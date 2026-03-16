@@ -25,3 +25,65 @@ RS_ATTRI_VISI_DEF int RsNdaGetDirectFlag(unsigned int phyId, unsigned int rdevIn
     *directFlag = rsNdaGetDirectFlagByVendorId(rdevCb->deviceAttr.vendor_id);
     return ret;
 }
+
+STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_extend *cqInitAttrEx, struct NdaCqInfo *info, void **cqHandle)
+{
+    int ret = 0;
+    hccp_dbg("RsNdaCqCreateEx begin..");
+
+    struct ibv_cq_extend *cqExt = RsNdaCreateCqExtend(rdevCb->ibCtxEx, cqInitAttrEx);
+    CHK_PRT_RETURN(cqExt == NULL, hccp_err("RsNdaCreateCqExtend failed, errno:%d", errno), -ENOMEM);
+
+    info->cq = cqExt->cq;
+    (void)memcpy_s(&info->rqInfo, sizeof(struct queue_info), &cqExt->cq_info, sizeof(struct queue_info));
+    *cqHandle = (void *)cqExt;
+
+    hccp_info("chip_id:%u, rdevIndex:%u cq create succ", rdevCb->rsCb->chipId, rdevCb->rdevIndex);
+    return ret;
+}
+
+RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaCqInitAttr *attr, 
+    struct NdaCqInfo *info, void **cqHandle)
+{
+    struct ibv_cq_init_attr_extend cqInitAttrEx = {0};
+    struct RsRdevCb *rdevCb = NULL;
+    int ret = 0;
+
+    CHK_PRT_RETURN(attr == NULL || info == NULL, hccp_err("attr or info is NULL, phyId:%u", phyId), -EINVAL);
+
+    CHK_PRT_RETURN(attr->dmaMode >= QBUF_DMA_MODE_MAX, hccp_err("param err, dmaMode:%u >= %u, phyId:%u",
+        attr->dmaMode, QBUF_DMA_MODE_MAX, phyId), -EINVAL);
+
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsQueryRdevCb phyId:%u rdevIndex:%u ret:%d", phyId, rdevIndex, ret), ret);
+
+    RsNdaCqInitExPrepare(rdevCb, attr, &cqInitAttrEx);
+
+    ret = RsNdaCqCreateEx(rdevCb, &cqInitAttrEx, info, cqHandle);
+    if (ret != 0) {
+        hccp_err("create nda qp create extend failed, ret:%d", ret);
+        return ret;
+    }
+
+    hccp_info("create cq successfully");
+    return ret;
+}
+
+RS_ATTRI_VISI_DEF int RsNdaCqDestroy(unsigned int phyId, unsigned int rdevIndex, void *cqHandle)
+{
+    // 准备ibv_cq_init_attr_extend
+    struct RsRdevCb *rdevCb = NULL;
+    int ret = 0;
+
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsQueryRdevCb phyId:%u rdevIndex:%u ret:%d", phyId, rdevIndex, ret), ret);
+
+    ret = RsNdaIbvDestroyCqExtend(rdevCb->ibCtxEx, (struct ibv_cq_extend *)cqHandle);
+    if (ret != 0) {
+        hccp_err("cq destroy extend failed, ret:%d", ret);
+        return ret;
+    }
+
+    hccp_info("cq destroy successfully");
+    return ret;
+}
