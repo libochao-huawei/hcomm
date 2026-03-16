@@ -119,7 +119,7 @@ HcclOpMetaInfo CollRunAlltoAllVTwoLevelPipeline::GetOpMeta(HcclCMDType opType, c
     bool hugeData = (isAlltoAllZCopyMode_) ? (algResResp_->paramInputMem.size() > SDMA_SEND_MAX_SIZE) : (false);
     bool alltoallPingPong = ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE 
         || topoAttr_.deviceType == DevType::DEV_TYPE_910_93) &&
-        !topoAttr_.multiModuleDiffDeviceNumMode &&
+        !static_cast<bool>(topoAttr_.multiModuleDiffDeviceNumMode) &&
         GetAlltoall2LevelPipelineMaxScratchSize910B(allMeshAggregationSendRecvInfo_) >
         algResResp_->cclInputMem.size());
     HcclOpMetaInfo opMeta;

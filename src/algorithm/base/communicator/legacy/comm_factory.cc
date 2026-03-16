@@ -515,7 +515,7 @@ HcclResult CommFactory::CreateCommP2PSync(const std::string &tag, const DeviceMe
     const CommParaInfo &commParaInfo, const std::vector<std::vector<RankInfo> > &commPlaneVec, bool isUsedRdma,
     std::vector<std::unique_ptr<CommBase> > &commVec)
 {
-    u32 status;
+    u32 status = 0;
     commVec = CreateCommP2PAsync(tag, inputMem, outputMem, commParaInfo.peerUserRank, status);
     for (u32 index = 0; index < commVec.size(); index++) {
         CHK_PRT_RET(!commVec[index],

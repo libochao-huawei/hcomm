@@ -35,7 +35,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::CalcCommInfo(std::vector<Level
 }
 
 HcclResult CollAllGatherMidCountFor91093Executor::CalcTransportMemType(TransportMemType &inputType,
-    TransportMemType &outputType)
+    TransportMemType &outputType) const
 {
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         inputType = TransportMemType::CCL_INPUT;
@@ -103,7 +103,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::PrepareL2DataSlices(const OpPa
 }
 
 HcclResult CollAllGatherMidCountFor91093Executor::RunLevel2ByNHR(const OpParam &param, ExecMem &execMem, 
-    SubCommInfo &level1CommInfo, SubCommInfo &level2CommInfo)
+    SubCommInfo &level1CommInfo, SubCommInfo &level2CommInfo) const
 {
     const u32 level2RankSize = level2CommInfo.localRankSize;
     const u32 multiSuperPodMode = 1;
@@ -134,7 +134,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::RunLevel2ByNHR(const OpParam &
 
 HcclResult CollAllGatherMidCountFor91093Executor::PrepareL1DataSlices(const OpParam &param, 
     const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
-    u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices)
+    u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices) const
 {
     (void) level2CommInfo;
     u32 unitSize = 0;

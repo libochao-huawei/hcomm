@@ -22,14 +22,14 @@ private:
     void ParseParam(const OpParam& param) override;
     /* *************** 资源计算 *************** */
     HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
-    u32 CalReduceStreamNum(const u32& localRankSize);
+    u32 CalReduceStreamNum(const u32& localRankSize) const;
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcLevel1CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcLevel2CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
+    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType) const;
 
     /* *************** 算法编排 *************** */
     bool IsSmallData(const u64 totalSize, const u64 curSize) override;
