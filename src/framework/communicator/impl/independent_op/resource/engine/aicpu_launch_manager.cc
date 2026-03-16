@@ -181,6 +181,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchForComm(std::vector<std::shared_ptr
 HcclResult AicpuLaunchMgr::ThreadKernelLaunchForBase(std::vector<std::shared_ptr<Thread>> &newThreads,
     std::unique_ptr<ThreadHandle[]> &aicpuHandle, aclrtBinHandle binHandle)
 {
+    CHK_PTR_NULL(binHandle);
     constexpr uint32_t defaultTimeOutSec = 120;
     ThreadKernelLaunchConfig config(
         "",      
