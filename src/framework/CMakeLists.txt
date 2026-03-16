@@ -601,7 +601,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         #framework
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
         ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service/i_hccl_one_sided_service.cc
-        ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy/zero_copy_memory_agent.cc
     )
     target_sources(ccl_kernel PRIVATE
         ${CCL_KERNEL_SRC_LIST}
@@ -800,7 +799,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     )
 
     target_include_directories(ccl_kernel PRIVATE
-        ${CCL_KERNEL_INCLUDE_LIST}
+        ${CCL_KERNEL_INCLUDE_LIST}/framework/communicator/impl/zero_copy
     )
 
     target_include_directories(ccl_kernel PRIVATE ${ORION_HEAD_LIST})
