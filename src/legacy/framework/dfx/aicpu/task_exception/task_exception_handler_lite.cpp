@@ -313,7 +313,6 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
             HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(*(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_))), static_cast<u32>(*(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_))), curTask->dfxOpInfo_->opIndex_);
         }
     }
-    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second), curTask->dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
 }
 
