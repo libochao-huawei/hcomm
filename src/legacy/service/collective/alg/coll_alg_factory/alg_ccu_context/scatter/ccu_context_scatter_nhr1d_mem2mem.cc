@@ -247,7 +247,7 @@ void CcuContextScatterNHR1DMem2Mem::DoScatterNHRSingleStep(const NHRStepInfo &nh
             dstMem_.addr += ScratchOffset_[sendSliceIdx];
             DoSendRecvSlice(nhrStepInfo.toRank, srcMem_, dstMem_, i % RANK_NUM_PER_CKE);
         }
-        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit); // 后同步,通知写入完毕,不需要前同步
+        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true); // 后同步,通知写入完毕,不需要前同步
     }
     HCCL_INFO("[DoScatterNHRSingleStep] rank %u step %u, toRank=%u, fromRank=%u, nSlice=%lu", rankId_, nhrStepInfo.step,
                nhrStepInfo.toRank, nhrStepInfo.fromRank, sendSliceIdxList.size());
