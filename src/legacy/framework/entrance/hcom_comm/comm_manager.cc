@@ -469,10 +469,10 @@ HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomGetCommV2(void **comm)
+HcclResult HcomGetCommV2(void **commV2)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
-    *comm = static_cast<void *>(hcomCommInfoV2.pComm.get());
+    *commV2 = static_cast<void *>(hcomCommInfoV2.pComm.get());
     HCCL_INFO("[HcomGetCommV2] success.");
     return HCCL_SUCCESS;
 }
