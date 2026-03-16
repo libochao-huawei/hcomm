@@ -393,8 +393,6 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
 
     HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2]Entry AicpuRunRpcServerV2, aicpuCacheEnable[%u]", tilingData->aicpuCacheEnable);
 
-    CHK_RET(hcclCommAicpu->RecordHostOrder(commParam, tag, tilingData->orderLaunchMode));
-
     hccl::OpParam opParam;
     opParam.tag = tag;
     opParam.inputPtr = reinterpret_cast<void *>(tilingData->inputPtr);
