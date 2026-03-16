@@ -210,6 +210,7 @@ else()
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/inc/aicpu/
         ${TOP_DIR}/abl/msprof/inc
+        ${TOP_DIR}/hcomm/src/framework/common/src
         ${TOP_DIR}/ace/npuruntime/inc
         ${TOP_DIR}/ace/npuruntime/inc/runtime
 
