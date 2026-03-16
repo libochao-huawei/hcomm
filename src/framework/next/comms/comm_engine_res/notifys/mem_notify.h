@@ -52,11 +52,9 @@ public:
             }
         } else {
             if (notifyHostVa_) {
+                (void)aclrtHostUnregister(notifyHostVa_);
                 free(notifyHostVa_);
-                aclError aclRet = aclrtHostUnregister(notifyHostVa_);
-                if (aclRet != ACL_SUCCESS) {
-                    HCCL_ERROR("aclrtHostUnregister failed, ret = %d", aclRet);
-                }
+                notifyHostVa_ = nullptr;
             }
         }
     };
@@ -122,7 +120,11 @@ public:
         hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType); // ?
         if (connectType == HOST_DEVICE_CONNECT_TYPE_PCIE) { // PCIe
             // 申请notify
-            aclrtMalloc(&notifyDeviceVa_, sizeof(uint8_t) + 4096ULL, ACL_MEM_MALLOC_HUGE_ONLY); // device// 对齐
+            aclError mallocRet = aclrtMalloc(&notifyDeviceVa_, sizeof(uint8_t) + 4096ULL, ACL_MEM_MALLOC_HUGE_ONLY);
+            if (mallocRet != ACL_SUCCESS) {
+                HCCL_ERROR("aclrtMalloc for notifyDeviceVa_ failed, ret = %d", mallocRet);
+                return HCCL_E_RUNTIME;
+            }
             uint64_t va = reinterpret_cast<uint64_t>(notifyDeviceVa_);
             uint64_t registerVa = (va + (4096ULL - 1ULL)) & ~(4096ULL - 1ULL);
             uint64_t accessVa;

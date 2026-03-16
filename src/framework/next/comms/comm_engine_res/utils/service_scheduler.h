@@ -40,6 +40,8 @@ public:
                 ThreadMsgEntity entity{};
                 CHK_RET(sendQueue_->Pop(entity));
                 CHK_RET(executeService(entity.serviceHandle, entity.args, entity.argsSizeByte));
+                free(entity.args);
+                entity.args = nullptr;
             }
             // 退出机制 ？注册一个特殊的退出服务，收到这个服务时退出循环
             if (stop_) {
