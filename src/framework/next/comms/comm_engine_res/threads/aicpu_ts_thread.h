@@ -13,6 +13,7 @@
 #include <vector>
 #include "thread.h"
 #include "aicpu_ts_thread_interface.h"
+#include "resource_entities.h"
 
 namespace hccl {
 class AicpuTsThread : public Thread {
@@ -27,6 +28,7 @@ public:
     std::string &GetUniqueId() override;
     uint32_t GetNotifyNum() const override;
     LocalNotify *GetNotify(uint32_t index) const override;
+    HcclResult GetThreadEntity(void* &threadEntity) override;
 
     // A3 Stream & A5 Stream
     bool IsDeviceA5() const override;
@@ -42,6 +44,7 @@ public:
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
 
     // Non-override functions
+    HcclResult NotifyRecord(const NotifyEntity notifyEntity) const;  // Support different types of Notify.
     HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
 
 private:
@@ -78,6 +81,8 @@ private:
     DeviceMem sqCqeContext_;
     DevType devType_ = DevType::DEV_TYPE_COUNT;
     std::unique_ptr<Hccl::IAicpuTsThread> pImpl_{nullptr};
+    void* deviceHandle_{nullptr};
+    void* deviceThreadHandle_{nullptr};
 };
 
 }  // namespace hccl

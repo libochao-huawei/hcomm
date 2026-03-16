@@ -57,6 +57,12 @@ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
 HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
 
+HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, const ThreadConfig config, const ThreadType type, ThreadHandle *threads);
+
+HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle);
+
+HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle);
+
 HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
 
 HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
@@ -65,6 +71,11 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
 
 HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
 
+/* Built-in services for AICPU engine + CPU thread type */
+HcclResult RecordService(void *args, uint64_t argsSizeByte);
+
+HcclResult WaitService(void *args, uint64_t argsSizeByte);
+ 
 #ifdef __cplusplus
 }
 #endif // __cplusplus

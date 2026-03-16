@@ -22,6 +22,7 @@
 #include "adapter_hal_pub.h"
 #include "device_capacity.h"
 #include "hccl/hccl_res.h"
+#include "resource_entities.h"
 
 namespace hccl {
 
@@ -68,6 +69,9 @@ public:
     virtual std::string &GetUniqueId() = 0;
     virtual uint32_t GetNotifyNum() const = 0;
     virtual LocalNotify *GetNotify(uint32_t index) const = 0;
+    virtual HcclResult GetThreadEntity(void* &threadEntity) {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
     // A3 Stream & A5 Stream
     virtual bool IsDeviceA5() const = 0;
@@ -109,7 +113,8 @@ inline LocalNotify *GetNotify(uint64_t thread, uint32_t index)
 }
 
 HcclResult CreateThread(CommEngine engine, StreamType streamType, uint32_t notifyNum,
-                        NotifyLoadType loadType, std::shared_ptr<Thread>& out_thread);
+                        const NotifyLoadType loadType, const ThreadType threadType,
+                        std::shared_ptr<Thread>& out_thread);
 HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
