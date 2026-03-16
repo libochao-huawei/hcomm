@@ -45,7 +45,7 @@
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
 
-using CcuKernelHandle = uint64_t;
+#include "ccu_types.h"
 
 namespace hcomm {
 
@@ -71,6 +71,17 @@ public:
 
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext *context);
+
+public:
+    CcuResult VariableCreate(CcuVariableHandle *var);
+    CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
+    CcuResult VariableAddVarToVar(CcuVariableHandle resVar,
+        CcuVariableHandle varA, CcuVariableHandle varB);
+
+private:
+    CcuResult GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable* variable);
+
+    std::unordered_map<CcuVariableHandle, CcuRep::Variable> ccuVarMap_{};
 
 protected:
     // 子类实现

@@ -63,7 +63,7 @@ HcclResult CcuInstance::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuInstance::ResetResPack()
+HcclResult CcuInstance::Reset()
 {
     if (!resPack_) {
         return HcclResult::HCCL_SUCCESS;
