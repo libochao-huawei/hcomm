@@ -107,10 +107,10 @@ HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(HcclCommunicator *commu
     std::lock_guard<std::mutex> lock(resMutex_);
     if (captureResMap_.find(modelId) == captureResMap_.end()) {
         captureCallbackParamMap_[modelId].modelId = modelId;
-        aclError aclRet = aclmdlRIDestroyRegisterCallback(rtModel, AclgraphDestroyCallback,
-            static_cast<void *>(&captureCallbackParamMap_[modelId]));
-        CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s] aclmdlRIDestroyRegisterCallback fail, modelId[%llu]",
-            __func__, modelId), HCCL_E_RUNTIME);
+        // aclError aclRet = aclmdlRIDestroyRegisterCallback(rtModel, AclgraphDestroyCallback,
+        //     static_cast<void *>(&captureCallbackParamMap_[modelId]));
+        // CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s] aclmdlRIDestroyRegisterCallback fail, modelId[%llu]",
+        //     __func__, modelId), HCCL_E_RUNTIME);
         HCCL_INFO("[%s] aclmdlRIDestroyRegisterCallback success modelID[%llu]", __func__, modelId);
     }
     captureResMap_[modelId][communicator].insert(newTag);

@@ -58,6 +58,9 @@ CcuKernel::CcuKernel(const CcuKernelArg &arg)
 {
     HCCL_INFO("Construct CcuKernel: %s", arg.GetKernelSignature().GetData().c_str());
     channels_ = arg.channels;
+
+    // 生成SQE粒度profiling信息
+    AddSqeProfiling(arg);
 }
 
 CcuKernel::~CcuKernel()
@@ -305,7 +308,9 @@ HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event)
 HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    Append(std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling));
+    auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling);
+    AddProfiling("WaitEvent", rep->GetMask());
+    Append(rep);
     return HCCL_SUCCESS;
 }
 
@@ -327,6 +332,7 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
 HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    AddProfiling(channel, "NotifyWait", localNotifyIdx, mask);
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     return HCCL_SUCCESS;
 }
@@ -665,6 +671,98 @@ CcuSharedResource &CcuKernel::GetExportedRes()
 CcuSharedResource &CcuKernel::GetImportedRes()
 {
     return importedRes_;
+}
+
+/*
+ * variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
+ * 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
+ */
+HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
+{
+    HCCL_INFO("[GetCcuProfilingInfo] Enter.");
+    std::vector<CcuProfilingInfo> allCcuProfilingInfos;
+    auto &ccuProfilingCache = GetProfilingInfo();
+
+    auto taskArgs = GeneArgs(arg);
+    uint32_t count = 0;
+    HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
+    for (auto &profInfo : ccuProfilingCache) {
+        profInfo.missionId = GetMissionId();
+        if (profInfo.type == static_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
+            profInfo.instrId   = GetInstrId();
+            allCcuProfilingInfos.push_back(profInfo);
+            continue;
+        }
+        if (count >= GetWaiteCkeProfilingReps().size()) {
+            HCCL_ERROR("count[%u] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            return HCCL_E_INTERNAL;
+        }
+        auto waitCkeRep = GetWaiteCkeProfilingReps()[count];
+        profInfo.instrId = waitCkeRep->StartInstrId();
+        if (profInfo.ckeId == INVALID_CKE_ID) { // localWait Rep
+            if (waitCkeRep.get() == nullptr) {
+                HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+                return HCCL_E_PTR;
+            }
+            auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitEvent*>(waitCkeRep.get());
+            profInfo.ckeId = localWaitRep->GetId();
+        }
+        allCcuProfilingInfos.push_back(profInfo);
+        count++;
+    }
+
+    // // loopGroup
+    // auto &lgProfInfo = GetLGProfilingInfo();
+    // HCCL_INFO("[GetCcuProfilingInfo] create varId2ArgIndexMap start. size=%lu", lgProfInfo.loadRep2ArgIdxMap.size());
+    // std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
+    // for (auto &iter : lgProfInfo.loadRep2ArgIdxMap) {
+    //     if (iter.first.get() == nullptr) {
+    //         HCCL_ERROR("[GetCcuProfilingInfo] loadRep is nullptr.");
+    //         return HCCL_E_PTR;
+    //     }
+    //     auto loadRep = dynamic_cast<CcuRep::CcuRepLoadArg*>(iter.first.get());
+    //     varId2ArgIndexMap[loadRep->GetVarId()] = iter.second;
+    // }
+
+    // HCCL_INFO("[GetCcuProfilingInfo] create varId2VarIdMap start. size=%lu", lgProfInfo.assignProfilingReps.size());
+    // std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
+    // for (auto &iter : lgProfInfo.assignProfilingReps) {
+    //     if (iter.get() == nullptr) {
+    //         HCCL_ERROR("[GetCcuProfilingInfo] assignRep is nullptr.");
+    //         return HCCL_E_PTR;
+    //     }
+    //     auto assignRep = dynamic_cast<CcuRep::CcuRepAssign*>(iter.get());
+    //     varId2VarIdMap[assignRep->varB.Id()] = assignRep->varA.Id();
+    // }
+
+    // HCCL_INFO("[GetCcuProfilingInfo] process loop group profiling start: lgsize(%lu), goSize(%lu)", lgProfInfo.lgProfilingReps.size(), groupOpSizeInfo.size());
+    // for (uint32_t i = 0; i < lgProfInfo.lgProfilingReps.size(); i += 2) { // 2: 一个goSize对应一个CcuProfilingInfo，对应1个loopGroup Rep
+    //     if (taskArgs.empty() || varId2ArgIndexMap.empty()) {
+    //         continue;
+    //     }
+    //     uint64_t loopParam = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].loopParam.Id());
+    //     uint64_t parallelParam = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].parallelParam.Id());
+    //     HCCL_INFO("Collect loopgroup profiling info: repSize[%u], index[%u], loopParam[%llu], parallelParam[%llu].",
+    //                lgProfInfo.lgProfilingReps.size(), i, loopParam, parallelParam);
+
+    //     if (loopParam != 0) {
+    //         lgProfInfo.ccuProfilingInfos[i].dataSize = loopParam * moConfig.loopCount * moConfig.memSlice;
+    //         lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i].get())->StartInstrId();
+    //         allCcuProfilingInfos.push_back(lgProfInfo.ccuProfilingInfos[i]);
+    //     }
+
+    //     if (parallelParam != 0) {
+    //         HCCL_INFO("[GetCcuProfilingInfo] collect lg, residual start i=%lu", i);
+    //         uint64_t residual = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].residual.Id());
+    //         uint64_t repeatNum = CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
+    //         lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig.memSlice + residual;
+    //         lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
+    //         allCcuProfilingInfos.push_back(lgProfInfo.ccuProfilingInfos[i]);
+    //     }
+    // }
+    // DumpCcuProfilingInfo(allCcuProfilingInfos);
+    allCcuProfilingInfo = allCcuProfilingInfos;
+    return HCCL_SUCCESS;
 }
 
 }; // namespace hcomm
