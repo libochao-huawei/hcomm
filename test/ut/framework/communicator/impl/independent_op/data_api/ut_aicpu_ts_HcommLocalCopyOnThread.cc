@@ -15,7 +15,6 @@
 #define private public
 #include "aicpu_ts_thread.h"
 #include "aicpu_ts_thread_interface.h"
-#include "dispatcher_aicpu.h"
 #undef private
 
 using namespace hccl;
@@ -47,47 +46,6 @@ protected:
 
 TEST_F(UtAicpuTsHcommLocalCopyOnThread, Ut_HcommLocalCopyOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));
-    
-    AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
-    HcclResult ret = aicpuThread.Init();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    std::string mainStr = aicpuThread.GetUniqueId();
-    isDeviceSide = true;
-    GlobalMockObject::verify(); 
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));
-
-     MOCKER(hrtGetDeviceType)
-        .stubs()
-        .with(outBound(DevType::DEV_TYPE_950))
-        .will(returnValue(HCCL_SUCCESS));
-
-    AicpuTsThread mainDevThread(mainStr);
-    ret = mainDevThread.Init();
-    std::function<HcclResult (u32, u32, const Hccl::TaskParam &, u64)> callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {return HCCL_SUCCESS;};
-    mainDevThread.SetAddTaskInfoCallback(callback);
-    EXPECT_EQ(ret, HCCL_SUCCESS);  
-
-    void *expectPtr = reinterpret_cast<void *>(0x2345);
-    void *streamPtr = mainDevThread.GetStreamLitePtr();
-    EXPECT_NE(nullptr, streamPtr);
-
-    ret = mainDevThread.LocalNotifyRecord(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-   
-    ret = mainDevThread.LocalNotifyWait(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    void *src = reinterpret_cast<void *>(0x2345);
-    void *dst = reinterpret_cast<void *>(0x2345);
-    uint64_t sizeByte = 8;
-    thread = reinterpret_cast<ThreadHandle>(&mainDevThread);
     res = HcommLocalCopyOnThread(thread, dst, src, len);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }

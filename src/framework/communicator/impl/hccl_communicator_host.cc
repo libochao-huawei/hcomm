@@ -8675,6 +8675,11 @@ namespace hccl
         return topoAttr;
     }
 
+    aclrtBinHandle HcclCommunicator::GetBinHandle()
+    {
+        return binHandle_;
+    }
+
     HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
         HDCommunicateParams &kfcStatusTransferD2HParams)
     {
@@ -8993,13 +8998,5 @@ namespace hccl
         }
         HCCL_INFO("[%s] aicpuUnfoldConfig[%u]", __func__, GetAicpuUnfoldConfig());
         return GetAicpuUnfoldConfig();
-    }
-
-    aclrtBinHandle HcclCommunicator::GetBinHandle() {
-        if (binHandle_ == nullptr) {
-            HCCL_ERROR("[HcclCommunicator][GetBinHandle] GetBinHandle binHandle failed.binHandle is nullptr");
-            return nullptr;
-        }
-        return binHandle_;
     }
 }

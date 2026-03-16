@@ -19,7 +19,6 @@
 #include "acl/acl_rt.h"
 #include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
-#include "hccl_common_v2.h"
 
 namespace Hccl {
 
@@ -207,7 +206,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
 
         if (curTask->taskParam_.taskType == TaskParamType::TASK_CCU) {
             ProcessCcuException(exceptionInfo, *curTask);
-        } else if (curTask->taskParam_.taskType == TaskParamType::TASK_AIV) {
+        } else if(curTask->taskParam_.taskType == TaskParamType::TASK_AIV){
             ProcessAivException(exceptionInfo, *curTask);
         } else {
             ProcessException(exceptionInfo, *curTask);
@@ -218,8 +217,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
 /*
  @Desc: AIV 算子异常DFX
 */
-void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
-{
+void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo){
     HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
     
     HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
@@ -237,12 +235,12 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     void *flag_buff_temp = nullptr;
     aclError aclRet = 0;
     aclRet = aclrtMallocHost(&flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize);
-    if (aclRet != ACL_SUCCESS) {
+    if(aclRet != ACL_SUCCESS){
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
         return;
     }
     aclRet = aclrtMemcpy(flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, taskInfo.taskParam_.taskPara.Aiv.flagMem, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, ACL_MEMCPY_DEVICE_TO_HOST);
-    if (aclRet != ACL_SUCCESS) {
+    if(aclRet != ACL_SUCCESS){
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
         return;
     }
@@ -262,9 +260,9 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     }
     HCCL_ERROR(flagStr.str().c_str());
     
-    if (flag_buff_temp != nullptr) {
+    if(flag_buff_temp != nullptr){
         aclRet = aclrtFreeHost(flag_buff_temp);
-        if (aclRet != ACL_SUCCESS) {
+        if(aclRet != ACL_SUCCESS){
             HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
             return;
         }

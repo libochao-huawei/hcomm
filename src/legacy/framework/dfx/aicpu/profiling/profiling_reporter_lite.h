@@ -16,7 +16,7 @@
 namespace Hccl {
 class ProfilingReporterLite {
 public:
-    explicit ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop = false);
+    explicit ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite);
     virtual ~ProfilingReporterLite();
     void Init() const;
     void ReportAllTasks();

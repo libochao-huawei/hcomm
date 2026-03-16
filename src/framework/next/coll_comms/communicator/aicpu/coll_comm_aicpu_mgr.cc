@@ -17,7 +17,7 @@ HcclResult CollCommAicpuMgr::AcquireCollCommAicpu()
         return HCCL_SUCCESS;
     }
 
-    EXECEPTION_CATCH(collCommAicpu_ = std::make_unique<CollCommAicpu>(), return HCCL_E_INTERNAL);
+    EXECEPTION_CATCH(collCommAicpu_ = std::make_shared<CollCommAicpu>(), return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
 

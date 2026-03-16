@@ -29,10 +29,10 @@
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
 
-hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identifier, std::string cclBufferName)
+hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identifier, std::string cclBuffName)
     : barrierSendBuf(nullptr), barrierRecvBuf(nullptr),
       inCCLbufferSize_(inCCLbufferSize), outCCLbufferSize_(outCCLbufferSize),
-      deviceType_(DevType::DEV_TYPE_COUNT), isFirstBarrier_(true), identifier_(identifier), cclBuffName_(cclBufferName), isHeterogComm_(false),
+      deviceType_(DevType::DEV_TYPE_COUNT), isFirstBarrier_(true), identifier_(identifier), cclBuffName_(cclBuffName), isHeterogComm_(false),
       isResetDevice_(false), isSpecialType_(false), communicator_(nullptr)
 {
     indirectInCCLbuffer_ = DeviceMem();
@@ -1532,11 +1532,6 @@ HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHan
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->GetCommSymWin(ptr, size, winHandle, offset));
     return HCCL_SUCCESS;
-}
-
-aclrtBinHandle hcclComm::GetBinHandle()
-{
-    return binHandle_;
 }
 
 }  // namespace hccl

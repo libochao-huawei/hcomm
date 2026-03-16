@@ -14,7 +14,7 @@
 #include <memory>
 #include <unordered_map>
 #include "hccl/base.h"
-#include "stream/stream.h"
+#include "stream.h"
 
 namespace Hccl {
 class CommunicatorImpl;

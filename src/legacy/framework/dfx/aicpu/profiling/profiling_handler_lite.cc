@@ -40,7 +40,6 @@ void ProfilingHandlerLite::Init() const
 void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
 {
     if (!GetProfL0State()) {
-        HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] l0 is false.");
         return;
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo start.");
@@ -62,12 +61,8 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
     hcclOpInfo.streamId = streamId;
     hcclOpInfo.count = opInfo.op_.dataCount;
     hcclOpInfo.dataType = opInfo.op_.dataType;
-    if (opInfo.isIndop_ == true) {
-        hcclOpInfo.groupName = GetProfHashId(opInfo.groupName_.c_str(), opInfo.groupName_.length());
-    } else {
-        CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(opInfo.comm_);
-        hcclOpInfo.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
-    }
+    CommunicatorImplLite *commImp        = static_cast<CommunicatorImplLite *>(opInfo.comm_);
+    hcclOpInfo.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] relay:%u, retry:%u, dataType:%s, algType:%u, count:%llu, "
               "groupName:%lu, ranksize:%u, taskId:%u, streamId:%u",
               hcclOpInfo.relay, hcclOpInfo.retry, DataTypeToSerialString(hcclOpInfo.dataType).c_str(), hcclOpInfo.algType, hcclOpInfo.count,
@@ -81,7 +76,6 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
 void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const
 {
     if (!GetProfL1State()) {
-        HCCL_INFO("[ProfilingHandlerLite][ReportHcclTaskDetails] l1 is false.");
         return;
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReporttHcclTaskDetails start.");
@@ -103,23 +97,13 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
 
 void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const 
 {
-    HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos %s", it.taskParam_.Describe().c_str());
     std::string nameInfo = GetProfTaskOpNameV2(it.taskParam_.taskType);
     taskDetailsInfos.itemId = GetProfHashId(nameInfo.c_str(), nameInfo.length());
     taskDetailsInfos.cclTag       = GetProfHashId(it.dfxOpInfo_->tag_.c_str(), it.dfxOpInfo_->tag_.length());
     taskDetailsInfos.remoteRank   = it.remoteRank_;
-    if (it.dfxOpInfo_->isIndop_ == true) {
-        taskDetailsInfos.groupName = GetProfHashId(it.dfxOpInfo_->groupName_.c_str(), it.dfxOpInfo_->groupName_.length());
-        taskDetailsInfos.rankSize  = it.dfxOpInfo_->rankSize_;
-        HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
-            it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
-    } else if (it.dfxOpInfo_->comm_ != nullptr) {
-        CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(it.dfxOpInfo_->comm_);
-        taskDetailsInfos.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
-        taskDetailsInfos.rankSize     = commImp->GetRankSize();
-        HCCL_INFO("ProfilingHandlerLite::GetTaskDetailInfos groupName_ %s, rankSize[%u]",
-            it.dfxOpInfo_->groupName_.c_str(), taskDetailsInfos.rankSize);
-    }
+    CommunicatorImplLite *commImp = static_cast<CommunicatorImplLite *>(it.dfxOpInfo_->comm_);
+    taskDetailsInfos.groupName = GetProfHashId(commImp->GetId().c_str(), commImp->GetId().length());
+    taskDetailsInfos.rankSize     = commImp->GetRankSize();
     taskDetailsInfos.localRank = it.dfxOpInfo_->op_.myRank;
     taskDetailsInfos.stage        = 0;
     if (it.taskParam_.taskType == TaskParamType::TASK_SDMA || it.taskParam_.taskType == TaskParamType::TASK_RDMA
@@ -158,8 +142,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
 
 void ProfilingHandlerLite::DumpTaskDetails(const MsprofAicpuHcclTaskInfo &taskDetailsInfos, const TaskInfo &taskInfo) const
 {
-    HCCL_INFO("ProfilingHandlerLite::DumpTaskDetails %s", taskInfo.taskParam_.Describe().c_str());
-    HCCL_INFO("[ProfilingHandlerLite]ReporttHcclTaskDetails data is: itemId[%llu], cclTag[%llu], groupName[%llu], "
+     HCCL_INFO("[ProfilingHandlerLite]ReporttHcclTaskDetails data is: itemId[%llu], cclTag[%llu], groupName[%llu], "
               " remoteRank[%u], rankSize[%u], stage[%u], taskType[%d], srcAddr[%llu], dstAddr[%llu], "
               " dataSize[%u], notifyID[%llu], dataType[%s],linkType[%u], timeStamp[%llu], durationEstimated[%f], "
               " taskId[%llu], streamId[%u], planeID[%llu], opType[%s], transportType[%d], role[%u], workFlowMode[%u] ",
@@ -174,18 +157,17 @@ void ProfilingHandlerLite::DumpTaskDetails(const MsprofAicpuHcclTaskInfo &taskDe
 void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo) const
 {
     if (!GetProfL0State()) {
-        HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] l0 is false.");
         return;
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] ReportMainStreamTask start.");
     MsprofAicpuHcclMainStreamTask flagtask {};
-    if (aicpu::GetTaskAndStreamId == nullptr) {
+    if(aicpu::GetTaskAndStreamId == nullptr){
         HCCL_WARNING("[ProfilingHandlerLite][ReportMainStreamTask] aicpu::GetTaskAndStreamId is nullptr.");
         return;
     }
     uint64_t aicpuKernelTaskId   = 0U;
     uint32_t aicpuKernelStreamId = 0;
-    if (aicpu::GetTaskAndStreamId(aicpuKernelTaskId, aicpuKernelStreamId) != aicpu::status_t::AICPU_ERROR_NONE) {
+    if(aicpu::GetTaskAndStreamId(aicpuKernelTaskId, aicpuKernelStreamId) != aicpu::status_t::AICPU_ERROR_NONE){
         THROW<InternalException>("[ProfilingHandler] Failed to get task id and stream id.");
     }
     // flagTaskInfo.taskId的高16位填到flagtask.taskId，低16位填到flagtask.streamId
@@ -197,7 +179,6 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
         THROW<InvalidParamsException>("[ProfilingHandler] aicpuKernelTaskId is larger than u32.");
     }
     // aicpuKernelTaskId的高16位填到flagtask.aicpuTaskId，低16位填到flagtask.aicpuStreamId
-    HCCL_INFO("[ProfilingHandlerLite][kernelTask] aicpuKernelTaskId %lu. aicpuKernelStreamId %u", aicpuKernelTaskId, aicpuKernelStreamId);
     uint32_t aicpuKernelTaskIdLow32 = static_cast<uint32_t>(aicpuKernelTaskId);
     flagtask.aicpuTaskId = static_cast<uint16_t>(aicpuKernelTaskIdLow32 >> 16);
     flagtask.aicpuStreamId = static_cast<uint16_t>(aicpuKernelTaskIdLow32);

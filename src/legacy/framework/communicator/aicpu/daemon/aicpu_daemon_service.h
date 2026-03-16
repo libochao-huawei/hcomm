@@ -13,7 +13,6 @@
 
 #include <cstdint>
 #include <vector>
-#include <mutex>
 #include "daemon_func.h"
 #include "enum_factory.h"
 
@@ -37,7 +36,6 @@ public:
 private:
     std::vector<DaemonFunc *> daemonFuncs;
     bool                      needBreak{false};
-    static std::mutex mutexForFuncs_;
 };
 } // namespace Hccl
 #endif // HCCL_AICPU_DAEMON_SERVICE_H

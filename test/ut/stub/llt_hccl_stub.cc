@@ -4623,6 +4623,16 @@ void UtraceDestroy(int32_t handle)
     return;
 }
 
+typedef struct TraceAttr {
+    bool exitSave;          // exec save when AtraceDestroy
+} TraceAttr;
+
+typedef struct TraceGlobalAttr {
+    uint8_t saveMode;   // 0: local save; 1: send to remote and save
+    uint8_t deviceId;   // 0: default; 32~63:vf
+    uint32_t pid;       // 0: default; if saveMode=1, means host pid
+    uint8_t reserve[32];
+} TraceGlobalAttr;
 
 int32_t AtraceCreateWithAttr(int32_t tracerType, const char *objName, const TraceAttr *attr)
 {
@@ -4651,6 +4661,13 @@ int32_t AtraceSetGlobalAttr(const TraceGlobalAttr *attr)
     (void)(attr);
     return 0;
 }
+
+typedef enum TracerType {
+    TRACER_TYPE_SCHEDULE   = 0,
+    TRACER_TYPE_PROGRESS   = 1,
+    TRACER_TYPE_STATISTICS = 2,
+    TRACER_TYPE_MAX,
+} TracerType;
 
 int32_t AtraceSave(TracerType tracerType, bool syncFlag)
 {

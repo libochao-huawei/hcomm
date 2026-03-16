@@ -115,7 +115,6 @@ struct TaskParam {
     TaskParamType taskType;
     u64           beginTime;
     u64           endTime;
-    bool          isMaster{false};
     union {
         ParaDMA    DMA;    // taskType = SDMA/RDMA使用, 包括rtRDMASend写notify
         ParaReduce Reduce; // taskType = inline/CCE Reduce使用

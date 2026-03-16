@@ -14,7 +14,6 @@
 #include "endpoint_pair.h"
 #include "hccl_res.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
-#include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 
 using namespace hcomm;
@@ -309,12 +308,6 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_RET(BatchCreateSockets(engine, channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
-    // 添加初始化时进行填表
-    for (u32 i = 0; i < channelNum; ++i) {
-        CHK_RET(CheckChannelParam(engine,channelDescs[i],i));
-        u32 remoteRank = channelDescs[i].remoteRank;
-        HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);
-    }
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         // 新增：添加 kernelLaunchAicpuCommInit 调用

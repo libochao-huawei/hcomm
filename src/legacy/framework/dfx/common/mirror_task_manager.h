@@ -27,7 +27,6 @@ public:
     MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed);
 
     void RegFullyCallBack(std::function<void()> callBack);
-    void RegFullyCallBack(std::function<void(const std::string&, u32)> callBack);
     void AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo);
     void SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
 
@@ -50,7 +49,6 @@ private:
     std::unordered_map<u32, u32> queueTaskNum;
     std::shared_ptr<DfxOpInfo>     currDfxOpInfo_;
     std::function<void()>          fullyCallBack_;
-    std::function<void(const std::string&, u32)>          fullyNewCallBack_;
 
 private:
     bool      IsStaticGraphMode(const CollOperator &collOperator) const;

@@ -105,7 +105,6 @@ void InsExecutor::ReportMainStreamTask(const StreamLite &stream, MainStreamTaskT
     flagTaskInfo.streamId = stream.GetId();
     flagTaskInfo.taskId   = stream.GetRtsq()->GetTaskId();
     flagTaskInfo.type     = type;
-    HCCL_INFO("[%s] TaskInfo yaskId %u streamId %u", __func__, flagTaskInfo.taskId, flagTaskInfo.streamId);
     ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
 }
 

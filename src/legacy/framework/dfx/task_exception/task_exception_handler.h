@@ -18,6 +18,7 @@
 #include "global_mirror_tasks.h"
 #include "ccu_dfx.h"
 #include "ccu_task_param.h"
+#include "hccl_common_v2.h"
 #include "error_message_v2.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
@@ -96,8 +97,7 @@ private:
 
 private:
     // 全局静态数组，存储异常处理器指针
-    static constexpr u32 MAX_MODULE_DEVICE_NUMS = 65;
-    static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUMS> handlers_;
+    static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> handlers_;
 };
 
 #ifdef __cplusplus

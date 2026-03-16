@@ -18,7 +18,6 @@
 #include "exchange_rdma_buffer_dto.h"
 #include "local_rdma_rma_buffer_manager.h"
 #include "local_rdma_rma_buffer.h"
-#include "hccl_one_sided_data.h"
 
 namespace hcomm {
 

@@ -146,12 +146,9 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_MyRankNullptr_Return_HCC
         .stubs()
         .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&CollComm::Init)
+     MOCKER_CPP(&CollComm::Init)
         .stubs()
-        .will(returnValue(0)); 
-    MOCKER_CPP(&CollComm::GetHDCommunicate)
-        .stubs()
-        .will(returnValue(0)); 
+        .will(returnValue(0));  
     MOCKER(IsSupportHCCLV2)
         .stubs()
         .will(returnValue(true));

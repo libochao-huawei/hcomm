@@ -12,7 +12,6 @@ add_subdirectory(common)
 add_subdirectory(rank)
 add_subdirectory(rank_pairs)
 add_subdirectory(api_c_adpt)
-add_subdirectory(dfx)
 add_subdirectory(communicator)
 
 target_include_directories(hcomm PRIVATE
