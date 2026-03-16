@@ -84,6 +84,9 @@ HcclResult CollComm::InitHDCommunicate()
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
         return HCCL_E_PTR);
     CHK_RET(kfcStatusTransferD2H_->InitHost());
+
+    myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+
     return HCCL_SUCCESS;
 }
 

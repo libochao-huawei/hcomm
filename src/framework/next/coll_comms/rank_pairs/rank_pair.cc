@@ -22,10 +22,10 @@ HcclResult RankPair::GetEndpointPair(CommEngine engine, const EndpointDescPair &
     return endpointPairMgr_->Get(engine, epDescPair, out);
 }
 
-hcomm::EpChannelList RankPair::GetEpChannelList()
+hcomm::EpChannelMap RankPair::GetEpChannelMap()
 {
-    auto epChannelList = endpointPairMgr_->GetEpChannelList();
-    return epChannelList;
+    auto epChannelmap = endpointPairMgr_->GetEpChannelMap();
+    return epChannelmap;
 }
 
 } // namespace hccl
