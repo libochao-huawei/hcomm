@@ -34,8 +34,6 @@ HcclResult __attribute__((weak)) HcomGetWorkspaceMemSizeV2(
     const std::string &opType, u64 count, HcclDataType dataType, const char *group, u64 &memSize);
 HcclResult __attribute__((weak)) HcomSetWorkspaceResourceV2(
     const std::string &tag, const char *group, std::vector<rtStream_t> stream, void *memPtr, u64 maxSize);
-HcclResult __attribute__((weak)) HcomSetAttachedStreamV2();
-HcclResult __attribute__((weak)) HcomReleaseSubCommsV2();
 HcclResult __attribute__((weak)) HcomGetRankIdV2(const char *group, u32 *rankId);
 HcclResult __attribute__((weak)) HcomBroadcastV2(const char *tag, void *ptr, u64 count, HcclDataType dataType,
     u32 root, const char *group, rtStream_t stream);
