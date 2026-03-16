@@ -29,34 +29,7 @@ HcclResult TopoMatchMesh::MatchTopo(std::vector<std::vector<RankId>> &vTopo, std
     CHK_PRT_RET((levelSet.size() == COMM_LEVEL_SIZE_0),
                 HCCL_ERROR("[CollAlgFactory] [TopoMatchMesh] Rank [%d], Invalid virtual topo.", myRank_),
                 HcclResult::HCCL_E_PARA);
-
-    // 只有Level0 场景
-    if (levelSet.size() == COMM_LEVEL_SIZE_1) {
-        rankOnSameBoardVector_.resize(RANK_SIZE_EIGHT, {});
-        rankOnSameSlotVector_.resize(RANK_SIZE_EIGHT, {});
-        CHK_RET(CalcRankOnSamePlaneOfR0(rankOnSameBoardVector_, rankOnSameSlotVector_, numRanksPerBoard_));
-        const NetInstance* netInstance = rankGraph_->GetNetInstanceByRankId(0, myRank_);
-        std::set<RankId> rankSetR0 = netInstance->GetRankIds();
-        if (numRanksPerBoard_.size() == 1 || numRanksPerBoard_[0] == 1) {
-            CHK_PRT_RET((numRanksPerBoard_[0] != rankSize_) && (numRanksPerBoard_.size() != rankSize_),
-                HCCL_ERROR("[CollAlgFactory] [TopoMatchMesh] Rank [%d], invalid virtual topo with rankSize [%u]: [%u] "
-                        "peers on identical board, [%u] peers on identical slot.",
-                        myRank_, rankSize_, numRanksPerBoard_[0], numRanksPerBoard_.size()),
-                HcclResult::HCCL_E_PARA);
-        } else {
-            if (!IsAllRanksFullMeshConnected(rankSetR0)) {
-                HCCL_ERROR("[CollAlgFactory] [TopoMatchMesh] Rank [%d], Invalid virtual topo for "
-                            "mesh in level0.", myRank_);
-                return HcclResult::HCCL_E_PARA;
-            }
-        }
-        for (RankId rankId : rankSetR0) {
-            rankIds_.push_back(rankId);
-        }
-    // Level0 和 Level1打平场景
-    } else {
-        CHK_RET(MeshTopoForAllLevel());
-    }
+    CHK_RET(MeshTopoForAllLevel());
     virtRanks = rankIds_;
     vTopo.push_back(rankIds_);
 
