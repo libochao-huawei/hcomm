@@ -679,10 +679,7 @@ void HrtNotifyDestroy(RtNotify_t ptr)
 
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 {
-    if (HrtGetDeviceType() == DevType::DEV_TYPE_950) {
-        return;
-    }
-    aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 0UL);
+    aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 2UL);
     HCCL_INFO("Call aclrtNotifyGetExportKey, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Set][IPCNotify]errNo[0x%016llx] IPC set notify name fail.  "
@@ -1153,6 +1150,123 @@ HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
         HCCL_ERROR("aclrtMemP2PMap fail ret = %d", ret);
         return HCCL_E_RUNTIME;
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtGetLogicDevIdByPhyDevId(u32 devicePhyId, u32 &deviceLogicId)
+{
+    s32 phyDevId = static_cast<s32>(devicePhyId);
+    s32 logicDevId;
+    if (HrtGetDeviceType() == DevType::DEV_TYPE_NOSOC) {
+        deviceLogicId = 0;
+        return HCCL_SUCCESS;
+    }
+
+    aclError ret = aclrtGetLogicDevIdByPhyDevId(phyDevId, &logicDevId);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("[aclrtGetLogicDevIdByPhyDevId] rtGet device logicid by PhyId failed, return[%d], "\
+            "para: phyId[%d], devIndex[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, phyDevId, logicDevId);
+        return HCCL_E_RUNTIME;
+    }
+    deviceLogicId = static_cast<u32>(logicDevId);
+    HCCL_INFO("aclrtGetLogicDevIdByPhyDevId success, devicePhyId[%u], deviceLogicId[%u]", devicePhyId, deviceLogicId);
+    return HCCL_SUCCESS;
+};
+
+HcclResult HrtGetUserDevIdByLogicDevId(u32 logicDevId, u32 &userDevid)
+{
+    s32 logicDevIdTmp = static_cast<s32>(logicDevId);
+    s32 userDevidTmp;
+    if (HrtGetDeviceType() == DevType::DEV_TYPE_NOSOC) {
+        userDevid = 0;
+        return HCCL_SUCCESS;
+    }
+
+    aclError ret = aclrtGetUserDevIdByLogicDevId(logicDevIdTmp, &userDevidTmp);
+    if (ret != ACL_SUCCESS) {
+        HCCL_ERROR("[aclrtGetUserDevIdByLogicDevId] rtGet device userId by logicid failed, return[%d], "\
+            "para: logicDevId[%d], userDevid[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, logicDevIdTmp, userDevidTmp);
+        return HCCL_E_RUNTIME;
+    }
+    userDevid = static_cast<u32>(userDevidTmp);
+    HCCL_INFO("aclrtGetUserDevIdByLogicDevId success, logicDevId[%u], userDevid[%u]", logicDevId, userDevid);
+    return HCCL_SUCCESS;
+};
+
+HcclResult HrtDeviceCanAccessPeer(int32_t *canAccessPeer, int32_t deviceId, int32_t peerDeviceId)
+{
+    int ret = aclrtDeviceCanAccessPeer(canAccessPeer, deviceId, peerDeviceId);
+    if (ret != 0) {
+        HCCL_ERROR("HrtDeviceCanAccessPeer fail ret = %d", ret);
+        return HCCL_E_RUNTIME;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtDeviceEnablePeerAccess(int32_t peerDeviceId)
+{
+    uint32_t flags = 0;
+    int ret = aclrtDeviceEnablePeerAccess(peerDeviceId, flags);
+    if (ret != 0) {
+        HCCL_ERROR("HrtDeviceEnablePeerAccess fail ret = %d", ret);
+        return HCCL_E_RUNTIME;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtSetAllDeviceEnablePeerAccess()
+{
+    HCCL_INFO("%s start", __func__);
+    int deviceCount = HrtGetDeviceCount();
+    int myDeviceId = HrtGetDevice();
+    for (int devId = 0; devId < deviceCount; devId++) {
+        if (devId == myDeviceId) {
+            continue;
+        }
+        int32_t canAccessPeer = 0;
+        (void)HrtDeviceCanAccessPeer(&canAccessPeer, devId, myDeviceId);
+        if (canAccessPeer == 1) {
+            (void)HrtDeviceEnablePeerAccess(devId);
+            HCCL_INFO("HrtDeviceEnablePeerAccess success myDevId[%d] rmtDevId[%d]", myDeviceId, devId);
+        } else {
+            HCCL_ERROR("Can Not Access Peer myDevId[%d] rmtDevId[%d] canAccessPeer[%d]", myDeviceId, devId, canAccessPeer);
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
+{
+    rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
+
+    HCCL_INFO("rt enableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
+
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Enable][P2P]errNo[0x%016llx] rt enableP2P deviceLogicId[%u] and "\
+        "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtDisableP2P(u32 deviceLogicId, u32 devicePhyId)
+{
+    rtError_t ret = rtDisableP2P(deviceLogicId, devicePhyId);
+
+    HCCL_INFO("rt disableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
+
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Disable][P2P]errNo[0x%016llx] rt disableP2P deviceLogicId[%u] and "\
+        "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status)
+{
+    rtError_t ret = rtGetP2PStatus(deviceLogicId, devicePhyId, status);
+
+    HCCL_DEBUG("rt getp2pstatus deviceLogicId[%u] and devicePhyId[%u] fail[%d], status[%u]",
+        deviceLogicId, devicePhyId, ret, *status);
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Get][P2PStatus]errNo[0x%016llx]Call rtGetP2PStatus failed, "
+            "ret[%d], deviceLogicId[%u], devicePhyId[%u]",
+            HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId, devicePhyId), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
 } // namespace Hccl

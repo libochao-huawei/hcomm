@@ -39,6 +39,12 @@ std::string RtsNotify::SetIpcName() const
     return ipcName;
 }
 
+
+void RtsNotify::SetIpcPid(s32 pid) const
+{
+    HrtSetIpcNotifyPid(handle, pid);
+}
+
 u32 RtsNotify::GetId() const
 {
     return id;
