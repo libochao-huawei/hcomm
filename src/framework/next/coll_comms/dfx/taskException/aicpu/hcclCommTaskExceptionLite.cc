@@ -194,7 +194,7 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     errMsgInfo.rankId = aicpuComm->GetTopoInfo().userRank;
     errMsgInfo.rankSize = aicpuComm->GetTopoInfo().userRankSize;
     errMsgInfo.algType = taskInfo.dfxOpInfo_ == nullptr ?
-        static_cast<Hccl::AlgType>(Hccl::AlgType::MESH) : taskInfo.dfxOpInfo_->algType_;
+        std::string("MESH") : taskInfo.dfxOpInfo_->algType_;
     errMsgInfo.opIndex = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->opIndex_;
     errMsgInfo.opType = taskInfo.dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo.dfxOpInfo_->op_.dataCount;
