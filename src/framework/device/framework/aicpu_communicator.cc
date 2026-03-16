@@ -4153,7 +4153,8 @@ std::string HcclCommAicpu::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
 
 void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer)
 {
-    const u32 sqeNum = 50; // 打印当前位置的前50个task
+    const u32 sqeNum = 200; // 打印当前位置的前200个task
+    const u32 maxTasksPerLine = 50;
     // 记录上一次打印的算子信息
     const AicpuOpInfo *lastOpInfo =
         aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[sqIdx].opRingBufferIdx);
@@ -4163,8 +4164,9 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
     u32 lastSqIdx = sqIdx; // 算子在sqeBuffer数组里的下标
     std::stringstream ss;
     ss << "OP(" << opIndex << ")";
+    u32 tasksInCurrentLine = 0;
 
-    for (u32 i = 0; i <= sqeNum; i++) {
+    for (u32 i = 0; i < sqeNum; i++) {
         u32 newSqIdx = (sqIdx - i + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT;
         const AicpuOpInfo *newOpInfo =
             aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[newSqIdx].opRingBufferIdx);
@@ -4172,7 +4174,7 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
 
         u32 newOpIdx = newOpInfo->opIndex;
         std::string newOpTag = newOpInfo->tagBuff;
-        if (newOpIdx != opIndex || newOpTag != opTag || i == sqeNum) { // 不同一个算子，或已经到打印的最后一个位置
+        if (newOpIdx != opIndex || newOpTag != opTag) { // 不同一个算子
             HCCL_ERROR("[TaskException]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
             HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
             opIndex = newOpIdx;
@@ -4180,9 +4182,23 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
             lastSqIdx = newSqIdx;
             ss.str("");
             ss << "OP(" << opIndex << ")";
+            tasksInCurrentLine = 0;
         }
         // 输入task缩写
         ss << "," << GetTaskBriefsInfo(newSqIdx, sqeContextBuffer);
+        tasksInCurrentLine++;
+
+        // 超过每行最大task数时切分打印
+        if (tasksInCurrentLine >= maxTasksPerLine && i < sqeNum - 1) {
+            HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
+            ss.str("");
+            ss << "OP(" << opIndex << ")";
+            tasksInCurrentLine = 0;
+        }
+    }
+    // 打印剩余的task
+    if (tasksInCurrentLine > 0) {
+        HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
     }
     return;
 }
