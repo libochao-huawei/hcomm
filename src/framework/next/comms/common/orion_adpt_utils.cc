@@ -80,7 +80,7 @@ HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProto
             break;
         default:
             HCCL_ERROR("[%s] Invaild CommProtocol[%u]", __func__, commProtocol);
-            return HCCL_E_NOT_FOUND;
+            return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
 }
@@ -101,40 +101,71 @@ Hccl::LinkData BuildDefaultLinkData()
     );
 }
 
-HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+static HcclResult EndpointLocTypeToPortDeploymentType(const EndpointLocType locType,
+    Hccl::PortDeploymentType &deployType)
 {
-    // 0) PortDeploymentType: 由 EndpointLocType 推导
-    Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::DEV_NET;
-    switch (locEp.loc.locType) {
+    switch (locType) {
         case EndpointLocType::ENDPOINT_LOC_TYPE_HOST:
-            portDeploymentType = Hccl::PortDeploymentType::HOST_NET;
+            deployType = Hccl::PortDeploymentType::HOST_NET;
             break;
         case EndpointLocType::ENDPOINT_LOC_TYPE_DEVICE:
-            portDeploymentType = Hccl::PortDeploymentType::DEV_NET;
+            deployType = Hccl::PortDeploymentType::DEV_NET;
             break;
         default:
-            // 保留/未知：保持默认 DEV_NET 或者在此处报错
-            HCCL_ERROR("[%s] unknown type of EndpointLocType[%d]", __func__, locEp.loc.locType);
-            break;
+            HCCL_ERROR("[%s] unknown type of EndpointLocType[%d]", __func__, locType);
+            return HcclResult::HCCL_E_PARA;
     }
 
-    // 1) LinkProtocol: 由 CommProtocol 推导
-    Hccl::LinkProtocol linkProtocol = Hccl::LinkProtocol::ROCE; // 默认值可按需调整
-    CommProtocolToLinkProtocol(locEp.protocol, linkProtocol);
+    return HcclResult::HCCL_SUCCESS;
+}
 
-    // TODO: client / server 的确定用 IpAddress
-    Hccl::IpAddress locAddr;
-    Hccl::IpAddress rmtAddr;
-    CommAddrToIpAddress(locEp.commAddr, locAddr);
-    CommAddrToIpAddress(rmtEp.commAddr, rmtAddr);
+HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+{
+    Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
+    CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
+
+    Hccl::LinkProtocol linkProtocol = Hccl::LinkProtocol::INVALID;
+    CHK_RET(CommProtocolToLinkProtocol(locEp.protocol, linkProtocol));
+
+    Hccl::IpAddress locAddr{};
+    Hccl::IpAddress rmtAddr{};
+    CHK_RET(CommAddrToIpAddress(locEp.commAddr, locAddr));
+    CHK_RET(CommAddrToIpAddress(rmtEp.commAddr, rmtAddr));
 
     uint32_t locDevPhyId = locEp.loc.device.devPhyId;
     uint32_t rmtDevPhyId = rmtEp.loc.device.devPhyId;
 
+    // 开源开放架构下comms层级不感知通信域层级的rank信息
+    // 当前复用orion数据结构故使用devId替换
     linkData = Hccl::LinkData(
         portDeploymentType,
         linkProtocol, 
         locDevPhyId, rmtDevPhyId,
+        locAddr, rmtAddr
+    );
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const uint32_t rmtRank,
+    const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+{
+    Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
+    CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
+
+    Hccl::LinkProtocol linkProtocol = Hccl::LinkProtocol::INVALID;
+    CHK_RET(CommProtocolToLinkProtocol(locEp.protocol, linkProtocol));
+
+    Hccl::IpAddress locAddr{};
+    Hccl::IpAddress rmtAddr{};
+    CHK_RET(CommAddrToIpAddress(locEp.commAddr, locAddr));
+    CHK_RET(CommAddrToIpAddress(rmtEp.commAddr, rmtAddr));
+
+    // 临时方案，为支持开源开放与orion通信域混跑，复用orion数据结构，添加rank信息
+    linkData = Hccl::LinkData(
+        portDeploymentType,
+        linkProtocol, 
+        myRank, rmtRank,
         locAddr, rmtAddr
     );
 

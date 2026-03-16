@@ -125,6 +125,8 @@ HcclResult HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t
 HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t flag);
 HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rtStream_t *aiCpuStream);
 
+HcclResult HcomSetAttachedStreamV2();
+HcclResult HcomReleaseSubCommsV2();
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
