@@ -15,10 +15,9 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     Hccl::CollOperator collOp{};
     collOp.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode); 
-    // if (Hccl::OP_TYPE_MAP.find(dfxOpInfo.opMode) == Hccl::OP_TYPE_MAP.end()) {
-    //     HCCL_ERROR("%s static_cast<HcclCMDType>(dfxOpInfo.opType)[%d] is not supported.", __func__, static_cast<HcclCMDType>(dfxOpInfo.opType));
-    //     return nullptr;
-    // }
+    if (Hccl::OP_TYPE_MAP.find(dfxOpInfo.opMode) == Hccl::OP_TYPE_MAP.end()) {
+        HCCL_ERROR("%s static_cast<HcclCMDType>(dfxOpInfo.opType)[%d] is not supported.", __func__, static_cast<HcclCMDType>(dfxOpInfo.opType));
+    }
     collOp.opType = Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.opType));
     collOp.reduceOp = Hccl::HcclReduceOpToReduceOp(static_cast<HcclReduceOp>(dfxOpInfo.reduceOp));
     collOp.dataType = Hccl::HcclDataTypeToDataType(static_cast<HcclDataType>(dfxOpInfo.dataType));
