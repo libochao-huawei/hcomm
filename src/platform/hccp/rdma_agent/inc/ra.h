@@ -163,6 +163,11 @@ struct RaLoopbackInfo {
     void *cqContext;
 };
 
+struct RaCqHandleExt {
+    struct NdaCqInfo *cqInfo;
+    struct RaRdmaHandle *rdmaHandle;
+};
+
 struct RaQpHandle {
     unsigned int qpn;
     int qpMode;
