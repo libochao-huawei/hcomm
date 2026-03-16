@@ -12,7 +12,9 @@
 #define CCU_RES_REPO_H
 
 #include <array>
+#include <string>
 #include <sstream>
+#include <vector>
 
 #include "ccu_common.h"
 

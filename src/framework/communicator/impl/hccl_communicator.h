@@ -411,7 +411,7 @@ public:
         numBlocks = numBlocks_;
         return HCCL_SUCCESS;
     }
-    HcclResult SetAivCoreLimit(u32 newAivCoreLimit);
+    HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup);
     HcclResult GetSwitchRanks(u32 *distSwitchRankList, bool *distSwitchUseBackup, u32 &distSwitchRankNum,
         u8 *distRemoteRankNicStatus, u32 &distNicStatusNum, bool &needCheckDefaultNic, bool &needCheckBackupNic);

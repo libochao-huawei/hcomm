@@ -21,7 +21,7 @@ HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
     CHK_PTR_NULL(info);
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         return HcclNetDevOpenV2(info, netDev);
     }
     return HcclNetDevOpenV1(info, netDev);
@@ -34,7 +34,7 @@ HcclResult HcclNetDevClose(HcclNetDev netDev)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         return HcclNetDevCloseV2(netDev);
     }
 
@@ -48,7 +48,7 @@ HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         return HcclNetDevGetAddrV2(netDev, addr);
     }
 
@@ -61,7 +61,7 @@ HcclResult HcclNetDevGetBusAddr(HcclDeviceId dstDevId, HcclAddress *busAddr)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         return HcclNetDevGetBusAddrV2(dstDevId, busAddr);
     }
 
@@ -75,7 +75,7 @@ HcclResult HcclNetDevGetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         return HcclNetDevGetNicAddrV2(devicePhyId, addr, addrNum);
     }
 

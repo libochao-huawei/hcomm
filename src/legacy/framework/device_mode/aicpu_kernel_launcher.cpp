@@ -58,32 +58,23 @@ void AicpuKernelLauncher::AicpuKernelLaunch(const Stream &stream, const string &
     SetHcclKernelLaunchParam(param);
 
     AddPostToUserStream(stream);
-    std::string jsonPath;
-    GetKernelFilePath(jsonPath);
-    jsonPath += "ccl_kernel.json";
-    aclrtBinHandle binHandle;
-    LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
-    aclrtFuncHandle funcHandle;
-    aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
-    if(aclRet != ACL_SUCCESS)
-    {
-        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
-    }
-	aclrtLaunchKernelAttr attr;
-	attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-	attr.value.timeout = comm->GetNotifyTimeoutCfg().GetNotifyTimeout();
+    const auto funcHandle = comm->GetAicpuKernelFuncHandle(param.kernelName);
+
+    aclrtLaunchKernelAttr attr;
+    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr.value.timeout = comm->GetNotifyTimeoutCfg().GetNotifyTimeout();
     aclrtLaunchKernelCfg cfg;
     cfg.attrs = &attr;
     cfg.numAttrs = 1;
     constexpr u32 numBlocks = 1;
     if (op->opMode == OpMode::OPBASE) {
         HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
-			&param.kernel, sizeof(HcclKernelParamLite));
+          &param.kernel, sizeof(HcclKernelParamLite));
         HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OPBASE mode "
                    "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
     } else if (op->opMode == OpMode::OFFLOAD) {
-	    HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream.GetPtr(), &cfg,
-		    &param.kernel, sizeof(HcclKernelParamLite));
+        HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, stream.GetPtr(), &cfg,
+            &param.kernel, sizeof(HcclKernelParamLite));
         HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s OFFLOAD mode "
                    "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName);
     }

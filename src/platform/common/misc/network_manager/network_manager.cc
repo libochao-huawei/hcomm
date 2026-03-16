@@ -389,7 +389,7 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
     HCCL_INFO("HeterogInit call HrtRaInit.");
     CHK_RET(HrtRaInit(&config));
 
-    struct rdev nicRdevInfo;
+    struct rdev nicRdevInfo = {};
     nicRdevInfo.phyId = devId;
     nicRdevInfo.family = ipAddr.GetFamily();
     nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;
@@ -1540,7 +1540,7 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
         CHK_RET(HrtRaInit(&config));
     }
 
-    struct rdev nicRdevInfo;
+    struct rdev nicRdevInfo = {};
     nicRdevInfo.phyId = devicePhyId;
     nicRdevInfo.family = ipAddr.GetFamily();
     nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;
@@ -1698,7 +1698,7 @@ HcclResult NetworkManager::PsWorkerRaDeinit(u32 devId, const HcclIpAddress &ipAd
 
 HcclResult NetworkManager::InitHostSocket(const HcclIpAddress &addr, SocketHandle &socketHandle) const
 {
-    struct SocketInitInfoT socketInitInfo;
+    struct SocketInitInfoT socketInitInfo = {};
     socketInitInfo.rdevInfo.family = addr.GetFamily();
     socketInitInfo.rdevInfo.phyId = devicePhyId_;
     socketInitInfo.rdevInfo.localIp.addr = addr.GetBinaryAddress().addr;
@@ -1797,7 +1797,7 @@ HcclResult NetworkManager::CreateHostSocketHandle(const HcclIpAddress &ipAddr, S
 
 HcclResult NetworkManager::StartListenSocket(const SocketHandle socketHandle, u32 &port) const
 {
-    struct SocketListenInfoT serverInfo;
+    struct SocketListenInfoT serverInfo = {};
     serverInfo.socketHandle = const_cast<SocketHandle>(socketHandle);
     serverInfo.port = port;
     if (isRaInitRepeated_) {

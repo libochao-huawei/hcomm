@@ -64,7 +64,7 @@ private:
     static HcclResult GetGroupId();
 
     bool isDestroyed{false};
-    CpuSendInfo sendinfo_;
+    CpuSendInfo sendinfo_{};
     std::atomic<bool> break_ = {false};
     std::atomic<bool> isWaiting_ = {false};
 

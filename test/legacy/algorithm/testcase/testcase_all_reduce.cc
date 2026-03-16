@@ -61,7 +61,7 @@ protected:
         checkerOpParam.tag = "AllReduce";
         checkerOpParam.opMode = opMode;
         checkerOpParam.reduceType = reduceType;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = dataType;
         checkerOpParam.algName = algName;
@@ -270,7 +270,7 @@ TEST_F(AllReduceTest, allreduce_aicpu_case_test_AllReduceNHR_2pod_2mul2_2mul2)
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllReduceNHR";
 
     Checker checker;
@@ -293,7 +293,7 @@ TEST_F(AllReduceTest, allreduce_aicpu_case_test_AllReduceNHR_3pod_2mul1_2mul2_3m
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MIN;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllReduceNHR";
 
     Checker checker;

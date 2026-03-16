@@ -41,12 +41,12 @@ public:
     std::string Describe() const;
 
     // 数据面调用verbs接口
-    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) const;
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx);
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
-    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) const;
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx);
     HcclResult Write(void *dst, const void *src, uint64_t len) const;
     HcclResult Read(void *dst, const void *src, uint64_t len) const;
-    HcclResult ChannelFence() const;
+    HcclResult ChannelFence();
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
 private:
@@ -102,8 +102,10 @@ private:
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
+    uint32_t wqeNum_{0};
 
     std::mutex cq_mutex;
+    std::mutex sendCq_mutex;
 };
 
 } // namespace hcomm

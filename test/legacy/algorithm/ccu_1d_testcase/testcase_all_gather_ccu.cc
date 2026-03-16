@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
@@ -62,7 +62,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -83,7 +83,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -104,7 +104,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_8rank_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -125,7 +125,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_5rank_4097)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 4097;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -146,7 +146,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_7rank_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -167,7 +167,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_6rank_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -188,7 +188,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_5rank_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -209,7 +209,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_4rank_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -230,7 +230,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -251,7 +251,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_offload_1M)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -272,7 +272,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_MeshMem2Mem1D_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMeshMem2Mem1D";
 
     Checker checker;
@@ -293,7 +293,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_offload_MeshMem2Mem1D_1M)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMeshMem2Mem1D";
 
     Checker checker;
@@ -314,7 +314,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_4rank_MeshMem2Mem1D_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMeshMem2Mem1D";
     Checker checker;
     HcclResult ret;
@@ -334,7 +334,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_5rank_MeshMem2Mem1D_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMeshMem2Mem1D";
 
     Checker checker;
@@ -355,7 +355,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_Mesh1DMultiMission_1M)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
@@ -376,7 +376,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_Mesh1DMem2MemWithStride)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1DMem2MemWithStride";
 
     Checker checker;
@@ -397,7 +397,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_V2AllGatherSoleExecutor)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsV2AllGatherSoleExecutor";
 
     Checker checker;
@@ -418,7 +418,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_offload_Mesh1DMem2MemWith
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherMesh1DMem2MemWithStride";
 
     Checker checker;
@@ -439,7 +439,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_offload_V2AllGatherSoleEx
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsV2AllGatherSoleExecutor";
 
     Checker checker;
@@ -459,7 +459,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_nhr)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherNHR1D";
 
     Checker checker;

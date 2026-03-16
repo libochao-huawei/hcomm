@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
@@ -68,7 +68,7 @@ TEST_F(All2AllCCUTest, all2all_ccu_case_test_2)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh1D";
 
     Checker checker;
@@ -95,7 +95,7 @@ TEST_F(All2AllCCUTest, all2all_ccu_case_test_3rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh1D";
 
     Checker checker;
@@ -122,7 +122,7 @@ TEST_F(All2AllCCUTest, all2all_ccu_case_test_8rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh1D";
 
     Checker checker;
@@ -149,7 +149,7 @@ TEST_F(All2AllCCUTest, all2all_ccu_case_test_5rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh1D";
 
     Checker checker;
@@ -176,7 +176,7 @@ TEST_F(All2AllCCUTest, all2all_ccu_case_test_4rank)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 100;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh1D";
 
     Checker checker;
@@ -203,7 +203,7 @@ TEST_F(All2AllCCUTest, all2all_ccu_case_test_4rank_600_count)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 600;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh1D";
 
     Checker checker;
@@ -230,7 +230,7 @@ TEST_F(All2AllCCUTest, all2all_ccu_case_test_4rank_600_offload_count)
     checkerOpParam.All2AllDataDes.recvType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.All2AllDataDes.sendCount = 600;
 
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAlltoAllMesh1D";
 
     Checker checker;

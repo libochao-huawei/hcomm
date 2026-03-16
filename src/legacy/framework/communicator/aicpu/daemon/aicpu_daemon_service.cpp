@@ -14,6 +14,7 @@
 namespace Hccl {
 
 constexpr u32 TEN_MILLISECOND_OF_USLEEP = 10000;
+std::mutex AicpuDaemonService::mutexForFuncs_;
 
 AicpuDaemonService &AicpuDaemonService::GetInstance()
 {
@@ -23,27 +24,31 @@ AicpuDaemonService &AicpuDaemonService::GetInstance()
 
 void AicpuDaemonService::ServiceRun(void *info)
 {
-    HCCL_INFO("Start back ground thread");
+    HCCL_RUN_INFO("Start back ground thread");
     auto commandToBackGroud = static_cast<CommandToBackGroud *>(info);
     while (true) {
         if (*commandToBackGroud == CommandToBackGroud::Stop) {
-            HCCL_INFO("Back ground thread returned");
+            HCCL_RUN_INFO("Back ground thread returned");
             break;
         }
 
+        std::unique_lock<std::mutex> lock(mutexForFuncs_);
         for (auto &func : daemonFuncs) {
             func->Call();
             if (needBreak) {
                 break;
             }
         }
+        lock.unlock();
+        
         if (needBreak) {
+            HCCL_RUN_INFO("Back ground thread needBreak");
             break;
         }
 
         SaluSleep(TEN_MILLISECOND_OF_USLEEP);
     }
-    HCCL_INFO("Exit back ground thread");
+    HCCL_RUN_INFO("Exit back ground thread");
 }
 
 void AicpuDaemonService::ServiceStop(void *info) const
@@ -55,6 +60,7 @@ void AicpuDaemonService::ServiceStop(void *info) const
 
 void AicpuDaemonService::Register(DaemonFunc *daemonFunc)
 {
+    std::unique_lock<std::mutex> lock(mutexForFuncs_);
     daemonFuncs.push_back(daemonFunc);
     HCCL_INFO("Back ground thread register daemonFunc");
 }

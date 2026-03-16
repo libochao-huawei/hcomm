@@ -525,4 +525,9 @@ Trace& HcclCommunicator::GetTrace() const
 {
     return pimpl->GetTrace();
 }
+
+u32 HcclCommunicator::GetRankInParentComm() {
+    return pimpl->GetRankInParentComm();
+}
+
 } // namespace Hccl
