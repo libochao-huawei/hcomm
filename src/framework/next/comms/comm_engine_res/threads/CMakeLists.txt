@@ -26,3 +26,80 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${src_list}
     )
 endif()
+
+# 创建 ccl_cpu 共享动态库
+add_library(ccl_cpu SHARED)
+# 指定 ccl_cpu 需要包含的文件搜索路径
+target_compile_definitions(ccl_cpu PRIVATE
+    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
+)
+
+target_include_directories(ccl_cpu PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
+    ${HCCL_BASE_DIR}/include/
+    ${HCCL_BASE_DIR}/include/hccl
+    ${HCCL_BASE_DIR}/pkg_inc
+    ${HCCL_BASE_DIR}/src/pub_inc
+    ${HCCL_BASE_DIR}/src/pub_inc/hccl
+    ${ASCEND_CANN_PACKAGE_PATH}/include
+    ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+)
+# 指定 ccl_cpu 的构建依赖关系
+add_dependencies(hcomm ccl_cpu)
+# 指定源文件
+set(CCL_CPU_SRC_LIST
+    ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/cpu_kernel_entrance.cc
+    ${HCCL_BASE_DIR}/src/framework/next/comms/comm_engine_res/threads/cpu_thread.cc
+)
+target_sources(ccl_cpu PRIVATE
+    ${CCL_CPU_SRC_LIST}
+)
+
+# 指定 ccl_cpu 的编译选项
+target_compile_options(ccl_cpu PRIVATE
+    -Werror
+    -Wall
+    -fno-common
+    -fno-strict-aliasing
+    -pipe
+    -O3
+    -std=c++14
+    -fstack-protector-all
+    $<$<CONFIG:Debug>:-g>
+)
+# 为 ccl_cpu 添加编译定义
+target_compile_definitions(ccl_cpu PRIVATE
+    HCCD
+    OPEN_BUILD_PROJECT
+)
+# 向 ccl_cpu 添加链接器选项
+target_link_options(ccl_cpu PRIVATE
+    -Wl,-z,relro,-z,now,-z,noexecstack
+    -Wl,-Bsymbolic
+    -Wl,--exclude-libs,ALL
+    $<$<CONFIG:Release>:-s>
+)
+# 将库文件链接到目标ccl_cpu
+target_link_libraries(ccl_cpu
+    -Wl,--no-as-needed
+    c_sec
+    mmpa
+    runtime
+    acl_rt
+    -Wl,--as-needed
+    -lrt
+    -ldl
+    -lpthread
+)
+
+# 指定 ccl_cpu 构建完成后安装到指定的目标位置
+install(TARGETS  ccl_cpu
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+)
