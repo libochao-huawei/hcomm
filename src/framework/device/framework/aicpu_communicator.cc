@@ -4034,45 +4034,127 @@ std::string HcclCommAicpu::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
     return ss.str();
 }
 
+// 获取指定索引的算子信息
+const AicpuOpInfo* HcclCommAicpu::GetOpInfoFromSqIdx(u32 sqIdx, SqeRingBuffer *sqeContextBuffer)
+{
+    return aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[sqIdx].opRingBufferIdx);
+}
+
+// 打印算子数据信息
+void HcclCommAicpu::PrintOpDataInfo(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor)
+{
+    std::string opInfo = GetTaskExceptionOpInfo(sqIdx, sqeContextBuffer);
+    if (isMonitor) {
+        HCCL_RUN_INFO("[StreamTaskMonitor]opData information is %s", opInfo.c_str());
+    } else {
+        HCCL_ERROR("[TaskException]opData information is %s", opInfo.c_str());
+    }
+}
+
+// 打印task序列行
+void HcclCommAicpu::PrintTaskLine(bool isMonitor, u32 lineNum, u32 totalPrinted, 
+                                  const std::string& taskLine) const
+{
+    if (isMonitor) {
+        HCCL_RUN_INFO("[StreamTaskMonitor]task sequence[%u/%u] is %s", 
+                      lineNum, totalPrinted, taskLine.c_str());
+    } else {
+        HCCL_ERROR("[TaskException]task sequence[%u/%u] is %s", 
+                   lineNum, totalPrinted, taskLine.c_str());
+    }
+}
+
+// 更新算子上下文
+void HcclCommAicpu::UpdateOpContext(u32& opIndex, std::string& opTag, u32& lineCount,
+                                    std::vector<std::string>& currentOpTasks,
+                                    u32 newOpIndex, const std::string& newOpTag) const
+{
+    opIndex = newOpIndex;
+    opTag = newOpTag;
+    lineCount = 0;
+    currentOpTasks.clear();
+    currentOpTasks.push_back("OP(" + std::to_string(opIndex) + ")");
+}
+
+// 准备下一行数据
+void HcclCommAicpu::PrepareNextLine(u32 opIndex, u32& lineCount,
+                                     std::vector<std::string>& currentOpTasks) const
+{
+    lineCount++;
+    currentOpTasks.clear();
+    currentOpTasks.push_back("OP(" + std::to_string(opIndex) + ") continued");
+}
+
+// 拼接task列表为字符串
+std::string HcclCommAicpu::ConcatTaskLine(const std::vector<std::string>& tasks) const
+{
+    std::string taskLine;
+    for (const auto& task : tasks) {
+        taskLine += task;
+    }
+    return taskLine;
+}
+
+// 打印剩余未满行的tasks
+void HcclCommAicpu::PrintRemainingTasks(bool isMonitor, u32 lineCount, u32 printedCount,
+                                        const std::vector<std::string>& currentOpTasks) const
+{
+    // size > 1 表示除了OP头还有task
+    if (currentOpTasks.size() > 1) {
+        std::string taskLine = ConcatTaskLine(currentOpTasks);
+        PrintTaskLine(isMonitor, lineCount + 1, printedCount, taskLine);
+    }
+}
+
 void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor)
 {
-    const u32 sqeNum = 50; // 打印当前位置的前50个task
-    // 记录上一次打印的算子信息
-    const AicpuOpInfo *lastOpInfo =
-        aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[sqIdx].opRingBufferIdx);
+    const u32 sqeNum = 200;
+    const u32 maxTasksPerLine = 50;
+    
+    // 获取初始算子信息
+    const AicpuOpInfo *lastOpInfo = GetOpInfoFromSqIdx(sqIdx, sqeContextBuffer);
     CHK_PRT_RET(lastOpInfo == nullptr, HCCL_ERROR("%s fail, opInfo is nullptr", __func__),);
-    u32 opIndex = lastOpInfo->opIndex; // 算子序号
+    
+    // 初始化状态
+    u32 opIndex = lastOpInfo->opIndex;
     std::string opTag = lastOpInfo->tagBuff;
-    u32 lastSqIdx = sqIdx; // 算子在sqeBuffer数组里的下标
-    std::stringstream ss;
-    ss << "OP(" << opIndex << ")";
-
-    for (u32 i = 0; i <= sqeNum; i++) {
+    u32 lineCount = 0;
+    u32 printedCount = 0;
+    std::vector<std::string> currentOpTasks;
+    currentOpTasks.push_back("OP(" + std::to_string(opIndex) + ")");
+    
+    // 主循环：遍历并打印
+    for (u32 i = 0; i < sqeNum; i++) {
+        // 计算新索引并获取算子信息
         u32 newSqIdx = (sqIdx - i + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT;
-        const AicpuOpInfo *newOpInfo =
-            aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[newSqIdx].opRingBufferIdx);
+        const AicpuOpInfo *newOpInfo = GetOpInfoFromSqIdx(newSqIdx, sqeContextBuffer);
         CHK_PRT_RET(newOpInfo == nullptr, HCCL_ERROR("%s fail, opInfo is nullptr", __func__),);
-
-        u32 newOpIdx = newOpInfo->opIndex;
-        std::string newOpTag = newOpInfo->tagBuff;
-        if (newOpIdx != opIndex || newOpTag != opTag || i == sqeNum) { // 不同一个算子，或已经到打印的最后一个位置
-            if (isMonitor == true) {
-                HCCL_RUN_INFO("[StreamTaskMonitor]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
-                HCCL_RUN_INFO("[StreamTaskMonitor]task sequence is %s", ss.str().c_str());
-            } else {
-                HCCL_ERROR("[TaskException]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
-                HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
+        
+        u32 sizeAfterAdd = currentOpTasks.size() + 1;
+        if (sizeAfterAdd >= (maxTasksPerLine + 2) || (i > 0 && (newOpInfo->opIndex != opIndex || newOpInfo->tagBuff != opTag))) {
+            // 打印算子信息（仅第一次）
+            if (lineCount == 0) {
+                PrintOpDataInfo(sqIdx, sqeContextBuffer, isMonitor);
             }
-            opIndex = newOpIdx;
-            opTag = newOpTag;
-            lastSqIdx = newSqIdx;
-            ss.str("");
-            ss << "OP(" << opIndex << ")";
+            
+            // 拼接并打印task行
+            std::string taskLine = ConcatTaskLine(currentOpTasks);
+            PrintTaskLine(isMonitor, lineCount + 1, printedCount, taskLine);
+            
+            // 更新状态
+            if (newOpInfo->opIndex != opIndex || newOpInfo->tagBuff != opTag) {
+                UpdateOpContext(opIndex, opTag, lineCount, currentOpTasks,
+                             newOpInfo->opIndex, newOpInfo->tagBuff);
+            } else {
+                PrepareNextLine(opIndex, lineCount, currentOpTasks);
+            }
         }
-        // 输入task缩写
-        ss << "," << GetTaskBriefsInfo(newSqIdx, sqeContextBuffer);
+        // 添加task到序列
+        currentOpTasks.push_back("," + GetTaskBriefsInfo(newSqIdx, sqeContextBuffer));
+        printedCount++;
     }
-    return;
+    // 打印剩余tasks
+    PrintRemainingTasks(isMonitor, lineCount, printedCount, currentOpTasks);
 }
 
 std::string HcclCommAicpu::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer)
