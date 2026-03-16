@@ -51,6 +51,19 @@ __aicore__ inline void AivAll2AllVGraph91093::Process(GM_ADDR buffOut0, GM_ADDR 
         offsetArgsTensor.SetValue(i * 4, sendDispls[i]);
 #endif
     }
+
+     
+    PipeBarrier<PIPE_ALL>();
+ 
+    for (uint32_t i = 0; i < numTargets; i++) {
+#ifndef OPEN_HCCL_TEST
+        DataCopy(offsetArgsGT[targetRanks[i] * 4], offsetArgsTensor[i * 4], 4);
+#endif
+        uint32_t curIdx = i * 4;
+        buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
+        buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
+    }
+ 
  
     PipeBarrier<PIPE_ALL>();
   
