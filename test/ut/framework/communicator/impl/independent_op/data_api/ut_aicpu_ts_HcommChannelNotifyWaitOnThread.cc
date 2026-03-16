@@ -11,12 +11,15 @@
 #include "gtest/gtest.h"
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
+#include <cstring>
 
 #define private public
 #include "aicpu_ts_thread.h"
 #include "aicpu_ts_thread_interface.h"
 #include "ub_transport_lite_impl.h"
 #undef private
+
+#include "resource_entities.h"
 
 using namespace hccl;
 
@@ -28,6 +31,11 @@ protected:
         threadOnDevice.devType_ = DevType::DEV_TYPE_950;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
         threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123456);
+
+        memset(&threadEntity_, 0, sizeof(threadEntity_));
+        threadEntity_.type = THREAD_TYPE_TS;
+        threadEntity_.engine = COMM_ENGINE_AICPU;
+        threadEntity_.threadObjAddr = reinterpret_cast<uint64_t>(&threadOnDevice);
     }
 
     virtual void TearDown() override
@@ -36,7 +44,8 @@ protected:
     }
 
     AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
+    ThreadEntity threadEntity_{};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadEntity_);
     std::vector<char> uniqueId;
     Hccl::UbTransportLiteImpl transportOnDevice{uniqueId};
     ChannelHandle channel = reinterpret_cast<ChannelHandle>(&transportOnDevice);

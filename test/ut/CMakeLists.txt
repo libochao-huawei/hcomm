@@ -172,6 +172,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/common
     ${HCCL_CODE_ROOT}/src/framework/device/utils
     ${HCCL_CODE_ROOT}/src/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
 
     # framework/next
@@ -256,6 +257,7 @@ set(UT_COMMON_INCLUDE_LIST
 
     #next
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/utils
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
@@ -304,6 +306,7 @@ set(UT_COMMON_INCLUDE_LIST
 
 add_subdirectory(stub)
 add_subdirectory(framework/next)
+add_subdirectory(framework/next/comms/api_c_adpt)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(misc)
