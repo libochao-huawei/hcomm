@@ -52,6 +52,7 @@ HcclResult CcuDriverHandle::Init() const
         return HCCL_E_UNAVAIL;
     }
 
+    CcuResSpecifications::GetInstance(devLogicId).Init(devLogicId);
     CcuComponent::GetInstance(devLogicId).Init();
     CcuResBatchAllocator::GetInstance(devLogicId).Init();
     CtxMgrImp::GetInstance(devLogicId).Init();
