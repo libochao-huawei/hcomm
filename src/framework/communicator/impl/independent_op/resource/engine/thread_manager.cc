@@ -137,6 +137,7 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
     CHK_RET(CheckThreadNum(engine, supplementThreadNum, notifyNumPerThread));
     NotifyLoadType notifyLoadType;
     StreamType streamType;
+    ThreadType threadType = THREAD_TYPE_TS;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] supplementThreadNum[%u] notifyNum[%u] notifyLoadType[%u], streamType[%u]",
@@ -150,7 +151,7 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
         std::shared_ptr<Thread> handle;
         HCCL_INFO("[ThreadMgr][%s] Hcom[%s] notifyLoadType[%u], streamType[%u]",
                 __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
-        CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
+        CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, threadType, handle));
         ret = handle->Init();
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] Failed to init thread index %u", i);
