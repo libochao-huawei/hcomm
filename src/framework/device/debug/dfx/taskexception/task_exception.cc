@@ -66,6 +66,13 @@ HcclResult TaskException::PrintTaskException(hccl::Stream& stream)
     if (sqHead == sqTail) { // 流上task已经执行完，不打印
         HCCL_RUN_INFO("%s skip, group:%s, streamId:%d, sqHead is equal to sqTail:%u",
             __func__, identifier_.c_str(), stream.id(), sqTail);
+        HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
+        CHK_PTR_NULL(sqeContext);
+        SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
+        CHK_PTR_NULL(sqeContextBuffer);
+        
+        const u32 printTaskNum = 200; // 打印最近200个已执行的task
+        PrintFinishedTaskQue(sqTail, sqeContextBuffer, printTaskNum);
         return HCCL_SUCCESS;
     }
 
@@ -133,7 +140,7 @@ std::string TaskException::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
 
 void TaskException::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer)
 {
-    const u32 sqeNum = 50; // 打印当前位置的前50个task
+    const u32 sqeNum = 200; // 打印当前位置的前200个task
     // 记录上一次打印的算子信息
     IndOpInfo& lastOpInfo = indOpInfos_[sqeContextBuffer->rtsDfxInfo[sqIdx].opRingBufferIdx];
     u32 opIndex = lastOpInfo.opIndex; // 算子序号
@@ -169,6 +176,61 @@ void TaskException::PrintTaskExceptionOpInfo(IndOpInfo& indOp)
     HCCL_ERROR("[TaskException]opData information is group:%s, opIndex:%u, %s",
         identifier_.c_str(), indOp.opIndex, opInfoTmp);
 }
+
+void TaskException::PrintFinishedTaskQue(u32 sqTail, SqeRingBuffer *sqeContextBuffer, u32 sqeNum)
+{
+    if (sqeNum == 0 || sqTail == 0) {
+        HCCL_RUN_INFO("%s skip, sqeNum:%u, sqTail:%u, no finished tasks to print",
+            __func__, sqeNum, sqTail);
+        return;
+    }
+
+    const u32 batchTaskNum = 50; // 每批打印50个task，避免单行日志过长
+    u32 lastSqIdx = (sqTail - 1 + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT;
+    
+    HCCL_RUN_INFO("%s start, will print last %u finished tasks from sqIdx:%u to sqIdx:%u, batch size:%u",
+        __func__, sqeNum, (sqTail - sqeNum + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT, lastSqIdx, batchTaskNum);
+
+    // 记录上一个算子的索引，用于分组
+    IndOpInfo& lastOpInfo = indOpInfos_[sqeContextBuffer->rtsDfxInfo[lastSqIdx].opRingBufferIdx];
+    u32 opIndex = lastOpInfo.opIndex;
+    
+    std::stringstream ss;
+    ss << "OP(" << opIndex << ")";
+    
+    u32 taskCountInBatch = 0; // 当前批次中的task计数
+
+    // 从最新的已执行task向前回溯，打印sqeNum个task
+    for (u32 i = 0; i < sqeNum; i++) {
+        u32 newSqIdx = (lastSqIdx - i + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT;
+        
+        IndOpInfo& newOpInfo = indOpInfos_[sqeContextBuffer->rtsDfxInfo[newSqIdx].opRingBufferIdx];
+        u32 newOpIdx = newOpInfo.opIndex;
+        
+        // 如果遇到不同算子，或者达到批次数量的阈值，或者已经到最后一个task，则打印当前批次
+        if (newOpIdx != opIndex || taskCountInBatch >= batchTaskNum || i == sqeNum - 1) {
+            PrintTaskExceptionOpInfo(lastOpInfo);
+            HCCL_ERROR("[TaskException]finished task sequence is %s", ss.str().c_str());
+            
+            // 重置批次信息
+            opIndex = newOpIdx;
+            ss.str("");
+            ss << "OP(" << opIndex << ")";
+            taskCountInBatch = 0;
+        }
+        
+        // 输入task缩写
+        ss << "," << GetTaskBriefsInfo(newSqIdx, sqeContextBuffer);
+        taskCountInBatch++;
+    }
+    
+    // 打印最后一个算子的信息
+    PrintTaskExceptionOpInfo(indOpInfos_[sqeContextBuffer->rtsDfxInfo[(lastSqIdx - sqeNum + 1 + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT].opRingBufferIdx]);
+    HCCL_ERROR("[TaskException]finished task sequence is %s", ss.str().c_str());
+    
+    return;
+}
+
 
 std::string TaskException::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer)
 {
