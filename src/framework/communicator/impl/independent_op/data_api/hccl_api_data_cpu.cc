@@ -26,6 +26,7 @@
 #include "adapter_prof.h"
 #include "task_info.h"
 #include "hccl_diag.h"
+#include "exception_handler.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
