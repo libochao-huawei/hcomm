@@ -12,6 +12,8 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
 )
 
+add_subdirectory(zero_copy)
+
 target_sources(hcomm PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
@@ -32,6 +34,5 @@ endif()
 
 add_subdirectory(resource_manager)
 add_subdirectory(one_sided_service)
-add_subdirectory(zero_copy)
 add_subdirectory(independent_op)
 add_subdirectory(symmetric_memory)
