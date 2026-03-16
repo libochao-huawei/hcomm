@@ -120,7 +120,7 @@ HcclResult HcomGetWorldRankFromGroupRankV2(const char *group, u32 groupRank, u32
 HcclResult HcomGetGroupRankFromWorldRankV2(u32 worldRank, const char *group, u32 *groupRank);
 HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize);
 HcclResult HcomGetCommV2(void **commV2);
-HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
+HcclResult HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
 HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify);
 HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify);
 HcclResult CallSingletons();
