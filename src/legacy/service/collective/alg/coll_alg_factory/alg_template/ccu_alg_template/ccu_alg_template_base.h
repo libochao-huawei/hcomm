@@ -13,6 +13,7 @@
 
 #include "const_val.h"
 #include "template_utils.h"
+#include "ccu_rank_group.h"
 #include "instruction.h"
 #include "ins_queue.h"
 #include "coll_operator.h"
