@@ -163,6 +163,7 @@ set(INSTALL_INCLUDE_DIR ${CMAKE_SYSTEM_PROCESSOR}-linux/include)
 set(INSTALL_PKG_INCLUDE_DIR ${CMAKE_SYSTEM_PROCESSOR}-linux/pkg_inc)
 set(INSTALL_CCL_KERNEL_JSON_DIR opp/built-in/op_impl/aicpu)
 set(INSTALL_DPU_KERNEL_JSON_DIR opp/built-in/op_impl/dpu)
+set(INSTALL_CPU_KERNEL_JSON_DIR opp/built-in/op_impl/cpu)
 set(INSTALL_DEVICE_TAR_DIR compat)
 
 set(CMAKE_SKIP_RPATH TRUE)

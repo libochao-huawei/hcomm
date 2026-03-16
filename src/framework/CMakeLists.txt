@@ -21,6 +21,7 @@ else()
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
     set(INSTALL_CCL_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
     set(INSTALL_DPU_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
+    set(INSTALL_CPU_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
 endif()
 
 
@@ -961,7 +962,17 @@ if(NOT KERNEL_MODE)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
         DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
     )
-    add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json)
+
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/ccl_cpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    add_custom_target(cpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json
+        DESTINATION ${INSTALL_CPU_KERNEL_JSON_DIR} OPTIONAL
+    )
+
+    add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json cpu_kernel_json)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)

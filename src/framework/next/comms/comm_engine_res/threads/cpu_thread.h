@@ -60,6 +60,12 @@ public:
     HcclResult LocalNotifyWait(uint32_t notifyId) const override {
         return HCCL_E_NOT_SUPPORT;
     };
+    HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const override {
+        return HCCL_E_NOT_SUPPORT;
+    };
+    HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const override {
+        return HCCL_E_NOT_SUPPORT;
+    };
     HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override {
         return HCCL_E_NOT_SUPPORT;
     };
@@ -76,6 +82,16 @@ public:
     HcclResult GetThreadEntity(void* &threadEntity) override;
     MemNotify* GetMemNotify(uint32_t notifyIndex);
     uint32_t GetNotifyNum() const override;
+    HcclResult SupplementNotify(uint32_t notifyNum) override {
+        (void)notifyNum;
+        return HCCL_E_NOT_SUPPORT;
+    };
+    bool GetMaster() const override {
+        return isMaster_;
+    };
+    void SetIsMaster(bool isMaster) override {
+        isMaster_ = isMaster;
+    };
 
 private:
     HcclResult PrepareDpuKernelResource(aclrtFuncHandle &funcHandle);
@@ -93,6 +109,7 @@ private:
     std::vector<std::unique_ptr<MemNotify>> notifys_;
     ThreadServiceHandle recordServiceHandle_;
     ThreadServiceHandle waitServiceHandle_;
+    bool isMaster_{false};
     bool isInit_{false};
     void* deviceHandle_;
 };
