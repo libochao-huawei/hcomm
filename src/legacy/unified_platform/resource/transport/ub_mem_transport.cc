@@ -32,7 +32,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
     HcclResult result = FillTagVec();
     CHK_RET_THROW(InternalException,
         StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
-        result = HCCL_SUCCESS);
+        result == HCCL_SUCCESS);
 }
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
@@ -45,7 +45,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
     HcclResult result = FillTagVec();
     CHK_RET_THROW(InternalException,
         StringFormat("[UbMemTransport][UbMemTransport] failed to construct UbMemTransport."),
-        result = HCCL_SUCCESS);
+        result == HCCL_SUCCESS);
 }
 
 HcclResult UbMemTransport::FillTagVec()
