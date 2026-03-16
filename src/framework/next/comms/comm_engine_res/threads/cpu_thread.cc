@@ -34,8 +34,8 @@ HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
     jsonPath += "/opp/built-in/op_impl/dpu/";
     HCCL_DEBUG("[CpuThread::%s] kernel folder path[%s]", __func__, jsonPath.c_str());
 
-    // cpuKernelMode为1时，json命名需与so命名保持一致， 即libccl_dpu.json与libccl_dpu.so
-    jsonPath += "libccl_dpu.json";
+    // cpuKernelMode为1时，json命名需与so命名保持一致， 即libccl_cpu.json与libccl_cpu.so
+    jsonPath += "libccl_cpu.json";
     char realPath[PATH_MAX] = {0};
     CHK_PRT_RET(realpath(jsonPath.c_str(), realPath) == nullptr,
         HCCL_ERROR("[CpuThread::%s]: %s is not a valid real path, err[%d]", __func__, jsonPath.c_str(), errno),
