@@ -19,8 +19,7 @@
 #include "ccu_common.h"
 
 namespace hcomm {
-namespace CcuRep {
-constexpr uint16_t  CCU_MAX_CHANNEL_NUM     = 16;     // 最多16条link
+    constexpr uint16_t  CCU_MAX_CHANNEL_NUM     = 16;     // 最多16条link
 constexpr uint16_t  INVALID_CKE_ID          = 0xFFFF; // CKE ID非法值
 constexpr uint16_t  INVALID_VALUE_CHANNELID = 0xFFFF; // channel id非法值
 constexpr uint64_t       INVALID_VALUE_NOTIFYID  = 0xFFFFFFFFFFFFFFFF; // NOTIFY id非法值
@@ -48,6 +47,8 @@ struct CcuProfilingInfo {
         (void)memset_s(remoteRankId, sizeof(remoteRankId), INVALID_RANKID, sizeof(remoteRankId));
     }
 };
+namespace CcuRep {
+
 
 struct LoopGroupProfilingInfo {
     std::vector<CcuProfilingInfo> ccuProfilingInfos;
@@ -76,7 +77,17 @@ public:
     void     SetMissionKey(uint32_t missionKey);
     uint32_t GetMissionKey() const;
 
+
     // ccu profiling相关接口
+    std::vector<CcuProfilingInfo> &GetProfilingInfo();
+    LoopGroupProfilingInfo &GetLGProfilingInfo();
+    const std::vector<std::shared_ptr<CcuRepBase>> &GetWaiteCkeProfilingReps() const;
+    void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
+
+    void AddSqeProfiling(const CcuKernelArg &arg);
+    void AddProfiling(const std::string &name, uint32_t mask);
+    void AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
+    // void AddProfiling(const CcuTransportGroup &transportGroup, const std::string &name, uint32_t signalIndex, uint32_t mask);
     void AddProfiling(const ChannelHandle *channels, uint32_t channelNum);
     void AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType, HcclDataType outputDataType,
                       HcclReduceOp opType);
@@ -98,17 +109,6 @@ private:
     LoopGroupProfilingInfo lgProfilingInfo; // LoopGroup相关profiling缓存信息
     std::vector<std::shared_ptr<CcuRepBase>> waitCkeProfilingReps; // waitCKE相关REP缓存
     std::vector<CcuProfilingInfo> profilingInfo; // context全部profiling缓存信息
-
-    // ccu profiling相关接口
-    std::vector<CcuProfilingInfo> &GetProfilingInfo();
-    LoopGroupProfilingInfo &GetLGProfilingInfo();
-    const std::vector<std::shared_ptr<CcuRepBase>> &GetWaiteCkeProfilingReps() const;
-    void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
-
-    void AddSqeProfiling(const CcuKernelArg &arg);
-    void AddProfiling(const std::string &name, uint32_t mask);
-    void AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
-    // void AddProfiling(const CcuTransportGroup &transportGroup, const std::string &name, uint32_t signalIndex, uint32_t mask);
 
 };
 

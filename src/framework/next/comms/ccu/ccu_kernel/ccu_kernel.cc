@@ -332,7 +332,7 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
 HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    AddProfiling(channel, "NotifyWait", signalIndex, mask);
+    AddProfiling(channel, "NotifyWait", localNotifyIdx, mask);
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     return HCCL_SUCCESS;
 }
