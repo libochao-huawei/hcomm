@@ -12,8 +12,6 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
 )
 
-add_subdirectory(zero_copy)
-
 target_sources(hcomm PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
@@ -28,11 +26,11 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_device.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_device.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy/zero_copy_memory_agent.cc
     )
 endif()
 
 add_subdirectory(resource_manager)
 add_subdirectory(one_sided_service)
+add_subdirectory(zero_copy)
 add_subdirectory(independent_op)
 add_subdirectory(symmetric_memory)
