@@ -12,7 +12,7 @@
 #include "securec.h"
 #include "user_log.h"
 #include "hccp_ctx.h"
-#include "hccp_async.h"
+#include "hccp_async_ctx.h"
 #include "ra_async.h"
 #include "ra_hdc_async_ctx.h"
 #include "ra_hdc_async.h"
