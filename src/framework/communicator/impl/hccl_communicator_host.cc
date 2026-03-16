@@ -52,6 +52,9 @@
 #include "comm_topo_desc.h"
 #include "rt_external.h"
 #include "externalinput.h"
+#include "aclgraph_callback.h"
+#include "adapter_hal.h"
+#include "dlhal_function.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -187,6 +190,7 @@ namespace hccl
         AlgWrap::GetInstance().UnregisterAlgCallBack(identifier_);
         DetectConnectionAnomalies::GetInstance(deviceLogicId_).Deinit();
         UnRegisterToCommConfiger();
+        AclgraphCallback::GetInstance().CleanCaptureRes(this);
 
         if (zeroCopyAclGraph_ != nullptr) {
             zeroCopyAclGraph_ = nullptr;
@@ -360,8 +364,8 @@ namespace hccl
         if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93){
             CHK_RET(RegisterKernel(deviceType_));
         }
-        CHK_RET(LoadAICPUKernel());
         CHK_RET(LoadCustomKernel());
+        CHK_RET(LoadAICPUKernel());
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
@@ -393,8 +397,8 @@ namespace hccl
         CHK_RET(InitTransportManager());
         CHK_RET(InitMemoryManagerSubGroup());
         CHK_RET(InitHcclAlg());
-        CHK_RET(LoadAICPUKernel());
         CHK_RET(LoadCustomKernel());
+        CHK_RET(LoadAICPUKernel());
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
@@ -413,14 +417,16 @@ namespace hccl
 
     HcclResult HcclCommunicator::LoadAICPUKernel(void)
     {
-        std::string jsonPath;
-        CHK_RET(GetKernelFilePath(jsonPath));
-        jsonPath += "ccl_kernel.json";
-        HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
-            binHandle_);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
-            "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+        if (binHandle_ == nullptr) {
+            std::string jsonPath;
+            CHK_RET(GetKernelFilePath(jsonPath));
+            jsonPath += "ccl_kernel.json";
+            HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
+                binHandle_);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+                "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+        }
         return HCCL_SUCCESS;
     }
 
@@ -434,6 +440,25 @@ namespace hccl
             }
             binHandle_ = nullptr;
         }
+        return;
+    }
+
+    HcclResult HcclCommunicator::LoadCustomKernel(void)
+    {
+        // 加载自定义算子
+        // 请勿删除，该函数为用户自定义算子时使用，应加载句柄
+        // 读取customEnable环境变量，开启了就执行
+        std::string jsonPath;
+        CHK_RET(GetCustomKernelFilePath(jsonPath));
+        jsonPath += "libaicpu_custom.json";
+        CHK_RET(LoadCustomFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 1, binHandle_));
+        return HCCL_SUCCESS;
+    }
+
+    void HcclCommunicator::UnloadCustomKernel(void)
+    {
+        // 卸载自定义算子
+        // 请勿删除，该函数为用户自定义算子时使用，应释放句柄：UnloadBinary(binCustomHandle_);
         return;
     }
 
@@ -852,7 +877,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::CheckDataType(const HcclDataType dataType, bool needReduce)
     {
-        const vector<string> infoTitle({"ccl_op", "parameter", "value", "tips"});
+        const vector<string> infoTitle({"ccl_op", "value", "parameter", "expect"});
         if (needReduce) {
             if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
                 if ((dataType == HCCL_DATA_TYPE_INT64) || (dataType == HCCL_DATA_TYPE_BFP16)) {
@@ -1044,7 +1069,7 @@ namespace hccl
                 ((dataType == HCCL_DATA_TYPE_INT16) || (dataType == HCCL_DATA_TYPE_BFP16))) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
                         GetDataTypeEnumStr(dataType),
                         "dataType",
@@ -1064,7 +1089,7 @@ namespace hccl
             if (dataType == HCCL_DATA_TYPE_INT16) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
                         GetDataTypeEnumStr(dataType),
                         "dataType",
@@ -1081,7 +1106,7 @@ namespace hccl
             if (dataType == HcclDataType::HCCL_DATA_TYPE_INT16 && op != HcclReduceOp::HCCL_REDUCE_SUM) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
                         GetReduceOpEnumStr(op),
                         "op",
@@ -2481,6 +2506,8 @@ namespace hccl
             return HCCL_E_UNAVAIL;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         Stream streamObj(stream);
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
@@ -2501,6 +2528,7 @@ namespace hccl
         opParam.reduceType = HcclReduceOp::HCCL_REDUCE_RESERVED;
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
+        opParam.isCapture = isCapture;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER;
@@ -2540,6 +2568,8 @@ namespace hccl
             outputSize += counts[i] * perDataSize;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         OpParam opParam;
         opParam.tag = tag;
         opParam.inputPtr = const_cast<void *>(sendBuf);
@@ -2553,6 +2583,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER_V;
 
@@ -2683,7 +2714,7 @@ namespace hccl
         CHK_RET(CheckSuspendingStatus());
         if (userRankSize_ == 1) {
             // rankSize为1时，退化为AllGather
-            return AllGather(tag, inputPtr, outputPtr, inputCount, dataType, stream);
+            return AllGatherOutPlace(tag, inputPtr, outputPtr, inputCount, dataType, stream);
         }
 
         if (!IsAtomicInit()) {
@@ -4064,7 +4095,7 @@ namespace hccl
         cacheInfo.newTag = newTag;
 
         if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-            size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+            size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
             for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
                 it = hcclCacheMap_.erase(it);
             }
@@ -4275,6 +4306,9 @@ namespace hccl
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
+        if (opParam.isCapture) {
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+        }
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
         bool selectAivAlg = algDesc.isAivMode;
@@ -4493,7 +4527,7 @@ namespace hccl
             }
         }
 
-        if (deviceType_ == DevType::DEV_TYPE_910B) {
+        if (deviceType_ == DevType::DEV_TYPE_910B && userRankSize_ > 1) {
             // 用于AIV支持Roce直驱判断
             CHK_RET(IsSupportAIVNormalQP(devicePhyId_, opParam.supportRoceDirect));
         }
@@ -4541,6 +4575,9 @@ namespace hccl
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+        }
+        if (opParam.isCapture) {
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         if (resMap_.find(newTag) == resMap_.end()) {
@@ -8417,19 +8454,30 @@ namespace hccl
     HcclResult HcclCommunicator::LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
     {
+        constexpr s32 CUSTOM_OP_ENHANCE_DEV_VERSION = 0x72400; // MAJOR:0x07, MINOR:0x23, PATCH:0x18
+        // 非910_93不支持custom kernel进程调用
+        if (deviceType_ != DevType::DEV_TYPE_910_93) {
+            binHandle = nullptr;
+            HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, deviceType_);
+            return HCCL_SUCCESS;
+        }
+
+        // 校验是否为新版本驱动，旧版本驱动不支持配置hrtGetDeviceInfo，报错返回
+        s32 halAPIVersion = 0;
+        CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
+        CHK_RET(hrtHalGetAPIVersion(halAPIVersion));
+        HCCL_INFO("[%s]params: halAPIVersion[%d], CUSTOM_OP_ENHANCE_DEV_VERSION[%d]", __func__, halAPIVersion,
+            CUSTOM_OP_ENHANCE_DEV_VERSION);
+        if (halAPIVersion < CUSTOM_OP_ENHANCE_DEV_VERSION) {
+            binHandle = nullptr;
+            HCCL_RUN_WARNING("[%s] custom kernel is not supported on device type[%d].", __func__, deviceType_);
+            return HCCL_SUCCESS;
+        }
         s64 isOpenCustomSwitch = 0;
         CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
                                  HcclRtDeviceInfoType::HCCL_INFO_TYPE_CUST_OP_ENHANCE, isOpenCustomSwitch));
         if (isOpenCustomSwitch == 1) {
-            std::string cannPath;
-            HcclResult ret = GetCannPath(binPath, cannPath);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                        HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
-                                   "cpuKernelMode[%u].",
-                                   ret, binPath, optionType, cpuKernelMode),
-                        ret);
-
-            ret = LoadBinaryFromFile(cannPath.c_str(), optionType, cpuKernelMode, binHandle);
+            HcclResult ret = LoadBinaryFromFile(binPath, optionType, cpuKernelMode, binHandle);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                         HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
                                    "cpuKernelMode[%u].",
@@ -8625,11 +8673,6 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         return topoAttr;
-    }
-
-    aclrtBinHandle HcclCommunicator::GetBinHandle()
-    {
-        return binHandle_;
     }
 
     HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
@@ -8950,5 +8993,13 @@ namespace hccl
         }
         HCCL_INFO("[%s] aicpuUnfoldConfig[%u]", __func__, GetAicpuUnfoldConfig());
         return GetAicpuUnfoldConfig();
+    }
+
+    aclrtBinHandle HcclCommunicator::GetBinHandle() {
+        if (binHandle_ == nullptr) {
+            HCCL_ERROR("[HcclCommunicator][GetBinHandle] GetBinHandle binHandle failed.binHandle is nullptr");
+            return nullptr;
+        }
+        return binHandle_;
     }
 }

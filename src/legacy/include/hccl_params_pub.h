@@ -32,7 +32,7 @@ public:
        创建hccl_world_group通信域时，myRank与rankInParentGroup相等;
        CreateGroup创建子通信域时，myRank为子通信域内的rankId，此时myRank与rankInParentGroup不一定相等 */
     RankId      rankInParentComm{0};
-    DevType     devType{DevType::DEV_TYPE_910_95};
+    DevType     devType{DevType::DEV_TYPE_950};
     bool        devUsed{false};
     bool        isWorldGroup{false};
 

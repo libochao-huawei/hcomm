@@ -13,9 +13,8 @@
 #include "hccl_mem_defs.h"
 #include "hccl_common.h"
 #include "transport_pub.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "aicpu_operator_pub.h"
-#include "hccl_types.h"
 
 // 独立算子同步资源
 struct HcclChannelP2p {
@@ -25,6 +24,7 @@ struct HcclChannelP2p {
     HcclSignalInfo localIpcSignal[LINK_P2P_MAX_NUM];    // localnotify
     HcclSignalInfo remoteIpcSignal[LINK_P2P_MAX_NUM];
     hccl::TransportAttr transportAttr;
+    u32 qos;
 };
  
 struct HcclChannelRoce {
@@ -75,6 +75,8 @@ struct HcclChannelUrmaRes {
     void* uniqueIdAddr;              // 序列化后device侧地址
     u32   uniqueIdSize{0};           // 序列化后总地址长度
     u32   singleUniqueIdSize{0};     // 单个channel内序列化后地址长度
+    u32*  remoteRankList;            // 序列化后返回给host侧的device侧rankList地址
+    u32*  remoteRankId;              // 记录每个channel的对端rank
 };
 
 #endif

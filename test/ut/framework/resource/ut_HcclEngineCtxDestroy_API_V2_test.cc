@@ -9,7 +9,7 @@
  */
 
 #include "hccl_api_base_test.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "independent_op_context_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
@@ -37,7 +37,7 @@ protected:
     void SetUpCommAndGraph(std::shared_ptr < hccl::hcclComm > &hcclCommPtr, 
         std::shared_ptr < Hccl::RankGraph > &rankGraphV2, void* &comm, HcclResult &ret) 
     {
-        MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_910_95)).will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_950)).will(returnValue(HCCL_SUCCESS));
 
         bool isDeviceSide {
             false

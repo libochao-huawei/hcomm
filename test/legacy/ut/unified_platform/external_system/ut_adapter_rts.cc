@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -420,7 +420,7 @@ TEST_F(AdapterRtsTest, HrtIpcSetMemoryName_return_nok)
 TEST_F(AdapterRtsTest, HrtIpcDestroyMemoryName_return_nok)
 {
     // Given
-    MOCKER(rtIpcDestroyMemoryName).stubs().will(returnValue(1));
+    MOCKER(aclrtIpcMemClose).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtIpcDestroyMemoryName(nullptr), RuntimeApiException);
@@ -450,7 +450,7 @@ TEST_F(AdapterRtsTest, HrtIpcOpenMemory_return_nok)
 TEST_F(AdapterRtsTest, HrtIpcCloseMemory_return_nok)
 {
     // Given
-    MOCKER(rtIpcCloseMemory).stubs().will(returnValue(1));
+    MOCKER(aclrtIpcMemClose).stubs().will(returnValue(1));
 
     // then
     EXPECT_THROW(HrtIpcCloseMemory(nullptr), RuntimeApiException);
@@ -1130,5 +1130,5 @@ TEST_F(AdapterRtsTest, HrtGetDeviceType_910_95_return_ok)
     DevType devType = HrtGetDeviceType();
 
     // then
-    EXPECT_EQ(devType, DevType::DEV_TYPE_910_95);
+    EXPECT_EQ(devType, DevType::DEV_TYPE_950);
 }

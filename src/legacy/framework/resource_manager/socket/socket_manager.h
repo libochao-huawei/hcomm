@@ -35,6 +35,9 @@ public:
                                                    SocketRole socketRole, NicType nicType)>
                       socketProducer
                   = nullptr);
+
+    SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, const std::string &socketTag);
+
     static void SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap);
 
     static std::unordered_map<u32, u32>& GetDeviceServerListenPortMap();
@@ -91,6 +94,8 @@ private:
 
     Socket *GetServerListenSocket(const PortData &localPort) const;
     std::set<LinkData>      availableLinks;
+
+    std::string socketTag_{};
 };
 
 } // namespace Hccl

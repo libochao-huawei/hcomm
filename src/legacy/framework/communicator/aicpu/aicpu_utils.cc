@@ -346,8 +346,9 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
     kernelParam_->op.algOperator.dataCount          = data->dataCount;
     kernelParam_->op.algOperator.root               = data->root;
     kernelParam_->op.algOperator.sendRecvRemoteRank = data->sendRecvRemoteRank;
-    HCCL_INFO("[%s]opType=%s, reduceOp=%u, dataType=%u, outputDataType=%u, dataCount=%u, root=%u, sendRecvRemoteRank=%u", __func__,
-              kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->dataType, data->outputDataType, data->dataCount);
+    HCCL_INFO("[%s]opType=%s, reduceOp=%u, dataType=%u, outputDataType=%u, dataCount=%llu, root=%u, sendRecvRemoteRank=%u", __func__,
+              kernelParam_->op.algOperator.opType.Describe().c_str(), data->reduceOp, data->dataType, data->outputDataType,
+              data->dataCount, data->root, data->sendRecvRemoteRank);
     if (kernelParam_->op.algOperator.opType == OpType::ALLTOALL) {
         kernelParam_->op.algOperator.all2AllDataDes.recvType = HcclDataTypeToDataType(data->all2AllDataDes.recvType);
         CHECK_DATA_TYPE(kernelParam_->op.algOperator.all2AllDataDes.recvType);

@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 #include "hccl_tbe_task.h"
 #include "../../hccl_api_base_test.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 
 static const char* RANKTABLE_FILE_NAME = nullptr;
 static constexpr uint64_t MB_UNIT = 1 * 1024 * 1024;

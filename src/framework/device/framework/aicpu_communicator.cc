@@ -5042,7 +5042,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
     CHK_RET(RegisterProfCallBack());
 
-    if (topoInfo_.deviceType == DevType::DEV_TYPE_910_95) {
+    if (topoInfo_.deviceType == DevType::DEV_TYPE_950) {
         HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOpV2 start");
         indOpCommInitialized_ = true;
         return HCCL_SUCCESS;
@@ -5120,7 +5120,7 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     // 为上报翻转初始化资源
-    if (topoInfo_.deviceType != DevType::DEV_TYPE_910_95) {
+    if (topoInfo_.deviceType != DevType::DEV_TYPE_950) {
         CHK_RET(InitProfthreadResource(threadNum));
     }
     return HCCL_SUCCESS;
@@ -5212,6 +5212,7 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     TransportPara para{};
     const std::unique_ptr<NotifyPool> notifyPool;
     DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    CHK_PRT(ctx->SetDispatcherHcclQos(remoteResV2.channelP2p.qos)); // 调度器添加hcclQos
     CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
         TransportType::TRANS_TYPE_DEVICE_P2P, para, ctx->GetDispatcher(), notifyPool, machinePara, transDevP2pData));

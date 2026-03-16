@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <mutex>
+#include <set>
 #include "socket_manager.h"
 #include "socket_handle_manager.h"
 #include "communicator_impl.h"
@@ -55,16 +56,19 @@ void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
 
     for (const auto &link : links) {
         // 通过虚拟拓扑获取Peer可能为空，如果为空，需要抛异，NullPtrException
-        auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
-        if (peer == nullptr) {
-            auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
-            THROW<NullPtrException>(msg);
+        if (comm) {
+            auto peer = comm->GetRankGraph()->GetPeer(link.GetRemoteRankId());
+            if (peer == nullptr) {
+                auto msg = StringFormat("Fail to get peer of rank %d!", link.GetRemoteRankId());
+                THROW<NullPtrException>(msg);
+            }
         }
+
         RaSocketWhitelist wlistInfo{};;
         wlistInfo.connLimit = 1;
         wlistInfo.remoteIp = link.GetRemoteAddr();
 
-        SocketConfig socketConfig(link.GetRemoteRankId(), link, comm->GetEstablishLinkSocketTag());
+        SocketConfig socketConfig(link.GetRemoteRankId(), link, socketTag_);
         string       hccpSocketTag = socketConfig.GetHccpTag();
 
         wlistInfo.tag = hccpSocketTag;
@@ -82,7 +86,7 @@ void SocketManager::BatchCreateConnectedSockets(const vector<LinkData> &links)
 {
     for (auto &link : links) {
         auto         remoteRank = link.GetRemoteRankId();
-        std::string  socketTag  = comm->GetEstablishLinkSocketTag();
+        std::string  socketTag  = socketTag_;
         SocketConfig socketConfig(remoteRank, link, socketTag);
         CreateConnectedSocket(socketConfig);
     }
@@ -128,18 +132,32 @@ void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPor
     }
 
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    for(uint32_t i = 0; i < links.size() ; i++)
-    {
+    std::set<PortData> newPorts;
+    bool useOld = false;  // 旧端口抢占过，就沿用旧端口
+    for(uint32_t i = 0; i < links.size(); i++) {
         LinkData link = links[i];
         auto localPort = link.GetLocalPort();
+        auto iter = serverSocketMap.find(localPort);
+        if (iter != serverSocketMap.end()) {
+            linstenPort = serverSocketMap[localPort]->GetListenPort();  
+            useOld = true;
+            HCCL_INFO("[SocketManager::%s] Device %u use the old device port %u in same process.", __func__, deviceLogicId_, linstenPort);
+        } else {
+            newPorts.insert(localPort);
+        }
+    }
+
+    for(auto it = newPorts.begin(); it != newPorts.end(); ++it)
+    {
+        auto localPort = *it;
         SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
         IpAddress ipAddress = localPort.GetAddr();
         auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, linstenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-        if (i == 0) { // 首个链接抢占，其余继承
+        if (!useOld && it == newPorts.begin()) { // 首个链接抢占，其余继承
             PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges, linstenPort);
             HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, linstenPort);
         } else {
-            serverSocket->Listen();
+            serverSocket->Listen(linstenPort);
         }
         serverSocketMap[localPort] = std::move(serverSocket);
     }
@@ -254,6 +272,16 @@ SocketManager::SocketManager(
     if (socketProducer != nullptr) {
         this->socketProducer = socketProducer;
     }
+
+    if (comm != nullptr) {
+        socketTag_ = comm->GetEstablishLinkSocketTag();
+    }
+}
+
+SocketManager::SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, const std::string &socketTag)
+    : comm(nullptr), localRank(localRank), devicePhyId(devicePhyId), deviceLogicId_(deviceLogicId)
+{
+    socketTag_ = socketTag;
 }
 
 void SocketManager::AddWhiteList(PortData &localPort, vector<RaSocketWhitelist> &wlistInfoVec) const

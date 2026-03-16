@@ -18,7 +18,7 @@ class BroadCastOperator : public CollAlgOperator {
 public:
     BroadCastOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~BroadCastOperator();
+    ~BroadCastOperator() override;
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag);
 private:
     HcclResult SelectAlgforMix(const OpParam& param, std::string& algName);

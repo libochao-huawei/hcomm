@@ -13,6 +13,9 @@
 #include "hcomm_c_adpt.h"
 #include "orion_adpt_utils.h"
 
+#include "hcom_common.h"
+#include "exception_handler.h"
+
 namespace hcomm {
 
 EndpointPair::~EndpointPair() 
@@ -36,11 +39,49 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& 
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
+HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
+    const std::string &socketTag, Hccl::Socket*& socket)
+{
+    // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
+    if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
+        CHK_RET(this->GetSocket(socketTag, socket));
+        return HCCL_SUCCESS;
+    }
+
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
+        localEndpointDesc_, remoteEndpointDesc_, linkData));
+    
+    // 复用orion流程可能抛异常
+    EXCEPTION_HANDLE_BEGIN
+    if (!socketMgrCompat_) {
+        int32_t devLogicId = HcclGetThreadDeviceId();
+        uint32_t devPhyId{0};
+        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId), devPhyId));
+
+        EXECEPTION_CATCH(socketMgrCompat_ =
+            std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
+            return HCCL_E_PTR);
+    }
+    
+    socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
+    Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, socketTag);
+    socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
+    CHK_PTR_NULL(socket);
+    EXCEPTION_HANDLE_END
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
-    channelHandles_.push_back(channels[0]);
+    if (channelHandles_.size() <= reuseIdx) {
+        CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+        channelHandles_.push_back(channels[0]);
+        return HCCL_SUCCESS;
+    }
+    channels[0] = channelHandles_[reuseIdx];
     return HCCL_SUCCESS;
 }
 

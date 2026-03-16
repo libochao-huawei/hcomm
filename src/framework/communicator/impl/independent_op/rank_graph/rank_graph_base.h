@@ -12,7 +12,8 @@
 #define RANK_HCOMM_GRAPH_H
 
 #include "topoinfo_struct.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
 #include "hccl_common.h"
 #include "hccl_impl_pub.h"
 #include "hccl_rank_graph.h"
@@ -37,7 +38,7 @@ public:
     virtual HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList,
                                 uint32_t *listSize) = 0;
     virtual HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum) = 0;
-    virtual HcclResult GetHeterogMode(HcclHeterogMode *mode) { return HCCL_SUCCESS; }
+    virtual HcclResult GetHeterogMode(HcclHeterogMode *mode) const { return HCCL_SUCCESS; }
     virtual HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType) = 0;
     virtual HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum) = 0;
     virtual HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum) = 0;

@@ -18,7 +18,6 @@
 #include "hccl_mem.h"
 #include "aicpu/launch_device.h"
 #include "exception_util.h"
-#include "invalid_params_exception.h"
 #include "runtime_api_exception.h"
 #include "env_config.h"
 
@@ -395,39 +394,25 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
 
 void HcclOneSidedService::OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream) const
 {
-    std::string jsonPath;
-    GetKernelFilePath(jsonPath);
-	jsonPath += "ccl_kernel.json";
-	aclrtBinHandle binHandle;
-	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
-		binHandle);
-	aclrtFuncHandle funcHandle;
-	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
-    if(aclRet != ACL_SUCCESS)
-    {
-        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
-    }
-	constexpr u32 numBlocks = 1;
-
-	aclrtLaunchKernelCfg cfg;
-	aclrtLaunchKernelAttr attr;
+    const aclrtFuncHandle funcHandle = comm_->GetAicpuKernelFuncHandle(param.kernelName);
+    constexpr u32 numBlocks = 1;
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr;
     attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
     auto timeoutCheck         = EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     // aicpu kernal超时时间: X+30s
     attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30));
-	cfg.numAttrs = 1;
-	cfg.attrs = &attr;
-
+    cfg.numAttrs = 1;
+    cfg.attrs = &attr;
     AddPostToUserStream(stream);
-
     HCCL_INFO("[HcclOneSidedService::AicpuKernelLaunch] param.soName: %s, param.kernelName: %s", param.soName,
               param.kernelName);
-
-	HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(),
-		&cfg, &param.kernel, sizeof(HcclKernelParamLite));
+    HrtAicpuLaunchKernelWithHostArgs(
+        funcHandle, numBlocks,
+        comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(), &cfg,
+        &param.kernel, sizeof(HcclKernelParamLite));
     HCCL_INFO("[HcclOneSidedService][AicpuKernelLaunch] param.kernel.algName: %s HrtAicpuLaunchKernelWithHostArgs end!",
               param.kernel.algName);
-
     AddWaitToUserStream(stream);
 }
 
@@ -551,13 +536,15 @@ void HcclOneSidedService::AddOpCounterMems()
     HrtMemcpy(srcAddr, srcSize, &srcValue, srcSize, RT_MEMCPY_HOST_TO_DEVICE);
 
     // 初始化后面两个四字节置0
-    u64   countMemSize = srcSize * 2;
-    float startValue   = 0; // value为0表示从0开始计数
-    void *countAddr    = reinterpret_cast<void *>(counterBuf->GetAddr() + srcSize);
-    HrtMemcpy(countAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
-
-    HCCL_INFO("[CollServiceBase::%s] end, counterBuf[%llu] srcAddr[%p] countAddr[%p].", __func__, counterBuf->GetAddr(),
-              srcAddr, countAddr);
+    u64 countMemSize = srcSize;
+ 	float startValue = 0; // value为0表示从0开始计数
+ 	void *headCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize);
+ 	void *tailCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize * 2);
+ 	HrtMemcpy(headCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
+ 	HrtMemcpy(tailCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
+ 	 
+ 	HCCL_INFO("[HcclOneSidedService::%s] end, counterBuf[%llu] srcAddr[%p] headCountAddr[%p] tailCountAddr[%p].", __func__,
+ 	    counterBuf->GetAddr(), srcAddr, headCountAddr, tailCountAddr);
 }
 
 DevBuffer *HcclOneSidedService::GetOpCounterBuf()

@@ -11,13 +11,19 @@
  
 namespace Hccl {
 ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager    *mirrorTaskMgr,
-                                             ProfilingHandlerLite *profilingHandlerLite)
+                                             ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
 {
     if (UNLIKELY(mirrorTaskMgr == nullptr || profilingHandlerLite == nullptr)) {
         THROW<InternalException>("[ProfilingHandler] ProfilingReporterLite is nullptr.");
     }
     mirrorTaskMgr_        = mirrorTaskMgr;
     profilingHandlerLite_ = profilingHandlerLite;
+    if (isIndop == false) {
+        mirrorTaskMgr_->RegFullyCallBack([this]() {
+            ReportAllTasks();
+        });
+        return;
+    }
     mirrorTaskMgr_->RegFullyCallBack([this]() {
         ReportAllTasks();
     });
@@ -40,6 +46,7 @@ void ProfilingReporterLite::Init() const
 *  *(*(*QUEUE.Begin())) = taskInfo;
 *  taskInfo.push_back((*(*((*currQueue).Begin())));
 */
+
 void ProfilingReporterLite::ReportAllTasks()
 {
     std::vector<TaskInfo> taskInfo;
@@ -52,14 +59,19 @@ void ProfilingReporterLite::ReportAllTasks()
         }
         // 不论首次是否打印，都手动将首个task打印一遍
         if (lastPoses_.find(streamId) == lastPoses_.end()) {
+            TaskInfo task = (*(*(*currQueue->Begin())));
+            taskInfo.push_back(task);
             lastPoses_[streamId] = currQueue->Begin();
         }
         if (currQueue->Tail() == nullptr) {
             continue;
         }
         auto endPos = currQueue->Tail();
-        for (auto iter = lastPoses_[streamId]; (*(iter)) != (*(endPos)); ++(*(iter))) {
+        auto iter = lastPoses_[streamId];
+        ++(*iter);
+        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
+            HCCL_INFO("taskParam_task.type %s", task.taskParam_.Describe().c_str());
             taskInfo.push_back(task);
         }
         lastPoses_[streamId] = endPos;

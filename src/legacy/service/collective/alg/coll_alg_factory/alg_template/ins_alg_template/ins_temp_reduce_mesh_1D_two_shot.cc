@@ -230,7 +230,7 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
 
             auto rootIt = tempVirtRankMap_.find(root_);
             if (rootIt == tempVirtRankMap_.end()) {
-                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] root_ [%d] not found in tempVirtRankMap.", root_);
+                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] root_ [%u] not found in tempVirtRankMap.", root_);
                 return HcclResult::HCCL_E_INTERNAL;
             }
 

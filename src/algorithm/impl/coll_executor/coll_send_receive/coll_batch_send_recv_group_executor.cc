@@ -101,7 +101,6 @@ HcclResult CollBatchSendRecvGroupExecutor::Orchestrate(OpParam& param, AlgResour
         CHK_RET(CalcRecvSlices());
 
         CHK_RET(RunLoopBig(param));
-        
     } else {
         // 不用按照streamId入队
         CHK_RET(CalcSendSlicesSmall());
@@ -439,7 +438,7 @@ HcclResult CollBatchSendRecvGroupExecutor::CalcRecvSlicesSmall()
     return HCCL_SUCCESS;
 }
 
-HcclResult CollBatchSendRecvGroupExecutor::SubNotifyMain(Stream& stream, u32 streamId)
+HcclResult CollBatchSendRecvGroupExecutor::SubNotifyMain(Stream& stream, u32 streamId) const
 {
     CHK_RET(LocalNotify::Post(stream, dispatcher_, algResResp_->notifiesMain[streamId], PROF_STAGE_0));
     CHK_RET(LocalNotify::Wait(stream, dispatcher_, algResResp_->notifiesAux[streamId], PROF_STAGE_0));
@@ -483,7 +482,6 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvStreamDataSlice(Stream& st
     if (topoAttr_.isDiffDeviceType || topoAttr_.superPodNum > 1 || 
             (topoAttr_.moduleNum > 1 && topoMatcher_->GetExternalInputInterHccsDisable()) ||
             (topoAttr_.deviceType == DevType::DEV_TYPE_910B && targetLink->GetLinkType() == LinkType::LINK_ROCE)) {
-        
         u64 offset = bufferSliceSize_ * (slice.remoteRank % recvStreamNum_);
         execMem.outputMem = algResResp_->cclOutputMem.range(offset, slice.size);
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);
@@ -612,7 +610,7 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& str
 }
 
 
-u64 CollBatchSendRecvGroupExecutor::CalcSendLoopMaxCount(const u32 unitSize)
+u64 CollBatchSendRecvGroupExecutor::CalcSendLoopMaxCount(const u32 unitSize) const
 {
     // 中转内存单次最多能够接受的input count
     u64 maxCountPerLoop = bufferSliceSize_ / unitSize;

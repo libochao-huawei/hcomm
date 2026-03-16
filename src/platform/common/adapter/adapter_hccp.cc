@@ -706,7 +706,7 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
         vector<string>({"device_id", "reason"}),
-        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
 #ifndef HCCD
     vector<HcclIpAddress> deviceIp;
@@ -738,11 +738,10 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         init_info.enabled2mbLite);
 
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInitWithAttr(init_info, rdevInfo, &rdmaHandle);
-
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
         vector<string>({"device_id", "reason"}),
-        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
@@ -783,11 +782,10 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     }
 
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInitWithBackupAttr(&init_info, &rdevInfo, &backupRdevInfo, &rdmaHandle);
-
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
         "EI0009",
         vector<string>({"device_id", "reason"}),
-        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down."})
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
@@ -1885,7 +1883,7 @@ map<string, vector<CqInfo>> g_qpRecords;
 mutex g_qpRecordsMutex;
 HcclResult CreateCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
-    struct CqAttr attr;
+    struct CqAttr attr = {};
     attr.qpContext = &cq.context;
     attr.ibSendCq = &cq.sq;
     attr.ibRecvCq = &cq.rq;
@@ -2655,7 +2653,7 @@ HcclResult hrtRaGetSocketVnicIpInfos(u32 phyId, enum IdType type, vector<u32> de
             HCCL_INFO("[hrtRaGetSocketVnicIpInfos] vnicInfoMap deviceIds[%u] found, Ip[%s]",
                 deviceIds[i], vnicIP.GetReadableAddress());
         } else {
-            struct IpInfo vnicIpInfo;
+            struct IpInfo vnicIpInfo = {};
             s32 sRet = memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
             CHK_PRT_RET(sRet != EOK,
                 HCCL_ERROR("[hrtRaGetSocketVnicIpInfos]errNo[0x%016llx] memset vnicIpInfo to 0 failed."
@@ -2951,7 +2949,7 @@ HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
 HcclResult SnapShotSaveAction(s32 networkMode, u32 devicePhyId, HcclSaveSnapShotAction action)
 {
     HCCL_INFO("%s networkMode[%d], devicePhyId[%u], action[%d]", __func__, networkMode, devicePhyId, action);
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
     s32 ret = DlRaFunction::GetInstance().dlRaSaveSnapShot(&raInfo, static_cast<enum SaveSnapshotAction>(action));
@@ -2988,7 +2986,7 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         }
         return HCCL_SUCCESS;
     }
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
 

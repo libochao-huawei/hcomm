@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -124,7 +124,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
     MOCKER_CPP(&Socket::GetAsyncStatus).stubs().will(returnValue((SocketStatus)SocketStatus::OK));
     MOCKER_CPP(&UbMemoryTransport::SendMemInfo).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemoryTransport::RecvMemInfo).stubs().will(ignoreReturnValue());
-
+    MOCKER_CPP(&UbMemoryTransport::RecvMemProcess).stubs().will(ignoreReturnValue());
     u64 res = 1;
     MOCKER(&CheckCollOperator).stubs().with().will(ignoreReturnValue());
     MOCKER(&HrtGetDevicePhyIdByIndex).stubs().with().will(returnValue(1));

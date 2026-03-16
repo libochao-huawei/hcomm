@@ -21,6 +21,7 @@ set(rs_ut_normal_list
     stub/ub_api.c
     stub/net_api.c
     stub/net_co.c
+    stub/nda_api.c
     tc_ut_rs.c
     tc_ut_rs_ping.c
     tc_ut_rs_ping_urma.c
@@ -41,6 +42,7 @@ set(rs_ut_normal_list
     ${SRC_DIR}/src/platform/hccp/rdma_service/tlv/rs_tlv.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/tlv/rs_adp_nslb.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/dl_ibverbs_function.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/dl_nda_function.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/tlv/dl_netco_function.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/hccp_dl.c
     ${SRC_DIR}/test/ut/platform/hccp/stub/roce_user/stub_hns_roce_u_cmd.c
@@ -51,6 +53,8 @@ set(rs_ut_normal_list
     ${CTX_DIR}/dl_urma_function.c
     ${CTX_DIR}/dl_net_function.c
     ${CTX_DIR}/rs_ccu.c
+    ${CTX_DIR}/rs_ub_dfx.c
+    ${CTX_DIR}/rs_ub_tp.c
     ${CTX_DIR}/rs_ub.c
     ${CTX_DIR}/rs_ctx.c
     ${CTX_DIR}/rs_esched.c
@@ -80,10 +84,11 @@ target_include_directories(rs_ut_normal PRIVATE
     ${SRC_DIR}/src/platform/hccp/inc/private/network
     ${SRC_DIR}/src/platform/hccp/inc/network
     ${SRC_DIR}/src/platform/hccp/external_depends/inc
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/platform/hccp/external_depends/ubengine
     ${SRC_DIR}/src/platform/hccp/external_depends/net_adapt
     ${SRC_DIR}/src/platform/hccp/external_depends/ccu
+    ${SRC_DIR}/src/platform/hccp/external_depends/nda
     ${RDMA_CORE_INCLUDE_DIR}
     ${CANN_3RD_LIB_PATH}/hcomm_utils/host/include/tls_adp
     ${CANN_3RD_LIB_PATH}/json/include/

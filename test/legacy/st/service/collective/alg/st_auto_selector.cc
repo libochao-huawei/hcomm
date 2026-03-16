@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -46,7 +46,7 @@ protected:
 
 TEST_F(AutoSelectorTest, TestAutoSelectorOneTimesFour)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -143,7 +143,7 @@ TEST_F(AutoSelectorTest, TestAutoSelectorOneTimesFour)
 
 TEST_F(AutoSelectorTest, TestAutoSelectorOneTimesFourCcuSchedule)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -210,7 +210,7 @@ TEST_F(AutoSelectorTest, TestAutoSelectorOneTimesFourCcuSchedule)
 }
 
 TEST_F(AutoSelectorTest, TestAutoSelectorTwoTimesTwo) {
-  MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+  MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
   VirtualTopoStub virtTopo(0);
   string rankTable = "test";
@@ -301,7 +301,7 @@ TEST_F(AutoSelectorTest, TestAutoSelectorTwoTimesTwo) {
 
 
 TEST_F(AutoSelectorTest, TestAutoSelectorTwoTimesTwoAicpu) {
-  MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+  MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
   VirtualTopoStub virtTopo(0);
   string rankTable = "test";
@@ -421,7 +421,7 @@ TEST_F(AutoSelectorTest, TestAutoSelectorTwoTimesTwoAicpu) {
 }
 
 TEST_F(AutoSelectorTest, TestAutoSelectorTwoServerTimesTwoDefault) {
-  MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+  MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
   VirtualTopoStub virtTopo(0);
   string rankTable = "test";
   virtTopo.TopoInit91095TwoServerTimesTwo(rankTable);

@@ -4524,6 +4524,30 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage 
  */
 ACL_FUNC_VISIBILITY aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, const size_t infoSize);
 
+/**
+ * @ingroup AscendCL
+ * @brief Used for inter-card memory mapping within the same process
+ * @param devPtr [IN]   Device memory address
+ * @param size [IN]  Size of the memory
+ * @param dstDevId [IN]  Device id to which the page table mapping is to be created
+ * @param flags [IN]  Reserved param
+ *
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags);
+
+/**
+ * @ingroup AscendCL
+ * @brief register callback func for model destroy
+ * @param [in] modelRI  model to execute
+ * @param [in] func     callback func
+ * @param [in] ptr      User data to be passed to the callback function
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, void *userData);
+
 #ifdef __cplusplus
 }
 #endif

@@ -42,15 +42,15 @@ enum CommConfigOpExpansion {
 };
 
 // 通信域级别配置参数结构体 - 内部信息
-typedef struct CommConfigInfoDef {
+using CommConfigInfo = struct CommConfigInfoDef {
     size_t configSize;  // 配置结构体大小
     u32 magicWord;      // Magic word
     u32 version;        // HCCL版本
     char reserved[8];   // 8 byte 保留字段
-} CommConfigInfo;
+};
 
 // 通信域级别配置参数结构体 - 外部配置项
-typedef struct CommConfigHandleDef {
+using CommConfigHandle = struct CommConfigHandleDef {
     CommConfigInfo info;
     u32 bufferSize;     // ccl buffer 大小配置
     u32 deterministic;   // 确定性计算配置
@@ -69,7 +69,7 @@ typedef struct CommConfigHandleDef {
     char bufferName[BUFFER_NAME_MAX_LENGTH];    // cclbuffer名称
     u32 hcclQos = HCCL_COMM_QOS_CONFIG_NOT_SET;
     uint64_t symmetricMemoryStride; // 对称内存预留VA大小
-} CommConfigHandle;
+};
 
 namespace hccl {
 class CommConfig {

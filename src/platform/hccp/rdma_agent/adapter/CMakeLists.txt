@@ -13,6 +13,7 @@ set(BASIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 set(TLV_DIR ${BASIC_PATH}/rdma_agent/adapter/tlv)
 set(ra_adp_list
     ra_adp.c
+    ra_adp_ping.c
     ra_adp_socket.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_pool.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_async.c
@@ -33,7 +34,6 @@ target_compile_definitions(ra_adp PRIVATE
 )
 
 target_include_directories(ra_adp PRIVATE
-    ${BASIC_PATH}/external_depends/inc/driver
     ${BASIC_PATH}/external_depends/inc/log
     ${RDMA_CORE_INCLUDE_DIR}
     ${BASIC_PATH}/inc/network
@@ -50,7 +50,7 @@ target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/rdma_service/tlv
     # cann头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
-
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     # rdma头文件
     ${BASIC_PATH}/external_depends/host_lite
 
@@ -58,6 +58,12 @@ target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/rdma_agent/adapter/ctx
     ${BASIC_PATH}/rdma_service/ctx
 )
+
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(ra_adp PRIVATE
+        ${TOP_DIR}/driver/driver/pkg_inc/
+    )
+endif()
 
 # c_sec、mmpa、unified_dlog动态库搜索路径
 target_link_directories(ra_adp PRIVATE

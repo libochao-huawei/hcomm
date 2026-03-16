@@ -21,20 +21,28 @@ constexpr u32 INVALID_VALUE_RANKID = 0xFFFFFFFF; // rank id非法值
 class DfxOpInfo {
 public:
     CollOperator op_;
-    std::string  tag_;
+    std::string  tag_; // 实际是opType
     AlgType      algType_;
-    u32          index_;
+    u32          commIndex_;
     u64          beginTime_;
     u64          endTime_;
-    void        *comm_;
-    u32          mainStreamId_;
+    void        *comm_{nullptr};
+    bool         isIndop_{false};
+    std::string  algTag_;
+    std::string  groupName_;
+    u32          rankSize_{0};
+    u32          cpuWaitAicpuNotifyId_{0};
+    std::string  commId_{};
+ 	u32          opIndex_{0};             // 下发算子总计数(单算子/图模式/CCU快速下发)
+ 	u64          headOpCounterAddr_{0};   // 执行算子头计数器地址（执行前加一）
+    u64          tailOpCounterAddr_{0};   // 执行算子尾计数器地址（执行后加一）
 
 public:
     std::string Describe() const
     {
         return StringFormat(
-            "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], index:[%u], beginTime:[%llu], endTime:[%llu]",
-            CollOpToString(op_).c_str(), tag_.c_str(), algType_, index_, beginTime_, endTime_);
+                "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[%llx], tailOpCounterAddr[%llx]",
+ 	            CollOpToString(op_).c_str(), tag_.c_str(), algType_, commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_);
     }
 };
 

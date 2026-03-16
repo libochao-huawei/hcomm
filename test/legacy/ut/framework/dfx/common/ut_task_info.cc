@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -212,15 +212,15 @@ TEST_F(TaskInfoTest, test_get_op_info)
 {
     TaskInfo taskInfo = InitTaskInfo();
 
-    taskInfo.dfxOpInfo_->index_ = 3;
+    taskInfo.dfxOpInfo_->commIndex_ = 3;
     taskInfo.dfxOpInfo_->op_.dataCount = 0xaaaabbbbcccc;
     taskInfo.dfxOpInfo_->op_.reduceOp = ReduceOp::SUM;
     taskInfo.dfxOpInfo_->op_.dataType = DataType::UINT64;
-    EXPECT_EQ(taskInfo.GetOpInfo(), "index[3], opType[OpType::Invalid], count[187650270809292], reduceType[ReduceOp::SUM], dataType[DataType::UINT64]");
+    EXPECT_EQ(taskInfo.GetOpInfo(), "commIndex[3], opType[OpType::Invalid], commId[], count[187650270809292], reduceType[ReduceOp::SUM], dataType[DataType::UINT64]");
 
     taskInfo.dfxOpInfo_->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
     taskInfo.dfxOpInfo_->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
-    EXPECT_EQ(taskInfo.GetOpInfo(), "index[3], opType[OpType::Invalid], count[187650270809292], reduceType[ReduceOp::SUM], src:[0x111122223333], dst:[0xaaaabbbbcccc], dataType[DataType::UINT64]");
+    EXPECT_EQ(taskInfo.GetOpInfo(), "commIndex[3], opType[OpType::Invalid], commId[], count[187650270809292], reduceType[ReduceOp::SUM], src:[0x111122223333], dst:[0xaaaabbbbcccc], dataType[DataType::UINT64]");
 
     taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
     EXPECT_EQ(taskInfo.GetOpInfo(), "");

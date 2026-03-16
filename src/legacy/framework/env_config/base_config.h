@@ -177,12 +177,10 @@ private:
 class EnvLogConfig : public BaseConfig {
 public:
     void               Parse() override;
-    bool               GetDiagnoseEnable() const;
     bool               GetEntryLogEnable() const;
     const std::string &GetCannVersion() const;
     const DfsConfig     &GetDfsConfig() const;
 private:
-    CfgField<bool>        diagnoseEnable{"HCCL_DIAGNOSE_ENABLE", false, CastBin2Bool};
     CfgField<bool>        entryLogEnable{"HCCL_ENTRY_LOG_ENABLE", false, CastBin2Bool};
     CfgField<std::string> cannVersion{"LD_LIBRARY_PATH", "", CastCannVersion};
     CfgField<DfsConfig> dfsConfig{"HCCL_DFS_CONFIG", DfsConfig(true), CastDfsConfig};

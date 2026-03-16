@@ -8,8 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <mutex>
+#include <cstring>
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hcomm_res.h"
 #include "hcomm_res_defs.h"
 #include "log.h"
@@ -25,14 +26,25 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+
+#include "../hcomm_res_mgr.h"
+
+#include "param_check_pub.h"
+#include "exception_handler.h"
+#include "hcclCommDfx.h"
+#include "hcclCommOp.h"
+#include "exception_handler.h"
+#include "param_check_pub.h"
+#include "launch_device.h"
+
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
 static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
-
+static aclrtBinHandle g_BinHandle;
 static std::mutex g_ChannelMapMtx;
+static std::mutex g_BinHandleMtx;
 }  // namespace hcomm
 
 namespace hcomm {
@@ -83,7 +95,40 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
-HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
+HcclResult HcommResMgrInit(uint32_t devPhyId)
+{
+    // 临时方案：触发统一平台层单例触发静态对象声明
+    // 内部流程触发各种单例声明，保证时序
+    EXCEPTION_HANDLE_BEGIN
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        (void)HcommResMgr::GetInstance(devPhyId);
+        return HcclResult::HCCL_SUCCESS;
+    }());
+    EXCEPTION_HANDLE_END
+    return HcclResult::HCCL_SUCCESS;
+}
+
+static HcclResult EnsureKernelBinLoaded(CommEngine engine) {
+    if (engine != COMM_ENGINE_AICPU && engine != COMM_ENGINE_AICPU_TS) {
+        HCCL_INFO("[%s] engine[%d] kernel loading not required", __func__, engine);
+        return HCCL_SUCCESS;
+    }
+    std::lock_guard<std::mutex> lock(hcomm::g_BinHandleMtx);
+    if (g_BinHandle != nullptr) {
+        return HCCL_SUCCESS;
+    }
+    std::string jsonPath;
+    CHK_RET(hccl::GetKernelFilePath(jsonPath));
+    jsonPath += "ccl_kernel.json";
+
+    HcclResult ret = hccl::LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, g_BinHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[EnsureKernelBinLoaded] load aicpu file fail, path[%s]", jsonPath.c_str()),
+                ret);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
@@ -95,6 +140,8 @@ HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  //
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    CHK_PTR_NULL(endpoint);
+    CHK_PTR_NULL(endpointHandle);
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
                    "endpoint->loc.locType is %d",
@@ -105,9 +152,17 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 
     std::unique_ptr<Endpoint> endpointPtr = nullptr;
 
-    CHK_RET(Endpoint::CreateEndpoint(*endpoint, endpointPtr));
+    HcclResult ret = Endpoint::CreateEndpoint(*endpoint, endpointPtr);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("call Endpoint::CreateEndpoint failed");
+        return ret;
+    }
     CHK_PTR_NULL(endpointPtr);
-    CHK_RET(endpointPtr->Init());
+    ret = endpointPtr->Init();
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("call endpointPtr->Init failed");
+        return ret;
+    }
 
     const EndpointHandle handle = reinterpret_cast<EndpointHandle>(endpointPtr.get());
     CHK_PTR_NULL(handle);
@@ -235,13 +290,15 @@ static HcclResult CombineHostMemory(const std::vector<std::vector<char>> &hostPa
     u64 packSize = 0;
 
     for (const auto &mem : hostPackBuffers) {
-        packSize += mem.size();
-        CHK_PRT_RET(packSize > dstMax,
-            HCCL_ERROR("[%s] fail, packSize[%llu] is bigger than dstMax[%llu]", __func__, packSize, dstMax),
+        // 先检查是否会溢出，再执行复制操作
+        CHK_PRT_RET((packSize + mem.size()) > dstMax,
+            HCCL_ERROR("[%s] fail, packSize[%llu] + mem.size[%zu] is bigger than dstMax[%llu]", 
+                __func__, packSize, mem.size(), dstMax),
             HCCL_E_PARA);
 
         CHK_SAFETY_FUNC_RET(memcpy_s(dstPtr, mem.size(), mem.data(), mem.size()));
         dstPtr += mem.size();  // 移动目标指针
+        packSize += mem.size();
     }
 
     HCCL_INFO("[%s] end of merging host memory, hostPackBuf.addr[%p], hostPackBuf.size[%zu]",
@@ -313,7 +370,16 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
     channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
-
+    hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
+    CHK_PTR_NULL(remoteRankList.ptr());
+    std::vector<u32> remoteRankIdList(listNum);
+    for ( u32 i = 0; i < listNum; ++i) {
+        CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankIdList[i]));
+    }
+    // 通过安全的内存拷贝将主机内存数据传输到设备内存
+    CHK_RET(hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(), 
+            listNum * sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    channelParam.remoteRankList = static_cast<u32 *>(remoteRankList.ptr());
     // 创建局部流
     hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
@@ -502,87 +568,40 @@ HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **r
     });
 }
 
-HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
-{
+HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads) {
     CHK_PTR_NULL(threads);
+    HCCL_INFO("[%s] ThreadAcquire begin. engine[%d], threadNum[%u], notifyPerThread[%u], threads[%p]",
+        __func__, engine, threadNum, notifyNumPerThread, threads);
 
-    HCCL_INFO("[%s]ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
-        __func__,
-        threadNum,
-        notifyNumPerThread);
-    if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
-        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
-        return HCCL_E_PARA;
-    }
+    // 1. 参数校验
+    CHK_RET(hccl::ValidateThreadParams(threadNum, notifyNumPerThread));
 
-    if (notifyNumPerThread < 0 || notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
-        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
-        return HCCL_E_PARA;
-    }
-
+    // 2. 获取引擎对应的类型
     hccl::NotifyLoadType notifyLoadType;
     hccl::StreamType streamType;
-    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
-    CHK_RET(CommEngineToStreamType(engine, streamType));
+    CHK_RET(hccl::CommEngineToNotifyLoadType(engine, notifyLoadType));
+    CHK_RET(hccl::CommEngineToStreamType(engine, streamType));
 
-    HcclResult ret = HCCL_SUCCESS;
-    for (uint32_t i = 0; i < threadNum; ++i) {
-        std::shared_ptr<hccl::Thread> handle;
-        HCCL_INFO("[%s] Thread notifyLoadType[%u], streamType[%u]",
-            __func__,
-            static_cast<int32_t>(notifyLoadType),
-            static_cast<int32_t>(streamType));
-        ret = CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle);
-        if (ret != HCCL_SUCCESS ) {
-            HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
-            if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
-            }
-            return ret;
-        }
-        ret = handle->Init();
-        if (ret != HCCL_SUCCESS ) {
-            HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
-            if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
-            }
-            return ret;
-        }
-        threads[i] = reinterpret_cast<ThreadHandle>(handle.get());
-        hcomm::g_ThreadMap.emplace(threads[i], handle);
-    }
+    // 3. 创建线程
+    std::vector<std::shared_ptr<hccl::Thread>> newThreads;
+    hccl::ThreadCreateParams params(engine, threadNum, notifyNumPerThread, notifyLoadType, streamType);
+    CHK_RET(hccl::CreateAndInitThreads(params, newThreads));
 
-    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
-              "notifyPerThread[%u]", engine, threadNum, notifyNumPerThread);
+    // 4. 插入全局映射表
+    CHK_RET(hccl::SaveThreads(newThreads));
+
+    // 5. 储存线程句柄
+    CHK_RET(EnsureKernelBinLoaded(engine));
+    CHK_RET(hccl::StoreThreadHandles(newThreads, threads, engine, g_BinHandle));
+
+    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u], notifyPerThread[%u]",
+              engine, threadNum, notifyNumPerThread);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
 {
-    if (threads == nullptr) {
-        HCCL_ERROR("[HcommThreadfree] threads is null.");
-        return HCCL_E_PARA;
-    }
-
-    // 不允许空释放
-    if (threadNum == 0) {
-        HCCL_ERROR("[HcommThreadfree] threadNum is 0, nothing to free.");
-        return HCCL_E_PARA;
-    }
-
-    HCCL_INFO("[HcommThreadfree] begin to free %u threads", threadNum);
-
-    for (uint32_t i = 0; i < threadNum; ++i) {
-        auto handleIter = hcomm::g_ThreadMap.find(threads[i]);
-        if (handleIter == hcomm::g_ThreadMap.end()) {
-            HCCL_ERROR("[%s] failed to find thread[0x%llx].", __func__, threads[i]);
-            return HcclResult::HCCL_E_NOT_FOUND;
-        }
-        hcomm::g_ThreadMap.erase(threads[i]);
-    }
-
-    HCCL_INFO("[HcommThreadfree] all threads freed successfully");
-    return HCCL_SUCCESS;
+    return hccl::FreeThreads(threads, threadNum, g_BinHandle);
 }
 
 HcclResult HcommThreadAllocWithStream(CommEngine engine,
@@ -652,5 +671,52 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
         return HCCL_E_PARA;
     }
     HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
+{
+    // 申请device侧内存
+    hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(sizeof(dfxOpInfo));
+    CHK_PTR_NULL(devicePackBuf.ptr());
+    
+    // 将dfxOpInfo信息传递给device侧
+    CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
+        sizeof(dfxOpInfo),
+        &dfxOpInfo,
+        sizeof(dfxOpInfo),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    // 创建局部流
+    hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
+    constexpr u32 aicpuStreamMode = 1;
+    CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
+
+    // 下kernel
+    std::string kernelName = "RunAicpuDfxOpInfoInitV2";
+
+    struct InitTask {
+        u64 context;
+        char commTag[256];
+    };
+
+    InitTask customInitTask = {0, ""};
+    customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
+    s32 sRet = strncpy_s(customInitTask.commTag, TAG_MAX_LENGTH, commTag.c_str(), TAG_MAX_LENGTH - 1);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] str copy fail. return[%d]", __func__, sRet), HCCL_E_INTERNAL);
+
+    CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
+        reinterpret_cast<void *>(&customInitTask),  
+        sizeof(customInitTask),  
+        binHandle,            
+        kernelName,
+        true,
+        NOTIFY_DEFAULT_WAIT_TIME));
+
+    CHK_RET(
+        hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
+
+    HCCL_INFO("[%s] channel kernel launch success.", __func__);
+
     return HCCL_SUCCESS;
 }

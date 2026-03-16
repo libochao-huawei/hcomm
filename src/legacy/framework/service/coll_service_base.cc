@@ -213,8 +213,9 @@ void CollServiceBase::WaitOpbasedTransportReady() const
         if (comm->GetMemTransportManager()->IsAllOpbasedTransportReady()) {
             break;
         }
-        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {  
             string timeoutMsg = StringFormat("WaitOpbasedTransportReady timeout, commId[%s].", comm->GetId().c_str());
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), std::vector<std::string>({timeoutMsg}));
             HCCL_ERROR(timeoutMsg.c_str());
             comm->GetMemTransportManager()->DumpNotReadyTransportsOpbased();
             THROW<InternalException>(timeoutMsg);
@@ -237,6 +238,7 @@ void CollServiceBase::WaitOffloadTransportReady(const std::string &opTag) const
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             string timeoutMsg = StringFormat("WaitOffloadTransportReady timeout, opTag[%s] commId[%s].", opTag.c_str(),
                                              comm->GetId().c_str());
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), std::vector<std::string>({timeoutMsg}));
             HCCL_ERROR(timeoutMsg.c_str());
             comm->GetMemTransportManager()->DumpNotReadyTransportsOffload(opTag);
             THROW<InternalException>(timeoutMsg);
@@ -264,6 +266,8 @@ void CollServiceBase::WaitTransportReady(const std::string &opTag) const
             }
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}),
+                            std::vector<std::string>({"WaitTransportReady timeout, SOCKET_TIMEOUT."}));
             THROW<InternalException>("WaitTransportReady timeout, opTag[%s] commId[%s].", opTag.c_str(),
                                      comm->GetId().c_str());
         }
@@ -284,13 +288,15 @@ void CollServiceBase::AddOpCounterMems()
     HrtMemcpy(srcAddr, srcSize, &srcValue, srcSize, RT_MEMCPY_HOST_TO_DEVICE); 
 
     // 初始化后面两个四字节置0
-    u64 countMemSize = srcSize * 2;
-    float startValue = 0; // value为0表示从0开始计数
-    void *countAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize);
-    HrtMemcpy(countAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE); 
-
-    HCCL_INFO("[CollServiceBase::%s] end, counterBuf[%llu] srcAddr[%p] countAddr[%p].", __func__,
-        counterBuf->GetAddr(), srcAddr, countAddr);
+    u64 countMemSize = srcSize;
+ 	float startValue = 0; // value为0表示从0开始计数
+ 	void *headCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize);
+ 	void *tailCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize * 2);
+ 	HrtMemcpy(headCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
+ 	HrtMemcpy(tailCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
+ 	 
+ 	HCCL_INFO("[CollServiceBase::%s] end, counterBuf[%llu] srcAddr[%p] headCountAddr[%p] tailCountAddr[%p].", __func__,
+ 	    counterBuf->GetAddr(), srcAddr, headCountAddr, tailCountAddr);
 }
 
 std::pair<u32, u32> CollServiceBase::GetOpCount()
@@ -361,10 +367,14 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
     dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
     dfxOpInfo->algType_ = AlgType::MESH;
-    dfxOpInfo->index_ = comm->GetIdIndex();
+    dfxOpInfo->commIndex_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;
-    dfxOpInfo->mainStreamId_ = comm->GetStreamManager().GetMaster()->GetId();
     dfxOpInfo->beginTime_ = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    dfxOpInfo->commId_ = comm->GetId();
+ 	dfxOpInfo->opIndex_ = comm->GetOpIndex();
+ 	u64 size = FOUR_BYTES;
+ 	dfxOpInfo->headOpCounterAddr_ = counterBuf->GetAddr() + size;
+ 	dfxOpInfo->tailOpCounterAddr_ = counterBuf->GetAddr() + size * 2;
 
     comm->GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
 }

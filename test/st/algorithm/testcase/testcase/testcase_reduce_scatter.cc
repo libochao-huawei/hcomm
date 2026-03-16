@@ -1994,7 +1994,7 @@ TEST_F(ReduceScatterTest, ReduceScatterOrderPreservedFor91093Executor2)
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
     checkerOpParam.tag = "ReduceScatter";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;

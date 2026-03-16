@@ -23,10 +23,12 @@
 #include "securec.h"
 #include "rs.h"
 #include "ra_rs_err.h"
+#include "rs_common_inner.h"
 #include "rs_inner.h"
 #include "rs_rdma_inner.h"
 #include "rs_epoll.h"
 #include "dl_ibverbs_function.h"
+#include "rs_drv_socket.h"
 #include "rs_drv_rdma.h"
 #include "rs_rdma.h"
 
@@ -2526,7 +2528,7 @@ RS_ATTRI_VISI_DEF int RsGetQpContext(unsigned int phyId, unsigned int rdevIndex,
     return 0;
 }
 
-STATIC int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
+int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
 {
     int ret;
     unsigned int chipId;

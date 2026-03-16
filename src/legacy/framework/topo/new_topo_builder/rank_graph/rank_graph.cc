@@ -324,7 +324,7 @@ HcclResult RankGraph::GetRanksByTopoInst(
     return HCCL_SUCCESS;
 }
 
-HcclResult RankGraph::GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num)
+HcclResult RankGraph::GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num) const
 {
     auto peer = GetPeer(myRank_);
     if (peer == nullptr) {
@@ -375,7 +375,7 @@ EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     }
 }
 
-HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc)
+HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc) const
 {
     auto peer = GetPeer(myRank_);
     CHK_PTR_NULL(peer);
@@ -422,10 +422,10 @@ HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint3
 }
 
 HcclResult RankGraph::GetEndpointInfo(uint32_t rankId,
-                                      const EndpointDesc* endpointDesc,
+                                      const EndpointDesc *endpointDesc,
                                       EndpointAttr endpointAttr,
                                       uint32_t infoLen,
-                                      void* info)
+                                      void *info) const
 {
     if (endpointDesc == nullptr || info == nullptr) {
         HCCL_ERROR("[GetEndpointInfo] Invalid parameter");
@@ -565,7 +565,7 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                 shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers)
 {
     // 不添加绕路link
-    if (oldLink.GetHop() > 1) {
+    if (oldLink.GetHop() > 1 && oldLink.GetType() != LinkType::PEER2NET) {
         return;
     }
 
@@ -840,5 +840,21 @@ void RankGraph::Dump() const
         }
     }
 }
+CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
+{
+    constexpr std::pair<LinkProtocol, CommProtocol> protocolPairs[] = {
+        {LinkProtocol::UB_CTP, COMM_PROTOCOL_UBC_CTP},
+        {LinkProtocol::UB_TP, COMM_PROTOCOL_UBC_TP},
+        {LinkProtocol::ROCE, COMM_PROTOCOL_ROCE},
+        {LinkProtocol::HCCS, COMM_PROTOCOL_HCCS},
+        {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM}};
 
+    for (const auto &p : protocolPairs) {
+        if (p.first == linkProtocol) {
+            return p.second;
+        }
+    }
+
+    return COMM_PROTOCOL_RESERVED;
+}
 } // namespace Hccl

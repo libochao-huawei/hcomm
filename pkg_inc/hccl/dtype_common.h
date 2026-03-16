@@ -20,6 +20,7 @@ constexpr u32 SIZE_TABLE[HCCL_DATA_TYPE_RESERVED] = {sizeof(s8), sizeof(s16), si
     8, 2, 16, 2, 1, 1, 1, 1};
 
 // 对内芯片类型
+#define MACRO_DEV_TYPE_NEW  // 兼容性处理，后续删除
 enum class DevType {
     DEV_TYPE_910 = 0,
     DEV_TYPE_310P3 = 1, // PG
@@ -27,7 +28,7 @@ enum class DevType {
     DEV_TYPE_310P1 = 3, // AG
     DEV_TYPE_910_93 = 4,
     DEV_TYPE_NOSOC = 5,
-    DEV_TYPE_910_95 = 6,
+    DEV_TYPE_950 = 6,
     DEV_TYPE_COUNT = 7
 };
 

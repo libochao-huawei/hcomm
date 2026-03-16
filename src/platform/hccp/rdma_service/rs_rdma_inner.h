@@ -11,6 +11,8 @@
 #ifndef RS_RDMA_INNER_H
 #define RS_RDMA_INNER_H
 
+#include "rs_common_inner.h"
+
 #define RS_WC_NUM 16384
 #define RS_QP_ATTR_MIN_RNR_TIMER 12
 #define RS_QP_ATTR_TIMEOUT 16
@@ -22,6 +24,14 @@
 #define RS_QP_TX_DEPTH_PEER_ONLINE 4096 // host RDMA adapt
 #define RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE 16 // host RDMA adapt
 #define RS_BUF_SIZE 2048
+#define RS_PORT_DEF     1
+
+#define RS_QP_PARA_CHECK(phyId) do { \
+    if ((phyId) >= RS_MAX_DEV_NUM) { \
+        hccp_err("rs qp param error ! physical_id:%d", phyId); \
+        return (-EINVAL); \
+    } \
+} while (0)
 
 enum RsCmdOpcode {
     RS_CMD_QP_INFO = 0x12345678,

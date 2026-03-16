@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -28,7 +28,7 @@ DevBuffer::DevBuffer(std::size_t allocSize) : Buffer(allocSize), selfOwned(true)
         THROW<InternalException>(msg);
     }
     addr_ = reinterpret_cast<uintptr_t>(HrtMalloc(allocSize,
-												  static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH)));
+												  static_cast<u32>(ACL_MEM_TYPE_HIGH_BAND_WIDTH)));
 }
 
 std::shared_ptr<DevBuffer> DevBuffer::Create(uintptr_t devAddr, std::size_t devSize)

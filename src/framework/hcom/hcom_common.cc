@@ -44,7 +44,7 @@ using namespace hccl;
 // DEV_TYPE_V71 对应 DevType::DEV_TYPE_V71
 // DEV_TYPE_V51_310_P1 对应 DevType::DEV_TYPE_310P1
 // DEV_TYPE_V81 对应 DevType::DEV_TYPE_V81
-// DEV_TYPE_910_95 对应 DevType::DEV_TYPE_910_95
+// DEV_TYPE_950 对应 DevType::DEV_TYPE_950
 // DEV_TYPE_NOSOC 对应 DevType::DEV_TYPE_NOSOC
 
 DevType MakeEnumToDevType(int makeEnum)
@@ -55,7 +55,7 @@ DevType MakeEnumToDevType(int makeEnum)
         {2, DevType::DEV_TYPE_910B},
         {3, DevType::DEV_TYPE_310P1},
         {4, DevType::DEV_TYPE_910_93},
-        {5, DevType::DEV_TYPE_910_95},
+        {5, DevType::DEV_TYPE_950},
         {6, DevType::DEV_TYPE_NOSOC}};
 
     auto it = makeEnumToDevType.find(makeEnum);
@@ -67,17 +67,17 @@ DevType MakeEnumToDevType(int makeEnum)
     return DevType::DEV_TYPE_NOSOC;
 }
 
-typedef HcclResult (*HcomCreateGroupCallback)(const std::string &, const std::vector<u32> &);
-typedef bool (*HcomCallBackGroupIsInit)(HcomInfo &);
-typedef HcclResult (*HcomDestroyGroupCallback)(const std::string &);
-typedef HcclResult (*HcomDestroyCallback)(HcomInfo &);
+using HcomCreateGroupCallback = HcclResult (*)(const std::string &, const std::vector<u32> &);
+using HcomCallBackGroupIsInit = bool (*)(HcomInfo &);
+using HcomDestroyGroupCallback = HcclResult (*)(const std::string &);
+using HcomDestroyCallback = HcclResult (*)(HcomInfo &);
 HcomCreateGroupCallback g_hcomCreateGroupCallback = nullptr;
 HcomCallBackGroupIsInit g_hcomCallBackGroupIsInit = nullptr;
 HcomDestroyGroupCallback g_hcomDestroyGroupCallback = nullptr;
 HcomDestroyCallback g_hcomDestroyCallback = nullptr;
 
-typedef HcclResult (*HcomSetGroupTopoInfoPtr)(const char *, uint32_t);
-typedef void (*HcomUnsetGroupTopoInfoPtr)(const char *);
+using HcomSetGroupTopoInfoPtr = HcclResult (*)(const char *, uint32_t);
+using HcomUnsetGroupTopoInfoPtr = void (*)(const char *);
 HcomSetGroupTopoInfoPtr g_hcomSetGroupTopoInfo = nullptr;
 HcomUnsetGroupTopoInfoPtr g_hcomUnsetGroupTopoInfo = nullptr;
 
@@ -207,12 +207,7 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
 {
     CHK_PTR_NULL(commHandle);
     CHK_PTR_NULL(group);
-#if ((!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)))
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp == nullptr || strcmp(indOp, "") == 0) {
-        HCCLV2_FUNC_RUN(HcclGetRawCommHandle(group, commHandle));
-    }
-#endif
+
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
@@ -408,7 +403,7 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
     if (isAutoTuneModeOpen) {
         return HCCL_SUCCESS;
     }
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomCreateGroup", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
     HcclResult ret = HcomCheckGroupName(group);
@@ -434,12 +429,12 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
             LOG_KEYWORDS_INVALID_ARGUMENT.c_str()),
         HCCL_E_PARA);
 
-    RPT_INPUT_ERR(rankIds == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(rankIds == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomCreateGroup", "nullptr", "rankIds", "non-null pointer"}));
     CHK_PTR_NULL(rankIds);
 
     if (rankNum == 0) {
-        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
             std::vector<std::string>({
                 "HcomCreateGroup",
                 std::to_string(rankNum),
@@ -568,7 +563,7 @@ HcclResult HcomDestroyGroup(const char *group)
         return HCCL_SUCCESS;
     }
 
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomDestroyGroup", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
     CHK_RET(HcomCheckGroupName(group));
@@ -605,7 +600,7 @@ HcclResult HcomFlushBackloggedGroups()
     HCCL_INFO("HcomFlushBackloggedGroups");
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     std::unique_lock<std::mutex> backGroupParaLock(g_backloggedGroupLock);
-    typedef map<string, std::vector<u32>>::iterator ITER;
+    using ITER = map<string, std::vector<u32>>::iterator;
     for (ITER iter = g_backloggedGroup.begin(); iter != g_backloggedGroup.end();) {
         HCCL_INFO("HcomFlushBackloggedGroups[%s], rank[%u]", iter->first.c_str(), hcomInfo.params.rank);
         if (std::count(iter->second.begin(), iter->second.end(), hcomInfo.params.rank)) {
@@ -738,7 +733,7 @@ HcclResult HcomQueryGroupRef(const char *group, u32 &groupRef)
 
 HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *worldRank)
 {
-    RPT_INPUT_ERR(worldRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(worldRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetWorldRankFromGroupRank", "nullptr", "worldRank", "non-null pointer"}));
     CHK_PTR_NULL(worldRank);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
@@ -750,7 +745,7 @@ HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetWorldRankFromGroupRank",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
@@ -778,7 +773,7 @@ HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *
 
 HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *groupRank)
 {
-    RPT_INPUT_ERR(groupRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(groupRank == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetGroupRankFromWorldRank", "nullptr", "groupRank", "non-null pointer"}));
     CHK_PTR_NULL(groupRank);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
@@ -790,7 +785,7 @@ HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetGroupRankFromWorldRank",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
@@ -916,7 +911,7 @@ HcclResult GetGroupRankInfo(const char *group, RankInfoType rankType, u32 inPara
 
 HcclResult HcomGetRankSize(const char *group, u32 *rankSize)
 {
-    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetRankSize", "nullptr", "rankSize", "non-null pointer"}));
     CHK_PTR_NULL(rankSize);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
@@ -926,7 +921,7 @@ HcclResult HcomGetRankSize(const char *group, u32 *rankSize)
     }
 
     HcclResult ret = HcomCheckGroupName(group);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetRankSize",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
@@ -1074,13 +1069,13 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
 
     RPT_INPUT_ERR(inputIdxList == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcomSetGradFusionByIndex", "nullptr", "inputIdxList", "non-null pointer"}));
     CHK_PTR_NULL(inputIdxList);
     bool bRet = segmentNum == 0;
     RPT_INPUT_ERR(bRet,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcomSetGradFusionByIndex", std::to_string(0), "segmentNum", "must be a positive integer (greater than 0)"}));
     CHK_PRT_RET(bRet,
@@ -1130,11 +1125,11 @@ HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const floa
         return HCCL_SUCCESS;
     }
 
-    RPT_INPUT_ERR(sizeList == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(sizeList == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomSetGradFusionBySize", "nullptr", "sizeList", "non-null pointer"}));
     CHK_PTR_NULL(sizeList);
     bool bRet = segmentNum == 0;
-    RPT_INPUT_ERR(bRet, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+    RPT_INPUT_ERR(bRet, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomSetGradFusionBySize",
             std::to_string(0),
@@ -1392,7 +1387,7 @@ HcclResult HcomCheckInitClusterInfo(const char *rankTableM, const char *identify
     ret = HcomCheckIdentify(identify);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcomInit", {identify, strnlen(identify, IDENTIFY_MAX_LEN + 1)}, "identify", "a valid node identifier"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1459,9 +1454,9 @@ DevType HcomGetDeviceType()
 {
     DevType devType;
 	hrtGetDeviceType(devType);
-    if(devType == DevType::DEV_TYPE_910_95 ){
+    if(devType == DevType::DEV_TYPE_950 ){
         HcomGetDevTypeV2(devType);
-        HCCL_INFO("LaunchHcomKernel: devType is DEV_TYPE_910_95");
+        HCCL_INFO("LaunchHcomKernel: devType is DEV_TYPE_950");
         return MakeEnumToDevType(static_cast<int>(devType));
     }
 
@@ -1471,13 +1466,13 @@ DevType HcomGetDeviceType()
 
 HcclResult HcomCreateCommCCLbuffer(const char *group)
 {
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetDevType", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetDevType",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
@@ -1489,7 +1484,7 @@ HcclResult HcomCreateCommCCLbuffer(const char *group)
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
 
     DevType devType = HcomGetDeviceType();
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_INFO("HcomCreateCommCclBufV2 start.");
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
         HCCLV2_FUNC_RUN(HcomCreateCommCclBufV2(group));
@@ -1505,13 +1500,13 @@ HcclResult HcomCreateCommCCLbuffer(const char *group)
  
 HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetInCCLbuffer", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetInCCLbuffer",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
@@ -1523,7 +1518,7 @@ HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
         HCCL_ERROR("[Get][HcomGetInCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
 
     DevType devType = HcomGetDeviceType();
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
         HCCLV2_FUNC_RUN(HcomGetInCclBufV2(group, *buffer, *size));
 #endif
@@ -1538,13 +1533,13 @@ HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
  
 HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetOutCCLbuffer", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetOutCCLbuffer",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
@@ -1556,7 +1551,7 @@ HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size)
         HCCL_ERROR("[Get][HcomGetOutCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
 
     DevType devType = HcomGetDeviceType();
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
         HCCLV2_FUNC_RUN(HcomGetOutCclBufV2(group, *buffer, *size));
 #endif
@@ -1571,13 +1566,13 @@ HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size)
  
 HcclResult HcomGetAicpuOpStreamNotify(const char *group, HcclRtStream *opStream, u8 aicpuNotifyNum, void** aicpuNotify)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetDevType", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
  
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetDevType",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
@@ -1596,7 +1591,7 @@ HcclResult HcomGetAicpuOpStreamNotify(const char *group, HcclRtStream *opStream,
  
 HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtStream_t *aiCpuStream)
 {   
-    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetDevType", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
 
@@ -1606,7 +1601,7 @@ HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtSt
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({
             "HcomGetDevType",
             { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
