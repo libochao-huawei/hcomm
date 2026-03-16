@@ -1951,8 +1951,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
     }
 
     std::shared_ptr<hccl::hcclComm> hcclComm;
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         /* 设定 workspace 内存资源 */
         CHK_RET(hcclComm->SetWorkspaceResource(tag, memPtr, maxSize, rtStream));
     }
@@ -1967,8 +1966,10 @@ HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_
     }
     std::shared_ptr<hccl::hcclComm> hcclComm = nullptr;
     std::vector<rtStream_t> rtStream(stream, stream + len);
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+
+    HCCLV2_FUNC_RUN(HcomSetAttachedStreamV2());
+
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_RET(hcclComm->SetAttachedStream(graphId, rtStream));
     } else {
         // HcclCommBase 场景暂是不支持设置附属从流
@@ -2104,15 +2105,15 @@ HcclResult HcomGetBandWidthPerNPU(u32 level, float *bandWidth)
 
 HcclResult HcomReleaseSubComms()
 {
+    HCCLV2_FUNC_RUN(HcomReleaseSubCommsV2());
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
-    DevType devType = HcomGetDeviceType();
-    if (devType != DevType::DEV_TYPE_910_95 && hcomInfo.pComm) {
+    if (hcomInfo.pComm) {
         CHK_RET(hcomInfo.pComm->ReleaseSubComms());
     }
 
     auto iter = hcomInfo.hcomGroupMap.begin();
     while (iter != hcomInfo.hcomGroupMap.end()) {
-        if (devType != DevType::DEV_TYPE_910_95 && iter->second.pSubComm) {
+        if (iter->second.pSubComm) {
             CHK_RET(iter->second.pSubComm->ReleaseSubComms());
         }
         iter++;
@@ -2387,8 +2388,7 @@ HcclResult HcomUnloadTask(const char *group, const char *tag)
 {
     HCCLV2_FUNC_RUN(HcomUnloadTaskV2(group, tag));
     std::shared_ptr<hcclComm> hcclComm;
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[UnloadAllTask]hcclComm is null, "\
         "please check if the initialize process is called."), HCCL_SUCCESS);
         HCCL_INFO("[UnloadTask]HcomUnloadTask: tag[%s]", tag);
@@ -2476,7 +2476,7 @@ HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globa
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING(" A5 does not support this interface");
         return HCCL_SUCCESS;
     }
@@ -2490,7 +2490,7 @@ HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcom over flow tasks.");
         return HCCL_SUCCESS;
     }
@@ -2519,7 +2519,7 @@ HcclResult HcclCommGetandClearOverFlowTasks(s64 opBaseHcom, std::vector<hccl::Hc
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcclcom over flow tasks.");
         return HCCL_SUCCESS;
     }
@@ -2748,8 +2748,7 @@ HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable)
     HCCLV2_FUNC_RUN(HcomSetAivClearEnableV2(group, aivClearEnable));
     CHK_PTR_NULL(group);
     std::shared_ptr<hcclComm> hcclComm;
-    DevType devType = HcomGetDeviceType();
-    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS && devType != DevType::DEV_TYPE_910_95) {
+    if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_RET(hcclComm->SetClearAivSyncBuf(aivClearEnable));
     }
 
@@ -2787,7 +2786,7 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcclcom set aiv core limit.");
         return HCCL_SUCCESS;
     }
@@ -2927,7 +2926,7 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
         HCCL_WARNING("call GetModuleInfo error, failed to get multiModuleDiffDeviceNumMode.");
     }
 
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         CHK_RET(CalcTaskNumV2(hcomOpParam, taskNum));
     } else {
         CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
@@ -2992,7 +2991,7 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, ifAiv, devType, streamNum, group));
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         // host展开已日落， Task任务数按照当前需求最多的CCU加速模式[AIV, AICPU使用较少]预估
         taskNum = ESTIMATE_CCU_TASK_PER_STREAM; 
     }
@@ -3012,7 +3011,7 @@ HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devTyp
 
     if (tempDevType != DevType::DEV_TYPE_910 && tempDevType != DevType::DEV_TYPE_910B &&
         tempDevType != DevType::DEV_TYPE_310P1 && tempDevType != DevType::DEV_TYPE_310P3 &&
-        tempDevType != DevType::DEV_TYPE_910_93 && tempDevType != DevType::DEV_TYPE_910_95) {
+        tempDevType != DevType::DEV_TYPE_910_93 && tempDevType != DevType::DEV_TYPE_950) {
         HCCL_ERROR("[offline][compilation] cur dev type[%u] is not support.", tempDevType);
         return HCCL_E_RUNTIME;
     }
@@ -3033,7 +3032,7 @@ HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 de
 
         case DevType::DEV_TYPE_910B:
         case DevType::DEV_TYPE_910:
-        case DevType::DEV_TYPE_910_95: 
+        case DevType::DEV_TYPE_950: 
         case DevType::DEV_TYPE_910_93: {
             CHK_RET(GetStremNumOfflineByDev(devType, hcclOpType, serverNum, deviceNumPerServer, ifAiv, streamNum, group));
             break;
