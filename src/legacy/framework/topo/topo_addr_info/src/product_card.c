@@ -23,6 +23,7 @@
 #define MAX_CARD_ROOTINFO_LEN (2048)
 #define MAX_MESH_PORT_ID (9)
 #define CARD_4P_MESH_NUM (4)
+#define CARD_2P_MESH_NUM (2)
 
 int GetCardRankInfoLen(size_t *len)
 {
@@ -89,6 +90,43 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *e
     return 0;
 }
 
+static int ProcessLayerMesh2P(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *eid_list, size_t eid_cnt)
+{
+    if (eid_cnt == 0) {
+        return -1;
+    }
+    char server_id[MAX_INSTANCE_ID_LEN] = {0};
+    char net_instance_id[MAX_INSTANCE_ID_LEN] = {0};
+    get_server_id(server_id, sizeof(server_id));
+    // 2p标卡每2个NPU一组， 可分多组， 标卡机头无单独的server id，因此使用mac地址作为server id 和组ID组合起来作为mesh域的ID
+    int ret = sprintf_s(net_instance_id, sizeof(net_instance_id), "%s_%d", server_id, (npu_id / CARD_2P_MESH_NUM));
+    if (ret < 0) {
+        return -1;
+    }
+    NetLayerInit(layer, 0, net_instance_id);
+    NetLayerSetNetType(layer, NET_TYPE_MESH);
+    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
+    for (size_t i = 0; i < eid_cnt; i++) {
+        int portId = UrmaEidGetPortId(&eid_list[i].eid);
+        // 2P互联使用PortGroup EID
+        if (portId <= MAX_MESH_PORT_ID) {
+            continue;
+        }
+        Addr addr;
+        memset_s(&addr, sizeof(Addr), 0x00, sizeof(Addr));
+        AddrSetEID(&addr, &eid_list[i].eid);
+        const int ports[] = {4,5,6,8}; // 2P互联固定使用4568端口
+        for (int j = 0; j < 4; ++j) {
+            char port[MAX_PORT_LEN] = {0};
+            sprintf_s(port, MAX_PORT_LEN, "0/%d", ports[j]);
+            AddrAddPort(&addr, port);
+        }
+        AddrSetPlaneId(&addr, "plane_0");
+        NetLayerAddAddr(layer, &addr);
+    }
+    return 0;
+}
+
 int GetCardRankInfo(int phyId, unsigned int mainboardId, void *buf, size_t* len)
 {
     if (buf == NULL || len == NULL) {
@@ -105,7 +143,13 @@ int GetCardRankInfo(int phyId, unsigned int mainboardId, void *buf, size_t* len)
     dcmi_urma_eid_info_t eid_list[MAX_EID_NUM] = {0};
     size_t eid_cnt = MAX_EID_NUM;
     hal_get_eid_list_by_phy_id(phyId, eid_list, &eid_cnt);
-    if (ProcessLayerMesh(phyId, &layer_mesh, eid_list, eid_cnt) == 0) {
+    int result = -1;
+    if (mainboardId == MAIN_BOARD_ID_CARD_4PMESH) {
+         result = ProcessLayerMesh(phyId, &layer_mesh, eid_list, eid_cnt);
+    } if (mainboardId == MAIN_BOARD_ID_CARD_2PMESH) {
+         result = ProcessLayerMesh2P(phyId, &layer_mesh, eid_list, eid_cnt);
+    }
+    if (result == 0) {// 无UB互联的标卡无0层
         RankAddNetLayer(&rank, &layer_mesh);
     }
     if (ProcessRoceLayer(phyId, &layer_roce) == 0) {
