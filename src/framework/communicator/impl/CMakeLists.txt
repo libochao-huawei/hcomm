@@ -26,6 +26,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${src_list}
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_device.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs_device.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy/zero_copy_memory_agent.cc
     )
 endif()
 
