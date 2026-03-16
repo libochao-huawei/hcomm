@@ -38,7 +38,7 @@ public:
         hrtGetDevice(&devId);
         int64_t connectType = 0;
         hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType); // ?
-        if (connectType == 1) { // PCIe
+        if (connectType == HOST_DEVICE_CONNECT_TYPE_PCIE) { // PCIe
             // 释放notify
             if (notifyDeviceVa_) {
                 aclrtFree(&notifyDeviceVa_); // device
@@ -71,11 +71,12 @@ public:
         hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType);
         auto timeout = std::chrono::milliseconds(WAIT_TIMEOUT_MS);
         auto startTime = std::chrono::steady_clock::now();
-        if (connectType == 1) { // PCIe
+        if (connectType == HOST_DEVICE_CONNECT_TYPE_PCIE) { // PCIe
             // 轮询notifyDeviceVa_地址，等待被写入
             while (true) {
                 uint8_t flag;
-                // halSvmAccess(devId, reinterpret_cast<uint64_t>(notifyHostVa_), reinterpret_cast<uint64_t>(notifyDeviceVa_), sizeof(uint8_t), SVM_MEM_READ);
+                // halSvmAccess(devId, reinterpret_cast<uint64_t>(notifyHostVa_), reinterpret_cast<uint64_t>(&flag), sizeof(uint8_t), SVM_MEM_READ);
+                // flag = *(reinterpret_cast<uint8_t*>(notifyHostVa_));
                 aclError err = aclrtMemcpy(&flag, sizeof(uint8_t), notifyDeviceVa_, sizeof(uint8_t), ACL_MEMCPY_DEVICE_TO_HOST);
                 if (err != ACL_ERROR_NONE) {
                     return HCCL_E_RUNTIME;
@@ -83,6 +84,7 @@ public:
                 if (flag != 0) {
                     // reset flag
                     uint8_t resetFlag = 0;
+                    // halSvmAccess(devId, reinterpret_cast<uint64_t>(notifyDeviceVa_), reinterpret_cast<uint64_t>(&resetFlag), sizeof(uint8_t), SVM_MEM_WRITE);
                     err = aclrtMemcpy(notifyDeviceVa_, sizeof(uint8_t), &resetFlag, sizeof(uint8_t), ACL_MEMCPY_HOST_TO_DEVICE);
                     if (err != ACL_ERROR_NONE) {
                         return HCCL_E_RUNTIME;
@@ -118,7 +120,7 @@ public:
         CHK_RET(hrtGetDevice(&devId));
         int64_t connectType = 0;
         hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, &connectType); // ?
-        if (connectType == 1) { // PCIe
+        if (connectType == HOST_DEVICE_CONNECT_TYPE_PCIE) { // PCIe
             // 申请notify
             aclrtMalloc(&notifyDeviceVa_, sizeof(uint8_t) + 4096ULL, ACL_MEM_MALLOC_HUGE_ONLY); // device// 对齐
             uint64_t va = reinterpret_cast<uint64_t>(notifyDeviceVa_);

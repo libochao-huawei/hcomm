@@ -8,18 +8,17 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef DPU_INTERFACE_H
-#define DPU_INTERFACE_H
+#ifndef DPU_THREAD_KERNEL_H
+#define DPU_THREAD_KERNEL_H
 
 #include <cstdint>
 #include <unordered_map>
 #include <string>
 #include <memory>
-#include "task_service.h"
+#include "cpu_thread.h"
 
-extern std::unordered_map<std::string, std::unique_ptr<Hccl::TaskService>> g_taskServiceMap;
 extern "C" {
-__attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_t args);
+__attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunchNew(const uint64_t args);
 }
 
-#endif // DPU_INTERFACE_H
+#endif // DPU_THREAD_KERNEL_H
