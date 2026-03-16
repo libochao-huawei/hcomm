@@ -13,4 +13,3 @@ target_sources(hcomm PRIVATE
 )
 
 add_subdirectory(threads)
-add_subdirectory(ccu)

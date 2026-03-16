@@ -24,15 +24,15 @@
 
 #include "ccu_rep_context_v1.h"
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
-#include "ccu_jetty_mgr.h"
-#include "ccu_assist.h"
+
+// todo: 引入头文件需要检查
+#include "ccu_assist_v1.h"
 #include "hccl_comm_pub.h"
 #include "hcclCommDfx.h"
 #include "task_info.h"
-
 #include "task_param.h"
-#include "ccu_ctx.h"
 
+#include "ccu_log.h"
 
 namespace hcomm {
 
@@ -79,31 +79,30 @@ static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId
         return HcclResult::HCCL_E_PTR;
     }
     dieId = channelImpl->GetDieId();
-    HCCL_INFO("[%s]channelHandle[0x%llx], dieId[%u]", __func__, channel, dieId);
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult GetDieIdByChannels(const std::vector<ChannelHandle> &channels, uint32_t &dieId)
-{
-    if (channels.empty()) {
-        dieId = 0;
-        return HcclResult::HCCL_SUCCESS;
-    }
+// static HcclResult GetDieIdByChannels(const std::vector<ChannelHandle> &channels, uint32_t &dieId)
+// {
+//     if (channels.empty()) {
+//         dieId = 0;
+//         return HcclResult::HCCL_SUCCESS;
+//     }
 
-    uint32_t firstDieId = 0;
-    CHK_RET(GetDieIdByChannel(channels[0], firstDieId));
-    for (const auto channel : channels) {
-        uint32_t nextDieId = 0;
-        CHK_RET(GetDieIdByChannel(channel, nextDieId));
-        if (firstDieId != nextDieId) {
-            HCCL_ERROR("[%s] failed, the dies of channels are not same.", __func__);
-            return HcclResult::HCCL_E_PARA;
-        }
-    }
+//     uint32_t firstDieId = 0;
+//     CHK_RET(GetDieIdByChannel(channels[0], firstDieId));
+//     for (const auto channel : channels) {
+//         uint32_t nextDieId = 0;
+//         CHK_RET(GetDieIdByChannel(channel, nextDieId));
+//         if (firstDieId != nextDieId) {
+//             HCCL_ERROR("[%s] failed, the dies of channels are not same.", __func__);
+//             return HcclResult::HCCL_E_PARA;
+//         }
+//     }
 
-    dieId = firstDieId;
-    return HcclResult::HCCL_SUCCESS;
-}
+//     dieId = firstDieId;
+//     return HcclResult::HCCL_SUCCESS;
+// }
 
 // todo: 需要整改成rep处理结束后
 HcclResult CcuKernel::Init()
@@ -117,7 +116,8 @@ HcclResult CcuKernel::Init()
     //         __func__, dieId, CCU_MAX_IODIE_NUM),
     //     HcclResult::HCCL_E_PARA);
 
-    // SetDieId(dieId);
+    constexpr uint32_t dieId = 1; // todo: 暂时指定2p使用die 1
+    SetDieId(dieId);
     // CHK_RET(Algorithm());
     // todo: 生成SQE粒度profiling信息
     // AddSqeProfiling();
@@ -233,6 +233,57 @@ CcuResReq CcuKernel::GetResourceRequest()
     HCCL_INFO("%s", info.c_str());
 
     return req;
+}
+
+template<typename HandleType, typename ResourceType>
+static CcuResult GetResourceByHandle(
+    std::unordered_map<HandleType, ResourceType> &resourceMap, 
+    HandleType handle, ResourceType *resource, const char *resourceType)
+{
+    auto iter = resourceMap.find(handle);
+    if (iter == resourceMap.end()) {
+        HCCL_ERROR("[%s] failed to find %s by handle: 0x%llx", __func__, resourceType, handle);
+        return CcuResult::CCU_E_NOT_FOUND;
+    }
+    *resource = iter->second; // 触发variable拷贝
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable *variable)
+{
+    return GetResourceByHandle(ccuVarMap_, varHandle, variable, "variable");
+}
+
+CcuResult CcuKernel::VariableCreate(CcuVariableHandle *varHandle)
+{
+    const auto &var = CreateResAssist(res_.variable);
+    CcuVariableHandle handle = ccuVarMap_.size(); // todo: 当前简单化生成 handle
+    ccuVarMap_.emplace(handle, var);
+    *varHandle = handle;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::VariableAssign(CcuVariableHandle varHandle, uint64_t immediate)
+{
+    CcuRep::Variable variable{};
+    CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
+    // todo: need try catch
+    // 通过符号重载实现，内部记录rep
+    variable = immediate;
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::VariableAddVarToVar(CcuVariableHandle varHandle, CcuVariableHandle varA, CcuVariableHandle varB)
+{
+    CcuRep::Variable resVar{}, leftVar{}, rightVar{};
+    CCU_CHK_RET(GetVariableByHandle(varHandle, &resVar));
+    CCU_CHK_RET(GetVariableByHandle(varA, &leftVar));
+    CCU_CHK_RET(GetVariableByHandle(varB, &rightVar));
+
+    // todo: need try catch
+    // 通过符号重载实现，内部记录rep
+    resVar = leftVar + rightVar;
+    return CcuResult::CCU_SUCCESS;
 }
 
 void CcuKernel::Load(const CcuRep::Variable &var)

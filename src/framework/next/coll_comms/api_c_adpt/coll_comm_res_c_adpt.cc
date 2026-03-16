@@ -20,6 +20,9 @@
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
 
+#include "ccu_types.h"
+#include "ccu_log.h"
+
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -230,73 +233,69 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCcuKernelRegister(HcclComm comm,
-    CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg)
-{
-    HCCL_RUN_INFO("Entry-%s", __func__);
-    HcclUs startut = TIME_NOW();
+// HcclResult HcclCcuKernelRegister(HcclComm comm,
+//     CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg)
+// {
+//     HCCL_RUN_INFO("Entry-%s", __func__);
+//     HcclUs startut = TIME_NOW();
 
-    CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(kernelHandle);
-    CHK_PTR_NULL(kernelCreator);
-    CHK_PTR_NULL(kernelArg);
+//     CHK_PTR_NULL(comm);
+//     CHK_PTR_NULL(kernelHandle);
+//     CHK_PTR_NULL(kernelCreator);
+//     CHK_PTR_NULL(kernelArg);
 
-    auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    auto *collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-    auto* myRank = collComm->GetMyRank();
-    CHK_PTR_NULL(myRank);
+//     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+//     auto *collComm = hcclComm->GetCollComm();
+//     CHK_PTR_NULL(collComm);
+//     auto* myRank = collComm->GetMyRank();
+//     CHK_PTR_NULL(myRank);
 
-    auto *ccuContainer = myRank->GetCcuResContainer();
-    CHK_PTR_NULL(ccuContainer);
+//     auto *ccuContainer = myRank->GetCcuResContainer();
+//     CHK_PTR_NULL(ccuContainer);
 
-    auto *resPack = ccuContainer->GetResPack();
-    CHK_PTR_NULL(resPack);
+//     auto *resPack = ccuContainer->GetResPack();
+//     CHK_PTR_NULL(resPack);
 
-    hcomm::KernelCreator creator = *static_cast<hcomm::KernelCreator*>(kernelCreator);
-    const auto& arg = *static_cast<const hcomm::CcuKernelArg*>(kernelArg);
-    std::unique_ptr<hcomm::CcuKernel> kernel = creator(arg);
+//     const uint32_t devLogicId = HcclGetThreadDeviceId();
+//     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+//     CcuKernelHandle newHandle{0};
+//     // 当前注册内部流程可能抛异常
+//     EXCEPTION_HANDLE_BEGIN
+//     CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
+//     EXCEPTION_HANDLE_END
+//     CHK_RET(ccuContainer->SaveCcuKernel(newHandle));
+//     *kernelHandle = newHandle;
+//     HCCL_INFO("[%s] success, take time [%lld]us.",
+//         __func__, DURATION_US(TIME_NOW() - startut));
+//     return HcclResult::HCCL_SUCCESS;
+// }
 
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
-    CcuKernelHandle newHandle{0};
-    // 当前注册内部流程可能抛异常
-    EXCEPTION_HANDLE_BEGIN
-    CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
-    EXCEPTION_HANDLE_END
-    CHK_RET(ccuContainer->SaveCcuKernel(newHandle));
-    *kernelHandle = newHandle;
-    HCCL_INFO("[%s] success, take time [%lld]us.",
-        __func__, DURATION_US(TIME_NOW() - startut));
-    return HcclResult::HCCL_SUCCESS;
-}
+// HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
+// {
+//     HCCL_RUN_INFO("Entry-%s", __func__);
+//     CHK_PTR_NULL(comm);
 
-HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
-{
-    HCCL_RUN_INFO("Entry-%s", __func__);
-    CHK_PTR_NULL(comm);
+//     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+//     auto *collComm = hcclComm->GetCollComm();
+//     CHK_PTR_NULL(collComm);
+//     auto* myRank = collComm->GetMyRank();
+//     CHK_PTR_NULL(myRank);
 
-    auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    auto *collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-    auto* myRank = collComm->GetMyRank();
-    CHK_PTR_NULL(myRank);
+//     auto *ccuContainer = myRank->GetCcuResContainer();
+//     CHK_PTR_NULL(ccuContainer);
 
-    auto *ccuContainer = myRank->GetCcuResContainer();
-    CHK_PTR_NULL(ccuContainer);
+//     const auto &newKernels = ccuContainer->GetUntranslatedKernels();
 
-    const auto &newKernels = ccuContainer->GetUntranslatedKernels();
+//     const uint32_t devLogicId = HcclGetThreadDeviceId();
+//     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+//     // 当前翻译内部流程可能抛异常
+//     EXCEPTION_HANDLE_BEGIN
+//     CCU_CHK_RET(kernelMgr.Translate(newKernels));
+//     EXCEPTION_HANDLE_END
 
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
-    // 当前翻译内部流程可能抛异常
-    EXCEPTION_HANDLE_BEGIN
-    CHK_RET(kernelMgr.Translate(newKernels));
-    EXCEPTION_HANDLE_END
-
-    CHK_RET(ccuContainer->ResetResPack());
-    return HcclResult::HCCL_SUCCESS;
-}
+//     CHK_RET(ccuContainer->ResetResPack());
+//     return HcclResult::HCCL_SUCCESS;
+// }
 
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {

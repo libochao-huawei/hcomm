@@ -41,3 +41,42 @@ CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle)
 
     return CcuResult::CCU_SUCCESS;
 }
+
+CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto *ccuIns = CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
+    CCU_CHK_PTR_NULL(ccuIns);
+
+    CCU_CHK_RET(ccuIns->Reset());
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
+    char *kernelFuncName, void *kernelFunc, void *kernelArg,
+    CcuKernelHandle *kernelHandle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto *ccuIns = CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
+    CCU_CHK_PTR_NULL(ccuIns);
+
+    // todo: 需要适配
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle)
+{
+    // todo: 需要拦截是否start
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto *ccuIns = CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
+    CCU_CHK_PTR_NULL(ccuIns);
+    const auto &newKernels = ccuContainer->GetUntranslatedKernels();
+
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    // 当前翻译内部流程可能抛异常
+    EXCEPTION_HANDLE_BEGIN
+    CCU_CHK_RET(kernelMgr.Translate(newKernels));
+    EXCEPTION_HANDLE_END
+
+    return CcuResult::CCU_SUCCESS;
+}
