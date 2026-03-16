@@ -40,6 +40,7 @@ public:
 private:
     std::string GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *sqeContextBuffer);
     void PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer); // 打印当前位置的前序task
+    void PrintFinishedTaskQue(u32 sqTail, SqeRingBuffer *sqeContextBuffer, u32 sqeNum); // 打印已执行完成的task序列
     std::string GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer);
     void PrintTaskExceptionOpInfo(IndOpInfo& indOp);
 
