@@ -419,13 +419,13 @@ HcclResult HcomSetWorkspaceResourceV2(
 
 HcclResult  HcomSetAttachedStreamV2()
 {
-    HCCL_RUN_WARNING("HcomSetAttachedStreamV2 is not support!");
+    HCCL_RUN_INFO("HcomSetAttachedStreamV2 is not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcomReleaseSubCommsV2()
 {
-    HCCL_RUN_WARNING("HcomReleaseSubCommsV2 is not support!");
+    HCCL_RUN_INFO("HcomReleaseSubCommsV2 is not support!");
     return HCCL_SUCCESS;
 }
 
