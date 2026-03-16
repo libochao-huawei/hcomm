@@ -790,7 +790,6 @@ TEST_F(AdapterHccpTest, ut_HrtRaSocketWhiteListDel_With_Enormous_WhiteList)
 TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_1_Expect_Return_True)
 {
     DevBaseAttr out {};
-    out.ub.priorityInfo[0].SL = 1;
     out.ub.priorityInfo[0].tpType.bs.rtp = 1;
     MOCKER(RaGetDevBaseAttr).stubs()
         .with(any(), outBoundP(&out, sizeof(out)))

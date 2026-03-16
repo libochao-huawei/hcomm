@@ -16,6 +16,7 @@
 #include "adapter_rts_common.h"
  
 namespace hcomm {
+
 UrmaEndpoint::UrmaEndpoint(const EndpointDesc &endpointDesc)
     : Endpoint(endpointDesc)
 {
@@ -29,6 +30,7 @@ HcclResult UrmaEndpoint::Init()
         HCCL_ERROR("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] only support ENDPOINT_LOC_TYPE_DEVICE", __func__, endpointDesc_.loc.locType);
         return HCCL_E_PARA;
     }
+
     Hccl::IpAddress ipAddr{};
     HcclResult ret = CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr);
     if(ret!= HCCL_SUCCESS) {
@@ -53,7 +55,7 @@ HcclResult UrmaEndpoint::Init()
 
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
         HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
-        endpointDesc_.loc.device.devPhyId = devPhyId;   // 当前endpointDesc.loc.device.devPhyId不准，暂时由查询的devPhyId赋值
+        endpointDesc_.loc.device.devPhyId = devPhyId; // 当前endpointDesc.loc.device.devPhyId不准，暂时由查询的devPhyId赋值
     }
 
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
@@ -75,6 +77,11 @@ HcclResult UrmaEndpoint::Init()
 
 HcclResult UrmaEndpoint::ServerSocketListen()
 {
+    // 临时方案：为支持混跑，复用原有的orion通信域 socketMgr
+    // endpoint中避免重复拉起socket，跳过原有流程
+    HCCL_RUN_INFO("[UrmaEndpoint][%s] passed, now running on compatible mode.", __func__);
+    return HcclResult::HCCL_SUCCESS;
+#if (false)
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
         HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
         return HCCL_SUCCESS;
@@ -90,7 +97,6 @@ HcclResult UrmaEndpoint::ServerSocketListen()
 
     Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(endpointDesc_.loc.device.devPhyId, localPort);
     auto &serverSocketMap = UrmaEndpoint::GetServerSocketMap();
-
     if (serverSocketMap.find(localPort) != serverSocketMap.end()){
         HCCL_INFO("[UrmaEndpoint][%s] reuse serverSocket", __func__);
         return HCCL_SUCCESS;
@@ -111,6 +117,7 @@ HcclResult UrmaEndpoint::ServerSocketListen()
     serverSocketMap[localPort] = std::move(serverSocket);
 
     return HCCL_SUCCESS;
+#endif
 }
 
 std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &UrmaEndpoint::GetServerSocketMap()

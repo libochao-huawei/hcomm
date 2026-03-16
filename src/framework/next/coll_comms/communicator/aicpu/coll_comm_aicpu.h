@@ -26,6 +26,10 @@
 #include "hdc_pub.h"
 #include "ns_recovery/aicpu/ns_recovery_lite.h"
 #include <atomic>
+#include "hcclCommDfxLite.h"
+#include "error_message_v2.h"
+#include "kfc.h"
+#include "aicpu_hdc.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -36,30 +40,44 @@ public:
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
-    std::string GetIdentifier();
-    u32 GetDevPhyId();
-    std::vector<std::shared_ptr<Thread>> GetThreads();
-
-    bool IsCommReady() const;
-
     // N秒快恢
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
     HcclResult Clean();
     HcclResult Resume(HcclChannelUrmaRes *commParam);
     
+    const std::vector<std::shared_ptr<Thread>>& GetAllThread() { return threads_; };
+    const HcclTopoInfo& GetTopoInfo() { return topoInfo_; }
+    const std::string& GetIdentifier() { return identifier_; }
+
+    // taskException
+    bool IsErrorReported() { return isErrorReported_; }
+    void SetErrorReported(bool isErrorReported) { isErrorReported_ = isErrorReported; }
+    HcclResult SendErrorMessageReportToHost(Hccl::ErrorMessageReport& errMsgInfo);
+    HcclResult RegisterProfCallBack();
+    HcclCommDfxLite* GetHcclCommDfxLite() { return &dfx_; };
+
+    // h2d - d2h通道信息交互
+    HcclResult BackGroundGetCmd(Hccl::KfcCommand &cmd);
+    HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
+    u32 UpdateIndex();
+
+    bool GetIsReady() { return isReady_; }
+    void SetIsReady(bool flag);
+
 private:
     HcclResult InitBackGroundThread();
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
+    HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
+
     u32 devId_{0};
     //通用的通道
     hccl::HDCommunicatePtr kfcControlTransferH2D_{nullptr};
     hccl::HDCommunicatePtr kfcStatusTransferD2H_{nullptr};
 
-    std::atomic<bool> isCommReady_{false};
-
     std::string identifier_;
-    bool indOpCommInitialized_{ false }; // 独立算子流程通信域是否初始化
+    bool isReady_{ false }; // 独立算子流程通信域是否初始化
     HcclTopoInfo topoInfo_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
@@ -69,6 +87,12 @@ private:
 
     // N秒快恢相关
     hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};
+
+    // dfx
+    bool isErrorReported_{false}; // 是否上报了taskException信息
+    HcclCommDfxLite dfx_;
+    u32 index_{0};
+
 };
 
 #endif // __COLL_COMM_AICPU_H__

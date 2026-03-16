@@ -300,8 +300,11 @@ namespace hccl
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(commAicpuParam_.deviceLogicId), commAicpuParam_.devicePhyId));
         CHK_RET(hrtGetDeviceType(devType_));
         commAicpuParam_.deviceType = static_cast<u32>(devType_);
+<<<<<<< HEAD
 
         // json表解析
+=======
+>>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a
         std::string jsonPath;
         CHK_RET(GetKernelFilePath(jsonPath));
         jsonPath += "ccl_kernel.json";
@@ -323,6 +326,14 @@ namespace hccl
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
         CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
             commAicpuParam_.kfcStatusTransferD2HParams));
+<<<<<<< HEAD
+=======
+        commAicpuParam_.userRank = collComm_->GetMyRankId();
+        commAicpuParam_.userRankSize = collComm_->GetRankSize();
+        HCCL_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], userRank[%u], userRankSize[%u]",
+            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
+            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize);
+>>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a
         return HCCL_SUCCESS;
     }
 
@@ -352,6 +363,7 @@ namespace hccl
     HcclResult hcclComm::KernelLaunchAicpuCommInit()
     {
         // 创建局部流
+        u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
         Stream localStream(StreamType::STREAM_TYPE_ONLINE);
         constexpr u32 aicpuStreamMode = 1;
         CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
@@ -365,7 +377,12 @@ namespace hccl
             sizeof(commAicpuParam_), binHandle_, kernelName, true, timeOut));
         HCCL_INFO("AicpuAclKernelLaunch end, hcclStreamSynchronize start");
         CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
-
+        HCCL_INFO("[KernelLaunchAicpuCommInit] ReportAicpuCommKernel begin");
+        CHK_PTR_NULL(collComm_);
+        HcclCommDfx* hcclComDfx = collComm_->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclComDfx);
+        CHK_RET(hcclComDfx->ReportKernel(beginTime, identifier_, kernelName, SalGetTid()));
+        HCCL_INFO("[KernelLaunchAicpuCommInit] ReportAicpuCommKernel end");
         // 打印增加初始化对应的参数
         HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);
         return HCCL_SUCCESS;

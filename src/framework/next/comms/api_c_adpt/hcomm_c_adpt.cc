@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <mutex>
+#include <cstring>
 
 #include "hccl/hccl_res.h"
 #include "hcomm_res.h"
@@ -25,6 +26,15 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
+
+#include "../hcomm_res_mgr.h"
+
+#include "param_check_pub.h"
+#include "exception_handler.h"
+#include "hcclCommDfx.h"
+#include "hcclCommOp.h"
+#include "exception_handler.h"
+#include "param_check_pub.h"
 #include "launch_device.h"
 
 namespace hcomm {
@@ -636,6 +646,53 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
         return HCCL_E_PARA;
     }
     HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
+{
+    // 申请device侧内存
+    hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(sizeof(dfxOpInfo));
+    CHK_PTR_NULL(devicePackBuf.ptr());
+    
+    // 将dfxOpInfo信息传递给device侧
+    CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
+        sizeof(dfxOpInfo),
+        &dfxOpInfo,
+        sizeof(dfxOpInfo),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    // 创建局部流
+    hccl::Stream localStream(hccl::StreamType::STREAM_TYPE_ONLINE);
+    constexpr u32 aicpuStreamMode = 1;
+    CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
+
+    // 下kernel
+    std::string kernelName = "RunAicpuDfxOpInfoInitV2";
+
+    struct InitTask {
+        u64 context;
+        char commTag[256];
+    };
+
+    InitTask customInitTask = {0, ""};
+    customInitTask.context = reinterpret_cast<u64>(devicePackBuf.ptr());
+    s32 sRet = strncpy_s(customInitTask.commTag, TAG_MAX_LENGTH, commTag.c_str(), TAG_MAX_LENGTH - 1);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] str copy fail. return[%d]", __func__, sRet), HCCL_E_INTERNAL);
+
+    CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
+        reinterpret_cast<void *>(&customInitTask),  
+        sizeof(customInitTask),  
+        binHandle,            
+        kernelName,
+        true,
+        NOTIFY_DEFAULT_WAIT_TIME));
+
+    CHK_RET(
+        hcclStreamSynchronize(localStream.ptr(), hccl::CommConfiger::GetInstance().GetCommConfigExecTimeOut(commTag)));
+
+    HCCL_INFO("[%s] channel kernel launch success.", __func__);
+
     return HCCL_SUCCESS;
 }
 
