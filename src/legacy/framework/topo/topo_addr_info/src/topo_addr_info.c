@@ -111,6 +111,7 @@ int TopoAddrInfoGet(int phyId, char* rankInfo, size_t *bufSize)
         return ret;
     }
     if ((mainboard_id == MAIN_BOARD_ID_CARD_4PMESH)
+      ||(mainboard_id ==  MAIN_BOARD_ID_CARD_4PMESH)
       ||(mainboard_id ==  MAIN_BOARD_ID_CARD_NOMESH)) {
         ret = GetCardRankInfo(phyId, mainboard_id, rankInfo, bufSize);
     }
