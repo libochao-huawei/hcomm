@@ -21,7 +21,7 @@
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
 
-#include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
+#include "ccu_types.h"
 
 namespace hccl {
 /**
@@ -37,8 +37,6 @@ public:
     CommMems* GetCommMems() const { return commMems_.get(); }
 
     EngineCtxs* GetEngineCtxs() const { return engineCtxs_.get(); }
-
-    hcomm::CcuResContainer *GetCcuResContainer() { return ccuResContainer_.get(); }
 
     uint32_t GetOpExpansionMode() {
         return opExpansionMode_;
@@ -69,8 +67,6 @@ private:
     std::unique_ptr<CommMems> commMems_{nullptr};
     std::unique_ptr<EngineCtxs> engineCtxs_{nullptr};
 
-    // 当前CommEngineResMgr复用a3代码，为不影响a3流程，先将ccu资源管理放在MyRank
-    std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
     CcuInsHandle ccuInsHandle_{0};
 
     ManagerCallbacks callbacks_;
