@@ -98,7 +98,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
         locAddr, rmtAddr, channelInfo, ccuJettys};
 
     std::vector<CcuTransport::CclBufferInfo> bufferInfos{};
-    BuildBufferInfos(memHandles, memHandleNum, bufferInfos);
+    CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferInfos));
 
     // 调用底层的创建函数 (CcuCreateTransport 通常是全局函数或静态函数)
     ret = CcuCreateTransport(socket, connectionInfo, bufferInfos, impl);
