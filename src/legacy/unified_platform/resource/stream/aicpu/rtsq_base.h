@@ -129,6 +129,13 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    virtual void WriteValue(u64 addr, u16 value)
+    {
+        (void)addr;
+        (void)value;
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
     virtual void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
     {
         (void)jettyLiteId;
