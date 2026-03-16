@@ -20,4 +20,8 @@ static inline int rsNdaGetDirectFlagByVendorId(uint32_t vendorId)
     return (vendorId == RS_VENDOR_ID_19E5) ? DIRECT_FLAG_UB : DIRECT_FLAG_PCIE;
 }
 
+RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaCqInitAttr *attr, 
+    struct NdaCqInfo *info, void *ibvCqExt);
+RS_ATTRI_VISI_DEF int RsNdaCqDestroy(unsigned int phyId, unsigned int rdevIndex, void *ibvCqExt);
+
 #endif // RS_NDA_H
