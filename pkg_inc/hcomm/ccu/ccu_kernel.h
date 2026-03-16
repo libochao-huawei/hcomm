@@ -73,6 +73,8 @@ public:
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext *context);
 
+    HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
+
 protected:
     // 子类实现
     virtual HcclResult Algorithm() = 0;
@@ -149,8 +151,6 @@ protected:
     CcuRep::FuncCall Func(const std::string &label);
     CcuRep::FuncCall Func(const CcuRep::Variable &funcAddr);
     CcuRep::LoopCall Loop(const std::string &label);
-
-    HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
 private:
     CcuRep::Address CreateAddress();

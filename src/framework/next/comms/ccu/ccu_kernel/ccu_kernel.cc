@@ -688,7 +688,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
     HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {
         profInfo.missionId = GetMissionId();
-        if (profInfo.type == hcomm::CcuProfilinType::CCU_TASK_PROFILING) {
+        if (profInfo.type == dynamic_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
             profInfo.instrId   = GetInstrId();
             allCcuProfilingInfos.push_back(profInfo);
             continue;
