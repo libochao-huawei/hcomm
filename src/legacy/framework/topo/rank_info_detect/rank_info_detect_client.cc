@@ -17,6 +17,7 @@
 #include "orion_adapter_rts.h"
 #include "host_socket_handle_manager.h"
 #include "socket_manager.h"
+#include "topo_addr_info.h"
 
 namespace Hccl {
 
@@ -183,7 +184,23 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
-    jsonParser.ParseFileToJson(filePath, parseJson);
+    try {
+        jsonParser.ParseFileToJson(filePath, parseJson);
+    } catch (...) {
+        size_t bufSize;
+        s32 result = TopoAddrInfoGetSize(devPhyId_, &bufSize); // 获取rankInfo大小，用于提前分配内存
+        CHK_PRT_THROW(result != 0 || bufSize > MAX_BUFFER_LEN,
+                  HCCL_ERROR("[RankInfoDetectClient::%s] Get rankinfo size failed.", __func__),
+                  InvalidParamsException, "Get rankinfo size failed.");
+        std::vector<char> buffer(bufSize, '\0');
+        result = TopoAddrInfoGet(devPhyId_, buffer.data(), &bufSize); // 获取rankInfo 并更新大小
+        CHK_PRT_THROW(result != 0,
+                  HCCL_ERROR("[RankInfoDetectClient::%s] Get rankinfo failed.", __func__),
+                  InvalidParamsException, "Get rankinfo size failed.");
+        std::string jsonString(buffer.data(), bufSize);
+        // 将生成的info信息转换成json文件
+        parseJson = nlohmann::json::parse(jsonString);
+    }
     CheckRootInfoJson(parseJson);
 
     // 2. 获取当前devPhyId_对应的devInfo
