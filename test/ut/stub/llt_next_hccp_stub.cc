@@ -110,3 +110,9 @@ int RaGetSecRandom(struct RaInfo *info, uint32_t *value)
 {
     return 0;
 }
+
+int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[],
+    unsigned int num, struct IpInfo infos[])
+{
+    return 0;
+}
