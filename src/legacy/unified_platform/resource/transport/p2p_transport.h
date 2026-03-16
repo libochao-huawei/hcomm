@@ -24,7 +24,7 @@ public:
 
     TransportStatus GetStatus() override;
 
-    // RemoteRmaBuffer *GetRmtRmaBuffer(u32 index) override // transport完成交换后该方法挪到父类中
+    std::vector<char> GetUniqueId() override;
 
     void Post(u32 index, const Stream &stream) override;
 
@@ -65,6 +65,11 @@ private:
 
     void RmtNotifyVecUnpackProc(BinaryStream &binaryStream);
     void RmtBufferVecUnpackProc(BinaryStream &binaryStream);
+
+    std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size) const;
+    std::vector<char> GetNotifyUniqueIds();
+    std::vector<char> GetRmtNotifyUniqueIds() const;
+    std::vector<char> GetRmtBufferUniqueIds() const;
 };
 
 } // namespace Hccl
