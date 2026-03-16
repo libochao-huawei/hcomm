@@ -11,16 +11,6 @@
 #include "aclgraph_callback.h"
 #include "stream_utils.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern aclError __attribute__((weak)) aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, void *userData);
-
-#ifdef __cplusplus
-}
-#endif
-
 namespace hccl {
 
 void AclgraphDestroyCallback(void *fnData)
@@ -109,11 +99,6 @@ HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(HcclCommunicator *commu
     aclmdlRI rtModel = nullptr;
     bool isCapture = false;
     u64 modelId = 0;
-
-    if (aclmdlRIDestroyRegisterCallback == nullptr) {
-        HCCL_WARNING("[%s] aclmdlRIDestroyRegisterCallback is nullptr", __func__);
-        return HCCL_SUCCESS;
-    }
 
     CHK_RET(GetStreamCaptureInfo(opParam.stream.ptr(), rtModel, isCapture));
     CHK_PTR_NULL(rtModel);
