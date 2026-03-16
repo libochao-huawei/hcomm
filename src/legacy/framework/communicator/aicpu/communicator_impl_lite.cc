@@ -437,7 +437,7 @@ void CommunicatorImplLite::InitCurrentOp(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
 {
-    u64 size = 4;
+    u64 size = FOUR_BYTES;
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
     dfxopInfo->tag_          = currentOp.opTag;
