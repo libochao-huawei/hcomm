@@ -250,8 +250,6 @@ extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channe
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
@@ -277,8 +275,6 @@ extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, 
  * @param[in] notifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
  * @note 当前在A5上主要支持
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
@@ -306,8 +302,6 @@ extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const v
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
@@ -468,8 +462,6 @@ extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, u
  * @brief DPU 数据面 Fence 接口
  * @param[in] thread 线程句柄
  * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommFenceOnThread(ThreadHandle thread);
 
@@ -487,8 +479,6 @@ extern int32_t HcommFlush();
  * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
  * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
 
