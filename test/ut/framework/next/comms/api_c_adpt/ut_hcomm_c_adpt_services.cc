@@ -45,7 +45,7 @@ protected:
         allHandles_.push_back(dstThreadHandle_);
 
         auto *tsThread = reinterpret_cast<AicpuTsThread *>(dstThreadHandle_);
-        tsThread->devType_ = DevType::DEV_TYPE_910_95;
+        tsThread->devType_ = DevType::DEV_TYPE_950;
         tsThread->pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
 
         // Fill default valid args

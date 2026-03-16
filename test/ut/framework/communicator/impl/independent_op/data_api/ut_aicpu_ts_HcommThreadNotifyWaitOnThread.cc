@@ -55,7 +55,7 @@ protected:
         MOCKER_CPP(&Hccl::IAicpuTsThread::NotifyWait, HcclResult (Hccl::IAicpuTsThread::*)(uint32_t, uint32_t) const).stubs().will(returnValue(HCCL_SUCCESS));
 
         // ---- TS thread (for AicpuTs wait tests) ----
-        tsThread_.devType_ = DevType::DEV_TYPE_910_95;
+        tsThread_.devType_ = DevType::DEV_TYPE_950;
         tsThread_.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
         InitNotifies(tsThread_);
 
