@@ -58,55 +58,33 @@ TEST_F(TestCpuThread, Ut_MemNotify_When_UB_Wait_Timeout_Expect_Fail)
     HcclResult ret = memNotify.Alloc();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
+    *reinterpret_cast<uint8_t*>(memNotify.notifyHostVa_) = 0;
+
     ret = memNotify.Wait();
     EXPECT_EQ(ret, HCCL_E_TIMEOUT);
 }
 
-// TEST_F(TestCpuThread, Ut_MemNotify_When_PCIE_Alloc_Wait_Expect_Success)
-// {
-//     hccl::MemNotify memNotify;
-//     // Mock for Alloc (PCIe path)
-//     MOCKER(hrtGetDevice)
-//         .stubs()
-//         .with(outBound(0))
-//         .will(returnValue(HCCL_SUCCESS));
-//     MOCKER(hrtHalGetDeviceInfo)
-//         .stubs()
-//         .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(1LL))
-//         .will(returnValue(HCCL_SUCCESS));
-//     void* mockDeviceVa = reinterpret_cast<void*>(0x1000);
-//     MOCKER(aclrtMalloc)
-//         .stubs()
-//         .with(outBoundPointee(mockDeviceVa), sizeof(uint8_t) + 4096ULL, ACL_MEM_MALLOC_HUGE_ONLY)
-//         .will(returnValue(ACL_SUCCESS));
-//     uint64_t mockAccessVa = 0xABCD;
-//     MOCKER(halSvmRegister)
-//         .stubs()
-//         .with(0, any(), sizeof(uint8_t), SVM_REGISTER_FLAG_WITH_ACCESS_VA, outBoundPointee(mockAccessVa))
-//         .will(returnValue(0));
-//     HcclResult ret = memNotify.Alloc();
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-//     // Mock for Wait - simulate device flag set
-//     MOCKER(hrtGetDevice)
-//         .stubs()
-//         .with(outBound(0))
-//         .will(returnValue(HCCL_SUCCESS));
-//     MOCKER(hrtHalGetDeviceInfo)
-//         .stubs()
-//         .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundPointee(1LL))
-//         .will(returnValue(HCCL_SUCCESS));
-//     // Mock aclrtMemcpy to return flag = 1
-//     MOCKER(aclrtMemcpy)
-//         .stubs()
-//         .with(any(), sizeof(uint8_t), mockDeviceVa, sizeof(uint8_t), ACL_MEMCPY_DEVICE_TO_HOST)
-//         .will(do {
-//             uint8_t* dst = (uint8_t*)arg0;
-//             *dst = 1;
-//             return ACL_ERROR_NONE;
-//         });
-//     ret = memNotify.Wait();
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-// }
+TEST_F(TestCpuThread, Ut_MemNotify_When_PCIE_Alloc_Wait_Expect_Success)
+{
+    // Mock(PCIe path)
+    int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_PCIE;
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundP(&mockConnectType))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    hccl::MemNotify memNotify;
+    HcclResult ret = memNotify.Alloc();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // Mock aclrtMemcpy to return flag = 1
+    MOCKER(aclrtMemcpy)
+        .stubs()
+        .with(any(), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    ret = memNotify.Wait();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
 
 TEST_F(TestCpuThread, Ut_When_CpuThread_Init_On_aclrtGetCurrentContextFailed_Expect_Return_HCCL_E_INTERNAL)
 {
