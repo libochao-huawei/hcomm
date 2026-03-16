@@ -182,7 +182,7 @@ function build_test() {
         && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
     fi
 
-    if [ "${TEST_TASK_NAME}" == "legacy_aicpu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+    if [ "${TEST_TASK_NAME}" == "legacy_aicpu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
         build legacy_alg_aicpu_2d_testcase
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
         && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/aicpu_2d_testcase/legacy_alg_aicpu_2d_testcase
