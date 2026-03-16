@@ -88,15 +88,27 @@ public:
     virtual void LaunchTask() const = 0;
 
     // Local Data Plane Functions
-    virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;
-    virtual HcclResult LocalNotifyWait(uint32_t notifyId) const = 0;
+    virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
+    virtual HcclResult LocalNotifyWait(uint32_t notifyId) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
-    virtual HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const = 0;
-    virtual HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const = 0;
+    virtual HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
+    virtual HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
-    virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const = 0;
+    virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
     virtual HcclResult LocalReduce(
-        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const = 0;
+        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
     virtual bool GetMaster() const = 0;
     virtual void SetIsMaster(bool isMaster) = 0;
 
