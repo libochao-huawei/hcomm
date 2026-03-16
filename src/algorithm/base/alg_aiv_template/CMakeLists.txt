@@ -20,7 +20,7 @@ if(BUILD_OPEN_PROJECT)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B.o
             COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B_tmp.o 
-            -DASCNEDC_DUMP --cce-aicore-arch=dav-c220-vec
+            -DASCENDC_DUMP=0 --cce-aicore-arch=dav-c220-vec
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/
