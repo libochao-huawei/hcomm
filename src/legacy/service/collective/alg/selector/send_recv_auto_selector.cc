@@ -40,6 +40,28 @@ SelectorStatus SendRecvAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
     return SelectorStatus::NOT_MATCH;
 }
 
+SelectorStatus SendRecvAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
+    const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
+{
+    (void) topoInfo;
+    std::vector<HcclAlgoType> algos = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+    auto it = configAlgMap.find(op.opType);
+    if (it != configAlgMap.end()) {
+        algos = it->second;
+    }
+
+    HCCL_INFO("[SendRecvAutoSelector] select AIV algo for Send/Recv");
+
+    if(op.opType == OpType::SEND) {
+        primQueueGenName = "AivSend";
+        return SelectorStatus::MATCH;
+    } else if (op.opType == OpType::RECV){
+        primQueueGenName = "AivRecv";
+        return SelectorStatus::MATCH;
+    }
+    return SelectorStatus::NOT_MATCH;
+}
+
 REGISTER_SELECTOR_BY_OPTYPE(OpType::SEND, 18, SendRecvAutoSelector);
 REGISTER_SELECTOR_BY_OPTYPE(OpType::RECV, 18, SendRecvAutoSelector);
 } // namespace Hccl
