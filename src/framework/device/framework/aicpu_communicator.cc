@@ -3959,18 +3959,27 @@ std::string HcclCommAicpu::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
 
 void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor)
 {
-    const u32 sqeNum = 50; // 打印当前位置的前50个task
-    // 记录上一次打印的算子信息
+    // 修改：将打印数量从50改为200
+    const u32 sqeNum = 200; 
+    
+    // 为了日志切分，每行最多打印的task数量（避免单行过长）
+    const u32 maxTasksPerLine = 50;
+    
     const AicpuOpInfo *lastOpInfo =
         aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[sqIdx].opRingBufferIdx);
     CHK_PRT_RET(lastOpInfo == nullptr, HCCL_ERROR("%s fail, opInfo is nullptr", __func__),);
-    u32 opIndex = lastOpInfo->opIndex; // 算子序号
+    
+    u32 opIndex = lastOpInfo->opIndex;
     std::string opTag = lastOpInfo->tagBuff;
-    u32 lastSqIdx = sqIdx; // 算子在sqeBuffer数组里的下标
-    std::stringstream ss;
-    ss << "OP(" << opIndex << ")";
-
-    for (u32 i = 0; i <= sqeNum; i++) {
+    u32 lineCount = 0; // 行号，用于日志切分
+    u32 printedCount = 0; // 记录实际已打印的task数量
+    
+    // 构建当前算子的task序列
+    std::vector<std::string> currentOpTasks;
+    currentOpTasks.push_back("OP(" + std::to_string(opIndex) + ")");
+    
+    // 从 sqIdx 向前遍历 sqeNum 个位置
+    for (u32 i = 0; i < sqeNum; i++) {
         u32 newSqIdx = (sqIdx - i + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT;
         const AicpuOpInfo *newOpInfo =
             aicpuShareData_.GetAicpuOpInfo(sqeContextBuffer->rtsDfxInfo[newSqIdx].opRingBufferIdx);
@@ -3978,25 +3987,79 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
 
         u32 newOpIdx = newOpInfo->opIndex;
         std::string newOpTag = newOpInfo->tagBuff;
-        if (newOpIdx != opIndex || newOpTag != opTag || i == sqeNum) { // 不同一个算子，或已经到打印的最后一个位置
-            if (isMonitor == true) {
-                HCCL_RUN_INFO("[StreamTaskMonitor]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
-                HCCL_RUN_INFO("[StreamTaskMonitor]task sequence is %s", ss.str().c_str());
-            } else {
-                HCCL_ERROR("[TaskException]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
-                HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
+        
+        // 添加当前task到序列
+        currentOpTasks.push_back("," + GetTaskBriefsInfo(newSqIdx, sqeContextBuffer));
+        printedCount++;
+        
+        // 当遇到不同算子，或当前行已满时，进行打印
+        if (newOpIdx != opIndex || newOpTag != opTag || 
+            currentOpTasks.size() >= (maxTasksPerLine + 1)) { // +1是因为包含了OP(index)头
+            
+            // 打印算子信息（只在每个算子的第一个分块时打印）
+            if (lineCount == 0) {
+                if (isMonitor == true) {
+                    HCCL_RUN_INFO("[StreamTaskMonitor]opData information is %s", 
+                        GetTaskExceptionOpInfo(sqIdx, sqeContextBuffer).c_str());
+                } else {
+                    HCCL_ERROR("[TaskException]opData information is %s", 
+                        GetTaskExceptionOpInfo(sqIdx, sqeContextBuffer).c_str());
+                }
             }
-            opIndex = newOpIdx;
-            opTag = newOpTag;
-            lastSqIdx = newSqIdx;
-            ss.str("");
-            ss << "OP(" << opIndex << ")";
+            
+            // 拼接当前行的task序列
+            std::string taskLine;
+            for (const auto& task : currentOpTasks) {
+                taskLine += task;
+            }
+            
+            // 打印task序列，带行号和已打印总数
+            if (isMonitor == true) {
+                HCCL_RUN_INFO("[StreamTaskMonitor]task sequence[%u/%u] is %s", 
+                    lineCount + 1, printedCount, taskLine.c_str());
+            } else {
+                HCCL_ERROR("[TaskException]task sequence[%u/%u] is %s", 
+                    lineCount + 1, printedCount, taskLine.c_str());
+            }
+            
+            // 更新状态，准备下一行或下一个算子
+            if (newOpIdx != opIndex || newOpTag != opTag) {
+                // 完全切换到下一个算子
+                opIndex = newOpIdx;
+                opTag = newOpTag;
+                lineCount = 0; // 重置行号
+                currentOpTasks.clear();
+                currentOpTasks.push_back("OP(" + std::to_string(opIndex) + ")");
+            } else {
+                // 同一个算子，继续下一行
+                lineCount++;
+                currentOpTasks.clear();
+                currentOpTasks.push_back("OP(" + std::to_string(opIndex) + ") continued");
+            }
         }
-        // 输入task缩写
-        ss << "," << GetTaskBriefsInfo(newSqIdx, sqeContextBuffer);
     }
+    
+    // 打印剩余未满行的tasks
+    if (currentOpTasks.size() > 1) { // size > 1 表示除了OP头还有task
+        // 拼接当前行的task序列
+        std::string taskLine;
+        for (const auto& task : currentOpTasks) {
+            taskLine += task;
+        }
+        
+        // 打印task序列
+        if (isMonitor == true) {
+            HCCL_RUN_INFO("[StreamTaskMonitor]task sequence[%u/%u] is %s", 
+                lineCount + 1, printedCount, taskLine.c_str());
+        } else {
+            HCCL_ERROR("[TaskException]task sequence[%u/%u] is %s", 
+                lineCount + 1, printedCount, taskLine.c_str());
+        }
+    }
+    
     return;
 }
+
 
 std::string HcclCommAicpu::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer)
 {
