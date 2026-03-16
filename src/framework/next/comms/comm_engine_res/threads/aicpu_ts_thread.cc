@@ -338,18 +338,6 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const
-{
-    HCCL_ERROR("[AicpuTsThread][%s]not support", __func__);
-    return HCCL_E_NOT_SUPPORT;
-}
-
-HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const
-{
-    HCCL_ERROR("[AicpuTsThread][%s]not support", __func__);
-    return HCCL_E_NOT_SUPPORT;
-}
-
 HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
