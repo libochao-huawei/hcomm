@@ -30,3 +30,40 @@ int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag)
     }
     return ret;
 }
+
+int RaPeerNdaCqCreate(struct RaRdmaHandle *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo *info,
+    void **cqHandle)
+{
+    struct RaCqHandleExt *cqPeer = NULL;
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret = 0;
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+
+    ret = RsNdaCqCreate(phyId, rdmaHandle->rdevIndex, attr, info);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[create][RaNdaCq]RsNdaCqCreate failed ret:%d", ret);
+    }
+    cqPeer->rdmaHandle = rdmaHandle;
+    cqPeer->cqInfo = info;
+    *cqHandle = cqPeer;
+    return ret;
+}
+
+int RaPeerNdaCqDestroy(struct RaRdmaHandle *rdmaHandle, void *cqHandle)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret = 0;
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    struct RaCqHandleExt *cqPeer = (struct RaCqHandleExt *)cqHandle;
+    ret = RsNdaCqDestroy(phyId, rdmaHandle->rdevIndex, cqPeer->cqInfo);
+    if (ret != 0) {
+        hccp_err("[destroy][RaNdaCq]RsNdaCqDestroy failed ret:%d", ret);
+    }
+    RaPeerMutexUnlock(phyId);
+    return ret;
+}
