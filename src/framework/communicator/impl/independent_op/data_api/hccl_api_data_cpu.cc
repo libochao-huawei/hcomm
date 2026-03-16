@@ -541,6 +541,11 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 
 int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType != DevType::DEV_TYPE_950) {
+        return HCCL_E_NOT_SUPPORT;
+    }
     return HcommChannelNotifyRecordOnThread(0, channel, remoteNotifyIdx);
 }
 
@@ -573,6 +578,11 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
 
 int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType != DevType::DEV_TYPE_950) {
+        return HCCL_E_NOT_SUPPORT;
+    }
     return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeout);
 }
 
