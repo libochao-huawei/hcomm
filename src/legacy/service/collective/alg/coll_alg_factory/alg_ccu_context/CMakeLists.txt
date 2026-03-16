@@ -1,51 +1,11 @@
 target_sources(hccl_v2_native_alg_repo PRIVATE
         ccu_context_alg_base.cc
-        ccu_context_all_gather_mesh1d.cc
-        ccu_context_all_gather_mesh1d_detour.cc
-        ccu_context_all_gather_mesh1d_mem2mem.cc
-        ccu_context_all_gather_mesh2d.cc
-        ccu_context_all_gather_mesh2d_mem2mem.cc
-        ccu_context_reduce_scatter_mesh1d.cc
-        ccu_context_all_reduce_mesh1d.cc
-        ccu_context_all_reduce_mesh1d_one_shot.cc
-        ccu_context_all_to_all_mesh1d.cc
-        ccu_context_scatter_mesh2d.cc
-        ccu_context_reduce_mesh1d.cc
-        ccu_context_reduce_mesh1d_mem2mem.cc
-        ccu_context_reduce_nhr1d_mem2mem.cc
-        ccu_context_all_to_all_v_mesh1d.cc
-        ccu_context_all_to_all_v_mesh2d.cc
-        ccu_context_scatter_mesh1d.cc
-        ccu_context_broadcast_mesh1d.cc
-        ccu_context_broadcast_mesh1d_mem2mem.cc
-        ccu_context_reduce_scatter_mesh2d.cc
-        ccu_context_reduce_scatter_mesh2d_mem2mem.cc
-        ccu_context_broadcast_mesh2d.cc
-        ccu_context_broadcast_mesh2d_mem2mem.cc
-        ccu_context_broadcast_nhr1d_mem2mem.cc
-        ccu_context_all_to_all_mesh2d.cc
-        ccu_context_reduce_mesh2d.cc
-        ccu_context_reduce_mesh2d_mem2mem.cc
         ccu_context_utils.cc
-        ccu_context_all_reduce_mesh2d_one_shot.cc
-        ccu_context_all_reduce_mesh2d_two_shot.cc
-        ccu_context_all_reduce_mesh2d_two_shot_mem2mem.cc
-        ccu_context_all_reduce_mesh1d_detour.cc
-        ccu_context_reduce_scatter_mesh1d_detour.cc
-        ccu_context_reduce_scatter_mesh1d_mem2mem.cc
-        ccu_context_reduce_tail_block.cc
-        ccu_context_all_reduce_mesh1d_mem2mem.cc
-        ccu_context_half_alltoallv_mesh1d.cc
-        ccu_context_all_gather_mesh1d_mem2mem_with_stride.cc
-        ccu_context_all_gather_nhr1d_mem2mem.cc
-        ccu_context_all_gather_v_mesh1d.cc
-        ccu_context_reduce_scatter_v_mesh1d.cc
-        ccu_context_reduce_scatter_v_mesh1d_mem2mem.cc
-        ccu_context_all_reduce_nhr1d_mem2mem.cc
-        ccu_context_reduce_scatter_nhr1d_mem2mem.cc
-        ccu_context_scatter_nhr1d_mem2mem.cc
-        ccu_context_all_gather_mesh1d_2die.cc
-        ccu_context_all_to_all_mesh1d_2Die.cc
-        ccu_context_all_to_all_v_mesh2die.cc
-        ccu_context_reduce_scatter_mesh1d_2die.cc
 )
+add_subdirectory(all_gather)
+add_subdirectory(all_reduce)
+add_subdirectory(all_to_all)
+add_subdirectory(broadcast)
+add_subdirectory(reduce)
+add_subdirectory(reduce_scatter)
+add_subdirectory(scatter)
