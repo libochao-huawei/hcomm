@@ -59,22 +59,22 @@ TEST_F(TaskInfoTest, test_get_alg_type_name)
 {
     TaskInfo taskInfo = InitTaskInfo();
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType::RING;
+    taskInfo.dfxOpInfo_->algType_ = std::string("RING");
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::RING");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType::MULTI_RING;
+    taskInfo.dfxOpInfo_->algType_ = std::string("MULTI_RING");
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::MULTI_RING");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType::MESH;
+    taskInfo.dfxOpInfo_->algType_ = std::string("MESH");
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::MESH");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType::RECURSIVE_HD;
+    taskInfo.dfxOpInfo_->algType_ = std::string("RECURSIVE_HD");
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::RECURSIVE_HD");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType::BINARY_HD;
+    taskInfo.dfxOpInfo_->algType_ = std::string("BINARY_HD");
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::BINARY_HD");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType::PAIR_WISE;
+    taskInfo.dfxOpInfo_->algType_ = std::string("PAIR_WISE");
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::PAIR_WISE");
 
     taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
@@ -150,7 +150,7 @@ TEST_F(TaskInfoTest, test_get_base_info)
     taskInfo.taskId_ = 7;
     taskInfo.taskParam_.taskType = TaskParamType::TASK_SDMA;
     taskInfo.dfxOpInfo_->tag_ = "tag_name";
-    taskInfo.dfxOpInfo_->algType_ = AlgType::MESH;
+    taskInfo.dfxOpInfo_->algType_ = std::string("MESH");
     EXPECT_EQ(taskInfo.GetBaseInfo(), "streamID(sqId):[1], taskID(sqeId):[7], taskType:[TaskParamType::TASK_SDMA], tag:[tag_name], algType:[AlgType::MESH]");
 
     taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
