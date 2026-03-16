@@ -58,6 +58,9 @@ HcclResult InsTempReduceScatterNHR::CalcSliceInfo(const AllignInfo &allignInfo, 
 HcclResult InsTempReduceScatterNHR::Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec,
     const BuffInfo &buffInfo, const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    }
     opMode_              = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
     buffInfo_            = buffInfo;
@@ -183,7 +186,9 @@ HcclResult InsTempReduceScatterNHR::GenExtIns(const TempFuncs &tempFuncs,
     std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[InsTempReduceScatterNHR] GenExtIns start");
-
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    }
     opMode_              = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
     tempAlgParams_       = tempAlgParams;
