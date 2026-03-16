@@ -158,3 +158,28 @@ int RsNdaIbvCloseExtend(struct ibv_context_extend *context)
     }
     return gNdaOps.rsNdaIbvCloseExtend(context);
 }
+
+struct ibv_cq_extend *RsNdaIbvCreateCqExtend(struct ibv_context_extend *context,
+    struct ibv_cq_init_attr_extend *cqInitAttr)
+{
+    if (gNdaOps.rsNdaCreateCqExtend == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsNdaCreateCqExtend is null");
+        return NULL;
+#endif
+    }
+    return gNdaOps.rsNdaCreateCqExtend(context, cqInitAttr);
+}
+
+int RsNdaIbvDestroyCqExtend(struct ibv_context_extend *context, void *ibvCqExt)
+{
+    struct ibv_cq_extend *cqExtend = (struct ibv_cq_extend *)ibvCqExt;
+
+    if (gNdaOps.rsNdaIbvDestroyCqExtend == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rsNdaIbvDestroyCqExtend is null");
+        return -EINVAL;
+#endif
+    }
+    return gNdaOps.rsNdaIbvDestroyCqExtend(context, cqExtend);
+}
