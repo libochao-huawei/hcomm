@@ -418,6 +418,9 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_AicpuTsThread_Return_HC
     MOCKER_CPP(&HcclCommProfiling::ReportKernel)
         .stubs()
         .will(returnValue(0));   
+    MOCKER(StoreThreadHandles)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));   
     
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
