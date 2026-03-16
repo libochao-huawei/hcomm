@@ -417,18 +417,6 @@ HcclResult HcomSetWorkspaceResourceV2(
     return HCCL_SUCCESS;
 }
 
-HcclResult  HcomSetAttachedStreamV2()
-{
-    HCCL_RUN_INFO("HcomSetAttachedStreamV2 is not support!");
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcomReleaseSubCommsV2()
-{
-    HCCL_RUN_INFO("HcomReleaseSubCommsV2 is not support!");
-    return HCCL_SUCCESS;
-}
-
 HcclResult HcomAlltoAllVV2(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
                          const char *group, rtStream_t stream, const char *tag)
