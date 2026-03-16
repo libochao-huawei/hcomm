@@ -666,7 +666,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     //HcclDfxOpInfo转为DfxOpInfo
     
     auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
-
+    CHK_SMART_PTR_RET_NULL(dfxOpInfoOnce);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
     dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
