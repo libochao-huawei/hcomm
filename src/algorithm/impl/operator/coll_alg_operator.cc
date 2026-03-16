@@ -128,7 +128,7 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
     CHK_PRT_RET(isOnlyAiv && !supportOnlyAiv,
             HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support onlyaiv",
                 GetCMDTypeEnumStr(param.opType).c_str()), HCCL_E_NOT_SUPPORT);
-    CHK_PRT_RET(isOnlyAiv && param.rankSize == 1 && supportOnlyAiv,
+    CHK_PRT_RET(isOnlyAiv && userRankSize_ == 1 && supportOnlyAiv,
             HCCL_ERROR("[CollAlgOperator][SelectAlg] onlyaiv not support, please ensure rankNum is greater than one"),
                 HCCL_E_NOT_SUPPORT);
 
