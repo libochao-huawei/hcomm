@@ -70,35 +70,4 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
     g_taskServiceMap.at(params->commId)->TaskRun();
     return HCCL_SUCCESS;
 }
-
-__attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunchNew(const uint64_t args)
-{
-    struct DpuKernelLaunchParam {
-        void*       cpuThread;
-        int32_t    deviceId;
-    };
-
-    HCCL_INFO("[%s] Launch Dpu Kernel: 0x%lx", __func__, args);
-    if (args == 0) {
-        HCCL_ERROR("[%s] args is null.", __func__);
-        return HCCL_E_PARA;
-    }
-
-    // 解析参数信息
-    DpuKernelLaunchParam *params = reinterpret_cast<DpuKernelLaunchParam *>(args);
-
-    // 实例化
-    CpuThread* cpuThread = static_cast<CpuThread*>(params->cpuThread);
-
-    aclError ret = aclrtSetDevice(params->deviceId);
-    if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[%s] set device fail. DeviceId: %d.", __func__, params->deviceId);
-        return HCCL_E_RUNTIME;
-    }
-
-    // Run
-    HCCL_INFO("[%s] start to TaskRun", __func__);
-    CHK_RET(cpuThread->KernelRun());
-    return HCCL_SUCCESS;
-}
 }
