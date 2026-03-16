@@ -39,7 +39,7 @@ protected:
     void *dst = dstBuf;
     uint64_t len = sizeof(srcBuf);
     int32_t res{HCCL_E_RESERVED};
-    DevType t950 = DevType::DEV_TYPE_910_95;
+    DevType t950 = DevType::DEV_TYPE_950;
     DevType t910C = DevType::DEV_TYPE_910_93;
 };
 

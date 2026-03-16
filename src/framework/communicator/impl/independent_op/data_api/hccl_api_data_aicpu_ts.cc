@@ -614,6 +614,14 @@ int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *
     return HCCL_E_NOT_SUPPORT;
 }
 
+int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
+{
+    HCCL_DEBUG("[%s] channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, channel, dst, src, len);
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
@@ -624,9 +632,27 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
     return HCCL_E_NOT_SUPPORT;
 }
 
+int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
+    uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_DEBUG("[%s] channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+        __func__, channel, dst, src, len, remoteNotifyIdx);
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, channel, dst, src, len);
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
+{
+    HCCL_DEBUG("[%s] channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, channel, dst, src, len);
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
     return HCCL_E_NOT_SUPPORT;
@@ -662,6 +688,12 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     return HCCL_SUCCESS;
 }
 
+int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx)
+{
+    HCCL_DEBUG("[%s] channel[0x%llx], remoteNotifyIdx[%u].", __func__, channel, remoteNotifyIdx);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout);
@@ -690,6 +722,12 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
+}
+
+int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+{
+    HCCL_DEBUG("[%s] channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, channel, localNotifyIdx, timeout);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
@@ -761,9 +799,20 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_E_NOT_SUPPORT;
 }
 
+int32_t HcommFlush()
+{
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
     HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcommChannelFence(ChannelHandle channel)
+{
+    HCCL_DEBUG("[%s] channel[0x%llx].", __func__, channel);
     return HCCL_E_NOT_SUPPORT;
 }
 

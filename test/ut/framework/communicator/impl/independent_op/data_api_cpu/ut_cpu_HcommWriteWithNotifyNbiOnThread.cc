@@ -40,7 +40,7 @@ protected:
     uint64_t len = sizeof(srcBuf);
     uint32_t remoteNotifyIdx = 0;
     int32_t res{HCCL_E_RESERVED};
-    DevType t950 = DevType::DEV_TYPE_910_95;
+    DevType t950 = DevType::DEV_TYPE_950;
     DevType t910C = DevType::DEV_TYPE_910_93;
 };
 
