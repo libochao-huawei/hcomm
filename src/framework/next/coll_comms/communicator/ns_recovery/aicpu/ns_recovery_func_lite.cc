@@ -26,7 +26,7 @@ void NsRecoveryFuncLite::Call()
     AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu* deviceComm = commInfo.second->GetCollCommAicpu();
-        if (!deviceComm->IsCommReady()) {
+        if (!deviceComm->GetIsReady()) {
             continue;
         }
         HandleStopLaunch(deviceComm);
@@ -61,7 +61,7 @@ void NsRecoveryFuncLite::HandleClean(CollCommAicpu *deviceComm)
         return;
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_CLEAN]");
-    CHK_RET(deviceComm->Clean());
+    deviceComm->Clean();
     StreamClean(deviceComm);
     deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(false);
     deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::CLEAN_DONE);
@@ -75,10 +75,10 @@ void NsRecoveryFuncLite::StreamClean(CollCommAicpu *deviceComm)
 {
     // 查询停流是否完成
     u32 localDevId{0};
-    auto ret = drvGetLocalDevIDByHostDevID(deviceComm->GetDevPhyId(), &localDevId);
+    auto ret = drvGetLocalDevIDByHostDevID(deviceComm->GetTopoInfo().devicePhyId, &localDevId);
     if (ret != DRV_ERROR_NONE) {
         HCCL_ERROR("NsRecoveryFuncLite::%s call drvGetLocalDevIDByHostDevID failed, devPhyId %u, ret %d", __func__, 
-            deviceComm->GetDevPhyId(), ret);
+            deviceComm->GetTopoInfo().devicePhyId, ret);
         return;
     }
     if (DeviceQuery(localDevId, APP_ABORT_STAUTS::APP_ABORT_KILL_FINISH, DEVICE_QUERY_TIMEOUT_NSEC) != HCCL_SUCCESS) {
@@ -88,7 +88,7 @@ void NsRecoveryFuncLite::StreamClean(CollCommAicpu *deviceComm)
     }
 
     // 通过thread获得streamlite信息，清理资源
-    std::vector<std::shared_ptr<hccl::Thread>> threads = deviceComm->GetThreads();
+    std::vector<std::shared_ptr<hccl::Thread>> threads = deviceComm->GetAllThread();
     for (auto &thread : threads) {
         Hccl::StreamLite *streamLitePtr = reinterpret_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
         streamLitePtr->GetRtsq()->Reset();

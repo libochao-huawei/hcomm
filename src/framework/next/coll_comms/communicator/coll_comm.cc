@@ -14,6 +14,7 @@
 #include "coll_comm_mgr.h"
 #include "kfc.h"
 #include "dlhal_function.h"
+#include "hcclCommTaskException.h"
 
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
@@ -25,6 +26,7 @@ CollComm::~CollComm()
 {
     CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
+    (void)DestroyAicpuComm();
 }
 
 HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
@@ -63,7 +65,43 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     CollCommMgr::GetInstance()->RegisteCollComm(this); 
     commStatus_ = HcclCommStatus::HCCL_COMM_READY;
 
+ 	if (!hcclCommDfx_) {
+        EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
+ 	}
+ 	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
+    CHK_RET(InitTaskExceptionHandler());
     EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::DestroyAicpuComm()
+{
+    if (callbacks_.getAicpuCommState()) {
+        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+
+        Hccl::KfcCommand opCmd = Hccl::KfcCommand::DESTROY_AICPU_COMM;
+        CHK_RET(kfcControlTransferH2D_->Put(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
+        HCCL_RUN_INFO("[%s]group[%s] send Hccl::KfcCommand[%d] success", __func__, commId_.c_str(), opCmd);
+
+        Hccl::KfcExecStatus opInfo;
+        constexpr u32 WAIT_CMD_TIMEOUT = 10 * 1000; // 最大等待10秒
+        auto timeout = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
+        auto startTime = std::chrono::steady_clock::now();
+
+        while (true) {
+            CHK_RET(kfcStatusTransferD2H_->Get(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+            if (opInfo.kfcStatus == Hccl::KfcStatus::DESTROY_AICPU_COMM_DONE) {
+                HCCL_RUN_INFO("[%s]get Hccl::KfcStatus[%d] success", __func__, opInfo.kfcStatus);
+                return HCCL_SUCCESS;
+            } else if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+                HCCL_ERROR("[%s]timeout, maxTime[%u ms] and get the opExecStatus is [%u].",
+                    __func__, WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+                return HCCL_E_TIMEOUT;
+            }
+            usleep(TEN_MILLISECOND_OF_USLEEP);
+        }
+    }
     return HCCL_SUCCESS;
 }
 
@@ -161,6 +199,43 @@ HcclResult CollComm::Resume()
     isCleaned_ = false;
     HCCL_INFO("[NsRecovery][Resume] Resume success.");
     return HcclResult::HCCL_SUCCESS;
+}
+
+}  // namespace hccl
+HcclResult CollComm::InitTaskExceptionHandler()
+{
+    hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(static_cast<size_t>(deviceLogicId_));
+    CHK_PTR_NULL(handler);
+    CHK_RET(handler->Register());
+    return HCCL_SUCCESS;
+}
+
+void CollComm::RegisterAicpuTaskExceptionCallback(u32 streamId)
+{
+    HCCL_INFO("[%s] start, commId[%s], streamId[%u]", __func__, commId_.c_str(), streamId);
+    auto getAicpuTaskExceptionCallBack = [this]() {return this->GetAicpuTaskException();};
+    hcomm::TaskExceptionHostManager::RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_,
+        getAicpuTaskExceptionCallBack);
+    return ;
+}
+
+Hccl::ErrorMessageReport CollComm::GetAicpuTaskException()
+{
+    Hccl::ErrorMessageReport errorMessage;
+    CHK_PRT_RET(kfcStatusTransferD2H_ == nullptr, HCCL_ERROR("[%s]fail, d2h is nullptr", __func__), errorMessage);
+    
+    HcclResult ret = kfcStatusTransferD2H_->Get(sizeof(Hccl::KfcStatus) + sizeof(Hccl::KfcErrType),
+       sizeof(errorMessage),reinterpret_cast<uint8_t *>(&errorMessage));
+   
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]fail, group [%s], ret[%u]", __func__, commId_.c_str() ,ret), errorMessage);
+    HCCL_INFO("[%s]group[%s] success", __func__, commId_.c_str());
+   return errorMessage;
+}
+
+uint32_t CollComm::UpdateIndex()
+{
+    return index_ += 1;
 }
 
 }  // namespace hccl

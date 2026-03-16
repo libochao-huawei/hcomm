@@ -40,8 +40,9 @@ void AicpuDaemonService::ServiceRun(void *info)
             }
         }
         lock.unlock();
-
+        
         if (needBreak) {
+            HCCL_RUN_INFO("Back ground thread needBreak");
             break;
         }
 
@@ -59,6 +60,7 @@ void AicpuDaemonService::ServiceStop(void *info) const
 
 void AicpuDaemonService::Register(DaemonFunc *daemonFunc)
 {
+    std::unique_lock<std::mutex> lock(mutexForFuncs_);
     daemonFuncs.push_back(daemonFunc);
     HCCL_INFO("Back ground thread register daemonFunc");
 }

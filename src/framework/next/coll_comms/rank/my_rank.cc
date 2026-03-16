@@ -15,6 +15,8 @@
 #include "hccl_res.h"
 #include "kfc.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
+#include "hcclCommDfx.h"
+#include "env_config/env_config.h"
 
 using namespace hcomm;
 
@@ -61,7 +63,10 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     EXECEPTION_CATCH(engineCtxs_ = std::make_unique<EngineCtxs>(), return HCCL_E_PTR);
 
     opExpansionMode_ = opExpansionMode;
-    if (!ccuResContainer_ && rankNum != 1) {
+
+    // 仅自定义算子ccu流程初始化资源
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
         CHK_PTR_NULL(ccuResContainer_);
         CHK_RET(ccuResContainer_->Init());
@@ -84,18 +89,17 @@ HcclResult MyRank::BatchCreateSockets(CommEngine engine, const HcclChannelDesc* 
     CHK_PRT_RET(channelNum == 0,
         HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
-    uint32_t localRank = rankId_;
     for (uint32_t i = 0; i < channelNum; ++i) {
         const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
         const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
-        uint32_t remoteRank = channelDescs[i].remoteRank;
+        const uint32_t remoteRank = channelDescs[i].remoteRank;
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] localProtocol[%d] remoteProtocol[%d]",
             __func__, i + 1, channelNum, remoteRank, localEndpointDesc.protocol, remoteEndpointDesc.protocol
         );
 
         hcomm::EndpointPair* endpointPair = nullptr;
-        RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
-        EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
+        const RankIdPair rankIdPair = std::make_pair(rankId_, remoteRank);
+        const EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
         RankPair* rankPair = nullptr;
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
@@ -103,7 +107,7 @@ HcclResult MyRank::BatchCreateSockets(CommEngine engine, const HcclChannelDesc* 
         CHK_PTR_NULL(endpointPair);
 
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetSocket(commTag, socket);
+        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, socket);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d]",
                 __func__, i, remoteRank, localEndpointDesc.protocol),
@@ -308,6 +312,12 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_RET(BatchCreateSockets(engine, channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
+    // 添加初始化时进行填表
+    for (u32 i = 0; i < channelNum; ++i) {
+        CHK_RET(CheckChannelParam(engine,channelDescs[i],i));
+        u32 remoteRank = channelDescs[i].remoteRank;
+        HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);
+    }
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         // 新增：添加 kernelLaunchAicpuCommInit 调用
