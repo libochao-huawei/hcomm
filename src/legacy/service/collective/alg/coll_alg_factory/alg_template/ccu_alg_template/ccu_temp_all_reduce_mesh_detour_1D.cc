@@ -201,7 +201,6 @@ HcclResult CcuTempAllReduceMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
     dimSize.push_back(tempRankSize_);
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
     GetAddrInfo(tempFuncs, inputAddr, outputAddr);
 
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量

@@ -196,7 +196,6 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::Run(const TempFuncs &tempFuncs, const 
     // 计算 buffer 地址信息
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
     CHK_RET(GetBufferAddr(tempFuncs, inputAddr, outputAddr));
     HCCL_INFO("[CcuTempAllReduceMesh2DTwoShot][Run] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
 
