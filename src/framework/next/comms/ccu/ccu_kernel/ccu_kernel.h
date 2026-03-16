@@ -48,6 +48,7 @@
 #ifndef CCU_PROFILING // 和hccl仓兼容性使用
 #define CCU_PROFILING
 #endif
+#include "ccu_types.h"
 
 using CcuKernelHandle = uint64_t;
 
@@ -98,6 +99,16 @@ public:
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
     const std::vector<CcuProfilingInfo> &GetAllCcuProfilingInfo() { return allCcuProfilingInfos_; };
+public:
+    CcuResult VariableCreate(CcuVariableHandle *var);
+    CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
+    CcuResult VariableAddVarToVar(CcuVariableHandle resVar,
+        CcuVariableHandle varA, CcuVariableHandle varB);
+
+private:
+    CcuResult GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable* variable);
+
+    std::unordered_map<CcuVariableHandle, CcuRep::Variable> ccuVarMap_{};
 
 protected:
     // 子类实现
