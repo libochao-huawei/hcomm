@@ -187,7 +187,7 @@ HcclResult StoreThreadHandles(vector<shared_ptr<Thread>>& newThreads,
         unique_ptr<ThreadHandle[]> aicpuHandle;
         EXECEPTION_CATCH(aicpuHandle = make_unique<ThreadHandle[]>(newThreads.size()),
                          return HCCL_E_PTR);
-        CHK_PTR_NULL(binHandle);
+
         HcclResult ret = AicpuLaunchMgr::ThreadKernelLaunchForBase(
             newThreads, aicpuHandle, binHandle);
 
@@ -280,14 +280,25 @@ HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBin
     return HCCL_SUCCESS;
 }
 
-HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle)
+HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<Thread> &handle)
 {
-    auto it = g_ThreadMap.find(thread);
-    if (it == g_ThreadMap.end()) {
-        HCCL_ERROR("[%s] failed. thread[%lu] not found.", __func__, thread);
-        return HCCL_E_NOT_FOUND;
+    lock_guard<mutex> lock(g_ThreadMapMtx);
+
+    const ThreadHandle devHandle = thread;
+    auto itH = g_ThreadD2HMap.find(devHandle);
+    if (itH == g_ThreadD2HMap.end()) {
+        HCCL_ERROR(
+            "[%s] failed to find handle mapping in g_ThreadD2HMap, devHandle[0x%llx].", __func__, devHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
     }
-    handle = it->second;
+    const ThreadHandle hostHandle = itH->second;
+    auto itC = g_ThreadMap.find(hostHandle);
+    if (itC == g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed to find thread in g_ThreadMap, devHandle[0x%llx], hostHandle[0x%llx].",
+            __func__, devHandle, hostHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    handle = itC->second;
     CHK_PTR_NULL(handle);
     return HCCL_SUCCESS;
 }
