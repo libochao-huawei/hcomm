@@ -12,7 +12,7 @@
 #include <errno.h>
 #include "securec.h"
 #include "ra_comm.h"
-#include "rs.h"
+#include "rs_nda.h"
 #include "ra_peer.h"
 #include "ra_peer_nda.h"
 
@@ -28,5 +28,54 @@ int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag)
     if (ret != 0) {
         hccp_err("[get][directFlag]RsNdaGetDirectFlag failed ret:%d", ret);
     }
+    return ret;
+}
+
+int RaPeerNdaCqCreate(struct RaRdmaHandle *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo *info,
+    void **cqHandle)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaCqHandleExt *cqPeer = NULL;
+    void *ibvCqExt;
+    int ret = 0;
+
+    cqPeer = (struct RaCqHandleExt *)calloc(1, sizeof(struct RaCqHandleExt));
+    CHK_PRT_RETURN(cqPeer == NULL, hccp_err("[create][RaPeerNdaCqCreate]cqPeer calloc failed."), -ENOMEM);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsNdaCqCreate(phyId, rdmaHandle->rdevIndex, attr, info, ibvCqExt);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[create][RaNdaCq]RsNdaCqCreate failed ret:%d", ret);
+        goto free_cq_handle;
+    }
+    cqPeer->addr = (unsigned long long)ibvCqExt;
+    cqPeer->rdmaHandle = rdmaHandle;
+
+    *cqHandle = cqPeer;
+    return ret;
+
+free_cq_handle:
+    free(cqPeer);
+    cqPeer = NULL;
+    return ret;
+}
+
+int RaPeerNdaCqDestroy(struct RaRdmaHandle *rdmaHandle, void *cqHandle)
+{
+    struct RaCqHandleExt *cqPeer = (struct RaCqHandleExt *)cqHandle;
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    void *ibvCqExt;
+    int ret = 0;
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ibvCqExt = (void *)cqPeer->addr;
+    ret = RsNdaCqDestroy(phyId, rdmaHandle->rdevIndex, ibvCqExt);
+    if (ret != 0) {
+        hccp_err("[destroy][RaNdaCq]RsNdaCqDestroy failed ret:%d", ret);
+    }
+    RaPeerMutexUnlock(phyId);
     return ret;
 }
