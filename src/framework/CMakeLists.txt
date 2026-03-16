@@ -799,7 +799,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     )
 
     target_include_directories(ccl_kernel PRIVATE
-        ${CCL_KERNEL_INCLUDE_LIST}/framework/communicator/impl/zero_copy
+        ${CCL_KERNEL_INCLUDE_LIST}
     )
 
     target_include_directories(ccl_kernel PRIVATE ${ORION_HEAD_LIST})
