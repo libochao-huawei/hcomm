@@ -150,6 +150,8 @@ protected:
     CcuRep::FuncCall Func(const CcuRep::Variable &funcAddr);
     CcuRep::LoopCall Loop(const std::string &label);
 
+    HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
+
 private:
     CcuRep::Address CreateAddress();
     CcuRep::LocalAddr CreateLocalAddr(const CcuRep::Variable &token);

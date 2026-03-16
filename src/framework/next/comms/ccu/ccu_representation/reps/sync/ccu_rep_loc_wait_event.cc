@@ -52,5 +52,10 @@ std::string CcuRepLocWaitEvent::Describe()
     return Hccl::StringFormat("CcuRepLocWaitEvent=id[%u], mask[%04x]", event_.Id(), event_.mask);
 }
 
+uint16_t CcuRepLocWaitEvent::GetMask()
+{
+    return event_.mask;
+}
+
 }; // namespace CcuRep
 }; // namespace hcomm

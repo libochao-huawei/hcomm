@@ -22,6 +22,7 @@ public:
     CcuRepLocWaitEvent(const CompletedEvent &event, bool isProfiling=true);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
+    uint32_t    GetMask();
 
 private:
     CompletedEvent event_{};
