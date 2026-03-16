@@ -330,6 +330,10 @@ RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value);
 // note: The FIRST invocation of this function MAY throw exceptions for each process
 RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId);
 
+RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaCqInitAttr *attr, 
+    struct NdaCqInfo *info, void **cqHandle);
+RS_ATTRI_VISI_DEF int RsNdaCqDestroy(unsigned int phyId, unsigned int rdevIndex, void **cqHandle);
+
 static inline bool RsIsTlvSupported(void)
 {
     enum ProductType productType;
