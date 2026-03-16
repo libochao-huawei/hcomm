@@ -18,12 +18,7 @@
 #include "ccu_kernel.h"
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
-<<<<<<< HEAD
-
-#include "ccu_types.h"
-#include "ccu_log.h"
-=======
->>>>>>> 67098c8a (feat(ccu): kernel launch)
+#include "hccl_ccu_res.h"
 
 #include "ccu_types.h"
 #include "ccu_log.h"
@@ -236,9 +231,71 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         __func__, DURATION_US(TIME_NOW() - startut));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
-<<<<<<< HEAD
-=======
 }
+
+// HcclResult HcclCcuKernelRegister(HcclComm comm,
+//     CcuKernelHandle *kernelHandle, void *kernelCreator, void *kernelArg)
+// {
+//     HCCL_RUN_INFO("Entry-%s", __func__);
+//     HcclUs startut = TIME_NOW();
+
+//     CHK_PTR_NULL(comm);
+//     CHK_PTR_NULL(kernelHandle);
+//     CHK_PTR_NULL(kernelCreator);
+//     CHK_PTR_NULL(kernelArg);
+
+//     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+//     auto *collComm = hcclComm->GetCollComm();
+//     CHK_PTR_NULL(collComm);
+//     auto* myRank = collComm->GetMyRank();
+//     CHK_PTR_NULL(myRank);
+
+//     auto *ccuContainer = myRank->GetCcuResContainer();
+//     CHK_PTR_NULL(ccuContainer);
+
+//     auto *resPack = ccuContainer->GetResPack();
+//     CHK_PTR_NULL(resPack);
+
+//     const uint32_t devLogicId = HcclGetThreadDeviceId();
+//     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+//     CcuKernelHandle newHandle{0};
+//     // 当前注册内部流程可能抛异常
+//     EXCEPTION_HANDLE_BEGIN
+//     CHK_RET(kernelMgr.Register(std::move(kernel), *resPack, newHandle));
+//     EXCEPTION_HANDLE_END
+//     CHK_RET(ccuContainer->SaveCcuKernel(newHandle));
+//     *kernelHandle = newHandle;
+//     HCCL_INFO("[%s] success, take time [%lld]us.",
+//         __func__, DURATION_US(TIME_NOW() - startut));
+//     return HcclResult::HCCL_SUCCESS;
+// }
+
+// HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
+// {
+//     HCCL_RUN_INFO("Entry-%s", __func__);
+//     CHK_PTR_NULL(comm);
+
+//     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+//     auto *collComm = hcclComm->GetCollComm();
+//     CHK_PTR_NULL(collComm);
+//     auto* myRank = collComm->GetMyRank();
+//     CHK_PTR_NULL(myRank);
+
+//     auto *ccuContainer = myRank->GetCcuResContainer();
+//     CHK_PTR_NULL(ccuContainer);
+
+//     const auto &newKernels = ccuContainer->GetUntranslatedKernels();
+
+//     const uint32_t devLogicId = HcclGetThreadDeviceId();
+//     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+//     // 当前翻译内部流程可能抛异常
+//     EXCEPTION_HANDLE_BEGIN
+//     CCU_CHK_RET(kernelMgr.Translate(newKernels));
+//     EXCEPTION_HANDLE_END
+
+//     CHK_RET(ccuContainer->ResetResPack());
+//     return HcclResult::HCCL_SUCCESS;
+// }
 
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {
@@ -404,11 +461,10 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     EXCEPTION_HANDLE_BEGIN
     const hcomm::CcuTaskArg *ccuTaskArgs = reinterpret_cast<hcomm::CcuTaskArg *>(taskArgs);
     std::vector<hcomm::CcuTaskParam> ccuParams{};
-    // todo: 需要切到新流程
-    // auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
-    // CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
-    //     HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
-    //     ret);
+    auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
+        ret);
 
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
@@ -438,5 +494,4 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
                                         comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
     return HcclResult::HCCL_SUCCESS;
->>>>>>> 1e05e06b (bugfix(ccu): fix compile bugs)
 }
