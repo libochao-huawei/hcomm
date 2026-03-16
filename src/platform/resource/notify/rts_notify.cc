@@ -183,7 +183,7 @@ HcclResult RtsNotify::Alloc()
     // Get notify address and size for 910_95. Used by notify record from CPU thread -> AicpuTs thread.
     DevType devType = DevType::DEV_TYPE_COUNT;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         rtDevResInfo resInfo{
             .dieId    = 0,
             .procType = RT_PROCESS_HCCP,
