@@ -15,4 +15,7 @@
 
 int RaPeerNdaGetDirectFlag(struct RaRdmaHandle *rdmaHandle, int *directFlag);
 
+int RaPeerNdaCqCreate(struct RaRdmaHandle *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo *info,
+    void **cqHandle);
+int RaPeerNdaCqDestroy(void *cqHandle);
 #endif // RA_PEER_NDA_H
