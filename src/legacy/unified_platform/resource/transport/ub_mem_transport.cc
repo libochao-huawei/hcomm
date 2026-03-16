@@ -63,8 +63,8 @@ HcclResult UbMemTransport::FillTagVec()
         if (localRmaBuffer == nullptr) {
             HCCL_WARNING("[UbMemTransport][FillTagVec] localRmaBuffer is nullptr. memHandleNum[%d]", index);
         } else {
-            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
             CHK_PTR_NULL(localRmaBuffer->GetBuf());
+            std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
             CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
             HCCL_INFO("[UbMemTransport][FillTagVec] memHandleNum[%d] memTag[%s]", index, memTag.data());
         }
