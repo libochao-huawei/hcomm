@@ -7,18 +7,6 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(src_list
-    aicpu_thread_process.cc
-)
 
-<<<<<<< HEAD:src/framework/next/coll_comms/dfx/taskException/CMakeLists.txt
 add_subdirectory(aicpu)
 add_subdirectory(host)
-
-=======
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
-    target_sources(ccl_kernel PRIVATE
-        ${src_list}
-    )
-endif()
->>>>>>> ea880086... HcommThreadResGetInfo:src/framework/next/comms/comm_engine_res/threads/slaves/CMakeLists.txt

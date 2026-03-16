@@ -280,14 +280,27 @@ HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBin
     return HCCL_SUCCESS;
 }
 
-HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<hccl::Thread> &handle)
+HcclResult GetThread(const ThreadHandle thread, std::shared_ptr<Thread> &handle)
 {
-    auto it = g_ThreadMap.find(thread);
-    if (it == g_ThreadMap.end()) {
-        HCCL_ERROR("[%s] failed. thread[%lu] not found.", __func__, thread);
-        return HCCL_E_NOT_FOUND;
+    lock_guard<mutex> lock(g_ThreadMapMtx);
+    const ThreadHandle inHandle = thread;
+    // 1) 先做 D2H 映射（统一销毁入口 handle）
+    auto itH = g_ThreadD2HMap.find(inHandle);
+    if (itH == g_ThreadD2HMap.end()) {
+        HCCL_ERROR(
+            "[%s] failed to find handle mapping in g_ThreadD2HMap, inHandle[0x%llx].", __func__, inHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
     }
-    handle = it->second;
+    const ThreadHandle mappedHandle = itH->second;
+
+    // 2) 从 ThreadMap 查找对应的thread对象
+    auto itC = g_ThreadMap.find(mappedHandle);
+    if (itC == g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] failed to find thread in g_ThreadMap, inHandle[0x%llx], mappedHandle[0x%llx].",
+            __func__, inHandle, mappedHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    handle = itC->second;
     CHK_PTR_NULL(handle);
     return HCCL_SUCCESS;
 }
