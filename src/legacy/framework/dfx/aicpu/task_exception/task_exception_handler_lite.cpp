@@ -309,9 +309,15 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(*curTask).c_str());
-    std::pair<float, float> floatCounter;
- 	floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
- 	floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
+    if (curTask->dfxOpInfo_ != nullptr) {
+        std::pair<float, float> floatCounter;
+        if (curTask->dfxOpInfo_->headOpCounterAddr_ != 0 && curTask->dfxOpInfo_->tailOpCounterAddr_ != 0) {
+            floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
+            floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
+            HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].",
+                static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second), curTask->dfxOpInfo_->opIndex_);
+        }
+    }
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second), curTask->dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
 }

@@ -103,7 +103,9 @@ TaskExceptionHandlerManager::~TaskExceptionHandlerManager()
 static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
 {
     std::pair<float, float> floatCounter;
-    if (taskInfo.dfxOpInfo_->headOpCounterAddr_ != 0 && taskInfo.dfxOpInfo_->tailOpCounterAddr_ != 0) {
+    if (taskInfo.dfxOpInfo_ != nullptr &&
+        taskInfo.dfxOpInfo_->headOpCounterAddr_ != 0 &&
+        taskInfo.dfxOpInfo_->tailOpCounterAddr_ != 0) {
         u64 size = 4;
         void *headAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->headOpCounterAddr_);
         void *tailAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->tailOpCounterAddr_);
@@ -114,7 +116,7 @@ static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
     std::pair<u32, u32> counter;
     counter.first = static_cast<u32>(floatCounter.first);
     counter.second = static_cast<u32>(floatCounter.second);
-    
+
     HCCL_INFO("[GetOpCounter] end, head:%u, tail:%u", counter.first, counter.second);
     return counter;
 }
@@ -349,7 +351,7 @@ void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, co
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
     auto count = GetOpCounter(taskInfo);
- 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
+    HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
 }
 
