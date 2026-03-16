@@ -631,6 +631,7 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
+    EXCEPTION_HANDLE_BEGIN
     bool l0State = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
     bool l1State = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
     if (l0State == false || l1State == false) {
@@ -664,7 +665,9 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     }
 
     //HcclDfxOpInfo转为DfxOpInfo
+    
     auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
+
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
     dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
@@ -682,11 +685,12 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
     // 下发device侧
-    if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS) {
+    if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS || dfxOpInfo->engine == COMM_ENGINE_AICPU) {
         CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
         const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
         CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
     }
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
