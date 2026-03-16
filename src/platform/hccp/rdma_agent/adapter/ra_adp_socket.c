@@ -145,7 +145,7 @@ int RaRsSocketListenStart(char *inBuf, char *outBuf, int *outLen, int *opResult,
     }
     *opResult = gSocketOps.socketListenStart((socketListenData->txData).conn, (socketListenData->txData).num);
     if (*opResult == -EADDRINUSE) {
-        hccp_run_warn("socket listen start unsuccessful ret[%d]", *opResult);
+        hccp_warn("socket listen start unsuccessful ret[%d]", *opResult);
         return 0;
     } else if (*opResult != 0) {
         hccp_err("socket listen start failed ret[%d]", *opResult);
