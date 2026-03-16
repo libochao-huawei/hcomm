@@ -63,15 +63,16 @@ HcclResult TaskException::PrintTaskException(hccl::Stream& stream)
     u32 sqHead = 0U;
     u32 sqTail = 0U;
     CHK_RET(QuerySqStatus(devId_, stream.sqId(), sqHead, sqTail));
-    if (sqHead == sqTail) { // 流上task已经执行完，不打印
-        HCCL_RUN_INFO("%s skip, group:%s, streamId:%d, sqHead is equal to sqTail:%u",
-            __func__, identifier_.c_str(), stream.id(), sqTail);
-        return HCCL_SUCCESS;
-    }
-
     HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
     SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
     CHK_PTR_NULL(sqeContextBuffer);
+    if (sqHead == sqTail) { // 流上task已经执行完，不打印
+        HCCL_RUN_INFO("%s skip, group:%s, streamId:%d, sqHead is equal to sqTail:%u",
+            __func__, identifier_.c_str(), stream.id(), sqTail);
+        // 打印最后执行的200个task
+        PrintTaskExceptionTaskQue(sqTail, sqeContextBuffer, 200);
+        return HCCL_SUCCESS;
+    }
     u32 opIndex = indOpInfos_[sqeContextBuffer->rtsDfxInfo[sqHead].opRingBufferIdx].opIndex;
     if (IsRepeatPrint(stream.id(), opIndex, sqHead)) { // 避免重复打印
         HCCL_RUN_INFO("%s skip, group:%s, streamId:%d, opIndex:%u, sqHead:%u, has already been printed",
@@ -85,7 +86,7 @@ HcclResult TaskException::PrintTaskException(hccl::Stream& stream)
 
     HCCL_ERROR("%s base information is streamId:%d, sqid:%d, head:%u, tail:%u, %s",
         __func__, stream.id(), stream.sqId(), sqHead, sqTail, GetTaskExceptionTaskInfo(sqHead, sqeContextBuffer).c_str());
-    PrintTaskExceptionTaskQue(sqHead, sqeContextBuffer);
+    PrintTaskExceptionTaskQue(sqHead, sqeContextBuffer, 200);
     return HCCL_SUCCESS;
 }
 
@@ -107,7 +108,7 @@ HcclResult TaskException::PrintTaskExceptionByTaskId(u8 sqeType, u16 taskId, hcc
 
     HCCL_ERROR("[TaskException]base information is streamId:%d, sqid:%d, head:%u, tail:%u, %s",
         stream.id(), stream.sqId(), sqHead, tail, GetTaskExceptionTaskInfo(sqHead, sqeContextBuffer).c_str());
-    PrintTaskExceptionTaskQue(sqHead, sqeContextBuffer);
+    PrintTaskExceptionTaskQue(sqHead, sqeContextBuffer, 200);
     return HCCL_SUCCESS;
 }
 
@@ -131,15 +132,15 @@ std::string TaskException::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
     return ss.str();
 }
 
-void TaskException::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer)
+void TaskException::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, u32 sqeNum)
 {
-    const u32 sqeNum = 50; // 打印当前位置的前50个task
     // 记录上一次打印的算子信息
     IndOpInfo& lastOpInfo = indOpInfos_[sqeContextBuffer->rtsDfxInfo[sqIdx].opRingBufferIdx];
     u32 opIndex = lastOpInfo.opIndex; // 算子序号
     std::stringstream ss;
     ss << "OP(" << opIndex << ")";
-
+    u32 tasksInCurrentLine = 0;
+    const u32 maxTasksPerLine = 25; // 每行最多25个task，避免日志过长
     for (u32 i = 0; i <= sqeNum; i++) {
         u32 newSqIdx = (sqIdx - i + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT;
         IndOpInfo& newOpInfo = indOpInfos_[sqeContextBuffer->rtsDfxInfo[newSqIdx].opRingBufferIdx];
@@ -150,9 +151,22 @@ void TaskException::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
             opIndex = newOpIdx;
             ss.str("");
             ss << "OP(" << opIndex << ")";
+            tasksInCurrentLine = 0;
         }
         // 输入task缩写
         ss << "," << GetTaskBriefsInfo(newSqIdx, sqeContextBuffer);
+        tasksInCurrentLine++;
+        // 超过每行最大task数时切分打印
+        if (tasksInCurrentLine >= maxTasksPerLine && i < sqeNum) {
+            HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
+            ss.str("");
+            ss << "OP(" << opIndex << ")";
+            tasksInCurrentLine = 0;
+        }
+    }
+    // 打印剩余的task
+    if (tasksInCurrentLine > 0) {
+        HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
     }
     return;
 }
