@@ -16,6 +16,7 @@
 #include "data_type.h"
 #include "reduce_op.h"
 #include "hccp_tlv.h"
+#include <mutex>
 
 namespace Hccl {
 using namespace std;
@@ -58,6 +59,11 @@ using FdHandle     = void *;
 using MrHandle = void *;
 
 MAKE_ENUM(HrtNetworkMode, PEER, HDC)
+enum DeviceIdType {
+    DEVICE_ID_TYPE_PHY_ID = 0,
+    DEVICE_ID_TYPE_SDID
+};
+
 
 inline s32 EnvLinkTimeoutGet();
 
@@ -186,6 +192,7 @@ struct RaSocketWhitelist {
 
 void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists);
 void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists);
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP);
 
 struct RaSocketConnectParam {
     SocketHandle socketHandle; /**< socket handle */

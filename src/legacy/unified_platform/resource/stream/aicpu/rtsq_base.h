@@ -129,6 +129,13 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    virtual void P2PWriteValue(u64 remoteAddr, u32 writeValue)
+    {
+        (void)remoteAddr;
+        (void)writeValue;
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
     virtual void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
     {
         (void)jettyLiteId;

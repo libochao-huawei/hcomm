@@ -32,11 +32,15 @@ MAKE_ENUM(ConnectProtoType, HCCS, PCIE, TCP, RDMA, UB)
 
 MAKE_ENUM(LinkProtoType, HCCS_PCIE, TCP, RDMA, UB)
 
-inline PortDeploymentType AddrPos2PortDeploymentType(AddrPosition addrPosition)
+inline PortDeploymentType AddrPos2PortDeploymentType(AddrPosition addrPosition, LinkProtocol linkProtocol)
 {
     PortDeploymentType portDeploymentType{};
     if (addrPosition == AddrPosition::DEVICE) {
-        portDeploymentType = PortDeploymentType::DEV_NET;
+        if (linkProtocol == LinkProtocol::PCIE) {
+            portDeploymentType = PortDeploymentType::P2P;
+        } else {
+            portDeploymentType = PortDeploymentType::DEV_NET;
+        }
     } else if (addrPosition == AddrPosition::HOST) {
         portDeploymentType = PortDeploymentType::HOST_NET;
     } else {
@@ -54,6 +58,8 @@ inline LinkProtoType LinkProtocol2LinkProtoType(LinkProtocol linkProtocol)
         linkType = LinkProtoType::UB;
     } else if (linkProtocol == LinkProtocol::ROCE) {
         linkType = LinkProtoType::RDMA;
+    } else if (linkProtocol == LinkProtocol::PCIE) {
+        linkType = LinkProtoType::HCCS_PCIE;
     } else {
         THROW<NotSupportException>(StringFormat("[LinkProtocol2LinkProtoType] linkProtocol[%s] don't support.",
             linkProtocol.Describe().c_str()));
@@ -186,7 +192,7 @@ public:
     }
 
     PortData(RankId rankId, const NetInstance::ConnInterface &connIface)
-        : rankId(rankId), type(AddrPos2PortDeploymentType(connIface.GetPos())),
+        : rankId(rankId), type(AddrPos2PortDeploymentType(connIface.GetPos(), *connIface.GetLinkProtocols().begin())),
           protoType(LinkProtocol2LinkProtoType(*connIface.GetLinkProtocols().begin())), id(0), addr(connIface.GetAddr())
     {
     }
