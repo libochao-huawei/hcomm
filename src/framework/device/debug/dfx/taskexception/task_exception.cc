@@ -133,7 +133,7 @@ std::string TaskException::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
 
 void TaskException::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer)
 {
-    const u32 sqeNum = 50; // 打印当前位置的前50个task
+    const u32 sqeNum = 50; // 打印当前位置的前200个task
     // 记录上一次打印的算子信息
     IndOpInfo& lastOpInfo = indOpInfos_[sqeContextBuffer->rtsDfxInfo[sqIdx].opRingBufferIdx];
     u32 opIndex = lastOpInfo.opIndex; // 算子序号
