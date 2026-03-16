@@ -25,6 +25,8 @@
 #include "externalinput.h"
 #include "aicpu_operator_pub.h"
 #include "alg_profiling.h"
+#include "task_exception.h"
+#include "aicpu_communicator.h"
 
 using namespace std;
 using namespace hccl;
@@ -799,3 +801,270 @@ TEST_F(TaskExceptionTest, St_DealExceptionTask_When_Comm_Has_Multi_Aiv_Expect_Pr
     GlobalMockObject::verify();
 }
 #endif
+
+// 回调函数用于获取算子信息
+void GetOpInfoCallback(void* opInfo, char* opInfoTmp, u32 maxSize)
+{
+    const char* testOpInfo = "test_op_info_data";
+    strncpy(opInfoTmp, testOpInfo, maxSize - 1);
+    opInfoTmp[maxSize - 1] = '\0';
+}
+
+TEST_F(TaskExceptionTest, ut_PrintTaskExceptionTaskQue_Coverage)
+{
+    u32 deviceLogicId = 0;
+    u32 localUserRank = 0;
+    std::string identifier = "test_identifier";
+    
+    // 初始化 TaskException 对象
+    TaskException taskException;
+    HcclResult ret = taskException.Init(deviceLogicId, localUserRank, identifier);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    // 创建并初始化 SqeRingBuffer
+    HcclSqeContext sqeContext;
+    SqeRingBuffer* sqeContextBuffer = &sqeContext.buffer;
+    memset(sqeContextBuffer, 0, sizeof(SqeRingBuffer));
+    
+    // 初始化 201 个位置的 rtsDfxInfo（覆盖循环从 0 到 200）
+    // 前 150 个属于算子 0，第 151-200 个属于算子 1
+    // 这样会触发 tasksInCurrentLine >= 50 的条件 3 次（50, 100, 150）
+    // 以及算子切换 2 次（在位置 150 和 200）
+    for (u32 i = 0; i <= 200; i++) {
+        // 前 150 个属于算子 0
+        if (i < 150) {
+            sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = 0;
+            sqeContextBuffer->rtsDfxInfo[i].remoteRank = i % 8;
+            sqeContextBuffer->rtsDfxInfo[i].notifyId = i % 16;
+        } else {
+            // 第 151-200 个属于算子 1
+            sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = 1;
+            sqeContextBuffer->rtsDfxInfo[i].remoteRank = (i + 1) % 8;
+            sqeContextBuffer->rtsDfxInfo[i].notifyId = (i + 1) % 16;
+        }
+        
+        // 初始化 rtsMirrorBuffer 中的 rtStarsSqeHeader_t
+        uint8_t* sqeMirrorBufferAddr = sqeContextBuffer->rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t* sqeHeader = reinterpret_cast<rtStarsSqeHeader_t*>(sqeMirrorBufferAddr);
+        memset(sqeHeader, 0, sizeof(rtStarsSqeHeader_t));
+        sqeHeader->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeHeader->taskId = static_cast<u16>(i);
+        
+        // 初始化 rtsqSqeType 和 addInfo
+        sqeContextBuffer->rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer->addInfo[i] = 0;
+    }
+    
+    // 注册算子 0 的信息
+    uint8_t opInfo0[64] = {0};
+    strncpy(reinterpret_cast<char*>(opInfo0), "op_info_0", sizeof(opInfo0) - 1);
+    ret = taskException.RegisterOpInfo(opInfo0, sizeof(opInfo0));
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = taskException.RegisterOpInfoCallback(GetOpInfoCallback);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    // 注册算子 1 的信息（需要先调用一次 RegisterOpInfo 来切换到新的 opRingBufferIdx）
+    uint8_t opInfo1[64] = {0};
+    strncpy(reinterpret_cast<char*>(opInfo1), "op_info_1", sizeof(opInfo1) - 1);
+    ret = taskException.RegisterOpInfo(opInfo1, sizeof(opInfo1));
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = taskException.RegisterOpInfoCallback(GetOpInfoCallback);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    // 由于 RegisterOpInfo 会递增 opRingBufferIdx_，现在需要调整 rtsDfxInfo 的 opRingBufferIdx
+    // 第一个算子应该是 opRingBufferIdx_ - 1
+    // 第二个算子应该是 opRingBufferIdx_
+    u32 opIdx0 = taskException.GetOpRingBufferIdx();
+    u32 opIdx1 = (opIdx0 + 1) % OPINFO_RING_BUFFER_MAX;
+    
+    for (u32 i = 0; i < 150; i++) {
+        sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = opIdx0;
+    }
+    for (u32 i = 150; i <= 200; i++) {
+        sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = opIdx1;
+    }
+    
+    // 调用 PrintTaskExceptionTaskQue 函数
+    // 这个函数会遍历 201 个位置（0 到 200）
+    // 触发以下逻辑：
+    // 1. tasksInCurrentLine = 0（初始化）
+    // 2. tasksInCurrentLine++（在循环中递增 201 次）
+    // 3. tasksInCurrentLine >= 50 && i < 200（在 i=50,100,150 时触发换行）
+    // 4. tasksInCurrentLine = 0（在换行时重置 3 次）
+    // 5. tasksInCurrentLine = 0（在算子切换时重置 1 次，i=150 时）
+    // 6. if (tasksInCurrentLine > 0)（在最后打印剩余的 task）
+    taskException.PrintTaskExceptionTaskQue(0, sqeContextBuffer);
+    
+    // 测试通过
+    SUCCEED();
+}
+
+// 测试 HcclCommAicpu::PrintTaskExceptionTaskQue 的覆盖率
+// 通过 Mock aicpuShareData_.GetAicpuOpInfo 来避免初始化 aicpuShareData
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Coverage)
+{
+    HcclCommAicpu aicpuComm;
+    
+    // 创建并初始化 SqeRingBuffer
+    HcclSqeContext sqeContext;
+    SqeRingBuffer* sqeContextBuffer = &sqeContext.buffer;
+    memset(sqeContextBuffer, 0, sizeof(SqeRingBuffer));
+    
+    AicpuOpInfo opInfo0;
+    opInfo0.opIndex = 0;
+    strncpy(opInfo0.tagBuff, "tag0", sizeof(opInfo0.tagBuff) - 1);
+    
+    AicpuOpInfo opInfo1;
+    opInfo1.opIndex = 1;
+    strncpy(opInfo1.tagBuff, "tag1", sizeof(opInfo1.tagBuff) - 1);
+    
+    AicpuOpInfo opInfo2;
+    opInfo2.opIndex = 2;
+    strncpy(opInfo2.tagBuff, "tag2", sizeof(opInfo2.tagBuff) - 1);
+    
+    // Mock aicpuShareData_.GetAicpuOpInfo 方法
+    // 这样可以避免初始化复杂的 aicpuShareData_
+    u32 opRingBufferIdx0 = 0;
+    u32 opRingBufferIdx1 = 1;
+    u32 opRingBufferIdx2 = 2;
+    
+    auto aicpuShareDataGetter = [&](u32 opRingBufferIdx) -> const AicpuOpInfo* {
+        if (opRingBufferIdx == opRingBufferIdx0) {
+            return &opInfo0;
+        } else if (opRingBufferIdx == opRingBufferIdx1) {
+            return &opInfo1;
+        } else if (opRingBufferIdx == opRingBufferIdx2) {
+            return &opInfo2;
+        }
+        return nullptr;
+    };
+    
+    // 使用宏访问私有成员 aicpuShareData_
+    // 在 SetUpTestCase 中已经定义了 #define private public
+    MOCKER(aicpuShareData_.GetAicpuOpInfo)
+        .stubs()
+        .with(any())
+        .will(invoke([&](u32 idx) -> const AicpuOpInfo* {
+            return aicpuShareDataGetter(idx);
+        }));
+    
+    // 初始化 201 个位置的 rtsDfxInfo
+    for (u32 i = 0; i <= 200; i++) {
+        if (i < 150) {
+            sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = opRingBufferIdx0;
+            sqeContextBuffer->rtsDfxInfo[i].remoteRank = i % 8;
+            sqeContextBuffer->rtsDfxInfo[i].notifyId = i % 16;
+        } else if (i < 175) {
+            sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = opRingBufferIdx1;
+            sqeContextBuffer->rtsDfxInfo[i].remoteRank = (i + 1) % 8;
+            sqeContextBuffer->rtsDfxInfo[i].notifyId = (i + 1) % 16;
+        } else {
+            sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = opRingBufferIdx2;
+            sqeContextBuffer->rtsDfxInfo[i].remoteRank = (i + 2) % 8;
+            sqeContextBuffer->rtsDfxInfo[i].notifyId = (i + 2) % 16;
+        }
+        
+        // 初始化 rtsMirrorBuffer
+        uint8_t* sqeMirrorBufferAddr = sqeContextBuffer->rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t* sqeHeader = reinterpret_cast<rtStarsSqeHeader_t*>(sqeMirrorBufferAddr);
+        memset(sqeHeader, 0, sizeof(rtStarsSqeHeader_t));
+        sqeHeader->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeHeader->taskId = static_cast<u16>(i);
+        
+        // 初始化 rtsqSqeType 和 addInfo
+        sqeContextBuffer->rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer->addInfo[i] = 0;
+    }
+    
+    // Mock GetTaskBriefsInfo 方法（这个函数也需要被 mock）
+    MOCKER(aicpuComm.GetTaskBriefsInfo)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue("NW(0,0)"));
+    
+    // Mock GetTaskExceptionOpInfo 方法（这个函数也需要被 mock）
+    MOCKER(aicpuComm.GetTaskExceptionOpInfo)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue("opInfo: test_op_info"));
+    
+    // 测试 isMonitor = false 的场景（HCCL_ERROR日志）
+    aicpuComm.PrintTaskExceptionTaskQue(0, sqeContextBuffer, false);
+    
+    // 清理 Mock
+    GlobalMockObject::verify();
+    
+    // 测试通过
+    SUCCEED();
+}
+
+// 测试 isMonitor = true 的场景（HCCL_RUN_INFO日志）
+TEST_F(TaskExceptionTest, ut_HcclCommAicpu_PrintTaskExceptionTaskQue_Monitor_Coverage)
+{
+    HcclCommAicpu aicpuComm;
+    
+    // 创建并初始化 SqeRingBuffer
+    HcclSqeContext sqeContext;
+    SqeRingBuffer* sqeContextBuffer = &sqeContext.buffer;
+    memset(sqeContextBuffer, 0, sizeof(SqeRingBuffer));
+    
+    // 准备测试用的算子信息（简单的单算子场景）
+    AicpuOpInfo opInfo0;
+    opInfo0.opIndex = 0;
+    strncpy(opInfo0.tagBuff, "tag0", sizeof(opInfo0.tagBuff) - 1);
+    
+    u32 opRingBufferIdx0 = 0;
+    
+    // Mock aicpuShareData_.GetAicpuOpInfo 方法
+    auto aicpuShareDataGetter = [&](u32 opRingBufferIdx) -> const AicpuOpInfo* {
+        if (opRingBufferIdx == opRingBufferIdx0) {
+            return &opInfo0;
+        }
+        return nullptr;
+    };
+    
+    MOCKER(aicpuShareData_.GetAicpuOpInfo)
+        .stubs()
+        .with(any())
+        .will(invoke([&](u32 idx) -> const AicpuOpInfo* {
+            return aicpuShareDataGetter(idx);
+        }));
+    
+    // 初始化 201 个位置的 rtsDfxInfo（单算子场景）
+    for (u32 i = 0; i <= 200; i++) {
+        sqeContextBuffer->rtsDfxInfo[i].opRingBufferIdx = opRingBufferIdx0;
+        sqeContextBuffer->rtsDfxInfo[i].remoteRank = i % 8;
+        sqeContextBuffer->rtsDfxInfo[i].notifyId = i % 16;
+        
+        uint8_t* sqeMirrorBufferAddr = sqeContextBuffer->rtsMirrorBuffer + i * HCCL_SQE_SIZE;
+        rtStarsSqeHeader_t* sqeHeader = reinterpret_cast<rtStarsSqeHeader_t*>(sqeMirrorBufferAddr);
+        memset(sqeHeader, 0, sizeof(rtStarsSqeHeader_t));
+        sqeHeader->type = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeHeader->taskId = static_cast<u16>(i);
+        
+        sqeContextBuffer->rtsqSqeType[i] = RT_STARS_SQE_TYPE_NOTIFY_WAIT;
+        sqeContextBuffer->addInfo[i] = 0;
+    }
+    
+    // Mock GetTaskBriefsInfo 方法
+    MOCKER(aicpuComm.GetTaskBriefsInfo)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue("NW(0,0)"));
+    
+    // Mock GetTaskExceptionOpInfo 方法
+    MOCKER(aicpuComm.GetTaskExceptionOpInfo)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue("opInfo: test_op_info"));
+    
+    // 测试 isMonitor = true 的场景（HCCL_RUN_INFO日志）
+    aicpuComm.PrintTaskExceptionTaskQue(0, sqeContextBuffer, true);
+    
+    // 清理 Mock
+    GlobalMockObject::verify();
+    
+    // 测试通过
+    SUCCEED();
+}
+
