@@ -209,7 +209,7 @@ void CcuContextBroadcastNHRMem2Mem1D::DoScatterNHRSingleStep(const NHRStepInfo &
         LocalWait(localSignal_, (1 << (sendSliceIdxList.size() % RANK_NUM_PER_CKE)) - 1);
 
         // 通知toRank数据写入完毕
-        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit);
+        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit, true);
     }
 
     //只需要收
@@ -293,7 +293,7 @@ void CcuContextBroadcastNHRMem2Mem1D::DoAllGatherNHRSingleStep(const NHRStepInfo
 
     if (nhrStepInfo.step + 1 != stepInfoVector_.size()) {   // 最后一步不需要同步
         // 通知toRank，写入完毕
-        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
         // 等待fromRank通知写入完毕
         uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
         uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
