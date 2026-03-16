@@ -199,7 +199,7 @@ HcclResult TransportRemoteAccess::CreateNotifyValueBuffer()
     CHK_RET(HrtRaMrReg(handle_, &mrInfo));
     // 将notify buffer地址保存
     localRegMem_.push_back(notifyValueMem_[deviceLogicId_].ptr());
-    NotifyMsg msg;
+    NotifyMsg msg = {};
     msg.mrRegFlag = REG_VALID;
     msg.addr = notifyValueMem_[deviceLogicId_].ptr();
     msg.len = notifySize_;

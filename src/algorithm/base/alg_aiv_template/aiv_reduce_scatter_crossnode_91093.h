@@ -44,6 +44,7 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
     uint64_t curOffset = 0;
     uint64_t curCount;
     uint64_t curBlockOffset;
+    uint64_t curBlockCclOffset = blockOffsetMid > blockOffsetTail ? blockOffsetMid : blockOffsetTail;
      uint32_t bufferLoopNum = (len + avgBufferCount - 1) / avgBufferCount;
 
     for (uint32_t loop = 0; loop < bufferLoopNum; loop++) {
@@ -61,7 +62,7 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
             if ( targetRanks[i]!=rank_){
                 uint64_t localSendOffset = len * targetRanks[i];
                 uint64_t localRecvOffset = avgBufferCount * targetRanks[i];
-                CpGM2GM(cclGMSelf + localRecvOffset + curBlockOffset, inputGM + localSendOffset + curOffset + curBlockOffset, curCount);
+                CpGM2GM(cclGMSelf + localRecvOffset + curBlockCclOffset, inputGM + localSendOffset + curOffset + curBlockOffset, curCount);
             }
         }
 
@@ -77,7 +78,7 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
             if (targetRanks[i] != rank_){
                 __gm__ T *cclGMOther = (__gm__ T *)(buffersIn[i]);
                 uint64_t remoteSendOffset = avgBufferCount * rank_;
-                CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMOther + remoteSendOffset + curBlockOffset, curCount, true, reduceOp_);
+                CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMOther + remoteSendOffset + curBlockCclOffset, curCount, true, reduceOp_);
             }
         }
 

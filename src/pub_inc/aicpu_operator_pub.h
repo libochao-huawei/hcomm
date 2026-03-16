@@ -20,7 +20,7 @@
 #include "dispatcher_task_types.h"
 #include "externalinput_pub.h"
 #include "hccl_mem_defs.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 
 using RankId = u32;
 

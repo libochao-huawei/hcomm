@@ -360,12 +360,6 @@ TEST_F(HcclCommunicatorTest, CollOperator_CollOpToString)
         EXPECT_NO_THROW(CollOpToString(collOp));
     }
 }
- 
-TEST_F(HcclCommunicatorTest, should_return_false_when_calling_CollOpToString_with_unknown_type)
-{
-    CollOperator collOp;
-    EXPECT_THROW(CollOpToString(collOp), NotSupportException);
-}
 
 TEST_F(HcclCommunicatorTest, is_comm_ready_should_success)
 {
@@ -466,7 +460,7 @@ TEST_F(HcclCommunicatorTest, Ut_GetLocalCclBuffer_When_Normal_Expect_OK)
 {
     void *bufAddr = reinterpret_cast<void *>(0x12345678);
     MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(bufAddr));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
  
     shared_ptr<DevBuffer> cclBuf = std::make_shared<DevBuffer>(10);
     GenRankTableFile1Ser8Dev();

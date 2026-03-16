@@ -54,6 +54,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/recovery/operator_retry/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/snapshot/
+    ${HCCL_BASE_DIR}/framework/cluster_maintenance/aclgraph/
     ${HCCL_BASE_DIR}/framework/common/src/
     ${HCCL_BASE_DIR}/framework/common/src/host
     ${HCCL_BASE_DIR}/framework/common/src/config
@@ -92,14 +93,23 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/platform/inc/adapter
 
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/profiling
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/profiling/host
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException/aicpu
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx/taskException/host
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/slaves/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/server_socket/
 
     # ccu 头文件
@@ -793,8 +803,9 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
         ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
         ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+        ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/slaves/
         ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
-        
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/dfx
     )
 
     target_include_directories(ccl_kernel PRIVATE

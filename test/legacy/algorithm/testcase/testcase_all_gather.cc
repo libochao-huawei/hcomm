@@ -59,7 +59,7 @@ protected:
         checkerOpParam.opType = CheckerOpType::ALLGATHER;
         checkerOpParam.tag = "AllGather";
         checkerOpParam.opMode = opMode;
-        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
         checkerOpParam.DataDes.count = dataCount;
         checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
         checkerOpParam.algName = algName;
@@ -166,7 +166,7 @@ TEST_F(AllGatherTest, AllGatherParallel_offload_3x2_small)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 3556632;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -188,7 +188,7 @@ TEST_F(AllGatherTest, AllGatherParallel_opbase_3x2_small)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 3556632;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -210,7 +210,7 @@ TEST_F(AllGatherTest, AllGatherParallel_offload_3x2_big)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 35523320;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -232,7 +232,7 @@ TEST_F(AllGatherTest, AllGatherParallel_opbase_3x2_big)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 35523320;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -255,7 +255,7 @@ TEST_F(AllGatherTest, AllGatherParallel_offload_2x2_small)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 3556632;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -277,7 +277,7 @@ TEST_F(AllGatherTest, AllGatherParallel_opbase_2x2_small)
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 3556632;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -299,7 +299,7 @@ TEST_F(AllGatherTest, AllGatherParallel_offload_2x2_little)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 10;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -321,7 +321,7 @@ TEST_F(AllGatherTest, AllGatherParallel_offload_3pods)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 10;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -344,7 +344,7 @@ TEST_F(AllGatherTest, AllGatherParallel_offload_4pods)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -367,7 +367,7 @@ TEST_F(AllGatherTest, AllGatherParallel_asymmetric_offload_2n4)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 10;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -390,7 +390,7 @@ TEST_F(AllGatherTest, AllGatherParallel_nhr_offload_2n3)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 10;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT64;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherNHR";
 
     Checker checker;
@@ -413,7 +413,7 @@ TEST_F(AllGatherTest, AllGatherParallel_nhr_offload_3pods)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherNHR";
 
     Checker checker;
@@ -436,7 +436,7 @@ TEST_F(AllGatherTest, AllGatherParallel_asymmetric_4n6)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -459,7 +459,7 @@ TEST_F(AllGatherTest, AllGatherParallel_asymmetric_offload_6n6n9)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherParallelMesh1DNHR";
 
     Checker checker;
@@ -482,7 +482,7 @@ TEST_F(AllGatherTest, AllGatherParallel_nhr_offload_6n7)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherNHR";
 
     Checker checker;
@@ -505,7 +505,7 @@ TEST_F(AllGatherTest, AllGatherParallel_nhr_4n5)
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsAllGatherNHR";
 
     Checker checker;

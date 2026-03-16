@@ -11,11 +11,8 @@
 #ifndef RA_CTX_COMM_H
 #define RA_CTX_COMM_H
 
-#include "ra.h"
-#include "hccp_common.h"
 #include "hccp_ctx.h"
 #include "ra_ctx.h"
-#include "ra_rs_comm.h"
 #include "ra_rs_ctx.h"
 
 int RaCtxPrepareLmemRegister(struct MrRegInfoT *lmemInfo, struct MemRegAttrT *memAttr);

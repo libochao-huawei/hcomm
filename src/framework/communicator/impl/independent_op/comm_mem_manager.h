@@ -14,7 +14,9 @@
 #include <unordered_map>
 #include <memory>
 #include <mutex>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
+#include "hccl_mem_defs.h"
 #include "mem_device_pub.h"
 #include "ccl_buffer_manager.h"
 #include "rma_buffer_mgr.h"

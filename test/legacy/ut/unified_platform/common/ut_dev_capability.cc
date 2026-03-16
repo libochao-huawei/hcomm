@@ -115,7 +115,7 @@ const u64 SDMA_SEND_MAX_SIZE = 0x100000000; // 节点内单个SDMA任务发送�
 
 TEST_F(DevCapabilityTest, test_dev_cap_v82)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
 
     ResetEnvCfgMap();

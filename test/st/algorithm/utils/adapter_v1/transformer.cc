@@ -123,7 +123,7 @@ std::map<CheckerDevType, DevType> g_CheckerDevType2HcclDevType = {
     {CheckerDevType::DEV_TYPE_910B, DevType::DEV_TYPE_910B},
     {CheckerDevType::DEV_TYPE_310P1, DevType::DEV_TYPE_310P1},
     {CheckerDevType::DEV_TYPE_910_93, DevType::DEV_TYPE_910_93},
-    {CheckerDevType::DEV_TYPE_910_95, DevType::DEV_TYPE_910_95}
+    {CheckerDevType::DEV_TYPE_950, DevType::DEV_TYPE_950}
 };
 
 std::map<DevType, CheckerDevType> g_HcclDevType2CheckerDevType = {
@@ -133,7 +133,7 @@ std::map<DevType, CheckerDevType> g_HcclDevType2CheckerDevType = {
     {DevType::DEV_TYPE_310P1, CheckerDevType::DEV_TYPE_310P1},
     {DevType::DEV_TYPE_910_93, CheckerDevType::DEV_TYPE_910_93},
     {DevType::DEV_TYPE_NOSOC, CheckerDevType::DEV_TYPE_NOSOC},
-    {DevType::DEV_TYPE_910_95, CheckerDevType::DEV_TYPE_910_95},
+    {DevType::DEV_TYPE_950, CheckerDevType::DEV_TYPE_950},
     {DevType::DEV_TYPE_COUNT, CheckerDevType::DEV_TYPE_COUNT},
 };
 

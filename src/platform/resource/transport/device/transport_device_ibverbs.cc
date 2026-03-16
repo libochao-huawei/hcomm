@@ -710,7 +710,7 @@ HcclResult TransportDeviceIbverbs::RdmaSendAsync(
             continue;
         }
 
-        RdmaTaskInfo taskInfo;
+        RdmaTaskInfo taskInfo = {};
         taskInfo.remoteRank = machinePara_.remoteWorldRank;
         taskInfo.rdmaType = (wrInfoVec[i].type == static_cast<u64>(WqeType::WQE_TYPE_DATA)) ?
             RdmaType::RDMA_SEND_PAYLOAD : RdmaType::RDMA_SEND_NOTIFY;
@@ -755,8 +755,7 @@ HcclResult TransportDeviceIbverbs::RdmaSendAsync(struct SendWr &wr, Stream &stre
     u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
     u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
     HCCL_DEBUG("dbIndex = [%d]", dbIndex);
-
-    RdmaTaskInfo taskInfo;
+    RdmaTaskInfo taskInfo = {};
     taskInfo.remoteRank = machinePara_.remoteWorldRank;
     taskInfo.rdmaType = (wqeType == WqeType::WQE_TYPE_DATA) ? RdmaType::RDMA_SEND_PAYLOAD : RdmaType::RDMA_SEND_NOTIFY;
     wrInfoTmp.type = static_cast<u64>(wqeType);

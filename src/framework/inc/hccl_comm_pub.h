@@ -23,7 +23,7 @@
 #include "comm.h"
 #include "topoinfo_struct.h"
 #include "transport_heterog_def.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "comm_config_pub.h"
 #include "transport_manager.h"
 #include "independent_op.h"
@@ -409,7 +409,7 @@ public:
     HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
     HcclResult DeregisterWindow(CommSymWindow winHandle);
     HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
-
+    aclrtBinHandle GetBinHandle();
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;

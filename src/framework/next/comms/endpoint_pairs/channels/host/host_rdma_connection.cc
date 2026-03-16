@@ -35,7 +35,7 @@ HcclResult HostRdmaConnection::Init()
     int qpMode = 0;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         qpMode = Hccl::OPBASE_QP_MODE;
     } else {
         HCCL_ERROR("Cannot support this device type!"
