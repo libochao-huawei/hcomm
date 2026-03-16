@@ -350,4 +350,5 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     ret = operation->SelectAlg("", opParam, algName, newTag);
     EXPECT_TRUE(algName == "BroadcastMeshAivExecutor");
     operation = nullptr;
+    GlobalMockObject::verify();
 }
