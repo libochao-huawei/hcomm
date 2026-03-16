@@ -68,7 +68,7 @@ CcuResult CcuInstanceMgr::Create(
     std::unique_ptr<CcuInstance> instance{nullptr};
     EXECEPTION_CATCH(
         instance = std::make_unique<CcuInstance>(insType),
-        return HCCL_E_PTR);
+        return CcuResult::CCU_E_PTR);
 
     CCU_CHK_RET(instance->Init());
 
