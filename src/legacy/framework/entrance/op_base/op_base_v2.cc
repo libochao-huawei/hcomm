@@ -182,7 +182,6 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
         opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
             CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
     } while (0);
-
     
     if (errorFlag) {
         HCCL_ERROR("[Init][CreateCommConfig]CreateCommConfig failed,  rank[%u],"\
@@ -253,7 +252,6 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
         opbasedCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
             CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
     } while (0);
-
 
     if (errorFlag) {
         HCCL_ERROR("[Init][%s]CreateCommConfigRootInfo failed return[0x%016llx]", __func__, 
