@@ -27,7 +27,7 @@ public:
     }
 };
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_Normal_Init_Register_KernelRun_Unregister_Expect_SUCCESS)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Normal_Init_Register_KernelRun_Unregister_Expect_SUCCESS)
 {
     // prepare mocks for MsgQueue memory operations
     MOCKER(aclrtMalloc)
@@ -62,7 +62,7 @@ TEST_F(TestServiceScheduler, Ut_ServiceScheduler_Normal_Init_Register_KernelRun_
     EXPECT_EQ(scheduler.ServiceUnregister(handle), HCCL_SUCCESS);
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_Register_Duplicate_Expect_Again)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Register_Duplicate_Expect_Again)
 {
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
@@ -73,21 +73,21 @@ TEST_F(TestServiceScheduler, Ut_ServiceScheduler_Register_Duplicate_Expect_Again
     EXPECT_EQ(scheduler.ServiceRegister(serviceCb, &h2), HCCL_E_AGAIN);
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_Unregister_NotFound_Expect_E_NOT_FOUND)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Unregister_NotFound_Expect_E_NOT_FOUND)
 {
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
     EXPECT_EQ(scheduler.ServiceUnregister(0x12345678), HCCL_E_NOT_FOUND);
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ExecuteService_NotFound_Expect_E_NOT_FOUND)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ExecuteService_NotFound_Expect_E_NOT_FOUND)
 {
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
     EXPECT_EQ(scheduler.executeService(0xdeadbeef, nullptr, 0), HCCL_E_NOT_FOUND);
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_EmptyAndStop_Expect_SUCCESS)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_EmptyAndStop_Expect_SUCCESS)
 {
     MOCKER(aclrtMalloc)
         .stubs()
@@ -116,7 +116,7 @@ TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_EmptyAndStop_Expect_
     EXPECT_TRUE(true); // just verify it can stop graceFully
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_ProcessMessage_And_Stop_Expect_SUCCESS)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_And_Stop_Expect_SUCCESS)
 {
     MOCKER(aclrtMalloc)
         .stubs()
@@ -153,7 +153,7 @@ TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_ProcessMessage_And_S
     EXPECT_EQ(scheduler.ServiceUnregister(handle), HCCL_SUCCESS);
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_ProcessMessage_WhenServiceFails_Expect_Fail)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_WhenServiceFails_Expect_Fail)
 {
     MOCKER(aclrtMalloc)
         .stubs()
@@ -185,7 +185,7 @@ TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_ProcessMessage_WhenS
     EXPECT_EQ(sendQ->Push(entity), HCCL_SUCCESS);
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_ProcessMessage_Then_Stop_Expect_SUCCESS)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_Then_Stop_Expect_SUCCESS)
 {
     MOCKER(aclrtMalloc)
         .stubs()
@@ -234,7 +234,7 @@ TEST_F(TestServiceScheduler, Ut_ServiceScheduler_ServiceRun_ProcessMessage_Then_
     EXPECT_TRUE(true);
 }
 
-TEST_F(TestServiceScheduler, Ut_ServiceScheduler_GetSendQueue_ReturnsNonNull)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_GetSendQueue_ReturnsNonNull)
 {
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
