@@ -10,6 +10,8 @@
 
 #include "ut_aicpu_ts_base.h"
 
+#include "resource_entities.h"
+
 using namespace hccl;
 
 class UtAicpuTsHcommLocalCopyOnThread : public UtAicpuTsBase

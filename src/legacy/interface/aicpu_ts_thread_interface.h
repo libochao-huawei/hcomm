@@ -35,6 +35,8 @@ public:
 
     HcclResult SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte, uint32_t dataTypeRaw,
                           uint32_t reduceOpRaw) const;
+    
+    HcclResult WriteValue(uint64_t addr, uint16_t value) const;
 
     HcclResult GetStreamLitePtr(void **streamLitePtrPtr) const;
 

@@ -34,7 +34,7 @@ TEST_F(TestHcclThread, Ut_TestHcclThread_When_CreateHostCpuTsCommEngineThread_Re
     .with(outBound(isDeviceSide))
     .will(returnValue(HCCL_SUCCESS));    
     std::shared_ptr<Thread> cpuHandle;
-    HcclResult ret = CreateThread(COMM_ENGINE_CPU_TS, StreamType::STREAM_TYPE_ONLINE, 3, NotifyLoadType::HOST_NOTIFY , cpuHandle);
+    HcclResult ret = CreateThread(COMM_ENGINE_CPU_TS, StreamType::STREAM_TYPE_ONLINE, 3, NotifyLoadType::HOST_NOTIFY, ThreadType::THREAD_TYPE_TS, cpuHandle);
     EXPECT_EQ(ret, 0);
     ret = cpuHandle->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -53,7 +53,7 @@ TEST_F(TestHcclThread, Ut_TestHcclThread_When_CreateAicpuTsCommEngineThread_Retu
     .stubs()
     .with(outBound(isDeviceSide))
     .will(returnValue(HCCL_SUCCESS));    
-    HcclResult ret =  CreateThread(COMM_ENGINE_AICPU_TS, StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY, aicpuHandle);
+    HcclResult ret =  CreateThread(COMM_ENGINE_AICPU_TS, StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY, ThreadType::THREAD_TYPE_TS, aicpuHandle);
     EXPECT_EQ(ret, 0);
     ret = aicpuHandle->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -72,7 +72,7 @@ TEST_F(TestHcclThread, Ut_TestHcclThread_When_CreateNotSurportCommEngineThread_R
     .stubs()
     .with(outBound(isDeviceSide))
     .will(returnValue(HCCL_SUCCESS));    
-    HcclResult ret =  CreateThread(COMM_ENGINE_AIV, StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY, Handle);
+    HcclResult ret =  CreateThread(COMM_ENGINE_AIV, StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY, ThreadType::THREAD_TYPE_TS, Handle);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }
 

@@ -54,6 +54,14 @@ typedef uint64_t ChannelHandle;
 typedef uint64_t ThreadHandle;
 #endif
 
+#ifndef THREAD_SERVICE_HANDLE_DEFINED
+#define THREAD_SERVICE_HANDLE_DEFINED
+/**
+ * @brief 线程服务句柄类型
+ */
+typedef uint64_t ThreadServiceHandle;
+#endif
+
 /**
  * @brief 通信引擎类型枚举
  */

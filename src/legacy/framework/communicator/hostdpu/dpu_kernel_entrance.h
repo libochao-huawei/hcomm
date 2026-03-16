@@ -20,6 +20,7 @@
 extern std::unordered_map<std::string, std::unique_ptr<Hccl::TaskService>> g_taskServiceMap;
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_t args);
+__attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunchNew(const uint64_t args);
 }
 
 #endif // DPU_INTERFACE_H

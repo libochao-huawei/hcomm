@@ -148,6 +148,42 @@ extern HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t t
 extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine, aclrtStream stream,
     uint32_t notifyNum, ThreadHandle *thread);
 
+typedef enum {
+    THREAD_TYPE_INVALID = -1,
+    THREAD_TYPE_CPU = 0,
+    THREAD_TYPE_TS = 1,
+} ThreadType;
+
+typedef struct {
+    uint16_t notifyNumPerThread;
+    uint16_t specifiedNotifyTypeNum;
+} ThreadConfig;
+
+typedef HcclResult(ThreadService)(void* args, uint64_t argsSize);
+
+typedef struct {
+    uint64_t service; // service 在host侧对应指针
+    uint64_t threadHandle;
+} ThreadServiceEntity;
+
+/**
+ * @brief 获取通信线程资源
+ *
+ * @param[in] comm 通信域句柄
+ * @param[in] engine 通信引擎类型
+ * @param[in] threadNum 线程数量
+ * @param[in] notifyNumPerThread 每线程的通知数量
+ * @param[in] type 线程类型
+ * @param[out] threads 返回的线程句柄 (引擎为AICPU或AICPU_TS时返回device侧的ThreadEntity句柄)
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_t threadNum,
+    ThreadType type, ThreadConfig config, ThreadHandle *threads);
+
+extern HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle);
+
+extern HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle);
+
 /** @} */  // 通信引擎资源管理
 
 /**

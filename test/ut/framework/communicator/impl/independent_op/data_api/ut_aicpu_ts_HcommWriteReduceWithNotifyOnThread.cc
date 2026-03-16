@@ -11,6 +11,8 @@
 #include "ut_aicpu_ts_base.h"
 #include "ub_transport_lite_impl.h"
 
+#include "resource_entities.h"
+
 using namespace hccl;
 
 class UtAicpuTsHcommWriteReduceWithNotifyOnThread : public UtAicpuTsBase

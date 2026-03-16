@@ -192,6 +192,40 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_t threadNum,
+    ThreadType type, ThreadConfig config, ThreadHandle *threads)
+{
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(threads == nullptr,  HCCL_ERROR("[%s] threads is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(!IsValidCommEngine(engine), 
+        HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(engine)), HCCL_E_PARA);
+
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    std::string commId = hcclComm->GetIdentifier();
+    HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%u] reqThreadNum[%u] notifyNumPerThread[%u]",
+        __func__, commId.c_str(), engine, threadNum, config.notifyNumPerThread);
+
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
+        CHK_PTR_NULL(engineResMgr);
+        ret = engineResMgr->HcclThreadAcquireWithConfig(engine, threadNum, config, type, threads);
+    } else {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to create threads for engine[%d], threadNum[%u], notifyNumPerThread[%u]",
+            __func__, engine, threadNum, config.notifyNumPerThread);
+        return ret;
+    }
+
+    HCCL_INFO("[%s] Allocated %u threads for engine[%d], notifyPerThread[%u]", __func__,
+              threadNum, engine, config.notifyNumPerThread);
+    return HCCL_SUCCESS;
+};
+
 HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
 {

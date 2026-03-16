@@ -30,6 +30,8 @@ public:
         uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
+    HcclResult HcclThreadAcquireWithConfig(CommEngine engine, uint32_t threadNum,
+        const ThreadConfig config, const ThreadType type, ThreadHandle *threads);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
     HcclResult HcclAllocNotify(CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
         NotifyHandle **notifyHandleList);

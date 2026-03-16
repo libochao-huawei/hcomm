@@ -11,6 +11,8 @@
 #include "ut_aicpu_ts_base.h"
 #include "ub_transport_lite_impl.h"
 
+#include "resource_entities.h"
+
 using namespace hccl;
 
 class UtAicpuTsHcommChannelNotifyWaitOnThread : public UtAicpuTsBase
@@ -61,5 +63,12 @@ TEST_F(UtAicpuTsHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThrea
 TEST_F(UtAicpuTsHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_Channel_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     res = HcommChannelNotifyWaitOnThread(thread, 0, notifyIdx, timeout);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_When_StreamLite_NotFound_Expect_ReturnIsHCCL_E_PTR)
+{
+    threadOnDevice.pImpl_->streamLiteVoidPtr_ = nullptr;
+    res = HcommChannelNotifyWaitOnThread(thread, channel, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_E_PTR);
 }

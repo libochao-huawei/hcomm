@@ -688,7 +688,15 @@ int32_t HcommChannelFence(ChannelHandle channel)
     return HcommChannelFenceOnThread(0, channel);
 }
 
-HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo) // 兼容性接口，后续删除
+int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceHandle serviceHandle, const void *args, uint64_t argsSizeByte)
+{
+    HCCL_INFO("[%s] START. dstThreadHandle[0x%llx], serviceHandle[0x%llx], args[0x%llx], argsSizeByte[%llu].",
+        __func__, dstThreadHandle, serviceHandle, args, argsSizeByte);
+    HCCL_ERROR("[%s] NOT SUPPORT on host side.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
     HCCL_WARNING("%s not support", __func__);
     return HCCL_SUCCESS;
