@@ -308,7 +308,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Alloced_
 {
     ManagerCallbacks callbacks;
     void* commV2 = reinterpret_cast<void *>(0x12345);
-    auto collComm = std::make_shared<hcclComm>(commV2, 0, "hccl_test", callbacks);
+    auto collComm = std::make_shared<hccl::CollComm>(commV2, 0, "hccl_test", callbacks);
     auto engineResMgr = std::make_shared<CommEngineResMgr>();
     engineResMgr->Init(38, 5, "hccl_test", nullptr, callbacks);
     MOCKER_CPP(&hccl::hcclComm::IsCommunicatorV2).stubs().will(returnValue(true));
@@ -329,7 +329,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_No_Valid
 {
     ManagerCallbacks callbacks;
     void* commV2 = reinterpret_cast<void *>(0x12345);
-    auto collComm = std::make_shared<hcclComm>(commV2, 0, "hccl_test", callbacks);
+    auto collComm = std::make_shared<hccl::CollComm>(commV2, 0, "hccl_test", callbacks);
     auto engineResMgr = std::make_shared<CommEngineResMgr>();
     engineResMgr->Init(40, 5, "hccl_test", nullptr, callbacks);
     MOCKER_CPP(&hccl::hcclComm::IsCommunicatorV2).stubs().will(returnValue(true));
@@ -348,13 +348,12 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Normal_E
 {
     ManagerCallbacks callbacks;
     void* commV2 = reinterpret_cast<void *>(0x12345);
-    auto collComm = std::make_shared<hcclComm>(commV2, 0, "hccl_test", callbacks);
+    auto collComm = std::make_shared<hccl::CollComm>(commV2, 0, "hccl_test", callbacks);
     auto engineResMgr = std::make_shared<CommEngineResMgr>();
     engineResMgr->Init(40, 5, "hccl_test", nullptr, callbacks);
     MOCKER_CPP(&hccl::hcclComm::IsCommunicatorV2).stubs().will(returnValue(true));
     MOCKER_CPP(&hccl::hcclComm::GetCollComm).stubs().will(returnValue(collComm.get()));
     MOCKER_CPP(&hccl::CollComm::GetCommEngineResMgr).stubs().will(returnValue(engineResMgr.get()));
-    MOCKER_CPP(&hccl::CpuThread::Init).stubs().will(returnValue(HCCL_SUCCESS));
 
     bool isDeviceSide = false;
     ThreadHandle threads[2] = {0};

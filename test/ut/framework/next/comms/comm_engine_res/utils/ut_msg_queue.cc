@@ -151,7 +151,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_GetQueueInfo_On_Normal_Expect_Correct)
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    QueueInfo info = msgQueue.GetQueueInfo();
+    hccl::QueueInfo info = msgQueue.GetQueueInfo();
     EXPECT_EQ(info.capacity, 256);
     EXPECT_EQ(info.msgSize, sizeof(ThreadMsgEntity));
 }
