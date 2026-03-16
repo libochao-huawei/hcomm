@@ -50,7 +50,7 @@ protected:
     virtual void SetUp() override
     {
         // ---- TS thread (for AicpuTs wait tests) ----
-        tsThread_.devType_ = DevType::DEV_TYPE_910_95;
+        tsThread_.devType_ = DevType::DEV_TYPE_950;
         tsThread_.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
         InitNotifies(tsThread_);
 
