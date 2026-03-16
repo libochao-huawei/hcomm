@@ -128,6 +128,8 @@ HcclResult __attribute__((weak)) HcommFlushV2();
 
 uint32_t __attribute__((weak)) HcclGetCommConfigCapabilityV2();
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+HcclResult __attribute__((weak)) HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTaskGroup);
+
 HcclResult __attribute__((weak)) HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
 
 HcclResult __attribute__((weak)) HcclGetInstSizeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
