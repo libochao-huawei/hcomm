@@ -20,6 +20,7 @@
 namespace Hccl {
 
 static std::mutex socketLock;
+static std::mutex deviceMapLock;
 
 void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
 {
@@ -293,6 +294,7 @@ bool SocketManager::DelWhiteList(PortData &localPort, vector<RaSocketWhitelist> 
 
 void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap)
 {
+    std::lock_guard<std::mutex> lock(deviceMapLock);
     std::unordered_map<u32, u32> &staticMap = SocketManager::GetDeviceServerListenPortMap();
     staticMap.clear();
     for (auto &pair : rankListenPortMap) {

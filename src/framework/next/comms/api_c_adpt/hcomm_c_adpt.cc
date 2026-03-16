@@ -110,7 +110,27 @@ static HcclResult EnsureKernelBinLoaded(CommEngine engine) {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
+static HcclResult EnsureKernelBinLoaded(CommEngine engine) {
+    if (engine != COMM_ENGINE_AICPU && engine != COMM_ENGINE_AICPU_TS) {
+        HCCL_INFO("[%s] engine[%d] kernel loading not required", __func__, engine);
+        return HCCL_SUCCESS;
+    }
+    std::lock_guard<std::mutex> lock(hcomm::g_BinHandleMtx);
+    if (g_BinHandle != nullptr) {
+        return HCCL_SUCCESS;
+    }
+    std::string jsonPath;
+    CHK_RET(hccl::GetKernelFilePath(jsonPath));
+    jsonPath += "ccl_kernel.json";
+
+    HcclResult ret = hccl::LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, g_BinHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[EnsureKernelBinLoaded] load aicpu file fail, path[%s]", jsonPath.c_str()),
+                ret);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommEndpointGet(const EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
