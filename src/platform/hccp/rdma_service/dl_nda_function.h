@@ -40,4 +40,8 @@ int RsNdaIbvExtendCheckVersion(uint32_t driverMajor, uint32_t driverMinor, uint3
 struct ibv_context_extend *RsNdaIbvOpenExtend(struct ibv_context *context);
 int RsNdaIbvCloseExtend(struct ibv_context_extend *context);
 
+struct ibv_cq_extend *RsNdaCreateCqExtend(struct ibv_context_extend *context,
+    struct ibv_cq_init_attr_extend *cqInitAttr);
+int RsNdaIbvDestroyCqExtend(struct ibv_context_extend *context, struct ibv_cq_extend *cqExtend);
+
 #endif // DL_NDA_FUNCTION_H
