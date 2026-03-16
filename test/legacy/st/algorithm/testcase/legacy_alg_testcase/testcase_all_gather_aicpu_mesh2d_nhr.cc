@@ -97,7 +97,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Mesh_template)
 // {{0,1},{8,9},{24,25},{32,33}},{{3,5},{19,21}},非对称2D
 TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_4x2_2x2)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     RankId myRank = 8;
     u32 rankSize = 12;
@@ -113,7 +113,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_4x2_2x2)
     algoExecutor->SetRankSize(rankSize);
     algoExecutor->EnableDataAllign(false);
     algoExecutor->EnableDetour(false);
-    algoExecutor->SetDevType(DevType::DEV_TYPE_910_95);
+    algoExecutor->SetDevType(DevType::DEV_TYPE_950);
 
     CollAlgOperator collAlgOp;
     collAlgOp.opType = OpType::ALLGATHER;
@@ -163,7 +163,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_4x2_2x2)
 // {{0,1},{8,9}},{{3,5},{19,21}},对称2D
 TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_2x2_2x2)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
 
     RankId myRank = 0;
     u32 rankSize = 8;
@@ -178,7 +178,7 @@ TEST_F(AllGatherAICPUMesh2dNHRTest, Aicpu_AllGather_Parallel_executor_2x2_2x2)
     algoExecutor->SetRankSize(rankSize);
     algoExecutor->EnableDataAllign(false);
     algoExecutor->EnableDetour(false);
-    algoExecutor->SetDevType(DevType::DEV_TYPE_910_95);
+    algoExecutor->SetDevType(DevType::DEV_TYPE_950);
 
     CollAlgOperator collAlgOp;
     collAlgOp.opType = OpType::ALLGATHER;

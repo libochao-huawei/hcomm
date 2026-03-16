@@ -33,7 +33,6 @@ add_dependencies(legacy_alg_aicpu_2d_testcase
     hccl_alg_adaption_v2
 )
 
-message(STATUS, "zhvxxxxxx:${THIRD_PARTY_PATH}")
 target_link_libraries(legacy_alg_aicpu_2d_testcase PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     hccl_alg_analyzer_legacy

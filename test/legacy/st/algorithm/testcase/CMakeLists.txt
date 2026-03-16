@@ -14,14 +14,10 @@ set(include_list
     ${ASCEND_CANN_INCLUDE_LIST}
 
     // 第三方
+    ${THIRD_PARTY_PATH}/rdma-core-build/include
     ${THIRD_PARTY_PATH}/json/include
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
     ${THIRD_PARTY_PATH}/protobuf/include
-
-    #${TOP_DIR}/inc/external/
-    #${TOP_DIR}/abl/adump/inc/adump
-    #${TOP_DIR}/metadef/inc/external/
-    #${TOP_DIR}/metadef/pkg_inc
 )
 
 file(GLOB_RECURSE ALG_CCU_CONTEXT_SRC "${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/*.cc")

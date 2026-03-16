@@ -109,7 +109,7 @@ protected:
 
         CollAlgComponentBuilder builder;
         component = builder.SetRankGraph(rankGraph.get())
-                        .SetDevType(DevType::DEV_TYPE_910_95)
+                        .SetDevType(DevType::DEV_TYPE_950)
                         .SetMyRank(myRank)
                         .SetRankSize(rankSize)
                         .Build();

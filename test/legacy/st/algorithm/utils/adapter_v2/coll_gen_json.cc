@@ -592,7 +592,7 @@ HcclResult InitGenRankTableJson(TopoMeta &topoMeta, const CheckerOpParam& param,
         InitGenRankTableJsonHF(topoMeta, rankTableString);
         return HCCL_SUCCESS;
     }
-    if(param.devtype != CheckerDevType::DEV_TYPE_910_95) {
+    if(param.devtype != CheckerDevType::DEV_TYPE_950) {
         return InitGenRankTableJsonV1(topoMeta, rankTableString);
     }
     u32 serverNum = GetServerNumFormTopoMeta(topoMeta);
@@ -657,7 +657,7 @@ HcclResult InitGenTopoJson(std::string &topoFileName, const CheckerOpParam& para
         InitGenTopoJsonHF(topoFileName, is1DTopo);
         return HCCL_SUCCESS;
     }
-    if(param.devtype !=  CheckerDevType::DEV_TYPE_910_95) {
+    if(param.devtype !=  CheckerDevType::DEV_TYPE_950) {
         return InitGenTopoJsonV1(topoFileName, is1DTopo);
     }
     u32 rankSizeNum = 64;  // 需要更大ranksize时，需要修改该值 = 64，最大支持64

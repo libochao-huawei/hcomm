@@ -113,8 +113,8 @@ std::map<CheckerDevType, Hccl::DevType> g_CheckerDevType2HcclDevType_aicpu = {
     {CheckerDevType::DEV_TYPE_310P1, Hccl::DevType::DEV_TYPE_V51_310_P1},
     {CheckerDevType::DEV_TYPE_910_93, Hccl::DevType::DEV_TYPE_910A3},
     {CheckerDevType::DEV_TYPE_NOSOC, Hccl::DevType::DEV_TYPE_NOSOC},
-    {CheckerDevType::DEV_TYPE_910_95, Hccl::DevType::DEV_TYPE_910_95},
-    {CheckerDevType::DEV_TYPE_HF, Hccl::DevType::DEV_TYPE_910_95}
+    {CheckerDevType::DEV_TYPE_950, Hccl::DevType::DEV_TYPE_950},
+    {CheckerDevType::DEV_TYPE_HF, Hccl::DevType::DEV_TYPE_950}
 };
 
 std::map<uint16_t, CheckerReduceOp> g_ReduceOp2CheckerReduceOp_ccu = {

@@ -70,7 +70,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_2rank)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -92,7 +92,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -116,7 +116,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -138,7 +138,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload)
 //     checkerOpParam.opType = CheckerOpType::BROADCAST;
 //     checkerOpParam.tag = "broadcast";
 //     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
 //     checkerOpParam.DataDes.count = 100;
 //     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
 //     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -160,7 +160,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload)
 //     checkerOpParam.opType = CheckerOpType::BROADCAST;
 //     checkerOpParam.tag = "broadcast";
 //     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
 //     checkerOpParam.DataDes.count = 512 * 1024;
 //     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
 //     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -184,7 +184,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload)
 //     checkerOpParam.opType = CheckerOpType::BROADCAST;
 //     checkerOpParam.tag = "broadcast";
 //     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
 //     checkerOpParam.DataDes.count = 512 * 1024;
 //     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
 //     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -208,7 +208,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload)
 //     checkerOpParam.opType = CheckerOpType::BROADCAST;
 //     checkerOpParam.tag = "broadcast";
 //     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
 //     checkerOpParam.DataDes.count = 100;
 //     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
 //     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -230,7 +230,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload)
 //     checkerOpParam.opType = CheckerOpType::BROADCAST;
 //     checkerOpParam.tag = "broadcast";
 //     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
 //     checkerOpParam.DataDes.count = 1000;
 //     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
 //     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -252,7 +252,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload)
 //     checkerOpParam.opType = CheckerOpType::BROADCAST;
 //     checkerOpParam.tag = "broadcast";
 //     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
 //     checkerOpParam.DataDes.count = 1000;
 //     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
 //     checkerOpParam.algName = "CcuBroadcastMesh1D";
@@ -274,7 +274,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_2rank_mem2mem)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -296,7 +296,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_mem2mem)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -318,7 +318,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_3rank_offload_mem2mem)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -340,7 +340,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_4rank_mem2mem)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -362,7 +362,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_4rank_512k_count_mem2mem)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 512 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -384,7 +384,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_4rank_offload_512k_count_mem2me
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 512 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -406,7 +406,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_5rank_mem2mem)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -428,7 +428,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_5rank_mem2mem)
 //     checkerOpParam.opType = CheckerOpType::BROADCAST;
 //     checkerOpParam.tag = "broadcast";
 //     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+//     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
 //     checkerOpParam.DataDes.count = 1000;
 //     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
 //     checkerOpParam.algName = "CcuBroadcastMeshMem2Mem1D";
@@ -452,7 +452,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_nhr1d_2rank)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastNHRMem2Mem1D";
@@ -476,7 +476,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_nhr1d_3rank)
     checkerOpParam.opType = CheckerOpType::BROADCAST;
     checkerOpParam.tag = "broadcast";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.algName = "CcuBroadcastNHRMem2Mem1D";

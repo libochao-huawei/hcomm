@@ -38,14 +38,14 @@ const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{{"Ascend310P1", D
                                                                {"Ascend910C1", DevType::DEV_TYPE_910A3},
                                                                {"Ascend910C2", DevType::DEV_TYPE_910A3},
                                                                {"Ascend910C3", DevType::DEV_TYPE_910A3},
-                                                               {"Ascend910_9591", DevType::DEV_TYPE_910_95},
-                                                               {"Ascend910_9599", DevType::DEV_TYPE_910_95},
-                                                               {"Ascend910_9589", DevType::DEV_TYPE_910_95},
-                                                               {"Ascend910_958a", DevType::DEV_TYPE_910_95},
-                                                               {"Ascend910_958b", DevType::DEV_TYPE_910_95},
-                                                               {"Ascend910_957b", DevType::DEV_TYPE_910_95},
-                                                               {"Ascend910_957d", DevType::DEV_TYPE_910_95},
-                                                               {"Ascend910_950z", DevType::DEV_TYPE_910_95},
+                                                               {"Ascend910_9591", DevType::DEV_TYPE_950},
+                                                               {"Ascend910_9599", DevType::DEV_TYPE_950},
+                                                               {"Ascend910_9589", DevType::DEV_TYPE_950},
+                                                               {"Ascend910_958a", DevType::DEV_TYPE_950},
+                                                               {"Ascend910_958b", DevType::DEV_TYPE_950},
+                                                               {"Ascend910_957b", DevType::DEV_TYPE_950},
+                                                               {"Ascend910_957d", DevType::DEV_TYPE_950},
+                                                               {"Ascend910_950z", DevType::DEV_TYPE_950},
                                                                {"nosoc", DevType::DEV_TYPE_NOSOC}};
 
 // 添加编译宏，防止返回82类型芯片造成已有UT失效
