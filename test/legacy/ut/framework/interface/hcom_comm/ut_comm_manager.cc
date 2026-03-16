@@ -119,6 +119,28 @@ protected:
 
 };
 
+namespace {
+void ResetCommInfoV2ForTest(u32 logicDevId = 0)
+{
+    auto &commInfoV2 = CommManager::GetInstance(logicDevId).GetCommInfoV2();
+    commInfoV2.hcclGroupMap.clear();
+    commInfoV2.pComm = nullptr;
+    commInfoV2.commParams = Hccl::CommParams();
+    commInfoV2.isUsed = false;
+}
+
+std::shared_ptr<Hccl::HcclCommunicator> SetupCommInfoV2ForTest(u32 logicDevId = 0, u32 rankSize = 4)
+{
+    auto hcclComm = std::make_shared<Hccl::HcclCommunicator>(Hccl::CommParams());
+    auto &commInfoV2 = CommManager::GetInstance(logicDevId).GetCommInfoV2();
+    commInfoV2.hcclGroupMap.clear();
+    commInfoV2.commParams.rankSize = rankSize;
+    commInfoV2.isUsed = true;
+    commInfoV2.pComm = hcclComm;
+    return hcclComm;
+}
+}
+
 TEST_F(HcomutCommManagerTest, ut_V2_gradient_Manage_Split_API)
 {
     HcclGroupParamsV2 hcclGroupParamsV2;
@@ -243,6 +265,90 @@ std::string file_name_t{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/interface
     MOCKER(GetFileSize).stubs().will(returnValue(RANKTABLE_FILE_MAX_SIZE + 1));
     int ret = HcomInitByFileV2(file_name_t.c_str(), identify);
     EXPECT_EQ(ret, HCCL_E_OPEN_FILE_FAILURE);
+}
+
+TEST_F(HcomutCommManagerTest, Ut_HcomGetCommV2_When_WorldCommExists_Expect_ReturnRawCommPointer)
+{
+    auto hcclComm = SetupCommInfoV2ForTest();
+    MOCKER(aclrtGetDevice).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+
+    void *comm = nullptr;
+    HcclResult ret = HcomGetCommV2(&comm);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(comm, static_cast<void *>(hcclComm.get()));
+
+    ResetCommInfoV2ForTest();
+}
+
+TEST_F(HcomutCommManagerTest, Ut_HcommGetGroupParamsV2_When_GroupExists_Expect_CopyGroupParamsAndReturnSubComm)
+{
+    constexpr u32 worldRank = 3;
+    constexpr u32 groupRank = 1;
+    constexpr u32 serverNum = 2;
+    constexpr u32 totalRanks = 4;
+    constexpr u32 refCounter = 7;
+    const std::vector<u32> groupRanks {0, 2, 4, 6};
+    const std::string groupName = "test_group";
+    auto hcclComm = SetupCommInfoV2ForTest();
+    auto &groupParamsV2 = CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap[groupName];
+    groupParamsV2.worldRank = worldRank;
+    groupParamsV2.groupRank = groupRank;
+    groupParamsV2.serverNum = serverNum;
+    groupParamsV2.totalRanks = totalRanks;
+    groupParamsV2.groupRanks = groupRanks;
+    groupParamsV2.refCounter = refCounter;
+    groupParamsV2.destroyFlag = true;
+    groupParamsV2.pComm = hcclComm;
+    MOCKER(aclrtGetDevice).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+
+    HcclGroupParamsTem groupParamsTem {};
+    void *commV2 = nullptr;
+    HcclResult ret = HcommGetGroupParamsV2(groupName.c_str(), &groupParamsTem, &commV2);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(groupParamsTem.worldRank, worldRank);
+    EXPECT_EQ(groupParamsTem.groupRank, groupRank);
+    EXPECT_EQ(groupParamsTem.serverNum, serverNum);
+    EXPECT_EQ(groupParamsTem.totalRanks, totalRanks);
+    EXPECT_EQ(groupParamsTem.groupRanks, groupRanks);
+    EXPECT_EQ(groupParamsTem.refCounter, refCounter);
+    EXPECT_TRUE(groupParamsTem.destroyFlag);
+    EXPECT_EQ(commV2, static_cast<void *>(hcclComm.get()));
+
+    ResetCommInfoV2ForTest();
+}
+
+TEST_F(HcomutCommManagerTest, Ut_HcommGetGroupParamsV2_When_GroupCommIsNull_Expect_ReturnPtrError)
+{
+    const std::string groupName = "test_group";
+    SetupCommInfoV2ForTest();
+    auto &groupParamsV2 = CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap[groupName];
+    groupParamsV2.worldRank = 1;
+    groupParamsV2.groupRank = 0;
+    groupParamsV2.serverNum = 1;
+    groupParamsV2.totalRanks = 2;
+    groupParamsV2.groupRanks = {0, 1};
+    groupParamsV2.refCounter = 3;
+    groupParamsV2.destroyFlag = false;
+    groupParamsV2.pComm = nullptr;
+    MOCKER(aclrtGetDevice).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+
+    HcclGroupParamsTem groupParamsTem {};
+    void *commV2 = reinterpret_cast<void *>(0x1);
+    HcclResult ret = HcommGetGroupParamsV2(groupName.c_str(), &groupParamsTem, &commV2);
+
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(groupParamsTem.worldRank, 1U);
+    EXPECT_EQ(groupParamsTem.groupRank, 0U);
+    EXPECT_EQ(groupParamsTem.serverNum, 1U);
+    EXPECT_EQ(groupParamsTem.totalRanks, 2U);
+    EXPECT_EQ(groupParamsTem.groupRanks, std::vector<u32>({0, 1}));
+    EXPECT_EQ(groupParamsTem.refCounter, 3U);
+    EXPECT_FALSE(groupParamsTem.destroyFlag);
+    EXPECT_EQ(commV2, reinterpret_cast<void *>(0x1));
+
+    ResetCommInfoV2ForTest();
 }
 
 TEST_F(HcomutCommManagerTest, ut_v2_comm_manager_max_device_id_test)
