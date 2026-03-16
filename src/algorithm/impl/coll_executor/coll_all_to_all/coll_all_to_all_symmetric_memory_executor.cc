@@ -45,7 +45,7 @@ HcclResult CollRunAlltoAllFullMeshSymmetricMemory::Orchestrate(OpParam& param, A
     return HCCL_SUCCESS;
 }
 
-HcclResult CollRunAlltoAllFullMeshSymmetricMemory::GetLocalSDMAGroupInfo(u32& devNumInlocalPod, u32& rankIdxInPod)
+HcclResult CollRunAlltoAllFullMeshSymmetricMemory::GetLocalSDMAGroupInfo(u32& devNumInlocalPod, u32& rankIdxInPod) const
 {
     CHK_RET(topoMatcher_->GetLocalSuperPodRankSize(topoAttr_.userRank, devNumInlocalPod, rankIdxInPod));
     CHK_PRT_RET(devNumInlocalPod == INVALID_VALUE_RANKSIZE,
@@ -84,7 +84,7 @@ HcclResult CollRunAlltoAllFullMeshSymmetricMemory::CalcLevel0CommInfo(TransportM
     return HCCL_SUCCESS;
 }
 
-HcclResult CollRunAlltoAllFullMeshSymmetricMemory::CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType)
+HcclResult CollRunAlltoAllFullMeshSymmetricMemory::CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType) const
 {
     inputType = TransportMemType::CCL_INPUT;
     outputType = TransportMemType::CCL_OUTPUT;

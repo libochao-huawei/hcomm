@@ -101,13 +101,13 @@ HcclResult CollAlgOperator::CalNumBlocks(std::string& algName, const OpParam& pa
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlgOperator::GetOpExpansionStr(const OpParam &param, AlgDesc &algDesc, std::string &opExpansionStr)
+HcclResult CollAlgOperator::GetOpExpansionStr(const OpParam &param, const AlgDesc &algDesc, std::string &opExpansionStr)
 {
     if (algDesc.isAivMode) {
         opExpansionStr = "AIV";
     } else if (param.aicpuUnfoldMode) {
         opExpansionStr = "AI_CPU";
-    } else if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+    } else if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         opExpansionStr = "HOST";
     } else {
         opExpansionStr = "HOST_TS";
@@ -118,6 +118,20 @@ HcclResult CollAlgOperator::GetOpExpansionStr(const OpParam &param, AlgDesc &alg
 HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &param, const ResourceLimit &limit,
     std::string &algName, AlgDesc &algDesc, std::string &newTag)
 {
+    bool isOnlyAiv = topoMatcher_->GetIsOnlyAivConfig();
+    bool supportOnlyAiv = (param.opType == HcclCMDType::HCCL_CMD_ALLGATHER || 
+                               param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
+                               param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE);
+    CHK_PRT_RET(isOnlyAiv && !supportOnlyAiv,
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support onlyaiv",
+                GetCMDTypeEnumStr(param.opType).c_str()), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(isOnlyAiv && userRankSize_ == 1 && supportOnlyAiv,
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] onlyaiv not support, please ensure rankNum is greater than one"),
+                HCCL_E_NOT_SUPPORT);
+
     // 兼容老接口
     if (limit.ifLimit) {
         CHK_RET(SelectAlg(tag, param, algName, newTag, limit));
@@ -984,7 +998,7 @@ HcclResult CollAlgOperator::AHCAlgSelect(AlgTypeLevel1 &algType, std::vector<std
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlgOperator::AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
+HcclResult CollAlgOperator::AHCAlgOptionSelect(const AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
     std::map<AHCConcOpType, TemplateType> &ahcAlgOption, const AHCAlgSelectParam &ahcAlgSelectParam)
 {
     (void) algType;
@@ -1098,7 +1112,7 @@ bool CollAlgOperator::IsNeedStrictMode(const OpParam& param)
     return isStrictMode;
 }
 
-bool CollAlgOperator::CheckStrictCondition(const OpParam& param)
+bool CollAlgOperator::CheckStrictCondition(const OpParam& param) const
 {
     CHK_PRT_RET(multiModuleDiffDeviceNumMode_ || multiSuperPodDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_, 
         HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support asymmetrical topo."),
