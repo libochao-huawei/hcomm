@@ -22,7 +22,7 @@ extern "C" {
  */
 typedef enum {
     CCU_SUCCESS = 0,               /**< success */
-    CCU_PARA = 1,                /**< parameter error */
+    CCU_E_PARA = 1,                /**< parameter error */
     CCU_E_PTR = 2,                 /**< empty pointer */
     CCU_E_MEMORY = 3,              /**< memory error */
     CCU_E_INTERNAL = 4,            /**< internal error */
@@ -65,7 +65,7 @@ typedef enum {
 
 typedef uint64_t CcuInsHandle;
 
-// typedef uint64_t CcuKernelHanlde; // todo: 需要放开
+typedef uint64_t CcuKernelHandle;
 
 typedef uint64_t CcuVariableHandle;
 
