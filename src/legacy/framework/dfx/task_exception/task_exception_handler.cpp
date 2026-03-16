@@ -106,7 +106,7 @@ static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
     if (taskInfo.dfxOpInfo_ != nullptr &&
         taskInfo.dfxOpInfo_->headOpCounterAddr_ != 0 &&
         taskInfo.dfxOpInfo_->tailOpCounterAddr_ != 0) {
-        u64 size = FOUR_BYTES;
+        u64 size = 4;
         void *headAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->headOpCounterAddr_);
         void *tailAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->tailOpCounterAddr_);
         HrtMemcpy(&floatCounter.first, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
