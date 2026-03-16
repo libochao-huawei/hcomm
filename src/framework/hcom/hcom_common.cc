@@ -481,7 +481,7 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
             CHK_RET(HcomCreateGroupImplV2(group, rankNum, ranks));
             HcclGroupParams groupParams{};
             void *commV2 = nullptr;
-            CHK_RET(HcommGetGroupParamsV2(group, static_cast<void *>(&groupParams), &commV2));
+            CHK_RET(HcomGetGroupParamsV2(group, static_cast<void *>(&groupParams), &commV2));
             Hccl::RankId rank = static_cast<Hccl::RankId>(groupParams.groupRank);
             CHK_RET(HcomInitCollComm(rank, &commV2, groupParams.pSubComm));
             CHK_PTR_NULL(groupParams.pSubComm);

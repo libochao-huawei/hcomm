@@ -477,7 +477,7 @@ HcclResult HcomGetCommV2(void **commV2)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
+HcclResult HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
     HcclGroupParamsV2 &groupParamsV2 = hcomCommInfoV2.hcclGroupMap[group];
@@ -491,7 +491,7 @@ HcclResult HcommGetGroupParamsV2(const char *group, void* groupParams, void **co
     groupParamsTem->destroyFlag = groupParamsV2.destroyFlag;
     CHK_PTR_NULL(groupParamsV2.pComm);
     *commV2 = static_cast<Hccl::HcclCommunicator*>(groupParamsV2.pComm.get());
-    HCCL_INFO("[HcommGetGroupParamsV2] success. group[%s]", group);
+    HCCL_INFO("[HcomGetGroupParamsV2] success. group[%s]", group);
     return HCCL_SUCCESS;
 }
 
