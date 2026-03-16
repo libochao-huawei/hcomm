@@ -244,16 +244,41 @@ extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channe
 
 /**
  * @brief 单边写操作
+ * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
  * @param[out] dst 目标内存地址
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
- * 
+ */
+extern int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
+
+/**
+ * @brief 单边写操作
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] len 数据长度（字节）
+ * @return int32_t 执行结果状态码
+ *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
- 
+
+/**
+ * @brief 带通知的单边写操作
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] len 数据长度（字节）
+ * @param[in] notifyIdx 远端通知索引
+ * @return int32_t 执行结果状态码
+ * @note 当前在A5上主要支持
+ */
+extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+    uint64_t len, uint32_t remoteNotifyIdx);
+
 /**
  * @brief 带通知的单边写操作
  * @param[in] channel 通道句柄
@@ -263,12 +288,23 @@ extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, 
  * @param[in] notifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
  * @note 当前在A5上主要支持
- * 
+ *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
- 
+
+/**
+ * @brief 单边读操作
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] len 数据长度（字节）
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
+
 /**
  * @brief 单边读操作
  * @param[in] channel 通道句柄
@@ -276,7 +312,7 @@ extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const v
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
- * 
+ *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
@@ -302,7 +338,7 @@ extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHand
  * @param[in] channel 通道句柄
  * @param[in] remoteNotifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
- * 
+ *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx);
@@ -323,7 +359,7 @@ extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle
  * @param[in] localNotifyIdx 本地通知索引
  * @param[in] timeout 超时时间(毫秒)
  * @return int32_t 执行结果状态码
- * 
+ *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
@@ -423,19 +459,34 @@ extern int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void
 extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
 
 /**
+ * @brief DPU 数据面 Fence 接口
+ * @param[in] thread 线程句柄
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommFenceOnThread(ThreadHandle thread);
+
+/**
  * @brief DPU数据面flush接口
  * @param[in] void
  * @return int32_t 执行结果状态码
- * 
+ *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
-*/
+ */
 extern int32_t HcommFlush();
+
+/**
+ * @brief 通信通道级内存屏障操作
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
 
 /**
  * @brief 通信通道级内存屏障操作
  * @param[in] channel 通道句柄
  * @return int32_t 执行结果状态码
- * 
+ *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelFence(ChannelHandle channel);

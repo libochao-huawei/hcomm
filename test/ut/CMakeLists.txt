@@ -184,6 +184,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
 
     # legacy include
     ${HCCL_CODE_ROOT}/src/legacy/common/
@@ -320,6 +321,7 @@ add_subdirectory(framework/op_base_api)
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)
+add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
 add_subdirectory(aicpu_kfc/aicpu)
 add_subdirectory(aicpu_kfc/misc)
 add_subdirectory(inter/comm)
