@@ -169,6 +169,7 @@ set(INSTALL_INCLUDE_DIR hcomm/include)
 set(INSTALL_PKG_INCLUDE_DIR hcomm/pkg_inc)
 set(INSTALL_CCL_KERNEL_JSON_DIR hcomm/built-in/data/op/aicpu)
 set(INSTALL_DPU_KERNEL_JSON_DIR hcomm/built-in/data/op/dpu)
+set(INSTALL_CPU_KERNEL_JSON_DIR hcomm/built-in/data/op/cpu)
 set(INSTALL_DEVICE_TAR_DIR hcomm/Ascend/aicpu)
 
 set(CMAKE_SKIP_RPATH TRUE)
