@@ -7,42 +7,27 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
 set(src_to_test_list
     main.cc
-    ut_aicpu_ts_HcommLocalCopyOnThread.cc
-    ut_aicpu_ts_HcommLocalReduceOnThread.cc
-    ut_aicpu_ts_HcommThreadNotifyRecordOnThread.cc
-    ut_aicpu_ts_HcommThreadNotifyWaitOnThread.cc
-    ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
-    ut_aicpu_ts_HcommChannelNotifyWaitOnThread.cc
-    ut_aicpu_ts_HcommWriteWithNotifyOnThread.cc
-    ut_aicpu_ts_HcommWriteReduceWithNotifyOnThread.cc
-    ut_aicpu_ts_HcommWriteOnThread.cc
-    ut_aicpu_ts_HcommWriteReduceOnThread.cc
-    ut_aicpu_ts_HcommReadOnThread.cc
-    ut_aicpu_ts_HcommReadReduceOnThread.cc
-    ut_aicpu_ts_HcommChannelFenceOnThread.cc
-    ut_aicpu_ts_HcommRequestServiceOnThread.cc
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/rtsq_base.cc
-    ${HCCL_LLT_ROOT}/ut/stub/legacy/llt_stub_ub_transport_lite_impl.cc
+    ut_hcomm_c_adpt_services.cc
+    ${HCCL_LLT_ROOT}/ut/stub/llt_stub_threads.cc
 )
 
-add_executable(hcomm_utest_api_data_aicpu_ts ${src_to_test_list})
+add_executable(hccl_utest_framework_comms_api_c_adpt ${src_to_test_list})
 
-#头文件搜索路径
-target_include_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
+target_include_directories(hccl_utest_framework_comms_api_c_adpt PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
 
-target_compile_definitions(hcomm_utest_api_data_aicpu_ts PRIVATE
+target_compile_definitions(hccl_utest_framework_comms_api_c_adpt PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hcomm_utest_api_data_aicpu_ts PRIVATE
+target_compile_options(hccl_utest_framework_comms_api_c_adpt PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -50,10 +35,11 @@ target_compile_options(hcomm_utest_api_data_aicpu_ts PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hcomm_utest_api_data_aicpu_ts PRIVATE
+target_link_directories(hccl_utest_framework_comms_api_c_adpt PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
+
+target_link_libraries(hccl_utest_framework_comms_api_c_adpt PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -64,7 +50,10 @@ target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
     -lrt
     -ldl
 )
-add_dependencies(hcomm_utest_api_data_aicpu_ts hccl_llt)
 
-enable_testing()
-add_test(NAME hcomm_utest_api_data_aicpu_ts COMMAND hcomm_utest_api_data_aicpu_ts)
+add_dependencies(hccl_utest_framework_comms_api_c_adpt hccl_llt)
+
+run_llt_test(
+   TARGET  hccl_utest_framework_comms_api_c_adpt
+   TASK_NUM 1
+)

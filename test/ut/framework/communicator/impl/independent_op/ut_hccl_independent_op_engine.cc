@@ -161,6 +161,8 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquire_When_Alloced_Notify_Mor
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
+
+
 // -----CommGetNotifyNumInThread接口host侧用例-------
 TEST_F(HcclIndependentOpEngineTest, Ut_CommGetNotifyNumInThread_When_Alloced_And_Get_Notify_Success)
 {
@@ -279,4 +281,89 @@ TEST_F(HcclIndependentOpEngineTest, Ut_PrintLinksInfo)
     link.dstEndpointDesc.loc.device.serverIdx = 1;
     link.dstEndpointDesc.loc.device.superPodIdx = 1;
     rankGraph_.PrintLinksInfo(link);
+}
+
+// -----HcclThreadAcquireWithConfig接口host侧用例-------
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Param_Is_Invalid_Expect_Para_Error)
+{
+    ThreadHandle threads[2] = {0};
+    ThreadConfig config;
+    ThreadType type = THREAD_TYPE_TS;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(nullptr, CommEngine::COMM_ENGINE_CPU_TS, 2, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 2, type, config, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_RESERVED, 2, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    // A3 not support
+    ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_AIV, 2, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Alloced_Threads_Morethan_Limit_Expect_E_PARA)
+{
+    ManagerCallbacks callbacks;
+    void* commV2 = reinterpret_cast<void *>(0x12345);
+    auto collComm = std::make_shared<hcclComm>(commV2, 0, "hccl_test", callbacks);
+    auto engineResMgr = std::make_shared<CommEngineResMgr>();
+    engineResMgr->Init(38, 5, "hccl_test", nullptr, callbacks);
+    MOCKER_CPP(&hccl::hcclComm::IsCommunicatorV2).stubs().will(returnValue(true));
+    MOCKER_CPP(&hccl::hcclComm::GetCollComm).stubs().will(returnValue(collComm.get()));
+    MOCKER_CPP(&hccl::CollComm::GetCommEngineResMgr).stubs().will(returnValue(engineResMgr.get()));
+
+    bool isDeviceSide = false;
+    ThreadHandle threads[39] = {0};
+    ThreadConfig config;
+    config.notifyNumPerThread = 1;
+    ThreadType type = THREAD_TYPE_TS;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 39, type, config, threads);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_No_Valid_Thread_Expect_NOT_SUPPORT)
+{
+    ManagerCallbacks callbacks;
+    void* commV2 = reinterpret_cast<void *>(0x12345);
+    auto collComm = std::make_shared<hcclComm>(commV2, 0, "hccl_test", callbacks);
+    auto engineResMgr = std::make_shared<CommEngineResMgr>();
+    engineResMgr->Init(40, 5, "hccl_test", nullptr, callbacks);
+    MOCKER_CPP(&hccl::hcclComm::IsCommunicatorV2).stubs().will(returnValue(true));
+    MOCKER_CPP(&hccl::hcclComm::GetCollComm).stubs().will(returnValue(collComm.get()));
+    MOCKER_CPP(&hccl::CollComm::GetCommEngineResMgr).stubs().will(returnValue(engineResMgr.get()));
+
+    ThreadHandle threads[1] = {0};
+    ThreadConfig config = {64};
+    ThreadType type = THREAD_TYPE_CPU;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 1, type, config, threads);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadAcquireWithConfig_When_Normal_Expect_Success)
+{
+    ManagerCallbacks callbacks;
+    void* commV2 = reinterpret_cast<void *>(0x12345);
+    auto collComm = std::make_shared<hcclComm>(commV2, 0, "hccl_test", callbacks);
+    auto engineResMgr = std::make_shared<CommEngineResMgr>();
+    engineResMgr->Init(40, 5, "hccl_test", nullptr, callbacks);
+    MOCKER_CPP(&hccl::hcclComm::IsCommunicatorV2).stubs().will(returnValue(true));
+    MOCKER_CPP(&hccl::hcclComm::GetCollComm).stubs().will(returnValue(collComm.get()));
+    MOCKER_CPP(&hccl::CollComm::GetCommEngineResMgr).stubs().will(returnValue(engineResMgr.get()));
+    MOCKER_CPP(&hccl::CpuThread::Init).stubs().will(returnValue(HCCL_SUCCESS));
+
+    bool isDeviceSide = false;
+    ThreadHandle threads[2] = {0};
+    ThreadConfig config = {2};
+    ThreadType type = THREAD_TYPE_TS;
+
+    HcclResult ret = HcclThreadAcquireWithConfig(comm, CommEngine::COMM_ENGINE_CPU_TS, 2, type, config, threads);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    for (int i = 0; i < 2; i++) {
+        EXPECT_NE(threads[i], 0);
+    }
 }

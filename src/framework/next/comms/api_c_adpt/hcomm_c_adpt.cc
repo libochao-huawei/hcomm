@@ -7,6 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "hcomm_c_adpt.h"
+
 #include <mutex>
 #include <cstring>
 
@@ -15,12 +17,12 @@
 #include "hcomm_res_defs.h"
 #include "hcomm_result_defs.h"
 #include "log.h"
-#include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
 #include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
+#include "cpu_thread.h"
 #include "aicpu_ts_urma_channel.h"
 #include "mem_device_pub.h"
 #include "channel_param.h"
@@ -38,6 +40,13 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
+#include "resource_entities.h"
+#include "orion_adapter_rts.h"
+
+// specify namespaces for the macro TRY_CATCH_*
+using string = std::string;
+using exception = std::exception;
+using HcclException = Hccl::HcclException;
 
 
 namespace hcomm {
@@ -476,6 +485,101 @@ HcommResult HcommThreadAllocWithStream(CommEngine engine,
     return HCCL_SUCCESS;
 }
 
+HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, const ThreadConfig config, const ThreadType type, ThreadHandle *threads) {
+    CHK_PTR_NULL(threads);
+
+    HCCL_INFO("[%s]ThreadAcquire begin. need threadNum[%u], notifyPerThread[%u]",
+        __func__,
+        threadNum,
+        config.notifyNumPerThread);
+    if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
+        return HCCL_E_PARA;
+    }
+
+    if (config.notifyNumPerThread < 0 || config.notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
+        HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", config.notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
+        return HCCL_E_PARA;
+    }
+
+    hccl::NotifyLoadType notifyLoadType;
+    hccl::StreamType streamType;
+    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
+    CHK_RET(CommEngineToStreamType(engine, streamType));
+
+    HcclResult ret = HCCL_SUCCESS;
+    for (uint32_t i = 0; i < threadNum; ++i) {
+        std::shared_ptr<hccl::Thread> hostHandle;
+        HCCL_INFO("[%s] Thread notifyLoadType[%d], streamType[%d], threadType[%d]",
+            __func__,
+            static_cast<int32_t>(notifyLoadType),
+            static_cast<int32_t>(streamType),
+            type);
+        ret = CreateThread(engine, streamType, config.notifyNumPerThread, notifyLoadType, type, hostHandle);
+        if (ret != HCCL_SUCCESS ) {
+            HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
+            if (i != 0) {
+                CHK_RET(HcommThreadFree(threads, i));
+            }
+            return ret;
+        }
+        ret = hostHandle->Init();
+        if (ret != HCCL_SUCCESS ) {
+            HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
+            if (i != 0) {
+                CHK_RET(HcommThreadFree(threads, i));
+            }
+            return ret;
+        }
+
+        if (engine == COMM_ENGINE_AICPU && type == THREAD_TYPE_CPU) {
+            void* deviceHandle{};
+            hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostHandle.get());
+            cpuThread->GetThreadEntity(deviceHandle);
+            threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle);
+        } else if (engine == COMM_ENGINE_AICPU_TS && type == THREAD_TYPE_TS) {
+            void* deviceHandle{};
+            hccl::AicpuTsThread* aicpuTsThread = dynamic_cast<hccl::AicpuTsThread*>(hostHandle.get());
+            aicpuTsThread->GetThreadEntity(deviceHandle);
+            threads[i] = reinterpret_cast<ThreadHandle>(deviceHandle);
+        } else {
+            threads[i] = reinterpret_cast<ThreadHandle>(hostHandle.get());
+        }
+        hcomm::g_ThreadMap.emplace(threads[i], hostHandle);
+    }
+
+    HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
+              "notifyPerThread[%u]", engine, threadNum, config.notifyNumPerThread);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle)
+{
+    if (hcomm::g_ThreadMap.find(threadHandle) == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("Unknown ThreadHandle");
+        return HCCL_E_NOT_FOUND;
+    }
+    auto hostThread = hcomm::g_ThreadMap[threadHandle];
+    hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
+    ThreadServiceHandle deviceServiceHandle{};
+    CHK_RET(cpuThread->ServiceRegister(service, &deviceServiceHandle));
+
+    *serviceHandle = deviceServiceHandle;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle)
+{
+    if (hcomm::g_ThreadMap.find(threadHandle) == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("Unknown ThreadHandle");
+        return HCCL_E_NOT_FOUND;
+    }
+    auto hostThread = hcomm::g_ThreadMap[threadHandle];
+    hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
+    CHK_RET(cpuThread->ServiceUnregister(serviceHandle));
+    return HCCL_SUCCESS;
+}
+
 HcommResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
 {
     CHK_PTR_NULL(ctx);
@@ -527,6 +631,80 @@ HcommResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcC
         return HCCL_E_PARA;
     }
     HCCL_INFO("[%s]copy engine ctx success, engine[%d]", __func__, engine);
+
+    return HCCL_SUCCESS;
+}
+
+/* Built-in services for AICPU engine + CPU thread type */
+HcclResult RecordService(void *args, uint64_t argsSizeByte)
+{
+    CHK_PTR_NULL(args);
+    if (argsSizeByte != sizeof(hccl::RecordServiceArgs)) {
+        HCCL_ERROR("[%s] invalid argsSizeByte[%llu], expected sizeof(RecordServiceArgs)[%zu]", __func__, argsSizeByte, sizeof(hccl::RecordServiceArgs));
+        return HCCL_E_PARA;
+    }
+    const auto &serviceArgs = *reinterpret_cast<hccl::RecordServiceArgs *>(args);
+    const ThreadHandle srcThreadHdl = serviceArgs.threadHandle;
+    const ThreadHandle dstThreadHdl = serviceArgs.dstThreadHandle;
+    const uint32_t     dstNotifyIdx = serviceArgs.dstNotifyIdx;
+    HCCL_INFO("[%s] START. srcThreadHandle[0x%llx], dstThreadHandle[0x%llx], dstNotifyIdx[%u]",
+        __func__, srcThreadHdl, dstThreadHdl, dstNotifyIdx);
+    
+    if (hcomm::g_ThreadMap.find(dstThreadHdl) == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] FAIL. dstThreadHandle[0x%llx] not found in g_ThreadMap.", __func__, dstThreadHdl);
+        return HCCL_E_NOT_FOUND;
+    }
+    hccl::Thread *const dstThread = hcomm::g_ThreadMap[dstThreadHdl].get();
+    auto *const dstAicpuTsThread = dynamic_cast<hccl::AicpuTsThread *>(dstThread);
+    if (dstAicpuTsThread == nullptr) {
+        HCCL_ERROR("[%s] FAIL. g_ThreadMap.at(dstThreadHandle) is not AicpuTsThread.", __func__);
+        return HCCL_E_PARA;
+    }
+
+    hccl::LocalNotify *const dstNotifyPtr = dstAicpuTsThread->GetNotify(dstNotifyIdx);
+    if (dstNotifyPtr == nullptr) {
+        HCCL_ERROR("[%s] FAIL. dstNotifyIdx[%u] is nullptr.", __func__, dstNotifyIdx);
+        return HCCL_E_PTR;
+    }
+    HcclSignalInfo notifyInfo{};
+    CHK_RET(dstNotifyPtr->GetNotifyData(notifyInfo));
+    void *const notifyAddrOnDev = reinterpret_cast<void *>(notifyInfo.addr);
+    const uint64_t recordValue = 1;
+    const uint64_t notifySize = sizeof(uint8_t);  // on 91095, notify size is 8 bit.
+    TRY_CATCH_RETURN(Hccl::HrtMemcpy(notifyAddrOnDev, notifySize, &recordValue, notifySize, Hccl::rtMemcpyKind_t::RT_MEMCPY_HOST_TO_DEVICE));
+    return HCCL_SUCCESS;
+}
+
+HcclResult WaitService(void *args, uint64_t argsSizeByte)
+{
+    CHK_PTR_NULL(args);
+    if (argsSizeByte != sizeof(hccl::WaitServiceArgs)) {
+        HCCL_ERROR("[%s] invalid argsSizeByte[%llu], expected sizeof(WaitServiceArgs)[%zu]", __func__, argsSizeByte, sizeof(hccl::WaitServiceArgs));
+        return HCCL_E_PARA;
+    }
+    const auto &serviceArgs = *reinterpret_cast<hccl::WaitServiceArgs *>(args);
+    const ThreadHandle threadHdl = serviceArgs.threadHandle;
+    const uint32_t     notifyIdx = serviceArgs.notifyIdx;
+    HCCL_INFO("[%s] START. threadHandle[0x%llx], notifyIdx[%u]", __func__, threadHdl, notifyIdx);
+
+    if (hcomm::g_ThreadMap.find(threadHdl) == hcomm::g_ThreadMap.end()) {
+        HCCL_ERROR("[%s] FAIL. threadHandle[0x%llx] not found in g_ThreadMap.", __func__, threadHdl);
+        return HCCL_E_NOT_FOUND;
+    }
+    hccl::Thread *const thread = hcomm::g_ThreadMap[threadHdl].get();
+    hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
+    if (cpuThread == nullptr) {
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);
+        return HCCL_E_PARA;
+    }
+
+    hccl::MemNotify *const memNotify = cpuThread->GetMemNotify(notifyIdx);
+    if (memNotify == nullptr) {
+        HCCL_ERROR("[%s] FAIL. notifyIdx[%u] is nullptr", __func__, notifyIdx);
+        return HCCL_E_PTR;
+    }
+    CHK_RET(memNotify->Wait());
+
     return HCCL_SUCCESS;
 }
 

@@ -109,6 +109,12 @@ HcommResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcommResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
 
+HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, const ThreadConfig config, const ThreadType type, ThreadHandle *threads);
+
+HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle);
+
+HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle);
+
 HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo);
 
 HcommResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
@@ -117,6 +123,11 @@ HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngi
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
 HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
 
+/* Built-in services for AICPU engine + CPU thread type */
+HcclResult RecordService(void *args, uint64_t argsSizeByte);
+
+HcclResult WaitService(void *args, uint64_t argsSizeByte);
+ 
 #ifdef __cplusplus
 }
 

@@ -304,6 +304,15 @@ TEST_F(RtsqA5Test, Ut_MakeSureAvailableSpace_When_InputValue_Expect_NO_THROW)
     EXPECT_THROW(rtsq.MakeSureAvailableSpace(), InternalException);
 }
 
+TEST_F(RtsqA5Test, write_value)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+
+    u64 addr  = 0x100000;
+    u16 value = 42;
+    rtsq.WriteValue(addr, value);
+}
+
 TEST_F(RtsqA5Test, Ut_CopyLocBufToSq_THROW)
 {
     RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);

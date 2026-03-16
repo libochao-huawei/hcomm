@@ -1,0 +1,10 @@
+# .gitignore
+
+build*
+output/
+scripts/
+third_party/
+
+*.log
+
+.vscode

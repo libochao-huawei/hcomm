@@ -58,6 +58,11 @@ public:
         return HCCL_SUCCESS;
     }
 
+    HcclResult WriteValue(uint64_t addr, uint64_t value) const
+    {
+        return HCCL_SUCCESS;
+    }
+
     void LaunchTask() const {}
 
     HcclResult GetSqId(uint32_t &sqId) const

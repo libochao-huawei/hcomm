@@ -28,6 +28,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
     ${HCCL_LLT_ROOT}/stub/legacy/interface_channel.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
+    ${HCCL_LLT_ROOT}/stub/llt_stub_hostdpu.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rank_graph.cc
 )
@@ -344,6 +345,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     #next
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
