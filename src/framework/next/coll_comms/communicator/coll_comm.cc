@@ -10,6 +10,8 @@
 #include "coll_comm.h"
 // #include "rank_graphs/rank_graph.h"
 #include "exception_handler.h"
+#include "rank_graph_v2.h"
+#include "coll_comm_mgr.h"
 #include "kfc.h"
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
@@ -17,10 +19,12 @@
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
     : comm_(comm), rankId_(rankId), commId_ (commName), callbacks_(callbacks)
-{}
+{
+}
 
 CollComm::~CollComm()
 {
+    CollCommMgr::GetInstance()->UnRegisteCollComm(this); 
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
     (void)DestroyAicpuComm();
 }
@@ -57,6 +61,9 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     CHK_RET(hrtGetDevice(&deviceLogicId_));
 
     CHK_RET(InitHDCommunicate());
+    
+    CollCommMgr::GetInstance()->RegisteCollComm(this); 
+    commStatus_ = HcclCommStatus::HCCL_COMM_READY;
 
  	if (!hcclCommDfx_) {
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
@@ -115,6 +122,9 @@ HcclResult CollComm::InitHDCommunicate()
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
         return HCCL_E_PTR);
     CHK_RET(kfcStatusTransferD2H_->InitHost());
+
+    myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+
     return HCCL_SUCCESS;
 }
 
@@ -129,6 +139,69 @@ HcclResult CollComm::GetHDCommunicate(
     return HCCL_SUCCESS;
 }
 
+std::string CollComm::GetCollCommName()
+{
+    return commId_;
+}
+
+HcclCommStatus CollComm::GetCommStatus()
+{
+    return commStatus_;
+}
+
+HcclResult CollComm::Suspend()
+{
+    if (commStatus_ == HcclCommStatus::HCCL_COMM_SUSPENDING) {
+        HCCL_WARNING("[NsRecovery][Suspend] The current communication has been suspended, no need to suspend again.");
+        return HcclResult::HCCL_SUCCESS;
+    }
+    commStatus_ = HcclCommStatus::HCCL_COMM_SUSPENDING;
+
+    return myRank_->StopLaunch();
+}
+
+HcclResult CollComm::Clean()
+{
+    if (commStatus_ != HcclCommStatus::HCCL_COMM_SUSPENDING) {
+        HCCL_ERROR("[NsRecovery][Clean] The current communication is not suspended, cannot clean.");
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
+    if (isCleaned_) {
+        HCCL_WARNING("[NsRecovery][Clean] The current communication has been cleaned, no need to clean again.");
+        return HcclResult::HCCL_SUCCESS;
+    }
+    isCleaned_ = true;
+
+    // 先清理Host
+    return myRank_->Clean();
+}
+
+HcclResult CollComm::Resume()
+{
+    if (commStatus_ == HcclCommStatus::HCCL_COMM_UNKNOWN) {
+        HCCL_ERROR("[NsRecovery][Resume] Comm has been error, can not resume now!");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    if (commStatus_ != HcclCommStatus::HCCL_COMM_SUSPENDING) {
+        HCCL_WARNING("[NsRecovery][Resume] The current communication is normal, no need to resume.");
+        return HcclResult::HCCL_SUCCESS;
+    }
+    
+    HCCL_INFO("[NsRecovery][Resume] start to Resume.");
+    CHK_SMART_PTR_NULL(myRank_);
+    auto ret = myRank_->Resume();
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Resume] %s failed!", __func__);
+        return ret;
+    }
+
+    commStatus_ = HcclCommStatus::HCCL_COMM_READY;
+    isCleaned_ = false;
+    HCCL_INFO("[NsRecovery][Resume] Resume success.");
+    return HcclResult::HCCL_SUCCESS;
+}
+
+}  // namespace hccl
 HcclResult CollComm::InitTaskExceptionHandler()
 {
     hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(static_cast<size_t>(deviceLogicId_));

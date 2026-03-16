@@ -7,30 +7,29 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef RANK_PAIR_MGR_H
-#define RANK_PAIR_MGR_H
 
-#include <unordered_map>
-#include <mutex>
-#include "rank_pair.h"
+#ifndef HCCL_AICPU_HDC_HANDLER_H
+#define HCCL_AICPU_HDC_HANDLER_H
+
+#include "hdc_pub.h"
+#include "kfc.h"
 
 namespace hccl {
 
-using ChannelTable = std::unordered_map<RankIdPair, hcomm::EpChannelMap>;
-
-class RankPairMgr {
+class AicpuHdcHandler {
 public:
-    RankPairMgr(){};
+    AicpuHdcHandler(const HDCommunicatePtr &h2dTransfer, const HDCommunicatePtr &d2hTransfer);
+    ~AicpuHdcHandler() = default;
 
-    ~RankPairMgr() = default;
-
-    HcclResult Get(RankIdPair rankIdPair, RankPair*& out);
-    ChannelTable GetChannelTable();
+    Hccl::KfcCommand GetKfcCommand();
+    void SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const;
 
 private:
-    std::unordered_map<RankIdPair, std::unique_ptr<RankPair>> rankPairMap_{};
+    HDCommunicatePtr h2dTransfer_{nullptr};
+    HDCommunicatePtr d2hTransfer_{nullptr};
+    Hccl::KfcCommand         lastCmd_{Hccl::KfcCommand::NONE};
 };
 
-} // namespace hccl
+}
 
-#endif // RANK_PAIR_MGR_H
+#endif // HCCL_AICPU_HDC_HANDLER_H

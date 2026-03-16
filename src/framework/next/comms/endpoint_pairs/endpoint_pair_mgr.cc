@@ -34,4 +34,17 @@ HcclResult EndpointPairMgr::Get(CommEngine engine, const EndpointDescPair &endpo
     return HCCL_SUCCESS;
 }
 
+EpChannelMap EndpointPairMgr::GetEpChannelMap()
+{
+    EpChannelMap epChannelMap;
+    for (const auto& commEnginItem: endpointPairMap_) {
+        std::unordered_map<EndpointDescPair, std::vector<ChannelHandle>> channelList;
+        for (const auto& endpointPair : commEnginItem.second) {
+            channelList[endpointPair.first] = endpointPair.second->GetChannelHandles();
+        }
+        epChannelMap[commEnginItem.first] = channelList;
+    }
+    return epChannelMap;
+}
+
 } // namespace hcomm

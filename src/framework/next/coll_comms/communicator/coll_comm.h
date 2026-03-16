@@ -19,10 +19,13 @@
 #include "independent_op_context_manager.h"
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
+<<<<<<< HEAD
+=======
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
 #include "error_message_v2.h"
 #include "../../../../legacy/include/hccl_communicator.h"
+>>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a
 
 namespace hccl {
 /**
@@ -87,20 +90,41 @@ public:
     }
     uint32_t UpdateIndex();
 
+    std::string GetCollCommName();
+    
+    // Todo:在这里做N秒快恢
+    HcclCommStatus GetCommStatus();
+    HcclResult Suspend();
+    HcclResult Clean();
+    HcclResult Resume();
+
+    HcclResult GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
+
 private:
+<<<<<<< HEAD
+    HcclResult InitHDCommunicate();
+=======
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
+>>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a
 
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
+<<<<<<< HEAD
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_UNKNOWN};
+    ManagerCallbacks callbacks_;
+    s32 deviceLogicId_{0};
+    
+=======
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};
     uint32_t index_{0};
 
 
+>>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
     std::unique_ptr<ContextManager>  contextMgr_{nullptr};
@@ -112,6 +136,12 @@ private:
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
 
+<<<<<<< HEAD
+    // NS recover
+    bool isCleaned_{false};
+
+=======
+>>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
 };
