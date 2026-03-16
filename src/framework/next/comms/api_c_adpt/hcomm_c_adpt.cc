@@ -492,12 +492,12 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
         __func__,
         threadNum,
         config.notifyNumPerThread);
-    if (threadNum <= 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
+    if (threadNum == 0 || threadNum > hccl::HCOMM_THREADNUM_MAX_NUM) {
         HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.ThreadNum %u.threadNum range (0 , %u]", threadNum, hccl::HCOMM_THREADNUM_MAX_NUM);
         return HCCL_E_PARA;
     }
 
-    if (config.notifyNumPerThread < 0 || config.notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
+    if (config.notifyNumPerThread > hccl::HCOMM_NOTIFY_MAX_NUM) {
         HCCL_ERROR("[HcommThreadAlloc]ThreadAlloc failed.notifyNumPerThread is %u,notifyNumPerThread range [0 , %u]", config.notifyNumPerThread, hccl::HCOMM_NOTIFY_MAX_NUM);
         return HCCL_E_PARA;
     }
@@ -561,6 +561,7 @@ HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService s
     }
     auto hostThread = hcomm::g_ThreadMap[threadHandle];
     hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
+    CHK_PTR_NULL(cpuThread);
     ThreadServiceHandle deviceServiceHandle{};
     CHK_RET(cpuThread->ServiceRegister(service, &deviceServiceHandle));
 
@@ -576,6 +577,7 @@ HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadService
     }
     auto hostThread = hcomm::g_ThreadMap[threadHandle];
     hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
+    CHK_PTR_NULL(cpuThread);
     CHK_RET(cpuThread->ServiceUnregister(serviceHandle));
     return HCCL_SUCCESS;
 }

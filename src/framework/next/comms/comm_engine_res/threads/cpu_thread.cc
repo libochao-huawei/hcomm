@@ -106,7 +106,7 @@ HcclResult CpuThread::Init()
     // 申请notify
     for (uint32_t i = 0; i < notifyNum_; ++i) {
         auto notify = std::make_unique<MemNotify>();
-        notify->Alloc();
+        CHK_RET(notify->Alloc());
         notifys_.push_back(std::move(notify));
     }
     
