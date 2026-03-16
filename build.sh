@@ -181,6 +181,48 @@ function build_test() {
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
         && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
     fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_aicpu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+        build legacy_alg_aicpu_2d_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/aicpu_2d_testcase/legacy_alg_aicpu_2d_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_hf16p_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+        build legacy_alg_ccu_1d_hf16p_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_hf16p_testcase/legacy_alg_ccu_1d_hf16p_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part1" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+        build legacy_alg_ccu_1d_testcase_part1
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part1/legacy_alg_ccu_1d_testcase_part1
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part2" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+        build legacy_alg_ccu_1d_testcase_part2
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part2/legacy_alg_ccu_1d_testcase_part2
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_alg_ccu_reduce" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+        build legacy_alg_ccu_reduce
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_reduce_testcase/legacy_alg_ccu_reduce
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_function_ut_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+        build legacy_alg_function_ut_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/function_ut_testcase/legacy_alg_function_ut_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_alg_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ];then
+        build legacy_alg_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/legacy_alg_testcase/legacy_alg_testcase
+    fi
 }
 
 function build_kernel() {
@@ -421,6 +463,46 @@ while [[ $# -gt 0 ]]; do
     --executor_pipeline_hccl_test)
         TEST="partial"
         TEST_TASK_NAME="executor_pipeline_hccl_test"
+        shift
+        ;;
+    --legacy_all_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_all_testcase"
+        shift
+        ;;
+    --legacy_aicpu_2d_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_aicpu_2d_testcase"
+        shift
+        ;;
+    --legacy_ccu_1d_hf16p_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_hf16p_testcase"
+        shift
+        ;;
+    --legacy_ccu_1d_testcase_part1)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_testcase_part1"
+        shift
+        ;;
+    --legacy_ccu_1d_testcase_part2)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_testcase_part2"
+        shift
+        ;;
+    --legacy_alg_ccu_reduce)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_alg_ccu_reduce"
+        shift
+        ;;
+    --legacy_function_ut_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_function_ut_testcase"
+        shift
+        ;;
+    --legacy_alg_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_alg_testcase"
         shift
         ;;
     --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
