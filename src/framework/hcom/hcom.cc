@@ -176,6 +176,9 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
             void *commV2 = nullptr;
             CHK_RET(HcomGetCommV2(&commV2));
             CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
+            u32 rankNum = 0;
+            CHK_RET(HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum));
+            CHK_RET(HcomSetGroupTopoInfo(HCCL_WORLD_GROUP, rankNum));
             return HCCL_SUCCESS;
         }());
 
