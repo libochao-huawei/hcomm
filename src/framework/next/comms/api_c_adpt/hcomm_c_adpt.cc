@@ -429,19 +429,6 @@ HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService s
     CHK_RET(cpuThread->ServiceRegister(service, &deviceServiceHandle));
 
     *serviceHandle = deviceServiceHandle;
-
-    // void* deviceHandle{};
-    // aclError ret = aclrtMemcpy(
-    //     deviceHandle, 
-    //     sizeof(ThreadServiceHandle), 
-    //     &deviceServiceHandle, 
-    //     sizeof(ThreadServiceHandle), 
-    //     ACL_MEMCPY_HOST_TO_DEVICE);
-    // *serviceHandle = reinterpret_cast<ThreadServiceHandle>(deviceHandle);
-    // if (ret != ACL_SUCCESS) {
-    //     HCCL_ERROR("[%s] copy deviceServiceHandle failed: %d", __func__, ret);
-    //     return HCCL_E_RUNTIME;
-    // }
     return HCCL_SUCCESS;
 }
 
@@ -455,19 +442,7 @@ HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadService
     hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
     CHK_PTR_NULL(cpuThread);
     CHK_RET(cpuThread->ServiceUnregister(serviceHandle));
-
-    // void* deviceHandle{};
-    // aclError ret = aclrtMemcpy(
-    //     deviceHandle, 
-    //     sizeof(ThreadServiceHandle), 
-    //     &deviceServiceHandle, 
-    //     sizeof(ThreadServiceHandle), 
-    //     ACL_MEMCPY_HOST_TO_DEVICE);
-    // *serviceHandle = reinterpret_cast<ThreadServiceHandle>(deviceHandle);
-    // if (ret != ACL_SUCCESS) {
-    //     HCCL_ERROR("[%s] copy deviceServiceHandle failed: %d", __func__, ret);
-    //     return HCCL_E_RUNTIME;
-    // }
+    
     return HCCL_SUCCESS;
 }
 
