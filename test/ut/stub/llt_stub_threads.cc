@@ -54,7 +54,9 @@ LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
 
 HcclResult AicpuTsThread::GetThreadEntity(void* &threadEntity)
 {
-    threadEntity = reinterpret_cast<void*>(0x2345); // Just return a dummy pointer for testing
+    auto threadEntityPtr = new ThreadEntity{};  // Expect manually delete by caller
+    threadEntityPtr->threadObjAddr = reinterpret_cast<uint64_t>(this);
+    threadEntity = threadEntityPtr;
     return HCCL_SUCCESS;
 }
 
