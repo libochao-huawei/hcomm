@@ -44,6 +44,10 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         std::string tag = buffer->GetMemTag();
+        if (tag.size() >= HCCL_RES_TAG_MAX_LEN) {
+            HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
+            return HCCL_E_PARA;
+        }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
             buffer->GetAddr(),
