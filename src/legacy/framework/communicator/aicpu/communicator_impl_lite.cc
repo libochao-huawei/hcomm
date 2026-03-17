@@ -111,7 +111,7 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
 
 void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
 {
-    opIndex = kernelParam->comm.opIndex;
+    opIndex_ = kernelParam->comm.opIndex_;
     uint64_t beginTime = ProfGetCurCpuTimestamp();
     profilingReporterLite->UpdateProfStat();
     UpdateCommParam(kernelParam);
@@ -446,7 +446,7 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;
     dfxopInfo->commId_       = commId;
- 	dfxopInfo->opIndex_      = opIndex;
+ 	dfxopInfo->opIndex_      = opIndex_;
  	dfxopInfo->headOpCounterAddr_ = opCounterAddr + size;
  	dfxopInfo->tailOpCounterAddr_ = opCounterAddr + size * 2;
     CHECK_NULLPTR(streamLiteMgr->GetMaster(), "[SetDfxOpInfo]master stream is nullptr!");
