@@ -27,7 +27,7 @@ HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo
 static HcclResult CcuJetty::Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
  	                         std::unique_ptr<CcuJetty> &ccuJetty) {
  	auto tmp = std::make_unique<CcuJetty>(ipAddr, jettyInfo);
- 	TRY_CATCH_RETURN(tmp->Initialize());
+ 	TRY_CATCH_RETURN(tmp->CcuJetty::CcuJetty());
  	ccuJetty = std::move(tmp);
  	return HcclResult::HCCL_SUCCESS;
 }
@@ -35,20 +35,19 @@ static HcclResult CcuJetty::Create(const IpAddress &ipAddr, const CcuJettyInfo &
 CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
     : ipAddr_(ipAddr), jettyInfo_(jettyInfo)
 {
-    devLogicId_ = HrtGetDevice(); 
-     uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_); 
-     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance(); 
-     rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr); 
-     const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL); 
-     const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_); 
-     const auto tokenIdHandle = tokenInfo.first; 
-     const auto tokenValue = GetUbToken(); 
-     const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式 
- 
- 
-     inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue, 
-         tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa, 
-         jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+    devLogicId_ = HrtGetDevice();
+    uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
+    auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
+    rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
+    const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
+    const auto tokenIdHandle = tokenInfo.first;
+    const auto tokenValue = GetUbToken();
+    const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
+
+    inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
+        tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa, 
+        jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
 }
 
 CcuJetty::~CcuJetty()
