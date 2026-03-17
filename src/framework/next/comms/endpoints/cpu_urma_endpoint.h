@@ -30,7 +30,7 @@ public:
 
     HcclResult ServerSocketListen() override;
 
-    static std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &GetServerSocketMap();
+    static std::unordered_map<Hccl::IpAddress, std::shared_ptr<Hccl::Socket>> &GetServerSocketMap();
 
     std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override {
         return regedMemMgr_;

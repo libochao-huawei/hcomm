@@ -11,11 +11,13 @@
 #include <algorithm>
 #include "endpoint_mgr.h"
 #include "log.h"
-#include "hccl_api.h"
 #include "reged_mems/urma_mem.h"
 #include "adapter_rts_common.h"
 #include "server_socket_mgr.h"
 #include "ub_mem.h"
+#include "../../../../legacy/unified_platform/common/rdma_handle_manager.h"
+#include "../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../legacy/framework/resource_manager/socket/host_socket_handle_manager.h"
  
 namespace hcomm {
 CpuUrmaEndpoint::CpuUrmaEndpoint(const EndpointDesc &endpointDesc)

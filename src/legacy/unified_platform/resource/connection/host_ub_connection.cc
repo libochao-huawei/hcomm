@@ -309,26 +309,26 @@ void HostUbConnection::SetJettyInfo()
 
 bool HostUbConnection::GetTpInfo()
 {
-    if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
-         HCCL_ERROR("[HostUbConnection][%s] failed, tpProtocol[%s] is not expected.",
-            __func__, tpProtocol.Describe().c_str());
-        ThrowAbnormalStatus(std::string(__func__));
-    }
+    // if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
+    //      HCCL_ERROR("[HostUbConnection][%s] failed, tpProtocol[%s] is not expected.",
+    //         __func__, tpProtocol.Describe().c_str());
+    //     ThrowAbnormalStatus(std::string(__func__));
+    // }
     
-    auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
-        {locAddr, rmtAddr, tpProtocol}, tpInfo);
+    // auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
+    //     {locAddr, rmtAddr, tpProtocol}, tpInfo);
 
-    switch (ret) {
-        case HcclResult::HCCL_SUCCESS:
-            GenerateLocalPsn();
-            return true;
-        case HcclResult::HCCL_E_AGAIN:
-            return false;
-        case HcclResult::HCCL_E_NOT_FOUND:
-        default:
-            HCCL_ERROR("[HostUbConnection][%s] failed, hccl result[%d]", __func__, ret);
-            ThrowAbnormalStatus(std::string(__func__));
-    }
+    // switch (ret) {
+    //     case HcclResult::HCCL_SUCCESS:
+    //         GenerateLocalPsn();
+    //         return true;
+    //     case HcclResult::HCCL_E_AGAIN:
+    //         return false;
+    //     case HcclResult::HCCL_E_NOT_FOUND:
+    //     default:
+    //         HCCL_ERROR("[HostUbConnection][%s] failed, hccl result[%d]", __func__, ret);
+    //         ThrowAbnormalStatus(std::string(__func__));
+    // }
     return true;
 }
 
@@ -352,7 +352,7 @@ void HostUbConnection::ImportJetty()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    HrtRaUbJettyCreatedOutParam remOutParam = RaUbTpImportJetty(rdmaHandle, in.key, in.keyLen, in.tokenValue, in.jettyImportCfg);
+    HrtRaUbJettyImportedOutParam remOutParam = RaUbTpImportJetty(rdmaHandle, in.key, in.keyLen, in.tokenValue, in.jettyImportCfg);
     remoteJettyHandle = remOutParam.handle;
 
     HrtRaUbJettyBind(jettyHandle, remoteJettyHandle);
@@ -367,11 +367,11 @@ void HostUbConnection::SetImportInfo()
 
 void HostUbConnection::ReleaseTp()
 {
-    if (tpInfo.tpHandle != 0) {
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
-        tpInfo.tpHandle = 0;
-    }
+    // if (tpInfo.tpHandle != 0) {
+    //     (void)TpManager::GetInstance(devLogicId)
+    //         .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
+    //     tpInfo.tpHandle = 0;
+    // }
 }
 
 void HostUbConnection::ReleaseResource()
@@ -854,7 +854,7 @@ void HostUbConnection::UpdateCiVal(u32 ci)
     ciVal = ci;
 }
 
-std::vector<HostUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns)
+std::vector<HostUbConnection *> GetStarsPollHostUbConns(const std::vector<RmaConnection *> &rmaConns)
 {
     std::vector<HostUbConnection *> ubConns;
     for (auto &rmaConn : rmaConns) {

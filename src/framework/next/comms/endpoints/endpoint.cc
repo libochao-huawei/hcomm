@@ -10,6 +10,7 @@
  #include "endpoint_mgr.h"
  #include "endpoint.h"
  #include "cpu_roce_endpoint.h"
+ #include "cpu_urma_endpoint.h"
  #include "urma_endpoint.h"
  #include "ub_mem_endpoint.h"
 

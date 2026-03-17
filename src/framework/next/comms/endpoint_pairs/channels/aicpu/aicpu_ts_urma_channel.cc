@@ -206,7 +206,7 @@ ChannelStatus AicpuTsUrmaChannel::GetStatus()
     return out;
 }
 
-HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
+static HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
 {
     int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
     if (ret != 0) {
@@ -245,6 +245,42 @@ HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
     HCCL_INFO("[AicpuTsUrmaChannelImpl][%s] Pack Buffer data[%p], Pack Buffer size[%zu].",
         __func__, buffer.data(), buffer.size());
     return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult AicpuTsUrmaChannel::ChannelFence()
+{
+    HCCL_INFO("[AicpuTsUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 
