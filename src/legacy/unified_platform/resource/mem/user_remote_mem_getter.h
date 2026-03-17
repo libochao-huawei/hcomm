@@ -19,7 +19,7 @@
 #include "hccl/hccl_types.h"
 #include "log.h"
 
-constexpr uint32_t MAX_BUFFER_NUM = 22000;
+constexpr uint32_t MAX_BUFFER_NUM = 30000;
 
 namespace Hccl {
 

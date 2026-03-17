@@ -406,6 +406,7 @@ HcclResult CcuTransport::TransResUnpackProc(Hccl::BinaryStream &binaryStream)
 HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
 {
     rmtBufferInfos_.clear();
+    remoteUserMemTag_.clear();
     u32 rmtBufferNum{0};
     binaryStream >> rmtBufferNum;
     CHK_PRT_RET(rmtBufferNum > MAX_BUFFER_NUM,
