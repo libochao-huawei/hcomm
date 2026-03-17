@@ -77,7 +77,7 @@ HcclResult CcuKernelMgr::Deinit()
 
 CcuResult CcuKernelMgr::Register(
     CcuResPack &resPack, char *kernelFuncName,
-    void *ccuKernelFunc, void *kernelArg,
+    CcuKernelFunc ccuKernelFunc, CcuKernelArg kernelArg,
     CcuKernelHandle &kernelHandle)
 {
     (void)kernelFuncName;
@@ -88,9 +88,7 @@ CcuResult CcuKernelMgr::Register(
     
     currKernel_ = std::make_unique<CcuKernel>(); // 重置待注册kernel
 
-    auto creator = *static_cast<hcomm::KernelCreator *>(ccuKernelFunc);
-    const auto& arg = *static_cast<const hcomm::CcuKernelArg *>(kernelArg);
-    CCU_CHK_RET(creator(arg)); // 执行算法流程，生成rep和计算资源占用
+    CCU_CHK_RET(ccuKernelFunc(kernelArg)); // 执行算法流程，生成rep和计算资源占用
 
     CCU_CHK_RET(AllocRes(resPack));
 
