@@ -60,7 +60,12 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_scatter_bfloat16_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::BFP16},
     {"aiv_scatter_uint64_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::INT64},
     {"aiv_scatter_int64_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::UINT64},
+    {"aiv_scatter_int8_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::HIF8},
+    {"aiv_scatter_int8_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E4M3},
+    {"aiv_scatter_int8_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E5M2},
+    {"aiv_scatter_int8_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E8M0},
 
+    // all_gather
     {"aiv_all_gather_half", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP16},
     {"aiv_all_gather_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::INT16},
     {"aiv_all_gather_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::UINT16},
@@ -72,6 +77,11 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_gather_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::BFP16},
     {"aiv_all_gather_uint64_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::INT64},
     {"aiv_all_gather_int64_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::UINT64},
+    {"aiv_all_gather_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::HIF8},
+    {"aiv_all_gather_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E4M3},
+    {"aiv_all_gather_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E5M2},
+    {"aiv_all_gather_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E8M0},
+
     //allreduce
     {"aiv_allreduce_half", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::FP16},
     {"aiv_allreduce_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT16},
@@ -79,6 +89,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_allreduce_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32},
     {"aiv_allreduce_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8},
     {"aiv_allreduce_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16},
+    
     //broadcast
     {"aiv_broadcast_half", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP16},
     {"aiv_broadcast_int16_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT16},
@@ -91,6 +102,11 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_broadcast_bfloat16_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::BFP16},
     {"aiv_broadcast_uint64_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT64},
     {"aiv_broadcast_int64_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::UINT64},
+    {"aiv_broadcast_int8_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::HIF8},
+    {"aiv_broadcast_int8_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E4M3},
+    {"aiv_broadcast_int8_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E5M2},
+    {"aiv_broadcast_int8_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E8M0},
+
     // allreduce two shot
     {"aiv_allreduce_mesh1d_twoshot_half", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::FP16, KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT16,KernelArgsType::ARGS_TYPE_TWO_SHOT},
@@ -98,6 +114,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_allreduce_mesh1d_twoshot_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16,KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    
     // alltoall
     {"aiv_alltoall_half", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP16},
     {"aiv_alltoall_int16_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT16},
@@ -110,6 +127,11 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_alltoall_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::BFP16},
     {"aiv_alltoall_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT64},
     {"aiv_alltoall_int64_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::UINT64},
+    {"aiv_alltoall_int8_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::HIF8},
+    {"aiv_alltoall_int8_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E4M3},
+    {"aiv_alltoall_int8_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E5M2},
+    {"aiv_alltoall_int8_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E8M0},
+
     // alltoallv
     {"aiv_alltoallv_half", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP16},
     {"aiv_alltoallv_int16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::INT16},
@@ -122,6 +144,11 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_alltoallv_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::BFP16},
     {"aiv_alltoallv_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::INT64},
     {"aiv_alltoallv_int64_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::UINT64},
+    {"aiv_alltoallv_int8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::HIF8},
+    {"aiv_alltoallv_int8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E4M3},
+    {"aiv_alltoallv_int8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E5M2},
+    {"aiv_alltoallv_int8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E8M0},
+
     // reduce
     {"aiv_reduce_half", HcclCMDType::HCCL_CMD_REDUCE, DataType::FP16},
     {"aiv_reduce_int16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT16},
@@ -129,6 +156,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_reduce_int32_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT32},
     {"aiv_reduce_int8_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT8},
     {"aiv_reduce_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::BFP16},
+    
     //reducescatter
     {"aiv_reduce_scatter_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::FP16},
     {"aiv_reduce_scatter_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT16},
