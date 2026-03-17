@@ -70,7 +70,10 @@ bool ZeroCopyAclGraph::SetAclGraphZeroCopyMode(
             deviceType);
         return false;
     }
-    if (opParam.isZeroCopy || opParam.supportZeroCopy || opParam.supportSymmetricMemory) {
+
+    bool isActivateAddr = ZeroCopyMemoryAgent::IsActivateCommMemoryAddr(opParam.inputPtr, opParam.inputSize) ||
+	        ZeroCopyMemoryAgent::IsActivateCommMemoryAddr(opParam.outputPtr, opParam.outputSize);
+    if (opParam.isZeroCopy || opParam.supportZeroCopy || opParam.supportSymmetricMemory || isActivateAddr) {
         HCCL_INFO("[ZeroCopyAclGraph][SetAclGraphZeroCopyMode] Hccl can't support graph zero copy mode and operator "
                   "zero copy at the same time.");
         return false;
