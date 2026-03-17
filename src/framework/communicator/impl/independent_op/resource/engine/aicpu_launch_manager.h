@@ -31,7 +31,7 @@ struct ThreadMgrAicpuParam {
     u32 rsv1;
     s32 deviceLogicId{-1}; // 基础通信使用
     u32 deviceType{0}; // 基础通信使用
-    u64 *threadHandles;
+    void *threadHandles;
 };
 
 struct NotifyMgrAicpuParam {

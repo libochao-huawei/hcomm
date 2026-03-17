@@ -80,13 +80,22 @@ void CollCommAicpu::SetIsReady(bool flag)
 HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
 {
     u32 threadNum = param->threadNum;
-    std::vector<Thread*> outThreads;
+    std::vector<std::shared_ptr<Thread>> outThreads;
     outThreads.reserve(threadNum);
     std::string hcomId(param->hcomId);
-    ThreadHandle * threadHandles = reinterpret_cast<ThreadHandle*>(param->threadHandles);
     for (u32 i = 0; i < threadNum; ++i) {
-        AicpuTsThread* thread = reinterpret_cast<AicpuTsThread*>(threadHandles[i]);
-        CHK_PTR_NULL(thread);
+        std::string thdUniqueId(param->threadParam[i], THREAD_UNIQUE_ID_MAX_SIZE);
+        if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
+            std::ostringstream oss;
+            oss << "threadParam[" << i << "] raw bytes: ";
+            for (u32 j = 0; j < THREAD_UNIQUE_ID_MAX_SIZE; ++j) {
+                oss << std::hex << std::setw(2) << std::setfill('0')
+                    << static_cast<unsigned int>(static_cast<unsigned char>(param->threadParam[i][j])) << " ";
+            }
+            HCCL_INFO("[CollCommAicpu][%s] %s", __func__, oss.str().c_str());
+        }
+        std::shared_ptr<AicpuTsThread> thread;
+        EXECEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
         s32 streamId = 0;
         u32 notifyNum = 0;
         std::string notifyDesc;
@@ -98,18 +107,44 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
                 streamId, threadPtr->GetNotifyNum(), notifyNum);
             CHK_RET(threadPtr->SupplementNotify(notifyNum, notifyDesc));
         } else {
+            HcclResult ret = thread->Init();
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",
+                    __func__, hcomId.c_str(), param->threadNum, i);
+                return ret;
+            }
             HCCL_INFO("[%s]threadIdx[%u], streamId[%d], notifyNum[%u]", __func__, i,
                 streamId, notifyNum);
-            streamIdToThreadMap_.emplace(streamId, thread);
+            streamIdToThreadMap_.emplace(streamId, thread.get());
             outThreads.emplace_back(thread);
         }
     }
 
+    ThreadHandle *threadArray = static_cast<ThreadHandle*>(param->deviceHandle);
+    // 空指针校验
+    CHK_PTR_NULL(threadArray);
     for (size_t i = 0; i < threadNum; ++i) {
-        CHK_RET(RegisterThreadAddDfxTaskInfo(threadHandles[i]));
+        threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
+        HCCL_INFO("[CollCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
+        CHK_RET(RegisterThreadAddDfxTaskInfo(threadArray[i]));
     }
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
+    HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
+        __func__, hcomId.c_str(), threadNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::RegisterThreads(ThreadMgrAicpuParam *param)
+{
+    u32 threadNum = param->threadNum;
+    std::vector<Thread*> outThreads;
+    outThreads.reserve(threadNum);
+    std::string hcomId(param->hcomId);
+    ThreadHandle * threadHandles = reinterpret_cast<ThreadHandle*>(param->threadHandles);
+    for (size_t i = 0; i < threadNum; ++i) {
+        CHK_RET(RegisterThreadAddDfxTaskInfo(threadHandles[i]));
+    }
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     return HCCL_SUCCESS;

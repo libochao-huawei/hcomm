@@ -21,6 +21,7 @@ public:
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
+    HcclResult RegisterThreads(ThreadMgrAicpuParam *param);
 
     bool IsUsed();
     void SetUsed(bool used);

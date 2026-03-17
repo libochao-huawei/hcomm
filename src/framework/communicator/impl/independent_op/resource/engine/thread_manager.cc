@@ -276,14 +276,14 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
             CHK_RET(GetThread(threads[i], newThread));
             newThreads.emplace_back(newThread);
         }
-        HCCL_DEBUG("[ThreadMgr][%s] ThreadKernelLaunch start", __func__);
-        ret = AicpuLaunchMgr::ThreadKernelLaunchForCommV2(threads, threadNum, commId_, binHandle_);
-        HCCL_DEBUG("[ThreadMgr][%s] ThreadKernelLaunch end", __func__);
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+            HCCL_DEBUG("[ThreadMgr][%s] ThreadKernelLaunch start", __func__);
+            ret = AicpuLaunchMgr::ThreadKernelLaunchForCommV2(threads, threadNum, commId_, binHandle_);
+            HCCL_DEBUG("[ThreadMgr][%s] ThreadKernelLaunch end", __func__);
             for (size_t i = 0; i < newThreads.size(); ++i) {
-            ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>(newThreads[i].get());
-            newThreads[i]->AddThreadHandleToMap(engine, threads[i]);
-            threadHandleOthersToCpu_[threads[i]] = cpuTsHandle;
+                ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>(newThreads[i].get());
+                newThreads[i]->AddThreadHandleToMap(engine, threads[i]);
+                threadHandleOthersToCpu_[threads[i]] = cpuTsHandle;
             }
         }
     } else {

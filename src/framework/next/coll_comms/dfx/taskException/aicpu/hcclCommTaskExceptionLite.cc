@@ -79,14 +79,14 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
             continue;
         }
 
-        const std::vector<hccl::Thread*> threads = aicpuComm->GetAllThread();
+        const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
         for (auto thread : threads) {
             rtLogicCqReport_t cqeException;
             dfx::CqeStatus cqeStatus = dfx::CqeStatus::kDefault;
             Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
             CHK_PTR_NULL(streamLite);
 
-            HcclResult ret = GetThreadCqe(thread, cqeException, cqeStatus);
+            HcclResult ret = GetThreadCqe(thread.get(), cqeException, cqeStatus);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]GetThreadCqe fail, aicpuComm[%s], streamId[%u]",
                 __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId()), ret);
 

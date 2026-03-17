@@ -183,7 +183,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchForCommV2(ThreadHandle* newThreads,
     ThreadKernelLaunchConfig config(
         commId,
         binHandle,
-        "RunAicpuIndOpThreadInit",
+        "RunAicpuRegisterThreads",
         false,
         CommConfiger::GetInstance().GetCommConfigExecTimeOut(commId),
         true
@@ -206,7 +206,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchImplV2(ThreadHandle* newThreads, ui
     // Step 2. 填写 opParam 并分配设备内存
     ThreadMgrAicpuParam opParam{};
     opParam.threadNum = threadNum;
-    opParam.threadHandles = reinterpret_cast<u64*>(newThreads);
+    opParam.threadHandles = reinterpret_cast<void*>(newThreads);
     errno_t sRet = strncpy_s(opParam.hcomId, HCOMID_MAX_SIZE, config.commId.c_str(), config.commId.length());
     CHK_PRT_RET(sRet != EOK,
     HCCL_ERROR("[%s] strncpy_s failed, return [%d].", __func__, sRet),
