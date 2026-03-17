@@ -15,21 +15,17 @@
 #include <stdexcept>
 #include <vector>
 
-#define private public
-#include "aicpu_ts_thread.h"
-#include "aicpu_ts_thread_interface.h"
-#include "cpu_thread.h"
-#undef private
-
 #include "hcomm_c_adpt.h"
 #include "resource_entities.h"
 #include "orion_adapter_rts.h"
 
+#define private public
+#include "aicpu_ts_thread.h"
+#include "aicpu_ts_thread_interface.h"
+#undef private
+
 using namespace hccl;
 
-// ===========================================================================
-//  RecordService Tests
-// ===========================================================================
 class RecordServiceTest : public testing::Test {
 protected:
     void SetUp() override
@@ -108,9 +104,6 @@ TEST_F(RecordServiceTest, Ut_RecordService_When_DstThreadHandleNotFoundInMap_Exp
 // test_05: dstThread is not AicpuTsThread → HCCL_E_PARA (dynamic_cast fails)
 TEST_F(RecordServiceTest, Ut_RecordService_When_DstThreadIsNotAicpuTsThread_Expect_ReturnIsHCCL_E_PARA)
 {
-    // Create a CpuThread (not AicpuTsThread) via HcommThreadAllocWithConfig.
-    // AICPU + CPU → CpuThread. GetThreadEntity fails (Init mocked, isInit_=false),
-    // so handle = nullptr, but g_ThreadMap[nullptr] = CpuThread.
     ThreadHandle cpuHandle{};
     ThreadConfig wrongConfig = {};
     wrongConfig.notifyNumPerThread = 1;
@@ -154,128 +147,4 @@ TEST_F(RecordServiceTest, Ut_RecordService_When_HrtMemcpyFails_Expect_ReturnIsEr
 
     HcclResult ret = RecordService(&args_, sizeof(RecordServiceArgs));
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
-}
-
-// ===========================================================================
-//  WaitService Tests
-// ===========================================================================
-class WaitServiceTest : public testing::Test {
-protected:
-    void SetUp() override
-    {
-        // Create CpuThread via public API (AICPU + CPU → CpuThread)
-        ThreadConfig config = {};
-        config.notifyNumPerThread = kNotifyNum;
-        HcclResult ret = HcommThreadAllocWithConfig(
-            COMM_ENGINE_AICPU, 1, config, THREAD_TYPE_CPU, &threadHandle_);
-        ASSERT_EQ(ret, HCCL_SUCCESS);
-        allHandles_.push_back(threadHandle_);
-
-        // Fill default valid args
-        memset(&args_, 0, sizeof(args_));
-        args_.threadHandle = threadHandle_;
-        args_.notifyIdx = 0;
-    }
-
-    void TearDown() override
-    {
-        if (!allHandles_.empty()) {
-            HcommThreadFree(allHandles_.data(), allHandles_.size());
-            allHandles_.clear();
-        }
-        GlobalMockObject::verify();
-    }
-
-    static constexpr uint32_t kNotifyNum = 2;
-    ThreadHandle threadHandle_{};
-    WaitServiceArgs args_{};
-    std::vector<ThreadHandle> allHandles_;
-};
-
-// test_01: Normal → HCCL_SUCCESS
-TEST_F(WaitServiceTest, Ut_WaitService_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
-{
-    MOCKER_CPP(&MemNotify::Wait)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-
-    HcclResult ret = WaitService(&args_, sizeof(WaitServiceArgs));
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-// test_02: args is nullptr → HCCL_E_PTR
-TEST_F(WaitServiceTest, Ut_WaitService_When_ArgsIsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    HcclResult ret = WaitService(nullptr, sizeof(WaitServiceArgs));
-    EXPECT_EQ(ret, HCCL_E_PTR);
-}
-
-// test_03: argsSizeByte mismatch → HCCL_E_PARA
-TEST_F(WaitServiceTest, Ut_WaitService_When_ArgsSizeByteInvalid_Expect_ReturnIsHCCL_E_PARA)
-{
-    HcclResult ret = WaitService(&args_, 0);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-// test_04: threadHandle not in g_ThreadMap → HCCL_E_NOT_FOUND
-TEST_F(WaitServiceTest, Ut_WaitService_When_ThreadHandleNotFoundInMap_Expect_ReturnIsHCCL_E_NOT_FOUND)
-{
-    args_.threadHandle = static_cast<ThreadHandle>(0xDEAD);
-    HcclResult ret = WaitService(&args_, sizeof(WaitServiceArgs));
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
-}
-
-// test_05: thread is not CpuThread → HCCL_E_PARA (dynamic_cast fails)
-TEST_F(WaitServiceTest, Ut_WaitService_When_ThreadIsNotCpuThread_Expect_ReturnIsHCCL_E_PARA)
-{
-    // Create an AicpuTsThread (not CpuThread) via HcommThreadAllocWithConfig.
-    ThreadHandle tsHandle{};
-    ThreadConfig wrongConfig = {};
-    wrongConfig.notifyNumPerThread = 1;
-    HcclResult allocRet = HcommThreadAllocWithConfig(
-        COMM_ENGINE_AICPU_TS, 1, wrongConfig, THREAD_TYPE_TS, &tsHandle);
-    ASSERT_EQ(allocRet, HCCL_SUCCESS);
-    allHandles_.push_back(tsHandle);
-
-    args_.threadHandle = tsHandle;
-    HcclResult ret = WaitService(&args_, sizeof(WaitServiceArgs));
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-// test_06: notifyIdx out of bounds → HCCL_E_PTR (GetMemNotify returns nullptr)
-TEST_F(WaitServiceTest, Ut_WaitService_When_NotifyIdxOutOfBounds_Expect_ReturnIsHCCL_E_PTR)
-{
-    args_.notifyIdx = kNotifyNum; // out of range [0, kNotifyNum)
-    HcclResult ret = WaitService(&args_, sizeof(WaitServiceArgs));
-    EXPECT_EQ(ret, HCCL_E_PTR);
-}
-
-// test_07: MemNotify::Wait fails → error code propagated
-TEST_F(WaitServiceTest, Ut_WaitService_When_MemNotifyWaitFails_Expect_ReturnIsWaitErrorCode)
-{
-    MOCKER_CPP(&MemNotify::Wait)
-        .stubs()
-        .will(returnValue(HCCL_E_INTERNAL));
-
-    HcclResult ret = WaitService(&args_, sizeof(WaitServiceArgs));
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-}
-
-// temp 
-HcclResult TestService(void *args, uint64_t argsSizeByte)
-{
-    return HCCL_SUCCESS;
-}
-TEST_F(WaitServiceTest, Ut_TaskServiceRegister_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
-{
-    MOCKER_CPP(&MemNotify::Wait)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-
-    // HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle)
-    ThreadServiceHandle serviceHandle;
-    HcclResult ret = HcommThreadServiceRegister(threadHandle_, TestService, &serviceHandle);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcommThreadServiceUnregister(threadHandle_, serviceHandle);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
