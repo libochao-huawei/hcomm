@@ -28,6 +28,9 @@
 #include <map>
 
 #include <stdlib.h>
+#include "urma_api.h"
+#include "urma_types.h"
+#include "urma_opcode.h"
 #include <set>
 #include <mutex>
 #include <utility>
@@ -5485,5 +5488,42 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
 {
     binaryPath = "./";
     return HCCL_SUCCESS;
+}
+}
+
+/**
+ * @brief urma相关函数桩实现
+ *
+ * urma_poll_jfc, urma_post_jfr_wr, urma_post_jfs_wr 定义在 src/platform/hccp/external_depends/ubengine/urma_api.h 中
+ * 这些函数在 src/framework/next/comms/endpoint_pairs/channels/host/host_cpu_urma_channel.cc 中被调用
+ * 由于链接时找不到这些符号，需要在 UT 的桩代码文件中添加桩实现
+ */
+extern "C" {
+urma_status_t urma_post_jfs_wr(urma_jfs_t *jfs, urma_jfs_wr_t *wr, urma_jfs_wr_t **bad_wr)
+{
+    (void)jfs;
+    (void)wr;
+    if (bad_wr != nullptr) {
+        *bad_wr = nullptr;
+    }
+    return 0;
+}
+
+urma_status_t urma_post_jfr_wr(urma_jfr_t *jfr, urma_jfr_wr_t *wr, urma_jfr_wr_t **bad_wr)
+{
+    (void)jfr;
+    (void)wr;
+    if (bad_wr != nullptr) {
+        *bad_wr = nullptr;
+    }
+    return 0;
+}
+
+int urma_poll_jfc(urma_jfc_t *jfc, int cr_cnt, urma_cr_t *cr)
+{
+    (void)jfc;
+    (void)cr_cnt;
+    (void)cr;
+    return 1;
 }
 }
