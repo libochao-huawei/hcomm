@@ -2033,9 +2033,6 @@ HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_
     }
     std::shared_ptr<hccl::hcclComm> hcclComm = nullptr;
     std::vector<rtStream_t> rtStream(stream, stream + len);
-
-    HCCLV2_FUNC_RUN(HcomSetAttachedStreamV2());
-
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_RET(hcclComm->SetAttachedStream(graphId, rtStream));
     } else {
