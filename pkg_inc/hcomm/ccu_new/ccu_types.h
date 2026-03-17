@@ -69,6 +69,10 @@ typedef uint64_t CcuKernelHandle;
 
 typedef uint64_t CcuVariableHandle;
 
+typedef void *CcuKernelArg;
+
+typedef CcuResult (*CcuKernelFunc)(CcuKernelArg arg);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
