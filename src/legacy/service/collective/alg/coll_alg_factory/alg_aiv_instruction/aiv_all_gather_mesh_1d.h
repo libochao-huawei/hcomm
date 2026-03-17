@@ -45,18 +45,18 @@ public:
         uint32_t curCoreRankNum = block_idx < remainRankNum ? perCoreRankNum + 1 : perCoreRankNum;
         uint32_t startRank = block_idx < remainRankNum ? (perCoreRankNum + 1) * block_idx : perCoreRankNum * block_idx + remainRankNum;
         for (uint32_t rank = startRank; rank < startRank + curCoreRankNum; rank++) {
-            Record(rank, rank_ / FLAG_SIZE, tag);
+            Record(rank, rank_, tag);
         }
         for (uint32_t rank = startRank; rank < startRank + curCoreRankNum; rank++) {
             auto gmOthers = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank]));
             auto output = reinterpret_cast<__gm__ T *>(output_ + rank * stride);
-            WaitFlag(rank_, rank / FLAG_SIZE, tag);
+            WaitFlag(rank_, rank, tag);
             CpGM2GM(output, gmOthers, count);
             PipeBarrier<PIPE_ALL>();
-            Record(rank, (rank_ + rankSize_) / FLAG_SIZE, tag);
+            Record(rank, rank_ + rankSize_, tag);
         }
         for (uint32_t rank = startRank; rank < startRank + curCoreRankNum; rank++) {
-            WaitFlag(rank_, (rank + rankSize_) / FLAG_SIZE, tag);
+            WaitFlag(rank_, rank + rankSize_, tag);
         }
     }   
     uint64_t coreOffset;

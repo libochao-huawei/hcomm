@@ -17,41 +17,38 @@ template<typename T>
 class AivReduceScatterMesh1D : public AivCommBase {
     constexpr static uint64_t stageNum = 2;  // 生产者 消费者
     constexpr static uint64_t TAG_FLAG_SIZE = 8;
-    constexpr static uint64_t PROCESS_NUM = 4;
  
 public:
  
     __aicore__ inline AivReduceScatterMesh1D() {
     }
-
+ 
     __aicore__ inline void InitCoreInfo(uint64_t len, uint64_t inputStride)
     {
         coreNumPerStage = rankSize_;  // 每个阶段提供的最大核数
         uint64_t processNum = len / rankSize_;
-        if (GetBlockIdx() < coreNumPerStage) { 
-            // input->远端ipc,一个block负责一个rank input
+        if(GetBlockIdx() < coreNumPerStage) { // input->ipc,一个block负责一个rank input
             targetRank = GetBlockIdx();
-            int64_t outerOffset = targetRank * inputStride; // inputStride是整个算子的输入size
-            int64_t ipcRankOffset = rank_ * len * sizeof(T);
+            int64_t outerOffset = targetRank  * inputStride; // inputStride是整个算子的输入size
+            int64_t ipcRankOffset = targetRank * len * sizeof(T);
             inputOffset = input_ + outerOffset; // 这里的input是已经偏移过前面处理完数据量的地址了
-            outputOffset = reinterpret_cast<uint64_t>(GM_IN[targetRank]) + ipcRankOffset;
-        } else if (GetBlockIdx() < (coreNumPerStage * stageNum)) { 
-            // ipc->output,一个block负责一个卡的数据
-            int64_t targetPart = GetBlockIdx() - coreNumPerStage;
-            int64_t outerOffset = targetPart * processNum * sizeof(T);
+            outputOffset = reinterpret_cast<uint64_t>(GM_IN[rank_]) + ipcRankOffset;
+        } else if (GetBlockIdx() < (coreNumPerStage * stageNum)) { // ipc->output,一个block负责一个卡的数据
+            int64_t outerOffset = (GetBlockIdx() % coreNumPerStage) * processNum * sizeof(T);
             outputOffset = output_ + outerOffset;
             int64_t consumInOffset;
-            for (int index = 0; index < rankSize_; index++) {                                                                                                      // 轮询每个rank的数据，拉取过来，做顺序累加
-                consumInOffset = reinterpret_cast<uint64_t>(GM_IN[rank_]) + len * index * sizeof(T) + outerOffset; // 本卡的数据都在ipc
+            for (int index = 0; index < rankSize_; index++) { // 轮询每个rank的数据，拉取过来，做顺序累加
+                consumInOffset = reinterpret_cast<uint64_t>(GM_IN[(index + GetBlockIdx()) % rankSize_]) + 
+                                 len * rank_ * sizeof(T) + outerOffset; // 本卡的数据都在ipc 
                 inputOffVec[index] = consumInOffset;
             }
             consumProcessNum = processNum;
-            if (targetPart == (rankSize_ - 1)) {
+            if ((GetBlockIdx() % coreNumPerStage) == (rankSize_ - 1)) {
                 consumProcessNum = len - processNum * (rankSize_ - 1);
-            }
+            } 
         }
     }
-
+ 
     __aicore__ inline void Producer()
     {
         CpGM2GM((__gm__ T *)outputOffset, (__gm__ T *)inputOffset, len_); // 本卡数据拷贝到ipc上
@@ -59,28 +56,23 @@ public:
         uint64_t flag_offset = rank_; 
         Record(targetRank, flag_offset, curTag);
     }
-
+ 
     __aicore__ inline void Consumer()
     {
         uint64_t flag_offset;
-
-        uint64_t processLen = len_ / PROCESS_NUM;
-        uint64_t processOffset = (GetBlockIdx() + PROCESS_NUM - coreNumPerStage * stageNum) * processLen * sizeof(T);
-        if (GetBlockIdx() == (coreNumPerStage * stageNum - 1)) {
-            processLen = len_ - processLen * (PROCESS_NUM - 1);
-        }
-        if (GetBlockIdx() >= (coreNumPerStage * stageNum - PROCESS_NUM)) {
+        for (int index = 0; index < rankSize_; index++) {
+            uint32_t rankIdx = (index + GetBlockIdx()) % rankSize_;
+            flag_offset = rankIdx;
             WaitFlag(rank_, flag_offset, curTag);
-            CpGM2GM((__gm__ T *)(output_ + processOffset), (__gm__ T *)(reinterpret_cast<uint64_t>(GM_IN[rank_])), processLen);
-            pipe_barrier(PIPE_ALL);
-            for (int index = 1; index < rankSize_; index++) {
-                WaitFlag(rank_, flag_offset, curTag);
-                CpGM2GM((__gm__ T *)(output_ + processOffset), (__gm__ T *)(reinterpret_cast<uint64_t>(GM_IN[rank_])), processLen, reduceOp_);
-                pipe_barrier(PIPE_ALL);
+            if (index == 0) { // 通过直接覆盖output把数据清一下
+                CpGM2GM((__gm__ T *)outputOffset, (__gm__ T *)inputOffVec[index], consumProcessNum);
+            } else { // 其他卡往output上做atomic add
+                CpGM2GM((__gm__ T *)outputOffset, (__gm__ T *)inputOffVec[index], consumProcessNum, reduceOp_);
             }
+            pipe_barrier(PIPE_ALL);
         }
     }
-
+ 
     __aicore__ inline void Process(uint32_t curTag)
     {
         this->curTag = static_cast<int32_t>(curTag);
