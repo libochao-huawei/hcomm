@@ -9,3 +9,4 @@
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(independent_op)
 add_subdirectory(symmetric_memory)
+add_subdirectory(one_sided_service)
