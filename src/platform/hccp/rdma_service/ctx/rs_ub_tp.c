@@ -76,11 +76,53 @@ int RsUbGetTpAttr(struct RsUbDevCb *devCb, unsigned int *attrBitmap, const uint6
     return ret;
 }
 
+STATIC int RsConvertIpToNetAddr(const uint8_t ip[], const urma_net_addr_t *addr)
+{
+    bool is_ipv4 = true;
+    int ret = 0, i;
+
+    for (i = 0; i < 11; ++i) {
+        if (ip[i] != 0) {
+            is_ipv4 = false;
+            break;
+        }
+    }
+
+    if (is_ipv4) {
+        addr->sin_family = AF_INET;
+        ret = memcpy_s(&addr->in4, sizeof(struct in_addr), &ip[12], sizeof(struct in_addr));
+        CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s ip failed, ret:%d errno:%d", ret, errno), -ESAFEFUNC);
+    } else {
+        addr->sin_family = AF_INET6;
+        ret = memcpy_s(&addr->in4, sizeof(struct in6_addr), ip, sizeof(struct in6_addr));
+        CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s ip failed, ret:%d errno:%d", ret, errno), -ESAFEFUNC);
+    }
+
+    return ret;
+}
+
 int RsUbSetTpAttr(struct RsUbDevCb *devCb, const unsigned int attrBitmap, const uint64_t tpHandle,
     struct TpAttr *attr)
 {
+    const urma_net_addr_t dip = {0};
     uint8_t tpAttrCnt = 0;
     int ret;
+
+    if ((attrBitmap & TP_ATTR_SIP_MASK) && (attrBitmap & TP_ATTR_SMAC_MASK)) {
+        ret = RsUrmaGetSmac(devCb->urmaCtx, attr->sma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rsUrmaGetSmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), ret);
+    }
+
+    if ((attrBitmap & TP_ATTR_DIP_MASK) && (attrBitmap & TP_ATTR_DMAC_MASK)) {
+        ret = RsConvertIpToNetAddr(attr->dip, &dip);
+        CHK_PRT_RETURN(ret != 0, hccp_err("RsConvertIpToNetAddr failed, attrBitmap:%u ret:%d",
+            attrBitmap, ret), ret);
+
+        ret = RsUrmaGetDmac(devCb->urmaCtx, attr->dip, attr->dma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rsUrmaGetDmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), ret);
+    }
 
     tpAttrCnt = RsGetBitmapCount(attrBitmap);
     ret = RsUrmaSetTpAttr(devCb->urmaCtx, tpHandle, tpAttrCnt, attrBitmap,
