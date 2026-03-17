@@ -99,7 +99,7 @@ protected:
     // 不同Device不同Context间同步操作
     void LocalPost(const CcuRep::MaskSignal &sig, uint32_t mask = 1);
     void LocalWait(const CcuRep::MaskSignal &sig, uint32_t mask = 1);
-    void RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask = 1);
+    void RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask = 1, bool single = false);
     void WriteVariableWithSignal(const CcuTransport &transport, const CcuRep::Variable &var, uint32_t varIndex,
                                  uint32_t signalIndex, uint32_t mask = 1);
     void RemoteWait(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask = 1);
