@@ -59,6 +59,7 @@ private:
     u64 usedNotifyNum_ = 0;
     std::mutex threadMutex_;
     std::vector<std::shared_ptr<Thread>> threads_;
+    uint32_t threadTotalCount = 0;
 
     std::mutex mainThreadMutex_;
     std::map<rtStream_t, std::shared_ptr<Thread>> mainThread_;
