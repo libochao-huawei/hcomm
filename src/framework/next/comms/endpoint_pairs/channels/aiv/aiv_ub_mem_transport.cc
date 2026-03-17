@@ -158,6 +158,9 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     rmtRmaBufferVec_.clear();
     u32 vecSize{0};
     binaryStream >> vecSize;
+    CHK_PRT_RET(vecSize > MAX_BUFFER_NUM,
+        HCCL_ERROR("[AivUbMemTransport][RmtBufferUnpackProc] vecSize[%u] exceeds limit[%u]", vecSize, MAX_BUFFER_NUM),
+        HCCL_E_PARA);
     HCCL_RUN_INFO("vecSize=%u", vecSize);
     for (u32 pos = 0; pos < vecSize; ++pos) {
         Hccl::ExchangeIpcBufferDto dto;

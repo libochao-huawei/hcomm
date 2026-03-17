@@ -10,6 +10,8 @@
 #ifndef USER_REMOTE_MEM_GETTER_H
 #define USER_REMOTE_MEM_GETTER_H
 
+constexpr uint32_t MAX_BUFFER_NUM = 256;
+
 namespace Hccl {
 
 template <typename T>
