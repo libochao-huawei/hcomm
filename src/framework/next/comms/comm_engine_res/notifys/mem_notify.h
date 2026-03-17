@@ -35,16 +35,17 @@ public:
             return;
         }
         if (connectType_ == HOST_DEVICE_CONNECT_TYPE_PCIE) { // PCIe
-            // 释放notify
-            if (notifyDeviceVa_) {
-                aclrtFree(&notifyDeviceVa_); // device
-            }
             // 对齐
             uint64_t va = reinterpret_cast<uint64_t>(notifyDeviceVa_);
             uint64_t registerVa = (va + (4096ULL - 1ULL)) & ~(4096ULL - 1ULL);
             int32_t ret = halSvmUnregister(devId_, registerVa, sizeof(uint8_t), SVM_REGISTER_FLAG_WITH_ACCESS_VA);
             if (ret != 0) {
                 HCCL_ERROR("[MemNotify][%s] halSvmUnregister failed, ret = %d", __func__, ret);
+            }
+            // 释放notify
+            if (notifyDeviceVa_) {
+                (void)aclrtFree(notifyDeviceVa_); // device
+                notifyDeviceVa_ = nullptr;
             }
         } else if (connectType_ == HOST_DEVICE_CONNECT_TYPE_UB) {
             if (notifyHostVa_) {
@@ -128,7 +129,7 @@ public:
             int32_t ret = halSvmRegister(devId_, registerVa, sizeof(uint8_t), SVM_REGISTER_FLAG_WITH_ACCESS_VA, &accessVa);
             if (ret != 0) {
                 HCCL_ERROR("[MemNotify][%s] halSvmRegister failed, ret = %d", __func__, ret);
-                aclrtFree(&notifyDeviceVa_);
+                aclrtFree(notifyDeviceVa_);
                 return HCCL_E_INTERNAL;
             }
             notifyHostVa_ = reinterpret_cast<void*>(accessVa);
