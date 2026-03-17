@@ -46,8 +46,6 @@ public:
     }
     HcclResult Clean();
     void GetJettyInfo(ConnJettyInfo& connJettyInfo);
-    static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
- 	                         std::unique_ptr<CcuJetty> &ccuJetty);
 
 private:
     int32_t devLogicId_{0};
