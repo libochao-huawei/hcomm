@@ -590,9 +590,13 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
-std::vector<ConnJettyInfo> CcuTransport::GetJettyInfo()
+std::vector<ConnJettyInfo> CcuTransport::GetDeleteJettyInfo()
 {
-    return ccuConnection->GetJettyInfo();
+    return ccuConnection->GetDeleteJettyInfo();
+}
+std::vector<ConnJettyInfo> CcuTransport::GetUnimportJettyInfo()
+{
+    return ccuConnection->GetUnimportJettyInfo();
 }
 
 HcclResult CcuTransport::Clean()

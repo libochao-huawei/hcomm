@@ -17,7 +17,7 @@ class CollBroadcastFor310PCommExecutor : public CollBroadcastExecutor {
 public:
     CollBroadcastFor310PCommExecutor(const HcclDispatcher dispatcher,
                                         std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBroadcastFor310PCommExecutor() = default;
+    ~CollBroadcastFor310PCommExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

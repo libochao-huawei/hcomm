@@ -19,7 +19,7 @@ class ReduceScatterVOperator : public CollAlgOperator {
 public:
     ReduceScatterVOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~ReduceScatterVOperator();
+    ~ReduceScatterVOperator() override;
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag);
 
 private:

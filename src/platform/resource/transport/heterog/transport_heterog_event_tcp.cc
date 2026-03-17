@@ -736,7 +736,7 @@ HcclResult TransportHeterogEventTcp::BlockRecv(const TransData &recvData, bool m
     u64 byteSize = sizeof(HcclEnvelope);
     FdHandle fdHandle{};
 
-    EventStatus eventStatus;
+    EventStatus eventStatus = {};
     eventStatus.matched = matched;
     eventStatus.event = EPOLLIN;
 

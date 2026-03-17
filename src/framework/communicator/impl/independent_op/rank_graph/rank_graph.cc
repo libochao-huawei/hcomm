@@ -40,7 +40,7 @@ HcclResult RankGraphV1::DevTypeToCommProtocol(DevType &type, CommProtocol &proto
         case DevType::DEV_TYPE_NOSOC:
             protocol = CommProtocol::COMM_PROTOCOL_PCIE;
             break;
-        case DevType::DEV_TYPE_910_95:
+        case DevType::DEV_TYPE_950:
             // 待扩展UB的协议，当前先不支持
             protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
             break;

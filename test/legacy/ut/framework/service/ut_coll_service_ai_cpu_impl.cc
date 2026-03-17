@@ -68,7 +68,7 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
         comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
         comm.InitNotifyManager();
         comm.InitSocketManager();
@@ -77,6 +77,7 @@ protected:
         comm.InitMemTransportManager();
         comm.devLogicId = 0;  // InitMirrorTaskManager依赖此字段
         comm.InitMirrorTaskManager();
+        comm.RegisterAicpuKernel();
         comm.myRank = 0;
         comm.id = "testTag";
         std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
@@ -521,7 +522,9 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
     comm.InitStreamManager();
     comm.InitMemTransportManager();
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
+    comm.devLogicId = 0;
     comm.id = "testTag";
     comm.currentCollOperator = make_unique<CollOperator>();
     comm.GetCurrentCollOperator()->opMode = OpMode::OPBASE;
@@ -572,7 +575,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Succe
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
@@ -594,6 +597,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Succe
     comm.InitMemTransportManager();
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
     comm.id = "testTag";
     std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
@@ -665,7 +669,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Loop_Expect_Success
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
@@ -687,6 +691,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Loop_Expect_Success
     comm.InitMemTransportManager();
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
     comm.id = "testTag";
     std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
@@ -769,12 +774,12 @@ TEST_F(CollServiceAiCpuImplTest, Ut_GetSnapShotDynamicBuf_When_Normal_Expect_Suc
     u32 utCntCke = 3;
 
     CollServiceAiCpuImpl service(&comm);
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
         .will(returnValue(collAlgOpReq));
-    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_950, 0, 1);
     BinaryStream bs{};
 
     u32 opAccState{0};
@@ -824,7 +829,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     CollAlgOpReq collAlgOpReq;
     collAlgOpReq.algName = "testAlg";
     collAlgOpReq.resReq.primQueueNum = 1;
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
@@ -846,6 +851,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     comm.InitMemTransportManager();
     comm.devLogicId = 0;
     comm.InitMirrorTaskManager();
+    comm.RegisterAicpuKernel();
     comm.myRank = 0;
     comm.id = "testTag";
     std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);

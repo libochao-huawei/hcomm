@@ -19,6 +19,7 @@
 #include "acl/acl_rt.h"
 #include "orion_adapter_hccp.h"
 #include <adapter_error_manager_pub.h>
+#include "hccl_common_v2.h"
 
 namespace Hccl {
 
@@ -98,6 +99,25 @@ TaskExceptionHandlerManager::~TaskExceptionHandlerManager()
             instance = nullptr;
         }
     }
+}
+
+static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
+{
+    std::pair<float, float> floatCounter;
+    if (taskInfo.dfxOpInfo_->headOpCounterAddr_ != 0 && taskInfo.dfxOpInfo_->tailOpCounterAddr_ != 0) {
+        u64 size = 4;
+        void *headAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->headOpCounterAddr_);
+        void *tailAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->tailOpCounterAddr_);
+        HrtMemcpy(&floatCounter.first, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+        HrtMemcpy(&floatCounter.second, size, tailAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+    }
+
+    std::pair<u32, u32> counter;
+    counter.first = static_cast<u32>(floatCounter.first);
+    counter.second = static_cast<u32>(floatCounter.second);
+    
+    HCCL_INFO("[GetOpCounter] end, head:%u, tail:%u", counter.first, counter.second);
+    return counter;
 }
 
 static bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
@@ -187,7 +207,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
 
         if (curTask->taskParam_.taskType == TaskParamType::TASK_CCU) {
             ProcessCcuException(exceptionInfo, *curTask);
-        } else if(curTask->taskParam_.taskType == TaskParamType::TASK_AIV){
+        } else if (curTask->taskParam_.taskType == TaskParamType::TASK_AIV) {
             ProcessAivException(exceptionInfo, *curTask);
         } else {
             ProcessException(exceptionInfo, *curTask);
@@ -198,7 +218,8 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
 /*
  @Desc: AIV 算子异常DFX
 */
-void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo){
+void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
+{
     HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
     
     HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
@@ -216,12 +237,12 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     void *flag_buff_temp = nullptr;
     aclError aclRet = 0;
     aclRet = aclrtMallocHost(&flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize);
-    if(aclRet != ACL_SUCCESS){
+    if (aclRet != ACL_SUCCESS) {
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
         return;
     }
     aclRet = aclrtMemcpy(flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, taskInfo.taskParam_.taskPara.Aiv.flagMem, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, ACL_MEMCPY_DEVICE_TO_HOST);
-    if(aclRet != ACL_SUCCESS){
+    if (aclRet != ACL_SUCCESS) {
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
         return;
     }
@@ -241,9 +262,9 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     }
     HCCL_ERROR(flagStr.str().c_str());
     
-    if(flag_buff_temp != nullptr){
+    if (flag_buff_temp != nullptr) {
         aclRet = aclrtFreeHost(flag_buff_temp);
-        if(aclRet != ACL_SUCCESS){
+        if (aclRet != ACL_SUCCESS) {
             HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
             return;
         }
@@ -329,6 +350,8 @@ void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, co
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, para information is %s.", taskInfo.GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
+    auto count = GetOpCounter(taskInfo);
+ 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
 }
 
@@ -514,6 +537,8 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
         deviceId, taskInfo.GetBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
+    auto count = GetOpCounter(taskInfo);
+ 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1

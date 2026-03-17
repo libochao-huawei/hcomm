@@ -69,9 +69,9 @@ IAicpuTsThread::~IAicpuTsThread()
     }
 }
 
-void IAicpuTsThread::StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t cqIds)
+void IAicpuTsThread::StreamLiteInit(uint32_t id, uint32_t sqIds, uint32_t phyId, uint32_t logicCqids)
 {
-    StreamLite *streamLitePtr = new StreamLite(id, sqIds, phyId, cqIds, true);
+    StreamLite *streamLitePtr = new StreamLite(id, sqIds, phyId, logicCqids, true);
     streamLiteVoidPtr_        = static_cast<void *>(streamLitePtr);
 }
 

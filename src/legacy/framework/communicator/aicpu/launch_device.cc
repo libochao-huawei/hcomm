@@ -17,6 +17,8 @@
 #include "exception_util.h"
 #include "invalid_params_exception.h"
 #include "runtime_api_exception.h"
+#include "hccl/base.h"
+
 
 using namespace std;
 
@@ -61,5 +63,113 @@ void LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionTyp
         THROW<RuntimeApiException>(StringFormat("[LoadBinaryFromFile]:errNo[0x%016llx]load binary from file error.",
                                                 aclRet));
     }
+}
+
+AicpuBinaryHolder::AicpuBinaryHolder(): handle_(nullptr), loaded_(false)
+{
+}
+
+AicpuBinaryHolder::~AicpuBinaryHolder() noexcept
+{
+    Unload();
+}
+
+namespace {
+struct LoadCleanupGuard {
+    explicit LoadCleanupGuard(AicpuBinaryHolder &holder) : holder_(holder), active_(true)
+    {
+    }
+
+    ~LoadCleanupGuard()
+    {
+        if (active_) {
+            holder_.Unload();
+        }
+    }
+
+    void Dismiss()
+    {
+        active_ = false;
+    }
+
+    AicpuBinaryHolder &holder_;
+    bool active_;
+};
+} // namespace
+
+void AicpuBinaryHolder::Load()
+{
+    if(loaded_)
+    {
+        HCCL_WARNING("[AicpuBinaryHolder::%s] has registered aicpu kernel, skip register again.", __func__);
+        return;
+    }
+    HCCL_INFO("[AicpuBinaryHolder::%s] start.", __func__);
+    std::string jsonPath;
+    GetKernelFilePath(jsonPath);
+    jsonPath += "ccl_kernel.json";
+    aclrtBinHandle tempHandle = nullptr;
+    LoadBinaryFromFile(jsonPath.c_str(),
+        ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE,
+        0,
+        tempHandle);
+    handle_ = tempHandle;
+    loaded_ = true; // 提前设置loaded_为true，确保下方触发异常后aicpuKernelGuard里面能正确释放handle_资源
+    LoadCleanupGuard aicpuKernelGuard(*this);
+    HCCL_INFO("[AicpuBinaryHolder::%s] LoadBinaryFromFile success [%s]", __func__, jsonPath.c_str());
+    //register base Func
+    constexpr std::array<const char *, 2> kernelFunction{
+        "HcclKernelEntrance", "HcclUpdateCommKernelEntrance"};
+    for (const auto &kernelName : kernelFunction) {
+        if (strlen(kernelName) == 0 ||
+            strlen(kernelName) >= KERNEL_PARAM_NAME_SIZE) {
+          HCCL_ERROR("[AicpuBinaryHolder::%s] invalid kernel name", __func__);
+          THROW<InvalidParamsException>("kernel name is invalid");
+        }
+        aclrtFuncHandle funcHandle;
+        const aclError aclRet =
+            aclrtBinaryGetFunction(handle_, kernelName, &funcHandle);
+        if (aclRet != ACL_SUCCESS) {
+          THROW<RuntimeApiException>(StringFormat(
+              "Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
+        }
+        HCCL_INFO("[AicpuBinaryHolder::%s] getting funcHandle for kernel[%s]",
+                  __func__, kernelName);
+        const std::string kernelNameStr = std::string(kernelName);
+        aicpuFuncMap_[kernelNameStr] = funcHandle;
+    }
+    aicpuKernelGuard.Dismiss();
+    HCCL_INFO("[AicpuBinaryHolder::%s] end.", __func__);
+}
+void AicpuBinaryHolder::Unload()
+{
+    if (loaded_ && handle_ != nullptr)
+    {
+        const aclError aclRet = aclrtBinaryUnLoad(handle_);
+        if (aclRet != ACL_SUCCESS) {
+            HCCL_ERROR("[~AicpuBinaryHolder] failed to unload binary, ret[%d]", aclRet);
+        }
+        handle_ = nullptr;
+        loaded_ = false;
+        aicpuFuncMap_.clear();
+    }
+}
+aclrtFuncHandle AicpuBinaryHolder::GetAicpuKernelFuncHandle(const char* kernelName) const
+{
+    if (kernelName == nullptr || strlen(kernelName) == 0 || strlen(kernelName) >= KERNEL_PARAM_NAME_SIZE) {
+        HCCL_ERROR("[AicpuBinaryHolder::%s] invalid kernel name", __func__);
+        THROW<InvalidParamsException>("kernel name is invalid");
+    }
+    if (!loaded_) {
+        HCCL_ERROR("[AicpuBinaryHolder::%s] aicpu kernel not registered, kernelName[%s]", __func__, kernelName);
+        THROW<RuntimeApiException>("aicpu kernel not registered");
+    }
+    const auto kernelNameStr = std::string(kernelName);
+    const auto it = aicpuFuncMap_.find(kernelNameStr);
+    if (it == aicpuFuncMap_.end()) {
+        HCCL_ERROR("[AicpuBinaryHolder::%s] function handle of kernelName[%s] is not get before", __func__, kernelName);
+        THROW<RuntimeApiException>(StringFormat("function handle of kernelName[%s] is not get before", kernelName));
+    }
+    return it->second;
 }
 }   // namespace Hccl

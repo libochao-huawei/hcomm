@@ -68,7 +68,7 @@ inline HcclResult GetUbToken(u32 devicePhyId, u32* client_qp_token, u32* client_
     std::lock_guard<std::mutex> lock(ubTokenMutex);
     if (!isInitialized) {
         u32 devPhyId = devicePhyId;
-        struct RaInfo raInfo;
+        struct RaInfo raInfo = {};
         raInfo.mode = HrtNetworkMode::HDC;
         raInfo.phyId = devPhyId;
         HcclResult ret = hrtRaGetSecRandom(&raInfo, client_qp_token);
@@ -1154,7 +1154,7 @@ HcclResult PingMesh::HccnRpingBatchPingStart(u32 deviceId, u32 pktNum, u32 inter
         payloadLen, bufferInfo->bufferSize, pktNum, targetNum);
         return HCCL_E_MEMORY;
     }
-    PingTaskAttr attr;
+    PingTaskAttr attr = {};
     attr.packetCnt = pktNum;
     attr.packetInterval = interval;
     attr.timeoutInterval = timeout;

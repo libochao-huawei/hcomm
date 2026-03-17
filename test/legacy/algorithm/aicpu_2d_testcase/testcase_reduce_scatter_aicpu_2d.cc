@@ -65,7 +65,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_coun
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -89,7 +89,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_coun
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -113,7 +113,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_coun
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -137,7 +137,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_coun
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 0;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -161,7 +161,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_coun
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2051;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -185,7 +185,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 21 * 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -209,7 +209,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 5242880;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -233,7 +233,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2621440;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -257,7 +257,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 3355443;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -281,7 +281,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 3355443;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -305,7 +305,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_2_rank_smal
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -329,7 +329,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_3_mul_3_rank)
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -353,7 +353,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_4_mul_4_rank)
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 9;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -377,7 +377,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_3_rank_smal
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 20 * 1024 * 1024 + 1;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -401,7 +401,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_3_rank_coun
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -425,7 +425,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_3_rank_coun
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2051;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -449,7 +449,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_3_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 20 * 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -473,7 +473,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_3_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 5242880;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;
@@ -497,7 +497,7 @@ TEST_F(ReduceScatterAicpu2DTest, reducescatter_aicpu_case_test_2_mul_3_rank_big_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2621440;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "InsReduceScatterMesh2D";
  
     Checker checker;

@@ -15,7 +15,7 @@ namespace hccl {
 class CollRunAlltoAllAivDirect: public CollAlltoAllExecutor {
 public:
     CollRunAlltoAllAivDirect(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllAivDirect() = default;
+    ~CollRunAlltoAllAivDirect() override = default;
 private:
     HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;

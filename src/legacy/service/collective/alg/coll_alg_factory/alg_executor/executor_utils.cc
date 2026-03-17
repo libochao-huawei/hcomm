@@ -14,7 +14,7 @@ namespace Hccl {
 bool IsEnableCounterNotifyByDevType(const RankId myRank, const DevType devType)
 {
     switch (devType) {
-        case DevType::DEV_TYPE_910_95:
+        case DevType::DEV_TYPE_950:
             HCCL_DEBUG("[CollAlgFactory] Rank [%d], CounterNotify func enabled.", myRank);
             return true;
         default:
