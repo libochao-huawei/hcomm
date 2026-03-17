@@ -48,3 +48,8 @@ int vsnprintf_s(char* strDest, size_t destMax, size_t count, const char* format,
         return -1;
     }
 }
+
+errno_t strcat_s(char *strDest, size_t destMax, const char *strSrc)
+{
+    return strcat(strDest, strSrc);
+}

@@ -60,6 +60,7 @@
 #include "json_parser.h"
 #include "adapter_error_manager_pub.h"
 #include "ccu_context_all_to_all_v_mesh1d.h"
+#include "topo_addr_info.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -1298,7 +1299,24 @@ std::string CommunicatorImpl::GetTopoFilePath() const
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
-    jsonParser.ParseFileToJson(filePath, parseJson);
+    try {
+        jsonParser.ParseFileToJson(filePath, parseJson);
+    } catch (...) {
+        const u32 maxBuffLen = 10 * 1024 * 1024;
+        size_t bufSize;
+        s32 result = TopoAddrInfoGetSize(devPhyId, &bufSize); // 获取rankInfo大小，用于提前分配内存
+        CHK_PRT_THROW(result != 0 || bufSize > maxBuffLen,
+                  HCCL_ERROR("[%s] Get rankinfo size failed.", __func__),
+                  InvalidParamsException, "Get rankinfo size failed.");
+        std::vector<char> buffer(bufSize, '\0');
+        result = TopoAddrInfoGet(devPhyId, buffer.data(), &bufSize);
+        CHK_PRT_THROW(result != 0,
+                  HCCL_ERROR("[%s] Get rankinfo failed.", __func__),
+                  InvalidParamsException, "Get rankinfo failed.");
+        std::string jsonString(buffer.data(), bufSize);
+        // 将生成的info信息转换成json文件
+        parseJson = nlohmann::json::parse(jsonString);
+    }
 
     // parser topo_file_path
     std::string topoFilePath{};
