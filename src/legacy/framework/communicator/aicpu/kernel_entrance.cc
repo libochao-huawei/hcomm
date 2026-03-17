@@ -52,9 +52,9 @@ uint32_t HcclKernelEntrance(void *args)
     CHK_RET(DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     u32 commIdIndex = kernelParam->comm.idIndex;
-    HCCL_RUN_INFO("HcclKernelEntrance begin, OpType[%s] algName[%s] commIdIndex[%u] commId[%s] opTag[%s], devPhyId[%u] myRank[%u] rankSize[%u] oneSidedComm[%d]",
+    HCCL_RUN_INFO("HcclKernelEntrance begin, OpType[%s] algName[%s] commIdIndex[%u] commId[%s] opTag[%s], devPhyId[%u] myRank[%u] rankSize[%u] oneSidedComm[%d] opIndex[%u]",
         kernelParam->op.algOperator.opType.Describe().c_str(), kernelParam->algName, commIdIndex, kernelParam->comm.commId,
-        kernelParam->opTag, kernelParam->comm.devPhyId, kernelParam->comm.myRank, kernelParam->comm.rankSize, kernelParam->oneSidedComm);
+        kernelParam->opTag, kernelParam->comm.devPhyId, kernelParam->comm.myRank, kernelParam->comm.rankSize, kernelParam->oneSidedComm, kernelParam->comm.opIndex_);
     Hccl::CommunicatorImplLite *communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
     if (communicatorImplLite == nullptr) {
         HCCL_ERROR("HcclKernelEntrance communicatorImplLite is null.");

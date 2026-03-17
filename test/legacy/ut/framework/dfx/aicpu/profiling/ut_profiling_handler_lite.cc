@@ -104,7 +104,7 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo_test)
     op.staticAddr = false;
     dfxOpInfo->op_ = op;
     dfxOpInfo->tag_ = "testTag";
-    dfxOpInfo->index_ = 0;
+    dfxOpInfo->commIndex_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
     dfxOpInfo->comm_ = &comm;
@@ -126,7 +126,7 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo1_test)
     op.staticAddr = false;
     dfxOpInfo->op_ = op;
     dfxOpInfo->tag_ = "testTag";
-    dfxOpInfo->index_ = 0;
+    dfxOpInfo->commIndex_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
     dfxOpInfo->comm_ = &comm;
@@ -147,7 +147,7 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo2_test)
     op.staticAddr = false;
     dfxOpInfo->op_ = op;
     dfxOpInfo->tag_ = "testTag";
-    dfxOpInfo->index_ = 0;
+    dfxOpInfo->commIndex_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
     dfxOpInfo->comm_ = &comm;

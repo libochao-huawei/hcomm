@@ -358,10 +358,10 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
 void CommunicatorImpl::TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const
 {
     auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], rankInGroup[%d],"
-                             " rankSizeInGroup[%u], devLogicId[%d], streamId[%u], opMode[%s], %s",
+                             " rankSizeInGroup[%u], devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
                              opParams.opType.Describe().c_str(), GetOpBaseOpIndex(), GetId().c_str(),
                              GetMyRank(), GetRankSize(), devLogicId, streamId,
-                             opMode.Describe().c_str(), opParams.Describe().c_str());
+                             opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
     GetTrace().Save(info);
 }
 
@@ -445,16 +445,13 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     bool canUpdate = superFasterLoad && (commExecuteConfig.accState == AcceleratorState::CCU_MS ||
                         commExecuteConfig.accState == AcceleratorState::CCU_SCHED);
     if (OpType::ALLTOALL == opParams.opType) {
-        ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.all2AllDataDes.sendType),
-                               static_cast<u32>(opParams.all2AllDataDes.sendCount)};
+        ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.all2AllDataDes.sendType), static_cast<u32>(opParams.all2AllDataDes.sendCount)};
     } else if (OpType::ALLTOALLV == opParams.opType) {
         ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.all2AllVDataDes.sendType), 0};
     } else if (OpType::BROADCAST == opParams.opType || OpType::SCATTER == opParams.opType) {
-        ccuParamsMappingKey = {static_cast<u32>(opParams.root), static_cast<u32>(opParams.dataType),
-                               static_cast<u32>(opParams.count)};
+        ccuParamsMappingKey = {static_cast<u32>(opParams.root), static_cast<u32>(opParams.dataType), static_cast<u32>(opParams.count)};
     } else {
-	    ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.dataType),
-	                           static_cast<u32>(opParams.count)};
+	    ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.dataType), static_cast<u32>(opParams.count)};
     }
     auto                   &ccuParamsMapping        = colCcuParamMapping[opParams.opType];
     auto                    ccuParamsMappingKeyIter = ccuParamsMapping.find(ccuParamsMappingKey);
@@ -475,9 +472,11 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->op_           = *GetCurrentCollOperator();
         dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
         dfxOpInfo->algType_      = AlgType::MESH;
-        dfxOpInfo->index_        = GetIdIndex();
+        dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        dfxOpInfo->commId_       = id;
+        dfxOpInfo->opIndex_      = opIndex;
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
         ReportProfInfo(beginTime, opParams.staticShape, true);
@@ -624,6 +623,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     collOpIndex++;
     submittedOpCnt = collOpIndex;
     opBaseOpIndex++;
+    opIndex++;
     status = CommStatus::COMM_READY;
 }
 
@@ -741,6 +741,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
+        opIndex++;
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -975,10 +976,10 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         }
 
         auto info = StringFormat("Entry-Hccl(opType[%s]): group[%s], rankInGroup[%d], rankSizeInGroup[%u], "
-                                 "devLogicId[%d], streamId[%u], opMode[%s], %s",
+                                 "devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
                                  currentCollOperator->opType.Describe().c_str(), GetId().c_str(), GetMyRank(),
                                  GetRankSize(), devLogicId, HrtGetStreamId(stream),
-                                 currentCollOperator->opMode.Describe().c_str(), opParams.Describe().c_str());
+                                 currentCollOperator->opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
         GetTrace().Save(info);
         if (isAiv && aivClearEnable) {
             aivOffloadTag = 1;
@@ -995,6 +996,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         ReportProfInfo(beginTime, opParams.staticShape, false);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
+        opIndex++;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
         HCCL_ERROR(e.what());
@@ -1582,9 +1584,15 @@ u32 CommunicatorImpl::GetSubmittedOpCnt() const
 {
     return submittedOpCnt;
 }
+
 u32 CommunicatorImpl::GetOpBaseOpIndex() const
 {
     return opBaseOpIndex;
+}
+
+u32 CommunicatorImpl::GetOpIndex() const
+{
+    return opIndex;
 }
 
 bool CommunicatorImpl::GetOpAiCpuTSFeatureFlag() const
