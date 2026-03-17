@@ -610,10 +610,10 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
 {
     u32 rmtNum;
     binaryStream >> rmtNum;
-    if (type == UbRmtBufType::BUFFER) {
-        CHK_PRT_RET(rmtNum > MAX_BUFFER_NUM,
-            HCCL_ERROR("[UbMemTransport][RmtBufferVecUnpackProc] rmtNum[%u] exceeds limit[%u]",
-            rmtNum, MAX_BUFFER_NUM), HCCL_E_PARA);
+    if (type == UbRmtBufType::BUFFER && rmtNum > MAX_BUFFER_NUM) {
+        MACRO_THROW(InvalidParamsException,
+            StringFormat("[UbMemTransport][RmtBufferVecUnpackProc] rmtNum[%u] exceeds limit[%u]",
+            rmtNum, MAX_BUFFER_NUM));
     }
     HCCL_INFO("unpack %s %s, locNum=%u, rmtNum=%u", type.Describe().c_str(), GetLinkDescInfo().c_str(), locNum,
                rmtNum);
