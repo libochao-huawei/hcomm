@@ -83,16 +83,6 @@ public:
         return StringFormat("CcuInstructionReduceScatterMesh1D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgReduceScatterMesh1D>(dimSize_, rankId_, op_, tempVTopo_);
