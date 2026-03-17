@@ -611,6 +611,13 @@ HcclResult HcomDestroyGroup(const char *group)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            std::unique_lock<std::mutex> groupParaLock(hcomInfo.groupParamsLock);
+            auto iter = hcomInfo.hcclGroupMap.find(group);
+            if (iter == hcomInfo.hcclGroupMap.end()) {
+                HCCL_ERROR(
+                    "[Destroy][Group]errNo[0x%016llx] group[%s] is not exist", HCOM_ERROR_CODE(HCCL_E_PARA), group.c_str());
+                return HCCL_E_PARA;
+            }
             hcomInfo.hcomGroupMap.erase(group);
             CHK_RET(HcomDestroyGroupImplV2(group));
             return HCCL_SUCCESS;
