@@ -493,12 +493,10 @@ void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtM
     aclError ret = aclrtMemcpy(dst, destMax, src, count, rtKind);
     HCCL_INFO("Call rtMemcpy, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[SyncCopy][Mem]errNo[0x%016llx] rtMemcpy failed. "
+        string msg = StringFormat("[SyncCopy][Mem]errNo[0x%016llx] rtMemcpy failed. "
                    "return[%d], para: dstAddr[%p], destMax[%llu], srcAddr[%p], count[%llu], kind[%d].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, dst, destMax, src, count, kind);
-        throw RuntimeApiException(StringFormat(
-            "call rtMemcpy failed. dst=%p, destMax=0x%llx, src=%p, count=0x%llx, kind=%d.",
-            dst, destMax, src, count, kind));
+        MACRO_THROW(RuntimeApiException, msg);
     }
     hcclRet = HrtThreadExchangeCaptureMode(&mode);
     CHK_PRT_CONT(hcclRet != HCCL_SUCCESS && hcclRet != HCCL_E_NOT_SUPPORT,
@@ -777,8 +775,8 @@ RtNotify_t HrtIpcOpenNotify(const char_t *name)
     HCCL_INFO("[HrtIpcOpenNotify] name[%s].", name);
     CHECK_NULLPTR(name, "[HrtIpcOpenNotify] name is nullptr!");
     uint64_t flags = 0;
-    aclrtNotify* notify = nullptr;
-    aclError ret = aclrtNotifyImportByKey(notify, name, static_cast<uint64_t>(flags));
+    aclrtNotify notify = nullptr;
+    aclError ret = aclrtNotifyImportByKey(&notify, name, static_cast<uint64_t>(flags));
     HCCL_INFO("Call rtIpcOpenNotify, return value[%d], para: notify[%p], name[%s].", ret, notify, name);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[rt][IpcOpenNotify]errNo[0x%016llx] rt ipc notify open fail. "

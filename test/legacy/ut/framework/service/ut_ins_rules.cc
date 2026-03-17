@@ -373,8 +373,8 @@ TEST_F(InsRulesTest, Interpret_local_post_to)
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtNotifyRecord).stubs();
+    MOCKER(HrtCntNotifyRecord).stubs();
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     RtsNotify *nullLocalNotify = nullptr;
@@ -434,7 +434,7 @@ TEST_F(InsRulesTest, Interpret_local_wait_from)
     insLocalWaitFrom.SetWaitQid(1);
 
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
-    MOCKER(HrtNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtNotifyWaitWithTimeOut).stubs();
     Stream       stream;
     OpTaskConfig taskConfig{};
 
@@ -454,7 +454,7 @@ TEST_F(InsRulesTest, Interpret_local_wait_from_cnt_notify)
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs();
 
     StubCommunicatorImpl fakeComm;
 
@@ -485,7 +485,7 @@ TEST_F(InsRulesTest, Interpret_local_wait_group)
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs();
 
     RtsCntNotify *nullCntNotify = nullptr;
     RtsCntNotify  rtsCntNotify;
@@ -518,7 +518,7 @@ TEST_F(InsRulesTest, Interpret_local_bcast_post)
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
     MOCKER(HrtCntNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
     MOCKER(HrtGetCntNotifyId).stubs().will(returnValue(fakeNotifyId));
-    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyRecord).stubs();
 
     Rts1ToNCntNotify *nullCntNotify = nullptr;
     Rts1ToNCntNotify  rts1toNCntNotify;
@@ -554,7 +554,7 @@ TEST_F(InsRulesTest, Interpret_local_copy)
     DataSlice    dstSlice2(BufferType::SCRATCH, 100, 0);
     InsLocalCopy insLocalCopy2(srcSlice2, dstSlice2);
 
-    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyRecord).stubs();
     MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
     Stream       stream;
     OpTaskConfig taskConfig{};
@@ -969,7 +969,7 @@ TEST_F(InsRulesTest, Interpret_read_reduce_p2p_slice_is_not_zero_one_task)
 
 TEST_F(InsRulesTest, Interpret_local_reduce_not_support_now)
 {
-    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyRecord).stubs();
     MOCKER(HrtReduceAsync).stubs().will(returnValue(0));
     StubCommunicatorImpl fakeComm;
 
@@ -1538,7 +1538,7 @@ TEST_F(InsRulesTest, Interpret_read_dev_net_ub_slice_is_not_zero_one_task)
 
 TEST_F(InsRulesTest, Interpret_wait_group_fin)
 {
-    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs();
 
     CommunicatorImpl comm;
     comm.devPhyId                   = 0;
@@ -1624,8 +1624,8 @@ HcclResult GetProfilingInfoStub(
 
 TEST_F(InsRulesTest, Interpret_ccu_instruction)
 {
-    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyWaitWithTimeOut).stubs();
+    MOCKER(HrtCntNotifyRecord).stubs();
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
     CommunicatorImpl comm;
@@ -1653,7 +1653,7 @@ TEST_F(InsRulesTest, Interpret_ccu_instruction)
 
 TEST_F(InsRulesTest, Interpret_aiv_instruction)
 {
-    MOCKER(HrtCntNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtCntNotifyRecord).stubs();
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).stubs().will(ignoreReturnValue());
