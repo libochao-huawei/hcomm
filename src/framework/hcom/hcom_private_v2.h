@@ -110,6 +110,8 @@ HcclResult __attribute__((weak)) HcclGetAlgExecParamV2(const std::string &tag, c
     void *inputPtr, void *outputPtr, HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op,
     void *&commContext, u64 &len, u32 aivCoreLimit); 
 HcclResult __attribute__((weak)) HcomGetDevIdV2(const char *group, s32 *devId);
+HcclResult __attribute__((weak)) HcomSetAttachedStreamV2();
+HcclResult __attribute__((weak)) HcomReleaseSubCommsV2();
 #ifdef __cplusplus
 }
 #endif // __cplusplus
