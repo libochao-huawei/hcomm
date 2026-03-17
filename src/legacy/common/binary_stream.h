@@ -12,7 +12,6 @@
 #define HCCL_SERIALIZATION_H
 
 #include <algorithm>
-#include <cstdint>
 
 #include "hccl/base.h"
 #include "exception_util.h"
