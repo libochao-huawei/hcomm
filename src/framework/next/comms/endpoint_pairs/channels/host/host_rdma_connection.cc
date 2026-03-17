@@ -103,19 +103,19 @@ HcclResult HostRdmaConnection::CreateQp()
     ret = RaSetQpAttrQos(qpInfo_.qpHandle, &qosAttr);
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrQos]errNo[0x%016llx] RaSetQpAttrQos fail. "
-        "return[%d], params: rdmaHandle[%p], trafficClass[%u], serviceLevel[%u]",
+        "return[%d], params: qpHandle[%p], trafficClass[%u], serviceLevel[%u]",
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qpHandle, qosAttr.tc, qosAttr.sl),
         HCCL_E_NETWORK);
     ret = RaSetQpAttrTimeout(qpInfo_.qpHandle, &(qpInfo_.retryInterval));
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrTimeout]errNo[0x%016llx] RaSetQpAttrTimeout fail. "
-        "return[%d], params: rdmaHandle[%p], retryInterval[%u]",
+        "return[%d], params: qpHandle[%p], retryInterval[%u]",
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qpHandle, qpInfo_.retryInterval),
         HCCL_E_NETWORK);
     ret = RaSetQpAttrRetryCnt(qpInfo_.qpHandle, &(qpInfo_.retryCnt));
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrRetryCnt]errNo[0x%016llx] RaSetQpAttrRetryCnt fail. "
-        "return[%d], params: rdmaHandle[%p], retryCnt[%u]",
+        "return[%d], params: qpHandle[%p], retryCnt[%u]",
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qpHandle, qpInfo_.retryCnt),
         HCCL_E_NETWORK);
 
