@@ -10,6 +10,15 @@
 #ifndef USER_REMOTE_MEM_GETTER_H
 #define USER_REMOTE_MEM_GETTER_H
 
+#include <cstdint>
+#include <vector>
+#include <array>
+#include <string>
+#include <functional>
+#include "hccl/hccl_res.h"
+#include "hccl/hccl_types.h"
+#include "legacy/common/log.h"
+
 constexpr uint32_t MAX_BUFFER_NUM = 22000;
 
 namespace Hccl {
