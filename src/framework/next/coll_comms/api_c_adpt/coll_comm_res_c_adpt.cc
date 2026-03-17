@@ -163,7 +163,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
-        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal);
+        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, hcclComm);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
                 "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),
