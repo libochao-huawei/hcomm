@@ -138,3 +138,54 @@ TEST_F(HcclGetStreamNumforAivModeTest, UT_HcclGetStreamNumforAivMode_When_NullGr
     HcclResult ret = HcomGetWorkspaceSubStreamNum(nullptr, streamNum, dataSize, dataType, aivCoreLimit, reduceOp, count, optype);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 可靠性用例: 极端条件下调用函数 
+TEST_F(HcclGetStreamNumforAivModeTest, UT_GetWorkspaceSubStreamNum_When_ReliabilityExtremeConditions_Expect_HCCL_E_INTERNAL) { 
+    u64 count = 1e3; 
+    u64 dataSize = 1e6; 
+    HcclDataType dataType = HCCL_DATA_TYPE_FP32; 
+    HcclReduceOp reduceOp = HCCL_REDUCE_SUM; 
+    HcclCMDType opType = HCCL_CMD_ALLREDUCE; 
+    std::string algName = ""; 
+    bool ifAiv = true; 
+
+
+    MOCKER_CPP(&GetAlgType) 
+        .stubs() 
+        .with(any()) 
+        .will(returnValue(HCCL_SUCCESS)); 
+    MOCKER_CPP(&HcclGetCommHandle) 
+        .stubs() 
+        .with(any()) 
+        .will(returnValue(HCCL_E_INTERNAL)); 
+
+
+    HcclResult ret = communicator_.GetWorkspaceSubStreamNum(count, dataType, reduceOp, algName, streamNum, dataSize, ifAiv, opType); 
+    EXPECT_EQ(ret, HCCL_E_INTERNAL); 
+    EXPECT_EQ(streamNum, 0); 
+} 
+
+
+// 安全性用例: 输入参数无效 
+TEST_F(HcclGetStreamNumforAivModeTest, UT_GetWorkspaceSubStreamNum_When_SafetyInvalidInputs_Expect_HCCL_E_PARA) { 
+    u64 count = 0; 
+    u64 dataSize = 0; 
+    HcclDataType dataType = static_cast<HcclDataType>(-1); 
+    HcclReduceOp reduceOp = static_cast<HcclReduceOp>(-1); 
+    HcclCMDType opType = static_cast<HcclCMDType>(-1); 
+    std::string algName = ""; 
+    bool ifAiv = false; 
+
+
+    HcclResult ret = communicator_.GetWorkspaceSubStreamNum(count, dataType, reduceOp, algName, streamNum, dataSize, ifAiv, opType); 
+    EXPECT_EQ(ret, HCCL_E_PARA); 
+} 
+
+
+// 兼容性用例: 使用原始参数调用函数，确保向后兼容但是不向前兼容 
+TEST_F(HcclGetStreamNumforAivModeTest, UT_GetWorkspaceSubStreamNum_When_CompatibilityOriginalParameters_Expect_HCCL_E_PARA) { 
+    u64 dataSize = 1024; 
+    HcclCMDType opType = HCCL_CMD_ALLREDUCE; 
+    HcclResult ret = communicator_.GetWorkspaceSubStreamNum(0, HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM, "", streamNum, dataSize, false, opType); 
+EXPECT_EQ(ret, HCCL_E_PARA); 
+}
