@@ -10,7 +10,9 @@
 
 set(src_to_test_list
     main.cc
-    ut_hcomm_c_adpt_services.cc
+    ut_record_service.cc
+    ut_wait_service.cc
+    ut_test_service.cc
     ${HCCL_LLT_ROOT}/ut/stub/llt_stub_threads.cc
 )
 
