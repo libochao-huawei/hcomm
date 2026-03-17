@@ -21,6 +21,10 @@
 #include "utils/service_scheduler.h"
 #include "notifys/mem_notify.h"
 namespace hccl {
+struct HostArgs {
+    void* cpuThreadPtr;
+    s32 deviceId;
+};
 class CpuThread : public Thread {
 public:
     CpuThread(aclrtStream rtStream, uint32_t notifyNum, const NotifyLoadType notifyLoadType)
@@ -82,15 +86,16 @@ private:
     uint32_t notifyNum_ = 0;
     NotifyLoadType notifyLoadType_ = NotifyLoadType::HOST_NOTIFY;
     
-    aclrtContext dpuContext_;
-    aclrtContext npuContext_;
+    aclrtContext dpuContext_{};
+    aclrtContext npuContext_{};
     std::unique_ptr<ServiceScheduler> serviceScheduler_{};
-    std::vector<std::unique_ptr<MemNotify>> notifys_;
-    ThreadServiceHandle recordServiceHandle_;
-    ThreadServiceHandle waitServiceHandle_;
+    std::vector<std::unique_ptr<MemNotify>> notifys_{};
+    ThreadServiceHandle recordServiceHandle_{};
+    ThreadServiceHandle waitServiceHandle_{};
     bool isMaster_{false};
     bool isInit_{false};
-    void* deviceHandle_;
+    void* deviceHandle_{};
+    HostArgs hostArgs_{};
 };
 
 }  // namespace hccl

@@ -126,6 +126,7 @@ public:
 
         // 5. 更新 head 指针
         head++;
+        head = head % capacity_;
         err = aclrtMemcpy(reinterpret_cast<void*>(head_), sizeof(uint64_t),
                           &head, sizeof(uint64_t), ACL_MEMCPY_HOST_TO_DEVICE);
         if (err != ACL_ERROR_NONE) {
@@ -178,6 +179,7 @@ public:
 
         // 5. 更新 tail 指针
         tail++;
+        tail = tail % capacity_;
         err = aclrtMemcpy(reinterpret_cast<void*>(tail_), sizeof(uint64_t),
                           &tail, sizeof(uint64_t), ACL_MEMCPY_HOST_TO_DEVICE);
         if (err != ACL_ERROR_NONE) {
