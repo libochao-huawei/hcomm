@@ -46,7 +46,7 @@ CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
     const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
 
     inParam_ = HrtRaUbCreateJettyParam{jfcHandle, jfcHandle, tokenValue,
-        tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa, 
+        tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
         jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
 }
 
