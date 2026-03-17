@@ -76,16 +76,6 @@ public:
         return StringFormat("CcuInstructionReduceTailBlock");
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgReduceTailBlock>(dimSize_, rankId_, notifySignal_, op_, tempVTopo_);

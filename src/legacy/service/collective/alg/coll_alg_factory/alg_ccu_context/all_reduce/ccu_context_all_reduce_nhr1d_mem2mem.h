@@ -52,9 +52,9 @@ private:
     uint32_t axisId_{0};
     uint32_t axisSize_{0};
     uint32_t localSize_{0};  // 本rank所在行或列的总rank数
+    uint32_t repeatNum_{0};
     uint32_t myRankIdx_{0};
     uint32_t signalNum_{0};  // 需要使用的signal数量
-    uint32_t repeatNum_{0};
     DataType dataType_;
     // DataType outputDataType_;
     std::vector<NHRStepInfo> stepInfoVector_;   //nhr算法执行过程中的参数
@@ -64,7 +64,7 @@ private:
     CcuRep::Variable input_;
     std::vector<CcuRep::Variable> output_;
     std::vector<CcuRep::Variable> token_;
-    CcuRep::Variable isInputOutputEqual_;
+    std::vector<CcuRep::Variable> sliceOffset_;
     CcuRep::Variable die0Size_;
     CcuRep::Variable die1Size_;
     CcuRep::Variable sliceSize_;
@@ -72,6 +72,7 @@ private:
     CcuRep::Variable die1SliceSize_;
     CcuRep::Variable die0LastSliceSize_;
     CcuRep::Variable die1LastSliceSize_;
+    CcuRep::Variable isInputOutputEqual_;
 
     // 跨轴同步信号
     std::string        localAxisSignalName_;
@@ -80,12 +81,11 @@ private:
     CcuRep::MaskSignal anotherAxisSignal_;
     CcuRep::MaskSignal localSignal_;
 
-    std::vector<CcuRep::Variable> sliceOffset_;
-    CcuRep::Variable repeatInputOffset_;
-    CcuRep::Variable repeatOutputOffset_;
-
     CcuRep::Memory srcMem_;
     CcuRep::Memory dstMem_;
+
+    CcuRep::Variable repeatInputOffset_;
+    CcuRep::Variable repeatOutputOffset_;
 };
 } // namespace Hccl
 
