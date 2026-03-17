@@ -460,7 +460,7 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
     connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite,, stream, DmaOp::HCCL_DMA_WRITE, taskId);
+    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, stream, DmaOp::HCCL_DMA_WRITE, taskId);
 }
 
 void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
