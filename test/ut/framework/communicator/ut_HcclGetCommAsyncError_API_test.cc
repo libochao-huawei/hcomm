@@ -10,16 +10,17 @@
 
 #include "hccl_api_base_test.h"
 
-class HcclGetCommNameTest : public BaseInit {
+class HcclGetCommAsyncErrorTest : public BaseInit {
 public:
     void SetUp() override {
         BaseInit::SetUp();
-        UT_USE_RANK_TABLE_910_1SERVER_1RANK;
-        // 将enableEntryLog默认返回为true
-        MOCKER(GetExternalInputHcclEnableEntryLog)
+        UT_USE_1SERVER_2RANK_AS_DEFAULT;
+        // MOCK掉对communicator层的依赖，保证分层测试
+        HcclCommunicator commun_mock;
+        MOCKER_CPP_VIRTUAL(commun_mock, &HcclCommunicator::GetCqeError)
             .stubs()
             .with(any())
-            .will(returnValue(true));
+            .will(returnValue(HCCL_SUCCESS));
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -27,28 +28,12 @@ public:
     }
 };
 
-TEST_F(HcclGetCommNameTest, Ut_HcclGetCommName_When_CommNameIsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(HcclGetCommAsyncErrorTest, Ut_HcclGetCommAsyncError_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
-}
+    Ut_Device_Set(0);
 
-TEST_F(HcclGetCommNameTest, Ut_HcclGetCommName_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    char *commName = new char[ROOTINFO_INDENTIFIER_MAX_LENGTH];
+    HcclResult asyncError;
 
-    HcclResult ret = HcclGetCommName(comm, commName);
+    HcclResult ret = HcclGetCommAsyncError(comm, &asyncError);
     EXPECT_EQ(ret, HCCL_E_PTR);
-
-    delete[] commName;
-}
-
-TEST_F(HcclGetCommNameTest, HcclGetCommName_When_InputNoInit_Expect_ReturnIsHCCL_E_PTR)
-{
-    char *commName = nullptr;
-
-    HcclResult ret = HcclGetCommName(&comm, commName);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-}
-
-TEST_F(HcclGetCommNameTest, HcclGetCommName_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
-{
 }
