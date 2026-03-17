@@ -140,7 +140,7 @@ HcclResult CcuTempAllReduceMesh1DOneShot::CalcInputOutputAddr(const TempFuncs &t
     return HcclResult::HCCL_SUCCESS;
 }
 
- HcclResult CcuTempAllReduceMesh1DOneShot::PrepareLinks(const ResLinks &tempLinks, std::vector<LinkData> &links) const
+HcclResult CcuTempAllReduceMesh1DOneShot::PrepareLinks(const ResLinks &tempLinks, std::vector<LinkData> &links) const
 {
     for (auto &pair : tempLinks) {
         if (pair.second.empty()) {

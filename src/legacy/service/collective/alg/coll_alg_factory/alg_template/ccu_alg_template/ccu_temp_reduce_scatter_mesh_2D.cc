@@ -122,7 +122,7 @@ HcclResult CcuTempReduceScatterMesh2D::Run(const TempFuncs &tempFuncs, const Ran
     uint64_t inputAddr;
     uint64_t outputAddr;
     uint64_t offSet;
-    uint64_t outputSize = static_cast<uint64_t>(op_.outputMem->GetSize());	 
+    uint64_t outputSize = static_cast<uint64_t>(op_.outputMem->GetSize());
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
@@ -144,7 +144,7 @@ HcclResult CcuTempReduceScatterMesh2D::Run(const TempFuncs &tempFuncs, const Ran
         inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
     }
-     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
+    uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 

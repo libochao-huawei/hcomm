@@ -115,7 +115,7 @@ HcclResult CcuTempBroadcastMeshMem2Mem2D::GenExtIns(const TempFuncs          &te
     RankGroup rankGroupX;
     RankGroup rankGroupY;
     AddRanksToGroup(tempVTopo_,rankGroupX,rankGroupY);
-    
+
     uint64_t inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
 
     uint64_t sliceSize = templateDataParams.sliceSize; // 获取本rank需要处理的数据量

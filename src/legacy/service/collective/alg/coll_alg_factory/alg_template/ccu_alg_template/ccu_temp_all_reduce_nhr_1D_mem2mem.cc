@@ -171,7 +171,6 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 
-
     HCCL_INFO("[CcuTempAllReduceNHRMem2Mem1D] dimSize[%llu], die0Size[%llu], die1Size[%llu], inputAddr[%llu],"\
         "outputAddr[%llu], repeatNum[%llu], die0Slicesize[%llu], die1Slicesize[%llu], die0LastSlicesize[%llu],"\
         "die1LastSlicesize[%llu]",

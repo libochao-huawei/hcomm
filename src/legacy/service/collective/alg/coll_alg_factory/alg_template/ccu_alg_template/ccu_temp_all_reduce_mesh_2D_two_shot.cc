@@ -95,8 +95,8 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::CalcRes(AlgTempResReq &tempResReq)
 }
 
 HcclResult CcuTempAllReduceMesh2DTwoShot::GetBufferAddr(const TempFuncs &tempFuncs, uint64_t &inputAddr, 
-                                                         uint64_t &outputAddr) 
- { 
+                                                        uint64_t &outputAddr) 
+{ 
     uint64_t inputBaseAddr;
     uint64_t outputBaseAddr;
     uint64_t inputOffSet;
@@ -130,7 +130,7 @@ HcclResult CcuTempAllReduceMesh2DTwoShot::GetBufferAddr(const TempFuncs &tempFun
                inputBaseAddr, inputOffSet, outputBaseAddr, outputOffSet);
     HCCL_INFO("[GetBufferAddr] inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
     return HcclResult::HCCL_SUCCESS;
-} 
+}
 
 HcclResult CcuTempAllReduceMesh2DTwoShot::PrepareLinks(const ResLinks &tempLinks)
 {

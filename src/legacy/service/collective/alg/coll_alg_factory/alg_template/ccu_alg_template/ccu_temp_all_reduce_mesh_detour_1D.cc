@@ -165,8 +165,7 @@ void CcuTempAllReduceMeshDetour1D::ProcessLinks(std::vector<LinkData> &links, co
     return;
 }
 
-void CcuTempAllReduceMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, uint64_t &inputAddr, 
-     uint64_t &outputAddr) 
+void CcuTempAllReduceMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, uint64_t &inputAddr, uint64_t &outputAddr)
 {
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isBottom) {
@@ -187,7 +186,7 @@ void CcuTempAllReduceMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, uint6
     }
     HCCL_INFO("inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
     return;
-} 
+}
 
 HcclResult CcuTempAllReduceMeshDetour1D::Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec,
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,

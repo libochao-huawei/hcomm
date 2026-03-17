@@ -131,7 +131,7 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
     uint64_t inputAddr;
     // userOut 的位置，需要带上偏移
     uint64_t outputAddr;
-    if (opMode_ == OpMode::OPBASE) {	 
+    if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
                 + tempFuncs.usrData.usrInSlices[0].GetOffset();

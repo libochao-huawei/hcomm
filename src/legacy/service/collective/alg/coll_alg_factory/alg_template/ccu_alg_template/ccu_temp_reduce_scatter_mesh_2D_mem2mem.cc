@@ -122,7 +122,6 @@ HcclResult CcuTempReduceScatterMeshMem2Mem2D::Run(const TempFuncs &tempFuncs, co
     uint64_t inputAddr;
     uint64_t outputAddr;
     uint64_t offSet;
-
     uint64_t outputSize = static_cast<uint64_t>(op_.outputMem->GetSize());
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {

@@ -117,7 +117,7 @@ HcclResult CcuTempBroadcastMesh2D::Run(const TempFuncs &tempFuncs, const RankSli
     RankGroup rankGroupX;
     RankGroup rankGroupY;
     AddRanksToGroup(tempVTopo_,rankGroupX,rankGroupY);
-    
+
     uint64_t inputAddr;
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
