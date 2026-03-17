@@ -124,20 +124,21 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionBroadcastNHRMem2Mem1D instype is CCU_BROADCAST_NHR_1D_MEM2MEM.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionBroadcastNHRMem2Mem1D rankId [%u], instType[%s]", rankId_,
                             instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -163,10 +164,10 @@ private:
     uint64_t                         outputAddr_{0};
     uint64_t                         die0Size_{0};
     uint64_t                         die1Size_{0};
-    uint64_t                         die0SliceSize_{0};
-    uint64_t                         die1SliceSize_{0};
     uint64_t                         die0LastSliceSize_{0};
     uint64_t                         die1LastSliceSize_{0};
+    uint64_t                         die0SliceSize_{0};
+    uint64_t                         die1SliceSize_{0};
     uint64_t                         token_{0};
 
     std::vector<std::vector<RankId>> tempVTopo_;

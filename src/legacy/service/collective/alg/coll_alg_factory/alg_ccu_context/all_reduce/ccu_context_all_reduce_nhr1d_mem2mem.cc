@@ -62,13 +62,13 @@ void CcuContextAllReduceNHR1D::LoadArgs()
 
 void CcuContextAllReduceNHR1D::InitResources()
 {
-    die0Size_           = CreateVariable();
-    die1Size_           = CreateVariable();
+    isInputOutputEqual_ = CreateVariable();
     die0SliceSize_      = CreateVariable();
     die1SliceSize_      = CreateVariable();
     die0LastSliceSize_  = CreateVariable();
     die1LastSliceSize_  = CreateVariable();
-    isInputOutputEqual_ = CreateVariable();
+    die0Size_           = CreateVariable();
+    die1Size_           = CreateVariable();
     localSignal_        = CreateMaskSignal();
 
     input_ = CreateVariable();
@@ -91,16 +91,16 @@ void CcuContextAllReduceNHR1D::InitResources()
 void CcuContextAllReduceNHR1D::PreSync()
 {
     HCCL_DEBUG("[CcuContextAllReduceNHR1D] PreSync start");
-    uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
     uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
+    uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
+    std::vector<uint16_t> waitBitVector(signalNum_, 0);
     for (auto t : transports) {
         WriteVariableWithSignal(*t, output_[localSize_], OUTPUT_XN_ID, selfSignalId + signalNum_ * CKE_IDX_1, selfBit);
         WriteVariableWithSignal(*t, token_[localSize_], TOKEN_XN_ID, selfSignalId + signalNum_ * CKE_IDX_2, selfBit);
     }
-    std::vector<uint16_t> waitBitVector(signalNum_, 0);
     for (auto &pair : indexMap_) {
-        uint16_t pairSignalId       = pair.first / RANK_NUM_PER_CKE;
         uint16_t pairBit            = 1 << (pair.first % RANK_NUM_PER_CKE);
+        uint16_t pairSignalId       = pair.first / RANK_NUM_PER_CKE;
         waitBitVector[pairSignalId] = waitBitVector[pairSignalId] | pairBit;
     }
     for (uint16_t sId = 0; sId < waitBitVector.size(); sId++) {
@@ -114,10 +114,10 @@ void CcuContextAllReduceNHR1D::PostSync()
 {
     uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
     uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
+    std::vector<uint16_t> waitBitVector(signalNum_, 0);
     for (auto &t : transports) {
         RemotePost(*t, selfSignalId + signalNum_ * CKE_IDX_0, selfBit);
     }
-    std::vector<uint16_t> waitBitVector(signalNum_, 0);
     for (auto &pair : indexMap_) {
         uint16_t pairSignalId       = pair.first / RANK_NUM_PER_CKE;
         uint16_t pairBit            = 1 << (pair.first % RANK_NUM_PER_CKE);
@@ -153,14 +153,14 @@ void CcuContextAllReduceNHR1D::DoReduceScatterNHR()
 
 void CcuContextAllReduceNHR1D::DoReduceScatterNHRSingleStep(const NHRStepInfo &nhrStepInfo)
 {
-    u32 &toRankIdx = indexMap_[nhrStepInfo.toRank];
-    u32 &fromRankIdx = indexMap_[nhrStepInfo.fromRank];
     u32 sendSliceIdx = 0;
-    CcuTransport *sendTransport = transports[toRankIdx];
-    CcuTransport *recvTransport = transports[fromRankIdx];
+    u32 &fromRankIdx = indexMap_[nhrStepInfo.fromRank];
+    u32 &toRankIdx = indexMap_[nhrStepInfo.toRank];
     const std::vector<u32> &sendSliceIdxList = nhrStepInfo.txSliceIdxs;
     srcMem_.token = token_[myRankIdx_];
     dstMem_.token = token_[toRankIdx];
+    CcuTransport *sendTransport = transports[toRankIdx];
+    CcuTransport *recvTransport = transports[fromRankIdx];
 
     uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
     uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
@@ -183,6 +183,7 @@ void CcuContextAllReduceNHR1D::DoReduceScatterNHRSingleStep(const NHRStepInfo &n
         }
         if (nhrStepInfo.step == 0) {
             // 只有第0步的源数据从input中取
+            HCCL_INFO("[CcuContextAllReduceNHR1D] nhrStepInfo 0.");
             srcMem_.addr = input_;
             srcMem_.addr += sliceOffset_[sendSliceIdx];
         } else {
@@ -198,8 +199,8 @@ void CcuContextAllReduceNHR1D::DoReduceScatterNHRSingleStep(const NHRStepInfo &n
     // 通知toRank数据写入完毕
     RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit, true);
     // 等待fromRank通知数据写入完毕
-    uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
     uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
+    uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
     RemoteWait(*recvTransport, recvSignalId + signalNum_ * CKE_IDX_4, recvBit);
     HCCL_DEBUG("[DoReduceScatterNHRSingleStep] rank %u step %u, toRank=%u, fromRank=%u, nSlice=%lu",
                 rankId_, nhrStepInfo.step, nhrStepInfo.toRank, nhrStepInfo.fromRank, sendSliceIdxList.size());
@@ -208,17 +209,16 @@ void CcuContextAllReduceNHR1D::DoReduceScatterNHRSingleStep(const NHRStepInfo &n
 void CcuContextAllReduceNHR1D::DoWriteReduceSlice(const u32 &toRank, CcuRep::Memory &src, CcuRep::Memory &dst, 
                                                   const u32 &sendSliceIdx, u32 signalIndex)
 {
-    CcuTransport *sendTransport = transports[indexMap_[toRank]];
     bool          islastSlice;
-    
+    islastSlice = (sendSliceIdx + 1 == dimSize_);
+    CcuTransport *sendTransport = transports[indexMap_[toRank]];
     // 添加 die1 偏移
     if (axisId_ == 1) {
-        src.addr += die0Size_;
         dst.addr += die0Size_;
+        src.addr += die0Size_;
     }
 
     // allreduce切片的最后一块slice，大小可能不一致
-    islastSlice = (sendSliceIdx + 1 == dimSize_);
     const CcuRep::Variable &sliceSize = axisId_ == 0? (islastSlice? die0LastSliceSize_ : die0SliceSize_)
                                                     : (islastSlice? die1LastSliceSize_ : die1SliceSize_);
     CCU_IF(sliceSize != 0)
@@ -242,9 +242,9 @@ void CcuContextAllReduceNHR1D::DoAllGatherNHR()
 
 void CcuContextAllReduceNHR1D::DoAllGatherNHRSingleStep(const NHRStepInfo &nhrStepInfo)
 {
+    u32  sendSliceIdx = 0;
     u32& toRankIdx = indexMap_[nhrStepInfo.toRank];
     u32& fromRankIdx = indexMap_[nhrStepInfo.fromRank];
-    u32  sendSliceIdx = 0;
     CcuTransport           *sendTransport = transports[toRankIdx];
     CcuTransport           *recvTransport = transports[fromRankIdx];
     const std::vector<u32> &sendSliceIdxList  = nhrStepInfo.txSliceIdxs;
@@ -264,10 +264,9 @@ void CcuContextAllReduceNHR1D::DoAllGatherNHRSingleStep(const NHRStepInfo &nhrSt
         }
 
         srcMem_.addr = output_[myRankIdx_];
-        srcMem_.addr += sliceOffset_[sendSliceIdx];
-
         dstMem_.addr = output_[toRankIdx];
         dstMem_.addr += sliceOffset_[sendSliceIdx];
+        srcMem_.addr += sliceOffset_[sendSliceIdx];
         DoSendRecvSlice(nhrStepInfo.toRank, srcMem_, dstMem_, sendSliceIdx, i % RANK_NUM_PER_CKE);
     }
     LocalWait(localSignal_, (1 << (sendSliceIdxList.size() % RANK_NUM_PER_CKE)) - 1);
@@ -276,8 +275,8 @@ void CcuContextAllReduceNHR1D::DoAllGatherNHRSingleStep(const NHRStepInfo &nhrSt
         // 通知toRank，写入完毕
         RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
         // 等待fromRank通知写入完毕
-        uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
         uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
+        uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
         RemoteWait(*recvTransport, recvSignalId + signalNum_ * CKE_IDX_3, recvBit);
     }
 
@@ -290,14 +289,12 @@ void CcuContextAllReduceNHR1D::DoSendRecvSlice(const u32 &toRank, CcuRep::Memory
 {
     CcuTransport *sendTransport = transports[indexMap_[toRank]];
     bool          islastSlice;
-    
+    islastSlice = (sendSliceIdx + 1 == dimSize_);
     // 添加 die1 偏移
     if (axisId_ == 1) {
-        src.addr += die0Size_;
         dst.addr += die0Size_;
+        src.addr += die0Size_;
     }
-
-    islastSlice = (sendSliceIdx + 1 == dimSize_);
     const CcuRep::Variable &sliceSize = axisId_ == 0? (islastSlice? die0LastSliceSize_ : die0SliceSize_)
                                                     : (islastSlice? die1LastSliceSize_ : die1SliceSize_);
     CCU_IF(sliceSize != 0)
@@ -338,11 +335,10 @@ void CcuContextAllReduceNHR1D::LocalCopySlices()
             }
 
             srcMem_.addr  = input_;
-            srcMem_.addr += sliceOffset_[nonTxSliceIdx];
-            srcMem_.token = token_[myRankIdx_];
-
             dstMem_.addr  = output_[myRankIdx_];
+            srcMem_.addr += sliceOffset_[nonTxSliceIdx];
             dstMem_.addr += sliceOffset_[nonTxSliceIdx];
+            srcMem_.token = token_[myRankIdx_];
             dstMem_.token = token_[myRankIdx_];
             DoLocalCopySlice(srcMem_, dstMem_, nonTxSliceIdx, i);
         }
@@ -382,13 +378,14 @@ void CcuContextAllReduceNHR1D::DoLocalCopySlice(CcuRep::Memory &src, CcuRep::Mem
     islastSlice = (copySliceIdx + 1 == dimSize_);
     const CcuRep::Variable &sliceSize = axisId_ == 0? (islastSlice? die0LastSliceSize_ : die0SliceSize_)
                                                     : (islastSlice? die1LastSliceSize_ : die1SliceSize_);
-    CCU_IF(sliceSize != 0)
-    {
-        LocalCopy(dst, src, sliceSize, localSignal_, 1 << signalIndex);
-    }
     CCU_IF(sliceSize == 0)
     {
         LocalPost(localSignal_, 1 << signalIndex);
+    }
+
+    CCU_IF(sliceSize != 0)
+    {
+        LocalCopy(dst, src, sliceSize, localSignal_, 1 << signalIndex);
     }
 }
 
