@@ -19,6 +19,7 @@ set(hccl_utest_impl_list
     ut_template_base.cc
     # ut_netdevice.cc
     ut_global_mem_mgr.cc
+    ut_global_mem_mgr_multhread.cc
     ut_local_dispatcher_ctx.cc
 )
 add_executable(hccl_utest_impl ${hccl_utest_impl_list})
