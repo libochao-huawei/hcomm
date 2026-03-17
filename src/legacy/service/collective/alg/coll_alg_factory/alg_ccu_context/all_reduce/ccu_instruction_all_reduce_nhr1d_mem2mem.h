@@ -52,13 +52,13 @@ public:
         GenerateCcuCtxSignature(signature, CcuInstType::CCU_ALLREDUCE_NHR_1D_MEM2MEM, op_, tempVTopo_);
         return signature;
     }
+    CollAlgOperator                  op_;
     std::vector<uint64_t>            dimSize_;
     uint32_t                         rankId_;
     uint32_t                         axisId_;
     uint32_t                         axisSize_;
     std::vector<NHRStepInfo>         stepInfoVector_;
     std::map<u32, u32>               indexMap_;
-    CollAlgOperator                  op_;
     std::vector<std::vector<RankId>> tempVTopo_;
 };
 
@@ -80,10 +80,10 @@ public:
     uint64_t isInputOutputEqual_;
     uint64_t die0Size_;
     uint64_t die1Size_;
-    uint64_t die0SliceSize_;
-    uint64_t die1SliceSize_;
     uint64_t die0LastSliceSize_;
     uint64_t die1LastSliceSize_;
+    uint64_t die0SliceSize_;
+    uint64_t die1SliceSize_;
 };
 
 class CcuInstructionAllReduceNHR1D : public CcuInstruction {
@@ -104,6 +104,7 @@ public:
                 "[CcuInstructionAllReduceNHR1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
         }
         dimSize_.push_back(tempVTopo[0].size());
+        op_                 = op;
         rankId_             = rankId;
         inputAddr_          = inputAddr;
         outputAddr_         = outputAddr;
@@ -111,14 +112,13 @@ public:
         axisSize_           = axisSize;
         die0SliceSize_      = die0SliceSize;
         die1SliceSize_      = die1SliceSize;
-        die0Size_           = die0Size;
-        die1Size_           = die1Size;
         die0LastSliceSize_  = die0LastSliceSize;
         die1LastSliceSize_  = die1LastSliceSize;
+        die0Size_           = die0Size;
+        die1Size_           = die1Size;
         stepInfoVector_     = stepInfoVector;
         indexMap_           = indexMap;
         isInputOutputEqual_ = isInputOutputEqual;
-        op_                 = op;
         tempVTopo_          = tempVTopo;
         token_              = token;
         return;
@@ -128,16 +128,6 @@ public:
     {
         return StringFormat("CcuInstructionAllReduceNHR1D rankId [%u], instType[%s]", rankId_,
                             instType_.Describe().c_str());
-    }
-
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -160,10 +150,10 @@ private:
     uint32_t                         axisId_{0};
     uint32_t                         axisSize_{0};
 
-    uint64_t                         inputAddr_{0};
-    uint64_t                         outputAddr_{0};
     uint64_t                         die0Size_{0};
     uint64_t                         die1Size_{0};
+    uint64_t                         inputAddr_{0};
+    uint64_t                         outputAddr_{0};
     uint64_t                         die1SliceSize_{0};
     uint64_t                         die0SliceSize_{0};
     uint64_t                         die0LastSliceSize_{0};

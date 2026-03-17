@@ -103,16 +103,6 @@ dimSize.size[%u], tempVTopo.size[%u]", rankId_, inputAddr_, outputAddr_, scratch
         return StringFormat("[CcuInstructionAllGatherMesh1D]RankId[%u] Ins[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         HCCL_INFO("[CcuInstructionAlltoAllMesh2D][GetCtxArg] dimSize.size[%u], rankId[%u], axisId[%u], tempVTopo.size[%u]",

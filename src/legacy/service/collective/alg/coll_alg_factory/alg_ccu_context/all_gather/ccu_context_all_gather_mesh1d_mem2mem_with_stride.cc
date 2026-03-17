@@ -71,10 +71,10 @@ void CcuContextAllGatherMesh1DMem2MemWithStride::InitResource()
     tmpRepeatNum_                 = CreateVariable();
     normalSliceSize_              = CreateVariable();
     lastSliceSize_                = CreateVariable();
+    repeatTimeflag_               = CreateVariable();
+    repeatTimeflag_               = 0;
     constVar1_                    = CreateVariable();
     constVar1_                    = 1;
-    repeatTimeflag_                    = CreateVariable();
-    repeatTimeflag_               = 0;
 
     selfBit_ = 1 << rankId_;
     allBit_  = ((1 << rankSize_) - 1) & (~(1 << rankId_));

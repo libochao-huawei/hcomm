@@ -59,10 +59,11 @@ private:
     CcuRep::Variable input_;
     std::vector<CcuRep::Variable> output_;
     std::vector<CcuRep::Variable> token_;
-    CcuRep::Variable die0Size_;
-    CcuRep::Variable die1Size_;
+    std::vector<CcuRep::Variable> sliceOffset_;
     CcuRep::Variable die0SliceSize_;
     CcuRep::Variable die1SliceSize_;
+    CcuRep::Variable die0Size_;
+    CcuRep::Variable die1Size_;
     CcuRep::Variable die0LastSliceSize_;
     CcuRep::Variable die1LastSliceSize_;
 
@@ -70,13 +71,11 @@ private:
     std::string        localAxisSignalName_;
     std::string        anotherAxisSignalName_;
     CcuRep::MaskSignal localAxisSignal_;
-    CcuRep::MaskSignal anotherAxisSignal_;
     CcuRep::MaskSignal localSignal_;
+    CcuRep::MaskSignal anotherAxisSignal_;
 
-    std::vector<CcuRep::Variable> sliceOffset_;
-
-    CcuRep::Memory srcMem_;
     CcuRep::Memory dstMem_;
+    CcuRep::Memory srcMem_;
 };
 } // namespace Hccl
 
