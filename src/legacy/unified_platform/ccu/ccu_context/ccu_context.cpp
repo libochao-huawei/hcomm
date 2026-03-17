@@ -341,9 +341,9 @@ void CcuContext::LocalWait(const CcuRep::MaskSignal &sig, uint32_t mask)
     }
 }
 
-void CcuContext::RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask)
+void CcuContext::RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask, bool single)
 {
-    Append(std::make_shared<CcuRep::CcuRepRemPostSem>(transport, signalIndex, mask));
+    Append(std::make_shared<CcuRep::CcuRepRemPostSem>(transport, signalIndex, mask, single));
 }
 
 void CcuContext::WriteVariableWithSignal(const CcuTransport &transport, const CcuRep::Variable &var, uint32_t varIndex,

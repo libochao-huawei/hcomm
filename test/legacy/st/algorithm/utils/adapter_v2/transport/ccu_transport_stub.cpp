@@ -251,6 +251,17 @@ uint32_t CcuTransport::GetLocCntCkeByIndex(uint32_t index) const
     return locRes.cntCkes[index];
 }
 
+uint32_t CcuTransport::GetLocCkeByIndex(uint32_t index) const
+{
+    std::shared_lock<std::shared_timed_mutex> lock(transMutex);
+    if (index >= locRes.ckes.size()) {
+        THROW<InternalException>(
+            "[GetLocCkeByIndex]:index[%u] is bigger than ckes size[%u]",
+            index, locRes.ckes.size());
+    }
+    return locRes.ckes[index];
+}
+
 uint32_t CcuTransport::GetChannelId() const
 {
     return ccuConnection->GetChannelId();
