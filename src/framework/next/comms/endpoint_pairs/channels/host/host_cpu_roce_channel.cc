@@ -19,7 +19,6 @@
 #include "exchange_rdma_conn_dto.h"
 #include "sal.h"
 
-
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
