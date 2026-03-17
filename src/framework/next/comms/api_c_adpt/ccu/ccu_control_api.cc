@@ -10,19 +10,23 @@
 
 #include "ccu_primitives.h"
 
+#include "ccu_log.h"
+#include "ccu_types.h"
 #include "hcom_common.h"
+#include "exception_handler.h"
 
+#include "ccu_kernel_mgr.h"
 #include "ccu_instance_mgr.h"
 
 CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle)
 {
-    CHK_PTR_NULL(resDesc);
-    CHK_PTR_NULL(insHandle);
+    CCU_CHK_PTR_NULL(resDesc);
+    CCU_CHK_PTR_NULL(insHandle);
 
     // 当前该接口未对外提供，内部使用优先基于instance类型
     auto *insType = static_cast<CcuInstanceType *>(resDesc);
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    CCU_CHK_RET(CcuInstanceMgr::GetInstance(devLogicId).Create(*insType, insHandle));
+    CCU_CHK_RET(hcomm::CcuInstanceMgr::GetInstance(devLogicId).Create(*insType, *insHandle));
 
     return CcuResult::CCU_SUCCESS;
 }
@@ -37,7 +41,7 @@ CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle)
 CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    CCU_CHK_RET(CcuInstanceMgr::GetInstance(devLogicId).Destroy(insHandle));
+    CCU_CHK_RET(hcomm::CcuInstanceMgr::GetInstance(devLogicId).Destroy(insHandle));
 
     return CcuResult::CCU_SUCCESS;
 }
@@ -45,7 +49,7 @@ CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle)
 CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto *ccuIns = CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
+    auto *ccuIns = hcomm::CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
     CCU_CHK_PTR_NULL(ccuIns);
 
     CCU_CHK_RET(ccuIns->Reset());
@@ -56,11 +60,36 @@ CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
     char *kernelFuncName, void *kernelFunc, void *kernelArg,
     CcuKernelHandle *kernelHandle)
 {
+    HCCL_RUN_INFO("Entry-%s", __func__);
+    HcclUs startut = TIME_NOW();
+
+    CCU_CHK_PTR_NULL(kernelFuncName);
+    CCU_CHK_PTR_NULL(kernelFunc);
+    CCU_CHK_PTR_NULL(kernelArg);
+    CCU_CHK_PTR_NULL(kernelHandle);
+
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto *ccuIns = CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
+    auto *ccuIns = hcomm::CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
     CCU_CHK_PTR_NULL(ccuIns);
 
-    // todo: 需要适配
+    auto *resPack = ccuIns->GetResPack();
+    CCU_CHK_PTR_NULL(resPack);
+
+    auto ccuKernelFunc = reinterpret_cast<CcuKernelFunc>(kernelFunc);
+    auto ccuKernelArg = static_cast<CcuKernelArg>(kernelArg);
+
+    CcuKernelHandle newHandle{0};
+    // todo: 需要处理抛异常，当前hccl result与ccu result转换不方便
+    // EXCEPTION_HANDLE_BEGIN
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    CCU_CHK_RET(kernelMgr.Register(*resPack, kernelFuncName,
+        ccuKernelFunc, ccuKernelArg, newHandle));
+    CCU_CHK_RET(ccuIns->SaveKernel(newHandle));
+    // EXCEPTION_HANDLE_END
+
+    *kernelHandle = newHandle;
+    HCCL_INFO("[%s] success, take time [%lld]us.",
+        __func__, DURATION_US(TIME_NOW() - startut));
     return CcuResult::CCU_SUCCESS;
 }
 
@@ -68,15 +97,16 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle)
 {
     // todo: 需要拦截是否start
     const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto *ccuIns = CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
+    auto *ccuIns = hcomm::CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
     CCU_CHK_PTR_NULL(ccuIns);
-    const auto &newKernels = ccuContainer->GetUntranslatedKernels();
+    const auto &newKernels = ccuIns->GetUntranslatedKernels();
 
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    // todo: 需要处理抛异常，当前hccl result与ccu result转换不方便
     // 当前翻译内部流程可能抛异常
-    EXCEPTION_HANDLE_BEGIN
+    // EXCEPTION_HANDLE_BEGIN
     CCU_CHK_RET(kernelMgr.Translate(newKernels));
-    EXCEPTION_HANDLE_END
+    // EXCEPTION_HANDLE_END
 
     return CcuResult::CCU_SUCCESS;
 }
