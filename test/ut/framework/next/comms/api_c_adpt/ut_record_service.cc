@@ -36,7 +36,6 @@ protected:
         HcclResult ret = HcommThreadAllocWithConfig(
             COMM_ENGINE_AICPU_TS, 1, config, THREAD_TYPE_TS, &dstThreadHandle_);
         ASSERT_EQ(ret, HCCL_SUCCESS);
-        allHandles_.push_back(dstThreadHandle_);
 
         auto *tsThreadEntPtr = reinterpret_cast<ThreadEntity *>(dstThreadHandle_);
         auto *tsThreadDevPtr = reinterpret_cast<AicpuTsThread *>(tsThreadEntPtr->threadObjAddr);
@@ -53,17 +52,12 @@ protected:
     void TearDown() override
     {
         delete reinterpret_cast<ThreadEntity *>(dstThreadHandle_); // Clean up new ThreadEntity in GetThreadEntity
-        if (!allHandles_.empty()) {
-            HcommThreadFree(allHandles_.data(), allHandles_.size());
-            allHandles_.clear();
-        }
         GlobalMockObject::verify();
     }
 
     static constexpr uint32_t kNotifyNum = 2;
     ThreadHandle dstThreadHandle_{};
     RecordServiceArgs args_{};
-    std::vector<ThreadHandle> allHandles_;
 };
 
 // test_01: Normal → HCCL_SUCCESS
@@ -110,7 +104,6 @@ TEST_F(RecordServiceTest, Ut_RecordService_When_DstThreadIsNotAicpuTsThread_Expe
     HcclResult allocRet = HcommThreadAllocWithConfig(
         COMM_ENGINE_AICPU, 1, wrongConfig, THREAD_TYPE_CPU, &cpuHandle);
     ASSERT_EQ(allocRet, HCCL_SUCCESS);
-    allHandles_.push_back(cpuHandle);
 
     args_.dstThreadHandle = cpuHandle;
     HcclResult ret = RecordService(&args_, sizeof(RecordServiceArgs));
