@@ -50,7 +50,6 @@ public:
  	                         std::unique_ptr<CcuJetty> &ccuJetty);
 
 private:
-    void Initialize();
     int32_t devLogicId_{0};
     IpAddress ipAddr_{};
     CcuJettyInfo jettyInfo_{};
