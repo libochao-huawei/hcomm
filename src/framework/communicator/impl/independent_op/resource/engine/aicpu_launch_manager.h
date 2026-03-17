@@ -31,6 +31,7 @@ struct ThreadMgrAicpuParam {
     u32 rsv1;
     s32 deviceLogicId{-1}; // 基础通信使用
     u32 deviceType{0}; // 基础通信使用
+    u64 *threadHandles;
 };
 
 struct NotifyMgrAicpuParam {
@@ -93,6 +94,9 @@ public:
     template <typename OpParam>
     static HcclResult KernelLaunchAicpuCustom(OpParam &opParam, std::string kernelName, rtStream_t aicpuInitStream,
         aclrtBinHandle binCustomHandle);
+    HcclResult ThreadKernelLaunchForCommV2(ThreadHandle* newThreads, u32 threadNum,
+        const std::string &commId, aclrtBinHandle binHandle);
+    HcclResult ThreadKernelLaunchImplV2(ThreadHandle* newThreads, u32 threadNum, const ThreadKernelLaunchConfig &config);
 private:
     HcclResult AiCpuStreamAllocAndGet(rtStream_t &aiCpuStream);
     static HcclResult PrepareAicpuNotifyParam(NotifyMgrAicpuParam &opParam, const std::string &commId,

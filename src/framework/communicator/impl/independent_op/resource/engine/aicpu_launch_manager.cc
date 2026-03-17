@@ -177,6 +177,64 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchForComm(std::vector<std::shared_ptr
     return ThreadKernelLaunchImpl(newThreads, aicpuHandle, config);
 }
 
+HcclResult AicpuLaunchMgr::ThreadKernelLaunchForCommV2(ThreadHandle* newThreads, u32 threadNum,
+    const std::string &commId, aclrtBinHandle binHandle)
+{
+    ThreadKernelLaunchConfig config(
+        commId,
+        binHandle,
+        "RunAicpuIndOpThreadInit",
+        false,
+        CommConfiger::GetInstance().GetCommConfigExecTimeOut(commId),
+        true
+    );
+    return ThreadKernelLaunchImplV2(newThreads, threadNum, config);
+}
+
+HcclResult AicpuLaunchMgr::ThreadKernelLaunchImplV2(ThreadHandle* newThreads, u32 threadNum,
+    const ThreadKernelLaunchConfig &config)
+{
+    // 参数检查
+    CHK_PRT_RET(threadNum > LOCAL_STREAM_MAX_NUM,
+        HCCL_ERROR("[AicpuLaunchMgr][%s] streamNum[%zu] > LOCAL_STREAM_MAX_NUM[%u]", __func__,
+        threadNum, LOCAL_STREAM_MAX_NUM), HCCL_E_PARA);
+
+    // Step 1. 创建局部 stream
+    Stream localStream;
+    CHK_RET(CreateLocalStream(localStream));
+
+    // Step 2. 填写 opParam 并分配设备内存
+    ThreadMgrAicpuParam opParam{};
+    opParam.threadNum = threadNum;
+    opParam.threadHandles = newThreads;
+    errno_t sRet = strncpy_s(opParam.hcomId, HCOMID_MAX_SIZE, config.commId.c_str(), config.commId.length());
+    CHK_PRT_RET(sRet != EOK,
+    HCCL_ERROR("[%s] strncpy_s failed, return [%d].", __func__, sRet),
+    HCCL_E_MEMORY);
+    opParam.hcomId[HCOMID_MAX_SIZE - 1] = '\0';
+    opParam.deviceHandle = nullptr;
+
+    // 基础通信需要设备信息
+    if (config.needDeviceInfo) {
+        CHK_RET(hrtGetDevice(&opParam.deviceLogicId));
+        DevType devType;
+        CHK_RET(hrtGetDeviceType(devType));
+        opParam.deviceType = static_cast<u32>(devType);
+    }
+
+    // Step 3. 调用 KernelLaunch
+    HCCL_INFO("AicpuLaunchMgr::%s, call KernelLaunch", __func__);
+    HcclResult ret = KernelLaunchAicpuCustom(opParam, config.kernelName.c_str(),
+                                             localStream.ptr(), config.binHandle);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuLaunchMgr][%s] KernelLaunch failed, return [%d].", __func__, ret), ret);
+
+    // Step 4. 等待流完成
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), config.timeoutSec));
+
+    return HCCL_SUCCESS;
+}
+
 // 基础通信使用
 HcclResult AicpuLaunchMgr::ThreadKernelLaunchForBase(std::vector<std::shared_ptr<Thread>> &newThreads,
     std::unique_ptr<ThreadHandle[]> &aicpuHandle, aclrtBinHandle binHandle)
