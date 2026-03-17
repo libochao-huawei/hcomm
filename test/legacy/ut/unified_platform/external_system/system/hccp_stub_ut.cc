@@ -453,6 +453,7 @@ int RaSendWr(void *qp_handle, struct SendWr *wr, struct SendWrRsp *op_rsp)
 
 int RaCtxInit(struct CtxInitCfg *cfg, struct CtxInitAttr *info, void **ctx_handle)
 {
+    *ctx_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
