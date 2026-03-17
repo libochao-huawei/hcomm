@@ -21,7 +21,7 @@ public:
 
 private:
     /* *************** 算法编排 *************** */
-    virtual HcclResult DoubleRingReduceScatter(const std::string &tag, DeviceMem inputMem, DeviceMem outputMem, const u64 count,
+    HcclResult DoubleRingReduceScatter(const std::string &tag, DeviceMem inputMem, DeviceMem outputMem, const u64 count,
         const HcclDataType dataType, const HcclReduceOp reductionOp,
         const std::vector<std::vector<Slice>> multRingsSliceZero, Stream stream, s32 profStage,
         const u64 baseOffset = 0, const HcomCollOpInfo *opInfo = nullptr,
