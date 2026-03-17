@@ -27,19 +27,6 @@
 const u64 RANKTABLE_FILE_MAX_SIZE = 1024ULL * 1024 * 1024;
 u64 GetFileSize(const std::string& path);
 
-using HcclGroupParamsTem = struct TagHcclGroupParamsInfoTem {
-    /* * group的基本构建信息，节点数及本节点在group中的编号、
-    本节点在worldgroup中的编号、group的所有ranks */
-    u32 worldRank;                /* * 用于标识world内不同节点 */
-    u32 groupRank;                /* * 用于标识group内不同节点 */
-    u32 serverNum;                /* * 用于标识group内服务器总数 */
-    u32 totalRanks;              /* * 用于指示group内的节点总数, rank范围[0, totalRanks-1] */
-    std::vector<u32> groupRanks;  // 内部存储wordrankid，其下标表示groupid
-    void* pSubComm;
-    u32 refCounter = 0;
-    bool destroyFlag = false;
-};
-
 using HcclGroupParamsV2 = struct TagHcclGroupParamsInfoV2 {
     /* * group的基本构建信息，节点数及本节点在group中的编号、
     本节点在worldgroup中的编号、group的所有ranks */
@@ -48,9 +35,9 @@ using HcclGroupParamsV2 = struct TagHcclGroupParamsInfoV2 {
     u32 serverNum;                /* * 用于标识group内服务器总数 */
     u32 totalRanks;              /* * 用于指示group内的节点总数, rank范围[0, totalRanks-1] */
     std::vector<u32> groupRanks;  // 内部存储wordrankid，其下标表示groupid
+    std::shared_ptr<Hccl::HcclCommunicator> pComm;
     u32 refCounter = 0;
     bool destroyFlag = false;
-    std::shared_ptr<Hccl::HcclCommunicator> pComm;
 };
 
 MAKE_ENUM(DeviceStatus, DEVICE_IDLE = 0, DEVICE_RECOVERED, DEVICE_READY);
