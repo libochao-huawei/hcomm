@@ -341,7 +341,6 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *key, size_t len, uint
 
 aclError aclrtGetNotifyId(aclrtNotify notify, uint32_t *notifyId)
 {
-    notify = reinterpret_cast<aclrtNotify>(0x123);
     return ACL_SUCCESS;
 }
 
