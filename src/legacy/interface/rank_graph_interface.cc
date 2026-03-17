@@ -189,7 +189,8 @@ namespace Hccl {
             for (LinkProtocol protocol : link.GetLinkProtocols()) {
                 CommLink commLink;
                 CommLinkInit(&commLink, 1);
-                const CommProtocol &commProtocol = LinkProtocolToCommProtocol(protocol);
+                auto it = protocolMap.find(protocol);
+                CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
                 commLink.linkAttr.linkProtocol = commProtocol;
                 commLink.linkAttr.hop = peer2peer->GetHop();
                 commLink.srcEndpointDesc.protocol = commProtocol;
@@ -252,7 +253,8 @@ namespace Hccl {
         for (LinkProtocol protocol : peer2net->GetLinkProtocols()) {
             CommLink commLink;
             CommLinkInit(&commLink, 1);
-            const CommProtocol &commProtocol = LinkProtocolToCommProtocol(protocol);
+            auto it = protocolMap.find(protocol);
+            CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
 
             commLink.linkAttr.linkProtocol = commProtocol;
             commLink.linkAttr.hop = peer2net->GetHop();

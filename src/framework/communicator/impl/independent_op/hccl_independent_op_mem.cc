@@ -43,6 +43,11 @@ HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem,
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                HCCL_RUN_INFO("HcclCommMemReg is not supported");
+                return HCCL_SUCCESS;
+            }
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
             std::string commId = hcclComm->GetIdentifier();
             HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
@@ -106,6 +111,11 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetHcclBufferV2(comm, buffer, size));
+                return HCCL_SUCCESS;
+            }
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
             std::string commId = hcclComm->GetIdentifier();
             HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
