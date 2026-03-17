@@ -25,7 +25,7 @@ HcclResult AivUbMemTransport::Init()
 {
     // 拷贝memTag信息
     localUserMemTag_.reserve(channelDesc_.memHandleNum);
-    HCCL_INFO("channelDesc_.memHandleNum %d", channelDesc_.memHandleNum);
+    HCCL_INFO("channelDesc_.memHandleNum: %u", channelDesc_.memHandleNum);
     for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
         Hccl::LocalIpcRmaBuffer *localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(channelDesc_.memHandles[i]);
         localRmaBufferVec_.push_back(localIpcRmaBuffer);
@@ -36,7 +36,7 @@ HcclResult AivUbMemTransport::Init()
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
-        HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%d] memTag[%s]", i, memTag.data());
+        HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%u] memTag[%s]", i, memTag.data());
         localUserMemTag_.push_back(memTag);
     }
 
