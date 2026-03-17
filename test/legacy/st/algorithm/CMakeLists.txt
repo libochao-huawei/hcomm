@@ -182,6 +182,13 @@ set(legacy_service_include_list
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_topo_match
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/utils/common
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/all_reduce
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/all_gather
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/all_to_all
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/broadcast
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/reduce
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/reduce_scatter
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/scatter
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_aiv_instruction
 )
 
