@@ -10,16 +10,11 @@
 
 #include "hccl_api_base_test.h"
 
-class HcclGetCommNameTest : public BaseInit {
+class HcclGetRankSizeTest : public BaseInit {
 public:
     void SetUp() override {
         BaseInit::SetUp();
-        UT_USE_RANK_TABLE_910_1SERVER_1RANK;
-        // 将enableEntryLog默认返回为true
-        MOCKER(GetExternalInputHcclEnableEntryLog)
-            .stubs()
-            .with(any())
-            .will(returnValue(true));
+        UT_USE_1SERVER_1RANK_AS_DEFAULT;
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -27,28 +22,23 @@ public:
     }
 };
 
-TEST_F(HcclGetCommNameTest, Ut_HcclGetCommName_When_CommNameIsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(HcclGetRankSizeTest, Ut_HcclGetRankSize_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
-}
+    Ut_Device_Set(0);
 
-TEST_F(HcclGetCommNameTest, Ut_HcclGetCommName_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    char *commName = new char[ROOTINFO_INDENTIFIER_MAX_LENGTH];
+    uint32_t rankSize = 0;
 
-    HcclResult ret = HcclGetCommName(comm, commName);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
-    delete[] commName;
-}
-
-TEST_F(HcclGetCommNameTest, HcclGetCommName_When_InputNoInit_Expect_ReturnIsHCCL_E_PTR)
-{
-    char *commName = nullptr;
-
-    HcclResult ret = HcclGetCommName(&comm, commName);
+    HcclResult ret = HcclGetRankSize(comm, &rankSize);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(HcclGetCommNameTest, HcclGetCommName_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(HcclGetRankSizeTest, Ut_HcclGetRankSize_When_RankSizeIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
+    UT_COMM_CREATE_DEFAULT(comm);
+    uint32_t *pRankSize = nullptr;
+
+    HcclResult ret = HcclGetRankSize(comm, pRankSize);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    Ut_Comm_Destroy(comm);
 }
