@@ -110,8 +110,6 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
     return HCCL_SUCCESS;
 }
 
-constexpr uint32_t MEM_NUM_MAX = 256;  // memNum的默认限制最大为256
-
 HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems,
     char ***memTags)
 {
