@@ -38,7 +38,7 @@ public:
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
-    const std::vector<std::shared_ptr<Thread>>& GetAllThread() { return threads_; };
+    const std::vector<Thread*>& GetAllThread() { return threads_; };
     const HcclTopoInfo& GetTopoInfo() { return topoInfo_; }
     const std::string& GetIdentifier() { return identifier_; }
 
@@ -72,7 +72,7 @@ private:
     std::string identifier_;
     bool isReady_{ false }; // 独立算子流程通信域是否初始化
     HcclTopoInfo topoInfo_;
-    std::vector<std::shared_ptr<Thread>> threads_;
+    std::vector<Thread*> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     std::unordered_map<s32, Thread*> streamIdToThreadMap_;
     // A5 独立算子
