@@ -113,7 +113,7 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
 
     ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
     if (ret != 0) {
-        if (ret == RA_TLV_REQUEST_UNAVAIL) {
+        if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
             HCCL_WARNING("[HrtRaTlvRequest]ra tlv request UNAVAIL. return: ret[%d]", ret);
             return HCCL_E_UNAVAIL;
         }
