@@ -26,6 +26,7 @@
 #include "adapter_prof.h"
 #include "task_info.h"
 #include "hccl_diag.h"
+#include "exception_handler.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -681,13 +682,12 @@ int32_t HcommChannelFence(ChannelHandle channel)
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
+    EXCEPTION_HANDLE_BEGIN
     bool l0State = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
     bool l1State = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
     if (l0State == false || l1State == false) {
         HCCL_INFO("[HcclDfxRegOpInfo] profiling State is down l0State %d l1State %d", l0State, l1State);
     }
-    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
@@ -714,7 +714,9 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     }
 
     //HcclDfxOpInfo转为DfxOpInfo
+    
     auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
+    CHK_SMART_PTR_NULL(dfxOpInfoOnce);
     dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
     dfxOpInfoOnce->isIndop_ = true;
     dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
@@ -732,9 +734,13 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
    
     // 下发device侧
-    CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
-    const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
-    CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
+    if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS || dfxOpInfo->engine == COMM_ENGINE_AICPU) {
+        u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
+        const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
+        CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
+    }
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
