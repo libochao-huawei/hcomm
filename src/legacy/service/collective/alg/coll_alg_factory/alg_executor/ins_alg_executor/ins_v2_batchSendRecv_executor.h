@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCLV2_INS_BATCH_SEND_RECV_EXECUTOR_H
-#define HCCLV2_INS_BATCH_SEND_RECV_EXECUTOR_H
+#ifndef HCCLV2_INS_V2_BATCH_SEND_RECV_EXECUTOR_H
+#define HCCLV2_INS_V2_BATCH_SEND_RECV_EXECUTOR_H
 
 #include <unordered_set>
 #include <algorithm>
@@ -25,10 +25,10 @@ namespace Hccl {
 constexpr u32 MULTIPLY_TWO = 2;
 constexpr u64 HCCL_CHUNK_SIZE = 1024 * 1024 * 1024; // 1024*1024*1024的size
 
-template <typename AlgTopoMatch> class InsBatchSendRecvExecutor : public InsCollAlgBase {
+template <typename AlgTopoMatch> class InsV2BatchSendRecvExecutor : public InsCollAlgBase {
 public:
-    explicit InsBatchSendRecvExecutor();
-    ~InsBatchSendRecvExecutor() override;
+    explicit InsV2BatchSendRecvExecutor();
+    ~InsV2BatchSendRecvExecutor() override;
 
     std::string Describe() const override
     {
@@ -47,7 +47,7 @@ public:
                              ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
 
     void SetRmaDataBufferMgr(const RmtDataBufferMgr* rmaDataBufferMgr) override;
-    void SetOp(const CollAlgOperator &op) override;
+    HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit) override;
 
 protected:
     struct SendRecvSlice {
@@ -67,7 +67,7 @@ private:
     bool SortSendItems(HcclSendRecvItem* a, HcclSendRecvItem* b) const;
     bool SortRecvItems(HcclSendRecvItem* a, HcclSendRecvItem* b) const;
     HcclResult InitParams(const CollAlgOperator &op, const CollAlgParams &params) override;
-    HcclResult GetPairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum);
+    HcclResult GetPairWiseList();
 
     // 收发数据准备
     HcclResult CalcSendSlices(u64 maxRoundTransferSize);
@@ -84,8 +84,6 @@ private:
         std::vector<SendRecvSlice>& recvRemoteSlices, LinkData& link) const;
     HcclResult ProcessSendDataSlice(InsQuePtr& queue, SendRecvSlice& sendRemoteSlice,
         u32 remoteRank, uint64_t scratchBufferAddr, LinkData& link) const;
-    HcclResult ProcessRecvDataSlice(InsQuePtr& queue, SendRecvSlice& recvRemoteSlice,
-        u32 remoteRank, uint64_t scratchBufferAddr, LinkData& link) const;
     HcclResult SendRun(DataBuffer &execBufferSlice, u32 remoteUserRank, InsQuePtr& queue, LinkData& link) const;
     HcclResult CopyRecvDataSliceToUsrOut(InsQuePtr& queue, SendRecvSlice& slice,
         u32 remoteRank, uint64_t scratchBufferAddr) const;
@@ -94,6 +92,10 @@ private:
     HcclResult CalcResLinksPartialMesh(const RankId myRank, const std::vector<std::vector<RankId>> &tempVTopo,
         const u32 linkNumBtwPeers, AlgTempResReq &tempResReq);
     HcclResult CalcRes(AlgTempResReq &tempResReq);
+    HcclResult ExecAiv();
+
+    HcclResult InitCommInfo(const RankGraph *rankGraph);
+    HcclResult InitCommInfo(const AlgTopoInfo &topoInfo);
 
     std::set<u32> commTargetUserRankSet_;
     std::deque<HcclSendRecvItem*> sendToSelfDeque_;
@@ -112,6 +114,7 @@ private:
     std::map<u32, std::vector<SendRecvSlice>> SendSliceMapByRemoteRank_;
     std::map<u32, std::vector<SendRecvSlice>> RecvSliceMapByRemoteRank_;
     u64 maxRoundTransferSize_ = 0; // 单轮最多能够传输的size
+    u32 sliceId_{0};  // 用于组装aivTag
 };
 } // namespace Hccl
-#endif // !HCCLV2_INS_SEND_EXECUTOR_H
+#endif // !HCCLV2_INS_V2_BATCH_SEND_RECV_EXECUTOR_H

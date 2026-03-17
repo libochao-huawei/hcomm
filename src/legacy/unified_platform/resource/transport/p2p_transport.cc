@@ -168,7 +168,7 @@ TransportStatus P2PTransport::GetStatus()
         case P2PStatus::SEND_DATA:
             RecvExchangeData();
             p2pStatus = P2PStatus::RECV_DATA;
-            SetBaseStatusReady();
+            SetBaseStatusReady(); 
             break;
         default:
             break;
@@ -186,6 +186,9 @@ bool P2PTransport::IsRmtPidValid() const
 
 void P2PTransport::SendPid()
 {
+    myPid = HrtDeviceGetBareTgid();
+    HCCL_INFO("P2PTransport: send pid %u", myPid);
+
     BinaryStream binaryStream;
     binaryStream << myPid;
 
@@ -207,10 +210,14 @@ void P2PTransport::RecvPid()
 
     BinaryStream binaryStream(data);
     binaryStream >> rmtPid;
+    HCCL_INFO("P2PTransport: recv pid %u", rmtPid);
 }
 
 void P2PTransport::Grant()
 {
+    // 暂时不做Grant处理
+    return;
+
     for (auto it : commonLocRes.notifyVec) {
         static_cast<IpcLocalNotify *>(it)->Grant(rmtPid);
     }
@@ -287,6 +294,7 @@ void P2PTransport::BufferVecPack(BinaryStream &binaryStream)
     HCCL_INFO("start pack %s bufferVec", transportType.Describe().c_str());
     u32 pos = 0;
     for (auto &it : commonLocRes.bufferVec) {
+        binaryStream << pos;
         if (it != nullptr) { // 非空的buffer，从buffer中获取 dto
             std::unique_ptr<Serializable> dto = it->GetExchangeDto();
             dto->Serialize(binaryStream);
@@ -331,4 +339,88 @@ void P2PTransport::RmtBufferVecUnpackProc(BinaryStream &binaryStream)
     }
 }
 
+std::vector<char> P2PTransport::GetUniqueId()
+{
+    if (baseStatus != TransportStatus::READY) {
+        MACRO_THROW(InternalException, StringFormat("transport status is not ready, please check"));
+    }
+    u32          type = static_cast<u32>(transportType);
+    BinaryStream binaryStream;
+    binaryStream << type;
+    binaryStream << notifyNum;
+    binaryStream << bufferNum;
+
+    // [header...][notifyUniqueId...][rmtNotifyUniqueId...][rmtBufferUniqueIds...]
+    auto notifyUniqueIds = GetNotifyUniqueIds();
+    binaryStream << notifyUniqueIds;
+
+    auto rmtNotifyUniqueIds = GetRmtNotifyUniqueIds();
+    binaryStream << rmtNotifyUniqueIds;
+
+    auto rmtBufferUniqueIds = GetRmtBufferUniqueIds();
+    binaryStream << rmtBufferUniqueIds;
+
+    std::vector<char> result;
+    binaryStream.Dump(result);
+    return result;
+}
+
+std::vector<char> P2PTransport::GetNotifyUniqueIds()
+{
+    HCCL_INFO("start packing all notify uniqueIds");
+    std::vector<char> result(0);
+    for (auto &it : commonLocRes.notifyVec) {
+        HCCL_INFO("p2pMemTransport Notify %s", it->Describe().c_str());
+        auto uniqueId = it->GetUniqueId();
+        result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+    }
+    return result;
+}
+
+std::vector<char> P2PTransport::GetSingleRmtBufferUniqueId(u64 addr, u64 size) const
+{
+    BinaryStream binaryStream;
+    binaryStream << addr;
+    binaryStream << size;
+    HCCL_INFO("P2PTransport RmtAddr[addr=0x%llx, size=0x%llx]", addr, size);
+    std::vector<char> result;
+    binaryStream.Dump(result);
+    return result;
+}
+
+std::vector<char> P2PTransport::GetRmtNotifyUniqueIds() const
+{
+    HCCL_INFO("start packing all remote notify uniqueIds");
+    std::vector<char> result(0);
+    for (auto &it : rmtNotifyVec) {
+        std::vector<char> uniqueId;
+        if (it != nullptr) {
+            uniqueId = GetSingleRmtBufferUniqueId(it->GetAddr(), it->GetSize());
+            HCCL_INFO("P2PTransport::GetRmtNotifyUniqueIds, %s", it->Describe().c_str());
+        } else {
+            uniqueId = GetSingleRmtBufferUniqueId(0, 0); // 填充一个空的buffer
+            HCCL_INFO("P2PTransport::GetRmtNotifyUniqueIds, null buffer");
+        }
+        result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+    }
+    return result;
+}
+
+std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
+{
+    HCCL_INFO("start packing all remote buffer uniqueIds");
+    std::vector<char> result(0);
+    for (auto &it : rmtBufferVec) {
+        std::vector<char> uniqueId;
+        if (it != nullptr) {
+            uniqueId = GetSingleRmtBufferUniqueId(it->GetAddr(), it->GetSize());
+            HCCL_INFO("P2PTransport::GetRmtBufferUniqueIds, %s", it->Describe().c_str());
+        } else {
+            uniqueId = GetSingleRmtBufferUniqueId(0, 0); // 填充一个空的buffer
+            HCCL_INFO("P2PTransport::GetRmtBufferUniqueIds, null buffer");
+        }
+        result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+    }
+    return result;
+}
 } // namespace Hccl

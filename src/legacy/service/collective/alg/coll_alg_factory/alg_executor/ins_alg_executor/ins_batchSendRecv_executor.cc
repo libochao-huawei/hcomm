@@ -212,6 +212,34 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::ProcessSendRecv(const CollAlg
     CHK_PTR_NULL(op.scratchMem);
     uint64_t scratchBufferAddr = op.scratchMem->GetAddr();
 
+    // 当前是write的逻辑，整理一套read的逻辑出来
+    if (dmaMode_ == DmaMode::GET) {
+        for (u32 step = 0; step < maxSendRecvStep; step++) {
+            if (step < sendRemoteSlices.size()) {
+                // 先做localCopy local copy: usrin->cclin
+                DataBuffer inputBuffer(sendRemoteSlices[step].addr_, sendRemoteSlices[step].size_);
+                DataBuffer inScratchSlice(scratchBufferAddr + (remoteRank % rankSize_) * maxRoundTransferSize_,
+                    sendRemoteSlices[step].size_);
+                HCCL_DEBUG("scratchBufferAddr[%llu], offset[%llu], dataSize[%llu]", scratchBufferAddr,
+                    (remoteRank % rankSize_) * maxRoundTransferSize_, sendRemoteSlices[step].size_);
+
+                queue->Append(std::make_unique<InsLocalCopyExtend>(inputBuffer, inScratchSlice)); // 这里还没做DMA消减，可以到时看下性能再优化
+                // 然后通知对端来读
+                queue->Append(std::make_unique<InsPostReady>(static_cast<RankId>(remoteRank), link));
+            }
+
+            if (step < recvRemoteSlices.size()) {
+                CHK_RET(ProcessRecvDataSlice(queue, recvRemoteSlices[step], remoteRank, scratchBufferAddr, link));
+            }
+
+            if (step < sendRemoteSlices.size()) {
+                queue->Append(std::make_unique<InsWaitFin>(static_cast<RankId>(remoteRank), link));
+            }
+        }
+
+        return HcclResult::HCCL_SUCCESS;
+    }
+
     for (u32 step = 0; step < maxSendRecvStep; step++) {
         if (step < recvRemoteSlices.size()) {
             // tell sendRank ready to write
@@ -373,6 +401,37 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::CalcRecvSlices(u64 maxRoundTr
 }
 
 template <typename AlgTopoMatch>
+HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::ProcessRecvDataSlice(InsQuePtr& queue,
+    SendRecvSlice& recvRemoteSlice, u32 remoteRank, uint64_t scratchBufferAddr, LinkData& link) const
+{
+    // 从远端读
+    queue->Append(std::make_unique<InsWaitReady>(static_cast<RankId>(remoteRank), link));
+
+    // 获取远端内存地址, 获取的是scratch的基起始地址
+    DataBuffer remoteBuffer = rmaDataBufferMgr_->GetBuffer(link, BufferType::SCRATCH);
+    uint64_t remoteBufferAddr = remoteBuffer.GetAddr();
+    DataBuffer srcScratchSlice(remoteBufferAddr + (myRank_ % rankSize_) * maxRoundTransferSize_,
+        recvRemoteSlice.size_);
+
+    // 准备数据偏移
+    u64 offsetOfRemoteScratchBase = maxRoundTransferSize_ * rankSize_ + maxRoundTransferSize_ * (remoteRank % rankSize_);
+    DataBuffer dstScratchSlice(scratchBufferAddr + offsetOfRemoteScratchBase, recvRemoteSlice.size_);
+    HCCL_DEBUG("[InsBatchSendRecvExecutor][ProcessRecvDataSlice] myRank[%d] recv Size[%llu], remoteBuffer[%llu], remoteUserRank[%u].",
+        myRank_, recvRemoteSlice.size_, remoteBufferAddr, remoteRank);
+
+    // Recv
+    queue->Append(std::make_unique<InsReadExtend>(static_cast<RankId>(remoteRank),
+        link, dstScratchSlice, srcScratchSlice));
+
+    queue->Append(std::make_unique<InsPostFin>(static_cast<RankId>(remoteRank), link));
+
+    // 最后把数据拷贝回自己的output
+    CHK_RET(CopyRecvDataSliceToUsrOut(queue, recvRemoteSlice, remoteRank, scratchBufferAddr));
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+template <typename AlgTopoMatch>
 HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::ProcessSendDataSlice(InsQuePtr& queue,
     SendRecvSlice& sendRemoteSlice, u32 remoteRank, uint64_t scratchBufferAddr, LinkData& link) const
 {
@@ -491,6 +550,10 @@ HcclResult InsBatchSendRecvExecutor<AlgTopoMatch>::Orchestrate(const AlgTopoInfo
 
     CHK_PTR_NULL(linkMgr);
     CHK_RET(PrepResLinks(myRank_, tempResReq.links, linkMgr, tempResLinks_));
+
+    if (tempAlg.IsPcieLink(tempResLinks_)) {
+        dmaMode_ = DmaMode::GET;
+    }
 
     // cclbuffer
     buffInfo_.inBuffType     = BufferType::SCRATCH;

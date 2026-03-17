@@ -495,24 +495,37 @@ std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTo
     std::set<string> phyPorts = phyConnIFace->GetPorts();
     std::unordered_map<IpAddress, std::set<string>> addr2Ports;
     for (auto port: phyPorts) {
-        auto itPort = portAddrMap.find(port);
-        if(itPort == portAddrMap.end()) {
-            HCCL_WARNING("[RankGraphBuilder][ConstructConnIFromPhyTopoConnIAndPortMap] topo use port [%s] not find addrs in ranktable.", port.c_str());
-            continue;
-        }
-        auto it = addr2Ports.find(itPort->second);
-        if (it == addr2Ports.end()) {
-            std::set<std::string> newPorts;
-            newPorts.insert(port);
-            addr2Ports[itPort->second] = newPorts;
+        if (*(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
+            IpAddress tempIp;
+            auto it = addr2Ports.find(tempIp);
+            if (it == addr2Ports.end()) {
+                std::set<std::string> newPorts;
+                newPorts.insert("d2h");
+                addr2Ports[tempIp] = newPorts;
+            } else {
+                it->second.insert("d2h");
+            }
         } else {
-            it->second.insert("8080");
+            auto itPort = portAddrMap.find(port);
+            if (itPort == portAddrMap.end()) {
+                HCCL_WARNING("[RankGraphBuilder][ConstructConnIFromPhyTopoConnIAndPortMap] topo use port [%s] not find addrs in ranktable.", port.c_str());
+                continue;
+            }
+            auto it = addr2Ports.find(itPort->second);
+            if (it == addr2Ports.end()) {
+                std::set<std::string> newPorts;
+                newPorts.insert(port);
+                addr2Ports[itPort->second] = newPorts;
+            } else {
+                it->second.insert("8080");
+            }
         }
     }
 
     for (auto it = addr2Ports.begin(); it != addr2Ports.end(); ++it) {
+        auto linkType = *(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE ? LinkType::PEER2NET : LinkType::PEER2PEER;
         shared_ptr<NetInstance::ConnInterface> netConnIFace =
-            make_shared<NetInstance::ConnInterface>(it->first, it->second, phyConnIFace->GetPos(), LinkType::PEER2PEER,
+            make_shared<NetInstance::ConnInterface>(it->first, it->second, phyConnIFace->GetPos(), linkType,
                                                     phyConnIFace->GetLinkProtocols(), topoType, topoInstId);
         netConnIFaces.push_back(netConnIFace);
     }

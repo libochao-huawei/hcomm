@@ -54,6 +54,9 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
                 if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
                     (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == rankSize_4P)) {
                     primQueueGenName = "CcuAllGatherMeshDetour1D";
+                } else if (topoInfo.level0PcieMix) {
+                    HCCL_WARNING("[Algo][AllGatherAutoSelector] level0 PCIE mix is not supported yet for ccu_ms mode.");
+                    return SelectorStatus::NOT_MATCH;
                 } else {
                     primQueueGenName = "CcuAllGatherMesh1D";
                 }
@@ -111,6 +114,9 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "CcuAllGatherMeshMem2Mem1D";
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][AllGatherAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
             }
@@ -156,6 +162,8 @@ SelectorStatus AllGatherAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "InsAllGatherMesh";
+            } else if (topoInfo.level0PcieMix) {
+                primQueueGenName = "InsAllGatherParallelMesh1DNHR";
             } else {
                 primQueueGenName = "InsAllGatherParallelMesh1DNHR";
             }
