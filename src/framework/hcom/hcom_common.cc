@@ -617,7 +617,7 @@ HcclResult HcomDestroyGroup(const char *group)
             auto iter = hcomInfo.hcomGroupMap.find(group);
             if (iter == hcomInfo.hcomGroupMap.end()) {
                 HCCL_ERROR(
-                    "[Destroy][Group]errNo[0x%016llx] group[%s] is not exist", HCOM_ERROR_CODE(HCCL_E_PARA), group.c_str());
+                    "[Destroy][Group]errNo[0x%016llx] group[%s] is not exist", HCOM_ERROR_CODE(HCCL_E_PARA), group);
                 return HCCL_E_PARA;
             }
             hcomInfo.hcomGroupMap.erase(group);
