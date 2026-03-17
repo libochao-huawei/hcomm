@@ -96,13 +96,30 @@ HcclResult IAicpuTsThread::NotifyWait(uint32_t notifyId) const
 {
     RtsqBase *rtsqA5 = nullptr;
     CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
-    
+
     HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], notifyId [%u]",
         __func__,
         static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(),
         notifyId);
 
     rtsqA5->NotifyWait(notifyId);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult IAicpuTsThread::NotifyWait(uint32_t notifyId, uint32_t timeOut) const
+{
+    RtsqBase *rtsqA5 = nullptr;
+    CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
+
+    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], notifyId [%u], timeOut [%u]",
+        __func__,
+        static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(),
+        notifyId,
+        timeOut);
+
+    // 调用带 timeout 参数的 RtsqA5::NotifyWait 重载
+    rtsqA5->NotifyWait(notifyId, timeOut);
 
     return HCCL_SUCCESS;
 }
