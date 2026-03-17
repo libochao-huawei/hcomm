@@ -651,6 +651,7 @@ private:
     bool interServer_;
     std::unique_ptr<WorkspaceResource> workSpaceRes_;
     std::vector<u32> enableP2PDevices_;
+    std::unordered_set<u32> enableP2PRankIds_;
     bool isSingleMeshAggregation_;
     CCLBufferManager cclBufferManager_;
     bool isExecuteProfilingInit_;
