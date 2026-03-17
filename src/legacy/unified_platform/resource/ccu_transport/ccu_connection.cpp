@@ -521,7 +521,9 @@ void CcuConnection::Clean()
 
     // 销毁jetty要在ReleaseConnRes之后
     for (auto &ccuJetty : ccuJettys_) {
-        ccuJetty->Clean();
+    HcclResult ret = ccuJetty->Clean();
+    CHK_PRT_CONT(ret != HCCL_SUCCESS,
+        HCCL_WARNING("[CcuConnection::Clean] ccuJetty Clean failed, ret[%d].", ret));
     }
 }
 
