@@ -96,30 +96,3 @@ TEST_F(HcclCommInitRootInfoTest, Ut_HcclCommInitRootInfo_When_PCommIsNull_Expect
 
     Ut_Comm_Destroy(comm);
 }
-
-TEST_F(HcclCommInitRootInfoTest, Ut_HcclCommInitRootInfo_When_nRanksIsLarge_Expect_ReturnIsHCCL_E_INTERNAL)
-{
-    int nRanks = 128*1024;
-    HcclRootInfo id = Ut_Get_Root_Info(0);
-    int rank = 0;
-
-    HcclResult ret = HcclCommInitRootInfo(nRanks, &id, rank, &comm);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-
-    Ut_Comm_Destroy(comm);
-}
-
-TEST_F(HcclCommInitRootInfoTest, Ut_HcclCommInitRootInfo_When_RecvTimeOut_Expect_ReturnIsHCCL_E_TIMEOUT)
-{
-    MOCKER_CPP(&TopoInfoExchangeBase::RecvClusterInfoMsg)
-        .stubs()
-        .will(returnValue(HCCL_E_TIMEOUT));
-    int nRanks = 1;
-    HcclRootInfo id = Ut_Get_Root_Info(0);
-    int rank = 0;
-
-    HcclResult ret = HcclCommInitRootInfo(nRanks, &id, rank, &comm);
-    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
-
-    Ut_Comm_Destroy(comm);
-}

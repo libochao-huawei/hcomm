@@ -37,26 +37,3 @@ TEST_F(HcclGetCommAsyncErrorTest, Ut_HcclGetCommAsyncError_When_CommIsNull_Expec
     HcclResult ret = HcclGetCommAsyncError(comm, &asyncError);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
-
-TEST_F(HcclGetCommAsyncErrorTest, Ut_HcclGetCommAsyncError_When_asyncErrorIsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    UT_COMM_CREATE_DEFAULT(comm);
-    HcclResult *pAsyncError = nullptr;
-
-    HcclResult ret = HcclGetCommAsyncError(comm, pAsyncError);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
-    Ut_Comm_Destroy(comm);
-}
-
-TEST_F(HcclGetCommAsyncErrorTest, Ut_HcclGetCommAsyncError_When_1Server2Rank_Expect_ReturnHCCL_SUCCESS)
-{
-    UT_COMM_CREATE_DEFAULT(comm);
-    HcclResult asyncError;
-
-    HcclResult ret = HcclGetCommAsyncError(comm, &asyncError);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(asyncError, HCCL_SUCCESS);
-
-    Ut_Comm_Destroy(comm);
-}

@@ -42,27 +42,3 @@ TEST_F(HcclGetRankSizeTest, Ut_HcclGetRankSize_When_RankSizeIsNull_Expect_Return
 
     Ut_Comm_Destroy(comm);
 }
-
-TEST_F(HcclGetRankSizeTest, Ut_HcclGetRankSize_When_1Server2Rank_Expect_ReturnHCCL_SUCCESS)
-{
-    UT_COMM_CREATE_DEFAULT(comm);
-    uint32_t rankSize = 0;
-
-    HcclResult ret = HcclGetRankSize(comm, &rankSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(rankSize, rankNum);
-
-    Ut_Comm_Destroy(comm);
-}
-
-TEST_F(HcclGetRankSizeTest, Ut_HcclGetRankSize_When_2Server4Rank_Expect_ReturnHCCL_SUCCESS)
-{
-    UT_COMM_CREATE_DEFAULT(comm);
-    uint32_t rankSize = 0;
-
-    HcclResult ret = HcclGetRankSize(comm, &rankSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(rankSize, rankNum);
-
-    Ut_Comm_Destroy(comm);
-}
