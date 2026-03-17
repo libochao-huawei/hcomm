@@ -1863,7 +1863,6 @@ RequestHandle RaSocketListenOneStopAsync(RaSocketListenParam &in)
 
 RaSocketFdHandleParam RaGetOneSocket(u32 role, RaSocketGetParam &param)
 {
-    HCCL_INFO("[RaGetOneSocket] Input params: role=%u, socketHandle=%p, fdHandle=%p, remoteIp=%s, tag=%s", role, param.socketHandle, param.fdHandle, param.remoteIp.Describe().c_str(), param.tag.c_str());
     struct SocketInfoT socketInfo {};
 
     socketInfo.socketHandle = param.socketHandle;

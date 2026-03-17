@@ -494,22 +494,24 @@ HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const
 {
     const u8 orderLaunchInvalidInHcom = 255;
     if (orderLaunchMode == orderLaunchInvalidInHcom) {
-        HCCL_INFO("[%s] attachedStreams_ is invalid in graph mode", __func__);
+        HCCL_INFO("[%s] attachedStreams_[%d] is invalid in graph mode", __func__, orderStream_.id());
         return HCCL_SUCCESS;
     }
     if (orderNotifies_[orderLaunchMode] == nullptr) {
         std::shared_ptr<LocalNotify> notify;
         HcclSignalInfo *aicpuOrderNotify = reinterpret_cast<HcclSignalInfo*>(static_cast<u64>(commParam->aicpuOrderNotifyAddr) +
             (sizeof(HcclSignalInfo) * orderLaunchMode));
-
+        HCCL_INFO("[%s] attachedStreams_[%d] aicpuOrderNotify resId[%llu], addr[0x%llx], flag[%u], devId[%u], tsId[%u], rankId[%u]",
+            __func__, orderStream_.id(), aicpuOrderNotify->resId, aicpuOrderNotify->addr,
+            aicpuOrderNotify->flag, aicpuOrderNotify->devId, aicpuOrderNotify->tsId, aicpuOrderNotify->rankId);
         HcclResult ret = InitAndVerifySingleSignal(*aicpuOrderNotify, notify);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] check localRes noftify failed, resId[%u], group[%s]",
             __func__, aicpuOrderNotify->resId, identifier_.c_str()), ret);
         orderNotifies_[orderLaunchMode] = notify;
-        HCCL_INFO("%s success, group[%s], resId[%u]", __func__, identifier_.c_str(), aicpuOrderNotify->resId);
+        HCCL_INFO("%s success, group[%s], resId[%llu]", __func__, identifier_.c_str(), aicpuOrderNotify->resId);
     }
 
-    HCCL_INFO("%s group[%s] tag[%s] isDeviceMode[%d] orderLaunchMode[%d] mode[%d] streamId[%d] notifyId[%d]",
+    HCCL_INFO("%s group[%s] tag[%s] isDeviceMode[%d] orderLaunchMode[%u] mode[%d] streamId[%d] notifyId[%u]",
             __func__, identifier_.c_str(), tag.c_str(), isDeviceMode_, orderLaunchMode, GetWorkflowMode(), orderStream_.id(),
             orderNotifies_[orderLaunchMode]->notifyId_);
     CHK_RET(LocalNotify::Post(orderStream_, dispatcher_, orderNotifies_[orderLaunchMode]));
