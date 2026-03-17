@@ -100,16 +100,6 @@ public:
         return StringFormat("CcuInstructionAllReduceMeshDetour1D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgAllReduceMeshDetour1D>(dimSize_, rankId_, op_, tempVTopo_, singleTransportSize_, detourPathNum_, pathNumPerPeer_);

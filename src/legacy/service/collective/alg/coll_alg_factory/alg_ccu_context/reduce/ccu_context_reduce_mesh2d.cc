@@ -192,8 +192,8 @@ void CcuContextReduceMesh2D::Step2ReduceForRoot()
     CcuRep::Memory dst = CreateMemory();
     dst.addr = output_[0]; // 第二步reduce是从input reduce到root的output
     dst.token = token_[localId_];
-    uint32_t curId = 0;
     uint32_t dstId = 0;
+    uint32_t curId = 0;
     for (uint32_t rankIdx = 0; rankIdx < localSize_; rankIdx++) {
         if (rankIdx != localId_) {
             curId = dstId;
