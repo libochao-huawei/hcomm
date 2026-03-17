@@ -444,10 +444,6 @@ int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *
     return HCCL_SUCCESS;
 }
 
-int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
-{
-    return HcommWriteNbiOnThread(0, channel, dst, src, len);
-}
 
 int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
@@ -476,11 +472,6 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
     return HCCL_SUCCESS;
 }
 
-int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
-    uint64_t len, uint32_t remoteNotifyIdx)
-{
-    return HcommWriteWithNotifyNbiOnThread(0, channel, dst, src, len, remoteNotifyIdx);
-}
 
 int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
@@ -508,10 +499,6 @@ int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *d
     return HCCL_SUCCESS;
 }
 
-int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
-{
-    return HcommReadNbiOnThread(0, channel, dst, src, len);
-}
 
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
@@ -540,15 +527,6 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx)
-{
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_950) {
-        return HCCL_E_NOT_SUPPORT;
-    }
-    return HcommChannelNotifyRecordOnThread(0, channel, remoteNotifyIdx);
-}
 
 int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
@@ -577,15 +555,6 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
-{
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_950) {
-        return HCCL_E_NOT_SUPPORT;
-    }
-    return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeout);
-}
 
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
 {
@@ -649,10 +618,6 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommFlush()
-{
-    return HcommFenceOnThread(0);
-}
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
@@ -675,10 +640,6 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelFence(ChannelHandle channel)
-{
-    return HcommChannelFenceOnThread(0, channel);
-}
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
