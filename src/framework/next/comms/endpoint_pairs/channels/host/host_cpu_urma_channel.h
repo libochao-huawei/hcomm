@@ -7,24 +7,27 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef AICPU_TS_URMA_CHANNEL_H
-#define AICPU_TS_URMA_CHANNEL_H
+#ifndef HOST_CPU_URMA_CHANNEL_H
+#define HOST_CPU_URMA_CHANNEL_H
 
 #include "../channel.h"
+
+#include <mutex>
+#include "urma_types.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
-#include "dev_ub_connection.h"
+#include "host_ub_connection.h"
 #include "ub_local_notify.h"
 
 namespace hcomm {
 
-class AicpuTsUrmaChannel : public Channel {
+class HostCpuUrmaChannel : public Channel {
 public:
-    AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
+    HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
@@ -35,15 +38,10 @@ public:
 
     // 数据面接口
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
-
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
-
     HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;
-
     HcclResult Write(void *dst, const void *src, uint64_t len) override;
-
     HcclResult Read(void *dst, const void *src, uint64_t len) override;
-
     HcclResult ChannelFence() override;
 
 private:
@@ -74,11 +72,25 @@ private:
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
-    std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
+    std::vector<std::unique_ptr<Hccl::HostUbConnection>>        connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+
+    HcclResult UrmaPostJfr();
+    HcclResult PrepareNotifyWrResource(const uint32_t remoteNotifyIdx, urma_jfs_wr_t &notifyRecordWr);
+    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
+                                      urma_jfs_wr_t &writeWithNotifyWr);
+
+    urma_jfs_t jfs_;
+    urma_jfr_t jfr_;
+    urma_jfc_t jfc_;
+    urma_target_jetty_t tjetty_;
+    uint32_t wqeNum_{0};
+    bool fenceFlag_{false};
+
+    std::mutex jfcMutex_;
 };
 
 } // namespace hcomm
 
-#endif // AICPU_TS_URMA_CHANNEL_H
+#endif // HOST_CPU_URMA_CHANNEL_H

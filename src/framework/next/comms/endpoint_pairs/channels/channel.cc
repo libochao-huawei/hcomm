@@ -14,6 +14,7 @@
 #include "channel.h"
 #include "./aicpu/aicpu_ts_urma_channel.h"
 #include "./host/host_cpu_roce_channel.h"
+#include "./host/host_cpu_urma_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
 
@@ -31,6 +32,12 @@ HcclResult Channel::CreateChannel(
             // TODO: if 判断 EndpointDesc 里面的协议
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
                 EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
+                break;
+            }
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP || 
+                channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
                 break;
             }
