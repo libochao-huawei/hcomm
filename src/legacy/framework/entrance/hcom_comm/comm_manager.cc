@@ -481,7 +481,12 @@ HcclResult HcomGetCommV2(void **commV2)
 HcclResult HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
-    HcclGroupParamsV2 &groupParamsV2 = hcomCommInfoV2.hcclGroupMap[group];
+    auto iter = hcomCommInfoV2.hcclGroupMap.find(group);
+    if (iter == hcomCommInfoV2.hcclGroupMap.end()) {
+        HCCL_ERROR("[HcomGetGroupParamsV2] group[%s] not found", group);
+        return HCCL_E_PARA;
+    }
+    HcclGroupParamsV2 &groupParamsV2 = iter->second;
     HcclGroupParamsV2 *groupParamsTem = static_cast<HcclGroupParamsV2*>(groupParams);
     *groupParamsTem = groupParamsV2;
     CHK_PTR_NULL(groupParamsV2.pComm);
