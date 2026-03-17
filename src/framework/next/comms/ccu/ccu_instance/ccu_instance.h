@@ -33,7 +33,7 @@ public:
     HcclResult Init();
     HcclResult Reset();
     CcuResPack *GetResPack();
-    HcclResult SaveCcuKernel(CcuKernelHandle kernelHandle);
+    HcclResult SaveKernel(CcuKernelHandle kernelHandle);
     const std::vector<CcuKernelHandle> &GetUntranslatedKernels();
 
 private:
