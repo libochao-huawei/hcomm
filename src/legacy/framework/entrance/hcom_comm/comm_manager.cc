@@ -469,6 +469,27 @@ HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcomGetCommV2(void **commV2)
+{
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    CHK_PTR_NULL(hcomCommInfoV2.pComm);
+    *commV2 = static_cast<void *>(hcomCommInfoV2.pComm.get());
+    HCCL_INFO("[HcomGetCommV2] success.");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
+{
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    HcclGroupParamsV2 &groupParamsV2 = hcomCommInfoV2.hcclGroupMap[group];
+    HcclGroupParamsV2 *groupParamsTem = static_cast<HcclGroupParamsV2*>(groupParams);
+    *groupParamsTem = groupParamsV2;
+    CHK_PTR_NULL(groupParamsV2.pComm);
+    *commV2 = static_cast<Hccl::HcclCommunicator*>(groupParamsV2.pComm.get());
+    HCCL_INFO("[HcomGetGroupParamsV2] success. group[%s]", group);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomDestroyV2(void)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
