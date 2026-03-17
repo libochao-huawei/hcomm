@@ -72,10 +72,15 @@ public:
         outputAddr_ = outputAddr;
         sliceSize_ = sliceSize;
         token_ = token;
-        offSet_ = offSet;
         op_ = op;
         tempVTopo_ = tempVTopo;
+        offSet_ = offSet;
         return;
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::string Describe() const override
@@ -86,11 +91,6 @@ public:
     CcuInstType GetInstType() const override
     {
         return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override

@@ -108,16 +108,6 @@ public:
                             instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgAllGatherMesh1DMem2MemWithStride>(dimSize_, rankId_, op_, tempVTopo_);
@@ -130,6 +120,10 @@ public:
             outputRepeatStride_, normalSliceSize_, lastSliceSize_, isInputOutputEqual_);
     }
 
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
 private:
     CcuInstType                      instType_ = CcuInstType::CCU_ALLGATHER_MESH_1D_MEM2MEM_WITH_STRIDE_DIRECT;
     std::vector<uint64_t>            dimSize_;

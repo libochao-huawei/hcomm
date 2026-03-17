@@ -243,8 +243,8 @@ void CcuContextReduceMeshMem2Mem2D::ReduceStep2()
                 src.addr += yAxisOffset_;
                 dst.addr += yAxisOffset_;
             }
-            chunkOffset_   = 0;
             uint16_t chkId = 0;
+            chunkOffset_   = 0;
             if (rmtId < localId_) {
                 chkId = (i + rmtId) % (localSize_ - 1);
             } else {

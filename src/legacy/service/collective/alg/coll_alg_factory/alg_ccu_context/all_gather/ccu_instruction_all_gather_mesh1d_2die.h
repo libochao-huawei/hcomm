@@ -71,13 +71,18 @@ public:
         rankId_ = rankId;
         inputAddr_ = inputAddr;
         outputAddr_ = outputAddr;
-        sliceSize_ = sliceSize;
         token_ = token;
         outputSliceStride_ = outputSliceStride;
         withMyRank_ = withMyRank;
         op_ = op;
         tempVTopo_ = tempVTopo;
+        sliceSize_ = sliceSize;
         return;
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::string Describe() const override
@@ -85,14 +90,9 @@ public:
         return StringFormat("CcuInstructionAllGatherMesh1D2Die rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    CcuInstType GetInstType() const override 
+    { 
+        return instType_; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
