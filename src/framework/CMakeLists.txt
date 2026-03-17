@@ -69,7 +69,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/
     ${HCCL_BASE_DIR}/framework/communicator/impl/resource_manager
     ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service
-    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy_memory_agent
+    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
@@ -684,7 +684,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/hcom
         ${HCCL_BASE_DIR}/framework/communicator/impl/
         ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service/
-        ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy_memory_agent
+        ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy
         ${HCCL_BASE_DIR}/framework/communicator/impl/resource_manager
         ${HCCL_BASE_DIR}/framework/op_base/src/
         ${HCCL_BASE_DIR}/framework/device/
