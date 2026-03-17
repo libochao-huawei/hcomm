@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#ifndef AIV_ALL_2_ALL_V_910B_H
+#define AIV_ALL_2_ALL_V_910B_H
+
 #include "aiv_communication_base.h"
 
 using namespace AscendC;
@@ -212,3 +215,5 @@ __aicore__ inline void aiv_all_to_all_vc_910b(EXTERN_KERNEL_ARGS_DEF)
     op.Process<T>(input, output, tag, bufferSize, extraArgs);
     op.TailCounter();
 }
+
+#endif  /* AIV_ALL_2_ALL_V_910B_H */

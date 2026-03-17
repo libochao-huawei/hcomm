@@ -86,7 +86,7 @@ set(src_list_alg
     ${HCOMM_CODE_ALGORITHM}/impl/coll_executor/coll_comm_executor.cc
     ${HCOMM_CODE_ALGORITHM}/impl/coll_executor/alg_profiling.cc
 
-    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/aiv_communication.h
+    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_communication.h
 
     ${ALL_REDUCE_EXECUTOR}
     ${ALL_REDUCE_EXECUTOR_310P}
@@ -119,7 +119,7 @@ set(src_list_alg
 add_library(hccl_alg_test SHARED ${src_list_alg})
 
 set_source_files_properties(
-    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/aiv_communication.h PROPERTIES
+    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_communication.h PROPERTIES
     LANGUAGE CXX
     COMPILE_OPTIONS "-std=c++17"
 )

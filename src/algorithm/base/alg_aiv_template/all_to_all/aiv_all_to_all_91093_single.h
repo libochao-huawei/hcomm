@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#ifndef AIV_ALL_2_ALL_91093_SINGLE_H
+#define AIV_ALL_2_ALL_91093_SINGLE_H
+
 #include "aiv_communication_base.h"
 
 using namespace AscendC;
@@ -191,3 +194,5 @@ __aicore__ inline void sk_all_to_all_91093_single(SUPERKERNEL_ARGS_DEF)
     #else
     #endif
 }
+
+#endif  /* AIV_ALL_2_ALL_91093_SINGLE_H */
