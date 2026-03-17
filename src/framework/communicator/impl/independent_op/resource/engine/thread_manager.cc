@@ -256,6 +256,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
     CHK_RET(CheckThreadNum(engine, threadNum, notifyNumPerThread));
     std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(threadNum);
+    HcclResult ret = HCCL_SUCCESS;
     DevType decType;
     CHK_RET(hrtGetDeviceType(decType));
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
@@ -290,7 +291,6 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         StreamType streamType; 
         CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType)); 
         CHK_RET(CommEngineToStreamType(engine, streamType)); 
-        HcclResult ret = HCCL_E_INTERNAL; 
 
         for (uint32_t i = 0; i < threadNum; ++i) {	 
             std::shared_ptr<Thread> handle; 

@@ -92,6 +92,19 @@ HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuIndopProcess::RegisterThreads(ThreadMgrAicpuParam *param)
+{
+    std::string group = param->hcomId;
+    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+    HcclResult ret = collCommAicpuMgr->RegisterThreads(param);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuIndopProcess][AicpuIndOpThreadInit]errNo[0x%016llx] Failed to init threads group[%s]",
+        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+    AicpuReleaseCommMgrbyGroup(group);
+    return HCCL_SUCCESS;
+}
+
 CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &group)
 {
     auto startTime = std::chrono::steady_clock::now();

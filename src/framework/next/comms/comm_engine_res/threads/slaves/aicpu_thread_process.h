@@ -22,6 +22,9 @@ public:
     static HcclResult InitThreads(ThreadMgrAicpuParam *param);
     static HcclResult AicpuThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuThreadDestroy(ThreadMgrAicpuParam *param);
+    static std::vector<std::shared_ptr<hccl::Thread>> GetThreadMap() {
+        return threads_;
+    }
 private:
     static std::mutex mutex_;
     static std::vector<std::shared_ptr<hccl::Thread>> threads_;
