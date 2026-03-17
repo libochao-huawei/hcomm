@@ -124,11 +124,11 @@ typedef enum {
 constexpr uint32_t COMM_ADDR_EID_LEN = 16;
 typedef struct {
     CommAddrType type;         ///< 通信地址类别
+    uint32_t id;               ///< 标识
     union {
         uint8_t raws[36];      ///< 通用数据
         struct in_addr addr;   ///< IPv4地址结构
         struct in6_addr addr6; ///< IPv6地址结构
-        uint32_t id;           ///< 标识
         uint8_t eid[COMM_ADDR_EID_LEN];  ///< EID地址类型
     };
 } CommAddr;
