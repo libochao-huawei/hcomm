@@ -12,6 +12,7 @@
 #include "invalid_params_exception.h"
 #include "exception_util.h"
 #include "exchange_ipc_notify_dto.h"
+#include "dev_capability.h"
 namespace Hccl {
 
 IpcRemoteNotify::IpcRemoteNotify() : BaseRemoteNotify(RmaType::IPC)
@@ -27,6 +28,7 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
     devUsed    = dto.devUsed;
     (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
 
+    // OpenIpc
     u32 myPid = HrtDeviceGetBareTgid();
     if (rmtPid == myPid) {
         handle = reinterpret_cast<void *>(handleAddr);
@@ -37,6 +39,8 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
             handle = HrtIpcOpenNotify(name);
         }
     }
+    addr = HrtNotifyGetAddr(handle);
+    size = DevCapability::GetInstance().GetNotifySize();
 }
 
 void IpcRemoteNotify::Post(const Stream &stream) const

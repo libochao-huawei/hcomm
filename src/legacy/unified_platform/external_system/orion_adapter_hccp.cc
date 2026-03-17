@@ -703,6 +703,42 @@ void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist
     HCCL_INFO("[HrtRaSocketWhiteListDel] Success. Total delete num[%llu]", wlists.size());
 }
 
+std::mutex g_deviceVnicIpMutex;
+std::map<u32, IpAddress> g_deviceIdVnicInfoMap;   // 记录deviceid和vnic ip的关系，用于server内查询，避免重复查询
+
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{
+    std::lock_guard<std::mutex> lock(g_deviceVnicIpMutex);
+    auto iter = g_deviceIdVnicInfoMap.find(deviceId);
+    if (iter != g_deviceIdVnicInfoMap.end()) {
+        // 缓存查找到，直接从缓存获取
+        vnicIP = iter->second;
+        HCCL_INFO("[HrtRaSocketGetVnicIpInfos] vnicInfoMap deviceId[%u] found, Ip[%s]",
+            deviceId, vnicIP.Describe().c_str());
+        return;
+    }
+    struct IpInfo vnicIpInfo;
+    (void)memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
+    IdType idType = static_cast<IdType>(deviceIdType);
+    auto ret = RaSocketGetVnicIpInfos(phyId, idType, &deviceId, 1, &vnicIpInfo);
+    if (ret != 0) {
+        HCCL_ERROR("[hrtRaGetSocketVnicIpInfo]ra get VnicIpfail. ret[%d]", ret);
+        throw NetworkApiException(StringFormat("call hrtRaGetSocketVnicIpInfo failed, ret=%llu", ret));
+    }
+    BinaryAddr temp;
+    temp.addr = vnicIpInfo.ip.addr;
+    temp.addr6 = vnicIpInfo.ip.addr6;
+    IpAddress ipInfo(temp, vnicIpInfo.family);
+    if (ipInfo.IsInvalid()) {
+        HCCL_ERROR("vnicIp is invalid.");
+        throw NetworkApiException("vnicIp is invalid.");
+    }
+    g_deviceIdVnicInfoMap.insert({ deviceId, ipInfo });
+    vnicIP = ipInfo;
+    HCCL_INFO("[hrtRaGetSocketVnicIpInfos] add vnicInfoMap, deviceIds[%u], Ip[%s]",
+        deviceId, vnicIP.Describe().c_str());
+}
+
 static u32 HrtGetIfNum(struct RaGetIfattr &config)
 {
     HCCL_INFO("[HrtGetIfNum] Input params: phyId=%u, nicPosistion=%u", config.phyId, config.nicPosition);

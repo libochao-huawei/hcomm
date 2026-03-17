@@ -2023,6 +2023,9 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInf
     return HCCL_SUCCESS;
 }
 
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{}
+
 extern "C" {
 aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback) 
 {

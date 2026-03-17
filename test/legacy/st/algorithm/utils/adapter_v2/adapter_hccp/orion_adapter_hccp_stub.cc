@@ -140,5 +140,8 @@ void RaUbFreeTokenIdHandle(RdmaHandle handle, TokenIdHandle tokenIdHandle)
     (void)tokenIdHandle;
 }
 
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{}
+
 }
 
