@@ -135,6 +135,21 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
+HcclResult CollCommAicpu::RegisterThreads(ThreadMgrAicpuParam *param)
+{
+    u32 threadNum = param->threadNum;
+    std::vector<Thread*> outThreads;
+    outThreads.reserve(threadNum);
+    std::string hcomId(param->hcomId);
+    ThreadHandle * threadHandles = reinterpret_cast<ThreadHandle*>(param->threadHandles);
+    for (size_t i = 0; i < threadNum; ++i) {
+        CHK_RET(RegisterThreadAddDfxTaskInfo(threadHandles[i]));
+    }
+    HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
+        __func__, hcomId.c_str(), threadNum);
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread) 
 {
     int32_t ret = HcommThreadRegisterDfx(thread, dfx_.GetCallback());

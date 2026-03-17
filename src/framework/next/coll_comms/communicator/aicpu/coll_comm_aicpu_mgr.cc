@@ -33,6 +33,12 @@ HcclResult CollCommAicpuMgr::InitThreads(ThreadMgrAicpuParam *param)
     return collCommAicpu_->InitThreads(param);
 }
 
+HcclResult CollCommAicpuMgr::RegisterThreads(ThreadMgrAicpuParam *param)
+{
+    CHK_PTR_NULL(collCommAicpu_);
+    return collCommAicpu_->RegisterThreads(param);
+}
+
 HcclResult CollCommAicpuMgr::AllocChannelResource(HcclChannelUrmaRes *commParam)
 {
     CHK_PTR_NULL(collCommAicpu_);

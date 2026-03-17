@@ -10,4 +10,3 @@
 
 add_subdirectory(aicpu)
 add_subdirectory(host)
-

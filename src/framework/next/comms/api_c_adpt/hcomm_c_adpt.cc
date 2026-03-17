@@ -17,7 +17,6 @@
 #include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
-#include "thread.h"
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
@@ -718,5 +717,27 @@ HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHa
 
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    std::shared_ptr<hccl::Thread> threadPtr;
+    CHK_RET(hccl::GetThread(thread, threadPtr));
+    CHK_PTR_NULL(threadPtr);
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        if (infoLen != sizeof(ThreadResTypeStream)) {
+            HCCL_ERROR("[%s] failed. infoLen[%u] is mismatch sizeof(ThreadResTypeStream)[%zu]", 
+                       __func__, infoLen, sizeof(ThreadResTypeStream));
+            return HCCL_E_PARA;
+        }
+        CHK_PTR_NULL(threadPtr->GetStream());
+        ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
+        CHK_PTR_NULL(stream);
+        *info = stream;
+    } else {
+        HCCL_ERROR("[%s] failed. resType[%d] is not supported.", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
     return HCCL_SUCCESS;
 }

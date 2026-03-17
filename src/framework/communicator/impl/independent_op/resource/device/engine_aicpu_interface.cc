@@ -30,6 +30,19 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
 }
 
+__attribute__((visibility("default"))) uint32_t RunAicpuRegisterThreads(void *args)
+{
+    CHK_PTR_NULL(args);
+    uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
+    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(devAddr);
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    HCCL_INFO("[RunAicpuIndOpThreadInit] group[%s], threadNum[%u], deviceType[%u]",
+            param->hcomId, param->threadNum, devType);
+    return AicpuIndopProcess::RegisterThreads(param);
+    
+}
+
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
 {
     CHK_PTR_NULL(args);

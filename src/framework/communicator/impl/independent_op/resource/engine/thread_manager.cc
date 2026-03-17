@@ -13,6 +13,7 @@
 #include "aicpu_launch_manager.h"
 #include "aicpu_operator_pub.h"
 #include "independent_op.h"
+#include "hcomm_c_adpt.h"
 
 namespace hccl {
 
@@ -20,6 +21,16 @@ namespace hccl {
 ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, 
     aclrtBinHandle binHandle, const ManagerCallbacks& callbacks) : threadNum_(threadNum), notifyNumPerThread_(notifyNumPerThread), 
     commId_(commId), binHandle_(binHandle), callbacks_(callbacks){}
+
+ThreadMgr::~ThreadMgr(){
+    if (threadHandles_.empty()) {
+        return;
+    }
+    HcclResult ret = HcommThreadFree(threadHandles_.data(), threadHandles_.size());
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[ThreadMgr]failed to free thread, ret[%d]", ret);
+    }
+}
 
 uint64_t ThreadMgr::GetMaxNotifyTotal()
 {
@@ -245,75 +256,92 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
     }
 
     CHK_RET(CheckThreadNum(engine, threadNum, notifyNumPerThread));
-
-    NotifyLoadType notifyLoadType;
-    StreamType streamType;
-    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
-    CHK_RET(CommEngineToStreamType(engine, streamType));
     std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(threadNum);
-    HcclResult ret = HCCL_E_INTERNAL;
-
-    for (uint32_t i = 0; i < threadNum; ++i) {
-        std::shared_ptr<Thread> handle;
-        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
-                __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
-        CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
-        ret = handle->Init();
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] Failed to init thread index %u", i);
-            return ret;
-        }
-        usedNotifyNum_ += notifyNumPerThread;
-        newThreads.emplace_back(std::move(handle));
-    }
-
-    // thread资源 AICPU侧展开
-    std::unique_ptr<ThreadHandle[]> hostHandle;
+    HcclResult ret = HCCL_SUCCESS;
+    DevType decType;
+    CHK_RET(hrtGetDeviceType(decType));
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         if (!callbacks_.getAicpuCommState()) {
-            HCCL_INFO("ThreadMgr::HcclAllocThreadRes kernelLaunchAicpuCommInit start");
-            HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
+            HCCL_INFO("[ThreadMgr][%s] kernelLaunchAicpuCommInit start", __func__);
+            ret = callbacks_.kernelLaunchAicpuCommInit();
             CHK_PRT_RET(ret != HCCL_SUCCESS, 
-                HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
+                HCCL_ERROR("[ThreadMgr][%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
             callbacks_.setAicpuCommState(true);
         }
-
-        EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
-            return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch start");
-        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch end");
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] AiCpuKernelLaunch failed, return [%d].", ret), ret);
-        for (size_t i = 0; i < newThreads.size(); ++i) {
-            threads[i] = hostHandle[i];
-            HCCL_INFO("[ThreadMgr][%s] aicpu threadArray[%u] = [%lu]", __func__, i, threads[i]);
+    }
+    if (decType == DevType::DEV_TYPE_950) {
+        CHK_RET(HcommThreadAlloc(engine, threadNum, notifyNumPerThread, threads));
+        for (uint32_t i = 0; i < threadNum; ++i) {
+            usedNotifyNum_ += notifyNumPerThread;
+            std::shared_ptr<Thread> newThread = nullptr;
+            CHK_RET(GetThread(threads[i], newThread));
+            newThreads.emplace_back(newThread);
+        }
+        if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+            HCCL_DEBUG("[ThreadMgr][%s] ThreadKernelLaunch start", __func__);
+            ret = AicpuLaunchMgr::ThreadKernelLaunchForCommV2(threads, threadNum, commId_, binHandle_);
+            HCCL_DEBUG("[ThreadMgr][%s] ThreadKernelLaunch end", __func__);
+            for (size_t i = 0; i < newThreads.size(); ++i) {
+                ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>(newThreads[i].get());
+                newThreads[i]->AddThreadHandleToMap(engine, threads[i]);
+                threadHandleOthersToCpu_[threads[i]] = cpuTsHandle;
+            }
         }
     } else {
-        for (size_t i = 0; i < newThreads.size(); ++i) {
-            threads[i] = reinterpret_cast<ThreadHandle>(newThreads[i].get());
-            HCCL_INFO("[ThreadMgr][%s] host threadArray[%u] = [%lu]", __func__, i, threads[i]);
+        NotifyLoadType notifyLoadType;
+        StreamType streamType; 
+        CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType)); 
+        CHK_RET(CommEngineToStreamType(engine, streamType)); 
+
+        for (uint32_t i = 0; i < threadNum; ++i) {	 
+            std::shared_ptr<Thread> handle; 
+            HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]", 
+                    __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType)); 
+            CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle)); 
+            ret = handle->Init(); 
+            if (ret != HCCL_SUCCESS) { 
+                HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] Failed to init thread index %u", i); 
+                return ret; 
+            } 
+            usedNotifyNum_ += notifyNumPerThread;	 
+            newThreads.emplace_back(std::move(handle));	 
+        }
+
+        // thread资源 AICPU侧展开
+        std::unique_ptr<ThreadHandle[]> hostHandle;
+        if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
+            EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
+                return HCCL_E_PTR);
+            HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch start");
+            ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
+            HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch end");
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] AiCpuKernelLaunch failed, return [%d].", ret), ret);
+            for (size_t i = 0; i < newThreads.size(); ++i) {
+                threads[i] = hostHandle[i];
+                ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>(newThreads[i].get());
+                newThreads[i]->AddThreadHandleToMap(engine, hostHandle[i]);
+                threadHandleOthersToCpu_[hostHandle[i]] = cpuTsHandle;
+                HCCL_INFO("[ThreadMgr][%s] aicpu threadArray[%u] = [%lu]", __func__, i, threads[i]);
+            }
+        } else {	 
+            for (size_t i = 0; i < newThreads.size(); ++i) {	 
+                threads[i] = reinterpret_cast<ThreadHandle>(newThreads[i].get());	 
+                HCCL_INFO("[ThreadMgr][%s] host threadArray[%u] = [%lu]", __func__, i, threads[i]);
+            }
         }
     }
     for (size_t i = 0; i < newThreads.size(); ++i) {
         uint32_t id = newThreads[i]->GetStream()->id();
         HCCL_DEBUG("[%s] thread id = [%u]", __func__, id);
         threadId.push_back(id);
+        threadHandles_.emplace_back(threads[i]);
     }
     threads_.reserve(threads_.size() + newThreads.size());
-    auto threadsIt = threads_.end();
     threads_.insert(threads_.end(),
                     std::make_move_iterator(newThreads.begin()),
                     std::make_move_iterator(newThreads.end()));
-
-    if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        for (u32 i = 0; i < newThreads.size(); ++i, ++threadsIt) {
-            ThreadHandle cpuTsHandle = reinterpret_cast<ThreadHandle>((*threadsIt).get());
-            (*threadsIt)->AddThreadHandleToMap(engine, hostHandle[i]);
-            threadHandleOthersToCpu_[hostHandle[i]] = cpuTsHandle;
-        }
-    }
 
     HCCL_INFO("[ThreadMgr][HcclThreadAcquire] Hcom[%s] HcclThreadAcquire done: engine[%d] threadNum[%u],"
         "notifyPerThread[%u]%s", commId_.c_str(), engine, threadNum, notifyNumPerThread,
