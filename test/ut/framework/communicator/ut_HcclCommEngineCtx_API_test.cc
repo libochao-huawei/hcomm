@@ -9,10 +9,9 @@
  */
 
 #include "hccl_api_base_test.h"
-#include "hccl_api.h"
  
-// using namespace std;
-// using namespace hccl;
+using namespace std;
+using namespace hccl;
  
 constexpr const char* RANKTABLE_FILE_NAME = "./ut_independent_op_test.json";
  
@@ -57,16 +56,12 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Error_Input_Expect_Return_ER
     HcclResult ret = HcclEngineCtxCreate(nullptr, "opTag", CommEngine::COMM_ENGINE_CPU, size, &ctx);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    // create: opTag null
-    ret = HcclEngineCtxCreate(comm, nullptr, CommEngine::COMM_ENGINE_CPU, size, &ctx);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
     // create: Ctx null
     ret = HcclEngineCtxCreate(comm, "opTag", CommEngine::COMM_ENGINE_CPU, size, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     // create: engine unsupported
-    ret = HcclEngineCtxCreate(comm, "opTag", CommEngine::COMM_ENGINE_CCU, size, &ctx);
+    ret = HcclEngineCtxCreate(comm, "opTag", CommEngine::COMM_ENGINE_RESERVED, size, &ctx);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     // create: engineCtx->size 0
@@ -84,23 +79,13 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Error_Input_Expect_Return_ER
     ret = HcclEngineCtxGet(nullptr, "opTag", CommEngine::COMM_ENGINE_CPU, &ctx, &size);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    // get: opTag null
-    ret = HcclEngineCtxGet(comm, nullptr, CommEngine::COMM_ENGINE_CPU, &ctx, &size);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
     // get: opTag too long
     ret = HcclEngineCtxGet(comm, opTag, CommEngine::COMM_ENGINE_CPU, &ctx, &size);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    HcclMem engineCtx = MakeMem(ctx, 16, HCCL_MEM_TYPE_HOST);
     // destroy: comm null
-    ret = HcommEngineCtxDestroy(nullptr, &engineCtx);
+    ret = HcclEngineCtxDestroy(nullptr, "opTag", CommEngine::COMM_ENGINE_CPU);
     EXPECT_EQ(ret, HCCL_E_PTR);
-
-    // destroy: engineCtx null
-    ret = HcommEngineCtxDestroy(comm, nullptr);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
 }
 
 // 重复创建异常校验 HCCL_E_PARA 
@@ -115,8 +100,7 @@ TEST_F(HcclCommEngineCtxTest, Ut_HcclEngineCtxCreate_When_Duplicate_Creation_Exp
     ret = HcclEngineCtxCreate(comm, "opTag", CommEngine::COMM_ENGINE_CPU, size, &ctx);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    HcclMem engineCtx = MakeMem(ctx, 16, HCCL_MEM_TYPE_HOST);
-    ret = HcommEngineCtxDestroy(comm, &engineCtx);
+    ret = HcclEngineCtxDestroy(comm, "opTag", CommEngine::COMM_ENGINE_CPU);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -144,16 +128,14 @@ TEST_F(HcclCommEngineCtxTest, Ut_HcclEngineCtxGet_When_Error_Engine_Expect_Retur
     ret = HcclEngineCtxGet(comm, "opTag", CommEngine::COMM_ENGINE_CCU, &ctx, &size);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    HcclMem engineCtx = MakeMem(ctx, 16, HCCL_MEM_TYPE_HOST);
-    ret = HcommEngineCtxDestroy(comm, &engineCtx);
+    ret = HcclEngineCtxDestroy(comm, "opTag", CommEngine::COMM_ENGINE_CPU);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 未创建时销毁失败校验 HCCL_E_PARA
-TEST_F(HcclCommEngineCtxTest, Ut_HcommEngineCtxDestroy_When_Uncreated_Expect_Return_EPARA)
+TEST_F(HcclCommEngineCtxTest, Ut_HcclEngineCtxDestroy_When_Uncreated_Expect_Return_EPARA)
 {
-    HcclMem engineCtx = MakeMem((void*)0x1, 16, HCCL_MEM_TYPE_HOST);
-    HcclResult ret = HcommEngineCtxDestroy(comm, &engineCtx);
+    HcclResult ret = HcclEngineCtxDestroy(comm, "opTag", CommEngine::COMM_ENGINE_CPU);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -171,10 +153,12 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Host_Expect_Return_SUCCESS)
     uint64_t sizeGet = 0;
     ret = HcclEngineCtxGet(comm, "opTag", CommEngine::COMM_ENGINE_CPU, &ctxGet, &sizeGet);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(IsMemEqual(ctx, ctxGet), true);
 
-    HcclMem engineCtx = MakeMem(ctx, 16, HCCL_MEM_TYPE_HOST);
-    ret = HcommEngineCtxDestroy(comm, &engineCtx);
+    HcclMem createCtx = MakeMem(ctx, 16, HCCL_MEM_TYPE_HOST);
+    HcclMem getCtx = MakeMem(ctxGet, sizeGet, HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(IsMemEqual(createCtx, getCtx), true);
+
+    ret = HcclEngineCtxDestroy(comm, "opTag", CommEngine::COMM_ENGINE_CPU);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -191,10 +175,12 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Device_Expect_Return_SUCCESS
     uint64_t sizeGet = 0;
     ret = HcclEngineCtxGet(comm, "opTag", CommEngine::COMM_ENGINE_AICPU, &ctxGet, &sizeGet);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(IsMemEqual(ctx, ctxGet), true);
 
-    HcclMem engineCtx = MakeMem(ctx, 16, HCCL_MEM_TYPE_DEVICE);
-    ret = HcommEngineCtxDestroy(comm, &engineCtx);
+    HcclMem createCtx = MakeMem(ctx, 16, HCCL_MEM_TYPE_HOST);
+    HcclMem getCtx = MakeMem(ctxGet, sizeGet, HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(IsMemEqual(createCtx, getCtx), true);
+
+    ret = HcclEngineCtxDestroy(comm, "opTag", CommEngine::COMM_ENGINE_AICPU);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

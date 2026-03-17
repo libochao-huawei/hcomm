@@ -9,10 +9,9 @@
  */
 
 #include "hccl_api_base_test.h"
-#include "hccl_api.h"
  
-// using namespace std;
-// using namespace hccl;
+using namespace std;
+using namespace hccl;
  
 constexpr const char* RANKTABLE_FILE_NAME = "./ut_independent_op_test.json";
  

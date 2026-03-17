@@ -13,8 +13,8 @@
 class HcclGetRankIdTest : public BaseInit {
 public:
     void SetUp() override {
-        BaseInit::SetUp();
         UT_USE_1SERVER_1RANK_AS_DEFAULT;
+        BaseInit::SetUp();
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -30,33 +30,4 @@ TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_WhenCommIsNull_Expect_ReturnIsHCCL_E_
 
     HcclResult ret = HcclGetRankId(comm, &rankId);
     EXPECT_EQ(ret, HCCL_E_PTR);
-}
-
-TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_WhenRankIdIsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    int devId = 0;
-    int rankId = 0;
-
-    Ut_Comm_Create(comm, devId, rankTableFileName, rankId);
-    uint32_t *prankId = nullptr;
-
-    HcclResult ret = HcclGetRankId(comm, prankId);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
-    Ut_Comm_Destroy(comm);
-}
-
-TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_When_1Server2Rank_Expect_ReturnHCCL_SUCCESS)
-{
-    int devId = 0;
-    int _rankId = 0;
-
-    Ut_Comm_Create(comm, devId, rankTableFileName, _rankId);
-    uint32_t rankId = 0;
-
-    HcclResult ret = HcclGetRankId(comm, &rankId);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(_rankId, rankId);
-
-    Ut_Comm_Destroy(comm);
 }

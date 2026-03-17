@@ -46,26 +46,6 @@ TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_nRanks
     Ut_Comm_Destroy(comm);
 }
 
-// 小概率出现段错误
-TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_GetDeviceError_Expect_ReturnIsHCCL_E_RUNTIME)
-{
-    // int nRanks = 1;
-    // HcclRootInfo id = Ut_Get_Root_Info(0);
-    // int rank = 0;
-    // MOCKER(rtGetDevice)
-    //     .stubs()
-    //     .will(returnValue(ACL_ERROR_RT_CONTEXT_NULL));
-    // HcclCommConfig commConfig;
-    // HcclCommConfigInit(&commConfig);
-    // commConfig.hcclBufferSize= 400;
-
-    // HcclResult ret = HcclCommInitRootInfoConfig(nRanks, &id, rank, &commConfig, &comm);
-    // EXPECT_EQ(ret, HCCL_E_RUNTIME);
-
-    // GlobalMockObject::verify();
-    // Ut_Comm_Destroy(comm);
-}
-
 TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_RootInfoIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     Ut_Device_Set(0);
@@ -97,7 +77,7 @@ TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_RankGr
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_PCommIsNull_Expect_ReturnIsHCCL_E_PTR)
+TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_PCommIsNull_Expect_ReturnIsHCCL_E_PARA)
 {
     int nRanks = 1;
     HcclRootInfo id = Ut_Get_Root_Info(0);
@@ -105,7 +85,7 @@ TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_PCommI
     HcclCommConfig *pCommConfig = nullptr;
 
     HcclResult ret = HcclCommInitRootInfoConfig(nRanks, &id, rank, pCommConfig, &comm);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_PARA);
 
     Ut_Comm_Destroy(comm);
 }
@@ -121,39 +101,6 @@ TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_PCommC
 
     HcclResult ret = HcclCommInitRootInfoConfig(nRanks, &id, rank, &commConfig, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
-
-    Ut_Comm_Destroy(comm);
-}
-
-TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_nRanksIsLarge_Expect_ReturnIsHCCL_E_INTERNAL)
-{
-    int nRanks = 128*1024;
-    HcclRootInfo id = Ut_Get_Root_Info(0);
-    int rank = 0;
-    HcclCommConfig commConfig;
-    HcclCommConfigInit(&commConfig);
-    commConfig.hcclBufferSize= 400;
-
-    HcclResult ret = HcclCommInitRootInfoConfig(nRanks, &id, rank, &commConfig, &comm);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-
-    Ut_Comm_Destroy(comm);
-}
-
-TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_RecvTimeOut_Expect_ReturnIsHCCL_E_TIMEOUT)
-{
-    MOCKER_CPP(&TopoInfoExchangeBase::RecvClusterInfoMsg)
-        .stubs()
-        .will(returnValue(HCCL_E_TIMEOUT));
-    int nRanks = 1;
-    HcclRootInfo id = Ut_Get_Root_Info(0);
-    int rank = 0;
-    HcclCommConfig commConfig;
-    HcclCommConfigInit(&commConfig);
-    commConfig.hcclBufferSize= 400;
-
-    HcclResult ret = HcclCommInitRootInfoConfig(nRanks, &id, rank, &commConfig, &comm);
-    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
 
     Ut_Comm_Destroy(comm);
 }

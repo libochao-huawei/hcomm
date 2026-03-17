@@ -11,7 +11,6 @@
 #ifndef HCCL_SERIALIZATION_H
 #define HCCL_SERIALIZATION_H
 
-#include <cstdint>
 #include <algorithm>
 #include <cstdint>
 

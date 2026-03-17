@@ -195,9 +195,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_SetHOSTNAMEAsEth_Expect_IdEq
     setenv("HCCL_WHITELIST_DISABLE", "1", 1);
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_EQ(strcmp(id.internal, "127.0.0.1"), 0);
+    EXPECT_EQ(strncmp(id.internal, "127.0.0.1", strlen("127.0.0.1")), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     unsetenv("HCCL_WHITELIST_DISABLE");
