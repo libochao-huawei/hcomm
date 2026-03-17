@@ -79,7 +79,7 @@ CcuResPack *CcuInstance::GetResPack()
     return resPack_.get();
 }
 
-HcclResult CcuInstance::SaveCcuKernel(const CcuKernelHandle kernelHandle)
+HcclResult CcuInstance::SaveKernel(const CcuKernelHandle kernelHandle)
 {
     EXCEPTION_HANDLE_BEGIN
     kernelHandles_.push_back(kernelHandle);
