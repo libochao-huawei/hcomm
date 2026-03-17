@@ -75,7 +75,7 @@ HcclResult HostCpuRoceChannel::BuildConnection()
         return HCCL_E_INTERNAL);
     CHK_PTR_NULL(conn);
     CHK_RET(conn->Init());
-    Hccl::QpInfo qpInfo = conn->GetQpInfo();
+    Hccl::QpInfo& qpInfo = conn->GetQpInfo();
     qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
     qpInfo.trafficClass = channelDesc_.roceAttr.tc;
     qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
@@ -371,7 +371,7 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
         Hccl::CHECK_NULLPTR(conn,
             Hccl::StringFormat("[HostCpuRoceChannel::%s] failed, connection pointer is nullptr", __func__));
         CHK_RET(conn->ParseRmtExchangeDto(rmtConnDto_));
-        Hccl::QpInfo qpInfo = conn->GetQpInfo();
+        Hccl::QpInfo& qpInfo = conn->GetQpInfo();
         qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
         qpInfo.trafficClass = channelDesc_.roceAttr.tc;
         qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;

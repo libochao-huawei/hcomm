@@ -59,8 +59,8 @@ public:
         return comm_;
     }
 
-    inline CommConfig* GetCommConfig() {
-        return &config_;
+    inline CommConfig& GetCommConfig() {
+        return config_;
     }
     
     // 获取MyRank
