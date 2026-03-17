@@ -34,8 +34,6 @@ class RecordServiceTest : public testing::Test {
 protected:
     void SetUp() override
     {
-
-
         // Create AicpuTsThread via public API (AICPU_TS + TS → handle = AicpuTsThread*)
         ThreadConfig config = {};
         config.notifyNumPerThread = kNotifyNum;
@@ -44,9 +42,10 @@ protected:
         ASSERT_EQ(ret, HCCL_SUCCESS);
         allHandles_.push_back(dstThreadHandle_);
 
-        auto *tsThread = reinterpret_cast<AicpuTsThread *>(dstThreadHandle_);
-        tsThread->devType_ = DevType::DEV_TYPE_950;
-        tsThread->pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+        auto *tsThreadEntPtr = reinterpret_cast<ThreadEntity *>(dstThreadHandle_);
+        auto *tsThreadDevPtr = reinterpret_cast<AicpuTsThread *>(tsThreadEntPtr->threadObjAddr);
+        tsThreadDevPtr->devType_ = DevType::DEV_TYPE_950;
+        tsThreadDevPtr->pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
 
         // Fill default valid args
         memset(&args_, 0, sizeof(args_));
@@ -57,6 +56,7 @@ protected:
 
     void TearDown() override
     {
+        delete reinterpret_cast<ThreadEntity *>(dstThreadHandle_); // Clean up new ThreadEntity in GetThreadEntity
         if (!allHandles_.empty()) {
             HcommThreadFree(allHandles_.data(), allHandles_.size());
             allHandles_.clear();
