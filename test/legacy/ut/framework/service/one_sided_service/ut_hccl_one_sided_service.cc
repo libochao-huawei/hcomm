@@ -203,8 +203,8 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));  
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtStreamGetCqId).stubs().will(returnValue(static_cast<u32>(0)));
-    MOCKER(HrtNotifyRecord).stubs().will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtNotifyWaitWithTimeOut).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtNotifyRecord).stubs();
+    MOCKER(HrtNotifyWaitWithTimeOut).stubs();
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     RankId RankIdA = 0;

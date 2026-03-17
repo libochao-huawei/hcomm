@@ -746,8 +746,8 @@ TEST_F(CollServiceDefaultImplTest, col_service_default_impl_update_ub_ci_if_need
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
-    MOCKER(HrtEventDestroy).stubs().will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtEventRecord).stubs().will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtEventDestroy).stubs();
+    MOCKER(HrtEventRecord).stubs();
     u32 remoteRank = 1;
     CommunicatorImpl comm;
     CollOpParams collOpParams;

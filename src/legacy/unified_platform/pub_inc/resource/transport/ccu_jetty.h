@@ -16,9 +16,6 @@
 #include "ip_address.h"
 #include "ccu_dev_mgr.h"
 #include "orion_adapter_hccp.h"
-#include "hccp_ctx.h"
-#include "rdma_handle_manager.h"
-#include "local_ub_rma_buffer.h"
 
 namespace Hccl {
 class CcuJetty final {
@@ -49,40 +46,11 @@ public:
     }
     HcclResult Clean();
     void GetJettyInfo(ConnJettyInfo& connJettyInfo);
-
     static HcclResult Create(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
-                        std::unique_ptr<CcuJetty> &ccuJetty) {
-        auto tmp = std::make_unique<CcuJetty>(ipAddr, jettyInfo);
-        TRY_CATCH_RETURN(tmp->Initialize());
-        ccuJetty = std::move(tmp);
-        return HcclResult::HCCL_SUCCESS;
-    }
+ 	                         std::unique_ptr<CcuJetty> &ccuJetty);
 
 private:
-    void Initialize() {
-        devLogicId_ = HrtGetDevice();
-        uint32_t devPhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
-        auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
-        rdmaHandle_ = rdmaHandleMgr.GetByIp(devPhyId, ipAddr_);
-        CHECK_NULLPTR(rdmaHandle_, "[CcuJetty::Initialize] rdmaHandle_ is nullptr!");
-        const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle_, HrtUbJfcMode::CCU_POLL);
-        const auto &tokenInfo = rdmaHandleMgr.GetTokenIdInfo(rdmaHandle_);
-        const auto tokenIdHandle = tokenInfo.first;
-        const auto tokenValue = GetUbToken();
-        const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        
-        inParam_.sjfcHandle = jfcHandle;
-        inParam_.rjfcHandle = jfcHandle;
-        inParam_.tokenValue = tokenValue;
-        inParam_.tokenIdHandle = tokenIdHandle;
-        inParam_.jettyMode = jettyMode;
-        inParam_.jettyId = jettyInfo_.taJettyId;
-        inParam_.sqBufVa = jettyInfo_.sqBufVa;
-        inParam_.sqBufSize = jettyInfo_.sqBufSize;
-        inParam_.sqeBufIndex = jettyInfo_.wqeBBStartId;
-        inParam_.sqDepth = jettyInfo_.sqDepth;
-    }
-    
+    void Initialize();
     int32_t devLogicId_{0};
     IpAddress ipAddr_{};
     CcuJettyInfo jettyInfo_{};

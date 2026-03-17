@@ -295,7 +295,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtGetNotifyID).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());

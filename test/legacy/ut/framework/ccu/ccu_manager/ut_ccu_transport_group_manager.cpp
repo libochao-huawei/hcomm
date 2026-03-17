@@ -262,8 +262,8 @@ TEST_F(CcuTransportGroupMgrTest, Test_CcuTransportGroupMgr_003)
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtNotifyDestroy).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtNotifyDestroy).stubs();
+    MOCKER(HrtGetNotifyID).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
@@ -981,8 +981,8 @@ TEST_F(CcuTransportGroupMgrTest, should_throw_if_transportGroup_init_fail_when_c
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtNotifyDestroy).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
-    MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtNotifyDestroy).stubs().with(any()).will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtGetNotifyID).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
