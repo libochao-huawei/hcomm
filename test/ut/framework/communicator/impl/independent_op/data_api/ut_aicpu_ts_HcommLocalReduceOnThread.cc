@@ -29,10 +29,39 @@ protected:
 
     virtual void SetUp() override
     {
-        std::cout << "A Test case in UtAicpuTsHcommLocalReduceOnThread SetUp" << std::endl;
-        UtAicpuTsBase::SetUp();
+        MOCKER(GetRunSideIsDevice)
+            .stubs()
+            .with(outBound(false))
+            .will(returnValue(HCCL_SUCCESS));
 
-        MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaReduce, HcclResult (Hccl::IAicpuTsThread::*)(uint64_t, uint64_t, uint64_t, uint32_t, uint32_t) const).stubs().will(returnValue(HCCL_SUCCESS));
+        HcclResult ret = HCCL_E_RESERVED;
+        ret = tsThreadHost_.Init();
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+        std::string packedData = tsThreadHost_.GetUniqueId();
+
+        GlobalMockObject::verify();
+
+        MOCKER(GetRunSideIsDevice)
+            .stubs()
+            .with(outBound(true))
+            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetDeviceType)
+            .stubs()
+            .with(outBound(DevType::DEV_TYPE_950))
+            .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaReduce).stubs().will(returnValue(HCCL_SUCCESS));
+
+        tsThreadDevPtr_ = std::make_unique<AicpuTsThread>(packedData);
+        ret = tsThreadDevPtr_->Init();
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+        ret = tsThreadDevPtr_->SetAddTaskInfoCallback(callback_);
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+        ASSERT_NE(tsThreadDevPtr_->GetStreamLitePtr(), nullptr);
+
+        memset(&threadEntity_, 0, sizeof(threadEntity_));
+        threadEntity_.type = THREAD_TYPE_TS;
+        threadEntity_.engine = COMM_ENGINE_AICPU;
+        threadEntity_.threadObjAddr = reinterpret_cast<uint64_t>(tsThreadDevPtr_.get());
     }
 
     virtual void TearDown() override
@@ -41,9 +70,18 @@ protected:
         std::cout << "A Test case in UtAicpuTsHcommLocalReduceOnThread TearDown" << std::endl;
     }
 
-    void *dst = reinterpret_cast<void *>(0x2345);
-    void *src = reinterpret_cast<void *>(0x2345);
-    uint64_t count = 1;
+    AicpuTsThread tsThreadHost_{StreamType::STREAM_TYPE_DEVICE, 1, NotifyLoadType::DEVICE_NOTIFY};
+    std::unique_ptr<AicpuTsThread> tsThreadDevPtr_;
+    using FuncCb = std::function<HcclResult (u32, u32, const Hccl::TaskParam &, u64)>;
+    FuncCb callback_ = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {return HCCL_SUCCESS;};
+    ThreadEntity threadEntity_{};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadEntity_);
+    uint64_t tempDst[6] = {1, 1, 1, 1, 1, 1};
+    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
+    void *dst = reinterpret_cast<void *>(tempDst);
+    void *src = reinterpret_cast<void *>(tempSrc);
+    uint64_t len = sizeof(tempDst);
+    uint64_t count = len / sizeof(tempDst[0]);
     HcommDataType dataType = HCOMM_DATA_TYPE_FP16;
     HcommReduceOp reduceOp = HCOMM_REDUCE_SUM;
     int32_t res{HCCL_E_RESERVED};
