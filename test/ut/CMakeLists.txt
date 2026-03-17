@@ -59,6 +59,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/common/src/onesided_memory_management
     ${HCCL_CODE_ROOT}/src/framework/common/src/order_launch
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/resource_manager
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op
