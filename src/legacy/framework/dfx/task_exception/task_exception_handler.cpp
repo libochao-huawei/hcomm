@@ -100,6 +100,27 @@ TaskExceptionHandlerManager::~TaskExceptionHandlerManager()
     }
 }
 
+static std::pair<u32, u32> GetOpCounter(const TaskInfo& taskInfo)
+{
+    std::pair<float, float> floatCounter;
+    if (taskInfo.dfxOpInfo_ != nullptr &&
+        taskInfo.dfxOpInfo_->headOpCounterAddr_ != 0 &&
+        taskInfo.dfxOpInfo_->tailOpCounterAddr_ != 0) {
+        u64 size = 4;
+        void *headAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->headOpCounterAddr_);
+        void *tailAddr = reinterpret_cast<void *>(taskInfo.dfxOpInfo_->tailOpCounterAddr_);
+        HrtMemcpy(&floatCounter.first, size, headAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+        HrtMemcpy(&floatCounter.second, size, tailAddr, size, RT_MEMCPY_DEVICE_TO_HOST);
+    }
+
+    std::pair<u32, u32> counter;
+    counter.first = static_cast<u32>(floatCounter.first);
+    counter.second = static_cast<u32>(floatCounter.second);
+
+    HCCL_INFO("[GetOpCounter] end, head:%u, tail:%u", counter.first, counter.second);
+    return counter;
+}
+
 static bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
 {
     return exceptionInfo != nullptr && exceptionInfo->expandInfo.type == RT_EXCEPTION_FUSION &&
@@ -329,6 +350,8 @@ void TaskExceptionHandler::ProcessException(rtExceptionInfo_t* exceptionInfo, co
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, para information is %s.", taskInfo.GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
+    auto count = GetOpCounter(taskInfo);
+    HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
 }
 
@@ -514,6 +537,8 @@ void TaskExceptionHandler::ProcessCcuException(const rtExceptionInfo_t* exceptio
         deviceId, taskInfo.GetBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
+    auto count = GetOpCounter(taskInfo);
+ 	HCCL_ERROR("[TaskExceptionHandler]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(count.first), static_cast<u32>(count.second), taskInfo.dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1

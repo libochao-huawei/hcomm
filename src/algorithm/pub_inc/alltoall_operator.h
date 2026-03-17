@@ -54,7 +54,6 @@ public:
     bool IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param);
 
 private:
-    bool IsA3PipelineCondition(const OpParam& param);
     bool IsSatisfyAlltoallPipelineCondition();
     bool IsBufferSatisfyAlltoAllAivCondition(const OpParam& param);
     HcclResult RunAlltoAllVTwoLevelPipeline(DeviceMem &sendBuf, DeviceMem &recvBuf,

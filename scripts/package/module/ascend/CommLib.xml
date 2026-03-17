@@ -109,6 +109,7 @@
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>
+        <file value="libtopoaddrinfo.so" file_type="shared"/>
         <file value="dynamic_mul_int8_v80.o"/>
         <file value="dynamic_minimum_int8_v80.o"/>
         <file value="dynamic_maximum_int8_v80.o"/>

@@ -287,9 +287,10 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
 
     param.kernel.comm.idIndex  = comm->GetIdIndex();
     param.kernel.comm.myRank   = comm->GetMyRank();
-    param.kernel.comm.rankSize  = comm->GetRankSize();
+    param.kernel.comm.rankSize = comm->GetRankSize();
     param.kernel.comm.devType  = comm->GetDevType();
     param.kernel.comm.devPhyId = comm->GetDevicePhyId();
+    param.kernel.comm.opIndex_  = comm->GetOpIndex();
     param.kernel.comm.opCounterAddr = static_cast<u64>(counterBuf->GetAddr());
     auto ret = strcpy_s(param.kernel.comm.commId, sizeof(param.kernel.comm.commId), comm->GetId().data());
     if (ret != EOK) {

@@ -16,7 +16,6 @@
 #include "dlprof_function.h"
 namespace Hccl {
 
-constexpr u64 FOUR_BYTES = 4;
 constexpr u32 ADDR_SIZE = 2;
 
 void CollServiceBase::RegisterOpBufToBufMgr(CollOperator &op)
@@ -278,23 +277,24 @@ void CollServiceBase::AddOpCounterMems()
 {
     HCCL_INFO("[CollServiceBase::%s] start.", __func__);
 
-    u64 size = FOUR_BYTES * 3; // 第一个四字节用于计数加1, 后面两个四字节分别保存headCounter和tailCounter
+    u64 size = 4 * 3; // 第一个四字节用于计数加1, 后面两个四字节分别保存headCounter和tailCounter
     counterBuf = std::make_shared<DevBuffer>(size);
 
     // 初始化第一个四字节置1, 用于计数加1, reduce task add 1
-    u64 srcSize = FOUR_BYTES;
+    u64 srcSize = 4;
     float srcValue = 1; 
     void *srcAddr = reinterpret_cast<void*>(counterBuf->GetAddr());
     HrtMemcpy(srcAddr, srcSize, &srcValue, srcSize, RT_MEMCPY_HOST_TO_DEVICE); 
 
     // 初始化后面两个四字节置0
-    u64 countMemSize = srcSize * 2;
+    u64 countMemSize = srcSize;
     float startValue = 0; // value为0表示从0开始计数
-    void *countAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize);
-    HrtMemcpy(countAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE); 
-
-    HCCL_INFO("[CollServiceBase::%s] end, counterBuf[%llu] srcAddr[%p] countAddr[%p].", __func__,
-        counterBuf->GetAddr(), srcAddr, countAddr);
+    void *headCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize);
+    void *tailCountAddr = reinterpret_cast<void*>(counterBuf->GetAddr() + srcSize * 2);
+    HrtMemcpy(headCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE);
+    HrtMemcpy(tailCountAddr, countMemSize, &startValue, countMemSize, RT_MEMCPY_HOST_TO_DEVICE); 
+    HCCL_INFO("[CollServiceBase::%s] end, counterBuf[%llu] srcAddr[%p] headCountAddr[%p] tailCountAddr[%p].", __func__,
+ 	    counterBuf->GetAddr(), srcAddr, headCountAddr, tailCountAddr);
 }
 
 std::pair<u32, u32> CollServiceBase::GetOpCount()
@@ -302,7 +302,7 @@ std::pair<u32, u32> CollServiceBase::GetOpCount()
     HCCL_INFO("[CollServiceBase::%s] start.", __func__);
 
     std::pair<float, float> floatCounter;
-    u64 size = FOUR_BYTES;
+    u64 size = 4;
     if (counterBuf->GetSize() < size * ADDR_SIZE) {
         THROW<InternalException>("counterBuf size[%zu] is less than %u bytes", counterBuf->GetSize(), size * ADDR_SIZE);
     }
@@ -365,9 +365,14 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
     dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
     dfxOpInfo->algType_ = AlgType::MESH;
-    dfxOpInfo->index_ = comm->GetIdIndex();
+    dfxOpInfo->commIndex_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;
     dfxOpInfo->beginTime_ = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    dfxOpInfo->commId_ = comm->GetId();
+ 	dfxOpInfo->opIndex_ = comm->GetOpIndex();
+ 	u64 size = 4;
+ 	dfxOpInfo->headOpCounterAddr_ = counterBuf->GetAddr() + size;
+ 	dfxOpInfo->tailOpCounterAddr_ = counterBuf->GetAddr() + size * 2;
 
     comm->GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
 }

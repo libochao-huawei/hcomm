@@ -38,6 +38,7 @@ struct HcclAicpuCommunicatorLite {
     HcclAicpuLocBufLite opBaseScratch;
     uint64_t            opCounterAddr;
     char                commId[COMM_NAME_MAX_LENGTH]{0};
+    u32                 opIndex_{0};
 };
 
 struct HcclAicpuOpLite {
