@@ -1,43 +1,34 @@
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
-set(hccl_utest_impl_list
+set(src_to_test_list
     main.cc
-    ut_hccl_impl_common_new.cc
-    # ut_hccl_impl_common.cc
-    # ut_hccl_impl.cc
-    ut_hccl_impl_new.cc
-    # ut_zero_copy_memory_agent.cc
-    ut_preempt_port_manager.cc
-    ut_template_base.cc
-    # ut_netdevice.cc
-    ut_global_mem_mgr.cc
-    ut_global_mem_mgr_multhread.cc
-    ut_local_dispatcher_ctx.cc
+    ut_hccl_one_sided_service.cc
 )
-add_executable(hccl_utest_impl ${hccl_utest_impl_list})
 
-target_include_directories(hccl_utest_impl PRIVATE
+add_executable(hccl_utest_framework_one_sided_service ${src_to_test_list})
+
+#头文件搜索路径
+target_include_directories(hccl_utest_framework_one_sided_service PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/test/ut/framework/communicator
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
 )
 
-target_compile_definitions(hccl_utest_impl PRIVATE
+target_compile_definitions(hccl_utest_framework_one_sided_service PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
-    HALF_T=float
     google=ascend_private
-    CCL_KERNEL
-    CCL_LLT
+    -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hccl_utest_impl PRIVATE
+target_compile_options(hccl_utest_framework_one_sided_service PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -45,11 +36,10 @@ target_compile_options(hccl_utest_impl PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_impl PRIVATE
+target_link_directories(hccl_utest_framework_one_sided_service PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-
-target_link_libraries(hccl_utest_impl PRIVATE
+target_link_libraries(hccl_utest_framework_one_sided_service PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -60,9 +50,9 @@ target_link_libraries(hccl_utest_impl PRIVATE
     -lrt
     -ldl
 )
-add_dependencies(hccl_utest_impl hccl_llt)
+add_dependencies(hccl_utest_framework_one_sided_service hccl_llt)
 
 run_llt_test(
-   TARGET hccl_utest_impl
-   TASK_NUM 1
+    TARGET  hccl_utest_framework_one_sided_service
+    TASK_NUM 1
 )
