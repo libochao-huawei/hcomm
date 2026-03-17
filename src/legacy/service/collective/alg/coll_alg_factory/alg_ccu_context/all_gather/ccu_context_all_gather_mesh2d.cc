@@ -33,10 +33,10 @@ CcuContextAllGatherMesh2D::CcuContextAllGatherMesh2D(const CcuCtxArg &arg, const
     sliceSize_             = CreateVariable();
     firstInOffset_         = CreateVariable();
     firstOutOffset_        = CreateVariable();
-    secondInOutBaseOffset_ = CreateVariable();
-    secondInOutStepOffset_ = CreateVariable();
     goASize_               = CreateGroupOpSize();
     goBSize_               = CreateGroupOpSize();
+    secondInOutBaseOffset_ = CreateVariable();
+    secondInOutStepOffset_ = CreateVariable();
     localAxisSignal_       = CreateMaskSignal();
 
     const CcuCtxArgAllGatherMesh2D *ctxArg = dynamic_cast<const CcuCtxArgAllGatherMesh2D *>(&arg);
@@ -292,9 +292,9 @@ std::vector<uint64_t> CcuContextAllGatherMesh2D::GeneArgs(const CcuTaskArg &arg)
     // input&output&buffer地址
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t outputAddr = taskArg->outputAddr_;
+    uint64_t offset = taskArg->offSet_;
     uint64_t xAxisSize = taskArg->xAxisSize_;
     uint64_t yAxisSize = taskArg->yAxisSize_;
-    uint64_t offset = taskArg->offSet_;
     uint64_t sliceSize = xAxisSize + yAxisSize;
     uint64_t tokenValue  = taskArg->token_;
 

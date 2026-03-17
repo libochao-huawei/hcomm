@@ -71,13 +71,18 @@ public:
         rankId_ = rankId;
         inputAddr_ = inputAddr;
         outputAddr_ = outputAddr;
-        sliceSize_ = sliceSize;
         token_ = token;
         outputSliceStride_ = outputSliceStride;
         withMyRank_ = withMyRank;
         op_ = op;
         tempVTopo_ = tempVTopo;
+        sliceSize_ = sliceSize;
         return;
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::string Describe() const override
@@ -87,12 +92,8 @@ public:
 
     CcuInstType GetInstType() const override
     {
+        HCCL_INFO("CcuInstructionAllGatherMesh1D2Die instype is CCU_ALLGATHER_MESH_1D_2DIE.");
         return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
