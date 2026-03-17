@@ -31,6 +31,7 @@ struct ThreadMgrAicpuParam {
     u32 rsv1;
     s32 deviceLogicId{-1}; // 基础通信使用
     u32 deviceType{0}; // 基础通信使用
+    u64 *threadHandles;
 };
 
 struct NotifyMgrAicpuParam {
@@ -86,6 +87,9 @@ public:
         std::unique_ptr<ThreadHandle[]> &aicpuHandle, aclrtBinHandle binHandle);
     static HcclResult ThreadKernelLaunchDestroy(ThreadHandle *threadHandles, uint32_t listNum, 
         aclrtBinHandle binHandle);
+    static HcclResult ThreadKernelLaunchForCommV2(ThreadHandle* newThreads, uint32_t threadNum,
+        const std::string &commId, aclrtBinHandle binHandle);
+    static HcclResult ThreadKernelLaunchImplV2(ThreadHandle* newThreads, uint32_t threadNum, const ThreadKernelLaunchConfig &config);
     static HcclResult NotifyKernelLaunchAlloc(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const std::string &commId, std::unique_ptr<NotifyHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchFree(std::vector<NotifyHandle> &aicpuNotifys, uint32_t notifyNum,
@@ -93,6 +97,7 @@ public:
     template <typename OpParam>
     static HcclResult KernelLaunchAicpuCustom(OpParam &opParam, std::string kernelName, rtStream_t aicpuInitStream,
         aclrtBinHandle binCustomHandle);
+
 private:
     HcclResult AiCpuStreamAllocAndGet(rtStream_t &aiCpuStream);
     static HcclResult PrepareAicpuNotifyParam(NotifyMgrAicpuParam &opParam, const std::string &commId,
