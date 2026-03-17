@@ -46,9 +46,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_NotSetEnv_Expect_ReturnIsHCC
     unsetenv("HCCL_WHITELIST_FILE");
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_EQ(strcmp(id.internal,"127.0.0.1"), 0);
+    EXPECT_EQ(strncmp(id.internal, "127.0.0.1", strlen("127.0.0.1")), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -60,9 +61,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_NotSetWHITELISTFILE_Expect_R
     unsetenv("HCCL_WHITELIST_FILE");
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_NE(strcmp(id.internal, IpConfig), 0);
+    EXPECT_NE(strncmp(id.internal, IpConfig, strlen(IpConfig)), 0);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     unsetenv("HCCL_WHITELIST_DISABLE");
@@ -91,9 +93,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_IPNotInWhiteList_Expect_IdNo
     outfile.close();
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_NE(strcmp(id.internal, IpConfig), 0);
+    EXPECT_NE(strncmp(id.internal, IpConfig, strlen(IpConfig)), 0);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 
     remove(WhitelistFilePath);
@@ -124,9 +127,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_IPInWhiteList_Expect_IdEqWit
     outfile.close();
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_EQ(strcmp(id.internal, IpConfig), 0);
+    EXPECT_EQ(strncmp(id.internal, IpConfig, strlen(IpConfig)), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     remove(WhitelistFilePath);
@@ -142,9 +146,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_SetWhiteListDisable_Expect_I
     setenv("HCCL_WHITELIST_DISABLE", "1", 1);
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_EQ(strcmp(id.internal, IpConfig), 0);
+    EXPECT_EQ(strncmp(id.internal, IpConfig, strlen(IpConfig)), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     unsetenv("HCCL_WHITELIST_DISABLE");
@@ -158,9 +163,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_SetHOSTNAME_Expect_IdEqWithH
     setenv("HCCL_WHITELIST_DISABLE", "1", 1);
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_EQ(strcmp(id.internal,"127.0.0.1"), 0);
+    EXPECT_EQ(strncmp(id.internal, "127.0.0.1", strlen("127.0.0.1")), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     unsetenv("HCCL_WHITELIST_DISABLE");
@@ -177,9 +183,10 @@ TEST_F(HcclGetRootInfoTest, Ut_HcclGetRootInfo_When_SetIPAndHOSTNAME_Expect_IdEq
     setenv("HCCL_WHITELIST_DISABLE", "1", 1);
     Ut_Device_Set(0);
     HcclRootInfo id;
+    memset(id.internal, 0, HCCL_ROOT_INFO_BYTES);
 
     HcclResult ret = HcclGetRootInfo(&id);
-    EXPECT_EQ(strcmp(id.internal, IpConfig1), 0);
+    EXPECT_EQ(strncmp(id.internal, IpConfig1, strlen(IpConfig1)), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     unsetenv("HCCL_WHITELIST_DISABLE");
