@@ -265,12 +265,9 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         return HCCL_SUCCESS ;
     } else if (isCommon310P3DUO_) {
         algName = "RunAlltoAllVFor310PExecutor";
-    } else if (!useOneLevelAlgorithm && IsSatisfyAlltoallContinuousPipelineCondition(param)) {
-        algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
-        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
-        return HCCL_SUCCESS ;
     } else if (IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
-        isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) || param.aicpuUnfoldMode || deviceType_ == DevType::DEV_TYPE_310P3) {
+        isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) ||
+        (deviceType_ == DevType::DEV_TYPE_910_93 && param.aicpuUnfoldMode) || deviceType_ == DevType::DEV_TYPE_310P3) {
         if (param.supportSymmetricMemory && superPodNum_ == 1 && !GetExternalInputInterHccsDisable()) {
             algName = "RunAlltoAllFullMeshSymmetricMemory";
         } else {
@@ -278,6 +275,10 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         }
         HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
         return HCCL_SUCCESS;
+    } else if (!useOneLevelAlgorithm && IsSatisfyAlltoallContinuousPipelineCondition(param)) {
+        algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
+        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
+        return HCCL_SUCCESS ;
     } else if (IsSatisfyAlltoallPipelineCondition()) {
         algName = "RunAlltoAllVTwoLevelPipeline";
     } else if (SatisfyIntraSuperPod(deviceType_, userRankSize_, useSuperPodMode_, superPodNum_) ||
