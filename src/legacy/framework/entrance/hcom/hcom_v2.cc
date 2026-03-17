@@ -68,6 +68,7 @@ inline Hccl::CollOpParams GetHcclOpParams(void *inputPtr, void *outputPtr, u64 c
     opParams.sendBuf = inputPtr;
     opParams.recvBuf = outputPtr;
     opParams.count = count;
+    opParams.staticShape = true;
     if (dataType != HcclDataType::HCCL_DATA_TYPE_RESERVED) {
         opParams.dataType = HcclDataTypeToDataType(dataType);
     } else {
@@ -1264,6 +1265,18 @@ HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rt
     (void)aiCpuStream;
     HCCL_WARNING("[HcomMc2AiCpuStreamAllocAndGetV2] Not support");
     return HCCL_E_NOT_FOUND;
+}
+
+HcclResult HcomSetAttachedStreamV2()
+{
+    HCCL_RUN_INFO("HcomSetAttachedStreamV2 is not support!");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomReleaseSubCommsV2()
+{
+    HCCL_RUN_INFO("HcomReleaseSubCommsV2 is not support!");
+    return HCCL_SUCCESS;
 }
 
 #ifdef __cplusplus

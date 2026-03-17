@@ -13,6 +13,7 @@ if (DEVICE_MODE)
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
+add_subdirectory(netco)
 
 if (NOT DEVICE_MODE)
     return()
@@ -26,7 +27,7 @@ add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
@@ -42,6 +43,12 @@ target_include_directories(hccp_service.bin PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
 )
+
+if(NOT BUILD_OPEN_PROJECT)
+    target_include_directories(hccp_service.bin PRIVATE
+        ${TOP_DIR}/driver/driver/pkg_inc/
+    )
+endif()
 
 # c_sec、mmpa、unified_dlog动态库搜索路径
 target_link_directories(hccp_service.bin PRIVATE
@@ -92,10 +99,11 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:net_co> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCP_TAR_DIR}
         COMMAND chmod 750 ${HCCP_TAR_DIR}/lib*
         COMMAND chmod 750 ${HCCP_TAR_DIR}/hccp_service.bin
-        COMMENT "Copying rs ra_adp hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"
+        COMMENT "Copying rs ra_adp net_co hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"
     )
 endif()

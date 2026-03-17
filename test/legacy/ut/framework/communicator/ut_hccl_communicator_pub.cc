@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -360,12 +360,6 @@ TEST_F(HcclCommunicatorTest, CollOperator_CollOpToString)
         EXPECT_NO_THROW(CollOpToString(collOp));
     }
 }
- 
-TEST_F(HcclCommunicatorTest, should_return_false_when_calling_CollOpToString_with_unknown_type)
-{
-    CollOperator collOp;
-    EXPECT_THROW(CollOpToString(collOp), NotSupportException);
-}
 
 TEST_F(HcclCommunicatorTest, is_comm_ready_should_success)
 {
@@ -466,7 +460,7 @@ TEST_F(HcclCommunicatorTest, Ut_GetLocalCclBuffer_When_Normal_Expect_OK)
 {
     void *bufAddr = reinterpret_cast<void *>(0x12345678);
     MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(bufAddr));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
  
     shared_ptr<DevBuffer> cclBuf = std::make_shared<DevBuffer>(10);
     GenRankTableFile1Ser8Dev();

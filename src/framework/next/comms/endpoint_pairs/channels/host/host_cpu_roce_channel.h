@@ -102,8 +102,10 @@ private:
     std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
+    uint32_t wqeNum_{0};
 
     std::mutex cq_mutex;
+    std::mutex sendCq_mutex;
 };
 
 } // namespace hcomm

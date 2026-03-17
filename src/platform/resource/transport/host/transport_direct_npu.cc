@@ -857,7 +857,7 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
         u32 rfKey;
     };
     const std::string kernelName = "RunTransportRoceTx";
-    struct ApiParamDef apiParam;
+    struct ApiParamDef apiParam = {};
     MemDetails inputMemDetails;
     MemDetails outputMemDetails;
     CHK_PRT(GetLocalMemDetails(UserMemType::INPUT_MEM, inputMemDetails));
@@ -928,7 +928,7 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
         u32 rfKey;
     };
     const std::string kernelName = "RunTransportRoceRx";
-    struct ApiParamDef apiParam;
+    struct ApiParamDef apiParam = {};
     MemDetails inputMemDetails;
     MemDetails outputMemDetails;
     CHK_PRT(GetLocalMemDetails(UserMemType::INPUT_MEM, inputMemDetails));

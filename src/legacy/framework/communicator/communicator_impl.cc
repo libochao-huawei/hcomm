@@ -60,6 +60,7 @@
 #include "json_parser.h"
 #include "adapter_error_manager_pub.h"
 #include "ccu_context_all_to_all_v_mesh1d.h"
+#include "topo_addr_info.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -151,6 +152,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitHostDeviceSyncNotifyManager();
     InitUbMemoryTransportMgr();
     CollAlgComponentInit(); // 初始化算法组件
+    RegisterAicpuKernel();
     InitCollService();
     InitTraceManager();
     DlProfFunction::GetInstance().DlProfFunctionInit();
@@ -247,6 +249,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             InitTraceManager();
             InitHDCommunicate();
@@ -297,6 +300,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             AppendLocalDieIdForLinks();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             DlProfFunction::GetInstance().DlProfFunctionInit();
             InitMirrorTaskManager();
@@ -356,10 +360,10 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
 void CommunicatorImpl::TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const
 {
     auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], rankInGroup[%d],"
-                             " rankSizeInGroup[%u], devLogicId[%d], streamId[%u], opMode[%s], %s",
+                             " rankSizeInGroup[%u], devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
                              opParams.opType.Describe().c_str(), GetOpBaseOpIndex(), GetId().c_str(),
                              GetMyRank(), GetRankSize(), devLogicId, streamId,
-                             opMode.Describe().c_str(), opParams.Describe().c_str());
+                             opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
     GetTrace().Save(info);
 }
 
@@ -443,16 +447,13 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
     bool canUpdate = superFasterLoad && (commExecuteConfig.accState == AcceleratorState::CCU_MS ||
                         commExecuteConfig.accState == AcceleratorState::CCU_SCHED);
     if (OpType::ALLTOALL == opParams.opType) {
-        ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.all2AllDataDes.sendType),
-                               static_cast<u32>(opParams.all2AllDataDes.sendCount)};
+        ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.all2AllDataDes.sendType), static_cast<u32>(opParams.all2AllDataDes.sendCount)};
     } else if (OpType::ALLTOALLV == opParams.opType) {
         ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.all2AllVDataDes.sendType), 0};
     } else if (OpType::BROADCAST == opParams.opType || OpType::SCATTER == opParams.opType) {
-        ccuParamsMappingKey = {static_cast<u32>(opParams.root), static_cast<u32>(opParams.dataType),
-                               static_cast<u32>(opParams.count)};
+        ccuParamsMappingKey = {static_cast<u32>(opParams.root), static_cast<u32>(opParams.dataType), static_cast<u32>(opParams.count)};
     } else {
-	    ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.dataType),
-	                           static_cast<u32>(opParams.count)};
+	    ccuParamsMappingKey = {static_cast<u32>(opParams.reduceOp), static_cast<u32>(opParams.dataType), static_cast<u32>(opParams.count)};
     }
     auto                   &ccuParamsMapping        = colCcuParamMapping[opParams.opType];
     auto                    ccuParamsMappingKeyIter = ccuParamsMapping.find(ccuParamsMappingKey);
@@ -473,9 +474,11 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         dfxOpInfo->op_           = *GetCurrentCollOperator();
         dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
         dfxOpInfo->algType_      = AlgType::MESH;
-        dfxOpInfo->index_        = GetIdIndex();
+        dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+        dfxOpInfo->commId_       = id;
+        dfxOpInfo->opIndex_      = opIndex;
         GetMirrorTaskManager().SetCurrDfxOpInfo(dfxOpInfo);
         ExecuteFastCcuLaunch(opParams, stream, params);
         ReportProfInfo(beginTime, opParams.staticShape, true);
@@ -539,6 +542,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     auto &opbaseStream = GetStreamManager().opbase;
     auto  mStream      = params.isSlave ? opbaseStream->GetSlave(slaveIndex)->GetPtr() : stream;
     u32   streamNum    = params.count.size();
+    
     if (streamNum > 1) {
         timeout = notifyTimeoutCfg.GetNotifyTimeout();
         mStreamId = params.isSlave ? opbaseStream->GetSlave(slaveIndex++)->GetId() : HrtGetStreamId(mStream);
@@ -576,7 +580,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
                 params.taskParams[i + 1].beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
                 params.taskParams[i + 1].endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->GetIsMaster());
+                FastCcuLaunchSaveDfxTaskInfo(*this, params.taskParams[i + 1], slave->IsMaster());
             }
             else{
                 SuperFastLoad(ccuParams + params.count[i], slave->GetPtr(), params.count[i + 1]);
@@ -622,6 +626,7 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
     collOpIndex++;
     submittedOpCnt = collOpIndex;
     opBaseOpIndex++;
+    opIndex++;
     status = CommStatus::COMM_READY;
 }
 
@@ -739,6 +744,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
+        opIndex++;
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -973,10 +979,10 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         }
 
         auto info = StringFormat("Entry-Hccl(opType[%s]): group[%s], rankInGroup[%d], rankSizeInGroup[%u], "
-                                 "devLogicId[%d], streamId[%u], opMode[%s], %s",
+                                 "devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
                                  currentCollOperator->opType.Describe().c_str(), GetId().c_str(), GetMyRank(),
                                  GetRankSize(), devLogicId, HrtGetStreamId(stream),
-                                 currentCollOperator->opMode.Describe().c_str(), opParams.Describe().c_str());
+                                 currentCollOperator->opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
         GetTrace().Save(info);
         if (isAiv && aivClearEnable) {
             aivOffloadTag = 1;
@@ -993,6 +999,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         ReportProfInfo(beginTime, opParams.staticShape, false);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
+        opIndex++;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
         HCCL_ERROR(e.what());
@@ -1296,7 +1303,24 @@ std::string CommunicatorImpl::GetTopoFilePath() const
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
-    jsonParser.ParseFileToJson(filePath, parseJson);
+    try {
+        jsonParser.ParseFileToJson(filePath, parseJson);
+    } catch (...) {
+        const u32 maxBuffLen = 10 * 1024 * 1024;
+        size_t bufSize;
+        s32 result = TopoAddrInfoGetSize(devPhyId, &bufSize); // 获取rankInfo大小，用于提前分配内存
+        CHK_PRT_THROW(result != 0 || bufSize > maxBuffLen,
+                  HCCL_ERROR("[%s] Get rankinfo size failed.", __func__),
+                  InvalidParamsException, "Get rankinfo size failed.");
+        std::vector<char> buffer(bufSize, '\0');
+        result = TopoAddrInfoGet(devPhyId, buffer.data(), &bufSize);
+        CHK_PRT_THROW(result != 0,
+                  HCCL_ERROR("[%s] Get rankinfo failed.", __func__),
+                  InvalidParamsException, "Get rankinfo failed.");
+        std::string jsonString(buffer.data(), bufSize);
+        // 将生成的info信息转换成json文件
+        parseJson = nlohmann::json::parse(jsonString);
+    }
 
     // parser topo_file_path
     std::string topoFilePath{};
@@ -1331,7 +1355,7 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
 HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort) const
 {
     std::vector<LinkData> fullLinks = GetFullMeshLinks();
-    GetSocketManager().ServerInitAll(fullLinks, linstenPort);
+    TRY_CATCH_RETURN(GetSocketManager().ServerInitAll(fullLinks, linstenPort));
     return HCCL_SUCCESS;
 }
 
@@ -1357,10 +1381,7 @@ void CommunicatorImpl::InitDataBufferManager()
         scratchBufSize = scratchBufSize * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
     }
     // 如果是自定义算子流程，cclBufferSize的大小为2倍
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp != nullptr && strcmp(indOp, "1") == 0) {
-        scratchBufSize = scratchBufSize * INDEPENDENT_OP_BUFFER_SIZE_TIMES;
-    }
+    scratchBufSize = scratchBufSize * INDEPENDENT_OP_BUFFER_SIZE_TIMES;
     cclBufferSize = scratchBufSize;
 
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
@@ -1507,7 +1528,7 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
 
     enableProfilingEnv = hostApiState || nodeState || l0State || l1State || l2State;
 
-    HCCL_RUN_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
+    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
     taskExceptionEnv, hostApiState, nodeState, l0State, l1State, l2State);
 }
 
@@ -1580,9 +1601,15 @@ u32 CommunicatorImpl::GetSubmittedOpCnt() const
 {
     return submittedOpCnt;
 }
+
 u32 CommunicatorImpl::GetOpBaseOpIndex() const
 {
     return opBaseOpIndex;
+}
+
+u32 CommunicatorImpl::GetOpIndex() const
+{
+    return opIndex;
 }
 
 bool CommunicatorImpl::GetOpAiCpuTSFeatureFlag() const
@@ -2133,6 +2160,7 @@ HcclResult CommunicatorImpl::RecoverComm(SnapShotComm &snapShotComm, u32 stepPar
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             SelectCollService();
             InitTraceManager();
@@ -2196,6 +2224,7 @@ HcclResult CommunicatorImpl::RecoverComm(const SnapShotSubComm &snapShotSubComm,
             InitHostDeviceSyncNotifyManager();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
+            RegisterAicpuKernel();
             InitCollService();
             SelectCollService();
             InitTraceManager();
@@ -2454,34 +2483,37 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
 
 HcclResult CommunicatorImpl::NotifyAicpuDestroyComm()
 {
-    if (isAicpuKernelLaunched) {
-        if (kfcControlTransferH2D != nullptr) {
-            KfcCommand opCmd = KfcCommand::DESTROY_AICPU_COMM;
-            HCCL_INFO("[NotifyAicpuDestroyComm] send KfcCommand[%d] begin, which is DESTROY_AICPU_COMM.", opCmd);
-            CHK_RET(kfcControlTransferH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
-            HCCL_INFO("[NotifyAicpuDestroyComm] send KfcCommand[%d] success, which is DESTROY_AICPU_COMM.", opCmd);
-            KfcExecStatus opInfo;
-            auto          timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
-            auto          startTime = std::chrono::steady_clock::now();
-            while (true) {
-                CHK_RET(kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
-                if (opInfo.kfcStatus == KfcStatus::DESTROY_AICPU_COMM_DONE) {
-                    HCCL_INFO("[NotifyAicpuDestroyComm] get KfcStatus[%d], which is DESTROY_AICPU_COMM_DONE",
-                               opInfo.kfcStatus);
-                    return HcclResult::HCCL_SUCCESS;
-                } else {
-                    if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-                        HCCL_WARNING("[NotifyAicpuDestroyComm] Wait suspend response status timeout[%u ms] and get the "
-                                     "opExecStatus is [%u].",
-                                     WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+    if (!isAicpuKernelLaunched) {
+        HCCL_WARNING("[%s] isAicpuKernelLaunched is false", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
 
-                        return HcclResult::HCCL_E_TIMEOUT;
-                    }
-                    continue;
-                }
-            }
+    if (kfcControlTransferH2D == nullptr) {
+        HCCL_WARNING("[%s] kfcControlTransferH2D is null", __func__);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    KfcCommand opCmd = KfcCommand::DESTROY_AICPU_COMM;
+    HCCL_INFO("[%s] send KfcCommand[%d] begin, which is DESTROY_AICPU_COMM.", __func__, opCmd);
+    CHK_RET(kfcControlTransferH2D->Put(0, sizeof(KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
+    HCCL_INFO("[%s] send KfcCommand[%d] success, which is DESTROY_AICPU_COMM.", __func__, opCmd);
+    KfcExecStatus opInfo;
+    auto          timeout   = std::chrono::milliseconds(WAIT_CMD_TIMEOUT);
+    auto          startTime = std::chrono::steady_clock::now();
+    while (true) {
+        CHK_RET(kfcStatusTransferD2H->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
+        if (opInfo.kfcStatus == KfcStatus::DESTROY_AICPU_COMM_DONE) {
+            HCCL_INFO("[%s] get KfcStatus[%d], which is DESTROY_AICPU_COMM_DONE", __func__, opInfo.kfcStatus);
+            return HcclResult::HCCL_SUCCESS;
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_WARNING("[%s] Wait suspend response status timeout[%u ms] and get the "
+                            "opExecStatus is [%u].", __func__,
+                            WAIT_CMD_TIMEOUT, opInfo.kfcStatus);
+            return HcclResult::HCCL_E_TIMEOUT;
         }
     }
+
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -3214,6 +3246,7 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
     }
 
     HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel End", __func__);
+    isDpuKernelLaunched = true;
     return HCCL_SUCCESS;
 }
 
@@ -3392,8 +3425,7 @@ static HcclResult InsertInnerLink(const NetInstance::Path& path, std::vector<Com
         for (LinkProtocol protocol : link.GetLinkProtocols()) {
             CommLink commLink;
             CommLinkInit(&commLink, 1);
-            auto it = protocolMap.find(protocol);
-            CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+            const CommProtocol &commProtocol = LinkProtocolToCommProtocol(protocol);
             commLink.linkAttr.linkProtocol = commProtocol;
             commLink.linkAttr.hop = peer2peer->GetHop();
             commLink.srcEndpointDesc.protocol = commProtocol;
@@ -3440,8 +3472,7 @@ static HcclResult InsertClosLinks(const NetInstance::Path &path, std::vector<Com
     for (LinkProtocol protocol : peer2net->GetLinkProtocols()) {
         CommLink     commLink;
         CommLinkInit(&commLink, 1);
-        auto         it           = protocolMap.find(protocol);
-        CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+        const CommProtocol &commProtocol = LinkProtocolToCommProtocol(protocol);
 
         commLink.linkAttr.linkProtocol = commProtocol;
         commLink.linkAttr.hop = peer2net->GetHop();
@@ -3865,6 +3896,20 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
     }
     HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
     return errorMessage;
+}
+
+
+u32 CommunicatorImpl::GetRankInParentComm() {
+    return static_cast<u32>(rankInParentComm);
+}
+void CommunicatorImpl::RegisterAicpuKernel()
+{
+    aicpuKernelHolder_.Load();
+}
+
+aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelName) const
+{
+    return aicpuKernelHolder_.GetAicpuKernelFuncHandle(kernelName);
 }
 
 } // namespace Hccl

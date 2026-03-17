@@ -15,7 +15,7 @@ namespace hccl {
 class CollRunAlltoAllFullMeshSymmetricMemory : public CollAlltoAllExecutor {
 public:
     CollRunAlltoAllFullMeshSymmetricMemory(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllFullMeshSymmetricMemory() = default;
+    ~CollRunAlltoAllFullMeshSymmetricMemory() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 private:
     HcclResult CalcStreamNum(u32& streamNum) override;
@@ -26,8 +26,8 @@ private:
     HcclResult GetAlltoAllTmpRankSendRecvInfo(const OpParam &param);
     HcclResult GetLocalSendRecvInfoforAlltoall(const OpParam &param);
     HcclResult GetLocalSendRecvInfoforAlltoallVC(const OpParam &param);
-    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
-    HcclResult GetLocalSDMAGroupInfo(u32& devNumInlocalPod, u32& rankIdxInPod);
+    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType) const;
+    HcclResult GetLocalSDMAGroupInfo(u32& devNumInlocalPod, u32& rankIdxInPod) const;
     ZCopySendRecvInfo sendRecvInfo_;
     const ZCopySendRecvInfo *sendRecvInfoPtr = nullptr;
 };

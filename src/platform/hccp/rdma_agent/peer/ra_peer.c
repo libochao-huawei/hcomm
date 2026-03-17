@@ -155,7 +155,7 @@ int RaPeerSocketListenStart(unsigned int devId, struct SocketListenInfoT conn[],
     if (ret == -EEXIST) {
         hccp_info("[listen_start][ra_peer_socket]ra listen start unsuccessful ret(%d)", ret);
     } else if (ret == -EADDRINUSE) {
-        hccp_run_warn("[listen_start][ra_peer_socket]ra listen start unsuccessful ret(%d)", ret);
+        hccp_warn("[listen_start][ra_peer_socket]ra listen start unsuccessful ret(%d)", ret);
     } else if (ret != 0) {
         hccp_err("[listen_start][ra_peer_socket]ra listen start failed ret(%d)", ret);
     }

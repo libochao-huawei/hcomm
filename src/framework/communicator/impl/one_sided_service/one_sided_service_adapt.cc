@@ -68,18 +68,18 @@ HcclResult HcclRemapRegistedMemory(HcclComm *comm, HcclMem *memInfoArray, u64 co
 {
     RPT_INPUT_ERR(comm == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclRemapRegistedMemory", "nullptr", "comm", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(memInfoArray == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclRemapRegistedMemory", "nullptr", "memInfoArray", "non-null pointer"}));
     CHK_PTR_NULL(memInfoArray);
 
     RPT_INPUT_ERR(commSize <= ONE_SIDE_HOST_MEM_ZERO,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcclRemapRegistedMemory", "less than or equal to 0", "commSize", "greater than 0 (positive number)"}));
     CHK_PRT_RET(commSize <= ONE_SIDE_HOST_MEM_ZERO,
@@ -91,7 +91,7 @@ HcclResult HcclRemapRegistedMemory(HcclComm *comm, HcclMem *memInfoArray, u64 co
         HCCL_E_PARA);
     RPT_INPUT_ERR(arraySize <= ONE_SIDE_HOST_MEM_ZERO,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcclRemapRegistedMemory", "less than or equal to 0", "arraySize", "greater than 0 (positive number)"}));
     CHK_PRT_RET(arraySize <= ONE_SIDE_HOST_MEM_ZERO,
@@ -133,17 +133,22 @@ HcclResult HcclRegisterMem(HcclComm comm, u32 remoteRank, int type,
 {
     EXCEPTION_HANDLE_BEGIN
         // 参数校验和适配
-        RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclRegisterMem", "nullptr", "comm", "non-null pointer"}));
         CHK_PTR_NULL(comm);
-        RPT_INPUT_ERR(addr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        RPT_INPUT_ERR(addr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclRegisterMem", "nullptr", "addr", "non-null pointer"}));
         CHK_PTR_NULL(addr);
-        RPT_INPUT_ERR(desc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        RPT_INPUT_ERR(desc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclRegisterMem", "nullptr", "memory description", "non-null pointer"}));
         CHK_PTR_NULL(desc);
-
-        HCCLV2_FUNC_RUN(HcclRegisterMemV2(comm, remoteRank, type, addr, size, desc));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclRegisterMemV2(commV2, remoteRank, type, addr, size, desc));
+            return HCCL_SUCCESS;
+        }());
         u32 localRank = INVALID_VALUE_RANKID;
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         CHK_RET(hcclComm->GetUserRank(localRank));
@@ -187,14 +192,19 @@ HcclResult HcclDeregisterMem(HcclComm comm, HcclMemDesc* desc)
 {
     EXCEPTION_HANDLE_BEGIN
         // 参数校验和适配
-        RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclDeregisterMem", "nullptr", "comm", "non-null pointer"}));
         CHK_PTR_NULL(comm);
-        RPT_INPUT_ERR(desc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclDeregisterMem", "nullptr", "memory description", ""}));
+        RPT_INPUT_ERR(desc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
+        std::vector<std::string>({"HcclDeregisterMem", "nullptr", "memory description", "non-null pointer"}));
         CHK_PTR_NULL(desc);
-
-        HCCLV2_FUNC_RUN(HcclDeregisterMemV2(comm, desc));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclDeregisterMemV2(commV2, desc));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], memDescPtr[%p]", __func__, commIdentifier.c_str(), desc);
@@ -215,24 +225,24 @@ HcclResult HcclExchangeMemDesc(HcclComm comm, u32 remoteRank, HcclMemDescs* loca
         // 参数校验和适配
     RPT_INPUT_ERR(comm == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclExchangeMemDesc", "nullptr", "comm", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(local == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcclExchangeMemDesc", "nullptr", "local memory description", "non-null pointer"}));
     CHK_PTR_NULL(local);
     RPT_INPUT_ERR(remote == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcclExchangeMemDesc", "nullptr", "remote memory description", "non-null pointer"}));
     CHK_PTR_NULL(remote);
     RPT_INPUT_ERR(actualNum == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclExchangeMemDesc", "nullptr", "actualNum", "non-null pointer"}));
     CHK_PTR_NULL(actualNum);
 
@@ -240,7 +250,7 @@ HcclResult HcclExchangeMemDesc(HcclComm comm, u32 remoteRank, HcclMemDescs* loca
     const auto timeoutIsInvalid = timeout <= -2;
     RPT_INPUT_ERR(timeoutIsInvalid,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclExchangeMemDesc",
             std::to_string(timeout),
             "timeout",
@@ -252,8 +262,13 @@ HcclResult HcclExchangeMemDesc(HcclComm comm, u32 remoteRank, HcclMemDescs* loca
             LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
             timeout),
         HCCL_E_PARA);
-
-        HCCLV2_FUNC_RUN(HcclExchangeMemDescV2(comm, remoteRank, local, timeout, remote, actualNum));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclExchangeMemDescV2(commV2, remoteRank, local, timeout, remote, actualNum));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteRank[%u], localMemDescPtr[%p], timeout[%d s], remoteMemDescPtr[%p], "
@@ -281,22 +296,27 @@ HcclResult HcclEnableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc, HcclMe
         // 参数校验和适配
     RPT_INPUT_ERR(comm == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclEnableMemAccess", "nullptr", "comm", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(remoteMemDesc == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcclEnableMemAccess", "nullptr", "remote memory description", "non-null pointer"}));
     CHK_PTR_NULL(remoteMemDesc);
     RPT_INPUT_ERR(remoteMem == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclEnableMemAccess", "nullptr", "remoteMem Param error", "non-null pointer"}));
     CHK_PTR_NULL(remoteMem);
-
-        HCCLV2_FUNC_RUN(HcclEnableMemAccessV2(comm, remoteMemDesc, remoteMem));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclEnableMemAccessV2(commV2, remoteMemDesc, remoteMem));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteMemDescPtr[%p], remoteMemPtr[%p]", __func__, commIdentifier.c_str(), remoteMemDesc,
@@ -318,17 +338,22 @@ HcclResult HcclDisableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc)
         // 参数校验和适配
     RPT_INPUT_ERR(comm == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclEnableMemAccess", "nullptr", "comm", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(remoteMemDesc == nullptr,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>(
             {"HcclEnableMemAccess", "nullptr", "remote memory description", "non-null pointer"}));
     CHK_PTR_NULL(remoteMemDesc);
-
-        HCCLV2_FUNC_RUN(HcclDisableMemAccessV2(comm, remoteMemDesc));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclDisableMemAccessV2(commV2, remoteMemDesc));
+            return HCCL_SUCCESS;
+        }());
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteMemDescPtr[%p]", __func__, commIdentifier.c_str(), remoteMemDesc);
@@ -396,7 +421,13 @@ inline static HcclResult HcclBatchParaCheck(HcclBatchData &paraData, std::string
 HcclResult HcclBatchPut(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, u32 descNum, rtStream_t stream)
 {
     EXCEPTION_HANDLE_BEGIN
-        HCCLV2_FUNC_RUN(HcclBatchPutV2(comm, remoteRank, desc, descNum, stream));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclBatchPutV2(commV2, remoteRank, desc, descNum, stream));
+            return HCCL_SUCCESS;
+        }());
         HcclOneSidedSetIfProfile();
         HcclUs startut = TIME_NOW();
         uint64_t beginTime = hrtMsprofSysCycleTime();
@@ -432,7 +463,13 @@ HcclResult HcclBatchPut(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, 
 HcclResult HcclBatchGet(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, u32 descNum, rtStream_t stream)
 {
     EXCEPTION_HANDLE_BEGIN
-        HCCLV2_FUNC_RUN(HcclBatchGetV2(comm, remoteRank, desc, descNum, stream));
+        HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_PTR_NULL(commV2);
+            CHK_RET(HcclBatchGetV2(commV2, remoteRank, desc, descNum, stream));
+            return HCCL_SUCCESS;
+        }());
         HcclOneSidedSetIfProfile();
         HcclUs startut = TIME_NOW();
         uint64_t beginTime = hrtMsprofSysCycleTime();
@@ -476,7 +513,7 @@ inline static HcclResult HcclMemHandleParamCheck(void *memHandle, const std::str
     const std::string hexStr = ss.str();
     RPT_INPUT_ERR(true,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({funcName, hexStr, "memHandle", "a valid registered memory handle"}));
     HCCL_ERROR("[%s][%s] The parameter memHandle[%p] is invalid.",
         LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -500,7 +537,7 @@ HcclResult HcclRegisterGlobalMem(const HcclMem* mem, void** memHandle)
 {
     EXCEPTION_HANDLE_BEGIN
     // 入参校验
-    RPT_INPUT_ERR(mem == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(mem == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclRegisterGlobalMem", "nullptr", "mem", "non-null pointer"}));
     CHK_PTR_NULL(mem);
 
@@ -542,7 +579,7 @@ inline static HcclResult HcclCommHandleMem(HcclComm comm, void* memHandle, const
 {
     EXCEPTION_HANDLE_BEGIN
     // 入参校验
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({funcName, "nullptr", "comm", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     CHK_RET(HcclMemHandleParamCheck(memHandle, funcName));
@@ -585,16 +622,16 @@ HcclResult HcclCommPrepare(HcclComm comm, const HcclPrepareConfig* prepareConfig
     EXCEPTION_HANDLE_BEGIN
     HcclUs startut = TIME_NOW();
     // 参数校验和适配
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
     std::vector<std::string>({"HcclCommPrepare", "nullptr", "comm", "non-null pointer"}));
-    RPT_INPUT_ERR(prepareConfig == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(prepareConfig == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
     std::vector<std::string>({"HcclCommPrepare", "nullptr", "prepareConfig", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(prepareConfig);
 
     // timeout = 0 表示使用HCCL_CONNECT_TIMEOUT超时时间，timeout=-1 永不超时，其他为合法值
     const auto timeoutIsInvalid = timeout <= -2;
-    RPT_INPUT_ERR(timeoutIsInvalid, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(timeoutIsInvalid, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
     std::vector<std::string>({"HcclCommPrepare", std::to_string(timeout), "prepareConfig",
         "-1(never timeout) or any integer greater than or equal 0"}));
     CHK_PRT_RET(timeoutIsInvalid,

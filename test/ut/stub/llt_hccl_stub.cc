@@ -4626,16 +4626,6 @@ void UtraceDestroy(int32_t handle)
     return;
 }
 
-typedef struct TraceAttr {
-    bool exitSave;          // exec save when AtraceDestroy
-} TraceAttr;
-
-typedef struct TraceGlobalAttr {
-    uint8_t saveMode;   // 0: local save; 1: send to remote and save
-    uint8_t deviceId;   // 0: default; 32~63:vf
-    uint32_t pid;       // 0: default; if saveMode=1, means host pid
-    uint8_t reserve[32];
-} TraceGlobalAttr;
 
 int32_t AtraceCreateWithAttr(int32_t tracerType, const char *objName, const TraceAttr *attr)
 {
@@ -4664,13 +4654,6 @@ int32_t AtraceSetGlobalAttr(const TraceGlobalAttr *attr)
     (void)(attr);
     return 0;
 }
-
-typedef enum TracerType {
-    TRACER_TYPE_SCHEDULE   = 0,
-    TRACER_TYPE_PROGRESS   = 1,
-    TRACER_TYPE_STATISTICS = 2,
-    TRACER_TYPE_MAX,
-} TracerType;
 
 int32_t AtraceSave(TracerType tracerType, bool syncFlag)
 {
@@ -5411,13 +5394,13 @@ const char *aclrtGetSocName()
     return "Ascend910";
 }
 
-ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr) 
+extern "C" ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr)
 {
     sal_memcpy(versionStr, sizeof("8.5.0"), "8.5.0", sizeof("8.5.0"));
-    return ACL_SUCCESS; 
+    return ACL_SUCCESS;
 }
 
-ACL_FUNC_VISIBILITY aclError aclsysGetVersionNum(char* pkgNname, int32_t* versionNum)
+extern "C" ACL_FUNC_VISIBILITY aclError aclsysGetVersionNum(char* pkgNname, int32_t* versionNum)
 {
     *versionNum = 80500;
     return ACL_SUCCESS;
@@ -5481,6 +5464,11 @@ aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, size_t *total)
 {
     *total = 64 * GIGABYTE_TO_BYTE;
     *free = 50 * GIGABYTE_TO_BYTE;
+    return ACL_SUCCESS;
+}
+
+aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, void *ptr)
+{
     return ACL_SUCCESS;
 }
 

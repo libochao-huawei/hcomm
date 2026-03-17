@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
@@ -67,7 +67,7 @@ TEST_F(AllGatherVCCUTest, all_gather_v_ccu_case_test_2rank)
     checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
     checkerOpParam.tag = "AllGatherV";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -95,7 +95,7 @@ TEST_F(AllGatherVCCUTest, all_gather_v_ccu_case_test_4rank)
     checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
     checkerOpParam.tag = "AllGatherV";
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
@@ -136,7 +136,7 @@ TEST_F(AllGatherVCCUTest, allgather_v_ccu_case_test_4rank_auto_test)
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
     checkerOpParam.tag = "AllGatherV";
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
     checkerOpParam.algName = "CcuAllGatherVMesh1D";
 
     u64 randomNumbersIdx = 0;
