@@ -21,6 +21,7 @@
 #include "hccp_ctx.h"
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
+#include "orion_adapter_hccp.h"
  
 int RaCtxQpCreate(void *ctx_handle, struct QpCreateAttr *attr, struct QpCreateInfo *info,
     void **qp_handle)
@@ -110,3 +111,12 @@ int RaGetSecRandom(struct RaInfo *info, uint32_t *value)
 {
     return 0;
 }
+
+namespace Hccl {
+HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
+{
+    (void)info;
+    tlsStatus = TlsStatus::DISABLE;
+    return HCCL_SUCCESS;
+}
+} // namespace Hccl
