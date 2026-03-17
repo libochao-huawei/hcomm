@@ -443,7 +443,7 @@ TEST_F(HcomutCommManagerTest, ut_HcomGetGroupParamsV2_When_Normal_Expect_ReturnI
     groupParamsV2.pComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     std::string strGroup = "group2";
     hcomCommInfoV2.hcclGroupMap.insert(std::make_pair(strGroup, groupParamsV2));
-    HcclGroupParamsTem groupParams;
+    HcclGroupParamsV2 groupParams;
     void *commV2 = nullptr;
     HcclResult ret = HcomGetGroupParamsV2(strGroup.c_str(), static_cast<void*>(&groupParams), &commV2);
     EXPECT_EQ(groupParams.worldRank, 1);
