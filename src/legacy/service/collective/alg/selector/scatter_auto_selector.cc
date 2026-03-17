@@ -60,6 +60,9 @@ SelectorStatus ScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoIn
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "CcuScatterMesh1D";
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][ScatterAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
             }
@@ -106,10 +109,18 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "InsScatterMesh1D";
             } else {
+                if (topoInfo.level0PcieMix) {
+                    // 预留PCIE mix入口，如果要更新算法可以直接改
+                    primQueueGenName = "InsScatterParallelMesh1DNHR";
+                }
                 primQueueGenName = "InsScatterMesh1D";
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
-            primQueueGenName = "InsScatterMesh1D";
+            if (topoInfo.level0PcieMix) {
+                primQueueGenName = "InsScatterNHR";
+            } else {
+                primQueueGenName = "InsScatterMesh1D";
+            }
         } else {
             HCCL_WARNING("[ScatterAutoSelector] topo not match");
             return SelectorStatus::NOT_MATCH;
