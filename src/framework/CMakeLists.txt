@@ -972,7 +972,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         message(STATUS "framework ASCEND_CANN_PACKAGE_ENV_PATH=${ASCEND_CANN_PACKAGE_ENV_PATH}")
         set(CCL_KERNEL_PLF_PATH
             -Wl,--whole-archive
-            ${HCCL_BASE_DIR}/../build/src/libccl_kernel_plf.a
+            ccl_kernel_plf_a
             -Wl,--no-whole-archive
             -Wl,-Bsymbolic
         )
