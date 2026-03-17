@@ -148,7 +148,9 @@ HcclResult AivUbMemTransport::RecvMemInfo()
 HcclResult AivUbMemTransport::RecvDataProcess()
 {
     Hccl::BinaryStream binaryStream(recvData_);
+    EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(binaryStream);
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -158,10 +160,10 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
     rmtRmaBufferVec_.clear();
     u32 vecSize{0};
     binaryStream >> vecSize;
-    CHK_PRT_RET(vecSize > MAX_BUFFER_NUM,
-        HCCL_ERROR("[AivUbMemTransport][RmtBufferUnpackProc] vecSize[%u] exceeds limit[%u]", vecSize, MAX_BUFFER_NUM),
-        HCCL_E_PARA);
     HCCL_RUN_INFO("vecSize=%u", vecSize);
+    if (UNLIKELY(vecSize > MAX_BUFFER_NUM)) {
+        EXCEPTION_THROW_IF_ERR(HCCL_E_PARA, "[AivUbMemTransport][RmtBufferUnpackProc] vecSize exceeds limit.");
+    }
     for (u32 pos = 0; pos < vecSize; ++pos) {
         Hccl::ExchangeIpcBufferDto dto;
         dto.Deserialize(binaryStream);
