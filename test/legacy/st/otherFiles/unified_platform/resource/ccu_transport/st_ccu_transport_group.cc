@@ -368,8 +368,8 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     GenRankTableFile1Ser8Dev();
 
     void *devPtr = nullptr;
-    MOCKER(HrtGetNotifyID).stubs().with(any(), any()).will(returnValue(static_cast<u32>(0)));
-    MOCKER(HrtFree).stubs().with(any(), any()).will(returnValue(static_cast<void*>(0)));
+    MOCKER(HrtGetNotifyID).stubs().with(any()).will(returnValue(static_cast<u32>(0)));
+    MOCKER(HrtFree).stubs();
     MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue(devPtr));
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(commParams.devType));
     MOCKER(HrtMemcpy).stubs().with(any(), any(), any(), any(), any());
@@ -406,7 +406,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     RdmaHandle rdmaHandle = new int(1);
     u32 jettyNum = 1;   // 当前迭代，jettyNum默认为1
     u32 sqSize = 128;   // 当前迭代，默认使用MS，故sqSize固定为128。sqSize就是jetty深度
-    u32 cntCkeId;
+    u32 cntCkeId = 0;
     
     
     MOCKER(CcuDeviceManager::AllocXn).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
