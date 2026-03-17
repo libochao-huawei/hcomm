@@ -103,16 +103,6 @@ public:
             rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgAllGatherMeshDetour1D>(
@@ -125,6 +115,10 @@ public:
             tailOffset_, tailSize_, loopIterNum_, lengths_);
     }
 
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
 private:
     CcuInstType instType_ = CcuInstType::CCU_ALLGATHER_MESH_1D_DETOUR;
     std::vector<uint64_t> dimSize_;

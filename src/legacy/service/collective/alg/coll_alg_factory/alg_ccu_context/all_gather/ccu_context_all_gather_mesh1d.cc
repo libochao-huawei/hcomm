@@ -85,8 +85,8 @@ void CcuContextAllGatherMesh1D::Algorithm()
     }
     src.addr  = input_[0];
     src.token = token_[rankId_];
-    uint32_t dstId = 0;
     uint32_t curId = 0;
+    uint32_t dstId = 0;
     for (uint64_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
         if (rankIdx != rankId_) {
             curId = dstId;
