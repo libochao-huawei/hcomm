@@ -485,7 +485,9 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
             Hccl::RankId rank = static_cast<Hccl::RankId>(groupParams.groupRank);
             CHK_RET(HcomInitCollComm(rank, &commV2, groupParams.pSubComm));
             CHK_PTR_NULL(groupParams.pSubComm);
+            std::unique_lock<std::mutex> groupParaLock(hcomInfo.groupParamsLock);
             hcomInfo.hcomGroupMap.insert(std::make_pair(group, groupParams));
+            groupParaLock.unlock();
             CHK_RET(HcomSetGroupTopoInfo(group, rankNum));
             HCCL_INFO("[HcomCreateGroup] create group[%s] success.", group);
             return HCCL_SUCCESS;
@@ -619,6 +621,7 @@ HcclResult HcomDestroyGroup(const char *group)
                 return HCCL_E_PARA;
             }
             hcomInfo.hcomGroupMap.erase(group);
+            groupParaLock.unlock();
             CHK_RET(HcomDestroyGroupImplV2(group));
             return HCCL_SUCCESS;
         }());
