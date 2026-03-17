@@ -28,8 +28,10 @@ public:
         // 初始化sq和cq
         EXECEPTION_CATCH(
         sendQueue_ = std::make_shared<MsgQueue>(MSG_QUEUE_CAPACITY, sizeof(ThreadMsgEntity)), return HCCL_E_PTR);
+        CHK_RET(sendQueue_->Init());
         EXECEPTION_CATCH(
         completeQueue_ = std::make_shared<MsgQueue>(MSG_QUEUE_CAPACITY, sizeof(ThreadMsgEntity)), return HCCL_E_PTR);
+        CHK_RET(completeQueue_->Init());
         return HCCL_SUCCESS;
     };
     HcclResult ServiceRun() {
@@ -99,7 +101,7 @@ private:
     std::unordered_map<ThreadServiceHandle, ThreadService*> handle2ServiceMap_;
     std::shared_ptr<MsgQueue> sendQueue_;
     std::shared_ptr<MsgQueue> completeQueue_; // RDV - not used yet
-    bool stop_{false};
+    std::atomic<bool> stop_{false};
 };
 
 } // namespace hccl
