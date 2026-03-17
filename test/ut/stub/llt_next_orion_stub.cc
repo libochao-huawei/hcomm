@@ -1240,6 +1240,9 @@ void LocalIpcRmaBuffer::Grant(u32 pid)
 {
 }
 
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)

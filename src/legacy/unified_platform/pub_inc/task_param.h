@@ -107,6 +107,7 @@ struct ParaAiv{
     void* flagMem;
     u64 flagMemSize;
     u32 rank;
+    u32 sendRecvRemoteRank;
     bool isOpbase;
     HcclDataType dataType;
 };

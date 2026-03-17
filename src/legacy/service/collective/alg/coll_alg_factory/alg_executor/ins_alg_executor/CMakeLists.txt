@@ -44,6 +44,9 @@ target_sources(hccl_v2_native_alg_repo PRIVATE
         ins_v2_all_gather_v_sole_executor.cc
         ins_v2_reduce_scatter_v_sole_executor.cc
         ins_scatter_parallel_executor.cc
+        ins_v2_send_executor.cc
+        ins_v2_recv_executor.cc
+        ins_v2_batchSendRecv_executor.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
