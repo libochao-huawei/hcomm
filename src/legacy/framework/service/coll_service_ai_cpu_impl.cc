@@ -287,9 +287,10 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
 
     param.kernel.comm.idIndex  = comm->GetIdIndex();
     param.kernel.comm.myRank   = comm->GetMyRank();
-    param.kernel.comm.rankSize  = comm->GetRankSize();
+    param.kernel.comm.rankSize = comm->GetRankSize();
     param.kernel.comm.devType  = comm->GetDevType();
     param.kernel.comm.devPhyId = comm->GetDevicePhyId();
+    param.kernel.comm.opIndex  = comm->GetOpIndex();
     param.kernel.comm.opCounterAddr = static_cast<u64>(counterBuf->GetAddr());
     auto ret = strcpy_s(param.kernel.comm.commId, sizeof(param.kernel.comm.commId), comm->GetId().data());
     if (ret != EOK) {
@@ -430,20 +431,10 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
-	std::string jsonPath;
-    GetKernelFilePath(jsonPath);
-	jsonPath += "ccl_kernel.json";
-	aclrtBinHandle binHandle;
-	LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle);
-	aclrtFuncHandle funcHandle;
-	constexpr u32 numBlocks = 1;
-	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
-    if(aclRet != ACL_SUCCESS)
-    {
-        THROW<RuntimeApiException>(StringFormat("Call aclrtBinaryGetFunction failed, with ret[%d]", aclRet));
-    }
+    const aclrtFuncHandle funcHandle = comm->GetAicpuKernelFuncHandle(param.kernelName);
     auto& mStream = (opMode == OpMode::OPBASE) ? (*comm->GetAicpuStreamManager().GetFreeStream()) : stream;
     std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
+    constexpr u32 numBlocks = 1;
     HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
 			&param.kernel, sizeof(HcclKernelParamLite));
     HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
@@ -451,7 +442,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
-    SaveDfxTaskInfo(taskParam, -1, mStream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, mStream.IsMaster());
     AddWaitToUserStream(stream);
 }
 
@@ -504,7 +495,7 @@ void CollServiceAiCpuImpl::AddPostToUserStream(const Stream &stream)
     taskParam.taskPara.Notify.notifyID = postNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
  
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, stream.IsMaster());
 }
 
 void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
@@ -525,7 +516,7 @@ void CollServiceAiCpuImpl::AddWaitToUserStream(const Stream &stream)
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     taskParam.taskPara.Notify.notifyID = waitNotify->GetId();
     taskParam.taskPara.Notify.value = 1;
-    SaveDfxTaskInfo(taskParam, -1, stream.GetIsMaster());
+    SaveDfxTaskInfo(taskParam, -1, stream.IsMaster());
 }
 
 void CollServiceAiCpuImpl::AllocWorkStream(u32 primQueueNum) const

@@ -1317,7 +1317,7 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
        16-23代表芯片配置值b10:8s
        24-31代表芯片配置值b11:64s
     */
-    attr.ub.errTimeout       = 0;
+    attr.ub.errTimeout       = 16;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority         = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -1635,7 +1635,7 @@ bool HraGetRtpEnable(RdmaHandle handle)
         const CtxSlInfo &priorityInfo = out.ub.priorityInfo[i];
         HCCL_RUN_INFO("[%s] priorityInfo[%d]: SL[%u] tpType[%u] rtp[%u]",
             __func__, i, priorityInfo.SL, priorityInfo.tpType.value, priorityInfo.tpType.bs.rtp);
-        if (priorityInfo.tpType.bs.rtp == 1 && priorityInfo.SL != 0) {
+        if (priorityInfo.tpType.bs.rtp == 1) {
             return true;
         }
     }
@@ -1863,7 +1863,6 @@ RequestHandle RaSocketListenOneStopAsync(RaSocketListenParam &in)
 
 RaSocketFdHandleParam RaGetOneSocket(u32 role, RaSocketGetParam &param)
 {
-    HCCL_INFO("[RaGetOneSocket] Input params: role=%u, socketHandle=%p, fdHandle=%p, remoteIp=%s, tag=%s", role, param.socketHandle, param.fdHandle, param.remoteIp.Describe().c_str(), param.tag.c_str());
     struct SocketInfoT socketInfo {};
 
     socketInfo.socketHandle = param.socketHandle;

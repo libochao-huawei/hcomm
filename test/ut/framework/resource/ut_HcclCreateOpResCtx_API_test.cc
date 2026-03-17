@@ -35,7 +35,7 @@ HcclResult hrtGetDeviceTypeStub91093(DevType &devType) {
 }
 
 HcclResult hrtGetDeviceTypeStub91095(DevType &devType) {
-    devType = DevType::DEV_TYPE_910_95;
+    devType = DevType::DEV_TYPE_950;
     return HCCL_SUCCESS;
 }
 
@@ -52,6 +52,8 @@ TEST_F(HcclCreateOpResCtxTest, ut_HcclCreateOpResCtx_When_Normal_Expect_ReturnIs
     void * ctx;
 
     MOCKER(hrtGetDeviceType).stubs().will(invoke(hrtGetDeviceTypeStub91093));
+    MOCKER(hrtStreamSetMode).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::AllocComResourceByTiling).stubs().will(returnValue(HCCL_SUCCESS));
 
     HcclResult result = HcclCreateOpResCtxInner(comm, opType, srcDataType, dstDataType, reduceType, count, algConfig, engine, &ctx);
     EXPECT_EQ(result, HCCL_SUCCESS);

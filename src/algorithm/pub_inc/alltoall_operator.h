@@ -28,9 +28,9 @@ public:
     HcclResult GetAlltoAllvcSendRecvInfo(const void *sendCountMatrix, HcclDataType sendType, HcclDataType recvType);
     void UpdateAlltoAllCopyMode(std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo, std::string& copyMode);
     HcclResult SelectAlgforAlltoAll(const OpParam& param, std::string& algName, std::string& copyMode,
-        const ResourceLimit& ResourceLimit);
+        const ResourceLimit& resourceLimit);
     HcclResult SelectAlgforAiv(const OpParam& param, std::string& algName);
-    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag);
+    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag) override;
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag,
         const ResourceLimit& resourceLimit) override;
 

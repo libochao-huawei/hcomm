@@ -11,6 +11,8 @@
 #ifndef RS_RDMA_H
 #define RS_RDMA_H
 
+#include "rs_inner.h"
+
 #define MAX_NOTIFY_SIZE_CLOUD     8192
 #define NOTIFY_NUM_MAX_V2     32768
 #define NOTIFY_NUM_MAX_V3     1048576
@@ -34,4 +36,7 @@ struct RsQpLenInfo {
     uint32_t cmd;
     uint32_t len;
 };
+
+int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
+
 #endif // RS_RDMA_H

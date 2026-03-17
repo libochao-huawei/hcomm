@@ -22,7 +22,7 @@ add_executable(hccl_v2_utest ${HCCL_V2_UTEST_FILES})
 FILE(GLOB_RECURSE ut_sources_list LIST_DIRECTORIES TRUE ${HCCL_LLT_ROOT}/ut)
 
 foreach (dir ${ut_sources_list})
-    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "test/legacy") AND (NOT ${dir} MATCHES "legacy/depends"))
+    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "test/legacy") AND (NOT ${dir} MATCHES "legacy/depends") AND (NOT ${dir} MATCHES "legacy/st/algorithm"))
         target_include_directories(hccl_v2_utest PUBLIC ${dir})
     endif ()
 endforeach ()

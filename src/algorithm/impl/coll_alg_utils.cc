@@ -15,7 +15,7 @@
 
 namespace hccl {
 
-bool IsAlgTypeLevel0Mesh(AlgTypeLevel0 &originalAlgTypeLevel0)
+bool IsAlgTypeLevel0Mesh(const AlgTypeLevel0 &originalAlgTypeLevel0)
 {
     return originalAlgTypeLevel0 == AlgTypeLevel0::ALG_LEVEL0_NP_MESH ||
            originalAlgTypeLevel0 == AlgTypeLevel0::ALG_LEVEL0_4P_MESH ||
@@ -282,7 +282,7 @@ u32 InplaceDataUnitSize(const HcclCMDType &opType, const OpParam &param)
         opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
         if (param.DataDes.dataType >= HCCL_DATA_TYPE_RESERVED) {
             HCCL_WARNING("[InplaceDataUnitSize] out of range[%d, %d]",
-                HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_RESERVED - 1);
+                HCCL_DATA_TYPE_INT8, static_cast<int>(HCCL_DATA_TYPE_RESERVED) - 1);
             return 0;
         }
         unitSize = SIZE_TABLE[param.DataDes.dataType];
@@ -389,7 +389,7 @@ bool ExecutorNoSupportDMAReduce(const std::string& algName)
     return (algName == "AllReduceComm") || (algName == "ReduceScatterComm");
 }
 
-bool ExecutorSupportInPlace(OpParam &param, const std::string& algName, bool retryEnable,
+bool ExecutorSupportInPlace(const OpParam &param, const std::string& algName, bool retryEnable,
     InplaceSupportRetryStatus &inPlaceSupportRetryStatus)
 {
     (void) param;

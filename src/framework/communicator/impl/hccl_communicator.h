@@ -51,7 +51,7 @@
 #include "opretry_manager.h"
 #include "aclgraph/zero_copy_acl_graph.h"
 #include "../nslbdp/hccl_nslbdp.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "independent_op.h"
 #include "comm_config_pub.h"
 #include "new/hccl_dispatcher_ctx.h"
@@ -411,7 +411,7 @@ public:
         numBlocks = numBlocks_;
         return HCCL_SUCCESS;
     }
-    HcclResult SetAivCoreLimit(u32 newAivCoreLimit);
+    HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup);
     HcclResult GetSwitchRanks(u32 *distSwitchRankList, bool *distSwitchUseBackup, u32 &distSwitchRankNum,
         u8 *distRemoteRankNicStatus, u32 &distNicStatusNum, bool &needCheckDefaultNic, bool &needCheckBackupNic);

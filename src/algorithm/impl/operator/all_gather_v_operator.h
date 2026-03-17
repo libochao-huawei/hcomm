@@ -18,7 +18,7 @@ class AllGatherVOperator : public CollAlgOperator {
 public:
     AllGatherVOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~AllGatherVOperator();
+    ~AllGatherVOperator() override;
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag) override;
 private:
     HcclResult SelectAlgfor91093(const OpParam& param, std::string& algName);

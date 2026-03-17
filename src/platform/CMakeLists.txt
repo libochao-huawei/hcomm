@@ -102,14 +102,8 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/external/
         ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
 
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
-
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/

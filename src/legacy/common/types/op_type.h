@@ -63,6 +63,7 @@ const std::map<HcclCMDType, Hccl::OpType> OP_TYPE_MAP = {
     {HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, Hccl::OpType::REDUCESCATTERV},
     {HcclCMDType::HCCL_CMD_REDUCE, Hccl::OpType::REDUCE},
     {HcclCMDType::HCCL_CMD_ALLTOALLVC, Hccl::OpType::ALLTOALLVC},
+    {HcclCMDType::HCCL_CMD_SCATTER, Hccl::OpType::SCATTER},
 };
 
 const std::unordered_map<std::string, Hccl::OpType> OP_TYPE_STR = {

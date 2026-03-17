@@ -49,6 +49,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/framework/common/src
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
@@ -183,12 +184,15 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
 
     # legacy include
     ${HCCL_CODE_ROOT}/src/legacy/common/
     ${HCCL_CODE_ROOT}/src/legacy/common/utils/
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/
     ${HCCL_CODE_ROOT}/src/legacy/common/types/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
@@ -265,6 +269,26 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
 
+    ${HCCL_CODE_ROOT}/src/legacy/interface/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/host
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
+    ${HCCL_CODE_ROOT}/src/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
+    ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
+    ${HCCL_CODE_ROOT}/src/legacy/interface/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
+
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
@@ -291,13 +315,15 @@ add_subdirectory(stub)
 # add_subdirectory(platform/resource/transport)
 # add_subdirectory(platform/ping_mesh)
 add_subdirectory(framework/communicator)
-# add_subdirectory(framework/op_base_api)
-# # add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
-# add_subdirectory(framework/communicator/impl)
-# add_subdirectory(framework/resource)
-# add_subdirectory(framework/communicator/impl/independent_op/data_api)
-# add_subdirectory(aicpu_kfc/aicpu)
-# add_subdirectory(aicpu_kfc/misc)
-# add_subdirectory(inter/comm)
-# add_subdirectory(inter/hcom)
-# add_subdirectory(platform/hccp)
+add_subdirectory(framework/cluster_maintenance)
+add_subdirectory(framework/op_base_api)
+# add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
+add_subdirectory(framework/communicator/impl)
+add_subdirectory(framework/resource)
+add_subdirectory(framework/communicator/impl/independent_op/data_api)
+add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
+add_subdirectory(aicpu_kfc/aicpu)
+add_subdirectory(aicpu_kfc/misc)
+add_subdirectory(inter/comm)
+add_subdirectory(inter/hcom)
+add_subdirectory(platform/hccp)

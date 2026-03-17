@@ -13,7 +13,9 @@
 #include "mirror_task_manager.h"
 #include "profiling_handler.h"
 #include "queue.h"
+
 namespace Hccl {
+constexpr u32 REPORTER_MAX_MODULE_DEVICE_NUM = 65;
 class ProfilingReporter {
 public:
     ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler *profilingHandler);
@@ -22,9 +24,11 @@ public:
     void ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const;
     void ReportAllTasks(bool cachedReq);
     void UpdateProfStat();
-    void     CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
-                                   const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const;
+    void CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
+                                const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const;
 
+    void CallReportMc2CommInfo(const u32 kfcStreamId, const std::vector<u32> &aicpuStreamsId, const std::string &id,
+        RankId myRank, u32 rankSize, RankId rankInParentComm) const;
 private:
     void ReportCallBackAllTasks(bool cachedReq = false);
  
@@ -32,8 +36,9 @@ private:
     MirrorTaskManager                              *mirrorTaskMgr_{nullptr};
     bool                                            enableHcclL1_{false};
     /* lastposes是更新单前轮次profiling上报的最后位置记录 */
-    /* 修改静态:多通信域场景下,更新lastpose位置时需要全局（进程）粒度刷新，而不是当前按照通信域粒度刷新 */
-    static thread_local std::unordered_map<u32,  std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>> lastPoses_;
+    /* lastposes按设备粒度进行维护 */
+    using lastPosesMap = std::unordered_map<u32,  std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>>;
+    static std::array<lastPosesMap, REPORTER_MAX_MODULE_DEVICE_NUM> allLastPoses_;
     ProfilingHandler*                               profilingHandler_{nullptr};
     std::mutex profMutex;
 };

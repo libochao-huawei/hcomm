@@ -18,9 +18,11 @@ set(rs_list
     rs_ping_roce.c
     rs_socket.c
     rs_rdma.c
+    rs_nda.c
     rs_drv_rdma.c
     rs_drv_socket.c
     dl_ibverbs_function.c
+    dl_nda_function.c
     hccp_dl.c
     ctx/dl_net_function.c
     ctx/dl_ccu_function.c
@@ -68,21 +70,23 @@ target_include_directories(rs PRIVATE
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
 
     # HCCP Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/ctx
     ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
     ${URMA_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(rs PRIVATE
         ${TOP_DIR}/drivers/network/tls_adp
         ${TOP_DIR}/runtime/pkg_inc/base
+        ${TOP_DIR}/driver/driver/pkg_inc/
     )
 endif()
 

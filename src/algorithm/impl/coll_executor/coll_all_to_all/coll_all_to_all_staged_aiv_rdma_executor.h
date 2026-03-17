@@ -18,7 +18,7 @@ class CollRunAlltoAllStagedAivRdmaExecutor : public CollAlltoAllExecutor {
 
 public:
     CollRunAlltoAllStagedAivRdmaExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllStagedAivRdmaExecutor() = default;
+    ~CollRunAlltoAllStagedAivRdmaExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 
