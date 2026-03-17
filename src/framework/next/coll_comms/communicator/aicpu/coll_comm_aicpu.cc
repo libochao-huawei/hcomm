@@ -83,7 +83,7 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     std::vector<Thread*> outThreads;
     outThreads.reserve(threadNum);
     std::string hcomId(param->hcomId);
-    ThreadHandle * threadHandles = reinterpret_cast<ThreadHandle>(param->threadHandles);
+    ThreadHandle * threadHandles = reinterpret_cast<ThreadHandle*>(param->threadHandles);
     for (u32 i = 0; i < threadNum; ++i) {
         AicpuTsThread* thread = reinterpret_cast<AicpuTsThread*>(threadHandles[i]);
         CHK_PTR_NULL(thread);
@@ -105,8 +105,6 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         }
     }
 
-    // 空指针校验
-    CHK_PTR_NULL(threadArray);
     for (size_t i = 0; i < threadNum; ++i) {
         CHK_RET(RegisterThreadAddDfxTaskInfo(threadHandles[i]));
     }

@@ -177,7 +177,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchForComm(std::vector<std::shared_ptr
     return ThreadKernelLaunchImpl(newThreads, aicpuHandle, config);
 }
 
-HcclResult AicpuLaunchMgr::ThreadKernelLaunchForCommV2(ThreadHandle* newThreads, u32 threadNum,
+HcclResult AicpuLaunchMgr::ThreadKernelLaunchForCommV2(ThreadHandle* newThreads, uint32_t threadNum,
     const std::string &commId, aclrtBinHandle binHandle)
 {
     ThreadKernelLaunchConfig config(
@@ -191,7 +191,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchForCommV2(ThreadHandle* newThreads,
     return ThreadKernelLaunchImplV2(newThreads, threadNum, config);
 }
 
-HcclResult AicpuLaunchMgr::ThreadKernelLaunchImplV2(ThreadHandle* newThreads, u32 threadNum,
+HcclResult AicpuLaunchMgr::ThreadKernelLaunchImplV2(ThreadHandle* newThreads, uint32_t threadNum,
     const ThreadKernelLaunchConfig &config)
 {
     // 参数检查
@@ -206,7 +206,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchImplV2(ThreadHandle* newThreads, u3
     // Step 2. 填写 opParam 并分配设备内存
     ThreadMgrAicpuParam opParam{};
     opParam.threadNum = threadNum;
-    opParam.threadHandles = newThreads;
+    opParam.threadHandles = reinterpret_cast<u64*>(newThreads);
     errno_t sRet = strncpy_s(opParam.hcomId, HCOMID_MAX_SIZE, config.commId.c_str(), config.commId.length());
     CHK_PRT_RET(sRet != EOK,
     HCCL_ERROR("[%s] strncpy_s failed, return [%d].", __func__, sRet),
