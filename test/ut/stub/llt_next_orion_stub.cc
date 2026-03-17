@@ -1246,3 +1246,8 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
 {
     return HCCL_SUCCESS;
 }
+
+HcclResult HcommFlushV2()
+{
+    return HCCL_SUCCESS;
+}
