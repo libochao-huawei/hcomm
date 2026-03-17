@@ -43,7 +43,7 @@ public:
             : addr(addr), size(size), tokenId(tokenId), tokenValue(tokenValue) {}
 
         CclBufferInfo(const uint64_t addr, const uint32_t size, const uint32_t tokenId, const uint32_t tokenValue,
-            const CommMemType type, const std::array<char, HCCL_RES_TAG_MAX_LEN> memTag)
+            const CommMemType type, const std::array<char, HCCL_RES_TAG_MAX_LEN> &memTag)
             : addr(addr), size(size), tokenId(tokenId), tokenValue(tokenValue), type(type), memTag(memTag) {}
 
         void Pack(Hccl::BinaryStream &binaryStream) const {
