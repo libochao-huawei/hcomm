@@ -339,7 +339,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     bool isHccsPlusSio = userRankSize_ == 2 && pairLinkCounter_[static_cast<u32>(LinkTypeInServer::SIO_TYPE)] == 2 &&
                          pairLinkCounter_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)] == 0;
-    isHccsPlusSio = false; //待适配
+    isHccsPlusSio = false;
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "AllGatherHccsSioExecutor";
     } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
