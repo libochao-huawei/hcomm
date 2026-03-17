@@ -239,6 +239,7 @@ HcclResult CpuThread::GetThreadEntity(void* &threadEntity)
 
     aclError ret = aclrtMalloc(&threadEntity, totalSize, ACL_MEM_MALLOC_NORMAL_ONLY);
     if (ret != ACL_SUCCESS) {
+        delete[] reinterpret_cast<char*>(entity);
         HCCL_ERROR("Failed to allocate memory for thread entity");
         return HCCL_E_INTERNAL;
     }

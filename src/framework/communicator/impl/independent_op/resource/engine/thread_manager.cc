@@ -60,7 +60,7 @@ HcclResult ThreadMgr::CheckNotifyNum(CommEngine engine, uint32_t threadNum, uint
 HcclResult ThreadMgr::CheckThreadNum(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread)
 {
     GetMaxNotifyTotal();
-    uint32_t remainQuota = (threadNum_ > threads_.size()) ? (threadNum_ - threads_.size()) : 0;
+    uint32_t remainQuota = (threadNum_ > threadTotalCount) ? (threadNum_ - threadTotalCount) : 0;
     if (remainQuota == 0 || threadNum > remainQuota) {
         HCCL_ERROR("[ThreadMgr][%s] Threads quota exhausted: remainQuota[%u], need[%u].",
             __func__, remainQuota, threadNum);
@@ -184,6 +184,7 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
     engineToThreadsMap_[engine].reserve(engineToThreadsMap_[engine].size() + newThreads.size());
     engineToThreadsMap_[engine].insert(engineToThreadsMap_[engine].end(), newThreads.begin(), newThreads.end());
     threads_.insert(threads_.end(), newThreads.begin(), newThreads.end());
+    threadTotalCount += newThreads.size();
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         for (u32 i = 0; i < newThreads.size(); ++i) {
@@ -326,6 +327,7 @@ HcclResult ThreadMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
     threads_.insert(threads_.end(),
                     std::make_move_iterator(newThreads.begin()),
                     std::make_move_iterator(newThreads.end()));
+    threadTotalCount += newThreads.size();
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         for (u32 i = 0; i < newThreads.size(); ++i, ++threadsIt) {
@@ -366,7 +368,7 @@ HcclResult ThreadMgr::HcclThreadAcquireWithConfig(CommEngine engine, uint32_t th
         maxNotifyTotal = static_cast<uint64_t>(threadNum_) * static_cast<uint64_t>(notifyNumPerThread_);
         maxNotifyTotal = maxNotifyTotal > LOCAL_NOTIFY_MAX_NUM ? LOCAL_NOTIFY_MAX_NUM : maxNotifyTotal;
     }
-    uint32_t remainQuota = (threadNum_ > threads_.size()) ? (threadNum_ - threads_.size()) : 0;
+    uint32_t remainQuota = (threadNum_ > threadTotalCount) ? (threadNum_ - threadTotalCount) : 0;
     if (remainQuota == 0 || threadNum > remainQuota) {
         HCCL_ERROR("[ThreadMgr][%s] Threads quota exhausted: remainQuota[%u], need[%u].",
             __func__, remainQuota, threadNum);
@@ -385,10 +387,13 @@ HcclResult ThreadMgr::HcclThreadAcquireWithConfig(CommEngine engine, uint32_t th
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire quota: engine[%d] threadNum[%llu], "
-        "remainNotifyQuota[%u]", __func__, commId_.c_str(), engine, remainQuota, remainNotifyQuota);
+        "remainNotifyQuota[%llu]", __func__, commId_.c_str(), engine, remainQuota, remainNotifyQuota);
 
     // 开始创建thread资源
     CHK_RET(HcommThreadAllocWithConfig(engine, threadNum, config, type, threads));
+
+    // 更新已使用的notify数量
+    usedNotifyNum_ += config.notifyNumPerThread * threadNum;
 
     HCCL_INFO("[ThreadMgr][HcclThreadAcquire] Hcom[%s] HcclThreadAcquire done: engine[%d] threadNum[%u],"
         "notifyPerThread[%u]%s", commId_.c_str(), engine, threadNum, config.notifyNumPerThread,
