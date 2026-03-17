@@ -184,8 +184,9 @@ HcclResult GlobalMemRegMgr::DeReg(void *memRecordHandle)
 
 HcclResult GlobalMemRegMgr::InitNic()
 {
+    std::lock_guard<std::mutex> lock(netDevCtxMtx_);
     if (nicInited_) {
-        HCCL_INFO("[InitNic] Nic has been inited. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
+        HCCL_ERROR("[InitNic] Nic has been inited. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
         return HCCL_SUCCESS;
     }
 
@@ -197,7 +198,7 @@ HcclResult GlobalMemRegMgr::InitNic()
     nicInited_ = true;
     socketManager_.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, deviceLogicId_, devicePhyId_, 0));
     CHK_PTR_NULL(socketManager_);
-    HCCL_INFO("[InitNic] Nic init success, devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
+    HCCL_ERROR("[InitNic] Nic init success, devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
     return HCCL_SUCCESS;
 }
 
