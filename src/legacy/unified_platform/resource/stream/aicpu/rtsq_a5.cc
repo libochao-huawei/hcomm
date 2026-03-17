@@ -198,9 +198,18 @@ void RtsqA5::RefreshInfo()
 
 void RtsqA5::NotifyWait(u32 notifyId)
 {
-    BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, GetCurrSqeBuffer());
+    const u32 envTimeout  = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout;
+    BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, envTimeout, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::NotifyWait: notifyWait Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
-    HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
+    HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u, Default timeout %u", streamId_, taskId_, notifyId, envTimeout);
+    RefreshInfo();
+}
+
+void RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
+{
+    BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, timeout, GetCurrSqeBuffer());
+    HCCL_INFO("RtsqA5::NotifyWait with timeout: notifyWait Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u, timeout %u", streamId_, taskId_, notifyId, timeout);
     RefreshInfo();
 }
 

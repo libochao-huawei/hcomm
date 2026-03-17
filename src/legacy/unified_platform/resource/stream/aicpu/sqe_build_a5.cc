@@ -10,36 +10,10 @@
 #include "sqe_build_a5.h"
 #include "sqe_v82.h"
 #include "log.h"
-#include "communicator_impl_lite_manager.h"
 
 namespace Hccl {
 
 constexpr u32 LOW_BITS = 16;
-
-u32 GetKernelExecTimeoutFromEnvConfig()
-{
-    const u32 envTimeout  = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout;
-    return envTimeout;
-}
-
-void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
-{
-    (void) streamId;
-    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
-
-    sqe->kernelCredit      = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
-    sqe->header.type       = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
-    sqe->cntFlag           = false;
-    sqe->clrFlag           = true;
-    sqe->subType           = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_SINGLE_NOTIFY_WAIT);
-    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
-    sqe->header.taskId     = static_cast<uint16_t>(taskId >> LOW_BITS);
-    sqe->header.wrCqe      = 1U;
-    sqe->notifyId          = notifyId;
-    sqe->timeout           = GetKernelExecTimeoutFromEnvConfig();
-
-    HCCL_INFO("[SQE]NotifyWait: notifyId=%lu, timeout=%us, streamId=%u, taskId=%u", notifyId, sqe->timeout, streamId, taskId);
-}
 
 void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
 {
@@ -54,6 +28,25 @@ void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * co
     sqe->notifyId          = notifyId;
 
     HCCL_INFO("[SQE]NotifyRecord: notifyId=%lu, streamId=%u, taskId=%u", notifyId, streamId, taskId);
+}
+
+void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, uint8_t * const sqeIn)
+{
+    (void) streamId;
+    Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
+
+    sqe->kernelCredit      = RT_STARS_NEVER_TIMEOUT_KERNEL_CREDIT;
+    sqe->header.type       = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_NOTIFY_WAIT);
+    sqe->cntFlag           = false;
+    sqe->clrFlag           = true;
+    sqe->subType           = static_cast<uint16_t>(Rt91095NotifySubType::NOTIFY_SUB_TYPE_SINGLE_NOTIFY_WAIT);
+    sqe->header.rtStreamId = static_cast<uint16_t>(taskId);
+    sqe->header.taskId     = static_cast<uint16_t>(taskId >> LOW_BITS);
+    sqe->header.wrCqe      = 1U;
+    sqe->notifyId          = notifyId;
+    sqe->timeout           = timeout;
+
+    HCCL_INFO("[SQE]NotifyWait: notifyId=%lu, timeout=%us, streamId=%u, taskId=%u", notifyId, sqe->timeout, streamId, taskId);
 }
 
 void BuildA5SqeCnt1toNNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, u32 cntValue, uint8_t * const sqeIn)
