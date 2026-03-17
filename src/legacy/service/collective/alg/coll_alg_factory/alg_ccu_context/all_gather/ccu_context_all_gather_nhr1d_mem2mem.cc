@@ -14,13 +14,13 @@ namespace Hccl {
 
 constexpr uint16_t OUTPUT_XN_ID    = 1;
 constexpr uint16_t TOKEN_XN_ID     = 2;
+constexpr uint16_t FST_AXIS_ID     = 0;
+constexpr uint16_t SEC_AXIS_ID     = 1;
 constexpr uint16_t CKE_IDX_0       = 0;
 constexpr uint16_t CKE_IDX_1       = 1;
 constexpr uint16_t CKE_IDX_2       = 2;
 constexpr uint16_t CKE_IDX_3       = 3;
 constexpr uint16_t CKE_IDX_4       = 4;
-constexpr uint16_t FST_AXIS_ID     = 0;
-constexpr uint16_t SEC_AXIS_ID     = 1;
 constexpr uint16_t BIT_NUM_PER_CKE = 16; // 本rank给远端置位时应当写的CKE，16个对端一个CKE
 
 CcuContextAllGatherNHR1D::CcuContextAllGatherNHR1D(const CcuCtxArg &arg, const std::vector<CcuTransport *> &transports,

@@ -88,14 +88,9 @@ public:
         return StringFormat("CcuInstructionReduceMesh2D rankId [%u], instType[%d]", rankId_, instType_);
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -117,13 +112,13 @@ private:
     uint32_t rankId_{0};
     uint32_t rootId_{0};
     uint64_t axisId_{0};
+    uint64_t offSet_{0};
+    uint64_t token_{0};
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t sliceSize_{0};
     uint64_t xAxisSize_{0};
     uint64_t yAxisSize_{0};
-    uint64_t offSet_{0};
-    uint64_t token_{0};
     CollAlgOperator op_;
     std::vector<std::vector<RankId>> tempVTopo_;
 };

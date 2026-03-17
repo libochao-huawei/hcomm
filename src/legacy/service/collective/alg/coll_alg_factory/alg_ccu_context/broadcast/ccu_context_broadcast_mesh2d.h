@@ -57,10 +57,10 @@ private:
     GroupOpSize yAxisGroupOpSize_;
 
     // 跨轴同步信号
-    std::string localAxisSignalName_;
-    std::string anotherAxisSignalName_;
     CcuRep::MaskSignal localAxisSignal_;
     CcuRep::MaskSignal anotherAxisSignal_;
+    std::string localAxisSignalName_;
+    std::string anotherAxisSignalName_;
 };
 } // namespace Hccl
 

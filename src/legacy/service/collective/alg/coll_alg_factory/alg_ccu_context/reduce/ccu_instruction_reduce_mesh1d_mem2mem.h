@@ -107,20 +107,15 @@ public:
         return StringFormat("CcuInstructionReduceMeshMem2Mem1D rankId [%u], instType[%d]", rankId_, instType_);
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         HCCL_INFO("[CcuInstructionReduceMeshMem2Mem1D] GetCtxArg begin");
         return std::make_unique<CcuCtxArgReduceMeshMem2Mem1D>(dimSize_, rankId_, rootId_, op_, tempVTopo_);
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override

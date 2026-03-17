@@ -96,19 +96,14 @@ public:
         return;
     }
 
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionScatterMesh2D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
-    }
-
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -131,8 +126,8 @@ private:
     uint64_t outputAddr_{0};
     uint64_t scratchAddr_{0};
     uint64_t token_{0};
-    uint64_t sliceSize_{0};
     uint64_t stride_{0};
+    uint64_t sliceSize_{0};
     uint64_t xSliceSize_{0};
     uint64_t ySliceSize_{0};
     CollAlgOperator op_;

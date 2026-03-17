@@ -78,6 +78,11 @@ public:
         return;
     }
 
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionAllGatherMesh1D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
