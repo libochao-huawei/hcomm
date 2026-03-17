@@ -24,9 +24,14 @@ AivUbMemTransport::AivUbMemTransport(Hccl::Socket *socket, HcommChannelDesc &cha
 HcclResult AivUbMemTransport::Init()
 {
     // 拷贝memTag信息
-    localUserMemTag_.reserve(channelDesc_.memHandleNum);
-    HCCL_INFO("channelDesc_.memHandleNum %u", channelDesc_.memHandleNum);
-    for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
+    uint32_t bufferNum = channelDesc_.memHandleNum;
+    localUserMemTag_.reserve(bufferNum);
+    HCCL_INFO("channelDesc_.memHandleNum: %u", bufferNum);
+    if (bufferNum == 0) {
+        HCCL_ERROR("[AivUbMemTransport][Init] bufferNum is 0.");
+        return HCCL_E_PARA;
+    }
+    for (uint32_t i = 0; i < bufferNum; ++i) {
         Hccl::LocalIpcRmaBuffer *localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(channelDesc_.memHandles[i]);
         localRmaBufferVec_.push_back(localIpcRmaBuffer);
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};

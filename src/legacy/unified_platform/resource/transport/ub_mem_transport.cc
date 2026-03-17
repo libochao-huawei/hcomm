@@ -900,6 +900,10 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
 {
     std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    if (rmtBufferVec.size() == 0) {
+        HCCL_ERROR("[UbMemTransport][GetUserRemoteMem] bufferNum is 0.");
+        return HCCL_E_PARA;
+    }
     uint32_t userMemCount = rmtBufferVec.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
     auto cacheBuilder = [](RemoteMemCtx<std::unique_ptr<RemoteUbRmaBuffer>> &remoteMemCtx, uint32_t index) {
         auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
