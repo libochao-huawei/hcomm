@@ -17,7 +17,7 @@
 #include <functional>
 #include "hccl/hccl_res.h"
 #include "hccl/hccl_types.h"
-#include "legacy/common/log.h"
+#include "log.h"
 
 constexpr uint32_t MAX_BUFFER_NUM = 22000;
 
