@@ -49,15 +49,39 @@ class UtAicpuTsHcommThreadNotifyWaitOnThread : public testing::Test
 protected:
     virtual void SetUp() override
     {
+        MOCKER(GetRunSideIsDevice)
+            .stubs()
+            .with(outBound(false))
+            .will(returnValue(HCCL_SUCCESS));
+
+        HcclResult ret = HCCL_E_RESERVED;
+        ret = tsThreadHost_.Init();
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+        std::string packedData = tsThreadHost_.GetUniqueId();
+
+        GlobalMockObject::verify(); // Clear previous MOCKER
+
+        MOCKER(GetRunSideIsDevice)
+            .stubs()
+            .with(outBound(true))
+            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetDeviceType)
+            .stubs()
+            .with(outBound(DevType::DEV_TYPE_950))
+            .will(returnValue(HCCL_SUCCESS));
+
         // ---- TS thread (for AicpuTs wait tests) ----
-        tsThread_.devType_ = DevType::DEV_TYPE_950;
-        tsThread_.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
-        InitNotifies(tsThread_);
+        tsThreadDevPtr_ = std::make_unique<AicpuTsThread>(packedData);
+        ret = tsThreadDevPtr_->Init();
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+        ret = tsThreadDevPtr_->SetAddTaskInfoCallback(callback_);
+        ASSERT_EQ(ret, HCCL_SUCCESS);
+        ASSERT_NE(tsThreadDevPtr_->GetStreamLitePtr(), nullptr);
 
         memset(&tsBuf_, 0, sizeof(tsBuf_));
         tsBuf_.entity.type = THREAD_TYPE_TS;
         tsBuf_.entity.engine = COMM_ENGINE_AICPU;
-        tsBuf_.entity.threadObjAddr = reinterpret_cast<uint64_t>(&tsThread_);
+        tsBuf_.entity.threadObjAddr = reinterpret_cast<uint64_t>(tsThreadDevPtr_.get());
         tsBuf_.entity.notifyNum = 1;
 
         // ---- CPU thread (for CpuThread wait tests) ----
@@ -90,7 +114,10 @@ protected:
     }
 
     // TS thread
-    AicpuTsThread tsThread_{StreamType::STREAM_TYPE_DEVICE, 1, NotifyLoadType::DEVICE_NOTIFY};
+    AicpuTsThread tsThreadHost_{StreamType::STREAM_TYPE_DEVICE, 1, NotifyLoadType::DEVICE_NOTIFY};
+    std::unique_ptr<AicpuTsThread> tsThreadDevPtr_;
+    using FuncCb = std::function<HcclResult (u32, u32, const Hccl::TaskParam &, u64)>;
+    FuncCb callback_ = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {return HCCL_SUCCESS;};
     WaitThreadEntityBuffer tsBuf_;
 
     // CPU thread
@@ -110,50 +137,6 @@ protected:
 TEST_F(UtAicpuTsHcommThreadNotifyWaitOnThread,
     Ut_HcommThreadNotifyWaitOnThread_When_AicpuTsWaitNormal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));
-    
-    AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
-    HcclResult ret = aicpuThread.Init();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    std::string mainStr = aicpuThread.GetUniqueId();
-    isDeviceSide = true;
-    GlobalMockObject::verify(); 
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));
-
-     MOCKER(hrtGetDeviceType)
-        .stubs()
-        .with(outBound(DevType::DEV_TYPE_950))
-        .will(returnValue(HCCL_SUCCESS));
-
-    AicpuTsThread mainDevThread(mainStr);
-    ret = mainDevThread.Init();
-    std::function<HcclResult (u32, u32, const Hccl::TaskParam &, u64)> callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {return HCCL_SUCCESS;};
-    mainDevThread.SetAddTaskInfoCallback(callback);
-    EXPECT_EQ(ret, HCCL_SUCCESS);  
-
-    void *expectPtr = reinterpret_cast<void *>(0x2345);
-    void *streamPtr = mainDevThread.GetStreamLitePtr();
-    EXPECT_NE(nullptr, streamPtr);
-
-    ret = mainDevThread.LocalNotifyRecord(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-   
-    ret = mainDevThread.LocalNotifyWait(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    void *src = reinterpret_cast<void *>(0x2345);
-    void *dst = reinterpret_cast<void *>(0x2345);
-    uint64_t sizeByte = 8;
-    thread = reinterpret_cast<ThreadHandle>(&mainDevThread);
-    res = HcommThreadNotifyWaitOnThread(thread, notifyIdx, timeOut);
-    EXPECT_EQ(res, HCCL_SUCCESS);
-    // TODO
     MOCKER_CPP(&Hccl::IAicpuTsThread::NotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
     res_ = HcommThreadNotifyWaitOnThread(tsHandle_, 0, 1800);
     EXPECT_EQ(res_, HCCL_SUCCESS);
