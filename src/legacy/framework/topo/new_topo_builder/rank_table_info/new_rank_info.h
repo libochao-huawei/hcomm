@@ -18,6 +18,7 @@
 #include "nlohmann/json.hpp"
 #include "rank_level_info.h"
 #include "control_plane.h"
+#include "orion_adapter_hccp.h"
 namespace Hccl {
 constexpr unsigned int MAX_VALUE_DEVICEID = 64;
 constexpr unsigned int DEFAULT_VALUE_DEVICEPORT = 60001;
@@ -36,6 +37,7 @@ public:
     u32                        devicePort{DEFAULT_VALUE_DEVICEPORT};
     std::vector<RankLevelInfo> rankLevelInfos{};
     ControlPlane               controlPlane{};
+    TlsStatus                  tlsStatus{TlsStatus::UNKNOWN};
     std::string                Describe() const;
     void                       Deserialize(const nlohmann::json &newRankInfoJson);
     explicit                   NewRankInfo(BinaryStream &binStream);

@@ -14,6 +14,7 @@
 #include "sal.h"
 #include "rank_info_detect_service.h"
 #include "hccp_peer_manager.h"
+#include "hccp_hdc_manager.h"
 #include "internal_exception.h"
 #include "orion_adapter_hccp.h"
 #include "orion_adapter_rts.h"
@@ -52,6 +53,7 @@ void RankInfoDetect::SetupServer(HcclRootHandleV2 &rootHandle)
 
     // host网卡使能
     HccpPeerManager::GetInstance().Init(devLogicId_);
+    HccpHdcManager::GetInstance().Init(devLogicId_);
 
     // 获取LocalHostIP
     hostIp_ = GetBootstrapIp(devPhyId_);
