@@ -15,7 +15,7 @@ namespace Hccl {
 template <typename T>
 struct RemoteMemCtx{
     uint32_t                        userMemCount = 0;
-    bool                            cacheValid = false;
+    bool                            &cacheValid;
     std::vector<T>                  &rmtBufferVec;
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag;
     std::vector<CommMem>            &remoteUserMems;
@@ -26,7 +26,7 @@ struct RemoteMemCtx{
     char                            ***memTags;
     uint32_t                        *memNum;
 
-    RemoteMemCtx(uint32_t userMemCount, bool cacheValid, std::vector<T> &rmtBufferVec,
+    RemoteMemCtx(uint32_t userMemCount, bool &cacheValid, std::vector<T> &rmtBufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &remoteUserMemTag,
         std::vector<CommMem> &remoteUserMems, std::vector<std::string> &tagCopies,
         std::vector<char*> &tagPointers,
