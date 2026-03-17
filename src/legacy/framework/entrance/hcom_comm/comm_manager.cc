@@ -472,6 +472,7 @@ HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize)
 HcclResult HcomGetCommV2(void **commV2)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    CHK_PTR_NULL(hcomCommInfoV2.pComm);
     *commV2 = static_cast<void *>(hcomCommInfoV2.pComm.get());
     HCCL_INFO("[HcomGetCommV2] success.");
     return HCCL_SUCCESS;
