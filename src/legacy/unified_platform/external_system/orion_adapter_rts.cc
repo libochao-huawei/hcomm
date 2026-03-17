@@ -710,16 +710,12 @@ void HrtNotifyDestroy(RtNotify_t ptr)
 
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 {
-<<<<<<< HEAD
-    aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 2UL);
-=======
     HCCL_INFO("[HrtIpcSetNotifyName] ptr[%p], len[%u].", ptr, len);
     CHECK_NULLPTR(ptr, "[HrtIpcSetNotifyName] ptr is nullptr!");
     if (HrtGetDeviceType() == DevType::DEV_TYPE_950) {
         return;
     }
-    aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 0UL);
->>>>>>> ad1bb6f4... update
+    aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 2UL);
     HCCL_INFO("Call aclrtNotifyGetExportKey, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Set][IPCNotify]errNo[0x%016llx] IPC set notify name fail. "
@@ -1295,7 +1291,7 @@ HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
     }
     return HCCL_SUCCESS;
 }
-<<<<<<< HEAD
+
 HcclResult HrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
 {
     rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
@@ -1331,6 +1327,3 @@ HcclResult HrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status)
     return HCCL_SUCCESS;
 }
 } // namespace Hccl
-=======
-} // namespace Hccl
->>>>>>> ad1bb6f4... update
