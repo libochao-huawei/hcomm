@@ -331,13 +331,12 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
         return HCCL_SUCCESS;
     }
 
-    bool useA3Pipeline = IsA3PipelineCondition(param);
     bool useA2AAiv = IsSatisfyAlltoAllAivCondition(param);
     bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
             isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize());
 
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        if (!useA3Pipeline && (useDirectFullmesh || param.aicpuUnfoldMode)) {
+        if (useDirectFullmesh || param.aicpuUnfoldMode) {
             newTag = tag + algName;
         } else {
             newTag = tag + algName + copyMode;
@@ -347,7 +346,7 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
         newTag = tag;
     }
 
-    if (useA3Pipeline || (!useA2AAiv && !useDirectFullmesh && !param.aicpuUnfoldMode)) {
+    if (!useA2AAiv && !useDirectFullmesh && !param.aicpuUnfoldMode) {
         CHK_RET(SetExcutorExtraInfo(algName, param));
     }
     return ret;
@@ -419,13 +418,12 @@ HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
 bool AlltoAllOperator::JudgeIfNeedPreProcessAndGetParam(const OpParam& param,
     std::unique_ptr<PreProcessMetaInfo> &preMetaInfo)
 {
-    bool useA3Pipeline = IsA3PipelineCondition(param);
     bool useA2AAiv = IsSatisfyAlltoAllAivCondition(param);
     bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
             isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize());
     bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition(param);
     if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && !useA2AAiv) {
-        if (!useA3Pipeline && (useDirectFullmesh || useContinuousPipeline || param.aicpuUnfoldMode)) {
+        if (useDirectFullmesh || useContinuousPipeline || param.aicpuUnfoldMode) {
             return false;
         }
         CHK_RET(PrepareAlltoAllAddrInfo(param.All2AllDataDes.sendCounts, param.All2AllDataDes.sdispls,
