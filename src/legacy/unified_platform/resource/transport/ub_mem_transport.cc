@@ -52,7 +52,7 @@ HcclResult UbMemTransport::FillTagVec()
 {
     uint32_t bufferNum = commonLocRes.bufferVec.size();
     if (bufferNum == 0) {
-        HCCL_ERROR("[UbMemTransport][FillTagVec] bufferNum is 0.");
+        HCCL_WARNING("[UbMemTransport][FillTagVec] bufferNum is 0.");
         return HCCL_E_PARA;
     }
     localUserMemTag_.reserve(bufferNum);
