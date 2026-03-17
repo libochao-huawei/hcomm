@@ -325,6 +325,9 @@ namespace hccl
         HCCL_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], userRank[%u], userRankSize[%u]",
             __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
             commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize);
+        CommConfig& commConfig = collComm_->GetCommConfig();
+        CHK_RET(commConfig.SetConfigTrafficClass(config->hcclRdmaTrafficClass));
+        CHK_RET(commConfig.SetConfigServiceLevel(config->hcclRdmaServiceLevel));
         return HCCL_SUCCESS;
     }
 
