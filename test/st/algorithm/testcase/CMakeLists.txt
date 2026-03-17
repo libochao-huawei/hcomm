@@ -86,7 +86,15 @@ set(src_list_alg
     ${HCOMM_CODE_ALGORITHM}/impl/coll_executor/coll_comm_executor.cc
     ${HCOMM_CODE_ALGORITHM}/impl/coll_executor/alg_profiling.cc
 
-    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/aiv_communication.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_gather/aiv_all_gather_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_gather_v/aiv_all_gather_v_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_reduce/aiv_all_reduce_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_to_all/aiv_all_to_all_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_to_all/aiv_all_to_all_v_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_to_all/aiv_all_to_all_vc_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/broadcast/aiv_broadcast_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/reduce_scatter/aiv_reduce_scatter_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/reduce_scatter_v/aiv_reduce_scatter_v_op.h
 
     ${ALL_REDUCE_EXECUTOR}
     ${ALL_REDUCE_EXECUTOR_310P}
@@ -119,7 +127,16 @@ set(src_list_alg
 add_library(hccl_alg_test SHARED ${src_list_alg})
 
 set_source_files_properties(
-    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/aiv_communication.h PROPERTIES
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_gather/aiv_all_gather_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_gather_v/aiv_all_gather_v_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_reduce/aiv_all_reduce_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_to_all/aiv_all_to_all_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_to_all/aiv_all_to_all_v_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/all_to_all/aiv_all_to_all_vc_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/broadcast/aiv_broadcast_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/reduce_scatter/aiv_reduce_scatter_op.h
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template/reduce_scatter_v/aiv_reduce_scatter_v_op.h
+    PROPERTIES
     LANGUAGE CXX
     COMPILE_OPTIONS "-std=c++17"
 )

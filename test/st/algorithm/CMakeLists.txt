@@ -105,6 +105,7 @@ set(HCOMM_ALGORITHM_INCLUDE_LIST
     ${HCOMM_CODE_ALGORITHM}/base/alg_template/temp_reduce
     ${HCOMM_CODE_ALGORITHM}/base/alg_template/temp_scatter
     ${HCOMM_CODE_ALGORITHM}/base/alg_template/temp_broadcast
+    ${HCOMM_CODE_ALGORITHM}/base/alg_aiv_template
     ${HCOMM_CODE_ALGORITHM}/utils/inc
     ${HCOMM_CODE_ALGORITHM}/impl
     ${HCOMM_CODE_ALGORITHM}/impl/inc
