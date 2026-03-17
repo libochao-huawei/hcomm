@@ -13,17 +13,12 @@
 HcclResult RecordService(void *args, uint64_t argsSizeByte);
 HcclResult WaitService(void *args, uint64_t argsSizeByte);
 namespace hccl {
-struct HostArgs {
-    void* cpuThread;
-    s32 deviceId;
-};
-HostArgs hostArgsTemp;
-
 HcclResult CpuThread::PrepareDpuKernelResource(aclrtFuncHandle &funcHandle)
 {
     // 获取二进制文件路径
     std::string jsonPath;
-    std::string getPath = getenv("ASCEND_HOME_PATH");
+    const char* envPath = getenv("ASCEND_HOME_PATH");
+    std::string getPath = (envPath != nullptr) ? envPath : "";
     if (!getPath.empty()) {
         jsonPath = getPath;
     } else {
@@ -86,11 +81,11 @@ HcclResult CpuThread::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     cfg.attrs                = &kernelAttr;
     constexpr u32 numBlocks   = 1;
     // 核函数入参
-    hostArgsTemp.cpuThread = static_cast<void*>(this);
-    size_t               argsSize = sizeof(hostArgsTemp);
+    hostArgs_.cpuThreadPtr = static_cast<void*>(this);
+    size_t               argsSize = sizeof(hostArgs_);
     aclrtPlaceHolderInfo placeHolderArrays;
     size_t               placeHolderNum = 0;
-    if (aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, dpuStream_, &cfg, &hostArgsTemp, argsSize,
+    if (aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, dpuStream_, &cfg, &hostArgs_, argsSize,
                                       &placeHolderArrays, placeHolderNum)
         != ACL_SUCCESS) {
         HCCL_ERROR("[CpuThread::%s] Launch Dpu Kernel Failed", __func__);
@@ -119,7 +114,7 @@ HcclResult CpuThread::Init()
 
     s32 devId = 0;
     CHK_RET(hrtGetDevice(&devId));
-    hostArgsTemp.deviceId = devId;
+    hostArgs_.deviceId = devId;
 
     // 设置XPU
     HCCL_INFO("[CpuThread::%s] Switch to Dpu Ctx", __func__);
