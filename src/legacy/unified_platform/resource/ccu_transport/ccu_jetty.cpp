@@ -19,9 +19,9 @@ namespace Hccl {
 HcclResult CcuCreateJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
     std::unique_ptr<CcuJetty> &ccuJetty)
 {
-    TRY_CATCH_RETURN(	 
-        ccuJetty = std::make_unique<CcuJetty>(ipAddr, jettyInfo);	 
-    );	 
+    TRY_CATCH_RETURN(
+        ccuJetty = std::make_unique<CcuJetty>(ipAddr, jettyInfo);
+    );
     return HcclResult::HCCL_SUCCESS;
 }
 
