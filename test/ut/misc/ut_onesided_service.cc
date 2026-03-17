@@ -4068,3 +4068,39 @@ TEST_F(OneSidedSt, ut_one_sided_service_prepare_fail)
 
     GlobalMockObject::verify();
 }
+
+TEST_F(OneSidedSt, Prepare_When_PrepareFullMeshFail_With_NullptrConn_Expect_SkipClean)
+{
+    unique_ptr<HcclSocketManager> socketManager = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
+    unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
+    HcclCommConfig commConfig("hccl_world_group");
+    unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool, commConfig);
+
+    MOCKER_CPP(&HcclOneSidedService::PrepareFullMesh)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    // 构造ranktable
+    HcclDispatcher dispatcher = &notifyPool;
+    HcclRankLinkInfo localRankInfo{};
+    localRankInfo.userRank = 0;
+    RankTable_t rankTable{};
+    RankInfo_t rankInfo0;
+    rankInfo0.userRank = 0;
+    RankInfo_t rankInfo1;
+    rankInfo1.userRank = 1;
+    rankTable.rankList.push_back(rankInfo0);
+    rankTable.rankList.push_back(rankInfo1);
+    service->Config(dispatcher, localRankInfo, &rankTable);
+
+    service->oneSidedConns_[1] = nullptr;
+
+    std::string commIdentifier("test");
+    HcclPrepareConfig config;
+    config.topoType = HcclTopoType::HCCL_TOPO_FULLMESH;
+    ret = service->Prepare(commIdentifier, &config, 1);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
