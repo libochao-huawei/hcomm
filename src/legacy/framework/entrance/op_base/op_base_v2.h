@@ -133,7 +133,7 @@ HcclResult HcclCommResumeV2(HcclComm comm);
 HcclResult HcclCommResumeImplV2(HcclComm comm);
 
 HcclResult HcclGetRawCommHandle(const char *commName, HcclComm *commHandle);
-HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTaskGroup);
+HcclResult HcclGetCcuTaskInfo(HcclComm comm, void *tilingData, void *ccuTaskGroup);
 HcclResult HcclSnapshotSave(void *snapshotBuf, uint32_t size, uint32_t step);
 void RecoverSnapshotCcuStatus(const std::shared_ptr<Hccl::SnapShotBuf>& savedSnapshotBuf);
 HcclResult HcclSnapshotRecoverAllComms(const char *clusterInfo, const char *changedInfo, void *snapshotBuf, uint32_t snapshotBufSize);

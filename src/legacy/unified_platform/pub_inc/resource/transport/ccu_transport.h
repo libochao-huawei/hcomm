@@ -16,7 +16,7 @@
 #include <vector>
 #include <shared_mutex>
 
-#include "../../resource/socket/socket.h"
+#include "socket.h"
 #include "op_mode.h"
 #include "binary_stream.h"
 #include "ccu_connection.h"

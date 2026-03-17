@@ -70,6 +70,11 @@ HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcR
     HcclResult ret = HCCL_SUCCESS;
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetLinksV2(comm, netLayer, srcRank, dstRank, links, linkNum));
+                return HCCL_SUCCESS;
+            }
             if (srcRank == dstRank) {
                 HCCL_ERROR("[%s] srcRank[%u] and dstRank[%u] is same", __func__, srcRank, dstRank);
                 return HCCL_E_PARA;
@@ -100,6 +105,11 @@ HcclResult HcclRankGraphGetLayers(HcclComm comm, uint32_t** netLayers, uint32_t*
     CHK_PTR_NULL(netLayerNum);
     HcclResult ret = HCCL_SUCCESS;
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        const char* indOp = getenv("HCCL_INDEPENDENT_OP");
+        if (indOp == nullptr || strcmp(indOp, "") == 0) {
+            CHK_RET(HcclGetNetLayersV2(comm, netLayers, netLayerNum));
+            return HCCL_SUCCESS;
+        }
         RankGraph* rankGraph = nullptr;
         CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
         CHK_RET(rankGraph->GetNetLayers(netLayers, netLayerNum));
@@ -123,6 +133,13 @@ HcclResult HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, Com
     HcclResult ret = HCCL_SUCCESS;
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                uint32_t uintTopoType = 0;
+                CHK_RET(HcclGetInstTopoTypeByNetLayerV2(comm, netLayer, &uintTopoType));
+                *topoType = static_cast<CommTopo>(uintTopoType);
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetInstTopoTypeByNetLayer(netLayer, topoType));
@@ -147,6 +164,11 @@ HcclResult HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uin
     HcclResult ret = HCCL_SUCCESS;
     HCCLV2_FUNC_RUN(
     [&]() -> HcclResult {
+        const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+        if (indOp == nullptr || strcmp(indOp, "") == 0) {
+            CHK_RET(HcclGetInstSizeByNetLayerV2(comm, netLayer, rankNum));
+            return HCCL_SUCCESS;
+        }
         RankGraph* rankGraph = nullptr;
         CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
         CHK_RET(rankGraph->GetInstSizeByNetLayer(netLayer, rankNum));
@@ -171,6 +193,11 @@ HcclResult HcclRankGraphGetRanksByLayer(HcclComm comm, uint32_t netLayer, uint32
     HcclResult ret = HCCL_SUCCESS;
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetInstRanksByNetLayerV2(comm, netLayer, ranks, rankNum));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetInstRanksByNetLayer(netLayer, ranks, rankNum));
@@ -195,6 +222,11 @@ HcclResult HcclRankGraphGetInstSizeListByLayer(HcclComm comm, uint32_t netLayer,
     HcclResult ret = HCCL_SUCCESS;
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetInstSizeListByNetLayerV2(comm, netLayer, instSizeList, listSize));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize));
@@ -218,6 +250,11 @@ HcclResult HcclRankGraphGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, ui
     CHK_PTR_NULL(topoInstNum);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetTopoInstsByLayerV2(comm, netLayer, topoInsts, topoInstNum));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
@@ -235,6 +272,11 @@ HcclResult HcclRankGraphGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t t
     CHK_PTR_NULL(topoType);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetTopoTypeV2(comm, netLayer, topoInstId, topoType));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
@@ -253,6 +295,11 @@ HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uin
     CHK_PTR_NULL(rankNum);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetRanksByTopoInstV2(comm, netLayer, topoInstId, ranks, rankNum));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
@@ -270,6 +317,11 @@ HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t t
     CHK_PTR_NULL(num);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclRankGraphGetEndpointNumV2(comm, layer, topoInstId, num));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
@@ -288,6 +340,11 @@ HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t 
     CHK_PTR_NULL(endpointDesc);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclRankGraphGetEndpointDescV2(comm, layer, topoInstId, descNum, endpointDesc));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
@@ -306,6 +363,11 @@ HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const En
     CHK_PTR_NULL(info);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclRankGraphGetEndpointInfoV2(comm, rankId, endpointDesc, endpointAttr, infoLen, info));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
@@ -339,6 +401,11 @@ HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
     CHK_PTR_NULL(rankSize);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetRankSizeV2(comm, rankSize));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetRankSize(rankSize));
@@ -362,6 +429,11 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
     CHK_PTR_NULL(rank);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetRankIdV2(comm, rank));
+                return HCCL_SUCCESS;
+            }
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetRankId(rank));
