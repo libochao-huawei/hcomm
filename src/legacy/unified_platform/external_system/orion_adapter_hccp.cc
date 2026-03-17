@@ -42,6 +42,8 @@ constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
+constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
+constexpr u32 GET_TLS_ENABLE_VERSION = 1;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -51,6 +53,34 @@ inline s32 EnvLinkTimeoutGet()
 {
     g_linkTimeout = g_linkTimeout != 0 ? g_linkTimeout : EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut();
     return g_linkTimeout;
+}
+
+HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
+{
+    tlsStatus = TlsStatus::UNKNOWN;
+    CHK_PTR_NULL(info);
+
+    u32 tlsVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(info->phyId, GET_TLS_ENABLE_OPCODE, &tlsVersion);
+    if (versionRet != 0 || tlsVersion < GET_TLS_ENABLE_VERSION) {
+        HCCL_WARNING("[HrtRaGetTlsStatus] this package does not support RaGetTlsEnable for device, "
+            "please change new package. ret[%d], tlsVersion[%u].", versionRet, tlsVersion);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    bool tlsEnable = false;
+    s32 ret = RaGetTlsEnable(info, &tlsEnable);
+    if (ret != 0) {
+        tlsStatus = TlsStatus::DISABLE;
+        HCCL_ERROR("[HrtRaGetTlsStatus] errNo[0x%016llx] failed ret[%d], phyId[%u]",
+            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, info->phyId);
+        return HCCL_E_NETWORK;
+    }
+
+    tlsStatus = tlsEnable ? TlsStatus::ENABLE : TlsStatus::DISABLE;
+    HCCL_INFO("[HrtRaGetTlsStatus] phyId[%u], tlsEnable[%d], tlsStatus[%d]",
+        info->phyId, tlsEnable, static_cast<s32>(tlsStatus));
+    return HCCL_SUCCESS;
 }
 
 inline union HccpIpAddr IpAddressToHccpIpAddr(IpAddress &addr)
