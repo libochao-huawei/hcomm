@@ -70,10 +70,10 @@ void CcuContextReduceNHR1DMem2mem::InitResources()
 {
     die0Size_           = CreateVariable();
     die1Size_           = CreateVariable();
-    die0SliceSize_      = CreateVariable();
-    die1SliceSize_      = CreateVariable();
     die0LastSliceSize_  = CreateVariable();
     die1LastSliceSize_  = CreateVariable();
+    die0SliceSize_      = CreateVariable();
+    die1SliceSize_      = CreateVariable();
     localAxisSignal_    = CreateMaskSignal();
     localSignal_        = CreateMaskSignal();
     if (axisSize_ > 1) {
@@ -228,8 +228,8 @@ void CcuContextReduceNHR1DMem2mem::DoWriteReduceSlice(const u32 &toRank, CcuRep:
     
     // 添加 die1 偏移
     if (axisId_ == 1) {
-        src.addr += die0Size_;
         dst.addr += die0Size_;
+        src.addr += die0Size_;
     }
 
     // allreduce切片的最后一块slice，大小可能不一致
@@ -258,9 +258,9 @@ void CcuContextReduceNHR1DMem2mem::DoGatherNHRSingleStep(const NHRStepInfo &nhrS
 {
     u32& toRankIdx = indexMap_[nhrStepInfo.toRank];
     u32& fromRankIdx = indexMap_[nhrStepInfo.fromRank];
-    u32  sendSliceIdx = 0;
-    CcuTransport           *sendTransport = transports[toRankIdx];
     CcuTransport           *recvTransport = transports[fromRankIdx];
+    CcuTransport           *sendTransport = transports[toRankIdx];
+    u32  sendSliceIdx = 0;
     const std::vector<u32> &sendSliceIdxList  = nhrStepInfo.txSliceIdxs;
     srcMem_.token                         = token_[myRankIdx_];
     dstMem_.token                         = token_[toRankIdx];
@@ -388,8 +388,8 @@ void CcuContextReduceNHR1DMem2mem::DoLocalCopySlice(CcuRep::Memory &src, CcuRep:
     bool islastSlice;
     // 添加 die1 偏移
     if (axisId_ == 1) {
-        src.addr += die0Size_;
         dst.addr += die0Size_;
+        src.addr += die0Size_;
     }
 
     islastSlice = (copySliceIdx + 1 == dimSize_);

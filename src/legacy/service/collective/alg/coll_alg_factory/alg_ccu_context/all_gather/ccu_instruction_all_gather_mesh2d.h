@@ -93,16 +93,6 @@ public:
         return StringFormat("CcuInstructionAllGatherMesh2D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgAllGatherMesh2D>(dimSize_, rankId_, axisId_, op_, tempVTopo_);
