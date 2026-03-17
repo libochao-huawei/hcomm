@@ -32,6 +32,7 @@ HcclResult InsSendExecutor::Orchestrate(const RankGraph  *rankGraph,
                                        const CollAlgParams   &params,
                                        InsQuePtr              insQue)
 {
+    dmaMode_ = DmaMode::DEFAULT;
     HCCL_DEBUG("[InsCollAlgFactory][InsSendExecutor][Orchestrate] Begin to Generate Instruction Queue for SEND.");
     CHK_RET(Init(op, params, insQue));
     // 从集合通信算子op中获得remote rank和data type/count相关信息
@@ -52,6 +53,10 @@ HcclResult InsSendExecutor::Orchestrate(const RankGraph  *rankGraph,
                 HCCL_ERROR("[InsCollAlgFactory] Unable to obtain valid link, srcRank [%d], dstRank [%d].", myRank_,
                 remoteRank), HcclResult::HCCL_E_INTERNAL);
     LinkData sendLinkData(sendPath[0]);
+    if (sendLinkData.GetType() == PortDeploymentType::P2P
+        && sendLinkData.GetLinkProtocol() == LinkProtocol::PCIE) {
+        dmaMode_ = DmaMode::GET;
+    }
     HCCL_DEBUG("[InsCollAlgFactory][InsSendExecutor][Orchestrate] Total transfer data size [%llu], Max scratch buffer size [%u].", totalDataSize, params.maxTmpMemSize);
 
     // 初始化循环参数
@@ -68,7 +73,7 @@ HcclResult InsSendExecutor::Orchestrate(const RankGraph  *rankGraph,
         DataSlice remoteOutputBuffer(BufferType::OUTPUT, currentOffset, transferSize);
         SlicesList sendSlicesList({inputBuffer}, {remoteOutputBuffer});
         DataInfo sendInfo(sendLinkData, sendSlicesList);
-        CHK_RET(Send(sendInfo, insQue));
+        CHK_RET(Send(sendInfo, insQue, 0, true, dmaMode_));
     }else{
         HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OPBASE Mode for HOST.", myRank_);
         // 当需要多轮搬运时，需保证一次数据的搬运量需为单个数据size的整数倍
@@ -85,7 +90,7 @@ HcclResult InsSendExecutor::Orchestrate(const RankGraph  *rankGraph,
             CHK_RET(LocalCopy(insQue, inputBuffer, scratchBuffer));
             SlicesList sendSlicesList({scratchBuffer}, {remoteScratchBuffer});
             DataInfo sendInfo(sendLinkData, sendSlicesList);
-            CHK_RET(Send(sendInfo, insQue));
+            CHK_RET(Send(sendInfo, insQue, 0, true, dmaMode_));
 
             currentOffset = currentOffset + transferSize;
             resDataSize = resDataSize - transferSize;
@@ -135,6 +140,7 @@ HcclResult InsSendExecutor::Orchestrate(const AlgTopoInfo     &topoInfo, // aicp
                                           ConnectedLinkMgr      *linkMgr,
                                           InsQuePtr              insQue)
 {
+    dmaMode_ = DmaMode::DEFAULT;
     (void)topoInfo;
     HCCL_DEBUG("[InsCollAlgFactory][InsSendExecutor][Orchestrate] Begin to Generate Instruction Queue for SEND AICPU mode.");
     CHK_RET(Init(op, params, insQue));
@@ -156,6 +162,10 @@ HcclResult InsSendExecutor::Orchestrate(const AlgTopoInfo     &topoInfo, // aicp
                 HCCL_ERROR("[InsCollAlgFactory] Unable to obtain valid link, srcRank [%d], dstRank [%d].", myRank_,
                 remoteRank), HcclResult::HCCL_E_INTERNAL);
     LinkData sendLinkData(sendPath[0]);
+    if (sendLinkData.GetType() == PortDeploymentType::P2P
+        && sendLinkData.GetLinkProtocol() == LinkProtocol::PCIE) {
+        dmaMode_ = DmaMode::GET;
+    }
     HCCL_DEBUG("[InsCollAlgFactory][InsSendExecutor][Orchestrate] Total transfer data size [%llu], Max scratch buffer size [%u].", totalDataSize, params.maxTmpMemSize);
  
     // 初始化循环参数
@@ -172,7 +182,7 @@ HcclResult InsSendExecutor::Orchestrate(const AlgTopoInfo     &topoInfo, // aicp
             DataSlice remoteOutputBuffer(BufferType::OUTPUT, currentOffset, transferSize);
             SlicesList sendSlicesList({inputBuffer}, {remoteOutputBuffer});
             DataInfo sendInfo(sendLinkData, sendSlicesList);
-            CHK_RET(Send(sendInfo, insQue));
+            CHK_RET(Send(sendInfo, insQue, 0, true, dmaMode_));
             currentOffset = currentOffset + transferSize;
             resDataSize = resDataSize - transferSize;
             roundIdx = roundIdx + 1;
@@ -193,7 +203,7 @@ HcclResult InsSendExecutor::Orchestrate(const AlgTopoInfo     &topoInfo, // aicp
             CHK_RET(LocalCopy(insQue, inputBuffer, scratchBuffer));
             SlicesList sendSlicesList({scratchBuffer}, {remoteScratchBuffer});
             DataInfo sendInfo(sendLinkData, sendSlicesList);
-            CHK_RET(Send(sendInfo, insQue));
+            CHK_RET(Send(sendInfo, insQue, 0, true, dmaMode_));
  
             currentOffset = currentOffset + transferSize;
             resDataSize = resDataSize - transferSize;
