@@ -198,3 +198,149 @@ TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_backupInit)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
+
+HcclResult hrtGetDeviceRefreshForTest(s32* deviceLogicID)
+{
+    *deviceLogicID = 0;
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtGetDeviceRefreshFailedForTest(s32* deviceLogicID)
+{
+    *deviceLogicID = 0;
+    return HCCL_E_INTERNAL;
+}
+
+HcclResult hrtGetDeviceRefreshInvalidIdForTest(s32* deviceLogicID)
+{
+    *deviceLogicID = MAX_MODULE_DEVICE_NUM; // 无效的 deviceLogicID
+    return HCCL_SUCCESS;
+}
+
+// 模拟不同线程获取不同的设备逻辑 ID
+HcclResult hrtGetDeviceRefreshDifferentIdForTest(s32* deviceLogicID)
+{
+    // 为每个线程分配不同的设备逻辑 ID（0 和 1）
+    static std::atomic<int> threadId(0);
+    int id = threadId++ % 2;
+    *deviceLogicID = id;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_get_instance_multi_thread)
+{
+    // 测试正常情况：多线程获取实例
+    MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(hrtGetDeviceRefreshForTest));
+    
+    const int threadCount = 10;
+    std::vector<std::thread> threads;
+    std::vector<GlobalMemRegMgr*> instances(threadCount);
+    
+    // 多线程同时获取实例
+    for (int i = 0; i < threadCount; i++) {
+        threads.emplace_back([&, i]() {
+            instances[i] = &GlobalMemRegMgr::GetInstance();
+        });
+    }
+    
+    // 等待所有线程完成
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    
+    // 验证所有线程获取的是同一个实例
+    for (int i = 1; i < threadCount; i++) {
+        EXPECT_EQ(instances[i], instances[0]);
+    }
+    
+    GlobalMockObject::verify();
+}
+
+TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_get_instance_different_device_multi_thread)
+{
+    // 测试不同线程获取不同设备实例的场景
+    MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(hrtGetDeviceRefreshDifferentIdForTest));
+    
+    const int threadCount = 10;
+    std::vector<std::thread> threads;
+    std::vector<GlobalMemRegMgr*> instances(threadCount);
+    
+    // 多线程同时获取实例
+    for (int i = 0; i < threadCount; i++) {
+        threads.emplace_back([&, i]() {
+            instances[i] = &GlobalMemRegMgr::GetInstance();
+        });
+    }
+    
+    // 等待所有线程完成
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    
+    // 验证线程获取的实例数量（应该只有 2 个不同的实例，对应设备 0 和 1）
+    std::unordered_set<GlobalMemRegMgr*> uniqueInstances;
+    for (auto instance : instances) {
+        uniqueInstances.insert(instance);
+    }
+    EXPECT_EQ(uniqueInstances.size(), 2);
+    
+    GlobalMockObject::verify();
+}
+
+TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_get_instance_failed_multi_thread)
+{
+    // 测试 hrtGetDeviceRefresh 失败的情况：多线程获取实例
+    MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(hrtGetDeviceRefreshFailedForTest));
+    
+    const int threadCount = 10;
+    std::vector<std::thread> threads;
+    std::vector<GlobalMemRegMgr*> instances(threadCount);
+    
+    // 多线程同时获取实例
+    for (int i = 0; i < threadCount; i++) {
+        threads.emplace_back([&, i]() {
+            instances[i] = &GlobalMemRegMgr::GetInstance();
+        });
+    }
+    
+    // 等待所有线程完成
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    
+    // 验证所有线程获取的是同一个预留实例
+    for (int i = 1; i < threadCount; i++) {
+        EXPECT_EQ(instances[i], instances[0]);
+    }
+    
+    GlobalMockObject::verify();
+}
+
+TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_get_instance_invalid_id_multi_thread)
+{
+    // 测试无效 deviceLogicID 的情况：多线程获取实例
+    MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(hrtGetDeviceRefreshInvalidIdForTest));
+    
+    const int threadCount = 10;
+    std::vector<std::thread> threads;
+    std::vector<GlobalMemRegMgr*> instances(threadCount);
+    
+    // 多线程同时获取实例
+    for (int i = 0; i < threadCount; i++) {
+        threads.emplace_back([&, i]() {
+            instances[i] = &GlobalMemRegMgr::GetInstance();
+        });
+    }
+    
+    // 等待所有线程完成
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    
+    // 验证所有线程获取的是同一个预留实例
+    for (int i = 1; i < threadCount; i++) {
+        EXPECT_EQ(instances[i], instances[0]);
+    }
+    
+    GlobalMockObject::verify();
+}
