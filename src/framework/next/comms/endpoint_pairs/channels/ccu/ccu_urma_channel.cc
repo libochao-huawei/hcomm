@@ -153,11 +153,6 @@ HcclResult CcuUrmaChannel::Init()
     auto linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(locEndpointDesc, channelDesc_.remoteEndpoint, linkData));
 
-    if (channelDesc_.memHandleNum != 1) {
-        HCCL_ERROR("[CcuUrmaChannel][%s] failed, unsupport memHandleNum[%u].",
-            __func__, channelDesc_.memHandleNum);
-        return HcclResult::HCCL_E_NOT_SUPPORT;
-    }
     CHK_PTR_NULL(channelDesc_.memHandles);
 
     // 当前建链不支持资源扩容，CCU资源默认固定为16
