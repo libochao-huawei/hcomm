@@ -16,6 +16,7 @@
 #include "hccl_exception.h"
 #include "null_ptr_exception.h"
 #include "runtime_api_exception.h"
+#include "network_api_exception.h"
 #include "exception_util.h"
 #include "hccp_hdc_manager.h"
 #include "hccp_peer_manager.h"
@@ -58,6 +59,7 @@
 #include "hostdpu/flush_manager.h"
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "json_parser.h"
+#include "p2p_enable_manager.h"
 #include "adapter_error_manager_pub.h"
 #include "ccu_context_all_to_all_v_mesh1d.h"
 #include "topo_addr_info.h"
@@ -110,6 +112,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const std::strin
         initFlag = true;
         try {
             InitCommonData(commParams, config);
+            InitHccpHdc();    // tsdOpen + rainit
             InitRankGraph(ranktableM);
             InitCommResource(commParams);
         } catch (HcclException &e) {
@@ -132,7 +135,6 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const std::strin
 void CommunicatorImpl::InitCommResource(const CommParams &commParams)
 {
     HrtSetDevice(devLogicId);
-    InitHccpHdc();
     if (IsNeedDpu()) {
         InitHccpPeer();
     }
@@ -140,6 +142,7 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitCcuSuperFastLoad();
     InitNotifyManager();
     InitStreamManager();
+    InitPreResource();
     InitSocketManager();
     if (ranktableInfo != nullptr) {
         SocketManager::SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
@@ -207,6 +210,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, const RankTableI
         initFlag = true;
         try {
             InitCommonData(commParams, config);
+            InitHccpHdc();    // tsdOpen + rainit
             InitRankGraph(ranktable);
             InitCommResource(commParams);
         } catch (HcclException &e) {
@@ -1533,6 +1537,24 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
     taskExceptionEnv, hostApiState, nodeState, l0State, l1State, l2State);
 }
 
+void CommunicatorImpl::InitPreResource()
+{
+    // PCIE链路的两端实现enableP2P
+    auto links = GetFullMeshLinks();
+    for (auto link : links) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            DeviceId remotePhyId = link.GetRemoteDeviceId();
+            enableP2PDevices_.push_back(remotePhyId);
+        }
+    }
+    CHK_RET_THROW(RuntimeApiException, "EnableP2P Failed", P2PEnableManager::GetInstance().EnableP2P(enableP2PDevices_));
+}
+
+void CommunicatorImpl::DeInitPreResource()
+{
+    (void)P2PEnableManager::GetInstance().DisableP2P(enableP2PDevices_);
+}
+
 void CommunicatorImpl::InitSocketManager()
 {
     socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
@@ -2404,6 +2426,7 @@ CommunicatorImpl::~CommunicatorImpl()
 
     (void)DestroyDpuKernelResource();
     g_taskServiceMap.erase(id);
+    DeInitPreResource();
     HCCL_RUN_INFO("[~CommunicatorImpl] cclBuffer free, commId[%s] ", id.c_str());
 }
 
@@ -2725,19 +2748,15 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
             break;
         case HcclAccelerator::CCU_SCHED:
             commAccelerator = AcceleratorState::CCU_SCHED;
+            if (IsCommWithPCIEProtocol()) {
+                // 若当前通信域存在PCIE链路,不支持ccu展开,默认切换为aicpu展开,在大于8卡不支持aicpu场景由后续算法选择部分切换至aiv展开
+                commAccelerator = AcceleratorState::AICPU_TS;
+            }
             break;
         case HcclAccelerator::AIV:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             commAccelerator = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV_ONLY加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             commAccelerator = AcceleratorState::AIV_ONLY;
             break;
         case HcclAccelerator::AICPU_TS:
@@ -2760,6 +2779,19 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     SetOpExecuteConfig(inCommExecuteConfig); // 算子粒度加速模式 同步为 通信域粒度加速模式
     HCCL_DEBUG("[CommunicatorImpl][%s] comm accelerator [%s], isCcuMsAvailable is [%d]", __func__, GetCommExecuteConfig().accState.Describe().c_str(), isCcuMsAvailable);
     return HCCL_SUCCESS;
+}
+
+bool CommunicatorImpl::IsCommWithPCIEProtocol()
+{
+    auto links = GetFullMeshLinks();
+    for (auto link : links) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            HCCL_INFO("[CommunicatorImpl][%s]the current communicator has PCIE link", __func__);
+            return true;
+        }
+    }
+    HCCL_INFO("[CommunicatorImpl][%s]the current communicator does not have a PCIE link", __func__);
+    return false;
 }
 
 HcclResult CommunicatorImpl::GetAccelerator(int32_t *accelerator) const
@@ -3262,7 +3294,7 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
     auto processLinks = [&](const std::vector<std::shared_ptr<NetInstance::Link>>& links, bool isSource) {
         for (auto link : links) {
             auto iface = isSource ? link->GetSourceIface() : link->GetTargetIface();
-            if (iface->GetPos() == AddrPosition::HOST) {
+            if (iface->GetPos() == AddrPosition::HOST || *(iface->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
                 continue;
             }
             u32 dieId = GetLocalDieId({myRank, *iface});

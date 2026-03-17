@@ -447,18 +447,6 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
     ReduceProfilingProcess(loc, rmt, reduceIn, stream, taskId);
 }
 
-HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
-{
-    static std::map<ReduceOp, HcclReduceOp> reduceTypeMap = {{ReduceOp::SUM, HcclReduceOp::HCCL_REDUCE_SUM},
-                                                             {ReduceOp::PROD, HcclReduceOp::HCCL_REDUCE_PROD},
-                                                             {ReduceOp::MAX, HcclReduceOp::HCCL_REDUCE_MAX},
-                                                             {ReduceOp::MIN, HcclReduceOp::HCCL_REDUCE_MIN}};
-    if (UNLIKELY(reduceTypeMap.find(reduceOp) == reduceTypeMap.end())) {
-        THROW<InternalException>(StringFormat("reduceOp[%u] is invalid", reduceOp));
-    }
-    return reduceTypeMap[reduceOp];
-}
-
 void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {

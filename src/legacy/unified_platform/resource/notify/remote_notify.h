@@ -47,6 +47,21 @@ public:
 
     string Describe() const override;
 
+    inline u32 GetId() const
+    {
+        return id;
+    }
+
+    inline u64 GetAddr() const
+    {
+        return addr;
+    }
+
+    inline u32 GetSize() const
+    {
+        return size;
+    }
+
 private:
     char_t     name[RTS_IPC_MEM_NAME_LEN]{0};
     u64        handleAddr{0}; // 两rank处于相同Server, 相同进程下, 携带指针 RtNotify 的值
@@ -55,6 +70,8 @@ private:
     u32        rmtDevPhyId{0};
     bool       devUsed{false};
     RtNotify_t handle{};
+    u64        addr{0};
+    u32        size{0};
 };
 
 } // namespace Hccl

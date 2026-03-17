@@ -48,10 +48,12 @@ public:
             auto targetPeer = link.GetTargetNode();
             shared_ptr<NetInstance::ConnInterface> srcConnIface = link.GetSourceIface();
             auto targetConnIface = link.GetTargetIface();
-            type = AddrPos2PortDeploymentType(srcConnIface->GetPos());
             linkProtocol_ = *link.GetLinkProtocols().begin();
+            type = AddrPos2PortDeploymentType(srcConnIface->GetPos(), linkProtocol_);
             localRankId_ = std::dynamic_pointer_cast<NetInstance::Peer>(srcPeer)->GetRankId();
             remoteRankId_ = std::dynamic_pointer_cast<NetInstance::Peer>(targetPeer)->GetRankId();
+            localDeviceId_ = std::dynamic_pointer_cast<NetInstance::Peer>(srcPeer)->GetDeviceId();
+            remoteDeviceId_ = std::dynamic_pointer_cast<NetInstance::Peer>(targetPeer)->GetDeviceId();
             localAddr_ = srcConnIface->GetAddr();
             remoteAddr_ = targetConnIface->GetAddr();
             localDieId_ = srcConnIface->GetLocalDieId();
@@ -63,10 +65,12 @@ public:
             auto targetPeer = link1.GetTargetNode();
             auto srcConnIface = link0.GetSourceIface();
             auto targetConnIface = link1.GetTargetIface();
-            type = AddrPos2PortDeploymentType(srcConnIface->GetPos());
             linkProtocol_  = *link0.GetLinkProtocols().begin();
+            type = AddrPos2PortDeploymentType(srcConnIface->GetPos(), linkProtocol_);
             localRankId_ = std::dynamic_pointer_cast<NetInstance::Peer>(srcPeer)->GetRankId();
             remoteRankId_ = std::dynamic_pointer_cast<NetInstance::Peer>(targetPeer)->GetRankId();
+            localDeviceId_ = std::dynamic_pointer_cast<NetInstance::Peer>(srcPeer)->GetDeviceId();
+            remoteDeviceId_ = std::dynamic_pointer_cast<NetInstance::Peer>(targetPeer)->GetDeviceId();
             localAddr_ = srcConnIface->GetAddr();
             remoteAddr_ = targetConnIface->GetAddr();
             localDieId_ = srcConnIface->GetLocalDieId();
@@ -81,6 +85,7 @@ public:
         } else {
             HCCL_ERROR("[LinkData][Constructor]path.links.size()[%u] is invalid", path.links.size());
         }
+        UpdateIpAddrWithPCIE();
         direction = path.direction;
 
         localPortId_ = 0;
@@ -220,6 +225,11 @@ public:
         return remoteRankId_;
     };
 
+    DeviceId GetRemoteDeviceId() const
+    {
+        return remoteDeviceId_;
+    };
+
     u32 GetLocalPortId() const
     {
         return localPortId_;
@@ -259,6 +269,7 @@ public:
     {
         return writable;
     };
+    void UpdateIpAddrWithPCIE();
 
 private:
     PortDeploymentType type;
@@ -275,6 +286,8 @@ private:
     LinkDirection      direction;
     u32                localDieId_{};
     u8                 portGroupSize{1};
+    DeviceId localDeviceId_;
+    DeviceId remoteDeviceId_;
 };
 } // namespace Hccl
 

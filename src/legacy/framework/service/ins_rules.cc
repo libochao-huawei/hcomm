@@ -790,6 +790,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
                                            reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_ADDR_OFFSET),
                     .flagMemSize = AIV_FLAG_AREA_SIZE,
                     .rank        = aivOpArgs.rank,
+                    .sendRecvRemoteRank = aivOpArgs.sendRecvRemoteRank,
                     .isOpbase    = aivOpArgs.isOpBase,
                     .dataType    = DataTypeToHcclDataType(aivOpArgs.dataType),
             }

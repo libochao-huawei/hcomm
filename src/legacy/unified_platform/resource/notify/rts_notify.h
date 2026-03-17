@@ -36,6 +36,8 @@ public:
 
     std::string SetIpcName() const;
 
+    void SetIpcPid(s32 pid) const;
+
     u32 GetId() const;
 
     u64 GetOffset() const;

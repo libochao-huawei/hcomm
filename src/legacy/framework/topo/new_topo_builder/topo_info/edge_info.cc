@@ -20,6 +20,7 @@ const unordered_map<string, LinkProtocol> EdgeInfo::strToLinkProtocol =
         {"UB_TP", LinkProtocol::UB_TP},
         {"ROCE", LinkProtocol::ROCE},
         {"HCCS", LinkProtocol::HCCS},
+        {"PCIE", LinkProtocol::PCIE},
         {"TCP", LinkProtocol::TCP},
         {"UB_MEM", LinkProtocol::UB_MEM}});
 
