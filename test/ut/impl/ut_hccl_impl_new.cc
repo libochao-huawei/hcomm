@@ -316,6 +316,11 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
+    MOCKER(hccl::RegisterKernel)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+
     ret = implBase->Init(params, rankTable);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 

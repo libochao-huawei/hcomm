@@ -17,6 +17,32 @@
 
 using namespace AscendC;
 
+#define EXPORT_AIV_META_INFO(kernel_name) \
+static const struct FunLevelKType kernel_name##_kernel_type_section __attribute__ \
+((used, section (".ascend.meta." #kernel_name))) \
+= {{F_TYPE_KTYPE, sizeof(unsigned int), K_TYPE_AIV}}
+
+// AIV支持的Atomic数据类型
+#define AIV_ATOMIC_DATA_TYPE_DEF(func) \
+    func(float); \
+    func(half); \
+    func(int16_t); \
+    func(int32_t); \
+    func(int8_t); \
+    func(bfloat16_t)
+
+// AIV支持的DataCopy数据类型
+#define AIV_COPY_DATA_TYPE_DEF(func) \
+    func(half); \
+    func(int16_t); \
+    func(uint16_t); \
+    func(float); \
+    func(int32_t); \
+    func(uint32_t); \
+    func(int8_t); \
+    func(uint8_t); \
+    func(bfloat16_t)
+    
 constexpr uint32_t MAX_RANK_SIZE = 16; // server内最大卡数
 constexpr uint32_t MAX_RANK_SIZE_A3 = 768; // 超节点内最大卡数
 constexpr uint32_t MAX_TARGET_NUM = 20; // 最大轮数
