@@ -497,7 +497,7 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx) const
+HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
     uint64_t bufferBlockSize = localRmaBuffers_[0]->GetBufferInfo().second / 2;
 
@@ -632,7 +632,7 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
 }
 
 HcclResult HostCpuRoceChannel::WriteWithNotify(
-    void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx) const
+    void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx)
 {
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
@@ -677,17 +677,17 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len) const
+HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len)
 {
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len) const 
+HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len)
 {
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HostCpuRoceChannel::ChannelFence() const
+HcclResult HostCpuRoceChannel::ChannelFence()
 {
     struct ibv_wc wc{};
     int wcNum = 2;
