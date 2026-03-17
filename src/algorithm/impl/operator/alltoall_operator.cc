@@ -268,7 +268,8 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
     } else if (IsA3PipelineCondition(param)) {
         algName = "RunAlltoAllVTwoLevelPipeline";
     } else if (IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
-        isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) || param.aicpuUnfoldMode || deviceType_ == DevType::DEV_TYPE_310P3) {
+        isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) ||
+        (deviceType_ == DevType::DEV_TYPE_910_93 && param.aicpuUnfoldMode) || deviceType_ == DevType::DEV_TYPE_310P3) {
         if (param.supportSymmetricMemory && superPodNum_ == 1 && !GetExternalInputInterHccsDisable()) {
             algName = "RunAlltoAllFullMeshSymmetricMemory";
         } else {
