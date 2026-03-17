@@ -515,6 +515,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RegisterCclBuffer_When_Normal_Expect_Success
 
 TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
 {
+    MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
     CommunicatorImpl comm;
     comm.InitNotifyManager();
     comm.InitSocketManager();
@@ -531,7 +532,6 @@ TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
     void* ptr;
     auto stream = std::make_unique<Stream>(ptr);
     MOCKER(HrtStreamGetMode).stubs().will(returnValue((unsigned long long)0));
-    MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
     comm.streamManager->opbase->RegisterMaster(std::move(stream));
     void* ptr2;
     auto freeStream = make_unique<Stream>(ptr2);
