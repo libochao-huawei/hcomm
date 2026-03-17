@@ -88,6 +88,7 @@ HcclResult CcuTempReduceMesh2D::CalcSliceInfo(const AllignInfo &allignInfo, cons
     SliceInfo basicSlice;
     basicSlice.offset = 0;
     basicSlice.size = dataSize;
+    HCCL_INFO("[CcuTempReduceMesh2D] [CalcSliceInfo]basicSlice.size[%u]", basicSlice.size);
     std::vector<SliceInfo> singleRankSliceInfoVector{basicSlice};
     sliceInfoVec.resize(tempRankSize_, singleRankSliceInfoVector);
 
@@ -121,13 +122,7 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
 
     RankGroup rankGroupX;
     RankGroup rankGroupY;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroupX.AddRank(peer);
-    }
-
-    for (auto &peer : tempVTopo_[1]) {
-        rankGroupY.AddRank(peer);
-    }
+    AddRanksToGroup(tempVTopo_,rankGroupX,rankGroupY);
 
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_); // tempRankSize_ 就是rank数量
@@ -138,23 +133,18 @@ HcclResult CcuTempReduceMesh2D::Run(const TempFuncs &tempFuncs, const RankSliceI
     uint64_t outputAddr;
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
                 + tempFuncs.usrData.usrInSlices[0].GetOffset();
         } else {
-            // 从 inBuff 获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 把数据写入 UserOut
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
                 + tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 把数据写入 outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
         }
     } else {
-        // 图模式没有 tempFuncs.usrData，直接通过 buffInfo_ 获取输入输出地址
         inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
     }
