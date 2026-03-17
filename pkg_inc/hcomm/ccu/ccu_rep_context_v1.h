@@ -14,7 +14,6 @@
 #include "hcomm_primitives.h"
 #include "ccu_rep_base_v1.h"
 #include "ccu_rep_block_v1.h"
-#include "ccu_kernel_arg.h"
 
 #include "ccu_common.h"
 

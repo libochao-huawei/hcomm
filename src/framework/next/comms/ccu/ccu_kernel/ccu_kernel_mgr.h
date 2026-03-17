@@ -31,9 +31,8 @@ public:
     HcclResult Init();
     HcclResult Deinit();
 
-    CcuResult Register(
-        CcuResPack &resPack, char *kernelFuncName,
-        void *ccuKernelFunc, void *kernelArg,
+    CcuResult Register(CcuResPack &resPack, char *kernelFuncName,
+        CcuKernelFunc ccuKernelFunc, CcuKernelArg kernelArg,
         CcuKernelHandle &kernelHandle);
 
     CcuResult Translate(const std::vector<CcuKernelHandle> &kernelHandles);
