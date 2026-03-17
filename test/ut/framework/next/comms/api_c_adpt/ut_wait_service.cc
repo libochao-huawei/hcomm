@@ -30,7 +30,6 @@ protected:
         HcclResult ret = HcommThreadAllocWithConfig(
             COMM_ENGINE_AICPU, 1, config, THREAD_TYPE_CPU, &threadHandle_);
         ASSERT_EQ(ret, HCCL_SUCCESS);
-        allHandles_.push_back(threadHandle_);
 
         // Fill default valid args
         memset(&args_, 0, sizeof(args_));
@@ -40,17 +39,12 @@ protected:
 
     void TearDown() override
     {
-        if (!allHandles_.empty()) {
-            HcommThreadFree(allHandles_.data(), allHandles_.size());
-            allHandles_.clear();
-        }
         GlobalMockObject::verify();
     }
 
     static constexpr uint32_t kNotifyNum = 2;
     ThreadHandle threadHandle_{};
     WaitServiceArgs args_{};
-    std::vector<ThreadHandle> allHandles_;
 };
 
 // test_01: Normal → HCCL_SUCCESS
@@ -96,7 +90,6 @@ TEST_F(WaitServiceTest, Ut_WaitService_When_ThreadIsNotCpuThread_Expect_ReturnIs
     HcclResult allocRet = HcommThreadAllocWithConfig(
         COMM_ENGINE_AICPU_TS, 1, wrongConfig, THREAD_TYPE_TS, &tsHandle);
     ASSERT_EQ(allocRet, HCCL_SUCCESS);
-    allHandles_.push_back(tsHandle);
 
     args_.threadHandle = tsHandle;
     HcclResult ret = WaitService(&args_, sizeof(WaitServiceArgs));
