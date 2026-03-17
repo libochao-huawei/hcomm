@@ -30,21 +30,15 @@ protected:
         HcclResult ret = HcommThreadAllocWithConfig(
             COMM_ENGINE_AICPU, 1, config, THREAD_TYPE_CPU, &threadHandle_);
         ASSERT_EQ(ret, HCCL_SUCCESS);
-        allHandles_.push_back(threadHandle_);
     }
 
     void TearDown() override
     {
-        if (!allHandles_.empty()) {
-            HcommThreadFree(allHandles_.data(), allHandles_.size());
-            allHandles_.clear();
-        }
         GlobalMockObject::verify();
     }
 
     static constexpr uint32_t kNotifyNum = 2;
     ThreadHandle threadHandle_{};
-    std::vector<ThreadHandle> allHandles_;
 };
 
 static HcclResult TestService(void *args, uint64_t argsSizeByte)
