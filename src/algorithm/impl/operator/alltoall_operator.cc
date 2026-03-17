@@ -265,8 +265,6 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         return HCCL_SUCCESS ;
     } else if (isCommon310P3DUO_) {
         algName = "RunAlltoAllVFor310PExecutor";
-    } else if (IsA3PipelineCondition(param)) {
-        algName = "RunAlltoAllVTwoLevelPipeline";
     } else if (!useOneLevelAlgorithm && IsSatisfyAlltoallContinuousPipelineCondition(param)) {
         algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
         HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
@@ -495,12 +493,6 @@ HcclResult AlltoAllOperator::CheckNeedRecreateComm(const std::string& algName, c
     CollAlltoAllExecutor* alltoAllExecutor = dynamic_cast<CollAlltoAllExecutor *>(executor_.get());
     CHK_RET(alltoAllExecutor->CheckNeedRecreateComm(lastScratchMemSize, needRecreateAlltoallComm));
     return HCCL_SUCCESS;
-}
-
-bool AlltoAllOperator::IsA3PipelineCondition(const OpParam& param)
-{
-    (void) param;
-    return false;
 }
 
 bool AlltoAllOperator::IsSatisfyAlltoallPipelineCondition()
