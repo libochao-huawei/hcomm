@@ -28,7 +28,8 @@ const unordered_map<string, NetType> RankLevelInfo::strToNetType
                                       {"A3_SERVER", NetType::A3_SERVER},
                                       {"A2_AX_SERVER", NetType::A2_AX_SERVER},
                                       {"TOPO_FILE_DESC", NetType::TOPO_FILE_DESC},
-                                      {"CLOS", NetType::CLOS}});
+                                      {"CLOS", NetType::CLOS},
+                                      {"OXC_Mesh", NetType::OXC_MESH}});
 
 
 void RankLevelInfo::Deserialize(const nlohmann::json &rankLevelInfoJson)

@@ -22,6 +22,7 @@
 #include "./topo/topoinfo_ranktableStandard.h"
 #include "./topo/topoinfo_ranktableConcise.h"
 #include "./topo/topoinfo_ranktableHeterog.h"
+#include "./topo/topoinfo_ranktableOxc.h"
 #include "./topo/topoinfo_roletableParser.h"
 #include "comm.h"
 #include "externalinput_pub.h"
@@ -48,6 +49,9 @@ HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &i
         pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableHeterog(rankTableM, identify, deviceType));
+    } else if (rankTable.version.compare(OXC_CLUSTER_VERSION) == 0) {
+        pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableOxc(rankTableM, identify));
+        pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare("Standard") == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableStandard(rankTableM, identify));
     } else {
@@ -97,6 +101,9 @@ HcclResult CfgGetClusterInfoWithoutDev(const std::string &rankTableM, const std:
         pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableHeterog(rankTableM, identify));
+    } else if (rankTable.version.compare(OXC_CLUSTER_VERSION) == 0) {
+        pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableOxc(rankTableM, identify));
+        pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare("Standard") == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableStandard(rankTableM, identify));
     } else {

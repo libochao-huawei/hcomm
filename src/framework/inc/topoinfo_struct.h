@@ -91,6 +91,7 @@ using RankTable_t = struct tagRankTable {
     std::vector<ServerInfo_t> serverList; // [DEPRECATED]通信域内服务器信息 目前cloud和lab网卡在device场景置空
     std::string collectiveId;             // 通信域ID
     std::string version;                  // rankTable版本信息
+    std::string taskId;                   // OXC任务ID（2.0版本新增）
     std::string mode;                     // [DEPRECATED]通讯方式tcp/rdma
 };
 

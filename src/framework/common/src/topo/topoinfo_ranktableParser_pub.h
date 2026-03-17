@@ -22,6 +22,7 @@ constexpr char CLUSTER_PROP_VERSION[] = "version";
 constexpr char HCCL_CLUSTER_VERSION[] = "1.0";      // HCCL集群版本
 constexpr char HETEROG_CLUSTER_VERSION[] = "1.1";   // 异构集群版本
 constexpr char SUPERPOD_CLUSTER_VERSION[] = "1.2";      // 超节点集群版本
+constexpr char OXC_CLUSTER_VERSION[] = "2.0";       // OXC组网版本
 
 constexpr int AVERAGE_DEVICE_SIXTEEN = 16;
 constexpr int AVERAGE_DEVICE_EIGHT = 8;
