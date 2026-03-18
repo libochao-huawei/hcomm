@@ -86,14 +86,8 @@ int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
     return 0;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 #include <iostream>
 
->>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
-=======
->>>>>>> 67098c8a (feat(ccu): kernel launch)
 int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[],
     unsigned int *num)
 {
@@ -103,7 +97,7 @@ int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[],
         info_list[0].eid.in4.addr = 469762271;
     }
     
-    info_list[0].dieId = 1;
+    info_list[0].dieId = 0;
     info_list[0].chipId = 0;
     info_list[0].funcId = 2;
  
