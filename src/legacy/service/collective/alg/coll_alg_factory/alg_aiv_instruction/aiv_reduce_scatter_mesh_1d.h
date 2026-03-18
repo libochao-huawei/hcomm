@@ -69,7 +69,7 @@ public:
             pipe_barrier(PIPE_ALL);
             for (int index = 1; index < rankSize_; index++) {
                 WaitFlag(rank_, index, curTag);
-                CpGM2GM((__gm__ T *)(outputOffset), (__gm__ T *)(inputOffVec[index])), consumProcessNum, reduceOp_);
+                CpGM2GM((__gm__ T *)(outputOffset), (__gm__ T *)(inputOffVec[index]), consumProcessNum, reduceOp_);
                 pipe_barrier(PIPE_ALL);
             }
         }
