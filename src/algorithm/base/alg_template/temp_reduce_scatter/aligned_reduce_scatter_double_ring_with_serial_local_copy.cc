@@ -310,15 +310,16 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::RunReduceScatter(c
 
 HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::GetActiveSubstreamNumWithSerial(u32 &activeSubstreamNum)
 {
+    constexpr u32 IDX_2 = 2;
     activeSubstreamNum = subStreams_.size();
     if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
-        if (subStreams_.size() <= 2) {
+        if (subStreams_.size() <= IDX_2) {
             HCCL_ERROR("[GetActiveSubstreamNumWithSerial]subStreams_.size()[%zu] <= 2",
                 subStreams_.size());
             return HCCL_E_PARA;
         }
         if (disableDMAReduce_) {
-            activeSubstreamNum = subStreams_.size() - 2;
+            activeSubstreamNum = subStreams_.size() - IDX_2;
         } else {
             activeSubstreamNum = subStreams_.size() - 1;
         }
