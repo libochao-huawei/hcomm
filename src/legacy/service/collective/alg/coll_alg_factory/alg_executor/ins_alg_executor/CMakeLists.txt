@@ -9,71 +9,19 @@
 # -----------------------------------------------------------------------------------------------------------
 target_sources(hccl_v2_native_alg_repo PRIVATE
         ins_coll_alg_base.cc
-
-        ins_all_gather_sole_executor.cc
-        ins_all_gather_parallel_executor.cc
-
-        ins_reduce_scatter_sole_executor.cc
-        ins_reduce_scatter_parallel_executor.cc
-
-        ins_all_reduce_sole_executor.cc
-
-        ins_reduce_sole_executor.cc
-        ins_reduce_parallel_executor.cc
-
-        ins_scatter_sole_executor.cc
-
-        ins_send_executor.cc
-        ins_recv_executor.cc
-        ins_v2_all_reduce_sole_executor.cc
-        ins_all_reduce_parallel_executor.cc
-        ins_all_to_all_sole_executor.cc
-
-        ins_broadcast_sole_executor.cc
-        ins_broadcast_parallel_executor.cc
-
-        ins_batchSendRecv_executor.cc
-        ins_v2_all_gather_sole_executor.cc
-        ins_v2_all_gather_v_sole_executor.cc
-        ins_v2_broadcast_sole_executor.cc
-        ins_v2_all_to_all_sole_executor.cc
-        ins_v2_all_to_all_v_sole_executor.cc
-        ins_v2_scatter_sole_executor.cc
-        ins_v2_reduce_sole_executor.cc
-        ins_v2_reduce_scatter_sole_executor.cc
-        ins_v2_all_gather_v_sole_executor.cc
-        ins_v2_reduce_scatter_v_sole_executor.cc
-        ins_scatter_parallel_executor.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 target_sources(ccl_kernel PRIVATE
-        ins_all_gather_sole_executor.cc
-        ins_reduce_scatter_sole_executor.cc
-        ins_scatter_sole_executor.cc
-        ins_all_to_all_sole_executor.cc
         ins_coll_alg_base.cc
-        ins_reduce_parallel_executor.cc
-        ins_batchSendRecv_executor.cc
-        ins_send_executor.cc
-        ins_recv_executor.cc
-        ins_v2_all_reduce_sole_executor.cc
-        ins_all_reduce_parallel_executor.cc
-        ins_all_reduce_sole_executor.cc
-        ins_broadcast_sole_executor.cc
-        ins_broadcast_parallel_executor.cc
-        ins_reduce_sole_executor.cc
-        ins_v2_all_gather_sole_executor.cc
-        ins_v2_all_gather_v_sole_executor.cc
-        ins_v2_broadcast_sole_executor.cc
-        ins_v2_all_to_all_sole_executor.cc
-        ins_v2_scatter_sole_executor.cc
-        ins_v2_reduce_sole_executor.cc
-        ins_v2_reduce_scatter_sole_executor.cc
-        ins_v2_all_gather_v_sole_executor.cc
-        ins_v2_reduce_scatter_v_sole_executor.cc
-        ins_all_gather_parallel_executor.cc
-        ins_reduce_scatter_parallel_executor.cc
-        ins_scatter_parallel_executor.cc
 )
 endif()
+
+ add_subdirectory(all_gather)
+ add_subdirectory(all_reduce)
+ add_subdirectory(all_to_all)
+ add_subdirectory(broadcast)
+ add_subdirectory(reduce)
+ add_subdirectory(reduce_scatter)
+ add_subdirectory(scatter)
+ add_subdirectory(send_recv)
