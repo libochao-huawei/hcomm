@@ -638,7 +638,7 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
 {
     u32 rmtNum;
     binaryStream >> rmtNum;
-    if (type == UbRmtBufType::BUFFER && rmtNum > MAX_BUFFER_NUM) {
+    if (UNLIKELY(type == UbRmtBufType::BUFFER && rmtNum > MAX_BUFFER_NUM)) {
         MACRO_THROW(InvalidParamsException,
             StringFormat("[UbMemTransport][RmtBufferVecUnpackProc] rmtNum[%u] exceeds limit[%u]",
             rmtNum, MAX_BUFFER_NUM));
