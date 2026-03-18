@@ -119,8 +119,9 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
         // 以下为ccu新接口流程
         auto ccuInsType = OpExpansionModeToCcuInstanceType(opExpansionMode_);
         void *resDesc = static_cast<void *>(&ccuInsType);
-        // todo: 需要转换
-        CHK_RET(CCU_TO_HCCL_RET(HcommCcuInsCreate(resDesc, &ccuInsHandle_)));
+        // todo: 需要处理可能越界转换
+        auto ret = HcommCcuInsCreate(resDesc, &ccuInsHandle_);
+        CHK_RET(static_cast<HcclResult>(ret));
     }
 
     // 创建端点管理器

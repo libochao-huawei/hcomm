@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+<<<<<<< HEAD
 #include "ccu_api.hpp"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
 
@@ -15,10 +16,19 @@ struct CcuVarAddKernelArg {
     uint64_t numA{0xffffffff};
     uint32_t numB{0};
     ChannelHandle channelHandle{0};
+=======
+#include "ccu_data_api.h"
+#include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
+
+struct CcuVarAddKernelArg {
+    uint32_t numA{0};
+    uint32_t numB{0};
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 };
 
 struct CcuVarAddTaskArg {
 };
+<<<<<<< HEAD
 // CcuResult CcuVarAddDemoKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -143,10 +153,30 @@ CcuResult CcuLocalReduceKernel(CcuKernelArg arg)
     ccu::BlockAlloc(buf, 2);
     ccu::LocalReduceNb(buf, 2, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, len, evt);
     ccu::WaitEvent(evt);
+=======
+
+CcuResult CcuVarAddDemoKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+
+    // 定义空的资源对象
+    CcuVariable result{}, numA{}, numB{};
+
+    // 为资源对象赋资源实例（可以是创建或借用）
+    CCU_CHK_RET(CcuVariableCreate(&result));
+    CCU_CHK_RET(CcuVariableCreate(&numA));
+    CCU_CHK_RET(CcuVariableCreate(&numB));
+
+    // 算法具体实现
+    numA = args->numA;
+    numB = args->numB;
+    result = numA + numB;
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 
     return CcuResult::CCU_SUCCESS;
 }
 
+<<<<<<< HEAD
 CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -609,3 +639,10 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     var = 1024;
 //     return CcuResult::CCU_SUCCESS;
 // }
+=======
+CcuResult CcuVarAddDemoGenTaskArgs(CcuVarAddTaskArg arg, uint64_t *vars, uint32_t num)
+{
+    // vars
+    return CcuResult::CCU_SUCCESS;
+}
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
