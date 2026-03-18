@@ -282,7 +282,7 @@ std::unordered_map<u32, u32> RankTableInfo::GetRankDeviceListenPortMap()
 {
     std::unordered_map<u32, u32> rankIdPortMap;
     for (auto &rankinfo : ranks) {
-        rankIdPortMap.insert(std::make_pair(rankinfo.deviceId, rankinfo.devicePort));
+        rankIdPortMap.insert(std::make_pair(rankinfo.rankId, rankinfo.devicePort));
     }
     return rankIdPortMap;
 }
