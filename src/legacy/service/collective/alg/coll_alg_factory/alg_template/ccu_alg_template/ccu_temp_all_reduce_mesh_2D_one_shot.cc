@@ -63,6 +63,7 @@ HcclResult CcuTempAllReduceMesh2DOneShot::CalcSliceInfo(const AllignInfo &allign
     SliceInfo basicSlice;
     basicSlice.offset = 0;
     basicSlice.size = dataSize;
+    HCCL_INFO("[CcuTempAllReduceMesh2DOneShot] basicSlice.size[%u].", basicSlice.size);
     std::vector<SliceInfo> singleRankSliceInfoVector{basicSlice};
     sliceInfoVec.resize(tempRankSize_, singleRankSliceInfoVector);
     return HcclResult::HCCL_SUCCESS;
@@ -110,29 +111,24 @@ HcclResult CcuTempAllReduceMesh2DOneShot::GetBufferAddr(const TempFuncs &tempFun
 
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据, 添加 loop 偏移
             inputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType());
             inputOffSet   = tempFuncs.usrData.usrInSlices[0].GetOffset();
         } else {
-            // 从 inBuff 获取数据, 添加 inBuffBaseOff
             inputBaseAddr = BufferTypeToAddr(buffInfo_.inBuffType);
             inputOffSet   = buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 把数据写入 UserOut, 添加 loop 偏移
             outputBaseAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
             outputOffSet   = tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 把数据写入 outBuff, 添加 outBuffBaseOff
             outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
             outputOffSet   = buffInfo_.outBuffBaseOff;
         }
     } else {
-        // 图模式
-        inputBaseAddr  = BufferTypeToAddr(buffInfo_.inBuffType);
-        inputOffSet    = buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
         outputBaseAddr = BufferTypeToAddr(buffInfo_.outBuffType);
         outputOffSet   = buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        inputBaseAddr  = BufferTypeToAddr(buffInfo_.inBuffType);
+        inputOffSet    = buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
     }
 
     scratchBaseAddr = BufferTypeToAddr(buffInfo_.scratBuffType);
@@ -190,10 +186,10 @@ HcclResult CcuTempAllReduceMesh2DOneShot::PrepareRankGroups()
         rankGroupY_.AddRank(peer);
     }
     CHK_PRT_RET(rankGroupX_.GetRanks().size() <= 1 || rankGroupY_.GetRanks().size() <= 1,
-        HCCL_ERROR("[PrepareRankGroups] Rank[%d] RankGroupX size[%u] or RankGroupY size[%u] is not greater than 1. ",
+        HCCL_ERROR("[CcuTempAllReduceMesh2DOneShot][PrepareRankGroups] Rank[%d] RankGroupX size[%u] or RankGroupY size[%u] is not greater than 1. ",
         myRank_, rankGroupX_.GetRanks().size(), rankGroupY_.GetRanks().size()),
         HcclResult::HCCL_E_PARA);
-    HCCL_INFO("[PrepareRankGroups] RankGroupX size[%u], RankGroupY size[%u].",
+    HCCL_INFO("[CcuTempAllReduceMesh2DOneShot][PrepareRankGroups] RankGroupX size[%u], RankGroupY size[%u].",
         rankGroupX_.GetRanks().size(), rankGroupY_.GetRanks().size());
     return HcclResult::HCCL_SUCCESS;
 }

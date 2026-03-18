@@ -170,6 +170,18 @@ uint64_t CcuAlgTemplateBase::BufferTypeToAddr(const BufferType bufferType)
     }
 }
 
+HcclResult CcuAlgTemplateBase::AddRanksToGroup(const std::vector<std::vector<RankId>> &tempVTopo, RankGroup &rankGroupX, RankGroup &rankGroupY) const
+{
+    for (auto &peer : tempVTopo[0]) {
+        rankGroupX.AddRank(peer);
+    }
+
+    for (auto &peer : tempVTopo[1]) {
+        rankGroupY.AddRank(peer);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
     (void) numBlocks;
