@@ -760,7 +760,7 @@ HcclResult TransportRoceMem::CreateNotifyValueBuffer()
 HcclResult TransportRoceMem::DoorBellSend(
     const s32 qpMode,  WrInfo &sendWrInfo, const SendWrRsp &opRsp, rtStream_t stream)
 {
-    struct SendWr sendwr;
+    struct SendWr sendwr = {};
     sendwr.bufList = &sendWrInfo.memList;
     sendwr.bufNum = 1; /* 此处list只有一个，设置为1 */
     sendwr.dstAddr = sendWrInfo.dstAddr;

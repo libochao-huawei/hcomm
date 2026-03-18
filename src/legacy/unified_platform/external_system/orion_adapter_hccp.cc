@@ -113,7 +113,7 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
 
     ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
     if (ret != 0) {
-        if (ret == RA_TLV_REQUEST_UNAVAIL) {
+        if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
             HCCL_WARNING("[HrtRaTlvRequest]ra tlv request UNAVAIL. return: ret[%d]", ret);
             return HCCL_E_UNAVAIL;
         }
@@ -701,6 +701,42 @@ void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist
         startIdx += delListNum;
     }
     HCCL_INFO("[HrtRaSocketWhiteListDel] Success. Total delete num[%llu]", wlists.size());
+}
+
+std::mutex g_deviceVnicIpMutex;
+std::map<u32, IpAddress> g_deviceIdVnicInfoMap;   // 记录deviceid和vnic ip的关系，用于server内查询，避免重复查询
+
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{
+    std::lock_guard<std::mutex> lock(g_deviceVnicIpMutex);
+    auto iter = g_deviceIdVnicInfoMap.find(deviceId);
+    if (iter != g_deviceIdVnicInfoMap.end()) {
+        // 缓存查找到，直接从缓存获取
+        vnicIP = iter->second;
+        HCCL_INFO("[HrtRaSocketGetVnicIpInfos] vnicInfoMap deviceId[%u] found, Ip[%s]",
+            deviceId, vnicIP.Describe().c_str());
+        return;
+    }
+    struct IpInfo vnicIpInfo;
+    (void)memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
+    IdType idType = static_cast<IdType>(deviceIdType);
+    auto ret = RaSocketGetVnicIpInfos(phyId, idType, &deviceId, 1, &vnicIpInfo);
+    if (ret != 0) {
+        HCCL_ERROR("[hrtRaGetSocketVnicIpInfo]ra get VnicIpfail. ret[%d]", ret);
+        throw NetworkApiException(StringFormat("call hrtRaGetSocketVnicIpInfo failed, ret=%llu", ret));
+    }
+    BinaryAddr temp;
+    temp.addr = vnicIpInfo.ip.addr;
+    temp.addr6 = vnicIpInfo.ip.addr6;
+    IpAddress ipInfo(temp, vnicIpInfo.family);
+    if (ipInfo.IsInvalid()) {
+        HCCL_ERROR("vnicIp is invalid.");
+        throw NetworkApiException("vnicIp is invalid.");
+    }
+    g_deviceIdVnicInfoMap.insert({ deviceId, ipInfo });
+    vnicIP = ipInfo;
+    HCCL_INFO("[hrtRaGetSocketVnicIpInfos] add vnicInfoMap, deviceIds[%u], Ip[%s]",
+        deviceId, vnicIP.Describe().c_str());
 }
 
 static u32 HrtGetIfNum(struct RaGetIfattr &config)
@@ -1317,7 +1353,7 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
        16-23代表芯片配置值b10:8s
        24-31代表芯片配置值b11:64s
     */
-    attr.ub.errTimeout       = 0;
+    attr.ub.errTimeout       = 16;
     // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
     attr.ub.priority         = 2;
     attr.ub.rnrRetry         = RNR_RETRY;
@@ -1635,7 +1671,7 @@ bool HraGetRtpEnable(RdmaHandle handle)
         const CtxSlInfo &priorityInfo = out.ub.priorityInfo[i];
         HCCL_RUN_INFO("[%s] priorityInfo[%d]: SL[%u] tpType[%u] rtp[%u]",
             __func__, i, priorityInfo.SL, priorityInfo.tpType.value, priorityInfo.tpType.bs.rtp);
-        if (priorityInfo.tpType.bs.rtp == 1 && priorityInfo.SL != 0) {
+        if (priorityInfo.tpType.bs.rtp == 1) {
             return true;
         }
     }
@@ -1863,7 +1899,6 @@ RequestHandle RaSocketListenOneStopAsync(RaSocketListenParam &in)
 
 RaSocketFdHandleParam RaGetOneSocket(u32 role, RaSocketGetParam &param)
 {
-    HCCL_INFO("[RaGetOneSocket] Input params: role=%u, socketHandle=%p, fdHandle=%p, remoteIp=%s, tag=%s", role, param.socketHandle, param.fdHandle, param.remoteIp.Describe().c_str(), param.tag.c_str());
     struct SocketInfoT socketInfo {};
 
     socketInfo.socketHandle = param.socketHandle;

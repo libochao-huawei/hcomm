@@ -75,7 +75,7 @@ HcclResult InsTempAllReduceAicpuReduce::RunAllGatherMesh(const TempFuncs &tempFu
         LinkData neighborLinkData = tempLinks.at(neighborRank)[0];
         TxRxLinks sendRecvLinks(neighborLinkData, neighborLinkData);
         DataSlice currRecvSliceSrc
-            = DataSlice(BufferType::INPUT, templateDataParams.buffInfo.inBuffBaseOff, templateDataParams.sliceSize);
+            = DataSlice(BufferType::SCRATCH, templateDataParams.sliceSize * neighborRank, templateDataParams.sliceSize);
         DataSlice currRecvSliceDst
             = DataSlice(BufferType::SCRATCH, templateDataParams.sliceSize * neighborRank, templateDataParams.sliceSize);
         std::vector<DataSlice> rxSrcSlices;
@@ -84,7 +84,7 @@ HcclResult InsTempAllReduceAicpuReduce::RunAllGatherMesh(const TempFuncs &tempFu
         rxDstSlices.push_back(currRecvSliceDst);
         TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
         SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
-        CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[queIdx], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempAllReduceAicpuReduce] RunAllGather sendrecv failed"),
+        CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[queIdx], 0, true, dmaMode_), HCCL_ERROR("[InsTempAllReduceAicpuReduce] RunAllGather sendrecv failed"),
                     HcclResult::HCCL_E_INTERNAL);
     }
     CHK_RET(PostSyncInterQueues(tempInsQues));
@@ -107,6 +107,11 @@ HcclResult InsTempAllReduceAicpuReduce::GenExtIns(const TempFuncs &tempFuncs, co
                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[InsTempAllReduceAicpuReduce] Run start");
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    } else {
+        dmaMode_ = DmaMode::PUT;
+    }
     if (tempVTopo_[0].size() == 1) {
         return HcclResult::HCCL_SUCCESS;
     }

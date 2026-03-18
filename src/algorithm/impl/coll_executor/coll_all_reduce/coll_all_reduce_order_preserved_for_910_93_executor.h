@@ -21,24 +21,24 @@ private:
     void ParseParam(const OpParam& param) override;
     /* *************** 资源计算 *************** */
     HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
-    u32 CalReduceStreamNum(const u32& localRankSize);
+    u32 CalReduceStreamNum(const u32& localRankSize) const;
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcLevel1CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcLevel2CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
-    void CalGroupSlices(const OpParam &param, ExecMem &execMem);
+    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType) const;
+    void CalGroupSlices(const OpParam &param, const ExecMem &execMem);
     void CalcSizePerBlock(const OpParam &param, ExecMem &execMem);
 
     /* *************** 算法编排 *************** */
     bool IsHugeData(const u64 curSize) override;
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
-    HcclResult RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunReduceScatterLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunAllGatherLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
-    HcclResult RunAllGatherLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
+    HcclResult RunReduceScatterLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
+    HcclResult RunReduceScatterLevel2(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
+    HcclResult RunAllGatherLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level1CommInfo);
+    HcclResult RunAllGatherLevel2(const OpParam &param, const ExecMem &execMem, const SubCommInfo &level1CommInfo);
 
     u64 sizePerBlock_{0};        // 单块数据的大小
     std::vector<u64> groupSize_; // input切分每块数据的大小

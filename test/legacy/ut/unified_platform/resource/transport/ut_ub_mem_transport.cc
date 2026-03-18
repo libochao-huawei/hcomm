@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -258,6 +258,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
 
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
 
+    MOCKER_CPP(&UbMemTransport::SendDataSize).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&UbMemTransport::RecvDataSize).stubs();
     MOCKER_CPP(&UbMemTransport::SendExchangeData).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemTransport::RecvExchangeData).stubs();
     MOCKER_CPP(&UbMemTransport::RecvDataProcess).stubs().will(returnValue(true));
@@ -282,6 +284,14 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     MOCKER(RaGetOneSocket).stubs()
         .with(any(), any())
         .will(returnValue(fakeParam));
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SEND_SIZE);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::RECV_SIZE);
 
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
@@ -313,6 +323,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     transport.socket = &fakeSocket;
     GlobalMockObject::verify();
 
+    MOCKER_CPP(&UbMemTransport::SendDataSize).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&UbMemTransport::RecvDataSize).stubs();
     MOCKER_CPP(&UbMemTransport::SendExchangeData).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemTransport::RecvExchangeData).stubs();
     MOCKER_CPP(&UbMemTransport::RecvDataProcess).stubs().will(returnValue(false));
@@ -327,6 +339,14 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
     EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SOCKET_OK);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SEND_SIZE);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::RECV_SIZE);
 
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
@@ -395,7 +415,7 @@ TEST_F(UbMemTransportTest, UbMemTransport_send_recv_exchange_data)
             break;
         }
     }
-    EXPECT_NO_THROW(transport.SendExchangeData());
+    EXPECT_NO_THROW(transport.SendDataSize());
 
     max_times = 10;
     while (!transport.IsSocketReady()) {
@@ -404,7 +424,7 @@ TEST_F(UbMemTransportTest, UbMemTransport_send_recv_exchange_data)
             break;
         }
     }
-    EXPECT_NO_THROW(transport.RecvExchangeData());
+    EXPECT_NO_THROW(transport.RecvDataSize());
     max_times = 10;
     while (!transport.IsSocketReady()) {
         if (max_times-- <= 0) {

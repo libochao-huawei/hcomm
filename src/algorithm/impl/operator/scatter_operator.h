@@ -20,9 +20,9 @@ class ScatterOperator : public CollAlgOperator {
 public:
     ScatterOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~ScatterOperator();
+    ~ScatterOperator() override;
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
-        std::string& newTag);
+        std::string& newTag) override;
 private:
 };
 }

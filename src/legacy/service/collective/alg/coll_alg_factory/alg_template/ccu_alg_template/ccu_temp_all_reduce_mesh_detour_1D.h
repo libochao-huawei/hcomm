@@ -15,14 +15,13 @@
 #include <map>
 #include <string>
 #include <hccl/hccl_types.h>
+#include "ccu_instruction_all_reduce_mesh1d_detour.h"
 #include "reduce_op.h"
 #include "hccl/base.h"
 #include "types/types.h"
 #include "string_util.h"
 #include "data_type.h"
 #include "template_utils.h"
-#include "ccu_alg_template_base.h"
-#include "ccu_instruction_all_reduce_mesh1d_detour.h"
 #include "ccu_alg_template_base.h"
 
 namespace Hccl {

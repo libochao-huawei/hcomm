@@ -633,7 +633,8 @@ void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRa
         LocalId localId = oldPeer->GetLocalId();
         LocalId replacedLocalId = oldPeer->GetReplacedLocalId();
         DeviceId deviceId = oldPeer->GetDeviceId();
-        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId);
+        u32 devicePort = oldPeer->GetDevicePort();
+        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort);
         subRankGraph->AddPeer(subPeer);
         peers.emplace(subRankId, subPeer);
         HCCL_DEBUG("[RankGraph][AddSubPeers] oldRankId[%d] subPeer[%s] add success.", rankId,
@@ -840,5 +841,21 @@ void RankGraph::Dump() const
         }
     }
 }
+CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
+{
+    constexpr std::pair<LinkProtocol, CommProtocol> protocolPairs[] = {
+        {LinkProtocol::UB_CTP, COMM_PROTOCOL_UBC_CTP},
+        {LinkProtocol::UB_TP, COMM_PROTOCOL_UBC_TP},
+        {LinkProtocol::ROCE, COMM_PROTOCOL_ROCE},
+        {LinkProtocol::HCCS, COMM_PROTOCOL_HCCS},
+        {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM}};
 
+    for (const auto &p : protocolPairs) {
+        if (p.first == linkProtocol) {
+            return p.second;
+        }
+    }
+
+    return COMM_PROTOCOL_RESERVED;
+}
 } // namespace Hccl

@@ -28,11 +28,11 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of Reduce ccu mesh 2D mem2mem with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of Reduce ccu mesh mem2mem 2D with tempRankSize [%u].", tempRankSize_);
     }
 
-    HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     void       InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
+    HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
 

@@ -45,7 +45,7 @@ HcclResult CcuTempAllGatherMeshDetour1D::CalcResDetour(const RankGraph *rankGrap
 
     tempResReq.queNum = 1;  // 当前只有一个ccu mission，暂定1条流
     tempResReq.streamNum = tempResReq.queNum;
-    HCCL_INFO("[CalcResDetour] tempResReq.queNum[%u]", tempResReq.queNum);
+    HCCL_INFO("[CcuTempAllGatherMeshDetour1D][CalcResDetour] tempResReq.queNum[%u]", tempResReq.queNum);
     u32 myAlgRank;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
 
@@ -54,18 +54,18 @@ HcclResult CcuTempAllGatherMeshDetour1D::CalcResDetour(const RankGraph *rankGrap
         RankId neighborRank = tempVTopo_[0][(myAlgRank + 1 + queIdx) % tempRankSize_];
         uint32_t linkNum = GetPathsFromRankGraph(rankGraph, myRank_, neighborRank).size();
         tempResReq.links[neighborRank] = linkNum;
-        HCCL_INFO("[CalcResDetour] RankSize[%u], MyRank[%d]--Neighbor[%d], linkNum[%u]",
+        HCCL_INFO("[CcuTempAllGatherMeshDetour1D][CalcResDetour] RankSize[%u], MyRank[%d]--Neighbor[%d], linkNum[%u]",
             tempRankSize_, myRank_, neighborRank, linkNum);
 
         // 2P支持2,3,4条link，4P支持2条link，注意绕路link分两条
         CHK_PRT_RET((tempRankSize_ == 2 && (linkNum <= 1 || linkNum > 1 + 3 * 2)) ||
                     (tempRankSize_ == 4 && linkNum != 1 + 1 * 2),  // 4P场景下，1条直连，绕路拆成2条
-            HCCL_ERROR("[CalcResDetour] Invalid linkNum[%u] for RankSize[%u].", linkNum, tempRankSize_),
+            HCCL_ERROR("[CcuTempAllGatherMeshDetour1D][CalcResDetour] Invalid linkNum[%u] for RankSize[%u].", linkNum, tempRankSize_),
                 HcclResult::HCCL_E_INTERNAL);
         if (queIdx == 0) {
             detourPathNum_ = (tempRankSize_ == 2) ? (linkNum - 1) / 2 : 1;  // 2P时去掉直连有2N条绕路link，对应N个绕路路径
             pathNumPerPeer_ = (tempRankSize_ == 2) ? (detourPathNum_ + 1) : detourPathNum_ + 2;  // 4P直连有2条，固定3条
-            HCCL_INFO("[CalcResDetour] detourPathNum[%u], pathNum[%u]", detourPathNum_, pathNumPerPeer_);
+            HCCL_INFO("[CcuTempAllGatherMeshDetour1D][CalcResDetour] detourPathNum[%u], pathNum[%u]", detourPathNum_, pathNumPerPeer_);
         }
     }
 
@@ -120,7 +120,7 @@ void CcuTempAllGatherMeshDetour1D::ProcessLinks(std::vector<LinkData> &links, co
         if (pair.second.empty()) {
             continue;
         }
-        HCCL_INFO("[ProcessLinks] rankId[%d], linkSize[%zu]", pair.first, pair.second.size());
+        HCCL_INFO("[CcuTempAllGatherMeshDetour1D][ProcessLinks] rankId[%d], linkSize[%zu]", pair.first, pair.second.size());
         for (uint32_t i = 0; i < pair.second.size(); i++) {
             LinkData curLink = pair.second[i];
             if (curLink.GetHop() == 1) {
@@ -131,7 +131,7 @@ void CcuTempAllGatherMeshDetour1D::ProcessLinks(std::vector<LinkData> &links, co
                 recvLinks.emplace_back(curLink);
             } else {
                 THROW<InvalidParamsException>(StringFormat(
-                    "[ProcessLinks] Rank[%d]--Peer[%d]--link[%d], unexpected link type.", myRank_, pair.first, i));
+                    "[CcuTempAllGatherMeshDetour1D][ProcessLinks] Rank[%d]--Peer[%d]--link[%d], unexpected link type.", myRank_, pair.first, i));
             }
         }
     }
@@ -140,7 +140,7 @@ void CcuTempAllGatherMeshDetour1D::ProcessLinks(std::vector<LinkData> &links, co
     if (sendLinks.size() != recvLinks.size() || directLinks.size() != tempRankSize_ - 1 ||
         sendLinks.size() % directLinks.size() != 0 || recvLinks.size() % directLinks.size() != 0) {
         THROW<InvalidParamsException>(StringFormat(
-            "directSize[%u]-sendSize[%u]-recvSize[%u].", directLinks.size(), sendLinks.size(), recvLinks.size()));
+            "[CcuTempAllGatherMeshDetour1D] directSize[%u]-sendSize[%u]-recvSize[%u].", directLinks.size(), sendLinks.size(), recvLinks.size()));
     }
     for (uint32_t i = 0; i < directLinks.size(); i++) {
         HCCL_INFO("Peer[%d][%s]", directLinks[i].GetRemoteRankId(), directLinks[i].GetDirection().Describe().c_str());
@@ -163,22 +163,18 @@ void CcuTempAllGatherMeshDetour1D::GetAddrInfo(const TempFuncs &tempFuncs, const
 {
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
                 + tempFuncs.usrData.usrInSlices[0].GetOffset();
         } else {
-            // 从 inBuff 获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 从 UserOut 获取数据
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
-            // 需要加上 UserOUt 的偏移，包含了 loop 偏移和 rank 偏移
+            // 需要加上UserOUt的偏移，包含了loop偏移和rank偏移
             offSet = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
         } else {
-            // 把数据写入 outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
-            // 从 inBuff 获取数据，只需要加上 rank 偏移
+            // 从inBuff获取数据，只需要加上rank偏移
             offSet = sliceInfoVec[myRank_][0].offset;
         }
     } else {

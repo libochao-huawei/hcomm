@@ -37,6 +37,7 @@
 #include "hccl_tbe_task.h"
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
+#include "hcom_common.h"
 
 using namespace std;
 using namespace hccl;
@@ -167,7 +168,19 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     CHK_PTR_NULL(rankTableM);
     CHK_PTR_NULL(identify);
 
-    HCCLV2_FUNC_RUN(HcomInitByStringV2(rankTableM, identify));
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            CHK_RET(HcomInitByStringV2(rankTableM, identify));
+            s32 myRank = std::atoi(identify);
+            Hccl::RankId rank = static_cast<Hccl::RankId>(myRank);
+            void *commV2 = nullptr;
+            CHK_RET(HcomGetCommV2(&commV2));
+            CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
+            u32 rankNum = 0;
+            CHK_RET(HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum));
+            CHK_RET(HcomSetGroupTopoInfo(HCCL_WORLD_GROUP, rankNum));
+            return HCCL_SUCCESS;
+        }());
 
     if (initConfig != nullptr) {
         DevType devType;
@@ -364,13 +377,13 @@ HcclResult HcomAllGather(const char *tag, void *inputPtr, void *outputPtr, u64 i
     CHK_PRT_RET(inputCount == 0, HCCL_WARNING("input count is 0, return AllGather success"), HCCL_SUCCESS);
     // 参数合法性校验
 
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllGather",  "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllGather",  "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllGather",  "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -418,13 +431,13 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
     // 参数合法性校验
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllGatherV", "nullptr", "sendBuf", "non-null pointer"}));
     CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllGatherV", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllGatherV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -480,13 +493,13 @@ HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 c
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return AllReduce success"), HCCL_SUCCESS);
     // 入参合法性校验
 
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -533,10 +546,10 @@ HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dat
 
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return BroadCast success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomBroadcast", "nullptr", "ptr", "non-null pointer"}));
     CHK_PTR_NULL(ptr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomBroadcast", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -584,16 +597,16 @@ HcclResult HcomReduce(const char *tag, void *inputPtr, void *outputPtr, u64 coun
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return Reduce success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduce", "nullptr", "tag", "non-null pointer"}));
     CHK_PTR_NULL(tag);
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     CHK_RET(HcomCheckReductionOp("HcomReduce", op));
@@ -646,13 +659,13 @@ HcclResult HcomReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return ReduceScatter success"), HCCL_SUCCESS);
     // 入参合法性校验
 
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduceScatter", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduceScatter", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduceScatter", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     CHK_RET(HcomCheckReductionOp("HcomReduceScatter", op));
@@ -695,14 +708,14 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
     // 入参合法性校验
     CHK_PTR_NULL(sendCounts);
     CHK_PTR_NULL(sdispls);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduceScatterV", "nullptr", "sendBuf", "non-null pointer"}));
     CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduceScatterV", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
     CHK_RET(HcomCheckReductionOp("HcomReduceScatterV", op));
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReduceScatterV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -752,10 +765,10 @@ HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dat
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return send success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomSend", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomSend", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -809,10 +822,10 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return receive success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReceive", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomReceive", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -861,13 +874,13 @@ HcclResult HcclCommGraphAllGather(const char *tag, void *inputPtr, void *outputP
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(inputCount == 0, HCCL_WARNING("input count is 0, return AllGather success"), HCCL_SUCCESS);
     // 参数合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphAllGather", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphAllGather", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphAllGather", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -883,7 +896,14 @@ HcclResult HcclCommGraphAllGather(const char *tag, void *inputPtr, void *outputP
     CHK_RET(PrintMemoryAttr(outputPtr));
 
     // HcclCommGraphAllGatherV2
-    HCCLV2_FUNC_RUN(HcclCommGraphAllGatherV2(tag, inputPtr, outputPtr, inputCount, dataType, opBaseHcom, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcclCommGraphAllGatherV2(tag, inputPtr, outputPtr, inputCount, dataType, opBaseHcom, stream));
+        return HCCL_SUCCESS;
+    }());
     CHK_RET(HcomCheckOpParam(tag, inputCount, dataType, stream));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -907,13 +927,13 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return AllReduce success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphAllReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphAllReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphAllReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     CHK_RET(HcomCheckReductionOp("HcclCommGraphAllReduce", op));
@@ -928,7 +948,14 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     CHK_RET(PrintMemoryAttr(outputPtr));
 
     // HcomGraphAllReduceV2
-    HCCLV2_FUNC_RUN(HcomGraphAllReduceV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcomGraphAllReduceV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
+        return HCCL_SUCCESS;
+    }());
     CHK_RET(HcomCheckOpParam(tag, count, dataType, stream));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -954,16 +981,16 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return Reduce success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(tag == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "tag", "non-null pointer"}));
     CHK_PTR_NULL(tag);
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReduce", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     CHK_RET(HcomCheckReductionOp("HcclCommGraphReduce", op));
@@ -981,7 +1008,14 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
     CHK_RET(PrintMemoryAttr(outputPtr));
 
      // HcomGraphReduceV2
-    HCCLV2_FUNC_RUN(HcomGraphReduceV2(tag, inputPtr, outputPtr, count, dataType, op, root, opBaseHcom, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcomGraphReduceV2(tag, inputPtr, outputPtr, count, dataType, op, root, opBaseHcom, stream));
+        return HCCL_SUCCESS;
+    }());
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1000,6 +1034,7 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
 
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
     s64 opBaseHcom, rtStream_t stream)
 {
@@ -1008,10 +1043,10 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return BroadCast success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(ptr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphBroadcast", "nullptr", "ptr", "non-null pointer"}));
     CHK_PTR_NULL(ptr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphBroadcast", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     u32 totalRanks = 0;
@@ -1026,8 +1061,14 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
         streamId);
 
     CHK_RET(PrintMemoryAttr(ptr));
-
-    HCCLV2_FUNC_RUN(HcomGraphBroadcastV2(tag, ptr, count, dataType, root, opBaseHcom, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcomGraphBroadcastV2(tag, ptr, count, dataType, root, opBaseHcom, stream));
+        return HCCL_SUCCESS;
+    }());
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1054,13 +1095,13 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return ReduceScatter success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReduceScatter", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReduceScatter", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReduceScatter", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     CHK_RET(HcomCheckReductionOp("HcclCommGraphReduceScatter", op));
@@ -1074,7 +1115,14 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
-    HCCLV2_FUNC_RUN(HcomGraphReduceScatterV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcomGraphReduceScatterV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
+        return HCCL_SUCCESS;
+    }());
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1101,10 +1149,10 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return send success"), HCCL_SUCCESS);
 
     // 入参合法性校验
-    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(inputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphSend", "nullptr", "inputPtr", "non-null pointer"}));
     CHK_PTR_NULL(inputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphSend", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     u32 totalRanks = 0;
@@ -1119,8 +1167,14 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
         srTag, opBaseHcom, streamId);
 
     CHK_RET(PrintMemoryAttr(inputPtr));
-
-    HCCLV2_FUNC_RUN(HcomGraphSendV2(tag, inputPtr, count, dataType, destRank, srTag, opBaseHcom, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcomGraphSendV2(tag, inputPtr, count, dataType, destRank, srTag, opBaseHcom, stream));
+        return HCCL_SUCCESS;
+    }());
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1147,10 +1201,10 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
     uint64_t beginTime = hrtMsprofSysCycleTime();
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return receive success"), HCCL_SUCCESS);
     // 入参合法性校验
-    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(outputPtr == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReceive", "nullptr", "outputPtr", "non-null pointer"}));
     CHK_PTR_NULL(outputPtr);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphReceive", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     u32 totalRanks = 0;
@@ -1164,8 +1218,14 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
         "srTag[%u], opBaseHcom[%lld], streamId[%d]", tag, outputPtr,  count, GetDataTypeEnumStr(dataType).c_str(),
         srcRank, srTag, opBaseHcom, streamId);
     CHK_RET(PrintMemoryAttr(outputPtr));
-
-    HCCLV2_FUNC_RUN(HcomGraphReceiveV2(tag, outputPtr, count, dataType, srcRank, srTag, opBaseHcom, stream));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcomGraphReceiveV2(tag, outputPtr, count, dataType, srcRank, srTag, opBaseHcom, stream));
+        return HCCL_SUCCESS;
+    }());
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
@@ -1214,7 +1274,7 @@ HcclResult HcclCommGraphSetWorkspaceResource(const std::string &tag, s64 opBaseH
 
 HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
 {
-    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(rankSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphGetRankSize", "nullptr", "rankSize", "non-null pointer"}));
     CHK_PTR_NULL(rankSize);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
@@ -1223,8 +1283,14 @@ HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
         return HCCL_SUCCESS;
     }
     HCCL_INFO("HcclCommGraphGetRankSize:opBaseHcom[%lld]", opBaseHcom);
-
-    HCCLV2_FUNC_RUN(HcclCommGraphGetRankSizeV2(opBaseHcom, rankSize));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcclCommGraphGetRankSizeV2(opBaseHcom, rankSize));
+        return HCCL_SUCCESS;
+    }());
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1235,7 +1301,7 @@ HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
 
 HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
 {
-    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcclCommGraphGetRankId", "nullptr", "rankId", "non-null pointer"}));
     CHK_PTR_NULL(rankId);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
@@ -1244,8 +1310,14 @@ HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
         return HCCL_SUCCESS;
     }
     HCCL_INFO("HcclCommGraphGetRankId:opBaseHcom[%lld]", opBaseHcom);
-
-    HCCLV2_FUNC_RUN(HcclCommGraphGetRankIdV2(opBaseHcom, rankId));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcclCommGraphGetRankIdV2(opBaseHcom, rankId));
+        return HCCL_SUCCESS;
+    }());
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1356,7 +1428,7 @@ HcclResult HcclCommGraphGetDevId(s64 opBaseHcom, s32 *devId)
 HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
 {
     RPT_INPUT_ERR(localRankSize == nullptr, "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({ "HcomGetLocalRankSize", "nullptr", "localRankSize", "non-null pointer" }));
     CHK_PTR_NULL(localRankSize);
 
@@ -1372,7 +1444,7 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({ "HcomGetLocalRankSize",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
         "group",
@@ -1400,7 +1472,7 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
 
 HcclResult HcomGetRankId(const char *group, u32 *rankId)
 {
-    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(rankId == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomGetRankId", "nullptr", "rankId", "non-null pointer"}));
     CHK_PTR_NULL(rankId);
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
@@ -1412,7 +1484,7 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003",
-        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),
+        std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({ "HcomGetRankId",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
         "group",
@@ -1708,6 +1780,10 @@ HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u6
 {
     std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(comm);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        comm = reinterpret_cast<s64>(commV2);
         CHK_RET(HcomSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -1951,6 +2027,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
 
 HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len)
 {
+    HCCLV2_FUNC_RUN(HcomSetAttachedStreamV2());
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
@@ -2092,6 +2169,7 @@ HcclResult HcomGetBandWidthPerNPU(u32 level, float *bandWidth)
 
 HcclResult HcomReleaseSubComms()
 {
+    HCCLV2_FUNC_RUN(HcomReleaseSubCommsV2());
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm) {
         CHK_RET(hcomInfo.pComm->ReleaseSubComms());
@@ -2118,7 +2196,7 @@ HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     CHK_PTR_NULL(sdispls);
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAlltoAllV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     s32 streamId = 0;
@@ -2183,7 +2261,7 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
     uint64_t beginTime = hrtMsprofSysCycleTime();
     // 入参合法性校验
     CHK_PTR_NULL(sendCountMatrix);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAlltoAllVC", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     s32 streamId = 0;
@@ -2436,7 +2514,14 @@ HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
 {
  #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
-    HCCLV2_FUNC_RUN(HcclCommGraphUnloadTaskV2(opBaseHcom, tag));
+    HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        HcclComm commV2 = hcclComm->GetCommunicatorV2();
+        CHK_PTR_NULL(commV2);
+        opBaseHcom = reinterpret_cast<s64>(commV2);
+        CHK_RET(HcclCommGraphUnloadTaskV2(opBaseHcom, tag));
+        return HCCL_SUCCESS;
+    }());
 #endif
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[HcclCommGraphUnloadTask]hcclComm is null, "\
@@ -2462,7 +2547,7 @@ HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globa
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING(" A5 does not support this interface");
         return HCCL_SUCCESS;
     }
@@ -2476,7 +2561,7 @@ HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcom over flow tasks.");
         return HCCL_SUCCESS;
     }
@@ -2505,7 +2590,7 @@ HcclResult HcclCommGetandClearOverFlowTasks(s64 opBaseHcom, std::vector<hccl::Hc
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcclcom over flow tasks.");
         return HCCL_SUCCESS;
     }
@@ -2554,7 +2639,7 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
     // 入参合法性校验
     CHK_PTR_NULL(sendBuf);
     CHK_PTR_NULL(recvBuf);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
         std::vector<std::string>({"HcomAllToAll", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
@@ -2772,7 +2857,7 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcclcom set aiv core limit.");
         return HCCL_SUCCESS;
     }
@@ -2912,7 +2997,7 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
         HCCL_WARNING("call GetModuleInfo error, failed to get multiModuleDiffDeviceNumMode.");
     }
 
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         CHK_RET(CalcTaskNumV2(hcomOpParam, taskNum));
     } else {
         CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
@@ -2977,7 +3062,7 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, ifAiv, devType, streamNum, group));
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         // host展开已日落， Task任务数按照当前需求最多的CCU加速模式[AIV, AICPU使用较少]预估
         taskNum = ESTIMATE_CCU_TASK_PER_STREAM; 
     }
@@ -2997,7 +3082,7 @@ HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devTyp
 
     if (tempDevType != DevType::DEV_TYPE_910 && tempDevType != DevType::DEV_TYPE_910B &&
         tempDevType != DevType::DEV_TYPE_310P1 && tempDevType != DevType::DEV_TYPE_310P3 &&
-        tempDevType != DevType::DEV_TYPE_910_93 && tempDevType != DevType::DEV_TYPE_910_95) {
+        tempDevType != DevType::DEV_TYPE_910_93 && tempDevType != DevType::DEV_TYPE_950) {
         HCCL_ERROR("[offline][compilation] cur dev type[%u] is not support.", tempDevType);
         return HCCL_E_RUNTIME;
     }
@@ -3018,7 +3103,7 @@ HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 de
 
         case DevType::DEV_TYPE_910B:
         case DevType::DEV_TYPE_910:
-        case DevType::DEV_TYPE_910_95: 
+        case DevType::DEV_TYPE_950: 
         case DevType::DEV_TYPE_910_93: {
             CHK_RET(GetStremNumOfflineByDev(devType, hcclOpType, serverNum, deviceNumPerServer, ifAiv, streamNum, group));
             break;

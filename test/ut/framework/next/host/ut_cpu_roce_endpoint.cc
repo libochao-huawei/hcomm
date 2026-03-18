@@ -2,6 +2,7 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 #include "cpu_roce_endpoint.h"
+#include "hcomm_res.h"
 #include "hcomm_c_adpt.h"
 #include "rdma_handle_manager.h"
 #include "buffer/local_rdma_rma_buffer.h"
@@ -42,6 +43,7 @@ protected:
     RdmaHandle   rdmaHandle = (void *)0x1000000;
 };
 
+// HcommEndpointCreate
 TEST_F(CpuRoceEndpointTest, Ut_When_Normal_EXPECT_Return_HCCL_SUCCESS)
 {
     Hccl::IpAddress   localIp("1.0.0.0");
@@ -87,6 +89,23 @@ TEST_F(CpuRoceEndpointTest, Ut_When_RdmaHandle_Init_Fail_Expect_Return_HCCL_E_PT
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
+// HcommEndpointStartListen
+TEST_F(CpuRoceEndpointTest, Ut_When_HcommEndpointStartListen_EXPECT_Return_HCCL_SUCCESS)
+{
+    Hccl::IpAddress   localIp("1.0.0.0");
+    EndpointDesc endpointDesc;
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    void* endpointHandle{nullptr};
+    MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
+    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcommEndpointStartListen(endpointHandle, 60001, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 // Ip重复监听
 TEST_F(CpuRoceEndpointTest, Ut_When_Listen_Repeat_Ip_EXPECT_Return_HCCL_SUCCESS)
 {
@@ -100,7 +119,30 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Listen_Repeat_Ip_EXPECT_Return_HCCL_SUCCESS)
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
     HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    ret = HcommEndpointStartListen(endpointHandle, 60001, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcommEndpointStartListen(endpointHandle, 60001, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// 停止监听
+TEST_F(CpuRoceEndpointTest, Ut_When_Stop_Listen_EXPECT_Return_HCCL_SUCCESS)
+{
+    Hccl::IpAddress   localIp("1.0.0.0");
+    EndpointDesc endpointDesc;
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    void* endpointHandle{nullptr};
+    MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
+    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcommEndpointStopListen(endpointHandle, 60001);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcommEndpointStartListen(endpointHandle, 60001, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcommEndpointStopListen(endpointHandle, 60001);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

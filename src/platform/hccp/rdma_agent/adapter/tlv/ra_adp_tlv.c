@@ -76,7 +76,7 @@ int RaRsTlvRequest(char *inBuf, char *outBuf, int *outLen, int *opResult, int rc
     *opResult = gRaRsTlvOps.tlvRequest(&dataIn->txData.head, dataIn->txData.data, dataOut->rxData.recvData,
             &dataOut->rxData.recvBytes);
 
-    CHK_PRT_RETURN(*opResult == -EUSERS, hccp_warn("tlv request unsuccessful"), 0);
+    CHK_PRT_RETURN(*opResult == -EUSERS || *opResult == -ENOTSUPP, hccp_warn("tlv request unsuccessful"), 0);
     if (*opResult != 0) {
         hccp_err("tlv_request failed ret[%d]", *opResult);
     }

@@ -91,6 +91,7 @@ set(orion_list
 
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
@@ -103,6 +104,9 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/virtual_topo.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
 )
 
 set(hccl_list
@@ -154,6 +158,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/aclgraph
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/config
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
@@ -318,6 +323,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets
@@ -337,6 +344,7 @@ target_include_directories(hccl_llt  PRIVATE
 
     #next
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
@@ -346,6 +354,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
@@ -378,6 +387,24 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/loop
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/sync
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/translator
+
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/aicpu
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/profiling/host
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
+    ${HCCL_CODE_ROOT}/src/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
+    ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
+    ${HCCL_CODE_ROOT}/src/legacy/interface/
+
 )
 
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy)

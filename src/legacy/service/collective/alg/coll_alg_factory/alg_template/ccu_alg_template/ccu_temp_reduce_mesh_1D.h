@@ -34,14 +34,14 @@ public:
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, const ResLinks &tempLinks,
                    std::vector<InsQuePtr> &tempInsQues);
-    void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
-
     HcclResult GenExtIns(const RankGraph *rankGraph, const TemplateInfo &tmpInfo,
                          const std::vector<InsQuePtr> &tempInsQues) const;
+    void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
+
 
 private:
-    ReduceOp reduceOp_;
     DataType dataType_;
+    ReduceOp reduceOp_;
 };
 
 } // namespace Hccl

@@ -196,7 +196,7 @@ static void DlHalApiInit(void)
     gHalOps.dlHalMemRegUbSegment = (drvError_t (*)(uint32_t devId, uint64_t va, uint64_t size))
         AscendHalDlsym(gHalApiHandle, "halMemRegUbSegment");
 
-    gHalOps.dlHalMemUnRegUbSegment = (drvError_t (*)(uint32_t devId, uint64_t va, uint64_t size))
+    gHalOps.dlHalMemUnRegUbSegment = (drvError_t (*)(uint32_t devId, uint64_t va))
         AscendHalDlsym(gHalApiHandle, "halMemUnRegUbSegment");
 
     gHalOps.dlDrvMemGetAttribute = (DVresult (*)(DVdeviceptr vptr, struct DVattribute *attr))
@@ -630,11 +630,11 @@ int DlHalMemRegUbSegment(uint32_t devId, uint64_t va, uint64_t size)
     return gHalOps.dlHalMemRegUbSegment(devId, va, size);
 }
 
-int DlHalMemUnRegUbSegment(uint32_t devId, uint64_t va, uint64_t size)
+int DlHalMemUnRegUbSegment(uint32_t devId, uint64_t va)
 {
     DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemUnRegUbSegment, "dlHalMemUnRegUbSegment");
 
-    return gHalOps.dlHalMemUnRegUbSegment(devId, va, size);
+    return gHalOps.dlHalMemUnRegUbSegment(devId, va);
 }
 
 int DlDrvMemGetAttribute(DVdeviceptr vptr, struct DVattribute *attr)

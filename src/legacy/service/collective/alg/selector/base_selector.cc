@@ -299,6 +299,10 @@ HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
 
     auto &topoInstNum = level0TopoInstDetails.topoInstNum;
     auto &rankNumForTopoType = level0TopoInstDetails.rankNumForTopoType;
+    HCCL_INFO("[%s]topoInstNum[%d]", __func__, topoInstNum);
+    for (const auto &iter: rankNumForTopoType) {
+        HCCL_INFO("[%s]topoType[%d] size[%d]", __func__, iter.first, iter.second.size());
+    }
 
     if (topoInstNum == 1 && rankNumForTopoType[TopoType::MESH_1D].size() == 1) {
         // MESH_1D 拓扑校验
@@ -317,6 +321,9 @@ HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
                 level0LocalRankSize),
             HCCL_E_INTERNAL);
         topoInfo.level0Shape = Level0Shape::CLOS;
+        if (IsLevel0PcieMix()) {
+            topoInfo.level0PcieMix = true;
+        }
         return HCCL_SUCCESS;
     } else if (topoInstNum == topoInstNum2 && rankNumForTopoType[TopoType::CLOS].size() == 1 &&
                rankNumForTopoType[TopoType::MESH_1D].size() == 1) {
@@ -327,6 +334,13 @@ HcclResult BaseSelector::CalcLevel0TopoShape(TopoInfo &topoInfo) const
                 level0LocalRankSize),
             HCCL_E_INTERNAL);
         topoInfo.level0Shape = Level0Shape::MESH_1D_CLOS;
+
+        if (IsLevel0PcieMix()) {
+            topoInfo.level0PcieMix = true;
+        }
+        if (rankNumForTopoType[TopoType::CLOS].at(0) > BIG_CLOS_RANGE) {
+            topoInfo.level0BigClosRange = true;
+        }
         return HCCL_SUCCESS;
     } else if (topoInstNum == topoInstNum3 && rankNumForTopoType[TopoType::MESH_1D].size() == topoInstNum2 &&
                rankNumForTopoType[TopoType::CLOS].size() == 1) {
@@ -360,7 +374,8 @@ void BaseSelector::CalcTopoShape(TopoInfo &topoInfo) const
     CHK_PRT_THROW(CalcLevel0TopoShape(topoInfo),
         HCCL_ERROR("[BaseSelector][CalcTopoShape] CalcLevel0TopoShape Failed"),
         InvalidParamsException, "CalcLevel0TopoShape Failed");
-    HCCL_INFO("[BaseSelector][CalcTopoShape] topoInfo.level0Shape is [%d]", topoInfo.level0Shape);
+    HCCL_INFO("[BaseSelector][CalcTopoShape] topoInfo.level0Shape is [%d], level0PcieMix is [%d], level0BigClosRange is [%d]", 
+        topoInfo.level0Shape, topoInfo.level0PcieMix, topoInfo.level0BigClosRange);
 }
 
 bool BaseSelector::IsLayerAllConnetedWithTopo(const TopoInfo &topoInfo, const u32 netLayer, const TopoType topoType) const
@@ -478,5 +493,35 @@ bool BaseSelector::Is2DieFullMesh() const
         }
     }
     return true;
+}
+
+bool BaseSelector::IsLevel0PcieMix() const
+{
+    u32 netLayer = 0;  // 0 级拓扑
+    const NetInstance *netInstance = rankGraph_->GetNetInstanceByRankId(netLayer, myRank_);
+    std::set<RankId> rankSet = netInstance->GetRankIds();
+    for (RankId rankId : rankSet) {
+        if (rankId == myRank_) {
+            continue;
+        }
+        std::vector<NetInstance::Path> paths = rankGraph_->GetPaths(netLayer, myRank_, rankId);
+        CHK_PRT_RET(paths.size() == 0 || paths[0].links.size() == 0,
+            HCCL_INFO("[BaseSelector][Is2DieFullMesh], Can not find path from Local[%u] to Rmt[%u], in netLayer %u. "
+                      "Topo is not mesh",
+                myRank_,
+                rankId,
+                netLayer),
+            false);
+        NetInstance::Link &link = paths[0].links[0];  // 只取第一条路径的第一条link
+        std::shared_ptr<NetInstance::ConnInterface> connInterface = link.GetSourceIface();
+        std::set<LinkProtocol> linkProtocolsSet = connInterface->GetLinkProtocols();
+        // 判断协议类型包含PCIE
+        if (linkProtocolsSet.find(LinkProtocol::PCIE) != linkProtocolsSet.end()) {
+            HCCL_INFO("IsLevel0PcieMix[true]");
+            return true;
+        }
+    }
+    HCCL_INFO("IsLevel0PcieMix[false]");
+    return false;
 }
 }  // namespace Hccl

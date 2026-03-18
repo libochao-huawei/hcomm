@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -104,7 +104,7 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo_test)
     op.staticAddr = false;
     dfxOpInfo->op_ = op;
     dfxOpInfo->tag_ = "testTag";
-    dfxOpInfo->index_ = 0;
+    dfxOpInfo->commIndex_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
     dfxOpInfo->comm_ = &comm;
@@ -126,7 +126,7 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo1_test)
     op.staticAddr = false;
     dfxOpInfo->op_ = op;
     dfxOpInfo->tag_ = "testTag";
-    dfxOpInfo->index_ = 0;
+    dfxOpInfo->commIndex_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
     dfxOpInfo->comm_ = &comm;
@@ -147,7 +147,7 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo2_test)
     op.staticAddr = false;
     dfxOpInfo->op_ = op;
     dfxOpInfo->tag_ = "testTag";
-    dfxOpInfo->index_ = 0;
+    dfxOpInfo->commIndex_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
     dfxOpInfo->comm_ = &comm;

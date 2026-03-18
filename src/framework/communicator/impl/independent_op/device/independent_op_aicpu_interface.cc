@@ -19,7 +19,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpCommInit(void *args
 
     CommAicpuParam *commAicpuParam = reinterpret_cast<CommAicpuParam *>(args);
     DevType devType = static_cast<DevType>(commAicpuParam->deviceType);
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         HCCL_INFO("[RunAicpuIndOpCommInit] group[%s], deviceLogicId[%u], devicePhyId[%u], deviceType[%u]",
                 commAicpuParam->hcomId, commAicpuParam->deviceLogicId, commAicpuParam->devicePhyId, commAicpuParam->deviceType);
         return AicpuIndopProcess::AicpuIndOpCommInit(commAicpuParam);

@@ -21,6 +21,9 @@ private:
     std::vector<T> elems_;
 
 public:
+    VectorQueue() {
+        elems_.reserve(2048);
+    }
     class Iterator : public Queue<T>::Iterator {
     private:
         VectorQueue *queue_{nullptr};
@@ -30,7 +33,6 @@ public:
         {
             if ((this->it_) < queue_->elems_.begin() || (this->it_) > queue_->elems_.end()) {
                 THROW<InternalException>(StringFormat("VectorQueue<T>::Iterator out of range"));
-                return;
             }
         }
 
