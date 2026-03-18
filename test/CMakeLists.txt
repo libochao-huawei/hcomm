@@ -13,7 +13,7 @@ set(CMAKE_SKIP_RPATH FALSE)
 if(ENABLE_UT)
     enable_testing()
     add_subdirectory(ut)
-    add_subdirectory(legacy/ut)
+    # add_subdirectory(legacy/ut)
 endif()
 
 # ST

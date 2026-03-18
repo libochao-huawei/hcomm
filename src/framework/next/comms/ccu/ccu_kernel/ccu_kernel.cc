@@ -126,64 +126,64 @@ HcclResult CcuKernel::Init()
 
 // todo: 需要整改成算法生成sqe
 
-// HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
-// {
-//     auto args    = GeneArgs(arg);
-//     auto agrsNum = args.size();
-//     if (agrsNum != loadArgIndex_) {
-//         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
-//             "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
-//         return HcclResult::HCCL_E_INTERNAL;
-//     }
+HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
+{
+    auto args    = std::vector<uint64_t>(); // GeneArgs(arg);
+    auto agrsNum = 0; // args.size();
+    if (agrsNum != loadArgIndex_) {
+        HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
+            "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
 
-//     if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
-//         HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
-//             "the kernel is not been translated yet.", __func__);
-//         return HcclResult::HCCL_E_INTERNAL;
-//     }
+    if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
+        HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
+            "the kernel is not been translated yet.", __func__);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
 
-//     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
-//     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
-//     const uint32_t seqNum
-//         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
+    // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
+    // args数量大于等于0、小于等于最大值时，返回1个TaskParam
+    const uint32_t seqNum
+        = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
 
-//     const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
-//     if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
-//         HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
-//             "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
-//             preMissonSqeInsCnt);
-//         return HcclResult::HCCL_E_INTERNAL;
-//     }
+    const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
+    if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
+        HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
+            "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
+            preMissonSqeInsCnt);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
 
-//     taskParams.resize(seqNum);
-//     for (uint32_t index = 0; index < seqNum; index++) {
-//         taskParams[index].dieId       = GetDieId();
-//         taskParams[index].missionId   = GetMissionId();
-//         taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-//         taskParams[index].key         = GetMissionKey();
-//         taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
-//         if (index == seqNum - 1) {
-//             // index 由计算得出，相乘结果不会溢出
-//             const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
-//             taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
-//             std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
-//         } else {
-//             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
-//             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-//                       std::begin(taskParams[index].args));
-//         }
+    taskParams.resize(seqNum);
+    for (uint32_t index = 0; index < seqNum; index++) {
+        taskParams[index].dieId       = GetDieId();
+        taskParams[index].missionId   = GetMissionId();
+        taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
+        taskParams[index].key         = GetMissionKey();
+        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+        if (index == seqNum - 1) {
+            // index 由计算得出，相乘结果不会溢出
+            const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
+            taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
+            std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
+        } else {
+            taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
+            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
+                      std::begin(taskParams[index].args));
+        }
 
-//         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-//                   taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
-//                   taskParams[index].instCnt, taskParams[index].argSize);
-//         for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
-//             if (i == TOKEN_VALUE_INDEX) { continue; }
-//             HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
-//         }
-//     }
+        HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
+                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
+                  taskParams[index].instCnt, taskParams[index].argSize);
+        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
+            if (i == TOKEN_VALUE_INDEX) { continue; }
+            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
+        }
+    }
 
-//     return HcclResult::HCCL_SUCCESS;
-// }
+    return HcclResult::HCCL_SUCCESS;
+}
 
 HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const
 {
@@ -238,18 +238,20 @@ CcuResReq CcuKernel::GetResourceRequest()
 template<typename HandleType, typename ResourceType>
 static CcuResult GetResourceByHandle(
     std::unordered_map<HandleType, ResourceType> &resourceMap, 
-    HandleType handle, ResourceType *resource, const char *resourceType)
+    HandleType handle, ResourceType **resource, const char *resourceType)
 {
     auto iter = resourceMap.find(handle);
     if (iter == resourceMap.end()) {
         HCCL_ERROR("[%s] failed to find %s by handle: 0x%llx", __func__, resourceType, handle);
         return CcuResult::CCU_E_NOT_FOUND;
     }
-    *resource = iter->second; // 触发variable拷贝
+
+    // ccu资源本身可能重载=，对象赋值会被转换成指令，导致流程失败
+    *resource = &(iter->second);
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable *variable)
+CcuResult CcuKernel::GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable **variable)
 {
     return GetResourceByHandle(ccuVarMap_, varHandle, variable, "variable");
 }
@@ -259,30 +261,31 @@ CcuResult CcuKernel::VariableCreate(CcuVariableHandle *varHandle)
     const auto &var = CreateResAssist(res_.variable);
     CcuVariableHandle handle = ccuVarMap_.size(); // todo: 当前简单化生成 handle
     ccuVarMap_.emplace(handle, var);
+
     *varHandle = handle;
     return CcuResult::CCU_SUCCESS;
 }
 
 CcuResult CcuKernel::VariableAssign(CcuVariableHandle varHandle, uint64_t immediate)
 {
-    CcuRep::Variable variable{};
+    CcuRep::Variable *variable{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
     // todo: need try catch
     // 通过符号重载实现，内部记录rep
-    variable = immediate;
+    (*variable) = immediate;
     return CcuResult::CCU_SUCCESS;
 }
 
 CcuResult CcuKernel::VariableAddVarToVar(CcuVariableHandle varHandle, CcuVariableHandle varA, CcuVariableHandle varB)
 {
-    CcuRep::Variable resVar{}, leftVar{}, rightVar{};
+    CcuRep::Variable *resVar{nullptr}, *leftVar{nullptr}, *rightVar{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &resVar));
     CCU_CHK_RET(GetVariableByHandle(varA, &leftVar));
     CCU_CHK_RET(GetVariableByHandle(varB, &rightVar));
 
     // todo: need try catch
     // 通过符号重载实现，内部记录rep
-    resVar = leftVar + rightVar;
+    *resVar = *leftVar + *rightVar;
     return CcuResult::CCU_SUCCESS;
 }
 
