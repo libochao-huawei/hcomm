@@ -71,7 +71,7 @@ void CollServiceDefaultImpl::UpdateUbCiIfNeed(const std::string &opTag)
     HCCL_INFO("CollServiceDefaultImpl::UpdateUbCiIfNeed start, opTag[%s]", opTag.c_str());
     if (updatingUbCiEvent == nullptr) {
         HCCL_INFO("updatingUbCiEvent is null");
-        std::vector<DevUbConnection *> devUbConns = GetStarsPollUbConns(comm->GetRmaConnManager().GetOpTagConns(opTag));
+        std::vector<DevUbConnection *> devUbConns = GetDevStarsPollUbConns(comm->GetRmaConnManager().GetOpTagConns(opTag));
         HCCL_INFO("starsPoll devUbConns size: %lu", devUbConns.size());
         if (IfNeedUpdatingUbCi(devUbConns)) {
             HCCL_INFO("need update ub ci");

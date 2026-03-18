@@ -176,7 +176,7 @@ public:
                        const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
 };
 
-std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
+std::vector<DevUbConnection *> GetDevStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
 
 bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns);
 

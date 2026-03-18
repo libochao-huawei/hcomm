@@ -11,6 +11,8 @@
 #define HOST_CPU_URMA_CHANNEL_H
 
 #include "../channel.h"
+#include <mutex>
+#include "urma_types.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
@@ -32,6 +34,14 @@ public:
     ChannelStatus GetStatus() override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
+
+    // 数据面接口
+ 	HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
+ 	HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
+ 	HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;
+ 	HcclResult Write(void *dst, const void *src, uint64_t len) override;
+ 	HcclResult Read(void *dst, const void *src, uint64_t len) override;
+ 	HcclResult ChannelFence() override;
 
 private:
     HcclResult ParseInputParam();
@@ -64,6 +74,20 @@ private:
     std::vector<std::unique_ptr<Hccl::HostUbConnection>>        connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+
+    HcclResult UrmaPostJfr();
+    HcclResult PrepareNotifyWrResource(const uint32_t remoteNotifyIdx, urma_jfs_wr_t &notifyRecordWr);
+    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
+                                     urma_jfs_wr_t &writeWithNotifyWr);
+
+    urma_jfs_t jfs_;
+    urma_jfr_t jfr_;
+    urma_jfc_t jfc_;
+    urma_target_jetty_t tjetty_;
+    uint32_t wqeNum_{0};
+    bool fenceFlag_{false};
+
+    std::mutex jfcMutex_;
 };
 
 } // namespace hcomm
