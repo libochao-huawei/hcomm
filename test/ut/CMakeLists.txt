@@ -19,6 +19,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu_new
 
     # src/pub_inc 目录下头文件
     ${HCCL_CODE_ROOT}/src/pub_inc
@@ -306,10 +307,13 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_instance/
 )
 
 add_subdirectory(stub)
-add_subdirectory(framework/next)
+# add_subdirectory(framework/next)
 add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
