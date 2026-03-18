@@ -252,7 +252,7 @@ function build_ut() {
               -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
               -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
               -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-              -DENABLE_COV=${ENABLE_COV} \
+              -DENABLE_GCOV=${ENABLE_GCOV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
@@ -282,16 +282,14 @@ function build_ut() {
 }
 
 function make_ut_gov() {
-  if [[ "X$ENABLE_UT" = "Xon" || "X$ENABLE_COV" = "Xon" ]]; then
+  if [[ "X$ENABLE_UT" = "Xon" || "X$ENABLE_GCOV" = "Xon" ]]; then
     echo "Generated coverage statistics, please wait..."
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
     lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/all.info
     lcov -r cov/all.info */src/platform/hccp/external_depends/* -o cov/tmp.info
-    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
-    # LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
-    # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${CANN_3RD_LIB_PATH}/*" -o cov/coverage.info
+    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
@@ -624,7 +622,7 @@ cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
-    # make_ut_gov
+    make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
 elif [ "${KERNEL}" == "true" ]; then
