@@ -97,20 +97,16 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionAllGatherMeshDetour1D instype is CCU_ALLGATHER_MESH_1D_DETOUR.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionAllGatherMeshDetour1D rankId [%u], instType[%s]",
             rankId_, instType_.Describe().c_str());
-    }
-
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -125,6 +121,10 @@ public:
             tailOffset_, tailSize_, loopIterNum_, lengths_);
     }
 
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
 private:
     CcuInstType instType_ = CcuInstType::CCU_ALLGATHER_MESH_1D_DETOUR;
     std::vector<uint64_t> dimSize_;

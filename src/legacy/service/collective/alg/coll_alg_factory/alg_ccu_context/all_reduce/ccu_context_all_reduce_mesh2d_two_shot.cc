@@ -12,9 +12,7 @@
 #include "ccu_instruction_all_reduce_mesh2d_two_shot.h"
 
 namespace Hccl {
-constexpr int      INPUT_XN_ID  = 0;
-constexpr int      OUTPUT_XN_ID = 1;
-constexpr int      TOKEN_XN_ID  = 2;
+constexpr uint32_t AXIS_NUM     = 2;
 constexpr int      CKE_IDX_0    = 0;
 constexpr int      CKE_IDX_1    = 1;
 constexpr int      CKE_IDX_2    = 2;
@@ -22,7 +20,9 @@ constexpr int      CKE_IDX_3    = 3;
 constexpr int      CKE_IDX_4    = 4;
 constexpr int      CKE_IDX_5    = 5;
 constexpr int      CKE_IDX_6    = 6;
-constexpr uint32_t AXIS_NUM     = 2;
+constexpr int      INPUT_XN_ID  = 0;
+constexpr int      OUTPUT_XN_ID = 1;
+constexpr int      TOKEN_XN_ID  = 2;
 
 CcuContextAllReduceMesh2DTwoShot::CcuContextAllReduceMesh2DTwoShot(const CcuCtxArg                   &arg,
                                                                    const std::vector<CcuTransport *> &transports,
@@ -238,10 +238,10 @@ void CcuContextAllReduceMesh2DTwoShot::InitVariables()
         }
     }
 
-    normalRankXSliceSize_ = CreateVariable();
-    normalRankYSliceSize_ = CreateVariable();
     lastRankXSliceSize_   = CreateVariable();
     lastRankYSliceSize_   = CreateVariable();
+    normalRankXSliceSize_ = CreateVariable();
+    normalRankYSliceSize_ = CreateVariable();
 
     normalRankXGoSize_ = CreateGroupOpSize();
     normalRankYGoSize_ = CreateGroupOpSize();
@@ -329,8 +329,8 @@ void CcuContextAllReduceMesh2DTwoShot::DoGroupReduce(std::vector<CcuRep::Variabl
     HCCL_INFO("[CcuContextAllReduceMesh2DTwoShot] DoGroupReduce Starts");
     // 从轴上所有的对端读取数据
     std::vector<CcuRep::Memory> &srcAddrs = tmpAddrList_;
-    uint32_t                     rmtId    = 0;
     uint32_t                     curId    = 0;
+    uint32_t                     rmtId    = 0;
     for (uint64_t rankIdx = 0; rankIdx < currentAxisRankSize_; rankIdx++) {
         if (rankIdx != myRankIdxInCurrentAxis_) {
             curId = rmtId;
@@ -339,8 +339,8 @@ void CcuContextAllReduceMesh2DTwoShot::DoGroupReduce(std::vector<CcuRep::Variabl
             curId = currentAxisRankSize_ - 1;
         }
         srcAddrs[curId].addr = srcBase[rankIdx];
-        srcAddrs[curId].addr += offset;
         srcAddrs[curId].token = token_[rankIdx];
+        srcAddrs[curId].addr += offset;
     }
     // Reduce 到本端
     CcuRep::Memory &dstAddr = tmpAddr_;
