@@ -415,3 +415,44 @@ TEST_F(HcomutCommManagerTest, ut_HcomInitByStringV2_expectHCCL_E_INTERNAL)
     ret = HcomInitByStringV2(rank_table_string.c_str(), "0");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(HcomutCommManagerTest, ut_HcomGetCommV2_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    Hccl::CommParams commParams;
+    hcomCommInfoV2.pComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    void *commV2 = nullptr;
+    HcclResult ret = HcomGetCommV2(&commV2);
+    EXPECT_NE(commV2, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcomutCommManagerTest, ut_HcomGetGroupParamsV2_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    HcclGroupParamsV2 groupParamsV2;
+    groupParamsV2.worldRank = 1;
+    groupParamsV2.groupRank = 2;
+    groupParamsV2.serverNum = 3;
+    groupParamsV2.totalRanks = 4;
+    std::vector<u32> vec{0, 1, 2, 3};
+    groupParamsV2.groupRanks = vec;
+    groupParamsV2.refCounter = 0;
+    groupParamsV2.destroyFlag = true;
+    Hccl::CommParams commParams;
+    groupParamsV2.pComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    std::string strGroup = "group2";
+    hcomCommInfoV2.hcclGroupMap.insert(std::make_pair(strGroup, groupParamsV2));
+    HcclGroupParamsV2 groupParams;
+    void *commV2 = nullptr;
+    HcclResult ret = HcomGetGroupParamsV2(strGroup.c_str(), static_cast<void*>(&groupParams), &commV2);
+    EXPECT_EQ(groupParams.worldRank, 1);
+    EXPECT_EQ(groupParams.groupRank, 2);
+    EXPECT_EQ(groupParams.serverNum, 3);
+    EXPECT_EQ(groupParams.totalRanks, 4);
+    EXPECT_EQ(groupParams.groupRanks, vec);
+    EXPECT_EQ(groupParams.refCounter, 0);
+    EXPECT_EQ(groupParams.destroyFlag, true);
+    EXPECT_NE(commV2, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

@@ -69,20 +69,21 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionHalfAllToAllVMesh1D instype is CCU_HALF_ALLTOALLV_MESH_1D.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionHalfAllToAllVMesh1D rankId [%u], instType[%s]",
             rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+        void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override

@@ -82,19 +82,20 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionReduceScatterVMeshMem2Mem1D instype is CCU_REDUCE_SCATTER_V_MESH_1D_MEM2MEM_DIRECT.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionReduceScatterVMeshMem2Mem1D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
