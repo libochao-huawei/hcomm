@@ -86,6 +86,11 @@ int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
     return 0;
 }
 
+<<<<<<< HEAD
+=======
+#include <iostream>
+
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[],
     unsigned int *num)
 {

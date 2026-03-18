@@ -13,8 +13,11 @@ set(src_to_test_list
     hccl_api_base_test.cc
     ut_CcuComponent_test.cc
     ut_HcommCcuControlApi_test.cc
+<<<<<<< HEAD
 
     mocks/ccu_device_mock_utils.cc
+=======
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})

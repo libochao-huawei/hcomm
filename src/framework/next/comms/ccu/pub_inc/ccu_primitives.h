@@ -36,7 +36,7 @@ typedef enum {
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
-CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle);
+extern CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle);
 
 /**
  * @brief 关闭CCU特性，解初始化CCU平台层
@@ -45,7 +45,7 @@ CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle);
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
-CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle);
+extern CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle);
 
 #ifdef __cplusplus
 }

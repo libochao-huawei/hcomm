@@ -14,16 +14,25 @@
 #define private public
 #define protected public
 
+<<<<<<< HEAD
 #include "log.h"
 #include "adapter_rts.h"
 #include "hcomm_c_adpt.h"
 
+=======
+#include "ccu_channel_mock_utils.h"
+#include "adapter_rts.h"
+#include "log.h"
+#include "hcomm_c_adpt.h"
+#include "ccu_device_mock_utils.h"
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 #include "ccu_device_pub.h"
 #include "ccu_kernel_mgr.h"
 #include "ccu_instance_mgr.h"
 #include "ccu_primitives.h"
 #include "ccu_control_api.h"
 
+<<<<<<< HEAD
 #include "mocks/ccu_device_mock_utils.h"
 #include "mocks/ccu_channel_mock_utils.h"
 
@@ -35,6 +44,9 @@
 #include "ccu_kernel_impl/ccu_var_add_simple_demo.h"
 #include "ccu_kernel_impl/ccu_loop_add_demo.h"
 #include "ccu_kernel_impl/ccu_jump_demo.h"
+=======
+#include "ccu_kernel_impl/ccu_var_add_simple_demo.h"
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 
 #undef protected
 #undef private
@@ -42,7 +54,10 @@
 class HcommCcuControlApiTest : public BaseInit {
 public:
     void SetUp() override {
+<<<<<<< HEAD
         GlobalMockObject::verify();
+=======
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
         BaseInit::SetUp();
         // 将enableEntryLog默认返回为true
         MOCKER(GetExternalInputHcclEnableEntryLog)
@@ -61,7 +76,11 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
     uint32_t srcDevPhyId, uint32_t dstDevPhyId,
     uint32_t srcIp, uint32_t dstIp, CommEngine commEngine)
 {
+<<<<<<< HEAD
     HcommResult hcommRet = 0;
+=======
+    HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
     CcuResult ccuRest = CcuResult::CCU_E_RESERVED;
 
     CommAddr srcAddr{}, dstAddr{};
@@ -72,14 +91,20 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
 
     const auto &srcEpDesc = MockEndpointDesc(srcAddr, srcDevPhyId);
     EndpointHandle srcEpHandle{};
+<<<<<<< HEAD
     hcommRet = HcommEndpointCreate(&srcEpDesc, &srcEpHandle);
     EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
+=======
+    hcclRet = HcommEndpointCreate(&srcEpDesc, &srcEpHandle);
+    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 
     const auto &dstEpDesc = MockEndpointDesc(dstAddr, dstDevPhyId);
 
     const auto &socket = MockHcclSocket(srcAddr, dstAddr);
     HcommSocket socketPtr = static_cast<HcommSocket>(socket.get());
     const auto &rmaBuffer = MockUbRmaBuffer();
+<<<<<<< HEAD
     auto commMemInfo = MockCommMemInfo(rmaBuffer.get());
     void *memHandle = static_cast<void *>(&commMemInfo);
     auto channelDesc = MockHcommChannelDesc(dstEpDesc, socketPtr, memHandle);
@@ -87,12 +112,21 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
     ChannelHandle channelHandle{0};
     hcommRet = HcommChannelCreate(srcEpHandle, commEngine, &channelDesc, channelNum, &channelHandle);
     EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
+=======
+    void *memHandle = static_cast<void *>(rmaBuffer.get());
+    auto channelDesc = MockHcommChannelDesc(dstEpDesc, socketPtr, memHandle);
+    constexpr uint32_t channelNum = 1;
+    ChannelHandle channelHandle{0};
+    hcclRet = HcommChannelCreate(srcEpHandle, commEngine, &channelDesc, channelNum, &channelHandle);
+    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 
     int32_t statusList[] = {0};
 
     constexpr uint32_t MAX_LOOP_TIME = 100;
     uint32_t leftTime = MAX_LOOP_TIME;
     while (leftTime--) {
+<<<<<<< HEAD
         hcommRet = HcommChannelGetStatus(&channelHandle, channelNum, statusList);
         if (hcommRet == static_cast<HcommResult>(HcclResult::HCCL_SUCCESS)) {
             break;
@@ -100,10 +134,20 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
 
         if (hcommRet != static_cast<HcommResult>(HcclResult::HCCL_E_AGAIN)) {
             HCCL_ERROR("[%s] invalid ret[%d].", __func__, hcommRet);
+=======
+        hcclRet = HcommChannelGetStatus(&channelHandle, channelNum, statusList);
+        if (hcclRet == HcclResult::HCCL_SUCCESS) {
+            break;
+        }
+
+        if (hcclRet != HcclResult::HCCL_E_AGAIN) {
+            HCCL_ERROR("[%s] invalid ret[%d].", __func__, hcclRet);
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
             break;
         }
     }
 
+<<<<<<< HEAD
     EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
     return {srcEpHandle, channelHandle};
 }
@@ -134,11 +178,27 @@ static ThreadHandle MockThreadAllocWithStream(CommEngine commEngine)
         fakeNotifyNum, &fakeThreadHandle), HcclResult::HCCL_SUCCESS);
 
     return fakeThreadHandle;
+=======
+    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+    return {srcEpHandle, channelHandle};
+}
+
+void MockChannelDestory(const std::pair<EndpointHandle, ChannelHandle> &handles)
+{
+    HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
+    constexpr uint32_t channelNum = 1;
+    hcclRet = HcommChannelDestroy(&(handles.second), channelNum);
+    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+
+    hcclRet = HcommEndpointDestroy(handles.first);
+    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
 }
 
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     // 整体打桩，处理ccu资源
+<<<<<<< HEAD
     HcommResult hcclRet = 0;
     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 2;
@@ -153,6 +213,15 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
     MockCcuNetworkDeviceDefault(fakeDeviceLogicId); // 先处理网络设备，再初始化ccu
     EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
+=======
+    HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
+    CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM;
+    MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
+    int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
+    MOCKER(hrtGetDevice).stubs().with(outBound(&fakeDeviceLogicId)).will(returnValue(HcclResult::HCCL_SUCCESS));
+    EXPECT_EQ(MockCcuResources(fakeDeviceLogicId, hcomm::CcuVersion::CCU_V1), HcclResult::HCCL_SUCCESS);
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
     MockCcuChannelGetRes();
     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 
@@ -173,11 +242,18 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造CcuKernel实现
+<<<<<<< HEAD
     CcuKernelFunc demoFunc = CcuAllocDemoKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.numA = 1;
     demoArg.numB = 2;
     demoArg.channelHandle = handlePair.second;
+=======
+    CcuKernelFunc demoFunc = CcuVarAddDemoKernel;
+    CcuVarAddKernelArg demoArg{};
+    demoArg.numA = 1;
+    demoArg.numB = 2;
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
     auto kernelFunc = reinterpret_cast<void *>(demoFunc);
     auto kernelArg = static_cast<CcuKernelArg>(&demoArg);
 
@@ -195,6 +271,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     // kernel翻译
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+<<<<<<< HEAD
     
     // 申请流，假定已经获取了threadHandle
     auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
@@ -459,6 +536,13 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelDoWhile_When_AllFine_Expect_Retu
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
+=======
+
+    // kernel下发
+    // todo:
+
+    // 清理各种资源，析构有时序要求
+>>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
     MockChannelDestory(handlePair);
     ccuRet = HcommCcuInsDestroy(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
