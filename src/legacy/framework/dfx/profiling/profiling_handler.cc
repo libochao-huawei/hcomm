@@ -547,7 +547,6 @@ void ProfilingHandler::ReportHcclOpApi(uint64_t beginTime, uint64_t endTime, uin
 void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId)
 {
     // 获取数据
-    HCCL_INFO("[ProfilingHandler]ReportHcclOpInfo start.");
     MsprofCompactInfo reporterData{};
     reporterData.level     = MSPROF_REPORT_NODE_LEVEL;
     reporterData.type      = MSPROF_REPORT_NODE_HCCL_OP_INFO_TYPE;
@@ -597,7 +596,6 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     if (ret != 0) {
          THROW<InternalException>("[ProfilingHandler] Call dlMsprofReportCompactInfo failed, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportHcclOpInfo end.");
 }
 
 void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
