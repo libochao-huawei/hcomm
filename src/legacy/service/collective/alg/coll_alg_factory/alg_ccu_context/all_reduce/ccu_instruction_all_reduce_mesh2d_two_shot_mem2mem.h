@@ -93,6 +93,12 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionAllReduceMeshTwoShotMem2Mem2D instype is CCU_ALL_REDUCE_MESH_2D_TWO_SHOT_MEM2MEM.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionAllReduceMeshTwoShotMem2Mem2D rankId [%u], instType[%s]", rankId_,
