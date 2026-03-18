@@ -1,0 +1,20 @@
+HcclThreadResGetInfo
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Wed Mar 18 16:22:05 2026 +0800
+#
+# On branch master
+# Your branch is up to date with 'origin/master'.
+#
+# Changes to be committed:
+#	modified:   include/hccl/hccl_res.h
+#	modified:   include/hcomm_res.h
+#	modified:   src/framework/communicator/impl/independent_op/hccl_independent_op_engine.cc
+#	modified:   src/framework/communicator/impl/independent_op/resource/engine/comm_engine_res_manager.cc
+#	modified:   src/framework/communicator/impl/independent_op/resource/engine/comm_engine_res_manager.h
+#	modified:   src/framework/communicator/impl/independent_op/resource/engine/thread_manager.cc
+#	modified:   src/framework/communicator/impl/independent_op/resource/engine/thread_manager.h
+#	modified:   test/ut/framework/next/comms/comm_engine_res/threads/test_thread_api.cc
+#
