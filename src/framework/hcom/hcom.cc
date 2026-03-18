@@ -37,6 +37,7 @@
 #include "hccl_tbe_task.h"
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
+#include "hcom_common.h"
 
 using namespace std;
 using namespace hccl;
@@ -167,7 +168,19 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     CHK_PTR_NULL(rankTableM);
     CHK_PTR_NULL(identify);
 
-    HCCLV2_FUNC_RUN(HcomInitByStringV2(rankTableM, identify));
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            CHK_RET(HcomInitByStringV2(rankTableM, identify));
+            s32 myRank = std::atoi(identify);
+            Hccl::RankId rank = static_cast<Hccl::RankId>(myRank);
+            void *commV2 = nullptr;
+            CHK_RET(HcomGetCommV2(&commV2));
+            CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
+            u32 rankNum = 0;
+            CHK_RET(HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum));
+            CHK_RET(HcomSetGroupTopoInfo(HCCL_WORLD_GROUP, rankNum));
+            return HCCL_SUCCESS;
+        }());
 
     if (initConfig != nullptr) {
         DevType devType;

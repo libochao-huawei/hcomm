@@ -62,11 +62,11 @@ void CcuContextReduceScatterMesh2D::InitResources()
     step0BaseOffset_   = CreateVariable();
     step0AddOffset_    = CreateVariable();
     step1AddOffset_    = CreateVariable();
+    xAxisGroupOpSize_  = CreateGroupOpSize();
+    yAxisGroupOpSize_  = CreateGroupOpSize();
     localAxisSignal_   = CreateMaskSignal();
     anotherAxisSignal_ = CreateMaskSignal();
     yAxisOffset_       = CreateVariable();
-    xAxisGroupOpSize_  = CreateGroupOpSize();
-    yAxisGroupOpSize_  = CreateGroupOpSize();
 
     ExportMaskSignal(localAxisSignal_, localAxisSignalName_);
     anotherAxisSignal_ = ImportMaskSignal(anotherAxisSignalName_);

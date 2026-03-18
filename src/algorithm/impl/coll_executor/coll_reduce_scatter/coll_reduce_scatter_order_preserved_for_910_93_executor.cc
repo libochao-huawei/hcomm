@@ -39,7 +39,7 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::CalcScratchMemSize(u
     return HCCL_SUCCESS;
 }
 
-u32 CollReduceScatterOrderPreservedFor91093Executor::CalReduceStreamNum(const u32& localRankSize)
+u32 CollReduceScatterOrderPreservedFor91093Executor::CalReduceStreamNum(const u32& localRankSize) const
 {
     return (1 << static_cast<int>(std::floor(log2(localRankSize))));
 }
@@ -75,7 +75,7 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::CalcCommInfo(std::ve
 }
 
 HcclResult CollReduceScatterOrderPreservedFor91093Executor::CalcTransportMemType(TransportMemType &inputType,
-    TransportMemType &outputType)
+    TransportMemType &outputType) const
 {
     // scratchMemFlag_ 对应图模式场景（图模式没有cclbuffer）, PARAM_INPUT -> userInput
     inputType = scratchMemFlag_ ? TransportMemType::PARAM_INPUT : TransportMemType::CCL_INPUT;
