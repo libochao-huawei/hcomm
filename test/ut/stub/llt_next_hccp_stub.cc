@@ -85,11 +85,13 @@ int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
     *num = 2;
     return 0;
 }
- 
+
+#include <iostream>
+
 int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[],
     unsigned int *num)
 {
-    if (info.phyId == 0) {
+    if (info.phyId != 1) {
         info_list[0].eid.in4.addr = 167772383;
     } else {
         info_list[0].eid.in4.addr = 469762271;
