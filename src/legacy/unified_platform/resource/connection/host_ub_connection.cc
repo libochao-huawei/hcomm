@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -7,7 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "dev_ub_connection.h"
+
+#include "host_ub_connection.h"
 
 #include <cstdlib>
 
@@ -25,13 +26,12 @@ constexpr u32 UB_SQ_WQEBB_SIZE        = 64;
 constexpr u32 WQE_NUM_PER_SQE         = 4; // URMA约束每个SQE包含4个WQEBB
 constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传输量256*1024*1024 Byte
 
-DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+HostUbConnection::HostUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                  const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
       opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
 {
-    HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
-    devLogicId = HrtGetDevice();
+    HCCL_INFO("[HostUbConnection::HostUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
 
     auto dieIdAndFuncId = RdmaHandleManager::GetInstance().GetDieAndFuncId(rdmaHandle); // 获取dieId和FuncId
     dieId               = dieIdAndFuncId.first;
@@ -48,7 +48,7 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     if (opMode == OpMode::OFFLOAD && devUsed == false) {
         sqDepth = UB_SQ_OFFLOAD_DEPTH;
     }
-    HCCL_INFO("[DevUbConnection][Constructor] set sqDepth[%u]", sqDepth);
+    HCCL_INFO("[HostUbConnection][Constructor] set sqDepth[%u]", sqDepth);
 
     if (sqDepth > (UINT32_MAX / UB_SQ_WQEBB_SIZE / WQE_NUM_PER_SQE)) {
         THROW<InternalException>("integer overflow occurs");
@@ -57,21 +57,21 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     CreateJetty(devUsed);
 }
 
-DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+HostUbTpConnection::HostUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                      const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    : HostUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {
     tpProtocol = TpProtocol::TP;
 }
 
-DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+HostUbCtpConnection::HostUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                        const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    : HostUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {
     tpProtocol = TpProtocol::CTP;
 }
 
-std::vector<char> DevUbConnection::GetUniqueId() const
+std::vector<char> HostUbConnection::GetUniqueId() const
 {
     BinaryStream binaryStream;
     binaryStream << dieId;
@@ -93,13 +93,13 @@ std::vector<char> DevUbConnection::GetUniqueId() const
 
     std::vector<char> result;
     binaryStream.Dump(result);
-    HCCL_INFO("DevUbConnection::GetUniqueId:%s", Describe().c_str());
+    HCCL_INFO("HostUbConnection::GetUniqueId:%s", Describe().c_str());
     HCCL_INFO("type=%s, jfcPollMode=%u, dwqeCacheLocked=%d, sqCiAddr=0x%llx", rmaConnType.Describe().c_str(),
                jfcPollMode, dwqeCacheLocked, sqCiAddr);
     return result;
 }
 
-void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq)
+void HostUbConnection::SetCqInfo(HcclAiRMACQ &cq)
 {
     cq.jfcId = cqInfo_.id;
     cq.cqVA = cqInfo_.va;
@@ -108,7 +108,7 @@ void DevUbConnection::SetCqInfo(HcclAiRMACQ &cq)
     cq.dbAddr = cqInfo_.swdbAddr;
 }
 
-void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
+void HostUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
 {
     wq.jettyId = jettyId;
     wq.dbAddr = dbAddr;
@@ -118,7 +118,7 @@ void DevUbConnection::SetWqInfo(HcclAiRMAWQ &wq)
     memcpy_s(wq.rmtEid, sizeof(wq.rmtEid), rmtEid.raw, sizeof(wq.rmtEid));
 }
 
-void DevUbConnection::Connect()
+void HostUbConnection::Connect()
 {
     GetStatus();
 }
@@ -129,7 +129,7 @@ inline uint32_t GetRandomNum()
     return randNum;
 }
 
-RmaConnStatus DevUbConnection::GetStatus()
+RmaConnStatus HostUbConnection::GetStatus()
 {
     if (!CheckRequestResult()) {
         return status;
@@ -137,7 +137,7 @@ RmaConnStatus DevUbConnection::GetStatus()
 
     switch (ubConnStatus) {
         case UbConnStatus::INIT: {
-            HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
+            HCCL_INFO("[HostUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
                       ubConnStatus.Describe().c_str());
 
             SetJettyInfo();
@@ -159,7 +159,7 @@ RmaConnStatus DevUbConnection::GetStatus()
             break;
         }
         case UbConnStatus::JETTY_CREATED: {
-            HCCL_INFO("[DevUbConnection][%s] status[%s] will not change, "
+            HCCL_INFO("[HostUbConnection][%s] status[%s] will not change, "
                       "should call ImportRmtDto to change status.",
                       __func__, status.Describe().c_str());
             break;
@@ -180,10 +180,10 @@ RmaConnStatus DevUbConnection::GetStatus()
     return status;
 }
 
-std::unique_ptr<Serializable> DevUbConnection::GetExchangeDto()
+std::unique_ptr<Serializable> HostUbConnection::GetExchangeDto()
 {
     if (status != RmaConnStatus::READY && status != RmaConnStatus::EXCHANGEABLE) {
-        HCCL_ERROR("[DevUbConnection][%s] status[%s] is not expected.", __func__,
+        HCCL_ERROR("[HostUbConnection][%s] status[%s] is not expected.", __func__,
             status.Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
@@ -191,7 +191,7 @@ std::unique_ptr<Serializable> DevUbConnection::GetExchangeDto()
     if (tpProtocol != TpProtocol::INVALID) {
         jettyImportCfg.localTpHandle = tpInfo.tpHandle;
  
-        HCCL_INFO("[DevUbConnection][%s] tpEnable, localTpHandle[0x%llx] localPsn[%u].", __func__,
+        HCCL_INFO("[HostUbConnection][%s] tpEnable, localTpHandle[0x%llx] localPsn[%u].", __func__,
                    jettyImportCfg.localTpHandle, jettyImportCfg.localPsn);
     }
 
@@ -201,31 +201,31 @@ std::unique_ptr<Serializable> DevUbConnection::GetExchangeDto()
     return std::unique_ptr<Serializable>(dto.release());
 }
 
-void DevUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
+void HostUbConnection::ParseRmtExchangeDto(const Serializable &rmtDto)
 {
     auto dto = dynamic_cast<const ExchangeUbConnDto &>(rmtDto);
-    HCCL_INFO("[DevUbConnection][%s] remoteConnDto[%s]", __func__, dto.Describe().c_str());
+    HCCL_INFO("[HostUbConnection][%s] remoteConnDto[%s]", __func__, dto.Describe().c_str());
     remoteTokenValue = dto.tokenValue;
     (void)memcpy_s(remoteQpKey, HRT_UB_QP_KEY_MAX_LEN, dto.qpKey, HRT_UB_QP_KEY_MAX_LEN);
 
     if (tpProtocol != TpProtocol::INVALID) {
         jettyImportCfg.remoteTpHandle = dto.tpHandle;
         jettyImportCfg.remotePsn      = dto.psn;
-        HCCL_INFO("[DevUbConnection][%s] tpEnable, remoteTpHandle[0x%llx], remotePsn[%u].", __func__,
+        HCCL_INFO("[HostUbConnection][%s] tpEnable, remoteTpHandle[0x%llx], remotePsn[%u].", __func__,
                    jettyImportCfg.remoteTpHandle, jettyImportCfg.remotePsn);
     }
 }
 
-void DevUbConnection::ImportRmtDto()
+void HostUbConnection::ImportRmtDto()
 {
     if (ubConnStatus == UbConnStatus::READY) {
-        HCCL_WARNING("[DevUbConnection][%s] import jetty already, %s.",
+        HCCL_WARNING("[HostUbConnection][%s] import jetty already, %s.",
                      __func__, Describe().c_str());
         return;
     }
 
     if (ubConnStatus != UbConnStatus::JETTY_CREATED) {
-        HCCL_ERROR("[DevUbConnection][%s] failed, ubConnStatus[%s] is not expected.",
+        HCCL_ERROR("[HostUbConnection][%s] failed, ubConnStatus[%s] is not expected.",
             __func__, ubConnStatus.Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
@@ -234,16 +234,16 @@ void DevUbConnection::ImportRmtDto()
     ubConnStatus = UbConnStatus::JETTY_IMPORTING;
 }
 
-void DevUbConnection::ThrowAbnormalStatus(std::string funcName)
+void HostUbConnection::ThrowAbnormalStatus(std::string funcName)
 {
-    auto errMsg = StringFormat("[DevUbConnection][%s] failed, [%s].",
+    auto errMsg = StringFormat("[HostUbConnection][%s] failed, [%s].",
         funcName.c_str(), Describe().c_str());
     status = RmaConnStatus::CONN_INVALID;
     ubConnStatus = UbConnStatus::CONN_INVALID; 
     THROW<RmaConnException>(errMsg);
 }
 
-bool DevUbConnection::CheckRequestResult()
+bool HostUbConnection::CheckRequestResult()
 {
     if (reqHandle == 0) {
         return true;
@@ -255,17 +255,17 @@ bool DevUbConnection::CheckRequestResult()
     }
 
     if (result != ReqHandleResult::COMPLETED) {
-        THROW<InternalException>("[DevUbConnection][%s] failed, result[%s] is unexpected.",
+        THROW<InternalException>("[HostUbConnection][%s] failed, result[%s] is unexpected.",
             __func__, result.Describe().c_str());
     }
 
     return true;
 }
 
-void DevUbConnection::CreateJetty(const bool devUsed)
+void HostUbConnection::CreateJetty(const bool devUsed)
 {
     if (sqDepth > UINT32_MAX / UB_SQ_WQEBB_SIZE / WQE_NUM_PER_SQE) {
-        THROW<InternalException>("[DevUbConnection][%s] failed, sqDepth[%u] times "
+        THROW<InternalException>("[HostUbConnection][%s] failed, sqDepth[%u] times "
             "UB_SQ_WQEBB_SIZE[%u] overflow uint32 max.", __func__, sqDepth, UB_SQ_WQEBB_SIZE);
     }
     u32 size = static_cast<u32>(sqDepth) * static_cast<u32>(UB_SQ_WQEBB_SIZE) * static_cast<u32>(WQE_NUM_PER_SQE);
@@ -284,33 +284,34 @@ void DevUbConnection::CreateJetty(const bool devUsed)
 
     if (devUsed) { // AICPU场景切换模式
         req.jettyMode = HrtJettyMode::DEV_USED;
-        HCCL_INFO("[DevUbConnection][%s] HrtJettyMode is DEV_USED.", __func__);
+        HCCL_INFO("[HostUbConnection][%s] HrtJettyMode is DEV_USED.", __func__);
     }
 
-    reqHandle = RaUbCreateJettyAsync(rdmaHandle, req, reqDataBuffer, jettyHandlePtr);
+    HrtRaUbJettyCreatedOutParam repJetty = HrtRaUbCreateJetty(rdmaHandle, req);
+    jettyHandle = repJetty.handle;
 }
 
-void DevUbConnection::SetJettyInfo()
+void HostUbConnection::SetJettyInfo()
 {
     struct QpCreateInfo *info = reinterpret_cast<QpCreateInfo *>(reqDataBuffer.data());
     jettyId                     = info->ub.id;
     jettyHandle                 = reinterpret_cast<JettyHandle>(jettyHandlePtr);
     keySize                     = info->key.size;
     sqBuffVa                    = info->ub.sqBuffVa; // hccp提供
-    HCCL_INFO("[DevUbConnection][%s] Get sqBuffVa is %llx.", __func__, sqBuffVa);
+    HCCL_INFO("[HostUbConnection][%s] Get sqBuffVa is %llx.", __func__, sqBuffVa);
 
     s32 ret = memcpy_s(localQpKey, HRT_UB_QP_KEY_MAX_LEN, info->key.value, info->key.size);
     if (ret != 0) {
-        THROW<InternalException>(StringFormat("[DevUbConnection][%s] memcpy_s failed, ret=%d", __func__, ret));
+        THROW<InternalException>(StringFormat("[HostUbConnection][%s] memcpy_s failed, ret=%d", __func__, ret));
     }
 
     dbAddr = info->ub.dbAddr;
 }
 
-bool DevUbConnection::GetTpInfo()
+bool HostUbConnection::GetTpInfo()
 {
     if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
-         HCCL_ERROR("[DevUbConnection][%s] failed, tpProtocol[%s] is not expected.",
+         HCCL_ERROR("[HostUbConnection][%s] failed, tpProtocol[%s] is not expected.",
             __func__, tpProtocol.Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
@@ -326,18 +327,18 @@ bool DevUbConnection::GetTpInfo()
             return false;
         case HcclResult::HCCL_E_NOT_FOUND:
         default:
-            HCCL_ERROR("[DevUbConnection][%s] failed, hccl result[%d]", __func__, ret);
+            HCCL_ERROR("[HostUbConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
     }
     return true;
 }
 
-void DevUbConnection::GenerateLocalPsn()
+void HostUbConnection::GenerateLocalPsn()
 {
     jettyImportCfg.localPsn = GetRandomNum();
 }
 
-void DevUbConnection::ImportJetty()
+void HostUbConnection::ImportJetty()
 {
     HrtRaUbJettyImportedInParam in{};
     in.key            = remoteQpKey;
@@ -347,32 +348,34 @@ void DevUbConnection::ImportJetty()
     in.jettyImportCfg.protocol = tpProtocol;
 
     if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP) {
-        HCCL_ERROR("[DevUbConnection][%s] failed, tp protocol[%s] is not expected, %s.",
+        HCCL_ERROR("[HostUbConnection][%s] failed, tp protocol[%s] is not expected, %s.",
             __func__, tpProtocol.Describe().c_str(), Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
 
-    reqHandle = RaUbTpImportJettyAsync(rdmaHandle, in,
-        reqDataBuffer, remoteJettyHandlePtr);
+    HrtRaUbJettyImportedOutParam remOutParam = RaUbTpImportJetty(rdmaHandle, in.key, in.keyLen, in.tokenValue, in.jettyImportCfg);
+    remoteJettyHandle = remOutParam.targetJettyVa;
+
+    HrtRaUbJettyBind(jettyHandle, remoteJettyHandle);
 }
 
-void DevUbConnection::SetImportInfo()
+void HostUbConnection::SetImportInfo()
 {
     struct QpImportInfoT *info = reinterpret_cast<QpImportInfoT *>(reqDataBuffer.data());
-    remoteJettyHandle             = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtr);
-    tpn                           = info->out.ub.tpn;
+    // remoteJettyHandle          = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtr);
+    tpn                        = info->out.ub.tpn;
 }
 
-void DevUbConnection::ReleaseTp()
+void HostUbConnection::ReleaseTp()
 {
-    if (tpInfo.tpHandle != 0) {
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
-        tpInfo.tpHandle = 0;
-    }
+    // if (tpInfo.tpHandle != 0) {
+    //     (void)TpManager::GetInstance(devLogicId)
+    //         .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
+    //     tpInfo.tpHandle = 0;
+    // }
 }
 
-void DevUbConnection::ReleaseResource()
+void HostUbConnection::ReleaseResource()
 {
     if (rdmaHandle && remoteJettyHandle != 0) {
         HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
@@ -387,17 +390,17 @@ void DevUbConnection::ReleaseResource()
     }
 }
 
-DevUbConnection::~DevUbConnection()
+HostUbConnection::~HostUbConnection()
 {
-    DECTOR_TRY_CATCH("DevUbConnection", ReleaseResource());
+    DECTOR_TRY_CATCH("HostUbConnection", ReleaseResource());
 }
 
 // Suspend接口当前已不使用，由框架调用触发析构流程
-bool DevUbConnection::Suspend()
+bool HostUbConnection::Suspend()
 {
-    HCCL_WARNING("[DevUbConnection][%s] should not be called.", __func__);
+    HCCL_WARNING("[HostUbConnection][%s] should not be called.", __func__);
     if (status == RmaConnStatus::SUSPENDED) {
-        HCCL_INFO("[DevUbConnection][%s] RmaConnStatus is SUSPENDED, status[%s].", __func__, status.Describe().c_str());
+        HCCL_INFO("[HostUbConnection][%s] RmaConnStatus is SUSPENDED, status[%s].", __func__, status.Describe().c_str());
         return true;
     }
 
@@ -452,7 +455,7 @@ static void PrepareUbSendWrReqParamNotifyInfo(HrtRaUbSendWrReqParam &sendWrReq, 
               static_cast<u32>(sendWrReq.opcode), sendWrReq.notifyData, sendWrReq.notifyAddr, sendWrReq.notifyHandle);
 }
 
-std::unique_ptr<BaseTask> DevUbConnection::ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp,
+std::unique_ptr<BaseTask> HostUbConnection::ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp,
                                                                const SqeConfig              &config)
 {
     unique_ptr<BaseTask> result;
@@ -464,7 +467,7 @@ std::unique_ptr<BaseTask> DevUbConnection::ConstructTaskUbSend(const HrtRaUbSend
             result
                 = make_unique<TaskUbDbSend>(sendWrResp.jettyId, sendWrResp.funcId, sendWrResp.piVal, sendWrResp.dieId);
         } else if (config.wqeMode == WqeMode::WRITE_VALUE) {
-            HCCL_INFO("[DevUbConnection::%s] dbAddr=[%llx], piVal=[%u]", __func__, dbAddr, sendWrResp.piVal);
+            HCCL_INFO("[HostUbConnection::%s] dbAddr=[%llx], piVal=[%u]", __func__, dbAddr, sendWrResp.piVal);
             result = make_unique<TaskWriteValue>(dbAddr, sendWrResp.piVal);
         } else {
             auto msg = StringFormat("Invalid WqeMode[%s]", config.wqeMode.Describe().c_str());
@@ -472,11 +475,11 @@ std::unique_ptr<BaseTask> DevUbConnection::ConstructTaskUbSend(const HrtRaUbSend
         }
     } else if (opMode == OpMode::OFFLOAD) {
         CHK_PRT_THROW(sendWrResp.piVal < piVal,
-                      HCCL_ERROR("[DevUbConnection::%s] sendWrResp.piVal[%u] is less than piVal[%u]", __func__, sendWrResp.piVal, piVal),
+                      HCCL_ERROR("[HostUbConnection::%s] sendWrResp.piVal[%u] is less than piVal[%u]", __func__, sendWrResp.piVal, piVal),
                       InvalidParamsException, "sendWrResp.piVal or piVal is invalid");
         u32 sendPiVal = sendWrResp.piVal - piVal;
         result = make_unique<TaskUbDbSend>(sendWrResp.jettyId, sendWrResp.funcId, sendPiVal, sendWrResp.dieId);
-        HCCL_INFO("[DevUbConnection::%s] sendPiVal[%u] piVal[%u] sendWrResp.piVal[%u]", __func__, sendPiVal, piVal, sendWrResp.piVal);
+        HCCL_INFO("[HostUbConnection::%s] sendPiVal[%u] piVal[%u] sendWrResp.piVal[%u]", __func__, sendPiVal, piVal, sendWrResp.piVal);
     } else {
         auto msg = StringFormat("Invalid OpMode[%s]", opMode.Describe().c_str());
         THROW<InvalidParamsException>(msg);
@@ -486,11 +489,11 @@ std::unique_ptr<BaseTask> DevUbConnection::ConstructTaskUbSend(const HrtRaUbSend
     return result;
 }
 
-void DevUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer &rmt,
+void HostUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer &rmt,
                                     std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
                                     DataType                                                             dataType) const
 {
-    HCCL_INFO("[DevUbConnection::%s] start", __func__);
+    HCCL_INFO("[HostUbConnection::%s] start", __func__);
 
     // reduce操作需要保证切片大小是数据类型大小的整数倍
     u32 sliceSize = UB_MAX_TRANS_SIZE;
@@ -521,16 +524,16 @@ void DevUbConnection::ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer 
         sliceNum++;
     }
 
-    HCCL_INFO("[DevUbConnection::%s] end, locBufSize[%u], sliceNUm[%u], sliceSize[%u], lastSliceSize[%u]", __func__,
+    HCCL_INFO("[HostUbConnection::%s] end, locBufSize[%u], sliceNUm[%u], sliceSize[%u], lastSliceSize[%u]", __func__,
               locBufSize, sliceNum, sliceSize, lastSliceSize);
 }
 
-void DevUbConnection::ProcessSlicesWithNotify(
+void HostUbConnection::ProcessSlicesWithNotify(
     const MemoryBuffer &loc, const MemoryBuffer &rmt,
     std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
     std::function<void(const MemoryBuffer &, const MemoryBuffer &)> processOneSliceWithNotify, DataType dataType) const
 {
-    HCCL_INFO("[DevUbConnection::%s] start", __func__);
+    HCCL_INFO("[HostUbConnection::%s] start", __func__);
 
     // reduce操作需要保证切片大小是数据类型大小的整数倍
     u32 sliceSize = UB_MAX_TRANS_SIZE;
@@ -561,14 +564,14 @@ void DevUbConnection::ProcessSlicesWithNotify(
         sliceNum++;
     }
 
-    HCCL_INFO("[DevUbConnection::%s] end, locBufSize[%u], sliceNum[%u], sliceSize[%u], lastSliceSize[%u]", __func__,
+    HCCL_INFO("[HostUbConnection::%s] end, locBufSize[%u], sliceNum[%u], sliceSize[%u], lastSliceSize[%u]", __func__,
               locBufSize, sliceNum, sliceSize, lastSliceSize);
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+unique_ptr<BaseTask> HostUbConnection::PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
                                                   const SqeConfig &config)
 {
-    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareRead");
+    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "HostUbConnection::PrepareRead");
 
     if (localMemBuf.size == 0) {
         return nullptr;
@@ -586,11 +589,11 @@ unique_ptr<BaseTask> DevUbConnection::PrepareRead(const MemoryBuffer &remoteMemB
     return ConstructTaskUbSend(sendWrResp, config);
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf,
+unique_ptr<BaseTask> HostUbConnection::PrepareReadReduce(const MemoryBuffer &remoteMemBuf,
                                                         const MemoryBuffer &localMemBuf, DataType dataType,
                                                         ReduceOp reduceOp, const SqeConfig &config)
 {
-    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareReadReduce");
+    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "HostUbConnection::PrepareReadReduce");
 
     if (localMemBuf.size == 0) {
         return nullptr;
@@ -612,10 +615,10 @@ unique_ptr<BaseTask> DevUbConnection::PrepareReadReduce(const MemoryBuffer &remo
     return ConstructTaskUbSend(sendWrResp, config);
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
+unique_ptr<BaseTask> HostUbConnection::PrepareWrite(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
                                                    const SqeConfig &config)
 {
-    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWrite");
+    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "HostUbConnection::PrepareWrite");
 
     if (localMemBuf.size == 0) {
         return nullptr;
@@ -632,11 +635,11 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWrite(const MemoryBuffer &remoteMem
     return ConstructTaskUbSend(sendWrResp, config);
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
+unique_ptr<BaseTask> HostUbConnection::PrepareWriteReduce(const MemoryBuffer &remoteMemBuf,
                                                          const MemoryBuffer &localMemBuf, DataType dataType,
                                                          ReduceOp reduceOp, const SqeConfig &config)
 {
-    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWriteReduce");
+    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "HostUbConnection::PrepareWriteReduce");
 
     if (localMemBuf.size == 0) {
         return nullptr;
@@ -657,7 +660,7 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduce(const MemoryBuffer &rem
     return ConstructTaskUbSend(sendWrResp, config);
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
+unique_ptr<BaseTask> HostUbConnection::PrepareInlineWrite(const MemoryBuffer &remoteMemBuf, u64 data,
                                                          const SqeConfig &config)
 {
     HrtRaUbSendWrReqParam sendWrReq = {};
@@ -682,7 +685,7 @@ unique_ptr<BaseTask> DevUbConnection::PrepareInlineWrite(const MemoryBuffer &rem
     }
 
     HCCL_INFO(
-        "DevUbConnection::PrepareInlineWrite params opCode=[%u], "
+        "HostUbConnection::PrepareInlineWrite params opCode=[%u], "
         "remoteAddr=[0x%llx], rmemHandle=[0x%llx], remoteJettyHandle=[0x%llx], inlineFlag[%u], size=[%u], data=[%u]",
         sendWrReq.opcode, sendWrReq.remoteAddr, sendWrReq.rmemHandle, sendWrReq.handle, sendWrReq.inlineFlag,
         sendWrReq.size, static_cast<u32>(*sendWrReq.inlineData));
@@ -709,12 +712,12 @@ inline HrtRaUbSendWrReqParam ConstructUbSendWrReqParamForWriteWithNotify(const M
     return sendWrReq;
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
+unique_ptr<BaseTask> HostUbConnection::PrepareWriteWithNotify(const MemoryBuffer &remoteMemBuf,
                                                              const MemoryBuffer &localMemBuf, u64 data,
                                                              const MemoryBuffer &remoteNotifyMemBuf,
                                                              const SqeConfig    &config)
 {
-    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWriteWithNotify");
+    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "HostUbConnection::PrepareWriteWithNotify");
 
     if (localMemBuf.size == 0) {
         return nullptr;
@@ -741,13 +744,13 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteWithNotify(const MemoryBuffer 
     return ConstructTaskUbSend(sendWrResp, config);
 }
 
-unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
+unique_ptr<BaseTask> HostUbConnection::PrepareWriteReduceWithNotify(const MemoryBuffer &remoteMemBuf,
                                                                    const MemoryBuffer &localMemBuf, DataType dataType,
                                                                    ReduceOp reduceOp, u64 data,
                                                                    const MemoryBuffer &remoteNotifyMemBuf,
                                                                    const SqeConfig    &config)
 {
-    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "DevUbConnection::PrepareWriteReduceWithNotify");
+    VerifySizeIsEqual(remoteMemBuf, localMemBuf, "HostUbConnection::PrepareWriteReduceWithNotify");
 
     if (localMemBuf.size == 0) {
         return nullptr;
@@ -776,18 +779,18 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduceWithNotify(const MemoryB
     return ConstructTaskUbSend(sendWrResp, config);
 }
 
-string DevUbConnection::Describe() const
+string HostUbConnection::Describe() const
 {
-    return StringFormat("DevUbConnection[locAddr=%s, rmtAddr=%s, status=%s, dieId=%u, funcId=%u, jettyId=%u, sqBuffVa=%llx, "
+    return StringFormat("HostUbConnection[locAddr=%s, rmtAddr=%s, status=%s, dieId=%u, funcId=%u, jettyId=%u, sqBuffVa=%llx, "
                         "sqDepth=%u, tpn=%u, dbAddr=0x%llx]",
                         locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), status.Describe().c_str(), dieId,
                         funcId, jettyId, sqBuffVa, sqDepth, tpn, dbAddr);
 }
 
-void DevUbConnection::AddNop(const Stream &stream)
+void HostUbConnection::AddNop(const Stream &stream)
 {
     if (opMode != OpMode::OFFLOAD) {
-        HCCL_WARNING("[DevUbConnection][AddNop]Invalid OpMode[%s]", opMode.Describe().c_str());
+        HCCL_WARNING("[HostUbConnection][AddNop]Invalid OpMode[%s]", opMode.Describe().c_str());
         return;
     }
     if (sqDepth < piVal) {
@@ -812,60 +815,60 @@ void DevUbConnection::AddNop(const Stream &stream)
     piVal = sqDepth;
 }
 
-HrtUbJfcMode DevUbConnection::GetUbJfcMode() const
+HrtUbJfcMode HostUbConnection::GetUbJfcMode() const
 {
     return jfcMode;
 }
 
-JettyHandle& DevUbConnection::GetJettyHandle()
+JettyHandle& HostUbConnection::GetJettyHandle()
 {
     return jettyHandle;
 }
 
-JettyHandle&  DevUbConnection::GetRemoteJettyHandle()
+JettyHandle&  HostUbConnection::GetRemoteJettyHandle()
 {
     return remoteJettyHandle;
 }
 
-RdmaHandle&  DevUbConnection::GetRdmaHandle()
+RdmaHandle&  HostUbConnection::GetRdmaHandle()
 {
     return rdmaHandle;
 }
 
-u32 DevUbConnection::GetPiVal() const
+u32 HostUbConnection::GetPiVal() const
 {
     return piVal;
 }
 
-u32 DevUbConnection::GetCiVal() const
+u32 HostUbConnection::GetCiVal() const
 {
     return ciVal;
 }
 
-u32 DevUbConnection::GetSqDepth() const
+u32 HostUbConnection::GetSqDepth() const
 {
     return sqDepth;
 }
 
-void DevUbConnection::UpdateCiVal(u32 ci)
+void HostUbConnection::UpdateCiVal(u32 ci)
 {
     ciVal = ci;
 }
 
-std::vector<DevUbConnection *> GetDevStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns)
+std::vector<HostUbConnection *> GetHostStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns)
 {
-    std::vector<DevUbConnection *> ubConns;
+    std::vector<HostUbConnection *> ubConns;
     for (auto &rmaConn : rmaConns) {
         if (rmaConn->GetRmaConnType() == RmaConnType::UB) {
-            if (dynamic_cast<DevUbConnection *>(rmaConn)->GetUbJfcMode() == HrtUbJfcMode::STARS_POLL) {
-                ubConns.emplace_back(dynamic_cast<DevUbConnection *>(rmaConn));
+            if (dynamic_cast<HostUbConnection *>(rmaConn)->GetUbJfcMode() == HrtUbJfcMode::STARS_POLL) {
+                ubConns.emplace_back(dynamic_cast<HostUbConnection *>(rmaConn));
             }
         }
     }
     return ubConns;
 }
 
-bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns)
+bool IfNeedUpdatingUbCi(const std::vector<HostUbConnection *> &ubConns)
 {
     for (auto &ubConn : ubConns) {
         u32 pi      = ubConn->GetPiVal();

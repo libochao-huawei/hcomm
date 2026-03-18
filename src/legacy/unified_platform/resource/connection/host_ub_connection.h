@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCLV2_DEV_UB_CONNECTION_H
-#define HCCLV2_DEV_UB_CONNECTION_H
+#ifndef HCCLV2_HOST_UB_CONNECTION_H
+#define HCCLV2_HOST_UB_CONNECTION_H
 
 #include "rma_connection.h"
 #include "op_mode.h"
@@ -22,9 +22,9 @@
 
 namespace Hccl {
 
-class DevUbConnection : public RmaConnection {
+class HostUbConnection : public RmaConnection {
 public:
-    DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+    HostUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                     const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
     void          Connect() override;
     RmaConnStatus GetStatus() override;
@@ -68,8 +68,8 @@ public:
 
     void AddNop(const Stream &stream) override;
 
-    void         ReleaseTp();
-    ~DevUbConnection() override;
+    void ReleaseTp();
+    ~HostUbConnection() override;
 
     string Describe() const override;
 
@@ -102,7 +102,6 @@ private:
     Eid          rmtEid{};
     Eid          locEid{};
 
-    int32_t   devLogicId{0};
     u32       dieId{0};
     u32       funcId{0};
     JfcHandle jfcHandle{0};
@@ -164,22 +163,22 @@ private:
     void                      UpdateCiVal(u32 ci);
 };
 
-class DevUbTpConnection : public DevUbConnection {
+class HostUbTpConnection : public HostUbConnection {
 public:
-    DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+    HostUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
 };
 
-class DevUbCtpConnection : public DevUbConnection {
+class HostUbCtpConnection : public HostUbConnection {
 public:
-    DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+    HostUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                        const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
 };
 
-std::vector<DevUbConnection *> GetDevStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
+std::vector<HostUbConnection *> GetHostStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
 
-bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns);
+bool IfNeedUpdatingUbCi(const std::vector<HostUbConnection *> &ubConns);
 
 } // namespace Hccl
 
-#endif // HCCLV2_DEV_UB_CONNECTION_H
+#endif // HCCLV2_HOST_UB_CONNECTION_H
