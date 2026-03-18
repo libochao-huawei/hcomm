@@ -147,6 +147,15 @@ TEST_F(RtsqA5Test, notify_wait)
     rtsq.NotifyWait(fakeNotifyId);
 }
 
+TEST_F(RtsqA5Test, notify_wait_with_timeout)
+{
+    RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
+
+    u32 fakeNotifyId = 0;
+    u32 fakeTimeout = 68;
+    rtsq.NotifyWait(fakeNotifyId, fakeTimeout);
+}
+
 TEST_F(RtsqA5Test, notify_record_local)
 {
     RtsqA5 rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
