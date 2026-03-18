@@ -44,7 +44,7 @@ protected:
     uint32_t notifyIdx = 0;
     uint32_t timeout = 10000;  // in ms
     int32_t res{HCCL_E_RESERVED};
-    DevType t950 = DevType::DEV_TYPE_910_95;
+    DevType t950 = static_cast<DevType>(6);
     DevType t910C = DevType::DEV_TYPE_910_93;
 };
 
