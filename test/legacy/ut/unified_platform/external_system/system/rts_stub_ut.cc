@@ -61,6 +61,7 @@ aclError aclrtSetDeviceTaskAbortCallback(const char *regName, aclrtDeviceTaskAbo
 
 aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
 {
+    *event = reinterpret_cast<aclrtEvent>(0x123);
     return aclrtCreateEvent(event);
 }
 
@@ -223,6 +224,7 @@ rtError_t aclrtMallocHost(void **hostPtr, size_t size)
 
 aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
 {
+    *devPtr = reinterpret_cast<void*>(0x123);
     return ACL_SUCCESS;
 }
 
@@ -585,6 +587,7 @@ aclError aclrtGetCurrentContext(aclrtContext *ctx)
  
 aclError aclrtCreateStreamWithConfig(aclrtStream *stream, uint32_t priority, uint32_t flag)
 {
+    *stream = reinterpret_cast<aclrtStream>(0x123);
     return aclrtCreateStream(stream);
 }
  

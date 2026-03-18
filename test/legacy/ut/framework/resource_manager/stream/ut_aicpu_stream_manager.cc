@@ -39,7 +39,8 @@ protected:
     {
         streamManager = new AicpuStreamManager();
 
-        MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
+ 	    MOCKER(HrtStreamGetCqId).stubs().will(returnValue(static_cast<u32>(0)));
+ 	    MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeDevLogId));
         MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
         MOCKER(HrtStreamDestroy).stubs();
         MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));

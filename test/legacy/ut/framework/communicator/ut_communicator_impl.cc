@@ -557,6 +557,7 @@ TEST_F(CommunicatorImplTest, initvittualtopo_check_fail)
 
 TEST_F(CommunicatorImplTest, should_return_success_when_normal_calling_new_init_with_two_parameters_new)
 {
+    MOCKER(HrtFreeHost).stubs();
     MOCKER(HrtSetDevice).stubs().with(any()).will(ignoreReturnValue());
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     MOCKER(HrtOpenTsdProcess).stubs().with(any(), any()).will(returnValue(HcclResult::HCCL_SUCCESS));

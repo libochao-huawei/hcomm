@@ -89,6 +89,7 @@ std::vector<char> StubAivSocket::buf;
 
 TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsConnect)
 {
+    MOCKER(HrtDevMemAlignWithPage).stubs();
     cout<<1<<endl;
     CommunicatorImpl comm;
     comm.InitSocketManager();
@@ -136,6 +137,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
 
 TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_GetLocMemBuffer)
 {
+    MOCKER(HrtDevMemAlignWithPage).stubs();
     std::shared_ptr<Buffer> cclBuffer = DevBuffer::Create(0x100, 10);
 
     unique_ptr<StubAivSocket> fakeSocket = make_unique<StubAivSocket>();

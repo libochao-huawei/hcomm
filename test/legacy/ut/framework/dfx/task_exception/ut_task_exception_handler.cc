@@ -83,6 +83,7 @@ TEST_F(TaskExceptionHandlerTest, TestGetInstanceWithValidDevId)
 
 TEST_F(TaskExceptionHandlerTest, TestConstructorAndDestructor)
 {
+    MOCKER(HrtRegTaskFailCallbackByModule).stubs();
     TaskExceptionHandler *instance = new TaskExceptionHandler(0);
     EXPECT_NO_THROW(instance->~TaskExceptionHandler());
     delete instance;
@@ -90,6 +91,7 @@ TEST_F(TaskExceptionHandlerTest, TestConstructorAndDestructor)
 
 TEST_F(TaskExceptionHandlerTest, TestRegisterAndUnRegister)
 {
+    MOCKER(HrtRegTaskFailCallbackByModule).stubs();
     TaskExceptionHandler *instance = TaskExceptionHandlerManager::GetHandler(0);
     instance->Register();
     instance->UnRegister();
