@@ -89,7 +89,7 @@ constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
  * 宏定义                                       *
  *----------------------------------------------*/
 
-static s32 stub_log_level = DLOG_INFO; // LLT日志级别开关，debug可以改成 DLOG_INFO;
+static s32 stub_log_level = DLOG_ERROR; // LLT日志级别开关，debug可以改成 DLOG_INFO;
 static u32 FailureDeviceId = 0xFFFFFFFF;
 static tasktype_e FailureTaskType = TASK_TYPE_RESERVED;
 static std::mutex taskFailCallbackMapMutex;
