@@ -19,6 +19,7 @@ set(src_to_test_list
     comms/aiv/ut_AivUbMemTransport_API_test.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
+    comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
     comms/comm_engine_res/threads/test_thread_api.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
