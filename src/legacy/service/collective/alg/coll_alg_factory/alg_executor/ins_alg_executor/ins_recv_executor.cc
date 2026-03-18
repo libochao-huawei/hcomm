@@ -32,6 +32,7 @@ HcclResult InsRecvExecutor::Orchestrate(const RankGraph  *rankGraph,
                                        const CollAlgParams   &params,
                                        InsQuePtr              insQue)
 {
+    dmaMode_ = DmaMode::DEFAULT;
     HCCL_DEBUG("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] Begin to Generate Instruction Queue for RECV.");
     CHK_RET(Init(op, params, insQue));
     // 从集合通信算子op中获得remote rank和data type/count相关信息
@@ -52,6 +53,10 @@ HcclResult InsRecvExecutor::Orchestrate(const RankGraph  *rankGraph,
                 HCCL_ERROR("[InsCollAlgFactory] Unable to obtain valid link, srcRank [%d], dstRank [%d].", myRank_,
                 remoteRank), HcclResult::HCCL_E_INTERNAL);
     LinkData recvLinkData(recvPath[0]);
+    if (recvLinkData.GetType() == PortDeploymentType::P2P
+        && recvLinkData.GetLinkProtocol() == LinkProtocol::PCIE) {
+        dmaMode_ = DmaMode::GET;
+    }
     HCCL_DEBUG("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] Total transfer data size [%llu], Max scratch buffer size [%u].", totalDataSize, params.maxTmpMemSize);
 
     // 初始化循环参数
@@ -67,7 +72,7 @@ HcclResult InsRecvExecutor::Orchestrate(const RankGraph  *rankGraph,
         DataSlice remoteInputBuffer(BufferType::INPUT, currentOffset, transferSize);
         SlicesList recvSlicesList({remoteInputBuffer}, {outputBuffer});
         DataInfo recvInfo(recvLinkData, recvSlicesList);
-        CHK_RET(Recv(recvInfo, insQue));
+        CHK_RET(Recv(recvInfo, insQue, 0, true, dmaMode_));
     }else {
         HCCL_DEBUG("[InsCollAlgFactory] Rank[%d], Generating Instruction Queues in OPBASE Mode for HOST.", myRank_);
         // 当需要多轮搬运时，需保证一次数据的搬运量需为单个数据size的整数倍
@@ -82,7 +87,7 @@ HcclResult InsRecvExecutor::Orchestrate(const RankGraph  *rankGraph,
             DataSlice remoteScratchBuffer(BufferType::SCRATCH, 0, transferSize);
             SlicesList recvSlicesList({remoteScratchBuffer}, {scratchBuffer});
             DataInfo recvInfo(recvLinkData, recvSlicesList);
-            CHK_RET(Recv(recvInfo, insQue));
+            CHK_RET(Recv(recvInfo, insQue, 0, true, dmaMode_));
             // local copy
             CHK_RET(LocalCopy(insQue, scratchBuffer, outputBuffer));
             // 更新循环参数
@@ -135,6 +140,7 @@ HcclResult InsRecvExecutor::Orchestrate(const AlgTopoInfo     &topoInfo,
                                           ConnectedLinkMgr      *linkMgr,
                                           InsQuePtr              insQue)
 {
+    dmaMode_ = DmaMode::DEFAULT;
     (void)topoInfo;
     HCCL_DEBUG("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] Begin to Generate Instruction Queue for RECV AICPU mode.");
     CHK_RET(Init(op, params, insQue));
@@ -156,6 +162,10 @@ HcclResult InsRecvExecutor::Orchestrate(const AlgTopoInfo     &topoInfo,
             HCCL_ERROR("[InsCollAlgFactory] Unable to obtain valid link, srcRank [%d], dstRank [%d].", myRank_,
             remoteRank), HcclResult::HCCL_E_INTERNAL);
     LinkData recvLinkData(recvPath[0]);
+    if (recvLinkData.GetType() == PortDeploymentType::P2P
+        && recvLinkData.GetLinkProtocol() == LinkProtocol::PCIE) {
+        dmaMode_ = DmaMode::GET;
+    }
     HCCL_DEBUG("[InsCollAlgFactory][InsRecvExecutor][Orchestrate] Total transfer data size [%llu], Max scratch buffer size [%u].", totalDataSize, params.maxTmpMemSize);
  
     // 初始化循环参数
@@ -172,7 +182,7 @@ HcclResult InsRecvExecutor::Orchestrate(const AlgTopoInfo     &topoInfo,
             DataSlice remoteInputBuffer(BufferType::INPUT, currentOffset, transferSize);
             SlicesList recvSlicesList({remoteInputBuffer}, {outputBuffer});
             DataInfo recvInfo(recvLinkData, recvSlicesList);
-            CHK_RET(Recv(recvInfo, insQue));
+            CHK_RET(Recv(recvInfo, insQue, 0, true, dmaMode_));
             currentOffset = currentOffset + transferSize;
             resDataSize = resDataSize - transferSize;
             roundIdx = roundIdx + 1;
@@ -192,7 +202,7 @@ HcclResult InsRecvExecutor::Orchestrate(const AlgTopoInfo     &topoInfo,
  
             SlicesList recvSlicesList({remoteScratchBuffer}, {scratchBuffer});
             DataInfo recvInfo(recvLinkData, recvSlicesList);
-            CHK_RET(Recv(recvInfo, insQue));
+            CHK_RET(Recv(recvInfo, insQue, 0, true, dmaMode_));
             // local copy
             CHK_RET(LocalCopy(insQue, scratchBuffer, outputBuffer));
             // 更新循环参数

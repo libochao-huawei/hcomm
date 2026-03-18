@@ -59,6 +59,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/common/src/onesided_memory_management
     ${HCCL_CODE_ROOT}/src/framework/common/src/order_launch
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/resource_manager
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op
@@ -278,7 +279,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
     ${HCCL_CODE_ROOT}/src/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common

@@ -117,7 +117,7 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     return (void*)0x12345678;
 }
- 
+
 RdmaHandleManager::RdmaHandleManager()
 {
 }
@@ -1362,6 +1362,10 @@ HccpPeerManager::~HccpPeerManager()
 {
 }
 
+void HccpPeerManager::Init(s32 deviceLogicId)
+{
+}
+
 HcclResult CcuResSpecifications::GetXnNum(const uint8_t dieId, uint32_t &xnNum) const
 {
     return HcclResult::HCCL_SUCCESS;
@@ -1421,6 +1425,10 @@ TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
 {
     static TpManager tpManager;
     return tpManager;
+}
+
+void TpManager::Init()
+{
 }
 
 TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,std::shared_ptr<DfxOpInfo> dfxOpInfo, bool isMaster)
@@ -2032,6 +2040,9 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInf
 {
     return HCCL_SUCCESS;
 }
+
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{}
 
 extern "C" {
 aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback) 

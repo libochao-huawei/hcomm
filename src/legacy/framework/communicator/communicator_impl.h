@@ -382,6 +382,7 @@ public:
     ErrorMessageReport GetAicpuTaskException();
     u32 GetRankInParentComm();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
+    bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
 
 private:
     std::string                                id;
@@ -431,6 +432,7 @@ private:
     std::vector<CommLink> linkListVec;
     std::vector<uint32_t> ranksVec;
     std::vector<uint32_t> topoInstsVec;
+    std::vector<u32> enableP2PDevices_;
 
     NotifyTimeoutCfg notifyTimeoutCfg;
 
@@ -511,6 +513,8 @@ private:
     void InitCollService();
     void InitHccpHdc() const;
     void InitCcuSuperFastLoad();
+    void InitPreResource();
+    void DeInitPreResource();
     void InitSocketManager();
     void InitRmaConnManager();
     void InitNotifyFixedValue();

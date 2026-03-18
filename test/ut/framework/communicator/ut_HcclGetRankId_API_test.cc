@@ -8,13 +8,26 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef AICPU_TS_URMA_CAHNNEL_KERNEL_H
-#define AICPU_TS_URMA_CAHNNEL_KERNEL_H
+#include "hccl_api_base_test.h"
 
-#include <cstdint>
+class HcclGetRankIdTest : public BaseInit {
+public:
+    void SetUp() override {
+        UT_USE_1SERVER_1RANK_AS_DEFAULT;
+        BaseInit::SetUp();
+    }
+    void TearDown() override {
+        BaseInit::TearDown();
+        GlobalMockObject::verify();
+    }
+};
 
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args);
+TEST_F(HcclGetRankIdTest, Ut_HcclGetRankId_WhenCommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    Ut_Device_Set(0);
+
+    uint32_t rankId = 0;
+
+    HcclResult ret = HcclGetRankId(comm, &rankId);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
-
-#endif // AICPU_TS_URMA_CAHNNEL_KERNEL_H

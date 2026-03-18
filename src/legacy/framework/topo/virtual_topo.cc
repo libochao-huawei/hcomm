@@ -19,6 +19,7 @@
 #include "invalid_params_exception.h"
 #include "not_support_exception.h"
 #include "internal_exception.h"
+#include "orion_adapter_hccp.h"
 
 namespace Hccl {
 
@@ -96,6 +97,17 @@ std::vector<char> LinkData::GetUniqueId() const
     result.insert(result.end(), loc.begin(), loc.end());
     result.insert(result.end(), rmt.begin(), rmt.end());
     return result;
+}
+
+void LinkData::UpdateIpAddrWithPCIE()
+{
+#ifndef CCL_KERNEL_AICPU
+    if (linkProtocol_ == LinkProtocol::PCIE) {
+        // 更新localAddr和remoteAddr为vinc ip
+        HrtRaSocketGetVnicIpInfos(localDeviceId_, DeviceIdType::DEVICE_ID_TYPE_PHY_ID, localDeviceId_, localAddr_);
+        HrtRaSocketGetVnicIpInfos(localDeviceId_, DeviceIdType::DEVICE_ID_TYPE_PHY_ID, remoteDeviceId_, remoteAddr_);
+    }
+#endif
 }
 
 } // namespace Hccl
