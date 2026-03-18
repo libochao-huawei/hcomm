@@ -207,7 +207,7 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
 }
 
 HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
-    int hert = HcommChannelRegisterDfx(channel, dfx_.GetCallback())
+    int hert = HcommChannelRegisterDfx(channel, dfx_.GetCallback());
     return static_cast<HcclResult>(hert);
 }
 
