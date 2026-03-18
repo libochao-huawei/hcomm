@@ -342,7 +342,7 @@ HcclResult HcclNetDevGetTlsStatus(HcclNetDevCtx netDevCtx, TlsStatus *tlsStatus)
     }
 
     u32 devicePhyId = static_cast<u32>(pNetDevCtx->GetPhyId());
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = static_cast<int>(pNetDevCtx->GetNicDeployment());
     raInfo.phyId = devicePhyId;
     bool tlsEnable = false;

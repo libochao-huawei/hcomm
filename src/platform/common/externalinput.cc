@@ -546,7 +546,6 @@ HcclResult ParseExecTimeOut()
 
     // 校验环境变量长度
     bool isEnvLenValid = CheckEnvLen(execTimeOutEnv.c_str(), MAX_LEN_OF_DIGIT_ENV);
-
     CHK_PRT_RET(!isEnvLenValid,
         HCCL_ERROR("[Parse][ExecuteTimeOut]errNo[0x%016llx] Invalid ExecuteTimeOut env len, len is bigger than "\
             "[%u]. errorno[%d]", HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
@@ -951,6 +950,10 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
     CHK_PTR_NULL(execTimeOutStr);
     if (!IsValidExecTimeOutMs(execTimeOutStr)) {
         HCCL_ERROR("[SetHccLExecTimeOut]Invalid config value, execTimeOutStr[%s]", execTimeOutStr);
+        RPT_ENV_ERR(true,
+            "EI0001",
+            std::vector<std::string>({"value", "env", "expect"}),\
+            std::vector<std::string>({std::string(execTimeOutStr), "HCCL_EXEC_TIMEOUT", "a valid number in the specified range"}));
         return HCCL_E_PARA;
     }
     DevType deviceType;
@@ -960,7 +963,6 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
     double execTimeOut = hcclExecTimeout;
     g_externalInput.execTimeOut = hcclExecTimeout;
     HcclResult ret = SalStrToDouble(execTimeOutStr, execTimeOut);
-
     bool flag = false;
     std::string inputValue = (execTimeOutStr ? execTimeOutStr : "NULL");
     if (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) {

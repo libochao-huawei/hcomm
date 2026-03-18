@@ -29,12 +29,16 @@ namespace Hccl {
 class CommunicatorImpl;
 class SocketManager {
 public:
+    SocketManager() = default;
     SocketManager(const CommunicatorImpl &communicator, u32 localRank, u32 devicePhyId, u32 deviceLogicId,
                   std::function<shared_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress,
                                                    u32 listenPort, SocketHandle socketHandle, const std::string &tag,
                                                    SocketRole socketRole, NicType nicType)>
                       socketProducer
                   = nullptr);
+
+    SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, const std::string &socketTag);
+
     static void SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap);
 
     static std::unordered_map<u32, u32>& GetDeviceServerListenPortMap();
@@ -52,6 +56,8 @@ public:
     bool DestroyConnectedSocket(SocketConfig &socketConfig);
 
     Socket *GetConnectedSocket(SocketConfig &socketConfig) const;
+
+    bool CheckServerPortListening(const PortData &portData) const;
 
     void DestroyAll();
 
@@ -91,6 +97,8 @@ private:
 
     Socket *GetServerListenSocket(const PortData &localPort) const;
     std::set<LinkData>      availableLinks;
+
+    std::string socketTag_{};
 };
 
 } // namespace Hccl

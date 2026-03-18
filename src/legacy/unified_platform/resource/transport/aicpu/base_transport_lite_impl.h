@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef BASE_MEM_TRANSPORT_LITE_H
@@ -15,10 +15,23 @@
 #include <unordered_map>
 #include "stream_lite.h"
 #include "buffer.h"
+#include "internal_exception.h"
 #include "rma_buffer_lite.h"
 #include "mem_transport_common.h"
 #include "rmt_rma_buf_slice_lite.h"
 namespace Hccl {
+
+inline HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
+{
+    static std::map<ReduceOp, HcclReduceOp> reduceTypeMap = {{ReduceOp::SUM, HcclReduceOp::HCCL_REDUCE_SUM},
+                                                             {ReduceOp::PROD, HcclReduceOp::HCCL_REDUCE_PROD},
+                                                             {ReduceOp::MAX, HcclReduceOp::HCCL_REDUCE_MAX},
+                                                             {ReduceOp::MIN, HcclReduceOp::HCCL_REDUCE_MIN}};
+    if (UNLIKELY(reduceTypeMap.find(reduceOp) == reduceTypeMap.end())) {
+        THROW<InternalException>(StringFormat("reduceOp[%u] is invalid", reduceOp));
+    }
+    return reduceTypeMap[reduceOp];
+}
 
 MAKE_ENUM(TransferType, WRITE, READ)
 

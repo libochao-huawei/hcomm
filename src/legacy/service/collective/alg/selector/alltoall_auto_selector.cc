@@ -54,6 +54,9 @@ SelectorStatus AlltoAllAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoI
                 } else {
                     primQueueGenName = "CcuAlltoAllMesh1D";
                 }
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
                     topoInfo.level0Shape);
@@ -99,6 +102,8 @@ SelectorStatus AlltoAllAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "InsAlltoAllMesh";
+            } else if (topoInfo.level0PcieMix) {
+                    primQueueGenName = "InsAlltoAllMesh";
             } else {
                 primQueueGenName = "InsAlltoAllMesh";
             }

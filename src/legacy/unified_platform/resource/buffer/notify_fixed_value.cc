@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "notify_fixed_value.h"
@@ -20,7 +20,7 @@ namespace Hccl {
 constexpr u32 V82_NOTIFY_SIZE = 8;
 NotifyFixedValue::NotifyFixedValue() : size(DevCapability::GetInstance().GetNotifySize())
 {
-    size = HrtGetDeviceType() == DevType::DEV_TYPE_910_95 ? V82_NOTIFY_SIZE : DevCapability::GetInstance().GetNotifySize();
+    size = HrtGetDeviceType() == DevType::DEV_TYPE_950 ? V82_NOTIFY_SIZE : DevCapability::GetInstance().GetNotifySize();
     u64   notifyValueSize = LARGE_PAGE_MEMORY_MIN_SIZE; // 避免申请小页内存。最小2*1024*1024
     void *ptr             = HrtMalloc(notifyValueSize, static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
     u32   notifyValue     = 1; // notify值写1表示record

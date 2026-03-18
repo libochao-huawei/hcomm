@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -214,7 +214,7 @@ TEST_F(TaskInfoTest, test_get_op_info)
 {
     TaskInfo taskInfo = InitTaskInfo();
 
-    taskInfo.dfxOpInfo_->index_ = 3;
+    taskInfo.dfxOpInfo_->commIndex_ = 3;
     taskInfo.dfxOpInfo_->op_.dataCount = 0xaaaabbbbcccc;
     taskInfo.dfxOpInfo_->op_.reduceOp = ReduceOp::SUM;
     taskInfo.dfxOpInfo_->op_.dataType = DataType::UINT64;

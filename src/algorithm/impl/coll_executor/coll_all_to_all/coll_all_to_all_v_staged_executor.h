@@ -16,7 +16,7 @@ class CollRunAlltoAllVStaged : public CollAlltoAllExecutor {
 
 public:
     CollRunAlltoAllVStaged(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllVStaged() = default;
+    ~CollRunAlltoAllVStaged() override = default;
 
     HcclResult CheckNeedRecreateComm(u64 lastScratchMemSize, bool& needRecreateAlltoallComm) override;
     HcclResult CheckNeedCreateVirtualLinks(AlgResourceRequest &resourceRequest) override;

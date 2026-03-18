@@ -20,9 +20,9 @@ class ReceiveOperator : public CollAlgOperator {
 public:
     ReceiveOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~ReceiveOperator();
+    ~ReceiveOperator() override;
 
-    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag);
+    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag) override;
 };
 }
 

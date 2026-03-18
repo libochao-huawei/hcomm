@@ -132,37 +132,6 @@ TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_dereg)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_reg_maximum)
-{
-    GlobalMemRegMgr mgr;
-    HcclResult ret = HCCL_SUCCESS;
-
-    auto buffer1 = std::vector<int8_t>(MAX_GLOBAL_MEM_REG_COUNT);
-    auto buffer2 = std::vector<int8_t>(10);
-    int8_t* ptr = buffer1.data();
-
-    auto handles = std::vector<void*>{};
-
-    for (auto i = 0; i < MAX_GLOBAL_MEM_REG_COUNT; ++i) {
-        HcclMem mem{HCCL_MEM_TYPE_DEVICE, ptr + i, 1};
-        void* memHandle = nullptr;
-        ret = mgr.Reg(&mem, &memHandle);
-        EXPECT_EQ(ret, HCCL_SUCCESS);
-        handles.emplace_back(memHandle);
-    }
-
-    HcclMem mem2{HCCL_MEM_TYPE_DEVICE, buffer2.data(), buffer2.size()};
-    void* memHandle2 = nullptr;
-    ret = mgr.Reg(&mem2, &memHandle2);
-    EXPECT_EQ(ret, HCCL_E_UNAVAIL);
-
-    ret = mgr.DeReg(*(handles.rbegin()));
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = mgr.Reg(&mem2, &memHandle2);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_NE(memHandle2, nullptr);
-}
-
 HcclResult hrtGetPairDevicePhyIdForTest(u32 localDevPhyId, u32 &pairDevPhyId)
 {
     pairDevPhyId = 1;

@@ -37,7 +37,7 @@ private:
     HcclResult RunInitStep(const u32 rank, const u32 rankSize);
     virtual HcclResult PrepareRunMainStream(u32 ringIndex, Stream &stream, LINK &preLink, LINK &nextLink);
     HcclResult RunAllStreams(const u32 step, const u32 rankSize,
-        std::vector<TxMemoryInfo> &mainTxMems, std::vector<RxMemoryInfo> &mainRxMems,
+        const std::vector<TxMemoryInfo> &mainTxMems, std::vector<RxMemoryInfo> &mainRxMems,
         const std::vector<TxMemoryInfo> &subTxMems, std::vector<RxMemoryInfo> &subRxMems,
         std::vector<DeviceMem> &mainLocalSrcMems, std::vector<DeviceMem> &mainLocalDstMems,
         std::vector<DeviceMem> &subLocalSrcMems, std::vector<DeviceMem> &subLocalDstMems);

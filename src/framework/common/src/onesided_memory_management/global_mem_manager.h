@@ -25,8 +25,6 @@
 
 namespace hccl {
 
-constexpr u32 MAX_GLOBAL_MEM_REG_COUNT = 256;
-
 // 进程粒度的内存管理单例
 class GlobalMemRegMgr {
 public:

@@ -288,7 +288,7 @@ void RankGraphBuilder::BuildFromRankTable()
     for (const auto &rankInfo : rankTable_->ranks) {
         updaterFor64Plus1_.SaveReplaceInfo(rankInfo);   // 暂存备份替换信息
         RankId rankId = rankInfo.rankId;
-        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId);
+        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort);
         rankGraph_->AddPeer(peer);
         peers_.emplace(rankId, peer);  // rankid2peer
 
@@ -349,8 +349,7 @@ void RankGraphBuilder::SetEndpointDesc()
                 HcclResult ret = GetCommAddr(desc.commAddr, iface->GetAddr());
                 CHK_PRT_THROW(ret != HCCL_SUCCESS, HCCL_ERROR("[RankGraphBuilder::%s] fail", __func__), InternalException, "GetCommAddr fail" );
 
-                auto it = protocolMap.find(protocol);
-                desc.protocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+                desc.protocol = LinkProtocolToCommProtocol(protocol);
                 desc.loc.locType = AddrPositionToEndpointLoc(iface->GetPos());
 
                 HCCL_INFO("[RankGraphBuilder::SetEndpointDesc] local type[%d] protocol[%d]",
@@ -495,24 +494,37 @@ std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTo
     std::set<string> phyPorts = phyConnIFace->GetPorts();
     std::unordered_map<IpAddress, std::set<string>> addr2Ports;
     for (auto port: phyPorts) {
-        auto itPort = portAddrMap.find(port);
-        if(itPort == portAddrMap.end()) {
-            HCCL_WARNING("[RankGraphBuilder][ConstructConnIFromPhyTopoConnIAndPortMap] topo use port [%s] not find addrs in ranktable.", port.c_str());
-            continue;
-        }
-        auto it = addr2Ports.find(itPort->second);
-        if (it == addr2Ports.end()) {
-            std::set<std::string> newPorts;
-            newPorts.insert(port);
-            addr2Ports[itPort->second] = newPorts;
+        if (*(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
+            IpAddress tempIp;
+            auto it = addr2Ports.find(tempIp);
+            if (it == addr2Ports.end()) {
+                std::set<std::string> newPorts;
+                newPorts.insert("d2h");
+                addr2Ports[tempIp] = newPorts;
+            } else {
+                it->second.insert("d2h");
+            }
         } else {
-            it->second.insert("8080");
+            auto itPort = portAddrMap.find(port);
+            if (itPort == portAddrMap.end()) {
+                HCCL_WARNING("[RankGraphBuilder][ConstructConnIFromPhyTopoConnIAndPortMap] topo use port [%s] not find addrs in ranktable.", port.c_str());
+                continue;
+            }
+            auto it = addr2Ports.find(itPort->second);
+            if (it == addr2Ports.end()) {
+                std::set<std::string> newPorts;
+                newPorts.insert(port);
+                addr2Ports[itPort->second] = newPorts;
+            } else {
+                it->second.insert("8080");
+            }
         }
     }
 
     for (auto it = addr2Ports.begin(); it != addr2Ports.end(); ++it) {
+        auto linkType = *(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE ? LinkType::PEER2NET : LinkType::PEER2PEER;
         shared_ptr<NetInstance::ConnInterface> netConnIFace =
-            make_shared<NetInstance::ConnInterface>(it->first, it->second, phyConnIFace->GetPos(), LinkType::PEER2PEER,
+            make_shared<NetInstance::ConnInterface>(it->first, it->second, phyConnIFace->GetPos(), linkType,
                                                     phyConnIFace->GetLinkProtocols(), topoType, topoInstId);
         netConnIFaces.push_back(netConnIFace);
     }
