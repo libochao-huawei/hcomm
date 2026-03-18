@@ -125,7 +125,11 @@ KERNEL_ARGS_CALL, extraArgs
 buffIn, input, output,\
 rank, sendRecvRemoteRank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, \
 inputSliceStride, outputSliceStride, repeatNum, inputRepeatStride, outputRepeatStride, \
+<<<<<<< HEAD
 headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
+=======
+headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter 
+>>>>>>> c44a8d60... add 9
 
 #define SUPERKERNEL_LITE_ARGS_DEF \
 uint64_t args_offset
