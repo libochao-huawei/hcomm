@@ -405,6 +405,24 @@ bool Socket::Recv(void *recvBuf, u32 size) const
     return true;
 }
 
+RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
+{
+}
+void RtsqBase::Reset() {}
+
+StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds)
+    : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
+{
+    rtsq = std::make_unique<RtsqBase>(phyId, id, sqIds);
+}
+
+StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds, bool launchFlag)
+    : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
+{
+    (void)launchFlag;
+    rtsq = std::make_unique<RtsqBase>(phyId, id, sqIds);
+}
+
 u32 StreamLite::GetId() const
 {
     return 2;
@@ -421,18 +439,16 @@ u32 StreamLite::GetDevPhyId() const
 {
     return 2;
 }
-RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
-{
-}
-void RtsqBase::Reset() {
 
-}
 RtsqBase *StreamLite::GetRtsq() const
 {
-    RtsqBase *rtSq = new RtsqBase(1, 2, 3);
-    return rtSq;
+    return rtsq.get();
 }
 
+u32 GetKernelExecTimeoutFromEnvConfig()
+{
+    return 0;
+}
 
 
 
