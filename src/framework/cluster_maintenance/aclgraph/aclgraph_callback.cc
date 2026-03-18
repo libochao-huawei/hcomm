@@ -53,7 +53,9 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
     }
 
     bool isResourceReleaseFailed = false;
+    HCCL_INFO("[%s] modelID[%llu] communicator count[%zu]", __func__, modelId, modelIt->second.size());
     for (auto commIt : modelIt->second) {
+        HCCL_INFO("[%s] communicator[%p] found in modelID[%llu]", __func__, commIt.first, modelId);
         for (auto newTag : commIt.second) {
             ret = commIt.first->ClearOpResource(newTag);
             if (ret != HCCL_SUCCESS) {
@@ -61,7 +63,7 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
                     __func__, modelId, newTag.c_str(), ret);
                 isResourceReleaseFailed = true;
             }
-            HCCL_DEBUG("[%s] modelID[%llu] tag[%s] resource release finish", __func__, modelId, newTag.c_str());
+            HCCL_DEBUG("[%s] modelID[%llu] communicator[%p] tag[%s] resource release finish", __func__, modelId, commIt.first, newTag.c_str());
         }
     }
 
@@ -83,8 +85,9 @@ void AclgraphCallback::CleanCaptureRes(HcclCommunicator *communicator)
     }
 
     std::lock_guard<std::mutex> lock(resMutex_);
-    for (auto modelIt : captureResMap_) {
+    for (auto &modelIt : captureResMap_) {
         if (modelIt.second.find(communicator) != modelIt.second.end()) {
+            HCCL_INFO("[%s] communicator[%p] found in modelID[%llu]", __func__, communicator, modelIt.first);
             modelIt.second.erase(communicator);
         }
     }
@@ -114,7 +117,7 @@ HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(HcclCommunicator *commu
         HCCL_INFO("[%s] aclmdlRIDestroyRegisterCallback success modelID[%llu]", __func__, modelId);
     }
     captureResMap_[modelId][communicator].insert(newTag);
-    HCCL_DEBUG("[%s] captureResMap insert tag[%s] to modelID[%llu]", __func__, newTag.c_str(), modelId);
+    HCCL_DEBUG("[%s] captureResMap insert tag[%s] to modelID[%llu] communicator[%p]", __func__, newTag.c_str(), modelId, communicator);
 
     return HCCL_SUCCESS;
 }
