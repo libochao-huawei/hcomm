@@ -24,9 +24,6 @@
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
-HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，该接口头文件还没定
-
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
     if (isReady_) {
