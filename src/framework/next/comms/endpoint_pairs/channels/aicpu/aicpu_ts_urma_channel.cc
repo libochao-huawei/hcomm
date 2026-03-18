@@ -339,4 +339,9 @@ HcclResult AicpuTsUrmaChannel::ChannelFence()
     return HCCL_E_NOT_SUPPORT;
 }
 
+HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)	 
+{
+    return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);	 
+}
+
 } // namespace hcomm
