@@ -193,11 +193,10 @@ HcclResult AicpuTsUrmaChannel::BuildSocket()
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(localEp_.loc.device.devPhyId), type, 0, ipaddr);
     Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(localEp_.loc.device.devPhyId, localPort);
-    std::unique_ptr<Hccl::Socket> serverSocket;
-    EXECEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
+    EXECEPTION_CATCH(serverSocket_ = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, 
         ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA);
-    HCCL_INFO("[AicpuTsUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket->Describe().c_str());
-    EXECEPTION_CATCH(serverSocket->Listen(), return HCCL_E_INTERNAL);
+    HCCL_INFO("[AicpuTsUrmaChannel][%s] listen_socket_info[%s]", __func__, serverSocket_->Describe().c_str());
+    EXECEPTION_CATCH(serverSocket_->Listen(), return HCCL_E_INTERNAL);
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
