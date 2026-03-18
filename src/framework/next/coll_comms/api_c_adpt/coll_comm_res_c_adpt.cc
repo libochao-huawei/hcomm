@@ -341,6 +341,8 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
         return HcclResult::HCCL_SUCCESS;
     }
+    std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
+    CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",
