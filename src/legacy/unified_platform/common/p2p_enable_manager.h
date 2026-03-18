@@ -17,6 +17,7 @@
 #include <map>
 #include <functional>
 #include <thread>
+#include <array>
 
 #include "types.h"
 #include "hccl_common_v2.h"
