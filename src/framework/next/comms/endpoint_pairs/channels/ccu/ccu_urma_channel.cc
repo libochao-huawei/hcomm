@@ -35,10 +35,6 @@ CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
 HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
-    if (memHandleNum == 0) {
-        HCCL_ERROR("[BuildBufferInfos] memHandleNum is 0.");
-        return HCCL_E_PARA;
-    }
     for (uint32_t i = 0; i < memHandleNum; ++i) {
         auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
         CHK_PTR_NULL(locRmaBuffer);
