@@ -41,8 +41,6 @@ set(HCOMM_LEGACY_FRAMEWORK ${HCOMM_CODE_LEGACY}/framework)
 set(HCOMM_LEGACY_PLATFORM  ${HCOMM_CODE_LEGACY}/unified_platform)
 set(HCOMM_LEGACY_SERVICE   ${HCOMM_CODE_LEGACY}/service/collective)
 
-# 下载并编译gtest
-set(CANN_3RD_LIB_PATH ${HCOMM_ROOT_PATH}/third_party)
 set(THIRD_PARTY_PATH   ${CANN_3RD_LIB_PATH})
 set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
 include(${HCOMM_ROOT_PATH}/cmake/third_party/gtest.cmake)

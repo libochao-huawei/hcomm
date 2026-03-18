@@ -81,6 +81,13 @@ function clean()
     mkdir -p ${BUILD_DIR}
 }
 
+function rmdir()
+{
+    if [ "${DO_NOT_CLEAN}" = "false" ] && [ $# -gt 0 ]; then
+        rm -rf "$@"
+    fi
+}
+
 function cmake_config()
 {
     local extra_option="$1"
@@ -282,7 +289,7 @@ function build_ut() {
 }
 
 function make_ut_gov() {
-  if [[ "X$ENABLE_UT" = "Xon" || "X$ENABLE_GCOV" = "Xon" ]]; then
+  if [[ "X$ENABLE_UT" = "Xon" && "X$ENABLE_GCOV" = "Xon" ]]; then
     echo "Generated coverage statistics, please wait..."
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
@@ -657,7 +664,7 @@ elif [ "${FULL_MODE}" == "true" ]; then
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
+    rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}
@@ -668,5 +675,5 @@ else
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR}
+    rmdir ${BUILD_DEVICE_DIR}
 fi
