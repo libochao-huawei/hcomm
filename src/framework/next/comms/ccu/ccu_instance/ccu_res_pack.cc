@@ -38,9 +38,10 @@ HcclResult CcuResPack::Init()
         return HcclResult::HCCL_E_PARA;
     }
 
-    // todo: 
-    CHK_RET(CCU_TO_HCCL_RET(
-        CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_)));
+    auto ret = CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_);
+    // todo: 需要整改
+    CHK_RET(static_cast<HcclResult>(ret));
+
     CHK_RET(Reset());
     return HcclResult::HCCL_SUCCESS;
 }

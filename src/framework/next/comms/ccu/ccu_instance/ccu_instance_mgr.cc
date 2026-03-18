@@ -27,7 +27,7 @@ CcuInstanceMgr::~CcuInstanceMgr()
 
 CcuInstanceMgr &CcuInstanceMgr::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuInstanceMgr instanceMgrs[MAX_MODULE_DEVICE_NUM];
+    static CcuInstanceMgr instanceMgrs[MAX_MODULE_DEVICE_NUM + 1];
 
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
