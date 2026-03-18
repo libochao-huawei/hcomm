@@ -72,10 +72,15 @@ public:
         outputAddr_ = outputAddr;
         sliceSize_ = sliceSize;
         token_ = token;
-        offSet_ = offSet;
         op_ = op;
         tempVTopo_ = tempVTopo;
+        offSet_ = offSet;
         return;
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::string Describe() const override
@@ -85,12 +90,8 @@ public:
 
     CcuInstType GetInstType() const override
     {
+        HCCL_INFO("CcuInstructionAllGatherMesh1D instype is CCU_ALLGATHER_MESH_1D_DIRECT.");
         return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
