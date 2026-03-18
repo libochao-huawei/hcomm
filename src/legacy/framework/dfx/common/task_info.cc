@@ -119,7 +119,7 @@ string TaskInfo::GetOpInfo() const
         return "";
     }
     const auto opInfo = this->dfxOpInfo_;
-    return StringFormat("commIndex[%u], opType[%s], commId[%s], count[%llu], reduceType[%s], %sdataType[%s]",
+    return StringFormat("commIndex[%u], opType[%s], commId[%s], count[%llu], reduceType[%s], dataType[%s]",
         opInfo->commIndex_,
         opInfo->op_.opType.Describe().c_str(),
         opInfo->commId_.c_str(),

@@ -766,7 +766,7 @@ int32_t HcommAcquireComm(const char* commId)
         CHK_RET(hcclComm->SetDispatcherCtxOnThread());
     } else {
         CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
-        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
     }
     return HCCL_SUCCESS;
 }
@@ -796,10 +796,10 @@ int32_t HcommReleaseComm(const char* commId)
     CHK_RET(hrtGetDeviceType(deviceType));
     if (deviceType != DevType::DEV_TYPE_950) {
         AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
-        HCCL_INFO("%s success, commId[%s]", __func__, commId);
+        HCCL_INFO("[%s] AicpuReleaseCommbyGroup success, commId[%s]", __func__, commId);
     } else {
         AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
-        HCCL_INFO("%s success, commId[%s]", __func__, commId);
+        HCCL_INFO("[%s] AicpuReleaseCommMgrbyGroup success, commId[%s]", __func__, commId);
     }
     return HCCL_SUCCESS;
 }
