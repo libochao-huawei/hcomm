@@ -175,6 +175,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
 
     # ccu 头文件
     ${HCOMM_CODE_FRAMEWORK}/../../pkg_inc/hcomm/ccu/
+    ${HCOMM_CODE_FRAMEWORK}/../../pkg_inc/hcomm/ccu/_new
     ${HCOMM_CODE_FRAMEWORK}/next/comms/adpt/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
  
@@ -185,6 +186,8 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_transport/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_kernel/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_instance/
 )
 
 set(HCOMM_LEGACY_INCLUDE_LIST
