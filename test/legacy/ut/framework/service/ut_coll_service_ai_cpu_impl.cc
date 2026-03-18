@@ -516,6 +516,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RegisterCclBuffer_When_Normal_Expect_Success
 TEST_F(CollServiceAiCpuImplTest, Ut_Resume_When_Normal_Expect_Success)
 {
     MOCKER(HrtGetStreamId).stubs().will(returnValue(static_cast<s32>(0)));
+    MOCKER(HrtNotifyRecord).stubs();
     CommunicatorImpl comm;
     comm.InitNotifyManager();
     comm.InitSocketManager();
