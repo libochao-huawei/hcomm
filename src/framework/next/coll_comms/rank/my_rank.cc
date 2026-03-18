@@ -189,14 +189,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         // 注册内存
         std::vector<MemHandle> memHandleVec;
         std::vector<std::string> memTag;
-        if (engine == COMM_ENGINE_AIV) {
-            memVec.clear();
-            CHK_RET(commMems_->GetTagMemoryHandles(channelDescs[i].memHandles, channelDescs[i].memHandleNum, memVec, memTag));
-            HCCL_INFO("[%s][%u/%u] remoteRank[%u] got %zu user memory handles",
-                __func__, i + 1, channelNum, remoteRank, memVec.size());
-        } else {
-            memTag.push_back("HcclBuffer");
-        }
+        memVec.clear();
+        CHK_RET(commMems_->GetTagMemoryHandles(channelDescs[i].memHandles, channelDescs[i].memHandleNum, memVec, memTag));
+        HCCL_INFO("[%s][%u/%u] remoteRank[%u] got %zu user memory handles",
+            __func__, i + 1, channelNum, remoteRank, memVec.size());
 
         ret = endpointMgr_->RegisterMemory(epHandle, memTag, memVec, memHandleVec);
         CHK_PRT_RET(ret != HCCL_SUCCESS,

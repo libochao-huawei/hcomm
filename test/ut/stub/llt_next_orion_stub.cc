@@ -944,6 +944,11 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {}
 
+HcclResult UbMemTransport::FillTagVec()
+{
+    return HCCL_SUCCESS;
+}
+
 std::string UbMemTransport::Describe() const
 {
 
@@ -1130,6 +1135,11 @@ void UbMemTransport::SaveDfxTaskInfo(const TaskParam &taskParam)
 HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
 {
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
     return HCCL_SUCCESS;
 }
 
