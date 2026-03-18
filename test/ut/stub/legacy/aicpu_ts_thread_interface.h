@@ -31,6 +31,11 @@ public:
         return HCCL_SUCCESS;
     }
 
+    HcclResult NotifyWait(uint32_t notifyId, uint32_t timeout) const
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult NotifyRecordLoc(uint32_t notifyId) const
     {
         return HCCL_SUCCESS;

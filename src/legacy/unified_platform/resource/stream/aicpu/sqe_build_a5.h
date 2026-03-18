@@ -17,6 +17,9 @@ namespace Hccl {
 // 普通notify的record
 void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn);
 
+// 普通notify的wait (带timeout参数)
+void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, uint8_t * const sqeIn);
+
 // 普通notify的wait
 void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn);
 
