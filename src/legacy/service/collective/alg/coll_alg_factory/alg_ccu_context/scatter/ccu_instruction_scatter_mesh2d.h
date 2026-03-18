@@ -96,19 +96,20 @@ public:
         return;
     }
 
-    std::string Describe() const override
-    {
-        return StringFormat("CcuInstructionScatterMesh2D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
-    }
-
     CcuInstType GetInstType() const override
     {
+        HCCL_INFO("CcuInstructionScatterMesh2D instype is CCU_SCATTER_MESH_2D_DIRECT.");
         return instType_;
     }
 
-    void SetInstType(CcuInstType instType)
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
+
+    std::string Describe() const override
     {
-        instType_ = instType;
+        return StringFormat("CcuInstructionScatterMesh2D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -131,8 +132,8 @@ private:
     uint64_t outputAddr_{0};
     uint64_t scratchAddr_{0};
     uint64_t token_{0};
-    uint64_t sliceSize_{0};
     uint64_t stride_{0};
+    uint64_t sliceSize_{0};
     uint64_t xSliceSize_{0};
     uint64_t ySliceSize_{0};
     CollAlgOperator op_;
