@@ -202,7 +202,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/common/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_table_info/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/
+    ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/

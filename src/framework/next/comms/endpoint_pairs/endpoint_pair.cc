@@ -31,21 +31,21 @@ HcclResult EndpointPair::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& socket)
+HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t listenPort, Hccl::Socket*& socket)
 {
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData));
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag);
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, socketTag);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
 
 HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
-    const std::string &socketTag, Hccl::Socket*& socket)
+    const std::string &socketTag, const uint32_t listenPort, Hccl::Socket*& socket)
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
-        CHK_RET(this->GetSocket(socketTag, socket));
+        CHK_RET(this->GetSocket(socketTag, listenPort, socket));
         return HCCL_SUCCESS;
     }
 
