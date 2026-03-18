@@ -191,6 +191,7 @@ HcclResult HcomSetGroupTopoInfo(const char *group, uint32_t rankSize)
 
 HcclResult HcomInitCollComm(uint32_t rank, void **commV2, HcclCommPtr &comm)
 {
+    CHK_PTR_NULL(commV2);
     HCCL_INFO("[HcomInitCollComm] CollComm init start.");
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HcclUs startut = TIME_NOW();
