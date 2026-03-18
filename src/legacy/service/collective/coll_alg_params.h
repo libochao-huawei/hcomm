@@ -11,6 +11,7 @@
 #ifndef HCCLV2_COLL_ALG_PARAMS
 #define HCCLV2_COLL_ALG_PARAMS
 
+
 #include <string>
 #include <vector>
 #include "op_mode.h"
