@@ -218,6 +218,7 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadVec[idx].get());
         threads[idx] = (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) ?
             hostToDeviceThreadHandle_[handle] : handle;
+        threadMap_[threads[idx]] = threadVec[idx];
         uint32_t id = threadVec[idx]->GetStream()->id();
         HCCL_DEBUG("[%s]idx[%u] threadHandle[%llu] thread id = [%u]", __func__, idx, threads[idx], id);
         threadId.push_back(id);
@@ -357,6 +358,7 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     std::lock_guard<std::mutex> lock(mainThreadMutex_);
     mainThread_.emplace(stream, std::move(handle));
     *thread = reinterpret_cast<ThreadHandle>(mainThread_[stream].get());
+    g_ThreadMap[*thread] = mainThread_[stream];
     HCCL_INFO("[ThreadMgr] Hcom[%s] HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]", commId_.c_str(), engine, stream, notifyNum);
     return HCCL_SUCCESS;
@@ -458,4 +460,33 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult ThreadMgr::HcclThreadResGetInfo(const ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    auto it = threadMap_.find(thread);
+    if (it == threadMap_.end()) {
+        HCCL_ERROR(
+            "[%s] failed to find handle mapping in threadMap_, thread[0x%llx].", __func__, thread);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    std::shared_ptr<Thread> threadPtr = it->second;
+    CHK_PTR_NULL(threadPtr);
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        if (infoLen != sizeof(ThreadResTypeStream)) {
+            HCCL_ERROR("[%s] failed. infoLen[%u] is mismatch sizeof(ThreadResTypeStream)[%zu]", 
+                    __func__, infoLen, sizeof(ThreadResTypeStream));
+            return HCCL_E_PARA;
+        }
+        CHK_PTR_NULL(threadPtr->GetStream());
+        ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
+        CHK_PTR_NULL(stream);
+        *info = stream;
+    } else {
+        HCCL_ERROR("[%s] failed. resType[%d] is not supported.", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HCCL_INFO("[%s] success. thread[0x%llx] resType[%d] info[0x%llx]", __func__, thread, static_cast<int32_t>(resType), *info);
+    return HCCL_SUCCESS;
+}
+
 }

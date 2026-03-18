@@ -306,3 +306,23 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclThreadResGetInfo(HcclComm comm, const ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    CHK_PTR_NULL(comm);
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
+        CHK_PTR_NULL(engineResMgr);
+        ret = engineResMgr->HcclThreadResGetInfo(thread, resType, infoLen, info);
+    } else {
+        HCCL_INFO("[%s] communicatorType is not supported.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] thread resource get info failed. thread[%p], resType[%d], infoLen[%u], info[%p]",
+         __func__, thread, static_cast<int32_t>(resType), infoLen, info), ret);
+    HCCL_INFO("[%s]:comm[%s] get thread resource success. ", __func__, commId.c_str());
+    return HCCL_SUCCESS;
+}
