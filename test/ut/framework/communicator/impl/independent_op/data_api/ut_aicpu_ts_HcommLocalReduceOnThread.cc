@@ -84,7 +84,7 @@ TEST_F(UtAicpuTsHcommLocalReduceOnThread, Ut_HcommLocalReduceOnThread_When_Norma
     ret = mainDevThread.LocalNotifyRecord(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
    
-    ret = mainDevThread.LocalNotifyWait(0);
+    ret = mainDevThread.LocalNotifyWait(0, 68);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     void *src = reinterpret_cast<void *>(0x2345);
     void *dst = reinterpret_cast<void *>(0x2345);
