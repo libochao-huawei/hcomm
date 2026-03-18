@@ -86,7 +86,7 @@ public:
     }
  
 private:
- 
+    uint32_t outputCoreNum;
     uint32_t targetRank;
     uint64_t inputOffset;
     uint64_t outputOffset;
