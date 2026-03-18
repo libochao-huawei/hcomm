@@ -135,7 +135,7 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(rank), 0,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
 
     shared_ptr<HcclCommConfig> hcclConf;
     EXECEPTION_CATCH((hcclConf = make_shared<HcclCommConfig>()), return HCCL_E_PTR);
@@ -206,7 +206,7 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{identifier, static_cast<Hccl::RankId>(rank), 0,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
 
     shared_ptr<HcclCommConfig> hcclConf;
     EXECEPTION_CATCH((hcclConf = make_shared<HcclCommConfig>()), return HCCL_E_PTR);
@@ -317,7 +317,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(rank), 0,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     opbasedCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     CHK_PTR_NULL(opbasedCommInfoV2.pComm);
     /* --------------初始化------------------------- */
@@ -888,7 +888,7 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
 
     /* 创建子通信域 */
     Hccl::CommParams commParams{subCommIdStr, static_cast<Hccl::RankId>(subCommRankId),
-        rankNum, opbasedCommInfoV2.commParams.myRank, Hccl::DevType::DEV_TYPE_910_95};
+        rankNum, opbasedCommInfoV2.commParams.myRank, Hccl::DevType::DEV_TYPE_950};
     CheckHcclDeterministic(config->hcclDeterministic);
     // 默认全都开启确定性计算
     config->hcclDeterministic = 1;
@@ -1656,7 +1656,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
     bool devUsed = false;
     bool isWorldGroup = true;
     Hccl::CommParams commParams{identifier, static_cast<Hccl::RankId>(rank), nRanks,
-        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        static_cast<Hccl::RankId>(rank), Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     opbasedCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     opbasedCommInfoV2.commParams = commParams;
 
@@ -2725,7 +2725,7 @@ HcclResult HcclSnapshotGetBufSize(uint32_t step, uint32_t *size)
     // 校验DevType
     HCCL_INFO("[%s] start", __func__);
     Hccl::DevType devType = HrtGetDeviceType();
-    if (devType != DevType::DEV_TYPE_910_95) {
+    if (devType != DevType::DEV_TYPE_950) {
         HCCL_INFO("[%s] Get buffer size not support in this device type[%d]", __func__, devType);
         return HCCL_E_NOT_SUPPORT;
     }

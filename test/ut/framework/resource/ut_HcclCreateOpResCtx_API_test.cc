@@ -35,7 +35,7 @@ HcclResult hrtGetDeviceTypeStub91093(DevType &devType) {
 }
 
 HcclResult hrtGetDeviceTypeStub91095(DevType &devType) {
-    devType = DevType::DEV_TYPE_910_95;
+    devType = DevType::DEV_TYPE_950;
     return HCCL_SUCCESS;
 }
 
