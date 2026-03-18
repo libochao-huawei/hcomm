@@ -132,13 +132,13 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     if (taskType == TaskParamType::TASK_AICPU_KERNEL) {
         return;
     }
-    if ((ignoreLevel && !enableHcclL1_) || (!ignoreLevel && !enableHcclNode_)) {
-        if (cachedReq) {
-            HCCL_INFO("[ProfilingHandler] Cache ReportData");
-            std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
-            cachedTaskApiInfo_.push(reporterData);
-            return;
-        }
+    if ((!enableHcclNode_) || (!ignoreLevel && !enableHcclL1_)) {
+        return;
+    }
+    if (cachedReq) {
+        HCCL_INFO("[ProfilingHandler] Cache ReportData");
+        std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
+        cachedTaskApiInfo_.push(reporterData);
         return;
     }
     // 数据上报
@@ -804,6 +804,7 @@ void ProfilingHandler::ReportStoragedTaskApi()
 }
 
 void ProfilingHandler::StartHostHcclOpSubscribe() {
+    enableHcclNode_ = true;
     enableHcclL0_ = true;
     CallProfRegHcclOpApi();
     ReportStoragedCompactInfo();
@@ -834,6 +835,7 @@ void ProfilingHandler::CallProfRegHcclOpApi() const
 
 void ProfilingHandler::StartAddtionInfoSubscribe()
 {
+    enableHcclNode_ = true;
     enableHcclL1_ = true;
     ReportStoragedAdditionInfo();
     HCCL_RUN_INFO("StartAddtionInfoSubscribe:[%d]", enableHcclL1_);
@@ -852,6 +854,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
 
 void ProfilingHandler::StartL2Subscribe()
 {
+    enableHcclNode_ = true;
     enableHcclL1_ = true;
     enableHcclL2_ = true;
     HCCL_INFO("ProfilingHandler StartL2Subscribe");
