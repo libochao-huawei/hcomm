@@ -12,16 +12,16 @@
 
 #include "exception_handler.h"
 
+#include "../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
+
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;
 constexpr char FINISH_MSG[FINISH_MSG_SIZE] = "Transport exchange data ready!";
 
-HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
-    const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport)
+HcclResult BuildCcuConnection(const CcuTransport::CcuConnectionInfo &ccuConnectionInfo, 
+    std::unique_ptr<CcuConnection> &ccuConnection)
 {
-    CHK_PTR_NULL(socket);
-    std::unique_ptr<CcuConnection> ccuConnection{nullptr};
     if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_CTP) {
         ccuConnection.reset(new (std::nothrow) CcuCtpConnection(
             ccuConnectionInfo.locAddr, ccuConnectionInfo.rmtAddr,
@@ -33,6 +33,15 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     }
     CHK_PTR_NULL(ccuConnection);
     CHK_RET(ccuConnection->Init());
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
+    const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport)
+{
+    CHK_PTR_NULL(socket);
+    std::unique_ptr<CcuConnection> ccuConnection{nullptr};
+    CHK_RET(BuildCcuConnection(ccuConnectionInfo, ccuConnection));
 
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), cclBufferInfo));
@@ -42,9 +51,35 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
+    const std::vector<CcuTransport::CclBufferInfo> &bufferInfos, std::unique_ptr<CcuTransport> &ccuTransport)
+{
+    CHK_PTR_NULL(socket);
+    std::unique_ptr<CcuConnection> ccuConnection{nullptr};
+    CHK_RET(BuildCcuConnection(ccuConnectionInfo, ccuConnection));
+
+    if (bufferInfos.size() == 0) {
+        HCCL_ERROR("[BuildBufferInfos] bufferNum is 0.");
+        return HCCL_E_PARA;
+    }
+    ccuTransport.reset(new (std::nothrow)
+        CcuTransport(socket, std::move(ccuConnection), bufferInfos));
+    CHK_PTR_NULL(ccuTransport);
+    CHK_RET(ccuTransport->Init());
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
 CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
     const CclBufferInfo &locCclBufInfo)
-    : socket_(socket), ccuConnection_(std::move(connection)), locCclBufInfo_(locCclBufInfo)
+    : socket_(socket), ccuConnection_(std::move(connection))
+{
+    locBufferInfos_.push_back(locCclBufInfo);
+}
+
+CcuTransport::CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection,
+    const std::vector<CclBufferInfo> &bufferInfos)
+    : socket_(socket), ccuConnection_(std::move(connection)), locBufferInfos_(bufferInfos)
 {
 }
 
@@ -225,7 +260,7 @@ HcclResult CcuTransport::SendConnAndTransInfo()
     CHK_RET(HandshakeMsgPack(binaryStream));
     CHK_RET(ConnInfoPack(binaryStream));
     CHK_RET(TransResPack(binaryStream));
-    CHK_RET(CclBufferInfoPack(binaryStream));
+    CHK_RET(BufferInfoPack(binaryStream));
     binaryStream.Dump(sendData_);
     // 当前socket失败会抛异常，需要统一整改
     EXCEPTION_HANDLE_BEGIN
@@ -250,7 +285,7 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(HandshakeMsgUnpack(binaryStream));
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
-    CHK_RET(CclBufferInfoUnpack(binaryStream));
+    CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -317,9 +352,13 @@ HcclResult CcuTransport::TransResPack(Hccl::BinaryStream &binaryStream)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTransport::CclBufferInfoPack(Hccl::BinaryStream &binaryStream) const
+HcclResult CcuTransport::BufferInfoPack(Hccl::BinaryStream &binaryStream) const
 {
-    locCclBufInfo_.Pack(binaryStream);
+    u32 locBufferNum = locBufferInfos_.size();
+    binaryStream << locBufferNum;
+    for (u32 pos = 0; pos < locBufferNum; ++pos) {
+        locBufferInfos_[pos].Pack(binaryStream);
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -368,9 +407,22 @@ HcclResult CcuTransport::TransResUnpackProc(Hccl::BinaryStream &binaryStream)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTransport::CclBufferInfoUnpack(Hccl::BinaryStream &binaryStream)
+HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
 {
-    rmtCclBufInfo_.Unpack(binaryStream);
+    rmtBufferInfos_.clear();
+    remoteUserMemTag_.clear();
+    u32 rmtBufferNum{0};
+    binaryStream >> rmtBufferNum;
+    CHK_PRT_RET(rmtBufferNum > MAX_BUFFER_NUM,
+        HCCL_ERROR("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u] exceeds limit[%u]", rmtBufferNum, MAX_BUFFER_NUM),
+        HCCL_E_PARA);
+    HCCL_INFO("[CcuTransport][BufferInfoUnpack] rmtBufferNum[%u]", rmtBufferNum);
+    for (u32 pos = 0; pos < rmtBufferNum; ++pos) {
+        CclBufferInfo rmtBufferInfo{};
+        rmtBufferInfo.Unpack(binaryStream);
+        rmtBufferInfos_.push_back(rmtBufferInfo);
+        remoteUserMemTag_.push_back(rmtBufferInfo.memTag);
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -511,14 +563,14 @@ HcclResult CcuTransport::GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXnId
 HcclResult CcuTransport::GetLocBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const
 {
     (void)bufNum;
-    bufferInfo = locCclBufInfo_;
+    bufferInfo = locBufferInfos_[0];
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuTransport::GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const
 {
     (void)bufNum;
-    bufferInfo = rmtCclBufInfo_;
+    bufferInfo = rmtBufferInfos_[0];
     return HCCL_SUCCESS;
 }
 
@@ -555,4 +607,20 @@ void CcuTransport::Clean()
     ccuConnection_->Clean();
 }
 
+HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    std::lock_guard<std::mutex> lock(remoteMemsMutex_);
+    uint32_t userMemCount = rmtBufferInfos_.size() - 1; // 默认 cclBuffer 数量为1，后续出现1的含义也是 cclBufferNum
+    auto cacheBuilder = [](Hccl::RemoteMemCtx<CclBufferInfo> &remoteMemCtx, uint32_t index) {
+        auto &rmtBuffer = remoteMemCtx.rmtBufferVec[index + 1];
+        remoteMemCtx.remoteUserMems[index].type = rmtBuffer.type;
+        remoteMemCtx.remoteUserMems[index].addr = reinterpret_cast<void *>(rmtBuffer.addr);
+        remoteMemCtx.remoteUserMems[index].size = rmtBuffer.size;
+    };
+    Hccl::RemoteMemCtx<CclBufferInfo> remoteMemCtx{
+        userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
+        cacheBuilder, remoteMem, memTags, memNum};
+    CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
+    return HCCL_SUCCESS;
+}
 } // namespace hcomm
