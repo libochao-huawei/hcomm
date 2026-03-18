@@ -227,19 +227,19 @@ HcclResult HcclBatchPutV2(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(desc);
     CHK_PTR_NULL(stream);
-        std::string getTag;
-        CHK_PRT_RET(descNum == 0, HCCL_WARNING("[%s] the count of HcclOneSideOpDesc is zero.",
-                                                        __func__), HCCL_SUCCESS);
-        HcclBatchData paraData = {comm, HcclCMDType::HCCL_CMD_BATCH_PUT, remoteRank, desc, descNum, stream};
-        CHK_RET(HcclBatchParaCheckV2(comm, paraData, getTag));
-        Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
-        Hccl::HcclOneSidedService *service = nullptr;
-        CHK_RET(hcclCommunicator->GetOneSidedService(&service));
-        CHK_PTR_NULL(service);
+    std::string getTag;
+    CHK_PRT_RET(descNum == 0, HCCL_WARNING("[%s] the count of HcclOneSideOpDesc is zero.",
+                                                    __func__), HCCL_SUCCESS);
+    HcclBatchData paraData = {comm, HcclCMDType::HCCL_CMD_BATCH_PUT, remoteRank, desc, descNum, stream};
+    CHK_RET(HcclBatchParaCheckV2(comm, paraData, getTag));
+    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    Hccl::HcclOneSidedService *service = nullptr;
+    CHK_RET(hcclCommunicator->GetOneSidedService(&service));
+    CHK_PTR_NULL(service);
 
-        HCCL_INFO("HcclBatchPutV2 BatchPut Begin");
-        CHK_RET(service->BatchPut(remoteRank, desc, descNum, stream));
-        HCCL_INFO("HcclBatchPutV2 End");
+    HCCL_INFO("HcclBatchPutV2 BatchPut Begin");
+    CHK_RET(service->BatchPut(remoteRank, desc, descNum, stream));
+    HCCL_INFO("HcclBatchPutV2 End");
     return HCCL_SUCCESS;
 }
 
@@ -249,18 +249,18 @@ HcclResult HcclBatchGetV2(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(desc);
     CHK_PTR_NULL(stream);
-        std::string getTag;
-        CHK_PRT_RET(descNum == 0, HCCL_WARNING("[%s] the count of HcclOneSideOpDesc is zero.",
-                                                        __func__), HCCL_SUCCESS);
-        HcclBatchData paraData = {comm, HcclCMDType::HCCL_CMD_BATCH_PUT, remoteRank, desc, descNum, stream};
-        CHK_RET(HcclBatchParaCheckV2(comm, paraData, getTag));
-        Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
-        Hccl::HcclOneSidedService *service = nullptr;
-        CHK_RET(hcclCommunicator->GetOneSidedService(&service));
-        CHK_PTR_NULL(service);
+    std::string getTag;
+    CHK_PRT_RET(descNum == 0, HCCL_WARNING("[%s] the count of HcclOneSideOpDesc is zero.",
+                                                    __func__), HCCL_SUCCESS);
+    HcclBatchData paraData = {comm, HcclCMDType::HCCL_CMD_BATCH_PUT, remoteRank, desc, descNum, stream};
+    CHK_RET(HcclBatchParaCheckV2(comm, paraData, getTag));
+    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    Hccl::HcclOneSidedService *service = nullptr;
+    CHK_RET(hcclCommunicator->GetOneSidedService(&service));
+    CHK_PTR_NULL(service);
 
-        HCCL_INFO("HcclBatchGetV2 BatchGet Begin");
-        CHK_RET(service->BatchGet(remoteRank, desc, descNum, stream));
-        HCCL_INFO("HcclBatchGetV2 End");
+    HCCL_INFO("HcclBatchGetV2 BatchGet Begin");
+    CHK_RET(service->BatchGet(remoteRank, desc, descNum, stream));
+    HCCL_INFO("HcclBatchGetV2 End");
     return HCCL_SUCCESS;
 }
