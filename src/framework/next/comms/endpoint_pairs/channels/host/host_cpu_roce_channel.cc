@@ -376,7 +376,7 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
         qpInfo.trafficClass = channelDesc_.roceAttr.tc;
         qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
         qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
-        HCCL_INFO("[HostCpuRoceChannel::ModifyQp] QpInfo: serviceLevel[], trafficClass[], retryCnt[], retryInterval[].", 
+        HCCL_INFO("[HostCpuRoceChannel::ModifyQp] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
             qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
         HcclResult ret = conn->ModifyQp();
         if (ret == HCCL_E_AGAIN) {
