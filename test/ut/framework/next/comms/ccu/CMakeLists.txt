@@ -13,8 +13,6 @@ set(src_to_test_list
     hccl_api_base_test.cc
     ut_CcuComponent_test.cc
     ut_HcommCcuControlApi_test.cc
-
-    mocks/ccu_device_mock_utils.cc
 )
 
 add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
