@@ -40,6 +40,9 @@ void CcuRepContext::SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBloc
     activeBlock = repBlock;
 }
 
+/**
+ * @details:保存rep信息，后续有arg后配合补全profiling信息
+ */
 void CcuRepContext::CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep)
 {
     if (rep->Type() == CcuRepType::ASSIGN) {
