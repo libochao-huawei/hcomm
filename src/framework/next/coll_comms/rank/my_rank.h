@@ -20,6 +20,7 @@
 #include "comm_mems/comm_mems.h"
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
+#include "orion_adapter_hccp.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -56,6 +57,7 @@ private:
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
+    HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
