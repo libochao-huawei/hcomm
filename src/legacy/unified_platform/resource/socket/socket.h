@@ -91,7 +91,7 @@ public:
     }
 
 private:
-    SocketHandle      socketHandle{nullptr}; // vnic/nic创建的handle，HCCP初始化返回的handle_
+    SocketHandle      socketHandle{nullptr}; // vnic/nic创建的handle，HCCP初始化返回的handle_ 
     IpAddress         localIp;
     u32               listenPort{0};
     IpAddress         remoteIp;
