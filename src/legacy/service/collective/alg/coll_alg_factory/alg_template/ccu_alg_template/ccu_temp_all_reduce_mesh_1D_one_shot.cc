@@ -54,6 +54,7 @@ HcclResult CcuTempAllReduceMesh1DOneShot::CalcSliceInfo(const AllignInfo &allign
     SliceInfo basicSlice;
     basicSlice.offset = 0;
     basicSlice.size = dataSize;
+    HCCL_INFO("[CcuTempAllReduceMesh1DOneShot][CalcSliceInfo] basicSlice.size[%u]", basicSlice.size);
     std::vector<SliceInfo> singleRankSliceInfoVector{basicSlice};
     sliceInfoVec.resize(tempRankSize_, singleRankSliceInfoVector);
     return HcclResult::HCCL_SUCCESS;
@@ -119,21 +120,15 @@ HcclResult CcuTempAllReduceMesh1DOneShot::CalcInputOutputAddr(const TempFuncs &t
 {
     HCCL_INFO("[CcuTempAllReduceMesh1DOneShot][CalcInputOutputAddr] start");
     if (opMode_ == OpMode::OPBASE) {
-        if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据
-            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
-                + tempFuncs.usrData.usrInSlices[0].GetOffset();
-        } else {
-            // 从 inBuff 获取数据
-            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
-        }
         if (tempFuncs.isBottom) {
-            // 把数据写入 UserOut
-            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
-                + tempFuncs.usrData.usrOutSlices[0].GetOffset();
+            outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType()) + tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 把数据写入 outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
+        }
+        if (tempFuncs.isForepart) {
+            inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType()) + tempFuncs.usrData.usrInSlices[0].GetOffset();
+        } else {
+            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
     } else {
         // 图模式

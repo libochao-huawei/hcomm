@@ -80,17 +80,17 @@ HcclResult CcuTempBroadcastNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 
-    uint32_t axisSize = tempLinks.begin()->second.size();
-    uint32_t myVirtRankId = tempVirtRankMap_[myRank_];
-    uint64_t DataCount = (tempAlgParams.sliceSize / DataTypeSizeGet(dataType_));
-    uint64_t die0Size = DataCount / axisSize * DataTypeSizeGet(dataType_);
-    uint64_t die1Size = tempAlgParams.sliceSize - die0Size;
-    uint64_t inputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
-    uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
-    uint64_t repeatNum = tempAlgParams.repeatNum;
-    uint64_t die0SliceSize = die0Size / tempRankSize_;
+    uint32_t axisSize            = tempLinks.begin()->second.size();
+    uint32_t myVirtRankId        = tempVirtRankMap_[myRank_];
+    uint64_t DataCount           = (tempAlgParams.sliceSize / DataTypeSizeGet(dataType_));
+    uint64_t die0Size            = DataCount / axisSize * DataTypeSizeGet(dataType_);
+    uint64_t die1Size            = tempAlgParams.sliceSize - die0Size;
+    uint64_t inputAddr           = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
+    uint64_t outputAddr          = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
+    uint64_t repeatNum           = tempAlgParams.repeatNum;
+    uint64_t die0SliceSize       = die0Size / tempRankSize_;
     uint64_t die0LastSliceSize   = die0Size % tempRankSize_ + die0SliceSize;
-    uint64_t die1SliceSize = die1Size / tempRankSize_;
+    uint64_t die1SliceSize       = die1Size / tempRankSize_;
     uint64_t die1LastSliceSize   = die1Size % tempRankSize_ + die1SliceSize;
     uint64_t token;              
     CHK_RET(GetToken(op_, token));
@@ -112,7 +112,7 @@ HcclResult CcuTempBroadcastNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
 
     std::vector<LinkData> linksDie0;
     std::vector<LinkData> linksDie1;
-    RankGroup rankGroup;
+    RankGroup broadcastRankGroup;
     std::map<u32, u32> indexMap;
     std::vector<NHRStepInfo> stepInfoVector;
     u32 nSteps = GetNHRStepNum(tempRankSize_) * 2; // 分为Scatter和AG两次NHR
@@ -128,7 +128,7 @@ HcclResult CcuTempBroadcastNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(fromRankIdx)[1]);
             }
-            rankGroup.AddRank(fromRankIdx);
+            broadcastRankGroup.AddRank(fromRankIdx);
         }
         if (indexMap.count(stepInfo.toRank) == 0 && stepInfo.txSliceIdxs.size() != 0) {
             u32 toRankIdx = virtRankId2RankId(stepInfo.toRank);
@@ -137,10 +137,10 @@ HcclResult CcuTempBroadcastNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(toRankIdx)[1]);
             }
-            rankGroup.AddRank(toRankIdx);
+            broadcastRankGroup.AddRank(toRankIdx);
         }
     }
-    rankGroup.AddRank(myRank_);
+    broadcastRankGroup.AddRank(myRank_);
 
     std::unique_ptr<CcuInsGroup> insGroupPtr = std::make_unique<CcuInsGroup>();
     for (uint32_t axisId = 0; axisId < axisSize; axisId++) {  // 2个die上各一个mission
@@ -151,7 +151,7 @@ HcclResult CcuTempBroadcastNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
             die0LastSliceSize, die1LastSliceSize,
             stepInfoVector, indexMap, token, op_, tempVTopo_);
         ccuInstruction.SetLinks(axisId == 0 ? linksDie0 : linksDie1);
-        ccuInstruction.SetRankGroup(rankGroup);
+        ccuInstruction.SetRankGroup(broadcastRankGroup);
         ccuInstruction.SetCntCkeNum(5);  // 每个transport用5个CKE
         insGroupPtr->Append(std::move(std::make_unique<CcuInstructionBroadcastNHRMem2Mem1D>(ccuInstruction)));
     }
@@ -236,12 +236,12 @@ HcclResult CcuTempBroadcastNHRMem2Mem1D::GetAllGatherStepInfo(u32 step, u32 nSte
     stepInfo.step = step;
     stepInfo.myRank = virtRankIdx;
 
-    // 计算通信对象
+    // BroadcastNHR计算通信对象
     u32 deltaRank = 1 << (nSteps - 1 - step);
     u32 recvFrom = (virtRankIdx + tempRankSize_ - deltaRank) % tempRankSize_;
     u32 sendTo = (virtRankIdx + deltaRank) % tempRankSize_;
 
-    // 数据份数和数据编号增量
+    // BroadcastNHR数据份数和数据编号增量
     u32 nSlices = (tempRankSize_ - 1 + (1 << (nSteps - 1 - step))) / (1 << (nSteps - step));
     u32 deltaSliceIndex = 1 << (nSteps - step);
     u32 txSliceIdx = virtRankIdx;
