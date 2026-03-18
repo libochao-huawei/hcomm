@@ -30,7 +30,7 @@ static std::mutex ccuDrvHandleMutex;
 
 HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle)
 {
-    if (devLogicId >= static_cast<int32_t>(MAX_MODULE_DEVICE_NUM)) {
+    if (devLogicId > static_cast<int32_t>(MAX_MODULE_DEVICE_NUM)) {
         HCCL_ERROR("[%s] failed, devLogicId[%d] is too large, should be less than %u.",
             __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
         return HcclResult::HCCL_E_PARA;
@@ -49,6 +49,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
     drvHandle.reset(new (std::nothrow) CcuDrvHandle(devLogicId));
     CHK_PTR_NULL(drvHandle);
     CHK_RET(drvHandle->Init());
+
     ccuDrvHandleMap[devLogicId] = drvHandle;
     ccuDrvHandle = ccuDrvHandleMap[devLogicId];
     HCCL_RUN_INFO("[%s] devLogicId[%d] init ccu feature, handle[0x%llx].",

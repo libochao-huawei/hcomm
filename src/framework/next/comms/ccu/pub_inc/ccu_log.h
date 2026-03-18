@@ -16,8 +16,6 @@
 // todo: 需要适配资源不足
 
 #define HCCL_TO_CCU_RET(ret) static_cast<CcuResult>(ret)
-#define CCU_TO_HCCL_RET(ret) \
-    (static_cast<int>(ret) <= static_cast<int>(HCCL_E_RESERVED) ? static_cast<HcclResult>(ret) : HCCL_E_INTERNAL)
 
 /* 检查函数返回值, 并返回指定错误码 */
 #define CCU_CHK_RET(call)                                 \
