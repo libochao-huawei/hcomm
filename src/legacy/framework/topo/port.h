@@ -230,7 +230,7 @@ public:
 
     bool operator==(const PortData &rhs) const
     {
-        return rankId == rhs.rankId && type == rhs.type && id == rhs.id && addr == rhs.addr;
+        return type == rhs.type && id == rhs.id && addr == rhs.addr; // TODO: rankId后面应该要删，rankId == rhs.rankId && 
     }
 
     bool operator!=(const PortData &rhs) const

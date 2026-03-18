@@ -387,8 +387,6 @@ HostSocketHandleManager::~HostSocketHandleManager()
 HostSocketHandleManager::HostSocketHandleManager()
 {}
 
-
-
 SocketStatus Socket::GetStatus()
 {
     return SocketStatus::OK;
@@ -1311,6 +1309,15 @@ Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
     return nullptr;
 }
 
+bool SocketManager::CheckServerPortListening(const PortData &portData) const
+{
+    return true;
+}
+
+bool SocketManager::ServerDeInit(PortData &portData) const
+{
+    return true;
+}
 
 HccpTlvHdcManager &HccpTlvHdcManager::GetInstance()
 {
