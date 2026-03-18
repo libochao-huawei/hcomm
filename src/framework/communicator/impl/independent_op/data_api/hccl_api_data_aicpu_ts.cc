@@ -308,7 +308,21 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
     CHK_PTR_NULL(threadPtr);
 
     HcclResult ret = HCCL_SUCCESS;
-    if (threadPtr->IsDeviceA5()) {
+    if (threadPtr->IsDeviceA5() && isNDA) {
+        auto *const ndaChannelPtr = reinterpret_cast<hcomm::NdaChannel *>(channel);
+        CHK_PTR_NULL(ndaChannelPtr);
+        auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLitePtr);
+
+        Hccl::RmaBufferLite locRmaBuf;
+        ret = ndaChannelPtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(src), len, locRmaBuf);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
+            __func__, thread, channel, dst, src, len), ret);
+        const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(dst), len};
+
+        EXECEPTION_CATCH(ndaChannelPtr->Write(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
+    } else if (threadPtr->IsDeviceA5()) {
         auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
         CHK_PTR_NULL(ubTransportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
