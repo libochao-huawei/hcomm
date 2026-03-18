@@ -33,11 +33,9 @@ HcclResult CpuUrmaEndpoint::Init()
     CHK_RET(hrtGetDevice(&devId));
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
-    auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    Hccl::PortDeploymentType NetType = (endpointDesc_.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) 
-        ? Hccl::PortDeploymentType::DEV_NET : Hccl::PortDeploymentType::HOST_NET;
+    auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance(); // devip是否需要
     ctxHandle_ = static_cast<void *>(
-        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::UB, ipAddr, NetType));
+        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::UB, ipAddr, Hccl::PortDeploymentType::HOST_NET));
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("CpuUrmaEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__,

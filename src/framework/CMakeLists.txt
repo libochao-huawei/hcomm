@@ -151,6 +151,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/ubengine
 
         ${HCCL_BASE_DIR}/platform/inc/adapter
         
