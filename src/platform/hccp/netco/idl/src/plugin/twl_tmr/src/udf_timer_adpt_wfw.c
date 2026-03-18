@@ -165,12 +165,9 @@ void* BkfAdptTwlTimerInit(BkfTwlTmrInitArg *initArg)
     adptCtrl->disp = initArg->disp;
     adptCtrl->logCnt = initArg->logCnt;
     adptCtrl->log = initArg->log;
-
-    if (initArg->name != NULL) {
-        (void)memcpy_s(adptCtrl->name, UDF_TWL_TMR_NAME_LEN, initArg->name, BKF_TWL_TMR_NAME_LEN);
-        adptCtrl->name[UDF_TWL_TMR_NAME_LEN - 1] = '\0';
-    }
-
+	(void)memcpy_s(adptCtrl->name, UDF_TWL_TMR_NAME_LEN, initArg->name, BKF_TWL_TMR_NAME_LEN);
+	adptCtrl->name[UDF_TWL_TMR_NAME_LEN - 1] = '\0';
+ 
     UdfTimerInitParam innerInit;
     (void)memset_s(&innerInit, sizeof(UdfTimerInitParam), 0, sizeof(UdfTimerInitParam));
     innerInit.appHandle = (void*)adptCtrl;
@@ -179,10 +176,8 @@ void* BkfAdptTwlTimerInit(BkfTwlTmrInitArg *initArg)
     innerInit.epollCtlCB = BkfAdptTwlTimerEpollCtl;
     innerInit.freeCB = BkfAdptTwlTimerFree;
     innerInit.mallocCB = BkfAdptTwlTimerMalloc;
-    if (initArg->name != NULL) {
-        (void)memcpy_s(innerInit.timerInstName, UDF_TWL_TMR_NAME_LEN, adptCtrl->name, UDF_TWL_TMR_NAME_LEN);
-        innerInit.timerInstName[UDF_TWL_TMR_NAME_LEN - 1] = '\0';
-    }
+	(void)memcpy_s(innerInit.timerInstName, UDF_TWL_TMR_NAME_LEN, adptCtrl->name, UDF_TWL_TMR_NAME_LEN);
+	innerInit.timerInstName[UDF_TWL_TMR_NAME_LEN - 1] = '\0';
 
     uint32_t ret = UdfTwlTimerCreate(&innerInit, &adptCtrl->timerHandle);
     if  (ret != 0) {
