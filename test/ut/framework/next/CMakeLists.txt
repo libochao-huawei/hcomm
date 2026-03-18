@@ -17,6 +17,7 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
+    comms/comm_engine_res/threads/ut_aicpu_ts_thread_methods.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
 )
 
