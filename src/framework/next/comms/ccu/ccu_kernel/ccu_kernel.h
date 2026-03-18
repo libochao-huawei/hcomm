@@ -104,7 +104,7 @@ public:
         CcuVariableHandle varA, CcuVariableHandle varB);
 
 private:
-    CcuResult GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable* variable);
+    CcuResult GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable **variable);
 
     std::unordered_map<CcuVariableHandle, CcuRep::Variable> ccuVarMap_{};
 
