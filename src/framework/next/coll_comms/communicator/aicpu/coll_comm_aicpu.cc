@@ -23,7 +23,8 @@
 #include "coll_comm_aicpu_destroy_func.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
-
+ HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel, 
+     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，后续移动至Op.h
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
     if (isReady_) {
