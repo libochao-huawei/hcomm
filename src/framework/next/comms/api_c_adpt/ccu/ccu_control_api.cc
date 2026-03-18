@@ -8,6 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "ccu_control_api.h"
+
 #include "ccu_primitives.h"
 
 #include "ccu_log.h"
@@ -48,6 +50,7 @@ CcuResult HcommCcuInsDestroy(CcuInsHandle insHandle)
 
 CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle)
 {
+    // todo: 需要考虑怎么拦截start调用之前没有end
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto *ccuIns = hcomm::CcuInstanceMgr::GetInstance(devLogicId).Get(insHandle);
     CCU_CHK_PTR_NULL(ccuIns);
