@@ -83,19 +83,20 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionReduceScatterMeshMem2Mem2D instype is CCU_REDUCE_SCATTER_MESH_2D_MEM2MEM.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionReduceScatterMeshMem2Mem2D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -114,11 +115,11 @@ private:
     std::vector<uint64_t> dimSize_;
     uint32_t rankId_{0};
     uint64_t axisId_{0};
+    uint64_t xAxisSize_{0};
+    uint64_t yAxisSize_{0};
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t outputSize_{0};
-    uint64_t xAxisSize_{0};
-    uint64_t yAxisSize_{0};
     uint64_t offSet_{0};
     uint64_t token_{0};
     CollAlgOperator op_;

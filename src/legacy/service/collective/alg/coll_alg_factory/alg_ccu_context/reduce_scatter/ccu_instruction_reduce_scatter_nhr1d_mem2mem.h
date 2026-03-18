@@ -134,12 +134,13 @@ public:
 
     CcuInstType GetInstType() const override
     {
+        HCCL_INFO("CcuInstructionReduceScatterNHR1D instype is CCU_REDUCE_SCATTER_NHR_1D_MEM2MEM.");
         return instType_;
     }
 
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override

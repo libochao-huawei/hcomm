@@ -98,19 +98,15 @@ dimSize.size[%u], tempVTopo.size[%u]", rankId_, inputAddr_, outputAddr_, scratch
         return;
     }
 
-    std::string Describe() const override
-    {
-        return StringFormat("[CcuInstructionAllGatherMesh1D]RankId[%u] Ins[%s]", rankId_, instType_.Describe().c_str());
-    }
-
     CcuInstType GetInstType() const override
     {
+        HCCL_INFO("CcuInstructionAllGatherMesh1D instype is CCU_ALLTOALL_MESH_2D_DIRECT.");
         return instType_;
     }
 
-    void SetInstType(CcuInstType instType)
+    std::string Describe() const override
     {
-        instType_ = instType;
+        return StringFormat("[CcuInstructionAllGatherMesh1D]RankId[%u] Ins[%s]", rankId_, instType_.Describe().c_str());
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -118,6 +114,11 @@ dimSize.size[%u], tempVTopo.size[%u]", rankId_, inputAddr_, outputAddr_, scratch
         HCCL_INFO("[CcuInstructionAlltoAllMesh2D][GetCtxArg] dimSize.size[%u], rankId[%u], axisId[%u], tempVTopo.size[%u]",
             dimSize_.size(), rankId_, axisId_, tempVTopo_.size());
         return std::make_unique<CcuCtxArgAlltoAllMesh2D>(dimSize_, rankId_, axisId_, op_, tempVTopo_);
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override
