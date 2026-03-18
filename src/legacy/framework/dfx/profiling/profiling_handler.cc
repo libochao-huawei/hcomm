@@ -563,20 +563,21 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     u32 ranksize{0};
     if (opInfo.isIndop_ == true) {
         ranksize = opInfo.rankSize_;
+        reporterData.data.hcclopInfo.count = opInfo.op_.dataCount;
     } else {
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo.comm_);
         ranksize = commImp->GetRankSize();
-    }
-    if (opInfo.op_.opType == OpType::ALLTOALLV) {
-        u64 sendCount = 0;
-        for (u64 i = 0; i < ranksize; i++) {
-            sendCount += *(static_cast<const u64 *>(opInfo.op_.all2AllVDataDes.sendCounts) + i);
+        if (opInfo.op_.opType == OpType::ALLTOALLV) {
+            u64 sendCount = 0;
+            for (u64 i = 0; i < ranksize; i++) {
+                sendCount += *(static_cast<const u64 *>(opInfo.op_.all2AllVDataDes.sendCounts) + i);
+            }
+            reporterData.data.hcclopInfo.count = sendCount;
+        } else if (opInfo.op_.opType == OpType::ALLTOALL) {
+            reporterData.data.hcclopInfo.count = opInfo.op_.all2AllDataDes.sendCount;
+        } else {
+            reporterData.data.hcclopInfo.count = opInfo.op_.dataCount;
         }
-        reporterData.data.hcclopInfo.count = sendCount;
-    } else if (opInfo.op_.opType == OpType::ALLTOALL) {
-        reporterData.data.hcclopInfo.count = opInfo.op_.all2AllDataDes.sendCount;
-    } else {
-        reporterData.data.hcclopInfo.count = opInfo.op_.dataCount;
     }
     // 订阅开关未开，缓存数据
     if (!enableHostApi_) {
