@@ -6412,8 +6412,8 @@ namespace hccl
                     auto tempLink = singleSubCommTransport.links[linkIdx];
                     MemDetails remoteMem;
                     u32 remoteId = tempLink->GetRemoteRank();
-                    CHK_PRT_RET((remoteId > MAX_RANK_NUM_A3),
-                        HCCL_ERROR("[%s]Invalid remoteId, valid range is [0, %u], remoteId[%u]", __func__,
+                    CHK_PRT_RET((remoteId >= MAX_RANK_NUM_A3),
+                        HCCL_ERROR("[%s]Invalid remoteId, valid range is [0, %u), remoteId[%u]", __func__,
                             MAX_RANK_NUM_A3, remoteId), HCCL_E_PARA);
                     void *userMemPtr = nullptr;
                     CHK_RET(tempLink->GetRemoteMem(UserMemType::INPUT_MEM, &userMemPtr));
