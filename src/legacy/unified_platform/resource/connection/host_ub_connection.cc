@@ -310,26 +310,26 @@ void HostUbConnection::SetJettyInfo()
 
 bool HostUbConnection::GetTpInfo()
 {
-    // if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
-    //      HCCL_ERROR("[HostUbConnection][%s] failed, tpProtocol[%s] is not expected.",
-    //         __func__, tpProtocol.Describe().c_str());
-    //     ThrowAbnormalStatus(std::string(__func__));
-    // }
+    if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
+         HCCL_ERROR("[HostUbConnection][%s] failed, tpProtocol[%s] is not expected.",
+            __func__, tpProtocol.Describe().c_str());
+        ThrowAbnormalStatus(std::string(__func__));
+    }
     
-    // auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
-    //     {locAddr, rmtAddr, tpProtocol}, tpInfo);
+    auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
+        {locAddr, rmtAddr, tpProtocol}, tpInfo);
 
-    // switch (ret) {
-    //     case HcclResult::HCCL_SUCCESS:
-    //         GenerateLocalPsn();
-    //         return true;
-    //     case HcclResult::HCCL_E_AGAIN:
-    //         return false;
-    //     case HcclResult::HCCL_E_NOT_FOUND:
-    //     default:
-    //         HCCL_ERROR("[HostUbConnection][%s] failed, hccl result[%d]", __func__, ret);
-    //         ThrowAbnormalStatus(std::string(__func__));
-    // }
+    switch (ret) {
+        case HcclResult::HCCL_SUCCESS:
+            GenerateLocalPsn();
+            return true;
+        case HcclResult::HCCL_E_AGAIN:
+            return false;
+        case HcclResult::HCCL_E_NOT_FOUND:
+        default:
+            HCCL_ERROR("[HostUbConnection][%s] failed, hccl result[%d]", __func__, ret);
+            ThrowAbnormalStatus(std::string(__func__));
+    }
     return true;
 }
 
