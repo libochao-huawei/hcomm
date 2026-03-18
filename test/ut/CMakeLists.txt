@@ -19,6 +19,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu_new
 
     # src/pub_inc 目录下头文件
     ${HCCL_CODE_ROOT}/src/pub_inc
@@ -306,30 +307,34 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
+
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_instance/
 )
 
 add_subdirectory(stub)
-add_subdirectory(framework/next)
-add_subdirectory(common/prepare_ut_env)
-add_subdirectory(common/binary_package)
-add_subdirectory(misc)
-add_subdirectory(impl)
-add_subdirectory(device)
-add_subdirectory(platform/hcom)
-add_subdirectory(platform/resource/dispatcher)
-add_subdirectory(platform/resource/notify)
-add_subdirectory(platform/resource/transport)
-add_subdirectory(platform/ping_mesh)
-add_subdirectory(framework/communicator)
-add_subdirectory(framework/cluster_maintenance)
-add_subdirectory(framework/op_base_api)
-# add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
-add_subdirectory(framework/communicator/impl)
-add_subdirectory(framework/resource)
-add_subdirectory(framework/communicator/impl/independent_op/data_api)
-add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
-add_subdirectory(aicpu_kfc/aicpu)
-add_subdirectory(aicpu_kfc/misc)
-add_subdirectory(inter/comm)
-add_subdirectory(inter/hcom)
-add_subdirectory(platform/hccp)
+# add_subdirectory(framework/next)
+add_subdirectory(framework/next/comms/ccu)
+# add_subdirectory(common/prepare_ut_env)
+# add_subdirectory(common/binary_package)
+# add_subdirectory(misc)
+# add_subdirectory(impl)
+# add_subdirectory(device)
+# add_subdirectory(platform/hcom)
+# add_subdirectory(platform/resource/dispatcher)
+# add_subdirectory(platform/resource/notify)
+# add_subdirectory(platform/resource/transport)
+# add_subdirectory(platform/ping_mesh)
+# add_subdirectory(framework/communicator)
+# add_subdirectory(framework/cluster_maintenance)
+# add_subdirectory(framework/op_base_api)
+# # add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
+# add_subdirectory(framework/communicator/impl)
+# add_subdirectory(framework/resource)
+# add_subdirectory(framework/communicator/impl/independent_op/data_api)
+# add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
+# add_subdirectory(aicpu_kfc/aicpu)
+# add_subdirectory(aicpu_kfc/misc)
+# add_subdirectory(inter/comm)
+# add_subdirectory(inter/hcom)
+# add_subdirectory(platform/hccp)

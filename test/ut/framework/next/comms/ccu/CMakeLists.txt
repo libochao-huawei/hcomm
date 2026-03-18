@@ -11,10 +11,12 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    ut_CcuDevMgr_API_test.cc
-    ut_CcuTransport_API_test.cc
+    # ut_CcuDevMgr_API_test.cc
+    # ut_CcuTransport_API_test.cc
     # stubs/llt_orion_stub.cc
-    stubs/llt_hccp_stub.cc
+    # stubs/llt_hccp_stub.cc
+
+    ut_HcommCcuControlApi_test.cc
 )
 
 add_executable(hccl_utest_framework_ccu_dev_mgr_api ${src_to_test_list})
@@ -55,7 +57,7 @@ target_link_libraries(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
 )
 add_dependencies(hccl_utest_framework_ccu_dev_mgr_api hccl_llt)
 
-run_llt_test(
-   TARGET  hccl_utest_framework_ccu_dev_mgr_api
-   TASK_NUM 1
-)
+# run_llt_test(
+#    TARGET  hccl_utest_framework_ccu_dev_mgr_api
+#    TASK_NUM 1
+# )

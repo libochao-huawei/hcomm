@@ -78,20 +78,20 @@ int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
 int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[],
     unsigned int *num)
 {
-    if (info.phyId == 0) {
-        info_list[0].eid.in4.addr = 167772383;
-    } else {
+    if (info.phyId != 0) {
         info_list[0].eid.in4.addr = 469762271;
+    } else {
+        info_list[0].eid.in4.addr = 167772383;
     }
     
-    info_list[0].die_id = 0;
-    info_list[0].chip_id = 0;
-    info_list[0].func_id = 2;
+    info_list[0].dieId = 0;
+    info_list[0].chipId = 0;
+    info_list[0].funcId = 2;
 
     info_list[1].eid.in4.addr = 12346;
-    info_list[1].die_id = 1;
-    info_list[1].chip_id = 0;
-    info_list[1].func_id = 3;
+    info_list[1].dieId = 1;
+    info_list[1].chipId = 0;
+    info_list[1].funcId = 3;
 
     return 0;
 }

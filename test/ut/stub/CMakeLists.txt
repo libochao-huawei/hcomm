@@ -137,6 +137,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu_new
     ${HCCL_CODE_ROOT}/externel_depends/tsch
     ${HCCL_CODE_ROOT}/src/pub_inc/
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
@@ -374,6 +375,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
  
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_instance
 
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_microcode
