@@ -798,7 +798,7 @@ int32_t HcommReleaseComm(const char* commId)
         AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
         HCCL_INFO("%s success, commId[%s]", __func__, commId);
     } else {
-        AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
+        AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
         HCCL_INFO("%s success, commId[%s]", __func__, commId);
     }
     return HCCL_SUCCESS;

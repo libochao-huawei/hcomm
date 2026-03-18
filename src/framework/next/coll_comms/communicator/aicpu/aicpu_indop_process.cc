@@ -96,7 +96,7 @@ CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &g
 {
     auto startTime = std::chrono::steady_clock::now();
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
-    constexpr u32 pollTimeoutMs = 10000; // 轮询超时时间10ms
+    constexpr u32 pollTimeoutMs = 10000; // 轮询超时时间10ms //临时规避host侧在临时流下发kernel获取锁超时的问题
     auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
 

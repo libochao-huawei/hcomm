@@ -112,7 +112,7 @@ protected:
     HcclResult ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 sqId) const;
     HcclResult ReportHostLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const;
     HcclResult ReportAicpuLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
-        HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 sqId) const;
+        HcommReduceOp reduceOp, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
         HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const;
 
