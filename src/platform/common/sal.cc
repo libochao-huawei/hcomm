@@ -36,6 +36,7 @@ constexpr uint32_t HOST = 1;
 
 u32 SalStrLen(const char *s, u32 maxLen)
 {
+    HCCL_INFO("[SalStrLen] argument maxLen[%u]", maxLen);
     return strnlen(s, maxLen);
 }
 
