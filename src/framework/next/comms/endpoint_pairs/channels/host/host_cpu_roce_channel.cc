@@ -706,56 +706,60 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len)
+HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opcode, void *localAddr,
+                                           const void *remoteAddr, const uint64_t len)
 {
-    HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
+    HCCL_INFO("[HostCpuRoceChannel::%s] START. localAddr[%p], remoteAddr[%p], len[%llu].", caller, localAddr,
+              remoteAddr, len);
 
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
-    CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
-    CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", __func__),
+    CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", caller), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", caller),
                 HCCL_E_ROCE_CONNECT);
-    CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", __func__),
+    CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", caller),
                 HCCL_E_ROCE_CONNECT);
 
-    // 1. 构造 WR
+    // 1. 查找 buffer 索引
     auto startTime = std::chrono::steady_clock::now();
     size_t localIdx = 0;
-    CHK_RET(FindLocalBuffer(reinterpret_cast<uint64_t>(src), len, localIdx));
+    CHK_RET(FindLocalBuffer(reinterpret_cast<uint64_t>(localAddr), len, localIdx));
     size_t rmtIdx = 0;
-    CHK_RET(FindRemoteBuffer(reinterpret_cast<uint64_t>(dst), len, rmtIdx));
+    CHK_RET(FindRemoteBuffer(reinterpret_cast<uint64_t>(remoteAddr), len, rmtIdx));
     auto endTime = std::chrono::steady_clock::now();
-    HCCL_INFO("[HostCpuRoceChannel::Write] check buffer takes time [%u]", endTime - startTime);
-    struct ibv_send_wr writeWr{};
+    HCCL_INFO("[HostCpuRoceChannel::%s] check buffer takes time [%u]", caller, endTime - startTime);
+
+    // 2. 构造 WR
+    struct ibv_send_wr wr{};
     struct ibv_send_wr *badWr = nullptr;
     struct ibv_sge sg;
-    writeWr.sg_list = &sg;
-    writeWr.sg_list->addr       = reinterpret_cast<uint64_t>(src); // 源地址
-    writeWr.sg_list->length     = len;
-    writeWr.sg_list->lkey       = localRmaBuffers_[localIdx]->GetLkey(); // LKey
+    wr.sg_list = &sg;
+    wr.sg_list->addr       = reinterpret_cast<uint64_t>(localAddr);
+    wr.sg_list->length     = len;
+    wr.sg_list->lkey       = localRmaBuffers_[localIdx]->GetLkey();
 
-    writeWr.opcode              = IBV_WR_RDMA_WRITE;
-    writeWr.send_flags          = (fenceFlag_ == true ? (IBV_SEND_SIGNALED | IBV_SEND_FENCE) : IBV_SEND_SIGNALED);
-    writeWr.next                = nullptr;
-    writeWr.num_sge             = 1;
-    writeWr.wr_id               = 0;
-    writeWr.wr.rdma.rkey        = rmtRmaBuffers_[rmtIdx]->GetRkey(); // 远端 RKey
-    writeWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(dst); // 远端地址
+    wr.opcode              = opcode;
+    wr.send_flags          = (fenceFlag_ == true ? (IBV_SEND_SIGNALED | IBV_SEND_FENCE) : IBV_SEND_SIGNALED);
+    wr.next                = nullptr;
+    wr.num_sge             = 1;
+    wr.wr_id               = 0;
+    wr.wr.rdma.rkey        = rmtRmaBuffers_[rmtIdx]->GetRkey();
+    wr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(remoteAddr);
 
-    // 2. 调用 ibv_post_send
-    s32 ret = ibv_post_send(qpInfo[0].qp, &writeWr, &badWr);
+    // 3. 调用 ibv_post_send
+    s32 ret = ibv_post_send(qpInfo[0].qp, &wr, &badWr);
     CHK_PRT_CONT(ret == ENOMEM,
         HCCL_WARNING("[HostCpuRoceChannel::%s] post send wqe overflow. ret:%d, "
         "badWr->wr_id[%llu], badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-        __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
+        caller, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
 
     CHK_PRT_CONT(ret != 0,
         HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_post_send failed. ret:%d, "
         "badWr->wr_id[%llu], badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-        __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
+        caller, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
 
-    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS.", __func__);
+    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS.", caller);
     if (wqeNum_ == UINT32_MAX) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", __func__);
+        HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", caller);
         return HCCL_E_INTERNAL;
     }
     wqeNum_++;
@@ -763,62 +767,14 @@ HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t 
     return HCCL_SUCCESS;
 }
 
+HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len)
+{
+    return PostRdmaOp(__func__, IBV_WR_RDMA_WRITE, const_cast<void *>(src), dst, len);
+}
+
 HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len)
 {
-    HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
-
-    std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
-    CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
-    CHK_PRT_RET(localRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] localRmaBuffer is Empty", __func__),
-                HCCL_E_ROCE_CONNECT);
-    CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", __func__),
-                HCCL_E_ROCE_CONNECT);
-
-    auto startTime = std::chrono::steady_clock::now();
-    size_t localIdx = 0;
-    CHK_RET(FindLocalBuffer(reinterpret_cast<uint64_t>(dst), len, localIdx));
-    size_t rmtIdx = 0;
-    CHK_RET(FindRemoteBuffer(reinterpret_cast<uint64_t>(src), len, rmtIdx));
-    auto endTime = std::chrono::steady_clock::now();
-    HCCL_INFO("[HostCpuRoceChannel::Read] check buffer takes time [%u]", endTime - startTime);
-
-    // 1. 构造 WR
-    struct ibv_send_wr readWr{};
-    struct ibv_send_wr *badWr = nullptr;
-    struct ibv_sge sg;
-    readWr.sg_list = &sg;
-    readWr.sg_list->addr       = reinterpret_cast<uint64_t>(dst);
-    readWr.sg_list->length     = len;
-    readWr.sg_list->lkey       = localRmaBuffers_[localIdx]->GetLkey(); // LKey
- 
-    readWr.opcode              = IBV_WR_RDMA_READ;
-    readWr.send_flags          = (fenceFlag_ == true ? (IBV_SEND_SIGNALED | IBV_SEND_FENCE) : IBV_SEND_SIGNALED);
-    readWr.next                = nullptr;
-    readWr.num_sge             = 1;
-    readWr.wr_id               = 0;
-    readWr.wr.rdma.rkey        = rmtRmaBuffers_[rmtIdx]->GetRkey(); // 远端 RKey
-    readWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(src); // 远端地址
-
-    // 2. 调用 ibv_post_send
-    s32 ret = ibv_post_send(qpInfo[0].qp, &readWr, &badWr);
-    CHK_PRT_CONT(ret == ENOMEM,
-        HCCL_WARNING("[HostCpuRoceChannel][%s] post send wqe overflow. ret:%d, "
-        "badWr->wr_id[%llu], badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-        __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
-
-    CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuRoceChannel::Read][%s] ibv_post_send failed. ret:%d, "
-        "badWr->wr_id[%llu], badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-        __func__, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
-
-    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS.", __func__);
-    if (wqeNum_ == UINT32_MAX) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", __func__);
-        return HCCL_E_INTERNAL;
-    }
-    wqeNum_++;
-    fenceFlag_ = false;
-    return HCCL_SUCCESS;
+    return PostRdmaOp(__func__, IBV_WR_RDMA_READ, dst, src, len);
 }
 
 HcclResult HostCpuRoceChannel::FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const
