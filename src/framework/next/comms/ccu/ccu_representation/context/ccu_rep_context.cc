@@ -241,11 +241,10 @@ HcclResult CcuRepContext::AddProfiling(const std::vector<CcuTransport *> &transp
  	    CHK_RET(HcommChannelGet(channels[i], &channelPtr));
         CHK_PTR_NULL(channelPtr);
  	    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
-        CHK_PTR_NULL(channelImpl);
  	    ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
     }
  
-    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
+    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCachse);
     lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
     HCCL_INFO("[%s]AddProfiling success ",__func__);
     return HCCL_SUCCESS;
