@@ -64,7 +64,7 @@ HcclResult UbMemTransport::FillTagVec()
         } else {
             CHK_PTR_NULL(localRmaBuffer->GetBuf());
             std::string tag = localRmaBuffer->GetBuf()->GetMemTag();
-            if (tag.size() >= HCCL_RES_TAG_MAX_LEN) {
+            if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
                 HCCL_ERROR("[UbMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
                 return HCCL_E_PARA;
             }
