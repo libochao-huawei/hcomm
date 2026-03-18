@@ -84,6 +84,8 @@ private:
         std::vector<SendRecvSlice>& recvRemoteSlices, LinkData& link) const;
     HcclResult ProcessSendDataSlice(InsQuePtr& queue, SendRecvSlice& sendRemoteSlice,
         u32 remoteRank, uint64_t scratchBufferAddr, LinkData& link) const;
+    HcclResult ProcessRecvDataSlice(InsQuePtr& queue, SendRecvSlice& recvRemoteSlice,
+        u32 remoteRank, uint64_t scratchBufferAddr, LinkData& link) const;
     HcclResult SendRun(DataBuffer &execBufferSlice, u32 remoteUserRank, InsQuePtr& queue, LinkData& link) const;
     HcclResult CopyRecvDataSliceToUsrOut(InsQuePtr& queue, SendRecvSlice& slice,
         u32 remoteRank, uint64_t scratchBufferAddr) const;

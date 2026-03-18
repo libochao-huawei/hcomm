@@ -9,7 +9,7 @@
  */
 
 #include "hccl_api_base_test.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "channel_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
@@ -75,7 +75,7 @@ TEST_F(HcclSetConfigTest, Ut_HcclSetConfig_When_SetEnvHCCL_DETERMINISTIC_Expect_
     
     unsetenv("HCCL_DETERMINISTIC");
 }
- 
+
 TEST_F(HcclSetConfigTest, ut_CommChannelGetStatus_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_USE_RANK_TABLE_910_1SERVER_1RANK;

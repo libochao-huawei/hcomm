@@ -17,7 +17,7 @@ set(URMA_SRC_DIR ${URMA_BUILD_PATH}/urma)
 set(URMA_SRC_DIRS
     "${URMA_SEARCH_PATHS}/kernelspace/urma/code/lib/urma/include"
     "${URMA_SEARCH_PATHS}/kernelspace/urma/code/include"
-    "${URMA_SEARCH_PATHS}/userspace/include/external/udma"
+    "${URMA_SEARCH_PATHS}/userspace/udma/src/urma/hw/udma/include"
 )
 set(URMA_INCLUDE_DIR ${URMA_BUILD_PATH}/urma)
 file(MAKE_DIRECTORY "${URMA_INCLUDE_DIR}")

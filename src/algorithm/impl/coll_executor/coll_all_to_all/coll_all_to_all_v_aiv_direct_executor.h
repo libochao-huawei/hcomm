@@ -15,14 +15,14 @@ namespace hccl {
 class CollRunAlltoAllAivDirect: public CollAlltoAllExecutor {
 public:
     CollRunAlltoAllAivDirect(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollRunAlltoAllAivDirect() = default;
+    ~CollRunAlltoAllAivDirect() override = default;
 private:
     HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcLevel1CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
+    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType) const;
 };
 } // namespace hccl
 #endif

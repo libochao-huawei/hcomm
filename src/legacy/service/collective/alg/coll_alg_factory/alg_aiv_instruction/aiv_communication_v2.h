@@ -22,6 +22,9 @@
 #include "aiv_reduce_mesh_1d.h"
 #include "aiv_reduce_scatter_mesh_1d.h"
 #include "aiv_reduce_scatter_mesh_1d_corectrl.h"
+#include "aiv_send_mesh_1D.h"
+#include "aiv_recv_mesh_1D.h"
+#include "aiv_batchSendRecv.h"
  
 using namespace AscendC;
 
@@ -89,6 +92,24 @@ extern "C" __global__ __aicore__ void aiv_alltoallv_##type(EXTERN_KERNEL_ARGS_DE
 } \
 EXPORT_AIV_META_INFO(aiv_alltoallv_##type)
 
+#define AIV_SEND_KERNEL_BATCH_DEF(type) \
+extern "C" __global__ __aicore__ void aiv_send_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
+         return AivSendV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
+} \
+EXPORT_AIV_META_INFO(aiv_send_##type)
+
+#define AIV_RECV_KERNEL_BATCH_DEF(type) \
+extern "C" __global__ __aicore__ void aiv_recv_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
+         return AivRecvV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
+} \
+EXPORT_AIV_META_INFO(aiv_recv_##type)
+
+#define AIV_BATCHSENDRECV_KERNEL_BATCH_DEF(type) \
+extern "C" __global__ __aicore__ void aiv_batchSendRecv_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
+         return AivBatchSendRecvV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
+} \
+EXPORT_AIV_META_INFO(aiv_batchSendRecv_##type)
+
 // 910B支持的Atomic数据类型
 #define AIV_ATOMIC_DATA_TYPE_DEF(func) \
     func(float); \
@@ -110,8 +131,11 @@ EXPORT_AIV_META_INFO(aiv_alltoallv_##type)
     func(uint8_t); \
     func(bfloat16_t); \
     func(uint64_t); \
-    func(int64_t)
- 
+    func(int64_t); \
+    func(fp8_e4m3fn_t); \
+    func(fp8_e5m2_t); \
+    func(fp8_e8m0_t); \
+    func(hifloat8_t)
  
 // 定义各算子各数据类型Kernel入口
 AIV_COPY_DATA_TYPE_DEF(AIV_ALLGATHER_KERNEL_BATCH_DEF);
@@ -123,5 +147,8 @@ AIV_COPY_DATA_TYPE_DEF(AIV_BROADCAST_KERNEL_BATCH_DEF);
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_ALLREDUCE_MESH1D_TWOSHOT_KERNEL_BATCH_DEF);
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_KERNEL_BATCH_DEF);
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF);
+AIV_COPY_DATA_TYPE_DEF(AIV_SEND_KERNEL_BATCH_DEF);
+AIV_COPY_DATA_TYPE_DEF(AIV_RECV_KERNEL_BATCH_DEF);
+AIV_COPY_DATA_TYPE_DEF(AIV_BATCHSENDRECV_KERNEL_BATCH_DEF);
 
 #endif  /* AIV_COMMUNICATION_V2_H */

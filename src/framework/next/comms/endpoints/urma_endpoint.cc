@@ -11,7 +11,7 @@
 #include <algorithm>
 #include "endpoint_mgr.h"
 #include "log.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "reged_mems/urma_mem.h"
 #include "adapter_rts_common.h"
  
@@ -32,13 +32,27 @@ HcclResult UrmaEndpoint::Init()
     }
 
     Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    HcclResult ret = CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr);
+    if(ret!= HCCL_SUCCESS) {
+        HCCL_ERROR("call CommAddrToIpAddress failed");
+        return ret;
+    }
 
-    uint32_t devPhyId{};
-    int32_t deviceLogicId{};
-    CHK_RET(hrtGetDevice(&deviceLogicId));
+
+    u32 devPhyId;
+    s32 deviceLogicId;
+    ret = hrtGetDevice(&deviceLogicId);
+    if(ret != HCCL_SUCCESS){
+        HCCL_ERROR("call hrtGetDevice failed, deviceLogicId[%d]", deviceLogicId);
+        return ret;
+    }
     Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
-    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
+    ret = hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId);
+    if(ret!= HCCL_SUCCESS){
+        HCCL_ERROR("call hrtGetDevicePhyIdByIndex failed, deviceLogicId[%d], devPhyId[%u]",deviceLogicId, devPhyId);
+        return ret;
+    }
+
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
         HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
         endpointDesc_.loc.device.devPhyId = devPhyId; // 当前endpointDesc.loc.device.devPhyId不准，暂时由查询的devPhyId赋值
@@ -81,13 +95,14 @@ HcclResult UrmaEndpoint::ServerSocketListen()
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
 
+    Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(endpointDesc_.loc.device.devPhyId, localPort);
     auto &serverSocketMap = UrmaEndpoint::GetServerSocketMap();
     if (serverSocketMap.find(localPort) != serverSocketMap.end()){
         HCCL_INFO("[UrmaEndpoint][%s] reuse serverSocket", __func__);
         return HCCL_SUCCESS;
     }
     
-    Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(endpointDesc_.loc.device.devPhyId, localPort);
+
     HCCL_INFO("[UrmaEndpoint][%s] socketHandle[%p] devicePhyId[%u] localPort[%s]", 
         __func__, 
         socketHandle, 

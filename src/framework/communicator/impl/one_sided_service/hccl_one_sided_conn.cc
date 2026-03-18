@@ -65,6 +65,12 @@ HcclResult HcclOneSidedConn::Connect(const std::string &commIdentifier, s32 time
     }
     HCCL_DEBUG("[HcclOneSidedConn][Connect]socket tag:%s", newTag.c_str());
 
+    // 1、通信域初始化时会做非标卡且非310P场景的EnableP2P操作
+    // 2、此处补全标卡且不使用RDMA场景下的EnableP2P操作
+    HCCL_DEBUG("[HcclOneSidedConn][Connect]localRankId[%u]-localDevicePhyId[%u], remoteRankId[%u]-remoteDevicePhyId[%u], " \
+        "isStandardCard[%s], useRdma[%s]",
+        localRankInfo_.userRank, localRankInfo_.devicePhyId, remoteRankInfo_.userRank, remoteRankInfo_.devicePhyId,
+        isStandardCard_ ? "true" : "false", useRdma_ ? "true" : "false");
     if (isStandardCard_ && !useRdma_) {
         std::vector<u32> enableP2PDevices;
         enableP2PDevices.push_back(remoteRankInfo_.devicePhyId);
@@ -76,14 +82,17 @@ HcclResult HcclOneSidedConn::Connect(const std::string &commIdentifier, s32 time
             localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId, ret), ret);
     }
 
-    std::vector<u32> WaitP2PEnabledDevices;
-    WaitP2PEnabledDevices.push_back(remoteRankInfo_.devicePhyId);
-    HCCL_INFO("[HcclOneSidedConn][Connect]localDevicePhyId[%u] wait p2p enable with remoteDevicePhyId[%u]",
-        localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId);
-    HcclResult ret = P2PMgmtPub::WaitP2PEnabled(WaitP2PEnabledDevices, [this]() -> bool { return socketManager_->GetStopFlag(); });
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclOneSidedConn][Connect]Wait Enable P2P Failed, src devicePhyId[%u], dst devicePhyId[%u], ret[%u]",
-        localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId, ret), ret);
+    // EnableP2P需要和WaitP2PEnabled匹配使用，此处需要对1、2两处的EnableP2P做WaitP2PEnabled处理
+    if (!isStandardCard_ || !useRdma_) {
+        std::vector<u32> waitP2PEnabledDevices;
+        waitP2PEnabledDevices.push_back(remoteRankInfo_.devicePhyId);
+        HCCL_INFO("[HcclOneSidedConn][Connect]localDevicePhyId[%u] wait p2p enable with remoteDevicePhyId[%u]",
+            localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId);
+        HcclResult ret = P2PMgmtPub::WaitP2PEnabled(waitP2PEnabledDevices, [this]() -> bool { return socketManager_->GetStopFlag(); });
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[HcclOneSidedConn][Connect]Wait Enable P2P Failed, src devicePhyId[%u], dst devicePhyId[%u], ret[%u]",
+            localRankInfo_.devicePhyId, remoteRankInfo_.devicePhyId, ret), ret);
+    }
 
     std::vector<std::shared_ptr<HcclSocket>> connectSockets;
     CHK_RET(socketManager_->CreateSingleLinkSocket(newTag, netDevCtx_, remoteRankInfo_, connectSockets, true, true, timeoutSec));
@@ -399,16 +408,38 @@ HcclResult HcclOneSidedConn::GetRemoteProcessInfo(ProcessInfo& remoteProcess)
 
 HcclResult HcclOneSidedConn::ExchangeMemDesc(const HcclMemDescs &localMemDescs)
 {
-    remoteMemDescsVec_.resize(MAX_REMOTE_MEM_NUM);
-    TransportMem::RmaMemDesc *localMemDescArray =
-        static_cast<TransportMem::RmaMemDesc *>(static_cast<void *>(localMemDescs.array));
-    TransportMem::RmaMemDescs localRmaMemDescs = {localMemDescArray, localMemDescs.arrayLength};
-    TransportMem::RmaMemDesc *remoteMemDescArray =
-        static_cast<TransportMem::RmaMemDesc *>(static_cast<void *>(remoteMemDescsVec_.data()));
-    TransportMem::RmaMemDescs remoteRmaMemDescs = {remoteMemDescArray, MAX_REMOTE_MEM_NUM};
+    constexpr u32 exchangeCntPerLoop = MAX_REMOTE_MEM_NUM;
+    u32 localMemOffset = 0;
+    u32 localMemCnt = localMemDescs.arrayLength;
+    remoteMemDescsVec_.resize(exchangeCntPerLoop);
+    actualNumOfRemote_ = 0;
 
-    return transportMemPtr_->ExchangeMemDesc(
-        localRmaMemDescs, remoteRmaMemDescs, actualNumOfRemote_);
+    while (true) {
+        // 每轮循环最多交换 exchangeCntPerLoop 个 memDesc
+        u32 sendLocalCnt = localMemCnt > exchangeCntPerLoop ? exchangeCntPerLoop : localMemCnt;
+        TransportMem::RmaMemDesc *localMemDescArray = 
+            static_cast<TransportMem::RmaMemDesc *>(static_cast<void *>(localMemDescs.array)) + localMemOffset;
+        TransportMem::RmaMemDescs localRmaMemDescs = {localMemDescArray, sendLocalCnt};
+
+        if (remoteMemDescsVec_.size() - actualNumOfRemote_ < exchangeCntPerLoop) {
+            remoteMemDescsVec_.resize(remoteMemDescsVec_.size() + exchangeCntPerLoop);
+        }
+        TransportMem::RmaMemDesc *remoteMemDescArray =
+            static_cast<TransportMem::RmaMemDesc *>(static_cast<void *>(&remoteMemDescsVec_[actualNumOfRemote_]));
+        TransportMem::RmaMemDescs remoteRmaMemDescs = {remoteMemDescArray, exchangeCntPerLoop};
+
+        u32 actualNumOfRemote = 0;
+        CHK_RET(transportMemPtr_->ExchangeMemDesc(localRmaMemDescs, remoteRmaMemDescs, actualNumOfRemote));
+        localMemOffset += sendLocalCnt;
+        localMemCnt -= sendLocalCnt;
+        actualNumOfRemote_ += actualNumOfRemote;
+
+        if (actualNumOfRemote < exchangeCntPerLoop && sendLocalCnt < exchangeCntPerLoop) {
+            // 循环结束条件，下轮没有memDesc要发 且 对端也没有memDesc要发
+            break;
+        }
+    }
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcclOneSidedConn::EnableMemAccess()

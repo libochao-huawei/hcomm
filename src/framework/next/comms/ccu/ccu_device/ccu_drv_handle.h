@@ -27,6 +27,7 @@ private:
 
 private:
     int32_t devLogicId_{0};
+    uint32_t devPhyId_{0};
     void *tlvHandle_{nullptr};
 };
 

@@ -815,7 +815,7 @@ DfsConfig CastDfsConfig(const std::string &dfsConfigEnv)
 void CheckExecTimeOut(const u32 &timeOut)
 {
     DevType devType = HrtGetDeviceType();
-    if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_950) {
         // 910A2和910A3算子超时时间范围0s-2147483647s,其中0代表永不超时
         CheckRange<u32>(timeOut, 0, HCCL_EXEC_TIME_OUT_S_910A3);
     } else {
@@ -844,7 +844,7 @@ void SetRealPath(string &filePath)
 void ProcExecTimeOut(u32 &timeOut)
 {
     DevType devType = HrtGetDeviceType();
-    if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_910A2 || devType == DevType::DEV_TYPE_910A3 || devType == DevType::DEV_TYPE_950) {
         return;
     }
     // 910A芯片限制超时时长为68的倍数

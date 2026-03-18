@@ -19,7 +19,7 @@ class CollReduceScatterMeshAivSmallCountExecutor : public CollReduceScatterExecu
 public:
     CollReduceScatterMeshAivSmallCountExecutor(const HcclDispatcher dispatcher,
                                                std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterMeshAivSmallCountExecutor() = default;
+    ~CollReduceScatterMeshAivSmallCountExecutor() override = default;
  
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;

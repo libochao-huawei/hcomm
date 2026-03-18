@@ -12,6 +12,7 @@
 #include "socket_config.h"
 #include "hcomm_c_adpt.h"
 #include "orion_adpt_utils.h"
+#include "channel_process.h"
 
 #include "hcom_common.h"
 #include "exception_handler.h"
@@ -20,7 +21,7 @@ namespace hcomm {
 
 EndpointPair::~EndpointPair() 
 {
-    (void)HcommChannelDestroy(channelHandles_.data(), channelHandles_.size());
+    (void)ChannelProcess::ChannelDestroy(channelHandles_.data(), channelHandles_.size());
 }
 
 HcclResult EndpointPair::Init()
@@ -73,11 +74,15 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
+HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
-    channelHandles_.push_back(channels[0]);
+    if (channelHandles_.size() <= reuseIdx) {
+        CHK_RET(HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+        channelHandles_.push_back(channels[0]);
+        return HCCL_SUCCESS;
+    }
+    channels[0] = channelHandles_[reuseIdx];
     return HCCL_SUCCESS;
 }
 

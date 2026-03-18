@@ -81,7 +81,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
     // AIV aclgrah 流程
-    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV) {
+    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV 
+    || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         HandleAclGraphFirstOpAivBuff(stream->GetPtr());
     }
  
@@ -90,7 +91,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
  
     RegisterOpbasedStream(std::move(stream));
  
-    if(comm->GetOpExecuteConfig().accState == AcceleratorState::AIV){
+    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV 
+    || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         auto  insQueue = make_shared<InsQueue>();
  
         AivOpCacheArgs opCacheParam{comm->GetCurAlgName(), op.dataCount, op.dataType, op.opType, op.reduceOp, op.root, op.numBlocksLimit, op.outputDataType,{},{}};
@@ -103,7 +105,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
         }
         auto it = comm->hcclCacheMap_.find(opCacheParam);
         bool isCache = false;
-        if (it != comm->hcclCacheMap_.end()) {
+        bool isSendRecv = ((op.opType == OpType::SEND) || (op.opType == OpType::RECV) || (op.opType == OpType::BATCHSENDRECV));
+        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv)) {
             isCache = true;
             insQueue = it->second;
         }  else{

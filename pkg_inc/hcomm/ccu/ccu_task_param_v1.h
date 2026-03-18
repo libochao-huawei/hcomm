@@ -7,6 +7,8 @@
 #ifndef HCOMM_CCU_TASK_PARAM_H
 #define HCOMM_CCU_TASK_PARAM_H
 
+#include <cstdint>
+
 namespace hcomm {
 
 constexpr uint32_t CCU_SQE_ARGS_LEN = 13;

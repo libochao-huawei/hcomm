@@ -2014,6 +2014,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
 
 HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len)
 {
+    HCCLV2_FUNC_RUN(HcomSetAttachedStreamV2());
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
@@ -2155,6 +2156,7 @@ HcclResult HcomGetBandWidthPerNPU(u32 level, float *bandWidth)
 
 HcclResult HcomReleaseSubComms()
 {
+    HCCLV2_FUNC_RUN(HcomReleaseSubCommsV2());
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm) {
         CHK_RET(hcomInfo.pComm->ReleaseSubComms());
@@ -2532,7 +2534,7 @@ HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globa
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING(" A5 does not support this interface");
         return HCCL_SUCCESS;
     }
@@ -2546,7 +2548,7 @@ HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcom over flow tasks.");
         return HCCL_SUCCESS;
     }
@@ -2575,7 +2577,7 @@ HcclResult HcclCommGetandClearOverFlowTasks(s64 opBaseHcom, std::vector<hccl::Hc
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcclcom over flow tasks.");
         return HCCL_SUCCESS;
     }
@@ -2842,7 +2844,7 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit)
 
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if(devType == DevType::DEV_TYPE_910_95){
+    if(devType == DevType::DEV_TYPE_950){
         HCCL_WARNING("A5 does not support get and clear hcclcom set aiv core limit.");
         return HCCL_SUCCESS;
     }
@@ -2982,7 +2984,7 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
         HCCL_WARNING("call GetModuleInfo error, failed to get multiModuleDiffDeviceNumMode.");
     }
 
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         CHK_RET(CalcTaskNumV2(hcomOpParam, taskNum));
     } else {
         CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
@@ -3047,7 +3049,7 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, ifAiv, devType, streamNum, group));
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         // host展开已日落， Task任务数按照当前需求最多的CCU加速模式[AIV, AICPU使用较少]预估
         taskNum = ESTIMATE_CCU_TASK_PER_STREAM; 
     }
@@ -3067,7 +3069,7 @@ HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devTyp
 
     if (tempDevType != DevType::DEV_TYPE_910 && tempDevType != DevType::DEV_TYPE_910B &&
         tempDevType != DevType::DEV_TYPE_310P1 && tempDevType != DevType::DEV_TYPE_310P3 &&
-        tempDevType != DevType::DEV_TYPE_910_93 && tempDevType != DevType::DEV_TYPE_910_95) {
+        tempDevType != DevType::DEV_TYPE_910_93 && tempDevType != DevType::DEV_TYPE_950) {
         HCCL_ERROR("[offline][compilation] cur dev type[%u] is not support.", tempDevType);
         return HCCL_E_RUNTIME;
     }
@@ -3088,7 +3090,7 @@ HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 de
 
         case DevType::DEV_TYPE_910B:
         case DevType::DEV_TYPE_910:
-        case DevType::DEV_TYPE_910_95: 
+        case DevType::DEV_TYPE_950: 
         case DevType::DEV_TYPE_910_93: {
             CHK_RET(GetStremNumOfflineByDev(devType, hcclOpType, serverNum, deviceNumPerServer, ifAiv, streamNum, group));
             break;

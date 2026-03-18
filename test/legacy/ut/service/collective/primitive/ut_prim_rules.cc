@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -391,7 +391,7 @@ TEST_F(PrimRulesTest, translate_send_link_p2p_dma_put_test)
 
 TEST_F(PrimRulesTest, translate_send_link_dev_net_ub_dma_default)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     DevCapability::GetInstance().isSupportWriteWithNotify = true;
     DevCapability::GetInstance().isSupportStarsPollNetCq = true;
     // Given
@@ -415,7 +415,7 @@ TEST_F(PrimRulesTest, translate_send_link_dev_net_ub_dma_default)
 
 TEST_F(PrimRulesTest, translate_send_link_dev_net_ub_dma_put)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     DevCapability::GetInstance().isSupportWriteWithNotify = true;
     DevCapability::GetInstance().isSupportStarsPollNetCq = true;
     // Given
@@ -815,7 +815,7 @@ TEST_F(PrimRulesTest, translate_group_send_recv_p2p_dma_default_or_get)
 
 TEST_F(PrimRulesTest, translate_group_send_recv_dev_net_ub)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     DevCapability::GetInstance().isSupportWriteWithNotify = true;
     DevCapability::GetInstance().isSupportStarsPollNetCq = true;
     // Given

@@ -95,7 +95,7 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/inc/network
     ${SRC_DIR}/src/platform/hccp/inc/private/network
     ${SRC_DIR}/src/platform/hccp/external_depends/inc
-    ${SRC_DIR}/src/platform/hccp/external_depends/inc/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
     ${RDMA_CORE_INCLUDE_DIR}
     ${CANN_3RD_LIB_PATH}/json/include/	 
