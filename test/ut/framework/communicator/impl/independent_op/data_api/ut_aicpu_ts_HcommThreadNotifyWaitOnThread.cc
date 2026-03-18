@@ -35,7 +35,7 @@ class UtAicpuTsHcommThreadNotifyWaitOnThread : public testing::Test
 protected:
     virtual void SetUp() override
     {
-        MOCKER_CPP(&Hccl::IAicpuTsThread::NotifyWait).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(static_cast<HcclResult (Hccl::IAicpuTsThread::*)(uint32_t, uint32_t) const>(&Hccl::IAicpuTsThread::NotifyWait)).stubs().will(returnValue(HCCL_SUCCESS));
         threadOnDevice.devType_ = DevType::DEV_TYPE_950;
         threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
         InitNotifies(threadOnDevice);

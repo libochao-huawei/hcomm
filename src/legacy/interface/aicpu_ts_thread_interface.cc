@@ -15,6 +15,7 @@
 
 #include "stream_lite.h"
 #include "rtsq_a5.h"
+#include "sqe_build_a5.h"
 
 namespace Hccl {
 
@@ -94,15 +95,21 @@ void IAicpuTsThread::LaunchTask() const
 
 HcclResult IAicpuTsThread::NotifyWait(uint32_t notifyId) const
 {
+    return NotifyWait(notifyId, GetKernelExecTimeoutFromEnvConfig());
+}
+
+HcclResult IAicpuTsThread::NotifyWait(uint32_t notifyId, uint32_t timeout) const
+{
     RtsqBase *rtsqA5 = nullptr;
     CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
     
-    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], notifyId [%u]",
+    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], notifyId [%u], timeout [%u]",
         __func__,
         static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(),
-        notifyId);
+        notifyId,
+        timeout);
 
-    rtsqA5->NotifyWait(notifyId);
+    rtsqA5->NotifyWait(notifyId, timeout);
 
     return HCCL_SUCCESS;
 }
