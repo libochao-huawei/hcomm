@@ -190,14 +190,17 @@ HcclResult CollBatchSendRecvGroupExecutor::RunTasksBig(OpParam& param)
         HCCL_INFO("nonEmptySendStream[%u], nonEmptyRecvStream[%u]", nonEmptySendStream, nonEmptyRecvStream);
         CHK_RET(MainPostSubWait(param.stream));
 
+        u32 localRankStreamId = topoAttr_.userRank % sendStreamNum_;
         for (u32 i = 0; i < sendStreamNum_; i++){
-            if (!sendDataSilcesBySendStream_[i].empty()) {
-                CHK_RET(ProcessSendStreamDataSlice(algResResp_->slaveStreams[i], i, false, false));
+            u32 sendStreamId = (localRankStreamId + sendStreamNum_ - i) % sendStreamNum_; // 从localRankStreamId开始，依次减小
+            if (!sendDataSilcesBySendStream_[sendStreamId].empty()) {
+                CHK_RET(ProcessSendStreamDataSlice(algResResp_->slaveStreams[sendStreamId], sendStreamId, false, false));
             }
         }
         for (u32 i = 0; i < recvStreamNum_; i++){
-            if (!recvDataSilcesByRecvStream_[i].empty()) {
-                CHK_RET(ProcessRecvStreamDataSlice(algResResp_->slaveStreams[i + sendStreamNum_], i, false, false));
+            u32 recvStreamId = (localRankStreamId + i) % recvStreamNum_; // 从localRankStreamId开始，依次增大
+            if (!recvDataSilcesByRecvStream_[recvStreamId].empty()) {
+                CHK_RET(ProcessRecvStreamDataSlice(algResResp_->slaveStreams[recvStreamId + sendStreamNum_], recvStreamId, false, false));
             }
         }
         CHK_RET(MainWaitSubPost(param.stream));
