@@ -21,6 +21,7 @@
 #include "aicpu_daemon_service.h"
 #include "hcclCommTaskExceptionLite.h"
 #include "coll_comm_aicpu_destroy_func.h"
+#include "aicpu_thread_process.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
 
@@ -138,13 +139,28 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
 HcclResult CollCommAicpu::RegisterThreads(ThreadMgrAicpuParam *param)
 {
     u32 threadNum = param->threadNum;
-    std::vector<Thread*> outThreads;
+    std::vector<std::shared_ptr<Thread>> outThreads;
     outThreads.reserve(threadNum);
     std::string hcomId(param->hcomId);
-    ThreadHandle * threadHandles = reinterpret_cast<ThreadHandle*>(param->threadHandles);
-    for (size_t i = 0; i < threadNum; ++i) {
-        CHK_RET(RegisterThreadAddDfxTaskInfo(threadHandles[i]));
+    ThreadHandle * threadHandles = reinterpret_cast<ThreadHandle*>(param->deviceHandle);
+    std::vector<std::shared_ptr<hccl::Thread>> threads = AicpuThreadProcess::GetThreadMap();
+    for (u32 i = 0; i < param->threadNum; ++i) {
+        ThreadHandle handle = threadHandles[i];
+        auto it = std::find_if(threads.begin(), threads.end(),
+            [handle](const std::shared_ptr<Thread> &ptr) {
+                return reinterpret_cast<ThreadHandle>(ptr.get()) == handle;
+            });
+        if (it == threads.end()) {
+            HCCL_ERROR("[AicpuThreadProcess][%s] thread handle[0x%llx] not found in threads_", __func__, handle);
+            return HCCL_E_NOT_FOUND;
+        }
+        // 从容器中移除，shared_ptr 自动释放对象
+        CHK_RET(RegisterThreadAddDfxTaskInfo(reinterpret_cast<ThreadHandle>((*it).get())));
+        std::shared_ptr<Thread> thread = *it;
+        outThreads.emplace_back(thread.get());
     }
+    threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
+        std::make_move_iterator(outThreads.end()));
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     return HCCL_SUCCESS;

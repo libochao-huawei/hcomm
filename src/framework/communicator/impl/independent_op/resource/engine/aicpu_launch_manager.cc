@@ -205,14 +205,20 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchImplV2(ThreadHandle* newThreads, ui
 
     // Step 2. 填写 opParam 并分配设备内存
     ThreadMgrAicpuParam opParam{};
+    (void)memset_s(&opParam, sizeof(opParam), 0, sizeof(opParam));
     opParam.threadNum = threadNum;
-    opParam.threadHandles = reinterpret_cast<void*>(newThreads);
     errno_t sRet = strncpy_s(opParam.hcomId, HCOMID_MAX_SIZE, config.commId.c_str(), config.commId.length());
     CHK_PRT_RET(sRet != EOK,
     HCCL_ERROR("[%s] strncpy_s failed, return [%d].", __func__, sRet),
     HCCL_E_MEMORY);
     opParam.hcomId[HCOMID_MAX_SIZE - 1] = '\0';
-    opParam.deviceHandle = nullptr;
+    size_t handleLen = sizeof(ThreadHandle) * listNum;
+    DeviceMem deviceHandle = DeviceMem::alloc(handleLen);
+    CHK_SMART_PTR_NULL(deviceHandle);
+    opParam.deviceHandle = deviceHandle.ptr();
+    CHK_RET(hrtMemSyncCopy(deviceHandle.ptr(), handleLen,
+        newThreads, handleLen,
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
     // 基础通信需要设备信息
     if (config.needDeviceInfo) {
