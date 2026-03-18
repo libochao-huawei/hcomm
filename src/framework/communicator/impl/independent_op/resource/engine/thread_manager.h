@@ -35,6 +35,8 @@ public:
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
     HcclResult HcclThreadExportToCommEngine(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
+    HcclResult HcclThreadResGetInfo(const ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info);
+
     u32 GetThreadNum() const { return threadNum_; }
     u32 GetNotifyNumPerThread() const { return notifyNumPerThread_; }
 
@@ -46,7 +48,7 @@ private:
     HcclResult SupplementThread(CommEngine engine, uint32_t supplementThreadNum, uint32_t notifyNumPerThread);
     HcclResult ThreadExportToCommEngineCpu(uint32_t threadNum, const ThreadHandle *threads, ThreadHandle *exportedThreads);
     HcclResult ThreadExportToCommEngineAicpu(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
-    HcclResult GetExportedThread(const ThreadHandle threadHandle, CommEngine commEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut);
+    HcclResult GetExportedThread(ThreadHandle threadHandle, CommEngine commEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut);
     u32 threadNum_ = 0;
     u32 notifyNumPerThread_ = 0;
     std::string commId_;
@@ -66,6 +68,9 @@ private:
     std::unordered_map<ThreadHandle, ThreadHandle> threadHandleOthersToCpu_; // 其他引擎上的ThreadHandle与CPU_TS上的ThreadHandle的映射
     std::unordered_map<ThreadHandle, ThreadHandle> hostToDeviceThreadHandle_;
     ManagerCallbacks callbacks_;
+
+    std::mutex threadhandleToThreadMutex_;
+    std::unordered_map<ThreadHandle, std::shared_ptr<Thread>> threadMap_;
 };
 }
 #endif
