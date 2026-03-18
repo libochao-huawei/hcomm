@@ -26,6 +26,7 @@
 #include "ccu_temp_reduce_nhr_1D_mem2mem.h"
 #include "ccu_temp_reduce_mesh_1D_mem2mem.h"
 #include "ccu_temp_reduce_mesh_2D_mem2mem.h"
+#include "ccu_temp_reduce_mesh_1D_two_shot_mem2mem.h"
 #endif
 
 namespace Hccl {
@@ -274,5 +275,7 @@ INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, AivReduceMesh1D, InsV2ReduceSoleExecut
     TopoMatchMesh, AivTempReduceMesh1D);
 INS_REGISTER_IMPL_BY_TEMP(
     OpType::REDUCE, CcuReduceMeshMem2Mem2D, InsV2ReduceSoleExecutor, TopoMatchConcurrMesh, CcuTempReduceMeshMem2Mem2D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, CcuReduceMeshTwoShotMem2Mem1D, InsV2ReduceSoleExecutor,
+                          TopoMatchMesh, CcuTempReduceMeshTwoShotMem2Mem1D);
 #endif
 } // namespace Hccl

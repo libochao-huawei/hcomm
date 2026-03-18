@@ -11,14 +11,13 @@
 #ifndef IBV_EXTEND_H
 #define IBV_EXTEND_H
 
-#include <sys/uio.h>
 #include <infiniband/verbs.h>
 #include <stdint.h>
 
-#define IBV_EXTEND_VERSION_MAJOR 2
+#define IBV_EXTEND_VERSION_MAJOR 3
 #define IBV_EXTEND_VERSION_MINOR 1
 #define IBV_EXTEND_VERSION_PATCH 0
-#define IBV_EXTEND_VERSION_STRING "2.1.0"
+#define IBV_EXTEND_VERSION_STRING "3.1.0"
 
 enum queue_buf_dma_mode {
     QU_BUF_DMA_MODE_DEFAULT = 0,
@@ -49,22 +48,22 @@ enum ibv_extend_device_cap {
 };
 
 struct doorbell_map_desc {
-    uint32_t type;
-
     union {
         uint64_t hva;
         struct {
             uint64_t guid_l;
             uint64_t guid_h;
             struct {
-                uint32_t resource_id : 4;
-                uint32_t offset : 24;
-                uint32_t rsvd : 4;
+                uint64_t resource_id : 4;
+                uint64_t offset : 32;
+                uint64_t resv : 28;
             } bits;
-            uint32_t rsvd;
         } ub_res;
     };
     uint64_t size;
+    uint32_t type;
+
+    uint32_t resv;
 };
 
 struct ibv_extend_ops {
@@ -78,17 +77,24 @@ struct ibv_extend_ops {
     int (*db_unmap)(void *ptr, struct doorbell_map_desc *desc);
 };
 
+struct iov_addr_desc {
+    void *iov_base;
+    size_t iov_len;
+};
+
 struct queue_buf {
     uint64_t base;
     uint32_t entry_cnt;
     uint32_t entry_size;
+    uint64_t resv[4];
 };
 
 struct queue_info {
     struct queue_buf qbuf;
-    struct iovec dbr_pi_va;
-    struct iovec dbr_ci_va;
-    struct iovec db_hw_va;
+    struct iov_addr_desc dbr_pi_va;
+    struct iov_addr_desc dbr_ci_va;
+    struct iov_addr_desc db_hw_va;
+    uint64_t resv[4];
 };
 
 struct ibv_qp_extend {
@@ -120,6 +126,8 @@ struct ibv_qp_init_attr_extend {
     uint32_t qp_cap_flag;
     enum queue_buf_dma_mode type;
     struct ibv_extend_ops *ops;
+
+    uint64_t resv[8];
 };
 
 struct ibv_cq_init_attr_extend {
@@ -128,6 +136,8 @@ struct ibv_cq_init_attr_extend {
     uint32_t cq_cap_flag;
     enum queue_buf_dma_mode type;
     struct ibv_extend_ops *ops;
+
+    uint64_t resv[8];
 };
 
 struct ibv_srq_init_attr_extend {
@@ -139,6 +149,8 @@ struct ibv_srq_init_attr_extend {
     uint32_t srq_cap_flag;
     enum queue_buf_dma_mode type;
     struct ibv_extend_ops *ops;
+
+    uint64_t resv[8];
 };
 
 struct ibv_device_attr_extend {
@@ -159,6 +171,8 @@ int ibv_extend_check_version(uint32_t driver_major, uint32_t driver_minor, uint3
 struct ibv_context_extend *ibv_open_extend(struct ibv_context *context);
 
 int ibv_close_extend(struct ibv_context_extend *context);
+
+int ibv_query_device_extend(struct ibv_context_extend *context, struct ibv_device_attr_extend *ext_dev_attr);
 
 struct ibv_qp_extend *ibv_create_qp_extend(struct ibv_context_extend *context,
                                            struct ibv_qp_init_attr_extend *qp_init_attr);
@@ -187,7 +201,7 @@ struct ibv_context_extend_ops {
     int (*destroy_cq)(struct ibv_cq_extend *cq_extend);
     int (*destroy_srq)(struct ibv_srq_extend *srq_extend);
 
-    int (*query_device)(struct ibv_context_extend *context,
+    int (*query_device)(struct ibv_context *context,
                         struct ibv_device_attr_extend *ext_dev_attr);
 };
 
@@ -203,7 +217,7 @@ void verbs_register_driver_extend(const struct verbs_device_extend_ops *ops);
 #define PROVIDER_EXTEND_DRIVER(drv)                                              \
     static __attribute__((constructor)) void drv##__register_extend_driver(void) \
     {                                                                            \
-        verbs_register_driver_extend(&drv);                                      \
+        verbs_register_driver_extend(&(drv));                                    \
     }
 
 #endif // IBV_EXTEND_H
