@@ -36,7 +36,7 @@ HcclResult AivUbMemTransport::Init()
         localRmaBufferVec_.push_back(localIpcRmaBuffer);
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         std::string tag = localIpcRmaBuffer->GetBuf()->GetMemTag();
-        if (tag.size() >= HCCL_RES_TAG_MAX_LEN) {
+        if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[AivUbMemTransport][Init] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
