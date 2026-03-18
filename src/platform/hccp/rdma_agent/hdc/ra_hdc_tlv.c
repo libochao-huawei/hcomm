@@ -127,7 +127,7 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
     while (head.offset < sendMsg->length) {
         head.sendBytes = (head.totalBytes - head.offset) >= MAX_TLV_MSG_DATA_LEN ?
             MAX_TLV_MSG_DATA_LEN : (head.totalBytes - head.offset);
-        ret = memcpy_s(&(tlvData.txData.head), sizeof(struct TlvRequestMsgHead),
+        (void)memcpy_s(&(tlvData.txData.head), sizeof(struct TlvRequestMsgHead),
             &head, sizeof(struct TlvRequestMsgHead));
 
         (void)memset_s(tlvData.txData.data, MAX_TLV_MSG_DATA_LEN, 0, MAX_TLV_MSG_DATA_LEN);
