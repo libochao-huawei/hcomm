@@ -263,7 +263,8 @@ TEST_F(CommunicatorImplLiteTest, test_update_comm_success)
     service.GetStreamLiteMgr()->streams.emplace_back(std::make_unique<StreamLite>(uniqueId));
 
     auto rtsq = static_cast<RtsqA5 *>(service.GetStreamLiteMgr()->GetMaster()->GetRtsq());
-    MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::NotifyWait).stubs().with(any());
+    MOCKER_CPP_VIRTUAL(*rtsq, static_cast<void (RtsqA5::*)(u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
+    MOCKER_CPP_VIRTUAL(*rtsq, static_cast<void (RtsqA5::*)(u32, u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::NotifyRecordLoc).stubs().with(any());
 
     HcclKernelParamLite kernelParam;
