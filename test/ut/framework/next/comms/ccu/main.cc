@@ -14,6 +14,7 @@
 #include "gtest/gtest.h"
 #include "comm.h"
 #include "llt_hccl_stub_pub.h"
+
 GTEST_API_ int main(int argc, char **argv) {
     printf("Running hccl_api_single_thread_test\n");
     // testing::GTEST_FLAG(filter) = "TestHcclGetHcclBuffer*";

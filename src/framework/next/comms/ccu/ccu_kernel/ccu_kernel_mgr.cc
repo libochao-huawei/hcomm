@@ -38,7 +38,7 @@ CcuKernelMgr::~CcuKernelMgr()
 
 CcuKernelMgr &CcuKernelMgr::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM];
+    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM + 1];
 
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
@@ -87,6 +87,8 @@ CcuResult CcuKernelMgr::Register(
     std::unique_lock<std::mutex> lock(kernelMapMutex_);
     
     currKernel_ = std::make_unique<CcuKernel>(); // 重置待注册kernel
+    // todo: 需要整改kernel感知die的实现
+    CCU_CHK_RET(currKernel_->Init());
 
     CCU_CHK_RET(ccuKernelFunc(kernelArg)); // 执行算法流程，生成rep和计算资源占用
 
@@ -259,8 +261,6 @@ static CcuResult AllocInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_t
 
 CcuResult CcuKernelMgr::AllocRes(CcuResPack &resPack)
 {
-    CCU_CHK_RET(currKernel_->Init());
-
     CCU_CHK_RET(InstantiationTranslator(currKernel_->GetDieId()));
 
     CcuResReq leftRes{};

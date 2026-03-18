@@ -15,7 +15,7 @@
 #define private public
 #define protected public
 
-#include "ccu_dev_mgr.h"
+#include "ccu_device_pub.h"
 
 #undef protected
 #undef private
