@@ -59,14 +59,6 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
     return HCCL_SUCCESS;
 }
 
-// HcclResult HostCpuRoceChannel::BuildAttr()
-// {
-//     attr_.devicePhyId = localEp_.loc.device.devPhyId;
-//     attr_.opMode      = Hccl::OpMode::OPBASE;
-//     attr_.handshakeMsg = {'d', 'p', 'u'}; // TODO: 握手消息定义，怎么组？包括 cann版本号，rankTable CRC等字段
-//     return HCCL_SUCCESS;
-// }
-
 HcclResult HostCpuRoceChannel::BuildConnection()
 {
     std::unique_ptr<HostRdmaConnection> conn;
