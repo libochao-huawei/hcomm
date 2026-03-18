@@ -78,6 +78,7 @@ private:
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
                                       struct ibv_send_wr &writeWithNotifyWr) const;
 
+    HcclResult PostRdmaOp(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
 
