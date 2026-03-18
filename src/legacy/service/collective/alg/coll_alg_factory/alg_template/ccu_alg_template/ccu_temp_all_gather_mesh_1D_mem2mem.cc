@@ -96,11 +96,18 @@ HcclResult CcuTempAllGatherMeshMem2Mem1D::Run(const TempFuncs &tempFuncs, const 
                                               const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                               std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllGatherMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
+<<<<<<< HEAD
 
     CcuInstructionAllGatherMeshMem2Mem1D ccuInsAllGatherMeshMem2Mem1D;
 
+=======
+    CcuInstructionAllGatherMeshMem2Mem1D ccuInsAllGatherMesh1D;
+>>>>>>> d4d299c4... 2026.3 code check
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 

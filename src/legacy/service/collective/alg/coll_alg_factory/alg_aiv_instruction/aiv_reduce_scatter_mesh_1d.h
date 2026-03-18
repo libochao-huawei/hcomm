@@ -84,14 +84,13 @@ public:
     }
  
 private:
- 
-    uint32_t targetRank;
-    uint64_t inputOffset;
-    uint64_t outputOffset;
-    int32_t curTag;
-    uint64_t consumProcessNum;
-    int64_t inputOffVec[MAX_RANK_SIZE];
-    uint32_t coreNumPerStage;
+    uint32_t targetRank{0};
+    uint64_t inputOffset{0};
+    uint64_t outputOffset{0};
+    int32_t  curTag{0};
+    uint64_t consumProcessNum{0};
+    int64_t  inputOffVec[MAX_RANK_SIZE]{0};
+    uint32_t coreNumPerStage{0};
 };
  
 template<typename T>

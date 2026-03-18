@@ -89,6 +89,9 @@ HcclResult CcuTempBroadcastMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
                                           std::vector<InsQuePtr> &tempInsQues)
 {
     (void)sliceInfoVec;
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempBroadcastMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     buffInfo_ = buffInfo;
     opMode_ = tempFuncs.opMode;
     CcuInstructionBroadcastMesh1D ccuInsBroadcastMesh1D;
