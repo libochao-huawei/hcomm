@@ -27,7 +27,7 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of All Reduce ccu mesh 2D with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of All Reduce ccu mesh Mem2Mem 2D with tempRankSize [%u].", tempRankSize_);
     }
 
     HcclResult Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec, const BuffInfo &buffInfo,
@@ -45,11 +45,11 @@ private:
     // 内部计算用到的变量
     ReduceOp              reduceOp_;
     DataType              dataType_;
+    RankGroup             rankGroupY_;
+    RankGroup             rankGroupX_;
     std::vector<uint64_t> dimSize_;
     std::vector<LinkData> linksX_;
     std::vector<LinkData> linksY_;
-    RankGroup             rankGroupX_;
-    RankGroup             rankGroupY_;
 };
 
 } // namespace Hccl

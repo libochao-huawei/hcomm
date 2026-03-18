@@ -68,20 +68,16 @@ void CcuTempAllGatherMeshMem2Mem1D::GetAddrsAndOffset(const TempFuncs &tempFuncs
 {
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从 UserIn 获取数据
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
                 + tempFuncs.usrData.usrInSlices[0].GetOffset();
         } else {
-            // 从 inBuff 获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 从 UserOut 获取数据
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
             // 需要加上 UserOUt 的偏移，包含了 loop 偏移和 rank 偏移
             offset = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
         } else {
-            // 把数据写入 outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
             // 从 inBuff 获取数据，只需要加上 rank 偏移
             offset = sliceInfoVec[myRank_][0].offset;
@@ -103,7 +99,7 @@ HcclResult CcuTempAllGatherMeshMem2Mem1D::Run(const TempFuncs &tempFuncs, const 
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
 
-    CcuInstructionAllGatherMeshMem2Mem1D ccuInsAllGatherMesh1D;
+    CcuInstructionAllGatherMeshMem2Mem1D ccuInsAllGatherMeshMem2Mem1D;
 
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
@@ -116,8 +112,8 @@ HcclResult CcuTempAllGatherMeshMem2Mem1D::Run(const TempFuncs &tempFuncs, const 
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
     uint64_t token;
     CHK_RET(GetToken(op_, token));
-    ccuInsAllGatherMesh1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, offset, token, op_, tempVTopo_);
-    HCCL_INFO("[CcuTempAllGatherMesh1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu],"\
+    ccuInsAllGatherMeshMem2Mem1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, offset, token, op_, tempVTopo_);
+    HCCL_INFO("[CcuTempAllGatherMeshMem2Mem1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu],"\
         "outputAddr[%llu], sliceSize[%llu], offset[%llu]",
         myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offset);
 
@@ -128,19 +124,19 @@ HcclResult CcuTempAllGatherMeshMem2Mem1D::Run(const TempFuncs &tempFuncs, const 
         }
         links.push_back(pair.second[0]);
     }
-    HCCL_INFO("[CcuTempAllGatherMesh1D] links.size[%zu]", links.size());
-    ccuInsAllGatherMesh1D.SetLinks(links);
+    HCCL_INFO("[CcuTempAllGatherMeshMem2Mem1D] links.size[%zu]", links.size());
+    ccuInsAllGatherMeshMem2Mem1D.SetLinks(links);
 
     RankGroup rankGroup;
     for (auto &peer : tempVTopo_[0]) {
         rankGroup.AddRank(peer);
     }
     u32 cntCkeNum = 3;
-    ccuInsAllGatherMesh1D.SetCntCkeNum(cntCkeNum);
-    ccuInsAllGatherMesh1D.SetRankGroup(rankGroup);
-    HCCL_INFO("CCUInsAllGathermesh1D is [%s]", ccuInsAllGatherMesh1D.Describe().c_str());
-    ccuInsAllGatherMesh1D.Describe();
-    tempInsQues[0]->Append(std::move(std::make_unique<CcuInstructionAllGatherMeshMem2Mem1D>(ccuInsAllGatherMesh1D)));
+    ccuInsAllGatherMeshMem2Mem1D.SetCntCkeNum(cntCkeNum);
+    ccuInsAllGatherMeshMem2Mem1D.SetRankGroup(rankGroup);
+    HCCL_INFO("CcuTempAllGatherMeshMem2Mem1D is [%s]", ccuInsAllGatherMeshMem2Mem1D.Describe().c_str());
+    ccuInsAllGatherMeshMem2Mem1D.Describe();
+    tempInsQues[0]->Append(std::move(std::make_unique<CcuInstructionAllGatherMeshMem2Mem1D>(ccuInsAllGatherMeshMem2Mem1D)));
 
     return HcclResult::HCCL_SUCCESS;
 }

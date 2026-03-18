@@ -72,9 +72,9 @@ HcclResult CcuTempReduceMesh1D::GenExtIns(const TempFuncs &tempFuncs, const Temp
     CHK_RET(GetToken(op_, token));
     uint64_t inputSliceStride   = templateDataParams.inputSliceStride;
     uint64_t outputSliceStride  = templateDataParams.outputSliceStride;
-    uint64_t repeatNum          = templateDataParams.repeatNum;
     uint64_t inputRepeatStride  = templateDataParams.inputRepeatStride;
     uint64_t outputRepeatStride = templateDataParams.outputRepeatStride;
+    uint64_t repeatNum          = templateDataParams.repeatNum;
     uint64_t normalSliceSize    = templateDataParams.sliceSize;
     uint64_t lastSliceSize      = templateDataParams.tailSize;
     uint64_t repeatNumVar       = UINT64_MAX - repeatNum;
