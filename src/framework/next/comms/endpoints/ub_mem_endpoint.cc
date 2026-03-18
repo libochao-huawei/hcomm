@@ -31,6 +31,7 @@ HcclResult UbMemEndpoint::Init()
 HcclResult UbMemEndpoint::ServerSocketListen()
 {
     HCCL_INFO("UbMemEndpoint ServerSocketListen is not supported");
+    HCCL_INFO("UbMemEndpoint ServerSocketListen is not supported!");
     return HCCL_SUCCESS;
 }
 
