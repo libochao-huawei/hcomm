@@ -293,7 +293,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
 }
 
 template<typename T>
-static HcclResult LaunchKernelDeviceParam(const T &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
+HcclResult ChannelProcess::LaunchKernelDeviceParam(const T &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
 {
     hccl::Stream localStream = hccl::Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
@@ -324,7 +324,7 @@ static HcclResult LaunchKernelDeviceParam(const T &channelParam, aclrtBinHandle 
     return HCCL_SUCCESS;
 }
 
-static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
+HcclResult ChannelProcess::LaunchKernel(const HcclChannelUrmaRes &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
 {
     return LaunchKernelDeviceParam(channelParam, binHandle, kernelName);
 }
