@@ -671,10 +671,6 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommFlush()
-{
-    return HcommFenceOnThread(0);
-}
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
@@ -695,9 +691,4 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx].", __func__, thread, channel), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
-}
-
-int32_t HcommChannelFence(ChannelHandle channel)
-{
-    return HcommChannelFenceOnThread(0, channel);
 }
