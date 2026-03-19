@@ -213,7 +213,7 @@ void UbConnLite::ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const Str
     // 写wqe到va
     u8 *va = reinterpret_cast<u8 *>(sqVa_ + sqOffset * SQE_SIZE_64);
     if (!dwqeCacheLocked_) {
-        auto ret = memcpy_s(va, SQE_SIZE_64, sqe, SQE_SIZE_64);
+        auto ret = memcpy_sp(va, SQE_SIZE_64, sqe, SQE_SIZE_64);
         if (UNLIKELY(ret != 0)) {
             THROW<InternalException>(StringFormat("[UbConnLite::%s] memcpy_s failed, ret = %d", __func__, ret));
         }
@@ -268,7 +268,7 @@ void UbConnLite::MemorySetAndCopy(u8 *va, u32 sqeSize, void *sqe)
     if (UNLIKELY(ret != 0)) {
         THROW<InternalException>(StringFormat("[UbConnLite::%s] memset fail, ret = %d", __func__, ret));
     }
-    ret = memcpy_s(va, sqeSize, sqe, sqeSize);
+    ret = memcpy_sp(va, sqeSize, sqe, sqeSize);
     if (UNLIKELY(ret != 0)) {
         THROW<InternalException>(StringFormat("[UbConnLite::%s] not support this op type yet.", __func__));
     }
@@ -333,7 +333,7 @@ void UbConnLite::InlineWrite(const u8 *data, u16 size, const RmtRmaBufSliceLite 
     sqe.comm.inlineEn     = 1;
     sqe.comm.inlineMsgLen = size;
     FillCommSqe(&(sqe.comm), rmt, cfg, UdmaSqOpcode::UDMA_OPC_WRITE);
-    auto ret = memcpy_s(sqe.u.inlineData.data, SQE_INLINE_DATA_SIZE, data, size);
+    auto ret = memcpy_sp(sqe.u.inlineData.data, SQE_INLINE_DATA_SIZE, data, size);
     if (UNLIKELY(ret != 0)) {
         THROW<InternalException>(StringFormat("[UbConnLite::%s] not support this op type yet.", __func__));
     }
