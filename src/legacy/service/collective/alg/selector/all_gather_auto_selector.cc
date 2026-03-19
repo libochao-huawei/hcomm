@@ -21,6 +21,7 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+
     u32 rankSize_2P = 2;
  	u32 rankSize_4P = 4;  
     HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
