@@ -680,4 +680,12 @@ HcclResult Transport::HcclBatchWrite(const TransportDeviceNormalData &ibvData,
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
+
+HcclResult Transport::GetPeerPodInfo(s32 &pid, s32 &sid)
+{
+    CHK_PTR_NULL(pimpl_);
+    pimpl_->GetPeerPodInfo(pid, sid);
+    return HCCL_SUCCESS;
+}
+
 }
