@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include "endpoint.h"
+#include "hccl_ip_address.h"
 
 namespace hcomm {
 /**
@@ -21,16 +22,27 @@ namespace hcomm {
  */
 class AicpuTsHccsEndPoint : public Endpoint {
 public:
-    virtual ~AicpuTsHccsEndPoint() = default;
+    explicit AicpuTsHccsEndPoint(const EndpointDesc &endpointDesc);
 
-    // 注册内存
-    HcclResult RegisterMemory(const std::vector<MemHandle>& memHandles) override;
+    ~AicpuTsHccsEndPoint();
 
-    // 注销内存
-    virtual HcclResult UnregisterMemory(MemHandle memHandle) override;
+    HcclResult Init() override;
+    HcclResult ServerSocketListen(const uint32_t port) override;
+    HcclResult ServerSocketStopListen(const uint32_t port) override;
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
+    HcclResult UnregisterMemory(void* memHandle) override;
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
+    HcclResult EnableMemAccess(const HcommMemGrantInfo *remoteGrantInfo) override;
+    HcclResult DisableMemAccess(const HcommMemGrantInfo *remoteGrantInfo) override;
+    HcclNetDevCtx GetNetDevCtx() {return netDevCtx_;};
 
-    // 获取注册的内存信息
-    virtual HcclResult GetRegisteredMemory(std::vector<MemRegion>& memRegions) override;
+private:
+    HcclNetDevCtx netDevCtx_{};
+    u32 server_port_{16666};
+    hccl::HcclIpAddress devIpAddr_;
 };
 }
 #endif // AICPUTS_HCCS_ENDPOINT_H
