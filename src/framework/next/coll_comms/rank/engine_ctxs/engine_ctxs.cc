@@ -67,6 +67,10 @@ HcclResult EngineCtxs::CopyCommEngineCtx(const std::string &tag, CommEngine engi
     void *dstCtx;
     uint64_t dstSize = 0;
     CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
+    CHK_PRT_RET(dstCtxOffset + size > dstSize, 
+        HCCL_ERROR("[%s]Copy engine ctx failed: buffer overflow detected. tag[%s], engine[%d], "
+                    "dstSize[%llu], dstCtxOffset[%llu], copySize[%llu]",
+                    __func__, tag.c_str(), engine, dstSize, dstCtxOffset, size), HCCL_E_PARA);
     CHK_RET(HcommEngineCtxCopy(engine, reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, srcCtx, size)); // 增加大小判断，增加强转
     HCCL_INFO("[%s]copy engine ctx success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;

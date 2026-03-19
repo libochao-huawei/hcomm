@@ -10,6 +10,7 @@
 
 #include <exception>
 #include "exception_handler.h"
+#include "network_api_exception.h"
 
 namespace hccl {
 using namespace std;
@@ -22,6 +23,9 @@ HcclResult ExceptionHandler::HandleException(const char* functionName)
     } catch (const HcclException& e) {
         HCCL_ERROR("%s: HcclException, what: %s, code: %d", functionName, e.what(), e.code());
         return e.code();
+    } catch (const Hccl::NetworkApiException& e) {
+        HCCL_ERROR("%s: NetworkApiException, what: %s", functionName, e.what());
+        return HCCL_E_TCP_CONNECT;
     } catch (const out_of_range& e) {
         HCCL_ERROR("%s: Out of range error, what: %s", functionName, e.what());
         return HCCL_E_NOT_FOUND;
