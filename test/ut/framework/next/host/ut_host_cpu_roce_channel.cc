@@ -16,6 +16,7 @@
 #include "socket.h"
 #include "hccp.h"
 #include "types/types.h"
+#include "hcomm_res.h"
 
 #define private public
 using namespace hcomm;
@@ -41,6 +42,7 @@ protected:
         MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<Hccl::DevId>(0)));
         RdmaHandle rdmaHandle = (void *)0x1000000;
         MOCKER(Hccl::HrtRaRdmaInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+        MOCKER(HcommEndpointStartListen).stubs().will(returnValue(HCCL_SUCCESS));
         EndpointDesc endpointDesc{};
         endpointDesc.protocol = COMM_PROTOCOL_ROCE;
         endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
