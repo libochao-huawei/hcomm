@@ -1,0 +1,1476 @@
+From 3697d44b5b8f4fd584e63f58b86a4bcc3939957a Mon Sep 17 00:00:00 2001
+From: w00804505 <w00804505@huawei.com>
+Date: Mon, 9 Mar 2026 20:17:36 +0800
+Subject: [PATCH] DTS: DTS0000000000000
+
+Description: pcie
+
+Team: OTHERS
+Feature or Bugfix: Bugfix
+
+Change-Id: I307c314eef3ad84eae6c7e25cf93c028b4b67811
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: c00664093 c00664093@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: c00664093 c00664093@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: c00664093 c00664093@huawei.com
+Signed-off-by: j30074908 j30074908@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: j30074908 j30074908@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 l30056383@huawei.com
+Signed-off-by: w00804505 w00804505@huawei.com
+Signed-off-by: y00619628 y00619628@huawei.com
+Signed-off-by: l30056383 <l30056383@huawei.com>
+Signed-off-by: w00804505 <w00804505@huawei.com>
+---
+ .../framework/aiv/aiv_ins/hccl_aiv_utils.cc   |   4 +
+ .../communicator/op_params_checker.cc         |   3 +-
+ .../device_mode/coll_service_device_mode.cpp  |   3 +-
+ .../framework/service/coll_service_base.cc    |   2 +-
+ .../common/topo_common_types.h                |   2 +-
+ .../aiv_all_to_all_mesh_1D.h                  |  30 +--
+ .../aiv_all_to_all_v_mesh_1D.h                |  10 +-
+ .../aiv_communication_base_v2.h               | 193 +++++++-----------
+ .../aiv_communication_v2.h                    |   7 +-
+ .../alg_aiv_instruction/aiv_recv_mesh_1D.h    |   7 +-
+ .../alg_aiv_instruction/aiv_send_mesh_1D.h    |   8 +-
+ .../ins_all_gather_parallel_executor.cc       |   3 +
+ .../ins_all_reduce_parallel_executor.cc       |   3 +
+ .../ins_broadcast_parallel_executor.cc        |   5 +-
+ .../reduce/ins_reduce_parallel_executor.cc    |   3 +
+ .../ins_reduce_scatter_parallel_executor.cc   |   3 +
+ .../scatter/ins_scatter_parallel_executor.cc  |   3 +
+ .../ins_temp_all_to_all_mesh.cc               |  14 +-
+ .../ins_temp_reduce_aicpu_reduce.cc           |   9 +-
+ .../alg_topo_match/CMakeLists.txt             |   2 +
+ .../topo_match_mesh_nhr_pcie.cc               |  98 +++++++++
+ .../alg_topo_match/topo_match_mesh_nhr_pcie.h |  44 ++++
+ .../alg/selector/all_gather_auto_selector.cc  |   2 +-
+ .../alg/selector/all_reduce_auto_selector.cc  |   4 +-
+ .../alg/selector/alltoallv_auto_selector.cc   |   6 +-
+ .../alg/selector/broadcast_auto_selector.cc   |   2 +-
+ .../alg/selector/reduce_auto_selector.cc      |   4 +-
+ .../selector/reduce_scatter_auto_selector.cc  |  10 +-
+ .../alg/selector/scatter_auto_selector.cc     |   2 +-
+ .../external_system/orion_adapter_rts.cc      |   1 +
+ .../resource/notify/remote_notify.cc          |   7 +-
+ .../aicpu/p2p_transport_lite_impl.cc          |  72 +++++--
+ .../transport/aicpu/p2p_transport_lite_impl.h |  20 +-
+ .../resource/transport/p2p_transport.cc       |  20 +-
+ .../resource/transport/p2p_transport.h        |   1 +
+ 35 files changed, 403 insertions(+), 204 deletions(-)
+ create mode 100644 src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.cc
+ create mode 100644 src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.h
+
+diff --git a/src/legacy/framework/aiv/aiv_ins/hccl_aiv_utils.cc b/src/legacy/framework/aiv/aiv_ins/hccl_aiv_utils.cc
+index 8e188e0ae..80b5fb6a1 100644
+--- a/src/legacy/framework/aiv/aiv_ins/hccl_aiv_utils.cc
++++ b/src/legacy/framework/aiv/aiv_ins/hccl_aiv_utils.cc
+@@ -87,6 +87,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
+     {"aiv_allreduce_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32},
+     {"aiv_allreduce_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8},
+     {"aiv_allreduce_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16},
++    {"aiv_allreduce_int64_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT64},
+     //broadcast
+     {"aiv_broadcast_half", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP16},
+     {"aiv_broadcast_int16_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT16},
+@@ -110,6 +111,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
+     {"aiv_allreduce_mesh1d_twoshot_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32,KernelArgsType::ARGS_TYPE_TWO_SHOT},
+     {"aiv_allreduce_mesh1d_twoshot_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8,KernelArgsType::ARGS_TYPE_TWO_SHOT},
+     {"aiv_allreduce_mesh1d_twoshot_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16,KernelArgsType::ARGS_TYPE_TWO_SHOT},
++    {"aiv_allreduce_mesh1d_twoshot_int64_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT64,KernelArgsType::ARGS_TYPE_TWO_SHOT},
+     // alltoall
+     {"aiv_alltoall_half", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP16},
+     {"aiv_alltoall_int16_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT16},
+@@ -149,6 +151,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
+     {"aiv_reduce_int32_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT32},
+     {"aiv_reduce_int8_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT8},
+     {"aiv_reduce_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::BFP16},
++    {"aiv_reduce_int64_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT64},
+     //reducescatter
+     {"aiv_reduce_scatter_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::FP16},
+     {"aiv_reduce_scatter_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT16},
+@@ -156,6 +159,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
+     {"aiv_reduce_scatter_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT32},
+     {"aiv_reduce_scatter_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT8},
+     {"aiv_reduce_scatter_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::BFP16},
++    {"aiv_reduce_scatter_int64_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT64},
+     // send
+     {"aiv_send_int8_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT8}, // hccl_types.h
+     {"aiv_send_int16_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT16},
+diff --git a/src/legacy/framework/communicator/op_params_checker.cc b/src/legacy/framework/communicator/op_params_checker.cc
+index 4c058d8aa..71b8d32e8 100644
+--- a/src/legacy/framework/communicator/op_params_checker.cc
++++ b/src/legacy/framework/communicator/op_params_checker.cc
+@@ -285,8 +285,7 @@ DataTypeBitmap OpParamsChecker::dataTypeWithoutReduceAiv = DataTypeBitmap{}
+                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_HIF8))
+                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E4M3))
+                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E5M2))
+-                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E8M0))
+-                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_MXFP8));
++                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E8M0));
+ 
+ DataTypeBitmap OpParamsChecker::dataTypeWithReduceCcu = DataTypeBitmap{}
+                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT8))
+diff --git a/src/legacy/framework/device_mode/coll_service_device_mode.cpp b/src/legacy/framework/device_mode/coll_service_device_mode.cpp
+index 067f3401f..f933c1bb9 100644
+--- a/src/legacy/framework/device_mode/coll_service_device_mode.cpp
++++ b/src/legacy/framework/device_mode/coll_service_device_mode.cpp
+@@ -106,7 +106,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
+         auto it = comm->hcclCacheMap_.find(opCacheParam);
+         bool isCache = false;
+         bool isSendRecv = ((op.opType == OpType::SEND) || (op.opType == OpType::RECV) || (op.opType == OpType::BATCHSENDRECV));
+-        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv)) {
++        bool isAlltoAllV = (op.opType == OpType::ALLTOALLV);
++        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv) && (!isAlltoAllV)) {
+             isCache = true;
+             insQueue = it->second;
+         }  else{
+diff --git a/src/legacy/framework/service/coll_service_base.cc b/src/legacy/framework/service/coll_service_base.cc
+index e9b6391a3..d74cae95e 100644
+--- a/src/legacy/framework/service/coll_service_base.cc
++++ b/src/legacy/framework/service/coll_service_base.cc
+@@ -73,7 +73,7 @@ void CollServiceBase::RegisterCclBuffer(const std::vector<LinkData> &links) cons
+         if (rmaBufManager.Get(comm->GetId(), portData, BufferType::SCRATCH) != nullptr) {
+             HCCL_WARNING("RegisterCclBuffer has reged, optag(%s) portData[%s]",
+                 comm->GetId().c_str(), portData.Describe().c_str());
+-            return;
++            continue;
+         }
+         rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
+     }
+diff --git a/src/legacy/framework/topo/new_topo_builder/common/topo_common_types.h b/src/legacy/framework/topo/new_topo_builder/common/topo_common_types.h
+index 25aab86cf..1f65a307d 100644
+--- a/src/legacy/framework/topo/new_topo_builder/common/topo_common_types.h
++++ b/src/legacy/framework/topo/new_topo_builder/common/topo_common_types.h
+@@ -34,7 +34,7 @@ MAKE_ENUM(LinkType, PEER2PEER, PEER2NET, PEER2BACKUP)
+ MAKE_ENUM(AddrPosition, HOST, DEVICE)
+ MAKE_ENUM(AddrType, EID, IPV4, IPV6)
+ MAKE_ENUM(NetType, CLOS, MESH_1D, MESH_2D, A3_SERVER, A2_AX_SERVER, TOPO_FILE_DESC)
+-MAKE_ENUM(TopoType, CLOS, MESH_1D, MESH_2D, A3_SERVER, A2_AX_SERVER)
++MAKE_ENUM(TopoType, CLOS, MESH_1D, MESH_2D, A3_SERVER, A2_AX_SERVER, TOPO_TYPE_RESERVED)
+ constexpr LocalId BACKUP_LOCAL_ID = 64;
+ } // namespace Hccl
+ 
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_mesh_1D.h b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_mesh_1D.h
+index 07878e54d..8753fc0a5 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_mesh_1D.h
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_mesh_1D.h
+@@ -89,18 +89,18 @@ private:
+ 
+         // PutRemote阶段
+         srcOffset_ = input_ + dstRank * inputSliceStride_ + sliceOffsetSize;
+-        dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_ + sliceOffsetSize;
++        dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_ + sliceOffsetSize;
+         CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, sliceCount);
+         pipe_barrier(PIPE_ALL);
+ 
+-        uint64_t setFlagIdx = rank_ * coreNumPerDstRank + coreIdxForDstRank;
+-        Record(dstRank, setFlagIdx, opTag_);  // 按照数据源rank编排flag的偏移量
++        uint64_t setFlagIdx = coreIdx_;
++        Record(rank_, setFlagIdx, opTag_);
+ 
+         // PostCopy阶段
+-        uint64_t waitFlagIdx = coreIdx_;
+-        WaitFlag(rank_, waitFlagIdx, opTag_);
+-        
+-        srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_ + sliceOffsetSize;
++        uint64_t waitFlagIdx = rank_ * coreNumPerDstRank + coreIdxForDstRank;
++        WaitFlag(dstRank, waitFlagIdx, opTag_);
++
++        srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_ + sliceOffsetSize;
+         dstOffset_ = output_ + dstRank * outputSliceStride_ + sliceOffsetSize;
+         CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, sliceCount);
+         pipe_barrier(PIPE_ALL);
+@@ -119,12 +119,12 @@ private:
+ 
+             // PutRemote阶段
+             srcOffset_ = input_ + dstRank * inputSliceStride_;
+-            dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_;
++            dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_;
+             CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, len_);
+             pipe_barrier(PIPE_ALL);
+ 
+-            uint64_t setFlagIdx = rank_;
+-            Record(dstRank, setFlagIdx, opTag_);  // 按照数据源rank编排flag的偏移量
++            uint64_t setFlagIdx = dstRank;
++            Record(rank_, setFlagIdx, opTag_);  // 按照数据源rank编排flag的偏移量
+         }
+ 
+         for (uint32_t idx = 0; idx < rankNumPerCore; ++idx) {
+@@ -134,17 +134,17 @@ private:
+             }
+ 
+             // PostCopy阶段
+-            uint64_t waitFlagIdx = dstRank;
+-            WaitFlag(rank_, waitFlagIdx, opTag_);
+-            
+-            srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_;
++            uint64_t waitFlagIdx = rank_;
++            WaitFlag(dstRank, waitFlagIdx, opTag_);
++
++            srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_;
+             dstOffset_ = output_ + dstRank * outputSliceStride_;
+             CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, len_);
+             pipe_barrier(PIPE_ALL);
+         }
+     }
+ 
+-    __aicore__ inline void SplitData(uint64_t dataCount, uint64_t splitNum, uint64_t idx, 
++    __aicore__ inline void SplitData(uint64_t dataCount, uint64_t splitNum, uint64_t idx,
+         uint64_t& sliceOffset, uint64_t& sliceCount)
+     {
+         // 防止idx越界
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_v_mesh_1D.h b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_v_mesh_1D.h
+index ed3bc7291..4e0a29e36 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_v_mesh_1D.h
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_all_to_all_v_mesh_1D.h
+@@ -59,10 +59,12 @@ public:
+         if (sendCurCount == 0) {
+             return;
+         }
+-        CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
+-        PipeBarrier<PIPE_ALL>();
+         uint64_t flag_offset = block_idx;
+         WaitFlag(rank_, flag_offset, 0);
++
++        CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
++        PipeBarrier<PIPE_ALL>();
++
+         Record(rank_, flag_offset, curTag);
+     }
+ 
+@@ -73,9 +75,11 @@ public:
+         }
+         uint64_t flag_offset = rank_ * coreNumPerRank + coreIndex;
+         WaitFlag(targetRank, flag_offset, curTag);
+-        Record(targetRank, flag_offset, 0);
++
+         CpGM2GM((__gm__ T *)recvOutputOffset, (__gm__ T *)recvInputOffset, recvCurCount);
+         PipeBarrier<PIPE_ALL>(); // 核内自己的同步
++
++        Record(targetRank, flag_offset, 0);
+     }
+ 
+     __aicore__ inline void Process(uint64_t len, uint32_t tag, ExtraArgs &extraArgs)
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_base_v2.h b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_base_v2.h
+index a69fd84b4..dce2727ae 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_base_v2.h
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_base_v2.h
+@@ -31,7 +31,6 @@ constexpr uint64_t AIV_TAG_MOVE_RIGHT_BITS = 16;
+ constexpr uint64_t LOW_16_BITS = 0xFFFF;
+ constexpr uint32_t AIV_FLAG_CLEAR_OFFSET = 1040 * 1024;
+ constexpr uint32_t BATCH_SEND_RECV_ITEM_SIZE = 16; // 注意要和host侧的BATCH_SEND_RECV_ITEM_SIZE保持一致
+-constexpr uint32_t DATA_TYPE_INT64 = 5;
+ 
+ typedef enum {
+     HCCL_SEND = 0,
+@@ -173,7 +172,8 @@ constexpr uint64_t FLAG_FIVE_OFFSET = FLAG_SIZE * 4;
+ 
+ constexpr uint64_t DOUBLE = 2;
+ constexpr uint64_t FLAG_BUF_NUM = 3;
+-constexpr uint64_t SRC_DST_DIVIDE = 2;
++constexpr uint64_t TILING_NUM = 4;
++constexpr uint64_t CHUNK_SIZE = 2048;
+ 
+ // 当前每个kernel最多使用4组同步标记，这里预留6组
+ constexpr uint32_t MAX_FLAG_SIZE_PER_KERNEL = AIV_FLAG_CLEAR_OFFSET - MAX_RANK_SIZE * FLAG_SIZE;
+@@ -230,13 +230,10 @@ public:
+         localTagTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
+         pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
+ 
+-        pipe.InitBuffer(srcQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+-        pipe.InitBuffer(dstQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+-
+-        isReduce64 = false;
+-        if (dataType_ == DATA_TYPE_INT64) {
+-            isReduce64 = true;
+-        }
++        uint64_t chunkSize = UB_MAX_DATA_SIZE / TILING_NUM / UB_ALIGN_SIZE * UB_ALIGN_SIZE;
++        pipe.InitBuffer(inQueueX, 1, chunkSize);
++        pipe.InitBuffer(inQueueY, 1, chunkSize);
++        pipe.InitBuffer(outQueueZ, 1, chunkSize);
+     }
+ 
+     __aicore__ inline void Init(GM_ADDR hiddenInput, GM_ADDR input, GM_ADDR output)
+@@ -278,13 +275,10 @@ public:
+         localTagTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
+         pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
+ 
+-        pipe.InitBuffer(srcQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+-        pipe.InitBuffer(dstQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
+-
+-        isReduce64 = false;
+-        if (dataType_ == DATA_TYPE_INT64) {
+-            isReduce64 = true;
+-        }
++        uint64_t chunkSize = UB_MAX_DATA_SIZE / TILING_NUM / UB_ALIGN_SIZE * UB_ALIGN_SIZE;
++        pipe.InitBuffer(inQueueX, 1, chunkSize);
++        pipe.InitBuffer(inQueueY, 1, chunkSize);
++        pipe.InitBuffer(outQueueZ, 1, chunkSize);
+ 
+         if (args->clearEnable == 1) {
+             ClearSyncBuf();
+@@ -327,13 +321,6 @@ public:
+     template<typename T>
+     __aicore__ inline void Reduce64(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t reduceOp);
+ 
+-    template<typename T>
+-    __aicore__ inline void Add64(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, const uint64_t count);
+-
+-    template<typename T>
+-    static __simd_vf__ inline void AddVf(__ubuf__ T* dstPtr, __ubuf__ T* src0Ptr, __ubuf__ T* src1Ptr,
+-        uint32_t count, uint16_t oneRepeatSize, uint16_t repeatTimes);
+-
+     __aicore__ inline void BarrierAll();
+ 
+     __aicore__ inline void SendRecvBarrierAll(uint32_t myRank, uint32_t remoteRank);
+@@ -396,16 +383,16 @@ public:
+     GlobalTensor<int32_t> d2hGlobal;
+ 
+     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inOutQue;
+-    TQue<QuePosition::VECIN, 1> srcQue;
+-    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> dstQue;
++
++    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inQueueX;
++    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inQueueY;
++    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> outQueueZ;
+ 
+     uint32_t localOffset;
+     uint32_t multiOffset;
+     uint32_t pingpongOffset;
+     uint32_t countOffset;
+     uint32_t seperateOffset;
+-
+-    bool isReduce64;
+ };
+ 
+ 
+@@ -591,116 +578,93 @@ __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputG
+ template<typename T>
+ __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t atomicOp)
+ {
+-    if (isReduce64) {
++    if constexpr (Std::is_same<T, int64_t>::value) {
+         Reduce64(outputGM, inputGM, count, atomicOp);
++        return;
++    } else {
++        GlobalTensor<T> inputGT;
++        inputGT.SetGlobalBuffer(inputGM, count);
++        GlobalTensor<T> outputGT;
++        outputGT.SetGlobalBuffer(outputGM, count);
++
++        SetAtomicOp<T>(atomicOp);
++
++        uint64_t maxCountPerLoop = UB_MAX_DATA_SIZE / sizeof(T);
++        if (useDoubleBuffer_) {
++            maxCountPerLoop = UB_DB_DATA_BATCH_SIZE / sizeof(T);
++        }
++        uint64_t curOffset = 0;
++        while (count > 0) {
++            uint64_t curCount = count > maxCountPerLoop ? maxCountPerLoop : count;
++
++            LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
++            DataCopyGM2UB(localIn, inputGT[curOffset], curCount);
++            inOutQue.EnQue(localIn);
++            LocalTensor<T> localOut = inOutQue.DeQue<T>();
++            DataCopyUB2GM(outputGT[curOffset], localOut, curCount);
++            inOutQue.FreeTensor(localOut);
++
++            count -= curCount;
++            curOffset += curCount;
++        }
++
++        SetAtomicNone();
++
+         return;
+     }
+-
+-    GlobalTensor<T> inputGT;
+-    inputGT.SetGlobalBuffer(inputGM, count);
+-    GlobalTensor<T> outputGT;
+-    outputGT.SetGlobalBuffer(outputGM, count);
+-
+-    SetAtomicOp<T>(atomicOp);
+-
+-    uint64_t maxCountPerLoop = UB_MAX_DATA_SIZE / sizeof(T);
+-    if (useDoubleBuffer_) {
+-        maxCountPerLoop = UB_DB_DATA_BATCH_SIZE / sizeof(T);
+-    }
+-    uint64_t curOffset = 0;
+-    while (count > 0) {
+-        uint64_t curCount = count > maxCountPerLoop ? maxCountPerLoop : count;
+-
+-        LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
+-        DataCopyGM2UB(localIn, inputGT[curOffset], curCount);
+-        inOutQue.EnQue(localIn);
+-        LocalTensor<T> localOut = inOutQue.DeQue<T>();
+-        DataCopyUB2GM(outputGT[curOffset], localOut, curCount);
+-        inOutQue.FreeTensor(localOut);
+-
+-        count -= curCount;
+-        curOffset += curCount;
+-    }
+-
+-    SetAtomicNone();
+-
+-    return;
+ }
+ 
+ template<typename T>
+ __aicore__ inline void AivCommBase::Reduce64(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t reduceOp)
+ {
+-    GlobalTensor<T> inputGT;
+-    inputGT.SetGlobalBuffer(inputGM, count);
+-    GlobalTensor<T> outputGT;
+-    outputGT.SetGlobalBuffer(outputGM, count);
++    GlobalTensor<T> xGm;  // xGm, yGm为输入，zGm为输出
++    GlobalTensor<T> yGm;
++    GlobalTensor<T> zGm;
+ 
+-    // ubuf一半用来存src数据，另一半用来存reduce的结果数据
+-    uint64_t maxCountPerLoop = UB_MAX_DATA_SIZE / sizeof(T) / 2;
++    xGm.SetGlobalBuffer(inputGM, count);
++    yGm.SetGlobalBuffer(outputGM, count);
++    zGm.SetGlobalBuffer(outputGM, count);
++
++    // 单核Add/Max/Min数据量限制
+     uint64_t curOffset = 0;
+     while (count > 0) {
+-        uint64_t curCount = count > maxCountPerLoop ? maxCountPerLoop : count;
++        uint64_t curCount = count > CHUNK_SIZE ? CHUNK_SIZE : count;
+ 
+-        LocalTensor<T> localSrc = srcQue.AllocTensor<T>();
+-        LocalTensor<T> localDst = dstQue.AllocTensor<T>();
++        xGm.SetGlobalBuffer(inputGM + curOffset, curCount);
++        yGm.SetGlobalBuffer(outputGM + curOffset, curCount);
++        zGm.SetGlobalBuffer(outputGM + curOffset, curCount);
+ 
+-        // 将源数据和目标数据都搬入ubuf
+-        DataCopyGM2UB(localSrc, inputGT[curOffset], curCount);
+-        srcQue.EnQue(localSrc);
+-        DataCopyGM2UB(localDst, outputGT[curOffset], curCount);
+-        dstQue.EnQue(localDst);
++        LocalTensor<T> xLocal = inQueueX.AllocTensor<T>();
++        DataCopyGM2UB(xLocal, xGm, curCount);
++        pipe_barrier(PIPE_ALL);
++        inQueueX.EnQue(xLocal);
+ 
+-        // 将数据Reduce到output的ubuf上
++        LocalTensor<T> yLocal = inQueueY.AllocTensor<T>();
++        DataCopyGM2UB(yLocal, yGm, curCount);
++        inQueueY.EnQue(yLocal);
++
++        xLocal = inQueueX.DeQue<T>();
++        yLocal = inQueueY.DeQue<T>();
++
++        pipe_barrier(PIPE_ALL);
+         if (reduceOp == HcclReduceOp::HCCL_REDUCE_SUM) {
+-            Add64<T>(localDst, localSrc, curCount);
++            Add<T>(yLocal, xLocal, yLocal, curCount);
+         } else if (reduceOp == HcclReduceOp::HCCL_REDUCE_MAX) {
+-            Max<T>(localDst, localSrc, localDst, curCount);
++            Max<T>(yLocal, xLocal, yLocal, curCount);
+         } else if (reduceOp == HcclReduceOp::HCCL_REDUCE_MIN) {
+-            Min<T>(localDst, localSrc, localDst, curCount);
++            Min<T>(yLocal, xLocal, yLocal, curCount);
+         }
++        pipe_barrier(PIPE_ALL);
+ 
+-        // 将数据搬出ubuf
+-        LocalTensor<T> localOut = inOutQue.DeQue<T>();
+-        DataCopyUB2GM(outputGT[curOffset], localOut, curCount);
+-
+-        // 释放内存
+-        srcQue.FreeTensor(localSrc);
+-        dstQue.FreeTensor(localDst);
+-        dstQue.FreeTensor(localOut);
++        DataCopyUB2GM(zGm, yLocal, curCount);
++        pipe_barrier(PIPE_ALL);
++        // 释放localTensor
++        inQueueX.FreeTensor(xLocal);
++        inQueueY.FreeTensor(yLocal);
+ 
+         count -= curCount;
+         curOffset += curCount;
+     }
+-
+-    return;
+-}
+-
+-template<typename T>
+-__aicore__ inline void AivCommBase::Add64(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal,
+-                                          const uint64_t count)
+-{
+-    __ubuf__ T* dstPtr = (__ubuf__ T*)dstLocal.GetPhyAddr();
+-    __ubuf__ T* srcPtr = (__ubuf__ T*)srcLocal.GetPhyAddr();
+-
+-    AddVf<T>(dstPtr, srcPtr, dstPtr, count, count, 1);
+-}
+-
+-template<typename T>
+-__simd_vf__ inline void AivCommBase::AddVf(__ubuf__ T* dstPtr, __ubuf__ T* src0Ptr, __ubuf__ T* src1Ptr,
+-    uint32_t count, uint16_t oneRepeatSize, uint16_t repeatTimes)
+-{
+-    MicroAPI::RegTensor<T> vSrcReg0;
+-    MicroAPI::RegTensor<T> vSrcReg1;
+-    MicroAPI::RegTensor<T> vDstReg0;
+-    MicroAPI::MaskReg maskReg;
+-    maskReg = MicroAPI::UpdateMask<T>(count);
+-    for (uint16_t i = 0; i < repeatTimes; i++) {
+-        MicroAPI::LoadAlign(vSrcReg0, src0Ptr + i * oneRepeatSize);
+-        MicroAPI::LoadAlign(vSrcReg1, src1Ptr + i * oneRepeatSize);
+-        // Merging Mode模式
+-        MicroAPI::Add(vDstReg0, vSrcReg0, vSrcReg1, maskReg);
+-        MicroAPI::StoreAlign(dstPtr + i * oneRepeatSize, vDstReg0, maskReg);
+-    }
+ }
+ 
+ __aicore__ inline void AivCommBase::ClearFlag()
+@@ -769,3 +733,4 @@ __aicore__ inline void AivCommBase::ClearFlag()
+     }
+ 
+ #endif  /* AIV_COMMUNICATION_BASE_V2_H */
++
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_v2.h b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_v2.h
+index a4d52bfdd..23c6bca84 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_v2.h
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_communication_v2.h
+@@ -110,16 +110,17 @@ extern "C" __global__ __aicore__ void aiv_batchSendRecv_##type(EXTERN_KERNEL_ARG
+ } \
+ EXPORT_AIV_META_INFO(aiv_batchSendRecv_##type)
+ 
+-// 910B支持的Atomic数据类型
++// 支持Reduce的数据类型
+ #define AIV_ATOMIC_DATA_TYPE_DEF(func) \
+     func(float); \
+     func(half); \
+     func(int16_t); \
+     func(int32_t); \
+     func(int8_t); \
+-    func(bfloat16_t)
++    func(bfloat16_t); \
++    func(int64_t)
+  
+-// 910B支持的DataCopy数据类型
++// 支持搬运的数据类型
+ #define AIV_COPY_DATA_TYPE_DEF(func) \
+     func(half); \
+     func(int16_t); \
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_recv_mesh_1D.h b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_recv_mesh_1D.h
+index bfb354510..77d32f678 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_recv_mesh_1D.h
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_recv_mesh_1D.h
+@@ -35,7 +35,7 @@ public:
+             innerDispls = coreIndex * dataPerCore + remainder;
+             recvCurCount = dataPerCore;
+         }
+-        recvInputOffset = reinterpret_cast<uint64_t>(GM_IN[rank_]) + innerDispls * sizeof(T);
++        recvInputOffset = reinterpret_cast<uint64_t>(GM_IN[targetRank]) + innerDispls * sizeof(T);
+         recvOutputOffset = output_ + (processedDataCount + innerDispls) * sizeof(T); // 能不能直接拿着这个地址就用
+     }
+ 
+@@ -45,12 +45,12 @@ public:
+             return;
+         }
+         uint64_t flag_offset = block_idx;
+-        WaitFlag(rank_, flag_offset, curTag);
++        WaitFlag(targetRank, flag_offset, curTag);
+ 
+         CpGM2GM((__gm__ T *)recvOutputOffset, (__gm__ T *)recvInputOffset, recvCurCount);
+         PipeBarrier<PIPE_ALL>(); // 核内自己的同步
+ 
+-        Record(rank_, flag_offset, 0);
++        Record(targetRank, flag_offset, 0);
+     }
+ 
+     __aicore__ inline void Process(uint64_t len, uint32_t tag)
+@@ -66,6 +66,7 @@ public:
+             return;
+         }
+ 
++        targetRank = sendRecvRemoteRank_; // 每个核负责哪个rank的数据
+         curTag = static_cast<int32_t>(tag);
+         cclBufferCountPerRank = inputSliceStride_; // 整个cclBuffer给一张卡用
+ 
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_send_mesh_1D.h b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_send_mesh_1D.h
+index 7381da9b9..7f3e5e3d6 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_send_mesh_1D.h
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_aiv_instruction/aiv_send_mesh_1D.h
+@@ -37,7 +37,7 @@ public:
+             sendCurCount = dataPerCore;
+         }
+         sendInputOffset = input_ + (processedDataCount + innerDispls) * sizeof(T);
+-        sendOutputOffset = reinterpret_cast<uint64_t>(GM_IN[targetRank]) + innerDispls * sizeof(T);
++        sendOutputOffset = reinterpret_cast<uint64_t>(GM_IN[rank_]) + innerDispls * sizeof(T);
+     }
+ 
+     __aicore__ inline void Producer()
+@@ -46,12 +46,12 @@ public:
+             return;
+         }
+         uint64_t flag_offset = block_idx;
+-        WaitFlag(targetRank, flag_offset, 0);
++        WaitFlag(rank_, flag_offset, 0);
+ 
+         CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
+         PipeBarrier<PIPE_ALL>();
+ 
+-        Record(targetRank, flag_offset, curTag);
++        Record(rank_, flag_offset, curTag);
+     }
+ 
+     __aicore__ inline void Process(uint64_t len, uint32_t tag)
+@@ -73,7 +73,7 @@ public:
+         cclBufferCountPerRank = inputSliceStride_; // 整个cclBuffer给一张卡用
+ 
+         // 运行过程中用到的所有flag，先置为0，后面会复用，recv侧不用做这个事情，动作是send端发起，所以send端去置位
+-        Record(targetRank, block_idx, 0);
++        Record(rank_, block_idx, 0);
+         PipeBarrier<PIPE_ALL>();
+ 
+         uint64_t processedDataCount = 0;
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_gather/ins_all_gather_parallel_executor.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_gather/ins_all_gather_parallel_executor.cc
+index 880ee6cd0..d176750b5 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_gather/ins_all_gather_parallel_executor.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_gather/ins_all_gather_parallel_executor.cc
+@@ -18,6 +18,7 @@
+ 
+ #include "topo_match_mesh_nhr.h"
+ #include "topo_match_concurr_mesh_nhr.h"
++#include "topo_match_mesh_nhr_pcie.h"
+ 
+ #include "alg_data_trans_wrapper.h"
+ 
+@@ -505,6 +506,8 @@ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelMesh2DNHR,
+     TopoMatchConcurrMeshNHR, InsTempAllGatherMesh2D, InsTempAllGatherNHR);
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelNHRNHR, InsAllGatherParallelExecutor,
+     TopoMatchMeshNHR, InsTempAllGatherMesh2D, InsTempAllGatherNHR);
++INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelMesh1DNHRPcie, InsAllGatherParallelExecutor,
++    TopoMatchMeshNHRPcie, InsTempAllGatherMesh1D, InsTempAllGatherNHR);
+ 
+ // 算法注册
+ #ifndef CCL_KERNEL_AICPU
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_reduce/ins_all_reduce_parallel_executor.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_reduce/ins_all_reduce_parallel_executor.cc
+index 9e2d81c7e..96ee932c4 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_reduce/ins_all_reduce_parallel_executor.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_reduce/ins_all_reduce_parallel_executor.cc
+@@ -18,6 +18,7 @@
+ 
+ #include "topo_match_mesh_nhr.h"
+ #include "topo_match_concurr_mesh_nhr.h"
++#include "topo_match_mesh_nhr_pcie.h"
+ #include "alg_data_trans_wrapper.h"
+ 
+ #include "ins_temp_all_reduce_nhr.h"
+@@ -441,6 +442,8 @@ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, InsAllReduceParallelMesh2DNHR,
+     TopoMatchConcurrMeshNHR, InsTempAllReduceMesh2DTwoShot, InsTempAllReduceNHR);
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, InsAllReduceParallelNHRNHR, InsAllReduceParallelExecutor,
+     TopoMatchMeshNHR, InsTempAllReduceNHR, InsTempAllReduceNHR);
++INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, InsAllReduceParallelMesh1DNHRPcie, InsAllReduceParallelExecutor,
++    TopoMatchMeshNHRPcie, InsTempAllReduceMesh1DTwoShot, InsTempAllReduceNHR);
+ 
+ #ifndef CCL_KERNEL_AICPU
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, CcuAllReduceParallelMesh1DNHR, InsAllReduceParallelExecutor, TopoMatchMeshNHR,
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/broadcast/ins_broadcast_parallel_executor.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/broadcast/ins_broadcast_parallel_executor.cc
+index 911c486b0..d051d1c05 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/broadcast/ins_broadcast_parallel_executor.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/broadcast/ins_broadcast_parallel_executor.cc
+@@ -11,6 +11,7 @@
+ #include "log.h"
+ #include "ins_coll_alg_registry.h"
+ #include "topo_match_mesh_nhr.h"
++#include "topo_match_mesh_nhr_pcie.h"
+ #include "alg_data_trans_wrapper.h"
+ 
+ #include "ins_temp_broadcast_mesh_1D_two_shot.h"
+@@ -291,7 +292,7 @@ HcclResult InsBroadcastParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
+     }
+     CHK_RET(tempAlgInter.CalcRes(resReqInter));
+     u32 intraQueNum = resReqIntra.queNum;
+-    u32 interQueNum = resReqIntra.queNum;
++    u32 interQueNum = resReqInter.queNum;
+     // 申请算法模板所需资源
+     if(!(intraQueNum > 0 && interQueNum > 0)) {
+         HCCL_ERROR("[InsBroadcastParallelExecutor]resReqIntra.queNum and resReqInter.queNum must larger than 0.");
+@@ -435,6 +436,8 @@ HcclResult InsBroadcastParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
+ // 算法注册
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::BROADCAST, InsBroadcastParallelMesh1DNHR, InsBroadcastParallelExecutor,
+     TopoMatchMeshNHR, InsTempBroadcastMesh1DTwoShot, InsTempBroadcastNHR);
++INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::BROADCAST, InsBroadcastParallelMesh1DNHRPcie, InsBroadcastParallelExecutor,
++    TopoMatchMeshNHRPcie, InsTempBroadcastMesh1DTwoShot, InsTempBroadcastNHR);
+ 
+ #ifndef CCL_KERNEL_AICPU
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::BROADCAST, CcuBroadcastParallelMesh1DNHR, InsBroadcastParallelExecutor,
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce/ins_reduce_parallel_executor.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce/ins_reduce_parallel_executor.cc
+index 2df62141f..de24b1275 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce/ins_reduce_parallel_executor.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce/ins_reduce_parallel_executor.cc
+@@ -13,6 +13,7 @@
+ #include "log.h"
+ #include "ins_coll_alg_registry.h"
+ #include "topo_match_mesh_nhr.h"
++#include "topo_match_mesh_nhr_pcie.h"
+ #include "alg_data_trans_wrapper.h"
+ #include "ins_temp_reduce_nhr.h"
+ #include "ins_temp_reduce_mesh_1D.h"
+@@ -424,6 +425,8 @@ HcclResult InsReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempla
+ // 算法注册
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCE, InsReduceParallelMesh1DNHR, InsReduceParallelExecutor, TopoMatchMeshNHR,
+     InsTempReduceMesh1D, InsTempReduceNHR);
++INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCE, InsReduceParallelMesh1DNHRPcie, InsReduceParallelExecutor,
++    TopoMatchMeshNHRPcie, InsTempReduceMesh1D, InsTempReduceNHR);
+ #ifndef CCL_KERNEL_AICPU
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCE, CcuReduceParallelMesh1DNHR, InsReduceParallelExecutor, TopoMatchMeshNHR,
+     CcuTempReduceMeshMem2Mem1D, CcuTempReduceNHRMem2Mem1D);
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce_scatter/ins_reduce_scatter_parallel_executor.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce_scatter/ins_reduce_scatter_parallel_executor.cc
+index 7aee8c3e6..03b7abfdb 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce_scatter/ins_reduce_scatter_parallel_executor.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce_scatter/ins_reduce_scatter_parallel_executor.cc
+@@ -18,6 +18,7 @@
+ 
+ #include "topo_match_mesh_nhr.h"
+ #include "topo_match_concurr_mesh_nhr.h"
++#include "topo_match_mesh_nhr_pcie.h"
+ #include "alg_data_trans_wrapper.h"
+ #include "ins_temp_reduce_scatter_mesh_1D.h"
+ #include "ins_temp_reduce_scatter_mesh_2D.h"
+@@ -466,6 +467,8 @@ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, InsReduceScatterParallelMe
+     InsReduceScatterParallelExecutor, TopoMatchConcurrMeshNHR, InsTempReduceScatterMesh2D, InsTempReduceScatterNHR);
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, InsReduceScatterParallelNHRNHR,
+     InsReduceScatterParallelExecutor, TopoMatchConcurrMeshNHR, InsTempReduceScatterNHR, InsTempReduceScatterNHR);
++INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, InsReduceScatterParallelMesh1DNHRPcie,
++    InsReduceScatterParallelExecutor, TopoMatchMeshNHRPcie, InsTempReduceScatterMesh1D, InsTempReduceScatterNHR);
+ #ifndef CCL_KERNEL_AICPU
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, CcuReduceScatterParallelMesh1DNHR, InsReduceScatterParallelExecutor, TopoMatchMeshNHR,
+     CcuTempReduceScatterMeshMem2Mem1D, CcuTempReduceScatterNHR1DMem2Mem);
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/scatter/ins_scatter_parallel_executor.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/scatter/ins_scatter_parallel_executor.cc
+index 0952f08c8..6bf0fb522 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/scatter/ins_scatter_parallel_executor.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_executor/ins_alg_executor/scatter/ins_scatter_parallel_executor.cc
+@@ -17,6 +17,7 @@
+ #include "ins_coll_alg_registry.h"
+ 
+ #include "topo_match_mesh_nhr.h"
++#include "topo_match_mesh_nhr_pcie.h"
+ #include "alg_data_trans_wrapper.h"
+ 
+ #include "ins_temp_scatter_mesh_1d.h"
+@@ -427,6 +428,8 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
+ 
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::SCATTER, InsScatterParallelMesh1DNHR, InsScatterParallelExecutor, TopoMatchMeshNHR,
+     InsTempScatterMesh1D, InsTempScatterNHR);
++INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::SCATTER, InsScatterParallelMesh1DNHRPcie, InsScatterParallelExecutor,
++    TopoMatchMeshNHRPcie, InsTempScatterMesh1D, InsTempScatterNHR);
+ #ifndef CCL_KERNEL_AICPU
+ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::SCATTER, CcuScatterParallelMesh1DNHR, InsScatterParallelExecutor, TopoMatchMeshNHR,
+                                CcuTempScatterMesh1D, CcuTempScatterNHRMem2Mem1D);
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_all_to_all_mesh.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_all_to_all_mesh.cc
+index de2c9a90e..53eecda69 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_all_to_all_mesh.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_all_to_all_mesh.cc
+@@ -261,16 +261,10 @@ HcclResult InsTempAlltoAllMesh::SendRecvData(u32 step, const std::vector<u32> &c
+         UsrData &currReadSliceInfo = readSliceInfo[remoteRank];
+         LinkData link = tempLinks.at(remoteRank)[0];
+ 
+-        std::vector<DataSlice> &currSendSrcSlices = currSendSliceInfo.usrInSlices;
+-        std::vector<DataSlice> &currSendDstSlices = currSendSliceInfo.scratchOutSlices;
+-        std::vector<DataSlice> &currReadSrcSlices = currReadSliceInfo.usrInSlices;
+-        std::vector<DataSlice> &currReadDstSlices = currReadSliceInfo.scratchOutSlices;
+-        if (dmaMode_ == DmaMode::GET) {
+-            currSendSrcSlices = currSendSliceInfo.scratchInSlices;
+-            currSendDstSlices = currSendSliceInfo.usrOutSlices;
+-            currReadSrcSlices = currReadSliceInfo.scratchInSlices;
+-            currReadDstSlices = currReadSliceInfo.usrOutSlices;
+-        }
++        std::vector<DataSlice> &currSendSrcSlices = (dmaMode_ == DmaMode::GET) ? currSendSliceInfo.scratchInSlices : currSendSliceInfo.usrInSlices;
++        std::vector<DataSlice> &currSendDstSlices = (dmaMode_ == DmaMode::GET) ? currSendSliceInfo.usrOutSlices : currSendSliceInfo.scratchOutSlices;
++        std::vector<DataSlice> &currReadSrcSlices = (dmaMode_ == DmaMode::GET) ? currReadSliceInfo.scratchInSlices: currReadSliceInfo.usrInSlices;
++        std::vector<DataSlice> &currReadDstSlices = (dmaMode_ == DmaMode::GET) ? currReadSliceInfo.usrOutSlices : currReadSliceInfo.scratchOutSlices;
+ 
+         if (step < currSendSrcSlices.size() && step < currReadSrcSlices.size()) {
+             DataSlice &sendSrcSlice = currSendSrcSlices[step];
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_reduce_aicpu_reduce.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_reduce_aicpu_reduce.cc
+index 083e47542..437e9cb4a 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_reduce_aicpu_reduce.cc
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_template/ins_alg_template/ins_temp_reduce_aicpu_reduce.cc
+@@ -71,7 +71,7 @@ HcclResult InsTempReduceAicpuReduce::RunGatherMesh(const TempFuncs &tempFuncs, c
+             dstSlices.emplace_back(BufferType::SCRATCH, srcSize * neighborRank, srcSize);
+             SlicesList rxSlicesList(srcSlices, dstSlices);
+             DataInfo recvData(neighborLinkData, rxSlicesList);
+-            CHK_PRT_RET(Recv(recvData, tempInsQues[queIdx], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
++            CHK_PRT_RET(Recv(recvData, tempInsQues[queIdx], 0, true, dmaMode_), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
+                     HcclResult::HCCL_E_INTERNAL);
+         }
+         CHK_RET(PostSyncInterQueues(tempInsQues));
+@@ -86,7 +86,7 @@ HcclResult InsTempReduceAicpuReduce::RunGatherMesh(const TempFuncs &tempFuncs, c
+         dstSlices.emplace_back(BufferType::SCRATCH, srcSize * u32(myRank_), srcSize);
+         SlicesList txSlicesList(srcSlices, dstSlices);
+         DataInfo sendData(linkSend, txSlicesList);
+-        CHK_PRT_RET(Send(sendData, tempInsQues[0], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
++        CHK_PRT_RET(Send(sendData, tempInsQues[0], 0, true, dmaMode_), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
+                 HcclResult::HCCL_E_INTERNAL);
+     }
+     return HCCL_SUCCESS;
+@@ -108,6 +108,11 @@ HcclResult InsTempReduceAicpuReduce::GenExtIns(const TempFuncs &tempFuncs, const
+                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
+ {
+     HCCL_INFO("[InsTempReduceAicpuReduce] Run start");
++
++    dmaMode_ = DmaMode::PUT;
++    if (IsPcieLink(tempLinks)) {
++        dmaMode_ = DmaMode::GET;
++    }
+     if (tempVTopo_[0].size() == 1) {
+         return HcclResult::HCCL_SUCCESS;
+     }
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/CMakeLists.txt b/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/CMakeLists.txt
+index dec9175e9..15cf06885 100644
+--- a/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/CMakeLists.txt
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/CMakeLists.txt
+@@ -16,6 +16,7 @@ target_sources(hccl_v2_native_alg_repo PRIVATE
+         topo_match_nhr.cc
+         topo_match_mesh_nhr.cc
+         topo_match_partial_mesh.cc
++        topo_match_mesh_nhr_pcie.cc
+ )
+ 
+ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+@@ -29,5 +30,6 @@ target_sources(ccl_kernel PRIVATE
+         topo_match_nhr.cc
+         topo_match_mesh_nhr.cc
+         topo_match_partial_mesh.cc
++        topo_match_mesh_nhr_pcie.cc
+ )
+ endif()
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.cc b/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.cc
+new file mode 100644
+index 000000000..5b0b2fa9f
+--- /dev/null
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.cc
+@@ -0,0 +1,98 @@
++/**
++ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
++ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
++ * CANN Open Software License Agreement Version 2.0 (the "License").
++ * Please refer to the License for details. You may not use this file except in compliance with the License.
++ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
++ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
++ * See LICENSE in the root of the software repository for the full text of the License.
++ */
++
++#include "topo_match_mesh_nhr_pcie.h"
++
++namespace Hccl {
++TopoMatchMeshNHRPcie::TopoMatchMeshNHRPcie(
++    const RankId vRank, const u32 rankSize, const RankGraph *rankGraph, const DevType devType)
++    : TopoMatchBase(vRank, rankSize, rankGraph, devType)
++{}
++
++TopoMatchMeshNHRPcie::~TopoMatchMeshNHRPcie()
++{}
++
++HcclResult TopoMatchMeshNHRPcie::LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType)
++{
++    std::vector<u32> ranksInTopo;
++    u32 rankNum;
++    CHK_RET(rankGraph_->GetRanksByTopoInst(0, topoInstId, ranksInTopo, rankNum));
++    HCCL_DEBUG("[CollAlgFactory] [TopoMatchMeshNHRPcie] Rank [%d], in topoInst[%u], ranks=[%s]",
++        myRank_, topoInstId, PrintVector<u32>(ranksInTopo).c_str());
++    ranksOfSameLinkType.insert(ranksOfSameLinkType.end(), ranksInTopo.begin(), ranksInTopo.end());
++    return HCCL_SUCCESS;
++}
++
++HcclResult TopoMatchMeshNHRPcie::DeduplicateLevelRanks(std::vector<RankId> &level0Ranks,
++    std::vector<RankId> &level1Ranks)
++{
++    u32 level0RankSize = level0Ranks.size();
++    auto level1End = std::remove_if(level1Ranks.begin(), level1Ranks.end(),
++        [this, level0RankSize](int val) { return val % level0RankSize != myRank_% level0RankSize; }
++    );
++    level1Ranks.erase(level1End, level1Ranks.end());
++    return HCCL_SUCCESS;
++}
++
++HcclResult TopoMatchMeshNHRPcie::MatchTopo(std::vector<std::vector<std::vector<RankId>>> &vTopo,
++    std::vector<std::vector<RankId>> &virtRanks, std::vector<std::map<RankId, u32>> &virtRankMap)
++{
++    // 获取并校验当前通信层数
++    std::set<u32> levelSet = rankGraph_->GetLevels(myRank_);
++    HCCL_DEBUG("[CollAlgFactory] [TopoMatchMeshNHRPcie] Rank [%d], virtual topo levelSet[%u][%s]",
++        myRank_,
++        levelSet.size(),
++        PrintSet<u32>(levelSet).c_str());
++
++    u32 topoInstNum = 0;
++    vector<u32> topoInsts = {};
++    rankGraph_->GetTopoInstsByLayer(0, topoInsts, topoInstNum);
++    HCCL_INFO("[CollAlgFactory] [TopoMatchMeshNHRPcie] Rank [%d], [%u] topo instances",
++        myRank_,
++        topoInsts.size());
++
++    std::vector<RankId> ranksIn1DMeshTopo = {};
++    std::vector<RankId> ranksInClosTopo = {};
++    for (auto &topoInstId : topoInsts) {
++        TopoType topoType = TopoType::TOPO_TYPE_RESERVED;
++        CHK_RET(rankGraph_->GetTopoType(0, topoInstId, topoType));
++
++        if (topoType == TopoType::MESH_1D) {
++            CHK_RET(LoadTopoInstRanks(topoInstId, ranksIn1DMeshTopo));
++        } else if (topoType == TopoType::CLOS) {
++            CHK_RET(LoadTopoInstRanks(topoInstId, ranksInClosTopo));
++        } else {
++            HCCL_ERROR("[CollAlgFactory][TopoMatchMeshNHRPcie] Rank[%d], topoInstId[%u], Invalid topo type[%u]",
++                myRank_, topoInstId, topoType);
++            return HCCL_E_PARA;
++        }
++    }
++
++    CHK_RET(DeduplicateLevelRanks(ranksIn1DMeshTopo, ranksInClosTopo));
++
++    virtRanks.emplace_back(ranksIn1DMeshTopo);
++    virtRanks.emplace_back(ranksInClosTopo);
++
++    vTopo.push_back({ranksIn1DMeshTopo});
++    vTopo.push_back({ranksInClosTopo});
++
++    CHK_PRT_RET(GenVirtRankMappingMultiLevel(virtRanks, virtRankMap) != HcclResult::HCCL_SUCCESS,
++        HCCL_ERROR("[CollAlgFactory] [TopoMatchMeshNHRPcie] Rank [%d], Fail to generate virtRankMapping.", myRank_),
++        HcclResult::HCCL_E_INTERNAL);
++
++    HCCL_INFO("[CollAlgFactory] [TopoMatchMeshNHRPcie] Rank[%d], ranks in 1DMesh topo=[%s], ranks in Clos topo=[%s], "
++        "virtRanks size=[%u], vTopo size=[%u], virtRankMap size=[%u]", myRank_,
++        PrintVector<RankId>(ranksIn1DMeshTopo).c_str(), PrintVector<RankId>(ranksInClosTopo).c_str(),
++        virtRanks.size(), vTopo.size(), virtRankMap.size());
++
++    return HcclResult::HCCL_SUCCESS;
++}
++
++}  // namespace Hccl
+diff --git a/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.h b/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.h
+new file mode 100644
+index 000000000..78c405678
+--- /dev/null
++++ b/src/legacy/service/collective/alg/coll_alg_factory/alg_topo_match/topo_match_mesh_nhr_pcie.h
+@@ -0,0 +1,44 @@
++/**
++ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
++ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
++ * CANN Open Software License Agreement Version 2.0 (the "License").
++ * Please refer to the License for details. You may not use this file except in compliance with the License.
++ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
++ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
++ * See LICENSE in the root of the software repository for the full text of the License.
++ */
++
++#ifndef HCCLV2_TOPO_MATCH_MESH_NHR_PCIE
++#define HCCLV2_TOPO_MATCH_MESH_NHR_PCIE
++#include <string>
++#include <vector>
++#include <map>
++
++#include "types.h"
++#include "dev_type.h"
++#include "topo_match_base.h"
++#include "rank_gph.h"
++
++namespace Hccl {
++
++class TopoMatchMeshNHRPcie : public TopoMatchBase {
++public:
++    explicit TopoMatchMeshNHRPcie(
++        const RankId vRank, const u32 rankSize, const RankGraph *rankGraph, const DevType devType);
++    ~TopoMatchMeshNHRPcie() override;
++
++    std::string Describe() const override
++    {
++        return "Topo Match for combined Algorithm: level 0 Mesh, level 1 NHR, for PCIE only.";
++    }
++    using TopoMatchBase::MatchTopo;
++    HcclResult MatchTopo(std::vector<std::vector<std::vector<RankId>>> &vTopo,
++        std::vector<std::vector<RankId>> &virtRanks, std::vector<std::map<RankId, u32>> &virtRankMap) override;
++
++private:
++    HcclResult LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType);
++    HcclResult DeduplicateLevelRanks(std::vector<RankId> &level0Ranks, std::vector<RankId> &level1Ranks);
++};
++}  // namespace Hccl
++
++#endif  // !HCCLV2_TOPO_MATCH_MESH_NHR
+diff --git a/src/legacy/service/collective/alg/selector/all_gather_auto_selector.cc b/src/legacy/service/collective/alg/selector/all_gather_auto_selector.cc
+index 48cbd8f63..a05a9cfe8 100644
+--- a/src/legacy/service/collective/alg/selector/all_gather_auto_selector.cc
++++ b/src/legacy/service/collective/alg/selector/all_gather_auto_selector.cc
+@@ -163,7 +163,7 @@ SelectorStatus AllGatherAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
+                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+                 primQueueGenName = "InsAllGatherMesh";
+             } else if (topoInfo.level0PcieMix) {
+-                primQueueGenName = "InsAllGatherParallelMesh1DNHR";
++                primQueueGenName = "InsAllGatherParallelMesh1DNHRPcie";
+             } else {
+                 primQueueGenName = "InsAllGatherParallelMesh1DNHR";
+             }
+diff --git a/src/legacy/service/collective/alg/selector/all_reduce_auto_selector.cc b/src/legacy/service/collective/alg/selector/all_reduce_auto_selector.cc
+index 5610b165c..5b03916ef 100644
+--- a/src/legacy/service/collective/alg/selector/all_reduce_auto_selector.cc
++++ b/src/legacy/service/collective/alg/selector/all_reduce_auto_selector.cc
+@@ -294,7 +294,7 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
+                         topoInfo.level0Shape);
+                     return SelectorStatus::NOT_MATCH;
+                 } else if (topoInfo.level0PcieMix) {
+-                    primQueueGenName = "InsAllReduceParallelMesh1DNHR";
++                    primQueueGenName = "InsAllReduceParallelMesh1DNHRPcie";
+                 } else {
+                     primQueueGenName = "InsAllReduceParallelMesh1DNHR";
+                 }
+@@ -328,7 +328,7 @@ SelectorStatus AllReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
+             op.reduceOp.Describe().c_str()),
+         SelectorStatus::NOT_MATCH);
+ 
+-    if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
++    if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
+         HCCL_WARNING("[Algo][AllReduceAutoSelector] aiv mode not support INT64, UINT64, FP64.");
+         return SelectorStatus::NOT_MATCH;
+     }
+diff --git a/src/legacy/service/collective/alg/selector/alltoallv_auto_selector.cc b/src/legacy/service/collective/alg/selector/alltoallv_auto_selector.cc
+index 71ee1b782..b2c1e738d 100644
+--- a/src/legacy/service/collective/alg/selector/alltoallv_auto_selector.cc
++++ b/src/legacy/service/collective/alg/selector/alltoallv_auto_selector.cc
+@@ -37,7 +37,11 @@ SelectorStatus AlltoAllVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
+         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
+             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
+                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+-                primQueueGenName = "CcuAlltoAllVMesh2Die";
++                if (Is2DieFullMesh()) {
++                    primQueueGenName = "CcuAlltoAllVMesh2Die";
++                } else {
++                    primQueueGenName = "CcuAlltoAllVMesh1D";
++                }
+             } else if (topoInfo.level0PcieMix) {
+                 HCCL_WARNING("[Algo][AlltoAllVAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                 return SelectorStatus::NOT_MATCH;
+diff --git a/src/legacy/service/collective/alg/selector/broadcast_auto_selector.cc b/src/legacy/service/collective/alg/selector/broadcast_auto_selector.cc
+index 8c155fd9b..1a2b0e62f 100644
+--- a/src/legacy/service/collective/alg/selector/broadcast_auto_selector.cc
++++ b/src/legacy/service/collective/alg/selector/broadcast_auto_selector.cc
+@@ -148,7 +148,7 @@ SelectorStatus BroadcastAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
+             } else {
+                 if (topoInfo.level0PcieMix) {
+                     // 预留PCIE mix入口，如果要更新算法可以直接改
+-                    primQueueGenName = "InsBroadcastParallelMesh1DNHR";
++                    primQueueGenName = "InsBroadcastParallelMesh1DNHRPcie";
+                 } else {
+                     primQueueGenName = "InsBroadcastParallelMesh1DNHR";
+                 }
+diff --git a/src/legacy/service/collective/alg/selector/reduce_auto_selector.cc b/src/legacy/service/collective/alg/selector/reduce_auto_selector.cc
+index 77db16e7f..465b88e2a 100644
+--- a/src/legacy/service/collective/alg/selector/reduce_auto_selector.cc
++++ b/src/legacy/service/collective/alg/selector/reduce_auto_selector.cc
+@@ -221,7 +221,7 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
+             } else {
+                 if (topoInfo.level0PcieMix) {
+                     // 预留PCIE mix入口，如果要更新算法可以直接改
+-                    primQueueGenName = "InsReduceParallelMesh1DNHR";
++                    primQueueGenName = "InsReduceParallelMesh1DNHRPcie";
+                 }
+                 if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64 ||
+                     op.reduceOp == ReduceOp::PROD) {
+@@ -259,7 +259,7 @@ SelectorStatus ReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
+             op.reduceOp.Describe().c_str()),
+         SelectorStatus::NOT_MATCH);
+ 
+-    if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
++    if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
+         HCCL_WARNING("[Algo][ReduceAutoSelector] aiv mode not support INT64, UINT64, FP64.");
+         return SelectorStatus::NOT_MATCH;
+     }
+diff --git a/src/legacy/service/collective/alg/selector/reduce_scatter_auto_selector.cc b/src/legacy/service/collective/alg/selector/reduce_scatter_auto_selector.cc
+index 46a1c7fd6..726fd6889 100644
+--- a/src/legacy/service/collective/alg/selector/reduce_scatter_auto_selector.cc
++++ b/src/legacy/service/collective/alg/selector/reduce_scatter_auto_selector.cc
+@@ -277,7 +277,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
+                     return SelectorStatus::NOT_MATCH;
+                 } else if (topoInfo.level0PcieMix) {
+                     // 预留PCIE mix入口，如果要更新算法可以直接改
+-                    primQueueGenName = "InsReduceScatterParallelMesh1DNHR";
++                    primQueueGenName = "InsReduceScatterParallelMesh1DNHRPcie";
+                 } else {
+                     primQueueGenName = "InsReduceScatterParallelMesh1DNHR";
+                 }
+@@ -285,7 +285,11 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
+         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+             if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 ||
+                 op.dataType == DataType::FP64 || op.reduceOp == ReduceOp::PROD) {
+-                primQueueGenName = "InsReduceScatterAicpuReduce";
++                HCCL_ERROR("[SelectAicpuAlgo] level0Shape[%d], DataType[%s], reduceOp[%s] is not supported yet.",	 
++                    topoInfo.level0Shape, 
++                    op.dataType.Describe().c_str(), 
++                    op.reduceOp.Describe().c_str()); 
++                return SelectorStatus::NOT_MATCH;
+             } else {
+                 primQueueGenName = "InsReduceScatterNHR";
+             }
+@@ -308,7 +312,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo
+             op.reduceOp.Describe().c_str()),
+         SelectorStatus::NOT_MATCH);
+ 
+-    if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
++    if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
+         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] aiv mode not support INT64, UINT64, FP64.");
+         return SelectorStatus::NOT_MATCH;
+     }
+diff --git a/src/legacy/service/collective/alg/selector/scatter_auto_selector.cc b/src/legacy/service/collective/alg/selector/scatter_auto_selector.cc
+index f397bc774..2da4a6413 100644
+--- a/src/legacy/service/collective/alg/selector/scatter_auto_selector.cc
++++ b/src/legacy/service/collective/alg/selector/scatter_auto_selector.cc
+@@ -111,7 +111,7 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
+             } else {
+                 if (topoInfo.level0PcieMix) {
+                     // 预留PCIE mix入口，如果要更新算法可以直接改
+-                    primQueueGenName = "InsScatterParallelMesh1DNHR";
++                    primQueueGenName = "InsScatterParallelMesh1DNHRPcie";
+                 }
+                 primQueueGenName = "InsScatterMesh1D";
+             }
+diff --git a/src/legacy/unified_platform/external_system/orion_adapter_rts.cc b/src/legacy/unified_platform/external_system/orion_adapter_rts.cc
+index b5ca34960..bf138d0f0 100644
+--- a/src/legacy/unified_platform/external_system/orion_adapter_rts.cc
++++ b/src/legacy/unified_platform/external_system/orion_adapter_rts.cc
+@@ -1152,6 +1152,7 @@ HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
+     }
+     return HCCL_SUCCESS;
+ }
++
+ HcclResult HrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
+ {
+     rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
+diff --git a/src/legacy/unified_platform/resource/notify/remote_notify.cc b/src/legacy/unified_platform/resource/notify/remote_notify.cc
+index 046a5ffef..4989f1d48 100644
+--- a/src/legacy/unified_platform/resource/notify/remote_notify.cc
++++ b/src/legacy/unified_platform/resource/notify/remote_notify.cc
+@@ -26,6 +26,7 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
+     handleAddr = dto.handleAddr;
+     id         = dto.id;
+     devUsed    = dto.devUsed;
++    rmtDevPhyId = dto.devPhyId;
+     (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
+ 
+     // OpenIpc
+@@ -41,6 +42,8 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
+     }
+     addr = HrtNotifyGetAddr(handle);
+     size = DevCapability::GetInstance().GetNotifySize();
++    HCCL_INFO("IpcRemoteNotify[name=%s, handleAddr=0x%llx, id=%u, rmtPid=%u, rmtDevPhyId=%u, devUsed=%d, addr=%d, "
++                        "handle=%p]", name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, addr, handle);
+ }
+ 
+ void IpcRemoteNotify::Post(const Stream &stream) const
+@@ -51,8 +54,8 @@ void IpcRemoteNotify::Post(const Stream &stream) const
+ string IpcRemoteNotify::Describe() const
+ {
+     return StringFormat("IpcRemoteNotify[name=%s, handleAddr=0x%llx, id=%u, rmtPid=%u, rmtDevPhyId=%u, devUsed=%d, "
+-                        "handle=%p]",
+-                        name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, handle);
++                        "handle=%p, addr=0x%llx, size=%llu]",
++                        name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, handle, addr, size);
+ }
+ 
+ } // namespace Hccl
+diff --git a/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc b/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+index 9485e8a5a..9a1085a12 100644
+--- a/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
++++ b/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
+@@ -33,11 +33,11 @@ P2PTransportLiteImpl::P2PTransportLiteImpl(
+ 
+     std::vector<char> rmtNotifyUniqueIds;
+     binaryStream >> rmtNotifyUniqueIds;
+-    ParseRmtBufferVec(rmtNotifyUniqueIds, rmtNotifyVec, RmaP2PBufType::NOTIFY);
++    ParseRmtNotifyVec(rmtNotifyUniqueIds, rmtNotifyVec);
+ 
+     std::vector<char> rmtBufferUniqueIds;
+     binaryStream >> rmtBufferUniqueIds;
+-    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaP2PBufType::BUFFER);
++    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec);
+ }
+ 
+ P2PTransportLiteImpl::~P2PTransportLiteImpl()
+@@ -90,29 +90,45 @@ void P2PTransportLiteImpl::ParseLocNotifyVec(std::vector<char> &data)
+     }
+ }
+ 
+-void P2PTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtP2PBufLiteVec &vec, RmaP2PBufType rmtType) const
++void P2PTransportLiteImpl::ParseRmtNotifyVec(std::vector<char> &data, std::vector<RmtP2PNotifyLite> &vec) const
+ {
+-    u32 num = 0;
+-    if (rmtType == RmaP2PBufType::NOTIFY) {
+-        num = notifyNum;
+-    } else {
+-        num = bufferNum;
+-    }
+-
+-    if (num == 0) {
+-        HCCL_WARNING("P2PTransportLiteImpl::ParseRmtBufferVec %s num is 0", rmtType.Describe().c_str());
++    if (notifyNum == 0) {
++        HCCL_WARNING("P2PTransportLiteImpl::ParseRmtNotifyVec notifyNum is 0");
+         return;
+     }
+ 
+-    u32 rmtBufferSizePerDto = data.size() / num;
+-    HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]Parse %s num=%u, sizePerDto=%u", rmtType.Describe().c_str(), num, rmtBufferSizePerDto);
++    u32 rmtBufferSizePerDto = data.size() / notifyNum;
++    HCCL_INFO("[P2PTransportLiteImpl][ParseRmtNotifyVec]Parse notifyNum=%u, sizePerDto=%u",
++        notifyNum, rmtBufferSizePerDto);
+     BinaryStream binaryStream(data);
+ 
+-    for (u32 idx = 0; idx < num; idx++) {
++    for (u32 idx = 0; idx < notifyNum; idx++) {
++        RmtP2PNotifyLite p2pNotifyLite;
++        binaryStream >> p2pNotifyLite.addr;
++        binaryStream >> p2pNotifyLite.size;
++        binaryStream >> p2pNotifyLite.id;
++        HCCL_INFO("[P2PTransportLiteImpl][ParseRmtNotifyVec]idx=%u, %s", idx, p2pNotifyLite.Describe().c_str());
++        vec.push_back(p2pNotifyLite);
++    }
++}
++
++void P2PTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, std::vector<RmtP2PBufLite> &vec) const
++{
++    if (bufferNum == 0) {
++        HCCL_WARNING("P2PTransportLiteImpl::ParseRmtBufferVec bufferNum is 0");
++        return;
++    }
++
++    u32 rmtBufferSizePerDto = data.size() / bufferNum;
++    HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]Parse bufferNum=%u, sizePerDto=%u",
++        bufferNum, rmtBufferSizePerDto);
++    BinaryStream binaryStream(data);
++
++    for (u32 idx = 0; idx < bufferNum; idx++) {
+         RmtP2PBufLite p2pBufLite;
+         binaryStream >> p2pBufLite.addr;
+         binaryStream >> p2pBufLite.size;
+-        HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]idx=%u, %s %s", idx, rmtType.Describe().c_str(), p2pBufLite.Describe().c_str());
++        HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]idx=%u, %s", idx, p2pBufLite.Describe().c_str());
+         vec.push_back(p2pBufLite);
+     }
+ }
+@@ -123,6 +139,8 @@ Buffer P2PTransportLiteImpl::GetRmtBuffer(u32 index)
+         THROW<InternalException>(StringFormat("P2PTransportLiteImpl::GetRmtBuffer out-of-bounds. index=%u, size=%u",
+             index, rmtBufferVec.size()));
+     }
++    HCCL_DEBUG("[P2PTransportLiteImpl][GetRmtBuffer]buffer index[%u], addr[%llu], size[%llu]",
++        index, rmtBufferVec[index].addr, rmtBufferVec[index].size);
+     return Buffer(rmtBufferVec[index].addr, rmtBufferVec[index].size);
+ }
+ 
+@@ -170,7 +188,8 @@ void P2PTransportLiteImpl::BuildP2PRead(const StreamLite &stream, const RmaBuffe
+ 
+         auto taskId = stream.GetRtsq()->GetTaskId();
+         stream.GetRtsq()->SdmaCopy(src, dst, blockSize, 0);
+-        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx", __func__, src, dst, blockSize);
++        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, taskId=%u",
++            __func__, src, dst, blockSize, taskId);
+ 
+         if (callback_) {
+             TaskParam taskParam{};
+@@ -226,8 +245,8 @@ void P2PTransportLiteImpl::BuildP2PReadReduce(const StreamLite &stream, const Rm
+         auto taskId = stream.GetRtsq()->GetTaskId();
+         stream.GetRtsq()->SdmaReduce(src, dst, blockSize, 0, reduceIn);
+ 
+-        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, reduceIn=%s",
+-            __func__, src, dst, blockSize, reduceIn.Describe());
++        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, reduceIn=%s, taskId=%u",
++            __func__, src, dst, blockSize, reduceIn.Describe(), taskId);
+ 
+         if (callback_) {
+             TaskParam taskParam {};
+@@ -251,11 +270,20 @@ void P2PTransportLiteImpl::BuildP2PReadReduce(const StreamLite &stream, const Rm
+ 
+ void P2PTransportLiteImpl::Post(u32 index, const StreamLite &stream)
+ {
++    if (UNLIKELY(index >= rmtNotifyVec.size())) {
++        HCCL_ERROR("[P2PTransportLiteImpl]%s notify out-of-bounds, notifyNum[%u], index[%u]",
++        __func__, rmtNotifyVec.size(), index);
++        THROW<InternalException>("[P2PTransportLiteImpl]%s notify out-of-bounds, notifyNum[%u], index[%u]",
++            __func__, rmtNotifyVec.size(), index);
++        return;
++    }
++
+     auto taskId = stream.GetRtsq()->GetTaskId();
+     auto rmtNotifyAddr = rmtNotifyVec[index].addr;
+     BuildNotifyRecordTask(stream, rmtNotifyAddr);
+ 
+-    HCCL_INFO("P2PTransportLiteImpl::Post rmtNotifyAddr[0x%llx]", rmtNotifyAddr);
++    HCCL_INFO("P2PTransportLiteImpl::Post rmtNotifyAddr[0x%llx], notifyId[%u], taskId[%u]",
++        rmtNotifyAddr, rmtNotifyVec[index].id, taskId);
+ 
+     if (callback_ == nullptr)
+     {
+@@ -266,7 +294,7 @@ void P2PTransportLiteImpl::Post(u32 index, const StreamLite &stream)
+     TaskParam taskParam{};
+     taskParam.taskType                 = TaskParamType::TASK_NOTIFY_RECORD;
+     taskParam.beginTime                = ProfGetCurCpuTimestamp();
+-    taskParam.taskPara.Notify.notifyID = rmtNotifyAddr; // 暂时用notifyAddr填充，考虑将notifyId透传给AICPU
++    taskParam.taskPara.Notify.notifyID = rmtNotifyVec[index].id;
+     taskParam.taskPara.Notify.value    = 1;
+     callback_(stream.GetSqId(), taskId, taskParam);
+ }
+@@ -277,7 +305,7 @@ void P2PTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
+     auto notifyId = locNotifyVec[index]->GetId();
+     BuildNotifyWaitTask(stream, notifyId);
+ 
+-    HCCL_INFO("P2PTransportLiteImpl::Wait notifyId[%u]", notifyId);
++    HCCL_INFO("P2PTransportLiteImpl::Wait notifyId[%u], taskId[%u]", notifyId, taskId);
+     if (callback_ == nullptr)
+     {
+         HCCL_WARNING("[P2PTransportLiteImpl] callback_ is nullptr.");
+diff --git a/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.h b/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.h
+index d1562106c..8ad27090b 100644
+--- a/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.h
++++ b/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.h
+@@ -51,6 +51,16 @@ private:
+     u32 notifyNum{0};
+     u32 bufferNum{0};
+ 
++    struct RmtP2PNotifyLite {
++        u64         addr;
++        u64         size;
++        u32         id;
++        std::string Describe() const
++        {
++            return StringFormat("RmtP2PNotifyLite[addr=0x%llx, size=0x%llx, id=%u]", addr, size, id);
++        }
++    };
++
+     struct RmtP2PBufLite {
+         u64         addr;
+         u64         size;
+@@ -60,10 +70,8 @@ private:
+         }
+     };
+ 
+-    using RmtP2PBufLiteVec = std::vector<RmtP2PBufLite>;
+-    MAKE_ENUM(RmaP2PBufType, NOTIFY, BUFFER)
+-    RmtP2PBufLiteVec rmtNotifyVec;
+-    RmtP2PBufLiteVec rmtBufferVec;
++    std::vector<RmtP2PNotifyLite> rmtNotifyVec;
++    std::vector<RmtP2PBufLite> rmtBufferVec;
+ 
+     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
+ 
+@@ -71,7 +79,9 @@ private:
+ 
+     void ParseLocNotifyVec(std::vector<char> &data);
+ 
+-    void ParseRmtBufferVec(std::vector<char> &data, RmtP2PBufLiteVec &vec, RmaP2PBufType rmtType) const;
++    void ParseRmtNotifyVec(std::vector<char> &data, std::vector<RmtP2PNotifyLite> &vec) const;
++
++    void ParseRmtBufferVec(std::vector<char> &data, std::vector<RmtP2PBufLite> &vec) const;
+ 
+     void BuildNotifyRecordTask(const StreamLite &stream, u64 rmtNotifyAddr);
+ 
+diff --git a/src/legacy/unified_platform/resource/transport/p2p_transport.cc b/src/legacy/unified_platform/resource/transport/p2p_transport.cc
+index 4527a3cf7..a607bd72d 100644
+--- a/src/legacy/unified_platform/resource/transport/p2p_transport.cc
++++ b/src/legacy/unified_platform/resource/transport/p2p_transport.cc
+@@ -377,12 +377,13 @@ std::vector<char> P2PTransport::GetNotifyUniqueIds()
+     return result;
+ }
+ 
+-std::vector<char> P2PTransport::GetSingleRmtBufferUniqueId(u64 addr, u64 size) const
++std::vector<char> P2PTransport::GetSingleRmtNotifyUniqueId(u64 addr, u64 size, u32 notifyId) const
+ {
+     BinaryStream binaryStream;
+     binaryStream << addr;
+     binaryStream << size;
+-    HCCL_INFO("P2PTransport RmtAddr[addr=0x%llx, size=0x%llx]", addr, size);
++    binaryStream << notifyId;
++    HCCL_INFO("P2PTransport RmtNotifyAddr[addr=0x%llx, size=0x%llx, notifyId=%u]", addr, size, notifyId);
+     std::vector<char> result;
+     binaryStream.Dump(result);
+     return result;
+@@ -395,10 +396,10 @@ std::vector<char> P2PTransport::GetRmtNotifyUniqueIds() const
+     for (auto &it : rmtNotifyVec) {
+         std::vector<char> uniqueId;
+         if (it != nullptr) {
+-            uniqueId = GetSingleRmtBufferUniqueId(it->GetAddr(), it->GetSize());
++            uniqueId = GetSingleRmtNotifyUniqueId(it->GetAddr(), it->GetSize(), it->GetId());
+             HCCL_INFO("P2PTransport::GetRmtNotifyUniqueIds, %s", it->Describe().c_str());
+         } else {
+-            uniqueId = GetSingleRmtBufferUniqueId(0, 0); // 填充一个空的buffer
++            uniqueId = GetSingleRmtNotifyUniqueId(0, 0, 0); // 填充一个空的buffer
+             HCCL_INFO("P2PTransport::GetRmtNotifyUniqueIds, null buffer");
+         }
+         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+@@ -406,6 +407,17 @@ std::vector<char> P2PTransport::GetRmtNotifyUniqueIds() const
+     return result;
+ }
+ 
++std::vector<char> P2PTransport::GetSingleRmtBufferUniqueId(u64 addr, u64 size) const
++{
++    BinaryStream binaryStream;
++    binaryStream << addr;
++    binaryStream << size;
++    HCCL_INFO("P2PTransport RmtBufferAddr[addr=0x%llx, size=0x%llx]", addr, size);
++    std::vector<char> result;
++    binaryStream.Dump(result);
++    return result;
++}
++
+ std::vector<char> P2PTransport::GetRmtBufferUniqueIds() const
+ {
+     HCCL_INFO("start packing all remote buffer uniqueIds");
+diff --git a/src/legacy/unified_platform/resource/transport/p2p_transport.h b/src/legacy/unified_platform/resource/transport/p2p_transport.h
+index 6fde94c2f..233640c2f 100644
+--- a/src/legacy/unified_platform/resource/transport/p2p_transport.h
++++ b/src/legacy/unified_platform/resource/transport/p2p_transport.h
+@@ -66,6 +66,7 @@ private:
+     void RmtNotifyVecUnpackProc(BinaryStream &binaryStream);
+     void RmtBufferVecUnpackProc(BinaryStream &binaryStream);
+ 
++    std::vector<char> GetSingleRmtNotifyUniqueId(u64 addr, u64 size, u32 notifyId) const;
+     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size) const;
+     std::vector<char> GetNotifyUniqueIds();
+     std::vector<char> GetRmtNotifyUniqueIds() const;
+-- 
+2.45.2.huawei.10
+

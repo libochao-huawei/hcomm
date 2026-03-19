@@ -111,7 +111,7 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
             } else {
                 if (topoInfo.level0PcieMix) {
                     // 预留PCIE mix入口，如果要更新算法可以直接改
-                    primQueueGenName = "InsScatterParallelMesh1DNHR";
+                    primQueueGenName = "InsScatterParallelMesh1DNHRPcie";
                 }
                 primQueueGenName = "InsScatterMesh1D";
             }
