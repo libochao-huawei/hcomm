@@ -157,7 +157,7 @@ ReadWriteLockBase& AicpuIndopProcess::AicpuGetCommMutex()
     return g_commAicpuInfo.commAicpuMgrMapMutex;
 }
 
-HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam)
+HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelRes *commParam)
 {
     CHK_PTR_NULL(commParam);
 
@@ -180,7 +180,7 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commPara
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuIndopProcess::AicpuIndOpChannelUpdate(HcclChannelUrmaRes *commParam)
+HcclResult AicpuIndopProcess::AicpuIndOpChannelUpdate(HcclChannelRes *commParam)
 {
     CHK_PTR_NULL(commParam);
     HCCL_INFO("[AicpuIndopProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "

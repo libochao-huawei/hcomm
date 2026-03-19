@@ -12,6 +12,7 @@
 
 #include <memory>
 #include "hcomm_c_adpt.h"
+#include "log.h"
 
 using RdmaHandle = void *;
 
@@ -41,6 +42,19 @@ public:
 
     virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
  
+    // 授权
+    virtual HcclResult EnableMemAccess(const HcommMemGrantInfo *remoteGrantInfo)
+    {
+        HCCL_INFO("EnableMemAccess is not supported");
+        return HCCL_SUCCESS;
+    }
+
+    virtual HcclResult DisableMemAccess(const HcommMemGrantInfo *remoteGrantInfo)
+    {
+        HCCL_INFO("DisableMemAccess is not supported");
+        return HCCL_SUCCESS;
+    }
+
     RdmaHandle rdmaHandle_{nullptr};
 };
 }

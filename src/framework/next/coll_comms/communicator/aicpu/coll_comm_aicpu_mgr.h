@@ -18,8 +18,8 @@ public:
     HcclResult AcquireCollCommAicpu();
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
-    HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
-    HcclResult UpdateChannelResource(HcclChannelUrmaRes *commParam);
+    HcclResult AllocChannelResource(HcclChannelRes *commParam);
+    HcclResult UpdateChannelResource(HcclChannelRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 

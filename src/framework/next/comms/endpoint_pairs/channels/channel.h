@@ -65,6 +65,18 @@ public:
                                     CommEngine engine, 
                                     HcommChannelDesc channelDesc,
                                     std::unique_ptr<Channel>& out);
+
+
+    CommEngine GetCommEngine() {return engine_;}
+    CommProtocol GetCommProtocol() {return protocol_;}
+
+protected:
+    void SetCommEngine(CommEngine engine) {engine_ = engine;}
+    void SetCommProtocol(CommProtocol protocol) {protocol_ = protocol;}
+
+private:
+    CommEngine engine_{COMM_ENGINE_RESERVED};
+    CommProtocol protocol_{COMM_PROTOCOL_RESERVED};  ///< 通信协议
 };
 
 } // namespace hcomm

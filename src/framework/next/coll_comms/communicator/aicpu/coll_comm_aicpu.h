@@ -37,7 +37,7 @@ class CollCommAicpu {
 public:
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
-    HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
+    HcclResult AllocChannelResource(HcclChannelRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
     const std::vector<std::shared_ptr<Thread>>& GetAllThread() { return threads_; };
@@ -62,16 +62,16 @@ public:
     // N秒快恢
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
     HcclResult Clean();
-    HcclResult Resume(HcclChannelUrmaRes *commParam);
+    HcclResult Resume(HcclChannelRes *commParam);
 
 private:
-    HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
+    HcclResult InitUrmaChannel(HcclChannelRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     void InitBackGroundThread();
     HcclResult ResumePackData(std::vector<char> &data, ChannelHandle &handle);
-    HcclResult ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isInit);
+    HcclResult ProcessUrmaRes(HcclChannelRes *commParam, bool isInit);
 
     u32 devId_{0};
     //通用的通道

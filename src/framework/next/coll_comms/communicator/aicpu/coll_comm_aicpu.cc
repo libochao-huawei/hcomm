@@ -133,7 +133,7 @@ HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread)
  	return HCCL_SUCCESS;
 } 
 
-HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
+HcclResult CollCommAicpu::AllocChannelResource(HcclChannelRes *commParam)
 {
     HCCL_INFO("[CollCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
               "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
@@ -143,7 +143,7 @@ HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isInit)
+HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelRes *commParam, bool isInit)
 {
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
@@ -189,7 +189,7 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
+HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelRes *commParam)
 {
     return ProcessUrmaRes(commParam, true);
 }
@@ -310,7 +310,7 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
+HcclResult CollCommAicpu::Resume(HcclChannelRes *commParam)
 {
     CHK_PTR_NULL(commParam);
     CHK_RET(ProcessUrmaRes(commParam, false));
