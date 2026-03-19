@@ -21,7 +21,7 @@
 class AicpuIndopProcess {
 public:
     ~AicpuIndopProcess() = default;
-    static HcclResult AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam);
+    static HcclResult AicpuIndOpChannelInit(HcclChannelRes *commParam);
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
     static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);

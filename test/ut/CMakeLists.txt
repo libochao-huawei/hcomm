@@ -270,6 +270,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/net_dev
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
 
