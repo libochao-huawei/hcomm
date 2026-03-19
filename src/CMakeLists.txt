@@ -157,7 +157,6 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
-
 )
 
 # 指定hccd所需包含文件搜索路径
