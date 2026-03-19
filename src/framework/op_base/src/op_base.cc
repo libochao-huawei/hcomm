@@ -2302,7 +2302,7 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], op[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], op[%s], "
             "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
             localRank, streamId, deviceLogicId);
@@ -2448,7 +2448,7 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], sendDispls[%p], recvCount[%llu], dataType[%s], op[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], sendDispls[%p], recvCount[%llu], dataType[%s], op[%s], "
             "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, sendDispls, recvCount,
             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, deviceLogicId);
@@ -2712,7 +2712,7 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], localRank[%u], streamId[%d],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], localRank[%u], streamId[%d], "
             "deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
@@ -3648,7 +3648,7 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], localRank[%u], streamId[%d],"
+            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], localRank[%u], streamId[%d], "
             "deviceLogicId[%d]",
             tag.c_str(), sendCount, recvCount, GetDataTypeEnumStr(sendType).c_str(), GetDataTypeEnumStr(recvType).c_str(),
             localRank, streamId, deviceLogicId);
@@ -3764,7 +3764,7 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], recvCounts[%p], sendType[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], recvCounts[%p], sendType[%s], "
             "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, recvCounts, GetDataTypeEnumStr(sendType).c_str(),
             GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
@@ -3888,7 +3888,7 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p],"
+            "tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p], "
             "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, sendCountMatrixHash, GetDataTypeEnumStr(sendType).c_str(), recvBuf,
             GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
@@ -4011,7 +4011,7 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], count[%llu], dataType[%s], op[%s], root[%u],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], count[%llu], dataType[%s], op[%s], root[%u], "
             "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
             root, localRank, streamId, deviceLogicId);
