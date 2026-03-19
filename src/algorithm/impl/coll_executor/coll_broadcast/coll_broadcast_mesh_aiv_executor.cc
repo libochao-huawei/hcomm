@@ -47,7 +47,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSi
 {
     numBlocks = rankSize; // 默认情况使用rankSize个AIV
     CHK_PRT_RET(numBlocks_ < numBlocks,
-        HCCL_WARNING("[CollBroadcastMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_ERROR("[CollBroadcastMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
 
     HCCL_INFO("[CollBroadcastMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
