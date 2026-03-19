@@ -52,9 +52,6 @@ extern HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t
 extern HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **remoteMem, uint32_t *memNum, char **memTags);
-
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
