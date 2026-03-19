@@ -30,7 +30,15 @@ HcclResult UrmaEndpoint::Init()
         return HCCL_E_PARA;
     }
     Hccl::IpAddress ipAddr{};
+<<<<<<< Updated upstream
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+=======
+    HcclResult ret = CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr);
+    if(ret!= HCCL_SUCCESS) {
+        HCCL_ERROR("call CommAddrToIpAddress failed");
+        return ret;
+    }
+>>>>>>> Stashed changes
 
     u32 devPhyId;
     s32 deviceLogicId;
