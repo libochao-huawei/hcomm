@@ -35,7 +35,7 @@ HcclResult CollAllGatherVExecutor::Orchestrate(OpParam& param, AlgResourceRespon
         execMem.inputPtr = param.inputPtr;
         execMem.outputPtr = param.outputPtr;
         HCCL_DEBUG("[CollAllGatherVExecutor][Orchestrate]offload inputMem[%p][%llu], outputMem[%p][%llu]," \
-            "scratchMem[%p][%llu], inputPtr[%p] outputPtr[%p], count[%llu]",
+            "scratchMem[%p][%llu], inputPtr[%p] outputPtr[%p], count[%llu].",
             execMem.inputMem.ptr(), execMem.inputMem.size(), execMem.outputMem.ptr(), execMem.outputMem.size(),
             execMem.scratchMem.ptr(), execMem.scratchMem.size(), execMem.inputPtr, execMem.outputPtr, execMem.count);
         ret = KernelRun(param, execMem);
@@ -45,7 +45,7 @@ HcclResult CollAllGatherVExecutor::Orchestrate(OpParam& param, AlgResourceRespon
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAllGatherVExecutor][Orchestrate]errNo[0x%016llx]AllGatherV executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
-    HCCL_INFO("tag[%s], AllgatherV executor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], AllgatherV executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -77,7 +77,7 @@ bool CollAllGatherVExecutor::IsHugeData(const u64 curSize)
 HcclResult CollAllGatherVExecutor::CalcCurCountsAndCurDispls(const u64 maxTotalCount, std::vector<u64> &countsLeft,
         std::vector<u64> &displs, std::vector<u64> &curCounts, std::vector<u64> &curDispls, bool &finished)
 {
-    HCCL_DEBUG("[CollAllGatherVExecutor][CalcCurCountsAndCurDispls]default func called.");
+    HCCL_DEBUG("[CollAllGatherVExecutor][CalcCurCountsAndCurDispls]default func called");
     return HCCL_SUCCESS;
 }
 
@@ -134,7 +134,7 @@ HcclResult CollAllGatherVExecutor::RunLoop(OpParam &param, AlgResourceResponse &
         u64 curMaxCount = *std::max_element(curCounts.begin(), curCounts.end());
         u64 curMaxSize = curMaxCount * unitSize;
         HCCL_DEBUG("[CollAllGatherVExecutor][RunLoop]tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%d], "
-                   "OutputSize[%llu], curMaxSize[%llu].",
+                   "OutputSize[%llu], curMaxSize[%llu]",
             param.tag.c_str(), curInputPtr, curOutputPtr, curCount, dataType, OutputSize, curMaxSize);
 
         if (!is310P3Common_) {
