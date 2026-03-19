@@ -35,7 +35,6 @@
 #include "topoinfo_ranktableOffline.h"
 #include "mmpa_api.h"
 #include "hccl_tbe_task.h"
-#include "hcom_pub.h"
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
 #include "hcom_common.h"
