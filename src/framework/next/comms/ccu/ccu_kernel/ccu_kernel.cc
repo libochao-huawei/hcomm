@@ -125,11 +125,10 @@ HcclResult CcuKernel::Init()
 }
 
 // todo: 需要整改成算法生成sqe
-
 HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
 {
     auto args    = std::vector<uint64_t>(); // GeneArgs(arg);
-    auto agrsNum = 0; // args.size();
+    auto agrsNum = args.size();
     if (agrsNum != loadArgIndex_) {
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
             "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
