@@ -1152,6 +1152,7 @@ HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
     }
     return HCCL_SUCCESS;
 }
+
 HcclResult HrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
 {
     rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
