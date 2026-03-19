@@ -53,8 +53,8 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
     }
 
     bool isResourceReleaseFailed = false;
-    for (auto commIt : modelIt->second) {
-        for (auto newTag : commIt.second) {
+    for (auto &commIt : modelIt->second) {
+        for (auto &newTag : commIt.second) {
             ret = commIt.first->ClearOpResource(newTag);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail, ret[%d]",
@@ -83,7 +83,7 @@ void AclgraphCallback::CleanCaptureRes(HcclCommunicator *communicator)
     }
 
     std::lock_guard<std::mutex> lock(resMutex_);
-    for (auto modelIt : captureResMap_) {
+    for (auto &modelIt : captureResMap_) {
         if (modelIt.second.find(communicator) != modelIt.second.end()) {
             modelIt.second.erase(communicator);
         }
