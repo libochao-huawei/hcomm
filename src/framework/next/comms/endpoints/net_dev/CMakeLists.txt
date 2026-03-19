@@ -8,20 +8,9 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    endpoint_mgr.cc
-    cpu_roce_endpoint.cc
-    urma_endpoint.cc
-    ub_mem_endpoint.cc
-    aicpu_ts_roce_endpoint.cc
-    aicputs_hccs_endpoint.cc
-    endpoint.cc
-    uboe_endpoint.cc
+    global_net_dev_manager.cc
 )
 
 target_sources(hcomm PRIVATE
     ${src_list}
 )
-
-add_subdirectory(reged_mems)
-add_subdirectory(server_socket)
-add_subdirectory(net_dev)

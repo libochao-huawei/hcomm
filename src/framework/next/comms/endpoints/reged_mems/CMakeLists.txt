@@ -12,6 +12,7 @@ set(src_list
     aicpu_ts_roce_mem.cc
     urma_mem.cc
     ub_mem.cc
+    hccs_mem.cc
 )
 
 target_sources(hcomm PRIVATE
