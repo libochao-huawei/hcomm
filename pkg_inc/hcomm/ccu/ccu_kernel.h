@@ -74,7 +74,10 @@ public:
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext *context);
 
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
-    
+
+    HcclResult ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
+                                        const CommunicatorImpl &comm, TaskParam &taskParam, bool isMaster);
+
 protected:
     // 子类实现
     virtual HcclResult Algorithm() = 0;
