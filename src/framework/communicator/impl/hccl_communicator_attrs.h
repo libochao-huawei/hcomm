@@ -92,6 +92,7 @@ public:
     u32 GetHostPort();
     u32 GetLocalRank();
     std::string GetCollectiveId();
+    std::string GetRankTableVersion();
     s32 GetDeviceLogicId();
     bool GetInterServe();
 
@@ -198,6 +199,7 @@ private:
     bool isUsedInterHccsMode_{false};
     std::string identifier_{};
     std::string collectiveId_{};
+    std::string rankTableVersion_;
     u32 deviceNumPerAggregation_{INVALID_UINT};
     std::vector<RankInfo> rankInfoList_{};
     std::unordered_map<u32, std::unordered_map<int, std::vector<int>>> pairLinkInfo_{};
