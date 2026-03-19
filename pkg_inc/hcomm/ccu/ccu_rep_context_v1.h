@@ -41,10 +41,12 @@ struct CcuProfilingInfo {
     uint32_t mask;
     uint16_t channelId[CCU_MAX_CHANNEL_NUM];    // LoopGroup所包含的搬运指令使用的ChannelId
     uint32_t remoteRankId[CCU_MAX_CHANNEL_NUM]; // LoopGroup所包含的搬运指令的对端
+    uint64_t channelHandle[CCU_MAX_CHANNEL_NUM]; // channelhandle句柄
 
     CcuProfilingInfo() : name(""), type(0), dieId(0), missionId(0), instrId(0), reduceOpType(0), inputDataType(0), outputDataType(0), dataSize(0), ckeId(0), mask(0) {
         (void)memset_s(channelId, sizeof(channelId), INVALID_VALUE_CHANNELID, sizeof(channelId));
         (void)memset_s(remoteRankId, sizeof(remoteRankId), INVALID_RANKID, sizeof(remoteRankId));
+        (void)memset_s(channelHandle, sizeof(channelHandle), INVALID_RANKID, sizeof(channelHandle));
     }
 };
 namespace CcuRep {
@@ -76,41 +78,12 @@ public:
     uint32_t GetMissionId() const;
     void     SetMissionKey(uint32_t missionKey);
     uint32_t GetMissionKey() const;
-    /**
-        @details 获取返回的profiling信息
-    */
-    std::vector<CcuProfilingInfo> & GetProfilingInfo();
-    /**
-        @details 获取返回的loopGroup的profiling信息
-    */
-    LoopGroupProfilingInfo &GetLGProfilingInfo();
-
-    /**
-        @details 获取返回的waitcke的profiling信息
-    */
-    const std::vector<std::shared_ptr<CcuRepBase>> &GetWaiteCkeProfilingReps() const;
-    /**
-        @details:保存rep信息，后续有arg后配合补全profiling信息
-    */
-    void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
-    /**
-        @details:添加sqe粒度的profiling信息，在ctx构造时调用
-    */
-    void AddSqeProfiling(const CcuCtxArg &arg);
-
-    void AddProfiling(const std::string &name, uint32_t mask);
-
-    void AddProfiling(const CcuTransport &transport, const std::string &name, uint32_t signalIndex, uint32_t mask);
-    void AddProfiling(const CcuTransportGroup &transportGroup, const std::string &name, uint32_t signalIndex, uint32_t mask);
-    void AddProfiling(const std::vector<CcuTransport*> &transports);
-    void AddProfiling(const std::vector<CcuTransport *> &transports, DataType dataType, DataType outputDataType,
-                      ReduceOp opType);
 
 
     // ccu profiling相关接口
     std::vector<CcuProfilingInfo> &GetProfilingInfo();
-    LoopGroupProfilingInfo &GetLGProfilingInfo();
-    const std::vector<std::shared_ptr<CcuRepBase>> &GetWaiteCkeProfilingReps() const;
+    CcuRep::LoopGroupProfilingInfo &GetLGProfilingInfo();
+    const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &GetWaiteCkeProfilingReps() const;
     void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
 
     void AddSqeProfiling(const CcuKernelArg &arg);

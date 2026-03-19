@@ -21,7 +21,7 @@
 #include "task_param.h"
 #include "ccu_ctx_arg.h"
 #include "const_val.h"
-
+#include "ccu_transport.h"
 namespace Hccl {
 namespace CcuRep {
 

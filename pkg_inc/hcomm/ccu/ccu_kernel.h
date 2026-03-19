@@ -44,6 +44,8 @@
 #include "ccu_loopcall_v1.h"
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
+#include "ccu_communicator.h"
+#include "task_param.h"
 
 using CcuKernelHandle = uint64_t;
 
@@ -76,7 +78,7 @@ public:
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
     HcclResult ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                        const CommunicatorImpl &comm, TaskParam &taskParam, bool isMaster);
+                                        const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster);
 
 protected:
     // 子类实现
