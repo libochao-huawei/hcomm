@@ -14,16 +14,18 @@
 #define private public
 #define protected public
 
-#include "ccu_channel_mock_utils.h"
-#include "adapter_rts.h"
 #include "log.h"
+#include "adapter_rts.h"
 #include "hcomm_c_adpt.h"
-#include "ccu_device_mock_utils.h"
+
 #include "ccu_device_pub.h"
 #include "ccu_kernel_mgr.h"
 #include "ccu_instance_mgr.h"
 #include "ccu_primitives.h"
 #include "ccu_control_api.h"
+
+#include "mocks/ccu_device_mock_utils.h"
+#include "mocks/ccu_channel_mock_utils.h"
 
 #include "ccu_kernel_impl/ccu_var_add_simple_demo.h"
 
