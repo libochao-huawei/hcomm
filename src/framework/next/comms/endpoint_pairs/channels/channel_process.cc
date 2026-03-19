@@ -17,6 +17,7 @@
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 #include "aicpu_ts_p2p_channel.h"
+#include "channel_transport_process.h"
 
 namespace hcomm {
 
@@ -243,7 +244,7 @@ HcclResult ChannelProcess::FillChannelD2HMap(ChannelHandle *deviceChannelHandles
     return HCCL_SUCCESS;
 }
 
-static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam, 
+HcclResult ChannelProcess::FillChannelParam(HcclChannelRes &channelParam, 
     const std::string &commTag, 
     hccl::DeviceMem &deviceChannelList,
     hccl::DeviceMem &devicePackBuf,
@@ -266,12 +267,22 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     CHK_RET(hrtGetDeviceType(devType));
     channelParam.deviceType = static_cast<u32>(devType);
 
+    HCCL_INFO("[ChannelProcess][%s] channelList[%p], listNum[%u], uniqueIdAddr[%p], "
+        "uniqueIdSize[%u] isTransport [%u]",
+        __func__, channelParam.channelList, channelParam.listNum, channelParam.uniqueIdAddr,
+        channelParam.uniqueIdSize, static_cast<u32>(channelParam.isTransport));
+
     return HCCL_SUCCESS;
 }
 
-static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
+HcclResult ChannelProcess::LaunchKernel(const HcclChannelRes &channelParam,
     aclrtBinHandle binHandle, const std::string &kernelName)
 {
+    HCCL_INFO("[ChannelProcess][%s] channelList[%p], listNum[%u], uniqueIdAddr[%p], "
+        "uniqueIdSize[%u] isTransport [%u]",
+        __func__, channelParam.channelList, channelParam.listNum, channelParam.uniqueIdAddr,
+        channelParam.uniqueIdSize, static_cast<u32>(channelParam.isTransport));
+
     hccl::Stream localStream = hccl::Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
     CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
@@ -312,7 +323,7 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
 
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
-    HcclChannelUrmaRes channelParam{};
+    HcclChannelRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
 
     // 获取host侧序列化的地址
@@ -417,7 +428,13 @@ HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHa
     CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelDescs, channelNum, binHandle));
+        auto channel = reinterpret_cast<Channel *>(targetChannels[0]);
+        auto protocol = channel->GetCommProtocol();
+        if (protocol == COMM_PROTOCOL_HCCS) {
+            CHK_RET(ChannelTransportProcess::ChannelKernelLaunchForTransport(userChannels, targetChannels, channelNum, binHandle));
+        } else {
+            CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelDescs, channelNum, binHandle));
+        }
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {
@@ -483,7 +500,7 @@ HcclResult ChannelProcess::ChannelGet(const ChannelHandle channelHandle, void **
 HcclResult ChannelProcess::ChannelKernelDestroy(ChannelHandle *channelHandles, uint32_t listNum, aclrtBinHandle binHandle)
 {
     HCCL_RUN_INFO("[%s] listNum[%u]", __func__, listNum);
-    HcclChannelUrmaRes channelParam{};
+    HcclChannelRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
 
     // 将 host 侧的 channel handles 拷贝到 device 内存，供内核使用
@@ -667,7 +684,7 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
 {
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
-    HcclChannelUrmaRes channelParam{};
+    HcclChannelRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
 
     // 获取host侧序列化的地址

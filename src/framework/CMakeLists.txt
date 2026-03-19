@@ -111,6 +111,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/server_socket/
+    ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
 
     # ccu 头文件
     ${HCCL_BASE_DIR}/framework/next/comms/adpt
@@ -241,7 +242,7 @@ target_link_options(hcomm PRIVATE
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
-    -s
+#    -s
 )
 
 target_compile_definitions(hcomm PRIVATE

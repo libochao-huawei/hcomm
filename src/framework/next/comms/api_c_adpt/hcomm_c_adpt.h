@@ -42,11 +42,6 @@ typedef CommMem HcommMem;
 
 typedef HcommMemHandle MemHandle;
 
-typedef struct {
-    uint32_t sdid;
-    int32_t pid;
-} HcommMemGrantInfo;
-
 struct CommMemInfo {
     CommMem mem {};
     void* bufferHandle {nullptr};
