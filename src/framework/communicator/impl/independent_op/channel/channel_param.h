@@ -68,7 +68,7 @@ struct HcclIndOpChannelRemoteResV3 {
     HcclIndOpChannelRemoteResV2* remoteResV2 = nullptr; // 不同remoteRank建链的资源
 };
 
-struct HcclChannelUrmaRes {
+struct HcclChannelRes {
     char  hcomId[HCOMID_MAX_LENGTH]; // 通信域ID 最大长度待修改
     void* channelList;               // 反序列后返回给host侧的device侧handle地址
     u32   listNum = 0;               // 建链channel的总数量
@@ -79,6 +79,27 @@ struct HcclChannelUrmaRes {
     u32*  remoteRankId;              // 记录每个channel的对端rank
     s32   deviceLogicId{0};          // 基础通信使用
     u32   deviceType{0};             // 基础通信使用
+    bool  isTransport{false};        // for A2/A3 endpoint with tranport, when A2/A3, it's true
+};
+
+// for A2/A3 endpoint with tranport
+struct HcclChannelHccsRes {
+    HcclChannelP2p channelP2p;  // P2p资源
+    u64 p2pNotifyNum{0};       // 用于linkp2p添加notify信息
+    u32 deviceType{0};          // 基础通信使用
+    u32 remoteRank{0};         // 远端rankId
+    u32 localRank{0};
+    u32 remoteDevicePhyId{0};      // 远端 PhyId
+    u32 localDevicePhyId{0};
+    s32 localDeviceLogicId{0};
+};
+
+// for A2/A3 endpoint with tranport
+struct HcclChannelTransportResSet {
+    CommEngine engine{COMM_ENGINE_RESERVED};     // 通信引擎类型
+    CommProtocol protocol{COMM_PROTOCOL_RESERVED};  // 用于识别channel新的不同类型的连接类型
+    u32 listNum{0};
+    HcclChannelHccsRes *channelHccsRes{nullptr};
 };
 
 #endif
