@@ -584,17 +584,23 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                                       oldLink.GetLinkProtocols(), oldLink.GetLinkDirection(), oldLink.GetHop());
 
     newNetInstance->AddLink(link);
-    newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
-    newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+    if (newSourceIface != nullptr) {
+        newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
+    }
+    if (newTargetIface != nullptr) {
+        newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+    }
+    
     for (const auto&pair: newNetInstance->topoInsts_){
         uint32_t topoInstId = pair.first;
         if(pair.second==nullptr){
-            HCCL_ERROR("topoInst of newNetInstance is nullptr");
+            THROW<NullPtrException>(StringFormat("[SubRankGraph][AddNewLink] topoInstId %u has no TopoInst", topoInstId));
         }
         auto topoType = pair.second->topoType;
-        HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
+        if (UNLIKELY(HcclCheckLogLevel(DLOG_DEBUG))) {
+            HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
+        }
     }
-
     HCCL_DEBUG("[RankGraph][AddNewLink] srcNewRankId[%d] dstNewRankId[%d] newLink[%s]", srcNewRankId, dstNewRankId,
                link->Describe().c_str());
 }
