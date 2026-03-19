@@ -465,9 +465,9 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_950) {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
+        auto *const channelPtr = reinterpret_cast<hcomm::Channel *>(channel);
+        CHK_PTR_NULL(channelPtr);
+        ret = channelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
     } else {
         ret = HCCL_E_NOT_SUPPORT;
     }
