@@ -1013,3 +1013,16 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     }
     transportMgr.Clean();
 }
+TEST_F(CcuTransportMgrTest,Ut_DumpNotReadyTransport)
+{
+    MOCKER_CPP(Socket::Describe).stubs().willreturn("Socket[role=...]");
+    Socket socket{};
+    std::unique_ptr<CcuConnection> connection = std::make_unique<CcuConnection>();
+    CclBufferInfo locCclBufInfo{};
+    CcuTransport CcuTransport{socket,std::move(connection),locCclBufInfo};
+    BaseProtType portType(PortDeploymentType::P2P,ConnectProtoType::UB);
+    LinkData fakeLinkData(portType,0,1,0,1);
+    auto transport = std::make_pair(&ccuTransport,linkData);
+    vector<std::pair<CcuTransport*,LinkData>> transports{1,transport};
+    CcuTransportMgr::DumpNotReadyTransport(transports);
+}
