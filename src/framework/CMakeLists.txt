@@ -241,7 +241,7 @@ target_link_options(hcomm PRIVATE
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
-    -s
+#    -s
 )
 
 target_compile_definitions(hcomm PRIVATE

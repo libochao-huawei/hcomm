@@ -143,7 +143,7 @@ HcclResult CollCommAicpu::RegisterThreadAddDfxTaskInfo(ThreadHandle thread)
  	return HCCL_SUCCESS;
 } 
 
-HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
+HcclResult CollCommAicpu::AllocChannelResource(HcclChannelRes *commParam)
 {
     HCCL_INFO("[CollCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
               "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
@@ -153,7 +153,7 @@ HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
+HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelRes *commParam)
 {
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
