@@ -7226,19 +7226,27 @@ namespace hccl
     HcclResult HcclCommunicator::AicpuKfcTilingDataLaunchIn(const OpParam &opParam, const DeviceMem &deviceContext,
                                                             const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 opTilingDataSize, bool isCustom)
     {
+        HcclUs perfTimestamps[20];
+        u32 perfIdx = 0;
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         HostMem opTilingDataMem = opTilingDataBuf_.range(0, opTilingDataSize);
         CHK_RET(SetNormalMode(dispatcher_));
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         Stream &mainStream = const_cast<Stream &>(opParam.stream);
         CHK_RET(LocalNotify::Post(mainStream, dispatcher_,
             localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::HOST_TO_AICPU_0)], INVALID_VALUE_STAGE));
+        perfTimestamps[perfIdx++] = TIME_NOW();
 
         Stream kfcOpStream;
         HcclWorkflowMode mode = GetWorkflowMode();
-        bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
+        bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr);
         if (opParam.isCapture || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             kfcOpStream = opStream_;
         } else {
-            // 如果是图模式，则尝试从附属从流中获取一下stream，如果能拿到则使用，否则退化
             if (isSupportHcomAttachedStream) {
                 HCCL_INFO("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is valid in graph mode");
                 kfcOpStream = attachedStreams_[0];
@@ -7247,6 +7255,8 @@ namespace hccl
                 kfcOpStream = opParam.stream;
             }
         }
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         uint64_t beginTime = hrtMsprofSysCycleTime();
         std::string profName = GetCMDTypeEnumStr(opParam.opType);
         if (profName == "Invalid HcclCMDType" || profName == "invalid") {
@@ -7254,34 +7264,46 @@ namespace hccl
         } else {
             profName += "AicpuKernel";
         }
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         s32 streamId = kfcOpStream.id();
         auto getAicpuTaskExceptionCallBack = [this]() {
             return this->GetAicpuTaskException();
         };
         RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_, getAicpuTaskExceptionCallBack);
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         if (streamId != opParam.stream.id()) {
             RegisterGetAicpuTaskExceptionCallBack(opParam.stream.id(), deviceLogicId_, getAicpuTaskExceptionCallBack);
         }
+        perfTimestamps[perfIdx++] = TIME_NOW();
 
         HCCL_INFO("%s profName[%s] tag[%s] kfcOpStreamId[%d] mainStreamId[%u] kfcStreamId[%d] isCapture[%d] mode[%d] ",
             __func__, profName.c_str(), opParam.tag.c_str(), streamId, opParam.stream.id(), opStream_.id(),
             opParam.isCapture, mode);
 
-        if (opParam.isCapture) { // 非主流下发时，acl graph场景，capture从流
+        if (opParam.isCapture) {
             u64 modelId = UINT64_MAX;
             rtModel_t rtModel = nullptr;
             bool isCapture = false;
             CHK_RET(GetStreamCaptureInfo(opParam.stream.ptr(), rtModel, isCapture));
+            perfTimestamps[perfIdx++] = TIME_NOW();
+            
             CHK_PTR_NULL(rtModel);
             CHK_RET(AddStreamToModel(kfcOpStream.ptr(), rtModel));
+            perfTimestamps[perfIdx++] = TIME_NOW();
 
             CHK_RET(GetModelId(rtModel, modelId));
+            perfTimestamps[perfIdx++] = TIME_NOW();
+            
             HCCL_INFO("[HcclCommunicator][%s]tag[%s], add stream[%d] to modelId[%llu] success.",
                 __func__, opParam.tag.c_str(), streamId, modelId);
         }
 
         u32 timeOut = (opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
                                                                (opResPara_.config.notifyWaitTime + AICPU_H2D_TIMEOUT_INC);
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         OrderLaunch& orderLaunch = OrderLaunch::GetInstance(deviceLogicId_);
         std::shared_ptr<LocalNotify> notify0;
         std::shared_ptr<LocalNotify> notify1;
@@ -7289,19 +7311,24 @@ namespace hccl
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1)];
             CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(identifier_, kfcOpStream, notify0, notify1, timeOut));
+            perfTimestamps[perfIdx++] = TIME_NOW();
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
             CHK_RET(orderLaunch.OpbaseLaunchInOrder(identifier_, kfcOpStream, notify0, notify1, timeOut));
+            perfTimestamps[perfIdx++] = TIME_NOW();
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_1)];
             CHK_RET(orderLaunch.HcomLaunchInOrder(identifier_, kfcOpStream, graphId_, notify0,
                 notify1, timeOut));
+            perfTimestamps[perfIdx++] = TIME_NOW();
         }
         CHK_RET(KernelLaunchChooseAicpuOrCustom(opParam.inputPtr, opParam.outputPtr, kfcOpStream.ptr(),
                                                 reinterpret_cast<u64>(deviceContext.ptr()), opTilingDataMem.ptr(), opTilingDataSize,
                                                 kernelName, mode, opParam.tag, isCustom));
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         if (opParam.isCapture) {
             CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream));
         }
@@ -7309,8 +7336,38 @@ namespace hccl
         uint64_t endTime = hrtMsprofSysCycleTime();
         s32 threadId = SalGetTid();
         CHK_RET(ProfilingManagerPub::CallMsprofReportNodeInfo(beginTime, endTime, profName, threadId));
+        perfTimestamps[perfIdx++] = TIME_NOW();
+        
         CHK_RET(LocalNotify::Wait(mainStream, dispatcher_,
             localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::HOST_TO_AICPU_1)], INVALID_VALUE_STAGE, timeOut));
+        perfTimestamps[perfIdx++] = TIME_NOW();
+
+        auto totalTime = DURATION_US(endTime - beginTime);
+        HCCL_ERROR("[PerfMonitor][AicpuKfcTilingDataLaunchIn] tag[%s] threadId[%d] totalTime[%.2f] us "
+            "step0-opTilingDataBuf_range[%.2f]us step1-SetNormalMode[%.2f]us step2-LocalNotify_Post[%.2f]us "
+            "step3-GetWorkflowMode[%.2f]us step4-StreamSelect[%.2f]us step5-ProfName[%.2f]us "
+            "step6-RegisterCallback1[%.2f]us step7-RegisterCallback2[%.2f]us step8-GetStreamCaptureInfo[%.2f]us "
+            "step9-AddStreamToModel[%.2f]us step10-GetModelId[%.2f]us step11-TimeOut[%.2f]us "
+            "step12-OrderLaunch[%.2f]us step13-KernelLaunch[%.2f]us step14-OrderToKernel[%.2f]us "
+            "step15-ProfilingReport[%.2f]us step16-LocalNotify_Wait[%.2f]us",
+            opParam.tag.c_str(), threadId, static_cast<double>(totalTime.count()),
+            static_cast<double>(DURATION_US(perfTimestamps[1] - perfTimestamps[0]).count()),
+            static_cast<double>(DURATION_US(perfTimestamps[2] - perfTimestamps[1]).count()),
+            static_cast<double>(DURATION_US(perfTimestamps[3] - perfTimestamps[2]).count()),
+            static_cast<double>(DURATION_US(perfTimestamps[4] - perfTimestamps[3]).count()),
+            static_cast<double>(DURATION_US(perfTimestamps[5] - perfTimestamps[4]).count()),
+            static_cast<double>(DURATION_US(perfTimestamps[6] - perfTimestamps[5]).count()),
+            static_cast<double>(DURATION_US(perfTimestamps[7] - perfTimestamps[6]).count()),
+            static_cast<double>(DURATION_US(perfTimestamps[8] - perfTimestamps[7]).count()),
+            (perfIdx > 9) ? static_cast<double>(DURATION_US(perfTimestamps[9] - perfTimestamps[8]).count()) : 0.0,
+            (perfIdx > 10) ? static_cast<double>(DURATION_US(perfTimestamps[10] - perfTimestamps[9]).count()) : 0.0,
+            (perfIdx > 11) ? static_cast<double>(DURATION_US(perfTimestamps[11] - perfTimestamps[10]).count()) : 0.0,
+            (perfIdx > 12) ? static_cast<double>(DURATION_US(perfTimestamps[12] - perfTimestamps[11]).count()) : 0.0,
+            (perfIdx > 13) ? static_cast<double>(DURATION_US(perfTimestamps[13] - perfTimestamps[12]).count()) : 0.0,
+            (perfIdx > 14) ? static_cast<double>(DURATION_US(perfTimestamps[14] - perfTimestamps[13]).count()) : 0.0,
+            (perfIdx > 15) ? static_cast<double>(DURATION_US(perfTimestamps[15] - perfTimestamps[14]).count()) : 0.0,
+            (perfIdx > 16) ? static_cast<double>(DURATION_US(perfTimestamps[16] - perfTimestamps[15]).count()) : 0.0);
+        
         return HCCL_SUCCESS;
     }
 
