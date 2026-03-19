@@ -615,7 +615,6 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
 
     u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
                     std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
-    HCCL_INFO("[AicpuChannelInit] timeOut=%u.", timeOut);
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&customInitTask),
         sizeof(customInitTask), binHandle_, kernelName, true, timeOut));
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(tag)));

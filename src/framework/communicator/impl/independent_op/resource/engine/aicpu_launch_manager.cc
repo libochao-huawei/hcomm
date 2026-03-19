@@ -35,6 +35,7 @@ HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom(OpParam &opParam, std::string
     uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
     u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
                     std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
+    HCCL_INFO("[KernelLaunchAicpuCustom] timeOut=%u, NOTIFY_DEFAULT_WAIT_TIME=%u.", timeOut, NOTIFY_DEFAULT_WAIT_TIME);
     CHK_RET(AicpuAclKernelLaunch(aicpuInitStream, &context,
         sizeof(context), binCustomHandle, kernelName, true, timeOut));
     return HCCL_SUCCESS;

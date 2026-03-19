@@ -238,3 +238,63 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Suc
     Ut_Comm_Destroy(commHandle);
     GlobalMockObject::verify();
 }
+
+TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutLessThanU16Max_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(DevType::DEV_TYPE_950))
+    .will(returnValue(HCCL_SUCCESS));
+
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2Graph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 2;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void)*0x1000;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> HcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1;
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+
+    constexpr u16 customTimeout = std::numeric_limits<u16>::max() - 1;
+    AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, nullptr);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutGreaterThanU16Max_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(DevType::DEV_TYPE_950))
+    .will(returnValue(HCCL_SUCCESS));
+
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2Graph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 2;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void)*0x1000;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> HcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1;
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+
+    constexpr u16 customTimeout = std::numeric_limits<u16>::max() + 1;
+    AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, nullptr);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
