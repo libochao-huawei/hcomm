@@ -70,6 +70,8 @@ public:
     uint32_t    GetInstrId() const;
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
+    void AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
+                                 HcclDataType outputDataType, HcclReduceOp opType);
 
     HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
 
@@ -184,6 +186,7 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
+    std::vector<GroupInfo> groupOpSizeInfo;
 };
 
 // kernel构造函数的lambda函数
