@@ -787,8 +787,9 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
                 HCCL_E_ROCE_CONNECT);
     CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", caller),
                 HCCL_E_ROCE_CONNECT);
-    CHK_PRT_RET(len > UINT32_MAX,
-        HCCL_ERROR("[HostCpuRoceChannel::%s] len[%llu] exceeds uint32_t max", caller, len), HCCL_E_PARA);
+    if (len > UINT32_MAX) {
+        HCCL_WARNING("[HostCpuRoceChannel::%s] len[%llu] exceeds uint32_t max, will be casted to %u.", caller, len, static_cast<uint32_t>(len));
+    }
     CHK_PRT_RET(wqeNum_ == UINT32_MAX,
         HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", caller),
         HCCL_E_INTERNAL);
@@ -811,7 +812,7 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
 
     wqeNum_++;
     fenceFlag_ = false;
-    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS.", caller);
+    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u]", caller, wqeNum_);
     return HCCL_SUCCESS;
 }
 
@@ -869,7 +870,11 @@ HcclResult HostCpuRoceChannel::ChannelFence()
 {
     std::lock_guard<std::mutex> lock(sendCq_mutex);
     HCCL_INFO("[HostCpuRoceChannel::%s] ChannelFence start, wqeNum_=%u", __func__, wqeNum_);
-    CHK_PRT_RET(wqeNum_ == 0, HCCL_INFO("[HostCpuRoceChannel::%s] no need to fence since no wqenum.", __func__), HCCL_SUCCESS);
+    if (wqeNum_ == 0) {
+        HCCL_INFO("[HostCpuRoceChannel::%s] no need to fence since no wqenum.", __func__);
+        fenceFlag_ = true;
+        return HCCL_SUCCESS;
+    }
     std::vector<struct ibv_wc> wc(wqeNum_);
     const std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
