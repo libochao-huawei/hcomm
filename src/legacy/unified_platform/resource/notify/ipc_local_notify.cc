@@ -16,6 +16,7 @@ namespace Hccl {
 
 IpcLocalNotify::IpcLocalNotify(bool devUsed) : BaseLocalNotify(RmaType::IPC, devUsed)
 {
+    // SetIpc
     auto name = GetNotify()->SetIpcName();
     s32 sRet = memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, name.c_str(), name.size());
     if (sRet != EOK) {
@@ -51,7 +52,7 @@ void IpcLocalNotify::Grant(u32 pid)
 {
     u32 myPid = HrtDeviceGetBareTgid();
     if (pid != myPid) {
-        HrtSetIpcNotifyPid(ipcName, static_cast<s32>(pid));
+        GetNotify()->SetIpcPid(static_cast<s32>(pid));
     }
 }
 

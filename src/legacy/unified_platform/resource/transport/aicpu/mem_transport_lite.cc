@@ -10,6 +10,7 @@
 
 #include "mem_transport_lite.h"
 #include "ub_transport_lite_impl.h"
+#include "p2p_transport_lite_impl.h"
 #include "binary_stream.h"
 #include "not_support_exception.h"
 #include "internal_exception.h"
@@ -31,6 +32,8 @@ MemTransportLite::MemTransportLite(std::vector<char>                            
 
     if (type == TransportType::UB) {
         impl = std::make_unique<UbTransportLiteImpl>(uniqueId, callback);
+    } else if(type == TransportType::P2P) {
+        impl = std::make_unique<P2PTransportLiteImpl>(uniqueId, callback);
     } else {
         THROW<NotSupportException>(StringFormat("%s doesnot support now", type.Describe().c_str()));
     }

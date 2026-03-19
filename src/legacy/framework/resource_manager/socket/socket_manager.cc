@@ -16,6 +16,8 @@
 #include "exception_util.h"
 #include "stl_util.h"
 #include "preempt_port_manager.h"
+#include "timeout_exception.h"
+#include "p2p_enable_manager.h"
 
 namespace Hccl {
 
@@ -35,6 +37,16 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
         return;
     }
 
+    for (auto &link: pendingLinks) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+    }
     BatchServerInit(pendingLinks);
     BatchAddWhiteList(pendingLinks);
     BatchCreateConnectedSockets(pendingLinks);
@@ -107,8 +119,9 @@ void SocketManager::ServerInit(PortData &localPort)
     if (iter != rankListenPortMap.end()) {
         serverListenPort = iter->second;
     }
+    NicType nicType = localPort.GetType() == PortDeploymentType::P2P ? NicType::DEVICE_VNIC_TYPE : NicType::DEVICE_NIC_TYPE;
     auto         serverSocket     = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server",
-                                                   SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+                                                   SocketRole::SERVER, nicType);
     bool success = serverSocket->Listen(serverListenPort);
     if (success) {
         HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
@@ -195,9 +208,9 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
     if (iter != rankListenPortMap.end()) {
         serverListenPort = iter->second;
     }
-
+    NicType nicType = socketConfig.link.GetLocalPort().GetType() == PortDeploymentType::P2P ? NicType::DEVICE_VNIC_TYPE : NicType::DEVICE_NIC_TYPE;
     auto tmpSocket = socketProducer(localIpAddress, remoteIpAddress, serverListenPort, socketHandle, hccpSocketTag,
-                                    socketRole, NicType::DEVICE_NIC_TYPE);
+                                    socketRole, nicType);
     HCCL_INFO("[SocketManager::%s] Device %u connect async the remote rank %d port %u.", __func__, devicePhyId, socketConfig.remoteRank, serverListenPort);
     tmpSocket->ConnectAsync();
     connectedSocketMap[socketConfig] = std::move(tmpSocket);

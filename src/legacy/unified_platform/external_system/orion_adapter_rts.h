@@ -153,7 +153,7 @@ struct rtMemUbTokenInfo{
 constexpr uint32_t RT_STREAM_FAST_LAUNCH = 0x200U;
 constexpr uint32_t RT_STREAM_FAST_SYNC = 0x400U;
 constexpr uint32_t RT_STREAM_CP_PROCESS_USE = 0x800U; // RT_STREAM_CP_PROCESS_USE does not support OR with other flags
-constexpr uint32_t RT_NOTIFY_FLAG_DOWNLOAD_TO_DEV = 0x01U; // RT_NOTIFY_FLAG_DOWNLOAD_TO_DEV does not support OR with other flags
+constexpr uint32_t RT_NOTIFY_FLAG_DOWNLOAD_TO_DEV = 0x02U; // RT_NOTIFY_FLAG_DOWNLOAD_TO_DEV does not support OR with other flags
 constexpr uint64_t RT_NOTIFY_FLAG_DEFAULT = 0x00U;
 enum class HcclRtMemcpyKind {
     HCCL_RT_MEMCPY_KIND_HOST_TO_HOST = 0, /**< host to host */
@@ -316,6 +316,9 @@ HrtEventStatus HrtEventQueryStatus(RtEvent_t eventPtr);
 
 void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr);
 void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args);
+HcclResult HrtEnableP2P(u32 deviceLogicId, u32 devicePhyId);
+HcclResult HrtDisableP2P(u32 deviceLogicId, u32 devicePhyId);
+HcclResult HrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status);
 } // namespace Hccl
 
 #endif // HCCL_ADAPTER_RTS_H

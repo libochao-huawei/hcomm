@@ -381,6 +381,8 @@ public:
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
+    bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
+
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -429,6 +431,7 @@ private:
     std::vector<CommLink> linkListVec;
     std::vector<uint32_t> ranksVec;
     std::vector<uint32_t> topoInstsVec;
+    std::vector<u32> enableP2PDevices_;
 
     NotifyTimeoutCfg notifyTimeoutCfg;
 
@@ -509,6 +512,8 @@ private:
     void InitCollService();
     void InitHccpHdc() const;
     void InitCcuSuperFastLoad();
+    void InitPreResource();
+    void DeInitPreResource();
     void InitSocketManager();
     void InitRmaConnManager();
     void InitNotifyFixedValue();

@@ -80,6 +80,8 @@ public:
     HcclResult PreSyncInterQueues(std::vector<InsQuePtr> &syncInsQues) const;
     HcclResult PostSyncInterQueues(std::vector<InsQuePtr> &syncInsQues) const;
 
+    bool IsPcieLink(const ResLinks &tempLinks);
+
 protected:
     HcclResult PostCopyOpbase(const UsrData &usrData, std::vector<InsQuePtr> &tempInsQues) const;
     HcclResult PreCopyOpbase(const UsrData &usrData, std::vector<InsQuePtr> &tempInsQues) const;
