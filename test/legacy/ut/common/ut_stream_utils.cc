@@ -15,9 +15,7 @@
 #include "internal_exception.h"
 #include "invalid_params_exception.h"
 #include "stream_utils.h"
-#include "channel_manager.h"
 
-using namespace Ccu;
 using namespace Hccl;
 
 class StreamUtilsTest : public testing::Test {
