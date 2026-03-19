@@ -44,8 +44,8 @@ target_link_libraries(executor_pipeline_hccl_test PRIVATE
     hccl_alg_adaption
     hccl_alg_test
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    ${THIRD_PARTY_PATH}/mockcpp_shared/lib/libmockcpp.a
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so
     -lpthread
     ${PROTO_SOURCE_DIR}/libprotobuf.so
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
