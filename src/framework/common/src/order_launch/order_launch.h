@@ -47,13 +47,27 @@ struct OrderLaunchResMgr
     }
 
     // 设置context为已初始化状态（一旦调用，context就不会再变回INVALID_U64）
-    void MarkContextInitialized(u64 newContext) {
+    HcclResult MarkContextInitialized(u64 newContext) {
+        if (contextInitialized) {
+            if (context == INVALID_U64) {
+                HCCL_ERROR("[OrderLaunchResMgr] context is INVALID_U64 after initialized, current[0x%llx], new[0x%llx]", context, newContext);
+                return HCCL_E_PARA;
+            }
+            if (context != newContext) {
+                HCCL_ERROR("[OrderLaunchResMgr] context already initialized with different value, current[0x%llx], new[0x%llx]", context, newContext);
+                return HCCL_E_PARA;
+            }
+            HCCL_INFO("[OrderLaunchResMgr] context already initialized with same value[0x%llx], skip", context);
+            return HCCL_SUCCESS;
+        }
+        
         if (context == INVALID_U64 || context != newContext) {
             HCCL_INFO("[OrderLaunchResMgr] Mark context initialized: [0x%llx] -> [0x%llx]", context, newContext);
             context = newContext;
             contextInitialized = true; // 标记为已初始化
             resValid = false;
         }
+        return HCCL_SUCCESS;
     }
 
     // 析构资源
