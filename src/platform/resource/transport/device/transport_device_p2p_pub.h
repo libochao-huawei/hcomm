@@ -14,6 +14,7 @@
 #include "transport_p2p_pub.h"
 
 namespace hccl {
+
 class TransportDeviceP2p : public TransportP2p {
 public:
     explicit TransportDeviceP2p(DispatcherPub *dispatcher,
@@ -34,6 +35,7 @@ private:
     HcclResult ConfigUseSdmaCopyToSignalRecord();
     template <typename T> HcclResult ModifySignalAddrToVA(s32 deviceId, std::shared_ptr<T> &notify);
     HcclResult GetNotifyAddr(s32 deviceId, const HcclSignalInfo &signalInfo, u64 &addr);
+
     DeviceMem signalMem_;
 };
 }  // namespace hccl
