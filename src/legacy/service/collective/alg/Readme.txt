@@ -12,3 +12,5 @@ mkdir tmp && cd tmp && cmake ../cmake/superbuild -DHOST_PACKAGE=fwkacllib && TAR
 
 2）算法框架的so位置
 ./host-prefix/src/host-build/ace/comop/hccl/whole/hccl/v2/service/collective/alg/libhccl_v2_alg_frame.so
+
+
