@@ -51,12 +51,12 @@ TEST_F(CollCommAicpuTest, Ut_Resume_CallsProcessUrmaRes_And_ResetsNsRecoveryFlag
     coll.SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
 
     // Mock ProcessUrmaRes to avoid running heavy logic; return success
-    MOCKER_CPP(&CollCommAicpu::ProcessUrmaRes, HcclResult(CollCommAicpu::*)(HcclChannelUrmaRes*, bool))
+    MOCKER_CPP(&CollCommAicpu::ProcessUrmaRes, HcclResult(CollCommAicpu::*)(HcclChannelRes*, bool))
         .stubs()
         .with(any(), any())
         .will(returnValue(HCCL_SUCCESS));
 
-    HcclChannelUrmaRes commParam{};
+    HcclChannelRes commParam{};
     // call Resume with mocked ProcessUrmaRes
     auto ret = coll.Resume(&commParam);
     EXPECT_EQ(ret, HCCL_SUCCESS);

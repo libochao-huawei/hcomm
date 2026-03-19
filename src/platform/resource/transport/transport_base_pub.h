@@ -263,6 +263,12 @@ public:
 
         return HCCL_SUCCESS;
     }
+
+    void GetPeerPodInfo(s32 &pid, s32 &sid) {
+        pid = recvPid_;
+        sid = recvSdid_;
+    };
+
 protected:
     virtual HcclResult FillExchangeDataTotalSize();
     virtual HcclResult ConstructExchangeForSend();
