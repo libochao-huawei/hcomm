@@ -70,6 +70,12 @@ public:
 
     virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
 
+    virtual HcclResult EnableMemAccess(void* memHandle, const HcommMemGrantInfo *remoteGrantInfo) 
+    {
+        HCCL_INFO("EnableMemAccess is not supported");
+        return HCCL_SUCCESS;
+    }
+
 protected:
     void* ctxHandle_{nullptr};
     std::shared_ptr<RegedMemMgr> regedMemMgr_{};
