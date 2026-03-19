@@ -64,6 +64,9 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                 } else {
                     primQueueGenName = "CcuReduceMesh1D";
                 }
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][ReduceAutoSelector] level0 PCIE mix is not supported yet for ccu_ms mode.");
+                return SelectorStatus::NOT_MATCH;
             } else { // MS 不支持
                 HCCL_WARNING("[Algo][ReduceAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
                     topoInfo.level0Shape);
@@ -142,6 +145,9 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
                 } else {
                     primQueueGenName = "CcuReduceMeshMem2Mem1D";
                 }
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][ReduceAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuReduceNHR1D";
             }
@@ -213,6 +219,10 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                     primQueueGenName = "InsReduceParallelMesh1DNHR";
                 }
             } else {
+                if (topoInfo.level0PcieMix) {
+                    // 预留PCIE mix入口，如果要更新算法可以直接改
+                    primQueueGenName = "InsReduceParallelMesh1DNHR";
+                }
                 if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64 ||
                     op.reduceOp == ReduceOp::PROD) {
                     primQueueGenName = "InsReduceAicpuReduce";

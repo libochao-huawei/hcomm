@@ -173,6 +173,14 @@ set(legacy_service_include_list
     ${HCOMM_LEGACY_SERVICE}/alg/alg_registry
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_gather
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_reduce
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/all_to_all
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/broadcast
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/reduce_scatter
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/scatter
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/ins_alg_executor/send_recv
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_executor/prim_alg_executor
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_template
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_template/ins_alg_template
@@ -182,6 +190,13 @@ set(legacy_service_include_list
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_topo_match
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/utils/common
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/all_reduce
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/all_gather
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/all_to_all
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/broadcast
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/reduce
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/reduce_scatter
+    ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_ccu_context/scatter
     ${HCOMM_LEGACY_SERVICE}/alg/coll_alg_factory/alg_aiv_instruction
 )
 

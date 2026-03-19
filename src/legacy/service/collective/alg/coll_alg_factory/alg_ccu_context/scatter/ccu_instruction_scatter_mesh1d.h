@@ -96,20 +96,21 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionScatterMesh1D instype is CCU_SCATTER_MESH_1D_DIRECT.");
+        return instType_;
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionScatterMesh1D rankId [%u], instType[%s]", rankId_,
                             instType_.Describe().c_str());
-    }
-
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -130,10 +131,10 @@ private:
     uint32_t                         rankId_{0};
     uint32_t                         rootId_{0};
     CollAlgOperator                  op_;
+    uint64_t                         token_{0};
     std::vector<std::vector<RankId>> tempVTopo_;
     uint64_t                         inputAddr_{0};
     uint64_t                         outputAddr_{0};
-    uint64_t                         token_{0};
     uint64_t                         inputSliceStride_{0};
     uint64_t                         outputSliceStride_{0};
     uint64_t                         inputRepeatStride_{0};

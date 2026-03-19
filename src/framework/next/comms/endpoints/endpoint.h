@@ -34,7 +34,9 @@ public:
 
     virtual HcclResult Init() = 0;
 
-    virtual HcclResult ServerSocketListen() = 0;
+    virtual HcclResult ServerSocketListen(const uint32_t port) = 0;
+
+    virtual HcclResult ServerSocketStopListen(const uint32_t port) {return HCCL_E_NOT_SUPPORT;};
 
     virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr() 
     {

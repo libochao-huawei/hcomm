@@ -309,48 +309,22 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     param.kernel.op.algOperator.dataType  = op.dataType;
     param.kernel.op.algOperator.dataCount = op.dataCount;
     param.kernel.op.algOperator.root      = op.root;
+    HcclResult hcclRet = HCCL_SUCCESS;
     if (op.opType == OpType::ALLTOALL && isLaunch) {
         param.kernel.op.algOperator.all2AllDataDes = op.all2AllDataDes;
     } else if (op.opType == OpType::ALLTOALLV && isLaunch) {
-        param.kernel.op.algOperator.all2AllVDataDes.sendCounts
-            = reinterpret_cast<void *>(sendCountsMem[index].get()->GetAddr());
-        param.kernel.op.algOperator.all2AllVDataDes.recvCounts
-            = reinterpret_cast<void *>(recvCountsMem[index].get()->GetAddr());
-        param.kernel.op.algOperator.all2AllVDataDes.sdispls
-            = reinterpret_cast<void *>(sdisplsMem[index].get()->GetAddr());
-        param.kernel.op.algOperator.all2AllVDataDes.rdispls
-            = reinterpret_cast<void *>(rdisplsMem[index].get()->GetAddr());
-        param.kernel.op.algOperator.all2AllVDataDes.sendType = op.all2AllVDataDes.sendType;
-        param.kernel.op.algOperator.all2AllVDataDes.recvType = op.all2AllVDataDes.recvType;
-        HCCL_INFO("CollServiceAiCpuImpl::SetHcclKernelLaunchParam param.kernel.op.algOperator.sendCounts[%p] "
-                   "param.kernel.op.algOperator.recvCounts[%p] param.kernel.op.algOperator.sdispls[%p] "
-                   "param.kernel.op.algOperator.rdispls[%p], index[%u]",
-                   param.kernel.op.algOperator.all2AllVDataDes.sendCounts,
-                   param.kernel.op.algOperator.all2AllVDataDes.recvCounts,
-                   param.kernel.op.algOperator.all2AllVDataDes.sdispls,
-                   param.kernel.op.algOperator.all2AllVDataDes.rdispls, index);
-        index = (index + 1) % MAX_ALLTOALLV_MEM_NUM;
+        hcclRet = FillAllToAllvData(op);
     } else if (op.opType == OpType::ALLTOALLVC) {
-        param.kernel.op.algOperator.all2AllVCDataDes.sendType = op.all2AllVCDataDes.sendType;
-        param.kernel.op.algOperator.all2AllVCDataDes.recvType = op.all2AllVCDataDes.recvType;
-        param.kernel.op.algOperator.all2AllVCDataDes.sendCountMatrix = 
-            reinterpret_cast<void *>(sendCountMatrixMem[indexAlltoAllVC].get()->GetAddr());
-        HCCL_INFO("CollServiceAiCpuImpl::SetHcclKernelLaunchParam all2AllVCDataDes.sendType[%s] "
-                   "all2AllVCDataDes.recvType[%s] all2AllVCDataDes.sendCountMatrix[%p] index[%u]",
-                   param.kernel.op.algOperator.all2AllVCDataDes.sendType.Describe().c_str(),
-                   param.kernel.op.algOperator.all2AllVCDataDes.recvType.Describe().c_str(),
-                   param.kernel.op.algOperator.all2AllVCDataDes.sendCountMatrix, indexAlltoAllVC);
-        indexAlltoAllVC = (indexAlltoAllVC + 1) % MAX_ALLTOALLV_MEM_NUM;
+        hcclRet = FillAllToAllvcData(op);
     } else if (op.opType == OpType::BATCHSENDRECV) {
-        param.kernel.op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr =
-            reinterpret_cast<void *>(devBatchSendRecvItemBufs.get()->GetAddr());
-        param.kernel.op.algOperator.batchSendRecvDataDes.itemNum = op.batchSendRecvDataDes.itemNum;
-        HCCL_INFO("CollServiceAiCpuImpl::SetHcclKernelLaunchParam batchsendrecv param.kernel.op.algOperator.batchSendRecvDataDes.itemNum[%llu]",
-                   param.kernel.op.algOperator.batchSendRecvDataDes.itemNum);
+        hcclRet = FillBatchSendRecvData(op);
     } else if (op.opType == OpType::SEND || op.opType == OpType::RECV) {
         param.kernel.op.algOperator.sendRecvRemoteRank = op.sendRecvRemoteRank;
     }
-
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[CollServiceAiCpuImpl][SetHcclKernelLaunchParam] fill op data failed!");
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::SetHcclKernelLaunchParam, fill op data failed! ret [%d]", hcclRet));
+    }
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
     Stream *streamPtr = nullptr;
     if(op.opMode == OpMode::OPBASE) {
@@ -418,6 +392,9 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 	attr.value.timeout = static_cast<u16>((timeoutCheck == 0) ? timeoutCheck : (timeoutCheck + 30)); // aicpu kernal超时时间: X+30s
 	cfg.numAttrs = 1;
 	cfg.attrs = &attr;
+    HrtMemcpy(reinterpret_cast<void *>(kernelParamBuf_.get()->GetAddr()), sizeof(HcclKernelParamLite), 
+        reinterpret_cast<void *>(&param), sizeof(HcclKernelParamLite), RT_MEMCPY_HOST_TO_HOST);
+    
     HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, attr.value.timeout);
 
     AddPostToUserStream(stream);
@@ -436,7 +413,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
     constexpr u32 numBlocks = 1;
     HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
-			&param.kernel, sizeof(HcclKernelParamLite));
+			reinterpret_cast<void *>(kernelParamBuf_.get()->GetAddr()), sizeof(HcclKernelParamLite) + dynamicDataSize);
     HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
                 "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str());
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
@@ -551,98 +528,46 @@ void CollServiceAiCpuImpl::AllocNotifies(const vector<LinkData> &links)
     availableLinks.insert(pendingLinks.begin(), pendingLinks.end());
 }
 
-void CollServiceAiCpuImpl::AllocOpMemAlltoAllVC(const CollOperator &op)
-{
-    size_t size = static_cast<size_t>(sizeof(u64) * comm->GetRankSize() * comm->GetRankSize()); // 计算alltoallvc的countMatrix所需内存大小
-    if (!isCountMemInitedAlltoAllVC) {
-        for (u32 i = 0; i < MAX_ALLTOALLV_MEM_NUM; i++) {                 // 最多保存64个alltoallvc算子的countMatrix
-            shared_ptr<DevBuffer> sendMem = make_shared<DevBuffer>(size); // 申请device内存为了保存sendCountMatrix
-            sendCountMatrixMem.push_back(sendMem);
-        }
-        isCountMemInitedAlltoAllVC = true;
-    }
-    if (indexAlltoAllVC >= MAX_ALLTOALLV_MEM_NUM) {
-        THROW<InternalException>(StringFormat("Invalid indexAlltoAllVC: %u, max allowed: %u", 
-                                       indexAlltoAllVC, MAX_ALLTOALLV_MEM_NUM - 1));
-    }
-    HrtMemcpy(reinterpret_cast<void *>(sendCountMatrixMem[indexAlltoAllVC].get()->GetAddr()),
-              sendCountMatrixMem[indexAlltoAllVC].get()->GetSize(),
-              op.all2AllVCDataDes.sendCountMatrix, size,
-              RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将sendCountMatrix拷贝到device内存
-}
-
-void CollServiceAiCpuImpl::AllocOpMemAlltoAllV(const CollOperator &op)
-{
-    for (u32 j = 0; j < comm->GetRankSize(); j++) {
-        u64 curSendCounts = *(static_cast<const u64 *>(op.all2AllVDataDes.sendCounts) + j);
-        u64 curSendDispls = *(static_cast<const u64 *>(op.all2AllVDataDes.sdispls) + j);
-        u64 curRecvCounts = *(static_cast<const u64 *>(op.all2AllVDataDes.recvCounts) + j);
-        u64 curRecvDispls = *(static_cast<const u64 *>(op.all2AllVDataDes.rdispls) + j);
-
-        HCCL_INFO("[GetLocalSendRecvInfoforAlltoallV] rank[%u], sendCounts[%llu], sendDispls[%llu] "
-                   "recvCounts[%llu], recvDispls[%llu]",
-                   comm->GetRankSize(), curSendCounts, curSendDispls, curRecvCounts, curRecvDispls);
-    }
-    size_t size = static_cast<size_t>(comm->GetRankSize() * sizeof(u64)); // counts内存大小
-    if (!isCountMemInited) {
-        for (u32 i = 0; i < MAX_ALLTOALLV_MEM_NUM; i++) {                 // 64: 初始化countMem
-            shared_ptr<DevBuffer> sendMem = make_shared<DevBuffer>(size); // 申请senddevice内存
-            sendCountsMem.push_back(sendMem);
-
-            shared_ptr<DevBuffer> recvMem = make_shared<DevBuffer>(size); // 申请recvdevice内存
-            recvCountsMem.push_back(recvMem);
-
-            shared_ptr<DevBuffer> sdisplMem = make_shared<DevBuffer>(size); // 申请sdisplsdevice内存
-            sdisplsMem.push_back(sdisplMem);
-
-            shared_ptr<DevBuffer> rdisplMem = make_shared<DevBuffer>(size); // 申请rdisplsdevice内存
-            rdisplsMem.push_back(rdisplMem);
-        }
-        isCountMemInited = true;
-    }
-    HrtMemcpy(reinterpret_cast<void *>(sendCountsMem[index].get()->GetAddr()), sendCountsMem[index].get()->GetSize(),
-              op.all2AllVDataDes.sendCounts, size,
-              RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到SEND内存
-    HrtMemcpy(reinterpret_cast<void *>(recvCountsMem[index].get()->GetAddr()), recvCountsMem[index].get()->GetSize(),
-              op.all2AllVDataDes.recvCounts, size,
-              RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到RECV内存
-    HrtMemcpy(reinterpret_cast<void *>(sdisplsMem[index].get()->GetAddr()), sdisplsMem[index].get()->GetSize(),
-              op.all2AllVDataDes.sdispls, size,
-              RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到SDISPLS内存
-    HrtMemcpy(reinterpret_cast<void *>(rdisplsMem[index].get()->GetAddr()), rdisplsMem[index].get()->GetSize(),
-              op.all2AllVDataDes.rdispls, size,
-              RT_MEMCPY_HOST_TO_DEVICE); // H2D拷贝，将资源拷贝到RDISPLS内存
-}
-
-void CollServiceAiCpuImpl::AllocOpMemBatchSendRecv(const CollOperator &op)
-{
-    u32 itemNum = op.batchSendRecvDataDes.itemNum;
-    devBatchSendRecvItemBufs = make_shared<DevBuffer>(itemNum * sizeof(HcclSendRecvItem));
-    bsrItemsMem.push_back(devBatchSendRecvItemBufs);
-
-    HrtMemcpy(reinterpret_cast<void *>(devBatchSendRecvItemBufs.get()->GetAddr()), devBatchSendRecvItemBufs.get()->GetSize(),
-            op.batchSendRecvDataDes.sendRecvItemsPtr, itemNum * sizeof(HcclSendRecvItem),
-            RT_MEMCPY_HOST_TO_DEVICE);
-
-}
-
 void CollServiceAiCpuImpl::AllocOpMem(const CollOperator &op)
 {
-    if (op.opType == OpType::BATCHSENDRECV) {
-        AllocOpMemBatchSendRecv(op);
-        return;
+    dynamicDataSize = CalcOpDynamicDataSize(op, op.opType, comm->GetRankSize());
+    u64 kernelParamSize = sizeof(HcclKernelParamLite) + dynamicDataSize;
+    if (kernelParamBuf_ == nullptr) {
+        kernelParamBuf_ = make_shared<HostBuffer>(KERNEL_PARAM_BUF_SIZE);
+        if (kernelParamBuf_ == nullptr) {
+            HCCL_ERROR("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf failed !");
+            THROW<InternalException>(StringFormat("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf failed len"));
+        }
     }
 
-    if (op.opType == OpType::ALLTOALLVC) {
-        AllocOpMemAlltoAllVC(op);
-        return;
-    }
-
-    if (op.opType == OpType::ALLTOALLV) {
-        AllocOpMemAlltoAllV(op);
-        return;
+    if (kernelParamBuf_ != nullptr && kernelParamSize > kernelParamBuf_.get()->GetSize()) {
+        kernelParamBuf_ = make_shared<HostBuffer>(kernelParamSize);
+        if (kernelParamBuf_ == nullptr) {
+            HCCL_ERROR("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf len[%llu] failed !", kernelParamSize);
+            THROW<InternalException>(StringFormat("[CollServiceAiCpuImpl][AllocOpMem] Alloc kernelParamBuf failed len[%llu]", kernelParamSize));
+        }
     }
     HCCL_INFO("[AllocOpMem] op.opType[%d]", op.opType);
+}
+
+u64 CollServiceAiCpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize)
+{
+    u64 dynamicDataSize = 0ULL;
+    switch (opType) {
+        case OpType::BATCHSENDRECV:
+            dynamicDataSize = sizeof(struct BatchSendRecvDataDes) + op.batchSendRecvDataDes.itemNum * sizeof(HcclSendRecvItem);
+            break;
+        case OpType::ALLTOALLV:
+            dynamicDataSize = sizeof(struct AllToAllvDataDes) + rankSize * ALLTOALL_INFO_SIZE * sizeof(u64);
+            break;
+        case OpType::ALLTOALLVC:
+            dynamicDataSize = sizeof(struct AllToAllvcDataDes) + rankSize * rankSize * sizeof(u64);
+            break;
+        default:
+            break;
+    }
+    HCCL_INFO("HcclCommunicator::CalcOpDynamicDataSize dynamicDataSize[%llu]", dynamicDataSize);
+    return dynamicDataSize;
 }
 
 // 功能说明：根据输入的LinkData信息，恢复Tansport对象
@@ -909,6 +834,77 @@ u32 CollServiceAiCpuImpl::GetRemoteRankIdsHashValue(const CollOperator &op) cons
         seed ^= std::hash<uint32_t>()(rankId) + goldRatio + (seed << 6) + (seed >> 2);
     }
     return seed;
+}
+
+HcclResult CollServiceAiCpuImpl::FillBatchSendRecvData (const CollOperator &op)
+{
+    if (dynamicDataSize == 0) {
+        HCCL_ERROR("CollServiceAiCpuImpl::FillBatchSendRecvData dynamicDataSize is 0");
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::FillBatchSendRecvData dynamicDataSize is 0"));
+        return HCCL_E_PARA;
+    }
+    Buffer dynamicDataMem = kernelParamBuf_.get()->Range(sizeof(struct HcclKernelParamLite), dynamicDataSize);
+    struct BatchSendRecvDataDes *batchSendRecvDataPtr = reinterpret_cast<struct BatchSendRecvDataDes *>(dynamicDataMem.GetAddr());
+    batchSendRecvDataPtr->itemNum = op.batchSendRecvDataDes.itemNum;
+    for (u32 i = 0; i < op.batchSendRecvDataDes.itemNum; i++) {
+        CHK_PTR_NULL(static_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr) + i);
+        batchSendRecvDataPtr->batchSendRecvItem[i] = *(static_cast<HcclSendRecvItem *>(op.batchSendRecvDataDes.sendRecvItemsPtr) + i);
+        HCCL_INFO("[CollServiceAiCpuImpl][FillBatchSendRecvData] alloc batchSendRecvItem remoteRank[%u]", batchSendRecvDataPtr->batchSendRecvItem[i].remoteRank);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollServiceAiCpuImpl::FillAllToAllvData (const CollOperator &op)
+{
+    if (dynamicDataSize == 0) {
+        HCCL_ERROR("CollServiceAiCpuImpl::FillAllToAllvData dynamicDataSize is 0");
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::FillAllToAllvData dynamicDataSize is 0"));
+        return HCCL_E_PARA;
+    }
+    Buffer dynamicDataMem = kernelParamBuf_.get()->Range(sizeof(struct HcclKernelParamLite), dynamicDataSize);
+    struct AllToAllvDataDes *alltoallvDataPtr = reinterpret_cast<struct AllToAllvDataDes *>(dynamicDataMem.GetAddr());
+    alltoallvDataPtr->sendType = static_cast<u8>(op.all2AllVDataDes.sendType);
+    alltoallvDataPtr->recvType = static_cast<u8>(op.all2AllVDataDes.recvType);
+    u32 rankSize = comm->GetRankSize();
+    u64 *sendCountsPtr = static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos);
+    u64 *recvCountsPtr = sendCountsPtr + rankSize;
+    u64 *sdisplsPtr = recvCountsPtr + rankSize;
+    u64 *rdisplsPtr = sdisplsPtr + rankSize;
+    for (u32 i = 0; i < rankSize; i++) {
+        CHK_PTR_NULL(static_cast<const u64 *>(op.all2AllVDataDes.sendCounts) + i);
+        sendCountsPtr[i] = *(static_cast<const u64 *>(op.all2AllVDataDes.sendCounts) + i);
+        CHK_PTR_NULL(static_cast<const u64 *>(op.all2AllVDataDes.recvCounts) + i);
+        recvCountsPtr[i] = *(static_cast<const u64 *>(op.all2AllVDataDes.recvCounts) + i);
+        CHK_PTR_NULL(static_cast<const u64 *>(op.all2AllVDataDes.sdispls) + i);
+        sdisplsPtr[i] = *(static_cast<const u64 *>(op.all2AllVDataDes.sdispls) + i);
+        CHK_PTR_NULL(static_cast<const u64 *>(op.all2AllVDataDes.rdispls) + i);
+        rdisplsPtr[i] = *(static_cast<const u64 *>(op.all2AllVDataDes.rdispls) + i);
+        HCCL_INFO("[CollServiceAiCpuImpl][FillAllToAllvData] sendCounts[%llu], recvCounts[%llu], sdispls[%llu], rdispls[%llu]",
+            sendCountsPtr[i], recvCountsPtr[i], sdisplsPtr[i], rdisplsPtr[i]);
+    }
+    HCCL_INFO("[CollServiceAiCpuImpl][FillAllToAllvData] fill alltoallv data success, alltoallvDataPtr[%p]", alltoallvDataPtr);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollServiceAiCpuImpl::FillAllToAllvcData (const CollOperator &op)
+{
+    if (dynamicDataSize == 0) {
+        HCCL_ERROR("CollServiceAiCpuImpl::FillAllToAllvcData dynamicDataSize is 0");
+        THROW<InternalException>(StringFormat("CollServiceAiCpuImpl::FillAllToAllvcData dynamicDataSize is 0"));
+        return HCCL_E_PARA;
+    }
+    Buffer dynamicDataMem = kernelParamBuf_.get()->Range(sizeof(struct HcclKernelParamLite), dynamicDataSize);
+    struct AllToAllvcDataDes *alltoallvcDataPtr = reinterpret_cast<struct AllToAllvcDataDes *>(dynamicDataMem.GetAddr());
+    alltoallvcDataPtr->sendType = static_cast<u8>(op.all2AllVCDataDes.sendType);
+    alltoallvcDataPtr->recvType = static_cast<u8>(op.all2AllVCDataDes.recvType);
+    u32 rankSize = comm->GetRankSize();
+    for (u64 i = 0; i < rankSize * rankSize; i++)
+    {
+        CHK_PTR_NULL(static_cast<const u64 *>(op.all2AllVCDataDes.sendCountMatrix) + i);
+        alltoallvcDataPtr->sendCountMatrix[i] = *(static_cast<const u64 *>(op.all2AllVCDataDes.sendCountMatrix) + i);
+    }
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl

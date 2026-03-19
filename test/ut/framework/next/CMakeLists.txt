@@ -13,10 +13,12 @@ set(src_to_test_list
     host/ut_cpu_roce_endpoint.cc
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
+    host/ut_server_socket_manager.cc
     ut_HcclRankGraph_API.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
+    coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
 )
 

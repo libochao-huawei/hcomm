@@ -104,8 +104,9 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerT
 
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(threads.size()),
             return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunch start");
-        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunch end");
+        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm start");
+        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(threads, commId_, hostHandle, binHandle_);
+        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][SupplementNotify] AiCpuKernelLaunch failed, return [%d].", ret), ret);
     }
@@ -150,8 +151,9 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
 
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
             return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch start");
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch end");
+        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunchForComm start");
+        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
+        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunchForComm end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] AiCpuKernelLaunch failed, return [%d].", ret), ret);
     }

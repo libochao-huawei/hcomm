@@ -852,7 +852,7 @@ void DevUbConnection::UpdateCiVal(u32 ci)
     ciVal = ci;
 }
 
-std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns)
+std::vector<DevUbConnection *> GetDevStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns)
 {
     std::vector<DevUbConnection *> ubConns;
     for (auto &rmaConn : rmaConns) {

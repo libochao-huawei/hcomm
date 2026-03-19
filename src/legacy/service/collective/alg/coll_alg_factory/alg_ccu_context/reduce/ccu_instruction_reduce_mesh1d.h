@@ -87,13 +87,13 @@ public:
         dimSize_.push_back(tempVTopo[0].size());
         rankId_ = rankId;
         rootId_ = rootId;
+        repeatNum_          = repeatNum;
         op_                 = op;
         tempVTopo_          = tempVTopo;
         inputAddr_          = inputAddr;
         outputAddr_         = outputAddr;
         inputSliceStride_   = inputSliceStride;
         outputSliceStride_  = outputSliceStride;
-        repeatNum_          = repeatNum;
         inputRepeatStride_  = inputRepeatStride;
         outputRepeatStride_ = outputRepeatStride;
         normalSliceSize_    = normalSliceSize;
@@ -103,19 +103,20 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionReduceMesh1D instype is CCU_REDUCE_MESH_1D_DIRECT.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionReduceMesh1D rankId [%u], instType[%d]", rankId_, instType_);
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -138,18 +139,18 @@ private:
     uint32_t                         rankId_{0};
     uint32_t                         rootId_{0};
     CollAlgOperator                  op_;
+    uint64_t                         token_{0};
     std::vector<std::vector<RankId>> tempVTopo_;
     uint64_t                         repeatNum_{0};
     uint64_t                         inputAddr_{0};
     uint64_t                         outputAddr_{0};
+    uint64_t                         normalSliceSize_{0};
     uint64_t                         inputSliceStride_{0};
     uint64_t                         outputSliceStride_{0};
     uint64_t                         inputRepeatStride_{0};
     uint64_t                         outputRepeatStride_{0};
-    uint64_t                         normalSliceSize_{0};
     uint64_t                         lastSliceSize_{0};
     uint64_t                         repeatNumVar_{0};
-    uint64_t                         token_{0};
 };
 
 } // namespace Hccl
