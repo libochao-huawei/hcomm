@@ -21,7 +21,9 @@ namespace hcomm {
 
 EndpointPair::~EndpointPair() 
 {
-    (void)ChannelProcess::ChannelDestroy(channelHandles_.data(), channelHandles_.size());
+    for (auto &channels : channelHandles_) {
+        (void)ChannelProcess::ChannelDestroy(channels.second.data(), channels.second.size());
+    }
 }
 
 HcclResult EndpointPair::Init()
@@ -77,12 +79,12 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    if (channelHandles_.size() <= reuseIdx) {
+    if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_.size() <= reuseIdx) {
         CHK_RET(HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
-        channelHandles_.push_back(channels[0]);
+        channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
     }
-    channels[0] = channelHandles_[reuseIdx];
+    channels[0] = channelHandles_[engine][reuseIdx];
     return HCCL_SUCCESS;
 }
 
