@@ -15,7 +15,9 @@
 #include "internal_exception.h"
 #include "invalid_params_exception.h"
 #include "stream_utils.h"
+#include "channel_manager.h"
 
+using namespace Ccu;
 using namespace Hccl;
 
 class StreamUtilsTest : public testing::Test {
@@ -73,4 +75,42 @@ TEST_F(StreamUtilsTest, Ut_GetStreamCaptureInfo_When_aclmdlRICaptureGetInfo_succ
 
     // 后置验证
     EXPECT_EQ(GetStreamCaptureInfo(stream, rtModel, isCapture), HCCL_SUCCESS);
+}
+
+TEST(ChannelManagerTest, AicpuChannelInit_TimeoutLessThanU16Max) {
+    const u16 originalNotifyDefaultWaitTime = NOTIFY_DEFAULT_WAIT_TIME;
+    NOTIFY_DEFAULT_WAIT_TIME = std::numeric_limits<uint16_t>::max() - 1;
+
+    ChannelManager channelManager;
+    std::string commId = "testCommId";
+    std::string tag = "tastTag";
+    CommEngine engine = CommEngine::AICPU;
+    OpCommTransport opTransportResponse;
+    ChannelHandle channelList[10];
+    uint32_t listNum = 10;
+
+    HcclResult result = ChannelManager::AicpuChannelInit(commId, tag, engine, opTransportResponse, channelList, listNum)
+
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    NOTIFY_DEFAULT_WAIT_TIME = originalNotifyDefaultWaitTime;
+}
+
+TEST(ChannelManagerTest, AicpuChannelInit_TimeoutGreaterThanU16Max) {
+    const u16 originalNotifyDefaultWaitTime = NOTIFY_DEFAULT_WAIT_TIME;
+    NOTIFY_DEFAULT_WAIT_TIME = std::numeric_limits<uint16_t>::max() + 1;
+
+    ChannelManager channelManager;
+    std::string commId = "testCommId";
+    std::string tag = "tastTag";
+    CommEngine engine = CommEngine::AICPU;
+    OpCommTransport opTransportResponse;
+    ChannelHandle channelList[10];
+    uint32_t listNum = 10;
+
+    HcclResult result = ChannelManager::AicpuChannelInit(commId, tag, engine, opTransportResponse, channelList, listNum)
+
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    NOTIFY_DEFAULT_WAIT_TIME = originalNotifyDefaultWaitTime;
 }
