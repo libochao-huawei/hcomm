@@ -19,9 +19,12 @@
 #include "./host/host_cpu_roce_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
+#include "./aicpu/aicpu_ts_hccs_channel.h"
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
+std::atomic<u64> Channel::allId_(0);
+
 HcclResult Channel::CreateChannel(
     EndpointHandle endpointHandle, CommEngine engine, 
     HcommChannelDesc channelDesc, std::unique_ptr<Channel>& channelPtr)
@@ -51,6 +54,9 @@ std::unique_ptr<Channel> uniqueChannelPtr;
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
                        channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
                 uniqueChannelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(endpointHandle, channelDesc));
+            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_HCCS) {
+                uniqueChannelPtr.reset(
+                    new (std::nothrow) AicpuTsHccsChannel(endpointHandle, channelDesc));
             } else {
                 HCCL_ERROR("[Channel][%s] invalid protocol for engine %d, protocol=%d",
                     __func__, engine, channelDesc.remoteEndpoint.protocol);
