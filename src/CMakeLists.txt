@@ -157,7 +157,15 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
-
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu
+    ${HCCL_BASE_DIR}/legacy/framework/topo/
+    ${HCCL_BASE_DIR}/legacy/framework/topo/new_topo_builder
+    ${HCCL_BASE_DIR}/legacy/framework/topo/new_topo_builder/common
+    ${HCCL_BASE_DIR}/legacy/framework/topo/new_topo_builder/rank_graph
+    ${HCCL_BASE_DIR}/legacy/framework/topo/new_topo_builder/rank_table_info
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/buffer
+    ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
 )
 
 # 指定hccd所需包含文件搜索路径
@@ -492,6 +500,7 @@ set(ccl_kernel_plf_include_list
     ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
     ${HCCL_BASE_DIR}/common/debug/profiling/inc/aicpu
     ${HCCL_BASE_DIR}/framework/common/src/aicpu
+    ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
 )
 
 # 指定ccl_kernel_plf所需头文件搜索路径
