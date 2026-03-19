@@ -130,7 +130,7 @@ HcclResult OrderLaunch::InitGroupCtx(const std::string &group)
 
     auto& resMgr = contextResMgrMap_[currentContext];
     if (!resMgr.contextInitialized) {
-        resMgr.MarkContextInitialized(currentContext);
+        CHK_RET(resMgr.MarkContextInitialized(currentContext), HCCL_ERROR("[%s]MarkContextInitialized failed", __func__));
     }
 
     groupCtxMap_[group] = currentContext;
@@ -140,7 +140,7 @@ HcclResult OrderLaunch::InitGroupCtx(const std::string &group)
     return HCCL_SUCCESS;
 }
 
-// aclgraph模式下，先在kernel stream上写record，再在上order stream写wait；解order stream的wait
+// aclgraph模式下，解order stream的wait
 HcclResult OrderLaunch::AclgraphLaunchInOrderToOrderStream(std::string &group, const Stream& kernelStream,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut, HcclRtEvent event)
 {
@@ -307,7 +307,7 @@ HcclResult OrderLaunch::EnsureOrderStreamForGroup(std::string &group, u64 contex
 
         // 对group->contextResource的映射关系进行更新
         if (!groupCtxRes.contextInitialized) {
-            groupCtxRes.MarkContextInitialized(context);
+            CHK_RET(groupCtxRes.MarkContextInitialized(context), HCCL_ERROR("[%s]MarkContextInitialized failed", __func__));
         } else {
             groupCtxRes.UpdateContext(context);
         }
