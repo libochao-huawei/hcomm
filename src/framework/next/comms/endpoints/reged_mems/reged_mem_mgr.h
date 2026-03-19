@@ -13,6 +13,7 @@
 #include <memory>
 #include "hccl_types.h"
 #include "hcomm_res_defs.h"
+#include "log.h"
 
 using RdmaHandle = void *;
 
@@ -42,6 +43,13 @@ public:
 
     virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
  
+    // 授权
+    virtual HcclResult MemoryGrant(void* memHandle, const HcommMemGrantInfo *remoteGrantInfo)
+    {
+        HCCL_INFO("MemoryGrant is not supported");
+        return HCCL_SUCCESS;
+    }
+
     RdmaHandle rdmaHandle_{nullptr};
 };
 }
