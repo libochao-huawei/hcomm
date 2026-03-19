@@ -21,7 +21,7 @@
 #include "task_param.h"
 #include "ccu_ctx_arg.h"
 #include "const_val.h"
-
+#include "ccu_transport.h"
 namespace Hccl {
 namespace CcuRep {
 
@@ -40,7 +40,6 @@ public:
     // 平台层内部使用
     std::shared_ptr<CcuRep::CcuRepBlock> CurrentBlock();
     void                                 SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBlock);
-    void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep)
     void                                 Append(std::shared_ptr<CcuRep::CcuRepBase> rep);
     const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &GetRepSequence();
     std::shared_ptr<CcuRep::CcuRepBase> GetRepByInstrId(uint16_t instrId);
