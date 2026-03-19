@@ -50,6 +50,7 @@
 #include "hccl_aiv_utils.h"
 #include "error_message_v2.h"
 #include "hccp.h"
+#include "aicpu/launch_device.h"
 
 namespace Hccl {
 
@@ -165,6 +166,8 @@ public:
     virtual Trace &GetTrace() const;
 
     virtual u32 GetOpBaseOpIndex() const;
+
+    virtual u32 GetOpIndex() const;
 
     u32 GetSubmittedOpCnt() const;
 
@@ -377,6 +380,10 @@ public:
     std::string GetTopoFilePath() const;
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
+    u32 GetRankInParentComm();
+    aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
+    bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
+
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -425,12 +432,14 @@ private:
     std::vector<CommLink> linkListVec;
     std::vector<uint32_t> ranksVec;
     std::vector<uint32_t> topoInstsVec;
+    std::vector<u32> enableP2PDevices_;
 
     NotifyTimeoutCfg notifyTimeoutCfg;
 
     u32 step           = 0; // 全局device信息的step
     u32 opBaseOpIndex  = 0; // 单算子次数
     u32 collOpIndex    = 0; // 集合通信算子次数
+    u32 opIndex        = 0; // 下发算子总计数(单算子/图模式/CCU快速下发)
     u32 sendRecvIndex  = 0; // send/recv 算子次数
     u32 submittedOpCnt = 0;
     u32 aivCoreLimit   = MAX_NUM_BLOCKS;
@@ -488,6 +497,7 @@ private:
     CollOpParams                               curOpParams; // 当前算子参数
     std::map<std::pair<OpType, string>, std::pair<AcceleratorState, string>> 
         opAcceStateCache{}; // opType + algName --> acceleratorState + newAlgName
+    AicpuBinaryHolder aicpuKernelHolder_;
 
     void InitCommonData(const CommParams &commParams);
     void InitCommonDataNotInitDevType(const CommParams &commParams, const HcclCommConfig &commConfig);
@@ -503,6 +513,8 @@ private:
     void InitCollService();
     void InitHccpHdc() const;
     void InitCcuSuperFastLoad();
+    void InitPreResource();
+    void DeInitPreResource();
     void InitSocketManager();
     void InitRmaConnManager();
     void InitNotifyFixedValue();
@@ -523,6 +535,7 @@ private:
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
+    void RegisterAicpuKernel();
 
     // dpu相关
     void InitHccpPeer() const;           // 拉起peer模式HCCP进程

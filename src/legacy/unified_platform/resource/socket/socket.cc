@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -15,7 +15,7 @@
 
 namespace Hccl {
 
-constexpr u32 MAX_TRANSFER_SIZE         = 3 * 1024;
+constexpr u32 MAX_TRANSFER_SIZE         = 5 * 1024 * 1024;
 constexpr u32 MAX_LOG_TIMEOUT_MS        = 30000;
 constexpr u32 ONE_MILLISECOND_OF_USLEEP = 1000;
 constexpr u32 AUTO_LISTEN_PORT          = 0;

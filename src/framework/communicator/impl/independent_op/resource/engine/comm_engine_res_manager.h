@@ -13,7 +13,8 @@
 
 #include <unordered_map>
 #include <mutex>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
 #include "thread_manager.h"
 #include "notify_manager.h"
 
@@ -23,12 +24,14 @@ public:
     CommEngineResMgr();
     HcclResult Init(uint32_t threadNum, uint32_t notifyNumPerThread, const std::string& commId,
         const aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
+    HcclResult HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
+        uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
-    HcclResult HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+    HcclResult HcclAllocNotify(CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
         NotifyHandle **notifyHandleList);
     HcclResult HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList);
     HcclResult HcclThreadExportToCommEngine(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);

@@ -29,9 +29,9 @@ bool CcuRepRemWaitSem::Translate(CcuInstr *&instr, uint16_t &instrId, const Tran
 
     // 需要profiling的使用SetCKEInstr, 否则使用ClearCKEInstr
     if (isProfiling) {
-        SetCKEInstr(instr++, 0, 0, transport.GetLocCntCkeByIndex(semIndex), mask, 1);
+        SetCKEInstr(instr++, 0, 0, transport.GetLocCkeByIndex(semIndex), mask, 1);
     } else {
-        ClearCKEInstr(instr++, 0, 0, transport.GetLocCntCkeByIndex(semIndex), mask, 1);
+        ClearCKEInstr(instr++, 0, 0, transport.GetLocCkeByIndex(semIndex), mask, 1);
     }
     CHK_PRT_THROW(instrId > UINT16_MAX - instrCount,
                         HCCL_ERROR("[CcuRepRemWaitSem::Translate]uint16 integer overflow occurs, instrId = [%hu], instrCount = [%hu]", instrId, instrCount),

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -187,7 +187,7 @@ TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_template_run)
 
 TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_sole_executor)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
     virtTopo.TopoInit91095TwoTimesTwo(rankTable);
@@ -201,7 +201,7 @@ TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_sole_executor)
     algoExecutor->SetRankSize(rankSize);
     algoExecutor->EnableDataAllign(false);
     algoExecutor->EnableDetour(false);
-    algoExecutor->SetDevType(DevType::DEV_TYPE_910_95);
+    algoExecutor->SetDevType(DevType::DEV_TYPE_950);
 
     CollAlgOperator collAlgOp;
     collAlgOp.opType = OpType::ALLTOALL;
@@ -389,7 +389,7 @@ TEST_F(CcuMesh2DTest, CCU_A2A_Mesh_sole_context)
     
     MOCKER(CcuDeviceManager::AllocCke).stubs().will(invoke(AllocCkeStub));
     MOCKER(CcuDeviceManager::AllocXn).stubs().will(invoke(AllocXnStub));
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(CcuDeviceManager::GetLoopChannelId).stubs().will(invoke(CcuResourceMangerGetLoopChannelIdStub)); 
     MOCKER(&CcuDeviceManager::GetXnBaseAddr)
         .stubs()

@@ -98,7 +98,7 @@ struct RaSocketParams {
 };
 
 using WrInformation = struct TagWrInfo {
-    struct WrInfo wrData;
+    struct WrInfo wrData{};
     u64 type; // 默认 WqeType::WQE_TYPE_DATA
     u64 wrDataAddr;
     u32 notifyId;

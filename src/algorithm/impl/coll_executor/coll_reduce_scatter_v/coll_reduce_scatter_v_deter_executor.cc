@@ -271,7 +271,7 @@ HcclResult CollReduceScatterVDeterExecutor::CalReduceScatterVSliceData(const OpP
 }
 
 HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem,
-    SubCommInfo &level0CommInfo)
+    const SubCommInfo &level0CommInfo)
 {
     u32 commIndex = level0CommInfo.localRank; // 找到rank所在的节点间平面
     CHK_RET(CheckCommSize(COMM_LEVEL1, commIndex + 1));

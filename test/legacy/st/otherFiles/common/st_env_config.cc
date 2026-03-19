@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -179,7 +179,6 @@ TEST_F(EnvConfigTest, parse_env_config_should_success)
         };
         EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), algoMap);
         EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200*1024*1024);
-        EXPECT_EQ(envCfg.GetLogConfig().GetDiagnoseEnable(), true);
         EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
         EXPECT_EQ(envCfg.GetLogConfig().GetCannVersion(), "");
         EXPECT_EQ(envCfg.GetDetourConfig().GetDetourType(), HcclDetourType::HCCL_DETOUR_ENABLE_2P);
@@ -227,7 +226,6 @@ TEST_F(EnvConfigTest, parse_env_config_should_success2)
     EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_RING, HcclAlgoType::HCCL_ALGO_TYPE_RING, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
     EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200*1024*1024);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetOpExpansionMode(), OpExpansionMode::AI_CPU);
-    EXPECT_EQ(envCfg.GetLogConfig().GetDiagnoseEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetCannVersion(), "");
 }
@@ -258,7 +256,6 @@ TEST_F(EnvConfigTest, parse_env_config_should_success3)
     EXPECT_EQ(envCfg.GetAlgoConfig().GetAlgoConfig(), vector<HcclAlgoType>({HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT}));
     EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200*1024*1024);
     EXPECT_EQ(envCfg.GetAlgoConfig().GetOpExpansionMode(), OpExpansionMode::AI_CPU);
-    EXPECT_EQ(envCfg.GetLogConfig().GetDiagnoseEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
     EXPECT_EQ(envCfg.GetLogConfig().GetCannVersion(), "");
 }

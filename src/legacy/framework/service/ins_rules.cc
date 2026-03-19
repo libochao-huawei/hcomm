@@ -653,6 +653,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
+        .isMaster = false,
         .taskPara  = {
             .Ccu = {
                 .dieId         = 0,
@@ -681,7 +682,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
     // launch ccu task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.IsMaster());
 
     // launch LocalWaitFrom on stream
     RtsCntNotify *cntNotifyNTo1 = comm.GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(stream.GetId());
@@ -709,7 +710,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
         // launch ccu task
         LaunchCcuTasks(ccuParams[ccuProfIdx], slave, taskParam, taskConfig);
-        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->GetIsMaster());
+        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->IsMaster());
 
         // launch localPostTo on extra streams
         cntNotifyNTo1->PostBits(bitValue, *slave);
@@ -735,6 +736,7 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
+        .isMaster = false,
         .taskPara  = {
             .Ccu = {
                 .dieId         = 0,
@@ -752,7 +754,7 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
     
     //esl 2die适配，先申请从流再启动task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.IsMaster());
     FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 
@@ -779,6 +781,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .taskType  = TaskParamType::TASK_AIV,
         .beginTime = aivOpArgs.beginTime,
         .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
+        .isMaster = false,
         .taskPara  = {
             .Aiv = {
                     .cmdType     = aivOpArgs.cmdType,
@@ -790,6 +793,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
                                            reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_ADDR_OFFSET),
                     .flagMemSize = AIV_FLAG_AREA_SIZE,
                     .rank        = aivOpArgs.rank,
+                    .sendRecvRemoteRank = aivOpArgs.sendRecvRemoteRank,
                     .isOpbase    = aivOpArgs.isOpBase,
                     .dataType    = DataTypeToHcclDataType(aivOpArgs.dataType),
             }

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -453,6 +453,7 @@ int RaSendWr(void *qp_handle, struct SendWr *wr, struct SendWrRsp *op_rsp)
 
 int RaCtxInit(struct CtxInitCfg *cfg, struct CtxInitAttr *info, void **ctx_handle)
 {
+    *ctx_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
@@ -709,6 +710,12 @@ int RaGetLbMax(void *rdevHandle, int *lbMax)
 }
 
 int RaCtxQpDestroyBatchAsync(void *ctx_handle, void*qp_handle[], unsigned int *num, void **req_handle)
+{
+    return 0;
+}
+
+int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[],
+    unsigned int num, struct IpInfo infos[])
 {
     return 0;
 }

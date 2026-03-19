@@ -27,7 +27,7 @@
 #ifdef CONFIG_CGROUP
 typedef void (*SighandlerT)(int);
 
-STATIC int HccpAddToCgroup()
+STATIC int HccpAddToCgroup(void)
 {
     int ret;
     pid_t hccpPid;
@@ -51,7 +51,7 @@ STATIC int HccpAddToCgroup()
 }
 #endif
 
-STATIC int HccpChangeNumOfFile()
+STATIC int HccpChangeNumOfFile(void)
 {
     struct rlimit limit = {0, 0};
     int ret;

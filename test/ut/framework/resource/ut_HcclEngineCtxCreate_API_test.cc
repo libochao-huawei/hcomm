@@ -9,7 +9,7 @@
  */
 
 #include "hccl_api_base_test.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "independent_op_context_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"

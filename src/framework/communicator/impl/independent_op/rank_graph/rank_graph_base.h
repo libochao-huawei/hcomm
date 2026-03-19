@@ -12,7 +12,8 @@
 #define RANK_HCOMM_GRAPH_H
 
 #include "topoinfo_struct.h"
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_independent_common.h"
 #include "hccl_common.h"
 #include "hccl_impl_pub.h"
 #include "hccl_rank_graph.h"
@@ -33,6 +34,7 @@ public:
     };
     virtual HcclResult GetRankId(uint32_t *rank){return HCCL_E_NOT_SUPPORT;};
     virtual HcclResult GetRankSize(uint32_t *rankSize){return HCCL_E_NOT_SUPPORT;};
+    virtual HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort){return HCCL_E_NOT_SUPPORT;};
     virtual HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len) = 0;
     virtual HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList,
                                 uint32_t *listSize) = 0;

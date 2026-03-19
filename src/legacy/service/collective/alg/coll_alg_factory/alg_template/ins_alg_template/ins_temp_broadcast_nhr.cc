@@ -366,6 +366,9 @@ HcclResult InsTempBroadcastNHR::BatchSR(AicpuNHRStepInfo &stepInfo, const ResLin
 HcclResult InsTempBroadcastNHR::GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams,
                                                  const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    }
     opMode_              = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
     buffInfo_            = templateDataParams.buffInfo;

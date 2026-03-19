@@ -258,6 +258,7 @@ private:
     u64 scratchSize{0};
     u64 locBuffer[BufferType::__COUNT__]{};
     u64 opCounterAddr{0};
+    u32 opIndex;
     std::string commId;
     bool isUpdateComm {false};
     CollOperator currentOp;
@@ -267,6 +268,7 @@ private:
     bool isSuspended{false};          // 是否处于暂停状态
 
     void InitRmaBufferLite(HcclAicpuLocBufLite &bufLite, BufferType type);
+    void UpdateDynamicOpData(HcclKernelParamLite *kernelParam);
 
     std::vector<std::unique_ptr<RmaBufferLite>> rmaBufferLiteVec;
     DevType devType;
