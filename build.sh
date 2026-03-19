@@ -122,6 +122,7 @@ function build_cb_test_verify(){
 }
 
 function build_test() {
+    ${CURRENT_DIR}/build_third_party.sh
     ENABLE_ST="on"
     cmake_config -DENABLE_ST=${ENABLE_ST}
 
