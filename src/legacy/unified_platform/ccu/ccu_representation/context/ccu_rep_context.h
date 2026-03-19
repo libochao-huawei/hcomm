@@ -70,6 +70,10 @@ public:
     std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>> GetDependencyInfo(uint32_t id);
     void ClearDependencyInfo();
 
+    void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
+    void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
+                                 DataType outputDataType, ReduceOp opType);
+
 protected:
     std::set<std::string> registeredLoop;
 
