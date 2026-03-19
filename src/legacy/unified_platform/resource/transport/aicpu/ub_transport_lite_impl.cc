@@ -341,10 +341,11 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     u32           inlineData = 1;
     CheckConnVec("UbTransportLiteImpl::Post"); // 待修改优化, 检查connection
     auto taskId = stream.GetRtsq()->GetTaskId();
-    // 当前使用1个connection，下标为0
+    // 当前使用1个connection，下标为0 构建sqe
     auto rmtBuffSliceLite = GetRmtNotifySliceLite(index);
     connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
                             cfg, stream, connOut);
+    // 构建rts 的 sqe
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
@@ -362,11 +363,13 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     taskParam.taskPara.DMA.size        = rmtBuffSliceLite.GetSize();
     taskParam.taskPara.DMA.notifyID    = rmtBuffSliceLite.GetAddr();
     taskParam.taskPara.DMA.notifyValue = 1;
-    taskParam.taskPara.DMA.linkType    = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType    = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp       = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locEid      = GetLocEid();
     taskParam.taskPara.DMA.rmtEid      = GetRmtEid();
- 
+
+    HCCL_INFO("[UbTransportLiteImpl::%s] locEid[%s], rmtEid[%s]", __func__, GetLocEid().Describe().c_str(), GetRmtEid().Describe().c_str());
+
     if (callback_ != nullptr) {
         callback_(stream.GetSqId(), taskId, taskParam);
     }
@@ -420,7 +423,7 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufSliceLite &loc, const Rmt
     taskParam.taskPara.DMA.size     = loc.GetSize();
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.DMA.notifyValue = 0xffffffff;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp    = dmaOp;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
@@ -496,7 +499,7 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufSliceLite &loc, con
     taskParam.taskPara.Reduce.size = loc.GetSize();
     taskParam.taskPara.Reduce.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.Reduce.notifyValue = 1;
-    taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
+    taskParam.taskPara.Reduce.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
     taskParam.taskPara.Reduce.locEid   = GetLocEid();
@@ -604,7 +607,7 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     taskParam.taskPara.DMA.size     = locRmaBufSlicelite.GetSize();
     taskParam.taskPara.DMA.notifyID = rmtNotifySliceLite.GetAddr();
     taskParam.taskPara.DMA.notifyValue = 1;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
@@ -648,7 +651,7 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     taskParam.taskPara.Reduce.size     = locRmaBufSlicelite.GetSize();
     taskParam.taskPara.Reduce.notifyID = rmtNotifySliceLite.GetAddr();
     taskParam.taskPara.Reduce.notifyValue = 1;
-    taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
+    taskParam.taskPara.Reduce.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
     taskParam.taskPara.Reduce.locEid   = GetLocEid();
@@ -689,6 +692,7 @@ Eid UbTransportLiteImpl::GetLocEid() const
 {
     Eid eid{};
     if (!connVec.empty()) {
+        HCCL_INFO("[UbTransportLiteImpl::%s] locEid[%s]", __func__, connVec[0]->GetLocEid().Describe().c_str());
         return connVec[0]->GetLocEid();
     }
     return eid;
@@ -698,6 +702,7 @@ Eid UbTransportLiteImpl::GetRmtEid() const
 {
     Eid eid{};
     if (!connVec.empty()) {
+        HCCL_INFO("[UbTransportLiteImpl::%s] rmtEid[%s]", __func__, connVec[0]->GetRmtEid().Describe().c_str());
         return connVec[0]->GetRmtEid();
     }
     return eid;

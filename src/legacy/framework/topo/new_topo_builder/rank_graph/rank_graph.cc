@@ -848,7 +848,9 @@ CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
         {LinkProtocol::UB_TP, COMM_PROTOCOL_UBC_TP},
         {LinkProtocol::ROCE, COMM_PROTOCOL_ROCE},
         {LinkProtocol::HCCS, COMM_PROTOCOL_HCCS},
-        {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM}};
+        {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM},
+        {LinkProtocol::UBOE, COMM_PROTOCOL_UBOE}
+    };
 
     for (const auto &p : protocolPairs) {
         if (p.first == linkProtocol) {
