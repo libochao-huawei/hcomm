@@ -258,6 +258,11 @@ public:
     bool userMemEnable{true};
     // DispatcherCtxPtr；设备侧 TS Roce 等场景传入，WriteCommon 内写入线程局部 dispatcher
     void *dctxPtr{nullptr};
+    bool isNewOneSide{false};
+    u32 localBufSize{0};
+    u32 remoteBufSize{0};
+    HcclMemEx *localBufMem{nullptr};
+    HcclMemEx *remoteBufMem{nullptr};
     TagMachinePara() {}
 
     TagMachinePara(const struct TagMachinePara &that)
@@ -301,6 +306,11 @@ public:
         queueDepthAttr = that.queueDepthAttr;
         userMemEnable = that.userMemEnable;
         dctxPtr = that.dctxPtr;
+        isNewOneSide = (that.isNewOneSide);
+        localBufSize = (that.localBufSize);
+        remoteBufSize = (that.remoteBufSize);
+        localBufMem = (that.localBufMem);
+        remoteBufMem = (that.remoteBufMem);
     }
 
     struct TagMachinePara &operator=(struct TagMachinePara &that)
@@ -344,6 +354,11 @@ public:
             queueDepthAttr = that.queueDepthAttr;
             userMemEnable = that.userMemEnable;
             dctxPtr = that.dctxPtr;
+            isNewOneSide = (that.isNewOneSide);
+            localBufSize = (that.localBufSize);
+            remoteBufSize = (that.remoteBufSize);
+            localBufMem = (that.localBufMem);
+            remoteBufMem = (that.remoteBufMem);
         }
 
         return *this;
