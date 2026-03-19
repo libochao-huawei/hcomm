@@ -172,7 +172,7 @@ TEST_F(EnvConfigTest, parse_env_config_should_success)
         EXPECT_EQ(envCfg.GetAlgoConfig().GetBuffSize(), 200 * 1024 * 1024);
         EXPECT_EQ(envCfg.GetLogConfig().GetEntryLogEnable(), true);
         EXPECT_EQ(envCfg.GetLogConfig().GetCannVersion(), "");
-        //EXPECT_EQ(envCfg.GetDetourConfig().GetDetourType(), HcclDetourType::HCCL_DETOUR_ENABLE_2P);
+        EXPECT_EQ(envCfg.GetDetourConfig().GetDetourType(), HcclDetourType::HCCL_DETOUR_DISABLE);
     } catch (...) {
     }
 }
