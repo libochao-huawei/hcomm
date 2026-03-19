@@ -10,6 +10,7 @@
 
 #include "dev_aicpu_ts_channel_mgr.h"
 #include "dev_aicpu_ts_roce_channel.h"
+#include "dev_aicpu_ts_hccs_channel.h"
 #include "log.h"
 
 DevAicpuTsChannelMgr &DevAicpuTsChannelMgr::Instance()
@@ -30,6 +31,9 @@ DevAicpuTsChannel *DevAicpuTsChannelMgr::GetOrCreateAicpuTsChannel(hcomm::HcommC
     switch (kind) {
         case hcomm::HcommChannelKind::AICPU_TS_ROCE:
             channel = std::make_unique<DevAicpuTsRoceChannel>();
+            break;
+        case hcomm::HcommChannelKind::AICPU_TS_ROCE:
+            channel = std::make_unique<DevAicpuTsHccsChannel>();
             break;
         default:
             HCCL_ERROR("[DevAicpuTsChannelMgr][GetOrCreateAicpuTsChannel] unsupported kind[%u]",
