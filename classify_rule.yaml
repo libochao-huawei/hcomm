@@ -15,6 +15,9 @@ hcomm:
       - src
       - include
     unrelease:
+      - src/legacy/framework/ccu/ccu_ins/
+      - src/legacy/service/
+      - test/legacy/st/algorithm
   llt:
     ut_check: true
     st_check: false
