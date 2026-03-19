@@ -324,7 +324,7 @@ HcclResult hcomm::HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyId
 
     // 3.调用urma_post_jetty_send_wr	 
     HCCL_INFO("[HostCpuUrmaChannel::%s] call urma_post_jetty_send_wr.", __func__);	 
-    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &notifyRecordWr, &badWr);
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &notifyRecordWr, &badWr);
     if (ret != 0 && badWr == nullptr) {
         HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed while badWr is nullptr", __func__);
         return HCCL_E_INTERNAL;
@@ -354,7 +354,7 @@ HcclResult hcomm::HostCpuUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, 
     while (true) {
         HCCL_INFO("[HostCpuUrmaChannel::%s] start to poll jfc", __func__);
         
-        auto actualNum = urma_poll_jfc(reinterpret_cast<urma_jfc_t*>(connections_[0].GetCqVa()), 1, &wc);
+        auto actualNum = urma_poll_jfc(reinterpret_cast<urma_jfc_t*>(connections_[0]->GetCqVa()), 1, &wc);
         CHK_PRT_RET(wc.status != URMA_CR_SUCCESS,
             HCCL_ERROR("[HostCpuUrmaChannel][%s] urma_poll_jfc return wc.status is [%d].",
             __func__, wc.status), HCCL_E_NETWORK);
@@ -391,7 +391,7 @@ HcclResult hcomm::HostCpuUrmaChannel::WriteWithNotify(void *dst, const void *src
     CHK_RET(PrepareWriteWrResource(dst, src, len, remoteNotifyIdx, writeWithNotifyWr));
 
     // 3.调用urma_post_jetty_send_wr	 
-    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &writeWithNotifyWr, &badWr);
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &writeWithNotifyWr, &badWr);
     if (ret != 0 && badWr == nullptr) {
         HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed while badWr is nullptr", __func__);
         return HCCL_E_INTERNAL;
@@ -437,7 +437,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t
     urmaWriteWr.next = nullptr;
     
     // 3.调用 urma_post_jetty_send_wr	 
-    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &urmaWriteWr, &badWr);
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &urmaWriteWr, &badWr);
     
     CHK_PRT_CONT(ret != 0,
         HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed. ret:%d, "
@@ -480,7 +480,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t 
     urmaReadWr.next = nullptr;
 
     // 3.调用 urma_post_jetty_send_wr	 
-    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &urmaReadWr, &badWr);
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &urmaReadWr, &badWr);
     
     CHK_PRT_CONT(ret != 0,
         HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr. ret:%d, "
@@ -504,7 +504,7 @@ HcclResult hcomm::HostCpuUrmaChannel::ChannelFence()
     auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
     auto startTime = std::chrono::steady_clock::now();
     while (true) {
-        auto actualNum = urma_poll_jfc(reinterpret_cast<urma_jfc_t*>(connections_[0].GetCqVa()), wqeNum_, wc.data());
+        auto actualNum = urma_poll_jfc(reinterpret_cast<urma_jfc_t*>(connections_[0]->GetCqVa()), wqeNum_, wc.data());
 
         if (actualNum < 0) {
             HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_poll_jfc failed. actualNum=%d", __func__, actualNum);
@@ -558,7 +558,7 @@ HcclResult hcomm::HostCpuUrmaChannel::UrmaPostJfr()
     HCCL_INFO("[HostCpuUrmaChannel::%s] call ibv_post_recv", __func__);
 
     // 2. 调用 urma_post_jetty_recv_wr	 
-    auto ret = urma_post_jetty_recv_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &jfrWr, &badWr);
+    auto ret = urma_post_jetty_recv_wr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &jfrWr, &badWr);
 
     CHK_PRT_CONT(ret != 0,
         HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_recv_wr failed. ret:%d, "
