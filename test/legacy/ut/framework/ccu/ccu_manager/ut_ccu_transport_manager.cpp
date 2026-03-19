@@ -1019,10 +1019,10 @@ TEST_F(CcuTransportMgrTest,Ut_DumpNotReadyTransport)
     Socket socket{};
     std::unique_ptr<CcuConnection> connection = std::make_unique<CcuConnection>();
     CclBufferInfo locCclBufInfo{};
-    CcuTransport CcuTransport{socket,std::move(connection),locCclBufInfo};
-    BaseProtType portType(PortDeploymentType::P2P,ConnectProtoType::UB);
+    CcuTransport ccuTransport{socket,std::move(connection),locCclBufInfo};
+    BasePortType portType(PortDeploymentType::P2P,ConnectProtoType::UB);
     LinkData fakeLinkData(portType,0,1,0,1);
     auto transport = std::make_pair(&ccuTransport,linkData);
     vector<std::pair<CcuTransport*,LinkData>> transports{1,transport};
-    CcuTransportMgr::DumpNotReadyTransport(transports);
+    CcuTransportMgr::DumpNotReadyTransports(transports);
 }
