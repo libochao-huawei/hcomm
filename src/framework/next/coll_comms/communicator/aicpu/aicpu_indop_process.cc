@@ -157,7 +157,7 @@ ReadWriteLockBase& AicpuIndopProcess::AicpuGetCommMutex()
     return g_commAicpuInfo.commAicpuMgrMapMutex;
 }
 
-HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam)
+HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelRes *commParam)
 {
     CHK_PTR_NULL(commParam);
 
