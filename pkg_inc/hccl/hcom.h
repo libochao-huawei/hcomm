@@ -20,6 +20,7 @@
 #include "workflow.h"
 #include "dtype_common.h"
 #include "hccl/hccl_rank_graph.h"
+#include "hcom_pub.h"
 
 #ifdef __cplusplus
 extern "C" {
