@@ -33,7 +33,7 @@ public:
 
 private:
     struct RoceSlot {
-        DispatcherCtxPtr ctx{nullptr};
+        DispatcherCtxPtr dispatcherCtx{nullptr};
         std::shared_ptr<hccl::Transport> link;
         char commId[128]{};
     };
