@@ -234,6 +234,9 @@ u64 HrtStreamGetMode(HcclRtStream const ptr)
 void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
 {
     HCCL_INFO("[HrtStreamSetMode]streamPtr[%p], stmMode[%llu].", streamPtr, stmMode);
+    if (streamPtr == nullptr) {
+        throw RuntimeApiException(StringFormat("ptr is null, call aclrtSetStreamAttribute failed, ptr=%p", streamPtr));
+    }
     s32 streamId = -1;
     aclError ret = aclrtStreamGetId(streamPtr, &streamId);
     HCCL_DEBUG("Call aclrtStreamGetId, return value[%d].", ret);
@@ -392,6 +395,9 @@ inline s32 GetMsTimeFromExecTimeout()
 void HcclStreamSynchronize(HcclRtStream ptr)
 {
     HCCL_INFO("[HcclStreamSynchronize] ptr[%p].", ptr);
+    if (ptr == nullptr) {
+        throw RuntimeApiException(StringFormat("ptr is null, call aclrtSynchronizeStreamWithTimeout failed, ptr=%p", ptr));
+    }
     s32       timeout = GetMsTimeFromExecTimeout();
     aclError  ret     = aclrtSynchronizeStreamWithTimeout(ptr, timeout);
     if (ret != ACL_SUCCESS) {
@@ -562,9 +568,9 @@ void *HrtIpcOpenMemory(const char_t *name)
 
 void HrtIpcCloseMemory(const void *ptr)
 {
-    HCCL_INFO("[HrtIpcCloseMemory] ptr[%p].", ptr);
     aclError ret = aclrtIpcMemClose(reinterpret_cast<const char *>(ptr));
-    if (ret != RT_ERROR_NONE) {
+    HCCL_INFO("Call aclrtIpcMemClose, return[%d], para: name[%s].", ret, reinterpret_cast<const char *>(ptr));
+    if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Close][IpcMemory]errNo[0x%016llx] "
                    "rtClose ipc memory failed. return[%d], para: ptr[%p].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
@@ -697,9 +703,6 @@ void HrtNotifyDestroy(RtNotify_t ptr)
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 {
     HCCL_INFO("[HrtIpcSetNotifyName] ptr[%p], len[%u].", ptr, len);
-    if (HrtGetDeviceType() == DevType::DEV_TYPE_950) {
-        return;
-    }
     aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 2UL);
     HCCL_INFO("Call aclrtNotifyGetExportKey, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
@@ -728,7 +731,7 @@ u32 HrtGetNotifyID(RtNotify_t notifyHandle)
 u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
 {
     HCCL_INFO("[HrtNotifyGetAddr] notifyHandle[%p].", notifyHandle);
-    uint64_t  addr = 0;
+    uint64_t  addr;
     rtError_t ret = rtGetNotifyAddress(notifyHandle, &addr);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("[rtGetNotifyAddress]rt get notify address failed. "
@@ -755,14 +758,15 @@ void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
 RtNotify_t HrtIpcOpenNotify(const char_t *name)
 {
     HCCL_INFO("[HrtIpcOpenNotify] name[%s].", name);
+    RtNotify_t ptr = nullptr;
     uint64_t flags = 0;
-    aclrtNotify notify = nullptr;
-    aclError ret = aclrtNotifyImportByKey(&notify, name, static_cast<uint64_t>(flags));
-    HCCL_INFO("Call rtIpcOpenNotify, return value[%d], para: notify[%p], name[%s].", ret, notify, name);
+    aclrtNotify* notify = nullptr;
+    aclError ret = aclrtNotifyImportByKey(notify, name, static_cast<uint64_t>(flags));
+    HCCL_INFO("Call rtIpcOpenNotify, return value[%d], para: notify[%p], name[%s].", ret, ptr, name);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[rt][IpcOpenNotify]errNo[0x%016llx] rt ipc notify open fail. "
                    "return[%d]. para: notify[%p], name[%s], flags[%llu].",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, notify, name, flags);
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, name, flags);
         MACRO_THROW(RuntimeApiException, msg);
     }
     return notify;
@@ -1016,7 +1020,7 @@ void HrtRegTaskFailCallbackByModule(aclrtExceptionInfoCallback callback)
 u32 HrtStreamGetSqId(const aclrtStream ptr)
 {
     HCCL_INFO("[HrtStreamGetSqId] ptr[%p].", ptr);
-    u32       sqId = 0;
+    u32       sqId;
     rtError_t ret = rtStreamGetSqid(ptr, &sqId);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("Call rtStreamGetSqid failed. return[%d], ptr[%p], sqId[%u].", ret, ptr, sqId);
@@ -1028,13 +1032,11 @@ u32 HrtStreamGetSqId(const aclrtStream ptr)
 u32 HrtStreamGetCqId(const aclrtStream ptr)
 {
     HCCL_INFO("[HrtStreamGetCqId] ptr[%p].", ptr);
-    u32 cqId = 0;
-    u32 logicCqId = 0;
+    u32 cqId;
+    u32 logicCqId;
     rtError_t ret = rtStreamGetCqid(ptr, &cqId, &logicCqId);
     if (ret != RT_ERROR_NONE) {
-        string msg = StringFormat("Call rtStreamGetCqid failed. return[%d], ptr[%p], cqId[%u], logicCqId[%u].", 
-                    ret, ptr, cqId, logicCqId);
-        THROW<RuntimeApiException>(msg);
+        THROW<RuntimeApiException>(StringFormat("Call rtStreamGetCqid failed, with ret[%d]", ret));
     }
     return logicCqId;
 }
@@ -1073,8 +1075,7 @@ std::pair<u32, u32> HrtUbDevQueryToken(u64 addr, u64 size)
     info.size = size;
     auto ret  = rtUbDevQueryInfo(QUERY_PROCESS_TOKEN, &info);
     if (ret != RT_ERROR_NONE) {
-        HCCL_ERROR("[UbDev][QueryToken]errNo[0x%016llx] query(va=0x%llx, size=0x%llx) token failed. ret=%d.",
-            HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), addr, size, ret);
+        HCCL_WARNING("query(va=0x%llx, size=0x%llx) token failed, ret=%d", addr, size, ret);
         return std::make_pair(0, 0);
     }
 
@@ -1106,7 +1107,7 @@ HrtDevResAddrInfo HrtGetDevResAddress(const HrtDevResInfo &devResInfo)
     rtDevResAddrInfo addrInfo;
     addrInfo.resAddress = &addr;
     addrInfo.len        = &len;
-    auto ret           = rtGetDevResAddress(&resInfo, &addrInfo);
+    auto ret            = rtGetDevResAddress(&resInfo, &addrInfo);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("Call rtGetDevResAddress failed. return[%d], devResInfo.dieId[%u], "
                                 "devResInfo.procType[%u], devResInfo.resType[%u], devResInfo.flag[%u], "
