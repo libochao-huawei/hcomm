@@ -129,7 +129,8 @@ void SocketManager::ServerInit(PortData &localPort)
     if (success) {
         HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
     } else {
-        string msg = StringFormat("[SocketManager::%s] Device %u listen the port %u failed, maybe other process be listen it", __func__, deviceLogicId_, serverListenPort);
+        string msg = StringFormat("[SocketManager::%s] Device %u listen failed: port[%u] is in use or IP address[%s] is not available", 
+            __func__, deviceLogicId_, serverListenPort, ipAddress.Describe().c_str());
         MACRO_THROW(InvalidParamsException, msg);
     }
     serverSocketMap[localPort] = std::move(serverSocket);

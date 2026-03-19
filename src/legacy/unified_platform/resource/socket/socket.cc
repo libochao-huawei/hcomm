@@ -41,8 +41,8 @@ bool Socket::Listen(u32 &port)
     HCCL_INFO("[Socket::%s] trying to listen on port[%u]", __func__, port);
     RaSocketListenParam param(socketHandle, port);
     bool ret = HrtRaSocketTryListenOneStart(param);
-    CHK_PRT_RET(!ret, HCCL_INFO("[Socket::%s] socket[%s] listen failed, port[%u] is in use",
-                                 __func__, Describe().c_str(), port), ret);
+    CHK_PRT_RET(!ret, HCCL_INFO("[Socket::%s] socket[%s] listen failed: port[%u] is already in use or IP address unavailable",
+        __func__, Describe().c_str(), port), ret);
 
     port = port == AUTO_LISTEN_PORT ? param.port : port;
     listenPort = port;

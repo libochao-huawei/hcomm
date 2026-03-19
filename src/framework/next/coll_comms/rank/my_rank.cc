@@ -160,11 +160,36 @@ HcclResult MyRank::BatchCreateSockets(CommEngine engine, const HcclChannelDesc* 
     return HCCL_SUCCESS;
 }
 
+bool MyRank::IsProtocolSupported(CommEngine engine, CommProtocol protocol)
+{
+    static const std::map<CommEngine, std::vector<CommProtocol>> EngineProtocolMap = {
+        {COMM_ENGINE_CPU,      {COMM_PROTOCOL_ROCE}},
+        {COMM_ENGINE_CPU_TS,   {COMM_PROTOCOL_ROCE}},
+        {COMM_ENGINE_AICPU,    {COMM_PROTOCOL_UBC_CTP, COMM_PROTOCOL_UBC_TP}},
+        {COMM_ENGINE_AICPU_TS, {COMM_PROTOCOL_UBC_CTP, COMM_PROTOCOL_UBC_TP}},
+        {COMM_ENGINE_AIV,      {COMM_PROTOCOL_UB_MEM}},
+        {COMM_ENGINE_CCU,      {COMM_PROTOCOL_UBC_CTP, COMM_PROTOCOL_UBC_TP}}
+    };
+    
+    auto it = EngineProtocolMap.find(engine);
+    if (it == EngineProtocolMap.end()) {
+        return false;
+    }
+    
+    const auto& protocols = it->second;
+    return std::find(protocols.begin(), protocols.end(), protocol) != protocols.end();
+}
+
 constexpr uint32_t MEM_HANDLE_NUM_MAX = 256;  // memHandleNum的默认限制最大为256
 
 HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, 
     uint32_t index)
 {
+    // 协议匹配校验
+    CHK_PRT_RET(!IsProtocolSupported(engine, channelDesc.channelProtocol),
+        HCCL_ERROR("[%s]Channeldesc[%u] protocol[%d] not supported by engine[%d]",
+        __func__, index, channelDesc.channelProtocol, engine), HCCL_E_PARA);
+
     if (engine == COMM_ENGINE_AIV) {
         CHK_PRT_RET(
             (channelDesc.memHandleNum > MEM_HANDLE_NUM_MAX), 
