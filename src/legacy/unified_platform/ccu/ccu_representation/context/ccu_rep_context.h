@@ -40,7 +40,6 @@ public:
     // 平台层内部使用
     std::shared_ptr<CcuRep::CcuRepBlock> CurrentBlock();
     void                                 SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBlock);
-    void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep)
     void                                 Append(std::shared_ptr<CcuRep::CcuRepBase> rep);
     const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &GetRepSequence();
     std::shared_ptr<CcuRep::CcuRepBase> GetRepByInstrId(uint16_t instrId);
@@ -70,6 +69,10 @@ public:
     void SetDependencyInfo(uint32_t id, uint32_t mask, std::shared_ptr<CcuRepBase> rep);
     std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>> GetDependencyInfo(uint32_t id);
     void ClearDependencyInfo();
+
+    void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
+    void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
+                                 DataType outputDataType, ReduceOp opType);
 
 protected:
     std::set<std::string> registeredLoop;
