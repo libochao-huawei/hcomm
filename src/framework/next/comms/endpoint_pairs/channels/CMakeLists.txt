@@ -11,6 +11,7 @@
 set(src_list
     channel.cc
     channel_process.cc
+    channel_transport_process.cc
 )
 
 target_sources(hcomm PRIVATE

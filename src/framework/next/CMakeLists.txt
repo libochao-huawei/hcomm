@@ -13,4 +13,5 @@ add_subdirectory(comms)
 
 target_include_directories(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${HCCL_BASE_DIR}/pub_inc/inner
 )
