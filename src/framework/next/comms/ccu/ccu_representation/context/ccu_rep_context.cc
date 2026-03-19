@@ -174,6 +174,7 @@ void CcuRepContext::AddProfiling(const ChannelHandle channel, const std::string 
     ccuProfilingInfoCache.mask     = mask;
     (void)memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId));
     ccuProfilingInfoCache.channelId[0] = channelImpl->GetChannelId();
+    ccuProfilingInfoCache.channelHandle[0] = channel;
 
     profilingInfo.push_back(ccuProfilingInfoCache);
 }
@@ -194,6 +195,7 @@ void CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channel
         HcommChannelGet(channels[i], &channelPtr);
         auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+        ccuProfilingInfoCache.channelHandle[i] = channels[i];
     }
 
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
@@ -216,6 +218,7 @@ void CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channel
         HcommChannelGet(channels[i], &channelPtr);
         auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+        ccuProfilingInfoCache.channelHandle[i] = channels[i];
     }
 
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
