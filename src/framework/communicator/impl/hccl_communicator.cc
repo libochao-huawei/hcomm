@@ -764,6 +764,7 @@ namespace hccl
         ErrorMessageReport errorMessage;
         if (kfcStatusTransferD2H_ != nullptr)
         {
+            HcclUs startUt = TIME_NOW();
             CHK_PRT_RET(isInvalidComm_,
                 HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
                 "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), errorMessage);
@@ -773,6 +774,8 @@ namespace hccl
             {
                 HCCL_ERROR("GetAicpuTaskException get aicpu task exception failed.ret[%u]", ret);
             }
+            HcclUs endUt = TIME_NOW();
+            HCCL_INFO("GetAicpuTaskException get aicpu task exception cost time[%u]", endUt - startUt);
         }
         return errorMessage;
     }
