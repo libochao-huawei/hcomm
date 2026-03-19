@@ -12,10 +12,12 @@
 #include <cstdlib>
 
 #include "hccp_ctx.h"
+#include "hccp_async_ctx.h"
 #include "exception_util.h"
 #include "rma_conn_exception.h"
 #include "rdma_handle_manager.h"
 #include "exchange_ub_conn_dto.h"
+#include "arpa/inet.h" // 用于 inet_pton 函数(IP 转换)
 
 namespace Hccl {
 
@@ -26,9 +28,11 @@ constexpr u32 WQE_NUM_PER_SQE         = 4; // URMA约束每个SQE包含4个WQEBB
 constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传输量256*1024*1024 Byte
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                 const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+                                 const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                 const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr),
+      rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
     devLogicId = HrtGetDevice();
@@ -58,17 +62,27 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                     const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+                                     const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                     const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::TP;
 }
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                       const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+                                       const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                       const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::CTP;
+}
+
+DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                         const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+{
+    tpProtocol = TpProtocol::UBOE;
 }
 
 std::vector<char> DevUbConnection::GetUniqueId() const
@@ -230,6 +244,9 @@ void DevUbConnection::ImportRmtDto()
         ThrowAbnormalStatus(std::string(__func__));
     }
 
+    // 设置tp attr
+    SetTpAttrAsync();
+
     ImportJetty();
     ubConnStatus = UbConnStatus::JETTY_IMPORTING;
 }
@@ -346,7 +363,7 @@ void DevUbConnection::ImportJetty()
     in.jettyImportCfg = jettyImportCfg;
     in.jettyImportCfg.protocol = tpProtocol;
 
-    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP) {
+    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP && tpProtocol != TpProtocol::UBOE) {
         HCCL_ERROR("[DevUbConnection][%s] failed, tp protocol[%s] is not expected, %s.",
             __func__, tpProtocol.Describe().c_str(), Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
@@ -880,6 +897,35 @@ bool IfNeedUpdatingUbCi(const std::vector<DevUbConnection *> &ubConns)
         }
     }
     return false;
+}
+
+void DevUbConnection::SetTpAttrAsync()
+{
+    TpHandle tpHandle = tpInfo.tpHandle;
+    /*  bitmap 至少配置为1FC，转2进制: 0011 1111 1000(前两位retry_times_init+at不用配置、后三位at_times+sl+ttl不用配置)，转10进制:508 
+        0-retry_times_init: 3 bit   1-at: 5 bit             2-sip: 128 bit
+        3-dip: 128 bit              4-sma: 48 bit           5-dma: 48 bit
+        6-vlan_id: 12 bit           7-vlan_en: 1 bit        8-dscp: 6 bit
+        9-at_times: 5 bit           10-sl: 4 bit             11-ttl: 8 bit
+    */
+    uint32_t attrBitmap = 508;
+    struct TpAttr tpAttr = {0};
+
+    // 填充本端IP
+    // inet_pton: 将点分十进制IP转为网络字节序的二进制(sip: 128 bit->16字节，IPv4填充前4字节，后12字节留0)
+    const char* localIp = locIpv4Addr.GetIpStr().c_str();
+    if (inet_pton(AF_INET, localIp, tpAttr.sip) != 1) {
+        std::string msg = StringFormat("[DevUbConnection::%s] Failed to convert the locIpv4Addr[%s] to sip.", __func__, localIp);
+        THROW<InternalException>(msg);
+    }
+    // 填充对端IP
+    const char* rmtIp = rmtIpv4Addr.GetIpStr().c_str();
+    if (inet_pton(AF_INET, rmtIp, tpAttr.dip) != 1) {
+        std::string msg = StringFormat("[DevUbConnection::%s] Failed to convert the rmtIpv4Addr[%s] to sip.", __func__, rmtIp);
+        THROW<InternalException>(msg);
+    }
+    
+    HrtRaSetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle);
 }
 
 } // namespace Hccl
