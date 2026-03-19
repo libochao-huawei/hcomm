@@ -256,7 +256,7 @@ HcclResult hcomm::HostCpuUrmaChannel::PrepareNotifyWrResource(const uint32_t rem
     notifyRecordWr.flag.bs.comp_order = 1; // comp_order要一直保持为1,
     notifyRecordWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
     notifyRecordWr.flag.bs.solicited_enable = 1;
-    notifyRecordWr.tjetty = const_cast<urma_target_jetty_t*>(&tjetty_); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
+    notifyRecordWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa()); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
     notifyRecordWr.user_ctx = 0; // 跟ibvs中的wr_id对应
     // notifyRecordWr.rw.src.sge->addr; 不关心
     notifyRecordWr.rw.src.sge->len = 0;
@@ -287,7 +287,7 @@ HcclResult hcomm::HostCpuUrmaChannel::PrepareWriteWrResource(const void *dst, co
     // comp_order要一直保持为1,
     writeWithNotifyWr.flag.bs.comp_order = 1;
     writeWithNotifyWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
-    writeWithNotifyWr.tjetty = const_cast<urma_target_jetty_t*>(&tjetty_); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
+    writeWithNotifyWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa()); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
     writeWithNotifyWr.user_ctx = 0; // 跟ibvs中的wr_id对应
     writeWithNotifyWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
     writeWithNotifyWr.rw.src.sge->len = len;
@@ -423,7 +423,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t
     // comp_order要一直保持为1,
     urmaWriteWr.flag.bs.comp_order = 1;
     urmaWriteWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
-    urmaWriteWr.tjetty = const_cast<urma_target_jetty_t*>(&tjetty_); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
+    urmaWriteWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa()); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
     //华为云那边用1825的uboe,集合通信（host ub);单边通信也会用1650的UDie(host ub)
     urmaWriteWr.user_ctx = 0; // 跟ibvs中的wr_id对应
     urmaWriteWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
@@ -466,7 +466,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t 
     // comp_order要一直保持为1,
     urmaReadWr.flag.bs.comp_order = 1;
     urmaReadWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
-    urmaReadWr.tjetty = const_cast<urma_target_jetty_t*>(&tjetty_); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
+    urmaReadWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa()); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
     //华为云那边用1825的uboe,集合通信（host ub);单边通信也会用1650的UDie(host ub)
     urmaReadWr.user_ctx = 0; // 跟ibvs中的wr_id对应
     urmaReadWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
