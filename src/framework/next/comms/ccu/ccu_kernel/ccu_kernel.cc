@@ -761,6 +761,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
     //         allCcuProfilingInfos.push_back(lgProfInfo.ccuProfilingInfos[i]);
     //     }
     // }
+    // TODO:AddCcuProfiling();
     // DumpCcuProfilingInfo(allCcuProfilingInfos);
     allCcuProfilingInfo = allCcuProfilingInfos;
     return HCCL_SUCCESS;
