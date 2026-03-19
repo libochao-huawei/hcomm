@@ -12,6 +12,7 @@
 #include "dispatcher_pub.h"
 #include "hccl_primitive_remote.h"
 #include "hccl_primitive_local.h"
+#include "aicpu_ts_hccs_channel.h"
 
 using namespace hccl;
 extern HcclResult GetPubDispatcher(hccl::DispatcherPub** dispatcherPtr);
@@ -27,7 +28,15 @@ HcclResult HcclRemoteWrite(StreamHandle streamHandle, HcclMemTransport memTransp
     struct Transport::Buffer localBuf(locBuf->addr, locBuf->len);
     struct Transport::Buffer remoteBuf(rmtBuf->addr, rmtBuf->len);
 
-    return reinterpret_cast<Transport*>(memTransport)->WriteAsync(remoteBuf, localBuf, *stream);
+    Channel *channel = reinterpret_cast<Channel *>(memTransport);
+    if (channel->GetCommEngine() == COMM_ENGINE_AICPU_TS && channel->GetCommProtocol() == COMM_PROTOCOL_HCCS) {
+        AicpuTsHccsChannel *hccsChannel = reinterpret_cast<AicpuTsHccsChannel *>(channel);
+        std::shared_ptr<hccl::Transport> transport = hccsChannel->GetTransport();
+        CHK_PTR_NULL(transport);
+        return transport->WriteAsync(localBuf, remoteBuf, *stream);
+    } else {
+        return reinterpret_cast<Transport*>(memTransport)->WriteAsync(remoteBuf, localBuf, *stream);
+    }
 }
 
 HcclResult HcclRemoteRead(StreamHandle streamHandle, HcclMemTransport memTransport, HcclBuf *locBuf, HcclBuf *rmtBuf)
@@ -42,7 +51,16 @@ HcclResult HcclRemoteRead(StreamHandle streamHandle, HcclMemTransport memTranspo
 
     struct Transport::Buffer localBuf(locBuf->addr, locBuf->len);
     struct Transport::Buffer remoteBuf(rmtBuf->addr, rmtBuf->len);
-    return reinterpret_cast<Transport*>(memTransport)->ReadAsync(localBuf, remoteBuf, *stream);
+
+    Channel *channel = reinterpret_cast<Channel *>(memTransport);
+    if (channel->GetCommEngine() == COMM_ENGINE_AICPU_TS && channel->GetCommProtocol() == COMM_PROTOCOL_HCCS) {
+        AicpuTsHccsChannel *hccsChannel = reinterpret_cast<AicpuTsHccsChannel *>(channel);
+        std::shared_ptr<hccl::Transport> transport = hccsChannel->GetTransport();
+        CHK_PTR_NULL(transport);
+        return transport->ReadAsync(localBuf, remoteBuf, *stream);
+    } else {
+        return reinterpret_cast<Transport*>(memTransport)->ReadAsync(localBuf, remoteBuf, *stream);
+    }
 }
 
 constexpr uint32_t INVALID_COMPLETE_IDX = INVALID_UINT;

@@ -58,6 +58,9 @@ extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memD
 extern HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
+HcclResult HcommMemGrant(EndpointHandle endpointHandle, void *memHandle, const HcommMemGrantInfo *remoteGrantInfo);
+
+// WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
 

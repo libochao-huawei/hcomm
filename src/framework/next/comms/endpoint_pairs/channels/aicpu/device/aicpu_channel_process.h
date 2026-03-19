@@ -15,15 +15,20 @@
 #include "common.h"
 #include "channel_param.h"
 #include "ub_transport_lite_impl.h"
+
 class AicpuChannelProcess {
 public:
     ~AicpuChannelProcess() = default;
-    static HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
-    static HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
-    static HcclResult AicpuChannelInit(HcclChannelUrmaRes *commParam);
-    static HcclResult AicpuChannelDestroy(HcclChannelUrmaRes *commParam);
+    static HcclResult ParseUrmaPackData(std::vector<char> &data, ChannelHandle &handle);
+    static HcclResult InitUrmaChannel(HcclChannelRes *commParam);
+    static HcclResult InitTransportChannel(HcclChannelRes *commParam);
+    static HcclResult AicpuChannelInit(HcclChannelRes *commParam);
+    static HcclResult AicpuChannelDestroy(HcclChannelRes *commParam);
+
 private:
     static std::mutex mutex_;
+    static std::unordered_map<ChannelHandle, bool> handleMap_;
     static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    static std::unordered_map<ChannelHandle, std::unique_ptr<hccl::Transport>> transportMap_;
 };
 #endif // __AICPU_CHANNEL_PROCESS_H__
