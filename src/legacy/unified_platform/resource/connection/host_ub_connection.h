@@ -83,6 +83,7 @@ public:
 
     uint64_t GetCqVa() const;
     u64 GetJettyVa() const;
+    JettyHandle GetTJettyVa() const;
 
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
@@ -120,10 +121,11 @@ private:
     JettyImportCfg jettyImportCfg{};
     void          *remoteJettyHandlePtr{nullptr};
 
-    JettyHandle jettyHandle{0};
+    JettyHandle jettyHandle_{0};
     u64         jettyVa_{0};
     void       *jettyHandlePtr{nullptr};
-    JettyHandle remoteJettyHandle{0};
+    JettyHandle remoteJettyVa_{0};
+    TargetJettyHandle remoteJettyHandle_{0};
     u8          localQpKey[HRT_UB_QP_KEY_MAX_LEN]{0};
 
     u32 jettyId{0};
