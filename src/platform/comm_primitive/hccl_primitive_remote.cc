@@ -15,6 +15,7 @@
 
 using namespace hccl;
 extern HcclResult GetPubDispatcher(hccl::DispatcherPub** dispatcherPtr);
+
 HcclResult HcclRemoteWrite(StreamHandle streamHandle, HcclMemTransport memTransport, HcclBuf *rmtBuf, HcclBuf *locBuf)
 {
     CHK_PTR_NULL(streamHandle);
@@ -23,6 +24,7 @@ HcclResult HcclRemoteWrite(StreamHandle streamHandle, HcclMemTransport memTransp
     CHK_PTR_NULL(locBuf);
     HCCL_DEBUG("[HcclRemoteWrite]streamHandle[%p], memTransport[%p], locBuf addr[%p], rmtBuf addr[%p], len[%llu].",
         streamHandle, memTransport, locBuf->addr, rmtBuf->addr, rmtBuf->len);
+
     Stream *stream = reinterpret_cast<Stream*>(streamHandle);
     struct Transport::Buffer localBuf(locBuf->addr, locBuf->len);
     struct Transport::Buffer remoteBuf(rmtBuf->addr, rmtBuf->len);
@@ -38,10 +40,11 @@ HcclResult HcclRemoteRead(StreamHandle streamHandle, HcclMemTransport memTranspo
     CHK_PTR_NULL(rmtBuf);
     HCCL_DEBUG("[HcclRemoteRead]streamHandle[%p], memTransport[%p], locBuf addr[%p], rmtBuf addr[%p], len[%llu].",
         streamHandle, memTransport, locBuf->addr, rmtBuf->addr, rmtBuf->len);
-    Stream *stream = reinterpret_cast<Stream*>(streamHandle);
 
+    Stream *stream = reinterpret_cast<Stream*>(streamHandle);
     struct Transport::Buffer localBuf(locBuf->addr, locBuf->len);
     struct Transport::Buffer remoteBuf(rmtBuf->addr, rmtBuf->len);
+
     return reinterpret_cast<Transport*>(memTransport)->ReadAsync(localBuf, remoteBuf, *stream);
 }
 
