@@ -675,7 +675,7 @@ string TaskExceptionHost::GetCcuErrorMsgRemPostVar(const Hccl::CcuErrorInfo &ccu
 string TaskExceptionHost::GetCcuErrorMsgRemWaitGroup(const Hccl::CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo)
 {
     stringstream ranks;
-    for (uint32_t i = 0; i < WAIT_SIGNAL_CHANNEL_SIZE; ++i) {
+    for (uint32_t i = 0; i < Hccl::WAIT_SIGNAL_CHANNEL_SIZE; ++i) {
         const auto channelId = ccuErrorInfo.msg.waitSignal.channelId[i];
         if (channelId == UINT16_MAX) {
             break;
