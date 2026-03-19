@@ -14,9 +14,9 @@
 #include "mem_host_pub.h"
 #include <mutex>
 #include <string>
+#include "channel_param.h"
 
 namespace hcomm {
-
 class ChannelProcess {
 public:
     ChannelProcess() = default;
@@ -35,14 +35,23 @@ public:
     static HcclResult ChannelKernelDestroy(ChannelHandle *channelHandles, uint32_t listNum, aclrtBinHandle binHandle);
     static HcclResult ChannelDestroy(const ChannelHandle *channels, uint32_t channelNum, aclrtBinHandle binHandle = nullptr);
     static HcclResult ChannelGet(const ChannelHandle channelHandle, void **channel);
+    static HcclResult FillChannelParam(HcclChannelRes &channelParam, 
+        const std::string &commTag, 
+        hccl::DeviceMem &deviceChannelList,
+        hccl::DeviceMem &devicePackBuf,
+        uint32_t listNum, 
+        uint32_t totalListNum,
+        uint32_t singleUniqueIdSize);
+    static HcclResult LaunchKernel(const HcclChannelRes &channelParam,
+        aclrtBinHandle binHandle, const std::string &kernelName);
+    static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, 
+        uint32_t listNum);
 private:
     template <typename Func>
     static HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func);
 
     static HcclResult CombineHostMemory(const std::vector<std::vector<char>> &hostPackBuffers, 
         hccl::HostMem &hostPackBuf);
-    static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, 
-        uint32_t listNum);
     static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling);
     static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, 
