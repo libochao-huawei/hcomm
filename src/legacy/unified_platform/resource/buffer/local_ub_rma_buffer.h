@@ -44,6 +44,7 @@ public:
     u32 GetTokenValue() const;
     TokenIdHandle GetTokenIdHandle() const;
     std::pair<uintptr_t, u64> GetBufferInfo() {return make_pair(buf->GetAddr(), buf->GetSize());}
+    u64 GetTargetSeg() const {return reqReg.targetSegVa;}
 
     std::vector<char> Desc;
 

@@ -291,4 +291,40 @@ HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag,
 {
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
+
+HcclResult CcuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[CcuUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult CcuUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
+{
+    HCCL_INFO("[CcuUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult CcuUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_INFO("[CcuUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult CcuUrmaChannel::Write(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[CcuUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult CcuUrmaChannel::Read(void *dst, const void *src, uint64_t len)
+{
+    HCCL_INFO("[CcuUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult CcuUrmaChannel::ChannelFence()
+{
+    HCCL_INFO("[CcuUrmaChannel::%s] not supported yet.", __func__);
+    return HCCL_E_NOT_SUPPORT;
+}
 }  // namespace hcomm
