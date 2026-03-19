@@ -225,21 +225,5 @@ void CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channel
     lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
 }
 
-<<<<<<< Updated upstream
-// void CcuRepContext::AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn)
-// {
-//     AddProfiling(transportsIn);
-//     groupOpSizeInfo.push_back(goSize);
-// }
-
-// void CcuRepContext::AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
-//                                  DataType outputDataType, ReduceOp opType)
-// {
-//     AddProfiling(transportsIn, dataType, outputDataType, opType);
-//     groupOpSizeInfo.push_back(goSize);
-// }
-=======
->>>>>>> Stashed changes
-
 }; // namespace CcuRep
 }; // namespace hcomm
