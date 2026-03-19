@@ -34,7 +34,7 @@ class CollCommAicpu {
 public:
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
-    HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
+    HcclResult AllocChannelResource(HcclChannelRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
 
@@ -58,7 +58,7 @@ public:
     void SetIsReady(bool flag);
 
 private:
-    HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
+    HcclResult InitUrmaChannel(HcclChannelRes *commParam);
     HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
