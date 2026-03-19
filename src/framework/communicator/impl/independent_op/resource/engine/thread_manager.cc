@@ -217,7 +217,6 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         // 调用补充函数，如果engine是COMM_ENGINE_AICPU_TS、COMM_ENGINE_AICPU，需要去device恢复
         CHK_RET(SupplementThread(engine, supplementThreadNum, notifyNumPerThread));
     }
-
     // 3、返回threadHandle和id
     for (u32 idx = 0; idx < threadNum; idx++) {
         ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadVec[idx].get());
@@ -226,6 +225,9 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         uint32_t id = threadVec[idx]->GetStream()->id();
         HCCL_DEBUG("[%s]idx[%u] threadHandle[%llu] thread id = [%u]", __func__, idx, threads[idx], id);
         threadId.push_back(id);
+
+        std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+        threadMap_[threads[idx]] = threadVec[idx];
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire done: engine[%d] threadNum[%u],"
@@ -362,6 +364,8 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     std::lock_guard<std::mutex> lock(mainThreadMutex_);
     mainThread_.emplace(stream, std::move(handle));
     *thread = reinterpret_cast<ThreadHandle>(mainThread_[stream].get());
+    std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+    threadMap_[*thread] = mainThread_[stream];
     HCCL_INFO("[ThreadMgr] Hcom[%s] HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]", commId_.c_str(), engine, stream, notifyNum);
     return HCCL_SUCCESS;
@@ -463,4 +467,31 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult ThreadMgr::HcclThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    CHK_PRT_RET(resType != ThreadResType::THREAD_RES_TYPE_STREAM, HCCL_ERROR("[%s] failed. resType[%d] is not supported.", 
+        __func__, static_cast<int32_t>(resType)), HCCL_E_NOT_SUPPORT);
+
+    std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+    auto it = threadMap_.find(thread);
+    CHK_PRT_RET(it == threadMap_.end(), 
+        HCCL_ERROR("[%s] failed to find handle mapping in threadMap_, thread[0x%llx].", __func__, thread), HCCL_E_NOT_FOUND);
+    std::shared_ptr<Thread> threadPtr = it->second;
+    CHK_PTR_NULL(threadPtr);
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        CHK_PRT_RET(infoLen != sizeof(ThreadResTypeStream), HCCL_ERROR("[%s] failed. infoLen[%u] is mismatch sizeof(ThreadResTypeStream)[%zu]", 
+                    __func__, infoLen, sizeof(ThreadResTypeStream)), HCCL_E_PARA);
+        CHK_PTR_NULL(threadPtr->GetStream());
+        ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
+        CHK_PTR_NULL(stream);
+        *info = stream;
+    } else {
+        HCCL_ERROR("[%s] unsupported resType[%d]", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HCCL_INFO("[%s] success. thread[0x%llx] resType[%d] info[%p]", __func__, thread, static_cast<int32_t>(resType), *info);
+    return HCCL_SUCCESS;
+}
+
 }
