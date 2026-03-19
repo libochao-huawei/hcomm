@@ -122,10 +122,10 @@ private:
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};
 
-    void ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream, DmaOp dmaOp,
+    void ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
 
-    void ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
+    void ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const ReduceIn &reduceIn,
                                       const StreamLite &stream, u32 taskId);
 
     void ParseLocNotifyVec(std::vector<char> &data);

@@ -16,7 +16,7 @@
 namespace Hccl {
 constexpr u64 RS_2D_SMALL_DATA_SIZE = 1024 * 1024;
 constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
-constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
+constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
 constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
@@ -171,7 +171,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                 } else {
                     ratio = DEFAULT_RANK_SIZE / rankSize_;
                 }
-                if (dataSize_ * ratio > RS_M2M_1D_MAX_DATA_SIZE) {
+                if (dataSize_ * ratio >= RS_M2M_1D_MAX_DATA_SIZE) {
                     return SelectorStatus::NOT_MATCH;
                 }
                 primQueueGenName = "CcuReduceScatterMeshMem2Mem1D";
