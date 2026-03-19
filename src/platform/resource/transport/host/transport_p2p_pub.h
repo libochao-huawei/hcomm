@@ -14,8 +14,10 @@
 #include <sstream>
 
 #include "transport_base_pub.h"
+#include "rma_buffer_mgr.h"
 
 namespace hccl {
+using HcclMemExMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<HcclMemEx>>;
 
 typedef enum {
     EX_IPCMEN_SIZE = 0,    /**< ipcMenSize */
@@ -157,6 +159,14 @@ protected:
     std::vector<u64> remoteIndOpDeviceMemOffsetValueVector_;
 
     bool useSdmaToSignalRecord_{false};
+
+    HcclResult ReplaceMemAddr(Transport::Buffer &localMem, Transport::Buffer &remoteMem,
+        Transport::Buffer &newLocalMem, Transport::Buffer &newRemoteMem);
+    HcclResult InitHcclMemExMgrWithMem(HcclMemEx *bufMem, u32 bufSize, HcclMemExMgr &hcommMemExMgr);
+    HcclResult InitHcclMemExMgr(MachinePara &machinePara);
+    HcclMemExMgr localHcclMemExMgr_;
+    HcclMemExMgr remoteHcclMemExMgr_;
+
 private:
     HcclResult ParseSpecifyLink(LinkTypeInServer &linkType);
     void SetMemIncludeFlag();
