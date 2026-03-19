@@ -309,7 +309,7 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling);
- 	CHK_RETAddProfiling("WaitEvent", rep->GetMask()));
+ 	CHK_RET(AddProfiling("WaitEvent", rep->GetMask()));
  	Append(rep);
     return HCCL_SUCCESS;
 }
