@@ -51,10 +51,11 @@ public:
 
 private:
     HcclResult ParseInputParam();
+    HcclResult StartListen();
+    HcclResult BuildSocket();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
-    HcclResult BuildSocket();
 
     HcclResult CheckSocketStatus();
     HcclResult CreateQp();
