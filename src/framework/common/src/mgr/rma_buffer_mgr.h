@@ -147,10 +147,21 @@ public:
         return false; 
     }
 
+    ConstIterator Begin()
+    {
+        return intervalTree_.begin();
+    }
+
+    ConstIterator Next(ConstIterator it)
+    {
+        return std::next(it);
+    }
+
     ConstIterator End()
     {
         return intervalTree_.end();
     }
+
     size_t size() const
     {
         return intervalTree_.size();
