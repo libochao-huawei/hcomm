@@ -27,6 +27,7 @@ target_include_directories(hcomm PRIVATE
     #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/engine_ctxs
     #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/notifys
     #${CMAKE_CURRENT_SOURCE_DIR}/comm_engine_res/threads
+    ${CMAKE_CURRENT_SOURCE_DIR}/endpoints/net_dev
 )
 
 set(src_list
