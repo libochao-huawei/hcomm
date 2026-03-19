@@ -352,3 +352,12 @@ TEST_F(RankGraphTest, ut_GetEndpointDesc_When_Normal_Expect_SUCCESS)
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(RankGraphTest, ut_AddGroupLinks_When_1pNormal_Expect_SUCCESS) {
+    std::vector<u32> subRankIds = {0};
+    std::shared_ptr<NetInstance> oldNetInstance = std::make_shared<InnerNetInstance>(0, "layer0_1");
+    std::shared_ptr<NetInstance> newNetInstance = std::make_shared<InnerNetInstance>(0, "layer0_1");
+    newNetInstance->AddRankId(0);
+    RankId2PeerMap tmpPeers;
+    EXPECT_NO_THROW(AddGroupLinks(subRankIds, oldNetInstance, newNetInstance, tmpPeers));
+}
