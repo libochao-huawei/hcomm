@@ -67,7 +67,9 @@ private:
         hccl::HostMem &hostPackBuf);
     static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, 
         uint32_t listNum);
-static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    static HcclResult ChannelProcess::LaunchKernel(const HcclChannelUrmaRes &channelParam, aclrtBinHandle binHandle,
+        const std::string &kernelName);
+    static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
         HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle,
         const std::string &kernelName, bool needProfiling);
     static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,

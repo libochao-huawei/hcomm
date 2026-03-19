@@ -324,7 +324,7 @@ static HcclResult LaunchKernelDeviceParam(const T &channelParam, aclrtBinHandle 
     return HCCL_SUCCESS;
 }
 
-static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
+HcclResult ChannelProcess::LaunchKernel(const HcclChannelUrmaRes &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
 {
     return LaunchKernelDeviceParam(channelParam, binHandle, kernelName);
 }
