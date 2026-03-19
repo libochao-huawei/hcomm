@@ -7,20 +7,21 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef AICPU_TS_HCCS_CHANNEL_H
-#define AICPU_TS_HCCS_CHANNEL_H
-#include <memory>
-#include <vector>
 
-namespace hcomm {
-/**
- * @note 职责：Channel的AicpuTs通信引擎、HCCS协议的类派生
- */
-class AicpuTsHccsChannel : public Channel {
-public:
-    AicpuTsHccsChannel();
-    virtual ~AicpuTsHccsChannel() = default;
-};
+#include "aicpu_channel_transport_process.h"
+#include "aicpu_res_package_helper.h"
+#include "aicpu_channel_hccs_process.h"
+
+using namespace hccl;
+
+namespace hccl {
+
+HcclResult AicpuChannelTransportProcess::InitTransportChannel(HcclChannelTransportResSet *transportResSet, uint32_t channelIndex,
+    std::unique_ptr<hccl::Transport> &transport)
+{
+    if (transportResSet->protocol == COMM_PROTOCOL_HCCS) {
+        CHK_PRT(AicpuChannelHccsProcess::InitP2pChannel(transportResSet, channelIndex, transport));
+    }
+    return HCCL_SUCCESS;
 }
-
-#endif // AICPU_TS_HCCS_CHANNEL_H
+}

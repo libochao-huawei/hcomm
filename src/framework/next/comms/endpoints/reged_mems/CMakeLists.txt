@@ -11,6 +11,7 @@ set(src_list
     roce_mem.cc
     urma_mem.cc
     ub_mem.cc
+    hccs_mem.cc
 )
 
 target_sources(hcomm PRIVATE
