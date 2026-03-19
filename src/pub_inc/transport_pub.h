@@ -223,6 +223,11 @@ public:
     DeviceMem outputMem{DeviceMem()};
     std::vector<DeviceMem> mem{};
 
+    u32 localBufSize{0};
+    u32 remoteBufSize{0};
+    HcclMemEx *localBufMem{nullptr};
+    HcclMemEx *remoteBufMem{nullptr};
+
     // 自定义算子交换内存
     std::vector<DeviceMem> userDeviceMem{};
     std::vector<HostMem> userHostMem{};
@@ -242,6 +247,7 @@ public:
     LinkTypeInServer specifyLink{LinkTypeInServer::RESERVED_LINK_TYPE}; // 指定链路类型
     bool enableAtomicWrite{false}; // 使能atomicWrite
     QueueDepthAttr queueDepthAttr{}; // QP深度配置
+    bool isNewOndeSide{false};
     TagMachinePara() {}
 
     TagMachinePara(const struct TagMachinePara &that)
@@ -263,6 +269,10 @@ public:
         inputMem = (that.inputMem);
         outputMem = (that.outputMem);
         mem = (that.mem);
+        localBufSize = (that.localBufSize);
+        remoteBufSize = (that.remoteBufSize);
+        localBufMem = (that.localBufMem);
+        remoteBufMem = (that.remoteBufMem);
         userDeviceMem = (that.userDeviceMem);
         userHostMem = (that.userHostMem);
         isIndOp = (that.isIndOp);
@@ -283,6 +293,7 @@ public:
         specifyLink = that.specifyLink;
         enableAtomicWrite = that.enableAtomicWrite;
         queueDepthAttr = that.queueDepthAttr;
+        isNewOndeSide = (that.isNewOndeSide);
     }
 
     struct TagMachinePara &operator=(struct TagMachinePara &that)
@@ -305,6 +316,10 @@ public:
             inputMem = (that.inputMem);
             outputMem = (that.outputMem);
             mem = (that.mem);
+            localBufSize = (that.localBufSize);
+            remoteBufSize = (that.remoteBufSize);
+            localBufMem = (that.localBufMem);
+            remoteBufMem = (that.remoteBufMem);
             userDeviceMem = (that.userDeviceMem);
             userHostMem = (that.userHostMem);
             isIndOp = (that.isIndOp);
@@ -324,6 +339,7 @@ public:
             specifyLink = that.specifyLink;
             enableAtomicWrite = that.enableAtomicWrite;
             queueDepthAttr = that.queueDepthAttr;
+            isNewOndeSide = (that.isNewOndeSide);
         }
 
         return *this;
@@ -665,6 +681,7 @@ public:
 
     HcclResult GetSpecificNotify(HcclSignalInfo& notifyInfo, bool& isValid, const std::string& notifyName);
 
+    HcclResult GetPeerPodInfo(s32 &pid, s32 &sid);
 private:
     void CreateTransportRoce(TransportType type, TransportPara& para, const HcclDispatcher dispatcherPtr,
         const std::unique_ptr<NotifyPool> &notifyPool, MachinePara &machinePara);
