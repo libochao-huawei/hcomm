@@ -232,24 +232,24 @@ HcclResult HostCpuRoceChannel::ExchangeData()
 
     // 同步发送数据包尺寸
     socket_->Send(reinterpret_cast<void *>(&sendSize), sizeof(sendSize));
-    HCCL_INFO("[HostCpuRoceChannel::%s] Send size[%zu] of data success. [%llu] bytes sent.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Send size[%zu] of data success. [%zu] bytes sent.",
         __func__, sendSize, sizeof(sendSize));
 
     // 同步接收数据包尺寸
     socket_->Recv(reinterpret_cast<void *>(&recvSize), sizeof(recvSize));
-    HCCL_INFO("[HostCpuRoceChannel::%s] Receive size[%zu] of data success. [%llu] bytes received.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Receive size[%zu] of data success. [%zu] bytes received.",
         __func__, recvSize, sizeof(recvSize));
 
     // 同步发送数据
     socket_->Send(reinterpret_cast<void *>(sendData.data()), sendSize);
-    HCCL_INFO("[HostCpuRoceChannel::%s] Send Exchange Data success. [%llu] bytes sent.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Send Exchange Data success. [%zu] bytes sent.",
         __func__, sendSize);
 
     // 同步接收数据
     HCCL_INFO("[HostCpuRoceChannel::%s] Start to Receive Exchange Data", __func__);
     recvData.resize(recvSize);
     socket_->Recv(reinterpret_cast<void *>(recvData.data()), recvSize);
-    HCCL_INFO("[HostCpuRoceChannel::%s] Receive Exchange Data success. [%llu] bytes received.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Receive Exchange Data success. [%zu] bytes received.",
         __func__, recvSize);
 
     // 同步数据解包
@@ -329,14 +329,18 @@ HcclResult HostCpuRoceChannel::RmtBufferVecUnpackProc(Hccl::BinaryStream &binary
     for (u32 i = 0; i < rmtNum; i++) {
         u32 pos;
         binaryStream >> pos;
+        if (pos >= rmtNum) {
+            HCCL_ERROR("[HostCpuRoceChannel::%s] pos=%u out of range (rmtNum=%u)", __func__, pos, rmtNum);
+            return HCCL_E_INTERNAL;
+        }
         Hccl::ExchangeRdmaBufferDto dto;
         dto.Deserialize(binaryStream);
- 
+
         HCCL_INFO("[HostCpuRoceChannel::%s] pos=%u, dto %s", __func__, pos, dto.Describe().c_str());
-        EXECEPTION_CATCH(rmtRmaBuffers_[i] = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto), 
-            HCCL_ERROR("[HostCpuRoceChannel::%s] make_unique<Hccl::RemoteRdmaRmaBuffer> throws an exception!");
+        EXECEPTION_CATCH(rmtRmaBuffers_[pos] = std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto),
+            HCCL_ERROR("[HostCpuRoceChannel::%s] make_unique<Hccl::RemoteRdmaRmaBuffer> throws an exception!", __func__);
             return HCCL_E_INTERNAL);
-        HCCL_INFO("[HostCpuRoceChannel::%s] pos=%u, rmtRmaBuffer=%s", __func__, pos, rmtRmaBuffers_[i]->Describe().c_str());
+        HCCL_INFO("[HostCpuRoceChannel::%s] pos=%u, rmtRmaBuffer=%s", __func__, pos, rmtRmaBuffers_[pos]->Describe().c_str());
     }
  
     return HCCL_SUCCESS;
@@ -640,7 +644,7 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
         __func__, len), HCCL_E_PARA);
 
     writeWithNotifyWr.sg_list->addr = reinterpret_cast<uint64_t>(src); // 本端起始地址
-    writeWithNotifyWr.sg_list->length = len;
+    writeWithNotifyWr.sg_list->length = static_cast<uint32_t>(len);
     writeWithNotifyWr.sg_list->lkey = localRmaBuffers_[0]->GetLkey(); // 本端的访问秘钥
 
     writeWithNotifyWr.opcode              = IBV_WR_RDMA_WRITE_WITH_IMM;
@@ -726,15 +730,19 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
     size_t rmtIdx = 0;
     CHK_RET(FindRemoteBuffer(reinterpret_cast<uint64_t>(remoteAddr), len, rmtIdx));
     auto endTime = std::chrono::steady_clock::now();
-    HCCL_INFO("[HostCpuRoceChannel::%s] check buffer takes time [%u]", caller, endTime - startTime);
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+    HCCL_INFO("[HostCpuRoceChannel::%s] check buffer takes time [%lld]us", caller, elapsed);
 
     // 2. 构造 WR
     struct ibv_send_wr wr{};
     struct ibv_send_wr *badWr = nullptr;
     struct ibv_sge sg;
     wr.sg_list = &sg;
+    CHK_PRT_RET(len > UINT32_MAX,
+        HCCL_ERROR("[HostCpuRoceChannel::%s] len[%llu] exceeds uint32_t max", caller, len),
+        HCCL_E_PARA);
     wr.sg_list->addr       = reinterpret_cast<uint64_t>(localAddr);
-    wr.sg_list->length     = len;
+    wr.sg_list->length     = static_cast<uint32_t>(len);
     wr.sg_list->lkey       = localRmaBuffers_[localIdx]->GetLkey();
 
     wr.opcode              = opcode;
@@ -747,15 +755,21 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
 
     // 3. 调用 ibv_post_send
     s32 ret = ibv_post_send(qpInfo[0].qp, &wr, &badWr);
-    CHK_PRT_CONT(ret == ENOMEM,
+    if (ret != 0 && badWr == nullptr) {
+        HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_post_send failed while badWr is nullptr", caller);
+        return HCCL_E_INTERNAL;
+    }
+    CHK_PRT_RET(ret == ENOMEM,
         HCCL_WARNING("[HostCpuRoceChannel::%s] post send wqe overflow. ret:%d, "
         "badWr->wr_id[%llu], badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-        caller, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
+        caller, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn),
+        HCCL_E_AGAIN);
 
-    CHK_PRT_CONT(ret != 0,
+    CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_post_send failed. ret:%d, "
         "badWr->wr_id[%llu], badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-        caller, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn));
+        caller, ret, badWr->wr_id, badWr->sg_list->addr, badWr->wr.rdma.remote_addr, badWr->wr.ud.remote_qpn),
+        HCCL_E_NETWORK);
 
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS.", caller);
     if (wqeNum_ == UINT32_MAX) {
@@ -789,7 +803,7 @@ HcclResult HostCpuRoceChannel::FindLocalBuffer(const uint64_t addr, const uint64
         HCCL_INFO("[HostCpuRoceChannel::%s] Comparing with saved localRmaBuffer[%zu]: addr[0x%llx], len[0x%llx], addr+len[0x%llx].", __func__, i, bufAddr, bufSize, bufEndAddr);
         if (addr >= bufAddr && endAddr <= bufEndAddr) {
             targetIdx = i;
-            HCCL_INFO("[HostCpuRoceChannl::%s] SUCCESS. targetIdx[%zu]", __func__, targetIdx);
+            HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. targetIdx[%zu]", __func__, targetIdx);
             return HCCL_SUCCESS;
         }
     }
@@ -808,7 +822,7 @@ HcclResult HostCpuRoceChannel::FindRemoteBuffer(const uint64_t addr, const uint6
         HCCL_INFO("[HostCpuRoceChannel::%s] Comparing with saved rmtRmaBuffers[%zu]: addr[0x%llx], len[0x%llx], addr+len[0x%llx].", __func__, i, bufAddr, bufSize, bufEndAddr);
         if (addr >= bufAddr && endAddr <= bufEndAddr) {
             targetIdx = i;
-            HCCL_INFO("[HostCpuRoceChannl::%s] SUCCESS. targetIdx[%zu]", __func__, targetIdx);
+            HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. targetIdx[%zu]", __func__, targetIdx);
             return HCCL_SUCCESS;
         }
     }
