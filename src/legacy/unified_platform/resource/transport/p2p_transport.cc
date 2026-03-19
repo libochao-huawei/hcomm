@@ -377,12 +377,13 @@ std::vector<char> P2PTransport::GetNotifyUniqueIds()
     return result;
 }
 
-std::vector<char> P2PTransport::GetSingleRmtBufferUniqueId(u64 addr, u64 size) const
+std::vector<char> P2PTransport::GetSingleRmtNotifyUniqueId(u64 addr, u64 size, u32 notifyId) const
 {
     BinaryStream binaryStream;
     binaryStream << addr;
     binaryStream << size;
-    HCCL_INFO("P2PTransport RmtAddr[addr=0x%llx, size=0x%llx]", addr, size);
+    binaryStream << notifyId;
+    HCCL_INFO("P2PTransport RmtNotifyAddr[addr=0x%llx, size=0x%llx, notifyId=%u]", addr, size, notifyId);
     std::vector<char> result;
     binaryStream.Dump(result);
     return result;
@@ -395,14 +396,25 @@ std::vector<char> P2PTransport::GetRmtNotifyUniqueIds() const
     for (auto &it : rmtNotifyVec) {
         std::vector<char> uniqueId;
         if (it != nullptr) {
-            uniqueId = GetSingleRmtBufferUniqueId(it->GetAddr(), it->GetSize());
+            uniqueId = GetSingleRmtNotifyUniqueId(it->GetAddr(), it->GetSize(), it->GetId());
             HCCL_INFO("P2PTransport::GetRmtNotifyUniqueIds, %s", it->Describe().c_str());
         } else {
-            uniqueId = GetSingleRmtBufferUniqueId(0, 0); // 填充一个空的buffer
+            uniqueId = GetSingleRmtNotifyUniqueId(0, 0, 0); // 填充一个空的buffer
             HCCL_INFO("P2PTransport::GetRmtNotifyUniqueIds, null buffer");
         }
         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
     }
+    return result;
+}
+
+std::vector<char> P2PTransport::GetSingleRmtBufferUniqueId(u64 addr, u64 size) const
+{
+    BinaryStream binaryStream;
+    binaryStream << addr;
+    binaryStream << size;
+    HCCL_INFO("P2PTransport RmtBufferAddr[addr=0x%llx, size=0x%llx]", addr, size);
+    std::vector<char> result;
+    binaryStream.Dump(result);
     return result;
 }
 

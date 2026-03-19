@@ -1,0 +1,16 @@
+src\legacy\framework\device_mode\coll_service_device_mode.cpp
+src\legacy\framework\service\coll_service_base.cc
+src\legacy\service\collective\alg\coll_alg_factory\alg_executor\ins_alg_executor\broadcast\ins_broadcast_parallel_executor.cc
+src\legacy\service\collective\alg\coll_alg_factory\alg_template\ins_alg_template\ins_temp_all_to_all_mesh.cc
+src\legacy\service\collective\alg\coll_alg_factory\alg_template\ins_alg_template\ins_temp_reduce_aicpu_reduce.cc
+src\legacy\service\collective\alg\coll_alg_factory\alg_topo_match\topo_match_mesh_nhr_pcie.cc
+src\legacy\service\collective\alg\selector\all_gather_auto_selector.cc
+src\legacy\service\collective\alg\selector\all_reduce_auto_selector.cc
+src\legacy\service\collective\alg\selector\alltoallv_auto_selector.cc
+src\legacy\service\collective\alg\selector\broadcast_auto_selector.cc
+src\legacy\service\collective\alg\selector\reduce_auto_selector.cc
+src\legacy\service\collective\alg\selector\reduce_scatter_auto_selector.cc
+src\legacy\service\collective\alg\selector\scatter_auto_selector.cc
+src\platform\resource\notify\remote_notify.cc
+src\legacy\unified_platform\resource\transport\p2p_transport.cc
+src\legacy\unified_platform\resource\transport\aicpu\p2p_transport_lite_impl.cc
