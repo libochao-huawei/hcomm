@@ -810,10 +810,6 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_E_NOT_SUPPORT;
 }
 
-int32_t HcommFlush()
-{
-    return HCCL_E_NOT_SUPPORT;
-}
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
@@ -829,11 +825,6 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelFence(ChannelHandle channel)
-{
-    HCCL_DEBUG("[%s] channel[0x%llx].", __func__, channel);
-    return HCCL_E_NOT_SUPPORT;
-}
 
 int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
 {
