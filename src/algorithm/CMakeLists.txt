@@ -158,7 +158,7 @@ target_link_options(hccl_alg PRIVATE
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
-    -s
+    #-s
 )
 
 if(BUILD_OPEN_PROJECT)
