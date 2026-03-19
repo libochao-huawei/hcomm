@@ -324,6 +324,7 @@ HcclResult CpuTsThread::SupplementNotify(uint32_t notifyNum)
         HCCL_ERROR("[%s]Does not support this interface.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
+    HCCL_INFO("[%s]supplement notifyNum[%u], notifyNum_[%u]", __func__, notifyNum, notifyNum_);
 
     u32 currentNotifyNum = notifyNum_;
     notifyNum_ += notifyNum;

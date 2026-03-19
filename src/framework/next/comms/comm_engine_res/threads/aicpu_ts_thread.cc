@@ -450,6 +450,7 @@ void AicpuTsThread::SetIsMaster(bool isMaster) {
 
 HcclResult AicpuTsThread::SupplementNotify(uint32_t notifyNum)
 {
+    HCCL_INFO("[%s]supplement notifyNum[%u], notifyNum_[%u]", __func__, notifyNum, notifyNum_);
     // A5 aicpu场景thread多申请一个host类型notify，用于host&device同步
     u32 beginIdx = notifyNum_;
     u32 allNotifyNum = notifyNum_ + notifyNum;
@@ -501,6 +502,7 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
         HCCL_WARNING("[%s]supplement notifyNum[%u], notifyNum_[%u]", __func__, notifyNum, notifyNum_);
         return HCCL_SUCCESS;
     }
+    HCCL_INFO("[%s]supplement notifyNum[%u], notifyNum_[%u]", __func__, notifyNum, notifyNum_);
 
     std::istringstream iss(notifyDesc);
     notifys_.reserve(notifyNum);
