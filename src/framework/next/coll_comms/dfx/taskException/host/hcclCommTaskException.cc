@@ -609,7 +609,7 @@ string TaskExceptionHost::GetCcuLenErrorMsg(const uint64_t len)
     if ((0 < len) && (len <= CCU_MSG_256MB_LEN)) {
         return "";
     }
-    return StringFormat("ccu transMem Len[%llu]B > 256MB or is zero, not support!", len);
+    return Hccl::StringFormat("ccu transMem Len[%llu]B > 256MB or is zero, not support!", len);
 }
 
 string TaskExceptionHost::GetCcuErrorMsgLoop(const Hccl::CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo)
@@ -672,7 +672,7 @@ string TaskExceptionHost::GetCcuErrorMsgRemPostVar(const Hccl::CcuErrorInfo &ccu
                         GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo));
 }
 
-string TaskExceptionHost::GetCcuErrorMsgRemWaitGroup(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo)
+string TaskExceptionHost::GetCcuErrorMsgRemWaitGroup(const Hccl::CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo)
 {
     stringstream ranks;
     for (uint32_t i = 0; i < WAIT_SIGNAL_CHANNEL_SIZE; ++i) {
