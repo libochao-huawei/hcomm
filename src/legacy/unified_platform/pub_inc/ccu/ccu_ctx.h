@@ -83,7 +83,7 @@ protected:
         uint16_t loopParamId;
         uint16_t parallelParamId;
         uint16_t residualId;
-    }
+    };
 
     // 使用Transport中的Variable
     CcuRep::Variable CreateVariable(const CcuTransport &transport, uint32_t varIndex) const;
@@ -222,6 +222,7 @@ private:
 
     uint32_t loadArgIndex{0};
     // ccu profiling相关缓存
+    std::vector<GroupOpSize> groupOpSizeInfo;
     
 };
 
