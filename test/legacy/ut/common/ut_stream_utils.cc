@@ -77,7 +77,7 @@ TEST_F(StreamUtilsTest, Ut_GetStreamCaptureInfo_When_aclmdlRICaptureGetInfo_succ
     EXPECT_EQ(GetStreamCaptureInfo(stream, rtModel, isCapture), HCCL_SUCCESS);
 }
 
-TEST(ChannelManagerTest, AicpuChannelInit_TimeoutLessThanU16Max) {
+TEST(StreamUtilsTest, AicpuChannelInit_TimeoutLessThanU16Max) {
     const u16 originalNotifyDefaultWaitTime = NOTIFY_DEFAULT_WAIT_TIME;
     NOTIFY_DEFAULT_WAIT_TIME = std::numeric_limits<uint16_t>::max() - 1;
 
@@ -96,7 +96,7 @@ TEST(ChannelManagerTest, AicpuChannelInit_TimeoutLessThanU16Max) {
     NOTIFY_DEFAULT_WAIT_TIME = originalNotifyDefaultWaitTime;
 }
 
-TEST(ChannelManagerTest, AicpuChannelInit_TimeoutGreaterThanU16Max) {
+TEST(StreamUtilsTest, AicpuChannelInit_TimeoutGreaterThanU16Max) {
     const u16 originalNotifyDefaultWaitTime = NOTIFY_DEFAULT_WAIT_TIME;
     NOTIFY_DEFAULT_WAIT_TIME = std::numeric_limits<uint16_t>::max() + 1;
 
