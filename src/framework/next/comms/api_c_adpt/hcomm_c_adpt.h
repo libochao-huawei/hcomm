@@ -38,6 +38,8 @@ HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, ui
 
 HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
+HcclResult HcommMemGrant(EndpointHandle endpointHandle, void *memHandle, const HcommMemGrantInfo *remoteGrantInfo);
+
 HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
 

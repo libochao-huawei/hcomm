@@ -215,10 +215,11 @@ HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, 
     return HCCL_SUCCESS;
 }
 
-/* 暂未实现 */
-HcclResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo)
+HcclResult HcommMemGrant(EndpointHandle endpointHandle, void *memHandle, const HcommMemGrantInfo *remoteGrantInfo)
 {
-    return HCCL_E_NOT_SUPPORT;
+    auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_RET(endpoint->MemoryGrant(memHandle, remoteGrantInfo));
+    return HCCL_SUCCESS;
 }
 
 /* 暂未实现 */
