@@ -31,7 +31,6 @@ constexpr uint64_t AIV_TAG_MOVE_RIGHT_BITS = 16;
 constexpr uint64_t LOW_16_BITS = 0xFFFF;
 constexpr uint32_t AIV_FLAG_CLEAR_OFFSET = 1040 * 1024;
 constexpr uint32_t BATCH_SEND_RECV_ITEM_SIZE = 16; // 注意要和host侧的BATCH_SEND_RECV_ITEM_SIZE保持一致
-constexpr uint32_t DATA_TYPE_INT64 = 5;
 
 typedef enum {
     HCCL_SEND = 0,
@@ -173,7 +172,8 @@ constexpr uint64_t FLAG_FIVE_OFFSET = FLAG_SIZE * 4;
 
 constexpr uint64_t DOUBLE = 2;
 constexpr uint64_t FLAG_BUF_NUM = 3;
-constexpr uint64_t SRC_DST_DIVIDE = 2;
+constexpr uint64_t TILING_NUM = 4;
+constexpr uint64_t CHUNK_SIZE = 2048;
 
 // 当前每个kernel最多使用4组同步标记，这里预留6组
 constexpr uint32_t MAX_FLAG_SIZE_PER_KERNEL = AIV_FLAG_CLEAR_OFFSET - MAX_RANK_SIZE * FLAG_SIZE;
@@ -230,13 +230,10 @@ public:
         localTagTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
         pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
 
-        pipe.InitBuffer(srcQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
-        pipe.InitBuffer(dstQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
-
-        isReduce64 = false;
-        if (dataType_ == DATA_TYPE_INT64) {
-            isReduce64 = true;
-        }
+        uint64_t chunkSize = UB_MAX_DATA_SIZE / TILING_NUM / UB_ALIGN_SIZE * UB_ALIGN_SIZE;
+        pipe.InitBuffer(inQueueX, 1, chunkSize);
+        pipe.InitBuffer(inQueueY, 1, chunkSize);
+        pipe.InitBuffer(outQueueZ, 1, chunkSize);
     }
 
     __aicore__ inline void Init(GM_ADDR hiddenInput, GM_ADDR input, GM_ADDR output)
@@ -278,13 +275,10 @@ public:
         localTagTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FIVE_OFFSET);
         pipe.InitBuffer(inOutQue, 1, UB_MAX_DATA_SIZE);
 
-        pipe.InitBuffer(srcQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
-        pipe.InitBuffer(dstQue, 1, UB_MAX_DATA_SIZE / unitSize_ * unitSize_ / SRC_DST_DIVIDE);
-
-        isReduce64 = false;
-        if (dataType_ == DATA_TYPE_INT64) {
-            isReduce64 = true;
-        }
+        uint64_t chunkSize = UB_MAX_DATA_SIZE / TILING_NUM / UB_ALIGN_SIZE * UB_ALIGN_SIZE;
+        pipe.InitBuffer(inQueueX, 1, chunkSize);
+        pipe.InitBuffer(inQueueY, 1, chunkSize);
+        pipe.InitBuffer(outQueueZ, 1, chunkSize);
 
         if (args->clearEnable == 1) {
             ClearSyncBuf();
@@ -326,13 +320,6 @@ public:
 
     template<typename T>
     __aicore__ inline void Reduce64(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t reduceOp);
-
-    template<typename T>
-    __aicore__ inline void Add64(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, const uint64_t count);
-
-    template<typename T>
-    static __simd_vf__ inline void AddVf(__ubuf__ T* dstPtr, __ubuf__ T* src0Ptr, __ubuf__ T* src1Ptr,
-        uint32_t count, uint16_t oneRepeatSize, uint16_t repeatTimes);
 
     __aicore__ inline void BarrierAll();
 
@@ -396,16 +383,16 @@ public:
     GlobalTensor<int32_t> d2hGlobal;
 
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inOutQue;
-    TQue<QuePosition::VECIN, 1> srcQue;
-    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> dstQue;
+
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inQueueX;
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inQueueY;
+    TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> outQueueZ;
 
     uint32_t localOffset;
     uint32_t multiOffset;
     uint32_t pingpongOffset;
     uint32_t countOffset;
     uint32_t seperateOffset;
-
-    bool isReduce64;
 };
 
 
@@ -591,115 +578,92 @@ __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputG
 template<typename T>
 __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t atomicOp)
 {
-    if (isReduce64) {
+    if constexpr (Std::is_same<T, int64_t>::value) {
         Reduce64(outputGM, inputGM, count, atomicOp);
         return;
+    } else {
+        GlobalTensor<T> inputGT;
+        inputGT.SetGlobalBuffer(inputGM, count);
+        GlobalTensor<T> outputGT;
+        outputGT.SetGlobalBuffer(outputGM, count);
+
+        SetAtomicOp<T>(atomicOp);
+
+        uint64_t maxCountPerLoop = UB_MAX_DATA_SIZE / sizeof(T);
+        if (useDoubleBuffer_) {
+            maxCountPerLoop = UB_DB_DATA_BATCH_SIZE / sizeof(T);
+        }
+        uint64_t curOffset = 0;
+        while (count > 0) {
+            uint64_t curCount = count > maxCountPerLoop ? maxCountPerLoop : count;
+
+            LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
+            DataCopyGM2UB(localIn, inputGT[curOffset], curCount);
+            inOutQue.EnQue(localIn);
+            LocalTensor<T> localOut = inOutQue.DeQue<T>();
+            DataCopyUB2GM(outputGT[curOffset], localOut, curCount);
+            inOutQue.FreeTensor(localOut);
+
+            count -= curCount;
+            curOffset += curCount;
+        }
+
+        SetAtomicNone();
+
+        return;
     }
-
-    GlobalTensor<T> inputGT;
-    inputGT.SetGlobalBuffer(inputGM, count);
-    GlobalTensor<T> outputGT;
-    outputGT.SetGlobalBuffer(outputGM, count);
-
-    SetAtomicOp<T>(atomicOp);
-
-    uint64_t maxCountPerLoop = UB_MAX_DATA_SIZE / sizeof(T);
-    if (useDoubleBuffer_) {
-        maxCountPerLoop = UB_DB_DATA_BATCH_SIZE / sizeof(T);
-    }
-    uint64_t curOffset = 0;
-    while (count > 0) {
-        uint64_t curCount = count > maxCountPerLoop ? maxCountPerLoop : count;
-
-        LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
-        DataCopyGM2UB(localIn, inputGT[curOffset], curCount);
-        inOutQue.EnQue(localIn);
-        LocalTensor<T> localOut = inOutQue.DeQue<T>();
-        DataCopyUB2GM(outputGT[curOffset], localOut, curCount);
-        inOutQue.FreeTensor(localOut);
-
-        count -= curCount;
-        curOffset += curCount;
-    }
-
-    SetAtomicNone();
-
-    return;
 }
 
 template<typename T>
 __aicore__ inline void AivCommBase::Reduce64(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, uint32_t reduceOp)
 {
-    GlobalTensor<T> inputGT;
-    inputGT.SetGlobalBuffer(inputGM, count);
-    GlobalTensor<T> outputGT;
-    outputGT.SetGlobalBuffer(outputGM, count);
+    GlobalTensor<T> xGm;  // xGm, yGm为输入，zGm为输出
+    GlobalTensor<T> yGm;
+    GlobalTensor<T> zGm;
 
-    // ubuf一半用来存src数据，另一半用来存reduce的结果数据
-    uint64_t maxCountPerLoop = UB_MAX_DATA_SIZE / sizeof(T) / 2;
+    xGm.SetGlobalBuffer(inputGM, count);
+    yGm.SetGlobalBuffer(outputGM, count);
+    zGm.SetGlobalBuffer(outputGM, count);
+
+    // 单核Add/Max/Min数据量限制
     uint64_t curOffset = 0;
     while (count > 0) {
-        uint64_t curCount = count > maxCountPerLoop ? maxCountPerLoop : count;
+        uint64_t curCount = count > CHUNK_SIZE ? CHUNK_SIZE : count;
 
-        LocalTensor<T> localSrc = srcQue.AllocTensor<T>();
-        LocalTensor<T> localDst = dstQue.AllocTensor<T>();
+        xGm.SetGlobalBuffer(inputGM + curOffset, curCount);
+        yGm.SetGlobalBuffer(outputGM + curOffset, curCount);
+        zGm.SetGlobalBuffer(outputGM + curOffset, curCount);
 
-        // 将源数据和目标数据都搬入ubuf
-        DataCopyGM2UB(localSrc, inputGT[curOffset], curCount);
-        srcQue.EnQue(localSrc);
-        DataCopyGM2UB(localDst, outputGT[curOffset], curCount);
-        dstQue.EnQue(localDst);
+        LocalTensor<T> xLocal = inQueueX.AllocTensor<T>();
+        DataCopyGM2UB(xLocal, xGm, curCount);
+        pipe_barrier(PIPE_ALL);
+        inQueueX.EnQue(xLocal);
 
-        // 将数据Reduce到output的ubuf上
+        LocalTensor<T> yLocal = inQueueY.AllocTensor<T>();
+        DataCopyGM2UB(yLocal, yGm, curCount);
+        inQueueY.EnQue(yLocal);
+
+        xLocal = inQueueX.DeQue<T>();
+        yLocal = inQueueY.DeQue<T>();
+
+        pipe_barrier(PIPE_ALL);
         if (reduceOp == HcclReduceOp::HCCL_REDUCE_SUM) {
-            Add64<T>(localDst, localSrc, curCount);
+            Add<T>(yLocal, xLocal, yLocal, curCount);
         } else if (reduceOp == HcclReduceOp::HCCL_REDUCE_MAX) {
-            Max<T>(localDst, localSrc, localDst, curCount);
+            Max<T>(yLocal, xLocal, yLocal, curCount);
         } else if (reduceOp == HcclReduceOp::HCCL_REDUCE_MIN) {
-            Min<T>(localDst, localSrc, localDst, curCount);
+            Min<T>(yLocal, xLocal, yLocal, curCount);
         }
+        pipe_barrier(PIPE_ALL);
 
-        // 将数据搬出ubuf
-        LocalTensor<T> localOut = inOutQue.DeQue<T>();
-        DataCopyUB2GM(outputGT[curOffset], localOut, curCount);
-
-        // 释放内存
-        srcQue.FreeTensor(localSrc);
-        dstQue.FreeTensor(localDst);
-        dstQue.FreeTensor(localOut);
+        DataCopyUB2GM(zGm, yLocal, curCount);
+        pipe_barrier(PIPE_ALL);
+        // 释放localTensor
+        inQueueX.FreeTensor(xLocal);
+        inQueueY.FreeTensor(yLocal);
 
         count -= curCount;
         curOffset += curCount;
-    }
-
-    return;
-}
-
-template<typename T>
-__aicore__ inline void AivCommBase::Add64(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal,
-                                          const uint64_t count)
-{
-    __ubuf__ T* dstPtr = (__ubuf__ T*)dstLocal.GetPhyAddr();
-    __ubuf__ T* srcPtr = (__ubuf__ T*)srcLocal.GetPhyAddr();
-
-    AddVf<T>(dstPtr, srcPtr, dstPtr, count, count, 1);
-}
-
-template<typename T>
-__simd_vf__ inline void AivCommBase::AddVf(__ubuf__ T* dstPtr, __ubuf__ T* src0Ptr, __ubuf__ T* src1Ptr,
-    uint32_t count, uint16_t oneRepeatSize, uint16_t repeatTimes)
-{
-    MicroAPI::RegTensor<T> vSrcReg0;
-    MicroAPI::RegTensor<T> vSrcReg1;
-    MicroAPI::RegTensor<T> vDstReg0;
-    MicroAPI::MaskReg maskReg;
-    maskReg = MicroAPI::UpdateMask<T>(count);
-    for (uint16_t i = 0; i < repeatTimes; i++) {
-        MicroAPI::LoadAlign(vSrcReg0, src0Ptr + i * oneRepeatSize);
-        MicroAPI::LoadAlign(vSrcReg1, src1Ptr + i * oneRepeatSize);
-        // Merging Mode模式
-        MicroAPI::Add(vDstReg0, vSrcReg0, vSrcReg1, maskReg);
-        MicroAPI::StoreAlign(dstPtr + i * oneRepeatSize, vDstReg0, maskReg);
     }
 }
 
@@ -769,3 +733,4 @@ __aicore__ inline void AivCommBase::ClearFlag()
     }
 
 #endif  /* AIV_COMMUNICATION_BASE_V2_H */
+
