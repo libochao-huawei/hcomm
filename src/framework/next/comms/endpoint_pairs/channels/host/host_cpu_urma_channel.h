@@ -84,6 +84,7 @@ private:
     urma_jfr_t jfr_;
     urma_jfc_t jfc_;
     urma_target_jetty_t tjetty_;
+    urma_jetty_t jetty_;
     uint32_t wqeNum_{0};
     bool fenceFlag_{false};
 
