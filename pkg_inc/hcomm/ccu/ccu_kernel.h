@@ -46,6 +46,7 @@
 #include "ccu_assist_pub.h"
 #include "ccu_communicator.h"
 #include "task_param.h"
+#include "ccu_ctx.h"
 
 using CcuKernelHandle = uint64_t;
 
@@ -79,6 +80,10 @@ public:
 
     HcclResult ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
                                         const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster);
+
+    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
+    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
+    //                              DataType outputDataType, ReduceOp opType);
 
 protected:
     // 子类实现
