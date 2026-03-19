@@ -157,7 +157,7 @@ HcclResult InsV2ReduceScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchest
     u32 templateScratchMultiplier =
         algTemplate->CalcScratchMultiple(tempAlgParams.buffInfo.inBuffType, tempAlgParams.buffInfo.outBuffType);
     if (templateScratchMultiplier != 0) {
-        u64 scratchBoundDataSize = maxTmpMemSize_ / templateScratchMultiplier;
+        u64 scratchBoundDataSize = (maxTmpMemSize_ / templateScratchMultiplier) / dataTypeSize_ * dataTypeSize_;
         maxDataSizePerLoop = min(transportBoundDataSize, scratchBoundDataSize);
     } else {
         maxDataSizePerLoop = transportBoundDataSize;
