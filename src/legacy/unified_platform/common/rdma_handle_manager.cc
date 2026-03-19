@@ -130,8 +130,9 @@ RdmaHandle RdmaHandleManager::GetByAddr(u32 devPhyId, const LinkProtoType &local
         if (localProtocolType == LinkProtoType::RDMA) {
             res = Create(devPhyId, localProtocolType, localIp, type);
         } else if (localProtocolType == LinkProtoType::UB) {
-            HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, devPhyId, localIp);
-            res                                          = HrtRaUbCtxInit(in);
+            HrtNetworkMode mode = (type == Hccl::PortDeploymentType::DEV_NET) ? HrtNetworkMode::HDC : HrtNetworkMode::PEER;
+ 	        HrtRaUbCtxInitParam in(mode, devPhyId, localIp);
+            res                 = HrtRaUbCtxInit(in);
             rdmaHandleMap[devPhyId][localProtocolType][localIp] = res;
             tokenInfoMap[res] = std::make_unique<TokenInfoManager>(devPhyId, res);
             HCCL_INFO("Create one rdmahandle [%p], devPhyId [%u], portAddr [%s]",
