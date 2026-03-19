@@ -78,6 +78,8 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerT
     std::vector<std::shared_ptr<Thread>> &threads = engineToThreadsMap_[engine];
     HcclResult ret = HCCL_E_INTERNAL;
     CHK_RET(CheckNotifyNum(engine, threads.size(), notifyNumPerThread));
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] threadNum[%zu] supplementNotifyNum[%u] notifyLoadType[%u]",
+        __func__, commId_.c_str(), threads.size(), notifyNumPerThread, static_cast<int32_t>(notifyLoadType));
 
     for (uint32_t i = 0; i < threads.size(); ++i) {
         HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u]",
@@ -120,13 +122,16 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
     StreamType streamType;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] supplementThreadNum[%u] notifyNum[%u] notifyLoadType[%u], streamType[%u]",
+        __func__, commId_.c_str(), supplementThreadNum, notifyNumPerThread,
+        static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
     std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(supplementThreadNum);
     HcclResult ret = HCCL_E_INTERNAL;
 
     for (uint32_t i = 0; i < supplementThreadNum; ++i) {
         std::shared_ptr<Thread> handle;
-        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
+        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] notifyLoadType[%u], streamType[%u]",
                 __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
         CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
         ret = handle->Init();
