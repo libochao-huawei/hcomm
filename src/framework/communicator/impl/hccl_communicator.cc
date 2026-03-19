@@ -764,6 +764,11 @@ namespace hccl
         ErrorMessageReport errorMessage;
         if (kfcStatusTransferD2H_ != nullptr)
         {
+            auto perfTimestamps = std::make_unique<u64[]>(20);
+            u32 perfIdx = 0;
+            perfTimestamps[perfIdx++] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        
             CHK_PRT_RET(isInvalidComm_,
                 HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
                 "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), errorMessage);
@@ -773,6 +778,10 @@ namespace hccl
             {
                 HCCL_ERROR("GetAicpuTaskException get aicpu task exception failed.ret[%u]", ret);
             }
+            perfTimestamps[perfIdx++] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+            HCCL_ERROR("GetAicpuTaskException get aicpu task exception success, "
+                      "time cost[%llu]ns", perfTimestamps[1] - perfTimestamps[0]);
         }
         return errorMessage;
     }
