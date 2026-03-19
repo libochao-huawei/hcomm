@@ -221,7 +221,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Allocate_MaxNotifyNum_expect
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread;
-    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 1, hccl::HCOMM_NOTIFY_MAX_NUM + 1, &thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 1, hccl::HCOMM_THREAD_NOTIFY_MAX_NUM + 1, &thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
