@@ -857,15 +857,6 @@ void ProcExecTimeOut(u32 &timeOut)
 // 临时方案，特定场景执行算法会报错，后续适配了再放开
 HcclDetourType CastDetourType(const std::string &s)
 {
-    if (s == "detour:1") {
-        HCCL_INFO("HCCL detour type is 2P (detour:1).");
-        return HcclDetourType::HCCL_DETOUR_ENABLE_2P;
-    } else if (s == "detour:0") {
-        HCCL_INFO("HCCL detour type is disable (detour:0).");
-    } else {
-        THROW<NotSupportException>(StringFormat("environment variable HCCL_DETOUR currently only supports"
-                                                " detour:1 and detour:0 or not set."));
-    }
     return HcclDetourType::HCCL_DETOUR_DISABLE;
 }
 
