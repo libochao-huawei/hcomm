@@ -675,12 +675,12 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len) const
+HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len)
 {
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len) const 
+HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len)
 {
     return HCCL_E_NOT_SUPPORT;
 }
