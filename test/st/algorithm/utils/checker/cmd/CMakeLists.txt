@@ -52,7 +52,7 @@ target_compile_options(hccl_alg_analyzer_test PRIVATE
 target_link_libraries(hccl_alg_analyzer_test PRIVATE
     hccl_alg_adaption
     hccl_alg_analyzer
-    ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
+    ${THIRD_PARTY_PATH}/gtest_shared/lib64/libgtest.so
     -lpthread
     ${PROTO_SOURCE_DIR}/libprotobuf.so
     ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
