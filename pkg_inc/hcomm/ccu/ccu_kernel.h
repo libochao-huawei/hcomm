@@ -51,6 +51,12 @@
 using CcuKernelHandle = uint64_t;
 
 namespace hcomm {
+    
+struct GroupInfo {
+    uint16_t loopParamId;
+    uint16_t parallelParamId;
+    uint16_t residualId;
+};
 
 class CcuKernel : public CcuRep::CcuRepContext {
 public:

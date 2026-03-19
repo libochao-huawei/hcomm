@@ -79,11 +79,7 @@ protected:
         CcuRep::Variable parallelParam;
         CcuRep::Variable residual;
     };
-    struct GroupInfo {
-        uint16_t loopParamId;
-        uint16_t parallelParamId;
-        uint16_t residualId;
-    };
+
 
     // 使用Transport中的Variable
     CcuRep::Variable CreateVariable(const CcuTransport &transport, uint32_t varIndex) const;
