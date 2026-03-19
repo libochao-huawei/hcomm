@@ -65,7 +65,6 @@ DevType HrtGetDeviceType()
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), targetChipVerStr.c_str());
         MACRO_THROW(RuntimeApiException, msg);
     }
-
     return iter->second;
 }
 
@@ -120,10 +119,10 @@ s32 HrtGetDevice()
     s32 deviceLogicId = 0;
     aclError ret = aclrtGetDevice(&deviceLogicId);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("[Get][Device]errNo[0x%016llx] rtGet device fail. "
-                      "please make sure that device is set. return[%d], para:deviceLogicId[%d].",
-                      HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
-        MACRO_THROW(RuntimeApiException, msg);
+        HCCL_WARNING("[Get][Device]errNo[0x%016llx] rtGet device fail, "	 
+                     "please make sure that device is set. return[%d], para:deviceLogicId[%d]",	 
+                     HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);	 
+        throw RuntimeApiException("call aclrtGetDevice failed. ");
     }
     HCCL_INFO("[HrtGetDevice]deviceLogicId=%d.",deviceLogicId);
     return deviceLogicId;
@@ -446,9 +445,6 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
 void HrtFree(void *devPtr)
 {
     HCCL_INFO("[HrtFree] devPtr[%p].", devPtr);
-    if (devPtr == nullptr) {
-        return;
-    }
     aclError ret = aclrtFree(devPtr);
     HCCL_INFO("Call aclrtFree, return value[%d], para: dev_ptr[%p].", ret, devPtr);
     if (ret != RT_ERROR_NONE) {
@@ -660,9 +656,6 @@ void *HrtMallocHost(u64 size)
 void HrtFreeHost(void *hostPtr)
 {
     HCCL_INFO("[HrtFreeHost] hostPtr[%p].", hostPtr);
-    if (hostPtr == nullptr) {
-        return;
-    }
     aclError ret = aclrtFreeHost(hostPtr);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Free][Host]errNo[0x%016llx] rt free host fail. return[%d], "
