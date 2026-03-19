@@ -21,6 +21,7 @@
 #include "virtual_topo.h"
 #include "ccu_rank_group.h"
 #include "ins_queue.h"
+#include "host_buffer.h"
 
 namespace Hccl {
 class CollServiceBase {
