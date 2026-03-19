@@ -506,7 +506,6 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
     CHK_RET(HcclGetRankSizeV2(*commV2, &rankNum));
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     CHK_RET(HcclGetCommNameV2(*commV2, commName));
-    CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
     //获取cclbuffer
     uintptr_t cclBufferAddr{0};
     std::size_t cclBufferSize{0};
@@ -531,6 +530,8 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *co
 
     std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
     opBaseHcom.opGroup2CommMap[hcclCommPtr->GetIdentifier()] = hcclCommPtr;
+    lock.unlock();
+    CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
     HCCL_RUN_INFO("[%s] success, take time [%lld]us.", __func__, DURATION_US(TIME_NOW() - startut));
 #endif
     return HCCL_SUCCESS;
@@ -932,7 +933,6 @@ HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
             CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
             CHK_RET(HcclGetCommNameV2(commV2, commName));
-            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
@@ -1021,7 +1021,6 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
             CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
             CHK_RET(HcclGetCommNameV2(commV2, commName));
-            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
@@ -1268,7 +1267,6 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             CHK_RET(HcclCreateSubCommConfigV2(&commV2, rankNum, rankIds, subCommId, subCommRankId, config, &subCommV2));
             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
             CHK_RET(HcclGetCommNameV2(subCommV2, commName));
-            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
             HcclResult ret = HcclCommInitCollComm(subCommRankId, &subCommV2, config, subComm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed. Destroy subCommV2");
@@ -1937,7 +1935,6 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitRootInfoConfigV2(nRanks, rootInfo, rank, config, &commV2));
-            CHK_PRT(HcomSetGroupTopoInfo(config->hcclCommName, nRanks));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");

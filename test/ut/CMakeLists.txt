@@ -59,6 +59,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/common/src/onesided_memory_management
     ${HCCL_CODE_ROOT}/src/framework/common/src/order_launch
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/resource_manager
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op
@@ -201,7 +202,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/common/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_table_info/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/
+    ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
@@ -278,7 +282,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
     ${HCCL_CODE_ROOT}/src/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common

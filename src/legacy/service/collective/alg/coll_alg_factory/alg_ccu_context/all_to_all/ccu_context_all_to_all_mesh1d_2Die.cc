@@ -190,14 +190,14 @@ void CcuContextAllToAllMesh1D2Die::CreateLocalCopyLoop()
     }
 
     for (uint32_t index = 0; index < 2; index++) { // 需要2个Loop
+        CcuRep::Variable  len = CreateVariable();
         CcuRep::Memory    src = CreateMemory();
         CcuRep::Memory    dst = CreateMemory();
-        CcuRep::Variable  len = CreateVariable();
         CcuRep::LoopBlock lb(this, loopType + "_localcopy_loop_" + std::to_string(index));
         lb(src, dst, len);
 
-        CcuRep::MaskSignal             sem = moRes.maskSignal[index];
         std::vector<CcuRep::CcuBuffer> bufs;
+        CcuRep::MaskSignal             sem = moRes.maskSignal[index];
         for (uint32_t i = 0; i < LOCAL_COPY_MS; i++) {
             bufs.push_back(moRes.ccuBuffer[i]);
         }

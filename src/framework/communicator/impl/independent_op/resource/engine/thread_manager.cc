@@ -78,6 +78,8 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerT
     std::vector<std::shared_ptr<Thread>> &threads = engineToThreadsMap_[engine];
     HcclResult ret = HCCL_E_INTERNAL;
     CHK_RET(CheckNotifyNum(engine, threads.size(), notifyNumPerThread));
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] threadNum[%zu] supplementNotifyNum[%u] notifyLoadType[%u]",
+        __func__, commId_.c_str(), threads.size(), notifyNumPerThread, static_cast<int32_t>(notifyLoadType));
 
     for (uint32_t i = 0; i < threads.size(); ++i) {
         HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u]",
@@ -104,8 +106,9 @@ HcclResult ThreadMgr::SupplementNotify(CommEngine engine, uint32_t notifyNumPerT
 
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(threads.size()),
             return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunch start");
-        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunch end");
+        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm start");
+        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(threads, commId_, hostHandle, binHandle_);
+        HCCL_INFO("ThreadMgr::SupplementNotify ThreadKernelLaunchForComm end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][SupplementNotify] AiCpuKernelLaunch failed, return [%d].", ret), ret);
     }
@@ -119,13 +122,16 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
     StreamType streamType;
     CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
     CHK_RET(CommEngineToStreamType(engine, streamType));
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] supplementThreadNum[%u] notifyNum[%u] notifyLoadType[%u], streamType[%u]",
+        __func__, commId_.c_str(), supplementThreadNum, notifyNumPerThread,
+        static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
     std::vector<std::shared_ptr<Thread>> newThreads;
     newThreads.reserve(supplementThreadNum);
     HcclResult ret = HCCL_E_INTERNAL;
 
     for (uint32_t i = 0; i < supplementThreadNum; ++i) {
         std::shared_ptr<Thread> handle;
-        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] AicpuTsThread notifyLoadType[%u], streamType[%u]",
+        HCCL_INFO("[ThreadMgr][%s] Hcom[%s] notifyLoadType[%u], streamType[%u]",
                 __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
         CHK_RET(CreateThread(engine, streamType, notifyNumPerThread, notifyLoadType, handle));
         ret = handle->Init();
@@ -150,8 +156,9 @@ HcclResult ThreadMgr::SupplementThread(CommEngine engine, uint32_t supplementThr
 
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
             return HCCL_E_PTR);
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch start");
-        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunch end");
+        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunchForComm start");
+        ret = AicpuLaunchMgr::ThreadKernelLaunchForComm(newThreads, commId_, hostHandle, binHandle_);
+        HCCL_INFO("ThreadMgr::HcclAllocThreadRes ThreadKernelLaunchForComm end");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][HcclThreadAcquire] AiCpuKernelLaunch failed, return [%d].", ret), ret);
     }
@@ -210,7 +217,6 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         // 调用补充函数，如果engine是COMM_ENGINE_AICPU_TS、COMM_ENGINE_AICPU，需要去device恢复
         CHK_RET(SupplementThread(engine, supplementThreadNum, notifyNumPerThread));
     }
-
     // 3、返回threadHandle和id
     for (u32 idx = 0; idx < threadNum; idx++) {
         ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadVec[idx].get());
@@ -219,6 +225,9 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         uint32_t id = threadVec[idx]->GetStream()->id();
         HCCL_DEBUG("[%s]idx[%u] threadHandle[%llu] thread id = [%u]", __func__, idx, threads[idx], id);
         threadId.push_back(id);
+
+        std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+        threadMap_[threads[idx]] = threadVec[idx];
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclThreadAcquire done: engine[%d] threadNum[%u],"
@@ -355,6 +364,8 @@ HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     std::lock_guard<std::mutex> lock(mainThreadMutex_);
     mainThread_.emplace(stream, std::move(handle));
     *thread = reinterpret_cast<ThreadHandle>(mainThread_[stream].get());
+    std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+    threadMap_[*thread] = mainThread_[stream];
     HCCL_INFO("[ThreadMgr] Hcom[%s] HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]", commId_.c_str(), engine, stream, notifyNum);
     return HCCL_SUCCESS;
@@ -456,4 +467,31 @@ HcclResult ThreadMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const Thr
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult ThreadMgr::HcclThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    CHK_PRT_RET(resType != ThreadResType::THREAD_RES_TYPE_STREAM, HCCL_ERROR("[%s] failed. resType[%d] is not supported.", 
+        __func__, static_cast<int32_t>(resType)), HCCL_E_NOT_SUPPORT);
+
+    std::lock_guard<std::mutex> threadhandleToThreadMtx(threadhandleToThreadMutex_);
+    auto it = threadMap_.find(thread);
+    CHK_PRT_RET(it == threadMap_.end(), 
+        HCCL_ERROR("[%s] failed to find handle mapping in threadMap_, thread[0x%llx].", __func__, thread), HCCL_E_NOT_FOUND);
+    std::shared_ptr<Thread> threadPtr = it->second;
+    CHK_PTR_NULL(threadPtr);
+    if (resType == ThreadResType::THREAD_RES_TYPE_STREAM) {
+        CHK_PRT_RET(infoLen != sizeof(ThreadResTypeStream), HCCL_ERROR("[%s] failed. infoLen[%u] is mismatch sizeof(ThreadResTypeStream)[%zu]", 
+                    __func__, infoLen, sizeof(ThreadResTypeStream)), HCCL_E_PARA);
+        CHK_PTR_NULL(threadPtr->GetStream());
+        ThreadResTypeStream stream = threadPtr->GetStream()->ptr();
+        CHK_PTR_NULL(stream);
+        *info = stream;
+    } else {
+        HCCL_ERROR("[%s] unsupported resType[%d]", __func__, static_cast<int32_t>(resType));
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HCCL_INFO("[%s] success. thread[0x%llx] resType[%d] info[%p]", __func__, thread, static_cast<int32_t>(resType), *info);
+    return HCCL_SUCCESS;
+}
+
 }

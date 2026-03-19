@@ -33,7 +33,7 @@ STATIC int RsOpenLibnetCoSo(void)
         if (gNetcoApiHandle != NULL) {
             return 0;
         }
-        hccp_err("hccp_dlopen[libnet_co.so] failed! errno=%d, dlerror: %s", errno, dlerror());
+        hccp_err("HccpDlopen[libnet_co.so] failed! errno=%d, dlerror: %s", errno, dlerror());
         return -EINVAL;
     } else {
         hccp_run_info("netco_api dlopen again!");
@@ -79,12 +79,12 @@ STATIC int RsNetcoApiInit(void)
 {
     int ret;
     ret = RsOpenLibnetCoSo();
-    CHK_PRT_RETURN(ret, hccp_err("hccp_dlopen[libnet_co.so] failed! ret=[%d],"\
+    CHK_PRT_RETURN(ret != 0, hccp_err("HccpDlopen[libnet_co.so] failed! ret=[%d],"\
     "Please check network adapter driver has been installed", ret), ret);
 
     ret = RsNetcoTblApiInit();
     if (ret != 0) {
-        hccp_err("[rs_netco_tbl_api_init]hccp_dlopen failed! ret=[%d]", ret);
+        hccp_err("[rs_netco_tbl_api_init]HccpDlopen failed! ret=[%d]", ret);
         RsCloseNetcoSo();
         return ret;
     }

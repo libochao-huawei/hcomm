@@ -135,7 +135,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo.taskId << 16) | static_cast<uint32_t>(exceptionInfo.streamId);
     HCCL_INFO("[%s]group[%s], sqeId[0x%x], taskId[%u], streamId[%u].",
         __func__, aicpuComm->GetIdentifier().c_str(), sqeId, exceptionInfo.taskId, exceptionInfo.streamId);
-    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(0, exceptionInfo.sqId, sqeId);
+    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(devId_, exceptionInfo.sqId, sqeId);
     if (curTask == nullptr) {
         // 未找到异常对应的TaskInfo
         HCCL_ERROR("[%s]Exception task not found. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",

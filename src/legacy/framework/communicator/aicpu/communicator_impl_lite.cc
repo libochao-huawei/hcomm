@@ -24,6 +24,8 @@ namespace Hccl {
 
 constexpr int KERNEL_SUCCESS_CODE = 0;
 constexpr int KERNEL_ERROR_CODE   = 1;
+constexpr int ALLTOALLV_DATA_INDEX_2 = 2; // sdispls在sendRecvInfos数组中的偏移
+constexpr int ALLTOALLV_DATA_INDEX_3 = 3; // rdispls在sendRecvInfos数组中的偏移
 
 int CommunicatorImplLite::LoadWithOpBasedMode(HcclKernelParamLite *kernelParam)
 {
@@ -118,6 +120,7 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
     UpdateLocBuffer(kernelParam);
     UpdateUserStreamId(kernelParam);
     UpdateRes(kernelParam);
+    UpdateDynamicOpData(kernelParam);
     SetDfxOpInfo(beginTime);
 
     UpdateHDCommnicate(kernelParam);
@@ -286,6 +289,43 @@ void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
             kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams));
     std::unique_lock<std::mutex> lock(hdcShmLock_);
     hdcHandler = make_unique<AicpuHdcHandler>(*kfcControlTransferH2D, *kfcStatusTransferD2H);
+}
+
+void CommunicatorImplLite::UpdateDynamicOpData(HcclKernelParamLite *kernelParam)
+{
+    HCCL_INFO("[CommunicatorImplLite][UpdateDynamicOpData] OpType[%s]", kernelParam->op.algOperator.opType.Describe().c_str());
+    u8* dynamicDataPtr = reinterpret_cast<u8*>(kernelParam) + sizeof(struct HcclKernelParamLite);
+    if (kernelParam->op.algOperator.opType == OpType::BATCHSENDRECV) {
+        struct BatchSendRecvDataDes* batchSendRecvDataPtr = 
+            reinterpret_cast<struct BatchSendRecvDataDes*>(dynamicDataPtr);
+        kernelParam->op.algOperator.batchSendRecvDataDes.itemNum = batchSendRecvDataPtr->itemNum;
+        kernelParam->op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr = batchSendRecvDataPtr->batchSendRecvItem;
+        HcclSendRecvItem* itemPtr = reinterpret_cast<HcclSendRecvItem *>(kernelParam->op.algOperator.batchSendRecvDataDes.sendRecvItemsPtr);
+        for (u32 i = 0; i < kernelParam->op.algOperator.batchSendRecvDataDes.itemNum; i++) {
+            HCCL_INFO("[CommunicatorImplLite][UpdateDynamicOpData] batchSendRecvDataDes remoteRank[%u]", (itemPtr + i)->remoteRank);
+        }
+    } else if (kernelParam->op.algOperator.opType == OpType::ALLTOALLV) {
+        struct AllToAllvDataDes* alltoallvDataPtr = 
+            reinterpret_cast<struct AllToAllvDataDes *>(dynamicDataPtr);
+        kernelParam->op.algOperator.all2AllVDataDes.sendType = static_cast<DataType::Value>(alltoallvDataPtr->sendType);
+        kernelParam->op.algOperator.all2AllVDataDes.recvType = static_cast<DataType::Value>(alltoallvDataPtr->recvType);
+        u64 rankSize = kernelParam->comm.rankSize;
+        kernelParam->op.algOperator.all2AllVDataDes.sendCounts = static_cast<void *>(alltoallvDataPtr->sendRecvInfos);
+        kernelParam->op.algOperator.all2AllVDataDes.recvCounts = static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + rankSize);
+        kernelParam->op.algOperator.all2AllVDataDes.sdispls = static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + ALLTOALLV_DATA_INDEX_2 * rankSize);
+        kernelParam->op.algOperator.all2AllVDataDes.rdispls = static_cast<void *>(static_cast<u64 *>(alltoallvDataPtr->sendRecvInfos) + ALLTOALLV_DATA_INDEX_3 * rankSize);
+        for (u32 i = 0; i < rankSize; i++) {
+            HCCL_INFO("[CommunicatorImplLite][UpdateDynamicOpData] alltoallv sendCounts[%llu], recvCounts[%llu]", 
+                *(static_cast<const u64 *>(kernelParam->op.algOperator.all2AllVDataDes.sendCounts) + i), 
+                *(static_cast<const u64 *>(kernelParam->op.algOperator.all2AllVDataDes.recvCounts) + i));
+        }
+    } else if (kernelParam->op.algOperator.opType == OpType::ALLTOALLVC) {
+        struct AllToAllvcDataDes* alltoallvcDataPtr = 
+            reinterpret_cast<struct AllToAllvcDataDes *>(dynamicDataPtr);
+        kernelParam->op.algOperator.all2AllVCDataDes.sendType = static_cast<DataType::Value>(alltoallvcDataPtr->sendType);
+        kernelParam->op.algOperator.all2AllVCDataDes.recvType = static_cast<DataType::Value>(alltoallvcDataPtr->recvType);
+        kernelParam->op.algOperator.all2AllVCDataDes.sendCountMatrix = static_cast<void *>(alltoallvcDataPtr->sendCountMatrix);
+    }
 }
 
 HostDeviceSyncNotifyLiteMgr *CommunicatorImplLite::GetHostDeviceSyncNotifyLiteMgr()

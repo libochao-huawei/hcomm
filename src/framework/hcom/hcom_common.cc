@@ -189,6 +189,33 @@ HcclResult HcomSetGroupTopoInfo(const char *group, uint32_t rankSize)
     return g_hcomSetGroupTopoInfo(group, rankSize);
 }
 
+HcclResult HcomInitCollComm(uint32_t rank, void **commV2, HcclCommPtr &comm)
+{
+    CHK_PTR_NULL(commV2);
+    HCCL_INFO("[HcomInitCollComm] CollComm init start.");
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HcclUs startut = TIME_NOW();
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    CHK_RET(HcclGetCommNameV2(*commV2, commName));
+    //获取cclbuffer
+    uintptr_t cclBufferAddr{0};
+    std::size_t cclBufferSize{0};
+    HcclMemType cclBufferMemType{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+    CHK_RET(HcclGetCclBuffer(*commV2, cclBufferAddr, cclBufferSize, cclBufferMemType));
+    HcclMem cclBuffer;
+    cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
+    cclBuffer.type = cclBufferMemType;
+    cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);
+    EXECEPTION_CATCH(comm = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
+    void *rankGraph = nullptr;
+    CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
+    constexpr HcclCommConfig *config = nullptr;
+    CHK_RET(comm->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
+    HCCL_RUN_INFO("[%s] success, take time [%lld]us.", __func__, DURATION_US(TIME_NOW() - startut));
+#endif
+    return HCCL_SUCCESS;
+}
+
 void HcomUnSetGroupTopoInfo(const char *group)
 {
     if (g_hcomUnsetGroupTopoInfo == nullptr) {
@@ -448,15 +475,25 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
     }
     // 入参合法性校验 END
     std::vector<u32> ranks(rankIds, rankIds + rankNum);
+    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             CHK_RET(HcomCreateGroupImplV2(group, rankNum, ranks));
+            HcclGroupParams groupParams{};
+            void *commV2 = nullptr;
+            CHK_RET(HcomGetGroupParamsV2(group, static_cast<void *>(&groupParams), &commV2));
+            Hccl::RankId rank = static_cast<Hccl::RankId>(groupParams.groupRank);
+            CHK_RET(HcomInitCollComm(rank, &commV2, groupParams.pSubComm));
+            CHK_PTR_NULL(groupParams.pSubComm);
+            std::unique_lock<std::mutex> groupParaLock(hcomInfo.groupParamsLock);
+            hcomInfo.hcomGroupMap.insert(std::make_pair(group, groupParams));
+            groupParaLock.unlock();
             CHK_RET(HcomSetGroupTopoInfo(group, rankNum));
+            HCCL_INFO("[HcomCreateGroup] create group[%s] success.", group);
             return HCCL_SUCCESS;
         }());
 #endif
-    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm == nullptr &&
         ((g_hcomCallBackGroupIsInit != nullptr) && (!(g_hcomCallBackGroupIsInit(hcomInfo))))) {
         CHK_RET(HcomStoreBackloggedGroup(group, ranks));
@@ -573,10 +610,23 @@ HcclResult HcomDestroyGroup(const char *group)
             LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomDestroyGroupImplV2(group));
-#endif
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            std::unique_lock<std::mutex> groupParaLock(hcomInfo.groupParamsLock);
+            auto iter = hcomInfo.hcomGroupMap.find(group);
+            if (iter == hcomInfo.hcomGroupMap.end()) {
+                HCCL_ERROR(
+                    "[Destroy][Group]errNo[0x%016llx] group[%s] is not exist", HCOM_ERROR_CODE(HCCL_E_PARA), group);
+                return HCCL_E_PARA;
+            }
+            hcomInfo.hcomGroupMap.erase(group);
+            groupParaLock.unlock();
+            CHK_RET(HcomDestroyGroupImplV2(group));
+            return HCCL_SUCCESS;
+        }());
+#endif
 
     if (hcomInfo.pComm == nullptr &&
         ((g_hcomCallBackGroupIsInit != nullptr) && (!(g_hcomCallBackGroupIsInit(hcomInfo))))) {
@@ -989,7 +1039,17 @@ HcclResult HcomDestroyOneDevice(HcomInfo &hcomInfo)
 HcclResult HcomDestroy(void)
 {
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomDestroyV2());
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            std::unique_lock<std::mutex> lock(g_destroyDeviceLock);
+            for (u32 i = 0; i <= MAX_MODULE_DEVICE_NUM; i++) {
+                HcomInfo &hcomInfo = HcomGetCtxHomInfoById(i);
+                hcomInfo.pComm = nullptr;
+                hcomInfo.hcomGroupMap.clear();
+            }
+            CHK_RET(HcomDestroyV2());
+            return HCCL_SUCCESS;
+        }());
 #endif
     std::unique_lock<std::mutex> lock(g_destroyDeviceLock);
     for (u32 i = 0; i <= MAX_MODULE_DEVICE_NUM; i++) {
@@ -1411,6 +1471,11 @@ HcclResult HcomInitByFile(const char *rankTablePath, const char *identify)
             CHK_RET(HcomInitByFileV2(rankTablePath, identify));
             u32 rankNum = 0;
             CHK_RET(HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum));
+            s32 myRank = std::atoi(identify);
+            Hccl::RankId rank = static_cast<Hccl::RankId>(myRank);
+            void *commV2 = nullptr;
+            CHK_RET(HcomGetCommV2(&commV2));
+            CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
             CHK_RET(HcomSetGroupTopoInfo(HCCL_WORLD_GROUP, rankNum));
             return HCCL_SUCCESS;
         }());

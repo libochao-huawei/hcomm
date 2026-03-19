@@ -23,10 +23,8 @@
 #include "coll_comm_aicpu_destroy_func.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
-
-HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，该接口头文件还没定
-
+ HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel, 
+     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，后续移动至Op.h
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
     if (isReady_) {
@@ -210,7 +208,8 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
 }
 
 HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
-    return HcommChannelRegisterDfx(channel, dfx_.GetCallback());
+    int hert = HcommChannelRegisterDfx(channel, dfx_.GetCallback());
+    return static_cast<HcclResult>(hert);
 }
 
 HcclResult CollCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)
