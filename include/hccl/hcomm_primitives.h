@@ -465,14 +465,6 @@ extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, u
  */
 extern int32_t HcommFenceOnThread(ThreadHandle thread);
 
-/**
- * @brief DPU数据面flush接口
- * @param[in] void
- * @return int32_t 执行结果状态码
- *
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommFlush();
 
 /**
  * @brief 通信通道级内存屏障操作
@@ -482,14 +474,6 @@ extern int32_t HcommFlush();
  */
 extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
 
-/**
- * @brief 通信通道级内存屏障操作
- * @param[in] channel 通道句柄
- * @return int32_t 执行结果状态码
- *
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommChannelFence(ChannelHandle channel);
 
 /** @} */  // 算子编程接口
 #ifdef __cplusplus
