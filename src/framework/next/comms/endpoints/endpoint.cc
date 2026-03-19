@@ -14,6 +14,7 @@
  #include "urma_endpoint.h"
  #include "ub_mem_endpoint.h"
  #include "uboe_endpoint.h"
+ #include "aicputs_hccs_endpoint.h"
 
  namespace hcomm{
 static bool IsProtocolSupported(CommProtocol protocol)
@@ -25,11 +26,14 @@ static bool IsProtocolSupported(CommProtocol protocol)
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_UBOE:
+        case COMM_PROTOCOL_HCCS:
             return true;
         default:
             return false;
     }
 }
+
+std::atomic<u64> Endpoint::allId_(0);
 
 Endpoint::Endpoint(const EndpointDesc &endpointDesc)
 {
@@ -61,6 +65,8 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_HCCS && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<AicpuTsHccsEndPoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
         HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 
