@@ -48,7 +48,7 @@ private:
     HcclResult SupplementThread(CommEngine engine, uint32_t supplementThreadNum, uint32_t notifyNumPerThread);
     HcclResult ThreadExportToCommEngineCpu(uint32_t threadNum, const ThreadHandle *threads, ThreadHandle *exportedThreads);
     HcclResult ThreadExportToCommEngineAicpu(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
-    HcclResult GetExportedThread(ThreadHandle threadHandle, CommEngine commEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut);
+    HcclResult GetExportedThread(const ThreadHandle threadHandle, CommEngine commEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut);
     u32 threadNum_ = 0;
     u32 notifyNumPerThread_ = 0;
     std::string commId_;
