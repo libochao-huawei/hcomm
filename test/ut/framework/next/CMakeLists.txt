@@ -112,6 +112,8 @@ set(src_to_a3_test_list
     main.cc
     hccl_api_base_test.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_a3_api.cc
+    comms/endpoints/ut_hccs_mem_endpoint.cc
+    comms/api_c_adpt/ut_hcomm_hccs_channel_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource_a3 ${src_to_a3_test_list})
