@@ -237,6 +237,17 @@ TEST_F(AdapterHccpTest, hrtRaSocketListenOneStart_again)
     EXPECT_THROW(HrtRaSocketListenOneStart(listenInfo), NetworkApiException);
 }
 
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_Throw_Exception)
+{
+    MOCKER(RaSocketListenStart).stubs().will(returnValue(SOCK_EADDRNOTAVAIL));
+
+    SocketHandle socketHandle = nullptr;
+
+    RaSocketListenParam listenInfo(socketHandle, 0);
+
+    EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo), NetworkApiException);
+}
+
 TEST_F(AdapterHccpTest, HrtRaSocketInit_OK)
 {
     // Given
