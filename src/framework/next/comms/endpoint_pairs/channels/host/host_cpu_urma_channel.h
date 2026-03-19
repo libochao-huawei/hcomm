@@ -82,14 +82,14 @@ private:
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
                                     urma_jfs_wr_t &writeWithNotifyWr);
 
-    urma_jfs_t jfs_;
-    urma_jfr_t jfr_;
     urma_jfc_t jfc_;
+    urma_jetty_t jetty_;
     urma_target_jetty_t tjetty_;
     uint32_t wqeNum_{0};
     bool fenceFlag_{false};
 
     std::mutex jfcMutex_;
+    std::mutex fenceMutex_;
 };
 
 } // namespace hcomm

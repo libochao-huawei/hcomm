@@ -38,7 +38,7 @@ public:
 
     void SetCqInfo(HcclAiRMACQ &cq);
     
-void SetWqInfo(HcclAiRMAWQ &wq);
+    void SetWqInfo(HcclAiRMAWQ &wq);
 
     unique_ptr<BaseTask> PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
                                     const SqeConfig &config) override;
@@ -81,6 +81,9 @@ void SetWqInfo(HcclAiRMAWQ &wq);
     u32          GetCiVal() const;
     u32          GetSqDepth() const;
 
+    uint64_t GetCqVa() const;
+    u64 GetJettyVa() const;
+
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
 
@@ -118,6 +121,7 @@ private:
     void          *remoteJettyHandlePtr{nullptr};
 
     JettyHandle jettyHandle{0};
+    u64         jettyVa_{0};
     void       *jettyHandlePtr{nullptr};
     JettyHandle remoteJettyHandle{0};
     u8          localQpKey[HRT_UB_QP_KEY_MAX_LEN]{0};
