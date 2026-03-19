@@ -250,14 +250,14 @@ TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutLessThanU16
 
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
-    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2Graph();
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 2;
     cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
-    cclBuffer.addr = (void)*0x1000;
+    cclBuffer.addr = (void*)0x1000;
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    std::shared_ptr<hccl::hcclComm> HcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1;
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
@@ -280,14 +280,14 @@ TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutGreaterThan
 
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
-    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2Graph();
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
     u32 rank = 1;
     HcclMem cclBuffer;
     cclBuffer.size = 2;
     cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
-    cclBuffer.addr = (void)*0x1000;
+    cclBuffer.addr = (void*)0x1000;
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    std::shared_ptr<hccl::hcclComm> HcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1;
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
