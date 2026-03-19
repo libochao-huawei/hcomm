@@ -236,6 +236,11 @@ public:
     DeviceMem outputMem{DeviceMem()};
     std::vector<DeviceMem> mem{};
 
+    u32 localBufSize{0};
+    u32 remoteBufSize{0};
+    HcclMemEx *localBufMem{nullptr};
+    HcclMemEx *remoteBufMem{nullptr};
+
     // 自定义算子交换内存
     std::vector<DeviceMem> userDeviceMem{};
     std::vector<HostMem> userHostMem{};
@@ -258,6 +263,7 @@ public:
     bool userMemEnable{true};
     // DispatcherCtxPtr；设备侧 TS Roce 等场景传入，WriteCommon 内写入线程局部 dispatcher
     void *dctxPtr{nullptr};
+    bool isNewOneSide{false};
     TagMachinePara() {}
 
     TagMachinePara(const struct TagMachinePara &that)
@@ -279,6 +285,10 @@ public:
         inputMem = (that.inputMem);
         outputMem = (that.outputMem);
         mem = (that.mem);
+        localBufSize = (that.localBufSize);
+        remoteBufSize = (that.remoteBufSize);
+        localBufMem = (that.localBufMem);
+        remoteBufMem = (that.remoteBufMem);
         userDeviceMem = (that.userDeviceMem);
         userHostMem = (that.userHostMem);
         isIndOp = (that.isIndOp);
@@ -301,6 +311,7 @@ public:
         queueDepthAttr = that.queueDepthAttr;
         userMemEnable = that.userMemEnable;
         dctxPtr = that.dctxPtr;
+        isNewOneSide = (that.isNewOneSide);
     }
 
     struct TagMachinePara &operator=(struct TagMachinePara &that)
@@ -323,6 +334,10 @@ public:
             inputMem = (that.inputMem);
             outputMem = (that.outputMem);
             mem = (that.mem);
+            localBufSize = (that.localBufSize);
+            remoteBufSize = (that.remoteBufSize);
+            localBufMem = (that.localBufMem);
+            remoteBufMem = (that.remoteBufMem);
             userDeviceMem = (that.userDeviceMem);
             userHostMem = (that.userHostMem);
             isIndOp = (that.isIndOp);
@@ -344,6 +359,7 @@ public:
             queueDepthAttr = that.queueDepthAttr;
             userMemEnable = that.userMemEnable;
             dctxPtr = that.dctxPtr;
+            isNewOneSide = (that.isNewOneSide);
         }
 
         return *this;
