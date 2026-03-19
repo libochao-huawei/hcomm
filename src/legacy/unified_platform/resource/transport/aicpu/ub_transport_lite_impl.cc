@@ -454,6 +454,7 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
     ReduceProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, reduceIn, stream, taskId);
 }
 
+<<<<<<< 9.0.0
 HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
 {
     static std::map<ReduceOp, HcclReduceOp> reduceTypeMap = {{ReduceOp::SUM, HcclReduceOp::HCCL_REDUCE_SUM},
@@ -467,6 +468,9 @@ HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
 }
 
 void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
+=======
+void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt,
+>>>>>>> 9.0.0
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
     if (callback_ == nullptr)

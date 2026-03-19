@@ -650,10 +650,7 @@ void HrtNotifyDestroy(RtNotify_t ptr)
 
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 {
-    if (HrtGetDeviceType() == DevType::DEV_TYPE_950) {
-        return;
-    }
-    aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 0UL);
+    aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 2UL);
     HCCL_INFO("Call aclrtNotifyGetExportKey, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[Set][IPCNotify]errNo[0x%016llx] IPC set notify name fail.  "
@@ -1124,6 +1121,40 @@ HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
         HCCL_ERROR("aclrtMemP2PMap fail ret = %d", ret);
         return HCCL_E_RUNTIME;
     }
+    return HCCL_SUCCESS;
+}
+HcclResult HrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
+{
+    rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
+
+    HCCL_INFO("rt enableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
+
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Enable][P2P]errNo[0x%016llx] rt enableP2P deviceLogicId[%u] and "\
+        "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtDisableP2P(u32 deviceLogicId, u32 devicePhyId)
+{
+    rtError_t ret = rtDisableP2P(deviceLogicId, devicePhyId);
+
+    HCCL_INFO("rt disableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
+
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Disable][P2P]errNo[0x%016llx] rt disableP2P deviceLogicId[%u] and "\
+        "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status)
+{
+    rtError_t ret = rtGetP2PStatus(deviceLogicId, devicePhyId, status);
+
+    HCCL_DEBUG("rt getp2pstatus deviceLogicId[%u] and devicePhyId[%u] fail[%d], status[%u]",
+        deviceLogicId, devicePhyId, ret, *status);
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Get][P2PStatus]errNo[0x%016llx]Call rtGetP2PStatus failed, "
+            "ret[%d], deviceLogicId[%u], devicePhyId[%u]",
+            HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId, devicePhyId), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
 } // namespace Hccl

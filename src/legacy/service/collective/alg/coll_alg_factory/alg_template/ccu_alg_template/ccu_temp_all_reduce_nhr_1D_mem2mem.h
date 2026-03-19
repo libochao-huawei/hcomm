@@ -39,8 +39,8 @@ public:
 private:
     HcclResult CalcSlice(const u64 dataSize, RankSliceInfo &sliceInfoVec);
     HcclResult GetStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
-    HcclResult GetReduceScatterStepInfo(u32 step, NHRStepInfo &stepInfo);
     HcclResult GetAllGatherStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
+    HcclResult GetReduceScatterStepInfo(u32 step, NHRStepInfo &stepInfo);
     HcclResult ProcessNHRStepInfo(std::vector<NHRStepInfo> &stepInfoVector, RankGroup &rankGroup,
                                 std::map<u32, u32> &indexMap, std::vector<LinkData> &linksDie0,
                                 std::vector<LinkData> &linksDie1, const ResLinks &tempLinks);

@@ -80,6 +80,9 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
                 } else {
                     primQueueGenName = "CcuReduceScatterMesh1D";
                 }
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][ReduceScatterAutoSelector] level0 PCIE mix is not supported yet for ccu_ms mode.");
+                return SelectorStatus::NOT_MATCH;
             } else { // MS 不支持
                 HCCL_WARNING("[Algo][ReduceScatterAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
                     topoInfo.level0Shape);
@@ -172,6 +175,9 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                     return SelectorStatus::NOT_MATCH;
                 }
                 primQueueGenName = "CcuReduceScatterMeshMem2Mem1D";
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][ReduceScatterAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuReduceScatterParallelMesh1DNHR";
             }
@@ -269,6 +275,9 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
                         op.dataType.Describe().c_str(),
                         op.reduceOp.Describe().c_str());
                     return SelectorStatus::NOT_MATCH;
+                } else if (topoInfo.level0PcieMix) {
+                    // 预留PCIE mix入口，如果要更新算法可以直接改
+                    primQueueGenName = "InsReduceScatterParallelMesh1DNHR";
                 } else {
                     primQueueGenName = "InsReduceScatterParallelMesh1DNHR";
                 }
@@ -276,11 +285,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
             if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 ||
                 op.dataType == DataType::FP64 || op.reduceOp == ReduceOp::PROD) {
-                HCCL_ERROR("[SelectAicpuAlgo] level0Shape[%d], DataType[%s], reduceOp[%s] is not supported yet.",
-                    topoInfo.level0Shape,
-                    op.dataType.Describe().c_str(),
-                    op.reduceOp.Describe().c_str());
-                return SelectorStatus::NOT_MATCH;
+                primQueueGenName = "InsReduceScatterAicpuReduce";
             } else {
                 primQueueGenName = "InsReduceScatterNHR";
             }

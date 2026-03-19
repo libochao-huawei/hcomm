@@ -26,15 +26,15 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of ReduceScatter ccu nhr 1D mem2mem with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of ReduceScatter ccu mesh 1D 2die with tempRankSize [%u].", tempRankSize_);
     }
 
     HcclResult GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     uint64_t GetMaxSliceSize() const;
-    void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
     u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType) override;
+    void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
     ReduceOp reduceOp_;

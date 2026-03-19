@@ -22,8 +22,6 @@
 
 namespace Hccl {
 
-HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp);
-
 class UbTransportLiteImpl : public BaseTransportLiteImpl {
 public:
     explicit UbTransportLiteImpl(std::vector<char>                                                 &uniqueId,

@@ -33,8 +33,8 @@ public:
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
-    uint64_t GetMaxSliceSize() const;
     uint64_t GetExpandedMode() const;
+    uint64_t GetMaxSliceSize() const;
     HcclResult GenExtIns(const RankGraph *rankGraph, const TemplateInfo &tmpInfo,
                          const std::vector<InsQuePtr> &tempInsQues) const;
 };
