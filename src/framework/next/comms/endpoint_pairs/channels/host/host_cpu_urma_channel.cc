@@ -322,16 +322,16 @@ HcclResult hcomm::HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyId
 
     CHK_RET(PrepareNotifyWrResource(remoteNotifyIdx, notifyRecordWr));
 
-    // 3.调用urma_post_jfs_wr
-    HCCL_INFO("[HostCpuUrmaChannel::%s] call urma_post_jfs_wr", __func__);
-    int32_t ret = urma_post_jfs_wr(const_cast<urma_jfs_t*>(&jfs_), &notifyRecordWr, &badWr);
+    // 3.调用urma_post_jetty_send_wr	 
+    HCCL_INFO("[HostCpuUrmaChannel::%s] call urma_post_jetty_send_wr.", __func__);	 
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &notifyRecordWr, &badWr);
     if (ret != 0 && badWr == nullptr) {
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jfs_wr failed while badWr is nullptr", __func__);
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed while badWr is nullptr", __func__);
         return HCCL_E_INTERNAL;
     }
 
     CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jfs_wr failed. ret:%d, "
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed. ret:%d, "
         "badWr->rw.src.sge->addr[%llu], badWr->rw.dst.sge->addr[%llu]",
         __func__, ret, badWr->rw.src.sge->addr, badWr->rw.dst.sge->addr));
     
@@ -354,7 +354,7 @@ HcclResult hcomm::HostCpuUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, 
     while (true) {
         HCCL_INFO("[HostCpuUrmaChannel::%s] start to poll jfc", __func__);
         
-        auto actualNum = urma_poll_jfc(const_cast<urma_jfc_t*>(&jfc_), 1, &wc);
+        auto actualNum = urma_poll_jfc(reinterpret_cast<urma_jfc_t*>(connections_[0].GetCqVa()), 1, &wc);
         CHK_PRT_RET(wc.status != URMA_CR_SUCCESS,
             HCCL_ERROR("[HostCpuUrmaChannel][%s] urma_poll_jfc return wc.status is [%d].",
             __func__, wc.status), HCCL_E_NETWORK);
@@ -381,29 +381,30 @@ HcclResult hcomm::HostCpuUrmaChannel::WriteWithNotify(void *dst, const void *src
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
 
-    // 补充jfr中消耗的rqe
+    // 1.补充jfr中消耗的rqe
     CHK_RET(UrmaPostJfr());
 
-    // 1. 构造jfs_wr
+    // 2.构造jfs_wr
     urma_jfs_wr_t writeWithNotifyWr {};
     urma_jfs_wr_t *badWr = nullptr;
 
     CHK_RET(PrepareWriteWrResource(dst, src, len, remoteNotifyIdx, writeWithNotifyWr));
 
-    // 2. 调用urma_post_jfs_wr
-    int32_t ret = urma_post_jfs_wr(const_cast<urma_jfs_t*>(&jfs_), &writeWithNotifyWr, &badWr);
+    // 3.调用urma_post_jetty_send_wr	 
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &writeWithNotifyWr, &badWr);
     if (ret != 0 && badWr == nullptr) {
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jfs_wr failed while badWr is nullptr", __func__);
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed while badWr is nullptr", __func__);
         return HCCL_E_INTERNAL;
     }
 
     CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jfs_wr failed. ret:%d, "
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed. ret:%d, "
         "badWr->rw.src.sge->addr[%llu], badWr->rw.dst.sge->addr[%llu]",
         __func__, ret, badWr->rw.src.sge->addr, badWr->rw.dst.sge->addr));
 
     HCCL_INFO("[HostCpuUrmaChannel::%s] end.", __func__);
     wqeNum_++;
+
     return HCCL_SUCCESS;
 }
 
@@ -411,7 +412,10 @@ HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t
 {
     HCCL_INFO("[HostCpuUrmaChannel::%s] start. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
 
-    // 1.构造urma的wr
+    // 1.补充jfr中消耗的rqe	 
+    CHK_RET(UrmaPostJfr());
+
+    // 2.构造urma的wr
     urma_jfs_wr_t urmaWriteWr{};
     urma_jfs_wr_t *badWr = nullptr;
     urmaWriteWr.opcode = URMA_OPC_WRITE;
@@ -432,17 +436,18 @@ HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t
     urmaWriteWr.rw.notify_data = 0; // 在write下不需要填，给个初值即可。在writewithnotify中该值和imm_data值一致
     urmaWriteWr.next = nullptr;
     
-    // 2. 调用 urma_post_jfs_wr
-    s32 ret = urma_post_jfs_wr(const_cast<urma_jfs_t*>(&jfs_), &urmaWriteWr, &badWr);
+    // 3.调用 urma_post_jetty_send_wr	 
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &urmaWriteWr, &badWr);
     
     CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jfs_wr failed. ret:%d, "
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed. ret:%d, "
         "badWr->rw.src.sge->addr[%llu], badWr->rw.dst.sge->addr[%llu]",
         __func__, ret, badWr->rw.src.sge->addr, badWr->rw.dst.sge->addr));
     
     HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS.", __func__);
     fenceFlag_ = false;
     wqeNum_++;
+
     return HCCL_SUCCESS;
 }
 
@@ -450,7 +455,10 @@ HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t 
 {
     HCCL_INFO("[HostCpuUrmaChannel::%s] START. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
 
-    // 1. 构造 WR
+    // 1.补充jfr中消耗的rqe	 
+    CHK_RET(UrmaPostJfr());
+
+    // 2.构造 WR
     urma_jfs_wr_t urmaReadWr{};
     urma_jfs_wr_t *badWr = nullptr;
     urmaReadWr.opcode = URMA_OPC_READ;
@@ -471,23 +479,24 @@ HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t 
     urmaReadWr.rw.notify_data = 0; // 在write下不需要填，给个初值即可。在writewithnotify中该值和imm_data值一致
     urmaReadWr.next = nullptr;
 
-    // 2. 调用 urma_post_jfs_wr
-    s32 ret = urma_post_jfs_wr(const_cast<urma_jfs_t*>(&jfs_), &urmaReadWr, &badWr);
+    // 3.调用 urma_post_jetty_send_wr	 
+    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &urmaReadWr, &badWr);
     
     CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jfs_wr failed. ret:%d, "
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr. ret:%d, "
         "badWr->rw.src.sge->addr[%llu], badWr->rw.dst.sge->addr[%llu]",
         __func__, ret, badWr->rw.src.sge->addr, badWr->rw.dst.sge->addr));
     
     HCCL_INFO("[HostCpuUrmaChannel::%s] SUCCESS.", __func__);
     fenceFlag_ = false;
     wqeNum_++;
+
     return HCCL_SUCCESS;
 }
 
 HcclResult hcomm::HostCpuUrmaChannel::ChannelFence()
 {
-    std::lock_guard<std::mutex> lock(jfcMutex_);
+    std::lock_guard<std::mutex> lock(fenceMutex_);
     HCCL_INFO("[HostCpuUrmaChannel::%s] start, wqeNum_ = %u", __func__, wqeNum_);
     CHK_PRT_RET(wqeNum_ == 0, HCCL_INFO("[HostCpuUrmaChannel::%s] no need to fence since no wqeNum[%u].", __func__), HCCL_SUCCESS);
     std::vector<urma_cr_t> wc(wqeNum_);
@@ -495,7 +504,7 @@ HcclResult hcomm::HostCpuUrmaChannel::ChannelFence()
     auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
     auto startTime = std::chrono::steady_clock::now();
     while (true) {
-        auto actualNum = urma_poll_jfc(const_cast<urma_jfc_t*>(&jfc_), wqeNum_, wc.data());
+        auto actualNum = urma_poll_jfc(reinterpret_cast<urma_jfc_t*>(connections_[0].GetCqVa()), wqeNum_, wc.data());
 
         if (actualNum < 0) {
             HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_poll_jfc failed. actualNum=%d", __func__, actualNum);
@@ -548,11 +557,11 @@ HcclResult hcomm::HostCpuUrmaChannel::UrmaPostJfr()
 
     HCCL_INFO("[HostCpuUrmaChannel::%s] call ibv_post_recv", __func__);
 
-    // 2. 调用 urma_post_jfr_wr
-    int32_t ret = urma_post_jfr_wr(const_cast<urma_jfr_t*>(&jfr_), &jfrWr, &badWr);
+    // 2. 调用 urma_post_jetty_recv_wr	 
+    auto ret = urma_post_jetty_recv_wr(reinterpret_cast<urma_jetty_t*>(connections_[0].GetJettyVa()), &jfrWr, &badWr);
 
     CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jfr_wr failed. ret:%d, "
+        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_recv_wr failed. ret:%d, "
         "badWr->src.sge->addr[%llu]]", __func__, ret, badWr->src.sge->addr));
 
     return HCCL_SUCCESS;

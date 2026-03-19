@@ -289,6 +289,7 @@ void HostUbConnection::CreateJetty(const bool devUsed)
 
     HrtRaUbJettyCreatedOutParam repJetty = HrtRaUbCreateJetty(rdmaHandle, req);
     jettyHandle = repJetty.handle;
+    jettyVa_ = repJetty.jettyVa;
 }
 
 void HostUbConnection::SetJettyInfo()
@@ -848,6 +849,16 @@ u32 HostUbConnection::GetCiVal() const
 u32 HostUbConnection::GetSqDepth() const
 {
     return sqDepth;
+}
+
+uint64_t HostUbConnection::GetCqVa() const
+{
+    return cqInfo_.va;
+}
+
+u64 HostUbConnection::GetJettyVa() const
+{
+    return jettyVa_;
 }
 
 void HostUbConnection::UpdateCiVal(u32 ci)
