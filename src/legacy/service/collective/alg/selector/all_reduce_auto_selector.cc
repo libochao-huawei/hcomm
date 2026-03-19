@@ -294,7 +294,7 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
                         topoInfo.level0Shape);
                     return SelectorStatus::NOT_MATCH;
                 } else if (topoInfo.level0PcieMix) {
-                    primQueueGenName = "InsAllReduceParallelMesh1DNHR";
+                    primQueueGenName = "InsAllReduceParallelMesh1DNHRPcie";
                 } else {
                     primQueueGenName = "InsAllReduceParallelMesh1DNHR";
                 }
@@ -328,7 +328,7 @@ SelectorStatus AllReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
             op.reduceOp.Describe().c_str()),
         SelectorStatus::NOT_MATCH);
 
-    if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
+    if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
         HCCL_WARNING("[Algo][AllReduceAutoSelector] aiv mode not support INT64, UINT64, FP64.");
         return SelectorStatus::NOT_MATCH;
     }
