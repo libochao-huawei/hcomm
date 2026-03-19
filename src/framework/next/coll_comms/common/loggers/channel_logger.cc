@@ -78,8 +78,8 @@ void ChannelLogger::PrintErrorTableHeader(uint32_t localRank)
 {
     HCCL_ERROR("   ________________________________________________CHANNEL_CONNECT_ERROR_INFO________________________________________________");
     HCCL_ERROR("   |  comm error, localRank[%u]", localRank);
-    HCCL_ERROR("   |  idx  | localRank |              localAddr               | remoteRank |             remoteAddr             | chHandle  |            Status            | Proto | elapsed |");
-    HCCL_ERROR("   |-------|-----------|-------------------------------------|------------|-------------------------------------|-----------|----------------------------|-------|---------|");
+    HCCL_ERROR("   |  idx  | localRank |              localAddr               | remoteRank |             remoteAddr             | chHandle  |            Status            |    TlsStatus    | Proto | elapsed |");
+    HCCL_ERROR("   |-------|-----------|-------------------------------------|------------|-------------------------------------|-----------|----------------------------|-----------------|-------|---------|");
 }
 
 std::string ChannelStatusUtils::ToString(int32_t status)
@@ -95,14 +95,27 @@ void ChannelLogger::PrintErrorInfo(
     const HcclChannelDesc& channelDesc,
     ChannelHandle channelHandle,
     int32_t status,
-    uint64_t elapsedMs)
+    uint64_t elapsedMs,
+    Hccl::TlsStatus tlsStatus)
 {
     // 复用 FormatEndpointAddresses()
     std::string localAddr, remoteAddr;
     FormatEndpointAddresses(channelDesc, localAddr, remoteAddr);
     std::string statusStr = ChannelStatusUtils::ToString(status);
+    std::string tlsStatusStr = "UNKNOWN";
+    switch (tlsStatus) {
+        case Hccl::TlsStatus::ENABLE:
+            tlsStatusStr = "ENABLE";
+            break;
+        case Hccl::TlsStatus::DISABLE:
+            tlsStatusStr = "DISABLE";
+            break;
+        default:
+            tlsStatusStr = "UNKNOWN";
+            break;
+    }
 
-    HCCL_ERROR("   | %5u | %9u | %35s | %10u | %35s | 0x%08llx | %26s | %5d | %7llu |",
+    HCCL_ERROR("   | %5u | %9u | %35s | %10u | %35s | 0x%08llx | %26s | %15s | %5d | %7llu |",
         idx,
         localRank,
         localAddr.c_str(),
@@ -110,6 +123,7 @@ void ChannelLogger::PrintErrorInfo(
         remoteAddr.c_str(),
         static_cast<unsigned long long>(channelHandle),
         statusStr.c_str(),
+        tlsStatusStr.c_str(),
         channelDesc.channelProtocol,
         static_cast<unsigned long long>(elapsedMs));
 }
@@ -120,14 +134,15 @@ void ChannelLogger::PrintChannelErrorDetails(
     const HcclChannelDesc* channelDescs,
     ChannelHandle* channelHandles,
     int32_t* statusList,
-    int64_t elapsedMs)
+    int64_t elapsedMs,
+    Hccl::TlsStatus tlsStatus)
 {
     // 打印错误详情表格（只打印异常状态的 Channel）
     PrintErrorTableHeader(localRank);
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         if (IsAbnormalStatus(statusList[i])) {
-            PrintErrorInfo(i, localRank, channelDescs[i], channelHandles[i], statusList[i], elapsedMs);
+            PrintErrorInfo(i, localRank, channelDescs[i], channelHandles[i], statusList[i], elapsedMs, tlsStatus);
         }
     }
 
