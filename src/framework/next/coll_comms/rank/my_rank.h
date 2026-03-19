@@ -59,7 +59,8 @@ private:
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
-
+    static bool IsProtocolSupported(CommEngine engine, CommProtocol protocol);
+    
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
     CommConfig config_{};
