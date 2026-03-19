@@ -11,6 +11,7 @@
 #include "host_cpu_roce_channel.h"
 #include "../../../endpoints/endpoint.h"
 #include "dpu_notify/dpu_notify_manager.h"
+#include "hcomm_res.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
 
@@ -24,6 +25,7 @@
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
+constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
@@ -80,6 +82,41 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
     return HCCL_SUCCESS;
 }
 
+HcclResult HostCpuRoceChannel::StartListen()
+{
+    uint16_t port = channelDesc_.port;
+    HCCL_INFO("[HostCpuRoceChannel::%s] Start. EndpointHandle[0x%llx], port[%u]", __func__, reinterpret_cast<uint64_t>(endpointHandle_), port);
+    if (port == 0) {
+        port = DEFAULT_LISTENING_PORT;
+        HCCL_INFO("[HostCpuRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
+    }
+    CHK_RET(HcommEndpointStartListen(endpointHandle_, port, nullptr));
+    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::BuildSocket()
+{
+    if (socket_ != nullptr) {
+        return HCCL_SUCCESS;
+    }
+    HCCL_INFO("[HostCpuRoceChannel::%s] socket ptr is NULL, rebuild Socket", __func__);
+
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
+    HCCL_INFO("[HostCpuRoceChannel::%s] built linkData: %s", __func__, linkData.Describe().c_str());
+    uint16_t port = channelDesc_.port;
+    if (port == 0) {
+        port = DEFAULT_LISTENING_PORT;
+        HCCL_INFO("[HostCpuRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
+    }
+    std::string socketTag = "AUTOMATIC_SOCKET_TAG";
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HostCpuRoceChannel::BuildConnection()
 {
     std::unique_ptr<HostRdmaConnection> conn;
@@ -105,28 +142,10 @@ HcclResult HostCpuRoceChannel::BuildBuffer()
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::BuildSocket()
-{
-    if (socket_ != nullptr) {
-        return HCCL_SUCCESS;
-    }
-    HCCL_INFO("[HostCpuRoceChannel::%s] socket ptr is NULL, rebuild Socket", __func__);
-
-    Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
-    HCCL_INFO("[HostCpuRoceChannel::%s] built linkData: %s", __func__, linkData.Describe().c_str());
-
-    std::string socketTag = "AUTOMATIC_SOCKET_TAG";
-    bool noRankId = true;
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag, noRankId);
-    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
-
-    return HCCL_SUCCESS;
-}
-
 HcclResult HostCpuRoceChannel::Init()
 {
     CHK_RET(ParseInputParam());
+    CHK_RET(StartListen());
     CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
@@ -227,27 +246,27 @@ HcclResult HostCpuRoceChannel::ExchangeData()
 
     std::vector<char> sendData{};
     binaryStream.Dump(sendData);
-    size_t sendSize = sendData.size();
+    uint64_t sendSize = sendData.size();
     std::vector<char> recvData{};
-    size_t recvSize = 0;
+    uint64_t recvSize = 0;
 
     EXCEPTION_HANDLE_BEGIN
     // 同步发送数据包尺寸
     CHK_PRT_RET(!socket_->Send(reinterpret_cast<void *>(&sendSize), sizeof(sendSize)),
         HCCL_ERROR("[HostCpuRoceChannel::%s] Send sendSize failed", __func__), HCCL_E_NETWORK);
-    HCCL_INFO("[HostCpuRoceChannel::%s] Send size[%zu] of data success. [%zu] bytes sent.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Send size[%llu] of data success. [%llu] bytes sent.",
         __func__, sendSize, sizeof(sendSize));
 
     // 同步接收数据包尺寸
     CHK_PRT_RET(!socket_->Recv(reinterpret_cast<void *>(&recvSize), sizeof(recvSize)),
         HCCL_ERROR("[HostCpuRoceChannel::%s] Recv recvSize failed", __func__), HCCL_E_NETWORK);
-    HCCL_INFO("[HostCpuRoceChannel::%s] Receive size[%zu] of data success. [%zu] bytes received.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Receive size[%llu] of data success. [%llu] bytes received.",
         __func__, recvSize, sizeof(recvSize));
 
     // 同步发送数据
     CHK_PRT_RET(!socket_->Send(reinterpret_cast<void *>(sendData.data()), sendSize),
         HCCL_ERROR("[HostCpuRoceChannel::%s] Send exchange data failed", __func__), HCCL_E_NETWORK);
-    HCCL_INFO("[HostCpuRoceChannel::%s] Send Exchange Data success. [%zu] bytes sent.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Send Exchange Data success. [%llu] bytes sent.",
         __func__, sendSize);
 
     // 同步接收数据
@@ -255,7 +274,7 @@ HcclResult HostCpuRoceChannel::ExchangeData()
     recvData.resize(recvSize);
     CHK_PRT_RET(!socket_->Recv(reinterpret_cast<void *>(recvData.data()), recvSize),
         HCCL_ERROR("[HostCpuRoceChannel::%s] Recv exchange data failed", __func__), HCCL_E_NETWORK);
-    HCCL_INFO("[HostCpuRoceChannel::%s] Receive Exchange Data success. [%zu] bytes received.",
+    HCCL_INFO("[HostCpuRoceChannel::%s] Receive Exchange Data success. [%llu] bytes received.",
         __func__, recvSize);
     EXCEPTION_HANDLE_END
 
@@ -429,7 +448,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
         hcclMem->size = rmtRmaBuffer->GetSize();
         memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag().c_str());
         remoteMem[i] = hcclMem.get();
-        HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%lu]]", 
+        HCCL_INFO("[HostCpuRoceChannel::%s] rmtBuf[addr[%p], size[%llu]]", 
             __func__, remoteMem[i]->addr, remoteMem[i]->size);
         remoteMems.emplace_back(std::move(hcclMem));
     }
