@@ -88,7 +88,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/aicpu_ts_thread.cc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/thread.cc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/cpu_ts_thread.cc
-    # ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine/aicpu_launch_manager.cc
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine/aicpu_launch_manager.cc
 
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
