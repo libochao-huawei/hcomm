@@ -122,7 +122,7 @@ HcclResult CpuThread::Init()
         HCCL_ERROR("[CpuThread::%s] Get Npu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
-    if (Hccl::HrtSetXpuDevice(0, 0) != ACL_SUCCESS) {
+    if (Hccl::HrtSetXpuDevice(0, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("[CpuThread::%s] Switch to Dpu Ctx Failed", __func__);
         return HCCL_E_INTERNAL;
     }
@@ -189,7 +189,7 @@ HcclResult CpuThread::DestroyDpuKernelResource()
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
-    if (Hccl::HrtResetXpuDevice(0, 0) != ACL_SUCCESS) {
+    if (Hccl::HrtResetXpuDevice(0, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("ResetXpuDevice Failed");
         return HCCL_E_RUNTIME;
     }
