@@ -20,18 +20,23 @@ CollAlgExecRegistry &CollAlgExecRegistry::Instance()
 
 HcclResult CollAlgExecRegistry::Register(const std::string &tag, const CollExecCreator &collExecCreator)
 {
+    HCCL_INFO("[CollAlgExecRegistry][Register] this=%p, &execCreators_=%p, tag=%s, size=%zu",
+        this, &execCreators_, tag.c_str(), execCreators_.size());
     const std::lock_guard<std::mutex> lock(mu_);
     if (execCreators_.find(tag) != execCreators_.end()) {
         HCCL_WARNING("[CollAlgExecRegistry]Exec tag[%s] already registered.", tag.c_str());
         return HcclResult::HCCL_E_INTERNAL;
     }
     execCreators_.emplace(tag, collExecCreator);
+    HCCL_INFO("[CollAlgExecRegistry][Register] after emplace, size=%zu", execCreators_.size());
     return HcclResult::HCCL_SUCCESS;
 }
 
 std::unique_ptr<CollExecutorBase> CollAlgExecRegistry::GetAlgExec(
     const std::string &tag, const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)
 {
+    HCCL_INFO("[CollAlgExecRegistry][GetAlgExec] this=%p, &execCreators_=%p, tag=%s, size=%zu",
+        this, &execCreators_, tag.c_str(), execCreators_.size());
     if (execCreators_.find(tag) == execCreators_.end()) {
         HCCL_DEBUG("[CollAlgExecRegistry]Creator for executor tag[%s] has not registered.", tag.c_str());
         return nullptr;
