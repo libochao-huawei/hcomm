@@ -19,13 +19,10 @@
 #include "independent_op_context_manager.h"
 #include "comm_mem_manager.h"
 #include "channel_manager.h"
-<<<<<<< HEAD
-=======
 #include "hcclCommDfx.h"
 #include "rank_graph_v2.h"
 #include "error_message_v2.h"
 #include "../../../../legacy/include/hccl_communicator.h"
->>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a
 
 namespace hccl {
 /**
@@ -89,16 +86,12 @@ public:
         return HCCL_SUCCESS;
     }
     uint32_t UpdateIndex();
-
-    std::string GetCollCommName();
     
     // Todo:在这里做N秒快恢
     HcclCommStatus GetCommStatus();
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();
-
-    HcclResult GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams, HDCommunicateParams &kfcStatusTransferD2HParams);
 
 private:
     HcclResult DestroyAicpuComm();

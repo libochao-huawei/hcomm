@@ -70,6 +70,7 @@ private:
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     void InitBackGroundThread();
+    HcclResult ResumePackData(std::vector<char> &data, ChannelHandle &handle);
 
     u32 devId_{0};
     //通用的通道
