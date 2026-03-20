@@ -305,7 +305,11 @@ HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
 
 HcclResult AicpuTsUrmaChannel::Clean()
 {
+<<<<<<< HEAD
     memTransport_.reset();
+=======
+    memTransport_->reset(nullptr);
+>>>>>>> 82b3a4db7981441a76f2c8d9d2018afdd4bf76be
     return HCCL_SUCCESS;
 }
 

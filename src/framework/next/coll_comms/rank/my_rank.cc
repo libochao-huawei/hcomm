@@ -375,8 +375,13 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         std::vector<ChannelHandle> deviceList;
         std::vector<ChannelHandle> hostList;
         for (uint32_t index = 0; index < channelNum; ++index) {
+<<<<<<< HEAD
             deviceList.push_back(channelHandles[index]);
             hostList.push_back(hostChannelHandleList[index]);
+=======
+            deviceList.pussh_back(channelHandles[index]);
+            hostList.pussh_back(hostChannelHandleList[index]);
+>>>>>>> 82b3a4db7981441a76f2c8d9d2018afdd4bf76be
         }
 
         NsRecoveryData data{deviceList, hostList, channelNum, commTag};
@@ -582,7 +587,11 @@ HcclResult MyRank::Resume()
     for (auto& recoveryData : nsRecoveryDatas_) {
         if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
             // KernelLaunch时会将CollCommAicpu下的ubTransportMap_链路恢复,只打包transport
+<<<<<<< HEAD
             for (auto& handleData : recoveryData.second) {
+=======
+            for (const auto& handleData : recoveryData.second) {
+>>>>>>> 82b3a4db7981441a76f2c8d9d2018afdd4bf76be
                 CHK_RET(HcommChannelUpdateKernelLaunch(handleData.channelHandles_.data(), handleData.hostChannelHandleList_.data(), 
                 handleData.channelNum_, handleData.commTag_, binHandle_));
             }
