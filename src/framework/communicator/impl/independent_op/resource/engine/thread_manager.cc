@@ -27,12 +27,12 @@ uint64_t ThreadMgr::GetMaxNotifyTotal()
     uint64_t maxNotifyTotal = 0;
     if (threadNum_ == HCCL_COMM_THREADNUM_CONFIG_NOT_SET &&
         notifyNumPerThread_ == HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET) {
-        maxNotifyTotal = LOCAL_NOTIFY_MAX_NUM;
+        maxNotifyTotal = HCCL_THREAD_NOTIFY_MAX_NUM;
         threadNum_ = LOCAL_STREAM_MAX_NUM;
-        notifyNumPerThread_ = LOCAL_NOTIFY_MAX_NUM;
+        notifyNumPerThread_ = HCCL_THREAD_NOTIFY_MAX_NUM;
     } else {
         maxNotifyTotal = static_cast<uint64_t>(threadNum_) * static_cast<uint64_t>(notifyNumPerThread_);
-        maxNotifyTotal = maxNotifyTotal > LOCAL_NOTIFY_MAX_NUM ? LOCAL_NOTIFY_MAX_NUM : maxNotifyTotal;
+        maxNotifyTotal = maxNotifyTotal > HCCL_THREAD_NOTIFY_MAX_NUM ? HCCL_THREAD_NOTIFY_MAX_NUM : maxNotifyTotal;
     }
     return maxNotifyTotal;
 }
@@ -44,7 +44,7 @@ HcclResult ThreadMgr::CheckNotifyNum(CommEngine engine, uint32_t threadNum, uint
     uint64_t remainNotifyQuota = (maxNotifyTotal > used) ? (maxNotifyTotal - used) : 0;
     uint64_t needNotifyTotal = static_cast<uint64_t>(threadNum) * static_cast<uint64_t>(notifyNumPerThread);
     if (remainNotifyQuota < needNotifyTotal  || notifyNumPerThread > notifyNumPerThread_ ||
-        maxNotifyTotal > LOCAL_NOTIFY_MAX_NUM) {
+        maxNotifyTotal > HCCL_THREAD_NOTIFY_MAX_NUM) {
         HCCL_ERROR("[ThreadMgr][%s] Notify quota exhausted: remainQuota[%llu], total[%llu], used[%llu], need[%llu], " 
             "setPreNum[%u], allocPreNum[%u]", __func__, remainNotifyQuota, maxNotifyTotal, used, needNotifyTotal,
             notifyNumPerThread_, notifyNumPerThread);
