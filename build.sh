@@ -37,6 +37,7 @@ BUILD_CB_TEST="false"
 
 ENABLE_UT="off"
 ENABLE_ST="off"
+ENABLE_GCOV="off"
 CMAKE_BUILD_TYPE="Debug"
 HCOMM_LIB_NAME="libhcomm.so"
 INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
@@ -527,6 +528,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --cov)
+        ENABLE_GCOV="on"
         COV="true"
         shift
         ;;
