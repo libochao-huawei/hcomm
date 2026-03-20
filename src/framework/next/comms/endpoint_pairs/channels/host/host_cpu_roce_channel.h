@@ -78,7 +78,14 @@ private:
     HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
                                       struct ibv_send_wr &writeWithNotifyWr) const;
-
+    HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t size, size_t &targetIdx) const {
+        targetIdx = 0;
+        return HCCL_SUCCESS;
+    }
+    HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t size, size_t &targetIdx) const {
+        targetIdx = 0;
+        return HCCL_SUCCESS;
+    }
     // 入参
     EndpointHandle endpointHandle_;
     HcommChannelDesc channelDesc_;
