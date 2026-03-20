@@ -12,11 +12,10 @@
 
 namespace hcomm {
 
-HcclResult EndpointPairMgr::Get(CommEngine engine, const EndpointDescPair &endpointDescPair, EndpointPair*& out)
+HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out)
 {
-    if (endpointPairMap_.find(engine) != endpointPairMap_.end() &&
-        endpointPairMap_[engine].find(endpointDescPair) != endpointPairMap_[engine].end()) {
-        out = endpointPairMap_[engine][endpointDescPair].get();
+    if (endpointPairMap_.find(endpointDescPair) != endpointPairMap_.end()) {
+        out = endpointPairMap_[endpointDescPair].get();
         return HCCL_SUCCESS;
     }
  
@@ -29,7 +28,7 @@ HcclResult EndpointPairMgr::Get(CommEngine engine, const EndpointDescPair &endpo
     CHK_RET(endpointPair->Init());
  
     out = endpointPair.get();
-    endpointPairMap_[engine].emplace(endpointDescPair, std::move(endpointPair));
+    endpointPairMap_.emplace(endpointDescPair, std::move(endpointPair));
 
     return HCCL_SUCCESS;
 }
