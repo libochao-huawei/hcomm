@@ -316,4 +316,6 @@ HcclResult AicpuLaunchMgr::NotifyKernelLaunchFree(std::vector<NotifyHandle> &aic
         __func__, commId.c_str(), aicpuNotifys.size());
     return HCCL_SUCCESS;
 }
+
+template HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom<HcclMem>(HcclMem&, std::string, rtStream_t, aclrtBinHandle);
 }
