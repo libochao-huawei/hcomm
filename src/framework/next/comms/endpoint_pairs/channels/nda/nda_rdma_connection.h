@@ -17,7 +17,10 @@ public:
     HcclResult BuildCqContext(CqContext *context);
 
     // 数据面
-    void Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, u64 &dbValue);
+    void Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, u64 &dbValue);
+    void WriteWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, uint32_t notifyId, u64 &dbValue);
+
+    void NotifyWait(uint32_t notifyId, uint32_t timeout);
 
 private:
     u16  pi{0};

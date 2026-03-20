@@ -123,15 +123,104 @@ class NdaUbOps : public NdaBaseVendorOps {
 public:
 
 protected:
-    int BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, WqeEntry *wqe_buf)
+    // 创建Hi1823对应RoceWqeEntry, 并下发
+    int PostWqe(const WqeDesc &desc)
     {
-        BuildOneWqe(loc, rmt, wqe_buf, static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE));
+        RoceWqeEntry wqe{};
+        int ret = BuildOneWqe(desc, &wqe);
+        if (ret != HCCL_SUCCESS) {
+            return ret;
+        }
+        return ProcessOneWqe(&wqe, sizeof(RoceWqeEntry), desc.opCode);
     }
 
-    int BuildOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, WqeEntry *wqe_buf, uint32_t opCode)
+    int PostRecv()
     {
-        HCCL_INFO("[NdaUbOps::%s] start, loc size[%u]", __func__, loc.GetSize());
+        return HCCL_SUCCESS;
+    }
 
+    int PollCq(CqeResult &result)
+    {
+        auto cqTail     = ci;
+        auto cqeSize    = cqContext_.cqeSize;
+        auto cqDepth    = cqContext_.cqDepth;
+        auto cqN        = cqContext_.cqn;
+        auto cqBaseAddr = cqContext_.dbVa;
+
+        // 只读一个CQE
+        RoceCqeEntry cqe{};
+        uint8_t expectOwner = (HtoNL(cqTail) & (cqDepth + 1)) == 0 ? 0 : 1;
+        u8 *va = reinterpret_cast<u8 *>(cqBaseAddr + ((HtoNL(cqTail) & cqDepth) * cqeSize));
+
+        auto ret = memcpy_s(&cqe, cqeSize, va, cqeSize);
+        if (UNLIKELY(ret != 0)) {
+            HCCL_ERROR("[NdaUbOps][%s] memcpy_s failed, ret = %d", __func__, ret);
+            return -1;      // Inner Error
+        }
+
+        // owner + cqn 校验
+        uint8_t actualOwner = ((cqe.cqe0) >> 31) & 0x1;
+        uint32_t actualCqn = (cqe.cqe0 & 0xfffff);
+
+        if (actualOwner != expectOwner || actualCqn != cqN) {
+            return 0;   // 上层继续While循环
+        }
+
+        // 确定CQE是对的
+        result.immData = cqe.cqe3;
+        result.status = 1;
+
+        // CI推进
+        ci++;
+        // TODO CqDb?
+        RingCqDb(ci);
+
+        return 1;
+    }
+
+    int BuildDoorbell(u64 &dbValue)
+    {
+        HCCL_INFO("[NdaUbOps::%s] start BuildDoorbell", __func__);
+
+        RoceDbEntry dbEntry = {0};
+        dbEntry.dw0.bs.type = ROCE_SQ_DOORBELL_TYPE;
+        dbEntry.dw0.bs.c = 0;
+        dbEntry.dw0.bs.n = 0;
+        dbEntry.dw0.bs.cntxSize = 1;
+        dbEntry.dw0.bs.qpn = sqContext_.qpn;                    // Doorbell QPN
+        dbEntry.dw0.bs.mtuShift = 0;
+        dbEntry.dw0.bs.resv = 0;
+        dbEntry.dw0.bs.sgidIndex = ROCE_INIT_SQ_DB_SGIT_IDX;
+        dbEntry.dw0.bs.cos = 0x7;
+        dbEntry.dw0.bs.pi = pi;                                 // Doorbell PI
+
+        dbValue = dbEntry.dw0.value;
+
+        HCCL_INFO("[NdaUbOps::%s] Hcomm UB Build Doorbell OK", __func__);
+        return HCCL_SUCCESS;
+    }
+
+private:
+    // 总的Wqe创建入口，分发任务
+    int BuildOneWqe(const WqeDesc &desc, RoceWqeEntry *wqe)
+    {
+        switch (desc.opCode) {
+            case static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE):
+                return BuildWrite(desc, wqe);
+            case static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE_WITH_NOTIFY):
+                return BuildWriteWithNotify(desc, wqe);
+            case static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE_REDUCE):
+                return BuildWriteReduce(desc, wqe);
+            case static_cast<uint32_t>(HCOMM_OP_TYPE::WRITE_REDUCE_WITH_NOTIFY):
+                return BuildWriteReduceWithNotify(desc, wqe);
+            default:
+                return HCCL_E_NOT_SUPPORT;
+        }
+    }
+
+    int BuildWrite(const WqeDesc &desc, RoceWqeEntry *wqe)
+    {
+        HCCL_INFO("[NdaUbOps::%s] BuildWrite start, loc size[%u]", __func__, desc.loc.GetSize());
         auto wqeSize = sqContext_.wqeSize;
         auto sqDepth = sqContext_.depth;
         auto sqBaseAddr = sqContext_.sqVa;
@@ -139,7 +228,6 @@ protected:
         u32 sqHead = pi % sqDepth;
         uint8_t owner = (sqHead & sqDepth) == 0 ? 0 : 1;
 
-        auto *wqe = static_cast<RoceWqeEntry *>(wqe_buf);
         // ----- Ctrl Seg 1 -----
         wqe->ctrl.dw0.value =
             HtoNL(owner << HCOMM_WQE_OWNER_OFFSET | 2U << HCOMM_WQE_CTRLSL_OFFSET | 1U << HCOMM_WQE_CR_OFFSET
@@ -149,54 +237,36 @@ protected:
         wqe->doorbell = 0;
         // ----- Task Seg -----
         wqe->task.dw0.value = HtoNL(opCode << HCOMM_WQE_OP_TYPE_OFFSET | 1U << HCOMM_WQE_C_OFFSET);
-        wqe->dataLen = HtoNL(len);
+        wqe->dataLen = HtoNL(loc.GetSize());
         wqe->immeData = 0;
         wqe->firstLast = 0;
         wqe->nxtEthHdr = 0;
         wqe->cmdLen = 0;
         wqe->rsvd0 = 0;
         wqe->lastExtLen = 0;
-        wqe->vaHigh32 = HtoNL(((uint64_t)dst + len) >> 32);
-        wqe->vaLow32 = HtoNL(((uint64_t)dst + len) & 0xffffffff);
+        wqe->vaHigh32 = HtoNL(((uint64_t)rmt.GetAddr() + rmt.GetSize()) >> 32);
+        wqe->vaLow32 = HtoNL(((uint64_t)rmt.GetAddr() + rmt.GetSize()) & 0xffffffff);
         // rkey通过rmt传入
         uint32_t rKey = rmt.GetRkey();
         wqe->rKey = HtoNL(rKey);
         wqe->rsvd1 = 0;
         // ----- Data Seg -----
-        wqe->data.bufAddrHigh32 = HtoNL((uint64_t)src >> 32);
-        wqe->data.bufAddrLow32 = HtoNL((uint64_t)src & 0xffffffff);
-        wqe->data.rLen = (uint32_t)len;
+        wqe->data.bufAddrHigh32 = HtoNL((uint64_t)loc.GetAddr() >> 32);
+        wqe->data.bufAddrLow32 = HtoNL((uint64_t)loc.GetAddr() & 0xffffffff);
+        wqe->data.rLen = (uint32_t)loc.GetSize();
         // lkey通过loc传入
         uint32_t lKey = loc.GetLkey();
         wqe->data.leKey = HtoNL(1 << 31 | lKey);
 
-        // 记录wqeSize
-        wqe_buf->wqeSize = sizeof(RoceWqeEntry);
-
-        HCCL_INFO("[NdaUbOps::%s] Hcomm UB Build wqe OK", __func__);
+        HCCL_INFO("[NdaUbOps::%s] Hcomm UB BuildWrite wqe OK", __func__);
         return HCCL_SUCCESS;
     }
 
-    int BuildDoorbell(u64 &dbValue)
+    int BuildWriteWithNotify(const WqeDesc &desc, RoceWqeEntry *wqe)
     {
-        HCCL_INFO("[NdaUbOps::%s] start BuildDoorbell", __func__);
+        HCCL_INFO("[NdaUbOps::%s] BuildWriteWithNotify start, loc size[%u]", __func__, desc.loc.GetSize());
 
-        uint64_t qpN = sqContext_.qpn;
-        RoceDbEntry dbEntry = {0};
-        dbEntry.dw0.bs.type = ROCE_SQ_DOORBELL_TYPE;
-        dbEntry.dw0.bs.c = 0;
-        dbEntry.dw0.bs.n = 0;
-        dbEntry.dw0.bs.cntxSize = 1;
-        dbEntry.dw0.bs.qpn = sqContext_.qpn;
-        dbEntry.dw0.bs.mtuShift = 0;
-        dbEntry.dw0.bs.resv = 0;
-        dbEntry.dw0.bs.sgidIndex = ROCE_INIT_SQ_DB_SGIT_IDX;
-        dbEntry.dw0.bs.cos = 0x7;
-        dbEntry.dw0.bs.pi = pi;
-
-        dbValue = dbEntry.dw0.value;
-
-        HCCL_INFO("[NdaUbOps::%s] Hcomm PCIe Build Doorbell OK", __func__);
+        HCCL_INFO("[NdaUbOps::%s] Hcomm UB BuildWriteWithNotify wqe OK", __func__);
         return HCCL_SUCCESS;
     }
 };

@@ -39,11 +39,34 @@ void NdaChannel::BuildRdmaDbSendTask(const StreamLite &stream, u64 dbValue)
 }
 
 void NdaChannel::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) {
-    ClearConnOut();
     CheckConnVec("NdaChannel::Write");
+
     // Post Wqe && return dbValue
     u64 dbValue = 0;
     connections_[0]->Write(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), stream, dbValue);
     // Ring Doorbell
     BuildRdmaDbSendTask(stream, dbValue);
+}
+
+void NdaChannel::WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const uint32_t remoteNotifyIdx, const StreamLite &stream) {
+    CheckConnVec("NdaChannel::WriteWithNotify");
+
+    // NotifyIdx
+    uint32_t dpuNotifyId = remoteDpuNotifyIds_[remoteNotifyIdx];
+
+    // Post Wqe && return dbValue
+    u64 dbValue = 0;
+    connections_[0]->Write(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), dpuNotifyId, dbValue);
+    // Ring Doorbell
+    BuildRdmaDbSendTask(stream, dbValue);
+}
+
+void NdaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) {
+    CheckConnVec("NdaChannel::NotifyWait");
+
+    // NotifyIdx
+    uint32_t dpuNotifyId = localDpuNotifyIds_[localNotifyIdx];
+
+    // Poll_cq
+    connections_[0]->NotifyWait(dpuNotifyId, timeout);
 }
