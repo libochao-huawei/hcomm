@@ -849,3 +849,10 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Ser
     EXPECT_EQ(listSize, 1);
     DestroyComm(comm);
 }
+
+TEST_F(HcclIndependentOpRankGraphTest, Ut_PrintLinksInfo)
+{
+    RankGraphV1 rankGraph_;
+    CommLink *linkList = nullptr;
+    rankGraph_.PrintLinksInfo(linkList);
+}
