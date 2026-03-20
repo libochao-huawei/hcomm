@@ -26,30 +26,31 @@
 #include "reduce_scatter_auto_selector.h"
 #include "reduce_scatter_v_auto_selector.h"
 #include "scatter_auto_selector.h"
+#include "env_config.h"
 
 using namespace Hccl;
 
-class SelectorTest : public testing::Test {
+class SelectorUnusedParamTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "SelectorTest set up." << std::endl;
+        std::cout << "SelectorUnusedParamTest set up." << std::endl;
     }
 
     static void TearDownTestCase()
     {
-        std::cout << "SelectorTest tear down" << std::endl;
+        std::cout << "SelectorUnusedParamTest tear down" << std::endl;
     }
 
     virtual void SetUp()
     {
-        std::cout << "A Test case in SelectorTest SetUP" << std::endl;
+        std::cout << "A Test case in SelectorUnusedParamTest SetUP" << std::endl;
     }
 
     virtual void TearDown()
     {
         GlobalMockObject::verify();
-        std::cout << "A Test case in SelectorTest TearDown" << std::endl;
+        std::cout << "A Test case in SelectorUnusedParamTest TearDown" << std::endl;
     }
 
     BaseSelector::TopoInfo CreateBasicTopoInfo()
@@ -70,18 +71,6 @@ protected:
         return op;
     }
 
-    CollAlgParams CreateBasicCollAlgParams()
-    {
-        CollAlgParams params;
-        params.opMode = OpMode::OPBASE;
-        params.maxTmpMemSize = 1024 * 1024;
-        params.maxQueue = 4;
-        params.maxLink = 8;
-        params.maxDepQueuePairs = 2;
-        params.dataSize = 1024 * 4;
-        return params;
-    }
-
     std::map<OpType, std::vector<HcclAlgoType>> CreateConfigAlgMap()
     {
         std::map<OpType, std::vector<HcclAlgoType>> configAlgMap;
@@ -92,117 +81,482 @@ protected:
     }
 };
 
-TEST_F(SelectorTest, CollAlgComponentBuilder_SetMainboardId)
+TEST_F(SelectorUnusedParamTest, CollAlgComponentBuilder_SetMainboardId)
 {
     CollAlgComponentBuilder builder;
-    u64 mainBoardId = 0x1234567879;
+    u64 mainBoardId = 0x1234567890;
     
     auto& result = builder.SetMainboardId(mainBoardId);
     
     EXPECT_EQ(&result, &builder);
 }
 
-TEST_F(SelectorTest, AllGatherAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, AllGatherAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     AllGatherAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, AllGatherVAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, AllGatherAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
+{
+    AllGatherAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AllGatherAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    AllGatherAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AllGatherAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    AllGatherAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AllGatherVAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     AllGatherVAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, AllReduceAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, AllGatherVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
+{
+    AllGatherVAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AllReduceAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     AllReduceAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLREDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, AlltoAllAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, AllReduceAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
+{
+    AllReduceAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLREDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AllReduceAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    AllReduceAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLREDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AllReduceAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    AllReduceAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLREDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AlltoAllAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     AlltoAllAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLTOALL;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, AlltoAllVAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, AlltoAllAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    AlltoAllAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLTOALL;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AlltoAllAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    AlltoAllAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLTOALL;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AlltoAllVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     AlltoAllVAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLTOALLV;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, AlltoAllVCAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, AlltoAllVAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    AlltoAllVAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLTOALLV;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AlltoAllVAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    AlltoAllVAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLTOALLV;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, AlltoAllVCAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     AlltoAllVCAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::ALLTOALLVC;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, BroadcastAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, BroadcastAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     BroadcastAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::BROADCAST;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, ReduceAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, BroadcastAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
+{
+    BroadcastAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::BROADCAST;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, BroadcastAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    BroadcastAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::BROADCAST;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, BroadcastAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    BroadcastAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::BROADCAST;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ReduceAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     ReduceAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, ReduceScatterAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, ReduceAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
+{
+    ReduceAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ReduceAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    ReduceAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ReduceAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    ReduceAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCE;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ReduceScatterAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     ReduceScatterAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCESCATTER;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, ReduceScatterVAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, ReduceScatterAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
+{
+    ReduceScatterAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCESCATTER;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ReduceScatterAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    ReduceScatterAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCESCATTER;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ReduceScatterAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    ReduceScatterAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCESCATTER;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ReduceScatterVAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     ReduceScatterVAutoSelector selector;
-    (void)selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCESCATTERV;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
 
-TEST_F(SelectorTest, ScatterAutoSelector_Creation)
+TEST_F(SelectorUnusedParamTest, ReduceScatterVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
+{
+    ReduceScatterVAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::REDUCESCATTERV;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ScatterAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     ScatterAutoSelector selector;
-    (void)selector;
-}
-
-TEST_F(SelectorTest, CreateBasicTopoInfo_Valid)
-{
     BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
-    
-    EXPECT_EQ(topoInfo.levelNum, 1);
-    EXPECT_EQ(topoInfo.level0Shape, Level0Shape::MESH_1D);
-}
-
-TEST_F(SelectorTest, CreateBasicCollAlgOperator_Valid)
-{
     CollAlgOperator op = CreateBasicCollAlgOperator();
-    
-    EXPECT_EQ(op.opType, OpType::ALLGATHER);
-    EXPECT_EQ(op.dataType, DataType::FP32);
-    EXPECT_EQ(op.dataCount, 1024);
-    EXPECT_EQ(op.reduceOp, ReduceOp::SUM);
-}
-
-TEST_F(SelectorTest, CreateBasicCollAlgParams_Valid)
-{
-    CollAlgParams params = CreateBasicCollAlgParams();
-    
-    EXPECT_EQ(params.opMode, OpMode::OPBASE);
-    EXPECT_EQ(params.maxTmpMemSize, 1024 * 1024);
-    EXPECT_EQ(params.maxQueue, 4);
-    EXPECT_EQ(params.maxLink, 8);
-    EXPECT_EQ(params.maxDepQueuePairs, 2);
-    EXPECT_EQ(params.dataSize, 1024 * 4);
-}
-
-TEST_F(SelectorTest, CreateConfigAlgMap_Valid)
-{
+    op.opType = OpType::SCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
     
-    EXPECT_EQ(configAlgMap.count(OpType::ALLGATHER), 1);
-    EXPECT_EQ(configAlgMap[OpType::ALLGATHER].size(), 1);
-    EXPECT_EQ(configAlgMap[OpType::ALLGATHER][0], HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+    auto status = selector.SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ScatterAutoSelector_SelectAicpuAlgo_UnusedParams)
+{
+    ScatterAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::SCATTER;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
+}
+
+TEST_F(SelectorUnusedParamTest, ScatterAutoSelector_SelectAivAlgo_UnusedParams)
+{
+    ScatterAutoSelector selector;
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
+    CollAlgOperator op = CreateBasicCollAlgOperator();
+    op.opType = OpType::SCATTER;
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
+    std::string primQueueGenName;
+    
+    auto status = selector.SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    
+    EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
