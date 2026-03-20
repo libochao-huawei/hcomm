@@ -340,7 +340,7 @@ HcclResult InsAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     return HCCL_SUCCESS;
 }
 
-bool InsAlgTemplateBase::IsPcieLink(const ResLinks &tempLinks)
+bool InsAlgTemplateBase::IsPcieLink(const ResLinks &tempLinks) const
 {
     for (auto it = tempLinks.begin(); it != tempLinks.end(); it++) {
         const std::vector<LinkData>& linkVector = it->second;

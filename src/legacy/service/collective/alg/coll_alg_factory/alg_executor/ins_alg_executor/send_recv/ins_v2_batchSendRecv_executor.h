@@ -47,7 +47,7 @@ public:
                              ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
 
     void SetRmaDataBufferMgr(const RmtDataBufferMgr* rmaDataBufferMgr) override;
-    HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit) override;
+    HcclResult CalNumBlocks(u32& blockDim, u64 dataSize, u32 blockDimLimit) override;
 
 protected:
     struct SendRecvSlice {
