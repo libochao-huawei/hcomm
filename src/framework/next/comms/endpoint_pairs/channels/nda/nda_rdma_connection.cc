@@ -24,7 +24,7 @@ HcclResult NdaRdmaConnection::BuildCqContext(CqContext *context)
 
 void NdaRdmaConnection::GetVendorOps()
 {
-    if (wqeBuilder_ != nullptr) {
+    if (vendorOps_ != nullptr) {
         return;
     }
     switch (directFlag_) {
@@ -39,19 +39,42 @@ void NdaRdmaConnection::GetVendorOps()
     }
 }
 
-void NdaRdmaConnection::Write(
-    const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, u64 &dbValue)
+void NdaRdmaConnection::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, u64 &dbVa, u64 &dbValue)
 {
-    HCCL_INFO("[NdaRdmaConnection::%s] start, loc size = %u", __func__, loc.GetSize());
+    HCCL_INFO("[NdaRdmaConnection::%s] Write start, loc size = %u", __func__, loc.GetSize());
     int ret;
-    // 和UDMA不同，RDMA似乎不需要考虑Slice切分
-    WqeEntry wqe{};
-    // 构造wqe, vendorOps_用来屏蔽厂商区别
-    ret = vendorOps_.BuildWriteWqe(loc, rmt, &wqe);
-    // 下发wqe
-    ret = vendorOps_.ProcessOneWqe(&wqe);
-    // 构造Doorbell
-    ret = vendorOps_.BuildDoorbell(dbValue);
 
-    HCCL_INFO("[NdaRdmaConnection::%s] end, out.dbValue = %llu", __func__, dbValue);
+    // Post wqe, vendorOps_用来屏蔽厂商区别; 和UDMA不同，RDMA似乎不需要考虑Slice切分
+    ret = vendorOps_->Write(loc, rmt);
+
+    // 构造Doorbell并返回
+    ret = vendorOps_->BuildDoorbell(dbVa, dbValue);
+
+    HCCL_INFO("[NdaRdmaConnection::%s] Write end, out.dbValue = %llu", __func__, dbValue);
+}
+
+void NdaRdmaConnection::WriteWithNotify(
+    const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, uint32_t remoteNotifyId, u64 &dbValue)
+{
+    HCCL_INFO("[NdaRdmaConnection::%s] WriteWithNotify start, loc size = %u, remoteNotifyId = %u", __func__, loc.GetSize(), remoteNotifyId);
+    int ret;
+
+    // Post wqe, vendorOps_用来屏蔽厂商区别; 和UDMA不同，RDMA似乎不需要考虑Slice切分
+    ret = vendorOps_->WriteWithNotify(loc, rmt);
+
+    // 构造Doorbell并返回
+    ret = vendorOps_->BuildDoorbell(dbVa, dbValue);
+
+    HCCL_INFO("[NdaRdmaConnection::%s] WriteWithNotify end, out.dbValue = %llu", __func__, dbValue);
+}
+
+void NdaRdmaConnection::NotifyWait(uint32_t localNotifyId, uint32_t timeout)
+{
+    HCCL_INFO("[NdaRdmaConnection::%s] NotifyWait start, localNotifyId = %u, timeout = %u", __func__, localNotifyId, timeout);
+    int ret;
+
+    // poll_cq, vendorOps_用来屏蔽厂商区别
+    ret = vendorOps_->NotifyWait(notifyId, timeout);
+
+    HCCL_INFO("[NdaRdmaConnection::%s] NotifyWait end, localNotifyId = %u, timeout = %u", __func__, localNotifyId, timeout);
 }

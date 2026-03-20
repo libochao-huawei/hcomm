@@ -17,7 +17,10 @@ public:
     HcclResult BuildCqContext(CqContext *context);
 
     // 数据面
-    void Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, u64 &dbValue);
+    void Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, u64 &dbValue);
+    void WriteWithNotify(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, uint32_t remoteNotifyId, u64 &dbValue);
+
+    void NotifyWait(uint32_t localNotifyId, uint32_t timeout);
 
 private:
     u16  pi{0};
@@ -28,7 +31,7 @@ private:
     SqContext *sqContext_;
     CqContext *cqContext_;
 
-    Hccl:RdmaHandle     rdmaHandle_{nullptr};
+    Hccl::RdmaHandle     rdmaHandle_{nullptr};
     uint32_t            directFlag_{0};
     uint32_t            dmaMode_{0};
 
@@ -38,8 +41,8 @@ private:
     struct NdaCqInfo    cqInfo_;
 
     // 工厂模式，负责具体的厂商ops创建
-    std::unique_ptr<NdaBaseVendorOps> vendorOps_;
-}
+    std::unique_ptr<NdaBaseVendorOps> vendorOps_ = nullptr;
+};
 
 }   // namespace hcomm
 
