@@ -55,6 +55,12 @@ private:
     void GetLocalRankTableJson(const nlohmann::json &parseJson, nlohmann::json &localRankTableJson);
     void GetLocalDevInfoJson(const nlohmann::json &parseJson, nlohmann::json &localDevInfoJson);
     void ConstructSingleRank(RankTableInfo &localRankTable);
+    HcclResult GetLocalTlsStatus(TlsStatus &tlsStatus) const;
+    HcclResult VerifyTlsConsistency() const;
+    void GenerateTlsStatusStr(std::string &tlsStatusStr, const std::vector<u32> &tlsStatusRanks) const;
+    void ReportTlsConfigurationError(
+        const std::string &tlsInconsistentTlsType, const std::string &tlsEnableRankStr,
+        const std::string &tlsDisableRankStr, const std::string &tlsUnknownRankStr) const;
     void TearDown();
 };
 

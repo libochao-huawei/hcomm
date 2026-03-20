@@ -110,16 +110,17 @@ extern "C" __global__ __aicore__ void aiv_batchSendRecv_##type(EXTERN_KERNEL_ARG
 } \
 EXPORT_AIV_META_INFO(aiv_batchSendRecv_##type)
 
-// 910B支持的Atomic数据类型
+// 支持Reduce的数据类型
 #define AIV_ATOMIC_DATA_TYPE_DEF(func) \
     func(float); \
     func(half); \
     func(int16_t); \
     func(int32_t); \
     func(int8_t); \
-    func(bfloat16_t)
+    func(bfloat16_t); \
+    func(int64_t)
  
-// 910B支持的DataCopy数据类型
+// 支持搬运的数据类型
 #define AIV_COPY_DATA_TYPE_DEF(func) \
     func(half); \
     func(int16_t); \
