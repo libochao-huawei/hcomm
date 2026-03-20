@@ -364,7 +364,7 @@ void HostUbConnection::ImportJetty()
 void HostUbConnection::SetImportInfo()
 {
     struct QpImportInfoT *info = reinterpret_cast<QpImportInfoT *>(reqDataBuffer.data());
-    // remoteJettyHandle          = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtr);
+    // remoteJettyHandle_          = reinterpret_cast<TargetJettyHandle>(remoteJettyHandlePtr);
     tpn                        = info->out.ub.tpn;
 }
 
@@ -379,9 +379,9 @@ void HostUbConnection::ReleaseTp()
 
 void HostUbConnection::ReleaseResource()
 {
-    if (rdmaHandle && remoteJettyHandle != 0) {
-        HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
-        remoteJettyHandle = 0;
+    if (rdmaHandle && remoteJettyHandle_ != 0) {
+        HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle_);
+        remoteJettyHandle_ = 0;
     }
 
     ReleaseTp();
@@ -582,7 +582,7 @@ unique_ptr<BaseTask> HostUbConnection::PrepareRead(const MemoryBuffer &remoteMem
     HrtRaUbSendWrRespParam sendWrResp{};
     ProcessSlices(localMemBuf, remoteMemBuf, [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
         HrtRaUbSendWrReqParam sendWrReq = {};
-        PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::READ, rmtSlice, locSlice, remoteJettyHandle,
+        PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::READ, rmtSlice, locSlice, remoteJettyHandle_,
                                             config, cqeEnable);
 
         sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
@@ -607,7 +607,7 @@ unique_ptr<BaseTask> HostUbConnection::PrepareReadReduce(const MemoryBuffer &rem
         [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::READ, rmtSlice, locSlice,
-                                                remoteJettyHandle, config, cqeEnable);
+                                                remoteJettyHandle_, config, cqeEnable);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
 
             sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
@@ -630,7 +630,7 @@ unique_ptr<BaseTask> HostUbConnection::PrepareWrite(const MemoryBuffer &remoteMe
     ProcessSlices(localMemBuf, remoteMemBuf, [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
         HrtRaUbSendWrReqParam sendWrReq = {};
         PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
-                                            remoteJettyHandle, config, cqeEnable);
+                                            remoteJettyHandle_, config, cqeEnable);
         sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
     });
 
@@ -653,7 +653,7 @@ unique_ptr<BaseTask> HostUbConnection::PrepareWriteReduce(const MemoryBuffer &re
         [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
-                                                remoteJettyHandle, config, cqeEnable);
+                                                remoteJettyHandle_, config, cqeEnable);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
             sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
         },
@@ -669,7 +669,7 @@ unique_ptr<BaseTask> HostUbConnection::PrepareInlineWrite(const MemoryBuffer &re
     sendWrReq.opcode                = HrtUbSendWrOpCode::WRITE;
     sendWrReq.remoteAddr            = remoteMemBuf.addr;
     sendWrReq.rmemHandle            = remoteMemBuf.memHandle;
-    sendWrReq.handle                = remoteJettyHandle;
+    sendWrReq.handle                = remoteJettyHandle_;
     sendWrReq.inlineFlag            = true;
     sendWrReq.inlineData            = reinterpret_cast<u8 *>(&data);
     sendWrReq.size                  = sizeof(data);
@@ -688,7 +688,7 @@ unique_ptr<BaseTask> HostUbConnection::PrepareInlineWrite(const MemoryBuffer &re
 
     HCCL_INFO(
         "HostUbConnection::PrepareInlineWrite params opCode=[%u], "
-        "remoteAddr=[0x%llx], rmemHandle=[0x%llx], remoteJettyHandle=[0x%llx], inlineFlag[%u], size=[%u], data=[%u]",
+        "remoteAddr=[0x%llx], rmemHandle=[0x%llx], remoteJettyHandle_=[0x%llx], inlineFlag[%u], size=[%u], data=[%u]",
         sendWrReq.opcode, sendWrReq.remoteAddr, sendWrReq.rmemHandle, sendWrReq.handle, sendWrReq.inlineFlag,
         sendWrReq.size, static_cast<u32>(*sendWrReq.inlineData));
     auto res = HrtRaUbPostSend(jettyHandle_, sendWrReq);
@@ -731,13 +731,13 @@ unique_ptr<BaseTask> HostUbConnection::PrepareWriteWithNotify(const MemoryBuffer
         [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
-                                                remoteJettyHandle, config, cqeEnable);
+                                                remoteJettyHandle_, config, cqeEnable);
             sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
         },
         [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
-                                                remoteJettyHandle, config);
+                                                remoteJettyHandle_, config);
             PrepareUbSendWrReqParamNotifyInfo(sendWrReq, data, remoteNotifyMemBuf);
 
             sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
@@ -764,14 +764,14 @@ unique_ptr<BaseTask> HostUbConnection::PrepareWriteReduceWithNotify(const Memory
         [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice, u32 cqeEnable) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
-                                                remoteJettyHandle, config, cqeEnable);
+                                                remoteJettyHandle_, config, cqeEnable);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
             sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
         },
         [&](const MemoryBuffer &locSlice, const MemoryBuffer &rmtSlice) {
             HrtRaUbSendWrReqParam sendWrReq = {};
             PrepareUbSendWrReqParamForWriteOrRead(sendWrReq, HrtUbSendWrOpCode::WRITE, rmtSlice, locSlice,
-                                                remoteJettyHandle, config);
+                                                remoteJettyHandle_, config);
             PrepareUbSendWrReqParamReduceInfo(sendWrReq, dataType, reduceOp);
             PrepareUbSendWrReqParamNotifyInfo(sendWrReq, data, remoteNotifyMemBuf);
             sendWrResp = HrtRaUbPostSend(jettyHandle_, sendWrReq);
@@ -803,7 +803,7 @@ void HostUbConnection::AddNop(const Stream &stream)
         return;
     }
     u32 numNop = sqDepth - piVal;
-    HrtRaUbPostNops(jettyHandle_, remoteJettyHandle, numNop);
+    HrtRaUbPostNops(jettyHandle_, remoteJettyHandle_, numNop);
 
     HrtUbDbInfo info;
     info.dbNum = 1;
@@ -829,7 +829,7 @@ JettyHandle& HostUbConnection::GetJettyHandle()
 
 JettyHandle&  HostUbConnection::GetRemoteJettyHandle()
 {
-    return remoteJettyHandle;
+    return remoteJettyHandle_;
 }
 
 RdmaHandle&  HostUbConnection::GetRdmaHandle()

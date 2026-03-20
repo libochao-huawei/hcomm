@@ -428,12 +428,25 @@ HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t
     urmaWriteWr.user_ctx = 0; // 跟ibvs中的wr_id对应
     urmaWriteWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
     urmaWriteWr.rw.src.sge->len = len;
+    urmaWriteWr.rw.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    urmaWriteWr.rw.src.sge->user_tseg = nullptr;
     urmaWriteWr.rw.src.num_sge = 1;
     urmaWriteWr.rw.dst.sge->addr = reinterpret_cast<uint64_t>(dst); // 远端地址
     urmaWriteWr.rw.dst.sge->len = len;
-
+    urmaWriteWr.rw.dst.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    urmaWriteWr.rw.dst.sge->user_tseg = nullptr;
+    urmaWriteWr.rw.dst.num_sge = 1;
     urmaWriteWr.rw.target_hint = 0;
     urmaWriteWr.rw.notify_data = 0; // 在write下不需要填，给个初值即可。在writewithnotify中该值和imm_data值一致
+
+    urmaWriteWr.send.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
+    urmaWriteWr.send.src.sge->len = len;
+    urmaWriteWr.send.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    urmaWriteWr.send.src.sge->user_tseg = nullptr;
+    urmaWriteWr.send.src.num_sge = 1;
+    urmaWriteWr.send.imm_data = 0;
+    urmaWriteWr.send.target_hint = 0;
+    urmaWriteWr.send.tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
     urmaWriteWr.next = nullptr;
     
     // 3.调用 urma_post_jetty_send_wr	 
@@ -466,17 +479,29 @@ HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t 
     // comp_order要一直保持为1,
     urmaReadWr.flag.bs.comp_order = 1;
     urmaReadWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
-    urmaReadWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa()); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
-    //华为云那边用1825的uboe,集合通信（host ub);单边通信也会用1650的UDie(host ub)
+    urmaReadWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa());
     urmaReadWr.user_ctx = 0; // 跟ibvs中的wr_id对应
     urmaReadWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
     urmaReadWr.rw.src.sge->len = len;
+    urmaReadWr.rw.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    urmaReadWr.rw.src.sge->user_tseg = nullptr;
     urmaReadWr.rw.src.num_sge = 1;
     urmaReadWr.rw.dst.sge->addr = reinterpret_cast<uint64_t>(dst); // 远端地址
     urmaReadWr.rw.dst.sge->len = len;
-
+    urmaReadWr.rw.dst.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    urmaReadWr.rw.dst.sge->user_tseg = nullptr;
+    urmaReadWr.rw.dst.num_sge = 1;
     urmaReadWr.rw.target_hint = 0;
-    urmaReadWr.rw.notify_data = 0; // 在write下不需要填，给个初值即可。在writewithnotify中该值和imm_data值一致
+    urmaReadWr.rw.notify_data = 0;
+
+    urmaReadWr.send.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
+    urmaReadWr.send.src.sge->len = len;
+    urmaReadWr.send.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    urmaReadWr.send.src.sge->user_tseg = nullptr;
+    urmaReadWr.send.src.num_sge = 1;
+    urmaReadWr.send.imm_data = 0;
+    urmaReadWr.send.target_hint = 0;
+    urmaReadWr.send.tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
     urmaReadWr.next = nullptr;
 
     // 3.调用 urma_post_jetty_send_wr	 
@@ -545,11 +570,10 @@ HcclResult hcomm::HostCpuUrmaChannel::UrmaPostJfr()
     // 1. 准备jfr_wr
     urma_jfr_wr_t jfrWr{};
     urma_jfr_wr_t *badWr = nullptr;
-    // TODO: 待修改从控制面拿到segment
-    // jfrWr.src.sge->addr = ; // 填希望用于做recv的地址（固定的device侧地址，响应writewithimm的4字节或8字节）【在控制面申请过并注册过segment的内存】
-    // jfrWr.src.sge->len = ; // 填希望用于做recv的长度
-    // jfrWr.src.sge->tseg->seg = ; // 注册时的segment，从控制面拿到
-    // jfrWr.src.sge->tseg ;//整个tseg应该由控制面提供
+
+    jfrWr.src.sge->addr = reinterpret_cast<uint64_t>(localRmaBuffers_[0]->GetBufferInfo().first);
+    jfrWr.src.sge->len = reinterpret_cast<uint32_t>(localRmaBuffers_[0]->GetBufferInfo().second);
+    jfrWr.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
     jfrWr.src.sge->user_tseg = nullptr;
     jfrWr.src.num_sge = 1;
     jfrWr.user_ctx = 0;
