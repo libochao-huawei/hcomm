@@ -71,7 +71,6 @@ HcclResult RankGraphV1::BuildRankGraphInfo(const RankInfo_t &rankItem,
             point.commAddr.type = COMM_ADDR_TYPE_IP_V4;
             point.commAddr.addr = addr.GetBinaryAddress().addr;
         }
-        point.commAddr.id = rankItem.rankId;
         point.protocol = protocol;
         point.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
         point.loc.device.devPhyId = rankItem.deviceInfo.devicePhyId;
