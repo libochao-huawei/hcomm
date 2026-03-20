@@ -138,6 +138,7 @@ RdmaHandle RdmaHandleManager::GetByAddr(u32 devPhyId, const LinkProtoType &local
 
 RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
 {
+    HCCL_INFO("[GetByIp] wzh checkpoint1")
     std::lock_guard<std::mutex> lock(managerMutex);
 
     if (devPhyId > rdmaHandleMap.size() - 1) {
@@ -148,15 +149,18 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
 
     // only support UB type
     RdmaHandle res = rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp];
+    HCCL_INFO("[GetByIp] wzh checkpoint2")
     if (res == nullptr) {
         HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, devPhyId, localIp);
+        HCCL_INFO("[GetByIp] wzh checkpoint3")
         res = HrtRaUbCtxInit(in);
+        HCCL_INFO("[GetByIp] wzh checkpoint4")
         rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp] = res;
         tokenInfoMap[res] = std::make_unique<TokenInfoManager>(devPhyId, res);
         HCCL_INFO("Create one rdmahandle [%p], devPhyId [%u], ipAddr [%s]",
             res, devPhyId, localIp.Describe().c_str());
     }
-
+    HCCL_INFO("[GetByIp] wzh checkpoint5")
     return res;
 }
 
