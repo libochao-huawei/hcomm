@@ -60,6 +60,7 @@ set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/tbe_vector_reduce
     ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication
+    ${CMAKE_CURRENT_SOURCE_DIR}/typical
 
     #legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/unified_platform

@@ -76,6 +76,7 @@ set(UT_COMMON_INCLUDE_LIST
 
     # src/platform 目录下头文件
     ${HCCL_CODE_ROOT}/src/platform/
+    ${HCCL_CODE_ROOT}/src/platform/typical
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
@@ -103,7 +104,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/debug/dfx/trace/
     ${HCCL_CODE_ROOT}/src/platform/task/
     ${HCCL_CODE_ROOT}/src/platform/task/rtsq_interact/
-    ${HCCL_CODE_ROOT}/src/platform/typical
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
     ${RDMA_CORE_INCLUDE_DIR}
