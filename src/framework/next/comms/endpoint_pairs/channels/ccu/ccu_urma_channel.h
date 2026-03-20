@@ -57,7 +57,5 @@ private:
     std::string memTag_{"HcclBuffer"};
 };
 
-HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
-    std::vector<CcuTransport::CclBufferInfo> &bufferInfos);
 }  // namespace hcomm
 #endif  // CCU_URMA_CHANNEL_H
