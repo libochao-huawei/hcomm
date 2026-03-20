@@ -202,6 +202,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/resource/mem
     ${HCCL_CODE_ROOT}/src/platform/task/
     ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
+    ${HCCL_CODE_ROOT}/src/platform/typical
     ${HCCL_CODE_ROOT}/src/hccd
 
     ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
