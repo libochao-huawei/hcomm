@@ -118,7 +118,8 @@ void SocketManager::ServerInit(PortData &localPort)
     SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
     IpAddress    ipAddress        = localPort.GetAddr();
     u32 serverListenPort          = DEFAULT_VALUE_DEVICEPORT;
-    auto iter = rankListenPortMap.find(devicePhyId);
+    // auto iter = rankListenPortMap.find(devicePhyId);
+    auto iter = rankListenPortMap.find(localPort.GetRankId());
     if (iter != rankListenPortMap.end()) {
         serverListenPort = iter->second;
     }
