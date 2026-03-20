@@ -32,7 +32,7 @@ const std::string hcomm_g_msg = R"(
       "errClass": "HCCL Errors",
       "errTitle": "Communication_Error_Timeout",
       "ErrCode": "EI0002",
-      "ErrMessage": "Communication operator execution waiting times out. Waiting peer end: %s; task information: %s; Communication operator information: %s; Communication: %s.",
+      "ErrMessage": "An timeout occurs when the Notify register waits for execution. Waiting peer end: %s; task information: %s; communication operator information: %s; communicator: %s.",
       "Arglist": "remote_rankid, base_information, task_information, group_rank_content",
       "suggestion": {
         "Possible Cause": "1. An exception occurs during the execution on some NPUs in the cluster. As a result, collective communication operation failed.2. The execution speed on some NPU in the cluster is too slow to complete a communication operation within the timeout interval. (The default timeout interval is 1800s, You can set the interval by using HCCL_EXEC_TIMEOUT.)3. The number of training samples of each NPU is inconsistent.4. Packet loss or other connectivity problems occur on the communication link.",
@@ -55,7 +55,7 @@ const std::string hcomm_g_msg = R"(
       "errTitle": "File_Operation_Error_Parse",
       "ErrCode": "EI0004",
       "ErrMessage": "Failed to parse the ranktable file %s. Reason: %s",
-      "Arglist": "error_reason,ranktable_path",
+      "Arglist": "ranktable_path, error_reason",
       "suggestion": {
         "Possible Cause": "N/A",
         "Solution": "N/A"
