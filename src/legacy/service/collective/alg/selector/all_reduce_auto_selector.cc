@@ -334,7 +334,7 @@ SelectorStatus AllReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
     }
 
     // aiv 直接走打平 mesh
-    if (IsSmallData(dataSize_)) {
+    if (dataSize_ <= AIV_ALL_REDUCE_SMALL_COUNT) {
         primQueueGenName = "AivAllReduceMesh1DOneShot";
     } else {
         primQueueGenName = "AivAllReduceMesh1DTwoShot";
