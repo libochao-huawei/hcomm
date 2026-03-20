@@ -48,6 +48,7 @@ set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/framework/common/src/launch_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/diag/aicpu/hcomm_diag_adapt_aicpu.cc"
+    "${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine/aicpu_launch_manager.cc"
     )
 list(REMOVE_ITEM FRAMEWORK_HOST_SOURCES ${EXCLUDE_FREAMEWORK_DEVICE_REGEX})
 
