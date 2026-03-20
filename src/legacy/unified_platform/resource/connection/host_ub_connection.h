@@ -119,7 +119,6 @@ private:
     u32            keySize{0};
     u32            remoteTokenValue{0};
     JettyImportCfg jettyImportCfg{};
-    void          *remoteJettyHandlePtr{nullptr};
 
     JettyHandle jettyHandle_{0};
     u64         jettyVa_{0};

@@ -2138,6 +2138,38 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     return reinterpret_cast<RequestHandle>(raReqHandle);
 }
 
+void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
+    vector<char_t> &out, uint32_t &num)
+{
+    CHECK_NULLPTR(rdmaHandle, "[RaUbGetTpInfoAsync] rdmaHandle is nullptr!");
+    HCCL_INFO("[RaUbGetTpInfoAsync] Input params: rdmaHandle=%p, num=%u", rdmaHandle, num);
+    const auto &locAddr    = param.locAddr;
+    const auto &rmtAddr    = param.rmtAddr;
+    const auto &tpProtocol = param.tpProtocol;
+
+    struct GetTpCfg cfg{};
+    cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
+    cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
+    cfg.localEid = IpAddressToHccpEid(locAddr);
+    HCCL_INFO("RaUbGetTpInfoAsync cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
+    cfg.peerEid = IpAddressToHccpEid(rmtAddr);
+    HCCL_INFO("RaUbGetTpInfoAsync cfg.peerEid=%s", HccpEidDesc(cfg.peerEid).c_str());
+
+    out.resize(sizeof(HccpTpInfo));
+    struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
+
+    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
+    s32 ret = RaGetTpInfoList(rdmaHandle, &cfg, info, &num);
+    if (ret != 0) {
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
+            "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, rdmaHandle,
+            locAddr.Describe().c_str(), rmtAddr.Describe().c_str()));
+    }
+
+    HCCL_INFO("[%s] ok, get handle[%llu].", __func__);
+}
+
 static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
     vector<char_t> &out, void *&remQpHandle, const JettyImportExpCfg &cfg, JettyImportMode mode,
     TpProtocol protocol = TpProtocol::INVALID)

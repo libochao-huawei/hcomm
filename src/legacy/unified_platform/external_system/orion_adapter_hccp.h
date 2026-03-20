@@ -604,6 +604,8 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
 
 RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param, vector<char_t> &out, uint32_t &num);
 
+RequestHandle RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param, vector<char_t> &out, uint32_t &num);
+
 RequestHandle RaUbImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
     vector<char_t> &out, void* &remQpHandle);
 RequestHandle RaUbTpImportJettyAsync(const RdmaHandle rdmaHandle, const HrtRaUbJettyImportedInParam &in,
