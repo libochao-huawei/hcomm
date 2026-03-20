@@ -97,10 +97,12 @@ public:
     HcclResult ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
                                         const hccl::HcclComm &comm, Hccl::TaskParam &taskParam, bool isMaster);
 
+    HcclResult UpdateChannelIdMap();
+    HcclResult GetChannelHandleById(u16 channelId, u64& channelHandle);
+
     // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
     // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
     //                              DataType outputDataType, ReduceOp opType);
-
 protected:
     // 子类实现
     virtual HcclResult Algorithm() = 0;
@@ -182,6 +184,8 @@ private:
     CcuRep::Address CreateAddress();
     CcuRep::LocalAddr CreateLocalAddr(const CcuRep::Variable &token);
 
+    HcclResult GetChannelIdByHandle(u64 channelHandle, u16& channelId);
+
 protected:
     std::vector<ChannelHandle> channels_;
     GroupOpConfig       moConfig{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF};
@@ -201,7 +205,13 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
+<<<<<<< master
+
+    std::unordered_map<u16, u64> channelHandleToId_;
+    std::unordered_map<u64, u16> channelIdToHandle_;
+=======
     std::vector<GroupInfo> groupOpSizeInfo;
+>>>>>>> master
 };
 
 // kernel构造函数的lambda函数
