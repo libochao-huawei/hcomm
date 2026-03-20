@@ -35,7 +35,7 @@ public:
             innerDispls = coreIndex * dataPerCore + remainder;
             recvCurCount = dataPerCore;
         }
-        recvInputOffset = reinterpret_cast<uint64_t>(GM_IN[rank_]) + innerDispls * sizeof(T);
+        recvInputOffset = reinterpret_cast<uint64_t>(GM_IN[targetRank]) + innerDispls * sizeof(T);
         recvOutputOffset = output_ + (processedDataCount + innerDispls) * sizeof(T); // 能不能直接拿着这个地址就用
     }
 
@@ -45,12 +45,12 @@ public:
             return;
         }
         uint64_t flag_offset = block_idx;
-        WaitFlag(rank_, flag_offset, curTag);
+        WaitFlag(targetRank, flag_offset, curTag);
 
         CpGM2GM((__gm__ T *)recvOutputOffset, (__gm__ T *)recvInputOffset, recvCurCount);
         PipeBarrier<PIPE_ALL>(); // 核内自己的同步
 
-        Record(rank_, flag_offset, 0);
+        Record(targetRank, flag_offset, 0);
     }
 
     __aicore__ inline void Process(uint64_t len, uint32_t tag)
@@ -66,6 +66,7 @@ public:
             return;
         }
 
+        targetRank = sendRecvRemoteRank_; // 每个核负责哪个rank的数据
         curTag = static_cast<int32_t>(tag);
         cclBufferCountPerRank = inputSliceStride_; // 整个cclBuffer给一张卡用
 

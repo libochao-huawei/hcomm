@@ -82,18 +82,18 @@ private:
 
         // PutRemote阶段
         srcOffset_ = input_ + dstRank * inputSliceStride_ + sliceOffsetSize;
-        dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_ + sliceOffsetSize;
+        dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_ + sliceOffsetSize;
         CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, sliceCount);
         pipe_barrier(PIPE_ALL);
 
-        uint64_t setFlagIdx = rank_ * coreNumPerDstRank + coreIdxForDstRank;
-        Record(dstRank, setFlagIdx, opTag_);  // 按照数据源rank编排flag的偏移量
+        uint64_t setFlagIdx = coreIdx_;
+        Record(rank_, setFlagIdx, opTag_);
 
         // PostCopy阶段
-        uint64_t waitFlagIdx = coreIdx_;
-        WaitFlag(rank_, waitFlagIdx, opTag_);
-        
-        srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_ + sliceOffsetSize;
+        uint64_t waitFlagIdx = rank_ * coreNumPerDstRank + coreIdxForDstRank;
+        WaitFlag(dstRank, waitFlagIdx, opTag_);
+
+        srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_ + sliceOffsetSize;
         dstOffset_ = output_ + dstRank * outputSliceStride_ + sliceOffsetSize;
         CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, sliceCount);
         pipe_barrier(PIPE_ALL);
@@ -112,12 +112,12 @@ private:
 
             // PutRemote阶段
             srcOffset_ = input_ + dstRank * inputSliceStride_;
-            dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_;
+            dstOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_;
             CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, len_);
             pipe_barrier(PIPE_ALL);
 
-            uint64_t setFlagIdx = rank_;
-            Record(dstRank, setFlagIdx, opTag_);  // 按照数据源rank编排flag的偏移量
+            uint64_t setFlagIdx = dstRank;
+            Record(rank_, setFlagIdx, opTag_);  // 按照数据源rank编排flag的偏移量
         }
 
         for (uint32_t idx = 0; idx < rankNumPerCore; ++idx) {
@@ -127,17 +127,17 @@ private:
             }
 
             // PostCopy阶段
-            uint64_t waitFlagIdx = dstRank;
-            WaitFlag(rank_, waitFlagIdx, opTag_);
-            
-            srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[rank_]) + dstRank * dataSize_;
+            uint64_t waitFlagIdx = rank_;
+            WaitFlag(dstRank, waitFlagIdx, opTag_);
+
+            srcOffset_ = reinterpret_cast<uint64_t>(GM_IN[dstRank]) + rank_ * dataSize_;
             dstOffset_ = output_ + dstRank * outputSliceStride_;
             CpGM2GM((__gm__ T *)dstOffset_, (__gm__ T *)srcOffset_, len_);
             pipe_barrier(PIPE_ALL);
         }
     }
 
-    __aicore__ inline void SplitData(uint64_t dataCount, uint64_t splitNum, uint64_t idx, 
+    __aicore__ inline void SplitData(uint64_t dataCount, uint64_t splitNum, uint64_t idx,
         uint64_t& sliceOffset, uint64_t& sliceCount)
     {
         // 防止idx越界

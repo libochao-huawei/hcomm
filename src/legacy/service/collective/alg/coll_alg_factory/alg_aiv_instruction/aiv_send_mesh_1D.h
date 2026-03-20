@@ -37,7 +37,7 @@ public:
             sendCurCount = dataPerCore;
         }
         sendInputOffset = input_ + (processedDataCount + innerDispls) * sizeof(T);
-        sendOutputOffset = reinterpret_cast<uint64_t>(GM_IN[targetRank]) + innerDispls * sizeof(T);
+        sendOutputOffset = reinterpret_cast<uint64_t>(GM_IN[rank_]) + innerDispls * sizeof(T);
     }
 
     __aicore__ inline void Producer()
@@ -46,12 +46,12 @@ public:
             return;
         }
         uint64_t flag_offset = block_idx;
-        WaitFlag(targetRank, flag_offset, 0);
+        WaitFlag(rank_, flag_offset, 0);
 
         CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
         PipeBarrier<PIPE_ALL>();
 
-        Record(targetRank, flag_offset, curTag);
+        Record(rank_, flag_offset, curTag);
     }
 
     __aicore__ inline void Process(uint64_t len, uint32_t tag)
@@ -73,7 +73,7 @@ public:
         cclBufferCountPerRank = inputSliceStride_; // 整个cclBuffer给一张卡用
 
         // 运行过程中用到的所有flag，先置为0，后面会复用，recv侧不用做这个事情，动作是send端发起，所以send端去置位
-        Record(targetRank, block_idx, 0);
+        Record(rank_, block_idx, 0);
         PipeBarrier<PIPE_ALL>();
 
         uint64_t processedDataCount = 0;
