@@ -39,7 +39,8 @@ void RsDrvPollCqHandle(struct RsQpCb *qpCb);
 void RsDrvPollSrqCqHandle(struct RsQpCb *qpCb);
 int RsDrvGetGidIndex(struct RsRdevCb *rdevCb, struct ibv_port_attr *attr, int *idx);
 int RsDrvCreateCq(struct RsQpCb *qpCb, int isExt);
-int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqAttr);
+int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqAttr,
+    unsigned int useResvMem, unsigned int resvMemPoolId);
 int RsDrvQpStateModifytoReset(struct RsQpCb *qpCb);
 int RsDrvQpStateModifytoInit(struct RsQpCb *qpCb, struct ibv_qp_attr *attr);
 enum ibv_mtu RsDrvSetMtu(struct RsQpCb *qpCb);

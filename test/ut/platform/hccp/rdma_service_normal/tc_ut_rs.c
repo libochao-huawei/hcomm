@@ -5964,7 +5964,7 @@ void TcRsMemPool()
 
     qpCb.qpMode = RA_RS_OP_QP_MODE;
     qpCb.memAlign = LITE_ALIGN_4KB;
-    ret = RsInitMemPool(&qpCb);
+    ret = RsInitMemPool(&qpCb, 0, 0);
     EXPECT_INT_EQ(ret, 0);
     RsDeinitMemPool(&qpCb);
 
@@ -5973,7 +5973,7 @@ void TcRsMemPool()
     qpCb.rdevCb = &rdevCb;
     rdevCb.rsCb = &rsCb;
     mocker(RsRoceInitMemPool, 100, -EINVAL);
-    ret = RsInitMemPool(&qpCb);
+    ret = RsInitMemPool(&qpCb, 0, 0);
     EXPECT_INT_EQ(ret, -EINVAL);
     mocker_clean();
     mocker(RsRoceDeinitMemPool, 100, -EINVAL);
