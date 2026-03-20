@@ -302,8 +302,7 @@ public:
     CcuErrorHandler(const CcuErrorHandler&) = delete;
     void operator=(const CcuErrorHandler&) = delete;
 
-    static void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
-        std::vector<CcuErrorInfo> &errorInfo, void* ccuRepContext);
+    static void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo);
     static void GetCcuJettys(int32_t deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuJetty *> ccuJettys);
 
 private:

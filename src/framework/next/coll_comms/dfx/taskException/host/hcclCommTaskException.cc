@@ -577,6 +577,7 @@ void TaskExceptionHost::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, co
         PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
     }
 }
+
 void TaskExceptionHost::PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo)
 {
     if (errorInfos.empty()) {
@@ -587,6 +588,7 @@ void TaskExceptionHost::PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& 
         HCCL_ERROR("[TaskExceptionHost][%s]", GetCcuErrorMsgByType(errorInfo, taskInfo).c_str());
     }
 }
+
 HcclResult TaskExceptionHost::PrintCcuUbRegisters(const std::vector<Hccl::CcuErrorInfo>& errorInfos, s32 devLogicId,
     const Hccl::TaskInfo& taskInfo)
 {
