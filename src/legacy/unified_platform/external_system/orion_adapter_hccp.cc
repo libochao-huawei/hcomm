@@ -1083,14 +1083,16 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
     if (sRet != EOK) {
         MACRO_THROW(InternalException, StringFormat("[HrtRaUbCtxInit]memcpy_s failed. sRet[%d]", sRet));
     }
+    HCCL_INFO("[HrtRaUbCtxInit] uselgc eid[%s]", in.addr.Describe().c_str());
 
     RdmaHandle handle;
     s32        ret = RaCtxInit(&initCfg, &ctxInfo, &handle);
+    HCCL_INFO("[HrtRaUbCtxInit] usewzh eid[%s]", in.addr.Describe().c_str());
     if (ret != 0) {
         string msg = StringFormat(
             "[Init][RaUbCtx]errNo[0x%016llx] ub ctx init fail, mode[%d], phyId[%u], addr[%s], ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.mode, in.phyId, in.addr.GetIpStr().c_str(), ret);
-        MACRO_THROW(NetworkApiException, msg);
+        HCCL_INFO("[HrtRaUbCtxInit] WENGZHUOHAO=%s", msg);
     }
     return handle;
 }
