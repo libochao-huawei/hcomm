@@ -93,7 +93,6 @@ s32 HrtDeviceGetBareTgid()
 {
     s32       pid = 0;
     aclError ret = aclrtDeviceGetBareTgid(&pid);
-    HCCL_ERROR("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
     HCCL_INFO("Call rtDeviceGetBareTgid, return value[%d], rtGet pid[%d].", ret, pid);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Get][BareTgid]errNo[0x%016llx] rtGet pid fail. "
@@ -120,9 +119,9 @@ s32 HrtGetDevice()
     s32 deviceLogicId = 0;
     aclError ret = aclrtGetDevice(&deviceLogicId);
     if (ret != ACL_SUCCESS) {
-        HCCL_WARNING("[Get][Device]errNo[0x%016llx] rtGet device fail, "	 
-                     "please make sure that device is set. return[%d], para:deviceLogicId[%d]",	 
-                     HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);	 
+        HCCL_WARNING("[Get][Device]errNo[0x%016llx] rtGet device fail, "
+                     "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
+                     HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
         throw RuntimeApiException("call aclrtGetDevice failed. ");
     }
     HCCL_INFO("[HrtGetDevice]deviceLogicId=%d.",deviceLogicId);
