@@ -263,11 +263,13 @@ TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutLessThanU16
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
 
-    constexpr u16 customTimeout = std::numeric_limits<u16>::max() - 1;
+    constexpr u16 customTimeout = NOTIFY_DEFAULT_WAIT_TIME;
+    NOTIFY_DEFAULT_WAIT_TIME = std::numeric_limits<u16>::max() - 1;
     aclrtBinHandle binCustomHandle = reinterpret_cast<aclrtBinHandle>(0x1);
     HcclResult result = hccl::AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, binCustomHandle);
 
     EXPECT_EQ(result, HCCL_SUCCESS);
+    NOTIFY_DEFAULT_WAIT_TIME = customTimeout;
 }
 
 TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutGreaterThanU16Max_Return_HCCL_Success)
@@ -294,9 +296,11 @@ TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutGreaterThan
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
 
-    constexpr u16 customTimeout = std::numeric_limits<u16>::max() + 1;
+    constexpr u16 customTimeout = NOTIFY_DEFAULT_WAIT_TIME;
+    NOTIFY_DEFAULT_WAIT_TIME = std::numeric_limits<u16>::max() + 1;
     aclrtBinHandle binCustomHandle = reinterpret_cast<aclrtBinHandle>(0x1);
     HcclResult result = hccl::AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, binCustomHandle);
 
     EXPECT_EQ(result, HCCL_SUCCESS);
+    NOTIFY_DEFAULT_WAIT_TIME = customTimeout;
 }
