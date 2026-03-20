@@ -19,6 +19,7 @@
 #include "hccl_comm_pub.h"
 #include "dlra_function.h"
 #include "hcom_common.h"
+#include "rank_graph.h"
 
 using namespace hccl;
 // 每个超节点内包含两个AI Server，每个AI Server内四个Device的资源配置文件为例
@@ -848,4 +849,11 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Ser
     }
     EXPECT_EQ(listSize, 1);
     DestroyComm(comm);
+}
+
+TEST_F(HcclIndependentOpRankGraphTest, Ut_PrintLinksInfo)
+{
+    RankGraphV1 rankGraph_;
+    CommLink *linkList = nullptr;
+    rankGraph_.PrintLinksInfo(linkList);
 }
