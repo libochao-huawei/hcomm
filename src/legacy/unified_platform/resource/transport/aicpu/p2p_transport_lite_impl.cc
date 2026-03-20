@@ -33,11 +33,11 @@ P2PTransportLiteImpl::P2PTransportLiteImpl(
 
     std::vector<char> rmtNotifyUniqueIds;
     binaryStream >> rmtNotifyUniqueIds;
-    ParseRmtBufferVec(rmtNotifyUniqueIds, rmtNotifyVec, RmaP2PBufType::NOTIFY);
+    ParseRmtNotifyVec(rmtNotifyUniqueIds, rmtNotifyVec);
 
     std::vector<char> rmtBufferUniqueIds;
     binaryStream >> rmtBufferUniqueIds;
-    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaP2PBufType::BUFFER);
+    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec);
 }
 
 P2PTransportLiteImpl::~P2PTransportLiteImpl()
@@ -90,29 +90,45 @@ void P2PTransportLiteImpl::ParseLocNotifyVec(std::vector<char> &data)
     }
 }
 
-void P2PTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, RmtP2PBufLiteVec &vec, RmaP2PBufType rmtType) const
+void P2PTransportLiteImpl::ParseRmtNotifyVec(std::vector<char> &data, std::vector<RmtP2PNotifyLite> &vec) const
 {
-    u32 num = 0;
-    if (rmtType == RmaP2PBufType::NOTIFY) {
-        num = notifyNum;
-    } else {
-        num = bufferNum;
-    }
-
-    if (num == 0) {
-        HCCL_WARNING("P2PTransportLiteImpl::ParseRmtBufferVec %s num is 0", rmtType.Describe().c_str());
+    if (notifyNum == 0) {
+        HCCL_WARNING("P2PTransportLiteImpl::ParseRmtNotifyVec notifyNum is 0");
         return;
     }
 
-    u32 rmtBufferSizePerDto = data.size() / num;
-    HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]Parse %s num=%u, sizePerDto=%u", rmtType.Describe().c_str(), num, rmtBufferSizePerDto);
+    u32 rmtBufferSizePerDto = data.size() / notifyNum;
+    HCCL_INFO("[P2PTransportLiteImpl][ParseRmtNotifyVec]Parse notifyNum=%u, sizePerDto=%u",
+        notifyNum, rmtBufferSizePerDto);
     BinaryStream binaryStream(data);
 
-    for (u32 idx = 0; idx < num; idx++) {
+    for (u32 idx = 0; idx < notifyNum; idx++) {
+        RmtP2PNotifyLite p2pNotifyLite;
+        binaryStream >> p2pNotifyLite.addr;
+        binaryStream >> p2pNotifyLite.size;
+        binaryStream >> p2pNotifyLite.id;
+        HCCL_INFO("[P2PTransportLiteImpl][ParseRmtNotifyVec]idx=%u, %s", idx, p2pNotifyLite.Describe().c_str());
+        vec.push_back(p2pNotifyLite);
+    }
+}
+
+void P2PTransportLiteImpl::ParseRmtBufferVec(std::vector<char> &data, std::vector<RmtP2PBufLite> &vec) const
+{
+    if (bufferNum == 0) {
+        HCCL_WARNING("P2PTransportLiteImpl::ParseRmtBufferVec bufferNum is 0");
+        return;
+    }
+
+    u32 rmtBufferSizePerDto = data.size() / bufferNum;
+    HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]Parse bufferNum=%u, sizePerDto=%u",
+        bufferNum, rmtBufferSizePerDto);
+    BinaryStream binaryStream(data);
+
+    for (u32 idx = 0; idx < bufferNum; idx++) {
         RmtP2PBufLite p2pBufLite;
         binaryStream >> p2pBufLite.addr;
         binaryStream >> p2pBufLite.size;
-        HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]idx=%u, %s %s", idx, rmtType.Describe().c_str(), p2pBufLite.Describe().c_str());
+        HCCL_INFO("[P2PTransportLiteImpl][ParseRmtBufferVec]idx=%u, %s", idx, p2pBufLite.Describe().c_str());
         vec.push_back(p2pBufLite);
     }
 }
@@ -123,6 +139,8 @@ Buffer P2PTransportLiteImpl::GetRmtBuffer(u32 index)
         THROW<InternalException>(StringFormat("P2PTransportLiteImpl::GetRmtBuffer out-of-bounds. index=%u, size=%u",
             index, rmtBufferVec.size()));
     }
+    HCCL_DEBUG("[P2PTransportLiteImpl][GetRmtBuffer]buffer index[%u], addr[%llu], size[%llu]",
+        index, rmtBufferVec[index].addr, rmtBufferVec[index].size);
     return Buffer(rmtBufferVec[index].addr, rmtBufferVec[index].size);
 }
 
@@ -170,7 +188,8 @@ void P2PTransportLiteImpl::BuildP2PRead(const StreamLite &stream, const RmaBuffe
 
         auto taskId = stream.GetRtsq()->GetTaskId();
         stream.GetRtsq()->SdmaCopy(src, dst, blockSize, 0);
-        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx", __func__, src, dst, blockSize);
+        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, taskId=%u",
+            __func__, src, dst, blockSize, taskId);
 
         if (callback_) {
             TaskParam taskParam{};
@@ -226,8 +245,8 @@ void P2PTransportLiteImpl::BuildP2PReadReduce(const StreamLite &stream, const Rm
         auto taskId = stream.GetRtsq()->GetTaskId();
         stream.GetRtsq()->SdmaReduce(src, dst, blockSize, 0, reduceIn);
 
-        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, reduceIn=%s",
-            __func__, src, dst, blockSize, reduceIn.Describe());
+        HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, reduceIn=%s, taskId=%u",
+            __func__, src, dst, blockSize, reduceIn.Describe(), taskId);
 
         if (callback_) {
             TaskParam taskParam {};
@@ -251,11 +270,20 @@ void P2PTransportLiteImpl::BuildP2PReadReduce(const StreamLite &stream, const Rm
 
 void P2PTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 {
+    if (UNLIKELY(index >= rmtNotifyVec.size())) {
+        HCCL_ERROR("[P2PTransportLiteImpl]%s notify out-of-bounds, notifyNum[%u], index[%u]",
+        __func__, rmtNotifyVec.size(), index);
+        THROW<InternalException>("[P2PTransportLiteImpl]%s notify out-of-bounds, notifyNum[%u], index[%u]",
+            __func__, rmtNotifyVec.size(), index);
+        return;
+    }
+
     auto taskId = stream.GetRtsq()->GetTaskId();
     auto rmtNotifyAddr = rmtNotifyVec[index].addr;
     BuildNotifyRecordTask(stream, rmtNotifyAddr);
 
-    HCCL_INFO("P2PTransportLiteImpl::Post rmtNotifyAddr[0x%llx]", rmtNotifyAddr);
+    HCCL_INFO("P2PTransportLiteImpl::Post rmtNotifyAddr[0x%llx], notifyId[%u], taskId[%u]",
+        rmtNotifyAddr, rmtNotifyVec[index].id, taskId);
 
     if (callback_ == nullptr)
     {
@@ -266,7 +294,7 @@ void P2PTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_NOTIFY_RECORD;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Notify.notifyID = rmtNotifyAddr; // 暂时用notifyAddr填充，考虑将notifyId透传给AICPU
+    taskParam.taskPara.Notify.notifyID = rmtNotifyVec[index].id;
     taskParam.taskPara.Notify.value    = 1;
     callback_(stream.GetSqId(), taskId, taskParam);
 }
@@ -277,7 +305,7 @@ void P2PTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     auto notifyId = locNotifyVec[index]->GetId();
     BuildNotifyWaitTask(stream, notifyId);
 
-    HCCL_INFO("P2PTransportLiteImpl::Wait notifyId[%u]", notifyId);
+    HCCL_INFO("P2PTransportLiteImpl::Wait notifyId[%u], taskId[%u]", notifyId, taskId);
     if (callback_ == nullptr)
     {
         HCCL_WARNING("[P2PTransportLiteImpl] callback_ is nullptr.");

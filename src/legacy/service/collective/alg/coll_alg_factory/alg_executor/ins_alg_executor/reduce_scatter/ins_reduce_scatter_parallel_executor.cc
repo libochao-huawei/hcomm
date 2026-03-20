@@ -18,6 +18,7 @@
 
 #include "topo_match_mesh_nhr.h"
 #include "topo_match_concurr_mesh_nhr.h"
+#include "topo_match_mesh_nhr_pcie.h"
 #include "alg_data_trans_wrapper.h"
 #include "ins_temp_reduce_scatter_mesh_1D.h"
 #include "ins_temp_reduce_scatter_mesh_2D.h"
@@ -466,6 +467,8 @@ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, InsReduceScatterParallelMe
     InsReduceScatterParallelExecutor, TopoMatchConcurrMeshNHR, InsTempReduceScatterMesh2D, InsTempReduceScatterNHR);
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, InsReduceScatterParallelNHRNHR,
     InsReduceScatterParallelExecutor, TopoMatchConcurrMeshNHR, InsTempReduceScatterNHR, InsTempReduceScatterNHR);
+INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, InsReduceScatterParallelMesh1DNHRPcie,
+    InsReduceScatterParallelExecutor, TopoMatchMeshNHRPcie, InsTempReduceScatterMesh1D, InsTempReduceScatterNHR);
 #ifndef CCL_KERNEL_AICPU
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::REDUCESCATTER, CcuReduceScatterParallelMesh1DNHR, InsReduceScatterParallelExecutor, TopoMatchMeshNHR,
     CcuTempReduceScatterMeshMem2Mem1D, CcuTempReduceScatterNHR1DMem2Mem);
