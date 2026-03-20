@@ -579,6 +579,13 @@ struct AsyncEvent {
     uint32_t eventType;
 };
 
+struct GetTpCfg {
+    union GetTpCfgFlag flag;
+    enum TransportModeT transMode;
+    union HccpEid localEid;
+    union HccpEid peerEid;
+};
+
 #define ASYNC_EVENT_MAX_NUM 128U
 
 /**

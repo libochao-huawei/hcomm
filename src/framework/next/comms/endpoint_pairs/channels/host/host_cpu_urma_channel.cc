@@ -21,6 +21,7 @@
 
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
+constexpr u32 MEMORY_BLOCK_SIZE = 128;
 
 HostCpuUrmaChannel::HostCpuUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
@@ -252,23 +253,29 @@ HcclResult hcomm::HostCpuUrmaChannel::PrepareNotifyWrResource(const uint32_t rem
 {
     // 构造 urma_jfs_wr_t
     notifyRecordWr.opcode = URMA_OPC_WRITE_IMM;
-    notifyRecordWr.flag.bs.place_order = (fenceFlag_ == true ? 2 : 1);//需要一个标志位，正常情况下是relax_order就是place_order是relax_order，除非加了fence,在调用fence后的第一个post_wr需要设置成strong order,随后又是relax_order.
+    notifyRecordWr.flag.bs.place_order = (fenceFlag_ == true ? 2 : 1);
     notifyRecordWr.flag.bs.comp_order = 1; // comp_order要一直保持为1,
     notifyRecordWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
     notifyRecordWr.flag.bs.solicited_enable = 1;
-    notifyRecordWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa()); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
+    notifyRecordWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa());
     notifyRecordWr.user_ctx = 0; // 跟ibvs中的wr_id对应
-    // notifyRecordWr.rw.src.sge->addr; 不关心
     notifyRecordWr.rw.src.sge->len = 0;
+    notifyRecordWr.rw.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    notifyRecordWr.rw.src.sge->user_tseg = nullptr;
     notifyRecordWr.rw.src.num_sge = 1;
-    // notifyRecordWr.rw.dst.sge->addr ; 不关心
     notifyRecordWr.rw.dst.sge->len = 0;
+    notifyRecordWr.rw.dst.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    notifyRecordWr.rw.dst.sge->user_tseg = nullptr;
 
     notifyRecordWr.rw.target_hint = 0;
     notifyRecordWr.rw.notify_data = remoteNotifyIdx;
     notifyRecordWr.send.src.sge->len = 0;
+    notifyRecordWr.send.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    notifyRecordWr.send.src.sge->user_tseg = nullptr;
     notifyRecordWr.send.src.num_sge = 1;
     notifyRecordWr.send.imm_data = remoteNotifyIdx;
+    notifyRecordWr.send.target_hint = 0;
+    notifyRecordWr.send.tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
     notifyRecordWr.next = nullptr;
 
     fenceFlag_ = false;
@@ -291,17 +298,24 @@ HcclResult hcomm::HostCpuUrmaChannel::PrepareWriteWrResource(const void *dst, co
     writeWithNotifyWr.user_ctx = 0; // 跟ibvs中的wr_id对应
     writeWithNotifyWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
     writeWithNotifyWr.rw.src.sge->len = len;
+    writeWithNotifyWr.rw.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    writeWithNotifyWr.rw.src.sge->user_tseg = nullptr;
     writeWithNotifyWr.rw.src.num_sge = 1;
     writeWithNotifyWr.rw.dst.sge->addr = reinterpret_cast<uint64_t>(dst); // 远端地址
     writeWithNotifyWr.rw.dst.sge->len = len;
+    writeWithNotifyWr.rw.dst.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    writeWithNotifyWr.rw.dst.sge->user_tseg = nullptr;
 
     writeWithNotifyWr.rw.target_hint = 0;
     writeWithNotifyWr.rw.notify_data = remoteNotifyIdx;
     writeWithNotifyWr.send.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
     writeWithNotifyWr.send.src.sge->len = len;
+    writeWithNotifyWr.send.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
+    writeWithNotifyWr.send.src.sge->user_tseg = nullptr;
     writeWithNotifyWr.send.src.num_sge = 1;
     writeWithNotifyWr.send.target_hint = 0;
     writeWithNotifyWr.send.imm_data = remoteNotifyIdx;
+    writeWithNotifyWr.send.tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
     writeWithNotifyWr.next = nullptr;
     
     fenceFlag_ = false;
@@ -572,7 +586,7 @@ HcclResult hcomm::HostCpuUrmaChannel::UrmaPostJfr()
     urma_jfr_wr_t *badWr = nullptr;
 
     jfrWr.src.sge->addr = reinterpret_cast<uint64_t>(localRmaBuffers_[0]->GetBufferInfo().first);
-    jfrWr.src.sge->len = reinterpret_cast<uint32_t>(localRmaBuffers_[0]->GetBufferInfo().second);
+    jfrWr.src.sge->len = MEMORY_BLOCK_SIZE;
     jfrWr.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
     jfrWr.src.sge->user_tseg = nullptr;
     jfrWr.src.num_sge = 1;
