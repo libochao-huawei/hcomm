@@ -886,7 +886,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
 }
 
 HcclResult CcuKernel::ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                        const hccl::HcclComm &comm, Hccl::TaskParam &taskParam, bool isMaster)
+                                        const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster)
 {
     if (streamProfilingInfo.empty()) {
         HCCL_INFO("There is no ccu profiling info.");
