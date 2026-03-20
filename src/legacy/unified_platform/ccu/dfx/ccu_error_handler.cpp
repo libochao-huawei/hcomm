@@ -63,7 +63,7 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
 };
 
 void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
-                                        std::vector<CcuErrorInfo> &errorInfo)
+    std::vector<CcuErrorInfo> &errorInfo, void* ccuRepContext)
 {
     const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
     if (missionStatus == 0) {
@@ -72,8 +72,9 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, c
         return;
     }
 
-    CcuRepContext *ctx
-        = CtxMgrImp::GetInstance(deviceId).GetCtx(ccuTaskParam.executeId, ccuTaskParam.dieId, ccuTaskParam.missionId);
+    CcuRepContext *ctx = ccuRepContext != nullptr ?
+        reinterpret_cast<CcuRepContext *>(ccuRepContext) :
+        CtxMgrImp::GetInstance(deviceId).GetCtx(ccuTaskParam.executeId, ccuTaskParam.dieId, ccuTaskParam.missionId);
     if (ctx == nullptr) {
         THROW<CcuApiException>("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]",
                                deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),

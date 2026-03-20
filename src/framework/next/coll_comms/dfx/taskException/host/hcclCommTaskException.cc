@@ -18,6 +18,7 @@
 #include "task_exception_handler.h"
 #include "task_param.h"
 #include "ccu_rep_type.h"
+#include "ccu_kernel_mgr.h"
 
 namespace hcomm {
 
@@ -552,8 +553,14 @@ void TaskExceptionHost::ProcessCcuException(const rtExceptionInfo_t* exceptionIn
 void TaskExceptionHost::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo)
 {
     const Hccl::ParaCcu& ccuTaskParam = taskInfo.taskParam_.taskPara.Ccu;
+
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
+    auto *kernel = kernelMgr.GetKernel(ccuTaskParam.ccuKernelHandle);
+    CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
+        __func__, deviceId, ccuTaskParam.ccuKernelHandle),);
+
     vector<Hccl::CcuErrorInfo> errorInfos {};
-    HcclResult ret = GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfos);
+    HcclResult ret = Hccl::GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfos, reinterpret_cast<void*>(kernel));
     const uint8_t missionStatus = (status >> 8) & 0xFF;
     if (ret != HcclResult::HCCL_SUCCESS || errorInfos.empty()) {
         HCCL_ERROR("Get CCU error info failed. deviceId[%u], dieId[%u], missionId[%u], executeId[%llu].",

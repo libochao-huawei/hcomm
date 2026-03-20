@@ -21,6 +21,8 @@
 namespace Hccl {
 
 HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu& ccuTaskParam, std::vector<CcuErrorInfo>& errorInfo);
+HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu& ccuTaskParam,
+    std::vector<CcuErrorInfo>& errorInfo, void* ccuRepContext);
 HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys);
 
 } // namespace Hccl
