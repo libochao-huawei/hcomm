@@ -375,7 +375,7 @@ bool RankConsistentcyChecker::CompareSection(const char *pRawData, const char *r
     return true;
 }
 
-bool RankConsistentcyChecker::CompareCrcInfo(const std::string &tag, HcclCRCInfo &crcInfo, HcclCRCInfo &crcInfoRecv)
+bool RankConsistentcyChecker::CompareCrcInfo(const  HcclCMDInfo &hcclCMDInfo, HcclCRCInfo &crcInfo, HcclCRCInfo &crcInfoRecv)
 {
     bool bIsDiff = false;
     // 检校验整体是否一致
@@ -384,7 +384,7 @@ bool RankConsistentcyChecker::CompareCrcInfo(const std::string &tag, HcclCRCInfo
         // 检查每种CRC类型是否一致
         for (auto i = 0U; i < crcInfo.crcNum; ++i) {
             if (crcInfo.crcArray[i] != crcInfoRecv.crcArray[i]) {
-                ReportCrcCheckFailed(tag, static_cast<HcclCrcRecordType>(i), crcInfo.crcArray[i],
+                ReportCrcCheckFailed(hcclCMDInfo, static_cast<HcclCrcRecordType>(i), crcInfo.crcArray[i],
                     crcInfoRecv.crcArray[i]);
             }
         }
@@ -392,50 +392,45 @@ bool RankConsistentcyChecker::CompareCrcInfo(const std::string &tag, HcclCRCInfo
     return bIsDiff;
 }
 
-void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const std::string &tag, const std::string &paraName,
+void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const HcclCMDInfo &hcclCMDInfo, const std::string &paraName,
     const std::string &localPara, const std::string &remotePara)
 {
-    RPT_INPUT_ERR(true,
-        "EI0005",
-        std::vector<std::string>({"para_name", "local_para", "remote_para"}),
-        std::vector<std::string>({paraName, localPara, remotePara}));
-    HCCL_ERROR("[%s][%s]CMD information %s check fail. local[%s], remote[%s]",
-        LOG_KEYWORDS_INIT_CHANNEL.c_str(),
-        LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
-        paraName.c_str(),
-        localPara.c_str(),
-        remotePara.c_str());
+    ReportCommonError(hcclCMDInfo, paraName, localPara, remotePara, "CMD information" );
 }
 
-void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const std::string &tag, const std::string &paraName,
+void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const HcclCMDInfo &hcclCMDInfo, const std::string &paraName,
     uint32_t localPara, uint32_t remotePara)
 {
-    RPT_INPUT_ERR(true,
-        "EI0005",
-        std::vector<std::string>({"para_name", "local_para", "remote_para"}),
-        std::vector<std::string>({paraName, std::to_string(localPara), std::to_string(remotePara)}));
-    HCCL_ERROR("[%s][%s]CMD information %s check fail. local[%u], remote[%u]",
-        LOG_KEYWORDS_INIT_CHANNEL.c_str(),
-        LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
-        paraName.c_str(),
-        localPara,
-        remotePara);
+    ReportCommonError(hcclCMDInfo, paraName, std::to_string(localPara), std::to_string(remotePara), "CMD information");
 }
 
-void RankConsistentcyChecker::ReportCrcCheckFailed(const std::string &tag, HcclCrcRecordType crcType,
+void RankConsistentcyChecker::ReportCrcCheckFailed(const HcclCMDInfo &hcclCMDInfo, HcclCrcRecordType crcType,
     const uint32_t localCrc, const uint32_t remoteCrc)
 {
     const auto crcTypeStr = GetCRCTypeEnumStr(crcType);
+    ReportCommonError(hcclCMDInfo, crcTypeStr, std::to_string(localCrc), std::to_string(remoteCrc), "CRC check");
+}
+
+void RankConsistentcyChecker::ReportCommonError(const HcclCMDInfo &hcclCMDInfo, const std::string &paraName,
+    const std::string &localParaStr, const std::string &remoteParaStr, const std::string &errorMsg) {
+    std::string opInfo = "Unknown";
+    for (const auto& pair : HCCL_OPTYPE_NAME_MAP) {
+        if (pair.second == hcclCMDInfo.cmdType) {
+            opInfo = std::string(pair.first);
+            break;
+        }
+    }
     RPT_INPUT_ERR(true,
         "EI0005",
-        std::vector<std::string>({"para_name", "local_para", "remote_para"}),
-        std::vector<std::string>({crcTypeStr, std::to_string(localCrc), std::to_string(remoteCrc)}));
-    HCCL_ERROR("[%s][%s]CRC for %s check fail. local[%u], remote[%u]",
+        std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
+        std::vector<std::string>({opInfo, hcclCMDInfo.group, paraName, localParaStr, remoteParaStr}));
+    HCCL_ERROR("[%s][%s]%s %s check fail. local[%s], remote[%s]",
         LOG_KEYWORDS_INIT_CHANNEL.c_str(),
         LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
-        crcTypeStr.c_str(),
-        localCrc,
-        remoteCrc);
+        errorMsg.c_str(),
+        paraName.c_str(),
+        localParaStr.c_str(),
+        remoteParaStr.c_str());
 }
 
 void RankConsistentcyChecker::CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheckInfo &checkInfoRecv)
@@ -444,60 +439,60 @@ void RankConsistentcyChecker::CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheck
     auto remoteInfo = &checkInfoRecv.cmdInfo;
 
     if (!CompareSection(localInfo->tag, remoteInfo->tag, TAG_MAX_LEN + 1)) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "tag", localInfo->tag, remoteInfo->tag);
+        ReportCmdInfoCheckFailed(*localInfo, "tag", localInfo->tag, remoteInfo->tag);
     }
 
     if (localInfo->cmdType != remoteInfo->cmdType) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "cmdType",
+        ReportCmdInfoCheckFailed(*localInfo, "cmdType",
             (uint32_t)localInfo->cmdType, (uint32_t)remoteInfo->cmdType);
     }
 
     if (localInfo->count != remoteInfo->count) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "count", localInfo->count, remoteInfo->count);
+        ReportCmdInfoCheckFailed(*localInfo, "count", localInfo->count, remoteInfo->count);
     }
 
     if (localInfo->dataType != remoteInfo->dataType) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "dataType",
+        ReportCmdInfoCheckFailed(*localInfo, "dataType",
             (uint32_t)localInfo->dataType, (uint32_t)remoteInfo->dataType);
     }
 
     if (localInfo->op != remoteInfo->op) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "op", (uint32_t)localInfo->op, (uint32_t)remoteInfo->op);
+        ReportCmdInfoCheckFailed(*localInfo, "op", (uint32_t)localInfo->op, (uint32_t)remoteInfo->op);
     }
 
     if (!CompareSection(localInfo->group, remoteInfo->group, GROUP_NAME_MAX_LEN + 1)) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "group", localInfo->group, remoteInfo->group);
+        ReportCmdInfoCheckFailed(*localInfo, "group", localInfo->group, remoteInfo->group);
     }
 
     if (localInfo->root != remoteInfo->root) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "root", localInfo->root, remoteInfo->root);
+        ReportCmdInfoCheckFailed(*localInfo, "root", localInfo->root, remoteInfo->root);
     }
 
     if (localInfo->rank != remoteInfo->rank) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "rank", localInfo->rank, remoteInfo->rank);
+        ReportCmdInfoCheckFailed(*localInfo, "rank", localInfo->rank, remoteInfo->rank);
     }
 
     if (localInfo->srTag != remoteInfo->srTag) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "srTag", localInfo->srTag, remoteInfo->srTag);
+        ReportCmdInfoCheckFailed(*localInfo, "srTag", localInfo->srTag, remoteInfo->srTag);
     }
 
     if (localInfo->inCclBufferSize != remoteInfo->inCclBufferSize) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "inCclBufferSize", localInfo->inCclBufferSize,
+        ReportCmdInfoCheckFailed(*localInfo, "inCclBufferSize", localInfo->inCclBufferSize,
             remoteInfo->inCclBufferSize);
     }
 
     if (localInfo->outCclBufferSize != remoteInfo->outCclBufferSize) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "outCclBufferSize", localInfo->outCclBufferSize,
+        ReportCmdInfoCheckFailed(*localInfo, "outCclBufferSize", localInfo->outCclBufferSize,
             remoteInfo->outCclBufferSize);
     }
 
     if (localInfo->aivCoreLimit != remoteInfo->aivCoreLimit) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "aivCoreLimit", localInfo->aivCoreLimit,
+        ReportCmdInfoCheckFailed(*localInfo, "aivCoreLimit", localInfo->aivCoreLimit,
             remoteInfo->aivCoreLimit);
     }
 
     if (localInfo->deterministic != remoteInfo->deterministic) {
-        ReportCmdInfoCheckFailed(localInfo->tag, "deterministic", localInfo->deterministic,
+        ReportCmdInfoCheckFailed(*localInfo, "deterministic", localInfo->deterministic,
             remoteInfo->deterministic);
     }
 
@@ -507,12 +502,12 @@ void RankConsistentcyChecker::CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheck
 bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckInfo &checkInfoRecv)
 {
     bool bIsDiff = false;
-    if (CompareCrcInfo(checkInfo.cmdInfo.tag, checkInfo.crcInfoGlobal, checkInfoRecv.crcInfoGlobal)) {
+    if (CompareCrcInfo(checkInfo.cmdInfo, checkInfo.crcInfoGlobal, checkInfoRecv.crcInfoGlobal)) {
         HCCL_ERROR("[RankConsistentcyChecker][CompareFrame]errNo[0x%016llx] CRC check fail, please check the "
             "rankTable file and hccl_config file.", HCCL_ERROR_CODE(HCCL_E_INTERNAL));
         bIsDiff = true;
     }
-    if (CompareCrcInfo(checkInfo.cmdInfo.tag, checkInfo.crcInfoOp, checkInfoRecv.crcInfoOp)) {
+    if (CompareCrcInfo(checkInfo.cmdInfo, checkInfo.crcInfoOp, checkInfoRecv.crcInfoOp)) {
         HCCL_ERROR("[RankConsistentcyChecker][CompareFrame]errNo[0x%016llx] Op CRC check fail, please check the op"
             " parameters, rankTable file and hccl_config file.", HCCL_ERROR_CODE(HCCL_E_INTERNAL));
         bIsDiff = true;
