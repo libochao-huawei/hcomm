@@ -5481,6 +5481,12 @@ aclError aclmdlRIDestroyRegisterCallback(aclmdlRI modelRI, aclrtCallback func, v
  * 所以需要在 UT 的桩代码文件 test/ut/stub/llt_hccl_stub.cc 中添加该函数的桩实现
  */
 namespace hccl {
+HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+    aclrtBinHandle &binHandle)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult GetCustomKernelFilePath(std::string &binaryPath)
 {
     binaryPath = "./";

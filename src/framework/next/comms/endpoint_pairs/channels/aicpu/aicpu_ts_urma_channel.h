@@ -11,9 +11,11 @@
 #define AICPU_TS_URMA_CHANNEL_H
 
 #include "../channel.h"
+#include "../../sockets/socket_mgr.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
@@ -30,6 +32,7 @@ public:
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
+    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
@@ -40,6 +43,7 @@ private:
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
+    HcclResult BuildSocket();
 
     HcclResult PackOpData(std::vector<char> &data);
 
@@ -64,6 +68,8 @@ private:
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+    std::unique_ptr<Hccl::Socket>                               serverSocket_;
+    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
 };
 
 } // namespace hcomm

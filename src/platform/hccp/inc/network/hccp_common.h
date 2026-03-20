@@ -597,7 +597,14 @@ struct QpExtAttrs {
     int memAlign; // 0,1:4KB, 2:2MB
     uint32_t udpSport;
     union AiDataPlaneCstmFlag dataPlaneFlag; // only valid in ra_ai_qp_create
-    uint32_t reserved[29U];
+    union {
+        struct {
+            uint32_t useResvMem : 1;
+            uint32_t reserved0 : 31;
+        } bs;
+        uint32_t value;
+    } cstmFlag; // only valid in RaQpCreateWithAttrs
+    uint32_t reserved[28U];
 };
 
 struct AiQpInfo {

@@ -224,9 +224,9 @@ void CcuContextReduceScatterMesh1D2Die::ReduceLoopGroup(CcuRep::Memory &outDstOr
     CreateReduceLoop(size, dataType, outputDataType, opType);
 
     std::string loopType                = CcuRep::GetReduceTypeStr(dataType, opType);
+    CcuRep::Variable sliceSizeExpansion = CreateVariable();
     loopType                            = "local_reduce_" + loopType;
     uint32_t         expansionNum       = CcuRep::GetReduceExpansionNum(opType, dataType, outputDataType);
-    CcuRep::Variable sliceSizeExpansion = CreateVariable();
 
     if (expansionNum != 1) {
         CcuRep::Variable tmp = CreateVariable();

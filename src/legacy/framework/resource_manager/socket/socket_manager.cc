@@ -319,6 +319,7 @@ bool SocketManager::DelWhiteList(PortData &localPort, vector<RaSocketWhitelist> 
 
 void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap)
 {
+    std::lock_guard<std::mutex> lock(socketLock);
     std::unordered_map<u32, u32> &staticMap = SocketManager::GetDeviceServerListenPortMap();
     staticMap.clear();
     for (auto &pair : rankListenPortMap) {
@@ -343,6 +344,17 @@ std::unordered_map<PortData, shared_ptr<Socket>> &SocketManager::GetServerSocket
 {
     static std::unordered_map<PortData, shared_ptr<Socket>> serverSocketMap;
     return serverSocketMap;
+}
+
+bool SocketManager::CheckServerPortListening(const PortData &portData) const
+{
+    std::lock_guard<std::mutex> lock(socketLock);
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    auto iterSocket = serverSocketMap.find(portData);
+    if (iterSocket == serverSocketMap.end()) {
+        return false;
+    }
+    return true;
 }
 
 } // namespace Hccl

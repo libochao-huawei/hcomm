@@ -483,6 +483,33 @@ extern HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMe
  */
 extern HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine engine);
 
+// 支持获取的底层资源类型
+typedef enum {
+    THREAD_RES_TYPE_INVALID = -1,
+    THREAD_RES_TYPE_STREAM = 0,
+} ThreadResType;
+
+typedef aclrtStream ThreadResTypeStream;
+
+/**
+ * @brief 获取Thread底层资源信息
+ * @param[in] comm 通信域句柄
+ * @param[in] thread 线程句柄(软件抽象)
+ * @param[in] resType 底层资源类型(如Stream)
+ * @param[in] infoLen 目标资源信息长度
+ * @param[out] info 资源信息输出缓冲区
+ * @warning 调用者必须确保
+ *   1. infoLen参数必须等于目标资源类型的大小
+ *   2. info缓冲区必须按资源类型对齐且可写
+ * @code {.c}
+ * ThreadResTypeStream stream;
+ * uint32_t size = sizeof(ThreadResTypeStream); // 必须等于目标类型大小
+ * HcclThreadResGetInfo(comm, thread, ThreadResType::THREAD_RES_TYPE_STREAM, size, &stream);
+ * @endcode
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclThreadResGetInfo(HcclComm comm, ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

@@ -105,14 +105,14 @@ public:
  	         return callback_;
  	}
 protected:
-    HcclResult ReportNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 streamId) const;
+    HcclResult ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool isMaster) const;
-    HcclResult ReportNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 streamId) const;
+    HcclResult ReportAicpuNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, bool isMaster) const;
-    HcclResult ReportLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 streamId) const;
+    HcclResult ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 sqId) const;
     HcclResult ReportHostLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const;
-    HcclResult ReportLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
-        HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 streamId) const;
+    HcclResult ReportAicpuLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
+        HcommReduceOp reduceOp, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
         HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const;
 

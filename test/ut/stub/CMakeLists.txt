@@ -62,6 +62,7 @@ set(EXCLUDE_COMMON_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc"
     "${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc"
+    "${HCCL_CODE_ROOT}/src/common/launch_device/launch_device.cc"
     )
 list(REMOVE_ITEM COMMON_SOURCES ${EXCLUDE_COMMON_DEVICE_REGEX})
 
@@ -354,6 +355,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/

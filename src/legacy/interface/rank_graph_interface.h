@@ -25,6 +25,7 @@ namespace Hccl {
 
         HcclResult GetRankId(uint32_t *rank);
         HcclResult GetRankSize(uint32_t *rankSize);
+        HcclResult GetDevicePort(const uint32_t rank, uint32_t *devPort);
         HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList, uint32_t *listSize);
         HcclResult GetRankGraphInfo(void **graph, uint32_t *len);
         HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);

@@ -332,6 +332,9 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
         HCCL_INFO("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
                     " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
         return false;
+    } else if (ret == SOCK_EADDRNOTAVAIL){
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: " 
+            "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
     } else {
         // 非ra限速场景错误，不轮询，直接退出
         MACRO_THROW(NetworkApiException, StringFormat("[TryListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
