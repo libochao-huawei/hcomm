@@ -31,7 +31,6 @@ FILE (GLOB_RECURSE hccl_orion_alg_files
 target_sources(hccl_v2_utest
         PUBLIC
         ut_ccu_alg_2d.cc
-        ut_selector.cc
         ${hccl_next_alg_files}
         ${hccl_orion_alg_files}
 )

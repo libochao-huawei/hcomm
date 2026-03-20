@@ -15,6 +15,7 @@ hcomm:
       - src
       - include
     unrelease:
+      - src/legacy/service/collective/alg/
   llt:
     ut_check: true
     st_check: false
