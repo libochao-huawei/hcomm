@@ -79,6 +79,8 @@ struct ibv_exp_qp_init_attr {
     unsigned int ai_op_support;
     unsigned int grp_id;
     unsigned int qp_cstm_flag;
+    unsigned int resv_mem;
+    unsigned int resv_mem_pool_id;
 };
 
 struct wr_exp_rsp {

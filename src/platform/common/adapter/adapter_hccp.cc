@@ -117,6 +117,12 @@ constexpr u32 RS_INIT_SUPPORT_ASYNC_VERSION = 2; // 支持socket async的版本�
 
 constexpr u32 ROCE_ENOMEM_RET = 328100; // 创建qp时由于内存不足的错误返回值
 
+//预留后续扩展多个池子信息，使用逗号,间隔resv_mem_$dev_id=$type_$pool_id_$total_mem_size_$page_size
+#define HCCN_RESV_MEM_TYPE_OFFSET (0)
+#define HCCN_RESV_MEM_POOLID_OFFSET (1)
+#define HCCN_RESV_MEM_PAGESIZE_OFFSET (3)
+#define HCCN_RSCV_MEM_COUNT (4)
+
 template <typename T>
 struct HandleInfo {
     std::mutex handleMutex;
@@ -2499,7 +2505,9 @@ HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attr
         string(",sendCqCompVector:") + to_string(attrs->cqAttr.sendCqCompVector) +
         string(",recvCqCompVector:") + to_string(attrs->cqAttr.recvCqCompVector) + string(",cap.max_send_wr:") +
         to_string(attrs->qpAttr.cap.max_send_wr) + string(",cap.max_recv_wr:") +
-        to_string(attrs->qpAttr.cap.max_recv_wr) + "]";
+        to_string(attrs->qpAttr.cap.max_recv_wr) + 
+        string("] resvMem: [")+ to_string(attrs->cstmFlag.bs.useResvMem) + string("]; resvMemPoolId:[") +
+        to_string(attrs->resvMemPoolId) + "]";
 
     s32 ret = DlRaFunction::GetInstance().dlRaQpCreateWithAttrs(rdmaHandle, attrs, &qpHandle);
     if (ret == ROCE_ENOMEM_RET && GetExternalInputRdmaFastPost()) {
@@ -2885,6 +2893,44 @@ HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct MemRemapInfo info[], unsig
     return HCCL_SUCCESS;
 }
 
+HcclResult GetHccnResvMemInfo(const std::string& info, uint32_t &pollId, uint32_t &pageSize) {
+    std::vector<std::string> parts;
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream partStream(info);
+    while (std::getline(partStream, token, ',')) {
+        parts.push_back(token);
+    }
+    for (auto s:parts) {
+        std::istringstream tokenStream(s);
+        while (std::getline(tokenStream, token, '_')) {
+            tokens.push_back(token);
+        }
+        if (tokens.size() != HCCN_RSCV_MEM_COUNT) {
+            HCCL_ERROR("[GetHccnResvMemInfo] resvMemInfo count[%u] is not equal [%u].",
+                tokens.size(), HCCN_RSCV_MEM_COUNT);
+            return HCCL_E_PARA;
+        }
+        for (u32 i=0; i<tokens.size(); i++) {
+            for (char c:tokens[i]) {
+                if (!std::isdigit(c)) {
+                    HCCL_ERROR("[GetHccnResvMemInfo] resvMemInfo[%s] is invalid.", tokens[i].c_str());
+                    return HCCL_E_PARA;
+                }
+            }
+        }
+
+        // 只解析其中type 0的pdccl, 不判断出现多个type为0的配置
+        if (0 == std::stoi(tokens[HCCN_RESV_MEM_TYPE_OFFSET])) {
+            pollId = std::stoi(tokens[HCCN_RESV_MEM_POOLID_OFFSET]);
+            pageSize = std::stoi(tokens[HCCN_RESV_MEM_PAGESIZE_OFFSET]);
+            return HCCL_SUCCESS;
+        }
+    }
+
+    return HCCL_E_PARA;
+}
+
 HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo)
 {
     HCCL_DEBUG("CreateQp qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], TC[%u], SL[%u], rdmaRetryCnt[%u], rdmaTimeOut[%u]",
@@ -2915,6 +2961,23 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
         HCCL_ERROR("this package does not support CreateQpWithDepthConfig for device, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
+
+    std::string flagValue;
+    vRet = HrtRaGetHccnCfg(static_cast<std::uint32_t>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId,\
+        HccnCfgKeyT::HCCN_RESV_MEM_INFO, flagValue);
+    if (vRet == HCCL_SUCCESS && !flagValue.empty()) {
+        uint32_t poolId;
+        uint32_t pageSize;
+        int32_t supportLite = 0;
+        if ((HCCL_SUCCESS == GetHccnResvMemInfo(flagValue, poolId, pageSize)) &&
+            (HCCL_SUCCESS == HrtGetRdmaLiteStatus(rdmaHandle, &supportLite))) {
+            if (((supportLite == 2) && (pageSize == 64))|| (supportLite == 1)) {
+                ext_attrs.cstmFlag.bs.useResvMem = 1;
+                ext_attrs.resvMemPoolId = poolId;
+            }
+        }
+    }
+
     CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &ext_attrs, qpHandle));
 
     struct QpAttr attr{};
@@ -2986,6 +3049,15 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         }
         return HCCL_SUCCESS;
     }
+
+    if ((key == HccnCfgKeyT::HCCN_RESV_MEM_INFO) && (raGetHccnCfg <= GET_HCCH_CFG_VERSION)) {
+        HCCL_WARNING("[HrtRaGetHccnCfg] this package does not support resvMem for device, "
+                         "please change new package ret[%d], version[%lu]",
+                static_cast<int>(vRet),
+                raGetHccnCfg);
+        return HCCL_SUCCESS;
+    }
+
     struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
@@ -3000,6 +3072,9 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
             break;
         case HccnCfgKeyT::HCCN_MULTI_QP_UDP_PORTS:
             hccnKey = HccnCfgKey::HCCN_CFG_MULTI_QP_UDP_PORTS;
+            break;
+        case HccnCfgKeyT::HCCN_RESV_MEM_INFO:
+            hccnKey = HccnCfgKey::HCCN_CFG_RESV_MEM_INFO;
             break;
         default:
             HCCL_ERROR("[HrtRaGetHccnCfg]not support key[%d]", key);

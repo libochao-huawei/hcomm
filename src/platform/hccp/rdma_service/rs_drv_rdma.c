@@ -315,7 +315,8 @@ STATIC int RsDrvGetSupportLite(struct RsRdevCb *rdevCb, int qpMode, unsigned int
     return 0;
 }
 
-int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqAttr)
+int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqAttr,
+    unsigned int useResvMem, unsigned int resvMemPoolId)
 {
     int sendEqNum = cqAttr->sendCqCompVector;
     int recvEqNum = cqAttr->recvCqCompVector;
@@ -328,9 +329,11 @@ int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqA
         .ai_op_support = qpCb->aiOpSupport,
         .grp_id = qpCb->grpId,
         .cq_cstm_flag = qpCb->cqCstmFlag,
+        .resv_mem = 0,
+        .resv_mem_pool_id = 0,
     };
     struct ibv_comp_channel *channel = qpCb->channel;
-
+ 
     attr.lite_op_supported = RsDrvGetSupportLite(qpCb->rdevCb, qpCb->qpMode, qpCb->aiOpSupport);
     // caller poll cq
     if (attr.lite_op_supported != 0 || attr.cq_cstm_flag != 0) {
@@ -339,6 +342,10 @@ int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqA
         recvEqNum = 0;
     }
 
+    if (!qpCb->aiOpSupport) {
+        attr.resv_mem = useResvMem;
+        attr.resv_mem_pool_id = resvMemPoolId;
+    }
     hccp_dbg("create cq start");
     if (isExt == 1) {
         qpCb->ibSendCq = RsIbvExpCreateCq(qpCb->rdevCb->ibCtx, cqAttr->sendCqDepth,
@@ -348,10 +355,10 @@ int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqA
         qpCb->ibSendCq = RsIbvCreateCq(qpCb->rdevCb->ibCtx, cqAttr->sendCqDepth,
             NULL, channel, sendEqNum);
     }
-
+ 
     /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     CHK_PRT_RETURN(qpCb->ibSendCq == NULL, hccp_err("ibv create send cq failed"), -ENOMEM);
-
+ 
     if (isExt == 1) {
         qpCb->ibRecvCq = RsIbvExpCreateCq(qpCb->rdevCb->ibCtx, cqAttr->recvCqDepth,
             NULL, channel, recvEqNum, &attr, &qpCb->qpResp.recvCqData);
@@ -360,18 +367,18 @@ int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqA
         qpCb->ibRecvCq = RsIbvCreateCq(qpCb->rdevCb->ibCtx, cqAttr->recvCqDepth,
             NULL, channel, recvEqNum);
     }
-
+ 
     /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     if (qpCb->ibRecvCq == NULL) {
         hccp_err("ibv create recv cq failed");
         (void)RsIbvDestroyCq(qpCb->ibSendCq);
         return -ENOMEM;
     }
-
+ 
     hccp_info("create cq success");
     return 0;
 }
-
+ 
 #define RS_DRV_CQ_DEPTH         16384
 #define RS_DRV_CQ_128_DEPTH     128
 #define RS_DRV_CQ_32K_DEPTH     32768
@@ -379,13 +386,13 @@ int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqA
 int RsDrvCreateCq(struct RsQpCb *qpCb, int isExt)
 {
     struct CqExtAttr cqAttr = {0};
-
+ 
     cqAttr.sendCqDepth = qpCb->sendCqDepth;
     cqAttr.sendCqCompVector = qpCb->eqNum;
     cqAttr.recvCqDepth = qpCb->recvCqDepth;
     cqAttr.recvCqCompVector = qpCb->eqNum;
-
-    return RsDrvCreateCqWithAttrs(qpCb, isExt, &cqAttr);
+ 
+    return RsDrvCreateCqWithAttrs(qpCb, isExt, &cqAttr, 0, 0);
 }
 
 void RsDrvEventDestroy(struct event_summary *event)
@@ -1030,8 +1037,11 @@ STATIC int RsDrvExpQpCreateInitWithAttrs(struct ibv_exp_qp_init_attr *qpInitAttr
     CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ENOMEM);
     qpInitAttr->attr.qp_type = qpNorm->extAttrs.qpAttr.qp_type;
     qpInitAttr->attr.sq_sig_all = qpNorm->extAttrs.qpAttr.sq_sig_all;
-
     qpInitAttr->udp_sport = qpCb->udpSport;
+    if (qpNorm->aiOpSupport != 0) {
+        qpInitAttr->resv_mem = qpNorm->extAttrs.cstmFlag.bs.useResvMem;
+        qpInitAttr->resv_mem_pool_id = qpNorm->extAttrs.resvMemPoolId;
+    }
 
     return 0;
 }
@@ -1056,6 +1066,7 @@ STATIC int RsDrvExpQpCreateWithAttrs(struct RsQpCb *qpCb, struct RsQpNormWithAtt
     qpInitAttr.ai_op_support = qpCb->aiOpSupport;
     qpInitAttr.grp_id = qpCb->grpId;
     qpInitAttr.qp_cstm_flag = qpCb->aiOpSupport;
+
     /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     qpCb->ibQp = RsIbvExpCreateQp(qpCb->ibPd, &qpInitAttr, &qpCb->qpResp.qpData);
     CHK_PRT_RETURN(qpCb->ibQp == NULL, hccp_err("rs_ibv_exp_create_qp failed"), -ENOMEM);
@@ -1107,7 +1118,6 @@ STATIC int RsDrvNormalQpCreateInitWithAttrs(struct ibv_qp_init_attr *qpInitAttr,
     CHK_PRT_RETURN(ret, hccp_err("memcpy_s for qp_init_attr failed, ret:%d", ret), -ENOMEM);
     qpInitAttr->qp_type = qpNorm->extAttrs.qpAttr.qp_type;
     qpInitAttr->sq_sig_all = qpNorm->extAttrs.qpAttr.sq_sig_all;
-
     return ret;
 }
 

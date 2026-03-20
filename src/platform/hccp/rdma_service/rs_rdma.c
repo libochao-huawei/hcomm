@@ -1608,7 +1608,7 @@ STATIC int RsQpQueryInfo(unsigned int phyId, unsigned int rdevIndex, struct RsRd
     return 0;
 }
 
-STATIC int RsInitMemPool(struct RsQpCb *qpCb)
+STATIC int RsInitMemPool(struct RsQpCb *qpCb, unsigned int useResvMem, unsigned int resvMemPoolId)
 {
     struct roce_mem_cq_qp_attr memAttr = {0};
     int ret;
@@ -1626,6 +1626,8 @@ STATIC int RsInitMemPool(struct RsQpCb *qpCb)
     memAttr.recv_qp_depth = qpCb->rxDepth;
     memAttr.recv_cq_depth = (unsigned int)qpCb->recvCqDepth;
     memAttr.recv_sge_num = qpCb->recvSgeNum;
+    memAttr.use_resv_mem = useResvMem;
+    memAttr.resv_mem_pool_id = resvMemPoolId;
 
     ret = RsRoceInitMemPool(&memAttr, &qpCb->memResp.memData, qpCb->rdevCb->rsCb->chipId);
     if (ret != 0) {
@@ -1669,7 +1671,7 @@ STATIC int RsAllocQpcb(struct RsRdevCb *rdevCb, struct RsQpCb **qpCb, struct RsQ
         goto rs_qpcb_init_err;
     }
 
-    ret = RsInitMemPool(*qpCb);
+    ret = RsInitMemPool(*qpCb, 0, 0);
     if (ret) {
         hccp_err("init mem pool failed ret %d", ret);
         goto rs_init_mem_err;
@@ -1849,13 +1851,15 @@ STATIC int RsAllocQpcbWithAttrs(struct RsRdevCb *rdevCb, struct RsQpCb **qpCb,
         goto rs_qpcb_init_err;
     }
 
-    ret = RsInitMemPool(*qpCb);
+    unsigned int useResvMem = qpNorm->extAttrs.cstmFlag.bs.useResvMem;
+    unsigned int resvMemPoolId = qpNorm->extAttrs.resvMemPoolId;
+    ret = RsInitMemPool(*qpCb, useResvMem, resvMemPoolId);
     if (ret) {
         hccp_err("init mem pool failed ret %d", ret);
         goto rs_init_mem_err;
     }
 
-    ret = RsDrvCreateCqWithAttrs(*qpCb, qpNorm->isExt, &qpNorm->extAttrs.cqAttr);
+    ret = RsDrvCreateCqWithAttrs(*qpCb, qpNorm->isExt, &qpNorm->extAttrs.cqAttr, useResvMem, resvMemPoolId);
     if (ret) {
         hccp_err("create cq failed ret %d", ret);
         goto create_cq_err;
