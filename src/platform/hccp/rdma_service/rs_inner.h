@@ -436,6 +436,8 @@ struct RsQpCb {
     unsigned int cqCstmFlag;
 
     struct RsCqeErrInfo cqeErrInfo;
+    unsigned int useResvMem;
+    unsigned int resvMemPoolId;
 };
 
 struct RsCqCreateAttr {
