@@ -26,6 +26,10 @@
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
 #include "ccu_jetty_mgr.h"
 #include "ccu_assist.h"
+#include "hccl_comm_pub.h"
+#include "hcclCommDfx.h"
+#include "task_info.h"
+
 
 namespace hcomm {
 
@@ -885,8 +889,34 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
     return HCCL_SUCCESS;
 }
 
+HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam, const hccl::RankId remoteRankId, bool isMaster = false)
+{
+    u32 taskId {0};
+    u32 streamId {0};
+    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
+    CHK_PTR_NULL(comm == nullptr, HCCL_ERROR("[%s] comm is null, __func__"), HCCL_E_PTR);
+    // 填入remoteRankId
+    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
+
+    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
+        hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), isMaster);
+ 
+    HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
+    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                        const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster)
+                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster)
 {
     if (streamProfilingInfo.empty()) {
         HCCL_INFO("There is no ccu profiling info.");
@@ -914,25 +944,54 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
     }
     // taskParam.ccuDetailInfo = std::make_shared<std::vector<CcuProfilingInfo>>(streamProfilingInfo);
     // HCCL_INFO("Begin to SaveDfxTaskInfo. taskType[%d]", static_cast<int32_t>(TaskParamType::TASK_CCU));
-    // SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster);
+    CHK_RET(SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName)
+{
+    CHK_PTR_NULL(channels);
+    ccuProfilingInfoCache.type           = (uint8_t)CcuProfilinType::CCU_LOOPGROUP_PROFILING;
+    ccuProfilingInfoCache.name           = opName;
+    ccuProfilingInfoCache.reduceOpType   = opType;
+    ccuProfilingInfoCache.inputDataType  = dataType;
+    ccuProfilingInfoCache.outputDataType = outputDataType;
+    ccuProfilingInfoCache.missionId      = GetMissionId();
+    
+    CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
+                                    INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
+    for (u32 i = 0; i < channelNum; i++) {
+        void *channelPtr{nullptr};
+        CHK_RET(HcommChannelGet(channels[i], &channelPtr));
+        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+        CHK_PTR_NULL(channelImpl);
+        ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+        ccuProfilingInfoCache.channelHandle[i] = channels[i];
+    }
+
+    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
+    lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
-                                 HcclDataType outputDataType, HcclReduceOp opType)
+                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName)
 {
-    CHK_RET(AddCcuProfiling(channelHandle.data(), channelHandle.size(), dataType, outputDataType, opType));
+    CHK_RET(AddCcuProfiling(channelHandle.data(), channelHandle.size(), dataType, outputDataType, opType, opName));
     groupOpSizeInfo.push_back(groupInfo);
     return HCCL_SUCCESS;
 }
 
 HcclResult CcuKernel::AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
-                                HcclDataType outputDataType, HcclReduceOp opType)
+                                HcclDataType outputDataType, HcclReduceOp opType, cosnt std::string& opName)
 {
     CHK_PTR_NULL(channels);
-    CHK_RET(AddProfiling(channels, channelNum, dataType, outputDataType, opType));
+    CHK_RET(AddProfilingInfo(channels, channelNum, dataType, outputDataType, opType, opName));
     return HCCL_SUCCESS;
 }
+
+
 
 
 }; // namespace hcomm

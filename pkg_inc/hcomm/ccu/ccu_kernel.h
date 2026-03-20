@@ -82,20 +82,23 @@ public:
     uint32_t    GetInstrId() const;
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
-    HcclResult AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
-                                 HcclDataType outputDataType, HcclReduceOp opType);
-    HcclResult AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
-                                HcclDataType outputDataType, HcclReduceOp opType);
 
     HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
 
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext *context);
 
+    HcclResult AddProfilingInfo(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
+
+    HcclResult AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
+                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
+    HcclResult AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
     HcclResult ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                        const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster);
+                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
 
     HcclResult UpdateChannelIdMap();
     HcclResult GetChannelHandleById(u16 channelId, u64& channelHandle);
@@ -208,6 +211,10 @@ private:
     std::unordered_map<u16, u64> channelHandleToId_;
     std::unordered_map<u64, u16> channelIdToHandle_;
     std::vector<GroupInfo> groupOpSizeInfo;
+
+    CcuProfilingInfo ccuProfilingInfoCache;
+    CcuRep::LoopGroupProfilingInfo lgProfilingInfo;
+    std::vector<std::shared_ptr<CcuRep::CcuRepBase>> allLgProfilingReps;
 };
 
 // kernel构造函数的lambda函数
