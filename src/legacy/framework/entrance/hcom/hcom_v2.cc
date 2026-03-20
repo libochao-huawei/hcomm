@@ -1112,15 +1112,15 @@ HcclResult HcomCheckCommValidityV2(const char *group)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomSupportDeterministicOptimV2(const char *group, const bool &isDeterministicOptim)
+HcclResult HcomSupportDeterministicOptimV2(const char *group, bool &isDeterministicOptim)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
             HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
             HCCL_E_NOT_FOUND);
-    (void)isDeterministicOptim;
-    HCCL_WARNING("HcomSupportDeterministicOptimV2 is not support at A5!");
+    isDeterministicOptim = true;
+    HCCL_INFO("[%s] A5 algo is deterministic by default, set isDeterministicOptim to true.", __func__);
     return HCCL_SUCCESS;
 }
 
