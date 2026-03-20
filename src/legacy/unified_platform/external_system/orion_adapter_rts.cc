@@ -93,6 +93,7 @@ s32 HrtDeviceGetBareTgid()
 {
     s32       pid = 0;
     aclError ret = aclrtDeviceGetBareTgid(&pid);
+    HCCL_ERROR("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
     HCCL_INFO("Call rtDeviceGetBareTgid, return value[%d], rtGet pid[%d].", ret, pid);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Get][BareTgid]errNo[0x%016llx] rtGet pid fail. "

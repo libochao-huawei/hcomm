@@ -332,19 +332,19 @@ std::unique_ptr<RankTableInfo> RankGraphBuilder::GetRankTableInfo()
     return nullptr;
 }
 
-s32 HrtGetDevice()
-{
-    return 1;
-}
-u32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
-{
-    return 1U;
-}
+// s32 HrtGetDevice()
+// {
+//     return 1;
+// }
+// u32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
+// {
+//     return 1U;
+// }
 
-DevType HrtGetDeviceType()
-{
-    return DevType::DEV_TYPE_950;
-}
+// DevType HrtGetDeviceType()
+// {
+//     return DevType::DEV_TYPE_950;
+// }
 
 RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
 {
