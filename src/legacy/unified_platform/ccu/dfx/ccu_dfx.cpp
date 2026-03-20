@@ -19,7 +19,7 @@ using namespace std;
 
 HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
 {
-    return GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo);
+    return GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo, nullptr);
 }
 
 HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu& ccuTaskParam,
