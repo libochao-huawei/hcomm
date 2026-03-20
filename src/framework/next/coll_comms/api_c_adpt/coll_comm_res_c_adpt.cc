@@ -346,7 +346,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    TaskParam taskParam = {
+    Hccl::TaskParam taskParam = {
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
@@ -364,10 +364,9 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         .ccuDetailInfo  = nullptr
     };
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
-    LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    // TODO: 需要一个report接口
-    CHK_RET(kernel->ReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo[0],
-                                        comm, taskParam, rtsThread->GetStream()->GetMaster()));
+
+    CHK_RET(kernel->ReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo,
+                                        comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startut));
