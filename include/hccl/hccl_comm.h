@@ -340,7 +340,8 @@ typedef enum {
     HCCL_OP_EXPANSION_HOST = 2,
     HCCL_OP_EXPANSION_HOST_TS = 3,
     HCCL_OP_EXPANSION_CCU_MS = 4,
-    HCCL_OP_EXPANSION_CCU_SCHED = 5
+    HCCL_OP_EXPANSION_CCU_SCHED = 5,
+    HCCL_OP_EXPANSION_AIV_ONLY = 6
 } HcclOpExpansionMode;
 
 typedef enum {
