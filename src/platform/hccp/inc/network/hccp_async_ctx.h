@@ -36,12 +36,12 @@ struct TpAttr {
 };
 #pragma pack()
 
-struct GetTpCfg {
-    union GetTpCfgFlag flag;
-    enum TransportModeT transMode;
-    union HccpEid localEid;
-    union HccpEid peerEid;
-};
+// struct GetTpCfg {
+//     union GetTpCfgFlag flag;
+//     enum TransportModeT transMode;
+//     union HccpEid localEid;
+//     union HccpEid peerEid;
+// };
 
 /**
  * @ingroup librdma

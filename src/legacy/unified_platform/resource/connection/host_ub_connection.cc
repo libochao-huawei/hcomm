@@ -371,6 +371,7 @@ void HostUbConnection::SetImportInfo()
 
 void HostUbConnection::ReleaseTp()
 {
+    int32_t devLogicId = HrtGetDevice();
     if (tpInfo.tpHandle != 0) {
         (void)TpManager::GetInstance(devLogicId)
             .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
