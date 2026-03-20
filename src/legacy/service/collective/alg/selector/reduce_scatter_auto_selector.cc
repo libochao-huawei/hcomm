@@ -24,6 +24,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     if (topoInfo.levelNum > 1) {
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
         return SelectorStatus::NOT_MATCH;
@@ -107,6 +108,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     // ccu 模式不支持 PROD
     CHK_PRT_RET(op.reduceOp == ReduceOp::PROD,
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] ReduceOp[%s] is not supported yet for ccu schedule mode.",
@@ -201,6 +203,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[ReduceScatterAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -306,6 +309,8 @@ SelectorStatus ReduceScatterAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo
                                                        const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                        std::string &primQueueGenName) const
 {
+    (void)topoInfo;
+    (void)configAlgMap;
     //aiv 模式不支持 PROD
     CHK_PRT_RET(op.reduceOp == ReduceOp::PROD,
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] ReduceOp[%s] is not supported yet for aiv mode.",
