@@ -95,7 +95,7 @@ public:
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
     HcclResult ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                        const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster);
+                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
 
     HcclResult UpdateChannelIdMap();
     HcclResult GetChannelHandleById(u16 channelId, u64& channelHandle);
