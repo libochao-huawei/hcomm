@@ -58,6 +58,12 @@ struct GroupInfo {
     uint16_t residualId;
 };
 
+struct GroupOpConfig {
+    uint32_t msInterleave;
+    uint32_t loopCount;
+    uint64_t memSlice;
+};
+
 class CcuKernel : public CcuRep::CcuRepContext {
 public:
     explicit CcuKernel(const CcuKernelArg &arg);
@@ -78,6 +84,8 @@ public:
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
     void AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
                                  HcclDataType outputDataType, HcclReduceOp opType);
+    void AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType);
 
     HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
 
@@ -87,7 +95,7 @@ public:
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
     HcclResult ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                        const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster);
+                                        const hccl::HcclComm &comm, Hccl::TaskParam &taskParam, bool isMaster);
 
     // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
     // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
@@ -176,6 +184,7 @@ private:
 
 protected:
     std::vector<ChannelHandle> channels_;
+    GroupOpConfig       moConfig{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF};
 
 private:
     template <typename T> T CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord);
