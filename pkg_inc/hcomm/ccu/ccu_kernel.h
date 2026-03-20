@@ -51,7 +51,7 @@
 using CcuKernelHandle = uint64_t;
 
 namespace hcomm {
-    
+
 struct GroupInfo {
     uint16_t loopParamId;
     uint16_t parallelParamId;
@@ -94,7 +94,7 @@ public:
 
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
-    HcclResult ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
+    HcclResult ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
                                         const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster);
 
     HcclResult UpdateChannelIdMap();

@@ -885,7 +885,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
+HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
                                         const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster)
 {
     if (streamProfilingInfo.empty()) {
