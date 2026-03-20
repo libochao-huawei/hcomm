@@ -73,7 +73,7 @@ private:
     static RankId GetRankIdByChannelId(uint16_t channelId, const Hccl::TaskInfo& taskInfo);
     static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(uint16_t channelId, const Hccl::TaskInfo& taskInfo);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
-
+    static HcclResult GetCcuChannelHandleById(u32 deviceId, u16 channelId, const Hccl::TaskInfo &taskInfo, u64& channelHandle);
 
 private:
     bool isRegistered_ {false};
