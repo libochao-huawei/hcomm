@@ -10,19 +10,35 @@ class NdaPcieOps : public NdaBaseVendorOps {
 public:
 
 protected:
-    int BuildOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, WqeEntry *wqe_buf, uint32_t opCode)
+    // 创建xscdv对应Wqe, 并下发
+    int PostWqe(const WqeDesc &desc)
     {
-        HCCL_INFO("[NdaPcieOps::%s] start, loc size[%u]", __func__, loc.GetSize());
-
-        HCCL_INFO("[NdaPcieOps::%s] Hcomm PCIe Build wqe OK", __func__);
         return HCCL_SUCCESS;
     }
 
-    int BuildDoorbell(u64 &dbValue)
+    int PostRecv()
     {
-        HCCL_INFO("[NdaPcieOps::%s] start BuildDoorbell", __func__);
+        return HCCL_SUCCESS;
+    }
 
-        HCCL_INFO("[NdaPcieOps::%s] Hcomm PCIe Build Doorbell OK", __func__);
+    int PollCq(CqeResult &result)
+    {
+        return 0;
+    }
+
+    int BuildDoorbell(u64 &dbVa, u64 &dbValue)
+    {
+        return HCCL_SUCCESS;
+    }
+
+private:
+    int BuildOneWqe()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    int BuildWrite()
+    {
         return HCCL_SUCCESS;
     }
 

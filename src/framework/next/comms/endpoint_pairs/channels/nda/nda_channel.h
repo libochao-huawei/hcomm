@@ -20,23 +20,15 @@ public:
     ~NdaChannel();
 
     // 数据面
-    void NotifyRecord(const uint32_t remoteNotifyIdx, const StreamLite &stream);
-
     void NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
 
     void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream);
 
-    void WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                     const StreamLite &stream);
-
     void WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const uint32_t remoteNotifyIdx,
                          const StreamLite &stream);
 
-    void WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                               uint32_t remoteNotifyIdx, const StreamLite &stream);
-
     // rtsq ring Doorbell
-    void BuildRdmaDbSendTask(const StreamLite &stream, u64 dbValue);
+    void BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue);
 
     // Help build local buffer
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
