@@ -37,7 +37,7 @@ public:
                              ConnectedLinkMgr *linkMgr, InsQuePtr insQue) override;
     HcclResult ExecAiv(const CollAlgOperator &op,
                                           const CollAlgParams   &params,
-                                          LinkData      &sendLinkData,
+                                          LinkData      &recvLinkData,
                                           InsQuePtr              insQue);
     HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit) override;
 private:
