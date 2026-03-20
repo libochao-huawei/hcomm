@@ -79,6 +79,17 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
 HcclResult CcuDeinitFeature(const int32_t devLogicId);
 
 /**
+ * @brief todo
+ *
+ * @param deviceLogicId 设备逻辑ID
+ * @param ccuEngine CCU通信引擎类型
+ * @param resHandle 返回的CCU批量资源句柄
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
+ */
+CcuResult CcuGetDieEnableInfos(int32_t deviceLogicId, std::array<bool, CCU_MAX_IODIE_NUM> &enableInfos);
+
+/**
  * @brief 按CCU实体模式申请批量资源
  *
  * @param deviceLogicId 设备逻辑ID
