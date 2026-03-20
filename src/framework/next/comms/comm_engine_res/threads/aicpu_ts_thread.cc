@@ -285,7 +285,7 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) c
 
     CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
 
-    CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
+    CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamId));
     return HCCL_SUCCESS;
 }
 
