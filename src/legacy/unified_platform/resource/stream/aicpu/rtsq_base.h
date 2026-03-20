@@ -143,8 +143,9 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
-    virtual void RdmaDbSend(const uint64_t &dbValue)
+    virtual void RdmaDbSend(const uint64_t &dbVa, const uint64_t &dbValue)
     {
+        (void)dbVa;
         (void)dbValue;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }

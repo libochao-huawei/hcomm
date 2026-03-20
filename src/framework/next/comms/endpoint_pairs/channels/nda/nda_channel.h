@@ -20,37 +20,15 @@ public:
     ~NdaChannel();
 
     // 数据面
-    void NotifyRecord(const uint32_t remoteNotifyIdx, const StreamLite &stream);
-
-    void NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
+    void NotifyWait(const uint32_t index, const StreamLite &stream);
 
     void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream);
-
-    void WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                     const StreamLite &stream);
 
     void WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const uint32_t remoteNotifyIdx,
                          const StreamLite &stream);
 
-    void WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
-                               uint32_t remoteNotifyIdx, const StreamLite &stream);
-
     // rtsq ring Doorbell
-    void BuildRdmaDbSendTask(const StreamLite &stream, u64 dbValue);
-
-    // Help build local buffer
-    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
-
-private:
-    EndpointHandle endpointHandle_;
-    HcommChannelDesc channelDesc_;
-    CommEngine engine_;
-
-    std::vector<std::unique_ptr<NdaRdmaConnection>> connections_{};
-    std::vector<uint32_t> localDpuNotifyIds_;
-
-    std::vector<SqContext> sqContextList_{};
-    std::vector<CqContext> cqContextList_{};
+    void BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue);
 };
 }   // namespace hcomm
 
