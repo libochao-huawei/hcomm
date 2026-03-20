@@ -9,6 +9,7 @@
  */
 
 #include "hccl_api_base_test.h"
+#include "llt_CcuTransport_stub.h"
 
 #include <iostream>
 
