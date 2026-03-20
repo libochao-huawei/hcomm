@@ -617,18 +617,18 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                     && (!retryEnable_)
                     && !multiModuleDiffDeviceNumMode_;
     
+    if (isSupportAivDeter) {
+        algName = "AllReduceMeshAivFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
             HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
             HCCL_E_NOT_SUPPORT);
 
         algName = "AllReduceOrderPreservedFor91093Executor";
-        HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    if (isSupportAivDeter) {
-        algName = "AllReduceMeshAivFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }
