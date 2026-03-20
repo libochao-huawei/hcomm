@@ -79,6 +79,12 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId)
     return HcclResult::HCCL_SUCCESS;
 }
 
+CcuResult CcuGetDieEnableInfos(int32_t deviceLogicId, std::array<bool, CCU_MAX_IODIE_NUM> &enableInfos)
+{
+    enableInfos = CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
+    return CcuResult::CCU_SUCCESS;
+}
+
 // CCU设备管理对集合通信提供的接口
 CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
     CcuInstanceType ccuInsType, CcuResHandle &resHandle)
