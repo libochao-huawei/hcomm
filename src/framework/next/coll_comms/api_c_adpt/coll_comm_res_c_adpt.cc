@@ -271,8 +271,9 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
     return HcclResult::HCCL_SUCCESS;
 }
 
-static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream)
+static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {
+    taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     constexpr uint32_t defaultTimeOutSec = 120; // 当前未支持从环境变量配置
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
@@ -293,6 +294,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
             constexpr std::size_t TOKEN_VALUE_INDEX = 2; // 与算法约束token index为 2
             if (i == TOKEN_VALUE_INDEX) { continue; }
             HCCL_INFO("[%s] arg[%lu] = %lu", __func__, i, taskInfo.args[i]);
+            taskParam.taskPara.Ccu.costumArgs[i] = taskInfo.args[i];
         }
 
         auto ret = rtCCULaunch(&taskInfo, stream);
@@ -301,6 +303,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
             return HcclResult::HCCL_E_RUNTIME;
         }
     }
+    taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -343,8 +346,28 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     std::vector<hcomm::CcuProfilingInfo> allCcuProfilingInfo;
     CHK_RET(kernel->GetCcuProfilingInfo(*ccuTaskArgs, allCcuProfilingInfo));
-    CHK_RET(LaunchCcuTasks(ccuParams, streamPtr));
+    TaskParam taskParam = {
+        .taskType  = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime   = 0,
+        .isMaster = false,
+        .taskPara  = {
+            .Ccu = {
+                .dieId         = 0,
+                .missionId     = 0,
+                .execMissionId = 0,
+                .instrId       = 0,
+                .costumArgs    = {0},
+                .executeId     = 0
+            }
+        },
+        .ccuDetailInfo  = nullptr
+    };
+    CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
+    LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
     // TODO: 需要一个report接口
+    CHK_RET(kernel->ReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo[0],
+                                        comm, taskParam, rtsThread->GetStream()->GetMaster()));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startut));
