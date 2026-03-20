@@ -317,20 +317,21 @@ bool HostUbConnection::GetTpInfo()
         ThrowAbnormalStatus(std::string(__func__));
     }
     
-    // auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
-    //     {locAddr, rmtAddr, tpProtocol}, tpInfo);
+    int32_t devLogicId = HrtGetDevice();
+    auto ret = TpManager::GetInstance(devLogicId).GetHostTpInfo(
+        {locAddr, rmtAddr, tpProtocol}, tpInfo);
 
-    // switch (ret) {
-    //     case HcclResult::HCCL_SUCCESS:
-    //         GenerateLocalPsn();
-    //         return true;
-    //     case HcclResult::HCCL_E_AGAIN:
-    //         return false;
-    //     case HcclResult::HCCL_E_NOT_FOUND:
-    //     default:
-    //         HCCL_ERROR("[HostUbConnection][%s] failed, hccl result[%d]", __func__, ret);
-    //         ThrowAbnormalStatus(std::string(__func__));
-    // }
+    switch (ret) {
+        case HcclResult::HCCL_SUCCESS:
+            GenerateLocalPsn();
+            return true;
+        case HcclResult::HCCL_E_AGAIN:
+            return false;
+        case HcclResult::HCCL_E_NOT_FOUND:
+        default:
+            HCCL_ERROR("[HostUbConnection][%s] failed, hccl result[%d]", __func__, ret);
+            ThrowAbnormalStatus(std::string(__func__));
+    }
     return true;
 }
 
@@ -370,11 +371,11 @@ void HostUbConnection::SetImportInfo()
 
 void HostUbConnection::ReleaseTp()
 {
-    // if (tpInfo.tpHandle != 0) {
-    //     (void)TpManager::GetInstance(devLogicId)
-    //         .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
-    //     tpInfo.tpHandle = 0;
-    // }
+    if (tpInfo.tpHandle != 0) {
+        (void)TpManager::GetInstance(devLogicId)
+            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
+        tpInfo.tpHandle = 0;
+    }
 }
 
 void HostUbConnection::ReleaseResource()
