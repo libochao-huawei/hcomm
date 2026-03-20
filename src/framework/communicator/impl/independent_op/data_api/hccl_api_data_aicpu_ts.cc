@@ -606,9 +606,27 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
     return HCCL_SUCCESS;
 }
 
+int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
+{
+    HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, channel, dst, src, len);
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     HCCL_DEBUG("[%s] channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, channel, dst, src, len);
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+    uint64_t len, uint32_t remoteNotifyIdx)
+{
+    HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
+        __func__, thread, channel, dst, src, len, remoteNotifyIdx);
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
     return HCCL_E_NOT_SUPPORT;
@@ -619,6 +637,14 @@ int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *sr
 {
     HCCL_DEBUG("[%s] channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
         __func__, channel, dst, src, len, remoteNotifyIdx);
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
+{
+    HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, channel, dst, src, len);
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
     return HCCL_E_NOT_SUPPORT;
@@ -732,11 +758,15 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
-    CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    DevType devType = hcclComm->GetDevType();
-    if (devType != DevType::DEV_TYPE_950){
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
+        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
         CHK_RET(hcclComm->SetDispatcherCtxOnThread());
+    } else {
+        CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
+        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
     }
     return HCCL_SUCCESS;
 }
@@ -762,13 +792,32 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
 int32_t HcommReleaseComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
-    HCCL_INFO("%s success, commId[%s]", __func__, commId);
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
+        HCCL_INFO("[%s] AicpuReleaseCommbyGroup success, commId[%s]", __func__, commId);
+    } else {
+        AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
+        HCCL_INFO("[%s] AicpuReleaseCommMgrbyGroup success, commId[%s]", __func__, commId);
+    }
     return HCCL_SUCCESS;
+}
+
+int32_t HcommFenceOnThread(ThreadHandle thread)
+{
+    HCCL_DEBUG("[%s] thread[0x%llx].", __func__, thread);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 int32_t HcommFlush()
 {
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
+{
+    HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
     return HCCL_E_NOT_SUPPORT;
 }
 

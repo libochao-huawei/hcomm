@@ -27,6 +27,8 @@
 namespace Hccl {
 
 constexpr u32 MAX_ALLTOALLV_MEM_NUM = 64;
+constexpr u32 ALLTOALL_INFO_SIZE = 4;
+constexpr u32 KERNEL_PARAM_BUF_SIZE = 32 * 1024;
 
 class CollServiceAiCpuImpl : public CollServiceBase {
 public:
@@ -71,28 +73,22 @@ private:
     void AllocWorkStream(u32 primQueueNum) const;
     void AllocNotifies(const vector<LinkData> &links);
     void AllocOpMem(const CollOperator &op);
-    void AllocOpMemAlltoAllVC(const CollOperator &op);
-    void AllocOpMemAlltoAllV(const CollOperator &op);
-    void AllocOpMemBatchSendRecv(const CollOperator &op);
     u32 GetRemoteRankIdsHashValue(const CollOperator &op) const;
+    u64 CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize);
+    HcclResult FillBatchSendRecvData(const CollOperator &op);
+    HcclResult FillAllToAllvData(const CollOperator &op);
+    HcclResult FillAllToAllvcData(const CollOperator &op);
 
     std::set<LinkData> availableLinks;
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>>
         collOpLoadedMap; // 集合通信算子资源加载到device侧的内存
     std::unordered_map<std::string, std::shared_ptr<DevBuffer>> 
         aicpuMc2CommResourceMap_;
-    std::vector<std::shared_ptr<DevBuffer>> sendCountsMem{};
-    std::vector<std::shared_ptr<DevBuffer>> recvCountsMem{};
-    std::vector<std::shared_ptr<DevBuffer>> sdisplsMem{};
-    std::vector<std::shared_ptr<DevBuffer>> rdisplsMem{};
-    std::vector<std::shared_ptr<DevBuffer>> sendCountMatrixMem{};
-    std::vector<std::shared_ptr<DevBuffer>> bsrItemsMem{};
 
-    bool isCountMemInited{ false };
-    bool isCountMemInitedAlltoAllVC{ false };
     u32 index{0};
-    u32 indexAlltoAllVC{0};
     std::string curTagKey{};
+    std::shared_ptr<HostBuffer> kernelParamBuf_;
+    u64 dynamicDataSize{0};
 
     std::vector<char> PackOpData(const std::string &opTag, const CollAlgOpReq &req) const;
     std::vector<char> PackAllTransportData() const;

@@ -376,7 +376,6 @@ TEST_F(AllToAllVCTest, alltoallvc_test_910_93_offload_RunAlltoAllDirectFullmesh)
 
 TEST_F(AllToAllVCTest, alltoallvc_test_91093_offload_AlltoAllMeshAivFor91093Executor)
 {
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch, HcclResult(const AivOpArgs&, const AivTopoArgs&,
     const AivResourceArgs&, const AivAlgArgs&, const ExtraArgsV2&,
     AivProfilingInfo&)).stubs().will(returnValue(HCCL_SUCCESS));
