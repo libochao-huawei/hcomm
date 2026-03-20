@@ -290,12 +290,11 @@ template <> class hash<Hccl::PortData> {
 public:
     size_t operator()(const Hccl::PortData &portData) const
     {
-        auto rankIdHash = hash<Hccl::RankId>{}(portData.GetRankId());
         auto typeHash  = hash<uint8_t>{}(portData.GetType());
         auto protoHash = hash<uint8_t>{}(portData.GetProto());
         auto addrHash  = hash<Hccl::IpAddress>{}(portData.GetAddr());
 
-        return Hccl::HashCombine({rankIdHash, addrHash, typeHash, protoHash});
+        return Hccl::HashCombine({addrHash, typeHash, protoHash});
     }
 };
 
@@ -303,7 +302,7 @@ template <> class equal_to<Hccl::PortData> {
 public:
     bool operator()(const Hccl::PortData &p1, const Hccl::PortData &p2) const
     {
-        return p1.GetAddr() == p2.GetAddr() && p1.GetRankId() == p2.GetRankId() && p1.GetType() == p2.GetType()
+        return p1.GetAddr() == p2.GetAddr() && p1.GetType() == p2.GetType()
                && p1.GetProto() == p2.GetProto();
     }
 };
