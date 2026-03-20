@@ -871,8 +871,8 @@ HcclResult HostCpuRoceChannel::ChannelFence()
     std::lock_guard<std::mutex> lock(sendCq_mutex);
     HCCL_INFO("[HostCpuRoceChannel::%s] ChannelFence start, wqeNum_=%u", __func__, wqeNum_);
     if (wqeNum_ == 0) {
-        HCCL_INFO("[HostCpuRoceChannel::%s] no need to fence since no wqenum.", __func__);
         fenceFlag_ = true;
+        HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u].", __func__, wqeNum_);
         return HCCL_SUCCESS;
     }
     std::vector<struct ibv_wc> wc(wqeNum_);
@@ -917,6 +917,7 @@ HcclResult HostCpuRoceChannel::ChannelFence()
 
     wqeNum_ = 0; // 所有的wqe都已经完成，重置计数器
     fenceFlag_ = true;
+    HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u].", __func__, wqeNum_);
     return HCCL_SUCCESS;
 }
 
