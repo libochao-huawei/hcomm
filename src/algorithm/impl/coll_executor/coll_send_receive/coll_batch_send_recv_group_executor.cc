@@ -602,6 +602,7 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& str
         execMem.outputMem = outMem;
         HCCL_INFO("[ProcessRecvStreamDataSlice] DMA Reduce, outMem ptr[%p], size[%llu]", outMem.ptr(), outMem.size());
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);
+
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
             "input_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(),
@@ -609,7 +610,6 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& str
     }
     return HCCL_SUCCESS;
 }
-
 
 u64 CollBatchSendRecvGroupExecutor::CalcSendLoopMaxCount(const u32 unitSize) const
 {
