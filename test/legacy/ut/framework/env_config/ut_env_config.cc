@@ -400,7 +400,7 @@ TEST_F(EnvConfigTest, parse_env_config_hccl_algo_invalid_test_1)
 TEST_F(EnvConfigTest, parse_env_config_HCCL_DETOUR_test)
 {
     EnvDetourConfig        detourCfg;
-    EXPECT_EQ(detourCfg.GetDetourConfig().GetDetourType(), HcclDetourType::HCCL_DETOUR_DISABLE);
+    EXPECT_EQ(detourCfg.GetDetourType(), HcclDetourType::HCCL_DETOUR_DISABLE);
     std::string input = "detour:0";
     EXPECT_EQ(CastDetourType(input), HcclDetourType::HCCL_DETOUR_DISABLE);
     input = "detour:1";
