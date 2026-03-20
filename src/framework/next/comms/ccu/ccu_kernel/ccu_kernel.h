@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "ccu_task_arg_v1.h"
 #include "ccu_task_param_v1.h"
@@ -68,7 +69,7 @@ class CcuKernel : public CcuRep::CcuRepContext {
 public:
     CcuKernel() = default;
     ~CcuKernel() override;
-    HcclResult Init();
+    HcclResult SelectDie();
 
     CcuResReq          GetResourceRequest();
     CcuResRepository  &GetResRepository();
@@ -114,7 +115,7 @@ protected:
     // virtual std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) = 0;
 
     // 使用channel中的Variable
-    HcclResult CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const;
+    HcclResult CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var);
     CcuRep::Variable CreateVariable();
     CcuRep::Variable CreateContinuousVariable();
     CcuRep::LocalAddr CreateLocalAddr();
@@ -201,7 +202,7 @@ private:
     CcuRepResource    res_{};
     CcuResRepository  resRepo_{};
 
-    std::vector<ChannelHandle> channels_;
+    std::unordered_set<ChannelHandle> channels_{};
 
     CcuRep::CcuInstrInfo instrInfo_{};
 
