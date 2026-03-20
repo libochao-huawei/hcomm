@@ -213,7 +213,7 @@ private:
     std::vector<GroupInfo> groupOpSizeInfo;
 
     CcuProfilingInfo ccuProfilingInfoCache;
-    CcuRep::LoopGroupProfilingInfo lgPofilingInfo;
+    CcuRep::LoopGroupProfilingInfo lgProfilingInfo;
     std::vector<std::shared_ptr<CcuRep::CcuRepBase>> allLgProfilingReps;
 };
 
