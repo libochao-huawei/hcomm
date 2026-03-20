@@ -87,11 +87,10 @@ public:
     void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
 
     void AddSqeProfiling(const CcuKernelArg &arg);
-    void AddProfiling(const std::string &name, uint32_t mask);
-    void AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
-    // void AddProfiling(const CcuTransportGroup &transportGroup, const std::string &name, uint32_t signalIndex, uint32_t mask);
-    void AddProfiling(const ChannelHandle *channels, uint32_t channelNum);
-    void AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType, HcclDataType outputDataType,
+    HcclResult AddProfiling(const std::string &name, uint32_t mask);
+    HcclResult AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
+    HcclResult AddProfiling(const ChannelHandle *channels, uint32_t channelNum);
+    HcclResult AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType, HcclDataType outputDataType,
                     HcclReduceOp opType);
 protected:
     std::set<std::string> registeredLoop;
