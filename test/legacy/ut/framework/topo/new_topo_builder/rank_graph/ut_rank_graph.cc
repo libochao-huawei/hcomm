@@ -352,3 +352,10 @@ TEST_F(RankGraphTest, ut_GetEndpointDesc_When_Normal_Expect_SUCCESS)
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+TEST_F(RankGraphTest, ut_AddGroupLinks_When_1pNormal_Expect_SUCCESS) {
+ 	     auto rankGraph = create4pRankGraph(myRank);
+ 	     vector<u32> subRankIds = {0};
+ 	     std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
+ 	     EXPECT_EQ(1, subRankGraph->GetLocalInstSize(0));
+}
