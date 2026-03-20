@@ -469,9 +469,7 @@ bool BaseSelector::Is2DieFullMesh() const
         CHK_PRT_RET(paths.size() == 0 || paths[0].links.size() == 0,
             HCCL_INFO("[BaseSelector][Is2DieFullMesh], Can not find path from Local[%d] to Rmt[%d], in netLayer %u. "
                       "Topo is not mesh",
-                myRank_,
-                rankId,
-                netLayer),
+                myRank_, rankId, netLayer),
             false);
         NetInstance::Link &link = paths[0].links[0];  // 只取第一条路径的第一条link
         std::shared_ptr<NetInstance::ConnInterface> connInterface = link.GetSourceIface();
