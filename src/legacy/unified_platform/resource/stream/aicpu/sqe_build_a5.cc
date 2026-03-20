@@ -313,4 +313,15 @@ void BuildA5SqeCCoreNotifyRecord(u32 streamId, u32 taskId, u64 writeAddr, u64 va
 }
 
 
+<<<<<<< Updated upstream
+=======
+    sqe->awsize                     = RtStarsWriteValueSizeType::RT_STARS_WRITE_VALUE_SIZE_TYPE_32BIT; // writeValue 为 4 byte
+    sqe->writeValuePart[0]          = writeValue; // 写对端Notify时，writeValue应当为1
+
+    sqe->va                         = 1; // 写对端notify的va地址而非phy地址
+
+    HCCL_INFO("P2P WriteValueSqe streamId %u, taskId %u, remoteAddr %llu, writeValue %u",
+        streamId, taskId, remoteAddr, writeValue);
+}
+>>>>>>> Stashed changes
 } // namespace Hccl

@@ -14,6 +14,14 @@
 #include <set>
 #include <mutex>
 #include <utility>
+<<<<<<< Updated upstream
+=======
+#include <map>
+#include <functional>
+#include <thread>
+#include <array>
+#include <vector>
+>>>>>>> Stashed changes
 
 #include "types.h"
 
@@ -39,6 +47,17 @@ private:
     P2PEnableManager(const P2PEnableManager &other) = delete;
 
     P2PEnableManager &operator=(const P2PEnableManager &other) = delete;
+<<<<<<< Updated upstream
+=======
+
+    HcclResult EnableP2P(uint32_t localDeviceLogicID, uint32_t remoteDevicePhysicID);
+    HcclResult WaitP2PEnabled(uint32_t localDeviceLogicID, uint32_t remoteDevicePhysicID);
+    HcclResult WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remoteDevicePhysicID) const;
+    HcclResult DisableP2P(uint32_t localDeviceLogicID, uint32_t remoteDevicePhysicID);
+
+    std::array<std::map<uint32_t, P2PConnectionInfo>, MAX_MODULE_DEVICE_NUM> connectionsInfo_;
+    std::array<std::mutex, MAX_MODULE_DEVICE_NUM> connectionsLock_;
+>>>>>>> Stashed changes
 };
 } // namespace Hccl
 

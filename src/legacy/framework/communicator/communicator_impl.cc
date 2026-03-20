@@ -2736,6 +2736,22 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     return HCCL_SUCCESS;
 }
 
+<<<<<<< Updated upstream
+=======
+bool CommunicatorImpl::IsCommWithPCIEProtocol() const
+{
+    auto links = GetFullMeshLinks();
+    for (auto link : links) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            HCCL_INFO("[CommunicatorImpl][%s]the current communicator has PCIE link", __func__);
+            return true;
+        }
+    }
+    HCCL_INFO("[CommunicatorImpl][%s]the current communicator does not have a PCIE link", __func__);
+    return false;
+}
+
+>>>>>>> Stashed changes
 HcclResult CommunicatorImpl::GetAccelerator(int32_t *accelerator) const
 {
     HcclAccelerator hcclAccelerator{HcclAccelerator::DEFAULT};

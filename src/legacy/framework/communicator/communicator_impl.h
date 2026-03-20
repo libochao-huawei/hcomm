@@ -379,6 +379,11 @@ public:
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
+<<<<<<< Updated upstream
+=======
+    bool IsCommWithPCIEProtocol() const;   // 判断通信域内是否有rank之间存在PCIE链路
+
+>>>>>>> Stashed changes
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
