@@ -31,14 +31,17 @@ HcclResult Sender::run(const std::shared_ptr<Transport> &link, const u64 dstOffs
     if (link->IsSupportTransportWithReduce() && (link->GetLinkType() == LinkType::LINK_STANDARD_ROCE ||
         isSpRdmaReduce)) {
         // 数据发送端执行Write With Reduce操作
+        HCCL_RUN_INFO("[%s] 1", __func__);
         CHK_RET(link->TxWithReduce(dstMemType, dstOffset, src.ptr(), src.size(), dataType_,
             reductionOp_, stream));
     } else if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttribute_)) {
         // link支持inline reduce 并且 reduceAttribute_ 也支持
         // notify 下一个rank做 inline reduce
+        HCCL_RUN_INFO("[%s] 2", __func__);
         CHK_RET(link->TxDataSignal(stream));
     } else {
         // 向下一个节点发送数据
+        HCCL_RUN_INFO("[%s] 3", __func__);
         CHK_RET(link->TxAsync(UserMemType::OUTPUT_MEM, dstOffset, src.ptr(), src.size(), stream));
     }
 
@@ -60,12 +63,17 @@ HcclResult Sender::run(const std::shared_ptr<Transport> &link, const std::vector
     }
 
     if (isSpTransportWithReduce && (linkType == LinkType::LINK_STANDARD_ROCE || isSpRdmaReduce)) {
+        // 数据发送端执行Write With Reduce操作
+        HCCL_RUN_INFO("[%s] 1", __func__);
         CHK_RET(link->TxWithReduce(txMems, dataType_, reductionOp_, stream));
     } else if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttribute_)) {
         // link支持inline reduce 并且 reduceAttribute_ 也支持
         // notify 下一个rank做 inline reduce
+        HCCL_RUN_INFO("[%s] 2", __func__);
         CHK_RET(link->TxDataSignal(stream));
     } else {
+        // 向下一个节点发送数据
+        HCCL_RUN_INFO("[%s] 3", __func__);
         for (TxMemoryInfo& txMem : txMems) {
             txMem.dstMemType = UserMemType::OUTPUT_MEM;
         }

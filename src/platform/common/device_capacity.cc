@@ -127,6 +127,10 @@ bool IsSupportSDMAReduce(const void *inputPtr, const void *outputPtr, HcclDataTy
 
 bool IsSupportRDMAReduce(HcclDataType dataType, HcclReduceOp op)
 {
+    if (SalGetEnv("TEST_SWITCH_DISABLE_RDMA_REDUCE") == "1") {
+        HCCL_RUN_INFO("[TEST_SWITCH_DISABLE_RDMA_REDUCE] Disable rdma reduce");
+        return false;
+    }
     bool checkDataType =
         (dataType == HCCL_DATA_TYPE_FP32 || dataType == HCCL_DATA_TYPE_FP16 || dataType == HCCL_DATA_TYPE_INT8 ||
         dataType == HCCL_DATA_TYPE_INT16 || dataType == HCCL_DATA_TYPE_INT32 || dataType == HCCL_DATA_TYPE_BFP16);
