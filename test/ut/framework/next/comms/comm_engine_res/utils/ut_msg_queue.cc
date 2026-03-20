@@ -87,6 +87,8 @@ TEST_F(TestMsgQueue, Ut_When_MsgQueue_Push_Or_Pop_Uninitialized_Expect_Return_HC
 
 TEST_F(TestMsgQueue, Ut_When_MsgQueue_Empty_On_Normal_Expect_Correct)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -107,6 +109,8 @@ TEST_F(TestMsgQueue, Ut_When_MsgQueue_Empty_On_Normal_Expect_Correct)
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Full_On_Normal_Expect_Correct)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue(2, sizeof(ThreadMsgEntity)); // 容量2, 实际可用容量为1
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -147,6 +151,8 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_GetQueueInfo_On_Normal_Expect_Correct)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -158,6 +164,8 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_GetQueueInfo_On_Normal_Expect_Correct)
 
 TEST_F(TestMsgQueue, Ut_MsgQueue_Multiple_Push_And_Pop_Expect_Correct)
 {
+    MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
     MsgQueue msgQueue(256, sizeof(ThreadMsgEntity));
     HcclResult ret = msgQueue.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);

@@ -64,6 +64,7 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Normal_Init_Register_Kerne
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Register_Duplicate_Expect_Again)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
     ThreadServiceHandle h1 = 0;
@@ -75,6 +76,7 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Register_Duplicate_Expect_
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Unregister_NotFound_Expect_E_NOT_FOUND)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
     EXPECT_EQ(scheduler.ServiceUnregister(0x12345678), HCCL_E_NOT_FOUND);
@@ -82,6 +84,7 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_Unregister_NotFound_Expect
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ExecuteService_NotFound_Expect_E_NOT_FOUND)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
     EXPECT_EQ(scheduler.executeService(0xdeadbeef, nullptr, 0), HCCL_E_NOT_FOUND);
@@ -89,6 +92,8 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ExecuteService_NotFound_Ex
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_EmptyAndStop_Expect_SUCCESS)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::MsgQueue::Push).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtMalloc)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
@@ -118,6 +123,8 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_EmptyAndStop_Ex
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_And_Stop_Expect_SUCCESS)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::MsgQueue::Push).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtMalloc)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
@@ -155,6 +162,8 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_WhenServiceFails_Expect_Fail)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::MsgQueue::Push).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtMalloc)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
@@ -187,6 +196,8 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_Then_Stop_Expect_SUCCESS)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::MsgQueue::Push).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtMalloc)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
@@ -236,6 +247,7 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_
 
 TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_GetSendQueue_ReturnsNonNull)
 {
+    MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
     ServiceScheduler scheduler;
     EXPECT_EQ(scheduler.Init(), HCCL_SUCCESS);
     auto sendQ = scheduler.GetSendQueue();

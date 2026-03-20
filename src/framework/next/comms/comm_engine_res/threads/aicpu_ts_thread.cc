@@ -248,6 +248,7 @@ HcclResult AicpuTsThread::GetThreadEntity(void* &threadEntity)
         return HCCL_E_INTERNAL;
     }
     entity.threadObjAddr = reinterpret_cast<uint64_t>(deviceThreadHandle_);
+    entity.notifyNum = notifyNum_;
 
     ret = aclrtMalloc(&deviceHandle_, sizeof(ThreadEntity), ACL_MEM_MALLOC_NORMAL_ONLY);
     if (ret != ACL_SUCCESS) {
