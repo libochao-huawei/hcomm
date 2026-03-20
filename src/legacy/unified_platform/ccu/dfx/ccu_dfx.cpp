@@ -19,23 +19,17 @@ using namespace std;
 
 HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
 {
-    return GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo, nullptr);
-}
-
-HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu& ccuTaskParam,
-    std::vector<CcuErrorInfo>& errorInfo, void* ccuRepContext)
-{
     TRY_CATCH_RETURN(
         HCCL_RUN_INFO(
-            "[CcuDfx]%s: deviceId[%d], dieId[%u], missionId[%u], execMissionId[%u], executeId[%llu], ccuRepContext[%p].",
+            "[CcuDfx]%s: deviceId[%d], dieId[%u], missionId[%u], execMissionId[%u], executeId[%llu].",
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
-            static_cast<u32>(ccuTaskParam.execMissionId), ccuTaskParam.executeId, ccuRepContext);
+            static_cast<u32>(ccuTaskParam.execMissionId), ccuTaskParam.executeId);
 
         // 入参校验
         CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
             HCCL_ERROR("[CcuDfx][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
 
-        CcuErrorHandler::GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo, ccuRepContext);
+        CcuErrorHandler::GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo);
     );
     return HCCL_SUCCESS;
 }
