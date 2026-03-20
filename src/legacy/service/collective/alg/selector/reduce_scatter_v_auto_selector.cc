@@ -17,6 +17,7 @@ namespace Hccl {
 SelectorStatus ReduceScatterVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[ReduceScatterVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // MS 模式不支持 int8
@@ -70,6 +71,8 @@ SelectorStatus ReduceScatterVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoI
 SelectorStatus ReduceScatterVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[ReduceScatterVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {

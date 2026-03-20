@@ -20,6 +20,8 @@ SelectorStatus AlltoAllVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AlltoAllVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -67,6 +69,8 @@ SelectorStatus AlltoAllVAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AlltoAllVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // 目前只有 InsAlltoAllvMesh 算法
@@ -110,6 +114,8 @@ SelectorStatus AlltoAllVAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AlltoAllVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // aiv 直接走打平 mesh
