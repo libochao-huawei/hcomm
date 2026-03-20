@@ -574,7 +574,7 @@ void TaskExceptionHost::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, co
     PrintCcuErrorLog(errorInfos, taskInfo);
 
     if (missionStatus >= 0x01 && missionStatus <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
-        PrintCcuUbRegisters(static_cast<s32>(deviceId), taskInfo.taskParam_.taskPara.Ccu);
+        PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
     }
 }
 void TaskExceptionHost::PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo)
@@ -587,13 +587,41 @@ void TaskExceptionHost::PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& 
         HCCL_ERROR("[TaskExceptionHost][%s]", GetCcuErrorMsgByType(errorInfo, taskInfo).c_str());
     }
 }
-HcclResult TaskExceptionHost::PrintCcuUbRegisters(s32 devLogicId, const Hccl::ParaCcu &ccuTaskParam)
+HcclResult TaskExceptionHost::PrintCcuUbRegisters(const std::vector<Hccl::CcuErrorInfo>& errorInfos, s32 devLogicId,
+    const Hccl::TaskInfo& taskInfo)
 {
     std::vector<Hccl::CcuJetty *> ccuJettys;
-    HcclResult ret = Hccl::GetCcuJettys(devLogicId, ccuTaskParam, ccuJettys);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("PrintCcuUbRegisters failed");
+
+    for (const Hccl::CcuErrorInfo& errorInfo : errorInfos) {
+        // channelId -> channelHandle
+        u64 channelHandle = INVALID_U64;
+        CHK_RET(GetCcuChannelHandleById(devLogicId, errorInfo.msg.transMem.channelId, taskInfo, channelHandle));
+
+        // channelHandle -> CcuUrmaChannel
+        void *channelPtr{nullptr};
+        CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
+        CHK_PTR_NULL(channelPtr);
+        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+
+        // CcuUrmaChannel -> UrmaEndpoint
+        EndpointHandle locEndPointHandle = channelImpl->GetlocEndPointHandle();
+        void *endpoint{nullptr};
+        CHK_RET(HcommEndpointGet(locEndPointHandle, &endpoint));
+        CHK_PTR_NULL(endpoint);
+        UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
+
+        // UrmaEndpoint -> CcuChannelCtxPool
+        CcuChannelCtxPool *ccuChannelCtxPool = ccuEndpoint->GetCcuChannelCtxPool();
+        CHK_PTR_NULL(ccuChannelCtxPool);
+
+        // CcuChannelCtxPool -> CcuJetty
+        auto channelIdKey = std::make_pair(errorInfo.dieId, errorInfo.msg.transMem.channelId);
+        std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
+        CHK_RET(ccuChannelCtxPool->GetCcuChannelCtxById(channelIdKey, ctx));
+
+        ccuJettys.insert(ccuJettys.end(), ctx.second.begin(), ctx.second.end());
     }
+
     u32 jettyNum = ccuJettys.size();
     std::vector<Hccl::JettyHandle> jettyHandles;
     for (auto &ccuJetty : ccuJettys) {
@@ -606,7 +634,7 @@ HcclResult TaskExceptionHost::PrintCcuUbRegisters(s32 devLogicId, const Hccl::Pa
     for (u32 i = 0; i < jettyNum; ++i) {
         if (jettyStatusVec[i] == Hccl::JettyStatus::ERROR) {
             auto rdmaHandle = ccuJettys[i]->GetRdmaHandle();
-            HCCL_ERROR("PrintCcuUbRegisters jettyId[%u]", ccuJettys[i]->GetJettyId());
+            HCCL_ERROR("[%s]jettyId[%u]", __func__, ccuJettys[i]->GetJettyId());
             PrintUbRegisters(devLogicId, rdmaHandle);
             break;
         }
@@ -972,25 +1000,26 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> TaskExceptionHost::GetAddrPairByChan
     }
     auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
 
-    Hccl::IpAddress locAddr{};
-    Hccl::IpAddress rmtAddr{};
-
+    // 获取locAddr
     EndpointHandle locEndPointHandle = channelImpl->GetlocEndPointHandle();
     void *endpoint{nullptr};
     ret = HcommEndpointGet(locEndPointHandle, &endpoint);
-    // if ()
-    // UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
-    // CHK_PTR_NULL(ccuEndpoint);
-    // const auto &locEndpointDesc = ccuEndpoint->GetEndpointDesc();
+    if (ret != HCCL_SUCCESS || endpoint == nullptr) {
+        HCCL_ERROR("[%s]HcommEndpointGet failed, ret[%d], locEndPointHandle[%p], endpoint[%p], channelId[%u]",
+            __func__, ret, locEndPointHandle, endpoint, channelId);
+        return dummy;
+    }
+    UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
+    const EndpointDesc &locEndpointDesc = ccuEndpoint->GetEndpointDesc();
+    HcclResult locRet = CommAddrToIpAddress(locEndpointDesc.commAddr, dummy.first);
 
-    // HcommChannelDesc remoteChannelDesc = channelImpl->GetChannelDesc();
-    // CHK_RET(CommAddrToIpAddress(locEp.commAddr, locAddr));
-    // CHK_RET(CommAddrToIpAddress(rmtEp.commAddr, rmtAddr));
+    // 获取remoteAddr
+    HcommChannelDesc remoteChannelDesc = channelImpl->GetChannelDesc();
+    HcclResult remRet = CommAddrToIpAddress(remoteChannelDesc.remoteEndpoint.commAddr, dummy.second);
+    HCCL_INFO("[%s]channelId[%u], channelHandle[0x%llx], locRet[%d], locIpAddr[%s], remRet[%d], remIpAddr[%s]",
+        __func__, channelId, channelHandle, locRet, dummy.first.Describe().c_str(),
+        remRet, dummy.second.Describe().c_str());
     return dummy;
-// 1、ccuKernelHandle, channelId -> 双边eid
-// ccuKernelHandle, channelId -> channelHandle -> 
-// remoteEid = (HcommChannelGet) CcuUrmaChannel::channelDesc_.remoteEndpoint.commAddr.eid
-// localEid = locEndpointHandle_-> HcommEndpointGet-> Endpoint -> Endpoint::endpointDesc_ -> Endpoint.commAddr.eid
 }
 
 

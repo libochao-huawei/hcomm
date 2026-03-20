@@ -211,4 +211,14 @@ HcclResult CcuChannelCtxPool::ReleaseConfirmedChannelRes()
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuChannelCtxPool::GetCcuChannelCtxById(const std::pair<uint8_t, uint32_t> &key, CcuChannelCtx& ctx)
+{
+    auto it = channelJettyInfoMap_.find(key);
+    if (it == channelJettyInfoMap_.end()) {
+        HCCL_ERROR("[%s]fail, key[%u, %u] not found", __func__, key.first, key.second);
+        return HCCL_E_NOT_FOUND;
+    }
+    ctx = it->second;
+    return HCCL_SUCCESS;
+}
 } // namespace hcomm
