@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <string>
 #include "hccl/hccl_res.h"
+#include "orion_adapter_hccp.h"
 #include "hcomm_res_defs.h"  // ChannelHandle
 
 #ifdef __cplusplus
@@ -92,7 +93,8 @@ public:
         const HcclChannelDesc& channelDesc,
         ChannelHandle channelHandle,
         int32_t status,
-        uint64_t elapsedMs);
+        uint64_t elapsedMs,
+        Hccl::TlsStatus tlsStatus);
 
     /**
      * @brief 打印 Channel 错误详情（批量）
@@ -113,7 +115,8 @@ public:
         const HcclChannelDesc* channelDescs,
         ChannelHandle* channelHandles,
         int32_t* statusList,
-        int64_t elapsedMs);
+        int64_t elapsedMs,
+        Hccl::TlsStatus tlsStatus);
 
 private:
     // 私有构造函数（静态工具类）

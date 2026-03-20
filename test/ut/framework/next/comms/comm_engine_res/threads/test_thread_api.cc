@@ -962,7 +962,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_A3_Acquire_CpuTsThrea
     EXPECT_EQ(ret, 0);
 }
 
-TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return_HCCL_E_UNAVAIL)
+TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_MAX_Thread_AicpuTsThread_Return_HCCL_E_UNAVAIL)
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
@@ -1000,7 +1000,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_41_AicpuTsThread_Return
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
-TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_Return_HCCL_E_UNAVAIL)
+TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_MAX_Notify_AicpuTsThread_Return_HCCL_E_UNAVAIL)
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
@@ -1034,7 +1034,7 @@ TEST_F(TestHcclThread, Ut_HcclThreadAcquire_When_Acquire_65Notify_AicpuTsThread_
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
-    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 65, &thread);
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_AICPU_TS, 1, 641, &thread);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 }
 
