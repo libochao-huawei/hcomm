@@ -125,11 +125,7 @@ KERNEL_ARGS_CALL, extraArgs
 buffIn, input, output,\
 rank, sendRecvRemoteRank, rankSize, xRankSize, yRankSize, zRankSize, len, dataType, reduceOp, root, \
 inputSliceStride, outputSliceStride, repeatNum, inputRepeatStride, outputRepeatStride, \
-<<<<<<< HEAD
 headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter
-=======
-headCountMem, tailCountMem, addOneMem, counterMemSize, isEnableCounter 
->>>>>>> c44a8d60... add 9
 
 #define SUPERKERNEL_LITE_ARGS_DEF \
 uint64_t args_offset
@@ -473,23 +469,26 @@ __aicore__ inline void AivCommBase::SyncCoreAll(int32_t curTag)
     }
 }
 
-__aicore__ inline void AivCommBase::BarrierAll()
+ __aicore__ inline void AivCommBase::BarrierAll()
 {
     SyncAll<true>();
-    if (GetBlockIdx() == 0) {
-        pipe_barrier(PIPE_ALL);
-        for (int i = 0; i < rankSize_; i++) {
+    int targetRank_ = GetBlockIdx();
+    while (targetRank_ < rankSize_) {
+
             uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
-            Record(i, flag_offset / UB_ALIGN_SIZE, 1);
-        }
-        pipe_barrier(PIPE_ALL);
-        for (int i = 0; i < rankSize_; i++) {
-            uint64_t flag_offset = BASE_FLAG_OFFSET + i * FLAG_SIZE;
+        Record(targetRank_, flag_offset / UB_ALIGN_SIZE, 1);
+        targetRank_ += block_num;
+    }
+    targetRank_ = GetBlockIdx();
+    while (targetRank_ < rankSize_) {
+        uint64_t flag_offset = BASE_FLAG_OFFSET + targetRank_ * FLAG_SIZE;
             WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
             Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
-        }
+        targetRank_ += block_num;
     }
+    SyncAll<true>();
 }
+ 	 
 
 // 为sendRecv单独设计
 __aicore__ inline void AivCommBase::SendRecvBarrierAll(uint32_t myRank, uint32_t remoteRank)
