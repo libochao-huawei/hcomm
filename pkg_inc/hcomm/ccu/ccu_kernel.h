@@ -44,11 +44,13 @@
 #include "ccu_loopcall_v1.h"
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
-#include "ccu_communicator.h"
-#include "task_param.h"
-#include "ccu_ctx.h"
+
 
 using CcuKernelHandle = uint64_t;
+
+namespace Hccl {
+    class TaskParam;
+}
 
 namespace hcomm {
 
@@ -101,7 +103,7 @@ public:
                                         const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
 
     HcclResult UpdateChannelIdMap();
-    HcclResult GetChannelHandleById(u16 channelId, u64& channelHandle);
+    HcclResult GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle);
 
     // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
     // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
@@ -187,7 +189,7 @@ private:
     CcuRep::Address CreateAddress();
     CcuRep::LocalAddr CreateLocalAddr(const CcuRep::Variable &token);
 
-    HcclResult GetChannelIdByHandle(u64 channelHandle, u16& channelId);
+    HcclResult GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId);
 
 protected:
     std::vector<ChannelHandle> channels_;
@@ -208,8 +210,8 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
-    std::unordered_map<u16, u64> channelHandleToId_;
-    std::unordered_map<u64, u16> channelIdToHandle_;
+    std::unordered_map<uint16_t, uint64_t> channelHandleToId_;
+    std::unordered_map<uint64_t, uint16_t> channelIdToHandle_;
     std::vector<GroupInfo> groupOpSizeInfo;
 
     CcuProfilingInfo ccuProfilingInfoCache;
