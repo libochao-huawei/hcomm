@@ -1,8 +1,8 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * This program is free software, you can redistribute it and/or modify it under terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * Please refer to License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
@@ -52,11 +52,11 @@ protected:
         std::cout << "A Test case in SelectorTest TearDown" << std::endl;
     }
 
-    TopoInfo CreateBasicTopoInfo()
+    BaseSelector::TopoInfo CreateBasicTopoInfo()
     {
-        TopoInfo topoInfo;
+        BaseSelector::TopoInfo topoInfo;
         topoInfo.levelNum = 1;
-        topoInfo.level0Shape = Level0Shape::MESH_1D;
+        topoInfo.level0Shape = BaseSelector::Level0Shape::MESH_1D;
         return topoInfo;
     }
 
@@ -85,7 +85,9 @@ protected:
     std::map<OpType, std::vector<HcclAlgoType>> CreateConfigAlgMap()
     {
         std::map<OpType, std::vector<HcclAlgoType>> configAlgMap;
-        configAlgMap[OpType::ALLGATHER] = {HcclAlgoType::HCCL_ALGO_RING};
+        std::vector<HcclAlgoType> algos;
+        algos.push_back(HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+        configAlgMap[OpType::ALLGATHER] = algos;
         return configAlgMap;
     }
 };
@@ -103,7 +105,7 @@ TEST_F(SelectorTest, CollAlgComponentBuilder_SetMainboardId)
 TEST_F(SelectorTest, AllGatherAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     AllGatherAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
     std::string primQueueGenName;
@@ -116,7 +118,7 @@ TEST_F(SelectorTest, AllGatherAutoSelector_SelectCcuMsAlgo_UnusedParams)
 TEST_F(SelectorTest, AllGatherAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     AllGatherAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
     std::string primQueueGenName;
@@ -129,7 +131,7 @@ TEST_F(SelectorTest, AllGatherAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, AllGatherAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     AllGatherAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
     std::string primQueueGenName;
@@ -142,7 +144,7 @@ TEST_F(SelectorTest, AllGatherAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, AllGatherAutoSelector_SelectAivAlgo_UnusedParams)
 {
     AllGatherAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
     std::string primQueueGenName;
@@ -155,7 +157,7 @@ TEST_F(SelectorTest, AllGatherAutoSelector_SelectAivAlgo_UnusedParams)
 TEST_F(SelectorTest, AllGatherVAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     AllGatherVAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
     std::string primQueueGenName;
@@ -168,7 +170,7 @@ TEST_F(SelectorTest, AllGatherVAutoSelector_SelectCcuMsAlgo_UnusedParams)
 TEST_F(SelectorTest, AllGatherVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     AllGatherVAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
     std::string primQueueGenName;
@@ -181,7 +183,7 @@ TEST_F(SelectorTest, AllGatherVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, AllReduceAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     AllReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLREDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -195,7 +197,7 @@ TEST_F(SelectorTest, AllReduceAutoSelector_SelectCcuMsAlgo_UnusedParams)
 TEST_F(SelectorTest, AllReduceAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     AllReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLREDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -209,7 +211,7 @@ TEST_F(SelectorTest, AllReduceAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, AllReduceAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     AllReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLREDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -223,7 +225,7 @@ TEST_F(SelectorTest, AllReduceAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, AllReduceAutoSelector_SelectAivAlgo_UnusedParams)
 {
     AllReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLREDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -237,7 +239,7 @@ TEST_F(SelectorTest, AllReduceAutoSelector_SelectAivAlgo_UnusedParams)
 TEST_F(SelectorTest, AlltoAllAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     AlltoAllAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLTOALL;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -251,7 +253,7 @@ TEST_F(SelectorTest, AlltoAllAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, AlltoAllAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     AlltoAllAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLTOALL;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -265,7 +267,7 @@ TEST_F(SelectorTest, AlltoAllAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, AlltoAllAutoSelector_SelectAivAlgo_UnusedParams)
 {
     AlltoAllAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLTOALL;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -279,7 +281,7 @@ TEST_F(SelectorTest, AlltoAllAutoSelector_SelectAivAlgo_UnusedParams)
 TEST_F(SelectorTest, AlltoAllVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     AlltoAllVAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLTOALLV;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -293,7 +295,7 @@ TEST_F(SelectorTest, AlltoAllVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, AlltoAllVAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     AlltoAllVAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLTOALLV;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -307,7 +309,7 @@ TEST_F(SelectorTest, AlltoAllVAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, AlltoAllVAutoSelector_SelectAivAlgo_UnusedParams)
 {
     AlltoAllVAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLTOALLV;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -321,7 +323,7 @@ TEST_F(SelectorTest, AlltoAllVAutoSelector_SelectAivAlgo_UnusedParams)
 TEST_F(SelectorTest, AlltoAllVCAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     AlltoAllVCAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::ALLTOALLVC;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -335,7 +337,7 @@ TEST_F(SelectorTest, AlltoAllVCAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, BroadcastAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     BroadcastAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::BROADCAST;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -349,7 +351,7 @@ TEST_F(SelectorTest, BroadcastAutoSelector_SelectCcuMsAlgo_UnusedParams)
 TEST_F(SelectorTest, BroadcastAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     BroadcastAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::BROADCAST;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -363,7 +365,7 @@ TEST_F(SelectorTest, BroadcastAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, BroadcastAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     BroadcastAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::BROADCAST;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -377,7 +379,7 @@ TEST_F(SelectorTest, BroadcastAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, BroadcastAutoSelector_SelectAivAlgo_UnusedParams)
 {
     BroadcastAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::BROADCAST;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -391,7 +393,7 @@ TEST_F(SelectorTest, BroadcastAutoSelector_SelectAivAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     ReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -405,7 +407,7 @@ TEST_F(SelectorTest, ReduceAutoSelector_SelectCcuMsAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     ReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -419,7 +421,7 @@ TEST_F(SelectorTest, ReduceAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     ReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -433,7 +435,7 @@ TEST_F(SelectorTest, ReduceAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceAutoSelector_SelectAivAlgo_UnusedParams)
 {
     ReduceAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCE;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -447,7 +449,7 @@ TEST_F(SelectorTest, ReduceAutoSelector_SelectAivAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     ReduceScatterAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCESCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -461,7 +463,7 @@ TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectCcuMsAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     ReduceScatterAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCESCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -475,7 +477,7 @@ TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectCcuScheduleAlgo_UnusedParam
 TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     ReduceScatterAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCESCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -489,7 +491,7 @@ TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectAivAlgo_UnusedParams)
 {
     ReduceScatterAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCESCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -503,7 +505,7 @@ TEST_F(SelectorTest, ReduceScatterAutoSelector_SelectAivAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceScatterVAutoSelector_SelectCcuMsAlgo_UnusedParams)
 {
     ReduceScatterVAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCESCATTERV;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -517,7 +519,7 @@ TEST_F(SelectorTest, ReduceScatterVAutoSelector_SelectCcuMsAlgo_UnusedParams)
 TEST_F(SelectorTest, ReduceScatterVAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     ReduceScatterVAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::REDUCESCATTERV;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -531,7 +533,7 @@ TEST_F(SelectorTest, ReduceScatterVAutoSelector_SelectCcuScheduleAlgo_UnusedPara
 TEST_F(SelectorTest, ScatterAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 {
     ScatterAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::SCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -545,7 +547,7 @@ TEST_F(SelectorTest, ScatterAutoSelector_SelectCcuScheduleAlgo_UnusedParams)
 TEST_F(SelectorTest, ScatterAutoSelector_SelectAicpuAlgo_UnusedParams)
 {
     ScatterAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::SCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
@@ -559,7 +561,7 @@ TEST_F(SelectorTest, ScatterAutoSelector_SelectAicpuAlgo_UnusedParams)
 TEST_F(SelectorTest, ScatterAutoSelector_SelectAivAlgo_UnusedParams)
 {
     ScatterAutoSelector selector;
-    TopoInfo topoInfo = CreateBasicTopoInfo();
+    BaseSelector::TopoInfo topoInfo = CreateBasicTopoInfo();
     CollAlgOperator op = CreateBasicCollAlgOperator();
     op.opType = OpType::SCATTER;
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
