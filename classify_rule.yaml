@@ -15,11 +15,7 @@ hcomm:
       - src
       - include
     unrelease:
-      - src/legacy/framework/device_mode/
-      - src/legacy/framework/service/
       - src/legacy/service/collective/alg/
-      - src/legacy/unified_platform/resource/notify/
-      - src/legacy/unified_platform/resource/transport/
   llt:
     ut_check: true
     st_check: false
