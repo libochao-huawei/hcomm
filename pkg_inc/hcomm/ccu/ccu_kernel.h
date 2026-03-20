@@ -46,10 +46,17 @@
 #include "ccu_assist_pub.h"
 #include "ccu_communicator.h"
 #include "task_param.h"
+#include "ccu_ctx.h"
 
 using CcuKernelHandle = uint64_t;
 
 namespace hcomm {
+    
+struct GroupInfo {
+    uint16_t loopParamId;
+    uint16_t parallelParamId;
+    uint16_t residualId;
+};
 
 class CcuKernel : public CcuRep::CcuRepContext {
 public:
@@ -69,6 +76,8 @@ public:
     uint32_t    GetInstrId() const;
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
+    void AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
+                                 HcclDataType outputDataType, HcclReduceOp opType);
 
     HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
 
@@ -79,9 +88,13 @@ public:
 
     HcclResult ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
                                         const Hccl::CommunicatorImpl &comm, Hccl::TaskParam &taskParam, bool isMaster);
-    
+
     HcclResult UpdateChannelIdMap();
     HcclResult GetChannelHandleById(u16 channelId, u64& channelHandle);
+
+    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
+    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
+    //                              DataType outputDataType, ReduceOp opType);
 protected:
     // 子类实现
     virtual HcclResult Algorithm() = 0;
@@ -183,9 +196,13 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
+<<<<<<< master
 
     std::unordered_map<u16, u64> channelHandleToId_;
     std::unordered_map<u64, u16> channelIdToHandle_;
+=======
+    std::vector<GroupInfo> groupOpSizeInfo;
+>>>>>>> master
 };
 
 // kernel构造函数的lambda函数

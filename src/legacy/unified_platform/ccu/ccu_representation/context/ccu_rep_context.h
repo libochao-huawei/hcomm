@@ -70,6 +70,7 @@ public:
     std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>> GetDependencyInfo(uint32_t id);
     void ClearDependencyInfo();
 
+
 protected:
     std::set<std::string> registeredLoop;
 
