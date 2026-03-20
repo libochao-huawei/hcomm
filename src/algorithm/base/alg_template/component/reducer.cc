@@ -52,6 +52,8 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
     if (link->IsSupportTransportWithReduce() && (RDMA_REDUCE_BITMASK & reduceAttribute_)) {
         // 数据接收端执行接收动作
         // RDMA的RxAsync不需要接收端内存信息
+        
+        HCCL_RUN_INFO("[%s] 1", __func__);
         CHK_RET(link->RxAsync(UserMemType::INPUT_MEM, remoteMemOffset, localDst.ptr(), localDst.size(), stream));
         if (link->GetSupportDataReceivedAck()) {
             CHK_RET(link->DataReceivedAck(stream));
@@ -64,12 +66,19 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
                 ret);
         }
     } else if (link->IsSupportTransportWithReduce() && link->GetLinkType() == LinkType::LINK_STANDARD_ROCE) {
+        // 数据接收端执行接收动作
+        // RDMA的RxWithReduce需要接收端内存信息
+        
+        HCCL_RUN_INFO("[%s] 2", __func__);
         u64 dataCount = localDst.size() / SIZE_TABLE[dataType_];
         DeviceMem &reduceSrc = (localSrc == localDst) ? remoteRcvTemp : localSrc;
         CHK_RET(link->RxWithReduce(srcMemType, remoteMemOffset, remoteRcvTemp.ptr(), dataBytes,
             reduceSrc.ptr(), localDst.ptr(), dataCount, dataType_, reductionOp_, stream, reduceAttribute_));
     } else if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttribute_)) {
-        //  runtime 的inline reduce 接口参数为数据的字节长度
+        // link支持inline reduce 并且 reduceAttribute_ 也支持
+        // notify 下一个rank做 inline reduce
+        
+        HCCL_RUN_INFO("[%s] 3", __func__);
         CHK_RET(link->RxDataSignal(stream));
         void *remoteMem = nullptr;
         CHK_RET(link->GetRemoteMem(srcMemType, &remoteMem));
@@ -92,6 +101,7 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
         }
     } else {
         // 从上一个节点接收数据
+        HCCL_RUN_INFO("[%s] 4", __func__);
         ret = link->RxAsync(UserMemType::INPUT_MEM, remoteMemOffset, remoteRcvTemp.ptr(), dataBytes, stream);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Reducer][Run]rx_sync remoteRcvTemp[%p] offset[%llu] size[%llu] "
@@ -161,6 +171,8 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
     if (isSpTransportWithReduce && isSpRdmaReduce) {
         // 数据接收端执行接收动作
         // RDMA的RxAsync不需要接收端内存信息
+        
+        HCCL_RUN_INFO("[%s] 1", __func__);
         std::vector<RxMemoryInfo> rxMems;
         CHK_RET(PrepareRxMems(reducerMems, rxMems));
         CHK_RET(link->RxAsync(rxMems, stream));
@@ -179,12 +191,20 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
         }
         CHK_RET(postSync_());
     } else if (isSpTransportWithReduce && (linkType == LinkType::LINK_STANDARD_ROCE)) {
+        // 数据接收端执行接收动作
+        // RDMA的RxWithReduce需要接收端内存信息
+        
+        HCCL_RUN_INFO("[%s] 2", __func__);
         std::vector<RxWithReduceMemoryInfo> rxWithReduceMems;
         CHK_RET(PrepareRxWithReduceMems(reducerMems, rxWithReduceMems));
         CHK_RET(preSync_());
         CHK_RET(link->RxWithReduce(rxWithReduceMems, dataType_, reductionOp_, stream, reduceAttribute_));
         CHK_RET(postSync_());
-    } else if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttribute_)) {
+    } else if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttribute_)) {    
+        // link支持inline reduce 并且 reduceAttribute_ 也支持
+        // notify 下一个rank做 inline reduce
+        
+        HCCL_RUN_INFO("[%s] 3", __func__);
         CHK_RET(link->RxDataSignal(stream));
         void *remoteMem = nullptr;
         CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteMem));
@@ -207,6 +227,8 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
         }
         CHK_RET(postSync_());
     } else {
+        // 从上一个节点接收数据
+        HCCL_RUN_INFO("[%s] 4", __func__);
         std::vector<RxMemoryInfo> rxMems;
         CHK_RET(PrepareRxMems(reducerMems, rxMems));
         std::vector<RxWithReduceMemoryInfo> rxWithReduceMems;
