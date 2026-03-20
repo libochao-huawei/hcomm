@@ -1087,13 +1087,7 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
     HCCL_INFO("[HrtRaUbCtxInit] wzh checkpoint2");
 
     RdmaHandle handle;
-    s32 ret = 100;
-    try{
-        ret = RaCtxInit(&initCfg, &ctxInfo, &handle);
-    }
-    catch(...){
-        HCCL_INFO("[HrtRaUbCtxInit] wzh checkpoint5");
-    }
+    s32 ret = RaCtxInit(&initCfg, &ctxInfo, &handle);
     HCCL_INFO("[HrtRaUbCtxInit] wzh checkpoint3");
     if (ret != 0) {
         string msg = StringFormat(
