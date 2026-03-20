@@ -30,11 +30,14 @@
 #include "hcclCommDfx.h"
 #include "task_info.h"
 
+#include "task_param.h"
+#include "ccu_ctx.h"
+
 
 namespace hcomm {
 
-constexpr u32 TOKEN_VALUE_INDEX = 2;
-constexpr u16 INVALID_U16 = 65535;
+constexpr uint32_t TOKEN_VALUE_INDEX = 2;
+constexpr uint16_t INVALID_U16 = 65535;
 
 template <typename T> T CcuKernel::CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
 {
@@ -762,8 +765,8 @@ void DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo)
 HcclResult CcuKernel::UpdateChannelIdMap()
 {
     for (auto it : channelHandleToId_) {
-        u64 channelHandle = it.first;
-        u16 channelId = INVALID_U16;
+        uint64_t channelHandle = it.first;
+        uint16_t channelId = INVALID_U16;
         CHK_RET(GetChannelIdByHandle(channelHandle, channelId));
         channelHandleToId_[channelHandle] = channelId;
         channelIdToHandle_[channelId] = channelHandle;
@@ -772,7 +775,7 @@ HcclResult CcuKernel::UpdateChannelIdMap()
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::GetChannelHandleById(u16 channelId, u64& channelHandle)
+HcclResult CcuKernel::GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle)
 {
     auto it = channelIdToHandle_.find(channelId);
     CHK_PRT_RET(it == channelIdToHandle_.end(),
@@ -781,7 +784,7 @@ HcclResult CcuKernel::GetChannelHandleById(u16 channelId, u64& channelHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::GetChannelIdByHandle(u64 channelHandle, u16& channelId)
+HcclResult CcuKernel::GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId)
 {
     void *channelPtr{nullptr};
     CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
@@ -891,10 +894,10 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
 
 HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam, const hccl::RankId remoteRankId, bool isMaster = false)
 {
-    u32 taskId {0};
-    u32 streamId {0};
+    uint32_t taskId {0};
+    uint32_t streamId {0};
     Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
-    CHK_PTR_NULL(comm == nullptr, HCCL_ERROR("[%s] comm is null, __func__"), HCCL_E_PTR);
+    CHK_PTR_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null, __func__"), HCCL_E_PTR);
     // 填入remoteRankId
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -961,7 +964,7 @@ HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t c
     
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
                                     INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
-    for (u32 i = 0; i < channelNum; i++) {
+    for (uint32_t i = 0; i < channelNum; i++) {
         void *channelPtr{nullptr};
         CHK_RET(HcommChannelGet(channels[i], &channelPtr));
         auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
