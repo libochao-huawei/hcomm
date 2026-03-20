@@ -19,6 +19,9 @@
 #include "task_param.h"
 #include "ccu_rep_type.h"
 #include "ccu_kernel_mgr.h"
+#include "hcomm_c_adpt.h"
+#include "ccu_urma_channel.h"
+#include "orion_adpt_utils.h"
 
 namespace hcomm {
 
@@ -888,52 +891,107 @@ string TaskExceptionHost::GetCcuErrorMsgByType(const Hccl::CcuErrorInfo& ccuErro
     }
 }
 
-// RankId TaskExceptionHost::GetRankIdByChannelId(uint16_t channelId, const Hccl::TaskInfo &taskInfo)
-// {
-//     if (taskInfo.taskParam_.taskType != Hccl::TaskParamType::TASK_CCU) {
-//         HCCL_ERROR("[TaskException][%s]Get RankId failed, task type error.", __func__);
-//         return INVALID_RANKID;
-//     }
-//     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-//         HCCL_ERROR("[TaskException][%s]Get RankId failed, communicator is nullptr.", __func__);
-//         return INVALID_RANKID;
-//     }
-//     const Hccl::CommunicatorImpl* communicator = (Hccl::CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
-//     auto* collServiceBase = communicator->GetCcuCollService();
-//     if (collServiceBase == nullptr) {
-//         HCCL_ERROR("[TaskException][%s]Failed to get collService from communicator.", __func__);
-//         return INVALID_RANKID;
-//     }
-//     auto         *collServiceCcu = static_cast<CollServiceDeviceMode *>(collServiceBase);
-//     const uint8_t dieId          = taskInfo.taskParam_.taskPara.Ccu.dieId;
-//     return collServiceCcu->GetCcuInsPreprocessor()->GetCcuComm()->GetCcuJettyMgr()->GetRemoteRankIdByChannelId(
-//         dieId, channelId);
-// }
+HcclResult TaskExceptionHost::GetCcuChannelHandleById(u32 deviceId, u16 channelId, const Hccl::TaskInfo &taskInfo,
+    u64& channelHandle)
+{
+    u64 ccuKernelHandle = taskInfo.taskParam_.taskPara.Ccu.ccuKernelHandle;
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
+    auto *kernel = kernelMgr.GetKernel(ccuKernelHandle);
+    if (kernel == nullptr) {
+        HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]", __func__, deviceId, ccuKernelHandle);
+        return HCCL_E_PARA;
+    }
+    
+    if (kernel->GetChannelHandleById(channelId, channelHandle) != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]GetChannelHandleById fail, channelId[%u], channelHandle[0x%llx]", __func__, channelId, channelHandle);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
 
-// std::pair<Hccl::IpAddress, Hccl::IpAddress> TaskExceptionHost::GetAddrPairByChannelId(uint16_t        channelId,
-//                                                                              const Hccl::TaskInfo &taskInfo)
-// {
-//     std::pair<Hccl::IpAddress, Hccl::IpAddress> dummy = {Hccl::IpAddress(), Hccl::IpAddress()};
-//     if (taskInfo.taskParam_.taskType != Hccl::TaskParamType::TASK_CCU) {
-//         HCCL_ERROR("[TaskException][%s]Get AddrPair failed, task type error[%s]", __func__,
-//                    taskInfo.taskParam_.Describe().c_str());
-//         return dummy;
-//     }
-//     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
-//         HCCL_ERROR("[TaskException][%s]Get AddrPair failed, communicator is nullptr.", __func__);
-//         return dummy;
-//     }
-//     const Hccl::CommunicatorImpl *communicator    = (Hccl::CommunicatorImpl *)taskInfo.dfxOpInfo_->comm_;
-//     auto                   *collServiceBase = communicator->GetCcuCollService();
-//     if (collServiceBase == nullptr) {
-//         HCCL_ERROR("[TaskException][%s]Failed to get collService from communicator.", __func__);
-//         return dummy;
-//     }
-//     auto         *collServiceCcu = static_cast<Hccl::CollServiceDeviceMode *>(collServiceBase);
-//     const uint8_t dieId          = taskInfo.taskParam_.taskPara.Ccu.dieId;
-//     return collServiceCcu->Hccl::HGetCcuInsPreprocessor()->Hccl::GetCcuComm()->Hccl::GetCcuJettyMgr()->Hccl::GetAddrPairByChannelId(
-//         dieId, channelId);
-// }
+RankId TaskExceptionHost::GetRankIdByChannelId(uint16_t channelId, const Hccl::TaskInfo &taskInfo)
+{
+    if (taskInfo.taskParam_.taskType != Hccl::TaskParamType::TASK_CCU) {
+        HCCL_ERROR("[%s]taskType[%s] is not CCU.", __func__, taskInfo.taskParam_.taskType.Describe().c_str());
+        return INVALID_UINT;
+    }
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[%s]dfxOpInfo[%p] or comm is nullptr.", __func__, taskInfo.dfxOpInfo_);
+        return INVALID_UINT;
+    }
+
+    u32 deviceId = 0; // zjwTODO: 临时打桩
+    u64 channelHandle = INVALID_U64;
+    if (GetCcuChannelHandleById(deviceId, channelId, taskInfo, channelHandle) != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]GetCcuChannelHandleById fail, deviceId[%u], channelId[%u], channelHandle[0x%llx]",
+            __func__, deviceId, channelId, channelHandle);
+        return INVALID_UINT;
+    }
+
+    hccl::CollComm *collComm = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
+    u32 remoteRank = INVALID_UINT;
+    if (hccl::HcclCommDfx::GetChannelRemoteRankId(collComm->GetCommId(), channelHandle, remoteRank) != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]GetChannelRemoteRankId fail, channelHandle[0x%llx], commId[%s]",
+            __func__, channelHandle, collComm->GetCommId().c_str());
+        return INVALID_UINT;
+    }
+
+    HCCL_INFO("[%s]channelId[%u], deviceId[%u], channelHandle[0x%llx], commId[%s], remoteRank[%u]",
+        __func__, channelId, deviceId, channelHandle, collComm->GetCommId().c_str(), remoteRank);
+    return remoteRank;
+}
+
+std::pair<Hccl::IpAddress, Hccl::IpAddress> TaskExceptionHost::GetAddrPairByChannelId(uint16_t channelId,
+    const Hccl::TaskInfo &taskInfo)
+{
+    std::pair<Hccl::IpAddress, Hccl::IpAddress> dummy = {Hccl::IpAddress(), Hccl::IpAddress()};
+    if (taskInfo.taskParam_.taskType != Hccl::TaskParamType::TASK_CCU) {
+        HCCL_ERROR("[TaskException][%s]Get AddrPair failed, task type error[%s]", __func__,
+                   taskInfo.taskParam_.Describe().c_str());
+        return dummy;
+    }
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[TaskException][%s]Get AddrPair failed, communicator is nullptr.", __func__);
+        return dummy;
+    }
+
+    u32 deviceId = 0; // zjwTODO: 临时打桩
+    u64 channelHandle = INVALID_U64;
+    if (GetCcuChannelHandleById(deviceId, channelId, taskInfo, channelHandle) != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]GetCcuChannelHandleById fail, deviceId[%u], channelId[%u], channelHandle[0x%llx]",
+            __func__, deviceId, channelId, channelHandle);
+        return dummy;
+    }
+
+    void *channelPtr{nullptr};
+    HcclResult ret = HcommChannelGet(channelHandle, &channelPtr);
+    if (ret != HCCL_SUCCESS || channelPtr == nullptr) {
+        HCCL_ERROR("[%s]HcommChannelGet failed, ret[%d], channelHandle[0x%llx], channelPtr[%p]",
+            __func__, ret, channelHandle, channelPtr);
+        return dummy;
+    }
+    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+
+    Hccl::IpAddress locAddr{};
+    Hccl::IpAddress rmtAddr{};
+
+    EndpointHandle locEndPointHandle = channelImpl->GetlocEndPointHandle();
+    void *endpoint{nullptr};
+    ret = HcommEndpointGet(locEndPointHandle, &endpoint);
+    // if ()
+    // UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
+    // CHK_PTR_NULL(ccuEndpoint);
+    // const auto &locEndpointDesc = ccuEndpoint->GetEndpointDesc();
+
+    // HcommChannelDesc remoteChannelDesc = channelImpl->GetChannelDesc();
+    // CHK_RET(CommAddrToIpAddress(locEp.commAddr, locAddr));
+    // CHK_RET(CommAddrToIpAddress(rmtEp.commAddr, rmtAddr));
+    return dummy;
+// 1、ccuKernelHandle, channelId -> 双边eid
+// ccuKernelHandle, channelId -> channelHandle -> 
+// remoteEid = (HcommChannelGet) CcuUrmaChannel::channelDesc_.remoteEndpoint.commAddr.eid
+// localEid = locEndpointHandle_-> HcommEndpointGet-> Endpoint -> Endpoint::endpointDesc_ -> Endpoint.commAddr.eid
+}
 
 
 } // namespace Hccl
