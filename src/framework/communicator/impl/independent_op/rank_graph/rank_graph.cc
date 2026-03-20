@@ -71,7 +71,6 @@ HcclResult RankGraphV1::BuildRankGraphInfo(const RankInfo_t &rankItem,
             point.commAddr.type = COMM_ADDR_TYPE_IP_V4;
             point.commAddr.addr = addr.GetBinaryAddress().addr;
         }
-        point.commAddr.id = rankItem.rankId;
         point.protocol = protocol;
         point.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
         point.loc.device.devPhyId = rankItem.deviceInfo.devicePhyId;
@@ -271,11 +270,10 @@ void RankGraphV1::PrintLinksInfo(CommLink &link) const
         link.header.version, link.header.magicWord, link.header.size, link.header.reserved);
 
     // 打印【源端】srcEndpointDesc 完整信息
-    HCCL_INFO("[RankGraphV1][%s] srcProtocol[%d] srcCommAddrType[%d] srcCommAddrId[%u] srcLocType[%d] srcDevPhyId[%u] "
+    HCCL_INFO("[RankGraphV1][%s] srcProtocol[%d] srcCommAddrType[%d] srcLocType[%d] srcDevPhyId[%u] "
         "srcSuperDevId[%u] srcServerIdx[%u] srcSuperPodIdx[%u]", __func__,
         link.srcEndpointDesc.protocol,
         link.srcEndpointDesc.commAddr.type,
-        link.srcEndpointDesc.commAddr.id,
         link.srcEndpointDesc.loc.locType,
         link.srcEndpointDesc.loc.device.devPhyId,
         link.srcEndpointDesc.loc.device.superDevId,
@@ -283,11 +281,10 @@ void RankGraphV1::PrintLinksInfo(CommLink &link) const
         link.srcEndpointDesc.loc.device.superPodIdx);
 
     // 打印【目的端】dstEndpointDesc 完整信息
-    HCCL_INFO("[RankGraphV1][%s] dstProtocol[%d] dstCommAddrType[%d] dstCommAddrId[%u] dstLocType[%d] dstDevPhyId[%u] "
+    HCCL_INFO("[RankGraphV1][%s] dstProtocol[%d] dstCommAddrType[%d] dstLocType[%d] dstDevPhyId[%u] "
         "dstSuperDevId[%u] dstServerIdx[%u] dstSuperPodIdx[%u]", __func__,
         link.dstEndpointDesc.protocol,
         link.dstEndpointDesc.commAddr.type,
-        link.dstEndpointDesc.commAddr.id,
         link.dstEndpointDesc.loc.locType,
         link.dstEndpointDesc.loc.device.devPhyId,
         link.dstEndpointDesc.loc.device.superDevId,
