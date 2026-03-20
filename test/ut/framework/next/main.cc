@@ -16,7 +16,7 @@
 #include "llt_hccl_stub_pub.h"
 GTEST_API_ int main(int argc, char **argv) {
     printf("Running hccl_api_single_thread_test\n");
-    // testing::GTEST_FLAG(filter) = "TestHcclThread*";
+    testing::GTEST_FLAG(filter) = "TestServiceScheduler*";
     testing::InitGoogleTest(&argc, argv);
     setenv("HCCL_DEBUG_CONFIG", "alg", 1);
     setenv("HCCL_DFS_CONFIG", "connection_fault_detction_time:0", 1);

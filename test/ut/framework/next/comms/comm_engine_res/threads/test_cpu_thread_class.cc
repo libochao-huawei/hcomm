@@ -41,6 +41,13 @@ drvError_t halSvmUnregister(uint32_t dev_id, uint64_t va, uint64_t size, uint64_
 
 TEST_F(TestCpuThread, Ut_MemNotify_When_UB_Alloc_Wait_Expect_Success)
 {
+    // Mock(UB path)
+    int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_UB;
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&mockConnectType))
+        .will(returnValue(HCCL_SUCCESS));
+    
     hccl::MemNotify memNotify;
     HcclResult ret = memNotify.Alloc();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -54,6 +61,13 @@ TEST_F(TestCpuThread, Ut_MemNotify_When_UB_Alloc_Wait_Expect_Success)
 
 TEST_F(TestCpuThread, Ut_MemNotify_When_UB_Wait_Timeout_Expect_Fail)
 {
+    // Mock(UB path)
+    int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_UB;
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&mockConnectType))
+        .will(returnValue(HCCL_SUCCESS));
+
     hccl::MemNotify memNotify;
     HcclResult ret = memNotify.Alloc();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -71,7 +85,7 @@ TEST_F(TestCpuThread, Ut_MemNotify_When_PCIE_Alloc_Wait_Expect_Success)
     int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_PCIE;
     MOCKER(hrtHalGetDeviceInfo)
         .stubs()
-        .with(0, MODULE_TYPE_SYSTEM, INFO_TYPE_HD_CONNECT_TYPE, outBoundP(&mockConnectType))
+        .with(any(), any(), any(), outBoundP(&mockConnectType))
         .will(returnValue(HCCL_SUCCESS));
     
     hccl::MemNotify memNotify;
@@ -87,12 +101,20 @@ TEST_F(TestCpuThread, Ut_MemNotify_When_PCIE_Alloc_Wait_Expect_Success)
 
 TEST_F(TestCpuThread, Ut_When_CpuThread_Init_On_aclrtGetCurrentContextFailed_Expect_Return_HCCL_E_INTERNAL)
 {
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
+    int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_PCIE;
+    MOCKER(hrtHalGetDeviceInfo)
         .stubs()
-        .with(outBound(isDeviceSide))
+        .with(any(), any(), any(), outBoundP(&mockConnectType))
         .will(returnValue(HCCL_SUCCESS));
-
+    MOCKER_CPP(&hccl::MemNotify::Alloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::ServiceScheduler::Init)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::ServiceScheduler::ServiceRegister)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtGetCurrentContext)
         .stubs()
         .will(returnValue(ACL_ERROR_INVALID_PARAM));
@@ -104,23 +126,29 @@ TEST_F(TestCpuThread, Ut_When_CpuThread_Init_On_aclrtGetCurrentContextFailed_Exp
 
 TEST_F(TestCpuThread, Ut_When_CpuThread_Init_On_PrepareDpuKernelResourceFailed_Expect_Return_HCCL_E_INTERNAL)
 {
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
+    int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_PCIE;
+    MOCKER(hrtHalGetDeviceInfo)
         .stubs()
-        .with(outBound(isDeviceSide))
+        .with(any(), any(), any(), outBoundP(&mockConnectType))
         .will(returnValue(HCCL_SUCCESS));
-
     MOCKER(aclrtGetCurrentContext)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
-
-    MOCKER(aclrtGetCurrentContext)
+    MOCKER(aclrtSetCurrentContext)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
-
-    MOCKER(aclrtBinaryLoadFromFile)
+    MOCKER_CPP(&hccl::MemNotify::Alloc)
         .stubs()
-        .will(returnValue(ACL_ERROR_INVALID_FILE));
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::ServiceScheduler::Init)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::ServiceScheduler::ServiceRegister)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::CpuThread::PrepareDpuKernelResource)
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
 
     hccl::CpuThread cpuThread(hccl::StreamType::STREAM_TYPE_DEVICE, 2, hccl::NotifyLoadType::HOST_NOTIFY);
     HcclResult ret = cpuThread.Init();
@@ -129,22 +157,38 @@ TEST_F(TestCpuThread, Ut_When_CpuThread_Init_On_PrepareDpuKernelResourceFailed_E
 
 TEST_F(TestCpuThread, Ut_When_CpuThread_Init_On_LaunchDpuKernelFailed_Expect_Return_HCCL_E_INTERNAL)
 {
+    int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_PCIE;
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&mockConnectType))
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtGetCurrentContext)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
-
+    MOCKER(aclrtSetCurrentContext)
+        .stubs()
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(&hccl::MemNotify::Alloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::ServiceScheduler::Init)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::ServiceScheduler::ServiceRegister)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtBinaryLoadFromFile)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
-
     MOCKER(aclrtCreateStreamWithConfig)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
-
     MOCKER(aclrtBinaryGetFunction)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
-
+    MOCKER_CPP(&hccl::CpuThread::PrepareDpuKernelResource)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtLaunchKernelWithHostArgs)
         .stubs()
         .will(returnValue(ACL_ERROR_INVALID_PARAM));
@@ -156,6 +200,12 @@ TEST_F(TestCpuThread, Ut_When_CpuThread_Init_On_LaunchDpuKernelFailed_Expect_Ret
 
 TEST_F(TestCpuThread, Ut_When_CpuThread_GetThreadEntity_On_Normal_Expect_Return_HCCL_SUCCESS)
 {
+    int64_t mockConnectType = HOST_DEVICE_CONNECT_TYPE_PCIE;
+    MOCKER(hrtHalGetDeviceInfo)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&mockConnectType))
+        .will(returnValue(HCCL_SUCCESS));
+
     MOCKER(aclrtGetCurrentContext)
         .stubs()
         .will(returnValue(ACL_SUCCESS));
