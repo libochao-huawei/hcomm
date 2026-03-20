@@ -15,7 +15,7 @@ hcomm:
       - src
       - include
     unrelease:
-      - src/legacy/framework/ccu/ccu_ins/
+      - src/legacy/framework/ccu/ccu_ins/ccu_ins.h
       - src/legacy/service/
       - test/legacy/st/algorithm/
   llt:
