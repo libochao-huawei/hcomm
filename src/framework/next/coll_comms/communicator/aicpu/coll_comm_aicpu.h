@@ -39,11 +39,6 @@ public:
     HcclResult AllocChannelResource(HcclChannelUrmaRes *commParam);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
-
-    // N秒快恢
-    hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
-    HcclResult Clean();
-    HcclResult Resume(HcclChannelUrmaRes *commParam);
     
     const std::vector<std::shared_ptr<Thread>>& GetAllThread() { return threads_; };
     const HcclTopoInfo& GetTopoInfo() { return topoInfo_; }
@@ -63,6 +58,11 @@ public:
 
     bool GetIsReady() { return isReady_; }
     void SetIsReady(bool flag);
+
+    // N秒快恢
+    hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
+    HcclResult Clean();
+    HcclResult Resume(HcclChannelUrmaRes *commParam);
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);

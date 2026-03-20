@@ -17,8 +17,8 @@
 namespace hccl {
 
 struct NsRecoveryData {
-    ChannelHandle *channelHandles_;
-    ChannelHandle* hostChannelHandleList_;
+    std::vector<ChannelHandle> channelHandles_;
+    std::vector<ChannelHandle> hostChannelHandleList_;
     uint32_t channelNum_;
     std::string commTag_;
 };

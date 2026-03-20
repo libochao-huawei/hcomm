@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -216,7 +216,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_post_sem)
     utCcuTransport->rmtRes.cntCkes.push_back(100);
     utCcuTransport->rmtRes.cntCkes.push_back(101);
 
-    shared_ptr<CcuRepBase> rep = make_shared<CcuRepRemPostSem>(*utCcuTransport, semIndex, mask);
+    shared_ptr<CcuRepBase> rep = make_shared<CcuRepRemPostSem>(*utCcuTransport, semIndex, mask, false);
     ErrorInfoBase baseInfo{0, 0, 1, 10, 0};
     vector<CcuErrorInfo> errorInfo{};
     CcuErrorHandler::GenErrorInfoByRepType(baseInfo, rep, errorInfo);

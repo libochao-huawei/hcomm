@@ -25,15 +25,12 @@ public:
     Hccl::KfcCommand BackGroundGetCmd();
     void BackGroundSetStatus(Hccl::KfcStatus status, Hccl::KfcErrType errorCode = Hccl::KfcErrType::NONE);
     void ResetErrorReported();
-    void SetIsCommReady(bool flag);
-    bool IsCommReady() const;
     void SetNeedClean(bool flag);
     bool IsNeedClean() const;
     void SetIsSuspended(bool status);
     bool IsSuspended() const;
 
 private:
-    bool isCommReady_{false};
     bool needClean_{false};
     bool isSuspended_{false};
     bool isErrorReported_{false};

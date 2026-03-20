@@ -238,10 +238,6 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             HCCL_INFO("server num[%u]: level1:pipeline algo is set.", moduleNum);
             break;
-        case HcclAlgoType::HCCL_ALGO_TYPE_CONTINUOUS_PIPELINE:
-            algType = AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE;
-            HCCL_INFO("server num[%u]: level1:CP algo is set.", moduleNum);
-            break;
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
             HCCL_WARNING("level1:fullmesh algo is not supported. the config is ignored.");

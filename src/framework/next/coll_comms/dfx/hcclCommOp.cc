@@ -15,6 +15,10 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     auto dfxOpInfoOnce = std::make_shared<Hccl::DfxOpInfo>();
     Hccl::CollOperator collOp{};
     collOp.opMode = static_cast<Hccl::OpMode::Value>(dfxOpInfo.opMode); 
+    if (Hccl::OP_TYPE_MAP.find(static_cast<HcclCMDType>(dfxOpInfo.opType)) == Hccl::OP_TYPE_MAP.end()) {
+        HCCL_ERROR("%s static_cast<HcclCMDType>(dfxOpInfo.opType)[%d] is not supported.", __func__, static_cast<HcclCMDType>(dfxOpInfo.opType));
+        return {};
+    }
     collOp.opType = Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.opType));
     collOp.reduceOp = Hccl::HcclReduceOpToReduceOp(static_cast<HcclReduceOp>(dfxOpInfo.reduceOp));
     collOp.dataType = Hccl::HcclDataTypeToDataType(static_cast<HcclDataType>(dfxOpInfo.dataType));
@@ -29,7 +33,7 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->algTag_ = dfxOpInfo.algTag;
     dfxOpInfoOnce->algType_ = Hccl::AlgType::MESH;
-    dfxOpInfoOnce->tag_ = Hccl::OpTypeToString(Hccl::OP_TYPE_MAP.at(static_cast<HcclCMDType>(dfxOpInfo.opType)));
+    dfxOpInfoOnce->tag_ = Hccl::OpTypeToString(collOp.opType);
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime;
     dfxOpInfoOnce->cpuWaitAicpuNotifyId_ = dfxOpInfo.cpuWaitAicpuNotifyId;
     return dfxOpInfoOnce;

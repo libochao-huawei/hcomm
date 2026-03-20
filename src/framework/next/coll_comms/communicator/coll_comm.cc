@@ -50,7 +50,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
 
-    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_), return HCCL_E_PTR);
+    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get()), return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
@@ -61,15 +61,17 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     CHK_RET(hrtGetDevice(&deviceLogicId_));
 
     CHK_RET(InitHDCommunicate());
-    
-    CollCommMgr::GetInstance()->RegisteCollComm(this); 
-    commStatus_ = HcclCommStatus::HCCL_COMM_READY;
 
  	if (!hcclCommDfx_) {
         EXECEPTION_CATCH(hcclCommDfx_ = std::make_unique<HcclCommDfx>(), return HCCL_E_PTR);
  	}
  	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
     CHK_RET(InitTaskExceptionHandler());
+
+    myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+    CollCommMgr::GetInstance()->RegisteCollComm(this); 
+    commStatus_ = HcclCommStatus::HCCL_COMM_READY;
+
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
@@ -122,8 +124,6 @@ HcclResult CollComm::InitHDCommunicate()
         std::make_shared<hccl::HDCommunicate>(deviceLogicId_, HCCL_HDC_TYPE_D2H, sizeof(Hccl::KfcExecStatus))),
         return HCCL_E_PTR);
     CHK_RET(kfcStatusTransferD2H_->InitHost());
-
-    myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
 
     return HCCL_SUCCESS;
 }

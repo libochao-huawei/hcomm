@@ -98,7 +98,7 @@ HcclTaskAbortHandler::HcclTaskAbortHandler()
 
 HcclTaskAbortHandler::~HcclTaskAbortHandler()
 {
-    // DECTOR_TRY_CATCH("HcclTaskAbortHandler", HrtDeviceAbortRegCallBack(nullptr, nullptr));
+    Hccl::HrtDeviceAbortRegCallBack(nullptr, nullptr)
 }
 
 HcclTaskAbortHandler &HcclTaskAbortHandler::GetInstance()

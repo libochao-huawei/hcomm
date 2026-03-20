@@ -32,7 +32,7 @@ CollCommMgr::~CollCommMgr()
 
 void CollCommMgr::RegisteCollComm(CollComm* collComm)
 {
-    allCollComms_[collComm->GetCollCommName()] = collComm;
+    allCollComms_[collComm->GetCommId()] = collComm;
 
     // 注册到需要的地方
     HcclTaskAbortHandler::GetInstance().Register(collComm);
@@ -40,7 +40,7 @@ void CollCommMgr::RegisteCollComm(CollComm* collComm)
 
 void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
 {
-    allCollComms_.erase(collComm->GetCollCommName());
+    allCollComms_.erase(collComm->GetCommId());
 
     // 从通信域里面注销
     HcclTaskAbortHandler::GetInstance().UnRegister(collComm);

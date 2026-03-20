@@ -67,10 +67,10 @@ HcclResult CcuTempReduceMeshMem2Mem1D::GenExtIns(const TempFuncs          &tempF
 
     const CollAlgOperator                  &op        = op_;
     const std::vector<std::vector<RankId>> &tempVTopo = tempVTopo_;
-    uint64_t inputAddr          = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
-    uint64_t outputAddr         = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
     uint64_t token;
     CHK_RET(GetToken(op_, token));
+    uint64_t inputAddr          = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+    uint64_t outputAddr         = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
     uint64_t repeatNum          = templateDataParams.repeatNum;
     uint64_t inputRepeatStride  = templateDataParams.inputRepeatStride;
     uint64_t outputRepeatStride = templateDataParams.outputRepeatStride;

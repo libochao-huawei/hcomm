@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -16,6 +16,7 @@ namespace Hccl {
 
 IpcLocalNotify::IpcLocalNotify(bool devUsed) : BaseLocalNotify(RmaType::IPC, devUsed)
 {
+    // SetIpc
     auto name = GetNotify()->SetIpcName();
     s32 sRet = memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, name.c_str(), name.size());
     if (sRet != EOK) {
@@ -51,7 +52,7 @@ void IpcLocalNotify::Grant(u32 pid)
 {
     u32 myPid = HrtDeviceGetBareTgid();
     if (pid != myPid) {
-        HrtSetIpcNotifyPid(ipcName, static_cast<s32>(pid));
+        GetNotify()->SetIpcPid(static_cast<s32>(pid));
     }
 }
 

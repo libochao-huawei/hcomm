@@ -38,7 +38,7 @@ ChannelTable RankPairMgr::GetChannelTable()
 {
     ChannelTable channelTable;
     for (const auto& rankPair : rankPairMap_) {
-        channelTable[rankPair.first] = rankPair.second->GetEpChannelList();
+        channelTable[rankPair.first] = rankPair.second->GetEpChannelMap();
     }
     return channelTable;
 }
