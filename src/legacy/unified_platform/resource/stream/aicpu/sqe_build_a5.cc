@@ -194,7 +194,7 @@ void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 remoteAddr, u64 dbValue,
     sqe->writeValuePart[0]          = static_cast<uint32_t>(dbValue & MASK_32_BIT);                         // low  32 bit
     sqe->writeValuePart[1]          = static_cast<uint32_t>((dbValue >> UINT32_BIT_NUM) & MASK_32_BIT);     // high 32 bit
 
-    sqe->va                         = 1; // 写对端notify的va地址而非phy地址
+    sqe->va                         = 0U;
 
     HCCL_INFO("[SQE]RdmaDbSend streamId %u, taskId %u, remoteAddr %p, dbValue %llu",
         streamId, taskId, remoteAddr, dbValue);
