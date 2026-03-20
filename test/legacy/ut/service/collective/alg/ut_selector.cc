@@ -56,7 +56,7 @@ protected:
     {
         BaseSelector::TopoInfo topoInfo;
         topoInfo.levelNum = 1;
-        topoInfo.level0Shape = BaseSelector::Level0Shape::MESH_1D;
+        topoInfo.level0Shape = Level0Shape::MESH_1D;
         return topoInfo;
     }
 
