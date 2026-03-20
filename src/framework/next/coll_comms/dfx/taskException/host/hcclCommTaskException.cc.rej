@@ -1,0 +1,27 @@
+diff a/src/framework/next/coll_comms/dfx/taskException/host/hcclCommTaskException.cc b/src/framework/next/coll_comms/dfx/taskException/host/hcclCommTaskException.cc	(rejected hunks)
+@@ -571,19 +574,23 @@ void TaskExceptionHost::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, co
+             ccuTaskParam.executeId);
+         return;
+     }
+-    PrintCcuErrorLog(errorInfos, taskInfo);
++    PrintCcuErrorLog(errorInfos, taskInfo, deviceId);
+ 
+     if (missionStatus >= 0x01 && missionStatus <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
+         PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
+     }
+ }
+-void TaskExceptionHost::PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo)
++void TaskExceptionHost::PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo, uint32_t deviceId)
+ {
+     if (errorInfos.empty()) {
+         return;
+     }
+     HCCL_ERROR("[TaskExceptionHost]Task run failed, ccu runtime information is: %s", __func__);
++    CcuHostParam ccuHostParam;
++    ccuHostParam.deviceId = deviceId;
++    ccuHostParam.taskImfo = taskInfo;
+     for (const auto& errorInfo : errorInfos) {
++        ccuHostParam.errorInfo = errorInfo;
+         HCCL_ERROR("[TaskExceptionHost][%s]", GetCcuErrorMsgByType(errorInfo, taskInfo).c_str());
+     }
+ }
