@@ -556,6 +556,25 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessSendDataSliceSmall(Stream& str
     HCCL_INFO("[ProcessSendStreamDataSlice] inCommMem ptr[%p], size[%llu]", inCommMem.ptr(), inCommMem.size());
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, inCommMem, inMem, stream));
 
+    HCCL_INFO("***************************[UserIN]PrintStart****************************");
+    float *temp_UserIn = reinterpret_cast<float *> (inMem.ptr());
+    std::string str_UserIn;
+    for (int i = 0; i < 10; i++){
+        str_UserIn += std::to_string(temp_UserIn[i]) + "  ";
+    }
+    HCCL_INFO("[%s]", str_UserIn.c_str());
+    HCCL_INFO("***************************[UserIN]PrintEnd****************************");
+
+    HCCL_INFO("***************************[CCLIN]PrintStart****************************");
+    CHK_RET(LaunchTaskExtend(dispatcher_, stream, algResResp_->slaveStreams));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    float *temp = reinterpret_cast<float *> (inCommMem.ptr());
+    std::string str;
+    for (int i = 0; i < 10; i++){
+        str += std::to_string(temp[i]) + "  ";
+    }
+    HCCL_INFO("[%s]", str.c_str());
+    HCCL_INFO("***************************[CCLIN]PrintEnd****************************");
     if (needStreamSync) {
         CHK_RET(SubNotifyMain(stream, sendStreamId));
     }
@@ -602,6 +621,18 @@ HcclResult CollBatchSendRecvGroupExecutor::ProcessRecvDataSliceSmall(Stream& str
         execMem.outputMem = outMem;
         HCCL_INFO("[ProcessRecvStreamDataSlice] DMA Reduce, outMem ptr[%p], size[%llu]", outMem.ptr(), outMem.size());
         HcclResult ret = RecvKernelRun(stream, execMem, slice.remoteRank, retryEnable);
+
+        HCCL_INFO("***************************[UserOut]PrintStart****************************");
+        CHK_RET(LaunchTaskExtend(dispatcher_, stream, algResResp_->slaveStreams));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        float *temp = reinterpret_cast<float *> (outMem.ptr());
+        std::string str;
+        for (int i = 0; i < 10; i++){
+            str += std::to_string(temp[i]) + "  ";
+        }
+        HCCL_INFO("[%s]", str.c_str());
+        HCCL_INFO("***************************[UserOut]PrintEnd****************************");
+
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[CollBatchSendRecvGroupExecutor][ProcessRecvStreamDataSlice]errNo[0x%016llx]kernel run error, tag[%s], " \
             "input_ptr[%p], size[%llu]", HCCL_ERROR_CODE(ret), tag_.c_str(), execMem.inputMem.ptr(),
