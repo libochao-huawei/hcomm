@@ -898,7 +898,7 @@ __aicore__ inline void AivCrossNode91093Base::GetTargetBuffer(bool isOpBase)
     // 准备参数，buffer地址
     for (uint32_t i = 0; i < numTargets; i++) {
         uint32_t targetRank = targetRanks[i];
-        DataCopy(bufferArgsTensor[i * IDX_4], bufferArgsGT[2 * targetRank], 4); // buffersIn buffersOut
+        DataCopy(bufferArgsTensor[i * IDX_4], bufferArgsGT[2 * targetRank], IDX_4); // buffersIn buffersOut
     }
 
     SyncFunc<HardEvent::MTE2_S>();

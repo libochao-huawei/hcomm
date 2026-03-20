@@ -26,7 +26,7 @@ HcclResult TopoMatchConcurrMeshNHR::MatchTopo(std::vector<std::vector<std::vecto
                                               std::vector<std::map<RankId, u32>> &virtRankMap)
 {
     // 校验DevType
-    CHK_PRT_RET((devType_ != DevType::DEV_TYPE_910_95),
+    CHK_PRT_RET((devType_ != DevType::DEV_TYPE_950),
                 HCCL_ERROR("[CollAlgFactory] [TopoMatchConcurrMeshNHR] Rank [%d], Invalid DeviceType.", myRank_),
                 HcclResult::HCCL_E_PARA);
     // 获取并校验当前通信层数

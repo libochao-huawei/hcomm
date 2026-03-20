@@ -44,7 +44,7 @@ void CollServiceBase::RegisterCclLocRmaBuffer() const // 注册CCL buffer
         const auto &ifaceVec = pair.second;
         for (const auto &connIface : ifaceVec) {
             std::set<LinkProtocol> protocols = connIface->GetLinkProtocols();
-            if (protocols.find(LinkProtocol::HCCS) != protocols.end()) {
+            if (protocols.find(LinkProtocol::HCCS) != protocols.end() || protocols.find(LinkProtocol::PCIE) != protocols.end()) {
                 if (p2pRegistered) {
                     break;
                 }

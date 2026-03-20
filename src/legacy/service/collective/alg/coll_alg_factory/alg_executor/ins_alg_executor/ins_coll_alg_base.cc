@@ -160,6 +160,39 @@ HcclResult InsCollAlgBase::SetLinkPrty(const std::vector<BasePortType> &linkPrio
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult InsCollAlgBase::CalcParallelNotifyReq(const u32 primQueueNum, std::vector<std::tuple<QId, QId, u32>> &queueNotifys) const
+{
+    u32 slaveNum = primQueueNum - 1;
+    std::vector<std::tuple<QId, QId, u32>> notifyRequests;
+
+    notifyRequests.reserve(slaveNum);  // 每个从流需要1个
+    for (QId q = 1; q < primQueueNum; q++) {
+        notifyRequests.emplace_back(std::make_tuple(0, q, 0));
+        notifyRequests.emplace_back(std::make_tuple(q, 0, 0));
+    }
+    queueNotifys = notifyRequests;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsCollAlgBase::CalcLocalRankSize(const RankId myRank,
+                                             const std::vector<std::vector<RankId>> &virtRanks,
+                                             u32 &rankSizeLevel0, u32 &rankSizeLevel1) const
+{
+    constexpr uint64_t virtRanks_2 = 2;
+    CHK_PRT_RET(virtRanks.size() < virtRanks_2,
+        HCCL_ERROR("[CalcLocalRankSize] virtRanks level num is smaller than 2."),
+        HcclResult::HCCL_E_INTERNAL);
+
+    rankSizeLevel0 = virtRanks.at(0).size();
+    rankSizeLevel1 = virtRanks.at(1).size();
+
+    HCCL_INFO("[CalcLocalRankSize] localRankSize: myRank[%d] rankSizeLevel0_[%u] rankSizeLevel1_[%u]",
+        myRank,
+        rankSizeLevel0,
+        rankSizeLevel1);
+    return HcclResult::HCCL_SUCCESS;
+};
+
 LinkReq InsCollAlgBase::GetSeqLinksUnion(const LinkReq &linkReq0, const LinkReq &linkReq1) const
 {
     LinkReq retLinkReq = linkReq0;

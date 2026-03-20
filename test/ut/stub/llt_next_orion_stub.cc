@@ -306,7 +306,7 @@ u32 HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
 
 DevType HrtGetDeviceType()
 {
-    return DevType::DEV_TYPE_910_95;
+    return DevType::DEV_TYPE_950;
 }
 
 RdmaHandle HrtRaRdmaInit(HrtNetworkMode netMode, RaInterface &in)
@@ -1239,6 +1239,9 @@ std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 void LocalIpcRmaBuffer::Grant(u32 pid)
 {
 }
+
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{}
 
 }  // namespace Hccl
 

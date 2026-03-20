@@ -358,10 +358,10 @@ void CcuContextAlltoAllMesh2D::CreateLocalCopyLoop()
 {
     std::string opStr = "a2a_localcpy_loopgroup";
     for (uint32_t index = 0; index < 2; index++) { // 需要2个Loop
-        CcuRep::Memory              src = CreateMemory();
-        CcuRep::Memory              dst = CreateMemory();
-        CcuRep::Variable            len = CreateVariable();
         CcuRep::LoopBlock           lb(this, "a2a_localcpy_loop_" + std::to_string(index));
+        CcuRep::Memory              src = CreateMemory();
+        CcuRep::Variable            len = CreateVariable();
+        CcuRep::Memory              dst = CreateMemory();
         lb(src, dst, len);
 
         CcuRep::CcuBuffer  buf = moRes.ccuBuffer[index * moConfig.msInterleave];
@@ -400,9 +400,9 @@ void CcuContextAlltoAllMesh2D::LocalCopyByLoopGroup(CcuRep::Memory dst, CcuRep::
 
     {
         CcuRep::Condition cond(this, goPara.parallelParam != 0);
-
-        src.addr += goPara.addrOffset;
+        
         dst.addr += goPara.addrOffset;
+        src.addr += goPara.addrOffset;
         auto lc0 = Loop("a2a_localcpy_loop_0")(src, dst, goPara.residual);
 
         src.addr += goPara.residual;

@@ -752,7 +752,7 @@ int32_t HcommAcquireComm(const char* commId)
     HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
     CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
     DevType devType = hcclComm->GetDevType();
-    if (devType != DevType::DEV_TYPE_910_95){
+    if (devType != DevType::DEV_TYPE_950){
         CHK_RET(hcclComm->SetDispatcherCtxOnThread());
     }
     return HCCL_SUCCESS;
