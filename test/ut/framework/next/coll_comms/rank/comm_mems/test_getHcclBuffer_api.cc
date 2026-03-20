@@ -264,9 +264,9 @@ TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutLessThanU16
     EXPECT_EQ(ret, 0);
 
     constexpr u16 customTimeout = std::numeric_limits<u16>::max() - 1;
-    ret = AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, nullptr);
+    HcclResult result = AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, nullptr);
 
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
 TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutGreaterThanU16Max_Return_HCCL_Success)
@@ -294,7 +294,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_KernelLaunchAicpuCustom_When_TimeoutGreaterThan
     EXPECT_EQ(ret, 0);
 
     constexpr u16 customTimeout = std::numeric_limits<u16>::max() + 1;
-    ret = AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, nullptr);
+    HcclResult result = AicpuLaunchMgr::KernelLaunchAicpuCustom(cclBuffer, "kernelName", nullptr, nullptr);
 
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(result, HCCL_SUCCESS);
 }
