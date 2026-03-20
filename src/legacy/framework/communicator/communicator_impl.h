@@ -382,7 +382,7 @@ public:
     ErrorMessageReport GetAicpuTaskException();
     u32 GetRankInParentComm();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
-    bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
+    bool IsCommWithPCIEProtocol() const;   // 判断通信域内是否有rank之间存在PCIE链路
 
 private:
     std::string                                id;

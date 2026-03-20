@@ -151,7 +151,7 @@ void P2PTransportLiteImpl::BuildP2PRead(const StreamLite &stream, const RmaBuffe
         return;
     }
 
-    HCCL_INFO("P2PTransportLiteImpl::Read remoteBuff[%s] localBuff[%s] reduce[%s]",
+    HCCL_INFO("P2PTransportLiteImpl::Read remoteBuff[%s] localBuff[%s]",
         rmt.Describe().c_str(), loc.Describe().c_str());
     // 传入数据大小不能超过 u32最大值， 需要进行切分
     u64 u32Max = UINT32_MAX;
