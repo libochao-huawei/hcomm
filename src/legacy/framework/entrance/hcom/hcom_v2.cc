@@ -1120,7 +1120,7 @@ HcclResult HcomSupportDeterministicOptimV2(const char *group, bool &isDeterminis
             HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
             HCCL_E_NOT_FOUND);
     isDeterministicOptim = true;
-    HCCL_WARNING("HcomSupportDeterministicOptimV2 is not support at A5! set isDeterministicOptim to true.");
+    HCCL_INFO("[%s] A5 algo is deterministic by default, set isDeterministicOptim to true.", __func__);
     return HCCL_SUCCESS;
 }
 
