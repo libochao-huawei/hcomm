@@ -2160,7 +2160,7 @@ void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
     num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
-    s32 ret = RaGetTpInfoList(rdmaHandle, &cfg, info, &num);
+    s32 ret = RaCtxGetTpInfoList(rdmaHandle, &cfg, info, &num);
     if (ret != 0) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d], "
             "rdmaHandle[%p], locAddr[%s], rmtAddr[%s].", __func__, ret, rdmaHandle,
