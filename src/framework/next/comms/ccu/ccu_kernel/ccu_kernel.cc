@@ -918,17 +918,20 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(uint64_t execId, std::vector<CcuPro
     return HCCL_SUCCESS;
 }
 
-void CcuKernel::AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
+HcclResult CcuKernel::AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
                                  HcclDataType outputDataType, HcclReduceOp opType)
 {
-    AddProfiling(channelHandle.data(), channelHandle.size(), dataType, outputDataType, opType);
+    CHK_RET(AddCcuProfiling(channelHandle.data(), channelHandle.size(), dataType, outputDataType, opType));
     groupOpSizeInfo.push_back(groupInfo);
+    return HCCL_SUCCESS;
 }
 
-void CcuKernel::AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+HcclResult CcuKernel::AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
                                 HcclDataType outputDataType, HcclReduceOp opType)
 {
-    AddProfiling(channels, channelNum, dataType, outputDataType, opType);
+    CHK_PTR_NULL(channels);
+    CHK_RET(AddProfiling(channels, channelNum, dataType, outputDataType, opType));
+    return HCCL_SUCCESS;
 }
 
 

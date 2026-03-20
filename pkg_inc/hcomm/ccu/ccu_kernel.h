@@ -82,9 +82,9 @@ public:
     uint32_t    GetInstrId() const;
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
-    void AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
+    HcclResult AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
                                  HcclDataType outputDataType, HcclReduceOp opType);
-    void AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+    HcclResult AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
                                 HcclDataType outputDataType, HcclReduceOp opType);
 
     HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
@@ -205,13 +205,9 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
-<<<<<<< master
-
     std::unordered_map<u16, u64> channelHandleToId_;
     std::unordered_map<u64, u16> channelIdToHandle_;
-=======
     std::vector<GroupInfo> groupOpSizeInfo;
->>>>>>> master
 };
 
 // kernel构造函数的lambda函数
