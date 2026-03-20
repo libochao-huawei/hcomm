@@ -905,7 +905,7 @@ if(NOT BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:hccl_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         -Wl,--no-as-needed

@@ -342,11 +342,12 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     CheckConnVec("UbTransportLiteImpl::Post"); // 待修改优化, 检查connection
     auto taskId = stream.GetRtsq()->GetTaskId();
     // 当前使用1个connection，下标为0
-    connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, GetRmtNotifySliceLite(index),
+    auto rmtBuffSliceLite = GetRmtNotifySliceLite(index);
+    connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
                             cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", GetRmtNotifySliceLite(index).GetAddr(), connOut.pi);
+    HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
  
     if (callback_ == nullptr && newCallback_ == nullptr)
     {
@@ -357,9 +358,9 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_UB_INLINE_WRITE;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.DMA.dst         = reinterpret_cast<void*>(GetRmtNotifySliceLite(index).GetAddr());
-    taskParam.taskPara.DMA.size        = GetRmtNotifySliceLite(index).GetSize();
-    taskParam.taskPara.DMA.notifyID    = GetRmtNotifySliceLite(index).GetAddr();
+    taskParam.taskPara.DMA.dst         = reinterpret_cast<void*>(rmtBuffSliceLite.GetAddr());
+    taskParam.taskPara.DMA.size        = rmtBuffSliceLite.GetSize();
+    taskParam.taskPara.DMA.notifyID    = rmtBuffSliceLite.GetAddr();
     taskParam.taskPara.DMA.notifyValue = 1;
     taskParam.taskPara.DMA.linkType    = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp       = DmaOp::HCCL_DMA_WRITE;
@@ -402,7 +403,7 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     }
 }
 
-void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream,
+void UbTransportLiteImpl::ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
     if (callback_ == nullptr && newCallback_ == nullptr)
@@ -414,9 +415,9 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffe
     TaskParam taskParam{};
     taskParam.taskType = TaskParamType::TASK_UB;
     taskParam.beginTime = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.DMA.size     = GetRmaBufSlicelite(loc).GetSize();
+    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(loc.GetAddr());
+    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(rmt.GetAddr());
+    taskParam.taskPara.DMA.size     = loc.GetSize();
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.DMA.notifyValue = 0xffffffff;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
@@ -439,10 +440,12 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::Read"); // 待修改优化, 检查connection
     // 当前使用1个connection,下标为0
-    connVec[0]->Read(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), cfg, stream, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->Read(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ProfilingProcess(loc, rmt, stream, DmaOp::HCCL_DMA_READ, taskId);
+    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, stream, DmaOp::HCCL_DMA_READ, taskId);
 }
 
 void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
@@ -452,10 +455,12 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::Write"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->Write(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), cfg, stream, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ProfilingProcess(loc, rmt, stream, DmaOp::HCCL_DMA_WRITE, taskId);
+    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, stream, DmaOp::HCCL_DMA_WRITE, taskId);
 }
 
 void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -466,13 +471,15 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::ReadReduce"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->ReadReduce(reduceIn, GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), stream, cfg, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->ReadReduce(reduceIn, locRmaBufSlicelite, rmtRmaBufSlicelite, stream, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ReduceProfilingProcess(loc, rmt, reduceIn, stream, taskId);
+    ReduceProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, reduceIn, stream, taskId);
 }
 
-void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt,
+void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
     if (callback_ == nullptr && newCallback_ == nullptr)
@@ -484,9 +491,9 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const
     TaskParam taskParam {};
     taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.beginTime = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.Reduce.size = GetRmaBufSlicelite(loc).GetSize();
+    taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(loc.GetAddr());
+    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(rmt.GetAddr());
+    taskParam.taskPara.Reduce.size = loc.GetSize();
     taskParam.taskPara.Reduce.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.Reduce.notifyValue = 1;
     taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
@@ -511,11 +518,13 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::WriteReduce"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->WriteReduce(reduceIn.dataType, reduceIn.reduceOp, GetRmaBufSlicelite(loc), stream,
-                            GetRmtRmaBufSliceLite(rmt), cfg, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->WriteReduce(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite, stream,
+                            rmtRmaBufSlicelite, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ReduceProfilingProcess(loc, rmt, reduceIn, stream, taskId);
+    ReduceProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, reduceIn, stream, taskId);
 }
 
 void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
@@ -559,9 +568,9 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
         if (transferOp[insNum - 1].transType == TransferType::READ) {
             dmaOp = DmaOp::HCCL_DMA_READ;
         }
-        ProfilingProcess(loc[insNum - 1], rmt[insNum - 1], stream, dmaOp, taskId);
+        ProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), stream, dmaOp, taskId);
     } else {
-        ReduceProfilingProcess(loc[insNum - 1], rmt[insNum - 1], transferOp[insNum - 1].reduceIn, stream, taskId);
+        ReduceProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), transferOp[insNum - 1].reduceIn, stream, taskId);
     }
 }
 
@@ -574,8 +583,11 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::WriteWithNotify"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->WriteWithNotify(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), cfg, connOut,
-                                GetRmtNotifySliceLite(withNotify.index_), stream, notifyData);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    auto rmtNotifySliceLite = GetRmtNotifySliceLite(withNotify.index_);
+    connVec[0]->WriteWithNotify(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, connOut,
+                                rmtNotifySliceLite, stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
     if (callback_ == nullptr && newCallback_ == nullptr)
@@ -587,10 +599,10 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     TaskParam taskParam{};
     taskParam.taskType              = TaskParamType::TASK_WRITE_WITH_NOTIFY;
     taskParam.beginTime             = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.DMA.size     = GetRmaBufSlicelite(loc).GetSize();
-    taskParam.taskPara.DMA.notifyID = GetRmtNotifySliceLite(withNotify.index_).GetAddr();
+    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.DMA.size     = locRmaBufSlicelite.GetSize();
+    taskParam.taskPara.DMA.notifyID = rmtNotifySliceLite.GetAddr();
     taskParam.taskPara.DMA.notifyValue = 1;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
@@ -614,8 +626,11 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     CheckConnVec("UbTransportLiteImpl::WriteReduceWithNotify"); // 待修改优化, 检查connection
     auto taskId = stream.GetRtsq()->GetTaskId();
     // 当前使用1个connection，下标为0
-    connVec[0]->WriteReduceWithNotify(reduceIn.dataType, reduceIn.reduceOp, GetRmaBufSlicelite(loc),
-                                      GetRmtRmaBufSliceLite(rmt), cfg, stream, connOut, GetRmtNotifySliceLite(withNotify.index_),
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    auto rmtNotifySliceLite = GetRmtNotifySliceLite(withNotify.index_);
+    connVec[0]->WriteReduceWithNotify(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite,
+                                      rmtRmaBufSlicelite, cfg, stream, connOut, rmtNotifySliceLite,
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
@@ -628,10 +643,10 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Reduce.src      = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.Reduce.dst      = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.Reduce.size     = GetRmaBufSlicelite(loc).GetSize();
-    taskParam.taskPara.Reduce.notifyID = GetRmtNotifySliceLite(withNotify.index_).GetAddr();
+    taskParam.taskPara.Reduce.src      = reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.Reduce.dst      = reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.Reduce.size     = locRmaBufSlicelite.GetSize();
+    taskParam.taskPara.Reduce.notifyID = rmtNotifySliceLite.GetAddr();
     taskParam.taskPara.Reduce.notifyValue = 1;
     taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
     taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);

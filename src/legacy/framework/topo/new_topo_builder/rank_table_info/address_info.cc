@@ -20,6 +20,7 @@
 #include "const_val.h"
 #include "dev_type.h"
 #include "exception_util.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 using namespace std;
@@ -41,9 +42,11 @@ void AddressInfo::Deserialize(const nlohmann::json &addressInfoJson)
     std::string address;
     std::string msgAddr = "error occurs when parser object of propName \"addr\"";
     const int MAX_DISPLAY_LEN = 128;
-    TRY_CATCH_THROW(InvalidParamsException, msgAddr, address = GetJsonProperty(addressInfoJson, "addr"););
+    TRY_CATCH_THROW(InvalidParamsException, msgAddr, address = GetJsonProperty(addressInfoJson, "addr", false););
    
     if (address.length() < MIN_VALUE_ADDR_LENGRH || address.length() > MAX_VALUE_ADDR_LENGRH) {
+        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}), 
+            std::vector<std::string>({address, "addr", "A ip address."}));
         THROW<InvalidParamsException>(StringFormat("addr [%.*s] length is out of range [%u] to [%u]", MAX_DISPLAY_LEN, address.c_str(), MIN_VALUE_ADDR_LENGRH, MAX_VALUE_ADDR_LENGRH));
     }
 

@@ -540,7 +540,6 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_mesh_small_count_aiv)
 
 TEST_F(AllGatherVTest, all_gather_v_910B_AllGatherVMeshAivSmallCountExecutor)
 {
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
