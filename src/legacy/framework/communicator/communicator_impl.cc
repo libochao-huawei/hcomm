@@ -2488,7 +2488,7 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
         return HCCL_E_RUNTIME;
     }
     HcclUs        startTime                   = std::chrono::steady_clock::now();
-    constexpr u32 waitTransportReadyTimeoutMs = 10 * 1000; // 定义最大等待10秒
+    constexpr u32 waitTransportReadyTimeoutMs = 200 * 1000; // 定义最大等待200秒
     auto          timeout                     = std::chrono::milliseconds(waitTransportReadyTimeoutMs);
     do {
         if (std::chrono::steady_clock::now() - startTime >= timeout) {
