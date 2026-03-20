@@ -416,7 +416,7 @@ TEST_F(SelectorUnusedParamTest, ReduceAutoSelector_SelectAicpuAlgo_UnusedParams)
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = CreateConfigAlgMap();
     std::string primQueueGenName;
     
-    auto status = selector.SelectAicpuAlgo(topoInfoInfo, op, configAlgMap, primQueueGenName);
+    auto status = selector.SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
     
     EXPECT_TRUE(status == SelectorStatus::MATCH || status == SelectorStatus::NOT_MATCH);
 }
