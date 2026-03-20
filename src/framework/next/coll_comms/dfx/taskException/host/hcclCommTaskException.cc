@@ -494,6 +494,7 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
         HCCL_INFO("PrintAicpuErrorMessage streamId[%u] is not found.", exceptionInfo->streamid);
     }
 }
+
 // CCU新加代码
 struct ccum_dfx_info {
     unsigned int query_result; // 0:success, 1:fail
@@ -556,10 +557,10 @@ void TaskExceptionHost::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, co
 {
     const Hccl::ParaCcu& ccuTaskParam = taskInfo.taskParam_.taskPara.Ccu;
 
-    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
-    auto *kernel = kernelMgr.GetKernel(ccuTaskParam.ccuKernelHandle);
-    CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
-        __func__, deviceId, ccuTaskParam.ccuKernelHandle),);
+    // auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
+    // auto *kernel = kernelMgr.GetKernel(ccuTaskParam.ccuKernelHandle);
+    // CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
+    //     __func__, deviceId, ccuTaskParam.ccuKernelHandle),);
 
     vector<Hccl::CcuErrorInfo> errorInfos {};
     HcclResult ret = Hccl::GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfos, reinterpret_cast<void*>(kernel));
@@ -651,9 +652,8 @@ string TaskExceptionHost::GetCcuLenErrorMsg(const uint64_t len)
     return Hccl::StringFormat("ccu transMem Len[%llu]B > 256MB or is zero, not support!", len);
 }
 
-string TaskExceptionHost::GetCcuErrorMsgLoop(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgLoop(const CcuHostParam &ccuHostParam)
 {
-    (void)taskInfo;
     return Hccl::StringFormat("InstrId[%u]: Loop startInstrId[%u], endInstrId[%u], executorId[%u], "
                         "totalIter[%u], curIter[%u], addressStride[0x%llx]",
                         ccuHostParam.ccuErrorInfo.instrId, ccuHostParam.ccuErrorInfo.msg.loop.startInstrId, ccuHostParam.ccuErrorInfo.msg.loop.endInstrId,
@@ -661,9 +661,8 @@ string TaskExceptionHost::GetCcuErrorMsgLoop(CcuHostParam &ccuHostParam)
                         ccuHostParam.ccuErrorInfo.msg.loop.loopCurrentCnt, ccuHostParam.ccuErrorInfo.msg.loop.addrStride);
 }
 
-string TaskExceptionHost::GetCcuErrorMsgLoopGroup(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgLoopGroup(const CcuHostParam &ccuHostParam)
 {
-    (void)taskInfo;
     return Hccl::StringFormat("InstrId[%u]: LoopGroup startLoopInsId[%u], loopInsCnt[%u], "
                         "expandOffset[%u], expandCnt[%u]",
                         ccuHostParam.ccuErrorInfo.instrId, ccuHostParam.ccuErrorInfo.msg.loopGroup.startLoopInsId,
@@ -671,30 +670,28 @@ string TaskExceptionHost::GetCcuErrorMsgLoopGroup(CcuHostParam &ccuHostParam)
                         ccuHostParam.ccuErrorInfo.msg.loopGroup.expandCnt);
 }
 
-string TaskExceptionHost::GetCcuErrorMsgLocPostSem(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgLocPostSem(const CcuHostParam &ccuHostParam)
 {
-    (void)taskInfo;
     return Hccl::StringFormat("InstrId[%u]: Set sem[%u], semValue[0x%04x], mask[0x%04x]", ccuHostParam.ccuErrorInfo.instrId,
                         ccuHostParam.ccuErrorInfo.msg.waitSignal.signalId, ccuHostParam.ccuErrorInfo.msg.waitSignal.signalValue,
                         ccuHostParam.ccuErrorInfo.msg.waitSignal.signalMask);
 }
 
-string TaskExceptionHost::GetCcuErrorMsgLocWaitSem(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgLocWaitSem(const CcuHostParam &ccuHostParam)
 {
-    (void)taskInfo;
     return Hccl::StringFormat("InstrId[%u]: Wait sem[%u], semValue[0x%04x], mask[0x%04x]", ccuHostParam.ccuErrorInfo.instrId,
                         ccuHostParam.ccuErrorInfo.msg.waitSignal.signalId, ccuHostParam.ccuErrorInfo.msg.waitSignal.signalValue,
                         ccuHostParam.ccuErrorInfo.msg.waitSignal.signalMask);
 }
 
-string TaskExceptionHost::GetCcuErrorMsgRemPostSem(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgRemPostSem(const CcuHostParam &ccuHostParam)
 {
     return Hccl::StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x], rankId[%d]", ccuHostParam.ccuErrorInfo.instrId,
                         ccuHostParam.ccuErrorInfo.msg.waitSignal.signalId, ccuHostParam.ccuErrorInfo.msg.waitSignal.signalMask,
                         GetRankIdByChannelId(ccuHostParam));
 }
 
-string TaskExceptionHost::GetCcuErrorMsgRemWaitSem(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgRemWaitSem(const CcuHostParam &ccuHostParam)
 {
     return Hccl::StringFormat("InstrId[%u]: Wait, Use sem[%u], semValue[0x%04x], mask[0x%04x], rankId[%d]",
                         ccuHostParam.ccuErrorInfo.instrId, ccuHostParam.ccuErrorInfo.msg.waitSignal.signalId,
@@ -702,7 +699,7 @@ string TaskExceptionHost::GetCcuErrorMsgRemWaitSem(CcuHostParam &ccuHostParam)
                         GetRankIdByChannelId(ccuHostParam));
 }
 
-string TaskExceptionHost::GetCcuErrorMsgRemPostVar(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgRemPostVar(const CcuHostParam &ccuHostParam)
 {
     return Hccl::StringFormat("InstrId[%u]: Post Variable[0x%016llx] To Param[%u], Use sem[%u], mask[0x%04x], rankId[%d]",
                         ccuHostParam.ccuErrorInfo.instrId, ccuHostParam.ccuErrorInfo.msg.waitSignal.paramValue,
@@ -711,7 +708,7 @@ string TaskExceptionHost::GetCcuErrorMsgRemPostVar(CcuHostParam &ccuHostParam)
                         GetRankIdByChannelId(ccuHostParam));
 }
 
-string TaskExceptionHost::GetCcuErrorMsgRemWaitGroup(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgRemWaitGroup(const CcuHostParam &ccuHostParam)
 {
     stringstream ranks;
     for (uint32_t i = 0; i < WAIT_SIGNAL_CHANNEL_SIZE; ++i) {
@@ -731,24 +728,14 @@ string TaskExceptionHost::GetCcuErrorMsgRemWaitGroup(CcuHostParam &ccuHostParam)
                         ranks.str().c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgPostSharedVar(CcuHostParam &ccuHostParam)
-{
-    (void)taskInfo;
-    return Hccl::StringFormat("InstrId[%u]: Post Shared Variable[%u] from Variable[0x%016llx], "
-                        "Use sem[%u], mask[0x%04x]",
-                        ccuHostParam.ccuErrorInfo.instrId, ccuHostParam.ccuErrorInfo.msg.waitSignal.paramId,
-                        ccuHostParam.ccuErrorInfo.msg.waitSignal.paramValue, ccuHostParam.ccuErrorInfo.msg.waitSignal.signalId,
-                        ccuHostParam.ccuErrorInfo.msg.waitSignal.signalMask);
-}
-
-string TaskExceptionHost::GetCcuErrorMsgPostSharedSem(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgPostSharedSem(const CcuHostParam &ccuHostParam)
 {
     (void)taskInfo;
     return Hccl::StringFormat("InstrId[%u]: Post, Use sem[%u], mask[0x%04x]", ccuHostParam.ccuErrorInfo.instrId,
                         ccuHostParam.ccuErrorInfo.msg.waitSignal.signalId, ccuHostParam.ccuErrorInfo.msg.waitSignal.signalMask);
 }
 
-string TaskExceptionHost::GetCcuErrorMsgRead(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgRead(const CcuHostParam &ccuHostParam)
 {
     auto pair = GetAddrPairByChannelId(ccuHostParam);
     string printMsg = GetCcuLenErrorMsg(ccuHostParam.ccuErrorInfo.msg.transMem.len);
@@ -762,7 +749,7 @@ string TaskExceptionHost::GetCcuErrorMsgRead(CcuHostParam &ccuHostParam)
         pair.second.Describe().c_str(), printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgWrite(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgWrite(const CcuHostParam &ccuHostParam)
 {
     auto pair = GetAddrPairByChannelId(ccuHostParam);
     string printMsg = GetCcuLenErrorMsg(ccuHostParam.ccuErrorInfo.msg.transMem.len);
@@ -776,7 +763,7 @@ string TaskExceptionHost::GetCcuErrorMsgWrite(CcuHostParam &ccuHostParam)
         pair.second.Describe().c_str(), printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgLocalCpy(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgLocalCpy(const CcuHostParam &ccuHostParam)
 {
     (void)taskInfo;
     string printMsg = GetCcuLenErrorMsg(ccuHostParam.ccuErrorInfo.msg.transMem.len);
@@ -787,7 +774,7 @@ string TaskExceptionHost::GetCcuErrorMsgLocalCpy(CcuHostParam &ccuHostParam)
                         ccuHostParam.ccuErrorInfo.msg.transMem.signalMask, printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgLocalReduce(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgLocalReduce(const CcuHostParam &ccuHostParam)
 {
     (void)taskInfo;
     string printMsg = GetCcuLenErrorMsg(ccuErrorInfo.msg.transMem.len);
@@ -799,7 +786,7 @@ string TaskExceptionHost::GetCcuErrorMsgLocalReduce(CcuHostParam &ccuHostParam)
                         ccuHostParam.ccuErrorInfo.msg.transMem.opType, printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgBufRead(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgBufRead(const CcuHostParam &ccuHostParam)
 {
     auto pair = GetAddrPairByChannelId(ccuHostParam);
     string printMsg = GetCcuLenErrorMsg(ccuErrorInfo.msg.bufTransMem.len);
@@ -813,7 +800,7 @@ string TaskExceptionHost::GetCcuErrorMsgBufRead(CcuHostParam &ccuHostParam)
         pair.second.Describe().c_str(), printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgBufWrite(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgBufWrite(const CcuHostParam &ccuHostParam)
 {
     auto pair = GetAddrPairByChannelId(ccuHostParam);
     string printMsg = GetCcuLenErrorMsg(ccuHostParam.ccuErrorInfo.msg.bufTransMem.len);
@@ -827,7 +814,7 @@ string TaskExceptionHost::GetCcuErrorMsgBufWrite(CcuHostParam &ccuHostParam)
         pair.second.Describe().c_str(), printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgBufLocRead(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgBufLocRead(const CcuHostParam &ccuHostParam)
 {
     (void)taskInfo;
     string printMsg = GetCcuLenErrorMsg(ccuHostParam.ccuErrorInfo.msg.bufTransMem.len);
@@ -837,7 +824,7 @@ string TaskExceptionHost::GetCcuErrorMsgBufLocRead(CcuHostParam &ccuHostParam)
                         ccuHostParam.ccuErrorInfo.msg.bufTransMem.signalMask, printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgBufLocWrite(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgBufLocWrite(const CcuHostParam &ccuHostParam)
 {
     (void)taskInfo;
     string printMsg = GetCcuLenErrorMsg(ccuErrorInfo.msg.bufTransMem.len);
@@ -847,7 +834,7 @@ string TaskExceptionHost::GetCcuErrorMsgBufLocWrite(CcuHostParam &ccuHostParam)
                         ccuHostParam.ccuErrorInfo.msg.bufTransMem.signalMask, printMsg.c_str());
 }
 
-string TaskExceptionHost::GetCcuErrorMsgBufReduce(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgBufReduce(const CcuHostParam &ccuHostParam)
 {
     (void)taskInfo;
     stringstream buffIds;
@@ -883,33 +870,33 @@ string TaskExceptionHost::GetCcuErrorMsgMission(const Hccl::CcuErrorInfo &ccuErr
         ccuErrorInfo.msg.mission.missionError);
 }
 
-string TaskExceptionHost::GetCcuErrorMsgByType(CcuHostParam &ccuHostParam)
+string TaskExceptionHost::GetCcuErrorMsgByType(const CcuHostParam &ccuHostParam)
 {
-    if (ccuHostParam.ccuErrorInfo.type == CcuErrorType::MISSION) {
-        return GetCcuErrorMsgMission(ccuErrorInfo);
+    if (ccuHostParam.ccuErrorInfo.type == Hccl::CcuErrorType::MISSION) {
+        return GetCcuErrorMsgMission(ccuHostParam.ccuErrorInfo);
     }
 
-    using GetCcuErrorMsgFunc = string (*)(ccuHostParam);
+    using GetCcuErrorMsgFunc = string (*)(const CcuHostParam &ccuHostParam);
     static const map<CcuRepType, GetCcuErrorMsgFunc> handlerMap {
-        {Hccl::CcuRepType::LOOP, &TaskExceptionHost::GetCcuErrorMsgLoop},
-        {Hccl::CcuRepType::LOOPGROUP, &TaskExceptionHost::GetCcuErrorMsgLoopGroup},
-        {Hccl::CcuRepType::LOC_POST_SEM, &TaskExceptionHost::GetCcuErrorMsgLocPostSem},
-        {Hccl::CcuRepType::LOC_WAIT_SEM, &TaskExceptionHost::GetCcuErrorMsgLocWaitSem},
-        {Hccl::CcuRepType::REM_POST_SEM, &TaskExceptionHost::GetCcuErrorMsgRemPostSem},
-        {Hccl::CcuRepType::REM_WAIT_SEM, &TaskExceptionHost::GetCcuErrorMsgRemWaitSem},
-        {Hccl::CcuRepType::REM_POST_VAR, &TaskExceptionHost::GetCcuErrorMsgRemPostVar},
-        {Hccl::CcuRepType::REM_WAIT_GROUP, &TaskExceptionHost::GetCcuErrorMsgRemWaitGroup},
-        {Hccl::CcuRepType::POST_SHARED_VAR, &TaskExceptionHost::GetCcuErrorMsgPostSharedVar},
-        {Hccl::CcuRepType::POST_SHARED_SEM, &TaskExceptionHost::GetCcuErrorMsgPostSharedSem},
-        {Hccl::CcuRepType::READ, &TaskExceptionHost::GetCcuErrorMsgRead},
-        {Hccl::CcuRepType::WRITE, &TaskExceptionHost::GetCcuErrorMsgWrite},
-        {Hccl::CcuRepType::LOCAL_CPY, &TaskExceptionHost::GetCcuErrorMsgLocalCpy},
-        {Hccl::CcuRepType::LOCAL_REDUCE, &TaskExceptionHost::GetCcuErrorMsgLocalReduce},
-        {Hccl::CcuRepType::BUF_READ, &TaskExceptionHost::GetCcuErrorMsgBufRead},
-        {Hccl::CcuRepType::BUF_WRITE, &TaskExceptionHost::GetCcuErrorMsgBufWrite},
-        {Hccl::CcuRepType::BUF_LOC_READ, &TaskExceptionHost::GetCcuErrorMsgBufLocRead},
-        {Hccl::CcuRepType::BUF_LOC_WRITE, &TaskExceptionHost::GetCcuErrorMsgBufLocWrite},
-        {Hccl::CcuRepType::BUF_REDUCE, &TaskExceptionHost::GetCcuErrorMsgBufReduce}
+        {CcuRepType::LOOP, &TaskExceptionHost::GetCcuErrorMsgLoop},
+        {CcuRepType::LOOPGROUP, &TaskExceptionHost::GetCcuErrorMsgLoopGroup},
+        {CcuRepType::LOC_RECORD_EVENT, &TaskExceptionHost::GetCcuErrorMsgLocPostSem},
+        {CcuRepType::LOC_WAIT_EVENT, &TaskExceptionHost::GetCcuErrorMsgLocWaitSem},
+        {CcuRepType::LOC_WAIT_NOTIFY, &TaskExceptionHost::GetCcuErrorMsgLocWaitSem},
+        {CcuRepType::REM_POST_SEM, &TaskExceptionHost::GetCcuErrorMsgRemPostSem},
+        {CcuRepType::REM_WAIT_SEM, &TaskExceptionHost::GetCcuErrorMsgRemWaitSem},
+        {CcuRepType::REM_POST_VAR, &TaskExceptionHost::GetCcuErrorMsgRemPostVar},
+        {CcuRepType::REM_WAIT_GROUP, &TaskExceptionHost::GetCcuErrorMsgRemWaitGroup},
+        {CcuRepType::RECORD_SHARED_NOTIFY, &TaskExceptionHost::GetCcuErrorMsgPostSharedSem},
+        {CcuRepType::READ, &TaskExceptionHost::GetCcuErrorMsgRead},
+        {CcuRepType::WRITE, &TaskExceptionHost::GetCcuErrorMsgWrite},
+        {CcuRepType::LOCAL_CPY, &TaskExceptionHost::GetCcuErrorMsgLocalCpy},
+        {CcuRepType::LOCAL_REDUCE, &TaskExceptionHost::GetCcuErrorMsgLocalReduce},
+        {CcuRepType::BUF_READ, &TaskExceptionHost::GetCcuErrorMsgBufRead},
+        {CcuRepType::BUF_WRITE, &TaskExceptionHost::GetCcuErrorMsgBufWrite},
+        {CcuRepType::BUF_LOC_READ, &TaskExceptionHost::GetCcuErrorMsgBufLocRead},
+        {CcuRepType::BUF_LOC_WRITE, &TaskExceptionHost::GetCcuErrorMsgBufLocWrite},
+        {CcuRepType::BUF_REDUCE, &TaskExceptionHost::GetCcuErrorMsgBufReduce}
     };
 
     const auto funcIt = handlerMap.find(ccuHostParam.ccuErrorInfo.repType);
