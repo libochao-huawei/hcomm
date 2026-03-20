@@ -152,7 +152,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
 #endif
     {RA_RS_GET_TLS_ENABLE, 1},
     {RA_RS_GET_SEC_RANDOM, 1},
-    {RA_RS_GET_HCCN_CFG, 1},
+    {RA_RS_GET_HCCN_CFG, 2},
     {RA_RS_GET_ROCE_API_VERSION, 0},
     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
     {RA_RS_GET_DEV_EID_INFO_LIST, 1},
@@ -593,7 +593,7 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
     unsigned int *valueLen)
 {
 #define HCCN_CFGFILE_PATH "/etc/hccl.cfg"
-    const char *keyName[HCCN_CFG_KEY_INVALID] = {"udp_port_mode", "multi_qp_count", "multi_qp_udp_ports"};
+    const char *keyName[HCCN_CFG_KEY_INVALID] = {"udp_port_mode", "multi_qp_count", "multi_qp_udp_ports", "resv_mem"};
     unsigned int valLen = 0;
     unsigned int bufLen;
     int ret = 0;
@@ -1061,7 +1061,6 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
     }
 
     rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
-
     return 0;
 
 unmmap_ai_db:
