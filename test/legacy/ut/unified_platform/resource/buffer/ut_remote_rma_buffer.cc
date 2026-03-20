@@ -15,6 +15,7 @@
 #include "local_ub_rma_buffer.h"
 #include "exchange_ub_buffer_dto.h"
 #include "exchange_ipc_buffer_dto.h"
+#include "exchange_rdma_buffer_dto.h"
 #define private public
 #define protected public
 #include "dev_buffer.h"
@@ -50,6 +51,21 @@ protected:
         std::cout << "A Test case in RemoteRmaBuffer TearDown." << std::endl;
     }
     std::shared_ptr<DevBuffer> devBuf;
+};
+
+TEST_F(RemoteRmaBufferTest, remoterdmarmabuffer_construct_with_dto)
+{
+    ExchangeRdmaBufferDto dto;
+    dto.addr = 0x114;
+    dto.size = 0x514;
+    dto.rkey = 1919;
+    dto.memTag = "testTag";
+    RdmaHandle rdmaHandle = (RdmaHandle)0x1000000;
+    RemoteRdmaRmaBuffer buffer(rdmaHandle, dto);
+    EXPECT_EQ(dto.addr, buffer.GetAddr());
+    EXPECT_EQ(dto.size, buffer.GetSize());
+    EXPECT_EQ(dto.rkey, buffer.GetRkey());
+    EXPECT_STREQ(dto.memTag.c_str(), buffer.GetMemTag().c_str());
 };
 
 TEST_F(RemoteRmaBufferTest, remoteubrmabuffer_construct_error)
