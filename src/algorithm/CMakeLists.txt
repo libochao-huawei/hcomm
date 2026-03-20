@@ -183,7 +183,7 @@ else()
     )
 endif()
 
-add_subdirectory(base)
+# add_subdirectory(base)
 add_subdirectory(impl)
 
 install(TARGETS hccl_alg
