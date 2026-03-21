@@ -273,11 +273,11 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         } else {
             algName = "RunAlltoAllDirectFullmesh";
         }
-        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s].", algName.c_str());
+        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
         return HCCL_SUCCESS;
     } else if (!useOneLevelAlgorithm && IsSatisfyAlltoallContinuousPipelineCondition(param)) {
         algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
-        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s].", algName.c_str());
+        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
         return HCCL_SUCCESS ;
     } else if (IsSatisfyAlltoallPipelineCondition()) {
         algName = "RunAlltoAllVTwoLevelPipeline";
@@ -320,7 +320,7 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
     std::string copyMode = "BCopy";
 
     if (isDiffDeviceType_) {
-        HCCL_ERROR("[AlltoAllOperator][SelectAlg] AlltoAll not support diffDeviceType.");
+        HCCL_ERROR("[AlltoAllOperator][SelectAlg] AlltoAll not support diffDeviceType");
         return HCCL_E_NOT_SUPPORT;
     }
     ret = SelectAlgforAlltoAll(param, algName, copyMode, resourceLimit);
@@ -328,7 +328,7 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
         HCCL_ERROR("[SelectAlgforAlltoAll][SelectAlg]tag[%s], Alltoall failed, return[%d].", tag.c_str(), ret), ret);
 
     if (resourceLimit.ifCompileForAiv) {
-        HCCL_DEBUG("[SelectAlg] AlltoAllOperator compile for aiv, early return");
+        HCCL_DEBUG("[SelectAlg] AlltoAllOperator compile for aiv, early return.");
         return HCCL_SUCCESS;
     }
 
