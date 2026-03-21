@@ -16,6 +16,7 @@
 #include "dispatcher_ctx.h"
 #include "hcomm_primitives.h"
 #include "launch_aicpu.h"
+#include "hccl_rank_graph.h"
 
 using namespace hccl;
 static const char* RANKTABLE_FILE_NAME = nullptr;
@@ -261,4 +262,20 @@ TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Engine_
     threadMgr->HcclThreadAcquireWithStream(CommEngine::COMM_ENGINE_CPU, nullptr, 1, threads);
     ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_AICPU_TS, exportedThreads);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_PrintLinksInfo)
+{
+    RankGraphV1 rankGraph_;
+    CommLink link;
+    CommLinkInit(&link, 1);
+    link.srcEndpointDesc.loc.device.devPhyId = 0;
+    link.srcEndpointDesc.loc.device.superDevId = 0;
+    link.srcEndpointDesc.loc.device.serverIdx = 0;
+    link.srcEndpointDesc.loc.device.superPodIdx = 0;
+    link.dstEndpointDesc.loc.device.devPhyId = 1;
+    link.dstEndpointDesc.loc.device.superDevId = 1;
+    link.dstEndpointDesc.loc.device.serverIdx = 1;
+    link.dstEndpointDesc.loc.device.superPodIdx = 1;
+    rankGraph_.PrintLinksInfo(link);
 }
