@@ -23,6 +23,7 @@
 
 #include "exception_handler.h"
 
+
 namespace hcomm {
 
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::RTP; // 环回使用RTP避免被环境link down阻塞
@@ -879,6 +880,81 @@ HcclResult CcuComponent::DestroyAllJettys()
     }
     createdOutParamMap_.clear();
     return HcclResult::HCCL_SUCCESS;
+}
+
+void CcuComponent::SetProcess(CcuOpcodeType opCode) const
+{
+    const HRaInfo info(HrtNetworkMode::HDC, devPhyId);
+    struct CustomChannelInfoIn  inBuff;
+    struct CustomChannelInfoOut outBuff;
+
+    inBuff.op = opCode;
+    for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
+        if (!dieEnableFlags[dieId]) {
+            HCCL_WARNING("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] is not enable,"
+                "skip SetProcess.", devLogicId, dieId);
+            continue;
+        }
+        HCCL_INFO("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] start.", devLogicId, dieId);
+        inBuff.data.dataInfo.udieIdx = dieId;
+        HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+    }
+}
+
+HcclResult CcuComponent::CleanTaskKillState() const
+{
+    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::SetTaskKillDone()
+{
+    std::lock_guard<std::mutex> _lock(innerMutex);
+    if (status == CcuTaskKillStatus::INVALID) {
+        HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
+            "state = %u, devLogicId = %d.", __func__, status, devLogicId);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    if (status == CcuTaskKillStatus::INIT) {
+        HCCL_INFO("No need to set task kill done, state = %u, devLogicId = %u", status, devLogicId);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    if (status != CcuTaskKillStatus::TASK_KILL) {
+        HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
+            "state = %u, devLogicId = %d.", __func__, status, devLogicId);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    status = CcuTaskKillStatus::INIT;
+    HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d", __func__, status, devLogicId);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuComponent::CcuSetTaskKillDone(const int32_t deviceLogicId)
+{
+    HCCL_INFO("[CcuSetTaskKillDone] Input params: deviceLogicId[%d]", deviceLogicId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuSetTaskKillDone]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
+    TRY_CATCH_RETURN(
+        return CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone();
+    );
+}
+
+HcclResult CcuComponent::CcuCleanTaskKillState(const int32_t deviceLogicId)
+{
+    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%d]", deviceLogicId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
+    TRY_CATCH_RETURN(
+        return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
+    );
 }
 
 }; // namespace hcomm
