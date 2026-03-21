@@ -139,7 +139,10 @@ private:
 
     void GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                     std::vector<CcuErrorInfo> &errorInfo);
+    uint64_t GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId);
+    void GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
     void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
+    CcuLoopContext GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId);
     CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
     HcclResult GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
         std::vector<CcuErrorInfo> &errorInfo);

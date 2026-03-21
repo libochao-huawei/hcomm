@@ -288,6 +288,26 @@ void CcuTaskException::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, sha
     errorInfo.push_back(errorMsg);
 }
 
+uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId)
+{
+    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    struct CustomChannelInfoIn  inBuff;
+    struct CustomChannelInfoOut outBuff;
+
+    inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_XN;
+    inBuff.data.dataInfo.udieIdx       = dieId;
+    inBuff.offsetStartIdx              = xnId;
+    inBuff.data.dataInfo.dataArraySize = 1; // 读1个Xn
+    inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
+
+    HrtRaCustomChannel(info, &inBuff, &outBuff);
+
+    uint64_t xnVal{0};
+    (void)memcpy_s(&xnVal, sizeof(xnVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
+    return xnVal;
+}
+
+
 void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
@@ -556,6 +576,65 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
         GenErrorInfoDefault(baseInfo, repBase, errorInfo);
     } else {
         (funcIt->second)(baseInfo, repBase, errorInfo);
+    }
+}
+
+CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId)
+{
+    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    struct CustomChannelInfoIn  inBuff;
+    struct CustomChannelInfoOut outBuff;
+
+    inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_LOOP_CTX;
+    inBuff.data.dataInfo.udieIdx       = dieId;
+    inBuff.offsetStartIdx              = loopCtxId;
+    inBuff.data.dataInfo.dataArraySize = 1; // 读1个LoopContext
+    inBuff.data.dataInfo.dataLen       = sizeof(CcuLoopContext) * inBuff.data.dataInfo.dataArraySize;
+
+    HrtRaCustomChannel(info, &inBuff, &outBuff);
+
+    CcuLoopContext loopCtx{};
+    (void)memcpy_s(&loopCtx, sizeof(loopCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
+    return loopCtx;
+}
+
+void CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx,
+                                       vector<CcuErrorInfo> &errorInfo)
+{
+    // 找LoopRep
+    auto repBase = ctx.GetRepByInstrId(baseInfo.currentInsId);
+    if (repBase == nullptr || repBase->Type() != CcuRepType::LOOP) {
+        THROW<CcuApiException>("Failed to find Loop REP from CcuContext, instrId[%u]", baseInfo.currentInsId);
+    }
+    const auto rep = static_pointer_cast<CcuRepLoop>(repBase);
+
+    CcuErrorInfo errorMsg{};
+    errorMsg.type    = CcuErrorType::LOOP;
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+
+    LoopXm loopXm{};
+    loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->loopParam.Id());
+    const auto ccuLoopContext        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
+    errorMsg.msg.loop.startInstrId   = rep->loopBlock->StartInstrId();
+    errorMsg.msg.loop.endInstrId     = rep->loopBlock->StartInstrId() + rep->loopBlock->InstrCount() - 1;
+    errorMsg.msg.loop.loopEngineId   = loopXm.loopCtxId;
+    errorMsg.msg.loop.loopCnt        = static_cast<uint16_t>(loopXm.loopCnt);
+    errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
+    errorMsg.msg.loop.addrStride     = ccuLoopContext.GetAddrStride();
+
+    errorInfo.push_back(errorMsg);
+
+    // 解析Loop内的异常Rep
+    for (uint16_t loopCurrentIns = errorMsg.msg.loop.startInstrId; loopCurrentIns <= errorMsg.msg.loop.endInstrId;
+         loopCurrentIns++) {
+        auto inLoopExRep = rep->loopBlock->GetRepByInstrId(loopCurrentIns);
+        if (inLoopExRep == nullptr) {
+            THROW<CcuApiException>("Failed to find REP from Loop, instrId[%u], Loop[%s]", loopCurrentIns,
+                                   rep->GetLabel().c_str());
+        }
+        ErrorInfoBase loopErrBase{baseInfo.deviceId, baseInfo.dieId, baseInfo.missionId, loopCurrentIns,
+                                  baseInfo.status};
+        GenErrorInfoByRepType(loopErrBase, inLoopExRep, errorInfo);
     }
 }
 
