@@ -220,9 +220,8 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
         HCCL_ERROR("[AicpuIndopProcess][%s]comm group [%s] has been used.", __func__, group.c_str());
         return HCCL_E_INTERNAL;
     }
-    CollCommAicpu* aicpuComm = iter->second->GetCollCommAicpu();
-    CHK_PTR_NULL(aicpuComm);
-    aicpuComm->SetIsReady(false);
+    // 从commMgrMap中删除该元素
+    g_commAicpuInfo.commMgrMap.erase(iter);
     HCCL_INFO("[AicpuIndopProcess][%s]Destroy comm group [%s] success.", __func__, group.c_str());
     return HCCL_SUCCESS;
 }
