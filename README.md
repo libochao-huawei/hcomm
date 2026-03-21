@@ -37,7 +37,7 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 |   │   ├── debug                     # 调试配置管理
 |   │   ├── error_code                # 错误码管理
 |   │   ├── health                    # 健康检查与一致性校验
-|   │   ├── launch_device             # 设备启动管理
+|   │   ├── launch_device             # kernel加载处理
 |   │   └── stream                    # 流管理工具
 │   ├── framework                     # 通信框架源码目录
 |   │   ├── cluster_maintenance       # 集群维护，包括：快照、心跳、算子重执行等
