@@ -7257,14 +7257,22 @@ namespace hccl
     HcclResult HcclCommunicator::AicpuKfcTilingDataLaunchIn(const OpParam &opParam, const DeviceMem &deviceContext,
                                                             const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 opTilingDataSize, bool isCustom)
     {
+        auto perfTimestamps = std::make_unique<u64[]>(20);
+        perfTimestamps[0] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         HostMem opTilingDataMem = opTilingDataBuf_.range(0, opTilingDataSize);
         CHK_RET(SetNormalMode(dispatcher_));
+        perfTimestamps[1] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         Stream &mainStream = const_cast<Stream &>(opParam.stream);
         CHK_RET(LocalNotify::Post(mainStream, dispatcher_,
             localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::HOST_TO_AICPU_0)], INVALID_VALUE_STAGE));
-
+        perfTimestamps[2] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         Stream kfcOpStream;
         HcclWorkflowMode mode = GetWorkflowMode();
+        perfTimestamps[3] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
         if (opParam.isCapture || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             kfcOpStream = opStream_;
@@ -7278,7 +7286,11 @@ namespace hccl
                 kfcOpStream = opParam.stream;
             }
         }
+        perfTimestamps[4] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         uint64_t beginTime = hrtMsprofSysCycleTime();
+        perfTimestamps[5] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         std::string profName = GetCMDTypeEnumStr(opParam.opType);
         if (profName == "Invalid HcclCMDType" || profName == "invalid") {
             profName = "HcclOpAicpuKernel";
@@ -7289,11 +7301,16 @@ namespace hccl
         auto getAicpuTaskExceptionCallBack = [this]() {
             return this->GetAicpuTaskException();
         };
+        perfTimestamps[6] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         RegisterGetAicpuTaskExceptionCallBack(streamId, deviceLogicId_, getAicpuTaskExceptionCallBack);
+        perfTimestamps[7] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         if (streamId != opParam.stream.id()) {
             RegisterGetAicpuTaskExceptionCallBack(opParam.stream.id(), deviceLogicId_, getAicpuTaskExceptionCallBack);
         }
-
+        perfTimestamps[8] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         HCCL_INFO("%s profName[%s] tag[%s] kfcOpStreamId[%d] mainStreamId[%u] kfcStreamId[%d] isCapture[%d] mode[%d] ",
             __func__, profName.c_str(), opParam.tag.c_str(), streamId, opParam.stream.id(), opStream_.id(),
             opParam.isCapture, mode);
@@ -7316,6 +7333,8 @@ namespace hccl
         OrderLaunch& orderLaunch = OrderLaunch::GetInstance(deviceLogicId_);
         std::shared_ptr<LocalNotify> notify0;
         std::shared_ptr<LocalNotify> notify1;
+        perfTimestamps[9] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         if (opParam.isCapture) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1)];
@@ -7332,19 +7351,52 @@ namespace hccl
             CHK_RET(orderLaunch.HcomLaunchInOrder(identifier_, kfcOpStream, graphId_, notify0,
                 notify1, timeOut));
         }
+        perfTimestamps[10] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         CHK_RET(KernelLaunchChooseAicpuOrCustom(opParam.inputPtr, opParam.outputPtr, kfcOpStream.ptr(),
                                                 reinterpret_cast<u64>(deviceContext.ptr()), opTilingDataMem.ptr(), opTilingDataSize,
                                                 kernelName, mode, opParam.tag, isCustom));
+        perfTimestamps[11] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         if (opParam.isCapture) {
             HcclRtEvent event1 = localAicpuOpEvent_[static_cast<u32>(AicpuLocalEventIdx::ORDER_INDEX_ACLGRAPH_EVENT_1)];
             CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream, event1));
         }
 
         uint64_t endTime = hrtMsprofSysCycleTime();
+        perfTimestamps[12] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         s32 threadId = SalGetTid();
         CHK_RET(ProfilingManagerPub::CallMsprofReportNodeInfo(beginTime, endTime, profName, threadId));
+        perfTimestamps[13] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         CHK_RET(LocalNotify::Wait(mainStream, dispatcher_,
             localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::HOST_TO_AICPU_1)], INVALID_VALUE_STAGE, timeOut));
+        perfTimestamps[14] = std::chrono::duration_cast<std::chrono::nanoseconds>(
+ 	                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        HCCL_ERROR("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] perf timestamps interval tag[%s]: "
+            "SetNormalMode=%lld(ns), LocalNotify_Post=%lld(ns), GetWorkflowMode=%lld(ns), "
+            "isSupportHcomAttachedStream_check=%lld(ns), hrtMsprofSysCycleTime=%lld(ns), GetCMDTypeEnumStr=%lld(ns), "
+            "RegisterGetAicpuTaskExceptionCallBack_streamId=%lld(ns), "
+            "RegisterGetAicpuTaskExceptionCallBack_opParam_stream=%lld(ns), OrderLaunch_GetInstance=%lld(ns), "
+            "OrderLaunch=%lld(ns), KernelLaunchChooseAicpuOrCustom=%lld(ns), "
+            "hrtMsprofSysCycleTime=%lld(ns), "
+            "CallMsprofReportNodeInfo=%lld(ns), LocalNotify_Wait=%lld(ns)",
+            opParam.tag.c_str(),
+            static_cast<long long>(perfTimestamps[1] - perfTimestamps[0]),
+            static_cast<long long>(perfTimestamps[2] - perfTimestamps[1]),
+            static_cast<long long>(perfTimestamps[3] - perfTimestamps[2]),
+            static_cast<long long>(perfTimestamps[4] - perfTimestamps[3]),
+            static_cast<long long>(perfTimestamps[5] - perfTimestamps[4]),
+            static_cast<long long>(perfTimestamps[6] - perfTimestamps[5]),
+            static_cast<long long>(perfTimestamps[7] - perfTimestamps[6]),
+            static_cast<long long>(perfTimestamps[8] - perfTimestamps[7]),
+            static_cast<long long>(perfTimestamps[9] - perfTimestamps[8]),
+            static_cast<long long>(perfTimestamps[10] - perfTimestamps[9]),
+            static_cast<long long>(perfTimestamps[11] - perfTimestamps[10]),
+            static_cast<long long>(perfTimestamps[12] - perfTimestamps[11]),
+            static_cast<long long>(perfTimestamps[13] - perfTimestamps[12]),
+            static_cast<long long>(perfTimestamps[14] - perfTimestamps[13]));
         return HCCL_SUCCESS;
     }
 
