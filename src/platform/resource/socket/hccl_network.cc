@@ -155,7 +155,7 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateRdmaHandle(localIp_, isBackup_, netMode, notifyType, netDevDeployment_));
                 NetworkManager::GetInstance(deviceLogicId_).GetRdmaHandleByIpAddr(localIp_, handle_);
                 CHK_PTR_NULL(handle_);
-                HCCL_INFO("[NetDevContext][InitV2]Deployment is device and proto is roce");
+                HCCL_INFO("[NetDevContext][InitV2]Deployment is host and proto is roce");
                 break;
             }
             default: // 保留

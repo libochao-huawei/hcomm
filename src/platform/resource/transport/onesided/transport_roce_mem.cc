@@ -41,6 +41,7 @@ TransportRoceMem::~TransportRoceMem()
     if (rdmaSignalMrHandle_ != nullptr) {
         HcclResult ret = HCCL_SUCCESS;
         ret = hrtRaDeRegGlobalMr(nicRdmaHandle_, rdmaSignalMrHandle_);
+        rdmaSignalMrHandle_ = nullptr;
         if (ret != 0) {
             HCCL_ERROR("deReg rdmaSignal GlobalMr failed, ret[%d]", ret);
         }
@@ -49,6 +50,7 @@ TransportRoceMem::~TransportRoceMem()
     if (notifyValueMemMrHandle_ != nullptr) {
         HcclResult ret = HCCL_SUCCESS;
         ret = hrtRaDeRegGlobalMr(nicRdmaHandle_, notifyValueMemMrHandle_);
+        notifyValueMemMrHandle_ = nullptr;
         if (ret != 0) {
             HCCL_ERROR("deReg notify Mem Mr failed, ret[%d]", ret);
         }
