@@ -22,8 +22,8 @@
 #include "aiv_all_gather_crossnode_91093.h"
 #include "aiv_all_gather_crossnode_91093_graph.h"
 
-#define AIV_ALL_GATHER_KERNEL_BATCH_DEF(type) \
-extern "C" __global__ __aicore__ void aiv_all_gather_##type(KERNEL_ARGS_DEF) { \
+#define AIV_ALL_GATHER_KERNEL_DEF(aa, kernel_name, type) \
+extern "C" aa void kernel_name(KERNEL_ARGS_DEF) { \
     if (isOpBase) { \
         if (aivRdmaStep >= 0) { \
             return aiv_all_gather_910b_rdma<type>(KERNEL_ARGS_CALL); \
@@ -42,16 +42,22 @@ extern "C" __global__ __aicore__ void aiv_all_gather_##type(KERNEL_ARGS_DEF) { \
         } \
     } \
 } \
-EXPORT_AIV_META_INFO(aiv_all_gather_##type)
+EXPORT_AIV_META_INFO(kernel_name)
 
-#define AIV_ALL_GATHER_KERNEL_BATCH_DEF_A3(type) \
-extern "C" __global__ __aicore__ void aiv_all_gather_cn_##type(KERNEL_ARGS_DEF_A3) { \
+#define AIV_ALL_GATHER_KERNEL_DEF_A3(aa, kernel_name, type) \
+extern "C" aa void kernel_name(KERNEL_ARGS_DEF_A3) { \
     if (isOpBase) { \
         return aiv_all_gather_crossnode_91093<type>(KERNEL_ARGS_CALL_A3); \
     } \
     return aiv_all_gather_crossnode_91093_graph<type>(KERNEL_ARGS_CALL_A3); \
 } \
-EXPORT_AIV_META_INFO(aiv_all_gather_cn_##type)
+EXPORT_AIV_META_INFO(kernel_name)
+
+#define AIV_ALL_GATHER_KERNEL_BATCH_DEF(type) \
+    AIV_KERNEL_BATCH_DEF(aiv_all_gather, type, AIV_ALL_GATHER_KERNEL_DEF, SK_BIND_FUNC_DEF_A2)
+
+#define AIV_ALL_GATHER_KERNEL_BATCH_DEF_A3(type) \
+    AIV_KERNEL_BATCH_DEF(aiv_all_gather_cn, type, AIV_ALL_GATHER_KERNEL_DEF_A3, SK_BIND_FUNC_DEF_A3)
 
 // 定义算子各数据类型Kernel入口
 AIV_COPY_DATA_TYPE_DEF(AIV_ALL_GATHER_KERNEL_BATCH_DEF);
