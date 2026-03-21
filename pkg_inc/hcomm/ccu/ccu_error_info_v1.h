@@ -119,7 +119,156 @@ struct ErrorInfoBase {
     uint16_t status;
 };
 
+struct CcuLoopContext {
+    union {
+        uint16_t value;
+        uint16_t timestamp;
+    } part0;
 
+    union {
+        uint16_t value;
+        uint16_t timestamp;
+    } part1;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t timestamp : 4;
+            uint16_t ckeOffset : 10;
+            uint16_t msOffset : 2;
+        };
+    } part2;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t msOffset : 9;
+            uint16_t addrOffset : 7;
+        };
+    } part3;
+
+    union {
+        uint16_t value;
+        uint16_t addrOffset;
+    } part4;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t addrOffset : 9;
+            uint16_t ckBit : 7;
+        };
+    } part5;
+
+    union {
+        uint16_t value;
+        uint16_t ckBit;
+    } part6;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t ckBit : 9;
+            uint16_t perfMode : 1;
+            uint16_t waitLoopCkbitValue : 6;
+        };
+    } part7;
+
+    union {
+        uint16_t value;
+        uint16_t waitLoopCkbitValue;
+    } part8;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t waitLoopCkbitValue : 10;
+            uint16_t currentIns : 6;    // Current_ins [5:0]
+        };
+    } part9;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t currentIns : 10;   // Current_ins [15:6]
+            uint16_t addrStride : 6;    // Addr_stride [5:0]
+        };
+    } part10;
+
+    union {
+        uint16_t value;
+        uint16_t addrStride;            // Addr_stride [21:6]
+    } part11;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t addrStride : 10;   // Addr_stride [31:22]
+            uint16_t denyCnt : 6;
+        };
+    } part12;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t denyCnt : 4;
+            uint16_t currentCnt : 12;   // Current_cnt [11:0]
+        };
+    } part13;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t currentCnt : 1;    // Current_cnt [12]
+            uint16_t totalCnt : 13;
+            uint16_t endIns : 2;
+        };
+    } part14;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t endIns : 14;
+            uint16_t startIns : 2;
+        };
+    } part15;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t startIns : 14;
+            uint16_t missionId : 2;
+        };
+    } part16;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t missionId : 2;
+            uint16_t reserved : 14;
+        };
+    } part17;
+
+    uint16_t reserved[14]; // part 18-31
+
+    uint16_t GetCurrentIns() const
+    {
+        return (part10.currentIns << 6) | (part9.currentIns);   // part10.currentIns为[15:6]位
+    }
+
+    uint16_t GetCurrentCnt() const
+    {
+        return (part14.currentCnt << 12) | (part13.currentCnt); // part14.currentCnt为第[12]位
+    }
+
+    uint32_t GetAddrStride() const
+    {
+        const uint32_t low = static_cast<uint32_t>(part10.addrStride);
+        const uint32_t mid = static_cast<uint32_t>(part11.addrStride) << 6;     // part11.addrStride为[21:6]位
+        const uint32_t high = static_cast<uint32_t>(part12.addrStride) << 22;   // part12.addrStride为[31:22]位
+        return high | mid | low;
+    }
+};
 
 struct CcuMissionContext {
     union {
