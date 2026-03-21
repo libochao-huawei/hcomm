@@ -153,7 +153,7 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
     if (res == nullptr) {
         HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, devPhyId, localIp);
         HCCL_INFO("[GetByIp] wzh checkpoint3");
-        EXECEPTION_CATCH(res = HrtRaUbCtxInit(in), return HCCL_E_PTR);
+        EXECEPTION_CATCH(res = HrtRaUbCtxInit(in), return nullptr);
         HCCL_INFO("[GetByIp] wzh checkpoint4");
         rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp] = res;
         tokenInfoMap[res] = std::make_unique<TokenInfoManager>(devPhyId, res);
