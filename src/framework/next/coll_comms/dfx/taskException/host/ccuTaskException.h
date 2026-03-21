@@ -99,8 +99,10 @@ private:
                                 CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
     static void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                 std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoLocWaitSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
-                                    std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                            std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                            std::vector<CcuErrorInfo> &errorInfo);
 
     static void GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                     std::vector<CcuErrorInfo> &errorInfo);
@@ -146,6 +148,7 @@ private:
     static HcclResult GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
         std::vector<CcuErrorInfo> &errorInfo);
     static void PrintPanicLogInfo(const uint8_t *panicLog);
+    static uint16_t GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint32_t ckeId);
 
 };
 } // namespace hcomm
