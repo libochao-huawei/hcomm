@@ -9,7 +9,7 @@
  */
 #include "hcclCommProfilingLite.h"
 #include "profiling_reporter_lite.h"
-#include "mirror_task_manager.h"
+#include "mirror_task_manager_lite.h"
 
 namespace hccl {
 // 构造函数
