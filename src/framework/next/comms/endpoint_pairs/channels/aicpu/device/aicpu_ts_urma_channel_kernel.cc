@@ -56,3 +56,4 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelUpdateV2(voi
 
     return AicpuIndopProcess::AicpuIndOpChannelUpdate(commParam);
 }
+}
