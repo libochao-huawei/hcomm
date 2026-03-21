@@ -264,8 +264,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     }
     // exceptionInfo->taskId和exceptionInfo->streamId拼成sqeId
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo->taskId << 16) | static_cast<uint32_t>(exceptionInfo->streamId);
-    const auto curTask = GlobalMirrorTasks::Instance().GetTaskInfo(
-            0, exceptionInfo->sqId, sqeId);
+    const auto curTask = GlobalMirrorTasks::Instance().GetTaskInfo(0, exceptionInfo->sqId, sqeId);
     if (curTask == nullptr) {
         // 未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
@@ -307,12 +306,13 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     PrintEid(curTask);
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, base information is %s.", curTask->GetBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
-    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
-        GetGroupRankInfo(*curTask).c_str());
-    std::pair<float, float> floatCounter;
- 	floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
- 	floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
-    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second), curTask->dfxOpInfo_->opIndex_);
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.", GetGroupRankInfo(*curTask).c_str());
+ 	if(curTask->dfxOpInfo_ != nullptr && curTask->dfxOpInfo_->headOpCounterAddr_ != 0 && curTask->dfxOpInfo_->tailOpCounterAddr_ != 0) {
+ 	    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].",
+ 	    static_cast<u32>(*(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_))),
+ 	    static_cast<u32>(*(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_))),
+ 	    curTask->dfxOpInfo_->opIndex_);
+ 	}
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
 }
 
