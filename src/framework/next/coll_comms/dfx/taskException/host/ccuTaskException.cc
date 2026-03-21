@@ -627,7 +627,14 @@ void CcuTaskException::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, shar
 
     errorInfo.push_back(errorMsg);
 }
-
+void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                                          vector<CcuErrorInfo> &errorInfo)
+{
+    CcuErrorInfo errorMsg{};
+    errorMsg.type    = CcuErrorType::DEFAULT;
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
+    errorInfo.push_back(errorMsg);
+}
 
 void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                             vector<CcuErrorInfo> &errorInfo)
