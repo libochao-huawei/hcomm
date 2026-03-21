@@ -10,7 +10,6 @@
 
 #include "read_write_lock.h"
 
-
 ReadWriteLock::~ReadWriteLock()
 {
     while (writersNum_ > 0) {

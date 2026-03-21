@@ -282,7 +282,7 @@ inline HcclResult RpingstateCheck(RpingState currState, RpingState nextState)
  
 inline void TsdProcessOpenInit(rtNetServiceOpenArgs &openArgs, rtProcExtParam *extParam)
 {
-    std::string extPam[TSD_EXT_PARA_NUM] = {std::string("--hdcType=" + std::to_string(HDC_SERVICE_TYPE_RDMA_V2)),
+    const std::string extPam[TSD_EXT_PARA_NUM] = {std::string("--hdcType=" + std::to_string(HDC_SERVICE_TYPE_RDMA_V2)),
                                             std::string("--whiteListStatus=" + std::to_string(WHITE_LIST_CLOSE))};
     for (u32 i = 0; i < TSD_EXT_PARA_NUM; i++) {
         extParam[i].paramInfo = extPam[i].c_str();
@@ -411,7 +411,11 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
     u32 num = 0;
     s32 ret = 0;
 
-    info.mode = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
+    auto iter = HRT_NETWORK_MODE_MAP.find(raInfo.mode);
+    if (iter != HRT_NETWORK_MODE_MAP.end()) {
+        HCCL_ERROR("[RaGetEidMap]HRT_NETWORK_MODE_MAP not found mode[%d].", raInfo.mode);
+        return HCCL_E_NOT_FOUND;
+    }
     info.phyId = raInfo.phyId;
 
     ret = hrtRaGetDevEidInfoNum(info, &num);

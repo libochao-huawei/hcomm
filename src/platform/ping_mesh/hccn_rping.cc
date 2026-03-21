@@ -273,7 +273,7 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
         HccnResult res = HccnRpingInitTargetAttr(target, input, m);
         if (res != HCCN_SUCCESS) {
             delete[] input;
-            HCCL_ERROR("[HccnRpingAddTargetWithCfg]init target attr fail, ret[%d].", ret);
+            HCCL_ERROR("[HccnRpingAddTargetWithCfg]init target attr fail, ret[%d].", res);
             return HCCN_E_PARA;
         }
         s32 sRet = memcpy_s(input[m].payload, input[m].len, target[m].payload, target[m].payloadLen);
@@ -406,7 +406,11 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         input[h].addrType = target[h].addrType;
     }
     int *state = new (std::nothrow) int[targetNum];
-    CHK_PRT_RET(state == nullptr, HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed."), HCCN_E_MEM);
+    if (state == nullptr) {
+        HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed.");
+        delete[] input;
+        return HCCN_E_MEM;
+    }
     ret = rping->HccnRpingGetTarget(static_cast<u32>(devLogicId), targetNum, input, state);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HccnRpingGetTarget]Device[%d] get targetNum %u fail, ret[%d]", devLogicId, targetNum, ret);
