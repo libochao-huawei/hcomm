@@ -146,6 +146,9 @@ private:
     static HcclResult GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
         std::vector<CcuErrorInfo> &errorInfo);
     static void PrintPanicLogInfo(const uint8_t *panicLog);
+    static void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                                          vector<CcuErrorInfo> &errorInfo);
+    uint64_t GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId);
 
 };
 } // namespace hcomm
