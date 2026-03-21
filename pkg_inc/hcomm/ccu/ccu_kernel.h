@@ -214,9 +214,6 @@ private:
     std::unordered_map<uint64_t, uint16_t> channelIdToHandle_;
     std::vector<GroupInfo> groupOpSizeInfo;
 
-    CcuProfilingInfo ccuProfilingInfoCache;
-    CcuRep::LoopGroupProfilingInfo lgProfilingInfo;
-    std::vector<std::shared_ptr<CcuRep::CcuRepBase>> allLgProfilingReps;
 };
 
 // kernel构造函数的lambda函数

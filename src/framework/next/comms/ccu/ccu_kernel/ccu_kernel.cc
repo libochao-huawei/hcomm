@@ -831,7 +831,12 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
                 return HCCL_E_PTR;
             }
             auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitEvent*>(waitCkeRep.get());
-            profInfo.ckeId = localWaitRep->GetId();
+            if (localWaitRep) {
+                profInfo.ckeId = localWaitRep->GetId();
+            } else {
+                HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+                return HCCL_E_PTR;
+            }
         }
         allCcuProfilingInfos.push_back(profInfo);
         count++;

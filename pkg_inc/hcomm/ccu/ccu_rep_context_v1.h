@@ -92,6 +92,13 @@ public:
     HcclResult AddProfiling(const ChannelHandle *channels, uint32_t channelNum);
     HcclResult AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType, HcclDataType outputDataType,
                     HcclReduceOp opType);
+public:
+    // CCU Profiling相关数据
+    CcuProfilingInfo ccuProfilingInfoCache;
+    std::vector<std::shared_ptr<CcuRepBase>> allLgProfilingReps;  // 当前所有的loopGroup Rep
+    LoopGroupProfilingInfo lgProfilingInfo; // LoopGroup相关profiling缓存信息
+    std::vector<std::shared_ptr<CcuRepBase>> waitCkeProfilingReps; // waitCKE相关REP缓存
+    std::vector<CcuProfilingInfo> profilingInfo; // context全部profiling缓存信息
 protected:
     std::set<std::string> registeredLoop;
 
@@ -102,12 +109,6 @@ private:
     uint32_t             dieId{CCU_MAX_IODIE_NUM};
     uint32_t             missionId{UINT32_MAX};
     uint32_t             missionKey{0};
-    // CCU Profiling相关数据
-    CcuProfilingInfo ccuProfilingInfoCache;
-    std::vector<std::shared_ptr<CcuRepBase>> allLgProfilingReps;  // 当前所有的loopGroup Rep
-    LoopGroupProfilingInfo lgProfilingInfo; // LoopGroup相关profiling缓存信息
-    std::vector<std::shared_ptr<CcuRepBase>> waitCkeProfilingReps; // waitCKE相关REP缓存
-    std::vector<CcuProfilingInfo> profilingInfo; // context全部profiling缓存信息
 };
 
 }; // namespace CcuRep
