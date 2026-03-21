@@ -651,15 +651,11 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
     return HCCL_SUCCESS;
 }
 
-bool CommunicatorImpl::IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const
+static HcclResult MatchAclgrpah(const rtStream_t stream, bool &isCapture) const
 {
-    bool isCapture = false;
     rtModel_t rtModel = nullptr;
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
-    if (isCapture && opWhiteSet.find(opParams.opType) != opWhiteSet.end()) {
-        return true;
-    }
-    return false;
+    return HCCL_SUCCESS;
 }
 
 HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOpParams &opParams)
@@ -699,7 +695,10 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
-        if (TryFastCcuLaunch(opParams, stream)) {
+        // 判断是否为aclgraph
+        bool isCapture = false; // isCapture为true表示aclgraph
+        CHK_RET(MatchAclgrpah(stream, isCapture));
+        if (!isCapture && TryFastCcuLaunch(opParams, stream)) { // 若是aclgraph则不走快速下发
             return HcclResult::HCCL_SUCCESS;
         }
         curOpParams = opParams;
@@ -715,7 +714,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
 
         // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的,会切换到图模式
-        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && IsOpSupportZeroCopyAlg(opParams, stream)) {
+        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && isCapture && (opWhiteSet.find(opParams.opType) != opWhiteSet.end())) {
             std::string tag = opParams.opTag + "_" + std::to_string(tagResourceIndex_++);
             OffloadResourcePre(tag, opParams);
             HCCL_INFO("[CommunicatorImpl][%s]current op support zero copy in aicpu aclgraph, change to offload", __func__);
@@ -743,7 +742,8 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             aivTag = 1;
         }
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, true);
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, true);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
@@ -1000,7 +1000,11 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, false);
+        // 判断是否为aclgraph(aicpu场景零拷贝会切图模式)
+        bool isCapture = false; // isCapture为true表示aclgraph
+        CHK_RET(MatchAclgrpah(stream, isCapture));
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, false);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         opIndex++;
