@@ -26,8 +26,7 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
     commTag_ = commTag;
     /*1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     注意：实际实现中应该避免这种情况，CommunicatorImplLite应该传入已经存在的MirrorTaskManager*/
-    EXECEPTION_CATCH(mirrorTaskManagerLite_ = std::make_unique<Hccl::MirrorTaskManagerLite>(
-            deviceId_, &Hccl::GlobalMirrorTasks::Instance(), true), return HCCL_E_PTR);
+    EXECEPTION_CATCH(mirrorTaskManagerLite_ = std::make_unique<Hccl::MirrorTaskManagerLite>(), return HCCL_E_PTR);
 
     // 2. 创建Profiling管理类
     EXECEPTION_CATCH(profilingImpl_ = std::make_unique<HcclCommProfilingLite>(deviceId_, mirrorTaskManagerLite_.get()), return HCCL_E_PTR);
