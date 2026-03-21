@@ -592,7 +592,6 @@ private:
     HcclResult GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const;
 
     // AICPU场景aclgraph专用
-    bool IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const;
     HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
 };
 } // namespace Hccl
