@@ -15,7 +15,6 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
-#include <hccl_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +44,9 @@ typedef enum {
     HCOMM_REDUCE_RESERVED = 255 /**< reserved */
 } HcommReduceOp;
 
+// TODO: 考虑是否要加上MXFP8类型。编译宏是否要去掉
+// TODO: 是否要交换hcomm_primitives.h和符号
+
 typedef enum {
     HCOMM_DATA_TYPE_INT8 = 0,    /**< int8 */
     HCOMM_DATA_TYPE_INT16 = 1,   /**< int16 */
@@ -59,12 +61,10 @@ typedef enum {
     HCOMM_DATA_TYPE_FP64 = 10,    /**< fp64 */
     HCOMM_DATA_TYPE_BFP16 = 11,    /**< bfp16 */
     HCOMM_DATA_TYPE_INT128 = 12,   /**< int128 */
-#ifndef OPEN_BUILD_PROJECT
     HCOMM_DATA_TYPE_HIF8 = 14,     /**< hif8 */
     HCOMM_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
     HCOMM_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
     HCOMM_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
-#endif
     HCOMM_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcommDataType;
 
@@ -407,56 +407,7 @@ extern int32_t HcommAcquireComm(const char* commId);
  * @note 当前仅支持AICPU模式
  */
 extern int32_t HcommReleaseComm(const char* commId);
-
-/**
- * @brief Get symmetric memory pointer.
- *
- * @param winHandle A pointer identifying the registered memory window handle.
- * @param offset A size_t identifying the offset of symmetric memory heap.
- * @param peerRank A u_integer identifying the identify for the peer rank.
- * @param ptr A pointer identifying the symmetric memory heap address.
- * @return HcclResult
- */
-extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr);
-
-#define HCOMM_PRIMITIVES_H_MODIFIED
-
-
-/**
- * @brief NPU上查询 rtsq任务执行完成的接口（阻塞）
- * @param[in] thread NPU上执行的线程句柄
- * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommThreadSynchronize(ThreadHandle thread);
-
-using MsgHandle = uint64_t;
-
-/**
- * @brief NPU 通过 HBM 共享内存向 DPU 发送同步消息（非阻塞）
- * @param[in] handle 目的地址，位于 HBM 共享内存
- * @param[in] msgTag 消息（算子任务）标签（char[256])
- * @param[in] src 附加消息源地址
- * @param[in] sizeByte 消息大小（字节）
- * @param[out] msgId 消息 Id 指针
- * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void *src, size_t sizeByte, uint32_t *msgId);
-
-/**
- * @brief NPU 通过 HBM 共享内存接收 DPU 同步消息（非阻塞）
- * @param[in] handle 源地址，位于 HBM 共享内存
- * @param[in] dst 读出数据的地址
- * @param[in] sizeByte 数据大小（字节）
- * @param[out] msgId 消息 Id 指针
- * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
+#define HCOMM_PRIMITIVES_H_MODIFIED // TODO 删除这些宏，issue
 
 /**
  * @brief DPU 数据面 Fence 接口
@@ -465,15 +416,7 @@ extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, u
  */
 extern int32_t HcommFenceOnThread(ThreadHandle thread);
 
-/**
- * @brief DPU数据面flush接口
- * @param[in] void
- * @return int32_t 执行结果状态码
- *
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcommFlush();
-
+// TODO: 两个Fence的接口都保留？
 /**
  * @brief 通信通道级内存屏障操作
  * @param[in] thread 线程句柄
