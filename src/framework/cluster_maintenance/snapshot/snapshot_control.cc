@@ -187,6 +187,9 @@ HcclResult SnapshotControl::PreProcess()
     if (devicePhyId_ == INVALID_UINT) {
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_, true));
     }
+
+    printf("DEBUG: SnapshotControl::PreProcess devId[%d] devicePhyId_[%u]\n", deviceLogicId_, devicePhyId_);
+
     HcclResult ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_,
         HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
