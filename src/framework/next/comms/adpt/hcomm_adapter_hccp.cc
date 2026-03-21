@@ -458,4 +458,32 @@ HcclResult RaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, 
         __func__, mode.Describe().c_str(), phyId, customIn, customOut), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
+
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
+{
+    if (jettyHandles.size() != num) {
+        HCCL_ERROR("jettyHandles size[%zu] not equal to num[%u]", jettyHandles.size(), num);
+        return HCCL_E_PARA;
+    }
+    std::vector<struct JettyAttr> raJettyAttrs(MAX_JETTY_QUERY_NUM);
+    void* qp_handle[jettyHandles.size()];
+    for (size_t i = 0; i < jettyHandles.size(); ++i) {
+        qp_handle[i] = reinterpret_cast<void*>(jettyHandles[i]);
+    }
+    auto ret = RaCtxQpQueryBatch(qp_handle, raJettyAttrs.data(), &num);
+    if (ret != 0) {
+        HCCL_ERROR("RaBatchQueryJettyAttr failed.");
+        return HCCL_E_NETWORK;
+    }
+    if (num != jettyHandles.size()) {
+        HCCL_ERROR("jettyAttrs num[%zu] not equal to input jettyHandles size[%zu]", num, jettyHandles.size());
+        return HCCL_E_PARA;
+    }
+
+    for (u32 i = 0; i < num; i++) {
+        JettyStatus jettyStatus = static_cast<JettyStatus::Value>(static_cast<int>(raJettyAttrs[i].state));
+        jettyAttrs.push_back(jettyStatus);
+    }
+    return HCCL_SUCCESS;
+}
 } // namespace hcomm
