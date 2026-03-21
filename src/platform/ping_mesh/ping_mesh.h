@@ -163,7 +163,7 @@ private:
     PingInitInfo initInfo_ {};                   // 初始化信息
     void *pingHandle_ = nullptr;                   // 记录hccp侧的pingmesh句柄
     std::shared_ptr<HcclSocket> socket_ = nullptr; // 记录server端的socket信息，用于建立rdma链路
-    HcclIpAddress *ipAddr_ = nullptr;              // 记录device的ip信息
+    HcclIpAddress ipAddr_;                         // 记录device的ip信息
     u8 *payload_ = nullptr;                        // client侧记录的payload信息
     RpingState rpingState_ = RpingState::UNINIT;   // 记录client状态
     int rpingTargetNum_ = 0;                       // 记录client目标数量
@@ -191,6 +191,7 @@ private:
     HcclResult HccnTarRemoveAttrInter(u32 targetNumInter, RpingInput *inputInter, PingTargetCommInfo *targetInter, std::shared_ptr<HcclSocket> &socketInter);
     HcclResult RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps, RpingInput *input, u32 targetNum);
     HcclResult HccnSupportedAndGetphyid(u32 deviceId, LinkType netMode);
+    HcclResult HccnRpingOpenTsd(u32 deviceId, u32 mode, u32 port, u32 nodeNum, u32 bufferSize, u32 sl, u32 tc);
 public:
     PingMesh();
     ~PingMesh();
