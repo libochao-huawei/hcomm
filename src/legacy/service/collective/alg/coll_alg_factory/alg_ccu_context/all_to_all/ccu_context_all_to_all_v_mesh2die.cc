@@ -53,6 +53,7 @@ CcuContextAllToAllVMesh2Die::CcuContextAllToAllVMesh2Die(const CcuCtxArg &arg,
 
     selfBit_ = 1 << logicId_;
     allBit_  = ((1 << peerSize_) - 1) & (~(withMyRank_ ? selfBit_ : 0));
+    AllocGoResource(LOC_CPY_LOOP_NUM);  // 只用8个loop做本地搬运，每个loop搬4K
 
     HCCL_INFO("[CcuContextAllToAllVMesh2Die] RankId[%u], rankSize[%u], localSize[%u], peerSize[%u], logicId[%u], "
         "withMyRank[%u]", rankId_, rankSize_, localSize_, peerSize_, logicId_, withMyRank_);
