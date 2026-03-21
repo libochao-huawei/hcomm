@@ -273,6 +273,11 @@ public:
         return eid_;
     }
 
+    void SetEid(Eid eid)
+    {
+        eid_ = eid;
+    }
+
     Eid GetReverseEid() const
     {
         Eid eidOut;
