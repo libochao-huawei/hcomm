@@ -87,11 +87,9 @@ SnapshotControl &SnapshotControl::GetInstance(s32 deviceLogicId)
 {
     static SnapshotControl instances[MAX_MODULE_DEVICE_NUM];
     if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
-        printf("DEBUG: PreProcessCallback, devId[%d], GetInstance.deviceLogicId_[%u]\n", deviceLogicId, instances[0].deviceLogicId_);
         return instances[0];
     }
     instances[deviceLogicId].deviceLogicId_ = deviceLogicId;
-    printf("DEBUG: PreProcessCallback, devId[%d], GetInstance.deviceLogicId_[%u]\n", deviceLogicId, instances[deviceLogicId].deviceLogicId_);
     return instances[deviceLogicId];
 }
 
