@@ -24,12 +24,7 @@
 
 namespace Hccl {
 
-const u32 MAX_CIRCULAR_QUEUE_LENGTH = 2048;
-
 MAKE_ENUM(QueueType, Circular_Queue, Vector_Queue)
-
-using TaskInfoQueue    = Queue<std::shared_ptr<TaskInfo>>;
-using TaskInfoQueueMap = std::map<u32, std::unique_ptr<TaskInfoQueue>>;
 
 class GlobalMirrorTasks {
 public:
