@@ -66,6 +66,7 @@ private:
     void RmtNotifyVecUnpackProc(BinaryStream &binaryStream);
     void RmtBufferVecUnpackProc(BinaryStream &binaryStream);
 
+    std::vector<char> GetSingleRmtNotifyUniqueId(u64 addr, u64 size, u32 notifyId) const;
     std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size) const;
     std::vector<char> GetNotifyUniqueIds();
     std::vector<char> GetRmtNotifyUniqueIds() const;

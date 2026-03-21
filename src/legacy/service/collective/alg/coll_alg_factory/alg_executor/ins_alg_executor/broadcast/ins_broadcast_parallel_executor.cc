@@ -11,6 +11,7 @@
 #include "log.h"
 #include "ins_coll_alg_registry.h"
 #include "topo_match_mesh_nhr.h"
+#include "topo_match_mesh_nhr_pcie.h"
 #include "alg_data_trans_wrapper.h"
 
 #include "ins_temp_broadcast_mesh_1D_two_shot.h"
@@ -291,7 +292,7 @@ HcclResult InsBroadcastParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     }
     CHK_RET(tempAlgInter.CalcRes(resReqInter));
     u32 intraQueNum = resReqIntra.queNum;
-    u32 interQueNum = resReqIntra.queNum;
+    u32 interQueNum = resReqInter.queNum;
     // 申请算法模板所需资源
     if(!(intraQueNum > 0 && interQueNum > 0)) {
         HCCL_ERROR("[InsBroadcastParallelExecutor]resReqIntra.queNum and resReqInter.queNum must larger than 0.");
@@ -435,6 +436,8 @@ HcclResult InsBroadcastParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
 // 算法注册
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::BROADCAST, InsBroadcastParallelMesh1DNHR, InsBroadcastParallelExecutor,
     TopoMatchMeshNHR, InsTempBroadcastMesh1DTwoShot, InsTempBroadcastNHR);
+INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::BROADCAST, InsBroadcastParallelMesh1DNHRPcie, InsBroadcastParallelExecutor,
+    TopoMatchMeshNHRPcie, InsTempBroadcastMesh1DTwoShot, InsTempBroadcastNHR);
 
 #ifndef CCL_KERNEL_AICPU
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::BROADCAST, CcuBroadcastParallelMesh1DNHR, InsBroadcastParallelExecutor,
