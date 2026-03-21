@@ -34,8 +34,6 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
 
-    HcclResult H2DResPack(std::vector<char>& buffer);
-
     // 数据面接口
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
@@ -51,9 +49,6 @@ private:
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
     HcclResult BuildUbMemTransport();
-
-    HcclResult PackOpData(std::vector<char> &data);
-    HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name);
 
 private:
     // --------------------- 入参 ---------------------
