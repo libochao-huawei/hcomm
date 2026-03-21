@@ -60,6 +60,7 @@ typedef void *HcclComm;
  */
 typedef void *HcclConn;
 
+// TODO: 需要规范名称
 /**
  * @brief handle to HCCL Window
  */
