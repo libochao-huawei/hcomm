@@ -2141,8 +2141,8 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
 void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
     vector<char_t> &out, uint32_t &num)
 {
-    CHECK_NULLPTR(rdmaHandle, "[RaUbGetTpInfoAsync] rdmaHandle is nullptr!");
-    HCCL_INFO("[RaUbGetTpInfoAsync] Input params: rdmaHandle=%p, num=%u", rdmaHandle, num);
+    CHECK_NULLPTR(rdmaHandle, "[RaUbGetTpInfo] rdmaHandle is nullptr!");
+    HCCL_INFO("[RaUbGetTpInfo] Input params: rdmaHandle=%p, num=%u", rdmaHandle, num);
     const auto &locAddr    = param.locAddr;
     const auto &rmtAddr    = param.rmtAddr;
     const auto &tpProtocol = param.tpProtocol;
@@ -2152,9 +2152,9 @@ void RaUbGetTpInfo(const RdmaHandle rdmaHandle, const RaUbGetTpInfoParam &param,
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
     cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
     cfg.localEid = IpAddressToHccpEid(locAddr);
-    HCCL_INFO("RaUbGetTpInfoAsync cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
+    HCCL_INFO("RaUbGetTpInfo cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
     cfg.peerEid = IpAddressToHccpEid(rmtAddr);
-    HCCL_INFO("RaUbGetTpInfoAsync cfg.peerEid=%s", HccpEidDesc(cfg.peerEid).c_str());
+    HCCL_INFO("RaUbGetTpInfo cfg.peerEid=%s", HccpEidDesc(cfg.peerEid).c_str());
 
     out.resize(sizeof(HccpTpInfo));
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
