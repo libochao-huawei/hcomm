@@ -1085,6 +1085,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadResGetInfo_When_Normal_Expect_Return_HCCL_Su
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
@@ -1129,6 +1131,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadResGetInfo_When_infoNull_Return_HCCL_E_PTR)
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
@@ -1162,6 +1166,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadResGetInfo_When_threadNotFound_Return_HCCL_E
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
@@ -1195,6 +1201,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadResGetInfo_When_restypeNotSupport_Return_HCC
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
@@ -1230,6 +1238,8 @@ TEST_F(TestHcclThread, Ut_HcclThreadResGetInfo_When_infoLenMismatch_Return_HCCL_
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     ThreadHandle thread;
