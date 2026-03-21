@@ -295,6 +295,17 @@ HcclResult CollCommAicpu::Clean()
     return HCCL_SUCCESS;
 }
 
+HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle &handle)
+{
+    Hccl::BinaryStream binaryStream(data);
+    std::vector<char> transpUniqueId;
+    binaryStream >> transpUniqueId;
+
+    auto transPortPtr = ubTransportMap_[handle];
+    CHK_RET(transPortPtr->Resume(transpUniqueId));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
 {
     HCCL_INFO("[CollCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
@@ -302,6 +313,7 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
               __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
               commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
 
+    ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     for (u32 index = 0; index < commParam->listNum; index++) {
         std::vector<char> data(commParam->singleUniqueIdSize);
 
@@ -320,18 +332,12 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
         }
 
         // 拿到device的channel句柄
-        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
-        if (!ubTransportMap_.count(channelList[index])) {
+        ChannelHandle channelHandle = channelList[index];
+        if (!ubTransportMap_.count(channelHandle)) {
             HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], current ChannelHandle nullptr", __func__, resType);
             continue;
         }
-
-        Hccl::BinaryStream binaryStream(dataVec[resType].data);
-        std::vector<char> transpUniqueId;
-        binaryStream >> transpUniqueId;
-
-        auto transPortPtr = ubTransportMap_[channelList[index]];
-        transPortPtr->Resume(transpUniqueId);
+        CHK_RET(ResumePackData(dataVec[resType].data, channelHandle));
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
             __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelList[index]);
     }

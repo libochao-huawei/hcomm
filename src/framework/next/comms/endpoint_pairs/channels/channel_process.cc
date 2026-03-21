@@ -628,23 +628,23 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
     // 填充channelParam参数
-    CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelHandles, devicePackBuf, 
-        listNum, totalListNum, totalListNum / hostPackBuffers.size()));
-    
-    // profiling信息
-    hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
-    CHK_PTR_NULL(remoteRankList.ptr());
-    std::vector<u32> remoteRankIdList(listNum);
-    // 集合通信场景才能开启
-    if (needProfiling) {
-        for ( u32 i = 0; i < listNum; ++i) {
-            CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankIdList[i]));
-        }
-        // 通过安全的内存拷贝将主机内存数据传输到设备内存
-        CHK_RET(hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(), 
-                listNum * sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-        channelParam.remoteRankList = static_cast<u32 *>(remoteRankList.ptr());
-    }
+    s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s] str copy fail. return[%d]", __func__, sRet), HCCL_E_INTERNAL);
+    channelParam.listNum = listNum;
+    channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
+    channelParam.uniqueIdSize = totalListNum;
+    channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
+
+    // 将 host 侧的 channel handles 拷贝到 device 内存，供内核使用
+    hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
+    CHK_PTR_NULL(deviceChannelList.ptr());
+    CHK_RET(hrtMemSyncCopy(deviceChannelList.ptr(),
+        listNum * sizeof(ChannelHandle),
+        deviceChannelHandles,
+        listNum * sizeof(ChannelHandle),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    channelParam.channelList = static_cast<void *>(deviceChannelList.ptr());
+
 
     // 调用抽离的通用内核启动函数
     std::string kernelName = "RunAicpuIndOpChannelUpdateV2";
