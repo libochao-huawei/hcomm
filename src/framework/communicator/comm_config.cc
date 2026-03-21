@@ -158,6 +158,72 @@ void CommConfig::InitAlgoConfig()
 
 
 
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");HCCL_INFO("[Load] config size");
+
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");HCCL_INFO("[Load] config size");
+    
 
     HCCL_INFO("[Load] config size");
 }
