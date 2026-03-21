@@ -31,6 +31,21 @@ struct CcuHostParam {
     uint32_t deviceId;
 };
 
+MAKE_ENUM(AuxInfoInType, AUX_INFO_IN_TYPE_CQE, AUX_INFO_IN_TYPE_AE, AUX_INFO_IN_TYPE_MAX);
+struct AuxInfoIn {
+    AuxInfoInType auxInfoInType;
+    union {
+        struct {
+            uint32_t status;
+            uint8_t sR;
+        } cqe;
+        struct {
+            uint32_t eventType;
+        } ae;
+    };
+    u8 resv[7];
+};
+
 class CcuTaskException {
 public:
     CcuTaskException() = default;
@@ -48,12 +63,12 @@ private:
 
     static void ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
-    static void PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo);
+    static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo);
 
     static std::string GetCcuErrorMsgByType(const CcuHostParam &ccuHostParam);
     static std::string GetCcuErrorMsgLoop(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgMission(const Hccl::CcuErrorInfo& ccuErrorInfo);
-    static std::string GetCcuErrorMsgDefault(const Hccl::CcuErrorInfo& ccuErrorInfo);
+    static std::string GetCcuErrorMsgMission(const CcuErrorInfo& ccuErrorInfo);
+    static std::string GetCcuErrorMsgDefault(const CcuErrorInfo& ccuErrorInfo);
     static std::string GetCcuErrorMsgLoopGroup(const CcuHostParam &ccuHostParam);
     static std::string GetCcuErrorMsgLocPostSem(const CcuHostParam &ccuHostParam);
     static std::string GetCcuErrorMsgLocWaitSem(const CcuHostParam &ccuHostParam);
@@ -77,6 +92,7 @@ private:
     void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
         std::vector<CcuErrorInfo> &errorInfo);
     static void PrintPanicLogInfo(const uint8_t *panicLog);
+
 };
 } // namespace hcomm
 
