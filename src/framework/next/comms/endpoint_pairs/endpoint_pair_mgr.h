@@ -30,8 +30,7 @@ public:
     EpChannelMap GetEpChannelMap();
 
 private:
-    std::unordered_map<CommEngine, std::unordered_map<EndpointDescPair,
-        std::unique_ptr<EndpointPair>>> endpointPairMap_{};
+    std::unordered_map<EndpointDescPair, std::unique_ptr<EndpointPair>> endpointPairMap_{};
 };
 
 } // namespace hcomm

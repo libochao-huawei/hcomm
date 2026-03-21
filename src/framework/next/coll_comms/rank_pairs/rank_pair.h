@@ -43,8 +43,12 @@ public:
     ~RankPair() = default;
 
     HcclResult Init();
+<<<<<<< HEAD
     HcclResult GetEndpointPair(CommEngine engine, const EndpointDescPair &epDescPair, hcomm::EndpointPair*& out);
     hcomm::EpChannelMap GetEpChannelMap();
+=======
+    HcclResult GetEndpointPair(const EndpointDescPair &epDescPair, hcomm::EndpointPair*& out);
+>>>>>>> 3de421bab5ec5fc7f651e70312b44612e788b9b0
 
 private:
     RankId localRankId_{};

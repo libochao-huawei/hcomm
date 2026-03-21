@@ -50,7 +50,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 
 HcclResult UbMemTransport::FillTagVec()
 {
-    uint32_t bufferNum = commonLocRes.bufferVec.size();
+    bufferNum = commonLocRes.bufferVec.size();
     if (bufferNum == 0) {
         HCCL_WARNING("[UbMemTransport][FillTagVec] bufferNum is 0.");
     }
