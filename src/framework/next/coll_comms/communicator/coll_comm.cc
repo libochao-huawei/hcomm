@@ -196,7 +196,6 @@ HcclResult CollComm::Resume()
     return HcclResult::HCCL_SUCCESS;
 }
 
-}  // namespace hccl
 HcclResult CollComm::InitTaskExceptionHandler()
 {
     hcomm::TaskExceptionHost* handler = hcomm::TaskExceptionHostManager::GetHandler(static_cast<size_t>(deviceLogicId_));

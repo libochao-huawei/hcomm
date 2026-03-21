@@ -98,7 +98,7 @@ HcclTaskAbortHandler::HcclTaskAbortHandler()
 
 HcclTaskAbortHandler::~HcclTaskAbortHandler()
 {
-    Hccl::HrtDeviceAbortRegCallBack(nullptr, nullptr)
+    Hccl::HrtDeviceAbortRegCallBack(nullptr, nullptr);
 }
 
 HcclTaskAbortHandler &HcclTaskAbortHandler::GetInstance()

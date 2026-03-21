@@ -550,13 +550,10 @@ HcclResult MyRank::Clean()
     ChannelTable channelTable = rankPairMgr_->GetChannelTable();
     std::vector<ChannelHandle> channelList;
     for (const auto& rankPair : channelTable) {
-        for (const auto& endPointMap : rankPair.second) {
-            for (const auto epPair : endPointMap.second) {
-                channelList.insert(channelList.end(), epPair.second.begin(), epPair.second.end());
-            }
+        for (const auto& endPointPair : rankPair.second) {
+            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
         }
     }
-
     if (channelList.empty()) {
         HCCL_INFO("[NsRecovery][Clean] Channel list empty, No need to clean!");
         return HcclResult::HCCL_SUCCESS;
@@ -598,10 +595,8 @@ HcclResult MyRank::Resume()
     ChannelTable channelTable = rankPairMgr_->GetChannelTable();
     std::vector<ChannelHandle> channelList;
     for (const auto& rankPair : channelTable) {
-        for (const auto& endPointMap : rankPair.second) {
-            for (const auto epPair : endPointMap.second) {
-                channelList.insert(channelList.end(), epPair.second.begin(), epPair.second.end());
-            }
+        for (const auto& endPointPair : rankPair.second) {
+            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
         }
     }
 
