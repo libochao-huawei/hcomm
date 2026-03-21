@@ -110,6 +110,125 @@ struct CcuErrorInfo {
         this->instrId = insId;
     }
 };
+
+struct ErrorInfoBase {
+    int32_t  deviceId;
+    uint8_t  dieId;
+    uint8_t  missionId;
+    uint16_t currentInsId;
+    uint16_t status;
+};
+
+
+
+struct CcuMissionContext {
+    union {
+        uint16_t value;
+        uint16_t taskId;
+    } part0;
+
+    union {
+        uint16_t value;
+        uint16_t streamId;
+    } part1;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t taskKill : 1;
+            uint16_t dieId : 2;
+            uint16_t status : 13; // Status [12:0]
+        };
+    } part2;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t status : 3; // Status [15:13]
+            uint16_t counter : 8;
+            uint16_t denyCnt : 5;
+        };
+    } part3;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t denyCnt : 5;
+            uint16_t currentIns : 11; // Current Ins [10:0]
+        };
+    } part4;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t currentIns : 5; // Current Ins [15:11]
+            uint16_t endIns : 11;
+        };
+    } part5;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t endIns : 5;
+            uint16_t startIns : 11;
+        };
+    } part6;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t startIns : 5;
+            uint16_t profileEn : 1;
+            uint16_t missionVld : 1;
+            uint16_t reserved : 9;
+        };
+    } part7;
+
+    uint16_t reserved[24]; // part 8-31
+
+    uint16_t GetStatus() const
+    {
+        return (part3.status << 13) | (part2.status);   // part3.status为[15:13]位
+    }
+
+    uint16_t GetCurrentIns() const
+    {
+        return (part5.currentIns << 11) | (part4.currentIns);   // part5.currentIns为[15:11]位
+    }
+
+    uint16_t GetStartIns() const
+    {
+        return (part7.startIns << 11) | (part6.startIns);    // part7.startIns[15:11]位
+    }
+
+    uint16_t GetEndIns() const
+    {
+        return (part6.endIns << 11) | (part5.endIns);     // part6.endIns[15:11]位
+    }
+};
+
+constexpr u32 CCU_COSTOM_ARGS_LEN = 32;
+struct ParaCcu {
+    u8  dieId;
+    u8  missionId;
+    u8  execMissionId;
+    u32 instrId;
+    u64 costumArgs[CCU_COSTOM_ARGS_LEN];
+    u64 executeId;
+    u64 ccuKernelHandle{0};
+};
+
+union LoopGroupXn {
+    uint64_t value;
+    struct {
+        uint64_t reservedLow : 41;
+        uint64_t loopInsCnt : 7;
+        uint64_t expandOffset : 7;
+        uint64_t expandCnt : 7;
+        uint64_t reservedHigh : 2;
+    };
+};
+
 }; // namespace hcomm
 
 #endif // _CCU_REPRESENTATION_TYPE_H
