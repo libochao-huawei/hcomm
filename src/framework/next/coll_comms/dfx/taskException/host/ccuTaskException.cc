@@ -22,6 +22,8 @@
 #include "ccu_urma_channel.h"
 #include "orion_adpt_utils.h"
 #include "ccuTaskException.h"
+#include "hcomm_adapter_hccp.h"
+#include "adapter_rts_common.h"
 
 namespace hcomm {
 
@@ -113,7 +115,13 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
 
 CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    CcuMissionContext missionCtx{};
+
+    u32 devicePhyId = 0;
+    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -123,9 +131,7 @@ CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint3
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个MissionContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuMissionContext) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff); // zjwTODO: 接异常
-
-    CcuMissionContext missionCtx{};
+    RaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
     (void)memcpy_s(&missionCtx, sizeof(missionCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
     return missionCtx;
 }
