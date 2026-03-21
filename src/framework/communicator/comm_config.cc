@@ -72,6 +72,160 @@ void CommConfig::InitAlgoConfig()
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
         algoConfig_[static_cast<HcclCMDType>(opType)] = GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType));
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");HCCL_INFO("[Load] config size");
+
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");
+    HCCL_INFO("[Load] config size");HCCL_INFO("[Load] config size");
+    
+
+    HCCL_INFO("[Load] config size");
 }
  
 void CommConfig::InitRetryEnable()
