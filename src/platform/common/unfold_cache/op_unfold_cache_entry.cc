@@ -553,8 +553,8 @@ namespace hccl {
                     // srcRank一定是current rank
                     const uint32_t srcRank = srcRefreshAddrInfo.rankId;
                     CHK_PRT_RET(srcRank != curRank,
-                        HCCL_ERROR("[OpUnfoldCacheEntry][UpdateRefreshAddrInfoForAlltoallv] srcRank[%u] != srcRank[%u]",
-                            srcRank, rankSize),
+                        HCCL_ERROR("[OpUnfoldCacheEntry][UpdateRefreshAddrInfoForAlltoallv] srcRank[%u] != curRank[%u], rankSize[%u]",
+                            srcRank, curRank, rankSize),
                         HCCL_E_INTERNAL);
 
                     // 注意: 对于alltoallv算子, 原始dstRefreshAddrInfo.rankId在MemcpySqeArray时被刷新
@@ -733,9 +733,9 @@ namespace hccl {
                             }
 
                             // Bit-field member不能直接传引用
-                            uint32_t tmp_high_addr = 0;
-                            SplitUint64ToUint32(sqeDstAddr, tmp_high_addr, writeValueSqePtr->write_addr_low);
-                            writeValueSqePtr->write_addr_high = tmp_high_addr;
+                            uint32_t tmpHighAddr = 0;
+                            SplitUint64ToUint32(sqeDstAddr, tmpHighAddr, writeValueSqePtr->write_addr_low);
+                            writeValueSqePtr->write_addr_high = tmpHighAddr;
                         }
                     }
                     break;
