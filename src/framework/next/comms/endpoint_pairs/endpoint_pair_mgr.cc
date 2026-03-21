@@ -36,12 +36,9 @@ HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, Endpoi
 EpChannelMap EndpointPairMgr::GetEpChannelMap()
 {
     EpChannelMap epChannelMap;
-    for (const auto& commEnginItem: endpointPairMap_) {
-        std::unordered_map<EndpointDescPair, std::vector<ChannelHandle>> channelList;
-        for (const auto& endpointPair : commEnginItem.second) {
-            channelList[endpointPair.first] = endpointPair.second->GetChannelHandles();
-        }
-        epChannelMap[commEnginItem.first] = channelList;
+    for (const auto& endpointPair: endpointPairMap_) {
+        auto channelList = endpointPair.second->GetChannelHandles();
+        epChannelMap[endpointPair.first] = channelList;
     }
     return epChannelMap;
 }
