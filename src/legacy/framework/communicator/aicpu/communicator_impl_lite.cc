@@ -64,7 +64,6 @@ int CommunicatorImplLite::UpdateComm(HcclKernelParamLite *kernelParam)
         id = GetHostDeviceSyncNotifyLiteMgr()->GetHostWaitNotify()->GetId();
         streamLiteMgr->GetMaster()->GetRtsq()->NotifyRecordLoc(id);
         streamLiteMgr->GetMaster()->GetRtsq()->LaunchTask();
-        HCCL_INFO("[NsRecovery] UpdateComm: task launched.");
     } catch (HcclException &e) {
         HCCL_ERROR("CommunicatorImplLite::UpdateComm Hccl exception %s was caught.", e.what());
         return KERNEL_ERROR_CODE;
@@ -82,7 +81,6 @@ int CommunicatorImplLite::UpdateComm(HcclKernelParamLite *kernelParam)
 std::shared_ptr<InsQueue> CommunicatorImplLite::GetInsQueue(HcclKernelParamLite *kernelParam)
 {
     if (kernelParam->oneSidedComm) {
-        HCCL_INFO("CommunicatorImplLite::GetInsQueue oneSidedComm begin");
         CreateOneSidedComponentLite();
         return GetOneSidedInsQueue(kernelParam);
     }
@@ -104,7 +102,6 @@ void CommunicatorImplLite::CreateCollAlgComponentLite()
         algComponentLite
             = make_unique<CollAlgComponentLite>(myRank, rankSize, devType, scratchSize, connectedLinkMgr.get(),
             rmtDataBufferMgr.get());
-        HCCL_INFO("CommunicatorImplLite::CreateCollAlgComponentLite is null");
     } else {
         algComponentLite->UpdateScratchBufferSize(scratchSize);
         HCCL_INFO("CommunicatorImplLite::CreateCollAlgComponentLite, bufferSize %llu", scratchSize);
@@ -129,18 +126,16 @@ void CommunicatorImplLite::UnfoldOp(HcclKernelParamLite *kernelParam)
     RegisterProfCallBack();
 #endif
     isCommReady = true;
-    HCCL_INFO("CommunicatorImplLite::UnfoldOpBase isCommReady is set to true.");
     std::shared_ptr<InsQueue> insQueue = GetInsQueue(kernelParam);
     if (insQueue == nullptr) {
         THROW<NullPtrException>(StringFormat("CommunicatorImplLite::UnfoldOpBase insQueue is nullptr."));
     }
+    HCCL_INFO("[UnfoldOp] DevType[%s]", devType);
     if (devType == DevType::DEV_TYPE_950) {
-        HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_950.");
         insExecutor->ExecuteV82(*insQueue);
         profilingReporterLite->ReportAllTasks();
         ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo());
     } else if (devType == DevType::DEV_TYPE_910A2) {
-        HCCL_INFO("CommunicatorImplLite::UnfoldOpBase DevType is DEV_TYPE_910A2.");
         insExecutor->Execute(*insQueue);
     } else {
         HCCL_WARNING("CommunicatorImplLite::UnfoldOpBase DevType is not support.");
@@ -161,7 +156,6 @@ void CommunicatorImplLite::RegisterRtsqCallback()
 void CommunicatorImplLite::RegisterProfCallBack()
 {
     if (MsprofRegisterCallback != nullptr) {
-        HCCL_INFO("RegisterProfCallBack not null");
         int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
         if (ret != 0) {
             THROW<InternalException>(StringFormat("CommunicatorImplLite::MsprofRegisterCallback failed, ret = %d", ret));
@@ -231,16 +225,13 @@ void CommunicatorImplLite::UpdateLocBuffer(HcclKernelParamLite *kernelParam)
     }
 
     InitCurrentOp(kernelParam);
-    HCCL_INFO("CommunicatorImplLite::UpdateLocBuffer locBuffer[BufferType::INPUT] %llx, locBuffer[BufferType::OUTPUT] %llx",
-               locBuffer[BufferType::INPUT], locBuffer[BufferType::OUTPUT]);
-    HCCL_INFO("CommunicatorImplLite::UpdateLocBuffer locBuffer[BufferType::SCRATCH] %llx", locBuffer[BufferType::SCRATCH]);
+    HCCL_INFO("CommunicatorImplLite::UpdateLocBuffer INPUT[%llx], OUTPUT[%llx], SCRATCH[%llx] ",
+               locBuffer[BufferType::INPUT], locBuffer[BufferType::OUTPUT], locBuffer[BufferType::SCRATCH]);
 }
 
 void CommunicatorImplLite::UpdateTransports(HcclKernelParamLite *kernelParam)
 {
-    HCCL_INFO("[NsRecovery] RestoreAllTransports start");
     RestoreAllTransports(kernelParam->binaryResAddr, kernelParam->binaryResSize);
-    HCCL_INFO("[NsRecovery] RestoreAllTransports end");
 }
 
 void CommunicatorImplLite::RestoreAllTransports(u64 addr, u64 bufSize)
@@ -257,7 +248,6 @@ void CommunicatorImplLite::RestoreAllTransports(u64 addr, u64 bufSize)
     
     AicpuResMgrType resType = AicpuResMgrType::TRANSPORT;
     GetTransportLiteMgr()->ParseAllPackedData(dataVec[resType].data);
-    HCCL_INFO("[NsRecovery] CommunicatorImplLite::RestoreAllTransports: GetResMgr %s Data", resType.Describe().c_str());
 }
 
 bool CommunicatorImplLite::CheckNeedUpdateRes(HcclKernelParamLite *kernelParam)
@@ -277,7 +267,6 @@ void CommunicatorImplLite::UpdateRes(HcclKernelParamLite *kernelParam)
     if (CheckNeedUpdateRes(kernelParam)) {   
         HCCL_INFO("[UpdateRes] start, opMode[%s]", kernelParam->op.algOperator.opMode.Describe().c_str());
         RestoreOpRes(kernelParam->opTag, kernelParam->tagKey, kernelParam->binaryResAddr, kernelParam->binaryResSize);
-        HCCL_INFO("[UpdateRes] end");
     }
 }
 
@@ -472,7 +461,6 @@ void CommunicatorImplLite::InitCurrentOp(HcclKernelParamLite *kernelParam)
         HCCL_INFO("CommunicatorImplLite::InitCurrentOp scratchMem addr %llx, size %llu",
                    kernelParam->op.algOperator.scratchMem->GetAddr(), kernelParam->op.algOperator.scratchMem->GetSize());
     }
-    HCCL_INFO("CommunicatorImplLite::InitCurrentOp end");
 }
 
 void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
