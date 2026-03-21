@@ -273,11 +273,11 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         } else {
             algName = "RunAlltoAllDirectFullmesh";
         }
-        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
+        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s].", algName.c_str());
         return HCCL_SUCCESS;
     } else if (!useOneLevelAlgorithm && IsSatisfyAlltoallContinuousPipelineCondition(param)) {
         algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
-        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
+        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s].", algName.c_str());
         return HCCL_SUCCESS ;
     } else if (IsSatisfyAlltoallPipelineCondition()) {
         algName = "RunAlltoAllVTwoLevelPipeline";
@@ -320,7 +320,7 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
     std::string copyMode = "BCopy";
 
     if (isDiffDeviceType_) {
-        HCCL_ERROR("[AlltoAllOperator][SelectAlg] AlltoAll not support diffDeviceType");
+        HCCL_ERROR("[AlltoAllOperator][SelectAlg] AlltoAll not support diffDeviceType.");
         return HCCL_E_NOT_SUPPORT;
     }
     ret = SelectAlgforAlltoAll(param, algName, copyMode, resourceLimit);
@@ -328,7 +328,7 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
         HCCL_ERROR("[SelectAlgforAlltoAll][SelectAlg]tag[%s], Alltoall failed, return[%d].", tag.c_str(), ret), ret);
 
     if (resourceLimit.ifCompileForAiv) {
-        HCCL_DEBUG("[SelectAlg] AlltoAllOperator compile for aiv, early return.");
+        HCCL_DEBUG("[SelectAlg] AlltoAllOperator compile for aiv, early return");
         return HCCL_SUCCESS;
     }
 
@@ -641,7 +641,7 @@ bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpPara
 {
     bool cclBigEnough = cclBufferManager_.GetInCCLbufferSize() >= ALLTOALL_PIPELINE_MIN_CCL_SIZE;
     bool multiRankPerServer = meshAggregationRankSize_ > 1;
-    bool isMultiServer = ((userRankSize_ > meshAggregationRankSize_) &&
+    bool isMultiServer = (meshAggregationRankSize_ != 0) && ((userRankSize_ > meshAggregationRankSize_) &&
         (userRankSize_ % meshAggregationRankSize_) == 0);
     bool isDefaultAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)
         || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD);
@@ -652,7 +652,7 @@ bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpPara
         GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && isMultiServer &&
         !multiModuleDiffDeviceNumMode_ && cclBigEnough);
     HCCL_DEBUG("[AlltoAllOperator][IsSatisfyAlltoallContinuousPipelineCondition] isSatisfy[%d], isAlltoAllv %u,"
-        "multiRankPerServer %u, isMultiServer %u, satisfyAlgType %u, multiModuleDiffDeviceNumMode_ %u",
+        "multiRankPerServer %u, isMultiServer %u, satisfyAlgType %u, multiModuleDiffDeviceNumMode_ %u.",
         res, isAlltoAllv, multiRankPerServer, isMultiServer, satisfyAlgType, multiModuleDiffDeviceNumMode_);
     return res;
 }
