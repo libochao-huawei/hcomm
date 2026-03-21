@@ -128,6 +128,28 @@ void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
                 info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
                 info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
 }
+HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
+{
+    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%d]", deviceLogicId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
+    TRY_CATCH_RETURN(
+        return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
+    );
+}
+HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
+{
+    HCCL_INFO("[CcuCleanDieCkes] Input params: deviceLogicId[%d], dieId[%u]", deviceLogicId, dieId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuCleanDieCkes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
+    TRY_CATCH_RETURN(
+        return CcuComponent::GetInstance(deviceLogicId).CleanDieCkes(dieId);
+    );
+}
 
 void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
 {
@@ -148,13 +170,13 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
     }
 
     const int32_t devLogicId = static_cast<int32_t>(deviceId);
-    if (Hccl::CcuCleanTaskKillState(devLogicId) != HcclResult::HCCL_SUCCESS) {
+    if (CcuCleanTaskKillState(devLogicId) != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu task kill state, "
             "devLogicId[%d].", __func__, devLogicId);
     }
 
     const uint8_t dieId = taskInfo.taskParam_.taskPara.Ccu.dieId;
-    if (Hccl::CcuCleanDieCkes(devLogicId, dieId) != HcclResult::HCCL_SUCCESS) {
+    if (CcuCleanDieCkes(devLogicId, dieId) != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu die ckes, "
             "dieId[%u], devLogicId[%d].", __func__, dieId, devLogicId);
     }

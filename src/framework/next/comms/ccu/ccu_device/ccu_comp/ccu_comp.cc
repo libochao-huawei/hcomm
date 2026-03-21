@@ -956,5 +956,54 @@ HcclResult CcuComponent::CcuCleanTaskKillState(const int32_t deviceLogicId)
         return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
     );
 }
+// 以下接口用于n秒快恢与TaskException
+HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
+{
+    CHK_PRT_RET(dieId >= MAX_CCU_IODIE_NUM,
+        HCCL_WARNING("[CcuComponent][%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+            __func__, dieId, MAX_CCU_IODIE_NUM, devLogicId),
+        HcclResult::HCCL_E_PARA);
+
+    if (!dieEnableFlags[dieId]) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+    
+    HRaInfo               info(HrtNetworkMode::HDC, devPhyId);
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
+
+    // 设置操作码和数据
+    uint32_t ckeNum = 0;
+    CHK_RET(CcuResSpecifications::GetInstance(devLogicId).GetCkeNum(dieId, ckeNum));
+    HCCL_INFO("[CcuComponent][CleanAllCke]Nsrecovery devLogicId[%d], dieId[%u] ckeNum[%u].",
+        devLogicId, dieId, ckeNum);
+    
+    inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_CKE;
+    inBuff.data.dataInfo.udieIdx       = dieId;
+    // 接口限制，目前方案每次最多清理8个cke，超过8个时分多次清理
+    for (uint32_t startIdx = 0; startIdx < ckeNum; startIdx += MAX_CKE_DATA_ARRAY_SIZE) {
+        inBuff.data.dataInfo.dataArraySize = std::min(ckeNum - startIdx, MAX_CKE_DATA_ARRAY_SIZE);
+        inBuff.data.dataInfo.dataLen       = sizeof(CcuDataByte8) * inBuff.data.dataInfo.dataArraySize;
+        inBuff.offsetStartIdx              = startIdx;
+        void *customIn = &inBuff;
+        void *customOut = &outBuff;
+        CHECK_NULLPTR(customIn, "[HrtRaCustomChannel] customIn is nullptr!");
+        CHECK_NULLPTR(customOut, "[HrtRaCustomChannel] customOut is nullptr!");
+        struct RaInfo info {};
+        info.mode   = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
+        info.phyId = raInfo.phyId;
+
+        HCCL_INFO("[HrtRaCustomChannel] Input params: customIn=%p, customOut=%p, mode=%d, phyId=%u", customIn, customOut, info.mode, info.phyId);
+        struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
+        struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
+
+        int ret = RaCustomChannel(info, in, out);
+        if (ret != 0) {
+            HCCL_ERROR(StringFormat("call ra_custom_channel failed, error code =%d.", ret));
+        }
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
 
 }; // namespace hcomm
