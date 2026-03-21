@@ -20,6 +20,27 @@
 extern "C" {
 #endif // __cplusplus
 
+typedef struct{
+    int32_t devPhyId;
+    uint32_t superPodId;
+} HcommDevId;
+
+/**
+ * @struct HcommBuf
+ * @brief 内存缓冲区描述结构体
+ * @var addr   - 虚拟地址指针
+ * @var len    - 内存长度（单位字节）
+ */
+typedef struct {
+    void *addr;
+    uint64_t len;
+} HcommBuf;
+
+typedef struct {
+    uint32_t sdid;
+    int32_t pid;
+} HcommMemGrantInfo;
+
 HcclResult HcommResMgrInit(uint32_t devPhyId);
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
@@ -27,6 +48,36 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
 HcclResult HcommEndpointGet(const EndpointHandle endpointHandle, void **endpoint);
 
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
+
+/**
+ * @brief 通信设备Endpoint监听配置结构体
+ */
+typedef struct {
+    union {
+        uint8_t raws[24]; ///< 通用数据区，用于未来扩展，如backlog, timeout等
+        struct {
+        };
+    };
+} HcommEndpointListenConfig;
+
+/**
+ * @brief 启动通信设备Endpoint监听
+ * @param[in] endpointHandle Endpoint句柄
+ * @param[in] port 监听端口号
+ * @param[in] config 监听配置参数（可为NULL，使用默认配置）
+ * @return HcclResult 执行结果状态码
+ * @note 启动指定Endpoint在指定端口上的监听服务
+ */
+extern HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port, HcommEndpointListenConfig* config);
+
+/**
+ * @brief 停止通信设备Endpoint监听
+ * @param[in] endpointHandle Endpoint句柄
+ * @param[in] port 监听端口号
+ * @return HcclResult 执行结果状态码
+ * @note 停止指定Endpoint在指定端口上的监听服务
+ */
+extern HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
 
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
 
