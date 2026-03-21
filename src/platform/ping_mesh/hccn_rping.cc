@@ -273,7 +273,7 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
         HccnResult res = HccnRpingInitTargetAttr(target, input, m);
         if (res != HCCN_SUCCESS) {
             delete[] input;
-            HCCL_ERROR("[HccnRpingAddTargetWithCfg]init target attr fail, ret[%d].", ret);
+            HCCL_ERROR("[HccnRpingAddTargetWithCfg]init target attr fail, ret[%d].", res);
             return HCCN_E_PARA;
         }
         s32 sRet = memcpy_s(input[m].payload, input[m].len, target[m].payload, target[m].payloadLen);

@@ -57,6 +57,7 @@ protected:
     {
         JfcHandle jfcHandle = 1;
         MOCKER(HrtRaUbCreateJfc).defaults().will(returnValue(jfcHandle));
+        AllocGoResource(LOC_CPY_LOOP_NUM);  // 只用8个loop做本地搬运，每个loop搬4K
         std::cout << "A Test case in CcuDfxTest SetUP" << std::endl;
     }
 
