@@ -14,10 +14,28 @@
 #include <set>
 #include <mutex>
 #include <utility>
+#include <map>
+#include <functional>
+#include <thread>
+#include <array>
 
 #include "types.h"
+#include "hccl_common_v2.h"
+#include "orion_adapter_rts.h"
+#include "driver/ascend_hal.h"
 
 namespace Hccl {
+
+enum class P2PStatus {
+    P2P_STATUS_DISABLED = 0,
+    P2P_STATUS_ENABLING,
+    P2P_STATUS_ENABLED
+};
+
+using P2PConnectionInfo = struct P2PConnectionInfoDef {
+    uint32_t reference = 0;
+    P2PStatus status = P2PStatus::P2P_STATUS_DISABLED;
+};
 
 class P2PEnableManager {
 public:
@@ -29,6 +47,10 @@ public:
         return devicePairs;
     }
 
+    HcclResult EnableP2P(std::vector<uint32_t> remoteDevices);
+    HcclResult WaitP2PEnabled(std::vector<uint32_t> remoteDevices);
+    HcclResult DisableP2P(std::vector<uint32_t> remoteDevices);
+
     ~P2PEnableManager();
 
 private:
@@ -39,6 +61,14 @@ private:
     P2PEnableManager(const P2PEnableManager &other) = delete;
 
     P2PEnableManager &operator=(const P2PEnableManager &other) = delete;
+
+    HcclResult EnableP2P(uint32_t localDeviceLogicID, uint32_t remoteDevicePhysicID);
+    HcclResult WaitP2PEnabled(uint32_t localDeviceLogicID, uint32_t remoteDevicePhysicID);
+    HcclResult WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remoteDevicePhysicID);
+    HcclResult DisableP2P(uint32_t localDeviceLogicID, uint32_t remoteDevicePhysicID);
+
+    std::array<std::map<uint32_t, P2PConnectionInfo>, MAX_MODULE_DEVICE_NUM> connectionsInfo_;
+    std::array<std::mutex, MAX_MODULE_DEVICE_NUM> connectionsLock_;
 };
 } // namespace Hccl
 

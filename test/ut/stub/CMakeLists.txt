@@ -62,6 +62,7 @@ set(EXCLUDE_COMMON_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc"
     "${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc"
+    "${HCCL_CODE_ROOT}/src/common/launch_device/launch_device.cc"
     )
 list(REMOVE_ITEM COMMON_SOURCES ${EXCLUDE_COMMON_DEVICE_REGEX})
 
@@ -91,6 +92,7 @@ set(orion_list
 
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
@@ -322,6 +324,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets
@@ -351,6 +355,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/

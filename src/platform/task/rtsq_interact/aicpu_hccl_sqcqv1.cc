@@ -279,8 +279,8 @@ void AddOneEventResetSqeV1(uint16_t streamId, int32_t eventId, uint16_t taskId, 
     const u64 eventNum = (static_cast<u64>(eventId)) & 0xFFFUL;
     // 默认devType  为DevType::DEV_TYPE_COUNT  stream->Device_()->GetPhyChipId() 默认0 stream->Device_()->GetPhyDieId() 默认0
     u64 base =
-        static_cast<u64>(RT_STARS_BASE_ADDR + (RT_ASCEND920_CHIP_ADDR_OFFSET * static_cast<u64>(phyChipId)) +
-        (RT_ASCEND920_DIE_ADDR_OFFSET * static_cast<u64>(phyDieId)) + STARS_EVENT_BASE_ADDR);
+        static_cast<u64>(RT_STARS_BASE_ADDR + (RT_CHIP_ADDR_OFFSET * static_cast<u64>(phyChipId)) +
+        (RT_DIE_ADDR_OFFSET * static_cast<u64>(phyDieId)) + STARS_EVENT_BASE_ADDR);
     const u64 addr = base + (eventTableId * STARS_EVENT_TABLE_OFFSET) + (eventNum * STARS_EVENT_OFFSET);
     sqe->write_addr_low = static_cast<uint32_t>(addr & MASK_32_BIT);
     sqe->write_addr_high = static_cast<uint32_t>((addr >> UINT32_BIT_NUM) & MASK_17_BIT);

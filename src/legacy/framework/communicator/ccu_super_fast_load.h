@@ -82,7 +82,7 @@ private:
     }
     inline std::size_t round_up_to(std::size_t size, std::size_t alignment) const
     {
-        return (size + alignment - 1) / alignment * alignment;
+        return alignment != 0 ? (size + alignment - 1) / alignment * alignment : size;
     }
     inline void *alloc_aligned_raw(std::size_t alignment, std::size_t size) const
     {

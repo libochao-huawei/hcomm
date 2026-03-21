@@ -23,10 +23,8 @@
 #include "coll_comm_aicpu_destroy_func.h"
 
 constexpr u32 NOTIFY_SIZE_EIGHT = 8;
-
-HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel,
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，该接口头文件还没定
-
+ HcclResult __attribute__((weak)) HcommChannelRegisterDfx(ChannelHandle channel, 
+     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，后续移动至Op.h
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
     if (isReady_) {
@@ -41,7 +39,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     identifier_ = std::string(commAicpuParam->hcomId);
     topoInfo_.userRankSize = commAicpuParam->userRankSize;
     topoInfo_.userRank = commAicpuParam->userRank; 
-    notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
+    notifys_.reserve(hccl::HCCL_THREAD_NOTIFY_MAX_NUM);
 
     CHK_RET(hrtSetWorkModeAicpu(true));
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
@@ -210,7 +208,8 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
 }
 
 HcclResult CollCommAicpu::RegisterChannelAddDfxTaskInfo(ChannelHandle channel) {
-    return HcommChannelRegisterDfx(channel, dfx_.GetCallback());
+    int hert = HcommChannelRegisterDfx(channel, dfx_.GetCallback());
+    return static_cast<HcclResult>(hert);
 }
 
 HcclResult CollCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)

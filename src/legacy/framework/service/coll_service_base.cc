@@ -45,7 +45,7 @@ void CollServiceBase::RegisterCclLocRmaBuffer() const // 注册CCL buffer
         const auto &ifaceVec = pair.second;
         for (const auto &connIface : ifaceVec) {
             std::set<LinkProtocol> protocols = connIface->GetLinkProtocols();
-            if (protocols.find(LinkProtocol::HCCS) != protocols.end()) {
+            if (protocols.find(LinkProtocol::HCCS) != protocols.end() || protocols.find(LinkProtocol::PCIE) != protocols.end()) {
                 if (p2pRegistered) {
                     break;
                 }
@@ -73,7 +73,7 @@ void CollServiceBase::RegisterCclBuffer(const std::vector<LinkData> &links) cons
         if (rmaBufManager.Get(comm->GetId(), portData, BufferType::SCRATCH) != nullptr) {
             HCCL_WARNING("RegisterCclBuffer has reged, optag(%s) portData[%s]",
                 comm->GetId().c_str(), portData.Describe().c_str());
-            return;
+            continue;
         }
         rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
     }

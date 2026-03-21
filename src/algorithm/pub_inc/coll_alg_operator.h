@@ -74,7 +74,7 @@ public:
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);
     u32 CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, HcclCMDType opType);
     HcclResult SetRmaInfo(void* rmaInfo);
-    HcclResult GetOpExpansionStr(const OpParam &param, AlgDesc &algDesc, std::string &opExpansionStr);
+    HcclResult GetOpExpansionStr(const OpParam &param, const AlgDesc &algDesc, std::string &opExpansionStr);
 protected:
     std::string GenerateNewTagByAlgTypeLevel1(std::string tag, std::string algTypeLevel1Tag) const;
     u32 CalcContextNumForPipeline(HcclCMDType hcclCMDType);
@@ -90,11 +90,11 @@ protected:
     HcclResult SelectAlgforAHC(u64 dataSize, AHCOpType ahcOpType);
     HcclResult AHCAlgSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
         std::map<AHCConcOpType, TemplateType> &ahcAlgOption, AHCAlgSelectParam &ahcAlgSelectParam);
-    HcclResult AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
+    HcclResult AHCAlgOptionSelect(const AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
         std::map<AHCConcOpType, TemplateType> &ahcAlgOption, const AHCAlgSelectParam &ahcAlgSelectParam);
 
     bool IsNeedStrictMode(const OpParam& param);
-    bool CheckStrictCondition(const OpParam& param);
+    bool CheckStrictCondition(const OpParam& param) const;
 
     AlgType algType_;    // 算法类型
     TopoType topoType_;

@@ -470,6 +470,27 @@ void Interpret(const InsBatchRead &ins, const StreamLite &stream, ResMgrFetcher 
     transport.BatchTransfer(locRmaBufferLites, rmtBuffers, transferOp, stream);
 }
 
+void Interpret(const InsReadExtend &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
+{
+    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
+    DataBuffer localBuffer = ins.GetLocalBuffer();
+    if (UNLIKELY(localBuffer.GetSize() == 0)) {
+        HCCL_WARNING("%s insReadExtend localSlice size is 0, return", __func__);
+        return;
+    }
+    DataBuffer remoteBuffer = ins.GetRemoteBuffer();
+    u64 scratchAddr = resMgrFetcher->GetRmaBufferLite(BufferType::SCRATCH)->GetAddr();
+    u64 scratchSize = resMgrFetcher->GetRmaBufferLite(BufferType::SCRATCH)->GetSize();
+    HCCL_INFO("%s scratchAddr = %llu, scratchSize = %llu", __func__, scratchAddr, scratchSize);
+    RmaBufferLite loc(localBuffer.GetAddr(), localBuffer.GetSize(),
+                      resMgrFetcher->GetRmaBufferLite(BufferType::SCRATCH)->GetTokenId(),
+                      resMgrFetcher->GetRmaBufferLite(BufferType::SCRATCH)->GetTokenValue());
+    Buffer rmt(remoteBuffer.GetAddr(), remoteBuffer.GetSize());
+    HCCL_INFO("%s RmaBufferLite = %s, Buffer = %s", __func__, loc.Describe().c_str(), rmt.Describe().c_str());
+    auto &transport = GetTransportLite(ins, resMgrFetcher);
+    transport.Read(loc, rmt, stream);
+}
+
 void Interpret(const InsWrite &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
     HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
@@ -754,6 +775,7 @@ const std::unordered_map<InstructionType, InsToSqeRule91095, std::EnumClassHash>
     {InstructionType::BATCH_READ, Rule91095<InsBatchRead>()},
     {InstructionType::READ, Rule91095<InsRead>()},
     {InstructionType::READ_REDUCE, Rule91095<InsReadReduce>()},
+    {InstructionType::READ_EXTEND, Rule91095<InsReadExtend>()},
     {InstructionType::WRITE_REDUCE_WITH_FIN, Rule91095<InsWriteReduceWithFin>()},
     {InstructionType::WRITE_WITH_FIN, Rule91095<InsWriteWithFin>()},
     {InstructionType::LOCAL_COPY_EXTEND, Rule91095<InsLocalCopyExtend>()},
