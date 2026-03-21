@@ -109,7 +109,7 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
 {
 }
 
-void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream,
+void UbTransportLiteImpl::ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
 }
@@ -127,7 +127,7 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
 {
 }
 
-void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt,
+void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
 }

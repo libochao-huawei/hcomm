@@ -21,6 +21,7 @@
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
 #include "rank_graph.h"
+#include "orion_adapter_hccp.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -59,6 +60,7 @@ private:
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
+    HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};

@@ -51,6 +51,20 @@ MyRank::~MyRank()
     commMems_ = nullptr;
 }
 
+HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
+{
+    tlsStatus = Hccl::TlsStatus::UNKNOWN;
+    s32 deviceLogicId = -1;
+    u32 devicePhyId = INVALID_UINT;
+    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devicePhyId));
+
+    RaInfo info{};
+    info.mode = NetworkMode::NETWORK_OFFLINE;
+    info.phyId = devicePhyId;
+    return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
+}
+
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
 {
     // EXCEPTION_HANDLE_BEGIN
@@ -302,7 +316,11 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
                     std::chrono::steady_clock::now() - startTime).count();
                 HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
                     __func__, timeout, channelNum, elapsed, retryCount);
-                logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
+                Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+                CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                    HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+                logger::ChannelLogger::PrintChannelErrorDetails(
+                    rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
                 return HCCL_E_TIMEOUT;
             }
 
@@ -318,7 +336,11 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
                     std::chrono::steady_clock::now() - startTime).count();
                 HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
                     __func__, channelNum, ret, elapsed, retryCount);
-                logger::ChannelLogger::PrintChannelErrorDetails(rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed);
+                Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+                CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                    HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+                logger::ChannelLogger::PrintChannelErrorDetails(
+                    rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
                 return ret;
             }
 

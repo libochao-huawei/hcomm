@@ -16,7 +16,7 @@
 namespace Hccl {
 constexpr u64 RS_2D_SMALL_DATA_SIZE = 1024 * 1024;
 constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
-constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
+constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
 constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
@@ -171,7 +171,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                 } else {
                     ratio = DEFAULT_RANK_SIZE / rankSize_;
                 }
-                if (dataSize_ * ratio > RS_M2M_1D_MAX_DATA_SIZE) {
+                if (dataSize_ * ratio >= RS_M2M_1D_MAX_DATA_SIZE) {
                     return SelectorStatus::NOT_MATCH;
                 }
                 primQueueGenName = "CcuReduceScatterMeshMem2Mem1D";
@@ -277,7 +277,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
                     return SelectorStatus::NOT_MATCH;
                 } else if (topoInfo.level0PcieMix) {
                     // 预留PCIE mix入口，如果要更新算法可以直接改
-                    primQueueGenName = "InsReduceScatterParallelMesh1DNHR";
+                    primQueueGenName = "InsReduceScatterParallelMesh1DNHRPcie";
                 } else {
                     primQueueGenName = "InsReduceScatterParallelMesh1DNHR";
                 }
@@ -285,7 +285,11 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
             if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 ||
                 op.dataType == DataType::FP64 || op.reduceOp == ReduceOp::PROD) {
-                primQueueGenName = "InsReduceScatterAicpuReduce";
+                HCCL_ERROR("[SelectAicpuAlgo] level0Shape[%d], DataType[%s], reduceOp[%s] is not supported yet.",	 
+                    topoInfo.level0Shape, 
+                    op.dataType.Describe().c_str(), 
+                    op.reduceOp.Describe().c_str()); 
+                return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "InsReduceScatterNHR";
             }
@@ -308,7 +312,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo
             op.reduceOp.Describe().c_str()),
         SelectorStatus::NOT_MATCH);
 
-    if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
+    if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] aiv mode not support INT64, UINT64, FP64.");
         return SelectorStatus::NOT_MATCH;
     }

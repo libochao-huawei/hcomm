@@ -26,11 +26,11 @@ HcclResult AivUbMemTransport::Init()
     // 拷贝memTag信息
     uint32_t bufferNum = channelDesc_.memHandleNum;
     localUserMemTag_.reserve(bufferNum);
-    HCCL_INFO("channelDesc_.memHandleNum: %u", bufferNum);
     if (bufferNum == 0) {
         HCCL_ERROR("[AivUbMemTransport][Init] bufferNum is 0.");
         return HCCL_E_PARA;
     }
+    HCCL_INFO("channelDesc_.memHandleNum: %u", bufferNum);
     for (uint32_t i = 0; i < bufferNum; ++i) {
         Hccl::LocalIpcRmaBuffer *localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(channelDesc_.memHandles[i]);
         localRmaBufferVec_.push_back(localIpcRmaBuffer);

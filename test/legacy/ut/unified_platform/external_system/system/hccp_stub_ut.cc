@@ -380,6 +380,14 @@ int RaGetInterfaceVersion(unsigned int phy_id, unsigned int interface_opcode, un
     return 0;
 }
 
+int RaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
+{
+    if (tlsEnable != nullptr) {
+        *tlsEnable = false;
+    }
+    return 0;
+}
+
 int RaQpCreate(void *rdev_handle, int flag, int qp_mode, void **qp_handle)
 {
     return 0;

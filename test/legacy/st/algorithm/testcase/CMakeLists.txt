@@ -53,6 +53,7 @@ set(david_to_test_list
 )
 
 add_library(hccl_orion_alg_test SHARED ${david_to_test_list})
+add_dependencies(hccl_orion_alg_test protobuf)  # 依赖 protobuf
 
 #头文件搜索路径
 target_include_directories(hccl_orion_alg_test PRIVATE
