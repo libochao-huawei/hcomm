@@ -46,8 +46,6 @@ HcclResult HcclNetDevOpenV1(const HcclNetDevInfos *info, HcclNetDev *netDev)
             u32 tempDevicePhyId = hasBackup ? static_cast<u32>(info->devicePhyId) : hccl::DEFAULT_PHY_ID;
             HCCL_DEBUG("[%s]start HcclNetDevOpen, deviceLogicId[%u], devicePhyId[%u], nicDeploy[%d], hasBackup[%d],"
             " tempDevicePhyId[%u]", __func__, deviceLogicId, info->devicePhyId, info->netdevDeployment, hasBackup, tempDevicePhyId);
-            CHK_RET(hccl::NetworkManager::GetInstance(deviceLogicId).InitV2(
-            NICDeployment::NIC_DEPLOYMENT_DEVICE, hasBackup, tempDevicePhyId, isHostUseDevNic));
             CHK_RET(hccl::NetworkManager::GetInstance(deviceLogicId)
                         .InitV2(NICDeployment::NIC_DEPLOYMENT_DEVICE, hasBackup, tempDevicePhyId, isHostUseDevNic));
             break;
