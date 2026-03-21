@@ -253,7 +253,7 @@ void CheckRDMATrafficClass(const u32 &rdmaTrafficClass)
 {
     if (rdmaTrafficClass % HCCL_RDMA_TC_BASE != 0) {
         RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
-                            std::vector<std::string>({std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four."}));
+                            std::vector<std::string>({std::to_string(rdmaTrafficClass), "HCCL_RDMA_TC", "value should be multiple of four"}));
         HCCL_ERROR("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE);
         THROW<InvalidParamsException>(
             StringFormat("rdmaTrafficClass[%u] is not a multiple of [%u]", rdmaTrafficClass, HCCL_RDMA_TC_BASE));
