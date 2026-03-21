@@ -29,6 +29,38 @@ input, output, rank, rankSize, len, \
 dataType, reduceOp, root, tag, numBlocks, isOpBase, \
 step, deterministic
 
+// 将__sk__参数转成__aicore__参数 A3
+#define CONVERT_SK_PARAM_TO_KERNEL_ARGS_A3 \
+GM_ADDR buffIn0 = args[0]; \
+GM_ADDR buffIn1 = args[1]; \
+GM_ADDR buffOut0 = args[2]; \
+GM_ADDR buffOut1 = args[3]; \
+GM_ADDR bufferSize = args[4]; \
+GM_ADDR headCountMem = args[5]; \
+GM_ADDR tailCountMem = args[6]; \
+GM_ADDR addOneMem = args[7]; \
+GM_ADDR isEnableCounter = args[8]; \
+GM_ADDR input = args[9]; \
+GM_ADDR output = args[10]; \
+uint32_t* param11 = static_cast<uint32_t*>(args + 11); uint32_t rank = param11[0]; \
+uint32_t* param12 = static_cast<uint32_t*>(param11 + 1); uint32_t rankSize = param12[0]; \
+uint64_t* param13 = static_cast<uint64_t*>(param12 + 1); uint64_t len = param13[0]; \
+uint32_t* param14 = static_cast<uint32_t*>(param13 + 1); uint32_t dataType = param14[0]; \
+uint32_t* param15 = static_cast<uint32_t*>(param14 + 1); uint32_t reduceOp = param15[0]; \
+uint32_t* param16 = static_cast<uint32_t*>(param15 + 1); uint32_t root = param16[0]; \
+int32_t* param17 = static_cast<int32_t*>(param16 + 1); int32_t tag = param17[0]; \
+uint32_t* param18 = static_cast<uint32_t*>(param17 + 1); uint32_t numBlocks = param18[0]; \
+bool* param19 = static_cast<bool*>(param18 + 1); bool isOpBase = param19[0]; \
+int32_t* param20 = static_cast<int32_t*>(param19 + 1); int32_t step = param20[0]; \
+uint32_t* param21 = static_cast<uint32_t*>(param20 + 1); uint32_t deterministic = param21[0]
+
+#define SK_BIND_FUNC_DEF_A3(kernel_name, postfix) \
+extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS) \
+{ \
+    CONVERT_SK_PARAM_TO_KERNEL_ARGS_A3; \
+    kernel_name(KERNEL_ARGS_CALL_A3); \
+}
+
 constexpr uint32_t SIZE_OF_INT32 = 4;
 
 class AivCrossNode91093Base {
