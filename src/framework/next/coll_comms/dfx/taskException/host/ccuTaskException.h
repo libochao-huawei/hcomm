@@ -7,8 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef HCCL_COMM_TASKEXCEPTION_H
-#define HCCL_COMM_TASKEXCEPTION_H
+#ifndef CCU_TASKEXCEPTION_H
+#define CCU_TASKEXCEPTION_H
 
 #include <array>
 #include "types.h"
@@ -20,33 +20,21 @@
 #include "rdma_handle_manager.h"
 #include "ccu_error_info.h"
 #include "rank_pair.h"
+#include "ccu_error_info_v1.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
-using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>; 
 
 struct CcuHostParam {
     CcuErrorInfo ccuErrorInfo;
-    TaskInfo taskInfo;
+    Hccl::TaskInfo taskInfo;
     uint32_t deviceId;
 };
-constexpr u32 CCU_COSTOM_ARGS_LEN = 32;
-struct ParaCcu {
-    u8  dieId;
-    u8  missionId;
-    u8  execMissionId;
-    u32 instrId;
-    u64 costumArgs[CCU_COSTOM_ARGS_LEN];
-    u64 executeId;
-    u64 ccuKernelHandle{0};
-};
+
 class CcuTaskException {
 public:
     CcuTaskException() = default;
-    ~CcuTaskException();
-
-    HcclResult        Register() ;                                // 向rts注册异常处理方法
-    HcclResult        UnRegister() ;                              // 向rts注销异常处理方法
+    ~CcuTaskException() = default;
 
 private:
     static std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
@@ -86,28 +74,10 @@ private:
     static RankId GetRankIdByChannelId(const CcuHostParam &ccuHostParam);
     static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(const CcuHostParam &ccuHostParam);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
-    void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
-    std::vector<CcuErrorInfo> &errorInfo)
-
-
-private:
-    bool isRegistered_ {false};
+    void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
+        std::vector<CcuErrorInfo> &errorInfo);
+    static void PrintPanicLogInfo(const uint8_t *panicLog);
 };
+} // namespace hcomm
 
-class TaskExceptionHostManager {
-public:
-    // 获取指定位置的异常处理器
-    static TaskExceptionHost *GetHandler(size_t devId);
-    static void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBackHcomm p1);
-
-private:
-    TaskExceptionHostManager();
-    // 私有析构函数，负责释放数组中所有单例实例的内存
-    ~TaskExceptionHostManager();
-    // 私有拷贝构造函数和赋值运算符，防止对象被拷贝
-    TaskExceptionHostManager(const TaskExceptionHostManager &)            = delete;
-    TaskExceptionHostManager &operator=(const TaskExceptionHostManager &) = delete;
-};
-} // namespace hccl
-
-#endif // HCCL_TASK_EXCEPTION_HANDLER_H
+#endif

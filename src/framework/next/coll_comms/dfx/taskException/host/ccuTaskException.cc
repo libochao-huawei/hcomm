@@ -42,7 +42,8 @@ struct ccum_dfx_info {
     unsigned int ccum_cif_sqe_cnt;
     unsigned int ccum_cif_cqe_cnt;
 };
-void PrintPanicLogInfo(const uint8_t *panicLog)
+
+void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
 {
     struct ccum_dfx_info *info = reinterpret_cast<struct ccum_dfx_info *>(const_cast<uint8_t*>(panicLog));
     const uint16_t ccumIsEnable = info->lqc_ccu_sec_reg0 & 1;
@@ -56,6 +57,7 @@ void PrintPanicLogInfo(const uint8_t *panicLog)
                 info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
                 info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
 }
+
 void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
 {
     auto deviceId = exceptionInfo->deviceid;
