@@ -26,6 +26,9 @@
 // 暂时引入orion仓
 #include "local_ub_rma_buffer.h"
 
+#include "orion_adapter_hccp.h"
+#include "ccu_device_manager.h"
+
 namespace hcomm {
 
 class CcuComponent {
@@ -57,6 +60,13 @@ public:
     HcclResult ReleaseCke(const uint8_t dieId, const std::vector<ResInfo> &ckeInfos);
     HcclResult AllocXn(const uint8_t dieId, const uint32_t num, std::vector<ResInfo> &xnInfos);
     HcclResult ReleaseXn(const uint8_t dieId, const std::vector<ResInfo> &xnInfos);
+    HcclResult SetTaskKillDone();
+
+    HcclResult SetTaskKillDone();
+    HcclResult CleanTaskKillState() const;
+    void SetProcess(CcuOpcodeType opCode) const;
+    HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
+    HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
 
     std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
 
@@ -113,6 +123,8 @@ private:
     using ImportOutParamPair = std::pair<CtxHandle, HrtRaUbJettyImportedOutParam>;
     std::unordered_map<uint8_t, std::vector<ImportOutParamPair>> importedOutParamMap_{};
     std::unordered_map<uint8_t, TpInfo> tpInfoMap_{};
+    enum class CcuTaskKillStatus : uint8_t { INIT = 0, TASK_KILL = 1, KILL_DONE = 2, CLEAN_TIF = 3, INVALID = 4};
+    CcuTaskKillStatus status{CcuTaskKillStatus::INVALID};
 };
 
 } // namespace hcomm
