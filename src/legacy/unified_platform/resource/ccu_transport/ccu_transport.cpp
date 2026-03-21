@@ -31,6 +31,10 @@ HcclResult CcuCreateTransport(Socket *socket, const CcuTransport::CcuConnectionI
             ccuConnection = std::make_unique<CcuCtpConnection>(ccuConnectionInfo.locAddr,
                 ccuConnectionInfo.rmtAddr, ccuConnectionInfo.channelInfo,
                 ccuConnectionInfo.ccuJettys);
+        } else if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_UBOE) {
+            ccuConnection = std::make_unique<CcuUboeConnection>(ccuConnectionInfo.locAddr,
+                ccuConnectionInfo.rmtAddr, ccuConnectionInfo.channelInfo,
+                ccuConnectionInfo.ccuJettys);
         } else {
             ccuConnection = std::make_unique<CcuTpConnection>(ccuConnectionInfo.locAddr,
                 ccuConnectionInfo.rmtAddr, ccuConnectionInfo.channelInfo,
