@@ -129,6 +129,8 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxhandle, const HrtRaUbCreateJetty
 HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreateJettyParam &in,
     std::vector<char> &out, void *&jettyHandle, RequestHandle &reqHandle);
 
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num);
+
 using HrtRaUbJettyImportedOutParam = struct HrtRaUbJettyImportedOutParamDef {
     TargetJettyHandle handle{0};
     u64               targetJettyVa{0};

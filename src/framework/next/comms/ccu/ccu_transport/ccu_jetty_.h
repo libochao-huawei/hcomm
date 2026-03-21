@@ -33,6 +33,14 @@ public:
     {
         return jettyInfo_.taJettyId;
     }
+    JettyHandle GetJettyHandle() const
+    {
+        return reinterpret_cast<JettyHandle>(jettyHandlePtr_);
+    }
+    RdmaHandle GetRdmaHandle() const
+    {
+        return rdmaHandle_;
+    }
 
 private:
     CcuJetty(const CcuJetty &that) = delete;
@@ -58,6 +66,7 @@ private:
     HrtRaUbJettyCreatedOutParam outParam_{};
 
     HcclResult HandleAsyncRequest();
+    RdmaHandle rdmaHandle_{nullptr};
 };
 
 HcclResult CcuCreateJetty(const Hccl::IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
