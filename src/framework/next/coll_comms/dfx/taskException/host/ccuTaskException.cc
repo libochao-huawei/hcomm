@@ -310,7 +310,24 @@ void CcuTaskException::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, sha
 
     errorInfo.push_back(errorMsg);
 }
+uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId)
+{
+    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    struct CustomChannelInfoIn  inBuff;
+    struct CustomChannelInfoOut outBuff;
 
+    inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_GSA;
+    inBuff.data.dataInfo.udieIdx       = dieId;
+    inBuff.offsetStartIdx              = gsaId;
+    inBuff.data.dataInfo.dataArraySize = 1; // 读1个GSA
+    inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
+
+    HrtRaCustomChannel(info, &inBuff, &outBuff);
+
+    uint64_t gsaVal{0};
+    (void)memcpy_s(&gsaVal, sizeof(gsaVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
+    return gsaVal;
+}
 uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId)
 {
     HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
