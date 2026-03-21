@@ -29,6 +29,43 @@ using namespace std;
 constexpr int BYTE = 8;
 constexpr uint64_t CCU_MSG_256MB_LEN = 256 * 1024 * 1024; // CCU消息长度不能大于256MB
 
+const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
+    {0x02,
+     {{0x01, "Local Length Error(0x01)"},
+      {0x02, "Local Access Error(0x02)"},
+      {0x03, "Remote Response Length Error(0x03)"},
+      {0x04, "Local Data Poison(0x04)"}}},
+    {0x03,
+     {{0x01, "Remote Unsupported Request(0x01)"},
+      {0x02, "Remote Access Abort(0x02)"},
+      {0x04, "Remote Data Poison(0x04)"}}},
+    {0x09, {{0x01, "SQE instr and key not match(0x01)"}, {0x02, "CCU Mission Task Killed(0x02)"}}},
+    {0x0A,
+     {{0x01, "EXOKAY(0x01)"},
+      {0x11, "EXOKAY(0x11)"},
+      {0x02, "SLVERR(0x02)"},
+      {0x12, "SLVERR(0x12)"},
+      {0x03, "DECERR(0x03)"},
+      {0x13, "DECERR(0x13)"},
+      {0x04, "Abort(0x04)"},
+      {0x14, "Abort(0x14)"},
+      {0x05, "Write Permission Err(0x05)"},
+      {0x15, "Write Permission Err(0x15)"},
+      {0x06, "Read Permission Err(0x06)"},
+      {0x16, "Read Permission Err(0x16)"},
+      {0x07, "Atomic Permission Err(0x07)"},
+      {0x17, "Atomic Permission Err(0x17)"},
+      {0x08, "Tokenval Err(0x08)"},
+      {0x18, "Tokenval Err(0x18)"},
+      {0x09, "Page Fault(0x09)"},
+      {0x0a, "Page Fault(0x0A)"},
+      {0x0b, "Page Fault(0x0B)"},
+      {0x19, "Page Fault(0x19)"},
+      {0x1a, "Page Fault(0x1A)"},
+      {0x1b, "Page Fault(0x1B)"},
+      {0x0c, "Read Local Mem Poison(0x0C)"}}},
+};
+
 struct ccum_dfx_info {
     unsigned int query_result; // 0:success, 1:fail
     unsigned int ccum_sqe_recv_cnt;
@@ -130,6 +167,28 @@ CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint3
     return missionCtx;
 }
 
+static string StatusCode2Str(uint8_t highPart, uint8_t lowPart)
+{
+    HCCL_INFO("Mission Status Code: highPart[0x%02x], lowPart[0x%02x]", highPart, lowPart);
+    const auto status = MISSION_STATUS_MAP.find(highPart);
+    if (status == MISSION_STATUS_MAP.end()) {
+        return "Unknown Status";
+    }
+    stringstream result;
+    result << status->second;
+
+    const auto lowMap = MISSION_SUB_STATUS_MAP.find(highPart);
+    if (lowMap == MISSION_SUB_STATUS_MAP.end()) {
+        HCCL_ERROR("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        return result.str();
+    }
+
+    const auto subStatus = lowMap->second.find(lowPart);
+    const string subStatusMsg = subStatus == lowMap->second.end() ? "Unknown Status" : subStatus->second;
+    result << ", " << subStatusMsg;
+    return result.str();
+}
+
 void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -156,14 +215,14 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
                                                        vector<CcuErrorInfo> &errorInfo);
     static const map<CcuRepType, GenErrorInfoFunc> handlerMap {
         // WAIT_SIGNAL
-        {CcuRepType::LOC_POST_SEM, &CcuErrorHandler::GenErrorInfoLocPostSem},
-        {CcuRepType::LOC_WAIT_SEM, &CcuErrorHandler::GenErrorInfoLocWaitSem},
+        {CcuRepType::LOC_RECORD_EVENT, &CcuErrorHandler::GenErrorInfoLocPostSem},
+        {CcuRepType::LOC_WAIT_EVENT, &CcuErrorHandler::GenErrorInfoLocWaitSem},
+        {CcuRepType::LOC_WAIT_NOTIFY, &CcuErrorHandler::GenErrorInfoLocWaitSem},
         {CcuRepType::REM_POST_SEM, &CcuErrorHandler::GenErrorInfoRemPostSem},
         {CcuRepType::REM_WAIT_SEM, &CcuErrorHandler::GenErrorInfoRemWaitSem},
         {CcuRepType::REM_POST_VAR, &CcuErrorHandler::GenErrorInfoRemPostVar},
         {CcuRepType::REM_WAIT_GROUP, &CcuErrorHandler::GenErrorInfoRemWaitGroup},
-        {CcuRepType::POST_SHARED_VAR, &CcuErrorHandler::GenErrorInfoPostSharedVar},
-        {CcuRepType::POST_SHARED_SEM, &CcuErrorHandler::GenErrorInfoPostSharedSem},
+        {CcuRepType::RECORD_SHARED_NOTIFY, &CcuErrorHandler::GenErrorInfoPostSharedSem},
         // TRANS_MEM
         {CcuRepType::READ, &CcuErrorHandler::GenErrorInfoRead},
         {CcuRepType::WRITE, &CcuErrorHandler::GenErrorInfoWrite},
