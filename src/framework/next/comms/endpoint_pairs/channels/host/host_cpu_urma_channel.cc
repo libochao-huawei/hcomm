@@ -208,47 +208,6 @@ ChannelStatus HostCpuUrmaChannel::GetStatus()
     return out;
 }
 
-HcclResult HostCpuUrmaChannel::SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
-{
-    int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
-    if (ret != 0) {
-        HCCL_ERROR("[SetModuleDataName] strcpy_s name %s failed", name.c_str());
-        return HCCL_E_INTERNAL;
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult HostCpuUrmaChannel::PackOpData(std::vector<char> &data)
-{
-    std::vector<Hccl::ModuleData> dataVec;
-    dataVec.resize(Hccl::AicpuResMgrType::__COUNT__);
-
-    Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM;
-    CHK_RET(SetModuleDataName(dataVec[resType], "UbMemTransport"));
-
-    std::vector<char> result;
-    Hccl::BinaryStream      binaryStream;
-    binaryStream << memTransport_->GetUniqueIdV2();
-
-    binaryStream.Dump(result);
-
-    dataVec[resType].data = result;
-
-    Hccl::AicpuResPackageHelper helper;
-    data = helper.GetPackedData(dataVec);
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult HostCpuUrmaChannel::H2DResPack(std::vector<char>& buffer)
-{
-    CHK_RET(PackOpData(buffer));
-    HCCL_INFO("[HostCpuUrmaChannelImpl][%s] Pack Buffer data[%p], Pack Buffer size[%zu].",
-        __func__, buffer.data(), buffer.size());
-    return HCCL_SUCCESS;
-}
-
 HcclResult hcomm::HostCpuUrmaChannel::PrepareNotifyWrResource(const uint32_t remoteNotifyIdx, urma_jfs_wr_t &notifyRecordWr)
 {
     // 构造 urma_jfs_wr_t

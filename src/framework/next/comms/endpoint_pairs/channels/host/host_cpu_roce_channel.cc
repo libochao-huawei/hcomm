@@ -776,7 +776,9 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len)
+void HostCpuRoceChannel::BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr,	 
+                                       const void *remoteAddr, uint64_t len, size_t localIdx, size_t rmtIdx, 
+                                       struct ibv_send_wr &wr, struct ibv_sge &sg) const
 {
     wr.sg_list             = &sg;
     wr.sg_list->addr       = reinterpret_cast<uint64_t>(localAddr);
@@ -792,7 +794,7 @@ HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t 
     wr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(remoteAddr);
 }
 
-HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len)
+HcclResult HostCpuRoceChannel::PostAndCheckSend(const char *caller, struct ibv_send_wr &wr)
 {
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     struct ibv_send_wr *badWr = nullptr;
