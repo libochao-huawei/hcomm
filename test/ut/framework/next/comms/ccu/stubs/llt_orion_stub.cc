@@ -133,6 +133,16 @@ size_t Buffer::GetSize() const
 {
     return size_;
 }
+
+HcclMemType Buffer::GetMemType() const
+{
+    return memType_;
+}
+
+const std::string Buffer::GetMemTag() const
+{
+    return mem_Tag_;
+}
  
 DevBuffer::DevBuffer(uintptr_t devAddr, std::size_t devSize) : Buffer(devSize), selfOwned(false)
 {

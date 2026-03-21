@@ -2074,3 +2074,18 @@ HcclResult HcommFlushV2()
 {
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
+{
+    return HCCL_SUCCESS;
+}
