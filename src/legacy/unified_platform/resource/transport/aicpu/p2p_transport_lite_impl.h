@@ -51,16 +51,6 @@ private:
     u32 notifyNum{0};
     u32 bufferNum{0};
 
-    struct RmtP2PNotifyLite {
-        u64         addr;
-        u64         size;
-        u32         id;
-        std::string Describe() const
-        {
-            return StringFormat("RmtP2PNotifyLite[addr=0x%llx, size=0x%llx, id=%u]", addr, size, id);
-        }
-    };
-
     struct RmtP2PBufLite {
         u64         addr;
         u64         size;
@@ -70,8 +60,10 @@ private:
         }
     };
 
-    std::vector<RmtP2PNotifyLite> rmtNotifyVec;
-    std::vector<RmtP2PBufLite> rmtBufferVec;
+    using RmtP2PBufLiteVec = std::vector<RmtP2PBufLite>;
+    MAKE_ENUM(RmaP2PBufType, NOTIFY, BUFFER)
+    RmtP2PBufLiteVec rmtNotifyVec;
+    RmtP2PBufLiteVec rmtBufferVec;
 
     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
 
@@ -79,9 +71,7 @@ private:
 
     void ParseLocNotifyVec(std::vector<char> &data);
 
-    void ParseRmtNotifyVec(std::vector<char> &data, std::vector<RmtP2PNotifyLite> &vec) const;
-
-    void ParseRmtBufferVec(std::vector<char> &data, std::vector<RmtP2PBufLite> &vec) const;
+    void ParseRmtBufferVec(std::vector<char> &data, RmtP2PBufLiteVec &vec, RmaP2PBufType rmtType) const;
 
     void BuildNotifyRecordTask(const StreamLite &stream, u64 rmtNotifyAddr);
 

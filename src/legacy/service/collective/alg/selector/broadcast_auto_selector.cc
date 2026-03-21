@@ -148,7 +148,7 @@ SelectorStatus BroadcastAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
             } else {
                 if (topoInfo.level0PcieMix) {
                     // 预留PCIE mix入口，如果要更新算法可以直接改
-                    primQueueGenName = "InsBroadcastParallelMesh1DNHRPcie";
+                    primQueueGenName = "InsBroadcastParallelMesh1DNHR";
                 } else {
                     primQueueGenName = "InsBroadcastParallelMesh1DNHR";
                 }

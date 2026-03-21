@@ -44,6 +44,7 @@ public:
 
     HcclResult Init();
     HcclResult GetEndpointPair(CommEngine engine, const EndpointDescPair &epDescPair, hcomm::EndpointPair*& out);
+    hcomm::EpChannelMap GetEpChannelMap();
 
 private:
     RankId localRankId_{};

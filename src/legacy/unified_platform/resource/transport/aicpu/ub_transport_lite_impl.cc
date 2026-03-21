@@ -702,4 +702,57 @@ Eid UbTransportLiteImpl::GetRmtEid() const
     }
     return eid;
 }
+
+HcclResult UbTransportLiteImpl::Clean()
+{
+    locNotifyVec.clear();
+    rmtNotifyVec.clear();
+    locBufferVec.clear();
+    rmtBufferVec.clear();
+
+    // 清理connVec，connLite由UbConnLiteMgr管理
+    for (auto &it : connUniqueIdVec) {
+       DECTOR_TRY_CATCH("UbTransportLiteImpl",  UbConnLiteMgr::GetInstance().Clear(it));
+    }
+    connUniqueIdVec.clear();
+    connVec.clear();
+
+    // 清理wqe
+    ClearConnOut();
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbTransportLiteImpl::Resume(std::vector<char> &uniqueId)
+{
+    BinaryStream binaryStream(uniqueId);
+    u32          theType;
+    binaryStream >> theType;
+    binaryStream >> notifyNum;
+    binaryStream >> bufferNum;
+    binaryStream >> connNum;
+ 
+    std::vector<char> notifyUniqueIds;
+    binaryStream >> notifyUniqueIds;
+    ParseLocNotifyVec(notifyUniqueIds);
+ 
+    std::vector<char> rmtNotifyUniqueIds;
+    binaryStream >> rmtNotifyUniqueIds;
+    ParseRmtBufferVec(rmtNotifyUniqueIds, rmtNotifyVec, RmaUbBufType::NOTIFY);
+ 
+    std::vector<char> locBufferUniqueIds;
+    binaryStream >> locBufferUniqueIds;
+    ParseLocBufferVec(locBufferUniqueIds, locBufferVec, RmaUbBufType::BUFFER);
+
+    std::vector<char> rmtBufferUniqueIds;
+    binaryStream >> rmtBufferUniqueIds;
+    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaUbBufType::BUFFER);
+
+    std::vector<char> connUniqueIds;
+    binaryStream >> connUniqueIds;
+    ParseConnVec(connUniqueIds);
+
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

@@ -163,7 +163,7 @@ SelectorStatus AllGatherAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "InsAllGatherMesh";
             } else if (topoInfo.level0PcieMix) {
-                primQueueGenName = "InsAllGatherParallelMesh1DNHRPcie";
+                primQueueGenName = "InsAllGatherParallelMesh1DNHR";
             } else {
                 primQueueGenName = "InsAllGatherParallelMesh1DNHR";
             }
