@@ -59,7 +59,8 @@ private:
     static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
-    static HcclResult PrintCcuUbRegisters(s32 devLogicId, const Hccl::ParaCcu &ccuTaskParam);
+    static HcclResult PrintCcuUbRegisters(const std::vector<CcuErrorInfo>& errorInfos, s32 devLogicId,
+        const Hccl::TaskInfo& taskInfo);
 
     static void ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
