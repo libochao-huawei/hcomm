@@ -27,6 +27,7 @@ namespace hcomm {
 
 // 暂时放在adapter
 constexpr uint32_t URMA_EID_LEN = 16;
+MAKE_ENUM(HrtNetworkMode, PEER, HDC);
 
 using Eid = HccpEid; // 使用hccp定义的union表示eid
 
@@ -161,5 +162,6 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
     const HccpUbJettyImportedInParam &in, std::vector<char> &out,
     void *&remQpHandle, RequestHandle &reqHandle);
 
+HcclResult RaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
 } // namespace hcomm
 #endif // HCOMM_ADAPTER_HCCP_H
