@@ -674,13 +674,14 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
     return loopCtx;
 }
 
-void CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx,
+HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx,
                                        vector<CcuErrorInfo> &errorInfo)
 {
     // 找LoopRep
     auto repBase = ctx.GetRepByInstrId(baseInfo.currentInsId);
     if (repBase == nullptr || repBase->Type() != CcuRepType::LOOP) {
-        THROW<CcuApiException>("Failed to find Loop REP from CcuContext, instrId[%u]", baseInfo.currentInsId);
+        HCCL_ERROR("Failed to find Loop REP from CcuContext, instrId[%u]", baseInfo.currentInsId);
+        return HCCL_E_PARA;
     }
     const auto rep = static_pointer_cast<CcuRepLoop>(repBase);
 
@@ -705,16 +706,17 @@ void CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepCon
          loopCurrentIns++) {
         auto inLoopExRep = rep->loopBlock->GetRepByInstrId(loopCurrentIns);
         if (inLoopExRep == nullptr) {
-            THROW<CcuApiException>("Failed to find REP from Loop, instrId[%u], Loop[%s]", loopCurrentIns,
-                                   rep->GetLabel().c_str());
+            HCCL_ERROR("Failed to find REP from Loop, instrId[%u], Loop[%s]", loopCurrentIns,rep->GetLabel().c_str());
+            return HCCL_E_PARA;
         }
         ErrorInfoBase loopErrBase{baseInfo.deviceId, baseInfo.dieId, baseInfo.missionId, loopCurrentIns,
                                   baseInfo.status};
         GenErrorInfoByRepType(loopErrBase, inLoopExRep, errorInfo);
     }
+    return HCCL_SUCCESS;
 }
 
-void CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+HcclResult CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                             CcuRepContext &ctx, vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -737,8 +739,9 @@ void CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shar
         uint16_t      loopInsId = startLoopInstrId + i;
         ErrorInfoBase loopErrInfoBase{baseInfo.deviceId, baseInfo.dieId, baseInfo.missionId, loopInsId,
                                       baseInfo.status};
-        GenErrorInfoLoop(loopErrInfoBase, ctx, errorInfo);
+        CHK_RET(GenErrorInfoLoop(loopErrInfoBase, ctx, errorInfo));
     }
+    return HCCL_SUCCESS;
 }
 
 HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
@@ -789,7 +792,7 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
 
     if ((prevRep != nullptr && prevRep->Type() == CcuRep::CcuRepType::LOOPGROUP) || (rep->Type() == CcuRep::CcuRepType::LOOPGROUP)) {
         // 处理LoopGroup
-        GenErrorInfoLoopGroup(baseInfo, prevRep, *ctx, errorInfo);
+        CHK_RET(GenErrorInfoLoopGroup(baseInfo, prevRep, *ctx, errorInfo));
     } else if (rep->Type() == CcuRep::CcuRepType::LOC_WAIT_EVENT || rep->Type() == CcuRep::CcuRepType::LOC_WAIT_NOTIFY) {
         GenErrorInfoByRepType(baseInfo, rep, errorInfo);
         uint16_t actValue = errorInfo.back().msg.waitSignal.signalValue;

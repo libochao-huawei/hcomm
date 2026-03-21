@@ -95,7 +95,7 @@ private:
     static std::string GetCcuLenErrorMsg(const uint64_t len);
     static void GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                     std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+    static HcclResult GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                 CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
     static void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                 std::vector<CcuErrorInfo> &errorInfo);
@@ -141,7 +141,7 @@ private:
     static void GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                     std::vector<CcuErrorInfo> &errorInfo);
     static uint64_t GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId);
-    static void GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
+    static HcclResult GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
     static void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
     static CcuLoopContext GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId);
     static CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
