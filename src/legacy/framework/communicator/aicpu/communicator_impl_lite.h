@@ -258,7 +258,7 @@ private:
     u64 scratchSize{0};
     u64 locBuffer[BufferType::__COUNT__]{};
     u64 opCounterAddr{0};
-    u32 opIndex;
+    u32 opIndex_;
     std::string commId;
     bool isUpdateComm {false};
     CollOperator currentOp;
