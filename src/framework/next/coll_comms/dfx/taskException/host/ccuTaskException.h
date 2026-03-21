@@ -74,6 +74,12 @@ private:
     static RankId GetRankIdByChannelId(const CcuHostParam &ccuHostParam);
     static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(const CcuHostParam &ccuHostParam);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
+    void GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                                            CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                                std::vector<CcuErrorInfo> &errorInfo);
+    void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
+    CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
     void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
         std::vector<CcuErrorInfo> &errorInfo);
     static void PrintPanicLogInfo(const uint8_t *panicLog);
