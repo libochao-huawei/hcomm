@@ -9,7 +9,7 @@
  */
 #ifndef HCCL_COMM_DFX_LITE_H
 #define HCCL_COMM_DFX_LITE_H
-#include "mirror_task_manager.h"
+#include "mirror_task_manager_lite.h"
 #include "hcclCommProfilingLite.h"
 #include "read_write_lock.h"
 #include "hccl_common.h"
@@ -28,7 +28,7 @@ public:
     // 注册回调到单例
     HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
     // 获取MirrorTaskManager
-    Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
+    Hccl::MirrorTaskManagerLite* GetMirrorTaskManagerLite() const;
 
     // Profiling相关接口（直接暴露，不通过GetProfilingImpl）- 全部修改为返回HcclResult类型
     HcclResult ReportAllTasks();
@@ -42,7 +42,7 @@ public:
     // 在channelRemoteRankId_表中对remoteRankId进行查找
     static HcclResult GetChannelRemoteRankId(const std::string& commTag, u64 handle, u32& remoteRankId);
 private:
-    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
+    std::unique_ptr<Hccl::MirrorTaskManagerLite> mirrorTaskManagerLite_;
     std::unique_ptr<HcclCommProfilingLite> profilingImpl_;
     static std::unordered_map<std::string,std::unordered_map<u64, u32> > channelRemoteRankIdLite_;
     std::string commTag_;
