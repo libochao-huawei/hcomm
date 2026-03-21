@@ -34,7 +34,7 @@ HcclResult LocalRdmaRmaBuffer::Init()
     CHK_PRT_RET((size == 0 || (memType == RmaMemType::HOST && size >= HOST_MEM_MAX_COUNT) ||
         (memType == RmaMemType::DEVICE && size >= DEVICE_MEM_MAX_COUNT)),
         HCCL_ERROR("[LocalRdmaRmaBuffer][Init]memory size[%llu] should be greater than 0 and less than [%llu].",
-        size, (memType == RmaMemType::DEVICE ? HOST_MEM_MAX_COUNT : DEVICE_MEM_MAX_COUNT)), HCCL_E_PARA);
+        size, (memType == RmaMemType::DEVICE ? DEVICE_MEM_MAX_COUNT : HOST_MEM_MAX_COUNT)), HCCL_E_PARA);
 
     CHK_SMART_PTR_NULL(pimpl_);
     HcclResult ret = pimpl_->Init();
