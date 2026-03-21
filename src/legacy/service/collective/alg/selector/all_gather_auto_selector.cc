@@ -20,6 +20,8 @@ constexpr u64 AG_2D_SMALL_DATA_SIZE = 1 * 1024 * 1024;
 SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;    
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     u32 rankSize_2P = 2;
  	u32 rankSize_4P = 4;  
@@ -82,6 +84,8 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
 SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -137,6 +141,8 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
 SelectorStatus AllGatherAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -163,7 +169,7 @@ SelectorStatus AllGatherAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "InsAllGatherMesh";
             } else if (topoInfo.level0PcieMix) {
-                primQueueGenName = "InsAllGatherParallelMesh1DNHR";
+                primQueueGenName = "InsAllGatherParallelMesh1DNHRPcie";
             } else {
                 primQueueGenName = "InsAllGatherParallelMesh1DNHR";
             }
@@ -181,6 +187,8 @@ SelectorStatus AllGatherAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
 SelectorStatus AllGatherAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // aiv 直接走打平 mesh

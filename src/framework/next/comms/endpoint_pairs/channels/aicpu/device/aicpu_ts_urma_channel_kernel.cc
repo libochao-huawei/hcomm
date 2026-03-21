@@ -46,19 +46,8 @@ __attribute__((visibility("default"))) uint32_t RunAicpuChannelDestroyV2(void *a
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelUpdateV2(void *args)
 {
     HCCL_RUN_INFO("RunAicpuIndOpChannelUpdateV2 start.");
-<<<<<<< HEAD
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
     HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(devAddr);
-=======
-    CHK_PRT_RET(args == nullptr, HCCL_ERROR("[%s]args is null.", __func__), HCCL_E_PARA);
-    struct InitTask {
-        u64 context;
-        bool isCustom;
-    };
-    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(ctxArgs->context);
-
->>>>>>> 82b3a4db7981441a76f2c8d9d2018afdd4bf76be
     return AicpuIndopProcess::AicpuIndOpChannelUpdate(commParam);
 }

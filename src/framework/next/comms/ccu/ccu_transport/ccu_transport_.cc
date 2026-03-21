@@ -59,7 +59,7 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     CHK_RET(BuildCcuConnection(ccuConnectionInfo, ccuConnection));
 
     if (bufferInfos.size() == 0) {
-        HCCL_ERROR("[BuildBufferInfos] bufferNum is 0.");
+        HCCL_ERROR("[CcuCreateTransport] bufferNum is 0.");
         return HCCL_E_PARA;
     }
     ccuTransport.reset(new (std::nothrow)

@@ -139,11 +139,6 @@ HcclResult CollComm::GetHDCommunicate(
     return HCCL_SUCCESS;
 }
 
-std::string CollComm::GetCollCommName()
-{
-    return commId_;
-}
-
 HcclCommStatus CollComm::GetCommStatus()
 {
     return commStatus_;

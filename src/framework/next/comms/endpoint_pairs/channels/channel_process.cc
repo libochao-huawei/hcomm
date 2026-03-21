@@ -645,7 +645,6 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     channelParam.channelList = static_cast<void *>(deviceChannelList.ptr());
 
-
     // 调用抽离的通用内核启动函数
     std::string kernelName = "RunAicpuIndOpChannelUpdateV2";
     CHK_RET(LaunchKernel(channelParam, binHandle, kernelName));

@@ -13,6 +13,7 @@
 
 #include "hccl_res.h"
 #include <string>
+#include <vector>
 
 namespace hccl {
 

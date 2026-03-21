@@ -71,16 +71,6 @@ HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHan
 
 HcclResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngine engine, 
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
-<<<<<<< HEAD
-=======
-
-HcclResult HcommChannelClean(const ChannelHandle *channelList, uint32_t channelNum);
-
-HcclResult HcommChannelResume(const ChannelHandle *channelList, uint32_t channelNum);
-
-HcclResult HcommChannelUpdateKernelLaunch(ChannelHandle* const deviceChannelHandles, const ChannelHandle* const hostChannelHandles, uint32_t listNum,
-    const std::string &commTag, aclrtBinHandle binHandle);
->>>>>>> 82b3a4db7981441a76f2c8d9d2018afdd4bf76be
 
 #ifdef __cplusplus
 }

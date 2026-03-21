@@ -22,7 +22,7 @@ struct CollCommAicpuInfo {
 };
 CollCommAicpuInfo g_commAicpuInfo;
 
-thread_local CollCommAicpuMgr *g_hcclComm = nullptr; // 记录当前线程通信域; AicpuGetCommbyGroup赋值，AicpuReleaseCommMgrbyGroup置空
+thread_local CollCommAicpuMgr *g_hcclComm = nullptr; // 记录当前线程通信域; AicpuGetCommbyGroup赋值，AicpuReleaseCommbyGroup置空
 }
 
 HcclResult AicpuIndopProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam) {
@@ -96,7 +96,7 @@ CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &g
 {
     auto startTime = std::chrono::steady_clock::now();
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
-    constexpr u32 pollTimeoutMs = 10000; // 轮询超时时间10ms //临时规避host侧在临时流下发kernel获取锁超时的问题
+    constexpr u32 pollTimeoutMs = 10; // 轮询超时时间10ms
     auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
 
@@ -144,7 +144,7 @@ void AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(const std::string &group)
         rwlock.readUnlock();
         return;
     }
-    g_hcclComm = nullptr;
+    g_hcclComm = iter->second.get();
     iter->second->SetUsed(false);
     rwlock.readUnlock();
 }
@@ -185,9 +185,9 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelUpdate(HcclChannelUrmaRes *commPa
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
     CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
 
-    HcclResult ret = collCommAicpuMgr->AllocChannelResource(commParam);
+    HcclResult ret = collCommAicpuMgr->UpdateChannelResource(commParam);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[AicpuIndopProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
+        HCCL_ERROR("[AicpuIndopProcess][UpdateChannelResource]errNo[0x%016llx] Failed to update channels group[%s]",
         HCCL_ERROR_CODE(ret), group.c_str()), ret);
 
     AicpuReleaseCommMgrbyGroup(group);
@@ -228,8 +228,6 @@ HcclResult AicpuIndopProcess::AicpuGetCommAll(std::vector<std::pair<std::string,
     }
     return HCCL_SUCCESS;
 }
-<<<<<<< HEAD
-=======
 
 HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
 {
@@ -323,4 +321,3 @@ HcclResult AicpuIndopProcess::UpdateTask(const std::string &group)
     CHK_RET(hcclCommDfxLite->UpdateProfStat());
     return HCCL_SUCCESS;
 }
->>>>>>> e8c17ee24aca54d7ce370ed3040705340980d82a

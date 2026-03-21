@@ -820,3 +820,104 @@ TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_0_Expect_Return_False
 
     EXPECT_EQ(HraGetRtpEnable(handle), false);
 }
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_InfoIsNull_Expect_ReturnPtrError)
+{
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+
+    HcclResult ret = HrtRaGetTlsStatus(nullptr, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(tlsStatus, TlsStatus::UNKNOWN);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_InterfaceVersionQueryFails_Expect_ReturnNotSupportAndUnknown)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::DISABLE;
+
+    MOCKER(RaGetInterfaceVersion).stubs().will(returnValue(-1));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(tlsStatus, TlsStatus::UNKNOWN);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_InterfaceVersionTooLow_Expect_ReturnNotSupportAndUnknown)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::DISABLE;
+    u32 lowVersion = 0;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&lowVersion, sizeof(lowVersion)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(tlsStatus, TlsStatus::UNKNOWN);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_RaGetTlsEnableFails_Expect_ReturnNetworkErrorAndDisable)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    u32 supportVersion = 1;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .will(returnValue(0));
+    MOCKER(RaGetTlsEnable).stubs().will(returnValue(-1));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+    EXPECT_EQ(tlsStatus, TlsStatus::DISABLE);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_TlsEnableIsTrue_Expect_ReturnSuccessAndEnable)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    u32 supportVersion = 1;
+    bool tlsEnable = true;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .will(returnValue(0));
+    MOCKER(RaGetTlsEnable).stubs()
+        .with(any(), outBoundP(&tlsEnable, sizeof(tlsEnable)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tlsStatus, TlsStatus::ENABLE);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_TlsEnableIsFalse_Expect_ReturnSuccessAndDisable)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    u32 supportVersion = 1;
+    bool tlsEnable = false;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .will(returnValue(0));
+    MOCKER(RaGetTlsEnable).stubs()
+        .with(any(), outBoundP(&tlsEnable, sizeof(tlsEnable)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tlsStatus, TlsStatus::DISABLE);
+}
