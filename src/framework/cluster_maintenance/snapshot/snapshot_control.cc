@@ -25,7 +25,6 @@ uint32_t PreProcessCallback(int32_t devId, void *args)
     printf("DEBUG: PreProcessCallback, devId[%d]\n", devId);
     HcclResult ret = SnapshotControl::GetInstance(devId).PreProcess();
     // debug 传入devId, 为什么GetInstance返回的实例, 成员变量deviceLogicId_和devId不一致，都是0
-    printf("DEBUG: PreProcessCallback, devId[%d], GetInstance.deviceLogicId_[%u]\n", devId, SnapshotControl::GetInstance(devId).deviceLogicId_);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] PreProcess fail, devId[%d].", devId), ret);
     HCCL_RUN_INFO("[Snapshot] PreProcess success, devId[%d]", devId);
@@ -88,9 +87,11 @@ SnapshotControl &SnapshotControl::GetInstance(s32 deviceLogicId)
 {
     static SnapshotControl instances[MAX_MODULE_DEVICE_NUM];
     if (static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+        printf("DEBUG: PreProcessCallback, devId[%d], GetInstance.deviceLogicId_[%u]\n", deviceLogicId, instances[0].deviceLogicId_);
         return instances[0];
     }
     instances[deviceLogicId].deviceLogicId_ = deviceLogicId;
+    printf("DEBUG: PreProcessCallback, devId[%d], GetInstance.deviceLogicId_[%u]\n", deviceLogicId, instances[deviceLogicId].deviceLogicId_);
     return instances[deviceLogicId];
 }
 
