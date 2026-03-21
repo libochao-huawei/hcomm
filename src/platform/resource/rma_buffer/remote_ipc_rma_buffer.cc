@@ -49,7 +49,7 @@ HcclResult RemoteIpcRmaBuffer::Deserialize(const std::string& msg)
         HCCL_ERROR(
             "[RemoteIpcRmaBuffer][Deserialize]memory size[%llu] should be greater than 0 and less than [%llu].",
             size,
-            (memType == RmaMemType::DEVICE ? HOST_MEM_MAX_COUNT : DEVICE_MEM_MAX_COUNT)), HCCL_E_PARA);
+            (memType == RmaMemType::DEVICE ? DEVICE_MEM_MAX_COUNT : HOST_MEM_MAX_COUNT)), HCCL_E_PARA);
 
     HCCL_DEBUG("[RemoteIpcRmaBuffer][Deserialize]addr[%p], size[%llu], devAddr[%p], memType[%d]", addr, size, devAddr, memType);
 
