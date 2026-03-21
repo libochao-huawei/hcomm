@@ -26,6 +26,7 @@
 #include "adapter_rts_common.h"
 #include "ccu_rep_loopgroup_v1.h"
 #include "ccu_rep_type_v1.h"
+#include "ccu_rep_loc_record_event.h"
 
 namespace hcomm {
 
@@ -245,17 +246,17 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoLocPostSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
-    const auto rep                      = static_pointer_cast<CcuRepLocPostSem>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->sem.Id();
+    const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocRecordEvent>(repBase);
+    errorMsg.msg.waitSignal.signalId    = rep->GetEventId();
     errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->sem.Id());
-    errorMsg.msg.waitSignal.signalMask  = rep->mask;
+    errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }
@@ -571,7 +572,7 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
                                                        vector<CcuErrorInfo> &errorInfo);
     static const map<CcuRep::CcuRepType, GenErrorInfoFunc> handlerMap {
         // WAIT_SIGNAL
-        {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GenErrorInfoLocPostSem},
+        {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GenErrorInfoLocRecordEvent},
         {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GenErrorInfoLocWaitSem},
         {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GenErrorInfoLocWaitSem},
         {CcuRep::CcuRepType::REM_POST_SEM, &CcuTaskException::GenErrorInfoRemPostSem},
