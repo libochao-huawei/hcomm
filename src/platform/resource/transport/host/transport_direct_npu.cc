@@ -96,7 +96,7 @@ HcclResult TransportDirectNpu::GetLocalNotifyValueAddrKey(std::vector<AddrKey> &
 
 HcclResult TransportDirectNpu::GetLocalRdmaNotify(std::vector<HcclSignalInfo> &rdmaNotify)
 {
-    HcclSignalInfo signalInfo;
+    HcclSignalInfo signalInfo = {};
     rdmaNotify.push_back(signalInfo);
     rdmaNotify.push_back(signalInfo);
     rdmaNotify.push_back(signalInfo);

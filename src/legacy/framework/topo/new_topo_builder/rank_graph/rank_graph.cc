@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <unordered_map>
 #include "virtual_topo.h"
 #include "string_util.h"
 #include "binary_stream.h"
