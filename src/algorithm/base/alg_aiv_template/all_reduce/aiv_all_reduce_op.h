@@ -32,8 +32,8 @@
 #include "aiv_all_reduce_crossnode_91093.h"
 #include "aiv_all_reduce_91093_deter.h"
 
-#define AIV_ALL_REDUCE_KERNEL_BATCH_DEF(type) \
-extern "C" __global__ __aicore__ void aiv_all_reduce_##type(KERNEL_ARGS_DEF) { \
+#define AIV_ALL_REDUCE_KERNEL_DEF(type) \
+__aicore__ inline void aiv_all_reduce_##type##_inner(KERNEL_ARGS_DEF) { \
     if (devType == DEV_TYPE_910B && deterministic == 1) { \
         if (len * sizeof(type) < AIV_ALL_REDUCE_DETER_SMALL_SIZE) { \
             return aiv_all_reduce_deter_910b_smalldata<type>(KERNEL_ARGS_CALL); \
@@ -72,18 +72,34 @@ extern "C" __global__ __aicore__ void aiv_all_reduce_##type(KERNEL_ARGS_DEF) { \
             return aiv_all_reduce_910b_smalldata_graph<type>(KERNEL_ARGS_CALL); \
         } \
     } \
-} \
-EXPORT_AIV_META_INFO(aiv_all_reduce_##type)
+}
 
-#define AIV_ALL_REDUCE_KERNEL_BATCH_DEF_A3(type) \
-extern "C" __global__ __aicore__ void aiv_all_reduce_cn_##type(KERNEL_ARGS_DEF_A3) { \
+#define AIV_ALL_REDUCE_KERNEL_DEF_A3(type) \
+__aicore__ inline void aiv_all_reduce_cn_##type##_inner(KERNEL_ARGS_DEF_A3) { \
     if(deterministic != 0) { \
         return aiv_all_reduce_91093_deter<type>(KERNEL_ARGS_CALL_A3); \
     } else { \
         return aiv_all_reduce_crossnode_91093<type>(KERNEL_ARGS_CALL_A3); \
     } \
-} \
-EXPORT_AIV_META_INFO(aiv_all_reduce_cn_##type)
+}
+
+#define AIV_ALL_REDUCE_KERNEL_BATCH_DEF(type) \
+    AIV_ALL_REDUCE_KERNEL_DEF(type); \
+    GLOBAL_FUNC_DEF_A2(aiv_all_reduce_##type); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_reduce_##type, 1); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_reduce_##type, 2); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_reduce_##type, 3); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_reduce_##type, 4); \
+    SuperKernelBind(aiv_all_reduce_##type)
+
+#define AIV_ALL_REDUCE_KERNEL_BATCH_DEF_A3(type) \
+    AIV_ALL_REDUCE_KERNEL_DEF_A3(type); \
+    GLOBAL_FUNC_DEF_A3(aiv_all_reduce_cn_##type); \
+    SK_BIND_FUNC_DEF_A3(aiv_all_reduce_cn_##type, 1); \
+    SK_BIND_FUNC_DEF_A3(aiv_all_reduce_cn_##type, 2); \
+    SK_BIND_FUNC_DEF_A3(aiv_all_reduce_cn_##type, 3); \
+    SK_BIND_FUNC_DEF_A3(aiv_all_reduce_cn_##type, 4); \
+    SuperKernelBind(aiv_all_reduce_cn_##type)
 
 // 定义算子各数据类型Kernel入口
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_ALL_REDUCE_KERNEL_BATCH_DEF);
