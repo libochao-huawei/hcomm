@@ -196,7 +196,7 @@ HcclResult HcclSocket::AddWhiteList(std::vector<SocketWlistInfo> &wlistInfoVec)
         wlistInfo.remoteIp.addr6 = remote.remoteIp.addr6;
         s32 sRet = memcpy_s(&wlistInfo.tag[0], sizeof(wlistInfo.tag), remote.tag, sizeof(remote.tag));
         if (sRet != EOK) {
-            HCCL_ERROR("[Delete][SocketWhiteList]memory copy failed. errorno[%d]", sRet);
+            HCCL_ERROR("[Add][SocketWhiteList]memory copy failed. errorno[%d]", sRet);
             return HCCL_E_MEMORY;
         }
         wlistInfosVec.push_back(wlistInfo);
@@ -452,6 +452,7 @@ HcclResult HcclSocket::Accept(const std::string &tag, std::shared_ptr<HcclSocket
 
 HcclResult HcclSocket::Send(const void *data, u64 size)
 {
+    CHK_PTR_NULL(data);
     CHK_PTR_NULL(fdHandle_);
     CHK_RET(hrtRaSocketBlockSend(fdHandle_, data, size, [this]() -> bool { return this->GetStopFlag(); }));
     return HCCL_SUCCESS;
@@ -494,6 +495,7 @@ HcclResult HcclSocket::Recv(std::string &recvMsg, u32 timeout)
 
 HcclResult HcclSocket::ISend(void *data, u64 size, u64& compSize)
 {
+    CHK_PTR_NULL(data);
     CHK_PTR_NULL(fdHandle_);
     if (sendStatus_) return HCCL_E_NETWORK;
     if (size > SOCKET_SEND_MAX_SIZE) {
@@ -502,11 +504,11 @@ HcclResult HcclSocket::ISend(void *data, u64 size, u64& compSize)
         return HCCL_E_PARA;
     }
     s32 ret = hrtRaSocketNonBlockSend(fdHandle_, data, size, &compSize);
-    HCCL_DEBUG("[ISend]except size [%u Byte], actual size [%u Byte], ret[%u]", size, compSize, ret);
+    HCCL_DEBUG("[ISend]except size [%llu Byte], actual size [%llu Byte], ret[%d]", size, compSize, ret);
 
     if (ret && ret != SOCK_EAGAIN) {
         sendStatus_ = ret;
-        HCCL_RUN_WARNING("[ISend]except size [%u Byte], actual size [%u Byte], ret[%u]", size, compSize, ret);
+        HCCL_RUN_WARNING("[ISend]except size [%llu Byte], actual size [%llu Byte], ret[%d]", size, compSize, ret);
         return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS; // EAGAIN和success都要返回HCCL_SUCCESS
@@ -535,7 +537,7 @@ HcclResult HcclSocket::SendAsync(const void *data, u64 size, u64 *sentSize, void
     CHK_PTR_NULL(sentSize);
     CHK_PTR_NULL(reqHandle);
     CHK_PRT_RET((size == 0) || (size > MAX_MSG_STR_LEN),
-        HCCL_ERROR("[SendAsync]send size[%d] is 0 or large than %d", size, MAX_MSG_STR_LEN), HCCL_E_PARA);
+        HCCL_ERROR("[SendAsync]send size[%llu] is 0 or large than %u", size, MAX_MSG_STR_LEN), HCCL_E_PARA);
 
     s32 ret = hrtRaSocketSendAsync(fdHandle_, data, size, sentSize, reqHandle);
     if (ret == 0) {
