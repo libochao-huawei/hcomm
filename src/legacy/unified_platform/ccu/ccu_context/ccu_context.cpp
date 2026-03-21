@@ -111,6 +111,10 @@ void CcuContext::AllocGoResource(uint32_t parallelDim, uint32_t msPerLoop)
         moRes.maskSignal = CreateBlockMaskSignal(moConfig.loopCount);
         moRes.ccuBuffer = CreateBlockCcuBuffer(moConfig.loopCount * moConfig.msInterleave);
     }
+
+    if (moRes.maskSignal.size() < 2) {
+        THROW<CcuApiException>("MaskSignal is not enough, maskSignal = %lu", moRes.maskSignal.size());
+    }
 }
 
 std::vector<uint64_t> CcuContext::CalGoSize(uint64_t size)
@@ -124,16 +128,24 @@ std::vector<uint64_t> CcuContext::CalGoSizeStatic(uint64_t size, GroupOpConfig &
     uint64_t loopIterNum   = 0;
     uint64_t loopExtendNum = 0;
     uint64_t tailSize      = 0;
+    constexpr uint64_t UNIT64_MAX =  0xFFFFFFFFFFFFFFFF;
 
-    uint64_t loopSize = moCfg.loopCount * moCfg.memSlice;
-    uint64_t maxSize = loopSize * (CcuRep::GetMaxLoopIterNum() + 1);
-
-    if (moCfg.loopCount == 0 || moCfg.memSlice == 0) {
-        THROW<CcuApiException>("Please Check Configure, loopCount = %u, memSlice = %u", moCfg.loopCount,
+    if (moCfg.loopCount == 0 || moCfg.memSlice == 0 || (moCfg.memSlice > UNIT64_MAX / moCfg.loopCount)) {
+        THROW<CcuApiException>("Please Check Configure, loopCount = %u, memSlice = %llu", moCfg.loopCount,
                                moCfg.memSlice);
     }
+
+    uint64_t loopSize = moCfg.loopCount * moCfg.memSlice;
+
+    if ((CcuRep::GetMaxLoopIterNum() + 1) > UNIT64_MAX / loopSize) {
+        THROW<CcuApiException>("Too Large Size, loopSize = %llu, (CcuRep::GetMaxLoopIterNum() + 1) = %llu",
+                loopSize, (CcuRep::GetMaxLoopIterNum() + 1));
+    }
+
+    uint64_t maxSize = loopSize * (CcuRep::GetMaxLoopIterNum() + 1);
+
     if (size > maxSize) {
-        THROW<CcuApiException>("Too Large Size, size = %lu, maxSize = %lu", size, maxSize);
+        THROW<CcuApiException>("Too Large Size, size = %llu, maxSize = %llu", size, maxSize);
     }
 
     uint64_t m = size / loopSize;
@@ -146,7 +158,7 @@ std::vector<uint64_t> CcuContext::CalGoSizeStatic(uint64_t size, GroupOpConfig &
         p = moCfg.memSlice;
     }
 
-    HCCL_INFO("[CalGoSizeStatic] moCfg.memSlice[%u], moCfg.loopCount[%u], moCfg.msInterleave[%u]", 
+    HCCL_INFO("[CalGoSizeStatic] moCfg.memSlice[%llu], moCfg.loopCount[%u], moCfg.msInterleave[%u]", 
         moCfg.memSlice, moCfg.loopCount, moCfg.msInterleave);
     HCCL_INFO("Ccu Slice Split: m = %lu, n = %lu, p = %lu", m, n, p);
 

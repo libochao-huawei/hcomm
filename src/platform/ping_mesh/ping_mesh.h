@@ -163,7 +163,7 @@ private:
     PingInitInfo initInfo_ {};                   // 初始化信息
     void *pingHandle_ = nullptr;                   // 记录hccp侧的pingmesh句柄
     std::shared_ptr<HcclSocket> socket_ = nullptr; // 记录server端的socket信息，用于建立rdma链路
-    HcclIpAddress *ipAddr_ = nullptr;              // 记录device的ip信息
+    HcclIpAddress ipAddr_;                         // 记录device的ip信息
     u8 *payload_ = nullptr;                        // client侧记录的payload信息
     RpingState rpingState_ = RpingState::UNINIT;   // 记录client状态
     int rpingTargetNum_ = 0;                       // 记录client目标数量
