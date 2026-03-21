@@ -24,6 +24,8 @@
 #include "ccuTaskException.h"
 #include "hcomm_adapter_hccp.h"
 #include "adapter_rts_common.h"
+#include "ccu_rep_loopgroup_v1.h"
+#include "ccu_rep_type_v1.h"
 
 namespace hcomm {
 
@@ -207,7 +209,7 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type = CcuErrorType::MISSION;
-    errorMsg.SetBaseInfo(CcuRepType::BASE, baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
+    errorMsg.SetBaseInfo(CcuRep::CcuRepType::BASE, baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
 
     const uint8_t highPart  = (baseInfo.status >> 8) & 0xFF; // 高8位
     const uint8_t lowPart   = baseInfo.status & 0xFF;        // 低8位
@@ -227,28 +229,28 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
 {
     using GenErrorInfoFunc = void (*)(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                                        vector<CcuErrorInfo> &errorInfo);
-    static const map<CcuRepType, GenErrorInfoFunc> handlerMap {
+    static const map<CcuRep::CcuRepType, GenErrorInfoFunc> handlerMap {
         // WAIT_SIGNAL
-        {CcuRepType::LOC_RECORD_EVENT, &CcuErrorHandler::GenErrorInfoLocPostSem},
-        {CcuRepType::LOC_WAIT_EVENT, &CcuErrorHandler::GenErrorInfoLocWaitSem},
-        {CcuRepType::LOC_WAIT_NOTIFY, &CcuErrorHandler::GenErrorInfoLocWaitSem},
-        {CcuRepType::REM_POST_SEM, &CcuErrorHandler::GenErrorInfoRemPostSem},
-        {CcuRepType::REM_WAIT_SEM, &CcuErrorHandler::GenErrorInfoRemWaitSem},
-        {CcuRepType::REM_POST_VAR, &CcuErrorHandler::GenErrorInfoRemPostVar},
-        {CcuRepType::REM_WAIT_GROUP, &CcuErrorHandler::GenErrorInfoRemWaitGroup},
-        {CcuRepType::RECORD_SHARED_NOTIFY, &CcuErrorHandler::GenErrorInfoPostSharedSem},
+        {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuErrorHandler::GenErrorInfoLocPostSem},
+        {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuErrorHandler::GenErrorInfoLocWaitSem},
+        {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuErrorHandler::GenErrorInfoLocWaitSem},
+        {CcuRep::CcuRepType::REM_POST_SEM, &CcuErrorHandler::GenErrorInfoRemPostSem},
+        {CcuRep::CcuRepType::REM_WAIT_SEM, &CcuErrorHandler::GenErrorInfoRemWaitSem},
+        {CcuRep::CcuRepType::REM_POST_VAR, &CcuErrorHandler::GenErrorInfoRemPostVar},
+        {CcuRep::CcuRepType::REM_WAIT_GROUP, &CcuErrorHandler::GenErrorInfoRemWaitGroup},
+        {CcuRep::CcuRepType::RECORD_SHARED_NOTIFY, &CcuErrorHandler::GenErrorInfoPostSharedSem},
         // TRANS_MEM
-        {CcuRepType::READ, &CcuErrorHandler::GenErrorInfoRead},
-        {CcuRepType::WRITE, &CcuErrorHandler::GenErrorInfoWrite},
-        {CcuRepType::LOCAL_CPY, &CcuErrorHandler::GenErrorInfoLocalCpy},
-        {CcuRepType::LOCAL_REDUCE, &CcuErrorHandler::GenErrorInfoLocalReduce},
+        {CcuRep::CcuRepType::READ, &CcuErrorHandler::GenErrorInfoRead},
+        {CcuRep::CcuRepType::WRITE, &CcuErrorHandler::GenErrorInfoWrite},
+        {CcuRep::CcuRepType::LOCAL_CPY, &CcuErrorHandler::GenErrorInfoLocalCpy},
+        {CcuRep::CcuRepType::LOCAL_REDUCE, &CcuErrorHandler::GenErrorInfoLocalReduce},
         // BUF_TRANS_MEM
-        {CcuRepType::BUF_READ, &CcuErrorHandler::GenErrorInfoBufRead},
-        {CcuRepType::BUF_WRITE, &CcuErrorHandler::GenErrorInfoBufWrite},
-        {CcuRepType::BUF_LOC_READ, &CcuErrorHandler::GenErrorInfoBufLocRead},
-        {CcuRepType::BUF_LOC_WRITE, &CcuErrorHandler::GenErrorInfoBufLocWrite},
+        {CcuRep::CcuRepType::BUF_READ, &CcuErrorHandler::GenErrorInfoBufRead},
+        {CcuRep::CcuRepType::BUF_WRITE, &CcuErrorHandler::GenErrorInfoBufWrite},
+        {CcuRep::CcuRepType::BUF_LOC_READ, &CcuErrorHandler::GenErrorInfoBufLocRead},
+        {CcuRep::CcuRepType::BUF_LOC_WRITE, &CcuErrorHandler::GenErrorInfoBufLocWrite},
         // BUF_REDUCE
-        {CcuRepType::BUF_REDUCE, &CcuErrorHandler::GenErrorInfoBufReduce}
+        {CcuRep::CcuRepType::BUF_REDUCE, &CcuErrorHandler::GenErrorInfoBufReduce}
     };
     const auto funcIt = handlerMap.find(repBase->Type());
     if (funcIt == handlerMap.end()) {
@@ -266,7 +268,7 @@ void CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shar
     errorMsg.type    = CcuErrorType::LOOP_GROUP;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
-    const auto  rep              = static_pointer_cast<CcuRepLoopGroup>(repBase);
+    const auto  rep              = static_pointer_cast<CcuRep::CcuRepLoopGroup>(repBase);
     const auto  startLoopInstrId = rep->GetStartLoopInstrId();
     LoopGroupXn loopGroupXn{};
     loopGroupXn.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->parallelParam.Id());
@@ -289,6 +291,14 @@ void CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shar
 HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
     std::vector<CcuErrorInfo> &errorInfo)
 {
+    HCCL_INFO("[CcuTaskException]%s: deviceId[%d], dieId[%u], missionId[%u], execMissionId[%u], executeId[%llu].",
+            __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
+            static_cast<u32>(ccuTaskParam.execMissionId), ccuTaskParam.executeId);
+
+    // 入参校验
+    CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuTaskException][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
+
     const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
     if (missionStatus == 0) {
         HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
@@ -299,17 +309,17 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
     auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
     auto *kernel = kernelMgr.GetKernel(ccuTaskParam.ccuKernelHandle);
     CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
-                __func__, deviceId, ccuTaskParam.ccuKernelHandle),);
+                __func__, deviceId, ccuTaskParam.ccuKernelHandle), HCCL_E_PARA);
 
     CcuRepContext *ctx = reinterpret_cast<CcuRepContext *>(kernel);
     CHK_PRT_RET(ctx == nullptr, HCCL_ERROR("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]",
                                deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
-                               ccuTaskParam.executeId), HcclResult::HCCL_E_PARA);
+                               ccuTaskParam.executeId), HCCL_E_PARA);
     const uint16_t currIns = missionContext.GetCurrentIns();
 
     auto rep = ctx->GetRepByInstrId(currIns);
     CHK_PRT_RET(rep == nullptr, HCCL_ERROR("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]",
-                                            __func__, currIns), HcclResult::HCCL_E_PARA);
+                                            __func__, currIns), HCCL_E_PARA);
     auto prevRep = ctx->GetRepByInstrId(currIns - 1);
 
     // 分类处理Rep, 返回异常信息
@@ -317,27 +327,27 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
     GenStatusInfo(baseInfo, errorInfo);
 
     // 处理Rep为FUNC_BLOCK的场景
-    while (rep->Type() == CcuRepType::FUNC_BLOCK) {
+    while (rep->Type() == CcuRep::CcuRepType::FUNC_BLOCK) {
         auto blockRep = static_pointer_cast<CcuRepBlock>(rep);
         rep           = blockRep->GetRepByInstrId(currIns);
         CHK_PRT_RET(rep == nullptr, HCCL_ERROR("Failed to find REP from FuncBlock, instrId[%u], FuncBlock[%s]", currIns,
                                 blockRep->GetLabel().c_str()), HcclResult::HCCL_E_PARA);
     }
 
-    if ((prevRep != nullptr && prevRep->Type() == CcuRepType::LOOPGROUP) || (rep->Type() == CcuRepType::LOOPGROUP)) {
+    if ((prevRep != nullptr && prevRep->Type() == CcuRep::CcuRepType::LOOPGROUP) || (rep->Type() == CcuRep::CcuRepType::LOOPGROUP)) {
         // 处理LoopGroup
         GenErrorInfoLoopGroup(baseInfo, prevRep, *ctx, errorInfo);
-    } else if (rep->Type() == CcuRepType::LOC_WAIT_SEM) {
+    } else if (rep->Type() == CcuRep::CcuRep::CcuRepType::LOC_WAIT_EVENT || rep->Type() == CcuRep::CcuRep::CcuRepType::LOC_WAIT_NOTIFY) {
         GenErrorInfoByRepType(baseInfo, rep, errorInfo);
         uint16_t actValue = errorInfo.back().msg.waitSignal.signalValue;
         uint16_t expValue = errorInfo.back().msg.waitSignal.signalMask;
         for (uint16_t i = 0; i < 16; ++i) { // CKE的bit数最多为16
             uint16_t mask = 1 << i; // 创建一个用于检查第 i 位的掩码
             if ((expValue & mask) != 0 && (actValue & mask) == 0) {
-                auto depRepVec = std::static_pointer_cast<CcuRepLocWaitSem>(rep)->GetDependencyInfo(mask);
-                for (const auto& depRep : depRepVec) {
-                    GenErrorInfoByRepType(baseInfo, depRep, errorInfo);
-                }
+                // auto depRepVec = std::static_pointer_cast<CcuRepLocWaitSem>(rep)->GetDependencyInfo(mask); // zjwTodo: 遗留待确认
+                // for (const auto& depRep : depRepVec) {
+                //     GenErrorInfoByRepType(baseInfo, depRep, errorInfo);
+                // }
             }
         }
     } else {
@@ -771,26 +781,26 @@ string CcuTaskException::GetCcuErrorMsgByType(const CcuErrorInfo &ccuErrorInfo, 
     }
 
     using GetCcuErrorMsgFunc = string (*)(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
-    static const map<CcuRepType, GetCcuErrorMsgFunc> handlerMap {
-        {CcuRepType::LOOP, &CcuTaskException::GetCcuErrorMsgLoop},
-        {CcuRepType::LOOPGROUP, &CcuTaskException::GetCcuErrorMsgLoopGroup},
-        {CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GetCcuErrorMsgLocPostSem},
-        {CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
-        {CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
-        {CcuRepType::REM_POST_SEM, &CcuTaskException::GetCcuErrorMsgRemPostSem},
-        {CcuRepType::REM_WAIT_SEM, &CcuTaskException::GetCcuErrorMsgRemWaitSem},
-        {CcuRepType::REM_POST_VAR, &CcuTaskException::GetCcuErrorMsgRemPostVar},
-        {CcuRepType::REM_WAIT_GROUP, &CcuTaskException::GetCcuErrorMsgRemWaitGroup},
-        {CcuRepType::RECORD_SHARED_NOTIFY, &CcuTaskException::GetCcuErrorMsgPostSharedSem},
-        {CcuRepType::READ, &CcuTaskException::GetCcuErrorMsgRead},
-        {CcuRepType::WRITE, &CcuTaskException::GetCcuErrorMsgWrite},
-        {CcuRepType::LOCAL_CPY, &CcuTaskException::GetCcuErrorMsgLocalCpy},
-        {CcuRepType::LOCAL_REDUCE, &CcuTaskException::GetCcuErrorMsgLocalReduce},
-        {CcuRepType::BUF_READ, &CcuTaskException::GetCcuErrorMsgBufRead},
-        {CcuRepType::BUF_WRITE, &CcuTaskException::GetCcuErrorMsgBufWrite},
-        {CcuRepType::BUF_LOC_READ, &CcuTaskException::GetCcuErrorMsgBufLocRead},
-        {CcuRepType::BUF_LOC_WRITE, &CcuTaskException::GetCcuErrorMsgBufLocWrite},
-        {CcuRepType::BUF_REDUCE, &CcuTaskException::GetCcuErrorMsgBufReduce}
+    static const map<CcuRep::CcuRepType, GetCcuErrorMsgFunc> handlerMap {
+        {CcuRep::CcuRepType::LOOP, &CcuTaskException::GetCcuErrorMsgLoop},
+        {CcuRep::CcuRepType::LOOPGROUP, &CcuTaskException::GetCcuErrorMsgLoopGroup},
+        {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GetCcuErrorMsgLocPostSem},
+        {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
+        {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
+        {CcuRep::CcuRepType::REM_POST_SEM, &CcuTaskException::GetCcuErrorMsgRemPostSem},
+        {CcuRep::CcuRepType::REM_WAIT_SEM, &CcuTaskException::GetCcuErrorMsgRemWaitSem},
+        {CcuRep::CcuRepType::REM_POST_VAR, &CcuTaskException::GetCcuErrorMsgRemPostVar},
+        {CcuRep::CcuRepType::REM_WAIT_GROUP, &CcuTaskException::GetCcuErrorMsgRemWaitGroup},
+        {CcuRep::CcuRepType::RECORD_SHARED_NOTIFY, &CcuTaskException::GetCcuErrorMsgPostSharedSem},
+        {CcuRep::CcuRepType::READ, &CcuTaskException::GetCcuErrorMsgRead},
+        {CcuRep::CcuRepType::WRITE, &CcuTaskException::GetCcuErrorMsgWrite},
+        {CcuRep::CcuRepType::LOCAL_CPY, &CcuTaskException::GetCcuErrorMsgLocalCpy},
+        {CcuRep::CcuRepType::LOCAL_REDUCE, &CcuTaskException::GetCcuErrorMsgLocalReduce},
+        {CcuRep::CcuRepType::BUF_READ, &CcuTaskException::GetCcuErrorMsgBufRead},
+        {CcuRep::CcuRepType::BUF_WRITE, &CcuTaskException::GetCcuErrorMsgBufWrite},
+        {CcuRep::CcuRepType::BUF_LOC_READ, &CcuTaskException::GetCcuErrorMsgBufLocRead},
+        {CcuRep::CcuRepType::BUF_LOC_WRITE, &CcuTaskException::GetCcuErrorMsgBufLocWrite},
+        {CcuRep::CcuRepType::BUF_REDUCE, &CcuTaskException::GetCcuErrorMsgBufReduce}
     };
 
     const auto funcIt = handlerMap.find(ccuErrorInfo.repType);
@@ -905,109 +915,5 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
         remRet, dummy.second.Describe().c_str());
     return dummy;
 }
-HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
-    std::vector<CcuErrorInfo> &errorInfo)
-{
-    HCCL_INFO("[CcuTaskException]%s: deviceId[%d], dieId[%u], missionId[%u], execMissionId[%u], executeId[%llu].",
-            __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
-            static_cast<u32>(ccuTaskParam.execMissionId), ccuTaskParam.executeId);
-
-        // 入参校验
-    CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
-            HCCL_ERROR("[CcuTaskException][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
-
-    // zjwTODO: 在next目录下重新定义missionContext
-    // GetCcuMissionContext这个函数里面牵扯的特别多函数都要重写么
-    const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
-    if (missionStatus == 0) {
-        HCCL_INFO("[CcuTaskException][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
-            __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
-        return;
-    }
-
-    // zjwTODO: 用cclkernelHandle
-    CcuRepContext *ctx =
-        CtxMgrImp::GetInstance(deviceId).GetCtx(ccuTaskParam.executeId, ccuTaskParam.dieId, ccuTaskParam.missionId);
-    if (ctx == nullptr) {
-        THROW<CcuApiException>("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]",
-                               deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
-                               ccuTaskParam.executeId);
-    }
-
-    const uint16_t currIns = missionContext.GetCurrentIns();
-
-    auto rep = ctx->GetRepByInstrId(currIns);
-    auto prevRep = ctx->GetRepByInstrId(currIns - 1);
-    if (rep == nullptr) {
-        HCCL_WARNING("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, currIns);
-        return;
-    }
-
-    // 分类处理Rep, 返回异常信息
-    ErrorInfoBase baseInfo{deviceId, ccuTaskParam.dieId, ccuTaskParam.missionId, currIns, missionStatus};
-    GenStatusInfo(baseInfo, errorInfo);
-
-    // 处理Rep为FUNC_BLOCK的场景
-    while (rep->Type() == CcuRepType::FUNC_BLOCK) {
-        auto blockRep = static_pointer_cast<CcuRepBlock>(rep);
-        rep           = blockRep->GetRepByInstrId(currIns);
-        if (rep == nullptr) {
-            THROW<CcuApiException>("Failed to find REP from FuncBlock, instrId[%u], FuncBlock[%s]", currIns,
-                                blockRep->GetLabel().c_str());
-        }
-    }
-
-    if ((prevRep != nullptr && prevRep->Type() == CcuRepType::LOOPGROUP) || (rep->Type() == CcuRepType::LOOPGROUP)) {
-        // 处理LoopGroup
-        GenErrorInfoLoopGroup(baseInfo, prevRep, *ctx, errorInfo);
-    } else if (rep->Type() == CcuRepType::LOC_WAIT_SEM) {
-        GenErrorInfoByRepType(baseInfo, rep, errorInfo);
-        uint16_t actValue = errorInfo.back().msg.waitSignal.signalValue;
-        uint16_t expValue = errorInfo.back().msg.waitSignal.signalMask;
-        for (uint16_t i = 0; i < 16; ++i) { // CKE的bit数最多为16
-            uint16_t mask = 1 << i; // 创建一个用于检查第 i 位的掩码
-            if ((expValue & mask) != 0 && (actValue & mask) == 0) {
-                auto depRepVec = std::static_pointer_cast<CcuRepLocWaitSem>(rep)->GetDependencyInfo(mask);
-                for (const auto& depRep : depRepVec) {
-                    GenErrorInfoByRepType(baseInfo, depRep, errorInfo);
-                }
-            }
-        }
-    } else {
-        // 处理可直接解析的Rep
-        GenErrorInfoByRepType(baseInfo, rep, errorInfo);
-    }
-
-    const uint16_t endIns = missionContext.GetEndIns();
-    const uint16_t startIns = missionContext.GetStartIns();
-    // 获取异常指令对应的Rep
-    HCCL_ERROR("[CcuErrorHandler]device %d, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]",
-               deviceId, ccuTaskParam.execMissionId, startIns, endIns, currIns);
-    if (endIns == currIns) {
-        HCCL_ERROR("[CcuErrorHandler]device %d SQE != CQE, endIns[%u], currIns[%u]", deviceId, endIns, currIns);
-    }
-
-    // 安全地获取currIns - 10的值
-    uint16_t loopUpInstrNum = 10; // 获取出错指令前10条指令
-    uint16_t beginIns = (currIns < loopUpInstrNum) ? startIns : ((currIns - loopUpInstrNum) > startIns ? (currIns - loopUpInstrNum) : startIns); 
-    // 打印报错的前10条指令，并且从第一个非空rep开始
-    for (uint16_t instrId = currIns - 1; instrId >= beginIns; instrId--) {
-        auto rep = ctx->GetRepByInstrId(instrId);
-        if (rep == nullptr) {
-           beginIns = instrId + 1;
-           break;
-        }
-    }
-    for (uint16_t instrId = beginIns; instrId <= currIns; instrId++) {
-        auto rep = ctx->GetRepByInstrId(instrId);
-        if (rep == nullptr) {
-            HCCL_WARNING("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, instrId);
-            continue;
-        }
-
-        GenErrorInfoByRepType(baseInfo, rep, errorInfo);
-    }
-}
-
 
 }
