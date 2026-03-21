@@ -72,6 +72,7 @@ private:
     bool isHost_{ true };
     bool supportDevMemReg_{ true };
     ReadWriteLockBase lock_;
+    std::mutex mutex_;
 };
 }
 #endif // HCCL_HDC_PUB_H
