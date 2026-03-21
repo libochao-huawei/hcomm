@@ -957,6 +957,8 @@ STATIC int RaHdcSessionSaveSnapshot(unsigned int phyId, enum SaveSnapshotAction 
 {
     int ret = 0;
 
+    printf("DEBUG: RaHdcSessionSaveSnapshot, phyId[%u] action[%d]\n", phyId, action);
+
     RA_PTHREAD_MUTEX_LOCK(&gRaHdc[phyId].lock);
     if (action == SAVE_SNAPSHOT_ACTION_PRE_PROCESSING && gRaHdc[phyId].session != NULL) {
         gRaHdc[phyId].snapshotSession = gRaHdc[phyId].session;
