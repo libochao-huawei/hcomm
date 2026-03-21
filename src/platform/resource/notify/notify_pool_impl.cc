@@ -127,7 +127,9 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMap(u32 index)
     auto &notifyPoolIPCAsignedMap = notifyResMgr_[index].notifyPoolIPCAsignedMap;
     for (auto iter = notifyPoolIPCAsignedMap.begin(); iter != notifyPoolIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
+            if (DestroyNotify(it) != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s]DestroyNotify failed", __func__);
+            }
         }
     }
     notifyPoolIPCAsignedMap.clear();
@@ -141,7 +143,9 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDevIPCAsignedMap(u32 index)
     auto &notifyPoolDevIPCAsignedMap = notifyResMgr_[index].notifyPoolDevIPCAsignedMap;
     for (auto iter = notifyPoolDevIPCAsignedMap.begin(); iter != notifyPoolDevIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
+            if (DestroyNotify(it) != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s]DestroyNotify failed", __func__);
+            }
         }
     }
     notifyPoolDevIPCAsignedMap.clear();
@@ -155,7 +159,9 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMap(u32 index)
     auto &notifyPoolNoIPCAsignedMap = notifyResMgr_[index].notifyPoolNoIPCAsignedMap;
     for (auto iter = notifyPoolNoIPCAsignedMap.begin(); iter != notifyPoolNoIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
+            if (DestroyNotify(it) != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s]DestroyNotify failed", __func__);
+            }
         }
     }
     notifyPoolNoIPCAsignedMap.clear();
@@ -169,7 +175,9 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDevNoIPCAsignedMap(u32 index)
     auto &notifyPoolDevNoIPCAsignedMap = notifyResMgr_[index].notifyPoolDevNoIPCAsignedMap;
     for (auto iter = notifyPoolDevNoIPCAsignedMap.begin(); iter != notifyPoolDevNoIPCAsignedMap.end(); iter++) {
         for (auto &it : iter->second) {
-            CHK_RET(DestroyNotify(it));
+            if (DestroyNotify(it) != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s]DestroyNotify failed", __func__);
+            }
         }
     }
     notifyPoolDevNoIPCAsignedMap.clear();
