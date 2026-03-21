@@ -19,7 +19,6 @@
 #include "network_api_exception.h"
 #include "log.h"
 #include "tokenInfo_manager.h"
-#include "exception_handler.h"
 
 namespace Hccl {
 
@@ -154,9 +153,7 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
     if (res == nullptr) {
         HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, devPhyId, localIp);
         HCCL_INFO("[GetByIp] wzh checkpoint3");
-        EXCEPTION_HANDLE_BEGIN
-        res = HrtRaUbCtxInit(in);
-        EXCEPTION_HANDLE_END
+        EXECEPTION_CATCH(res = HrtRaUbCtxInit(in));
         HCCL_INFO("[GetByIp] wzh checkpoint4");
         rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp] = res;
         tokenInfoMap[res] = std::make_unique<TokenInfoManager>(devPhyId, res);
