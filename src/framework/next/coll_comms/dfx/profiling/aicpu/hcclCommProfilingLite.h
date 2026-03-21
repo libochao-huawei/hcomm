@@ -18,7 +18,7 @@ namespace hccl {
 class HcclCommProfilingLite {
 public:
     // 构造函数
-    HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManager* mirrorTaskManager);
+    HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManagerLite* mirrorTaskManagerLite);
     
     // 上报所有任务
     void ReportAllTasks();
