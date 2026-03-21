@@ -441,12 +441,12 @@ void NetInstance::Peer::AddNetInstance(const std::shared_ptr<NetInstance> &netIn
     netLayers_.insert(netInst->GetNetLayer());
 }
 
-void NetInstance::Peer::SetPortPortAddrMapLayer0(std::unordered_map<std::string, IpAddress> portAddrMap)
+void NetInstance::Peer::SetPortPortAddrMapLayer0(std::map<std::string, IpAddress> portAddrMap)
 {
-    portAddrMapLayer0_ = portAddrMap;
+    portAddrMapLayer0_ = std::move(portAddrMap);
 }
 
-std::unordered_map<std::string, IpAddress> NetInstance::Peer::GetPortAddrMapLayer0() const
+std::map<std::string, IpAddress> NetInstance::Peer::GetPortAddrMapLayer0() const
 {
     return portAddrMapLayer0_;
 }
