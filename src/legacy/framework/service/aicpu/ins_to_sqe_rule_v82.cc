@@ -131,7 +131,7 @@ void Interpret(const InsLocalPostTo &ins, const StreamLite &stream, ResMgrFetche
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalWaitFrom &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -161,7 +161,7 @@ void Interpret(const InsLocalWaitFrom &ins, const StreamLite &stream, ResMgrFetc
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalCopy &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -199,7 +199,7 @@ void Interpret(const InsLocalCopy &ins, const StreamLite &stream, ResMgrFetcher 
         taskParam.taskPara.DMA.linkType = DfxLinkType::ONCHIP;
         taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_READ;
         auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-        resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);   
+        resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);   
         src += offset;
         dst += offset;    
     }
@@ -241,7 +241,7 @@ void Interpret(const InsLocalCopyExtend &ins, const StreamLite &stream, ResMgrFe
         taskParam.taskPara.DMA.linkType = DfxLinkType::ONCHIP;
         taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_READ;
         auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-        resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+        resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
         src += offset;
         dst += offset; 
     }
@@ -300,7 +300,7 @@ void Interpret(const InsLocalReduce &ins, const StreamLite &stream, ResMgrFetche
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(ins.GetDataType());
     taskParam.taskPara.Reduce.reduceOp = ReduceOpToHcclReduceOp(ins.GetReduceOp());
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalWaitGroup &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -325,7 +325,7 @@ void Interpret(const InsLocalWaitGroup &ins, const StreamLite &stream, ResMgrFet
     taskParam.taskPara.Notify.notifyID = notify.GetId();
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalBcastPost &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -346,7 +346,7 @@ void Interpret(const InsLocalBcastPost &ins, const StreamLite &stream, ResMgrFet
     taskParam.taskPara.Notify.notifyID = notify.GetId();
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsPostReady &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -756,7 +756,7 @@ void Interpret(const InsAicpuReduce &insAicpuReduce, const StreamLite &stream, R
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(insAicpuReduce.GetDataType());
     taskParam.taskPara.Reduce.reduceOp = ReduceOpToHcclReduceOp(insAicpuReduce.GetReduceOp());
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 const std::unordered_map<InstructionType, InsToSqeRule91095, std::EnumClassHash> insRule91095Map{
