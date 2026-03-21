@@ -141,7 +141,7 @@ HcclResult CcuAlgTemplateBase::GetToken(const CollAlgOperator &op, uint64_t &tok
                                      static_cast<uint64_t>(op.scratchMem->GetSize()));
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("[GetToken] Both inputMem and outputMem are null");
+    HCCL_WARNING("[GetToken] Both inputMem and outputMem are null");
     return HCCL_E_PTR;
 }
 u32 CcuAlgTemplateBase::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType)
