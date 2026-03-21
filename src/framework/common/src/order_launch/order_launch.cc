@@ -210,21 +210,35 @@ HcclResult OrderLaunch::AclgraphLaunchInOrderToKernelStream(std::string &group, 
 HcclResult OrderLaunch::OpbaseLaunchInOrder(std::string &group, const Stream& kernelStream,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
+    auto beginTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     std::unique_lock<std::mutex> mapLock(streamMutex_);
+    auto lockTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     HCCL_INFO("[OrderLaunch][OpbaseLaunchInOrder] group[%s], kernelStreamId[%u], timeOut[%d]",
         group.c_str(), kernelStream.id(), timeOut);
     // group未注册过，或者未记录过算子下发阶段的线程context
     if (groupCtxMap_.find(group) == groupCtxMap_.end() || groupCtxMap_[group] == INVALID_U64) {
         CHK_RET(InitGroupCtx(group));
     }
-
+    auto groupCtxInitTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     u64 context = groupCtxMap_[group];
     Stream& opbaseStream = contextResMgrMap_[context].opbaseStream;
     EnsureOrderStreamForGroup(group, context, opbaseStream); // 单算子控制流
-
+    auto ensurebaseStreamTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     HCCL_INFO("[%s] group[%s], kernelStreamId[%u], orderStreamId[%u], context[0x%llx]",
         __func__, group.c_str(), kernelStream.id(), opbaseStream.id(), context);
     CHK_RET(LaunchInOrder(group, kernelStream, opbaseStream, notify0, notify1, timeOut));
+    auto launchTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    HCCL_ERROR("[%s] getlockTime=[%lld]ns, groupCtxInitTime=[%lld]ns, "
+        "ensurebaseStreamTime=[%lld]ns, launchTime=[%lld]ns",
+        __func__, static_cast<long long>(lockTime - beginTime), 
+        static_cast<long long>(groupCtxInitTime - lockTime), 
+        static_cast<long long>(ensurebaseStreamTime - groupCtxInitTime), 
+        static_cast<long long>(launchTime - ensurebaseStreamTime));
     return HCCL_SUCCESS;
 }
 
@@ -259,25 +273,38 @@ HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelSt
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut) 
 {
     aclError ret = ACL_SUCCESS;
+    auto beginTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     ret = aclrtWaitAndResetNotify(notify0->ptr(), kernelStream.ptr(), timeOut);
     CHK_PRT_RET(ret != ACL_SUCCESS,
         HCCL_ERROR("[%s] aclrtWaitAndResetNotify failed, ret[%d], notifyId[%u], streamId[%d], timeOut[%d s]",
         __func__, ret, notify0->notifyId_, kernelStream.id(), timeOut), HCCL_E_RUNTIME);
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
         __func__, notify0->notifyId_, kernelStream.id(), timeOut);
+    auto waitTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
     ret = aclrtRecordNotify(notify0->ptr(), hostOrderStream.ptr());
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s] aclrtRecordNotify failed, ret[%d], notifyId[%u], streamId[%d]",
         __func__, ret, notify0->notifyId_, hostOrderStream.id()), HCCL_E_RUNTIME);
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtRecordNotify para: notifyId[%u], streamId[%d]",
         __func__, notify0->notifyId_, hostOrderStream.id());
-
+    auto recordTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    
     ret = aclrtWaitAndResetNotify(notify1->ptr(), hostOrderStream.ptr(), timeOut);
     CHK_PRT_RET(ret != ACL_SUCCESS,
         HCCL_ERROR("[%s] aclrtWaitAndResetNotify failed, ret[%d], notifyId[%u], streamId[%d], timeOut[%d s]",
         __func__, ret, notify1->notifyId_, hostOrderStream.id(), timeOut), HCCL_E_RUNTIME);
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
         __func__, notify1->notifyId_, hostOrderStream.id(), timeOut);
+    auto waitTime1 = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    HCCL_ERROR("[%s] waitTime=[%lld]ns, recordTime=[%lld]ns, waitTime1=[%lld]ns",
+        __func__, static_cast<long long>(waitTime - beginTime), 
+        static_cast<long long>(recordTime - waitTime), 
+        static_cast<long long>(waitTime1 - recordTime));
+    
     return HCCL_SUCCESS;
 }
 
