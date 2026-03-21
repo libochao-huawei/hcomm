@@ -9,7 +9,7 @@
  */
 #ifndef HCCL_COMM_PROFILING_LITE_H
 #define HCCL_COMM_PROFILING_LITE_H
-#include "mirror_task_manager.h"
+#include "mirror_task_manager_lite.h"
 #include "profiling_reporter_lite.h"
 #include "types.h"
 
