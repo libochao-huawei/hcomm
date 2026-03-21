@@ -72,6 +72,8 @@ public:
         bool enable910ALite = false);
     HcclResult PingMeshRaPingInit(u32 devLogicId, u32 devPhyId, RaInitConfig *config);
     HcclResult PingMeshRaPingDeinit();
+    /** Ensure Ra session for given phyId (for snapshot when ACL passes devId to all processes). */
+    HcclResult EnsureRaInitForSnapshot(u32 phyId);
     bool GetRdmaLiteStatus();
     HcclResult GetRdmaHandleByIpAddr(const HcclIpAddress &ipAddr, RdmaHandle &rdmaHandle);
     HcclResult GetNicHandleByIpAddr(const HcclIpAddress &ipAddr, SocketHandle &nicHandle);

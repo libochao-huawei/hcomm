@@ -206,6 +206,8 @@ HcclResult HrtRaSendNormalWrlist(QpHandle handle, struct WrInfo wr[], struct Sen
 HcclResult HrtRaGetNotifyBaseAddr(RdmaHandle handle, u64 *va, u64 *size,
     std::function<bool()> needStop = []() { return false; });
 HcclResult HrtRaInit(struct RaInitConfig *config);
+/** Like HrtRaInit but treats already-initialized (REPEAT_RAINIT_ERROR_CODE) as success. Used for snapshot. */
+HcclResult HrtRaInitIfNeeded(struct RaInitConfig *config);
 HcclResult HrtRaDeInit(struct RaInitConfig *config);
 
 HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHandle &rdmaHandle);

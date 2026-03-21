@@ -700,6 +700,32 @@ HcclResult HrtRaInit(struct RaInitConfig *config)
     return HCCL_SUCCESS;
 }
 
+HcclResult HrtRaInitIfNeeded(struct RaInitConfig *config)
+{
+    CHK_RET(DlRaFunction::GetInstance().DlRaFunctionInit());
+    s32 ret = 0;
+    auto startTime = chrono::steady_clock::now();
+    auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
+    while (true) {
+        ret = DlRaFunction::GetInstance().dlRaInit(config);
+        if (!ret) {
+            break;
+        } else if (ret == static_cast<s32>(REPEAT_RAINIT_ERROR_CODE)) {
+            HCCL_RUN_WARNING("ra already init for phyId[%u], treat as success.", config->phyId);
+            return HCCL_SUCCESS;
+        } else if (ret == HCCP_EAGAIN) {
+            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
+            CHK_PRT_RET(bTimeout, HCCL_ERROR("[Init][Ra]errNo[0x%016llx] ra init timeout, phyId[%u]",
+                HCCL_ERROR_CODE(HCCL_E_TIMEOUT), config->phyId), HCCL_E_TIMEOUT);
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+        } else {
+            HCCL_ERROR("[Init][Ra] ra init fail ret[%d] phyId[%u]", ret, config->phyId);
+            return HCCL_E_NETWORK;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHandle &rdmaHandle)
 {
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInit(mode, notifyType, rdevInfo, &rdmaHandle);

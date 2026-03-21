@@ -320,6 +320,20 @@ HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFla
         HCCL_ERROR("[NetworkManager][Init]errNo[0x%016llx] ra init failed,return[%d] devicePhyId_[%u], "
             "nicPosition[%u]", HCCL_ERROR_CODE(ret), ret, devicePhyId_, static_cast<u32>(nicDeploy)), HCCL_E_NETWORK);
 
+    if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !Is310PDevice()) {
+        u32 deviceCount = 0;
+        if (hrtGetDeviceCount(&deviceCount) == HCCL_SUCCESS) {
+            for (u32 logicIdx = 0; logicIdx < deviceCount; ++logicIdx) {
+                u32 phyId = 0;
+                if (hrtGetDevicePhyIdByIndex(logicIdx, phyId, true) != HCCL_SUCCESS) {
+                    continue;
+                }
+                if (phyId != devicePhyId_) {
+                    (void)EnsureRaInitForSnapshot(phyId);
+                }
+            }
+        }
+    }
     HCCL_INFO("NetworkManager nicDeploy[%u] deviceLogicId_[%d] devicePhyId_[%u] init ra OK, nicSocketMap size[%u], "
         "isHostUseDevNic[%d]", static_cast<u32>(nicDeploy), deviceLogicId_, devicePhyId_,
         raResourceInfo_.nicSocketMap.size(), isHostUseDevNic);
@@ -348,6 +362,20 @@ HcclResult NetworkManager::InitV2(NICDeployment nicDeploy, bool isBackup, u32 de
     }
     CHK_RET(GetConfigAndRaInit(config, isHdcV2, nicDeploy));
 
+    if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !Is310PDevice()) {
+        u32 deviceCount = 0;
+        if (hrtGetDeviceCount(&deviceCount) == HCCL_SUCCESS) {
+            for (u32 logicIdx = 0; logicIdx < deviceCount; ++logicIdx) {
+                u32 phyId = 0;
+                if (hrtGetDevicePhyIdByIndex(logicIdx, phyId, true) != HCCL_SUCCESS) {
+                    continue;
+                }
+                if (phyId != devicePhyId_) {
+                    (void)EnsureRaInitForSnapshot(phyId);
+                }
+            }
+        }
+    }
     HCCL_INFO("NetworkManager nicDeploy[%u] deviceLogicId_[%d] devicePhyId_[%u] init ra OK, nicSocketMap size[%u], "
         "isHostUseDevNic[%d]", static_cast<u32>(nicDeploy), deviceLogicId_, devicePhyId_,
         raResourceInfo_.nicSocketMap.size(), isHostUseDevNic);
@@ -1618,6 +1646,25 @@ HcclResult NetworkManager::PingMeshRaPingDeinit()
     CHK_RET(HrtRaDeInit(&config));
     deviceNicInitRef_.Unref();
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult NetworkManager::EnsureRaInitForSnapshot(u32 phyId)
+{
+    if (Is310PDevice()) {
+        return HCCL_SUCCESS;
+    }
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    config.phyId = phyId;
+    config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_93) {
+        config.enableHdcAsync = true;
+    }
+    HCCL_DEBUG("[EnsureRaInitForSnapshot] phyId[%u]", phyId);
+    CHK_RET(HrtRaInitIfNeeded(&config));
     return HCCL_SUCCESS;
 }
 
