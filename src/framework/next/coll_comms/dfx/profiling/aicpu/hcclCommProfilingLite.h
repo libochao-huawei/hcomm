@@ -27,10 +27,10 @@ public:
     void UpdateProfStat();
     
     // 获取MirrorTaskManager
-    Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
+    Hccl::MirrorTaskManagerLite* GetMirrorTaskManagerLite() const;
     
 private:
-    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
+    std::unique_ptr<Hccl::MirrorTaskManagerLite> mirrorTaskManagerLite_;
     std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
 };
 }
