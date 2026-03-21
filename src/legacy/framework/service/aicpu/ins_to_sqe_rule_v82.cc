@@ -793,7 +793,6 @@ const std::unordered_map<InstructionType, InsToSqeRule91095, std::EnumClassHash>
 
 void Interpret(const Instruction &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto iter = insRule91095Map.find(ins.GetType());
     if (iter != insRule91095Map.end()) {
         auto &rule = iter->second;

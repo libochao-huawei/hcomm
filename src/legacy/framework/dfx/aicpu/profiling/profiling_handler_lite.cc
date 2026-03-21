@@ -43,7 +43,6 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
         HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] l0 is false.");
         return;
     }
-    HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo start.");
     MsprofAicpuHCCLOPInfo hcclOpInfo {};
     if (aicpu::GetTaskAndStreamId == nullptr) {
         HCCL_WARNING("[ProfilingHandlerLite][ReportHcclOpInfo] GetTaskAndStreamId is nullptr.");
@@ -75,7 +74,6 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
     // 信息上报
     ReportAdditionInfo(MSPROF_REPORT_AICPU_HCCL_OP_INFO, ProfGetCurCpuTimestamp(), &hcclOpInfo,
                        sizeof(MsprofAicpuHCCLOPInfo));
-    HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclOpInfo end.");
 }
 
 void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &taskInfo) const
@@ -177,7 +175,6 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
         HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] l0 is false.");
         return;
     }
-    HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] ReportMainStreamTask start.");
     MsprofAicpuHcclMainStreamTask flagtask {};
     if (aicpu::GetTaskAndStreamId == nullptr) {
         HCCL_WARNING("[ProfilingHandlerLite][ReportMainStreamTask] aicpu::GetTaskAndStreamId is nullptr.");
@@ -207,7 +204,6 @@ void ProfilingHandlerLite::ReportMainStreamTask(const FlagTaskInfo &flagTaskInfo
     // 信息上报
     ReportAdditionInfo(MSPROF_REPORT_AICPU_HCCL_FLAG_TASK, ProfGetCurCpuTimestamp(), &flagtask,
                                sizeof(MsprofAicpuHcclMainStreamTask));
-    HCCL_INFO("[ProfilingHandlerLite][ReportMainStreamTask] ReportMainStreamTask end.");
 }
 
 void ProfilingHandlerLite::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, const void *data, int len) const
