@@ -17,6 +17,10 @@
 #include "adapter_rts_common.h"
 #include "hccp_peer_manager.h"
 #include "server_socket_manager.h"
+
+using Hccl::HcclException;
+using std::string;
+using std::exception;
  
 namespace hcomm {
 CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
@@ -40,8 +44,8 @@ HcclResult CpuRoceEndpoint::Init()
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    ctxHandle_ = static_cast<void *>(
-        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
+    TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(
+        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET)));
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("CpuRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__,

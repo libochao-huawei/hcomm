@@ -17,6 +17,7 @@
 #include "ins_coll_alg_registry.h"
 
 #include "topo_match_mesh_nhr.h"
+#include "topo_match_mesh_nhr_pcie.h"
 #include "alg_data_trans_wrapper.h"
 
 #include "ins_temp_scatter_mesh_1d.h"
@@ -427,6 +428,8 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
 
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::SCATTER, InsScatterParallelMesh1DNHR, InsScatterParallelExecutor, TopoMatchMeshNHR,
     InsTempScatterMesh1D, InsTempScatterNHR);
+INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::SCATTER, InsScatterParallelMesh1DNHRPcie, InsScatterParallelExecutor,
+    TopoMatchMeshNHRPcie, InsTempScatterMesh1D, InsTempScatterNHR);
 #ifndef CCL_KERNEL_AICPU
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::SCATTER, CcuScatterParallelMesh1DNHR, InsScatterParallelExecutor, TopoMatchMeshNHR,
                                CcuTempScatterMesh1D, CcuTempScatterNHRMem2Mem1D);
