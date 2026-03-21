@@ -31,7 +31,15 @@ using namespace std;
 constexpr int BYTE = 8;
 constexpr uint64_t CCU_MSG_256MB_LEN = 256 * 1024 * 1024; // CCU消息长度不能大于256MB
 
-const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
+const map<uint8_t, string> MISSION_STATUS_MAP {
+    {0x01, "Unsupported Opcode(0x01)"},      {0x02, "Local Operation Error(0x02)"},
+    {0x03, "Remote Operation Error(0x03)"},  {0x04, "Transaction Retry Counter Exceeded(0x04)"},
+    {0x05, "Transaction ACK Timeout(0x05)"}, {0x06, "Jetty Work Request Flushed(0x06)"},
+    {0x07, "CCUA Alg Task Error(0x07)"},     {0x08, "Memory ECC Error(0x08)"},
+    {0x09, "CCUM Execute Error(0x09)"},      {0x0A, "CCUA Execute Error(0x0A)"},
+};
+
+const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP {
     {0x02,
      {{0x01, "Local Length Error(0x01)"},
       {0x02, "Local Access Error(0x02)"},
