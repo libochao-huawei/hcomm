@@ -30,16 +30,23 @@ struct CcuHostParam {
     TaskInfo taskInfo;
     uint32_t deviceId;
 };
-
-class TaskExceptionHost {
+constexpr u32 CCU_COSTOM_ARGS_LEN = 32;
+struct ParaCcu {
+    u8  dieId;
+    u8  missionId;
+    u8  execMissionId;
+    u32 instrId;
+    u64 costumArgs[CCU_COSTOM_ARGS_LEN];
+    u64 executeId;
+    u64 ccuKernelHandle{0};
+};
+class CcuTaskException {
 public:
-    TaskExceptionHost() = default;
-    ~TaskExceptionHost();
+    CcuTaskException() = default;
+    ~CcuTaskException();
 
     HcclResult        Register() ;                                // 向rts注册异常处理方法
     HcclResult        UnRegister() ;                              // 向rts注销异常处理方法
-    static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
-    static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo);
 
 private:
     static std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
@@ -49,7 +56,38 @@ private:
     static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
+    static HcclResult PrintCcuUbRegisters(s32 devLogicId, const Hccl::ParaCcu &ccuTaskParam);
 
+    static void ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
+ 	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
+    static void PrintCcuErrorLog(const std::vector<Hccl::CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo);
+
+    static std::string GetCcuErrorMsgByType(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgLoop(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgMission(const Hccl::CcuErrorInfo& ccuErrorInfo);
+    static std::string GetCcuErrorMsgDefault(const Hccl::CcuErrorInfo& ccuErrorInfo);
+    static std::string GetCcuErrorMsgLoopGroup(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgLocPostSem(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgLocWaitSem(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgRemPostSem(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgRemWaitSem(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgRemPostVar(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgRemWaitGroup(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgPostSharedSem(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgRead(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgWrite(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgLocalCpy(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgLocalReduce(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgBufRead(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgBufWrite(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgBufLocRead(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgBufLocWrite(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgBufReduce(const CcuHostParam &ccuHostParam);
+    static RankId GetRankIdByChannelId(const CcuHostParam &ccuHostParam);
+    static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuLenErrorMsg(const uint64_t len);
+    void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
+    std::vector<CcuErrorInfo> &errorInfo)
 
 
 private:
@@ -70,13 +108,6 @@ private:
     TaskExceptionHostManager(const TaskExceptionHostManager &)            = delete;
     TaskExceptionHostManager &operator=(const TaskExceptionHostManager &) = delete;
 };
-
-struct CcuHostParam{
-    Hccl::CcuErrorInfo ccuErrorInfo;
-    Hccl::TaskInfo taskImfo;
-    uint32_t deviceId;
-
-}
 } // namespace hccl
 
 #endif // HCCL_TASK_EXCEPTION_HANDLER_H
