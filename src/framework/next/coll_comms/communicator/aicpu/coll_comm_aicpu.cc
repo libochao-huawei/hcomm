@@ -94,28 +94,13 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         }
         std::shared_ptr<AicpuTsThread> thread;
         EXECEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
-        s32 streamId = 0;
-        u32 notifyNum = 0;
-        std::string notifyDesc;
-        CHK_RET(thread->GetStreamIdAndNotifyByUniqueId(streamId, notifyNum, notifyDesc));
-        if (streamIdToThreadMap_.find(streamId) != streamIdToThreadMap_.end()) {
-            AicpuTsThread *threadPtr = reinterpret_cast<AicpuTsThread*>(streamIdToThreadMap_[streamId]);
-            CHK_PTR_NULL(threadPtr);
-            HCCL_INFO("[%s]threadIdx[%u], streamId[%d], notifyNum[%u], newNotifyNum[%u]", __func__, i,
-                streamId, threadPtr->GetNotifyNum(), notifyNum);
-            CHK_RET(threadPtr->SupplementNotify(notifyNum, notifyDesc));
-        } else {
-            HcclResult ret = thread->Init();
-            if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",
-                    __func__, hcomId.c_str(), param->threadNum, i);
-                return ret;
-            }
-            HCCL_INFO("[%s]threadIdx[%u], streamId[%d], notifyNum[%u]", __func__, i,
-                streamId, notifyNum);
-            streamIdToThreadMap_.emplace(streamId, thread.get());
-            outThreads.emplace_back(thread);
+        HcclResult ret = thread->Init();
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",
+                __func__, hcomId.c_str(), param->threadNum, i);
+            return ret;
         }
+        outThreads.emplace_back(thread);
     }
 
     ThreadHandle *threadArray = static_cast<ThreadHandle*>(param->deviceHandle);
