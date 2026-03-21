@@ -44,7 +44,7 @@ private:
     uint64_t GetMaxNotifyTotal();
     HcclResult CheckNotifyNum(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread);
     HcclResult CheckThreadNum(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread);
-    HcclResult SupplementNotify(CommEngine engine, uint32_t notifyNumPerThread);
+    HcclResult SupplementNotify(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread);
     HcclResult SupplementThread(CommEngine engine, uint32_t supplementThreadNum, uint32_t notifyNumPerThread);
     HcclResult ThreadExportToCommEngineCpu(uint32_t threadNum, const ThreadHandle *threads, ThreadHandle *exportedThreads);
     HcclResult ThreadExportToCommEngineAicpu(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);

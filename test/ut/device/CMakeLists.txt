@@ -27,6 +27,8 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_aiv_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_alg_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_executor_aicpu.cc
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/device/engine_aicpu_interface.cc
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/aicpu_thread_process.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
@@ -34,6 +36,12 @@ add_executable(hccl_utest_device ${hccl_utest_device_src_list})
 # 头文件搜索路径
 target_include_directories(hccl_utest_device PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/device/
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine/
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/device/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/
 )
 target_compile_definitions(hccl_utest_device PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
@@ -66,3 +74,8 @@ target_link_libraries(hccl_utest_device PRIVATE
     -ldl
 )
 add_dependencies(hccl_utest_device hccl_llt)
+
+run_llt_test(
+   TARGET  hccl_utest_device
+   TASK_NUM 1
+)
