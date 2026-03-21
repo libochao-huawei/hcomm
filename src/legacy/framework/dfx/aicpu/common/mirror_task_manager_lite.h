@@ -14,14 +14,11 @@
 #include <unordered_map>
 #include <memory>
 #include <functional>
+#include "dfx_common.h"
 #include "circular_queue.h"
 #include "task_info.h"
 
 namespace Hccl {
-
-using TaskInfoQueue = Queue<std::shared_ptr<TaskInfo>>;
-using TaskInfoQueueMap = std::unordered_map<u32, std::unique_ptr<TaskInfoQueue>>;
-
 class MirrorTaskManagerLite {
 public:
     MirrorTaskManagerLite();
