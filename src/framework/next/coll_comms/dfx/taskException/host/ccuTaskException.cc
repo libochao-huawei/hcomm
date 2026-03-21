@@ -344,7 +344,7 @@ void CcuTaskException::PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorIn
 HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>& errorInfos, s32 devLogicId,
     const Hccl::TaskInfo& taskInfo)
 {
-    std::vector<Hccl::CcuJetty *> ccuJettys;
+    std::vector<CcuJetty *> ccuJettys;
 
     for (const CcuErrorInfo& errorInfo : errorInfos) {
         // channelId -> channelHandle
@@ -377,21 +377,76 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     }
 
     u32 jettyNum = ccuJettys.size();
-    std::vector<Hccl::JettyHandle> jettyHandles;
+    std::vector<JettyHandle> jettyHandles;
     for (auto &ccuJetty : ccuJettys) {
         jettyHandles.push_back(ccuJetty->GetJettyHandle());
     }
 
-    std::vector<Hccl::JettyStatus> jettyStatusVec;
+    std::vector<JettyStatus> jettyStatusVec;
     RaBatchQueryJettyStatus(jettyHandles, jettyStatusVec, jettyNum);
 
     for (u32 i = 0; i < jettyNum; ++i) {
-        if (jettyStatusVec[i] == Hccl::JettyStatus::ERROR) {
+        if (jettyStatusVec[i] == JettyStatus::ERROR) {
             auto rdmaHandle = ccuJettys[i]->GetRdmaHandle();
             HCCL_ERROR("[%s]jettyId[%u]", __func__, ccuJettys[i]->GetJettyId());
             PrintUbRegisters(devLogicId, rdmaHandle);
             break;
         }
+    }
+    return HCCL_SUCCESS;
+}
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
+{
+    HccpAuxInfoIn in;
+    in.type = static_cast<HccpAuxInfoInType>(static_cast<int>(auxInfoIn.auxInfoInType));
+    if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_CQE) {
+        in.cqe.status = auxInfoIn.cqe.status;
+        in.cqe.sR = auxInfoIn.cqe.sR;
+    } else if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_AE) {
+        in.ae.eventType = auxInfoIn.ae.eventType;
+    }
+
+    HccpAuxInfoOut out;
+    auto ret = RaCtxGetAuxInfo(rdmaHandle, &in, &out);
+    if (ret != 0) {
+        HCCL_ERROR("RaGetAuxInfo failed.");
+        return HCCL_E_NETWORK;
+    }
+
+    auxInfoOut.auxInfoNum = out.auxInfoNum;
+    for (uint32_t i = 0; i < out.auxInfoNum; i++) {
+        auxInfoOut.auxInfoTypes[i] = out.auxInfoType[i];
+        auxInfoOut.auxInfoValues[i] = out.auxInfoValue[i];
+    }
+    return HCCL_SUCCESS;
+}
+HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
+{
+    HCCL_INFO("[PrintUbRegister] start, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
+    AuxInfoIn in;
+    in.cqe.status = 0xffffffff; // 0xffffffff代表查询所有寄存器
+    in.auxInfoInType = AuxInfoInType::AUX_INFO_IN_TYPE_CQE;
+    in.cqe.sR = 0;
+    AuxInfoOut auxInfo;
+    auto ret = RaGetAuxInfo(rdmaHandle, in, auxInfo);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[PrintUbRegister]GetUbRegisterInfo failed, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
+        return ret;
+    }
+
+    uint16_t isAuxInfoExisted{false};
+    for (u32 i = 0; i < auxInfo.auxInfoNum; i++) {
+        if (auxInfo.auxInfoValues[i]) { // 非零进行打印
+            isAuxInfoExisted = true;
+            HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
+ 	  	            devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
+ 	    } else {
+ 	        HCCL_INFO("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
+ 	            devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
+        }
+    }
+    if (!isAuxInfoExisted) {
+        HCCL_ERROR("devLogicId[%d], all aux_info values are zero.", devLogicId);
     }
     return HCCL_SUCCESS;
 }

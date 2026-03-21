@@ -29,12 +29,17 @@ public:
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;
     HrtRaUbJettyCreatedOutParam GetJettyedOutParam() const;
     HcclResult Clean();
+    uint16_t GetJettyId() const
+    {
+        return jettyInfo_.taJettyId;
+    }
 
 private:
     CcuJetty(const CcuJetty &that) = delete;
     CcuJetty &operator=(const CcuJetty &that) = delete;
     CcuJetty(CcuJetty &&that) = delete;
     CcuJetty &operator=(CcuJetty &&that) = delete;
+    
 
 private:
     int32_t devLogicId_{0};

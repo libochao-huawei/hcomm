@@ -71,12 +71,7 @@ private:
     TaskExceptionHostManager &operator=(const TaskExceptionHostManager &) = delete;
 };
 
-struct CcuHostParam{
-    Hccl::CcuErrorInfo ccuErrorInfo;
-    Hccl::TaskInfo taskImfo;
-    uint32_t deviceId;
 
-}
 } // namespace hccl
 
 #endif // HCCL_TASK_EXCEPTION_HANDLER_H

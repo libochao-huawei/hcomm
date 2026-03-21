@@ -495,33 +495,4 @@ void TaskExceptionHost::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
     }
 }
 
-// CCU新加代码
-struct ccum_dfx_info {
-    unsigned int query_result; // 0:success, 1:fail
-    unsigned int ccum_sqe_recv_cnt;
-    unsigned int ccum_sqe_send_cnt;
-    unsigned int ccum_mission_dfx;
-    unsigned int ccum_sqe_drop_cnt;
-    unsigned int ccum_sqe_addr_len_err_drop_cnt;
-    unsigned int lqc_ccu_sec_reg0;
-    unsigned int ccum_tif_sqe_cnt;
-    unsigned int ccum_tif_cqe_cnt;
-    unsigned int ccum_cif_sqe_cnt;
-    unsigned int ccum_cif_cqe_cnt;
-};
-void PrintPanicLogInfo(const uint8_t *panicLog)
-{
-    struct ccum_dfx_info *info = reinterpret_cast<struct ccum_dfx_info *>(const_cast<uint8_t*>(panicLog));
-    const uint16_t ccumIsEnable = info->lqc_ccu_sec_reg0 & 1;
-    if (info->query_result != 0) {
-        HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
-    }
-    HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u]"
-                "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u]"
-                "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u]",
-                info->ccum_sqe_recv_cnt, info->ccum_sqe_send_cnt, info->ccum_mission_dfx,
-                info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
-                info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
-}
-
 } // namespace Hccl
