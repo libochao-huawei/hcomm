@@ -1109,19 +1109,23 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
     ctxInfo.phyId       = in.phyId;
     ctxInfo.ub.eidIndex = 0;
     HCCL_INFO("[HrtRaUbCtxInit] use eid[%s]", in.addr.Describe().c_str());
+    HCCL_INFO("[HrtRaUbCtxInit] wzh checkpoint1");
     s32 sRet = memcpy_s(ctxInfo.ub.eid.raw, sizeof(ctxInfo.ub.eid.raw), in.addr.GetEid().raw, sizeof(in.addr.GetEid().raw));
     if (sRet != EOK) {
         MACRO_THROW(InternalException, StringFormat("[HrtRaUbCtxInit]memcpy_s failed. sRet[%d]", sRet));
     }
+    HCCL_INFO("[HrtRaUbCtxInit] wzh checkpoint2");
 
     RdmaHandle handle;
-    s32        ret = RaCtxInit(&initCfg, &ctxInfo, &handle);
+    s32 ret = RaCtxInit(&initCfg, &ctxInfo, &handle);
+    HCCL_INFO("[HrtRaUbCtxInit] wzh checkpoint3");
     if (ret != 0) {
         string msg = StringFormat(
             "[Init][RaUbCtx]errNo[0x%016llx] ub ctx init fail, mode[%d], phyId[%u], addr[%s], ret[%d]",
             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), in.mode, in.phyId, in.addr.GetIpStr().c_str(), ret);
         MACRO_THROW(NetworkApiException, msg);
     }
+    HCCL_INFO("[HrtRaUbCtxInit] wzh checkpoint4");
     return handle;
 }
 

@@ -93,6 +93,7 @@ HcclResult HcommEndpointGet(const EndpointHandle endpointHandle, void **endpoint
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    HCCL_DEBUG("start HcommEndpointCreate");
     CHK_PTR_NULL(endpoint);
     CHK_PTR_NULL(endpointHandle);
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
