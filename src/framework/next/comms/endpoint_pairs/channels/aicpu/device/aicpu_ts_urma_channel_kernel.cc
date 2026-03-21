@@ -51,3 +51,5 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelUpdateV2(voi
     HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(devAddr);
     return AicpuIndopProcess::AicpuIndOpChannelUpdate(commParam);
 }
+
+}
