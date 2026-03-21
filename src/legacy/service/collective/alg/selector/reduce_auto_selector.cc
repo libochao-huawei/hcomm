@@ -22,6 +22,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[ReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     // MS 模式不支持 int8
     CHK_PRT_RET(op.dataType == DataType::INT8,
@@ -89,6 +90,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
 SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[ReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     // ccu 模式不支持 inplace 场景
     CHK_PRT_RET(IsInputOutputOverlap(op.inputMem, op.outputMem) == true,
@@ -170,6 +172,7 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[ReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -251,6 +254,7 @@ SelectorStatus ReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[ReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     //aiv 模式不支持 PROD
