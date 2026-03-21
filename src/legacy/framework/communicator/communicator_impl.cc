@@ -699,7 +699,11 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
-        if (TryFastCcuLaunch(opParams, stream)) {
+        // 判断是否为aclgraph
+        bool isCapture = false;
+        rtModel_t rtModel = nullptr;
+        CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
+        if (!isCapture && TryFastCcuLaunch(opParams, stream)) { // 若是aclgraph则不走快速下发
             return HcclResult::HCCL_SUCCESS;
         }
         curOpParams = opParams;
@@ -743,7 +747,8 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             aivTag = 1;
         }
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, true);
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, true);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
@@ -1000,7 +1005,12 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, false);
+        // 判断是否为aclgraph(aicpu场景零拷贝会切图模式)
+        bool isCapture = false;
+        rtModel_t rtModel = nullptr;
+        CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, false);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         opIndex++;
