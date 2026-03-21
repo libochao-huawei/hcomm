@@ -23,7 +23,7 @@ public:
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
     uint32_t    GetMask() { return event_.mask; };
-    uint16_t    GetId()  { return event_.Id(); };;
+    uint16_t    GetId()  { return event_.Id(); };
 
 private:
     CompletedEvent event_{};

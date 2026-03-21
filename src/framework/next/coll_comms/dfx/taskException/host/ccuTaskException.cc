@@ -688,7 +688,7 @@ void CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shar
     }
 }
 
-HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
+HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
     std::vector<CcuErrorInfo> &errorInfo)
 {
     HCCL_INFO("[CcuTaskException]%s: deviceId[%d], dieId[%u], missionId[%u], execMissionId[%u], executeId[%llu].",
@@ -1174,43 +1174,6 @@ string CcuTaskException::GetCcuErrorMsgMission(const CcuErrorInfo &ccuErrorInfo)
         ccuErrorInfo.msg.mission.missionError);
 }
 
-string CcuTaskException::GetCcuErrorMsgByType(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId)
-{
-    if (ccuErrorInfo.type == CcuErrorType::MISSION) {
-        return GetCcuErrorMsgMission(ccuErrorInfo);
-    }
-
-    using GetCcuErrorMsgFunc = string (*)(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
-    static const map<CcuRep::CcuRepType, GetCcuErrorMsgFunc> handlerMap {
-        {CcuRep::CcuRepType::LOOP, &CcuTaskException::GetCcuErrorMsgLoop},
-        {CcuRep::CcuRepType::LOOPGROUP, &CcuTaskException::GetCcuErrorMsgLoopGroup},
-        {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GetCcuErrorMsgLocPostSem},
-        {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
-        {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
-        {CcuRep::CcuRepType::REM_POST_SEM, &CcuTaskException::GetCcuErrorMsgRemPostSem},
-        {CcuRep::CcuRepType::REM_WAIT_SEM, &CcuTaskException::GetCcuErrorMsgRemWaitSem},
-        {CcuRep::CcuRepType::REM_POST_VAR, &CcuTaskException::GetCcuErrorMsgRemPostVar},
-        {CcuRep::CcuRepType::REM_WAIT_GROUP, &CcuTaskException::GetCcuErrorMsgRemWaitGroup},
-        {CcuRep::CcuRepType::RECORD_SHARED_NOTIFY, &CcuTaskException::GetCcuErrorMsgPostSharedSem},
-        {CcuRep::CcuRepType::READ, &CcuTaskException::GetCcuErrorMsgRead},
-        {CcuRep::CcuRepType::WRITE, &CcuTaskException::GetCcuErrorMsgWrite},
-        {CcuRep::CcuRepType::LOCAL_CPY, &CcuTaskException::GetCcuErrorMsgLocalCpy},
-        {CcuRep::CcuRepType::LOCAL_REDUCE, &CcuTaskException::GetCcuErrorMsgLocalReduce},
-        {CcuRep::CcuRepType::BUF_READ, &CcuTaskException::GetCcuErrorMsgBufRead},
-        {CcuRep::CcuRepType::BUF_WRITE, &CcuTaskException::GetCcuErrorMsgBufWrite},
-        {CcuRep::CcuRepType::BUF_LOC_READ, &CcuTaskException::GetCcuErrorMsgBufLocRead},
-        {CcuRep::CcuRepType::BUF_LOC_WRITE, &CcuTaskException::GetCcuErrorMsgBufLocWrite},
-        {CcuRep::CcuRepType::BUF_REDUCE, &CcuTaskException::GetCcuErrorMsgBufReduce}
-    };
-
-    const auto funcIt = handlerMap.find(ccuErrorInfo.repType);
-    if (funcIt == handlerMap.end()) {
-        return GetCcuErrorMsgDefault(ccuErrorInfo);
-    } else {
-        return funcIt->second(ccuErrorInfo, taskInfo, deviceId);
-    }
-}
-
 HcclResult CcuTaskException::GetCcuChannelHandleById(u32 deviceId, u16 channelId, const Hccl::TaskInfo &taskInfo,
     u64& channelHandle)
 {
@@ -1242,7 +1205,6 @@ RankId CcuTaskException::GetRankIdByChannelId(uint16_t channelId, const Hccl::Ta
         return INVALID_UINT;
     }
 
-    u32 deviceId = 0; // zjwTODO: 临时打桩
     u64 channelHandle = INVALID_U64;
     if (GetCcuChannelHandleById(deviceId, channelId, taskInfo, channelHandle) != HCCL_SUCCESS) {
         HCCL_ERROR("[%s]GetCcuChannelHandleById fail, deviceId[%u], channelId[%u], channelHandle[0x%llx]",
@@ -1316,4 +1278,40 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
     return dummy;
 }
 
+string CcuTaskException::GetCcuErrorMsgByType(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId)
+{
+    if (ccuErrorInfo.type == CcuErrorType::MISSION) {
+        return GetCcuErrorMsgMission(ccuErrorInfo);
+    }
+
+    using GetCcuErrorMsgFunc = string (*)(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static const map<CcuRep::CcuRepType, GetCcuErrorMsgFunc> handlerMap {
+        {CcuRep::CcuRepType::LOOP, &CcuTaskException::GetCcuErrorMsgLoop},
+        {CcuRep::CcuRepType::LOOPGROUP, &CcuTaskException::GetCcuErrorMsgLoopGroup},
+        {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GetCcuErrorMsgLocPostSem},
+        {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
+        {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
+        {CcuRep::CcuRepType::REM_POST_SEM, &CcuTaskException::GetCcuErrorMsgRemPostSem},
+        {CcuRep::CcuRepType::REM_WAIT_SEM, &CcuTaskException::GetCcuErrorMsgRemWaitSem},
+        {CcuRep::CcuRepType::REM_POST_VAR, &CcuTaskException::GetCcuErrorMsgRemPostVar},
+        {CcuRep::CcuRepType::REM_WAIT_GROUP, &CcuTaskException::GetCcuErrorMsgRemWaitGroup},
+        {CcuRep::CcuRepType::RECORD_SHARED_NOTIFY, &CcuTaskException::GetCcuErrorMsgPostSharedSem},
+        {CcuRep::CcuRepType::READ, &CcuTaskException::GetCcuErrorMsgRead},
+        {CcuRep::CcuRepType::WRITE, &CcuTaskException::GetCcuErrorMsgWrite},
+        {CcuRep::CcuRepType::LOCAL_CPY, &CcuTaskException::GetCcuErrorMsgLocalCpy},
+        {CcuRep::CcuRepType::LOCAL_REDUCE, &CcuTaskException::GetCcuErrorMsgLocalReduce},
+        {CcuRep::CcuRepType::BUF_READ, &CcuTaskException::GetCcuErrorMsgBufRead},
+        {CcuRep::CcuRepType::BUF_WRITE, &CcuTaskException::GetCcuErrorMsgBufWrite},
+        {CcuRep::CcuRepType::BUF_LOC_READ, &CcuTaskException::GetCcuErrorMsgBufLocRead},
+        {CcuRep::CcuRepType::BUF_LOC_WRITE, &CcuTaskException::GetCcuErrorMsgBufLocWrite},
+        {CcuRep::CcuRepType::BUF_REDUCE, &CcuTaskException::GetCcuErrorMsgBufReduce}
+    };
+
+    const auto funcIt = handlerMap.find(ccuErrorInfo.repType);
+    if (funcIt == handlerMap.end()) {
+        return GetCcuErrorMsgDefault(ccuErrorInfo);
+    } else {
+        return funcIt->second(ccuErrorInfo, taskInfo, deviceId);
+    }
+}
 }

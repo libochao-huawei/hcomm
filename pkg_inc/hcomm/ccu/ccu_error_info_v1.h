@@ -356,17 +356,6 @@ struct CcuMissionContext {
     }
 };
 
-constexpr u32 CCU_COSTOM_ARGS_LEN = 32;
-struct ParaCcu {
-    u8  dieId;
-    u8  missionId;
-    u8  execMissionId;
-    u32 instrId;
-    u64 costumArgs[CCU_COSTOM_ARGS_LEN];
-    u64 executeId;
-    u64 ccuKernelHandle{0};
-};
-
 union LoopGroupXn {
     uint64_t value;
     struct {
