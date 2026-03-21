@@ -121,7 +121,7 @@ HcclResult AllGatherOperator::SelectAlgfor910A(const OpParam& param, std::string
     } else {
         algName = "AllGatherComm";
     }
-    HCCL_INFO("[SelectAlgfor910A] AllGather SelectAlgfor910A is algName [%s].", algName.c_str());
+    HCCL_INFO("[SelectAlgfor910A] AllGather SelectAlgfor910A is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
 }
 
