@@ -762,6 +762,8 @@ namespace hccl
     {
         HcclResult ret = HCCL_SUCCESS;
         ErrorMessageReport errorMessage;
+        auto beginTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         if (kfcStatusTransferD2H_ != nullptr)
         {
             CHK_PRT_RET(isInvalidComm_,
@@ -774,6 +776,9 @@ namespace hccl
                 HCCL_ERROR("GetAicpuTaskException get aicpu task exception failed.ret[%u]", ret);
             }
         }
+        auto endTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                 std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        HCCL_ERROR("GetAicpuTaskException cost time[%llu]", endTime - beginTime);
         return errorMessage;
     }
 

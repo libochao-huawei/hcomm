@@ -139,7 +139,10 @@ HcclResult HDCommunicate::Put(u32 offset, u32 length, u8 *value)
     CHK_PRT_RET((offset + length > buffLen_),
         HCCL_ERROR("[HDCommunicate][Put]Invalid length, offset=%u, length=%u", offset, length), HCCL_E_PARA);
     ReadWriteLock lock(lock_);
-    return Write(offset, length, value);
+    lock.writeLock();
+    HcclResult ret = Write(offset, length, value);
+    lock.writeUnlock();
+    return ret;
 }
 
 HcclResult HDCommunicate::Get(u32 offset, u32 length, u8 *value)
@@ -152,7 +155,10 @@ HcclResult HDCommunicate::Get(u32 offset, u32 length, u8 *value)
         HCCL_ERROR("[HDCommunicate][Get]Invalid length, offset=%u, length=%u, befferLen=%u", offset, length, buffLen_),
         HCCL_E_PARA);
     ReadWriteLock lock(lock_);
-    return Read(offset, length, value);
+    lock.readLock();
+    HcclResult ret = Read(offset, length, value);
+    lock.readUnlock();
+    return ret;
 }
 
 #pragma GCC push_options
