@@ -506,4 +506,152 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
     return HCCL_SUCCESS;
 }
 
+HcclResult ChannelProcess::ChannelClean(const ChannelHandle *channelList, uint32_t listNum)
+{
+    CHK_PTR_NULL(channelList);
+
+    for (uint32_t i = 0; i < listNum; ++i) {
+        const ChannelHandle inHandle = channelList[i];
+        // 单锁：D2H 映射 + 查 map + 锁内调用 Clean()
+        HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+            return channel.Clean();  
+        });
+
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] ChannelHandle Clean failed.", __func__);
+            return ret;
+        }
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum)
+{
+    for (uint32_t i = 0; i < channelNum; ++i) {
+        const ChannelHandle inHandle = channelList[i];
+        HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+            return channel.Resume();
+        });
+
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] Get ChannelHandle failed.", __func__);
+            return ret;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+HcclResult ChannelProcess::ChannelResume(const ChannelHandle *channelList, uint32_t channelNum)
+{
+    CHK_PTR_NULL(channelList);
+
+    // 1.resume resource
+    HcclResult ret = ChannelResumeConcurrency(channelList, channelNum);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("HcommChannelResumeConcurrency error");
+        return ret;
+    }
+
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto startTime = std::chrono::steady_clock::now();
+    HCCL_INFO("[%s] start resuming channels, timeout[%u]sec", __func__, timeout);
+
+    std::vector<int32_t> statusVec(channelNum, 0);
+    int32_t* statusList = statusVec.data();
+    uint32_t retryCount{0};
+    while (true) {
+        HcclResult ret = ChannelGetStatus(channelList, channelNum);
+        // 1. 检查超时
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[%s] channel resume timeout after %u sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, channelNum, elapsed, retryCount);
+            return HCCL_E_TIMEOUT;
+        }
+
+        // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
+        if (ret == HCCL_E_AGAIN) {
+            ++retryCount;
+            continue;
+        }
+
+        // 3. 处理失败
+        if (ret != HCCL_SUCCESS) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
+                __func__, channelNum, ret, elapsed, retryCount);
+            return ret;
+        }
+
+        // 4. 正常情况：所有通道连接成功
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count();
+        HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+            __func__, channelNum, elapsed, retryCount);
+        break;
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChannelHandles, ChannelHandle* hostChannelHandles, uint32_t listNum,
+    const std::string &commTag, aclrtBinHandle binHandle)
+{
+    HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
+    std::vector<std::vector<char>> hostPackBuffers(listNum);
+    HcclChannelUrmaRes channelParam{};
+    CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
+
+    // 获取host侧序列化的地址
+    uint32_t totalListNum = 0;
+    for (uint32_t index = 0; index < listNum; index++) {
+        auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
+        CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));   // todo:后续只打包connction
+        totalListNum += hostPackBuffers[index].size();
+    }
+    HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
+
+    // 分配连续的host内存，将序列化的地址放入其中
+    hccl::HostMem hostPackBuf = hccl::HostMem::alloc(totalListNum);
+    CHK_PTR_NULL(hostPackBuf.ptr());
+    CHK_RET(CombineHostMemory(hostPackBuffers, hostPackBuf));
+    hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(totalListNum);
+    CHK_PTR_NULL(devicePackBuf.ptr());
+
+    // 将host侧序列化内容拷贝到device侧内存中
+    CHK_RET(hrtMemSyncCopy(devicePackBuf.ptr(),
+        totalListNum,
+        hostPackBuf.ptr(),
+        totalListNum,
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    // 填充channelParam参数
+    CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelHandles, devicePackBuf, 
+        listNum, totalListNum, totalListNum / hostPackBuffers.size()));
+    
+    // profiling信息
+    hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
+    CHK_PTR_NULL(remoteRankList.ptr());
+    std::vector<u32> remoteRankIdList(listNum);
+    // 集合通信场景才能开启
+    if (needProfiling) {
+        for ( u32 i = 0; i < listNum; ++i) {
+            CHK_RET(hccl::HcclCommDfx::GetChannelRemoteRankId(commTag, hostChannelHandles[i], remoteRankIdList[i]));
+        }
+        // 通过安全的内存拷贝将主机内存数据传输到设备内存
+        CHK_RET(hrtMemSyncCopy(remoteRankList.ptr(), listNum * sizeof(u32), remoteRankIdList.data(), 
+                listNum * sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+        channelParam.remoteRankList = static_cast<u32 *>(remoteRankList.ptr());
+    }
+
+    // 调用抽离的通用内核启动函数
+    std::string kernelName = "RunAicpuIndOpChannelUpdateV2";
+    CHK_RET(LaunchKernel(channelParam, binHandle, kernelName));
+
+    HCCL_INFO("[%s] channel kernel launch success.", __func__);
+    return HCCL_SUCCESS;
+}
+
 }

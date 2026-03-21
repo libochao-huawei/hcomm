@@ -11,6 +11,7 @@
 #include "server_socket_manager.h"
 #include "channel.h"
 #include "orion_adpt_utils.h"
+#include "host_socket_handle_manager.h"
 #include "exception_handler.h"
 #include "adapter_rts.h"
 

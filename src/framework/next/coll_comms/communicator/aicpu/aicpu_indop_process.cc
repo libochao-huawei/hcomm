@@ -175,6 +175,27 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commPara
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuIndopProcess::AicpuIndOpChannelUpdate(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[AicpuIndopProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
+        "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
+        commParam->uniqueIdSize);
+
+    std::string group = commParam->hcomId;
+    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+
+    HcclResult ret = collCommAicpuMgr->AllocChannelResource(commParam);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuIndopProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
+        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+
+    AicpuReleaseCommMgrbyGroup(group);
+    HCCL_INFO("[AicpuIndopProcess][%s] aicpuTask End.", __func__);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
 {
     std::string group = param->hcomId;

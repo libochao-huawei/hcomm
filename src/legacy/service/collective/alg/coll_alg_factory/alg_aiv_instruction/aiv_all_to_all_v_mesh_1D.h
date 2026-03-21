@@ -59,12 +59,10 @@ public:
         if (sendCurCount == 0) {
             return;
         }
-        uint64_t flag_offset = block_idx;
-        WaitFlag(rank_, flag_offset, 0);
-
         CpGM2GM((__gm__ T *)sendOutputOffset, (__gm__ T *)sendInputOffset, sendCurCount);
         PipeBarrier<PIPE_ALL>();
-
+        uint64_t flag_offset = block_idx;
+        WaitFlag(rank_, flag_offset, 0);
         Record(rank_, flag_offset, curTag);
     }
 
@@ -75,11 +73,9 @@ public:
         }
         uint64_t flag_offset = rank_ * coreNumPerRank + coreIndex;
         WaitFlag(targetRank, flag_offset, curTag);
-
+        Record(targetRank, flag_offset, 0);
         CpGM2GM((__gm__ T *)recvOutputOffset, (__gm__ T *)recvInputOffset, recvCurCount);
         PipeBarrier<PIPE_ALL>(); // 核内自己的同步
-
-        Record(targetRank, flag_offset, 0);
     }
 
     __aicore__ inline void Process(uint64_t len, uint32_t tag, ExtraArgs &extraArgs)

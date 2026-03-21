@@ -106,8 +106,7 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
         auto it = comm->hcclCacheMap_.find(opCacheParam);
         bool isCache = false;
         bool isSendRecv = ((op.opType == OpType::SEND) || (op.opType == OpType::RECV) || (op.opType == OpType::BATCHSENDRECV));
-        bool isAlltoAllV = (op.opType == OpType::ALLTOALLV);
-        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv) && (!isAlltoAllV)) {
+        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv)) {
             isCache = true;
             insQueue = it->second;
         }  else{

@@ -50,7 +50,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
 
 HcclResult UbMemTransport::FillTagVec()
 {
-    bufferNum = commonLocRes.bufferVec.size();
+    uint32_t bufferNum = commonLocRes.bufferVec.size();
     if (bufferNum == 0) {
         HCCL_WARNING("[UbMemTransport][FillTagVec] bufferNum is 0.");
     }
@@ -791,6 +791,25 @@ std::vector<char> UbMemTransport::GetUniqueIdV2()
  
     auto rmtBufferUniqueIds = GetRmtBufferUniqueIds(rmtBufferVec, UbRmtBufType::BUFFER);
     binaryStream << rmtBufferUniqueIds;
+ 
+    auto connUniqueIds = GetConnUniqueIds();
+    binaryStream << connUniqueIds;
+ 
+    std::vector<char> result;
+    binaryStream.Dump(result);
+    return result;
+}
+
+std::vector<char> UbMemTransport::PackConnData()
+{
+    if (baseStatus != TransportStatus::READY) {
+        MACRO_THROW(InternalException, StringFormat("transport status[%d] is not ready[%d], please check.",
+            baseStatus, TransportStatus::READY));
+    }
+    u32          type = static_cast<u32>(transportType);
+    BinaryStream binaryStream;
+    binaryStream << type;
+    binaryStream << connNum;
  
     auto connUniqueIds = GetConnUniqueIds();
     binaryStream << connUniqueIds;

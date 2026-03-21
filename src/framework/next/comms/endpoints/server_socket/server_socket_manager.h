@@ -19,8 +19,6 @@
 #include "socket_config.h"
 #include "socket_manager.h"
 #include "orion_adapter_rts.h"
-#include "socket_handle_manager.h"
-#include "host_socket_handle_manager.h"
 
 namespace hcomm {
 
@@ -41,12 +39,7 @@ public:
     HcclResult ServerSocketStopListen(const Hccl::PortData& localPort, const Hccl::NicType nicType, const uint32_t port);
 
 private:
-    ServerSocketManager()
-    {
-        // Ensure that (Host)SocketHandleManager desctruct after the destructionon of device/host ServerSocketMap_.
-        (void)Hccl::SocketHandleManager::GetInstance();
-        (void)Hccl::HostSocketHandleManager::GetInstance();
-    };
+    ServerSocketManager(){};
     HcclResult DeviceSocketListen(const Hccl::PortData& localPort, const uint32_t devPhyId, const uint32_t port);
     HcclResult HostSocketListen(const Hccl::PortData& localPort, const uint32_t devPhyId, const uint32_t port);
     HcclResult DeviceSocketStopListen(const Hccl::PortData& localPort, const uint32_t port);

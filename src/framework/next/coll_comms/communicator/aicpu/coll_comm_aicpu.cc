@@ -16,6 +16,7 @@
 #include "ub_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
+#include "ns_recovery/aicpu/ns_recovery_func_lite.h"
 #include "dlhal_function_v2.h"
 #include "profiling_command_handle_lite.h"
 #include "aicpu_daemon_service.h"
@@ -39,7 +40,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     identifier_ = std::string(commAicpuParam->hcomId);
     topoInfo_.userRankSize = commAicpuParam->userRankSize;
     topoInfo_.userRank = commAicpuParam->userRank; 
-    notifys_.reserve(hccl::HCCL_THREAD_NOTIFY_MAX_NUM);
+    notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
 
     CHK_RET(hrtSetWorkModeAicpu(true));
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
@@ -57,6 +58,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
+    nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     isReady_ = true;
@@ -196,8 +198,8 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+    std::shared_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_shared<Hccl::UbTransportLiteImpl>(transpUniqueId)),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 
@@ -278,6 +280,64 @@ HcclResult CollCommAicpu::NotifyAlloc(NotifyMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
+hccl::NsRecoveryLitePtr CollCommAicpu::GetNsRecoveryLitePtr()
+{
+    return nsRecoveryLitePtr_;
+}
+
+HcclResult CollCommAicpu::Clean()
+{
+    for (auto& transPort : ubTransportMap_) {
+        CHK_RET(transPort.second->Clean());
+    }
+    HCCL_INFO("CollCommAicpu::Clean() finished");
+    
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[CollCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
+              "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
+              __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
+              commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
+
+    for (u32 index = 0; index < commParam->listNum; index++) {
+        std::vector<char> data(commParam->singleUniqueIdSize);
+
+        // 计算地址块的偏移
+        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
+        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
+
+        // 反序列化得到device侧transport对象
+        Hccl::AicpuResPackageHelper helper;
+        auto dataVec = helper.ParsePackedData(data);
+
+        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
+        if (static_cast<u32>(resType) >= dataVec.size()) {
+            HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
+            return HCCL_E_PARA;
+        }
+
+        // 拿到device的channel句柄
+        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
+        if (!ubTransportMap_.count(channelList[index])) {
+            HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], current ChannelHandle nullptr", __func__, resType);
+            continue;
+        }
+
+        Hccl::BinaryStream binaryStream(dataVec[resType].data);
+        std::vector<char> transpUniqueId;
+        binaryStream >> transpUniqueId;
+
+        auto transPortPtr = ubTransportMap_[channelList[index]];
+        transPortPtr->Resume(transpUniqueId);
+        HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
+            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelList[index]);
+    }
+
+    return HCCL_SUCCESS;
+}
 void CollCommAicpu::InitBackGroundThread()
 {
     static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;
@@ -292,6 +352,7 @@ void CollCommAicpu::InitBackGroundThread()
     hcomm::HcclCommTaskExceptionLite::GetInstance().Init(devId_);
     Hccl::AicpuDaemonService::GetInstance().Register(&hcomm::HcclCommTaskExceptionLite::GetInstance());
     Hccl::AicpuDaemonService::GetInstance().Register(&hccl::CollCommAicpuDestroyFunc::GetInstance());
+    Hccl::AicpuDaemonService::GetInstance().Register(&NsRecoveryFuncLite::GetInstance());
 
     // 启动背景线程
     if (Hccl::StartMC2MaintenanceThread != nullptr) {

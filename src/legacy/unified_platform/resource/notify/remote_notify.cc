@@ -26,7 +26,6 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
     handleAddr = dto.handleAddr;
     id         = dto.id;
     devUsed    = dto.devUsed;
-    rmtDevPhyId = dto.devPhyId;
     (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
 
     // OpenIpc
@@ -42,8 +41,6 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
     }
     addr = HrtNotifyGetAddr(handle);
     size = DevCapability::GetInstance().GetNotifySize();
-    HCCL_INFO("IpcRemoteNotify[name=%s, handleAddr=0x%llx, id=%u, rmtPid=%u, rmtDevPhyId=%u, devUsed=%d, addr=%d, "
-                        "handle=%p]", name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, addr, handle);
 }
 
 void IpcRemoteNotify::Post(const Stream &stream) const
@@ -54,8 +51,8 @@ void IpcRemoteNotify::Post(const Stream &stream) const
 string IpcRemoteNotify::Describe() const
 {
     return StringFormat("IpcRemoteNotify[name=%s, handleAddr=0x%llx, id=%u, rmtPid=%u, rmtDevPhyId=%u, devUsed=%d, "
-                        "handle=%p, addr=0x%llx, size=%llu]",
-                        name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, handle, addr, size);
+                        "handle=%p]",
+                        name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, handle);
 }
 
 } // namespace Hccl

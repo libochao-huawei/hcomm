@@ -12,6 +12,7 @@ set(src_list
     aicpu_indop_process.cc
     coll_comm_aicpu_mgr.cc
     coll_comm_aicpu.cc
+    aicpu_hdc_handler.cc
     coll_comm_aicpu_destroy_func.cc
 )
 
