@@ -63,32 +63,41 @@ private:
 
     static void ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
-    static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo);
+    static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo, u32 deviceId);
 
-    static std::string GetCcuErrorMsgByType(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgLoop(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgByType(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgLoop(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuErrorMsgMission(const CcuErrorInfo& ccuErrorInfo);
     static std::string GetCcuErrorMsgDefault(const CcuErrorInfo& ccuErrorInfo);
-    static std::string GetCcuErrorMsgLoopGroup(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgLocPostSem(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgLocWaitSem(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgRemPostSem(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgRemWaitSem(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgRemPostVar(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgRemWaitGroup(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgPostSharedSem(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgRead(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgWrite(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgLocalCpy(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgLocalReduce(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgBufRead(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgBufWrite(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgBufLocRead(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgBufLocWrite(const CcuHostParam &ccuHostParam);
-    static std::string GetCcuErrorMsgBufReduce(const CcuHostParam &ccuHostParam);
-    static RankId GetRankIdByChannelId(const CcuHostParam &ccuHostParam);
-    static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(const CcuHostParam &ccuHostParam);
+    static std::string GetCcuErrorMsgLoopGroup(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgLocPostSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgLocWaitSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgRemPostSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgRemWaitSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgRemPostVar(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgRemWaitGroup(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgPostSharedSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgRead(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgWrite(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgLocalCpy(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgLocalReduce(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgBufRead(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgBufWrite(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgBufLocRead(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgBufLocWrite(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::string GetCcuErrorMsgBufReduce(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+
+    static HcclResult GetCcuChannelHandleById(u32 deviceId, u16 channelId, const Hccl::TaskInfo &taskInfo, u64& channelHandle);
+    static RankId GetRankIdByChannelId(uint16_t channelId, const Hccl::TaskInfo &taskInfo, u32 deviceId);
+    static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(uint16_t channelId,
+        const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
+    void GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                                            CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                                std::vector<CcuErrorInfo> &errorInfo);
+    void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
+    CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
     void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
         std::vector<CcuErrorInfo> &errorInfo);
     static void PrintPanicLogInfo(const uint8_t *panicLog);
