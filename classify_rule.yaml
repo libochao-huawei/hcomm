@@ -15,7 +15,8 @@ hcomm:
       - src
       - include
     unrelease:
-      - src/legacy/service/collective/alg/
+      - src/legacy/framework/ccu/ccu_ins/ccu_ins.h
+      - src/legacy/service/
   llt:
     ut_check: true
     st_check: false
