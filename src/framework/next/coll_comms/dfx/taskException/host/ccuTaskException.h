@@ -92,10 +92,53 @@ private:
     static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(uint16_t channelId,
         const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
-    void GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
-                                            CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
-    void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+    void GenErrorInfoLocPostSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                 std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoLocPostSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoLocWaitSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                            vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                            std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+    void GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
+
+    void GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                    std::vector<CcuErrorInfo> &errorInfo);
     void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
     CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
     HcclResult GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const Hccl::ParaCcu &ccuTaskParam,
