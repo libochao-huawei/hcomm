@@ -11,8 +11,6 @@
 
 namespace Hccl {
 
-const u32 MAX_CIRCULAR_QUEUE_LENGTH = 2048;
-
 MirrorTaskManagerLite::MirrorTaskManagerLite()
 {
 }
