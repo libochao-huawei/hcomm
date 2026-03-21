@@ -12,6 +12,7 @@
 #define HCCLV2_ADAPTER_HCCP_H
 #include <vector>
 #include <unordered_set>
+#include "hccp_common.h"
 #include "ip_address.h"
 #include "data_type.h"
 #include "reduce_op.h"
@@ -87,6 +88,14 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
 void HrtRaTlvDeInit(void* tlv_handle);
 
 u32 HrtRaGetInterfaceVersion(u32 phyId, u32 interfaceOpcode);
+
+enum class TlsStatus : int{
+    UNKNOWN = -1, // 不支持查询
+    DISABLE = 0, //  未使能
+    ENABLE,      //  使能
+};
+
+HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus);
 
 struct RaInterface {
     uint32_t  phyId;
