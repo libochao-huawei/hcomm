@@ -24,6 +24,7 @@ public:
     class Iterator : public Queue<T>::Iterator {
     private:
         VectorQueue *queue_{nullptr};
+        //u32          index_
 
     protected:
         void check() override
