@@ -93,12 +93,14 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbo
 
 HcclTaskAbortHandler::HcclTaskAbortHandler()
 {
-    Hccl::HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector));
+    std::string name = "HCOMM";
+    Hccl::HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector), name);
 }
 
 HcclTaskAbortHandler::~HcclTaskAbortHandler()
 {
-    Hccl::HrtDeviceAbortRegCallBack(nullptr, nullptr);
+    std::string name = "HCOMM";
+    Hccl::HrtDeviceAbortRegCallBack(nullptr, nullptr, name);
 }
 
 HcclTaskAbortHandler &HcclTaskAbortHandler::GetInstance()

@@ -71,6 +71,7 @@ private:
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     void InitBackGroundThread();
     HcclResult ResumePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isInit);
 
     u32 devId_{0};
     //通用的通道

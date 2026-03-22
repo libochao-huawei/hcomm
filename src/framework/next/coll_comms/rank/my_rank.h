@@ -78,7 +78,7 @@ private:
     // Ns recovery
     HcclResult ListenBackGround(Hccl::KfcExecStatus& opInfo);
     HcclResult PollStopStatus();
-    std::vector<ChannelHandle> GetAllChannelList()
+    std::vector<ChannelHandle> GetAllChannelList();
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
