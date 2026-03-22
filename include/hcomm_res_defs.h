@@ -18,6 +18,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
+
+/**
+ * @enum HcommResult
+ * @brief 错误码类型枚举定义
+ */
+typedef enum {
+    HCOMM_SUCCESS = 0,          ///< 成功
+} HcommResult;
  
 /* 网络设备句柄 */
 typedef void *EndpointHandle;
@@ -28,6 +36,35 @@ typedef void *EndpointHandle;
 typedef void *HcommMemHandle;
 
 typedef void *HcommSocket;
+
+/**
+ * @enum CommMemType
+ * @brief 内存类型枚举定义
+ */
+typedef enum {
+    COMM_MEM_TYPE_INVALID = -1, ///< 无效的内存类别
+    COMM_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
+    COMM_MEM_TYPE_HOST,   ///< 主机侧内存
+} CommMemType;
+
+/**
+ * @brief 内存段元数据描述结构体
+ */
+typedef struct {
+    CommMemType type; ///< 内存物理位置类型，参见CommMemType
+    void *addr;       ///< 内存地址
+    uint64_t size;    ///< 内存区域字节数
+} CommMem;
+
+/**
+ * @brief 兼容Abi字段结构体
+ */
+typedef struct {
+    uint32_t version;
+    uint32_t magicWord;
+    uint32_t size;
+    uint32_t reserved;
+} CommAbiHeader;
 
 /**
  * @brief 套接字角色
@@ -67,11 +104,11 @@ typedef struct {
 } HcommChannelDesc;
 
 /**
- * @brief 初始化HcclChannelDesc结构体
+ * @brief 初始化HcommChannelDesc结构体
  *
  * @param[inout] channelDesc 返回的通道描述参数
  * @param[in] descNum 描述数量
- * @return HcclResult 执行结果状态码
+ * @return HcommResult 执行结果状态码
  */
 inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, uint32_t descNum)
 {
