@@ -155,10 +155,11 @@ HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
+HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isInit)
 {
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
+    ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     for (u32 index = 0; index < commParam->listNum; index++) {
         std::vector<char> data(commParam->singleUniqueIdSize);
 
@@ -175,19 +176,34 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
             HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
             return HCCL_E_PARA;
         }
-        ChannelHandle channelHandle;
-        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
 
-        // 恢复出的channelHandle回填到commParam中
-        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
-        channelList[index] = channelHandle;
-        CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
-        HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankList[index]);
+        ChannelHandle channelHandle{0};
+        if (isInit) {
+            CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
+            // 恢复出的channelHandle回填到commParam中
+            channelList[index] = channelHandle;
+            CHK_RET(RegisterChannelAddDfxTaskInfo(channelHandle));
+            HcclCommDfxLite::AddChannelRemoteRankId(identifier_, channelHandle, commParam->remoteRankList[index]);
+        } else {
+            channelHandle = channelList[index];
+            if (!ubTransportMap_.count(channelHandle)) {
+                HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], current ChannelHandle nullptr", __func__, resType);
+                continue;
+            }
+            CHK_RET(ResumePackData(dataVec[resType].data, channelHandle));
+        }
+        
+        // 打印
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
             __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
     }
 
     return HCCL_SUCCESS;
+}
+
+HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
+{
+    return ProcessUrmaRes(commParam, true);
 }
 
 HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
@@ -308,41 +324,7 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
 
 HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
 {
-    HCCL_INFO("[CollCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
-              "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
-              __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
-              commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-
-    ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
-    for (u32 index = 0; index < commParam->listNum; index++) {
-        std::vector<char> data(commParam->singleUniqueIdSize);
-
-        // 计算地址块的偏移
-        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
-        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
-
-        // 反序列化得到device侧transport对象
-        Hccl::AicpuResPackageHelper helper;
-        auto dataVec = helper.ParsePackedData(data);
-
-        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
-        if (static_cast<u32>(resType) >= dataVec.size()) {
-            HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
-            return HCCL_E_PARA;
-        }
-
-        // 拿到device的channel句柄
-        ChannelHandle channelHandle = channelList[index];
-        if (!ubTransportMap_.count(channelHandle)) {
-            HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], current ChannelHandle nullptr", __func__, resType);
-            continue;
-        }
-        CHK_RET(ResumePackData(dataVec[resType].data, channelHandle));
-        HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
-            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelList[index]);
-    }
-
-    return HCCL_SUCCESS;
+    return ProcessUrmaRes(commParam, false);
 }
 void CollCommAicpu::InitBackGroundThread()
 {
