@@ -17,18 +17,6 @@
 extern "C" {
 #endif  // __cplusplus
 
-// TODO: 修改错误码类别
-// TODO：添加接口注释。包括其他的
-// TODO: 需要检查哪些接口外部还没有依赖的，需要先移除
-// TODO: HcommMem需要改为CommMem吧？
-
-// TODO: 1、hostDpu的老的数据面接口需要直接删除，控制面老接口不删除，放到pkg_inc里
-// TODO: 2、对外资料要同步修改，对应demo要同步修改。
-
-// TODO: 3、删除CCU_MS和SCHED等。
-
-// HcclConfigGet的接口，要放到hcomm_res.h吗？
-
 extern HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
 extern HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle);
@@ -54,7 +42,6 @@ extern HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t c
 
 extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
 
-// TODO 1、是否需要notifyNumPerThread改成数组，还是在新的AllocWithType接口里支持？2、这个接口是不是暂时先不放出去？
 extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t *notifyNumPerThread, ThreadHandle *threads);
 
 extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
