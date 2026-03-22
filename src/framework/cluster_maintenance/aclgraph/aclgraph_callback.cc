@@ -9,6 +9,7 @@
  */
 
 #include "aclgraph_callback.h"
+#include <dlfcn.h>
 #include "stream_utils.h"
 
 namespace hccl {
@@ -26,6 +27,20 @@ void AclgraphDestroyCallback(void *fnData)
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] modelID[%llu] CleanCaptureRes failed", __func__, callbackParam->modelId);
     }
+}
+
+namespace {
+using AclmdlRIDestroyRegisterCallbackFunc = aclError (*)(aclmdlRI, aclrtCallback, void *);
+
+AclmdlRIDestroyRegisterCallbackFunc GetAclmdlRIDestroyRegisterCallbackFunc()
+{
+    static auto destroyRegisterCallback =
+        reinterpret_cast<AclmdlRIDestroyRegisterCallbackFunc>(dlsym(RTLD_DEFAULT,
+        "aclmdlRIDestroyRegisterCallback"));
+    return destroyRegisterCallback;
+}
+
+std::once_flag g_destroyCallbackMissingWarningFlag;
 }
 
 AclgraphCallback &AclgraphCallback::GetInstance()
@@ -107,8 +122,16 @@ HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(HcclCommunicator *commu
 
     std::lock_guard<std::mutex> lock(resMutex_);
     if (captureResMap_.find(modelId) == captureResMap_.end()) {
+        auto destroyRegisterCallback = GetAclmdlRIDestroyRegisterCallbackFunc();
+        if (destroyRegisterCallback == nullptr) {
+            std::call_once(g_destroyCallbackMissingWarningFlag, []() {
+                HCCL_RUN_WARNING("[AclgraphCallback] aclmdlRIDestroyRegisterCallback is unavailable in current "
+                    "CANN toolkit/runtime, skip aclgraph destroy callback registration and keep legacy cleanup");
+            });
+            return HCCL_SUCCESS;
+        }
         captureCallbackParamMap_[modelId].modelId = modelId;
-        aclError aclRet = aclmdlRIDestroyRegisterCallback(rtModel, AclgraphDestroyCallback,
+        aclError aclRet = destroyRegisterCallback(rtModel, AclgraphDestroyCallback,
             static_cast<void *>(&captureCallbackParamMap_[modelId]));
         CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[%s] aclmdlRIDestroyRegisterCallback fail, modelId[%llu]",
             __func__, modelId), HCCL_E_RUNTIME);
