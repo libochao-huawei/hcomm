@@ -231,7 +231,7 @@ HcclResult AlltoAllOperator::SelectAlgforAiv(const OpParam& param, std::string& 
         algName = "AlltoAllMeshAivExecutor";
     }
 
-    HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s].", algName.c_str());
+    HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -302,7 +302,7 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
     }
     UpdateAlltoAllCopyMode(allMeshAggregationSendRecvInfo_, copyMode);
 
-    HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
+    HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s].", algName.c_str());
     return HCCL_SUCCESS;
 }
 
