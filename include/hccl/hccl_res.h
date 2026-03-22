@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include "securec.h"
 #include "acl/acl_rt.h"
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,25 +46,6 @@ typedef uint64_t ThreadHandle;
  * @brief 内存句柄类型（不透明结构）
  */
 typedef void *HcclMemHandle;
-
-/**
- * @enum CommMemType
- * @brief 内存类型枚举定义
- */
-typedef enum {
-    COMM_MEM_TYPE_INVALID = -1, ///< 无效的内存类别
-    COMM_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
-    COMM_MEM_TYPE_HOST,   ///< 主机侧内存
-} CommMemType;
-
-/**
- * @brief 内存段元数据描述结构体
- */
-typedef struct {
-    CommMemType type; ///< 内存物理位置类型，参见CommMemType
-    void *addr;       ///< 内存地址
-    uint64_t size;    ///< 内存区域字节数
-} CommMem;
  
 /**
  * @brief 通信引擎类型枚举
@@ -80,16 +62,6 @@ typedef enum {
 
 /// HCCL资源标识最大长度（字节）
 const uint32_t HCCL_RES_TAG_MAX_LEN = 255;
-
-/**
- * @brief 兼容Abi字段结构体
- */
-typedef struct {
-    uint32_t version;
-    uint32_t magicWord;
-    uint32_t size;
-    uint32_t reserved;
-} CommAbiHeader;
 
 /**
  * @brief 通信协议类型枚举
@@ -225,7 +197,6 @@ typedef struct {
 #define UNLIKELY(x) (__builtin_expect(!!(x), 0))
 #endif
 
-// TODO 需要看下HcclChannelDescInit和EndpointDescInit的实现是否需要递增一次版本号？？？
 /**
  * @brief 初始化HcclChannelDesc结构体
  *
