@@ -60,19 +60,10 @@ typedef void *HcclComm;
  */
 typedef void *HcclConn;
 
-// TODO: 需要规范名称
 /**
  * @brief handle to HCCL Window
  */
-typedef void *CommSymWindow;
-
-/**
- * @brief Symmetric Memory Flag
- */
-typedef enum {
-    HCCL_WIN_DEFAULT = 0,       /**< 先不支持，预留 */
-    HCCL_WIN_COLL_SYMMETRIC = 1 /**< 启用对称内存 */
-} symmetricMemoryFlag;
+typedef void *HcclCommSymWindow;
 
 /**
  * @brief HCCL Reduction operation
