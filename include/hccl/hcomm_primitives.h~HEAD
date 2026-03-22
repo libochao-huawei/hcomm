@@ -44,6 +44,9 @@ typedef enum {
     HCOMM_REDUCE_RESERVED = 255 /**< reserved */
 } HcommReduceOp;
 
+// TODO: 考虑是否要加上MXFP8类型。编译宏是否要去掉
+// TODO: 是否要交换hcomm_primitives.h和符号
+
 typedef enum {
     HCOMM_DATA_TYPE_INT8 = 0,    /**< int8 */
     HCOMM_DATA_TYPE_INT16 = 1,   /**< int16 */
@@ -62,6 +65,7 @@ typedef enum {
     HCOMM_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
     HCOMM_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
     HCOMM_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
+    HCOMM_DATA_TYPE_MXFP8 = 18,     /**< mxfp8 */
     HCOMM_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcommDataType;
 
@@ -404,7 +408,7 @@ extern int32_t HcommAcquireComm(const char* commId);
  * @note 当前仅支持AICPU模式
  */
 extern int32_t HcommReleaseComm(const char* commId);
-#define HCOMM_PRIMITIVES_H_MODIFIED
+#define HCOMM_PRIMITIVES_H_MODIFIED // TODO 删除这些宏，issue
 
 /**
  * @brief DPU 数据面 Fence 接口
