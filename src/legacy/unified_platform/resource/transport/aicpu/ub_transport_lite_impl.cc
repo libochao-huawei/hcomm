@@ -54,6 +54,11 @@ UbTransportLiteImpl::UbTransportLiteImpl(
 }
 UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
 {
+    Init(uniqueId);
+}
+
+void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
+{
     BinaryStream binaryStream(uniqueId);
     u32          theType;
     binaryStream >> theType;
@@ -725,33 +730,7 @@ HcclResult UbTransportLiteImpl::Clean()
 
 HcclResult UbTransportLiteImpl::Resume(std::vector<char> &uniqueId)
 {
-    BinaryStream binaryStream(uniqueId);
-    u32          theType;
-    binaryStream >> theType;
-    binaryStream >> notifyNum;
-    binaryStream >> bufferNum;
-    binaryStream >> connNum;
- 
-    std::vector<char> notifyUniqueIds;
-    binaryStream >> notifyUniqueIds;
-    ParseLocNotifyVec(notifyUniqueIds);
- 
-    std::vector<char> rmtNotifyUniqueIds;
-    binaryStream >> rmtNotifyUniqueIds;
-    ParseRmtBufferVec(rmtNotifyUniqueIds, rmtNotifyVec, RmaUbBufType::NOTIFY);
- 
-    std::vector<char> locBufferUniqueIds;
-    binaryStream >> locBufferUniqueIds;
-    ParseLocBufferVec(locBufferUniqueIds, locBufferVec, RmaUbBufType::BUFFER);
-
-    std::vector<char> rmtBufferUniqueIds;
-    binaryStream >> rmtBufferUniqueIds;
-    ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaUbBufType::BUFFER);
-
-    std::vector<char> connUniqueIds;
-    binaryStream >> connUniqueIds;
-    ParseConnVec(connUniqueIds);
-
+    Init(uniqueId);
     return HCCL_SUCCESS;
 }
 

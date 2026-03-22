@@ -28,6 +28,7 @@ public:
                                  std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
     UbTransportLiteImpl(std::vector<char> &uniqueId);
+    void Init(std::vector<char> &uniqueId);
 
     ~UbTransportLiteImpl() override;
 

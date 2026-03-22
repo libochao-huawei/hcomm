@@ -63,8 +63,6 @@ public:
     HcclResult StopLaunch();
     HcclResult Clean();
     HcclResult Resume();
-    HcclResult ListenBackGround(Hccl::KfcExecStatus& opInfo);
-    HcclResult PollStopStatus();
 
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
@@ -76,6 +74,11 @@ private:
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
+
+    // Ns recovery
+    HcclResult ListenBackGround(Hccl::KfcExecStatus& opInfo);
+    HcclResult PollStopStatus();
+    std::vector<ChannelHandle> GetAllChannelList()
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};

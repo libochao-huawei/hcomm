@@ -545,7 +545,7 @@ HcclResult MyRank::ListenBackGround(Hccl::KfcExecStatus& opInfo)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult MyRank::Clean()
+std::vector<ChannelHandle> MyRank::GetAllChannelList()
 {
     ChannelTable channelTable = rankPairMgr_->GetChannelTable();
     std::vector<ChannelHandle> channelList;
@@ -556,6 +556,13 @@ HcclResult MyRank::Clean()
             }
         }
     }
+
+    return channelList;
+}
+
+HcclResult MyRank::Clean()
+{
+    auto channelList = GetAllChannelList();
     if (channelList.empty()) {
         HCCL_INFO("[NsRecovery][Clean] Channel list empty, No need to clean!");
         return HcclResult::HCCL_SUCCESS;
@@ -594,16 +601,7 @@ HcclResult MyRank::Clean()
 
 HcclResult MyRank::Resume()
 {
-    ChannelTable channelTable = rankPairMgr_->GetChannelTable();
-    std::vector<ChannelHandle> channelList;
-    for (const auto& rankPair : channelTable) {
-        for (const auto& endPointPair : rankPair.second) {
-            for (const auto& comEngines : endPointPair.second) {
-                channelList.insert(channelList.end(), comEngines.second.begin(), comEngines.second.end());
-            }
-        }
-    }
-
+    auto channelList = GetAllChannelList();
     if (channelList.empty()) {
         HCCL_INFO("[NsRecovery][Clean] Resume list empty, No need to clean!");
         return HcclResult::HCCL_SUCCESS;
