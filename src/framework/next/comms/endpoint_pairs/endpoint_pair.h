@@ -83,7 +83,7 @@ public:
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
 
-    std::vector<ChannelHandle> GetChannelHandles();
+    const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& GetChannelHandles();
 
 private:
     EndpointDesc localEndpointDesc_{};

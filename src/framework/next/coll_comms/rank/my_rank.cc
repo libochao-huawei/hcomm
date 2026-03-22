@@ -551,7 +551,9 @@ HcclResult MyRank::Clean()
     std::vector<ChannelHandle> channelList;
     for (const auto& rankPair : channelTable) {
         for (const auto& endPointPair : rankPair.second) {
-            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
+            for (const auto& comEngines : endPointPair.second) {
+                channelList.insert(channelList.end(), comEngines.second.begin(), comEngines.second.end());
+            }
         }
     }
     if (channelList.empty()) {
@@ -596,7 +598,9 @@ HcclResult MyRank::Resume()
     std::vector<ChannelHandle> channelList;
     for (const auto& rankPair : channelTable) {
         for (const auto& endPointPair : rankPair.second) {
-            channelList.insert(channelList.end(), endPointPair.second.begin(), endPointPair.second.end());
+            for (const auto& comEngines : endPointPair.second) {
+                channelList.insert(channelList.end(), comEngines.second.begin(), comEngines.second.end());
+            }
         }
     }
 

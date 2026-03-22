@@ -560,7 +560,7 @@ HcclResult ChannelProcess::ChannelResume(const ChannelHandle *channelList, uint3
     int32_t* statusList = statusVec.data();
     uint32_t retryCount{0};
     while (true) {
-        HcclResult ret = ChannelGetStatus(channelList, channelNum);
+        HcclResult ret = ChannelGetStatus(channelList, channelNum, statusList);
         // 1. 检查超时
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
