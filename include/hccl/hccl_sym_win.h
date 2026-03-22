@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCOMM_PRIMITIVES_EXPT_H
-#define HCOMM_PRIMITIVES_EXPT_H
+#ifndef HCCL_SYM_WIN_H
+#define HCCL_SYM_WIN_H
 
 #include <stdint.h>
 #include <securec.h>
@@ -21,16 +21,17 @@ extern "C" {
 #endif  // __cplusplus
 
 /**
- * @brief NPU上查询 rtsq任务执行完成的接口（阻塞）
- * @param[in] thread NPU上执行的线程句柄
- * @param[in] timeout 超时时间(秒)
- * @return int32_t 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ * @brief Get symmetric memory pointer.
+ *
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param offset A size_t identifying the offset of symmetric memory heap.
+ * @param peerRank A u_integer identifying the identify for the peer rank.
+ * @param ptr A pointer identifying the symmetric memory heap address.
+ * @return HcclResult
  */
-extern int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout);
+extern HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr);
+
 #ifdef __cplusplus
 }
-#endif  // __cplusplus
-
-#endif
+#endif // __cplusplus
+#endif // HCCL_SYM_WIN_H
