@@ -105,7 +105,7 @@ public:
         stream.seekg(originalPos); // 恢复原始位置
     }
 
-    uint64_t GetSize()
+    std::uint64_t GetSize()
     {
         return stream.str().size();
     }
