@@ -22,6 +22,7 @@
 #include "dev_type.h"
 #include "exception_util.h"
 #include "adapter_error_manager_pub.h"
+#include "orion_adapter_hccp.h"
 
 namespace Hccl {
 
@@ -112,6 +113,10 @@ void RankTableInfo::Check()
     for (auto &rank : ranks) {
         for (auto &levelInfo : rank.rankLevelInfos) {
             InsertToRank(levelInfo.netInstId, levelInfo.rankAddrs.size(), verifyRankAddr, levelInfo.netLayer);
+            vector<IpAddress> deviceIps = HrtGetDeviceIp(rank.deviceId, NetworkMode::NETWORK_OFFLINE);
+            for(auto &ip : deviceIps) {
+                HCCL_DEBUG("RankTableInfo ipaddres check: %u, %s", rank.deviceId, ip.Describe().c_str());
+            }
         }
     }
 
