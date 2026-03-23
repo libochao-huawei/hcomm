@@ -33,6 +33,7 @@
 #include "coll_alg_component.h"
 #include "topo_match_nhr.h"
 #include "topo_match_concurr_mesh.h"
+#include "rank_table_info.h"
 #undef private
 using namespace Hccl;
 namespace checker {
@@ -56,6 +57,7 @@ protected:
     static void SetUpTestCase()
     {
         std::cout << "AllReduce AICPU 2D test set up." << std::endl;
+        MOCKER_CPP(&RankTableInfo::CheckAddrs).stubs().with().will(ignoreReturnValue());
     }
 
     static void TearDownTestCase()
