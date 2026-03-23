@@ -35,6 +35,7 @@ public:
     vector<char>               GetUniqueId(bool isContainLocId) const;  // 获取rankTable的字节流，供一致性校验crc时带localId使用
     void                       GetBinStream(bool isContainLocId, BinaryStream& binaryStream) const;
     void                       Check();
+    void                       CheckAddrs(const u32 devPhyId, const NewRankInfo &localRankInfo, const std::unordered_set<Eid> &localEidSet) const;
     void                       UpdateRankTable(const RankTableInfo &localRankInfo);
     std::unordered_map<u32, u32>         GetRankDeviceListenPortMap();
 
