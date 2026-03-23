@@ -68,7 +68,7 @@ def get_compress_cmd(pkg_args: Namespace,
         CommLog.cilog_error("the repack type '%s' is not support!", suffix)
         sys.exit(FAIL)
     try:
-        makeself_dir = os.path.join(TOP_DIR, "build/makeself.txt")
+        makeself_dir = os.path.join(pkg_utils.get_build_dir(), "makeself.txt")
         with open(makeself_dir, 'w') as f:
             f.write(pack_cmd)
     except Exception as exception:
@@ -140,7 +140,7 @@ def generate_version_header_content(target_conf) -> Iterator[str]:
 
 
 def generate_customized_file(target_conf, ext_name):
-    filepath = os.path.join(TOP_DIR, "build", target_conf.get('value'))
+    filepath = os.path.join(pkg_utils.get_build_dir(), target_conf.get('value'))
 
     generator = target_conf.get('generator', 'info')
     if generator == 'version_header':
@@ -238,8 +238,9 @@ def parse_install_info(infos: List,
     for target_config in infos:
         target_name = get_target_name(target_config)
         if target_config.get("optional") == 'true' and operate_type in ('copy', 'move'):
-            path = os.path.join(TOP_DIR, DELIVERY_PATH, target_config.get('dst_path'))
-            value = os.path.join(TOP_DIR, DELIVERY_PATH, target_config.get('dst_path'), target_name)
+            delivery_dir = pkg_utils.get_delivery_dir()
+            path = os.path.join(delivery_dir, target_config.get('dst_path'))
+            value = os.path.join(delivery_dir, target_config.get('dst_path'), target_name)
             if not os.path.exists(path):
                 continue
             if not os.path.exists(value):
@@ -541,7 +542,7 @@ def generate_config_inc(package_attr: Dict):
     if 'parallel' not in package_attr and 'parallel_limit' not in package_attr and 'use_move' not in package_attr:
         return
     year = datetime.now(timezone.utc).year
-    config_inc = os.path.join(TOP_DIR, "build", 'config.inc')
+    config_inc = os.path.join(pkg_utils.get_build_dir(), 'config.inc')
     header = [
         '#!/bin/sh\n',
         '#----------------------------------------------------------------------------\n',
@@ -566,7 +567,7 @@ def main(pkg_name='', xml_file='', main_args=None):
     参数: pkg_name, os_arch, type
     返回值: SUCCESS/FAIL
     """
-    delivery_dir = os.path.join(TOP_DIR, DELIVERY_PATH)
+    delivery_dir = pkg_utils.get_delivery_dir()
     if not os.path.exists(delivery_dir):
         return FAIL
 
