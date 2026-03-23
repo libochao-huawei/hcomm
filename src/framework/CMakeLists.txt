@@ -964,7 +964,7 @@ if(NOT KERNEL_MODE)
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json
-        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/ccl_cpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/next/comms/comm_engine_res/threads/slaves/ccl_cpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     add_custom_target(cpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_cpu.json)
