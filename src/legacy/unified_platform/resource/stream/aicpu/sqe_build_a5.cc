@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "sqe_build_a5.h"
@@ -312,5 +312,24 @@ void BuildA5SqeCCoreNotifyRecord(u32 streamId, u32 taskId, u64 writeAddr, u64 va
         sqe->ldrImm, sqe->llwi1, sqe->lhwi1, sqe->sw, sqe->nop[0]);
 }
 
+void BuildA5SqeP2pWriteValue(u32 streamId, u32 taskId, u64 remoteAddr, u32 writeValue, uint8_t * const sqeIn)
+{
+    Rt91095StarsWriteValueSqe *sqe  = (Rt91095StarsWriteValueSqe *)sqeIn;
+    sqe->header.type                = static_cast<uint8_t>(Rt91095StarsSqeType::RT_91095_SQE_TYPE_WRITE_VALUE);
 
+    sqe->kernelCredit               = RT_STARS_DEFAULT_KERNEL_CREDIT;
+    sqe->header.rtStreamId          = streamId;
+    sqe->header.taskId              = taskId;
+
+    sqe->writeAddrLow               = remoteAddr & MASK_32_BIT;
+    sqe->writeAddrHigh              = (remoteAddr >> UINT32_BIT_NUM) & MASK_17_BIT;
+
+    sqe->awsize                     = RtStarsWriteValueSizeType::RT_STARS_WRITE_VALUE_SIZE_TYPE_32BIT; // writeValue 为 4 byte
+    sqe->writeValuePart[0]          = writeValue; // 写对端Notify时，writeValue应当为1
+
+    sqe->va                         = 1; // 写对端notify的va地址而非phy地址
+
+    HCCL_INFO("P2P WriteValueSqe streamId %u, taskId %u, remoteAddr %p, writeValue %llu",
+        streamId, taskId, remoteAddr, writeValue);
+}
 } // namespace Hccl

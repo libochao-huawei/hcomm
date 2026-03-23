@@ -92,12 +92,7 @@ private:
     void AddSubLinks(const std::vector<RankId> &rankIds, RankId2PeerMap &peers, Level2Id2NetInst &subNetInsts) const;
 };
 
-const std::unordered_map<LinkProtocol, CommProtocol> protocolMap = {
-    {LinkProtocol::UB_CTP, COMM_PROTOCOL_UBC_CTP},
-    {LinkProtocol::UB_TP, COMM_PROTOCOL_UBC_TP},
-    {LinkProtocol::ROCE, COMM_PROTOCOL_ROCE},
-    {LinkProtocol::HCCS, COMM_PROTOCOL_HCCS},
-    {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM}};
+CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol);
 
 std::shared_ptr<NetInstance> GetOrCreateNetInstance(u32 netLayer, const string &netInstId, NetType type,
                                          Level2Id2NetInst &netInsts, RankGraph *rankGraph);

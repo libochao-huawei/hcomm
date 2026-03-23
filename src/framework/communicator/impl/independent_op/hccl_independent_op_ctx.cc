@@ -33,11 +33,6 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-            if (indOp == nullptr || strcmp(indOp, "") == 0) {
-                HCCL_RUN_INFO("HcclEngineCtxCreate is not supported");
-                return HCCL_SUCCESS;
-            }
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
             std::string commId = hcclComm->GetIdentifier();
             HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
@@ -85,11 +80,6 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-            if (indOp == nullptr || strcmp(indOp, "") == 0) {
-                HCCL_RUN_INFO("HcclEngineCtxGet is not supported");
-                return HCCL_SUCCESS;
-            }
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
             std::string commId = hcclComm->GetIdentifier();
             HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
@@ -138,11 +128,6 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-            if (indOp == nullptr || strcmp(indOp, "") == 0) {
-                HCCL_RUN_INFO("HcclEngineCtxCopy is not supported");
-                return HCCL_SUCCESS;
-            }
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
             std::string commId = hcclComm->GetIdentifier();
             HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
@@ -188,11 +173,6 @@ HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine en
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
-            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-            if (indOp == nullptr || strcmp(indOp, "") == 0) {
-                HCCL_RUN_INFO("HcclEngineCtxDestroy is not supported");
-                return HCCL_SUCCESS;
-            }
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
             std::string commId = hcclComm->GetIdentifier();
             HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());

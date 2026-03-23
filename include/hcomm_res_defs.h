@@ -67,10 +67,22 @@ typedef struct {
 typedef void* MemHandle;
 
 typedef void* HcommSocket;
- 
+
+/**
+ * @brief 套接字角色
+ */
+typedef enum {
+    HCOMM_SOCKET_ROLE_RESERVED = -1, ///< 保留的套接字角色
+    HCOMM_SOCKET_ROLE_CLIENT = 0, ///< 客户端角色，用于发起连接
+    HCOMM_SOCKET_ROLE_SERVER = 1, ///< 服务器角色，用于监听连接
+} HcommSocketRole;
+
+/**
+ * @brief 通道描述参数
+ */
 typedef struct {
-    EndpointDesc remoteEndpoint;
-    uint32_t notifyNum;
+    EndpointDesc remoteEndpoint; ///< 远端网络设备端侧描述
+    uint32_t notifyNum; ///< channel上使用的通知消息数量
 
     // exchangeAllMems = True 就不需要 memHandle 了
     bool exchangeAllMems;
@@ -78,13 +90,13 @@ typedef struct {
     uint32_t memHandleNum;
  
     union {
-        uint8_t raws[RAWS_SIZE];
+        uint8_t raws[RAWS_SIZE]; ///< 通用缓存
         struct {
-            uint32_t queueNum;
-            uint32_t retryCnt;
-            uint32_t retryInterval;
-            uint32_t tc;
-            uint32_t sl;
+            uint32_t queueNum;      ///< QP数量
+            uint32_t retryCnt;      ///< 最大重传次数
+            uint32_t retryInterval; ///< 重传间隔（ms)(对应协议计算公式)
+            uint32_t tc;            ///< 流量类别（QoS)
+            uint32_t sl;            ///< 服务等级（QoS)
         } roceAttr;
         struct
         {
@@ -93,9 +105,20 @@ typedef struct {
     };
 
     HcommSocket socket;
-    // socket 监听指定端口号（源/目的端口号）
-    uint16_t port;
+    HcommSocketRole role; ///< 本端角色(SERVER或CLIENT)
+    uint16_t port; ///< 端口号。当HcommSocketRole为SERVER时，表示本端监听端口；当为CLIENT时，表示远端目标端口
 } HcommChannelDesc;
+
+/**
+ * @brief 通信设备Endpoint监听配置结构体
+ */
+typedef struct {
+    union {
+        uint8_t raws[24]; ///< 通用数据区，用于未来扩展，如backlog, timeout等
+        struct {
+        };
+    };
+} HcommEndpointListenConfig;
  
 #ifdef __cplusplus
 }

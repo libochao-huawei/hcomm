@@ -97,7 +97,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::CalcScratchMemSize(u64& scr
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterMeshAivFor91093Executor::CalNumBlocksDeter(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollReduceScatterMeshAivFor91093Executor::CalNumBlocksDeter(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType) const
 {
     (void) dataSize;
     (void) cmdType;

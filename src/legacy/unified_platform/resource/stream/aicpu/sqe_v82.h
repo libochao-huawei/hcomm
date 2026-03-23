@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -489,6 +489,38 @@ struct Rt91095StarsMemcpySqe {
         RtMemcpyStride01 strideMode1;
         RtMemcpyStride10 strideMode2;
     } u;
+};
+
+struct Rt91095StarsWriteValueSqe {
+    /* word0-1 */
+    Rt91095StarsSqeHeader header;
+
+    /* word2 */
+    uint32_t res1;
+
+    /* word3 */
+    uint16_t res2;
+    uint8_t kernelCredit;
+    uint8_t res3;
+
+    /* word4 */
+    uint32_t writeAddrLow;
+
+    /* word5 */
+    uint32_t writeAddrHigh : 17;
+    uint32_t res4 : 3;
+    uint32_t awsize : 3;
+    uint32_t snoop : 1;
+    uint32_t awcache : 4;
+    uint32_t awprot : 3;
+    uint32_t va : 1;
+
+    /* word6-7 */
+    uint32_t res5;
+    uint32_t subType;  // use reserved filed
+
+    /* word8-15 */
+    uint32_t writeValuePart[8];  // write value field
 };
 } // namespace Hccl
 #endif

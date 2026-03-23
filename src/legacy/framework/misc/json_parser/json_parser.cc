@@ -7,9 +7,10 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
-#include "json_parser.h"
 #include <climits>
+#include "json_parser.h"
+#include "adapter_error_manager_pub.h"
+
 namespace Hccl {
 
 std::string GetJsonProperty(const nlohmann::json &obj, const char *propName, bool required)
@@ -74,6 +75,8 @@ void JsonParser::ParseFileToJson(const std::string &filePath, nlohmann::json &pa
     // 校验文件是否存在
     char resolvedPath[PATH_MAX] = {0};
     if (realpath(filePath.c_str(), resolvedPath) == nullptr) {
+        RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({"error_reason", "ranktable_path"}), 
+            std::vector<std::string>({filePath, "The rankTable file path is not a valid real path or the permission is insufficient."}));
         THROW<InvalidParamsException>(
             StringFormat("[Get][RanktableRealPath]errNo[0x%016llx] path %s is not a valid real path",
                          HCOM_ERROR_CODE(HcclResult::HCCL_E_PARA), filePath.c_str()));

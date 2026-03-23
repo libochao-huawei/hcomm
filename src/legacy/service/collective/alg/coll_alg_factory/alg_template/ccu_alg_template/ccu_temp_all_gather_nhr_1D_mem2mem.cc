@@ -109,7 +109,7 @@ HcclResult CcuTempAllGatherNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
 
     std::vector<LinkData>    linksDie0;
     std::vector<LinkData>    linksDie1;
-    RankGroup                rankGroup;
+    RankGroup                allgatherRankGroup;
     std::map<u32, u32>       indexMap;
     std::vector<NHRStepInfo> stepInfoVector;
     u32                      nSteps = GetNHRStepNum(tempRankSize_);
@@ -124,7 +124,7 @@ HcclResult CcuTempAllGatherNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(fromRankIdx)[1]);
             }
-            rankGroup.AddRank(fromRankIdx);
+            allgatherRankGroup.AddRank(fromRankIdx);
         }
         if (indexMap.count(stepInfo.toRank) == 0 && stepInfo.txSliceIdxs.size() > 0) {
             u32 toRankIdx             = virtRankId2RankId(stepInfo.toRank);
@@ -133,10 +133,10 @@ HcclResult CcuTempAllGatherNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(toRankIdx)[1]);
             }
-            rankGroup.AddRank(toRankIdx);
+            allgatherRankGroup.AddRank(toRankIdx);
         }
     }
-    rankGroup.AddRank(myRank_);
+    allgatherRankGroup.AddRank(myRank_);
 
     std::unique_ptr<CcuInsGroup> insGroupPtr = std::make_unique<CcuInsGroup>();
     for (uint32_t axisId = 0; axisId < axisSize; axisId++) { // 2D算法，需要下发 2 条通信指令
@@ -149,7 +149,7 @@ HcclResult CcuTempAllGatherNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
                             inputSliceStride, outputSliceStride, inputRepeatStride, outputRepeatStride, stepInfoVector,
                             indexMap, token, isInputOutputEqual, op_, tempVTopo_);
         ccuInstruction.SetLinks(axisId == 0 ? linksDie0 : linksDie1);
-        ccuInstruction.SetRankGroup(rankGroup);
+        ccuInstruction.SetRankGroup(allgatherRankGroup);
         ccuInstruction.SetCntCkeNum(5); // 每个transport用5个CKE
         insGroupPtr->Append(std::move(std::make_unique<CcuInstructionAllGatherNHR1D>(ccuInstruction)));
     }
@@ -166,12 +166,12 @@ HcclResult CcuTempAllGatherNHRMem2Mem1D::GetStepInfo(u32 step, u32 nSteps, NHRSt
     stepInfo.step   = step;
     stepInfo.myRank = rankIdx;
 
-    // 计算通信对象
+    // AllGatherNHR计算通信对象
     u32 deltaRank = 1 << (nSteps - 1 - step);
     u32 recvFrom  = (rankIdx + tempRankSize_ - deltaRank) % tempRankSize_;
     u32 sendTo    = (rankIdx + deltaRank) % tempRankSize_;
 
-    // 数据份数和数据编号增量
+    // AllGatherNHR数据份数和数据编号增量
     u32 nSlices         = (tempRankSize_ - 1 + (1 << (nSteps - 1 - step))) / (1 << (nSteps - step));
     u32 deltaSliceIndex = 1 << (nSteps - step);
     u32 txSliceIdx      = rankIdx;
