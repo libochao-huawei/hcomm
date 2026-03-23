@@ -83,7 +83,6 @@ private:
     static std::string GetCcuErrorMsgRemPostSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuErrorMsgRemWaitSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuErrorMsgRemPostVar(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
-    static std::string GetCcuErrorMsgRemWaitGroup(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuErrorMsgPostSharedSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuErrorMsgRead(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuErrorMsgWrite(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
@@ -111,17 +110,8 @@ private:
     static void GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                             std::vector<CcuErrorInfo> &errorInfo);
 
-    static HcclResult GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
-                                    std::vector<CcuErrorInfo> &errorInfo);
-
-    static HcclResult GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
-                                        std::vector<CcuErrorInfo> &errorInfo);
-
     static HcclResult GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                         std::vector<CcuErrorInfo> &errorInfo);
-
-    static HcclResult GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
-                                    std::vector<CcuErrorInfo> &errorInfo);
 
     static void GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                     std::vector<CcuErrorInfo> &errorInfo);
@@ -159,7 +149,7 @@ private:
     static void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                           vector<CcuErrorInfo> &errorInfo);
     static uint64_t GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId);
-
+    static uint16_t GetMSIdPerDie(uint16_t msId) { return msId & 0x7fff; }
 };
 } // namespace hcomm
 
