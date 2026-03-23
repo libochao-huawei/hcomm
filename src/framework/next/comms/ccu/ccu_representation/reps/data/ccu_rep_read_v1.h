@@ -43,6 +43,9 @@ public:
     uint32_t GetMask() {
        return  mask;
     }
+    uint32_t GetChannelId(uint16_t& channeId){
+       return  GetChannelIdByHandle(channel, channeId);
+    }
 
 private:
     ChannelHandle channel;

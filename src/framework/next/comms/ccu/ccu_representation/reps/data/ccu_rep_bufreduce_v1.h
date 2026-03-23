@@ -43,6 +43,9 @@ public:
     uint16_t GetSemId() {
        return  sem.Id();
     }
+    HcclResult GetChannelId(uint16_t& channeId){
+       return  GetChannelIdByHandle(channel, channeId);
+    }
 
 private:
     std::vector<CcuBuf> mem;

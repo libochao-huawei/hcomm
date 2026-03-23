@@ -28,6 +28,10 @@ public:
     CcuRepLoopBlock* GetLoopBlock() {
         return loopBlock.get();
     }
+    Variable* GetLoopParam() {
+        return loopBlock.get();
+    }
+
 
 private:
     std::string                      label;

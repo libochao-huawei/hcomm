@@ -416,8 +416,10 @@ void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_pt
     errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
     errorMsg.msg.transMem.signalId   = rep->GetSemId();
     errorMsg.msg.transMem.signalMask = rep->GetMask();
-    errorMsg.msg.transMem.channelId  = rep->GetTransportChannelId();
-
+    auto res = rep->GetChannelId(errorMsg.msg.transMem.channelId);
+    if (res! = HCCL_SUCCESS){
+        HCCL_ERROR("[CcuTaskException][GenErrorInfoRead] channelId get failed");
+    }
     errorInfo.push_back(errorMsg);
 }
 
@@ -495,7 +497,10 @@ void CcuTaskException::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared
     errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
     errorMsg.msg.bufTransMem.signalId = rep->GetSemId();
     errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
-    errorMsg.msg.bufTransMem.channelId  = rep->transport.GetChannelId();
+    auto res = rep->GetChannelId(errorMsg.msg.bufTransMem.channelId);
+    if (res! = HCCL_SUCCESS){
+        HCCL_ERROR("[CcuTaskException][GenErrorInfoBufRead] channelId get failed");
+    }
 
     errorInfo.push_back(errorMsg);
 }
@@ -527,7 +532,7 @@ void CcuTaskException::GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, sha
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepBufLocRead>(repBase);
-    errorMsg.msg.bufTransMem.bufId      = GetMSIdPerDie(rep->dst.Id());
+    errorMsg.msg.bufTransMem.bufId      = GetMSIdPerDie(rep->GetDstId());
     errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
     errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
     errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
@@ -545,7 +550,7 @@ void CcuTaskException::GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, sh
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepBufLocWrite>(repBase);
-    errorMsg.msg.bufTransMem.bufId      = GetMSIdPerDie(rep->src.Id());
+    errorMsg.msg.bufTransMem.bufId      = GetMSIdPerDie(rep->GetSrcAddrId());
     errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
     errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstTokenId());
     errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
@@ -662,10 +667,10 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
 
     LoopXm loopXm{};
-    loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->loopParam.Id());
+    loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLoopParam().Id());
     const auto ccuLoopContext        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
-    errorMsg.msg.loop.startInstrId   = rep->GetLoopBlock->StartInstrId();
-    errorMsg.msg.loop.endInstrId     = rep->GetLoopBlock->StartInstrId() + rep->loopBlock->InstrCount() - 1;
+    errorMsg.msg.loop.startInstrId   = rep->GetLoopBlock()->StartInstrId();
+    errorMsg.msg.loop.endInstrId     = rep->GetLoopBlock()->StartInstrId() + rep->loopBlock()->InstrCount() - 1;
     errorMsg.msg.loop.loopEngineId   = loopXm.loopCtxId;
     errorMsg.msg.loop.loopCnt        = static_cast<uint16_t>(loopXm.loopCnt);
     errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
@@ -676,7 +681,7 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
     // 解析Loop内的异常Rep
     for (uint16_t loopCurrentIns = errorMsg.msg.loop.startInstrId; loopCurrentIns <= errorMsg.msg.loop.endInstrId;
          loopCurrentIns++) {
-        auto inLoopExRep = rep->loopBlock->GetRepByInstrId(loopCurrentIns);
+        auto inLoopExRep = rep->loopBlock()->GetRepByInstrId(loopCurrentIns);
         if (inLoopExRep == nullptr) {
             HCCL_ERROR("Failed to find REP from Loop, instrId[%u], Loop[%s]", loopCurrentIns,rep->GetLabel().c_str());
             return HCCL_E_PARA;
