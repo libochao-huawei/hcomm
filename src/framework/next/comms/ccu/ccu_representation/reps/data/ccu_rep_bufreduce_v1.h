@@ -21,9 +21,7 @@ public:
                     uint16_t opType, CompletedEvent sem, const CcuRep::Variable &len, uint16_t mask = 1);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
-    std::vector<CcuBuf> GetMem{
-        return mem;
-    }
+    std::vector<CcuBuf> GetMem() { return mem; }
     uint16_t GetCount() {
        return  count;
     }

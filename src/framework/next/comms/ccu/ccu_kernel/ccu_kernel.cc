@@ -902,7 +902,7 @@ HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam
     uint32_t taskId {0};
     uint32_t streamId {0};
     Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
-    CHK_PTR_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null, __func__"), HCCL_E_PTR);
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     // 填入remoteRankId
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
@@ -992,7 +992,7 @@ HcclResult CcuKernel::AddCcuProfiling(GroupInfo groupInfo, const std::vector<Cha
 }
 
 HcclResult CcuKernel::AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
-                                HcclDataType outputDataType, HcclReduceOp opType, cosnt std::string& opName)
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName)
 {
     CHK_PTR_NULL(channels);
     CHK_RET(AddProfilingInfo(channels, channelNum, dataType, outputDataType, opType, opName));

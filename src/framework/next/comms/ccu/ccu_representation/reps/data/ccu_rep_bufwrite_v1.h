@@ -19,11 +19,8 @@ public:
                    uint16_t mask);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
-    uint16_t GetSrcAddrId() {
-       return  src.addr.Id();
-    }
-    uint16_t GetSrcTokenId() {
-       return  src.token.Id();
+    uint16_t GetSrcId() {
+       return  src.Id();
     }
     uint16_t GetDstAddrId() {
        return  dst.addr.Id();
