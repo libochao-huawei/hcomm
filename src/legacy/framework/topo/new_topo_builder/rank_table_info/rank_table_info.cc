@@ -22,6 +22,8 @@
 #include "dev_type.h"
 #include "exception_util.h"
 #include "adapter_error_manager_pub.h"
+#include "orion_adapter_hccp.h"
+#include "orion_adapter_rts.h"
 
 namespace Hccl {
 
@@ -109,7 +111,19 @@ void RankTableInfo::Check()
     }
 
     std::vector<std::unordered_map<std::string, u32>> verifyRankAddr;
+    auto devLogicId = HrtGetDevice();
+    u32 devPhyId   = HrtGetDevicePhyIdByIndex(devLogicId);
+    std::unordered_set<IpAddress> localIpAddressSet;
+    NewRankInfo localRankInfo;
     for (auto &rank : ranks) {
+        if (rank.deviceId == devPhyId) {  // 获取本卡的ip地址
+            HRaInfo info(HrtNetworkMode::HDC, rank.deviceId);
+            std::vector<HrtDevEidInfo> localEidInfos =  HrtRaGetDevEidInfoList(info);
+            for (auto &eidInfo : localEidInfos) {
+                localIpAddressSet.insert(eidInfo.ipAddress);
+            }
+            localRankInfo = rank;
+        }
         for (auto &levelInfo : rank.rankLevelInfos) {
             InsertToRank(levelInfo.netInstId, levelInfo.rankAddrs.size(), verifyRankAddr, levelInfo.netLayer);
         }
@@ -122,6 +136,19 @@ void RankTableInfo::Check()
         THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with configuring "
                                                    "same local_id[%u] with replaced one simutaneously",
                                                     __func__, recordedReplaceLocalId));
+    }
+
+    for(auto &ipaddress : localIpAddressSet) {
+        HCCL_DEBUG("RankTableInfo====ipaddres get: %u, %s", devPhyId, ipAddress.Describe().c_str());
+    }
+
+    for (auto &levelInfo : localRankInfo.rankLevelInfos) {
+        for (auto &addrs : levelInfo.rankAddrs) {
+            HCCL_DEBUG("RankTableInfo====ipaddres check: %u, %s, name %s", devPhyId, addrs.Describe().c_str());
+            if (localIpAddress.count(addrs.addr) == 0) {
+                THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] the ip address  %s of ranktable is error in rank %u", __func__, addrs.addr.Describe().c_str(), devPhyId));
+            }
+        }
     }
 }
 
