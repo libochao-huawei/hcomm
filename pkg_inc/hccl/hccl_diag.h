@@ -12,7 +12,9 @@
 #define HCCL_DIAG_H
 
 #include <cstddef>
+#include <hccl/base.h>
 #include <hccl/hccl_types.h>
+#include <hcomm_res_defs.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,13 +61,13 @@ struct HcclDfxOpInfo {
     uint32_t            dataType = 0;
     uint32_t            outputType = 0; //暂不删除，考虑后续算子使用
     uint64_t            dataCount = 0;
-    uint32_t            root = INVALID_VALUE_RANKID;
+    uint32_t            root = ~0U;
     char                algTag[HCOMM_ALG_TAG_LENGTH]; // 算法名 = "算子类型 + 通信域id + 选择的算法"
     CommEngine          engine = COMM_ENGINE_RESERVED;
     //task_exception
     uint64_t            cpuTsThread = 0; // host侧算子主流的threadhandle
-    uint32_t            cpuWaitAicpuNotifyIdx = INVALID_UINT; // host wait device notifyIdx
-    uint32_t            cpuWaitAicpuNotifyId = INVALID_UINT; // host wait device notifyId
+    uint32_t            cpuWaitAicpuNotifyIdx = ~0U; // host wait device notifyIdx
+    uint32_t            cpuWaitAicpuNotifyId = ~0U; // host wait device notifyId
     int8_t              reserve[128]; // 预留扩展字段
 };
 

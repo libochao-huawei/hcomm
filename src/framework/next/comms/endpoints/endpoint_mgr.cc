@@ -51,8 +51,12 @@ HcclResult EndpointMgr::RegisterMemory(EndpointHandle epHandle, const std::vecto
     uint32_t index = 0;
     for (const auto &mem: memVec) {
         MemHandle memHandle = nullptr;
-        HcommMem hmem { mem.type, mem.addr, mem.size };
-        HcclResult ret = HcommMemReg(epHandle, memTag[index].c_str(), hmem, &memHandle);
+        CommMem commMem {
+            static_cast<CommMemType>(mem.type),
+            mem.addr,
+            mem.size
+        };
+        HcclResult ret = HcommMemReg(epHandle, memTag[index].c_str(), &commMem, &memHandle);
         if(ret != HCCL_SUCCESS && ret != HCCL_E_AGAIN) {
             HCCL_ERROR("[%s]call trace: hcclRet -> %d", __FUNCTION__, ret);
             return ret;
