@@ -114,13 +114,13 @@ private:
     static HcclResult GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                     std::vector<CcuErrorInfo> &errorInfo);
 
-    static void GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
-                                    std::vector<CcuErrorInfo> &errorInfo);
+    static HcclResult GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                        std::vector<CcuErrorInfo> &errorInfo);
 
-    static void GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
-                                    std::vector<CcuErrorInfo> &errorInfo);
+    static HcclResult GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+                                        std::vector<CcuErrorInfo> &errorInfo);
 
-    static void GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+    static HcclResult GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                     std::vector<CcuErrorInfo> &errorInfo);
 
     static void GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
