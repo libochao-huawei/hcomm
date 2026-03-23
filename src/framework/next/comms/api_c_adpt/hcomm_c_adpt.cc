@@ -49,33 +49,17 @@ using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
 namespace {
-HcommMem ConvertToInternalMem(const CommMem &mem)
-{
-    HcommMem internalMem{};
-    internalMem.type = static_cast<HcclMemType>(mem.type);
-    internalMem.addr = mem.addr;
-    internalMem.size = mem.size;
-    return internalMem;
-}
-
-void ConvertToCommMem(const HcommMem &internalMem, CommMem &mem)
-{
-    mem.type = static_cast<CommMemType>(internalMem.type);
-    mem.addr = internalMem.addr;
-    mem.size = internalMem.size;
-}
-
 HcommResult ProcessHcommResPackReq(const HcommChannelDesc &channelDesc, HcommChannelDesc &channelDescFinal)
 {
     if (channelDesc.header.size < sizeof(CommAbiHeader)) {
         HCCL_ERROR("[%s] invalid channelDesc.header.size[%u].", __func__, channelDesc.header.size);
-        return HCOMM_E_PARA;
+        return HCCL_E_PARA;
     }
 
     if (channelDesc.header.magicWord != channelDescFinal.header.magicWord) {
         HCCL_ERROR("[%s] channelDesc.header.magicWord[0x%08x] is invalid, expected[0x%08x].",
             __func__, channelDesc.header.magicWord, channelDescFinal.header.magicWord);
-        return HCOMM_E_PARA;
+        return HCCL_E_PARA;
     }
 
     const uint32_t copySize = (channelDescFinal.header.size < channelDesc.header.size ?
@@ -95,11 +79,11 @@ HcommResult ProcessHcommResPackReq(const HcommChannelDesc &channelDesc, HcommCha
     }
 
     if (channelDesc.header.version > HCOMM_CHANNEL_VERSION) {
-        HCCL_WARNING("The version of provided [%u] is higher than the current version[%u], "
+        HCCL_RUN_WARNING("The version of provided [%u] is higher than the current version[%u], "
             "unsupported configuration will be ignored.",
             channelDesc.header.version, HCOMM_CHANNEL_VERSION);
     } else if (channelDesc.header.version < HCOMM_CHANNEL_VERSION) {
-        HCCL_WARNING("The version of provided [%u] is lower than the current version[%u], "
+        HCCL_RUN_WARNING("The version of provided [%u] is lower than the current version[%u], "
             "configurations supported by later versions will be ignored.",
             channelDesc.header.version, HCOMM_CHANNEL_VERSION);
     }
@@ -129,7 +113,7 @@ HcommResult NormalizeHcommChannelDescs(HcommChannelDesc *channelDescs, uint32_t 
 }
 } // namespace
 
-HcclResult HcommResMgrInit(uint32_t devPhyId)
+HcommResult HcommResMgrInit(uint32_t devPhyId)
 {
     // 临时方案：触发统一平台层单例触发静态对象声明
     // 内部流程触发各种单例声明，保证时序
@@ -139,7 +123,7 @@ HcclResult HcommResMgrInit(uint32_t devPhyId)
         return HcclResult::HCCL_SUCCESS;
     }());
     EXCEPTION_HANDLE_END
-    return HcclResult::HCCL_SUCCESS;
+    return HCCL_SUCCESS;
 }
 
 static HcclResult EnsureKernelBinLoaded(CommEngine engine) {
@@ -220,7 +204,7 @@ HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 }
 
 
-HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port, HcommEndpointListenConfig* config)
+HcommResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port, HcommEndpointListenConfig* config)
 {
     (void)config;
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
@@ -230,7 +214,7 @@ HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port)
+HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[%p]",
@@ -288,9 +272,9 @@ HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, u
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
     CHK_PTR_NULL(outMem);
-    HcommMem internalMem{};
-    CHK_RET(endpoint->MemoryImport(memDesc, descLen, &internalMem));
-    ConvertToCommMem(internalMem, *outMem);
+    CommMem importedMem{};
+    CHK_RET(endpoint->MemoryImport(memDesc, descLen, &importedMem));
+    *outMem = importedMem;
     return HCCL_SUCCESS;
 }
 
@@ -305,18 +289,18 @@ HcommResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc,
 }
 
 /* 暂未实现 */
-HcclResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo)
+HcommResult HcommMemGrant(EndpointHandle endpointHandle, const HcommMemGrantInfo *remoteGrantInfo)
 {
     return HCCL_E_NOT_SUPPORT;
 }
 
 /* 暂未实现 */
-HcclResult HcommMemRemap(const EndpointHandle endpointHandle, const HcommMem *memArray, uint64_t arraySize)
+HcommResult HcommMemRemap(const EndpointHandle endpointHandle, const CommMem *memArray, uint64_t arraySize)
 {
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum)
+HcommResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum)
 {
     CHK_PTR_NULL(memHandles);
     CHK_PTR_NULL(memHandleNum);
@@ -406,7 +390,7 @@ HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelN
     return ChannelProcess::ChannelDestroy(channels, channelNum, g_BinHandle);
 }
 
-HcclResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remoteMem, uint32_t *memNum, char **memTags)
+HcommResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memNum);
@@ -424,11 +408,16 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t *no
     ThreadHandle *threads) {
     CHK_PTR_NULL(threads);
     CHK_PTR_NULL(notifyNumPerThread);
+    const uint32_t notifyNum = notifyNumPerThread[0];
+    if (threadNum > 1U) {
+        HCCL_RUN_WARNING("[%s] only notifyNumPerThread[0] is used currently, threadNum[%u], notifyNum[0][%u].",
+            __func__, threadNum, notifyNum);
+    }
     HCCL_INFO("[%s] ThreadAcquire begin. engine[%d], threadNum[%u], notifyPerThread[%u], threads[%p]",
-        __func__, engine, threadNum, *notifyNumPerThread, threads);
+        __func__, engine, threadNum, notifyNum, threads);
 
     // 1. 参数校验
-    CHK_RET(hccl::ValidateThreadParams(threadNum, *notifyNumPerThread));
+    CHK_RET(hccl::ValidateThreadParams(threadNum, notifyNum));
 
     // 2. 获取引擎对应的类型
     hccl::NotifyLoadType notifyLoadType;
@@ -438,7 +427,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t *no
 
     // 3. 创建线程
     std::vector<std::shared_ptr<hccl::Thread>> newThreads;
-    hccl::ThreadCreateParams params(engine, threadNum, *notifyNumPerThread, notifyLoadType, streamType);
+    hccl::ThreadCreateParams params(engine, threadNum, notifyNum, notifyLoadType, streamType);
     CHK_RET(hccl::CreateAndInitThreads(params, newThreads));
 
     // 4. 插入全局映射表
@@ -449,8 +438,21 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t *no
     CHK_RET(hccl::StoreThreadHandles(newThreads, threads, engine, g_BinHandle));
 
     HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u], notifyPerThread[%u]",
-              engine, threadNum, *notifyNumPerThread);
+              engine, threadNum, notifyNum);
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread,
+    ThreadHandle *threads)
+{
+    return ::HcommThreadAlloc(engine, threadNum, &notifyNumPerThread, threads);
+}
+
+HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, int notifyNumPerThread,
+    ThreadHandle *threads)
+{
+    uint32_t notifyNum = static_cast<uint32_t>(notifyNumPerThread);
+    return ::HcommThreadAlloc(engine, threadNum, &notifyNum, threads);
 }
 
 HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
@@ -459,7 +461,7 @@ HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
     return hccl::FreeThreads(threads, threadNum, g_BinHandle);
 }
 
-HcclResult HcommThreadAllocWithStream(CommEngine engine,
+HcommResult HcommThreadAllocWithStream(CommEngine engine,
     rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
 {
     CHK_PTR_NULL(thread);
@@ -478,7 +480,7 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
+HcommResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
 {
     CHK_PTR_NULL(ctx);
     if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
@@ -496,7 +498,7 @@ HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
+HcommResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
 {
     CHK_PTR_NULL(ctx);
     if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
@@ -512,7 +514,7 @@ HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size)
+HcommResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size)
 {
     CHK_PTR_NULL(dstCtx);
     CHK_PTR_NULL(srcCtx);
@@ -532,7 +534,7 @@ HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCt
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
+HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo)
 {
     // 申请device侧内存
     hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(sizeof(dfxOpInfo));

@@ -301,11 +301,6 @@ extern HcclResult HcclGroupStart();
  */
 extern HcclResult HcclGroupEnd();
 
-typedef enum {
-    HCCL_WIN_DEFAULT = 0,
-    HCCL_WIN_COLL_SYMMETRIC = 1,
-} HcclCommSymWindowFlag;
-
 /**
  * @brief Register a memory window for HCCL communication.
  *
