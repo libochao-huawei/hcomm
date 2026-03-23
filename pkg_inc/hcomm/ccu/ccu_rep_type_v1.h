@@ -61,6 +61,7 @@ enum class CcuRepType {
     BUF_LOC_READ,
     BUF_LOC_WRITE,
     BUF_REDUCE,
+    BUF_MS_WRITE,
 
     RECORD_SHARED_NOTIFY,
 };
