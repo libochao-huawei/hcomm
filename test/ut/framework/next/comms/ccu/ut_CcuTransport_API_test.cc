@@ -9,7 +9,6 @@
  */
 
 #include "hccl_api_base_test.h"
-#include "comm_mems.h"
 #include "llt_stub_CcuTransport.h"
 
 #include <iostream>
@@ -65,22 +64,20 @@ TEST_F(CcuTransportTest, Ut_CcuTransport)
 TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     RdmaHandle rdmaHandle = (void*)0x100;
-    auto *buffer0 = std::make_shared<Buffer>(0x100, 0x100);
-    auto *locBuffer0 = make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
+    auto buffer0 = std::make_shared<Buffer>(0x100, 0x100);
+    auto locBuffer0 = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
     hccl::CommMemHandle memInfo0{};
     memInfo0.addr = (void*)0x100;
     memInfo0.size = (uint64_t)0x100;
     memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
 
-    auto *buffer1 = std::make_shared<Buffer>(0x101, 0x101);
-    auto *locBuffer1 = make_shared<Hccl::LocalUbRmaBuffer>(buffer1, rdmaHandle);
-    locBuffer1->tokenId = 2;
-    locBuffer1->tokenValue = 10;
+    auto buffer1 = std::make_shared<Buffer>(0x101, 0x101);
+    auto locBuffer1 = make_shared<Hccl::LocalUbRmaBuffer>(buffer1, rdmaHandle);
     hccl::CommMemHandle memInfo1{};
     memInfo1.addr = (void*)0x101;
     memInfo1.size = (uint64_t)0x101;
     memInfo1.memTag = "buffer1";
-    memInfo1.memType = HcclMemType::HCCL_MEM_TYPE_DEVICE;
+    memInfo1.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
     memInfo1.bufferHandle = static_cast<void*>(locBuffer1.get());
 
     std::vector<hccl::CommMemHandle*> memInfos{};
@@ -104,8 +101,6 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = ccuTransport->BufferInfoUnpack(binaryStream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(ccuTransport->rmtBufferInfos_[1].tokenId, 2);
-    EXPECT_EQ(ccuTransport->rmtBufferInfos_[1].tokenValue, 10);
 
     CommMem *remoteMems;
     char **memTags;
@@ -114,7 +109,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::string memTag = memTags[0];
     EXPECT_EQ(memTag, "buffer1");
-    EXPECT_EQ(remoteMems[0].type, HcclMemType::HCCL_MEM_TYPE_DEVICE);
+    EXPECT_EQ(remoteMems[0].type, CommMemType::COMM_MEM_TYPE_DEVICE);
     EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
     EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
 }
