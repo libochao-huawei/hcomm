@@ -311,28 +311,30 @@ void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, 
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocWaitNotify>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->sem.Id();
+    errorMsg.msg.waitSignal.signalId    = rep->GetId();
     errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->sem.Id());
-    errorMsg.msg.waitSignal.signalMask  = rep->mask;
+    errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
-                                             vector<CcuErrorInfo> &errorInfo)
+HcclResult CcuTaskException::GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+                                                vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                     = static_pointer_cast<CcuRep::CcuRepRemPostSem>(repBase);
-    errorMsg.msg.waitSignal.signalId   = rep->transport.GetRmtCntCkeByIndex(rep->semIndex);
-    errorMsg.msg.waitSignal.signalMask = rep->mask;
+    errorMsg.msg.waitSignal.signalId   = rep->GetSignalId(); 
+    errorMsg.msg.waitSignal.signalMask = rep->GetMask();
     (void)memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
                     sizeof(errorMsg.msg.waitSignal.channelId));
-    errorMsg.msg.waitSignal.channelId[0] = rep->transport.GetChannelId();
+
+    CHK_RET(rep->GetChannelId(errorMsg.msg.waitSignal.channelId[0] ));
 
     errorInfo.push_back(errorMsg);
+    return HCCL_SUCCESS;
 }
 
 void CcuTaskException::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
