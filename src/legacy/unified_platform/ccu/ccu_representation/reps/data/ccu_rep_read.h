@@ -27,6 +27,9 @@ public:
                uint16_t opType, MaskSignal sem, uint16_t mask);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
+    uint32_t GetTransportChannelId() {
+       return transport.GetChannelId();
+    }
 
 private:
     const CcuTransport &transport;
