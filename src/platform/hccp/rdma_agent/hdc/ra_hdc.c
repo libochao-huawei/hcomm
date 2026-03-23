@@ -959,12 +959,16 @@ STATIC int RaHdcSessionSaveSnapshot(unsigned int phyId, enum SaveSnapshotAction 
 
     printf("DEBUG: RaHdcSessionSaveSnapshot, phyId[%u] action[%d]\n", phyId, action);
 
+    if (gRaHdc[phyId].session == NULL) {
+        return ret;
+    }
+
     RA_PTHREAD_MUTEX_LOCK(&gRaHdc[phyId].lock);
-    if (action == SAVE_SNAPSHOT_ACTION_PRE_PROCESSING && gRaHdc[phyId].session != NULL) {
+    if (action == SAVE_SNAPSHOT_ACTION_PRE_PROCESSING && gRaHdc[phyId].snapshotSession == NULL) {
         gRaHdc[phyId].snapshotSession = gRaHdc[phyId].session;
-        gRaHdc[phyId].session = NULL;
-    } else if (action == SAVE_SNAPSHOT_ACTION_POST_PROCESSING && gRaHdc[phyId].session == NULL) {
-        gRaHdc[phyId].session = gRaHdc[phyId].snapshotSession;
+        // gRaHdc[phyId].session = NULL;
+    } else if (action == SAVE_SNAPSHOT_ACTION_POST_PROCESSING && gRaHdc[phyId].snapshotSession != NULL) {
+        // gRaHdc[phyId].session = gRaHdc[phyId].snapshotSession;
         gRaHdc[phyId].snapshotSession = NULL;
     } else {
         hccp_err("duplicate or incorrect order calls are not allowed, phyId[%u] action[%d]", phyId, action);
