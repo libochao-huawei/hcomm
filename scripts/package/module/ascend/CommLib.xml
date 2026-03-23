@@ -173,7 +173,15 @@
         <file value="dynamic_maximum_float16_v51.o"/>
         <file value="dynamic_add_float16_v51.o"/>
         <file value="MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o"/>
-        <file value="hccl_aiv_op_ascend910B.o"/>
+        <file value="hccl_aiv_all_reduce_op.o"/>
+        <file value="hccl_aiv_reduce_scatter_op.o"/>
+        <file value="hccl_aiv_all_gather_op.o"/>
+        <file value="hccl_aiv_broadcast_op.o"/>
+        <file value="hccl_aiv_all_to_all_op.o"/>
+        <file value="hccl_aiv_all_to_all_v_op.o"/>
+        <file value="hccl_aiv_all_to_all_vc_op.o"/>
+        <file value="hccl_aiv_reduce_scatter_v_op.o"/>
+        <file value="hccl_aiv_all_gather_v_op.o"/>
         <file value="hccl_ag_superkernel_int8.o"/>
         <file value="hccl_ag_superkernel_int16.o"/>
         <file value="hccl_ag_superkernel_int32.o"/>

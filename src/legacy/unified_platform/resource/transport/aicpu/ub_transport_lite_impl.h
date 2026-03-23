@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef UB_MEM_TRANSPORT_LITE_H
@@ -21,8 +21,6 @@
 #include "kernel_param_lite.h"
 
 namespace Hccl {
-
-HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp);
 
 class UbTransportLiteImpl : public BaseTransportLiteImpl {
 public:
@@ -127,10 +125,10 @@ private:
     
     std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
 
-    void ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream, DmaOp dmaOp,
+    void ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
 
-    void ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
+    void ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const ReduceIn &reduceIn,
                                       const StreamLite &stream, u32 taskId);
 
     void ParseLocNotifyVec(std::vector<char> &data);

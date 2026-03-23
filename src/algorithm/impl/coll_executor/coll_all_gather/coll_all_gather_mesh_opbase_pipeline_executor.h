@@ -15,7 +15,7 @@ namespace hccl {
 class CollAllGatherMeshOpbasePipelineExecutor : public CollAllGatherExecutor {
 public:
     explicit CollAllGatherMeshOpbasePipelineExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherMeshOpbasePipelineExecutor() = default;
+    ~CollAllGatherMeshOpbasePipelineExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

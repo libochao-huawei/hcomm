@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <chrono>
@@ -345,6 +345,15 @@ void RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
     HCCL_INFO("RtsqA5::CCoreNotifyRecord: CCoreNotifyRecord Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::CCoreNotifyRecord: streamId %u, taskId %u, recordAddr %llu, curTurnCntAddr %llu", streamId_, taskId_,
               recordAddr, curTurnCntAddr);
+    RefreshInfo();
+}
+
+void RtsqA5::P2PWriteValue(u64 remoteAddr, u32 writeValue)
+{
+    BuildA5SqeP2pWriteValue(streamId_, taskId_, remoteAddr, writeValue, GetCurrSqeBuffer());
+    HCCL_INFO("RtsqA5::P2PWriteValue: P2PWriteValue Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("RtsqA5::P2PWriteValue: streamId %u, taskId %u, remoteAddr %llu, writeValue %llu",
+        streamId_, taskId_, remoteAddr, writeValue);
     RefreshInfo();
 }
 }

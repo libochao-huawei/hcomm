@@ -19,8 +19,8 @@
 #include "hccl/base.h"
 #include "types/types.h"
 #include "string_util.h"
-#include "data_type.h"
 #include "template_utils.h"
+#include "data_type.h"
 #include "ccu_alg_template_base.h"
 #include "ccu_instruction_reduce_scatter_mesh1d_detour.h"
 

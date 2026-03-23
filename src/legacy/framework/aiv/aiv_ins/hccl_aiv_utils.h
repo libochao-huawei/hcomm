@@ -39,6 +39,8 @@ constexpr u32 AIV_LOW_16_BITS = 0xFFFF;
 constexpr u32 CACHEMAP_MAXSIZE = 65536;
 constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 
+constexpr u32 BATCH_SEND_RECV_ITEM_SIZE = 16; // 注意要和device侧的BATCH_SEND_RECV_ITEM_SIZE保持一致
+
 enum class KernelArgsType {
     ARGS_TYPE_SERVER = 0, // kernel参数为单机内
     ARGS_TYPE_TWO_SHOT = 1,
@@ -145,12 +147,22 @@ struct AivOpCacheArgs {
     }
 };
 
+struct HcclSendRecvItemHost {
+    uint32_t sendRecvType;
+    uint64_t bufAddr;
+    uint64_t count;
+    uint32_t dataTypeSize;
+    uint32_t remoteRank;
+};
+
 // 非均匀算子AlltoAllV/AlltoAllVC/AllGatherV/ReduceScatterV需要的额外参数信息，A3场景
-struct ExtraArgsA2A {
+struct ExtraArgsA2A { // 后面考虑把这个参数名换一下，或者直接独立弄个参数出来
     u64 sendCounts[MAX_RANK_SIZE_] = {};
     u64 sendDispls[MAX_RANK_SIZE_] = {};
     u64 recvCounts[MAX_RANK_SIZE_] = {};
     u64 recvDispls[MAX_RANK_SIZE_] = {};
+    uint64_t itemNum = 0;
+    HcclSendRecvItemHost sendRecvInfo[BATCH_SEND_RECV_ITEM_SIZE] = {};
 };
 
 // 算子计数信息
@@ -174,6 +186,7 @@ struct AivOpArgs {
     u64 input = 0;
     u64 output = 0;
     u32 rank = 0;
+    u32 sendRecvRemoteRank = 0;
     u32 rankSize = 0;
     u64 xRankSize = 0;
     u64 yRankSize = 0;

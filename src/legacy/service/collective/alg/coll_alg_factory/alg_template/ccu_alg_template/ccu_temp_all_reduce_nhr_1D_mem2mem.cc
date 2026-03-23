@@ -171,7 +171,6 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, T
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 
-
     HCCL_INFO("[CcuTempAllReduceNHRMem2Mem1D] dimSize[%llu], die0Size[%llu], die1Size[%llu], inputAddr[%llu],"\
         "outputAddr[%llu], repeatNum[%llu], die0Slicesize[%llu], die1Slicesize[%llu], die0LastSlicesize[%llu],"\
         "die1LastSlicesize[%llu]",
@@ -232,12 +231,12 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::GetReduceScatterStepInfo(u32 step, NHRS
     stepInfo.step = step;
     stepInfo.myRank = virtRankIdx;
 
-    // 计算通信对象
+    // AllReduceNHR计算通信对象
     u32 deltaRank = 1 << step;
     u32 sendTo = (virtRankIdx + tempRankSize_ - deltaRank) % tempRankSize_;
     u32 recvFrom = (virtRankIdx + deltaRank) % tempRankSize_;
 
-    // 数据份数和数据编号增量
+    // AllReduceNHR数据份数和数据编号增量
     u32 nSlices = (tempRankSize_ - 1 + (1 << step)) / (1 << (step + 1));
     u32 deltaSliceIndex = 1 << (step + 1);
     u32 rxSliceIdx = virtRankIdx;
@@ -267,12 +266,12 @@ HcclResult CcuTempAllReduceNHRMem2Mem1D::GetAllGatherStepInfo(u32 step, u32 nSte
     stepInfo.step = step;
     stepInfo.myRank = virtRankIdx;
 
-    // 计算通信对象
+    // AllReduceNHR计算通信对象
     u32 deltaRank = 1 << (nSteps - 1 - step);
     u32 recvFrom = (virtRankIdx + tempRankSize_ - deltaRank) % tempRankSize_;
     u32 sendTo = (virtRankIdx + deltaRank) % tempRankSize_;
 
-    // 数据份数和数据编号增量
+    // AllReduceNHR数据份数和数据编号增量
     u32 nSlices = (tempRankSize_ - 1 + (1 << (nSteps - 1 - step))) / (1 << (nSteps - step));
     u32 deltaSliceIndex = 1 << (nSteps - step);
     u32 txSliceIdx = virtRankIdx;

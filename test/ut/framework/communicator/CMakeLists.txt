@@ -10,14 +10,35 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    # ut_HcclSetConfig_API_test.cc
-    ut_HcclGetConfig_API_test.cc
-    ut_HcclGetCommName_API_test.cc
+    ut_HcclCommActivateCommMemory_API_test.cc
+    ut_HcclCommChannel_API_test.cc
+    ut_HcclCommConfigInit_API_test.cc
+    ut_HcclCommDeactivateCommMemory_API_test.cc
+    ut_HcclCommDestroy_API_test.cc
+    ut_HcclCommEngineCtx_API_test.cc
     ut_HcclCommGetHandleWithName_API_test.cc
     ut_HcclCommInitAll_API_test.cc
-    ut_HcclGetErrorString_API_test.cc
+    ut_HcclCommInitClusterInfoConfig_API_test.cc
+    ut_HcclCommInitClusterInfo_API_test.cc
+    ut_HcclCommInitRootInfoConfig_API_test.cc
+    ut_HcclCommInitRootInfo_API_test.cc
+    ut_HcclCommResume_API_test.cc
+    ut_HcclCommSetMemoryRange_API_test.cc
+    ut_HcclCommSuspend_API_test.cc
+    ut_HcclCommUnsetMemoryRange_API_test.cc
+    ut_HcclCommWorkingDevNicSet_API_test.cc
+    ut_HcclCreateSubCommConfig_API_test.cc
+    ut_HcclGetCommAsyncError_API_test.cc
     ut_HcclGetCommConfigCapability_API_test.cc
-    #ut_HcclTopoInfoDetect_API_test.cc
+    ut_HcclGetCommName_API_test.cc
+    ut_HcclGetConfig_API_test.cc
+    ut_HcclGetErrorString_API_test.cc
+    ut_HcclGetRankId_API_test.cc
+    ut_HcclGetRankSize_API_test.cc
+    ut_HcclGetRootInfo_API_test.cc
+    ut_HcclGetStreamNumforAivMode_API_test.cc
+    # ut_HcclSetConfig_API_test.cc
+    # ut_HcclTopoInfoDetect_API_test.cc
 )
 
 add_executable(hccl_utest_framework_communicator ${src_to_test_list})
