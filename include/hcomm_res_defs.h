@@ -15,47 +15,25 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
-#include "hccl/hccl_types.h"
 #include "securec.h"
-
-#define COMM_ADDR_EID_LEN 16U
-#define HCOMM_CHANNEL_MAGIC_WORD 0x0f0f0f0fU
-#define HCOMM_CHANNEL_VERSION_ONE 1U
-#define HCOMM_CHANNEL_VERSION HCOMM_CHANNEL_VERSION_ONE
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-typedef HcclResult HcommResult;
+enum {
+    COMM_ADDR_EID_LEN = 16U
+};
 
-#define HCOMM_SUCCESS HCCL_SUCCESS
-#define HCOMM_E_PARA HCCL_E_PARA
-#define HCOMM_E_PTR HCCL_E_PTR
-#define HCOMM_E_MEMORY HCCL_E_MEMORY
-#define HCOMM_E_INTERNAL HCCL_E_INTERNAL
-#define HCOMM_E_NOT_SUPPORT HCCL_E_NOT_SUPPORT
-#define HCOMM_E_NOT_FOUND HCCL_E_NOT_FOUND
-#define HCOMM_E_UNAVAIL HCCL_E_UNAVAIL
-#define HCOMM_E_SYSCALL HCCL_E_SYSCALL
-#define HCOMM_E_TIMEOUT HCCL_E_TIMEOUT
-#define HCOMM_E_OPEN_FILE_FAILURE HCCL_E_OPEN_FILE_FAILURE
-#define HCOMM_E_TCP_CONNECT HCCL_E_TCP_CONNECT
-#define HCOMM_E_ROCE_CONNECT HCCL_E_ROCE_CONNECT
-#define HCOMM_E_TCP_TRANSFER HCCL_E_TCP_TRANSFER
-#define HCOMM_E_ROCE_TRANSFER HCCL_E_ROCE_TRANSFER
-#define HCOMM_E_RUNTIME HCCL_E_RUNTIME
-#define HCOMM_E_DRV HCCL_E_DRV
-#define HCOMM_E_PROFILING HCCL_E_PROFILING
-#define HCOMM_E_CCE HCCL_E_CCE
-#define HCOMM_E_NETWORK HCCL_E_NETWORK
-#define HCOMM_E_AGAIN HCCL_E_AGAIN
-#define HCOMM_E_REMOTE HCCL_E_REMOTE
-#define HCOMM_E_SUSPENDING HCCL_E_SUSPENDING
-#define HCOMM_E_OPRETRY_FAIL HCCL_E_OPRETRY_FAIL
-#define HCOMM_E_OOM HCCL_E_OOM
-#define HCOMM_E_IN_STATUS HCCL_E_IN_STATUS
-#define HCOMM_E_RESERVED HCCL_E_RESERVED
+static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0f0f0f0fU;
+static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
+static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_ONE;
+
+typedef int32_t HcommResult;
+
+enum {
+    HCOMM_SUCCESS = 0
+};
 
 /* 网络设备句柄 */
 typedef void *EndpointHandle;
@@ -253,8 +231,9 @@ typedef struct {
  */
 static inline HcommResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
 {
+    const HcommResult hcommEPointer = (HcommResult)2; // 对齐HCCL_E_PTR
     if (endpoint == NULL) {
-        return HCOMM_E_PTR;
+        return hcommEPointer;
     }
 
     for (uint32_t idx = 0; idx < num; ++idx) {
@@ -277,8 +256,10 @@ static inline HcommResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
  */
 static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, uint32_t descNum)
 {
+    const HcommResult hcommEPointer = (HcommResult)2; // 对齐HCCL_E_PTR
+    const HcommResult hcommEInternal = (HcommResult)4; // 对齐HCCL_E_INTERNAL
     if (channelDesc == NULL) {
-        return HCOMM_E_PTR;
+        return hcommEPointer;
     }
 
     for (uint32_t idx = 0; idx < descNum; ++idx) {
@@ -295,7 +276,7 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
         channelDesc->role = HCOMM_SOCKET_ROLE_RESERVED;
         channelDesc->port = 0;
         if (EndpointDescInit(&channelDesc->remoteEndpoint, 1) != HCOMM_SUCCESS) {
-            return HCOMM_E_INTERNAL;
+            return hcommEInternal;
         }
         ++channelDesc;
     }
