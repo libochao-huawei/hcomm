@@ -275,6 +275,10 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
         }
 
         if (!isFoundSendRecv) {
+            u32 firstErrorRank = *(errorRank.begin());
+            auto curOpId = retryCtx->errorRankList_[firstErrorRank];
+            auto curTag = std::string(reinterpret_cast<const char*>(curOpId.tag));
+
             retryCtx->errorRankList_.clear();
             // 开始重执行
             HCCL_RUN_INFO("[OpRetry][Server]begin to exec retry of tag[%s] from rank[%u]",
@@ -283,6 +287,7 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
             CHK_PRT(SetNeedRetryServerRank(retryCtx, curOpId));
             CHK_RET(CreateOpRetryServerByState(RETRY_STATE_CMD_STOP_AICPU, retryCtx));
             return HCCL_SUCCESS;
+
         }
         errorRank.clear();
         SaluSleep(waitTime * TIME_MS_TO_US);
