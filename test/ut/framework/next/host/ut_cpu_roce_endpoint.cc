@@ -54,7 +54,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Normal_EXPECT_Return_HCCL_SUCCESS)
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -68,7 +68,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Endpoint_LocType_Device_Expect_Return_HCCL_E
     endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
     void* endpointHandle = malloc(sizeof(hcomm::CpuRoceEndpoint));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_E_PARA);
     free(endpointHandle);
 }
@@ -85,7 +85,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_RdmaHandle_Init_Fail_Expect_Return_HCCL_E_PT
     void* endpointHandle{nullptr};
     RdmaHandle rdmaHandle2{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle2));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -100,7 +100,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_HcommEndpointStartListen_EXPECT_Return_HCCL_
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommEndpointStartListen(endpointHandle, 60001, nullptr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -117,7 +117,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Listen_Repeat_Ip_EXPECT_Return_HCCL_SUCCESS)
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommEndpointStartListen(endpointHandle, 60001, nullptr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -136,7 +136,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Stop_Listen_EXPECT_Return_HCCL_SUCCESS)
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommEndpointStopListen(endpointHandle, 60001);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -157,11 +157,11 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Register_Memory_Fail_Expect_Return_HCCL_E_PT
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::CpuRoceEndpoint* endpoint = static_cast<hcomm::CpuRoceEndpoint*>(endpointHandle);
     HcommMem mem;
-    mem.type = HCCL_MEM_TYPE_DEVICE;
+    mem.type = COMM_MEM_TYPE_DEVICE;
     mem.addr = malloc(10);
     mem.size = 10;
     ret = endpoint->RegisterMemory(mem, "HcclBuffer", nullptr);
@@ -180,11 +180,11 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Unregister_Memory_Fail_Expect_Return_HCCL_E_
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::CpuRoceEndpoint* endpoint = static_cast<hcomm::CpuRoceEndpoint*>(endpointHandle);
     HcommMem mem;
-    mem.type = HCCL_MEM_TYPE_DEVICE;
+    mem.type = COMM_MEM_TYPE_DEVICE;
     mem.addr = malloc(10);
     mem.size = 10;
     void* memHandle{nullptr};
