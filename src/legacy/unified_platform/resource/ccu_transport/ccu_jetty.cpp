@@ -161,7 +161,7 @@ HcclResult CcuJetty::Clean()
             reqHandle_ = 0;
             jettyHandlePtr_ = nullptr;
             reqDataBuffer_.clear();
-            }
+        }
         isError_ = false;);
     return HcclResult::HCCL_SUCCESS;
 }

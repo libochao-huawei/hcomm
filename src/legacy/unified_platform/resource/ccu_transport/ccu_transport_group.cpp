@@ -16,11 +16,11 @@ namespace Hccl {
 
 bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
 {
-    HCCL_INFO("[CheckTransports] size[%llu].", transports.size());
     if (transports.size() == 0) {
         HCCL_ERROR("[CcuTransportGroup::%s] Transports size is 0, please check.", __func__);
         return false;
     }
+    HCCL_INFO("[CheckTransports] size[%llu].", transports.size());
 
     // 校验transports中所有的DieId是否相等，如果不相等,则构建失败，如果相等，则将transports传入transportsGrp中
     for (unsigned int i = 0; i < transports.size(); i++) {
@@ -71,9 +71,10 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
     cntCkesGroupDieId = transports[0]->GetDieId();
     cntCkeNumTransportGroupUse = cntCkeNum;
 
-    if (CheckTransportCntCke() != HcclResult::HCCL_SUCCESS) {
+    HcclResult ret = CheckTransportCntCke();
+    if (ret != HcclResult::HCCL_SUCCESS) {
         grpStatus = TransportGrpStatus::FAIL;
-        HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransportCntCke failed, please check.", __func__);
+        HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransportCntCke failed, ret=[%d], please check.", ret, __func__);
         return;
     }
 
