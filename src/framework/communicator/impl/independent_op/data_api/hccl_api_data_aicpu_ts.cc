@@ -1064,22 +1064,48 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
     HCCL_INFO("[%s] thread[0x%llx]'s send queue is not full. headIdx[%llu], tailIdx[%llu], capacity[%llu].",
         __func__, dstThreadHandle, headIdx, tailIdx, capacity);
 
-    // serviceArgsPtrOnHeap will be freed by CpuThread on Host after processing the service request.
-    void *const serviceArgsPtrOnHeap = malloc(argsSizeByte);
-    CHK_PTR_NULL(serviceArgsPtrOnHeap);
-    errno_t cpyRet = memcpy_s(serviceArgsPtrOnHeap, argsSizeByte, args, argsSizeByte);
-    if (cpyRet != EOK) {
-        free(serviceArgsPtrOnHeap);
-        HCCL_ERROR("[%s] FAIL. memcpy_s args from stack[0x%llx] to heap[0x%llx] failed, errno[%d].",
-            __func__, args, serviceArgsPtrOnHeap, cpyRet);
+    // --- DataRing: 将 args 写入环形缓冲区 ---
+    const hccl::DataRingInfo &ringInfo = dstThreadEntityPtr->cpuRes.dataRing;
+    uint64_t ringHead = *reinterpret_cast<uint64_t *>(ringInfo.headIdxAddr);
+    uint64_t ringTail = *reinterpret_cast<uint64_t *>(ringInfo.tailIdxAddr);
+    const uint32_t ringCapacity = ringInfo.capacity;
+    const uint64_t alignedSize = DATA_RING_ALIGN_UP(argsSizeByte, DATA_RING_ALIGNMENT);
+
+    // 环绕处理: 若 entry 跨越缓冲区末尾，跳过剩余空间
+    uint64_t bufTailPos = ringTail % ringCapacity;
+    if (bufTailPos + alignedSize > ringCapacity) {
+        uint64_t gap = ringCapacity - bufTailPos;
+        ringTail += gap;
+    }
+
+    // 检查可用空间
+    uint64_t usedSpace = ringTail - ringHead;
+    if (usedSpace + alignedSize > ringCapacity) {
+        HCCL_ERROR("[%s] FAIL. DataRing full. ringHead[%llu], ringTail[%llu], alignedSize[%llu], capacity[%u].",
+            __func__, ringHead, ringTail, alignedSize, ringCapacity);
         return HCCL_E_INTERNAL;
     }
-    HCCL_INFO("[%s] Copy args from stack[0x%llx] to heap[0x%llx] SUCCESS.", __func__, args, serviceArgsPtrOnHeap);
+
+    // 写入 args 到 DataRing
+    bufTailPos = ringTail % ringCapacity;
+    void *const dstAddr = reinterpret_cast<void *>(ringInfo.addr + bufTailPos);
+    errno_t cpyRet = memcpy_s(dstAddr, ringCapacity - bufTailPos, args, argsSizeByte);
+    if (cpyRet != EOK) {
+        HCCL_ERROR("[%s] FAIL. memcpy_s args to DataRing failed, errno[%d].", __func__, cpyRet);
+        return HCCL_E_INTERNAL;
+    }
+
+    uint64_t argsOffset = ringTail;
+    ringTail += alignedSize;
+    *reinterpret_cast<uint64_t *>(ringInfo.tailIdxAddr) = ringTail;
+
+    HCCL_INFO("[%s] Wrote args to DataRing at offset[%llu], bufPos[%llu], alignedSize[%llu].",
+        __func__, argsOffset, argsOffset % ringCapacity, alignedSize);
 
     // Push service request to thread entity's send queue
     static uint32_t s_msgId = 0;
     ThreadMsgEntity *const msgQueueBasePtr = reinterpret_cast<ThreadMsgEntity *>(queueInfo.addr);
-    ThreadMsgEntity tempMsgEnt = {s_msgId, serviceHandle, serviceArgsPtrOnHeap, argsSizeByte};
+    ThreadMsgEntity tempMsgEnt = {s_msgId, serviceHandle, argsOffset, argsSizeByte};
     msgQueueBasePtr[tailIdx] = tempMsgEnt;
     *reinterpret_cast<uint64_t *>(queueInfo.tailIdxAddr) = (tailIdx + 1) % capacity;  // update tail index.
     HCCL_INFO("[%s] Push service request to thread[0x%llx]'s send queue SUCCESS. msgId[%u]. New headIdx[%llu], tailIdx[%llu]",

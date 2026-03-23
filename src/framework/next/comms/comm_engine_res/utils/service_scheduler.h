@@ -14,6 +14,7 @@
 #include "hccl_independent_common.h"
 #include "resource_entities.h"
 #include "msg_queue.h"
+#include "data_ring.h"
 #include <memory>
 #include <unordered_map>
 #include <mutex>
@@ -32,18 +33,41 @@ public:
         EXECEPTION_CATCH(
         completeQueue_ = std::make_shared<MsgQueue>(MSG_QUEUE_CAPACITY, sizeof(ThreadMsgEntity)), return HCCL_E_PTR);
         CHK_RET(completeQueue_->Init());
+        // 初始化 DataRing
+        EXECEPTION_CATCH(
+        dataRing_ = std::make_shared<DataRing>(DATA_RING_CAPACITY), return HCCL_E_PTR);
+        CHK_RET(dataRing_->Init());
         return HCCL_SUCCESS;
     };
     HcclResult ServiceRun() {
         bool isEmpty = false;
+        constexpr uint64_t MAX_ARGS_SIZE = 64;
         while (true) {
             CHK_RET(sendQueue_->Empty(isEmpty));
             if (!isEmpty) {
                 ThreadMsgEntity entity{};
                 CHK_RET(sendQueue_->Pop(entity));
-                CHK_RET(executeService(entity.serviceHandle, entity.args, entity.argsSizeByte));
-                free(entity.args);
-                entity.args = nullptr;
+
+                // 从 DataRing 读取 args 到栈上缓冲区
+                uint8_t localArgsBuf[MAX_ARGS_SIZE] = {0};
+                void* argsPtr = nullptr;
+                if (entity.argsSizeByte > 0) {
+                    if (entity.argsSizeByte > MAX_ARGS_SIZE) {
+                        HCCL_ERROR("[ServiceScheduler::%s] argsSizeByte[%llu] exceeds MAX_ARGS_SIZE[%llu]",
+                                   __func__, entity.argsSizeByte, MAX_ARGS_SIZE);
+                        return HCCL_E_PARA;
+                    }
+                    CHK_RET(dataRing_->ReadArgs(entity.argsOffset, entity.argsSizeByte,
+                                                localArgsBuf, MAX_ARGS_SIZE));
+                    argsPtr = localArgsBuf;
+                }
+
+                CHK_RET(executeService(entity.serviceHandle, argsPtr, entity.argsSizeByte));
+
+                // 推进 DataRing head
+                if (entity.argsSizeByte > 0) {
+                    CHK_RET(dataRing_->AdvanceHead(entity.argsOffset, entity.argsSizeByte));
+                }
             }
             // 退出机制 ？注册一个特殊的退出服务，收到这个服务时退出循环
             if (stop_) {
@@ -91,6 +115,9 @@ public:
     std::shared_ptr<MsgQueue>& GetSendQueue() {
         return sendQueue_;
     };
+    std::shared_ptr<DataRing>& GetDataRing() {
+        return dataRing_;
+    };
 
     void StopService() {
         stop_ = true;
@@ -101,6 +128,7 @@ private:
     std::unordered_map<ThreadServiceHandle, ThreadService*> handle2ServiceMap_;
     std::shared_ptr<MsgQueue> sendQueue_;
     std::shared_ptr<MsgQueue> completeQueue_; // RDV - not used yet
+    std::shared_ptr<DataRing> dataRing_;
     std::atomic<bool> stop_{false};
 };
 
