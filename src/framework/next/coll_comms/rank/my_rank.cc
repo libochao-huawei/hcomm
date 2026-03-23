@@ -129,7 +129,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult SetMemHandles(void **memHandles, const std::vector<MemHandle>& memHandleVec) const
+HcclResult MyRank::SetMemHandles(void **memHandles, const std::vector<MemHandle>& memHandleVec) const
 {
     CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
     for (uint32_t i = 0; i < memTag.size(); ++i) {
