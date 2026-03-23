@@ -29,6 +29,10 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
     hcommDesc.notifyNum = hcclDesc.notifyNum;
     hcommDesc.memHandles = hcclDesc.memHandles;
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
+    hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
+    hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
+    hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
+    hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
     return hcommDesc;
 }
 
