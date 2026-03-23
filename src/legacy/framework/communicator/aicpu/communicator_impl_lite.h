@@ -215,7 +215,7 @@ public:
     void UpdateLocBuffer(HcclKernelParamLite *kernelParam);
     void UpdateRes(HcclKernelParamLite *kernelParam);
     void UpdateTransports(HcclKernelParamLite *kernelParam);
-    void UpdateHDCommnicate(HcclKernelParamLite *kernelParam);
+    void UpdateHDCommnicate(HcclKernelParamLite *kernelParam) const;
     void CreateCollAlgComponentLite();
     void InitCurrentOp(HcclKernelParamLite *kernelParam);
     void UpdateUserStreamId(HcclKernelParamLite *kernelParam);

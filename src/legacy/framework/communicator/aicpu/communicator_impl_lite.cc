@@ -281,7 +281,7 @@ void CommunicatorImplLite::UpdateRes(HcclKernelParamLite *kernelParam)
     }
 }
 
-void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
+void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam) const
 {
     CHK_RET_THROW(InternalException, StringFormat("[CommunicatorImplLite][%s] failed to init kfcControlTransferH2DParams", __func__), 
             kfcControlTransferH2D->Init(kernelParam->kfcControlTransferH2DParams));
