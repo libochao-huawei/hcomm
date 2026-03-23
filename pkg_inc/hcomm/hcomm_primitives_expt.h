@@ -15,6 +15,7 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
+#include "hcomm_primitives.h"
 
 #ifdef __cplusplus
 extern "C" {
