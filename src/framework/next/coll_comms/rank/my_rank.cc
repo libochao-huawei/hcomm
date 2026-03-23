@@ -241,7 +241,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
         CHK_RET(HcommEndpointStartListen(epHandle, listenPort, nullptr));
 
-        HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
+        HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]1111111",
             __func__, i + 1, channelNum, remoteRank,
             epHandle, localEndpointDesc.protocol);
 
