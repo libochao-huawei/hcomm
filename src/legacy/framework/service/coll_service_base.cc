@@ -119,6 +119,10 @@ void CollServiceBase::RegisterOpbasedLocalRmaBuf(const std::string &opTag) const
                                  devBuf.first.Describe().c_str(), comm->GetId().c_str(), portData.Describe().c_str());
                     continue;
                 }
+                if (devBuf.first != BufferType::SCRATCH && portData.GetType() == PortDeploymentType::P2P) {
+                    HCCL_WARNING("Input and Output Mem will not be reged at P2P");
+                    continue;
+                }
                 localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData);
             }
         }
