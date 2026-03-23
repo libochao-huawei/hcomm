@@ -8964,7 +8964,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle)
     {
         CHK_PRT_RET(superPodNum_ > 1, 
             HCCL_ERROR("[RegisterWindow] Cross-SuperNode not support symmetric memory"), HCCL_E_NOT_SUPPORT);
@@ -8976,13 +8976,13 @@ namespace hccl
         return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);
     }
 
-    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
+    HcclResult HcclCommunicator::DeregisterWindow(HcclCommSymWindow winHandle)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->DeregisterSymmetricMem(winHandle);
     }
 
-    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));

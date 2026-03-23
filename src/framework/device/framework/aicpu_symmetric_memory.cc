@@ -27,8 +27,7 @@ SymmetricMemory::~SymmetricMemory() {}
 
 using namespace hccl;
 
-namespace {
-HcclResult GetSymWinPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr)
+static HcclResult GetSymWinPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr)
 {
     CHK_PTR_NULL(winHandle);
     CHK_PTR_NULL(ptr);
@@ -44,18 +43,12 @@ HcclResult GetSymWinPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t
 
     return HCCL_SUCCESS;
 }
-} // namespace
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
 
 HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr)
-{
-    return GetSymWinPeerPointer(reinterpret_cast<CommSymWindow>(winHandle), offset, peerRank, ptr);
-}
-
-HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr)
 {
     return GetSymWinPeerPointer(winHandle, offset, peerRank, ptr);
 }
