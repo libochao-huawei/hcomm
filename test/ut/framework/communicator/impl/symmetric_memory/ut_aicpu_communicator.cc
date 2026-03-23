@@ -115,8 +115,8 @@ TEST_F(AicpuCommunicatorTest, Ut_ExecOp_When_SymMemEnabled_Expect_ReturnIsHCCL_S
     opParam.inputSymWindow = reinterpret_cast<void*>(&win);
     opParam.outputPtr = reinterpret_cast<void*>(0x2000000);
     opParam.outputSymWindow = reinterpret_cast<void*>(&win);
-    HcommSymWinGetPeerPointer(opParam.inputSymWindow, opParam.inputOffset, 0, &opParam.inputPtr);
-    HcommSymWinGetPeerPointer(opParam.outputSymWindow, opParam.outputOffset, 0, &opParam.outputPtr);
+    HcclSymWinGetPeerPointer(opParam.inputSymWindow, opParam.inputOffset, 0, &opParam.inputPtr);
+    HcclSymWinGetPeerPointer(opParam.outputSymWindow, opParam.outputOffset, 0, &opParam.outputPtr);
     
     hccl::AlgResourceResponse algResResponse;
     MOCKER_CPP(&HcclCommAicpu::GetAlgResponseRes)
