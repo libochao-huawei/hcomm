@@ -339,4 +339,21 @@ HcclResult InsAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     HCCL_WARNING("CalNumBlocks not support ins template.");
     return HCCL_SUCCESS;
 }
+
+bool InsAlgTemplateBase::IsPcieLink(const ResLinks &tempLinks)
+{
+    for (auto it = tempLinks.begin(); it != tempLinks.end(); it++) {
+        const std::vector<LinkData>& linkVector = it->second;
+
+        for (auto vecIt = linkVector.begin(); vecIt != linkVector.end(); vecIt++) {
+            if (vecIt->GetType() == PortDeploymentType::P2P
+                && vecIt->GetLinkProtocol() == LinkProtocol::PCIE) {
+                HCCL_INFO("IsPcieLink[true]");
+                return true;
+            }
+        }
+    }
+    HCCL_INFO("IsPcieLink[false]");
+    return false;
+}
 } // namespace Hccl

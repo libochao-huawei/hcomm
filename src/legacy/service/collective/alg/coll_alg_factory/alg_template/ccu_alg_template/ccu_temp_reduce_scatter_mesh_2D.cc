@@ -117,13 +117,7 @@ HcclResult CcuTempReduceScatterMesh2D::Run(const TempFuncs &tempFuncs, const Ran
 
     RankGroup rankGroupX;
     RankGroup rankGroupY;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroupX.AddRank(peer);
-    }
-
-    for (auto &peer : tempVTopo_[1]) {
-        rankGroupY.AddRank(peer);
-    }
+    AddRanksToGroup(tempVTopo_,rankGroupX,rankGroupY);
 
     uint64_t inputAddr;
     uint64_t outputAddr;
@@ -131,32 +125,26 @@ HcclResult CcuTempReduceScatterMesh2D::Run(const TempFuncs &tempFuncs, const Ran
     uint64_t outputSize = static_cast<uint64_t>(op_.outputMem->GetSize());
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从UserIn获取数据
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
             // 当前loop的size大小
             offSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 从inBuff获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
             // 从inBuff获取数据，只需要加上rank偏移
             offSet = sliceInfoVec[myRank_][0].offset;
         }
         if (tempFuncs.isBottom) {
-            // 把数据写入UserOut
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
                 + tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 把数据写入outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
         }
     } else {
-        // 图模式没有tempFuncs.usrData，直接通过buffInfo_获取输入输出地址
+        offSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
         inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-        offSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
     }
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
-
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 

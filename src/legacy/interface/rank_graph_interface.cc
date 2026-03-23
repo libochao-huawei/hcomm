@@ -34,6 +34,18 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    HcclResult IRankGraph::GetDevicePort(const uint32_t rank, uint32_t *devPort)
+    {
+        HCCL_RUN_INFO("Entry-IRankGraph::GetDevicePort");
+        CHK_PTR_NULL(devPort);
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        auto peer = rankGraph->GetPeer(rank);
+        CHK_PTR_NULL(peer);
+        *devPort = peer->GetDevicePort();
+        return HCCL_SUCCESS;
+    }
+
     HcclResult IRankGraph::GetRankGraphInfo(void **graph, uint32_t *len)
     {
         HCCL_RUN_INFO("Entry-IRankGraph::GetRankGraphInfo");
@@ -189,8 +201,7 @@ namespace Hccl {
             for (LinkProtocol protocol : link.GetLinkProtocols()) {
                 CommLink commLink;
                 CommLinkInit(&commLink, 1);
-                auto it = protocolMap.find(protocol);
-                CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+                const CommProtocol &commProtocol = LinkProtocolToCommProtocol(protocol);
                 commLink.linkAttr.linkProtocol = commProtocol;
                 commLink.linkAttr.hop = peer2peer->GetHop();
                 commLink.srcEndpointDesc.protocol = commProtocol;
@@ -253,8 +264,7 @@ namespace Hccl {
         for (LinkProtocol protocol : peer2net->GetLinkProtocols()) {
             CommLink commLink;
             CommLinkInit(&commLink, 1);
-            auto it = protocolMap.find(protocol);
-            CommProtocol commProtocol = (it != protocolMap.end()) ? it->second : COMM_PROTOCOL_RESERVED;
+            const CommProtocol &commProtocol = LinkProtocolToCommProtocol(protocol);
 
             commLink.linkAttr.linkProtocol = commProtocol;
             commLink.linkAttr.hop = peer2net->GetHop();

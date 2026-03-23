@@ -75,7 +75,7 @@ TEST_F(HcclSetConfigTest, Ut_HcclSetConfig_When_SetEnvHCCL_DETERMINISTIC_Expect_
     
     unsetenv("HCCL_DETERMINISTIC");
 }
- 
+
 TEST_F(HcclSetConfigTest, ut_CommChannelGetStatus_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_USE_RANK_TABLE_910_1SERVER_1RANK;

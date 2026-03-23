@@ -265,6 +265,7 @@ DataTypeBitmap OpParamsChecker::dataTypeWithReduceAiv = DataTypeBitmap{}
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT8))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT16))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT32))
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT64))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP16))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP32))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_BFP16));
@@ -280,7 +281,11 @@ DataTypeBitmap OpParamsChecker::dataTypeWithoutReduceAiv = DataTypeBitmap{}
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT64))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP16))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP32))
-                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_BFP16));
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_BFP16))
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_HIF8))
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E4M3))
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E5M2))
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E8M0));
 
 DataTypeBitmap OpParamsChecker::dataTypeWithReduceCcu = DataTypeBitmap{}
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT8))
@@ -352,7 +357,10 @@ DataTypeSupportMap OpParamsChecker::opDataTypeSupportMapAivOpbase = {
     {OpType::ALLTOALL, dataTypeWithoutReduceAiv},
     {OpType::ALLTOALLV, dataTypeWithoutReduceAiv},
     {OpType::REDUCE, dataTypeWithReduceAiv},
-    {OpType::BROADCAST, dataTypeWithoutReduceAiv}
+    {OpType::BROADCAST, dataTypeWithoutReduceAiv},
+    {OpType::SEND, dataTypeWithoutReduceAiv},
+    {OpType::RECV, dataTypeWithoutReduceAiv},
+    {OpType::BATCHSENDRECV, dataTypeWithoutReduceAiv}
 };
 
 DataTypeSupportMap OpParamsChecker::opDataTypeSupportMapAivOffload= {

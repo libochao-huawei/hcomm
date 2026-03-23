@@ -155,7 +155,7 @@ std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 
     hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
     return Hccl::StringFormat("group:[%s], rankSize[%u], rankId[%d]",
-        communicator->GetCommId(), communicator->GetRankSize(), communicator->GetMyRank());
+        communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
 }
 
 void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)

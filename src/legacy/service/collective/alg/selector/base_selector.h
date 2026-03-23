@@ -21,6 +21,8 @@
 namespace Hccl {
 constexpr u32 CCU_MS_MODE = 2;
 
+constexpr u32 BIG_CLOS_RANGE = 8;
+
 enum class SelectorStatus { MATCH, NOT_MATCH };
 enum class Level0Shape {
     MESH_1D = 1,
@@ -86,6 +88,9 @@ protected:
 
         bool Level0Nhr{false};
         bool Level1Nhr{false};
+
+        bool level0PcieMix{false};
+        bool level0BigClosRange{false};
     };
     u32 Gcd(u32 a, u32 b) const;  // 自定义实现的 gcd 函数（兼容旧版本 C++）
     u32 GcdOfArray(const std::vector<u32> &numbers) const;  // 计算数组中所有元素的最大公约数
@@ -98,6 +103,7 @@ protected:
     HcclResult ExtractNetLayerDetails(TopoInfo &topoInfo) const;
     HcclResult ExtractTopoDetails(TopoInfo &topoInfo) const;
     bool Is2DieFullMesh() const;
+    bool IsLevel0PcieMix() const;
     RankGraph *rankGraph_ = nullptr;
     OpExecuteConfig opConfig_;
     DevType      devType_;

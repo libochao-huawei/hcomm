@@ -374,9 +374,11 @@ HcclResult HcclOneSidedService::CreateConnection(RankId remoteRankId, const Hccl
     HcclRankLinkInfo *rankInfo = isUsedRdmaMap_.at(remoteRankId) ? &localRankInfo_ : &localRankVnicInfo_;
     u32 sdid = isUsedRdmaMap_.at(remoteRankId) ? 0 : rankTable_->rankList.at(localRankInfo_.userRank).superDeviceId;
     u32 serverId = isUsedRdmaMap_.at(remoteRankId) ? 0 : rankTable_->rankList.at(localRankInfo_.userRank).serverIdx;
+    // 新增isNeedEnableP2P，用于判断remoteRank和本Rank是否在同一server上，在则需要enableP2P，反之则不需要
+    bool isNeedEnableP2P = enableP2PRankIds_.find(remoteRankId) != enableP2PRankIds_.end();
     EXECEPTION_CATCH(tempConn = std::make_shared<HcclOneSidedConn>(*ctx, *rankInfo, remoteRankInfo,
         socketManager_, notifyPool_, dispatcher_, isUsedRdmaMap_[remoteRankId], sdid, serverId, trafficClass_,
-        serviceLevel_, aicpuUnfoldMode_, isStandardCard_), return HCCL_E_PTR);
+        serviceLevel_, aicpuUnfoldMode_, isStandardCard_, isNeedEnableP2P), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(tempConn);
     return HCCL_SUCCESS;
 }

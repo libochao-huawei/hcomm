@@ -132,8 +132,8 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     if (taskType == TaskParamType::TASK_AICPU_KERNEL) {
         return;
     }
-    if ((ignoreLevel && !enableHcclL1_) || (!ignoreLevel && !enableHcclNode_)) {
-        if (cachedReq) {
+    if ((!enableHcclNode_) || (!ignoreLevel && !enableHcclL1_)) {
+        if (cachedReq) { // 开关未开判断是否为图模式进行缓存
             HCCL_INFO("[ProfilingHandler] Cache ReportData");
             std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
             cachedTaskApiInfo_.push(reporterData);
@@ -547,7 +547,6 @@ void ProfilingHandler::ReportHcclOpApi(uint64_t beginTime, uint64_t endTime, uin
 void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opInfo, uint32_t threadId)
 {
     // 获取数据
-    HCCL_INFO("[ProfilingHandler]ReportHcclOpInfo start.");
     MsprofCompactInfo reporterData{};
     reporterData.level     = MSPROF_REPORT_NODE_LEVEL;
     reporterData.type      = MSPROF_REPORT_NODE_HCCL_OP_INFO_TYPE;
@@ -563,20 +562,21 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     u32 ranksize{0};
     if (opInfo.isIndop_ == true) {
         ranksize = opInfo.rankSize_;
+        reporterData.data.hcclopInfo.count = opInfo.op_.dataCount;
     } else {
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo.comm_);
         ranksize = commImp->GetRankSize();
-    }
-    if (opInfo.op_.opType == OpType::ALLTOALLV) {
-        u64 sendCount = 0;
-        for (u64 i = 0; i < ranksize; i++) {
-            sendCount += *(static_cast<const u64 *>(opInfo.op_.all2AllVDataDes.sendCounts) + i);
+        if (opInfo.op_.opType == OpType::ALLTOALLV) {
+            u64 sendCount = 0;
+            for (u64 i = 0; i < ranksize; i++) {
+                sendCount += *(static_cast<const u64 *>(opInfo.op_.all2AllVDataDes.sendCounts) + i);
+            }
+            reporterData.data.hcclopInfo.count = sendCount;
+        } else if (opInfo.op_.opType == OpType::ALLTOALL) {
+            reporterData.data.hcclopInfo.count = opInfo.op_.all2AllDataDes.sendCount;
+        } else {
+            reporterData.data.hcclopInfo.count = opInfo.op_.dataCount;
         }
-        reporterData.data.hcclopInfo.count = sendCount;
-    } else if (opInfo.op_.opType == OpType::ALLTOALL) {
-        reporterData.data.hcclopInfo.count = opInfo.op_.all2AllDataDes.sendCount;
-    } else {
-        reporterData.data.hcclopInfo.count = opInfo.op_.dataCount;
     }
     // 订阅开关未开，缓存数据
     if (!enableHostApi_) {
@@ -596,7 +596,6 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     if (ret != 0) {
          THROW<InternalException>("[ProfilingHandler] Call dlMsprofReportCompactInfo failed, return[%d]", ret);
     }
-    HCCL_INFO("[ProfilingHandler]ReportHcclOpInfo end.");
 }
 
 void ProfilingHandler::ReportAdditionInfo(uint32_t type, uint64_t timeStamp, void *data, uint32_t len) const
@@ -804,6 +803,7 @@ void ProfilingHandler::ReportStoragedTaskApi()
 }
 
 void ProfilingHandler::StartHostHcclOpSubscribe() {
+    enableHcclNode_ = true; // Node_ = L0 | L1
     enableHcclL0_ = true;
     CallProfRegHcclOpApi();
     ReportStoragedCompactInfo();
@@ -852,6 +852,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
 
 void ProfilingHandler::StartL2Subscribe()
 {
+    enableHcclNode_ = true;
     enableHcclL1_ = true;
     enableHcclL2_ = true;
     HCCL_INFO("ProfilingHandler StartL2Subscribe");

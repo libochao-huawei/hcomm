@@ -11,6 +11,8 @@
 #ifndef HCCLV2_CCU_CONTEXT_UTILS_H_
 #define HCCLV2_CCU_CONTEXT_UTILS_H_
 
+#include <memory>
+#include <map>
 #include <vector>
 #include <queue>
 #include "instruction.h"
