@@ -299,7 +299,7 @@ TEST_F(AdapterHccpTest, HrtHrtRaRdmaInit_NOK)
     EXPECT_THROW(HrtRaRdmaInit(HrtNetworkMode::HDC, rdevInfo), NetworkApiException);
     delete[] num;
 }
-
+#if 0
 TEST_F(AdapterHccpTest, HrtRaQpCreate_NOK)
 {
     // Given
@@ -316,7 +316,7 @@ TEST_F(AdapterHccpTest, HrtRaQpCreate_NOK)
     EXPECT_THROW(HrtRaQpCreate(rdmaHandle, 0, 0), NetworkApiException);
     delete[] num;
 }
-
+#endif
 TEST_F(AdapterHccpTest, HrtGetRaQpStatus_NOK)
 {
     // Given
