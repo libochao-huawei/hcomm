@@ -35,7 +35,6 @@ protected:
 
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
 {
-    std::cout << "Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS 1111111" << std::endl;
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
     aclrtBinHandle binHandle;
