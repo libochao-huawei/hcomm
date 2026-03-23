@@ -271,30 +271,6 @@ namespace hccl
         return communicator_->GetHeterogMode(mode);
     }
 
-    // 设置 RDMA Traffic Class 与 Service Level 的校验与配置
-    HcclResult ApplyRdmaTrafficAndServiceLevel(CommConfig &commConfig, const HcclCommConfig *config)
-    {
-        if (config == nullptr) {
-            return HCCL_SUCCESS;
-        }
-
-        u32 tc = config->hcclRdmaTrafficClass;
-        CHK_PRT_RET((tc != 0xFFFFFFFFu) && (tc >= 255 || (tc % 4 != 0)),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255) and a multiple of 4",
-                HCCL_ERROR_CODE(HCCL_E_PARA), tc),
-            HCCL_E_PARA);
-        CHK_RET(commConfig.SetConfigTrafficClass(tc));
-
-        u32 sl = config->hcclRdmaServiceLevel;
-        CHK_PRT_RET((sl != 0xFFFFFFFFu) && (sl > 7u),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
-                HCCL_ERROR_CODE(HCCL_E_PARA), sl),
-            HCCL_E_PARA);
-        CHK_RET(commConfig.SetConfigServiceLevel(sl));
-
-        return HCCL_SUCCESS;
-    }
-
     HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
         HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
         // 不校验config，为空时配置默认加速模式
@@ -342,9 +318,6 @@ namespace hccl
         return HCCL_E_PTR);
 
         CHK_RET(collComm_->Init(rankGraph, binHandle_, cclBuffer, config));
-        CommConfig& commConfig = collComm_->GetCommConfig();
-        CHK_RET(ApplyRdmaTrafficAndServiceLevel(commConfig, config));
-
         CHK_RET(collComm_->GetHDCommunicate(commAicpuParam_.kfcControlTransferH2DParams,
             commAicpuParam_.kfcStatusTransferD2HParams));
         commAicpuParam_.userRank = collComm_->GetMyRankId();
