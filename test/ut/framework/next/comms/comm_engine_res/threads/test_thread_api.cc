@@ -1251,3 +1251,90 @@ TEST_F(TestHcclThread, Ut_HcclThreadResGetInfo_When_infoLenMismatch_Return_HCCL_
     ret = HcclThreadResGetInfo(comm, thread, ThreadResType::THREAD_RES_TYPE_STREAM, 1, &stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+TEST_F(TestHcclThread, Ut_InitCollComm_When_ApplyRdmaTrafficAndServiceLevel_Return_HCCL_Success)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 120; // 配置RDMA Traffic Class为120，验证正常配置RDMA Traffic Class的场景
+    config.hcclRdmaServiceLevel = 3; // 配置RDMA Service Level为3，验证正常配置RDMA Service Level的场景
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+}
+
+TEST_F(TestHcclThread, Ut_InitCollComm_When_RdmaServiceLevel_Abnormal_Return_HCCL_E_PARA)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 8; // 配置RDMA Service Level超过正常值
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 1);
+}
+
+TEST_F(TestHcclThread, Ut_InitCollComm_When_RdmaTrafficClass_Abnormal_Return_HCCL_E_PARA)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 300; // 配置RDMA Traffic Class超过约束范围
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 1);
+}
