@@ -903,7 +903,7 @@ void CcuComponent::SetProcess(CcuOpcodeType opCode) const
 
 HcclResult CcuComponent::CleanTaskKillState() const
 {
-    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    EXECEPTION_CATCH(SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE));
     return HcclResult::HCCL_SUCCESS;
 }
 
