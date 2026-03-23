@@ -432,7 +432,7 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle, const HccpUbJetty
         cfg, mode, in.jettyImportCfg.protocol, reqHandle);
 }
 
-HcclResult RaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut)
+HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut)
 {
     HCCL_INFO("[%s]mode[%s], phyId[%u], customIn[%p], customOut[%p]",
         __func__, mode.Describe().c_str(), phyId, customIn, customOut);

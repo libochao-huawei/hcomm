@@ -34,6 +34,7 @@ namespace hcomm {
 using namespace std;
 constexpr int BYTE = 8;
 constexpr uint64_t CCU_MSG_256MB_LEN = 256 * 1024 * 1024; // CCU消息长度不能大于256MB
+constexpr uint16_t INVALID_U16 = 65535;
 
 const map<uint8_t, string> MISSION_STATUS_MAP {
     {0x01, "Unsupported Opcode(0x01)"},      {0x02, "Local Operation Error(0x02)"},
@@ -198,7 +199,7 @@ CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint3
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个MissionContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuMissionContext) * inBuff.data.dataInfo.dataArraySize;
 
-    RaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
     (void)memcpy_s(&missionCtx, sizeof(missionCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
     return missionCtx;
 }
@@ -215,7 +216,7 @@ static string StatusCode2Str(uint8_t highPart, uint8_t lowPart)
 
     const auto lowMap = MISSION_SUB_STATUS_MAP.find(highPart);
     if (lowMap == MISSION_SUB_STATUS_MAP.end()) {
-        HCCL_ERROR("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        HCCL_ERROR("[%s]highPart[%u] not found in MISSION_SUB_STATUS_MAP", __func__, highPart);
         return result.str();
     }
 
@@ -251,7 +252,7 @@ uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%u]", __func__, deviceId), INVALID_U16);
 
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_CKE;
@@ -260,10 +261,12 @@ uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个CKE
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    RaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), INVALID_U16);
 
     uint64_t ckeVal{0};
-    (void)memcpy_s(&ckeVal, sizeof(ckeVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
+    s32 sret = memcpy_s(&ckeVal, sizeof(ckeVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), INVALID_U16);
     return static_cast<uint16_t>(ckeVal);
 }
 
@@ -275,8 +278,8 @@ void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo,
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocRecordEvent>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->GetEventId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetEventId());
+    errorMsg.msg.waitSignal.signalId    = rep->GetId();
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
@@ -292,7 +295,7 @@ void CcuTaskException::GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, s
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocWaitEvent>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->GetId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->sem.Id());
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
@@ -384,7 +387,7 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个Xn
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    RaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
 
     uint64_t xnVal{0};
     (void)memcpy_s(&xnVal, sizeof(xnVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
@@ -687,7 +690,7 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个LoopContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuLoopContext) * inBuff.data.dataInfo.dataArraySize;
 
-    RaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
+    HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
 
     CcuLoopContext loopCtx{};
     (void)memcpy_s(&loopCtx, sizeof(loopCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
