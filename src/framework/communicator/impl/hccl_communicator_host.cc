@@ -4563,6 +4563,8 @@ namespace hccl
         if ((isOpbaseMode && userRankSize_ > 1) || (isSupportAlg(algName, opParam.aicpuUnfoldMode))) {
             CHK_RET(CreateCommCCLbuffer());
         }
+        auto resourceBeginTime = std::chrono::::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
         InsertNewTagToTagMap(newTag, opParam.tag);
@@ -4653,6 +4655,9 @@ namespace hccl
             /*发送流程*/
             hcclNslbDp::GetInstance().SendAlgorithmInfoTable();
         }
+
+        auto execBeginTime = std::chrono::::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         // 算法执行
         if (opParam.isNpuDirectRoce) {
             // AIV直驱roce多机场景，需要生成RMAInfo并拷贝至Device
@@ -4717,6 +4722,12 @@ namespace hccl
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
+        auto execEndTime = std::chrono::::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        HCCL_ERROR("[HcclCommunicator][ExecOp] algName[%s] exec time[%lld] ns, resource time[%lld] ns",
+            algName.c_str(), execEndTime - execBeginTime, algName.c_str(),
+            execEndTime - execBeginTime, execBeginTime - resourceBeginTime);
+
         // 尾计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, algRes.slaveStreams));
