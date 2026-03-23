@@ -53,6 +53,8 @@
 using namespace std;
 using namespace hccl;
 
+typedef int32_t Callback(uint64_t, int32_t);
+
 const std::string HCCL_ALLTOALL = "ALLTOALL";
 const std::string HCCL_ALLTOALLV = "ALLTOALLV";
 const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
@@ -3386,19 +3388,19 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
 
     switch(value) {
         case defaultMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_HOST;
         case hostTsMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_HOST_TS;
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_HOST_TS;
         case aicpuTsMode:
         case aicpuMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AI_CPU;
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AI_CPU;
         case ccuMsMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_MS;
         case ccuSchedMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+            // 公开HCCL头文件已不再暴露CCU模式，对外统一收敛为HOST模式。
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_HOST;
         case aivMode:
         case aivOnlyMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AIV;
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AIV;
         default:
             break;
     }
