@@ -29,6 +29,9 @@ public:
     ChannelStatus GetStatus() override;
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 private:
     HcclResult ParseInputParam();
     HcclResult BuildTransport();

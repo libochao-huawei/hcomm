@@ -13,15 +13,27 @@
 #include <unordered_set>
 #include <memory>
 #include <mutex>
-// #include "coll_comm.h"
+#include <vector>
+#include "coll_comm.h"
 
 namespace hccl {
 /**
  * @note 职责：实现多个集合通信通信域上下文的创建、销毁管理，及多通信域资源、信息的共享等。
  */
 class CollCommMgr {
-public:
+private:
+    CollCommMgr();
+    ~CollCommMgr();
 
+public:
+    static CollCommMgr *GetInstance();
+    void RegisteCollComm(CollComm* collComm);
+    void UnRegisteCollComm(CollComm* collComm);
+    std::unordered_map<std::string, CollComm*> GetAllCollComms();
+
+private:
+    static CollCommMgr* instance_;
+    std::unordered_map<std::string, CollComm*> allCollComms_;
 };
 }
 #endif // COLL_COMM_MGR_H
