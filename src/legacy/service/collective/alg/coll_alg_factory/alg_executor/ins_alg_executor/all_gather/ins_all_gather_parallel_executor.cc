@@ -18,6 +18,7 @@
 
 #include "topo_match_mesh_nhr.h"
 #include "topo_match_concurr_mesh_nhr.h"
+#include "topo_match_mesh_nhr_pcie.h"
 
 #include "alg_data_trans_wrapper.h"
 
@@ -106,7 +107,6 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     } else {
         HCCL_DEBUG("[InsAllGatherParallelExecutor] Rank[%d], CalcRes with detouring disabled."
                    "rankSizeLevel0[%u] rankSizeLevel1[%u]",
-                    __func__,
                     myRank_,
                     rankSizeLevel0_,
                     rankSizeLevel1_);
@@ -505,6 +505,8 @@ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelMesh2DNHR,
     TopoMatchConcurrMeshNHR, InsTempAllGatherMesh2D, InsTempAllGatherNHR);
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelNHRNHR, InsAllGatherParallelExecutor,
     TopoMatchMeshNHR, InsTempAllGatherMesh2D, InsTempAllGatherNHR);
+INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLGATHER, InsAllGatherParallelMesh1DNHRPcie, InsAllGatherParallelExecutor,
+    TopoMatchMeshNHRPcie, InsTempAllGatherMesh1D, InsTempAllGatherNHR);
 
 // 算法注册
 #ifndef CCL_KERNEL_AICPU

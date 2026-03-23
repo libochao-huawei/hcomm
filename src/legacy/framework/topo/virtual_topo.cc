@@ -16,8 +16,6 @@
 #include "const_val.h"
 #include "dev_type.h"
 #include "const_val.h"
-#include "invalid_params_exception.h"
-#include "not_support_exception.h"
 #include "internal_exception.h"
 #include "orion_adapter_hccp.h"
 

@@ -97,14 +97,15 @@ HcclResult InsV2BatchSendRecvExecutor<AlgTopoMatch>::CalNumBlocks(
     u32& blockDim, u64 dataSize, u32 blockDimLimit)
 {
     (void)dataSize;
+    u32 coreSize = 2;
     HCCL_INFO("[InsV2BatchSendRecvExecutor] Limit core num[%u]", blockDimLimit);
 
-    if (blockDimLimit < 2) { // batchSendRecv至少需要两个核，分别去收发
+    if (blockDimLimit < coreSize) { // batchSendRecv至少需要两个核，分别去收发
         HCCL_ERROR("[InsV2BatchSendRecvExecutor] core num[%u] is less than 2", blockDimLimit);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
-    blockDim = blockDimLimit / 2 * 2;
+    blockDim = blockDimLimit / coreSize * coreSize;
     HCCL_INFO("[InsV2BatchSendRecvExecutor] Actually use core num[%u]", blockDim);
 
     return HcclResult::HCCL_SUCCESS;
@@ -157,7 +158,7 @@ HcclResult InsV2BatchSendRecvExecutor<AlgTopoMatch>::GetPairWiseList()
     for (u32 i = 0; i < itemNum; i++) {
         CHK_PTR_NULL(sendRecvInfo->buf);
         HCCL_INFO("[InsV2BatchSendRecvExecutor][GetPairWiseList] index is %u, itemNum is %u,"\
-            "localRankID is %d, sendRecvType is %u, buf is %u, count is %u, dataType is %u, remoteRank is %u, rankSize is %u.",
+            "localRankID is %d, sendRecvType is %u, buf is %p, count is %u, dataType is %u, remoteRank is %u, rankSize is %u.",
             i, itemNum, myRank_, static_cast<u32>(sendRecvInfo->sendRecvType), sendRecvInfo->buf, sendRecvInfo->count,
             static_cast<u32>(sendRecvInfo->dataType), sendRecvInfo->remoteRank, rankSize_);
 

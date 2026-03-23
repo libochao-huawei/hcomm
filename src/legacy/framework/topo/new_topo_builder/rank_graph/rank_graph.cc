@@ -607,6 +607,12 @@ void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInsta
     if (oldNetInstance == nullptr) {
         THROW<NullPtrException>(StringFormat("[AddGroupLinks]oldNetInstance is nullptr"));
     }
+    if (newRankIds.size() == 1) { 
+ 	          // 子通信域单卡场景直接返回1DMESH 
+ 	          RankId singleId = *newRankIds.begin(); 
+ 	          newNetInstance->UpdateTopoInst(0, TopoType::MESH_1D, singleId); 
+ 	          return; 
+ 	}
     for (RankId srcRankId : newRankIds) {
         for (RankId dstRankId : newRankIds) {
             if (srcRankId == dstRankId) {
