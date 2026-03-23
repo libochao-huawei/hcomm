@@ -74,6 +74,7 @@ private:
     // OpMode              opMode_{OpMode::OPBASE};
 
     Hccl::QpInfo        qpInfo_;
+    RoceAttr            roceAttr_{};
     void                *sendCompChannel_{nullptr};
     void                *recvCompChannel_{nullptr};
     bool                isHdcMode_{false};

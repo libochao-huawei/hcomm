@@ -100,6 +100,11 @@ HcclResult HostRdmaConnection::CreateQp()
     qosAttr.sl = qpInfo_.serviceLevel;
     HCCL_INFO("[%s]Set qp qos success by config, TC[%u] SL[%u]", __func__, qosAttr.tc, qosAttr.sl);
 
+    roceAttr_.tc = qpInfo_.trafficClass;
+    roceAttr_.sl = qpInfo_.serviceLevel;
+    roceAttr_.retryCnt = qpInfo_.retryCnt;
+    roceAttr_.retryInterval = qpInfo_.retryInterval;
+
     ret = RaSetQpAttrQos(qpInfo_.qpHandle, &qosAttr);
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrQos]errNo[0x%016llx] RaSetQpAttrQos fail. "
@@ -208,15 +213,16 @@ HcclResult HostRdmaConnection::ModifyQp()
         return HCCL_E_ROCE_CONNECT;
     }
 
-    HCCL_INFO("[HostRdmaConnection::ModifyQp] HostRdmaConnection qpInfo_: serviceLevel[%d], trafficClass[%d], retryCnt[%d], retryInterval[%d].", 
-            qpInfo_.serviceLevel, qpInfo_.trafficClass, qpInfo_.retryCnt, qpInfo_.retryInterval);
+    HCCL_INFO("[HostRdmaConnection::ModifyQp] HostRdmaConnection qpInfo_: serviceLevel[%d], trafficClass[%d], retryCnt[%d], retryInterval[%d]. "
+               "roceAttr_: sl[%d], tc[%d], retryCnt[%d], retryInterval[%d]", qpInfo_.serviceLevel, qpInfo_.trafficClass, qpInfo_.retryCnt, qpInfo_.retryInterval,
+               roceAttr_.sl, roceAttr_.tc, roceAttr_.retryCnt, roceAttr_.retryInterval);
 
     struct TypicalQp localQp;
     struct TypicalQp rmtQp;
-    localQp.sl = qpInfo_.serviceLevel;
-    localQp.tc = qpInfo_.trafficClass;
-    localQp.retryCnt = qpInfo_.retryCnt;
-    localQp.retryTime = qpInfo_.retryInterval;
+    localQp.sl = roceAttr_.sl;
+    localQp.tc = roceAttr_.tc;
+    localQp.retryCnt = roceAttr_.retryCnt;
+    localQp.retryTime = roceAttr_.retryInterval;
     localQp.qpn = localQpAttr.qpn;
     localQp.psn = localQpAttr.psn;
     localQp.gidIdx = localQpAttr.gidIdx;
