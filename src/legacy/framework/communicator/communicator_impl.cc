@@ -2781,7 +2781,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     return HCCL_SUCCESS;
 }
 
-bool CommunicatorImpl::IsCommWithPCIEProtocol()
+bool CommunicatorImpl::IsCommWithPCIEProtocol() const
 {
     auto links = GetFullMeshLinks();
     for (auto link : links) {

@@ -72,7 +72,7 @@ void CollServiceBase::RegisterCclBuffer(const std::vector<LinkData> &links) cons
         if (rmaBufManager.Get(comm->GetId(), portData, BufferType::SCRATCH) != nullptr) {
             HCCL_WARNING("RegisterCclBuffer has reged, optag(%s) portData[%s]",
                 comm->GetId().c_str(), portData.Describe().c_str());
-            return;
+            continue;
         }
         rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
     }
