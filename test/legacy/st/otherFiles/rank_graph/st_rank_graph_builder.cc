@@ -43,6 +43,7 @@ protected:
  
     virtual void SetUp() {
         std::cout << "A Test case in RankGraphBuilderTest SetUP" << std::endl;
+        MOCKER_CPP(&RankTableInfo::CheckAddrs).stubs().with().will(ignoreReturnValue());
     }
  
     virtual void TearDown() {
