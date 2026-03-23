@@ -129,7 +129,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::BatchCreateSockets(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs)
 {
     CHK_PTR_NULL(channelDescs);
@@ -150,7 +150,7 @@ HcclResult MyRank::BatchCreateSockets(CommEngine engine, const HcclChannelDesc* 
         RankPair* rankPair = nullptr;
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
-        CHK_RET(rankPair->GetEndpointPair(engine, endpointDescPair, endpointPair));
+        CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
         hcommDescs[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDescs[i]);
@@ -211,7 +211,8 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     std::vector<HcclMem> memVec;
     CHK_SMART_PTR_NULL(commMems_);
     CHK_RET(commMems_->GetMemoryHandles(memVec));
-    std::unordered_map<RankPair*, std::unordered_map<hcomm::EndpointPair*, u32>> reuseChannelIdxMap{};
+    std::unordered_map<RankPair*, std::unordered_map<CommEngine,
+        std::unordered_map<hcomm::EndpointPair*, u32>>> reuseChannelIdxMap{};
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         // 参数检查
@@ -268,17 +269,23 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         RankPair* rankPair = nullptr;
         CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
         CHK_PTR_NULL(rankPair);
-        CHK_RET(rankPair->GetEndpointPair(engine, endpointDescPair, endpointPair));
+        CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
 
         if (reuseChannelIdxMap.find(rankPair) == reuseChannelIdxMap.end()) {
+            std::unordered_map<CommEngine, std::unordered_map<hcomm::EndpointPair*, u32>> engine2EndpointPairMap{};
             std::unordered_map<hcomm::EndpointPair*, u32> endpointPair2Idx{};
             endpointPair2Idx.emplace(endpointPair, 0);
-            reuseChannelIdxMap.emplace(rankPair, endpointPair2Idx);
-        } else if (reuseChannelIdxMap[rankPair].find(endpointPair) == reuseChannelIdxMap[rankPair].end()) {
-            reuseChannelIdxMap[rankPair].emplace(endpointPair, 0);
+            engine2EndpointPairMap.emplace(engine, endpointPair2Idx);
+            reuseChannelIdxMap.emplace(rankPair, engine2EndpointPairMap);
+        } else if (reuseChannelIdxMap[rankPair].find(engine) == reuseChannelIdxMap[rankPair].end()) {
+            std::unordered_map<hcomm::EndpointPair*, u32> endpointPair2Idx{};
+            endpointPair2Idx.emplace(endpointPair, 0);
+            reuseChannelIdxMap[rankPair].emplace(engine, endpointPair2Idx);
+        } else if (reuseChannelIdxMap[rankPair][engine].find(endpointPair) == reuseChannelIdxMap[rankPair][engine].end()) {
+            reuseChannelIdxMap[rankPair][engine].emplace(endpointPair, 0);
         }
-        u32& reuseIdx = reuseChannelIdxMap[rankPair][endpointPair];
+        u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
@@ -371,7 +378,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
 
-    CHK_RET(BatchCreateSockets(engine, channelDescs, channelNum, commTag, hcommDescs));
+    CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
     CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
