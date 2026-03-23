@@ -55,8 +55,8 @@ target_include_directories(ccl_cpu PRIVATE
 add_dependencies(hcomm ccl_cpu)
 # 指定源文件
 set(CCL_CPU_SRC_LIST
-    ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/cpu_kernel_entrance.cc
-    ${HCCL_BASE_DIR}/src/framework/next/comms/comm_engine_res/threads/cpu_thread.cc
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/slaves/cpu_thread_kernel.cc
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads/cpu_thread.cc
 )
 target_sources(ccl_cpu PRIVATE
     ${CCL_CPU_SRC_LIST}
