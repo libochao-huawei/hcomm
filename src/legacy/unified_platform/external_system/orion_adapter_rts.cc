@@ -74,7 +74,6 @@ DevId HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
     if (deviceType == DevType::DEV_TYPE_NOSOC) {
         return 0;
     }
-    HCCL_INFO("[HrtGetDevicePhyIdByIndex]deviceLogicId=%d.",deviceLogicId);
 
     s32 devicePhyId = 0;
     aclError ret = aclrtGetPhyDevIdByLogicDevId(deviceLogicId, &devicePhyId);
@@ -85,7 +84,7 @@ DevId HrtGetDevicePhyIdByIndex(s32 deviceLogicId)
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_DRV), ret, deviceLogicId, devicePhyId);
         MACRO_THROW(RuntimeApiException, msg);
     }
-    HCCL_INFO("[HrtGetDevicePhyIdByIndex]devicePhyId=%d.",devicePhyId);
+    HCCL_INFO("[HrtGetDevicePhyIdByIndex]deviceLogicId=%d, devicePhyId=%d.", deviceLogicId, devicePhyId);
     return static_cast<DevId>(devicePhyId);
 }
 
@@ -107,9 +106,9 @@ void HrtGetSocVer(std::string &socName)
 {
     const char *socNamePtr = aclrtGetSocName();
     if (socNamePtr == nullptr) {
-        HCCL_ERROR("[Get][SocVer]errNo[0x%016llx] rtGet deviceVer failed.",
+        string msg = StringFormat("[Get][SocVer]errNo[0x%016llx] rtGet deviceVer failed.",
                    HCCL_ERROR_CODE((HcclResult::HCCL_E_RUNTIME)));
-        throw RuntimeApiException("call rtGetSocVersion failed. ");
+        MACRO_THROW(RuntimeApiException, msg);
     }
     socName = socNamePtr;
 }
@@ -119,12 +118,12 @@ s32 HrtGetDevice()
     s32 deviceLogicId = 0;
     aclError ret = aclrtGetDevice(&deviceLogicId);
     if (ret != ACL_SUCCESS) {
-        HCCL_WARNING("[Get][Device]errNo[0x%016llx] rtGet device fail, "
+        string msg = StringFormat("[Get][Device]errNo[0x%016llx] rtGet device fail, "
                      "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
                      HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, deviceLogicId);
-        throw RuntimeApiException("call aclrtGetDevice failed. ");
+        MACRO_THROW(RuntimeApiException, msg);
     }
-    HCCL_INFO("[HrtGetDevice]deviceLogicId=%d.",deviceLogicId);
+    HCCL_INFO("[HrtGetDevice]deviceLogicId=%d.", deviceLogicId);
     return deviceLogicId;
 }
 
@@ -174,7 +173,7 @@ HcclResult HrtResetXpuDevice(uint32_t devType, const uint32_t devId)
     CHK_PTR_NULL(funcPtr);
     rtError_t ret = funcPtr(devType, devId);
     if (ret != RT_ERROR_NONE) {
-        HCCL_ERROR("[%s] reset xpu device failed, devType[%u],devId[%u],return[%d]", __func__, devType, devId, ret);
+        HCCL_ERROR("[%s] reset xpu device failed, devType[%u], devId[%u], return[%d].", __func__, devType, devId, ret);
         return HCCL_E_RUNTIME;
     }
     return HCCL_SUCCESS;
@@ -186,7 +185,7 @@ HcclResult HrtSetXpuDevice(uint32_t devType, const uint32_t devId)
     CHK_PTR_NULL(funcPtr);
     rtError_t ret = funcPtr(devType, devId);
     if (ret != RT_ERROR_NONE) {
-        HCCL_ERROR("[%s] set xpu device failed, devType[%u],devId[%u],return[%d]", __func__, devType, devId, ret);
+        HCCL_ERROR("[%s] set xpu device failed, devType[%u], devId[%u], return[%d].", __func__, devType, devId, ret);
         return HCCL_E_RUNTIME;
     }
     return HCCL_SUCCESS;
@@ -209,10 +208,10 @@ s32 HrtGetStreamId(aclrtStream ptr)
 
 u64 HrtStreamGetMode(HcclRtStream const ptr)
 {
-    HCCL_INFO("[HrtStreamGetMode]ptr[%p].", ptr);
     if (ptr == nullptr) {
         throw RuntimeApiException(StringFormat("ptr is null, call aclrtGetStreamAttribute failed, ptr=%p", ptr));
     }
+    HCCL_INFO("[HrtStreamGetMode]ptr[%p].", ptr);
     u64 stmMode  =  0;
     s32 streamId = -1;
     aclError ret = aclrtStreamGetId(ptr, &streamId);
@@ -232,10 +231,10 @@ u64 HrtStreamGetMode(HcclRtStream const ptr)
 
 void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
 {
-    HCCL_INFO("[HrtStreamSetMode]streamPtr[%p], stmMode[%llu].", streamPtr, stmMode);
     if (streamPtr == nullptr) {
         throw RuntimeApiException(StringFormat("ptr is null, call aclrtSetStreamAttribute failed, ptr=%p", streamPtr));
     }
+    HCCL_INFO("[HrtStreamSetMode]streamPtr[%p], stmMode[%llu].", streamPtr, stmMode);
     s32 streamId = -1;
     aclError ret = aclrtStreamGetId(streamPtr, &streamId);
     HCCL_DEBUG("Call aclrtStreamGetId, return value[%d].", ret);
@@ -253,12 +252,12 @@ void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
 
 HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, aclrtDevAttr infoType, int64_t &val)
 {
-    HCCL_INFO("[HrtGetDeviceInfo]deviceLogicId[%u], moduleType[%d], infoType[%d], val[%lld].",
-                deviceLogicId, moduleType, infoType, val);
     if(moduleType != DEV_MODULE_TYPE::MODULE_TYPE_SYSTEM)
     {
         THROW<NotSupportException>(StringFormat("[hrtGetDeviceInfo]Unsupported moduleType[%d].", moduleType));
     }
+    HCCL_INFO("[HrtGetDeviceInfo]deviceLogicId[%u], moduleType[%d], infoType[%d], val[%lld].",
+                deviceLogicId, moduleType, infoType, val);
     aclError ret = aclrtGetDeviceInfo(deviceLogicId, infoType, reinterpret_cast<int64_t *>(&val));
     HCCL_INFO("Call HrtGetDeviceInfo return[%d]. val[%lld].", ret, val);
     if (ret != ACL_SUCCESS) {
@@ -393,10 +392,11 @@ inline s32 GetMsTimeFromExecTimeout()
 
 void HcclStreamSynchronize(HcclRtStream ptr)
 {
-    HCCL_INFO("[HcclStreamSynchronize] ptr[%p].", ptr);
     if (ptr == nullptr) {
-        throw RuntimeApiException(StringFormat("ptr is null, call aclrtSynchronizeStreamWithTimeout failed, ptr=%p", ptr));
+        string msg = StringFormat("ptr is null, call aclrtSynchronizeStreamWithTimeout failed, ptr=%p", ptr);
+        MACRO_THROW(RuntimeApiException, msg);
     }
+    HCCL_INFO("[HcclStreamSynchronize] ptr[%p].", ptr);
     s32       timeout = GetMsTimeFromExecTimeout();
     aclError  ret     = aclrtSynchronizeStreamWithTimeout(ptr, timeout);
     if (ret != ACL_SUCCESS) {
@@ -592,10 +592,10 @@ aclrtPtrAttributes  HrtPointerGetAttributes(const void *ptr)
     aclrtPtrAttributes  ptrAttr;
     aclError             ret = aclrtPointerGetAttributes(ptr, reinterpret_cast<aclrtPtrAttributes *>(&ptrAttr));
     if (ret != ACL_SUCCESS) {
-        HCCL_ERROR("[Get][PointAttr]errNo[0x%016llx] rt get point attr failed, "
+        string msg = StringFormat("[Get][PointAttr]errNo[0x%016llx] rt get point attr failed, "
                    "return[%d], para: ptrAddr[%p].",
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr);
-        throw RuntimeApiException(StringFormat("call aclrtPointerGetAttributes failed, ptr=%p", ptr));
+        MACRO_THROW(RuntimeApiException, msg);
     }
     return ptrAttr;
 }
