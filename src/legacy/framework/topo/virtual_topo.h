@@ -81,6 +81,9 @@ public:
             if (portGroupSize != tgtPortGroupSize) {
                 HCCL_ERROR("[LinkData][Constructor]srcConnIface.portGroupSize[%u] is not euqal to targetConnIface.portGroupSize[%u]",
                     static_cast<u32>(portGroupSize), static_cast<u32>(tgtPortGroupSize));
+                HCCL_ERROR("Errinfo: localRank[%u], rmtRank[%u], localDev[%u], rmtDev[%u], localAddr[%s], rmtAddr[%s]",
+                    localRankId_, remoteRankId_, localDeviceId_, remoteDeviceId_, localAddr_.Describe().c_str(),
+                    remoteAddr_.Describe().c_str());
             }
             fullmesh = false;  // 多链路场景，非fullmesh
         } else {
