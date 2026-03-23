@@ -3385,6 +3385,8 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
     constexpr uint32_t ccuMsMode = 5;
     constexpr uint32_t ccuSchedMode = 6;
     constexpr uint32_t aicpuMode = 7;
+    constexpr uint32_t legacyCcuMsMode = 4;
+    constexpr uint32_t legacyCcuSchedMode = 5;
 
     switch(value) {
         case defaultMode:
@@ -3395,9 +3397,9 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
         case aicpuMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AI_CPU;
         case ccuMsMode:
+            return static_cast<HcclConfigTypeOpExpansionMode>(legacyCcuMsMode);
         case ccuSchedMode:
-            // 公开HCCL头文件已不再暴露CCU模式，对外统一收敛为HOST模式。
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_HOST;
+            return static_cast<HcclConfigTypeOpExpansionMode>(legacyCcuSchedMode);
         case aivMode:
         case aivOnlyMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AIV;
@@ -5169,17 +5171,22 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     return HCCL_SUCCESS;
 }
 
-std::unordered_map<CommSymWindow, HcclComm> winHandle2comm;
+enum HcclCommSymWindowInnerFlag {
+    HCCL_COMM_SYM_WINDOW_FLAG_DEFAULT = 0,
+    HCCL_COMM_SYM_WINDOW_FLAG_COLL_SYMMETRIC = 1
+};
+
+std::unordered_map<HcclCommSymWindow, HcclComm> winHandle2comm;
 std::mutex g_winHandleMtx; // 保护 winHandle2comm
 
-HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag)
+HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, HcclCommSymWindow *winHandle, uint32_t flag)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(addr);
     CHK_PTR_NULL(winHandle);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
-    if (flag == HCCL_WIN_COLL_SYMMETRIC) {
+    if (flag == HCCL_COMM_SYM_WINDOW_FLAG_COLL_SYMMETRIC) {
         hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
         CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
         HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
@@ -5188,7 +5195,7 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, Comm
             std::lock_guard<std::mutex> lock(g_winHandleMtx);
             winHandle2comm[*winHandle] = comm;
         }
-    } else if (flag == HCCL_WIN_DEFAULT) {
+    } else if (flag == HCCL_COMM_SYM_WINDOW_FLAG_DEFAULT) {
         HCCL_ERROR("[HcclCommSymWinRegister]flag: 0 is not supported yet.");
         return HCCL_E_PARA;
     }else {
@@ -5198,7 +5205,7 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, Comm
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
+HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle)
 {
     // 入参校验
     CHK_PTR_NULL(winHandle);
@@ -5218,7 +5225,7 @@ HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
 {
     // 入参校验
     CHK_PTR_NULL(comm);

@@ -9,6 +9,7 @@
  */
 
 #include "../communicator/hccl_api_base_test.h"
+#include "hcomm_primitives_inner.h"
 
 #include <chrono>
 #include <thread>
