@@ -20,6 +20,7 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_thread_api.cc
     comms/comm_engine_res/utils/ut_msg_queue.cc
     comms/comm_engine_res/utils/ut_service_scheduler.cc
+    comms/comm_engine_res/utils/ut_data_ring.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
 )
 

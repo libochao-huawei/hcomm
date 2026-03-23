@@ -35,7 +35,7 @@ TEST_F(TestMsgQueue, Ut_When_MsgQueue_Push_And_Pop_On_Normal_Expect_Return_HCCL_
     ThreadMsgEntity entity;
     entity.msgId = 1;
     entity.serviceHandle = 2;
-    entity.args = nullptr;
+    entity.argsOffset = 0;
     entity.argsSizeByte = 0;
     ret = msgQueue.Push(entity);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -96,7 +96,7 @@ TEST_F(TestMsgQueue, Ut_When_MsgQueue_Empty_On_Normal_Expect_Correct)
     ThreadMsgEntity entity;
     entity.msgId = 1;
     entity.serviceHandle = 2;
-    entity.args = nullptr;
+    entity.argsOffset = 0;
     entity.argsSizeByte = 0;
 
     ret = msgQueue.Push(entity);
@@ -142,7 +142,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
     ThreadMsgEntity entity;
     entity.msgId = 1;
     entity.serviceHandle = 2;
-    entity.args = nullptr;
+    entity.argsOffset = 0;
     entity.argsSizeByte = 0;
 
     ret = msgQueue.Push(entity);
@@ -175,7 +175,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Multiple_Push_And_Pop_Expect_Correct)
         ThreadMsgEntity entity;
         entity.msgId = i;
         entity.serviceHandle = i * 100;
-        entity.args = nullptr;
+        entity.argsOffset = 0;
         entity.argsSizeByte = 0;
 
         ret = msgQueue.Push(entity);
