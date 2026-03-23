@@ -28,6 +28,17 @@ typedef struct {
     uint32_t capacity;
 } QueueInfo;
 
+typedef struct {
+    uint64_t addr;         // 数据缓冲区基地址, on HBM
+    uint64_t headIdxAddr;  // head 偏移量地址, on HBM (uint64_t, 单调递增)
+    uint64_t tailIdxAddr;  // tail 偏移量地址, on HBM (uint64_t, 单调递增)
+    uint32_t capacity;     // 缓冲区总大小 (字节)
+    uint32_t reserved;
+} DataRingInfo;
+
+constexpr uint32_t DATA_RING_ALIGNMENT = 8;
+#define DATA_RING_ALIGN_UP(x, align) (((x) + (align) - 1) & ~((align) - 1))
+
 /**
  * @note 申请内存大小: sizeof(ThreadEntity) + notifyNum * sizeof(NotifyEntity)
  */
@@ -37,6 +48,7 @@ typedef struct {
     union {
         struct {
             QueueInfo sendQueue;
+            DataRingInfo dataRing;
             // QueueInfo completionQueue;  // TODO: for DFX, not planned for now.
             ThreadServiceHandle waitService;
             ThreadServiceHandle recordService;
@@ -67,7 +79,7 @@ typedef struct {
 typedef struct {
     uint32_t msgId;
     uint64_t serviceHandle;
-    void *args;  // -> RecordServiceArgs, WaitServiceArgs, or other custom args struct
+    uint64_t argsOffset;  // DataRing 中的单调字节偏移量
     uint64_t argsSizeByte;
 } ThreadMsgEntity;
 

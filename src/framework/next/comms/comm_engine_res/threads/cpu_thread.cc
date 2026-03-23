@@ -228,6 +228,7 @@ HcclResult CpuThread::GetThreadEntity(void* &threadEntity)
     entity->type = THREAD_TYPE_CPU;
     entity->engine = COMM_ENGINE_AICPU;
     entity->cpuRes.sendQueue = serviceScheduler_->GetSendQueue()->GetQueueInfo();
+    entity->cpuRes.dataRing = serviceScheduler_->GetDataRing()->GetDataRingInfo();
     entity->cpuRes.recordService = recordServiceHandle_;
     entity->cpuRes.waitService = waitServiceHandle_;
     entity->notifyNum = notifyNum_;

@@ -42,6 +42,11 @@ protected:
         tailIdx_ = 0;
         memset(msgQueue_, 0, sizeof(msgQueue_));
 
+        // DataRing 模拟缓冲区
+        dataRingHead_ = 0;
+        dataRingTail_ = 0;
+        memset(dataRingBuf_, 0, sizeof(dataRingBuf_));
+
         memset(&cpuBuf_, 0, sizeof(cpuBuf_));
         cpuBuf_.entity.type = THREAD_TYPE_CPU;
         cpuBuf_.entity.engine = COMM_ENGINE_AICPU;
@@ -50,6 +55,11 @@ protected:
         cpuBuf_.entity.cpuRes.sendQueue.tailIdxAddr = reinterpret_cast<uint64_t>(&tailIdx_);
         cpuBuf_.entity.cpuRes.sendQueue.msgSize = sizeof(ThreadMsgEntity);
         cpuBuf_.entity.cpuRes.sendQueue.capacity = kSvcQueueCapacity;
+        cpuBuf_.entity.cpuRes.dataRing.addr = reinterpret_cast<uint64_t>(dataRingBuf_);
+        cpuBuf_.entity.cpuRes.dataRing.headIdxAddr = reinterpret_cast<uint64_t>(&dataRingHead_);
+        cpuBuf_.entity.cpuRes.dataRing.tailIdxAddr = reinterpret_cast<uint64_t>(&dataRingTail_);
+        cpuBuf_.entity.cpuRes.dataRing.capacity = sizeof(dataRingBuf_);
+        cpuBuf_.entity.cpuRes.dataRing.reserved = 0;
         cpuBuf_.entity.notifyNum = 0;
 
         testArgs_.param1 = 42;
@@ -59,25 +69,21 @@ protected:
     virtual void TearDown() override
     {
         GlobalMockObject::verify();
-        // Free malloc'd args written to the queue by HcommRequestServiceOnThread
-        for (uint64_t i = headIdx_; i != tailIdx_; i = (i + 1) % kSvcQueueCapacity) {
-            if (msgQueue_[i].args != nullptr) {
-                free(msgQueue_[i].args);
-                msgQueue_[i].args = nullptr;
-            }
-        }
     }
 
     SvcThreadEntityBuffer cpuBuf_;
     uint64_t headIdx_ = 0;
     uint64_t tailIdx_ = 0;
     ThreadMsgEntity msgQueue_[kSvcQueueCapacity];
+    uint8_t dataRingBuf_[32768];
+    uint64_t dataRingHead_ = 0;
+    uint64_t dataRingTail_ = 0;
     TestServiceArgs testArgs_;
 
     int32_t res_{HCCL_E_RESERVED};
 };
 
-// test_01: normal case - args copied to heap, enqueued, msgId incremented -> HCCL_SUCCESS
+// test_01: normal case - args written to DataRing, enqueued, msgId incremented -> HCCL_SUCCESS
 TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     Ut_HcommRequestServiceOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
@@ -86,12 +92,14 @@ TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     EXPECT_EQ(res_, HCCL_SUCCESS);
     // Verify queue advanced
     EXPECT_EQ(tailIdx_, 1u);
-    // Verify args were copied to heap
-    EXPECT_NE(msgQueue_[0].args, nullptr);
+    // Verify args were written to DataRing
     EXPECT_EQ(msgQueue_[0].serviceHandle, kValidService);
-    TestServiceArgs *copiedArgs = reinterpret_cast<TestServiceArgs *>(msgQueue_[0].args);
+    uint64_t argsOffset = msgQueue_[0].argsOffset;
+    TestServiceArgs *copiedArgs = reinterpret_cast<TestServiceArgs *>(dataRingBuf_ + (argsOffset % sizeof(dataRingBuf_)));
     EXPECT_EQ(copiedArgs->param1, testArgs_.param1);
     EXPECT_EQ(copiedArgs->param2, testArgs_.param2);
+    // Verify DataRing tail advanced
+    EXPECT_GT(dataRingTail_, 0u);
 }
 
 // test_02: dstThread = 0 (null) -> HCCL_E_PTR
@@ -158,4 +166,40 @@ TEST_F(UtAicpuTsHcommRequestServiceOnThread,
     // Message was enqueued despite unregistered handle (detection happens in CpuThread::KernelRun)
     EXPECT_EQ(tailIdx_, 1u);
     EXPECT_EQ(msgQueue_[0].serviceHandle, unregisteredService);
+}
+
+// test_08: DataRing full -> HCCL_E_INTERNAL
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
+    Ut_HcommRequestServiceOnThread_When_DataRingFull_Expect_ReturnIsHCCL_E_INTERNAL)
+{
+    // Set DataRing nearly full: head=0, tail=capacity - 1 (only 1 byte free, not enough for aligned args)
+    dataRingHead_ = 0;
+    dataRingTail_ = sizeof(dataRingBuf_) - 1;
+
+    ThreadHandle cpuHandle = reinterpret_cast<ThreadHandle>(&cpuBuf_.entity);
+    res_ = HcommRequestServiceOnThread(cpuHandle, kValidService, &testArgs_, sizeof(testArgs_));
+    EXPECT_EQ(res_, HCCL_E_INTERNAL);
+}
+
+// test_09: DataRing wraps around -> HCCL_SUCCESS
+TEST_F(UtAicpuTsHcommRequestServiceOnThread,
+    Ut_HcommRequestServiceOnThread_When_DataRingWrapsAround_Expect_ReturnIsHCCL_SUCCESS)
+{
+    // Set tail near end of buffer so entry must wrap around
+    // alignedSize of TestServiceArgs (12 bytes) = ALIGN_UP(12, 8) = 16
+    // Set tail so bufTailPos + 16 > capacity, forcing wrap
+    uint64_t nearEnd = sizeof(dataRingBuf_) - 8; // only 8 bytes left, need 16
+    dataRingHead_ = nearEnd - 64; // enough free space after wrap
+    dataRingTail_ = nearEnd;
+
+    ThreadHandle cpuHandle = reinterpret_cast<ThreadHandle>(&cpuBuf_.entity);
+    res_ = HcommRequestServiceOnThread(cpuHandle, kValidService, &testArgs_, sizeof(testArgs_));
+    EXPECT_EQ(res_, HCCL_SUCCESS);
+    // Verify args were written at buffer position 0 (after wrap)
+    uint64_t argsOffset = msgQueue_[0].argsOffset;
+    uint64_t bufPos = argsOffset % sizeof(dataRingBuf_);
+    EXPECT_EQ(bufPos, 0u);
+    TestServiceArgs *copiedArgs = reinterpret_cast<TestServiceArgs *>(dataRingBuf_ + bufPos);
+    EXPECT_EQ(copiedArgs->param1, testArgs_.param1);
+    EXPECT_EQ(copiedArgs->param2, testArgs_.param2);
 }
