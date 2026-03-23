@@ -27,7 +27,7 @@
 
 3. 安装社区版CANN ops软件包。
    
-   若需要调用并执行通信算子，则需要安装CANN ops软件包；若仅对源码仓进行编译，无需安装此软件包。
+   若需要调用并执行通信算子，需要安装CANN ops软件包；若仅对源码仓进行编译，无需安装此软件包。
 
     ```bash
     # 确保安装包具有可执行权限
@@ -168,7 +168,7 @@ bash build.sh --ut
 
    上述tar.gz包会在业务启动时加载至Device，加载过程中默认会由驱动进行安全验签，确保包可信。由于开发者通过本源码仓自行编译生成的tar.gz包中并不含签名头，所以需要关闭驱动安全验签的机制。
 
-   - 关闭验签方式：
+   **关闭验签方式：**
 
       配套使用HDK 25.5.T2.B001及以上版本，并通过该HDK自带的npu-smi工具关闭验签。以下为参考命令，需要以root用户在物理机上执行（以device 0为例）。
   
@@ -177,7 +177,7 @@ bash build.sh --ut
       npu-smi set -t custom-op-secverify-mode -i 0 -d 0      # 关闭客户自定义验签
       ```
 
-3. 执行HCCL Test测试命令，测试集合通信的功能及性能。
+1. 执行HCCL Test测试命令，测试集合通信的功能及性能。
 
    以1个计算节点，8个NPU设备，测试AllReduce算子的性能为例，命令示例如下：
 
@@ -191,7 +191,7 @@ bash build.sh --ut
 
    工具的详细使用说明可参见[昇腾文档中心-HCCL 性能测试工具使用指南](https://hiascend.com/document/redirect/CannCommunityToolHcclTest)中的“工具执行”章节。
 
-4. 查看结果
+2. 查看结果
 
    执行完HCCL Test工具后，回显示例如下：
 
