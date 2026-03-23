@@ -324,7 +324,12 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
 
 HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
 {
-    return ProcessUrmaRes(commParam, false);
+    CHK_RET(ProcessUrmaRes(commParam, false));
+    nsRecoveryLitePtr_->SetIsSuspended(false);
+    nsRecoveryLitePtr_->SetNeedClean(false);
+    nsRecoveryLitePtr_->ResetErrorReported();
+    
+    return HCCL_SUCCESS;
 }
 void CollCommAicpu::InitBackGroundThread()
 {
