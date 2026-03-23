@@ -79,11 +79,11 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
     ${URMA_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(rs PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
         ${TOP_DIR}/drivers/network/tls_adp
         ${TOP_DIR}/runtime/pkg_inc/base
         ${TOP_DIR}/driver/driver/pkg_inc/
