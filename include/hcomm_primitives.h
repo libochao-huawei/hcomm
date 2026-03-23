@@ -12,6 +12,7 @@
 #define HCOMM_PRIMITIVES_H
 
 #include <stdint.h>
+#include <stddef.h>
 #include <securec.h>
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
@@ -35,6 +36,11 @@ typedef uint64_t ChannelHandle;
  */
 typedef uint64_t ThreadHandle;
 #endif
+
+/**
+ * @brief 消息句柄类型
+ */
+typedef void *MsgHandle;
 
 typedef enum {
     HCOMM_REDUCE_SUM = 0,    /**< sum */
@@ -404,6 +410,34 @@ extern int32_t HcommAcquireComm(const char* commId);
  * @note 当前仅支持AICPU模式
  */
 extern int32_t HcommReleaseComm(const char* commId);
+
+/**
+ * @brief 向消息共享区发送请求
+ * @param[in] handle 消息句柄
+ * @param[in] msgTag 消息标签
+ * @param[in] src 源数据地址
+ * @param[in] sizeByte 数据字节数
+ * @param[out] msgId 输出消息ID
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId);
+
+/**
+ * @brief 从消息共享区等待响应
+ * @param[in] handle 消息句柄
+ * @param[out] dst 目的数据地址
+ * @param[in] sizeByte 数据字节数
+ * @param[out] msgId 输出消息ID
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
+
+/**
+ * @brief 阻塞等待线程上任务完成
+ * @param[in] thread 线程句柄
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommThreadSynchronize(ThreadHandle thread);
 #define HCOMM_PRIMITIVES_H_MODIFIED
 
 /**
