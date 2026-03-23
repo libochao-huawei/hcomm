@@ -43,7 +43,7 @@ void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 
 void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLiteId, u16 piValue,
                         uint8_t * const sqeIn);
 
-void BuildA5SqeWriteValue(u32 streamId, u32 taskId, u64 addr, u16 value, uint8_t * const sqeIn);
+void BuildA5SqeWriteValue1B(u32 streamId, u32 taskId, u64 addr, u16 value, uint8_t * const sqeIn);
 
 // CCore notify的wait
 void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 actAddr, bool last, uint8_t * const sqeIn);

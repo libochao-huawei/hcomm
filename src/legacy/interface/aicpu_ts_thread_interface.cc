@@ -204,7 +204,7 @@ HcclResult IAicpuTsThread::WriteValue(uint64_t addr, uint16_t value) const
         addr,
         value);
 
-    TRY_CATCH_RETURN(rtsqA5->WriteValue(addr, value));
+    TRY_CATCH_RETURN(rtsqA5->WriteValue1B(addr, value));
 
     return HCCL_SUCCESS;
 }

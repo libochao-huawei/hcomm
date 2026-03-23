@@ -337,7 +337,7 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
 
 void RtsqA5::WriteValue1B(u64 addr, u16 value)
 {
-    BuildA5SqeWriteValue(streamId_, taskId_, addr, value, GetCurrSqeBuffer());
+    BuildA5SqeWriteValue1B(streamId_, taskId_, addr, value, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::WriteValue: WriteValue Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("[RtsqA5][WriteValue] addr:0x%llx, value:%u, SqTail(Rtsq Pi):%u", addr, value, sqTail_);
     RefreshInfo();
