@@ -198,8 +198,7 @@ void CcuTransportMgr::WaitTransportsReady(vector<std::pair<CcuTransport*, LinkDa
 void CcuTransportMgr::DumpNotReadyTransports(vector<std::pair<CcuTransport*, LinkData>> &transports) const
 {
     HCCL_ERROR("Dump ccu timeout transport info, transport size[%u]", transports.size());
-    for (auto transIter = transports.begin(); transIter != transports.end(); ++transIter) 
-    {
+    for (auto transIter = transports.begin(); transIter != transports.end(); ++transIter) {
         string allStr=(*transIter).first->Describe();
  	    size_t pos = allStr.find("Socket");
  	    if(pos!=string::npos){
