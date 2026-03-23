@@ -56,6 +56,16 @@ union Eid {
                             static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
                             static_cast<unsigned long long>(be64toh(in6.interfaceId)));
     }
+
+    bool operator==(const Eid &that) const
+    {
+        return memcmp(&raw, &that.raw, sizeof(raw)) == 0;
+    }
+
+    bool operator<(const Eid &that) const
+    {
+        return memcmp(&raw, &that.raw, sizeof(raw)) < 0;
+    }
 };
 
 union BinaryAddr {
