@@ -11,6 +11,10 @@
 #ifndef HCCL_RES_EXPT_H
 #define HCCL_RES_EXPT_H
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "hccl/hccl_res.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -71,7 +75,7 @@ typedef int32_t(Callback)(uint64_t, int32_t);
  * 
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)盐业风;
+extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
 /**
  * @brief 从指定的通信域中注销一个已注册的任务。
  * @param comm 通信域对象，用于标识任务注销的目标通信域。

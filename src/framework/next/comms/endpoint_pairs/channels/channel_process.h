@@ -10,6 +10,7 @@
 #ifndef CHANNEL_PROCESS_H
 #define CHANNEL_PROCESS_H
 
+#include "hcomm_c_adpt.h"
 #include "channel.h"
 #include "mem_host_pub.h"
 #include <mutex>
