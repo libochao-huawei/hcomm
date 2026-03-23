@@ -20,7 +20,7 @@ extern "C" {
 /**
  * @brief HCCL functions return value definition
  */
-typedef enum {
+typedef enum HcclResultTag {
     HCCL_SUCCESS = 0,               /**< success */
     HCCL_E_PARA = 1,                /**< parameter error */
     HCCL_E_PTR = 2,                 /**< empty pointer */
@@ -64,6 +64,20 @@ typedef void *HcclConn;
  * @brief handle to HCCL Window
  */
 typedef void *HcclCommSymWindow;
+
+/**
+ * @brief internal compatible handle to symmetric window
+ */
+typedef HcclCommSymWindow CommSymWindow;
+
+/**
+ * @brief HCCL memory type
+ */
+typedef enum {
+    HCCL_MEM_TYPE_DEVICE = 0, /**< device memory */
+    HCCL_MEM_TYPE_HOST = 1,   /**< host memory */
+    HCCL_MEM_TYPE_NUM = 2     /**< memory type count */
+} HcclMemType;
 
 /**
  * @brief HCCL Reduction operation
