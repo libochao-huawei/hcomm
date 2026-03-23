@@ -46,6 +46,13 @@ struct AuxInfoIn {
     u8 resv[7];
 };
 
+constexpr u32 MAX_AUX_INFO_NUM = 256;
+struct AuxInfoOut {
+    uint32_t auxInfoTypes[MAX_AUX_INFO_NUM];
+    uint32_t auxInfoValues[MAX_AUX_INFO_NUM];
+    uint32_t auxInfoNum{0};
+};
+
 class CcuTaskException {
 public:
     CcuTaskException() = default;

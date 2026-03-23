@@ -636,7 +636,7 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
                                             vector<CcuErrorInfo> &errorInfo)
 {
     using GenErrorInfoFunc = void (*)(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
-                                                       vector<CcuRep::CcuErrorInfo> &errorInfo);
+                                                       vector<CcuErrorInfo> &errorInfo);
     static const map<CcuRep::CcuRepType, GenErrorInfoFunc> handlerMap {
         // WAIT_SIGNAL
         {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GenErrorInfoLocRecordEvent},
@@ -712,8 +712,8 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
     LoopXm loopXm{};
     loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->loopParam.Id());
     const auto ccuLoopContext        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
-    errorMsg.msg.loop.startInstrId   = rep->loopBlock->StartInstrId();
-    errorMsg.msg.loop.endInstrId     = rep->loopBlock->StartInstrId() + rep->loopBlock->InstrCount() - 1;
+    errorMsg.msg.loop.startInstrId   = rep->GetLoopBlock->StartInstrId();
+    errorMsg.msg.loop.endInstrId     = rep->GetLoopBlock->StartInstrId() + rep->loopBlock->InstrCount() - 1;
     errorMsg.msg.loop.loopEngineId   = loopXm.loopCtxId;
     errorMsg.msg.loop.loopCnt        = static_cast<uint16_t>(loopXm.loopCnt);
     errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
@@ -746,7 +746,7 @@ HcclResult CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo
     const auto  rep              = static_pointer_cast<CcuRep::CcuRepLoopGroup>(repBase);
     const auto  startLoopInstrId = rep->GetStartLoopInstrId();
     LoopGroupXn loopGroupXn{};
-    loopGroupXn.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->parallelParam.Id());
+    loopGroupXn.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetOffestParam.Id());
     errorMsg.msg.loopGroup.startLoopInsId = startLoopInstrId;
     errorMsg.msg.loopGroup.loopInsCnt     = static_cast<uint16_t>(loopGroupXn.loopInsCnt);
     errorMsg.msg.loopGroup.expandOffset   = static_cast<uint16_t>(loopGroupXn.expandOffset);
@@ -867,12 +867,6 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
 void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo)
 {
     const Hccl::ParaCcu& ccuTaskParam = taskInfo.taskParam_.taskPara.Ccu;
-
-    // auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
-    // auto *kernel = kernelMgr.GetKernel(ccuTaskParam.ccuKernelHandle);
-    // CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
-    //     __func__, deviceId, ccuTaskParam.ccuKernelHandle),);
-
     vector<CcuErrorInfo> errorInfos {};
     HcclResult ret = GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfos);
     const uint8_t missionStatus = (status >> 8) & 0xFF;
@@ -942,7 +936,7 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     }
 
     std::vector<JettyStatus> jettyStatusVec;
-    RaBatchQueryJettyStatus(jettyHandles, jettyStatusVec, jettyNum);
+    CHK_RET(RaBatchQueryJettyStatus(jettyHandles, jettyStatusVec, jettyNum));
 
     for (u32 i = 0; i < jettyNum; ++i) {
         if (jettyStatusVec[i] == JettyStatus::ERROR) {
@@ -979,7 +973,7 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInf
     }
     return HCCL_SUCCESS;
 }
-HcclResult TaskExceptionHost::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
+HcclResult CcuTaskException::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle)
 {
     HCCL_INFO("[PrintUbRegister] start, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
     AuxInfoIn in;
