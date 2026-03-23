@@ -24,6 +24,8 @@ struct CommMemHandle {
     void* addr {nullptr};
     uint64_t size {0};
     CommMemType memType {COMM_MEM_TYPE_INVALID};
+    void* bufferHandle {nullptr};
+    std::string memTag {};
 };
 struct CommMemHandleEqual {
     bool operator()(const CommMemHandle& lhs, const CommMemHandle& rhs) const {

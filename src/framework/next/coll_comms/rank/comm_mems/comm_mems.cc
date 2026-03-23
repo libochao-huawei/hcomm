@@ -89,6 +89,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     h->addr    = mem.addr;
     h->size    = static_cast<uint64_t>(mem.size);
     h->memType = static_cast<CommMemType>(mem.type);
+    h->memTag  = memTag;
  
     const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
  
