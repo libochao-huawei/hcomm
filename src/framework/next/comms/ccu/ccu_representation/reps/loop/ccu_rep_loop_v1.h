@@ -25,6 +25,9 @@ public:
 
     void                        Reference(std::shared_ptr<CcuRepLoopBlock> refRep);
     std::shared_ptr<CcuRepBase> SetLoopParam(Executor executor, Variable var);
+    CcuRepLoopBlock* GetLoopBlock() {
+        return loopBlock.get();
+    }
 
 private:
     std::string                      label;
