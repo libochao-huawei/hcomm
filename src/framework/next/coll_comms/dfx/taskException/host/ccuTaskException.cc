@@ -28,6 +28,7 @@
 #include "ccu_rep_type_v1.h"
 #include "ccu_rep_loc_record_event.h"
 #include "ccu_rep_v1.h"
+#include "ccu_comp.h"
 
 namespace hcomm {
 
@@ -458,14 +459,14 @@ void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_pt
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRep::CcuRepRead>(repBase);
-    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->loc.addr.Id());
-    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->loc.token.Id());
-    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->rem.addr.Id());
-    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->rem.token.Id());
-    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.transMem.signalId   = rep->sem.Id();
-    errorMsg.msg.transMem.signalMask = rep->mask;
-    errorMsg.msg.transMem.channelId  = rep->transport.GetChannelId();
+    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLocAddrId());
+    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLocTokenId());
+    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetRemAddrId());
+    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetRemTokenId());
+    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.transMem.signalId   = rep->GetSemId();
+    errorMsg.msg.transMem.signalMask = rep->GetMask();
+    errorMsg.msg.transMem.channelId  = rep->GetTransportChannelId();
 
     errorInfo.push_back(errorMsg);
 }
@@ -478,14 +479,14 @@ void CcuTaskException::GenErrorInfoWrite(const ErrorInfoBase &baseInfo, shared_p
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRep::CcuRepWrite>(repBase);
-    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->loc.addr.Id());
-    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->loc.token.Id());
-    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->rem.addr.Id());
-    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->rem.token.Id());
-    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.transMem.signalId   = rep->sem.Id();
-    errorMsg.msg.transMem.signalMask = rep->mask;
-    errorMsg.msg.transMem.channelId  = rep->transport.GetChannelId();
+    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLocAddrId());
+    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLocTokenId());
+    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetRemAddrId());
+    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetRemTokenId());
+    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.transMem.signalId   = rep->GetSemId();
+    errorMsg.msg.transMem.signalMask = rep->GetMask();
+    errorMsg.msg.transMem.channelId  = rep->GetTransportChannelId();
 
     errorInfo.push_back(errorMsg);
 }
@@ -498,13 +499,13 @@ void CcuTaskException::GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, share
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRep::CcuRepLocCpy>(repBase);
-    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->src.addr.Id());
-    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->src.token.Id());
-    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.addr.Id());
-    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.token.Id());
-    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.transMem.signalId   = rep->sem.Id();
-    errorMsg.msg.transMem.signalMask = rep->mask;
+    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
+    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
+    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
+    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstTokenId());
+    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.transMem.signalId   = rep->GetSemId();
+    errorMsg.msg.transMem.signalMask = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }
@@ -517,15 +518,15 @@ void CcuTaskException::GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, sh
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRep::CcuRepLocCpy>(repBase);
-    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->src.addr.Id());
-    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->src.token.Id());
-    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.addr.Id());
-    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.token.Id());
-    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.transMem.signalId   = rep->sem.Id();
-    errorMsg.msg.transMem.signalMask = rep->mask;
-    errorMsg.msg.transMem.opType     = rep->opType;
-    errorMsg.msg.transMem.dataType   = rep->dataType;
+    errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
+    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
+    errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
+    errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstTokenId());
+    errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.transMem.signalId   = rep->GetSemId();
+    errorMsg.msg.transMem.signalMask = rep->GetMask();
+    errorMsg.msg.transMem.opType     = rep->GetOpType();
+    errorMsg.msg.transMem.dataType   = rep->GetDataType();
 
     errorInfo.push_back(errorMsg);
 }
@@ -539,11 +540,11 @@ void CcuTaskException::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared
 
     const auto rep                    = static_pointer_cast<CcuRep::CcuRepBufRead>(repBase);
     errorMsg.msg.bufTransMem.bufId    = GetMSIdPerDie(rep->dst.Id());
-    errorMsg.msg.bufTransMem.addr     = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->src.addr.Id());
-    errorMsg.msg.bufTransMem.token    = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->src.token.Id());
-    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.bufTransMem.signalId = rep->sem.Id();
-    errorMsg.msg.bufTransMem.signalMask = rep->mask;
+    errorMsg.msg.bufTransMem.addr     = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
+    errorMsg.msg.bufTransMem.token    = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
+    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.bufTransMem.signalId = rep->GetSemId();
+    errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
     errorMsg.msg.bufTransMem.channelId  = rep->transport.GetChannelId();
 
     errorInfo.push_back(errorMsg);
@@ -558,12 +559,12 @@ void CcuTaskException::GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, share
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepBufWrite>(repBase);
     errorMsg.msg.bufTransMem.bufId      = GetMSIdPerDie(rep->src.Id());
-    errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.addr.Id());
-    errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.token.Id());
-    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.bufTransMem.signalId   = rep->sem.Id();
-    errorMsg.msg.bufTransMem.signalMask = rep->mask;
-    errorMsg.msg.bufTransMem.channelId  = rep->transport.GetChannelId();
+    errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
+    errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstTokenId());
+    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.bufTransMem.signalId   = rep->GetSemId();
+    errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
+    errorMsg.msg.bufTransMem.channelId  = rep->GetTransportChannelId();
 
     errorInfo.push_back(errorMsg);
 }
@@ -577,11 +578,11 @@ void CcuTaskException::GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, sha
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepBufLocRead>(repBase);
     errorMsg.msg.bufTransMem.bufId      = GetMSIdPerDie(rep->dst.Id());
-    errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->src.addr.Id());
-    errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->src.token.Id());
-    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.bufTransMem.signalId   = rep->sem.Id();
-    errorMsg.msg.bufTransMem.signalMask = rep->mask;
+    errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
+    errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
+    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.bufTransMem.signalId   = rep->GetSemId();
+    errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }
@@ -595,11 +596,11 @@ void CcuTaskException::GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, sh
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepBufLocWrite>(repBase);
     errorMsg.msg.bufTransMem.bufId      = GetMSIdPerDie(rep->src.Id());
-    errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.addr.Id());
-    errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->dst.token.Id());
-    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->len.Id());
-    errorMsg.msg.bufTransMem.signalId   = rep->sem.Id();
-    errorMsg.msg.bufTransMem.signalMask = rep->mask;
+    errorMsg.msg.bufTransMem.addr       = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
+    errorMsg.msg.bufTransMem.token      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstTokenId());
+    errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
+    errorMsg.msg.bufTransMem.signalId   = rep->GetSemId();
+    errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }
@@ -612,14 +613,14 @@ void CcuTaskException::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, shar
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                        = static_pointer_cast<CcuRep::CcuRepBufReduce>(repBase);
-    errorMsg.msg.bufReduce.count          = rep->count;
-    errorMsg.msg.bufReduce.dataType       = rep->dataType;
-    errorMsg.msg.bufReduce.outputDataType = rep->outputDataType;
-    errorMsg.msg.bufReduce.opType         = rep->opType;
-    errorMsg.msg.bufReduce.signalId       = rep->sem.Id();
-    errorMsg.msg.bufReduce.signalMask     = rep->mask;
-    errorMsg.msg.bufReduce.xnIdLength     = rep->xnIdLength_.Id();
-    const auto &buffs                     = rep->mem;
+    errorMsg.msg.bufReduce.count          = rep->GetCount();
+    errorMsg.msg.bufReduce.dataType       = rep->GetDataType();
+    errorMsg.msg.bufReduce.outputDataType = rep->GetOutputDataType();
+    errorMsg.msg.bufReduce.opType         = rep->GetOpType();
+    errorMsg.msg.bufReduce.signalId       = rep->GetSemId();
+    errorMsg.msg.bufReduce.signalMask     = rep->GetMask();
+    errorMsg.msg.bufReduce.xnIdLength     = rep->GetXnLengthId();
+    const auto &buffs                     = rep->GetMem();
     (void)memset_s(errorMsg.msg.bufReduce.bufIds, sizeof(errorMsg.msg.bufReduce.bufIds), 0xFF,
                    sizeof(errorMsg.msg.bufReduce.bufIds));
     for (uint32_t i = 0; i < buffs.size() && i < BUF_REDUCE_ID_SIZE; ++i) {
