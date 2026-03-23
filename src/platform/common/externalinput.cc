@@ -137,7 +137,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_WHITELIST_DISABLE), "HCCL_WHITELIST_DISABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_WHITELIST_DISABLE), "HCCL_WHITELIST_DISABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse whitelist switch failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -286,7 +286,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_BUFFSIZE), "HCCL_BUFFSIZE", "equal to or greater than 1(MB)."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_BUFFSIZE), "HCCL_BUFFSIZE", "equal to or greater than 1(MB)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_BUFFSIZE failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -300,7 +300,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DETERMINISTIC), "HCCL_DETERMINISTIC", "true, false or strict."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DETERMINISTIC), "HCCL_DETERMINISTIC", "true, false or strict"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_DETERMINISTIC failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
@@ -314,7 +314,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DIAGNOSE_ENABLE), "HCCL_DIAGNOSE_ENABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_DIAGNOSE_ENABLE), "HCCL_DIAGNOSE_ENABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_DIAGNOSE_ENABLE failed. "
                    "errorno[%d]",
@@ -329,7 +329,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_ENTRY_LOG_ENABLE), "HCCL_ENTRY_LOG_ENABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_ENTRY_LOG_ENABLE), "HCCL_ENTRY_LOG_ENABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_ENTRY_LOG_ENABLE failed. "
                    "errorno[%d]",
@@ -344,7 +344,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_INTER_HCCS_DISABLE), "HCCL_INTER_HCCS_DISABLE", "true or false."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_INTER_HCCS_DISABLE), "HCCL_INTER_HCCS_DISABLE", "true or false"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_INTER_HCCS_DISABLE failed. "
                    "errorno[%d]",
@@ -359,7 +359,7 @@ HcclResult InitEnvVarParam()
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
         std::vector<std::string>({GET_ENV(MM_ENV_HCCL_OP_EXPANSION_MODE), "HCCL_OP_EXPANSION_MODE",
-            "Atlas A3: AI_CPU | AIV; Atlas A2 AIV | HOST | HOST_TS; Atlas 300I AI_CPU | HOST. "}));
+            "Atlas A3: AI_CPU | AIV; Atlas A2 AIV | HOST | HOST_TS; Atlas 300I AI_CPU | HOST"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_OP_EXPANSION_MODE failed. "
                    "errorno[%d]",
@@ -391,7 +391,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_MULTI_QP_THRESHOLD), "HCCL_MULTI_QP_THRESHOLD", "larger than 0, less than 8193(KB)."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_MULTI_QP_THRESHOLD), "HCCL_MULTI_QP_THRESHOLD", "larger than 0, less than 8193(KB)"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
                    "HCCL_MULTI_QP_THRESHOLD(range[1,8192]) failed. errorno[%d]",
@@ -407,7 +407,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_OP_RETRY_ENABLE), "HCCL_OP_RETRY_ENABLE", "0 or 1."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_OP_RETRY_ENABLE), "HCCL_OP_RETRY_ENABLE", "0 or 1"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_OP_RETRY_ENABLE failed. "
                    "errorno[%d]",
@@ -455,7 +455,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT), "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT", "true or false."}));
+        std::vector<std::string>({GET_ENV(MM_ENV_HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT), "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT", "true or false"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
                    "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT failed. errorno[%d]",
@@ -1083,7 +1083,7 @@ HcclResult SetMasterInfo(const string &masterIp, const string &masterPort, const
             RPT_ENV_ERR(HCCL_E_PARA,
                 "EI0001",
                 std::vector<std::string>({"value", "env", "expect"}),
-                std::vector<std::string>({rankIp, "CM_WORKER_IP", "an available ip."}));
+                std::vector<std::string>({rankIp, "CM_WORKER_IP", "an available ip"}));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] masterIp agent address[CM_WORKER_IP][%s] is invalid. errorno[%d]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_ENV_CONFIG.c_str(),
