@@ -49,10 +49,15 @@ HcclResult HcclTbeReduceGenArgs(const TbeReduceParam *param, aclrtStream stream,
 
 void *GraphMgrInit()
 {
+    void *graphMgr = new u64(1);
+    return graphMgr;
 }
 
 void GraphMgrDeInit(void *graphMgr)
 {
+    if (graphMgr != nullptr) {
+        delete static_cast<u64*>(graphMgr);
+    }
 }
 
 void* GetGraphCtx(void *graphMgr, const char *key, uint32_t keyLen)

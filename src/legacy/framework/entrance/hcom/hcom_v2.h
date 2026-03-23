@@ -98,7 +98,7 @@ HcclResult HcomGetDevTypeV2(Hccl::DevType &devType);
 HcclResult HcomSetGlobalWorkSpaceV2(const char *group, const std::vector<void *> &globalWorkSpaceAddr);
 HcclResult HcomGetInitStatusV2(bool& initiated);
 HcclResult HcomCheckCommValidityV2(const char *group);
-HcclResult HcomSupportDeterministicOptimV2(const char *group, const bool &isDeterministicOptim);
+HcclResult HcomSupportDeterministicOptimV2(const char *group, bool &isDeterministicOptim);
 HcclResult HcomSetAivCoreLimitV2(const char *group, u32 aivCoreLimit);
 HcclResult HcomSetQosCfgV2(const char *group, const u32 qosCfg);
 HcclResult HcomSelectAlgV2(s64 comm, const char *group, HcclCMDType opType, u64 count, HcclDataType dataType,
@@ -125,6 +125,8 @@ HcclResult HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t
 HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t flag);
 HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rtStream_t *aiCpuStream);
 
+HcclResult HcomSetAttachedStreamV2();
+HcclResult HcomReleaseSubCommsV2();
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

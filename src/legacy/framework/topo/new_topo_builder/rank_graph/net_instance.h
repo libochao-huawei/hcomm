@@ -16,6 +16,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <map>
 #include <utility>
 
 #include "graph.h"
@@ -25,7 +26,7 @@
 #include "topo_common_types.h"
 
 namespace Hccl {
-
+constexpr u32 DEFAULT_LISTENING_PORT = 60001;
 class NetInstance {
 public:
     class ConnInterface {
@@ -90,9 +91,9 @@ public:
     class Peer : public Node {
     public:
         using NetInstancePtr = const NetInstance *;
-        Peer(RankId rankId, LocalId localId, LocalId replacedLocalId, DeviceId deviceId)
+        Peer(RankId rankId, LocalId localId, LocalId replacedLocalId, DeviceId deviceId, u32 devicePort = DEFAULT_LISTENING_PORT)
             : Node(NodeType::PEER), rankId_(rankId), localId_(localId), replacedLocalId_(replacedLocalId),
-              deviceId_(deviceId)
+              deviceId_(deviceId), devicePort_(devicePort)
         {
             nodeId_ = GenerateNodeId(rankId);
         }
@@ -102,18 +103,20 @@ public:
         LocalId       GetReplacedLocalId() const;
         RankId        GetRankId() const;
         DeviceId      GetDeviceId() const;
+        u32           GetDevicePort() const;
         std::set<u32> GetLevels() const;
         NetInstancePtr   GetNetInstance(u32 level) const;
-        std::unordered_map<std::string, IpAddress> GetPortAddrMapLayer0() const;
-        void SetPortPortAddrMapLayer0(std::unordered_map<std::string, IpAddress> portAddrMap);
+        std::map<std::string, IpAddress> GetPortAddrMapLayer0() const;
+        void SetPortPortAddrMapLayer0(std::map<std::string, IpAddress> portAddrMap);
         std::string   Describe() const override;
     private:
         RankId                   rankId_;
         LocalId                  localId_;
         LocalId                  replacedLocalId_;
         DeviceId                 deviceId_;
+        u32                      devicePort_;
         std::set<u32>            netLayers_;
-        std::unordered_map<std::string, IpAddress> portAddrMapLayer0_{}; // layer0 层端口与IpAddress的映射。
+        std::map<std::string, IpAddress> portAddrMapLayer0_{}; // layer0 层端口与IpAddress的映射。
         std::vector<NetInstancePtr> netInsts_; // 下标为level，约束：level从0递增
     };
 

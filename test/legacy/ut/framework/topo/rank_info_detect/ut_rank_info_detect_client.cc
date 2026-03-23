@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -92,6 +92,29 @@ protected:
     nlohmann::json presetRankTableJson_;   // 模拟GetLocalRankTableJson的返回结果
     SocketHandle socketHandle;
 };
+
+namespace {
+NewRankInfo BuildRankInfoForTls(u32 rankId, TlsStatus tlsStatus)
+{
+    NewRankInfo rankInfo {};
+    rankInfo.rankId = rankId;
+    rankInfo.localId = rankId;
+    rankInfo.replacedLocalId = rankId;
+    rankInfo.rankLevelInfos.emplace_back(RankLevelInfo {});
+    rankInfo.tlsStatus = tlsStatus;
+    return rankInfo;
+}
+
+void BuildRankTableForTls(RankTableInfo &rankTable, const std::vector<TlsStatus> &tlsStatusList)
+{
+    rankTable.version = "2.0";
+    rankTable.rankCount = tlsStatusList.size();
+    rankTable.ranks.clear();
+    for (u32 idx = 0; idx < tlsStatusList.size(); ++idx) {
+        rankTable.ranks.emplace_back(BuildRankInfoForTls(idx, tlsStatusList[idx]));
+    }
+}
+}
 
 TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Normal_Expect_Success)
 {
@@ -190,3 +213,49 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
 
     EXPECT_NO_THROW(rankInfoDetectClient_->RecvRankTable());
 }
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_AllRanksEnable_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::ENABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_AllRanksDisable_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::DISABLE, TlsStatus::DISABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_EnableAndDisableMixed_Expect_ReturnParaError)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownConsistentAndUnknownExists_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::UNKNOWN});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentAndUnknownExists_Expect_ReturnParaError)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE, TlsStatus::UNKNOWN});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+

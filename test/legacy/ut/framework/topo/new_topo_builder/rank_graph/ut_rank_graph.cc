@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -351,4 +351,11 @@ TEST_F(RankGraphTest, ut_GetEndpointDesc_When_Normal_Expect_SUCCESS)
     delete[] endPointDesc;
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankGraphTest, ut_AddGroupLinks_When_1pNormal_Expect_SUCCESS) {
+    auto rankGraph = create4pRankGraph(myRank);
+    vector<u32> subRankIds = {0};
+    std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(subRankIds);
+    EXPECT_EQ(1, subRankGraph->GetLocalInstSize(0));
 }

@@ -350,7 +350,10 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.version = 0; // 暂时无用，默认给0
     initAttr.mode = NETWORK_OFFLINE; // net work mode 枚举值
     initAttr.ub.phyId = deviceId;
-    HCCL_INFO("Input Eid %s", ipAddr.GetEid().Describe().c_str());
+    if (eidmap.find(ipAddr.GetEid()) == eidmap.end()) {
+        HCCL_ERROR("eidmap don't have input Eid,Input Eid %s", ipAddr.GetEid().Describe().c_str());
+        return HCCL_E_NOT_FOUND;
+    }
     initAttr.dev.ub.eidIndex = eidmap.at(ipAddr.GetEid());//从eid_list获取eidIndex
     u32 ret = memcpy_s(initAttr.dev.ub.eid.raw, sizeof(initAttr.dev.ub.eid.raw), 
             ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
@@ -365,10 +368,7 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     u32 client_qp_token, client_seg_token;
     u32 server_qp_token, server_seg_token;
     HcclResult token_ret = GetUbToken(deviceId, &client_qp_token, &client_seg_token, &server_qp_token, &server_seg_token);
-    if (token_ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
-        return token_ret;
-    }
+    CHK_RET(token_ret);
     // client的初始化信息
     initAttr.client.ub.cqAttr.sendCqDepth = maxWrDepth;
     initAttr.client.ub.cqAttr.recvCqDepth = maxWrDepth;
@@ -436,6 +436,7 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
             HCCL_ERROR("[RaGetEidMap]memcpy_s failed, error code = %d.", ret);
             return HCCL_E_INTERNAL;
         }
+        HCCL_RUN_INFO("[RaGetEidMap] eid[%s], eidIndex[%u] get.", eid.Describe().c_str(), infoList[i].eidIndex);
         eidmap.insert(std::make_pair(eid, infoList[i].eidIndex));
     }
 

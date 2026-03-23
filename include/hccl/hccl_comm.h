@@ -333,6 +333,26 @@ extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
  */
 extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 
+typedef enum {
+    HCCL_OP_EXPANSION_MODE_INVALID = -1,
+    HCCL_OP_EXPANSION_AI_CPU = 0,
+    HCCL_OP_EXPANSION_AIV = 1,
+    HCCL_OP_EXPANSION_HOST = 2,
+    HCCL_OP_EXPANSION_HOST_TS = 3,
+    HCCL_OP_EXPANSION_CCU_MS = 4,
+    HCCL_OP_EXPANSION_CCU_SCHED = 5
+} HcclOpExpansionMode;
+
+typedef enum {
+    HCCL_CONFIG_TYPE_INVALID = -1,
+    HCCL_CONFIG_TYPE_OP_EXPANSION_MODE = 0
+} HcclConfigType;
+
+typedef HcclOpExpansionMode HcclConfigTypeOpExpansionMode;
+
+extern HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
+    uint32_t infoLen, void *info);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

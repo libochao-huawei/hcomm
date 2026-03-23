@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -808,7 +808,7 @@ TEST_F(OpbaseTestV2, HcclGetRawCommHandle)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_OK)
+TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_OK)
 {
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
@@ -819,11 +819,11 @@ TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_OK)
     void *ccuTaskGroup = static_cast<void*>(&a);
     void *fusionArgs = static_cast<void*>(&a);
     MOCKER_CPP(&HcclCommunicator::GetCcuTaskInfo).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = HcclGetCcuTaskInfo(comm, fusionArgs, ccuTaskGroup);
+    HcclResult ret = HcclGetCcuTaskInfoLegacy(comm, fusionArgs, ccuTaskGroup);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_ERR)
+TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_ERR)
 {
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
@@ -833,7 +833,7 @@ TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_ERR)
     void *ccuTaskGroup = static_cast<void*>(&a);
     void *fusionArgs = static_cast<void*>(&a);
     MOCKER_CPP(&HcclCommunicator::GetCcuTaskInfo).stubs().with(any(), any()).will(returnValue(HCCL_E_INTERNAL));
-    HcclResult ret = HcclGetCcuTaskInfo(comm, fusionArgs, ccuTaskGroup);
+    HcclResult ret = HcclGetCcuTaskInfoLegacy(comm, fusionArgs, ccuTaskGroup);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 

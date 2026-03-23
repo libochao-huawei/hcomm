@@ -26,7 +26,7 @@ CCLBufferManager::CCLBufferManager()
 
 CCLBufferManager::~CCLBufferManager()
 {
-    if (!isShareCCLbuffer_) {
+    if (!static_cast<bool>(isShareCCLbuffer_)) {
         ReleaseCommCCLbuffer();
     }
     ReleaseAlltoAllvParaBuffer();
