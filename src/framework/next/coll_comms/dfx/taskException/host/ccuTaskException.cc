@@ -279,8 +279,8 @@ void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo,
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocRecordEvent>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->GetEventId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetEventId());
+    errorMsg.msg.waitSignal.signalId    = rep->GetId();
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
@@ -296,7 +296,7 @@ void CcuTaskException::GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, s
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocWaitEvent>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->GetId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->sem.Id());
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
