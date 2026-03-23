@@ -81,7 +81,13 @@ void RankInfoDetectService::GetConnections()
         std::shared_ptr<Socket> connSocket = std::make_shared<Socket>(
             hccpHostSocketHandle, hostIp_, hostPort, hostIp_, connSocketTag, SocketRole::SERVER, NicType::HOST_NIC_TYPE);
         EXECEPTION_CATCH((status = connSocket->GetStatus()), 
-            HCCL_ERROR("[RankInfoDetectService::%s] server get socket fail", __func__));
+            {
+                // 非本端client首次连接异常，直接重试
+                if(status == SocketStatus::OK) {
+                    status = SocketStatus::CONNECTING;
+                }
+                HCCL_ERROR("[RankInfoDetectService::%s] server get socket fail", __func__)
+            });
         if (status == SocketStatus::OK) {
             if(!RecvAndVerifyRemoteAgentIdAndRankSize(connSocket, expectedSocketNum, previousRankNum)) {
                 break;
@@ -114,7 +120,7 @@ void RankInfoDetectService::GetConnections()
         // 将建立连接超时的client信息添加到failedAgentIdList_
         FailedConnectionAgentIdString(expectedSocketNum);
         DisplayConnectedRanks();
-        HCCL_INFO("[RankInfoDetectService::%s] end, there exist non-connected ranks.", __func__);
+        HCCL_ERROR("[RankInfoDetectService::%s] end, there exist non-connected ranks.", __func__);
     } else {
         HCCL_INFO("[RankInfoDetectService::%s] end, all agentId get connection socket success.", __func__);
     }
