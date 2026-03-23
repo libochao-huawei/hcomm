@@ -369,6 +369,14 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     return HCCL_SUCCESS;
 }
 
+HcclResult CcuKernel::MsWriteNb(const ChannelHandle channel, const CcuRep::CcuBuf &src,
+                                  const CcuRep::Variable &len,
+                                  uint32_t rmtCkeIdx, uint16_t mask, uint32_t rmtMsId)
+{
+    Append(std::make_shared<CcuRep::CcuRepMsWrite>(channel, src, len, rmtCkeIdx, mask, rmtMsId));
+    return HCCL_SUCCESS;
+}
+
 static bool isLowPrecisionIn(Hccl::DataType dataType)
 {
     return dataType == Hccl::DataType::INT8 || dataType == Hccl::DataType::HIF8 || dataType == Hccl::DataType::FP8E4M3
