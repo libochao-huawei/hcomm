@@ -14,6 +14,7 @@
 #include "kernel_operator.h"
 using namespace AscendC;
 
+
 constexpr uint64_t UB_FLAG_PAD_COUNT = 8;
 constexpr uint64_t UB_ADDRESS_PAD_COUNT = 4;
 
