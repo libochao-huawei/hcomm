@@ -716,8 +716,8 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
     LoopXm loopXm{};
     loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->loopParam.Id());
     const auto ccuLoopContext        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
-    errorMsg.msg.loop.startInstrId   = rep->loopBlock->StartInstrId();
-    errorMsg.msg.loop.endInstrId     = rep->loopBlock->StartInstrId() + rep->loopBlock->InstrCount() - 1;
+    errorMsg.msg.loop.startInstrId   = rep->GetLoopBlock->StartInstrId();
+    errorMsg.msg.loop.endInstrId     = rep->GetLoopBlock->StartInstrId() + rep->loopBlock->InstrCount() - 1;
     errorMsg.msg.loop.loopEngineId   = loopXm.loopCtxId;
     errorMsg.msg.loop.loopCnt        = static_cast<uint16_t>(loopXm.loopCnt);
     errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
@@ -750,7 +750,7 @@ HcclResult CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo
     const auto  rep              = static_pointer_cast<CcuRep::CcuRepLoopGroup>(repBase);
     const auto  startLoopInstrId = rep->GetStartLoopInstrId();
     LoopGroupXn loopGroupXn{};
-    loopGroupXn.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->parallelParam.Id());
+    loopGroupXn.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetOffestParam.Id());
     errorMsg.msg.loopGroup.startLoopInsId = startLoopInstrId;
     errorMsg.msg.loopGroup.loopInsCnt     = static_cast<uint16_t>(loopGroupXn.loopInsCnt);
     errorMsg.msg.loopGroup.expandOffset   = static_cast<uint16_t>(loopGroupXn.expandOffset);
