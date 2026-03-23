@@ -43,18 +43,18 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
         HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo.memTag;
+        std::string tag = locMemInfo->memTag;
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            locMemInfo.addr,
-            static_cast<uint32_t>(locMemInfo.size),
+            locMemInfo->addr,
+            static_cast<uint32_t>(locMemInfo->size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            locMemInfo.memType,
+            locMemInfo->memType,
             memTag);
     }
     return HCCL_SUCCESS;
