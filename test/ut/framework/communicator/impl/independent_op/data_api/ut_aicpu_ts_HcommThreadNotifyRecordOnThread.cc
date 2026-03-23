@@ -97,6 +97,11 @@ protected:
         tailIdx_ = 0;
         memset(msgQueue_, 0, sizeof(msgQueue_));
 
+        // DataRing 模拟缓冲区
+        dataRingHead_ = 0;
+        dataRingTail_ = 0;
+        memset(dataRingBuf_, 0, sizeof(dataRingBuf_));
+
         memset(&cpuBuf_, 0, sizeof(cpuBuf_));
         cpuBuf_.entity.type = THREAD_TYPE_CPU;
         cpuBuf_.entity.engine = COMM_ENGINE_AICPU;
@@ -106,6 +111,11 @@ protected:
         cpuBuf_.entity.cpuRes.sendQueue.tailIdxAddr = reinterpret_cast<uint64_t>(&tailIdx_);
         cpuBuf_.entity.cpuRes.sendQueue.msgSize = sizeof(ThreadMsgEntity);
         cpuBuf_.entity.cpuRes.sendQueue.capacity = kQueueCapacity;
+        cpuBuf_.entity.cpuRes.dataRing.addr = reinterpret_cast<uint64_t>(dataRingBuf_);
+        cpuBuf_.entity.cpuRes.dataRing.headIdxAddr = reinterpret_cast<uint64_t>(&dataRingHead_);
+        cpuBuf_.entity.cpuRes.dataRing.tailIdxAddr = reinterpret_cast<uint64_t>(&dataRingTail_);
+        cpuBuf_.entity.cpuRes.dataRing.capacity = sizeof(dataRingBuf_);
+        cpuBuf_.entity.cpuRes.dataRing.reserved = 0;
         cpuBuf_.entity.notifyNum = 1;
         cpuBuf_.notifiesData[0].type = NOTIFY_TYPE_DEVICE_MEM;
         cpuBuf_.notifiesData[0].identifier = kDeviceMemAddr;
@@ -114,13 +124,6 @@ protected:
     virtual void TearDown() override
     {
         GlobalMockObject::verify();
-        // Free any malloc'd args that HcommRequestServiceOnThread wrote to the queue
-        for (uint64_t i = headIdx_; i != tailIdx_; i = (i + 1) % kQueueCapacity) {
-            if (msgQueue_[i].args != nullptr) {
-                free(msgQueue_[i].args);
-                msgQueue_[i].args = nullptr;
-            }
-        }
     }
 
     // TS threads
@@ -138,6 +141,9 @@ protected:
     uint64_t headIdx_ = 0;
     uint64_t tailIdx_ = 0;
     ThreadMsgEntity msgQueue_[kQueueCapacity];
+    uint8_t dataRingBuf_[32768];
+    uint64_t dataRingHead_ = 0;
+    uint64_t dataRingTail_ = 0;
 
     // Handles (computed from entity addresses, valid after member construction)
     ThreadHandle tsHandle_ = reinterpret_cast<ThreadHandle>(&tsBuf_.entity);
