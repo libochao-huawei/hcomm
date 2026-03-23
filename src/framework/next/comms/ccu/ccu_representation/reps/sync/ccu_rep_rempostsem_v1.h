@@ -17,11 +17,15 @@ public:
     CcuRepRemPostSem(const ChannelHandle channel, uint16_t semIndex, uint16_t mask);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
+    uint32_t    GetMask() { return mask; };
+    uint32_t    GetSignalId() { return signalId; };
+    HcclResult    GetChannelId(uint16_t& channelId);
 
 private:
     ChannelHandle channel;
     uint16_t            semIndex{0};
     uint16_t            mask{0};
+    uint32_t            signalId{0};
 };
 
 }; // namespace CcuRep
