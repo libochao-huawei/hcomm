@@ -8,16 +8,14 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-if (DEVICE_MODE)
-    add_subdirectory(stub_tsd)
-endif()
-add_subdirectory(rdma_agent)
-add_subdirectory(rdma_service)
-add_subdirectory(netco)
-
 if (NOT DEVICE_MODE)
     return()
 endif()
+
+add_subdirectory(stub_tsd)
+add_subdirectory(rdma_agent)
+add_subdirectory(rdma_service)
+add_subdirectory(netco)
 
 add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/ascend_hal_dl.c
