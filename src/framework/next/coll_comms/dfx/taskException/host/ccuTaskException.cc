@@ -305,7 +305,6 @@ void CcuTaskException::GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, s
 void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
-    // TODO
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
@@ -320,7 +319,13 @@ void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, 
 
 uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId)
 {
-    HRaInfo                      info(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceId));
+    CcuMissionContext missionCtx{};
+
+    u32 devicePhyId = 0;
+    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
@@ -330,7 +335,7 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个GSA
     inBuff.data.dataInfo.dataLen       = sizeof(uint64_t) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff);
+    HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
 
     uint64_t gsaVal{0};
     (void)memcpy_s(&gsaVal, sizeof(gsaVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
@@ -373,10 +378,10 @@ HcclResult CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInf
     errorMsg.msg.waitSignal.signalMask = rep->GetMask();
     (void)memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
                    sizeof(errorMsg.msg.waitSignal.channelId));
-    errorMsg.msg.waitSignal.channelId[0] = rep->transport.GetChannelId();
-    CHK_RET(GetChannelId( errorMsg.msg.waitSignal.channelId[0]));
-    errorMsg.msg.waitSignal.paramId      = rep->transport.GetRmtXnByIndex(rep->paramIndex);
-    errorMsg.msg.waitSignal.paramValue   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->param.Id());
+                   
+    CHK_RET(rep->GetChannelId( errorMsg.msg.waitSignal.channelId[0]));
+    errorMsg.msg.waitSignal.paramId      = rep->transport.GetRmtXnByIndex(rep->GetParamIndex());
+    errorMsg.msg.waitSignal.paramValue   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetParam().Id());
 
     errorInfo.push_back(errorMsg);
     return HCCL_SUCCESS;
@@ -390,8 +395,8 @@ void CcuTaskException::GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, 
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepRecordSharedNotify>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->sem.Id();
-    errorMsg.msg.waitSignal.signalMask  = rep->mask;
+    errorMsg.msg.waitSignal.signalId    = rep->GetId();
+    errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }

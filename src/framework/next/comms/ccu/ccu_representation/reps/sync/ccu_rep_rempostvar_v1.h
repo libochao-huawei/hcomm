@@ -22,6 +22,8 @@ public:
     uint32_t    GetMask() { return mask; };
     uint32_t    GetSignalId() { return signalId; };
     HcclResult  GetChannelId(uint16_t& channelId);
+    uint16_t    GetParamIndex() { return paramIndex; };
+    Variable    GetParam() { return param; };
 
 private:
     Variable                      param;
