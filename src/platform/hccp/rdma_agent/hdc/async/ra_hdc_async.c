@@ -689,16 +689,23 @@ int RaHdcAsyncSaveSnapshot(unsigned int phyId, enum SaveSnapshotAction action)
         return 0;
     }
 
+    printf("DEBUG: RaHdcAsyncSaveSnapshot, phyId[%u] action[%d]\n", phyId, action);
+
 #ifndef HNS_ROCE_LLT
+
+    if (gRaHdcAsync[phyId].session == NULL) {
+        return ret;
+    }
+
     RA_PTHREAD_MUTEX_LOCK(&gRaHdcAsync[phyId].sendMutex);
     RA_PTHREAD_MUTEX_LOCK(&gRaHdcAsync[phyId].recvMutex);
-    if (action == SAVE_SNAPSHOT_ACTION_PRE_PROCESSING && gRaHdcAsync[phyId].session != NULL) {
+    if (action == SAVE_SNAPSHOT_ACTION_PRE_PROCESSING && gRaHdcAsync[phyId].snapshotSession == NULL) {
         RaHwAsyncSetConnectStatus(phyId, HDC_UNCONNECTED);
         gRaHdcAsync[phyId].snapshotSession = gRaHdcAsync[phyId].session;
-        gRaHdcAsync[phyId].session = NULL;
-    } else if (action == SAVE_SNAPSHOT_ACTION_POST_PROCESSING && gRaHdcAsync[phyId].session == NULL) {
+        // gRaHdcAsync[phyId].session = NULL;
+    } else if (action == SAVE_SNAPSHOT_ACTION_POST_PROCESSING && gRaHdcAsync[phyId].snapshotSession != NULL) {
         RaHwAsyncSetConnectStatus(phyId, HDC_CONNECTED);
-        gRaHdcAsync[phyId].session = gRaHdcAsync[phyId].snapshotSession;
+        // gRaHdcAsync[phyId].session = gRaHdcAsync[phyId].snapshotSession;
         gRaHdcAsync[phyId].snapshotSession = NULL;
     } else {
         hccp_err("duplicate or incorrect order calls are not allowed, phyId[%u] action[%d]", phyId, action);

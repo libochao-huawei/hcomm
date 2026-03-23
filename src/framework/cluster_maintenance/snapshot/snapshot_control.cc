@@ -22,7 +22,10 @@ bool SnapshotControl::registered = false;
 uint32_t PreProcessCallback(int32_t devId, void *args)
 {
     HCCL_RUN_INFO("[Snapshot] PreProcess callback, devId[%d]", devId);
+    printf("DEBUG: PreProcessCallback, devId[%d]\n", devId);
     HcclResult ret = SnapshotControl::GetInstance(devId).PreProcess();
+    // debug 传入devId, 为什么GetInstance返回的实例, 成员变量deviceLogicId_和devId不一致，都是0
+
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] PreProcess fail, devId[%d].", devId), ret);
     HCCL_RUN_INFO("[Snapshot] PreProcess success, devId[%d]", devId);
     return 0;
@@ -184,9 +187,12 @@ HcclResult SnapshotControl::PreProcess()
     CHK_RET(SetStatus(SnapshotStatus::PRE_SNAPSHOT));
     CHK_RET(CheckCommsPreProcess());
 
-    if (devicePhyId_ == INVALID_UINT) {
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
+    // debug 打印deviceLogicId_
+    printf("DEBUG: SnapshotControl::PreProcess deviceLogicId_[%d]\n", deviceLogicId_);
+
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_, true));
+    printf("DEBUG: SnapshotControl::PreProcess devId[%d] devicePhyId_[%u]\n", deviceLogicId_, devicePhyId_);
+
     HcclResult ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_,
         HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -212,9 +218,10 @@ HcclResult SnapshotControl::CheckCommsPostProcess()
 
 HcclResult SnapshotControl::PostProcess()
 {
-    if (devicePhyId_ == INVALID_UINT) {
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
+    
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_, true));
+    printf("DEBUG: SnapshotControl::PostProcess devId[%d] devicePhyId_[%u]\n", deviceLogicId_, devicePhyId_);
+
     HcclResult ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_,
         HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_POST_PROCESSING);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -248,9 +255,9 @@ HcclResult SnapshotControl::Recovery()
 {
     HCCL_ERROR("-------------------- THE ABOVE AND THIS ERROR LOG CAN BE IGNORED. --------------------");
 
-    if (devicePhyId_ == INVALID_UINT) {
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_, true));
+    printf("DEBUG: SnapshotControl::Recovery devId[%d] devicePhyId_[%u]\n", deviceLogicId_, devicePhyId_);
+
     HcclResult ret = SnapShotRestoreAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[SnapshotControl][Recovery] call SnapShotRestoreAction fail, devicePhyId[%u]", devicePhyId_), ret);
