@@ -7,12 +7,19 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+if(NOT DEFINED OUTPUT_PATH OR "${OUTPUT_PATH}" STREQUAL "")
+    set(OUTPUT_PATH "${CMAKE_BINARY_DIR}")
+endif()
 set(report_dir "${OUTPUT_PATH}/report/ut")
+if(NOT DEFINED LLT_KILL_TIME OR "${LLT_KILL_TIME}" STREQUAL "")
+    set(LLT_KILL_TIME 1200)
+endif()
 # 定义add_run_command函数
 function(add_run_command TARGET_NAME TASK_NUM)
     add_custom_command(
         TARGET ${TARGET_NAME}
         POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${report_dir}
         COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH}:${CANN_3RD_LIB_PATH}/gtest/lib64/ ASAN_OPTIONS=detect_leaks=0 timeout -s SIGKILL ${LLT_KILL_TIME}s ./${TARGET_NAME} --gtest_output=xml:${report_dir}/${TARGET_NAME}.xml
         COMMAND echo "Task number: ${TASK_NUM} timeout=${LLT_KILL_TIME}"
         COMMENT "Run ops${TARGET_NAME} with task number ${TASK_NUM} ASAN(${ENABLE_ASAN})"

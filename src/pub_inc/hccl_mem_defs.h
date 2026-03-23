@@ -12,7 +12,8 @@
 #define HCCL_MEM_DEFS_H
 
 #include <stdint.h>
-#include <hcomm_res_defs.h>
+#include "hccl/hccl_types.h"
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
