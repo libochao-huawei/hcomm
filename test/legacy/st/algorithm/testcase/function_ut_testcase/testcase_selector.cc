@@ -354,7 +354,7 @@ TEST_F(SelectorTest, TestAutoSelectorCcuSchedule_1D_2P)
     selectedAlgName = "";
     params.opExecuteConfig = opConfig;
     EXPECT_EQ(selector.Run(collAlgOp, params, selectedAlgName), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(selectedAlgName, "CcuReduceMeshMem2Mem1D");
+    EXPECT_EQ(selectedAlgName, "CcuReduceMeshTwoShotMem2Mem1D");
 
     collAlgOp = GetDefaultAlgOp(OpType::SCATTER);
     selectedAlgName = "";

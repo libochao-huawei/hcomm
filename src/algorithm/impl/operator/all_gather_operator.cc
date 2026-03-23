@@ -74,7 +74,7 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
         newTag += std::to_string(ringSize);
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag.c_str());
+    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s].", newTag.c_str());
     return ret;
 }
 
@@ -104,7 +104,7 @@ HcclResult AllGatherOperator::SelectAlgfor310P3(const OpParam& param, std::strin
     } else {         
         algName = "AllGatherFor310PExecutor";
     }
-    HCCL_INFO("[SelectAlgfor310P3] AllGather SelectAlgfor310P3 is algName [%s]", algName.c_str());
+    HCCL_INFO("[SelectAlgfor310P3] AllGather SelectAlgfor310P3 is algName [%s].", algName.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -240,7 +240,7 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
             isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
-    HCCL_INFO("[SelectAlgfor910B] AllGather SelectAlgfor910B is algName [%s], current mode is [%u]", algName.c_str(), workflowMode_);
+    HCCL_INFO("[SelectAlgfor910B] AllGather SelectAlgfor910B is algName [%s], current mode is [%u].", algName.c_str(), workflowMode_);
     return HCCL_SUCCESS;
 }
 
@@ -405,7 +405,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
-    HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s].", algName.c_str());
+    HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
 }
  
