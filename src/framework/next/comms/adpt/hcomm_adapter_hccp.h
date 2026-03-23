@@ -164,6 +164,6 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
     const HccpUbJettyImportedInParam &in, std::vector<char> &out,
     void *&remQpHandle, RequestHandle &reqHandle);
 
-HcclResult RaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
+HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
 } // namespace hcomm
 #endif // HCOMM_ADAPTER_HCCP_H
