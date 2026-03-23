@@ -50,7 +50,7 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            static_cast<uintptr_t>(locMemInfo->addr),
+            reinterpret_cast<uintptr_t>(locMemInfo->addr),
             static_cast<uint32_t>(locMemInfo->size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
