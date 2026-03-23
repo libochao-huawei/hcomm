@@ -35,7 +35,7 @@ protected:
 
     virtual void SetUp()
     {
-        const ::testing::TestInfo *const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+        const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
         std::string caseName =
             "analysis_result_" + std::string(test_info->test_case_name()) + "_" + std::string(test_info->name());
         Checker::SetDumpFileName(caseName);
@@ -48,31 +48,33 @@ protected:
         // 这边每个case执行完成需要清理所有的环境变量，如果有新增的环境变量，需要在这个函数中进行清理
         ClearHcclEnv();
     }
+    void RunBroadcastTest(
+        int root, int supNum, int sevNum, int rankNum, CheckerOpMode opMode, int dataCount, string algName,
+        int maxTmpMemSize)
+    {
+        RankTable_For_LLT gen;
+        TopoMeta topoMeta;
+        gen.GenTopoMeta(topoMeta, supNum, sevNum, rankNum);
+        setenv("HCCL_BUFFSIZE", std::to_string(maxTmpMemSize).c_str(), 1);
+        CheckerOpParam checkerOpParam;
+        checkerOpParam.opType = CheckerOpType::BROADCAST;
+        checkerOpParam.tag = "broadcast";
+        checkerOpParam.opMode = opMode;
+        checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
+        checkerOpParam.DataDes.count = dataCount;
+        checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+        checkerOpParam.root = root;
+        checkerOpParam.algName = algName;
+
+        Checker checker;
+        HcclResult ret;
+        checker.EnableTaskPrint();
+        ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
+        EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    }
 };
 
 TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_2_mul_1_rank_ParallelMesh1DNHR)
 {
-    // 此算法有ERROR级别日志报错
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0},{0}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-    // buffersize: 200 * 1024 * 1024
-    setenv("HCCL_BUFFSIZE", "200", 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::BROADCAST;
-    checkerOpParam.tag = "broadcast";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_950;
-    checkerOpParam.DataDes.count = 100;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.root = 0;    
-    checkerOpParam.algName = "AiCpuInsBroadcastParallelMesh1DNHR";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-   
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+    RunBroadcastTest(0, 1, 2, 4, CheckerOpMode::OPBASE, 100, "AiCpuInsBroadcastParallelMesh1DNHR", 200);
 }

@@ -121,7 +121,7 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     ThreadHandle *threadArray = static_cast<ThreadHandle*>(param->deviceHandle);
     // 空指针校验
     CHK_PTR_NULL(threadArray);
-    for (size_t i = 0; i < threadNum; ++i) {
+    for (size_t i = 0; i < outThreads.size(); ++i) {
         threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
         HCCL_INFO("[CollCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
         CHK_RET(RegisterThreadAddDfxTaskInfo(threadArray[i]));

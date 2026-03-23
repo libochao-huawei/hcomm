@@ -64,7 +64,7 @@ HcclResult InsTempScatterMesh1D::GenExtIns(TempFuncs &tempFuncs, TemplateDataPar
                   buffInfo_.outBuffType == BufferType::OUTPUT;
 
     // queNumPerNeighbor_初始化是1
-    CHK_PRT_RET(majorQueNum_ * queNumPerNeighbor_ != tempInsQues.size(),
+    CHK_PRT_RET(majorQueNum_ * queNumPerNeighbor_ > tempInsQues.size(),
                 HCCL_ERROR("[InsCollAlgFactory] [InsTempScatterMesh1D] Rank [%d], requiredQueNum [%u] not equals to "
                             "templateQueNum [%u].",
                             myRank_, majorQueNum_ * queNumPerNeighbor_, tempInsQues.size()),

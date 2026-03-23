@@ -93,8 +93,10 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqInterScatter.links, algResReq.levelRankPairs));
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqIntraAllGather.links, algResReq.levelRankPairs));
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqInterAllGather.links, algResReq.levelRankPairs));
-    algResReq.primQueueNum = resReqIntraScatter.streamNum + resReqInterScatter.streamNum +
-                             resReqIntraAllGather.streamNum + resReqInterAllGather.streamNum;
+    u32 intraQueNum = max(resReqIntraScatter.queNum, resReqIntraAllGather.queNum);
+    u32 interQueNum = max(resReqInterScatter.queNum, resReqInterAllGather.queNum);
+
+    algResReq.primQueueNum = intraQueNum + interQueNum;
 
     std::vector<std::tuple<QId, QId, u32>> notifyRequests;
 
@@ -250,8 +252,16 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     }
     u32 intraQueNum = max(resReqIntraScatter.queNum, resReqIntraAllGather.queNum);
     u32 interQueNum = max(resReqInterScatter.queNum, resReqInterAllGather.queNum);
-    CHK_RET(InitQueue(intraQueNum, intraQue_));
-    CHK_RET(InitQueue(interQueNum, interQue_));
+
+    u32 totalQueueNum = intraQueNum + interQueNum;
+    CHK_RET(InitQueue(totalQueueNum, requiredQue_));
+    for (u32 i = 0; i < requiredQue_.size(); i++) {
+        if (i < intraQueNum) {
+            intraQue_.push_back(requiredQue_.at(i));
+        } else {
+            interQue_.push_back(requiredQue_.at(i));
+        }
+    }
 
     // 每个算法的第0条流用于同步
     syncQueues_.emplace_back(intraQue_.at(0));
