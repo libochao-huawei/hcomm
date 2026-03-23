@@ -24,6 +24,7 @@ set(src_to_test_list
     coll_comms/rank/ut_my_rank.cc
     comms/comm_engine_res/utils/ut_msg_queue.cc
     comms/comm_engine_res/utils/ut_service_scheduler.cc
+    comms/comm_engine_res/utils/ut_data_ring.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/ut_my_rank_tls.cc
