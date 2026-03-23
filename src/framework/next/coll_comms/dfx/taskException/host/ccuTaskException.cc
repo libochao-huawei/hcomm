@@ -337,7 +337,7 @@ HcclResult CcuTaskException::GenErrorInfoRemPostSem(const ErrorInfoBase &baseInf
     return HCCL_SUCCESS;
 }
 
-void CcuTaskException::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+HcclResult CcuTaskException::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -345,14 +345,15 @@ void CcuTaskException::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, sha
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                     = static_pointer_cast<CcuRep::CcuRepRemWaitSem>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->transport.GetLocCntCkeByIndex(rep->semIndex);
+    errorMsg.msg.waitSignal.signalId    = GetSignalId();
     errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, errorMsg.msg.waitSignal.signalId);
-    errorMsg.msg.waitSignal.signalMask  = rep->mask;
+    errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
     (void)memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
                    sizeof(errorMsg.msg.waitSignal.channelId));
-    errorMsg.msg.waitSignal.channelId[0] = rep->transport.GetChannelId();
+    CHK_RET(GetChannelId(errorMsg.msg.waitSignal.channelId[0]));
 
     errorInfo.push_back(errorMsg);
+    return HCCL_SUCCESS;
 }
 uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId)
 {
@@ -397,7 +398,7 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     return xnVal;
 }
 
-void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+HcclResult CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -405,18 +406,20 @@ void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, sha
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                     = static_pointer_cast<CcuRep::CcuRepRemPostVar>(repBase);
-    errorMsg.msg.waitSignal.signalId   = rep->transport.GetRmtCntCkeByIndex(rep->semIndex);
-    errorMsg.msg.waitSignal.signalMask = rep->mask;
+    errorMsg.msg.waitSignal.signalId   = rep->GetSignalId();
+    errorMsg.msg.waitSignal.signalMask = rep->GetMask();
     (void)memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
                    sizeof(errorMsg.msg.waitSignal.channelId));
     errorMsg.msg.waitSignal.channelId[0] = rep->transport.GetChannelId();
+    CHK_RET(GetChannelId( errorMsg.msg.waitSignal.channelId[0]));
     errorMsg.msg.waitSignal.paramId      = rep->transport.GetRmtXnByIndex(rep->paramIndex);
     errorMsg.msg.waitSignal.paramValue   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->param.Id());
 
     errorInfo.push_back(errorMsg);
+    return HCCL_SUCCESS;
 }
 
-void CcuTaskException::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+HcclResult CcuTaskException::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                                vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -424,17 +427,17 @@ void CcuTaskException::GenErrorInfoRemWaitGroup(const ErrorInfoBase &baseInfo, s
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                           = static_pointer_cast<CcuRep::CcuRepWaitGroup>(repBase);
-    errorMsg.msg.waitSignal.signalId         = rep->transportGroup.GetCntCkeId(rep->semIndex);
+    errorMsg.msg.waitSignal.signalId         = rep->GetSignalId();
     errorMsg.msg.waitSignal.signalValue      = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, errorMsg.msg.waitSignal.signalId);
-    errorMsg.msg.waitSignal.signalMask       = rep->mask;
+    errorMsg.msg.waitSignal.signalMask       = rep->GetMask();
     const vector<CcuTransport*> &transports  = rep->transportGroup.GetTransports();
     (void)memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
                    sizeof(errorMsg.msg.waitSignal.channelId));
     for (uint32_t i = 0; i < transports.size() && i < WAIT_SIGNAL_CHANNEL_SIZE; ++i) {
-        errorMsg.msg.waitSignal.channelId[i] = transports[i]->GetChannelId();
+        CHK_RET(rep->GetChannelId(errorMsg.msg.waitSignal.channelId[i]));
     }
-
     errorInfo.push_back(errorMsg);
+    return HCCL_SUCCESS;
 }
 
 void CcuTaskException::GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
