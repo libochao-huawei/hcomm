@@ -882,8 +882,14 @@ HcclResult CcuComponent::DestroyAllJettys()
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuComponent::SetProcess(CcuOpcodeType opCode) const
+HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
 {
+    CcuMissionContext missionCtx{};
+    u32 devicePhyId = 0;
+    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+
     const HRaInfo info(HrtNetworkMode::HDC, devPhyId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
@@ -897,13 +903,15 @@ void CcuComponent::SetProcess(CcuOpcodeType opCode) const
         }
         HCCL_INFO("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] start.", devLogicId, dieId);
         inBuff.data.dataInfo.udieIdx = dieId;
-        HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, static_cast<void *>(&inBuff),
+                    static_cast<void *>(&outBuff)));
     }
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuComponent::CleanTaskKillState() const
 {
-    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    CHK_RET(SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -927,7 +935,7 @@ HcclResult CcuComponent::SetTaskKillDone()
         return HcclResult::HCCL_E_INTERNAL;
     }
 
-    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    CHK_RET(SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE));
     status = CcuTaskKillStatus::INIT;
     HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d", __func__, status, devLogicId);
     return HcclResult::HCCL_SUCCESS;
@@ -940,9 +948,7 @@ HcclResult CcuComponent::CcuSetTaskKillDone(const int32_t deviceLogicId)
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuSetTaskKillDone]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
             HcclResult::HCCL_E_PARA);
-    TRY_CATCH_RETURN(
-        return CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone();
-    );
+    return CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone();
 }
 
 HcclResult CcuComponent::CcuCleanTaskKillState(const int32_t deviceLogicId)
@@ -952,9 +958,7 @@ HcclResult CcuComponent::CcuCleanTaskKillState(const int32_t deviceLogicId)
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
             HcclResult::HCCL_E_PARA);
-    TRY_CATCH_RETURN(
-        return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
-    );
+    return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
 }
 // 以下接口用于n秒快恢与TaskException
 HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
@@ -968,7 +972,12 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         return HcclResult::HCCL_SUCCESS;
     }
     
-    HRaInfo               info(HrtNetworkMode::HDC, devPhyId);
+    CcuMissionContext missionCtx{};
+    u32 devicePhyId = 0;
+    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
@@ -987,20 +996,14 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         inBuff.offsetStartIdx              = startIdx;
         void *customIn = &inBuff;
         void *customOut = &outBuff;
-        CHECK_NULLPTR(customIn, "[HrtRaCustomChannel] customIn is nullptr!");
-        CHECK_NULLPTR(customOut, "[HrtRaCustomChannel] customOut is nullptr!");
         struct RaInfo info {};
         info.mode   = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
         info.phyId = raInfo.phyId;
 
-        HCCL_INFO("[HrtRaCustomChannel] Input params: customIn=%p, customOut=%p, mode=%d, phyId=%u", customIn, customOut, info.mode, info.phyId);
+        HCCL_INFO("[RaCustomChannel] Input params: customIn=%p, customOut=%p, mode=%d, phyId=%u", customIn, customOut, info.mode, info.phyId);
         struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
         struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
-
-        int ret = RaCustomChannel(info, in, out);
-        if (ret != 0) {
-            HCCL_ERROR(StringFormat("call ra_custom_channel failed, error code =%d.", ret));
-        }
+        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, in, out));
     }
 
     return HcclResult::HCCL_SUCCESS;

@@ -328,7 +328,7 @@ void CcuTaskException::GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, sha
     errorMsg.msg.waitSignal.signalId   = rep->transport.GetRmtCntCkeByIndex(rep->semIndex);
     errorMsg.msg.waitSignal.signalMask = rep->mask;
     (void)memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
-                   sizeof(errorMsg.msg.waitSignal.channelId));
+                    sizeof(errorMsg.msg.waitSignal.channelId));
     errorMsg.msg.waitSignal.channelId[0] = rep->transport.GetChannelId();
 
     errorInfo.push_back(errorMsg);
