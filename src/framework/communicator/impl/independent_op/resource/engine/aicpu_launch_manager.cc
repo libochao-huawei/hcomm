@@ -33,8 +33,10 @@ HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom(OpParam &opParam, std::string
     CHK_RET(hrtMemSyncCopy(addr.ptr(), sizeof(OpParam), &opParam, sizeof(OpParam),
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
-    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
-                    std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
+    u32 outTime = 65536;
+    u16 timeOut = outTime > std::numeric_limits<uint16_t>::max() ? 
+                    std::numeric_limits<uint16_t>::max() : outTime;
+    HCCL_ERROR("[KernelLaunchAicpuCustom] timeOut=%u, NOTIFY_DEFAULT_WAIT_TIME=%u.", timeOut, outTime);
     CHK_RET(AicpuAclKernelLaunch(aicpuInitStream, &context,
         sizeof(context), binCustomHandle, kernelName, true, timeOut));
     return HCCL_SUCCESS;
@@ -315,4 +317,6 @@ HcclResult AicpuLaunchMgr::NotifyKernelLaunchFree(std::vector<NotifyHandle> &aic
         __func__, commId.c_str(), aicpuNotifys.size());
     return HCCL_SUCCESS;
 }
+
+template HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom<HcclMem>(HcclMem&, std::string, rtStream_t, aclrtBinHandle);
 }
