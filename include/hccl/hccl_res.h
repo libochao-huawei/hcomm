@@ -12,9 +12,8 @@
 #define HCCL_RES_H
 
 #include <stdint.h>
-#include <arpa/inet.h>
-#include "securec.h"
 #include "acl/acl_rt.h"
+#include "hccl_types.h"
 #include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
@@ -22,145 +21,12 @@ extern "C" {
 #endif  // __cplusplus
 
 /**
- * @brief 通信域句柄类型（不透明结构）
- */
-typedef void *HcclComm;
-
-#ifndef CHANNEL_HANDLE_DEFINED
-#define CHANNEL_HANDLE_DEFINED
-/**
- * @brief 通道句柄类型
- */
-typedef uint64_t ChannelHandle;
-#endif
-
-#ifndef THREAD_HANDLE_DEFINED
-#define THREAD_HANDLE_DEFINED
-/**
- * @brief 线程句柄类型
- */
-typedef uint64_t ThreadHandle;
-#endif
-
-/**
  * @brief 内存句柄类型（不透明结构）
  */
 typedef void *HcclMemHandle;
- 
-/**
- * @brief 通信引擎类型枚举
- */
-typedef enum {
-    COMM_ENGINE_RESERVED = -1,    ///< 保留的通信引擎
-    COMM_ENGINE_CPU = 0,          ///< HOST CPU引擎
-    COMM_ENGINE_CPU_TS = 1,       ///< HOST CPU TS引擎
-    COMM_ENGINE_AICPU = 2,        ///< AICPU引擎
-    COMM_ENGINE_AICPU_TS = 3,     ///< AICPU TS引擎
-    COMM_ENGINE_AIV = 4,          ///< AIV引擎
-    COMM_ENGINE_CCU = 5,          ///< CCU引擎
-} CommEngine;
 
 /// HCCL资源标识最大长度（字节）
 const uint32_t HCCL_RES_TAG_MAX_LEN = 255;
-
-/**
- * @brief 通信协议类型枚举
- */
-typedef enum {
-    COMM_PROTOCOL_RESERVED = -1,  ///< 保留协议类型
-    COMM_PROTOCOL_HCCS = 0,       ///< HCCS协议
-    COMM_PROTOCOL_ROCE = 1,       ///< RDMA over Converged Ethernet
-    COMM_PROTOCOL_PCIE = 2,       ///< PCIE协议
-    COMM_PROTOCOL_SIO = 3,        ///< SIO协议
-    COMM_PROTOCOL_UBC_CTP = 4,    ///< 华为统一总线UBC_CTP
-    COMM_PROTOCOL_UBC_TP = 5,     ///< 华为统一总线UBC_TP
-    COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
-} CommProtocol;
-
-/**
- * @brief 通信设备地址类别
- */
-typedef enum {
-    COMM_ADDR_TYPE_RESERVED = -1, ///< 保留地址类型
-    COMM_ADDR_TYPE_IP_V4 = 0,     ///< IPv4地址类型
-    COMM_ADDR_TYPE_IP_V6 = 1,     ///< IPv6地址类型
-    COMM_ADDR_TYPE_ID = 2,         ///< ID地址类型
-    COMM_ADDR_TYPE_EID = 3,        ///< EID地址类型
-} CommAddrType;
-
-constexpr uint32_t COMM_ADDR_EID_LEN = 16;
-
-/**
- * @brief 通信设备地址描述结构体
- * @note 支持CommAddrType的扩展，地址最大长度36字节
- */
-typedef struct {
-    CommAddrType type;         ///< 通信地址类别
-    union {
-        uint8_t raws[36];      ///< 通用数据
-        struct in_addr addr;   ///< IPv4地址结构
-        struct in6_addr addr6; ///< IPv6地址结构
-        uint32_t id;           ///< 标识
-        uint8_t eid[COMM_ADDR_EID_LEN];  ///< EID地址类型
-    };
-} CommAddr;
-
-/**
- * @brief 通信设备Endpoint位置类型枚举
- */
-typedef enum {
-    ENDPOINT_LOC_TYPE_RESERVED = -1, ///< 保留的Endpoint位置
-    ENDPOINT_LOC_TYPE_DEVICE = 0,    ///< Endpoint在Device上
-    ENDPOINT_LOC_TYPE_HOST = 1,      ///< Endpoint在Host上
-} EndpointLocType;
-
-/**
- * @brief Endpoint位置类型结构体
- * @note 支持EndpointLocType的扩展，最大60字节内容
- */
-typedef struct {
-    EndpointLocType locType;        ///< Endpoint的位置类别
-    union {
-        uint8_t raws[60];           ///< 通用数据
-        struct {
-            uint32_t devPhyId;      ///< 设备物理Id
-            uint32_t superDevId;    ///< 超节点deviceId
-            uint32_t serverIdx;     ///< Server的索引
-            uint32_t superPodIdx;   ///< 超节点位置索引
-        } device;                   ///< 当locType为DEVICE时使用
-        struct {
-            uint32_t id;            ///< 普通Id，当locType为HOST等时可能使用
-        } host;
-    };
-} EndpointLoc;
-
-typedef struct {
-    CommProtocol protocol;  ///< 通信协议
-    CommAddr commAddr;      ///< 通信地址
-    EndpointLoc loc;        ///< Endpoint的位置信息
-    union {
-        uint8_t raws[52];   ///< 通用数据
-    };
-} EndpointDesc;
-
-inline HcclResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
-{
-    for (uint32_t idx = 0; idx < num; idx++) {
-        if (endpoint != nullptr) {
-            // 用0xFF填充整个结构体
-            (void)memset_s(endpoint, sizeof(EndpointDesc), 0xFF, sizeof(EndpointDesc));
-            
-            // 显式设置关键字段为无效值
-            endpoint->protocol = COMM_PROTOCOL_RESERVED;
-            endpoint->commAddr.type = COMM_ADDR_TYPE_RESERVED;
-            endpoint->loc.locType = ENDPOINT_LOC_TYPE_RESERVED;
-            endpoint++;  // 移动到下一个描述符
-        } else {
-            return HCCL_E_PTR;
-        }
-    }
-    return HCCL_SUCCESS;
-}
 
 const uint32_t HCCL_CHANNEL_MAGIC_WORD = 0x0f0f0f0f;
 const uint32_t HCCL_CHANNEL_VERSION = 1;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
@@ -204,7 +70,7 @@ typedef struct {
  * @param[in] descNum 描述数量
  * @return HcclResult 执行结果状态码
  */
-inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
+static inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 {
     for (uint32_t idx = 0; idx < descNum; idx++) {
         if (channelDesc != nullptr) {
