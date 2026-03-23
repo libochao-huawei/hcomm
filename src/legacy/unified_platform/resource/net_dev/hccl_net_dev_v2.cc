@@ -115,7 +115,6 @@ HcclResult HcclNetDevOpenV2(const HcclNetDevInfos *info, HcclNetDev *netDev)
         return ret;
     }
     *netDev = static_cast<HcclNetDev>(hcclNetDev);
-    CHK_PTR_NULL(*netDev);
     HCCL_INFO("HcclNetDevOpenV2: successfully opened netDev[%p]!", *netDev);
     return HCCL_SUCCESS;
 }
