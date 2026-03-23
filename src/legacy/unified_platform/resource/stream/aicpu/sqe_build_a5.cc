@@ -180,7 +180,7 @@ void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLite
               jettyLiteId.GetDieId(), jettyLiteId.GetFuncId(), jettyLiteId.GetJettyId(), piValue, streamId, taskId);
 }
 
-void BuildA5SqeWriteValue(u32 streamId, u32 taskId, u64 addr, u16 value, uint8_t * const sqeIn)
+void BuildA5SqeWriteValue1B(u32 streamId, u32 taskId, u64 addr, u16 value, uint8_t * const sqeIn)
 {
     (void) streamId;
     Rt91095StarsWriteValueSqe *sqe = (Rt91095StarsWriteValueSqe *)sqeIn;
