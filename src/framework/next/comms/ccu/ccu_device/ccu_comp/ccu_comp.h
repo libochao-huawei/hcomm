@@ -64,11 +64,12 @@ public:
 
     HcclResult SetTaskKillDone();
     HcclResult CleanTaskKillState() const;
-    void SetProcess(CcuOpcodeType opCode) const;
+    HcclResult SetProcess(CcuOpcodeType opCode) const;
     HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
     HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
 
     std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
+    HcclResult CleanDieCkes(const uint8_t dieId) const;
 
 private:
     explicit CcuComponent() = default;

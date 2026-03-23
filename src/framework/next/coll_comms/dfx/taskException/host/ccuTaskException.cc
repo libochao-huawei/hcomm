@@ -28,6 +28,7 @@
 #include "ccu_rep_type_v1.h"
 #include "ccu_rep_loc_record_event.h"
 #include "ccu_rep_v1.h"
+#include "ccu_comp.h"
 
 namespace hcomm {
 

@@ -22,7 +22,8 @@
 #include "ccu_channel_ctx_mgr_v1.h"
 
 #include "exception_handler.h"
-
+#include "adapter_rts_common.h"
+#include "ccu_error_info_v1.h"
 
 namespace hcomm {
 
@@ -39,6 +40,10 @@ constexpr u32 ONE_HUNDRED_MICROSEC_OF_USLEEP = 100;
 
 // 环境是ARM+X86时，配置 die0 的 MS 交织粒度为 1<<6 = 64
 constexpr uint32_t MSID_CONFIG_ARMX86_MAINBOARD = 6;
+// 设计支持的最大IOdie数量
+constexpr uint8_t MAX_CCU_IODIE_NUM = 2;
+// 清理CKE批量申请大小
+constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
@@ -884,27 +889,19 @@ HcclResult CcuComponent::DestroyAllJettys()
 
 HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
 {
-    CcuMissionContext missionCtx{};
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
-
-    const HRaInfo info(HrtNetworkMode::HDC, devPhyId);
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
 
     inBuff.op = opCode;
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
-        if (!dieEnableFlags[dieId]) {
-            HCCL_WARNING("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] is not enable,"
-                "skip SetProcess.", devLogicId, dieId);
+        if (!dieEnableFlags_[dieId]) {
+            HCCL_WARNING("[%s]devLogicId[%d], dieId[%u] is not enable, skip." , __func__, devLogicId_, dieId);
             continue;
         }
-        HCCL_INFO("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] start.", devLogicId, dieId);
+        HCCL_INFO("[%s]devLogicId[%d], dieId[%u] start.", __func__, devLogicId_, dieId);
         inBuff.data.dataInfo.udieIdx = dieId;
-        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, static_cast<void *>(&inBuff),
-                    static_cast<void *>(&outBuff)));
+        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devPhyId_, static_cast<void *>(&inBuff),
+            static_cast<void *>(&outBuff)));
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -917,27 +914,27 @@ HcclResult CcuComponent::CleanTaskKillState() const
 
 HcclResult CcuComponent::SetTaskKillDone()
 {
-    std::lock_guard<std::mutex> _lock(innerMutex);
+    std::lock_guard<std::mutex> _lock(innerMutex_);
     if (status == CcuTaskKillStatus::INVALID) {
         HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
-            "state = %u, devLogicId = %d.", __func__, status, devLogicId);
+            "state = %u, devLogicId = %d.", __func__, status, devLogicId_);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
     if (status == CcuTaskKillStatus::INIT) {
-        HCCL_INFO("No need to set task kill done, state = %u, devLogicId = %u", status, devLogicId);
+        HCCL_INFO("No need to set task kill done, state = %u, devLogicId = %u", status, devLogicId_);
         return HcclResult::HCCL_SUCCESS;
     }
 
     if (status != CcuTaskKillStatus::TASK_KILL) {
         HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
-            "state = %u, devLogicId = %d.", __func__, status, devLogicId);
+            "state = %u, devLogicId = %d.", __func__, status, devLogicId_);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
     CHK_RET(SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE));
     status = CcuTaskKillStatus::INIT;
-    HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d", __func__, status, devLogicId);
+    HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d", __func__, status, devLogicId_);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -960,32 +957,27 @@ HcclResult CcuComponent::CcuCleanTaskKillState(const int32_t deviceLogicId)
             HcclResult::HCCL_E_PARA);
     return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
 }
+
 // 以下接口用于n秒快恢与TaskException
 HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
 {
     CHK_PRT_RET(dieId >= MAX_CCU_IODIE_NUM,
-        HCCL_WARNING("[CcuComponent][%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
-            __func__, dieId, MAX_CCU_IODIE_NUM, devLogicId),
-        HcclResult::HCCL_E_PARA);
+        HCCL_WARNING("[%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+        __func__, dieId, MAX_CCU_IODIE_NUM, devLogicId_), HcclResult::HCCL_E_PARA);
 
-    if (!dieEnableFlags[dieId]) {
+    if (!dieEnableFlags_[dieId]) {
+        HCCL_INFO("[%s] dieId[%u] is not enable, skip", __func__, dieId);
         return HcclResult::HCCL_SUCCESS;
     }
-    
-    CcuMissionContext missionCtx{};
-    u32 devicePhyId = 0;
-    HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
 
     CustomChannelInfoIn  inBuff{};
     CustomChannelInfoOut outBuff{};
 
     // 设置操作码和数据
     uint32_t ckeNum = 0;
-    CHK_RET(CcuResSpecifications::GetInstance(devLogicId).GetCkeNum(dieId, ckeNum));
+    CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).GetCkeNum(dieId, ckeNum));
     HCCL_INFO("[CcuComponent][CleanAllCke]Nsrecovery devLogicId[%d], dieId[%u] ckeNum[%u].",
-        devLogicId, dieId, ckeNum);
+        devLogicId_, dieId, ckeNum);
     
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_CKE;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -994,16 +986,7 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         inBuff.data.dataInfo.dataArraySize = std::min(ckeNum - startIdx, MAX_CKE_DATA_ARRAY_SIZE);
         inBuff.data.dataInfo.dataLen       = sizeof(CcuDataByte8) * inBuff.data.dataInfo.dataArraySize;
         inBuff.offsetStartIdx              = startIdx;
-        void *customIn = &inBuff;
-        void *customOut = &outBuff;
-        struct RaInfo info {};
-        info.mode   = HRT_NETWORK_MODE_MAP.at(raInfo.mode);
-        info.phyId = raInfo.phyId;
-
-        HCCL_INFO("[RaCustomChannel] Input params: customIn=%p, customOut=%p, mode=%d, phyId=%u", customIn, customOut, info.mode, info.phyId);
-        struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
-        struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
-        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, in, out));
+        CHK_RET(HccpRaCustomChannel(HrtNetworkMode::HDC, devPhyId_, &inBuff, &outBuff));
     }
 
     return HcclResult::HCCL_SUCCESS;
