@@ -319,7 +319,14 @@ HcclResult CollAllGatherExecutor::RunLoopV(OpParam &param, AlgResourceResponse &
     u8 *curOutputPtr = static_cast<u8 *>(param.outputPtr);
     u8 *commInputPtr = static_cast<u8 *>(algRes.cclInputMem.ptr());
     u8 *commOutputPtr = static_cast<u8 *>(algRes.cclOutputMem.ptr());
-    CHK_PTR_NULL(curInputPtr);
+
+    if (UNLIKELY(curInputPtr == nullptr)) {
+        // 若本rank的input count为0，此时允许curInputPtr传入空指针，为保证后续流程正常执行，赋值为cclin的地址
+        curInputPtr = commInputPtr;
+        HCCL_DEBUG("Since the input count is 0, set curInputPtr to ccl input[%p]", curInputPtr);
+    } else {
+        CHK_PTR_NULL(curInputPtr);
+    }
     CHK_PTR_NULL(curOutputPtr);
     CHK_PTR_NULL(commInputPtr);
     CHK_PTR_NULL(commOutputPtr);

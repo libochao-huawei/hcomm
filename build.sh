@@ -470,6 +470,7 @@ fi
 cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
+    bash ${CURRENT_DIR}/build_third_party.sh
     build_ut
     make_ut_gov
 elif [ -n "${TEST}" ];then
