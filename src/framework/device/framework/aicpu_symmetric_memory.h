@@ -17,7 +17,6 @@ extern "C" {
 #endif
 
 HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr);
-HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr);
 
 #ifdef __cplusplus
 }
