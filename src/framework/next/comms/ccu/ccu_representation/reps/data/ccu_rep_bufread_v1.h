@@ -42,6 +42,9 @@ public:
     uint32_t GetChannelId() {
        return  channel;
     }
+    HcclResult GetChannelId(uint16_t& channeId){
+       return  GetChannelIdByHandle(channel, channeId);
+    }
 private:
     ChannelHandle channel;
 
