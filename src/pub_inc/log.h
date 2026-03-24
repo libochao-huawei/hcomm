@@ -187,7 +187,7 @@ const u64 HCCL_MODULE_ID = 5;
 /* 检查函数返回值, 并返回指定错误码 */
 #define CHK_RET(call)                                 \
     do {                                              \
-        HcclResult hcclRet = (HcclResult)(call);          \
+        HcclResult hcclRet = call;                        \
         if (UNLIKELY(hcclRet != HCCL_SUCCESS)) {                    \
             if (hcclRet == HCCL_E_AGAIN) {                \
                 HCCL_WARNING("[%s]call trace: hcclRet -> %d", __func__, hcclRet); \
@@ -201,7 +201,7 @@ const u64 HCCL_MODULE_ID = 5;
 /* 检查函数返回值, 返错时打印函数名及通信域标识 */
 #define CHK_RET_AND_PRINT_IDE(call, identifier)         \
     do {                                              \
-        HcclResult hcclRet = (HcclResult)(call);          \
+        HcclResult hcclRet = call;                        \
         if (UNLIKELY(hcclRet != HCCL_SUCCESS)) {                    \
             HCCL_RUN_INFO("[HCCL_TRACE]%s identifier[%s]", __func__, identifier); \
             if (hcclRet == HCCL_E_AGAIN) {                \
@@ -216,7 +216,7 @@ const u64 HCCL_MODULE_ID = 5;
 /* 检查函数返回值, 并返回空 */
 #define CHK_RET_NULL(call)                                 \
     do {                                              \
-        HcclResult ret = (HcclResult)(call);          \
+        HcclResult ret = call;                        \
         if (UNLIKELY(ret != HCCL_SUCCESS)) {                    \
             if (ret == HCCL_E_AGAIN) {                \
                 HCCL_WARNING("[%s]call trace: ret -> %d", __func__, ret); \
@@ -230,7 +230,7 @@ const u64 HCCL_MODULE_ID = 5;
 /* 检查函数返回值, 打印错误码, 函数不返回 */
 #define CHK_PRT(call)                                 \
     do {                                              \
-        HcclResult ret = (HcclResult)(call);          \
+        HcclResult ret = call;                        \
         if (UNLIKELY(ret != HCCL_SUCCESS)) {                    \
             if (ret == HCCL_E_AGAIN) {                \
                 HCCL_WARNING("[%s]call trace: ret -> %d", __func__, ret); \
