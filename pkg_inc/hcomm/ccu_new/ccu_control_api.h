@@ -24,6 +24,7 @@
 #include "hccl_types.h"
 #include "ccu_types.h"
 #include "hccl_res.h"
+<<<<<<< HEAD
 =======
 #ifndef HCCL_CCU_CONTROL_API_H
 #define HCCL_CCU_CONTROL_API_H
@@ -34,6 +35,8 @@
 
 #include "ccu_types.h"
 >>>>>>> 1e05e06b (bugfix(ccu): fix compile bugs)
+=======
+>>>>>>> 67098c8a (feat(ccu): kernel launch)
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,11 +57,17 @@ extern CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
 extern CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 extern CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     CcuKernelHandle kernelHandle, void *taskArgs, uint32_t argSize);
 
 =======
 >>>>>>> 1e05e06b (bugfix(ccu): fix compile bugs)
+=======
+extern CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
+    CcuKernelHandle kernelHandle, void *taskArgs, uint32_t argSize);
+
+>>>>>>> 67098c8a (feat(ccu): kernel launch)
 #ifdef __cplusplus
 }
 #endif // __cplusplus
