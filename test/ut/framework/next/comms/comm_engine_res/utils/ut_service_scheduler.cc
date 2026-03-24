@@ -245,7 +245,7 @@ TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_ServiceRun_ProcessMessage_
     EXPECT_TRUE(true);
 }
 
-TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_GetSendQueue_ReturnsNonNull)
+TEST_F(TestServiceScheduler, Ut_When_ServiceScheduler_GetSendQueue_Expect_Return_NonNull)
 {
     MOCKER_CPP(&hccl::MsgQueue::Init).stubs().will(returnValue(HCCL_SUCCESS));
     ServiceScheduler scheduler;
