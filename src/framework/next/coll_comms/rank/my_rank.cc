@@ -268,7 +268,8 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
         std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
         if (engine != COMM_ENGINE_CPU) {
-            CHK_RET(commMems_->SetMemHandles(hcommDescs[i], memHandleVec, commMemHandles));
+            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
+            hcommDescs[i].memHandles = reinterpret_cast<void**>(commMemHandles.data());
         }
 
         hcomm::EndpointPair* endpointPair = nullptr;

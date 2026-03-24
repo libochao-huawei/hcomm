@@ -181,16 +181,16 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     auto handle1 = std::make_unique<CommMemHandle>();
     std::vector<CommMemHandle*> mems{};
     mems.push_back(handle1.get());
-    HcommChannelDesc hcommDesc{};
-    hcommDesc.memHandles = reinterpret_cast<void**>(mems.data());
+    void **memHandles = reinterpret_cast<void**>(mems.data());
     std::vector<MemHandle> memHandleVec{};
     memHandleVec.emplace_back((void*)0x100);
     memHandleVec.emplace_back((void*)0x101);
 
     std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
-    HcclResult ret = myRank.commMems_->SetMemHandles(hcommDesc, memHandleVec, commMemHandles);
+    HcclResult ret = myRank.commMems_->SetMemHandles(memHandles, memHandleVec, commMemHandles);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(hcommDesc.memHandles);
-    EXPECT_EQ(handles[0]->bufferHandle, (void*)0x100);
-    EXPECT_EQ(handles[1]->bufferHandle, (void*)0x101);
+    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    EXPECT_EQ(handles[0]->bufferHandle, (void*)0x101);
+    EXPECT_EQ(commMemHandles[0]->bufferHandle, (void*)0x100);
+    EXPECT_EQ(commMemHandles[1]->bufferHandle, (void*)0x101);
 }
