@@ -92,9 +92,13 @@ void HostSocketHandleManager::DestroyAll()
             u32 count = innerMap.second.second.Count();
             CHK_PRT_CONT(count != 0, HCCL_WARNING("[HostSocketHandleManager::%s] release is not as expected, "
                          "devicePhyId[%u] hostIp[%s] ref[%u]", __func__, i, innerMap.first.c_str(), count));
-            DECTOR_TRY_CATCH("HrtRaSocketDeInit Exception", HrtRaSocketDeInit(innerMap.second.first));
+            if (count == 0) {
+                DECTOR_TRY_CATCH("HrtRaSocketDeInit Exception", HrtRaSocketDeInit(innerMap.second.first));
+                hostSocketHandleMap[devicePhyId].erase(innerMap.first.GetIpStr());
+                HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] deinit success.", 
+                    __func__, devicePhyId, hostIp.GetIpStr().c_str());
+            }
         }
-        hostSocketHandleMap[i].clear();
     }
 }
 
