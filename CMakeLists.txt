@@ -116,14 +116,11 @@ elseif(BUILD_OPEN_PROJECT)
         src/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
-        include/hccl/hccl_sym_win.h
-        include/hcomm_res.h
-        include/hcomm_res_defs.h
+        include/hccl/hccl_sym_win_primitives.h
     )
 
     set(HCOMM_HEAD
-        include/hcomm_res.h
-        include/hcomm_res_defs.h
+        include/hcomm_primitives.h
     )
 
     set(HCCL_JSON
@@ -250,6 +247,11 @@ elseif(BUILD_OPEN_PROJECT)
     )
     install(FILES
         include/hcomm_primitives.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+    )
+    install(FILES
+        include/hcomm_res.h
+        include/hcomm_res_defs.h
         DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
     )
     install(CODE [[
