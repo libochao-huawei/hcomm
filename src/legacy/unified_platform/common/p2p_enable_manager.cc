@@ -39,7 +39,7 @@ HcclResult P2PEnableManager::EnableP2P(uint32_t localDeviceLogicID, uint32_t rem
     if ((iterRemoteDevice == iterLocalDevice.end()) || (iterRemoteDevice->second.reference == 0)) {
         auto localDevicePhysicID = HrtGetDevicePhyIdByIndex(localDeviceLogicID);
         CHK_RET(HrtEnableP2P(localDeviceLogicID, remoteDevicePhysicID));
-        HCCL_INFO("[EnableP2P]enable p2p: local logic id:%u, local physic id:%d, remote physic id:%u.",
+        HCCL_INFO("[EnableP2P]enable p2p: local logic id:%u, local physic id:%u, remote physic id:%u.",
             localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
         iterLocalDevice[remoteDevicePhysicID].status = P2PStatus::P2P_STATUS_ENABLING;
         iterLocalDevice[remoteDevicePhysicID].reference++;
@@ -118,12 +118,19 @@ HcclResult P2PEnableManager::WaitP2PConnected(int32_t localDeviceLogicID, uint32
 
 HcclResult P2PEnableManager::DisableP2P(std::vector<uint32_t> remoteDevices)
 {
-    auto localDeviceLogicID = HrtGetDevice();
+    try {
+        auto localDeviceLogicID = HrtGetDevice();
 
-    for (auto &remoteDevicePhysicID : remoteDevices) {
-        CHK_RET(DisableP2P(localDeviceLogicID, remoteDevicePhysicID));
+        for (auto &remoteDevicePhysicID : remoteDevices) {
+            CHK_RET(DisableP2P(localDeviceLogicID, remoteDevicePhysicID));
+        }
+    } catch (HcclException &e) {
+        HCCL_ERROR(e.what());
+        return e.GetErrorCode();
+    } catch (...) {
+        HCCL_ERROR("Unknown error occurs!");
+        return HcclResult::HCCL_E_INTERNAL;
     }
-
     return HCCL_SUCCESS;
 }
 
@@ -141,12 +148,11 @@ HcclResult P2PEnableManager::DisableP2P(uint32_t localDeviceLogicID, uint32_t re
     iterRemoteDevice->second.reference--;
     if (iterRemoteDevice->second.reference == 0) {
         auto localDevicePhysicID = HrtGetDevicePhyIdByIndex(localDeviceLogicID);
-        HCCL_INFO("disable p2p: local logic id:%u, local physic id:%d, remote physic id:%u.", localDeviceLogicID,
+        HCCL_INFO("disable p2p: local logic id:%u, local physic id:%u, remote physic id:%u.", localDeviceLogicID,
             localDevicePhysicID, remoteDevicePhysicID);
         CHK_RET(HrtDisableP2P(localDeviceLogicID, remoteDevicePhysicID));
         iterLocalDevice[remoteDevicePhysicID].status = P2PStatus::P2P_STATUS_DISABLED;
     }
-
     return HCCL_SUCCESS;
 }
 

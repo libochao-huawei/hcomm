@@ -106,6 +106,16 @@ namespace hccl
         ORDER_INDEX_HCOM_1 = 7 // aicpu_order流 record, host_order流 wait
     };
 
+    enum class AicpuLocalEventIdx : u32
+    {
+        /**
+         *@brief 用于控制Aclgraph模式按序下发控制流入图的event
+         *@note 通信域绑定Context，而Stream是Context管理的资源，因此对应下在Stream上的event与通信域强相关，需要communicator管理
+        **/
+        ORDER_INDEX_ACLGRAPH_EVENT_0 = 0, // kernel流 record, host_order流 wait
+        ORDER_INDEX_ACLGRAPH_EVENT_1 = 1, // host_order流 record, kernel流 wait
+    };
+
     HcclCommunicator::HcclCommunicator()
         : dispatcher_(nullptr), vDispatcher_(nullptr), notifyPool_(nullptr),
           initializedFlag_(ATOMIC_FLAG_INIT), userRank_(INVALID_VALUE_RANKID), realUserRank_(INVALID_VALUE_RANKID),
@@ -236,6 +246,12 @@ namespace hccl
         }
 
         OrderLaunch::GetInstance(deviceLogicId_).UnRegisterOrderLaunch(identifier_);
+        for (u32 i = 0; i < AICPU_LOCAL_EVENT_SIZE; ++i) {
+            if (localAicpuOpEvent_[i] != nullptr) {
+                (void)hrtEventDestroy(localAicpuOpEvent_[i]);
+                localAicpuOpEvent_[i] = nullptr;
+            }
+        }
 
         (void)UnRegistTaskExceptionHandler();
         kfcControlTransferH2D_ = nullptr;
@@ -4980,6 +4996,14 @@ namespace hccl
         CHK_RET(AllocAndGetStreamContextBuff(opResPara_.aicpuOrderStreamParam.streamInfo.streamIds,
             opResPara_.aicpuOrderStreamParam.sqCqContextAddr,
             opResPara_.aicpuOrderStreamParam.sqCqContextSize));
+        
+        #ifndef CCL_KERNEL_AICPU
+        for (u32 i = 0; i < AICPU_LOCAL_EVENT_SIZE; ++i) {
+            aclError ret = aclrtCreateEventExWithFlag(&localAicpuOpEvent_[i], ACL_EVENT_SYNC);
+            CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtCreateEventExWithFlag failed, ret[%d] event[%p].",
+                __func__, ret, localAicpuOpEvent_[i]), HCCL_E_RUNTIME);
+        }
+        #endif
 
         CHK_RET(BuildOpLocalScratchMemResParam(algResource, newTag, localResHostPtr));
         return HCCL_SUCCESS;
@@ -7295,7 +7319,9 @@ namespace hccl
         if (opParam.isCapture) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1)];
-            CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(identifier_, kfcOpStream, notify0, notify1, timeOut));
+            HcclRtEvent event0 = localAicpuOpEvent_[static_cast<u32>(AicpuLocalEventIdx::ORDER_INDEX_ACLGRAPH_EVENT_0)];
+            CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(
+                identifier_, kfcOpStream, notify0, notify1, timeOut, event0));
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
@@ -7310,7 +7336,8 @@ namespace hccl
                                                 reinterpret_cast<u64>(deviceContext.ptr()), opTilingDataMem.ptr(), opTilingDataSize,
                                                 kernelName, mode, opParam.tag, isCustom));
         if (opParam.isCapture) {
-            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream));
+            HcclRtEvent event1 = localAicpuOpEvent_[static_cast<u32>(AicpuLocalEventIdx::ORDER_INDEX_ACLGRAPH_EVENT_1)];
+            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream, event1));
         }
 
         uint64_t endTime = hrtMsprofSysCycleTime();
