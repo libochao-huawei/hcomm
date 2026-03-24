@@ -21,19 +21,12 @@
 extern "C" {
 #endif // __cplusplus
 
-enum {
-    COMM_ADDR_EID_LEN = 16U
-};
-
-static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0f0f0f0fU;
+static const uint32_t COMM_ADDR_EID_LEN = 16U;
+static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0fcf0f0fU;
 static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
 static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_ONE;
 
 typedef int32_t HcommResult;
-
-enum {
-    HCOMM_SUCCESS = 0
-};
 
 /* 网络设备句柄 */
 typedef void *EndpointHandle;
@@ -156,16 +149,6 @@ typedef struct {
 } EndpointDesc;
 
 /**
- * @enum HcclMemType
- * @brief 兼容的内存类型枚举定义
- */
-typedef enum {
-    HCCL_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
-    HCCL_MEM_TYPE_HOST = 1,   ///< 主机侧内存
-    HCCL_MEM_TYPE_NUM = 2     ///< 内存类型数量
-} HcclMemType;
-
-/**
  * @enum CommMemType
  * @brief 内存类型枚举定义
  */
@@ -254,7 +237,7 @@ static inline HcommResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
         ++endpoint;
     }
 
-    return HCOMM_SUCCESS;
+    return 0;
 }
 
 /**
@@ -285,13 +268,13 @@ static inline HcommResult HcommChannelDescInit(HcommChannelDesc *channelDesc, ui
         channelDesc->socket = NULL;
         channelDesc->role = HCOMM_SOCKET_ROLE_RESERVED;
         channelDesc->port = 0;
-        if (EndpointDescInit(&channelDesc->remoteEndpoint, 1) != HCOMM_SUCCESS) {
+        if (EndpointDescInit(&channelDesc->remoteEndpoint, 1) != 0) {
             return hcommEInternal;
         }
         ++channelDesc;
     }
 
-    return HCOMM_SUCCESS;
+    return 0;
 }
 
 #ifdef __cplusplus
