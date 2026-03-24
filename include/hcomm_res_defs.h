@@ -21,19 +21,14 @@
 extern "C" {
 #endif // __cplusplus
 
-enum {
-    COMM_ADDR_EID_LEN = 16U
-};
-
-static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0f0f0f0fU;
+static const uint32_t COMM_ADDR_EID_LEN = 16U;
+static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x010f0f0fU;
 static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
 static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_ONE;
 
-typedef int32_t HcommResult;
-
-enum {
-    HCOMM_SUCCESS = 0
-};
+typedef enum {
+    HCOMM_SUCCESS = 0;
+} HcommResult;
 
 /* 网络设备句柄 */
 typedef void *EndpointHandle;
