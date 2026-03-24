@@ -314,7 +314,6 @@ const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboard
  */
 HcclResult HrtGetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
 {
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%u].", deviceLogicId);
     constexpr int32_t moduleType = DEV_MODULE_TYPE::MODULE_TYPE_SYSTEM;
     constexpr aclrtDevAttr infoType = aclrtDevAttr::ACL_DEV_ATTR_MAINBOARD_ID;
     constexpr uint64_t BITS_5 = 5;
