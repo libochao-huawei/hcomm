@@ -350,6 +350,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/comm_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
