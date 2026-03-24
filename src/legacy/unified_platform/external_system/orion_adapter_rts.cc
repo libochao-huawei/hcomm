@@ -256,10 +256,9 @@ HcclResult HrtGetDeviceInfo(uint32_t deviceLogicId, int32_t moduleType, aclrtDev
     {
         THROW<NotSupportException>(StringFormat("[hrtGetDeviceInfo]Unsupported moduleType[%d].", moduleType));
     }
-    HCCL_INFO("[HrtGetDeviceInfo]deviceLogicId[%u], moduleType[%d], infoType[%d], val[%lld].",
-                deviceLogicId, moduleType, infoType, val);
     aclError ret = aclrtGetDeviceInfo(deviceLogicId, infoType, reinterpret_cast<int64_t *>(&val));
-    HCCL_INFO("Call HrtGetDeviceInfo return[%d]. val[%lld].", ret, val);
+    HCCL_INFO("[HrtGetDeviceInfo]deviceLogicId[%u], moduleType[%d], infoType[%d], return[%d], val[%lld].",
+                deviceLogicId, moduleType, infoType, ret, val);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("[HrtGetDeviceInfo]errNo[0x%016llx] rt get device info failed, "
                    "deviceLogicId=%u, moduleType=%d, infoType=%d",
@@ -490,7 +489,8 @@ void HrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t count, rtM
     aclrtMemcpyKind rtKind = ACL_MEMCPY_DEFAULT;
     hcclRet = MemcpyKindTranslate(kind, &rtKind);
     aclError ret = aclrtMemcpy(dst, destMax, src, count, rtKind);
-    HCCL_INFO("Call rtMemcpy, return value[%d].", ret);
+    HCCL_INFO("[HrtMemcpy] dst[%p], destMax[%llu], src[%p], count[%llu], ret[%d].",
+                dst, destMax, src, count, ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[SyncCopy][Mem]errNo[0x%016llx] rtMemcpy failed. "
                    "return[%d], para: dstAddr[%p], destMax[%llu], srcAddr[%p], count[%llu], kind[%d].",
@@ -511,7 +511,6 @@ void HrtMemset(void *dst, uint64_t destMax, uint64_t count)
         HCCL_WARNING("[hrtMemSet] HrtThreadExchangeCaptureMode return [%d].", hcclRet));
     aclError ret = aclrtMemset(dst, destMax, 0, count);
 
-    HCCL_INFO("Call aclrtMemset, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[SyncSet][Mem]errNo[0x%016llx] aclrtMemset failed. "
                    "return[%d], para: dstAddr[%p], destMax[%llu], count[%llu].",
@@ -613,11 +612,10 @@ void PrintMemoryAttr(const void *memAddr)
 
 void HrtDevMemAlignWithPage(void *ptr, u64 size, void *&ipcPtr, u64 &ipcSize, u64 &ipcOff)
 {
-    HCCL_INFO("[HrtDevMemAlignWithPage] ptr[%p], size[%llu], ipcPtr[%p], ipcSize[%llu], ipcOff[%llu].",
-        ptr, size, ipcPtr, ipcSize, ipcOff);
     aclrtPtrAttributes memAttr = HrtPointerGetAttributes(ptr);
 
-    HCCL_INFO("[HrtDevMemAlignWithPage]get pageSize[%u].", memAttr.pageSize);
+    HCCL_INFO("[HrtDevMemAlignWithPage] ptr[%p], size[%llu], ipcPtr[%p], ipcSize[%llu], ipcOff[%llu], pageSize[%u].",
+                ptr, size, ipcPtr, ipcSize, ipcOff, memAttr.pageSize);
     if (memAttr.pageSize == 0) {
         ipcPtr  = ptr;
         ipcSize = size;
@@ -798,11 +796,9 @@ void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
 void HrtMemAsyncCopy(void *dst, uint64_t destMax, const void *src, uint64_t count, aclrtMemcpyKind kind,
                      aclrtStream streamPtr)
 {
-    HCCL_INFO("[HrtMemAsyncCopy] dst[%p], destMax[%llu], src[%p], count[%llu], kind[%d], streamPtr[%p].", 
-                dst, destMax, src, count, kind, streamPtr);
     aclError ret = aclrtMemcpyAsync(dst, destMax, src, count, kind, streamPtr);
-    HCCL_DEBUG("Call aclrtMemcpyAsync, return value[%d], para: dstAddr[%p], destMax[%llu], "
-               "srcAddr[%p], count[%llu], rtKind[%d].", ret, dst, destMax, src, count, kind);
+    HCCL_DEBUG("[HrtMemAsyncCopy] ret[%d], para: dstAddr[%p], destMax[%llu], "
+               "srcAddr[%p], count[%llu], rtKind[%d], streamPtr[%p].", ret, dst, destMax, src, count, kind, streamPtr);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[AsyncCopy][Mem]errNo[0x%016llx] rt memory async copy failed. "
                    "return[%d], para: dstAddr[%p], destMax[%llu], srcAddr[%p], count[%llu], kind[%d], stream[%p].",
