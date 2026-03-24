@@ -66,20 +66,52 @@ private:
         tempAlgParams.inputSliceStride = tempAlgParams.outputSliceStride = 0;
     }
 
-    template <typename TIntraRS, typename TInterAG>
+    template <typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2, typename InsAlgTemplate3>
     inline void InitAlgCommonParams(
-        TIntraRS& tempAlgIntraRS, 
-        TInterAG& tempAlgInterAG, 
+        InsAlgTemplate0& tempAlgIntraRS,
+        InsAlgTemplate1& tempAlgInterRS,
+        InsAlgTemplate2& tempAlgIntraAG,
+        InsAlgTemplate3& tempAlgInterAG,
         const CollAlgOperator& op) const
     {
-        // 仅初始化原逻辑中明确设置的两个实例（与原始行为严格一致）
         tempAlgIntraRS.SetDmaMode(dmaMode_);
         tempAlgIntraRS.InitReduceInfo(redOp_, dataType_);
         tempAlgIntraRS.SetCollOp(op);
 
+        tempAlgInterRS.SetDmaMode(dmaMode_);
+        tempAlgInterRS.InitReduceInfo(redOp_, dataType_);
+        tempAlgInterRS.SetCollOp(op);
+
+        tempAlgIntraAG.SetDmaMode(dmaMode_);
+        tempAlgIntraAG.InitReduceInfo(redOp_, dataType_);
+        tempAlgIntraAG.SetCollOp(op);
+
         tempAlgInterAG.SetDmaMode(dmaMode_);
         tempAlgInterAG.InitReduceInfo(redOp_, dataType_);
         tempAlgInterAG.SetCollOp(op);
+    }
+
+    inline void CalcQue(AlgTempResReq &resReqIntraRS, AlgTempResReq &resReqInterRS,
+                        AlgTempResReq &resReqIntraAG, AlgTempResReq &resReqInterAG) const
+    {
+        // 申请算法模板所需资源
+        if(!(resReqIntraRS.queNum > 0 && resReqInterRS.queNum > 0 && resReqIntraAG.queNum > 0 && resReqInterAG.queNum > 0)) {
+            HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        u32 totalQueueNum = std::max(resReqIntraRS.queNum + resReqInterRS.queNum, resReqIntraAG.queNum + resReqInterAG.queNum);
+        CHK_RET(InitQueue(totalQueueNum, requiredQue_));
+        for(u32 i = 0 ; i < requiredQue_.size(); i++) {
+            unsigned int neededIntraQueNum = ((resReqIntraRS.queNum + resReqInterRS.queNum) > (resReqIntraAG.queNum + resReqInterAG.queNum)) ?
+            resReqIntraRS.queNum : resReqIntraAG.queNum;
+            if (i < neededIntraQueNum) {
+                intraQue_.push_back(requiredQue_[i]);
+            } else {
+                interQue_.push_back(requiredQue_[i]);
+            }
+        }
+        syncQueues_.emplace_back(intraQue_[0]);
+        syncQueues_.emplace_back(interQue_[0]);
     }
 
     uint64_t rankSizeLevel0_{0};
