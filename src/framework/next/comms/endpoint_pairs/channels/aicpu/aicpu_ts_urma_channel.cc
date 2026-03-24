@@ -62,8 +62,8 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
         HCCL_INFO("[AicpuTsUrmaChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
         for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
-            auto *locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(channelDesc_.memHandles[i]);
-            HCCL_INFO("HcclResult AicpuTsUrmaChannel::ParseInputParam() %s\n", locMemInfo->memTag.c_str());
+            auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(channelDesc_.memHandles[i]);
+            HCCL_INFO(" [AicpuTsUrmaChannel][%s] [%s]", __func__, locMemInfo->memTag.c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
                 reinterpret_cast<uintptr_t>(locMemInfo->addr), locMemInfo->size,
                 hccl::ConvertCommToHcclMemType(locMemInfo->memType), locMemInfo->memTag.c_str())
