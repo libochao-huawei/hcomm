@@ -369,11 +369,10 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::MsWriteNb(const ChannelHandle channel, const CcuRep::CcuBuf &src,
-                                  const CcuRep::Variable &len,
-                                  uint32_t rmtCkeIdx, uint16_t mask, uint32_t rmtMsId)
+HcclResult CcuKernel::MsWriteNb(const ChannelHandle channel, const CcuRep::CcuBuf &src, const CcuRep::CcuBuf &dst,
+                                  const CcuRep::Variable &len, uint32_t remoteNotifyIdx, uint32_t mask)
 {
-    Append(std::make_shared<CcuRep::CcuRepMsWrite>(channel, src, len, rmtCkeIdx, mask, rmtMsId));
+    Append(std::make_shared<CcuRep::CcuRepMsWrite>(channel, src, dst, len, remoteNotifyIdx, static_cast<uint16_t>(mask)));
     return HCCL_SUCCESS;
 }
 
