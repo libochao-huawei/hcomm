@@ -1,0 +1,186 @@
+From 46f85fb0f6b666981ede38d8deff7f92f4fecbf0 Mon Sep 17 00:00:00 2001
+From: y00574408 <y00574408@huawei.com>
+Date: Fri, 6 Mar 2026 16:14:33 +0800
+Subject: [PATCH] DTS:DTS2023072416937 Description:device log
+
+Team:OTHERS
+Feature or Bugfix:Bugfix
+cherry picked from commit 9af8ac006e7602ee81402862407c4fb072e88ece
+
+Change-Id: Ife08fbd08fa45e821ddad48a2b15b167590d3988
+Signed-off-by: y00574408 <y00574408@huawei.com>
+---
+ .../device/framework/aicpu_hccl_process.cc    |  1 +
+ src/platform/common/CMakeLists.txt            |  2 +
+ src/platform/common/hccl_device.cc            | 52 +++++++++++++++++++
+ src/pub_inc/hccl_device.h                     |  8 +++
+ src/pub_inc/log.h                             |  7 +++
+ 5 files changed, 70 insertions(+)
+ create mode 100644 src/platform/common/hccl_device.cc
+ create mode 100644 src/pub_inc/hccl_device.h
+
+diff --git a/src/framework/device/framework/aicpu_hccl_process.cc b/src/framework/device/framework/aicpu_hccl_process.cc
+index 85f3b0034..c5fe67f1f 100644
+--- a/src/framework/device/framework/aicpu_hccl_process.cc
++++ b/src/framework/device/framework/aicpu_hccl_process.cc
+@@ -377,6 +377,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
+     std::string tag = reinterpret_cast<char *>(tilingData->tag);
+     std::string newTag = reinterpret_cast<char *>(tilingData->newTag);
+ 
++    HCCL_ERROR("TESTMXY AicpuRunRpcServerV2");
+     HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2]Entry AicpuRunRpcServerV2, group[%s], tag[%s], newTag[%s]",
+         hcclCommAicpu->GetGroupName().c_str(), tag.c_str(), newTag.c_str());
+ 
+diff --git a/src/platform/common/CMakeLists.txt b/src/platform/common/CMakeLists.txt
+index 8bda7988a..445fbab5a 100644
+--- a/src/platform/common/CMakeLists.txt
++++ b/src/platform/common/CMakeLists.txt
+@@ -11,6 +11,7 @@ set(src_list
+     externalinput.cc
+     sal.cc
+     log.cc
++    hccl_device.cc
+     workflow.cc
+     hccl_dl.cc
+     hccl_ip_address.cc
+@@ -56,6 +57,7 @@ target_sources(hccd PRIVATE
+     dlprof_func.cc
+     dlibv_function.cc
+     dlhns_function.cc
++    hccl_device.cc
+ )
+ 
+ add_subdirectory(adapter)
+diff --git a/src/platform/common/hccl_device.cc b/src/platform/common/hccl_device.cc
+new file mode 100644
+index 000000000..8e340bdfa
+--- /dev/null
++++ b/src/platform/common/hccl_device.cc
+@@ -0,0 +1,52 @@
++#include "hccl_device.h"
++#include <unistd.h>
++#include <sys/syscall.h>
++#include <mutex>
++#include <string>
++#include <stdio.h>
++#include <stdarg.h>
++#include <time.h>
++ 
++std::mutex g_logLock;
++ 
++inline const uint64_t GetLogPid()
++{
++    static const uint64_t pid = getpid();
++    return pid;
++}
++ 
++inline const uint64_t GetLogTid()
++{
++    thread_local static const uint64_t tid = static_cast<uint64_t>(syscall(__NR_gettid));
++    return tid;
++}
++ 
++std::string g_fileName = "/var/log/npu/slog/" + std::to_string(GetLogPid()) + "_hccl.log";
++ 
++void logC(const char *func, const char *file, const int line,
++          const char *type, const char *format, ...)
++{
++    FILE *file_fp;
++    time_t loacl_time;
++    char time_str[128];
++ 
++    // 获取本地时间
++    time(&loacl_time);
++    strftime(time_str, sizeof(time_str), "[%Y.%m.%d %X]", localtime(&loacl_time));
++ 
++    // 日志内容格式转换
++    va_list ap;
++    va_start(ap, format);
++    char fmt_str[2048];
++    vsnprintf(fmt_str, sizeof(fmt_str), format, ap);
++    va_end(ap);
++ 
++    // 写日志文件
++    std::lock_guard<std::mutex> lk(g_logLock);
++    file_fp = fopen(g_fileName.c_str(), "a");
++    if (file_fp != NULL) {
++        fprintf(file_fp, "%s%s[%s@%s:%d][tid:%lu] %s\n", type, time_str, func, 
++                file, line, GetLogTid(), fmt_str);
++        fclose(file_fp);
++    }
++}
+\ No newline at end of file
+diff --git a/src/pub_inc/hccl_device.h b/src/pub_inc/hccl_device.h
+new file mode 100644
+index 000000000..6c05463c3
+--- /dev/null
++++ b/src/pub_inc/hccl_device.h
+@@ -0,0 +1,8 @@
++#ifndef HCCL_DEVICE_LOG_H
++#define HCCL_DEVICE_LOG_H
++ 
++extern "C" {
++    __attribute__((visibility("default"))) void logC(const char *func, const char *file, const int line,
++                                                     const char *type, const char *format, ...);
++}
++#endif
+\ No newline at end of file
+diff --git a/src/pub_inc/log.h b/src/pub_inc/log.h
+index fc4b1dd34..4e67e98d4 100644
+--- a/src/pub_inc/log.h
++++ b/src/pub_inc/log.h
+@@ -21,6 +21,7 @@
+ #include <unistd.h>
+ #include <string>
+ #include "dlog_pub.h"
++#include "hccl_device.h"
+ #ifndef T_DESC
+ #define T_DESC(_msg, _y) ((_y) ? true : false)
+ #endif
+@@ -88,24 +89,28 @@ const u64 HCCL_MODULE_ID = 5;
+ #define HCCL_DEBUG(format, ...) do { \
+     if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_DEBUG))) { \
+         HCCL_LOG_PRINT(HCCL, HCCL_LOG_DEBUG, format, ##__VA_ARGS__); \
++        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
+     } \
+ } while(0)
+ 
+ #define HCCL_INFO(format, ...) do { \
+     if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) { \
+         HCCL_LOG_PRINT(HCCL, HCCL_LOG_INFO, format, ##__VA_ARGS__); \
++        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
+     } \
+ } while(0)
+ 
+ #define HCCL_WARNING(format, ...) do { \
+     if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_WARN))) { \
+         HCCL_LOG_PRINT(HCCL, HCCL_LOG_WARN, format, ##__VA_ARGS__); \
++        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
+     } \
+ } while(0)
+ 
+ #define HCCL_ERROR(format, ...) do { \
+     if (LIKELY(HcclCheckLogLevel(HCCL_LOG_ERROR))) { \
+         HCCL_ERROR_LOG_PRINT(format, ##__VA_ARGS__); \
++        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
+     } \
+ } while(0)
+ 
+@@ -113,12 +118,14 @@ const u64 HCCL_MODULE_ID = 5;
+ #define HCCL_RUN_INFO(format, ...) do { \
+     if (LIKELY(HcclCheckLogLevel(HCCL_LOG_INFO, HCCL_LOG_MASK))) { \
+         HCCL_RUN_LOG_PRINT(format, ##__VA_ARGS__); \
++        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
+     } \
+ } while(0)
+ 
+ #define HCCL_RUN_WARNING(format, ...) do { \
+     if (LIKELY(HcclCheckLogLevel(HCCL_LOG_WARN, HCCL_LOG_MASK))) { \
+         HCCL_LOG_PRINT(HCCL_LOG_MASK, HCCL_LOG_WARN, format, ##__VA_ARGS__); \
++        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
+     } \
+ } while(0)
+ 
+-- 
+2.45.2.huawei.10
+
