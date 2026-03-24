@@ -189,6 +189,6 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     HcclResult ret = myRank.SetMemHandles(memHandles, memHandleVec);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
-    EXPECT_NE(handles[0]->bufferHandle, nullptr);
-    EXPECT_NE(handles[1]->bufferHandle, nullptr);
+    EXPECT_NE(handles[0]->bufferHandle, (void*)0x100);
+    EXPECT_NE(handles[1]->bufferHandle, (void*)0x101);
 }
