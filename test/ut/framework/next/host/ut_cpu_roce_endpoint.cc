@@ -58,6 +58,21 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Normal_EXPECT_Return_HCCL_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+// HcommEndpointCreate fail
+TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
+{
+    Hccl::IpAddress   localIp("223.0.0.1");
+    EndpointDesc endpointDesc;
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    void* endpointHandle{nullptr};
+    MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
+    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    EXPECT_EQ(ret, 128003);
+}
+
 // Device
 TEST_F(CpuRoceEndpointTest, Ut_When_Endpoint_LocType_Device_Expect_Return_HCCL_E_PARA)
 {
