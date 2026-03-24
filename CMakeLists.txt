@@ -116,7 +116,7 @@ elseif(BUILD_OPEN_PROJECT)
         src/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
-        include/hccl/hccl_sym_win_primitives.h
+        include/hccl/hccl_sym_win.h
     )
 
     set(HCOMM_HEAD
