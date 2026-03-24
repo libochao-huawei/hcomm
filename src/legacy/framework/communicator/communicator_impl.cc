@@ -3946,6 +3946,7 @@ aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelNam
 
 HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream)
 {
+    HCCL_INFO("Mc2AiCpuStreamAllocAndGetV2 start");
     GetAicpuStreamManager().AllocFreeStream();
     Stream *stream = GetAicpuStreamManager().GetFreeStream();
     *aiCpuStream = stream->GetPtr();
