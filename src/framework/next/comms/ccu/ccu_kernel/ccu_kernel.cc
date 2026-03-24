@@ -940,7 +940,8 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
     taskParam.taskPara.Ccu.missionId = streamProfilingInfo[0].missionId;
     taskParam.taskPara.Ccu.execMissionId = streamProfilingInfo[0].missionId;
     taskParam.taskPara.Ccu.instrId   = streamProfilingInfo[0].instrId;
-    taskParam.taskPara.Ccu.executeId = execId;
+    taskParam.taskPara.Ccu.executeId = execId; // TODO: 传入是kernelHandle，不建议赋值给executeId
+    taskParam.taskPara.Ccu.ccuKernelHandle = execId;
     for (auto &profInfo : streamProfilingInfo) {
         for (int idx = 0; idx < CCU_MAX_CHANNEL_NUM; idx++) {
             if (profInfo.channelId[idx] == INVALID_VALUE_CHANNELID) {
