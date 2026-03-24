@@ -117,13 +117,11 @@ elseif(BUILD_OPEN_PROJECT)
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
         include/hccl/hccl_sym_win.h
-        include/hccl/hcomm_primitives.h
         include/hcomm_res.h
         include/hcomm_res_defs.h
     )
 
     set(HCOMM_HEAD
-        include/hcomm_primitives.h
         include/hcomm_res.h
         include/hcomm_res_defs.h
     )
@@ -250,6 +248,16 @@ elseif(BUILD_OPEN_PROJECT)
         ${HCOMM_HEAD}
         DESTINATION ${INSTALL_INCLUDE_DIR}/ OPTIONAL
     )
+    install(FILES
+        include/hcomm_primitives.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+    )
+    install(CODE [[
+file(MAKE_DIRECTORY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl")
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_primitives.h")
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h")
+file(CREATE_LINK "../hcomm/hcomm_primitives.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h" SYMBOLIC)
+]])
 
     set(HCCL_PKG_HEAD
         pkg_inc/hccl/base.h
