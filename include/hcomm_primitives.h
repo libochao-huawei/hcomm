@@ -37,11 +37,6 @@ typedef uint64_t ChannelHandle;
 typedef uint64_t ThreadHandle;
 #endif
 
-/**
- * @brief 消息句柄类型
- */
-typedef void *MsgHandle;
-
 typedef enum {
     HCOMM_REDUCE_SUM = 0,    /**< sum */
     HCOMM_REDUCE_PROD = 1,   /**< prod */
