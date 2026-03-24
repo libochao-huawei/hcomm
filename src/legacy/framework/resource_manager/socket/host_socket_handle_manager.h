@@ -24,7 +24,7 @@
 #include "referenced.h"
 
 namespace Hccl {
-
+constexpr u32 TIMEOUT_MS = 1000;
 // socketHandle的计数器
 using hostSocketHandleRef = std::pair<SocketHandle, Referenced>;
 
