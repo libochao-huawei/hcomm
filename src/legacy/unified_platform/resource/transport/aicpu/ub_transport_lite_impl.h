@@ -28,6 +28,7 @@ public:
                                  std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
     UbTransportLiteImpl(std::vector<char> &uniqueId);
+    void Init(std::vector<char> &uniqueId);
 
     ~UbTransportLiteImpl() override;
 
@@ -68,6 +69,9 @@ public:
                         const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
+
+    HcclResult Clean();
+    HcclResult Resume(std::vector<char> &uniqueId);
 
     HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback); // 自定义算子流程上报task的Callback
 private:
@@ -117,8 +121,8 @@ private:
 
     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
 
+    // N秒快恢需要清理的两个资源
     std::vector<std::vector<char>> connUniqueIdVec;
-
     std::vector<RmaConnLite *> connVec;
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};

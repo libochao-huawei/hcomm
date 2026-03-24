@@ -25,6 +25,7 @@
 #include "comm_configer.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
+#include "sal_pub.h"
 
 namespace hccl
 {
@@ -391,6 +392,24 @@ namespace hccl
     CollComm* hcclComm::GetCollComm() 
     {
         return collComm_!= nullptr ? collComm_.get() : nullptr;
+    }
+
+    HcclResult hcclComm::Resume()
+    {
+        if (IsCommunicatorV2()) {
+            CHK_RET(collComm_->Resume());
+        } else {
+            CHK_RET(communicator_->Resume());
+        }
+        
+        return HCCL_SUCCESS;
+    }
+    HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
+    {
+        if (IsCommunicatorV2()) {
+            status = collComm_->GetCommStatus();
+        }
+        return HCCL_SUCCESS;
     }
 
 } // namespace hccl
