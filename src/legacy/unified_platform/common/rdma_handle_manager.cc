@@ -150,7 +150,7 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
     RdmaHandle res = rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp];
     if (res == nullptr) {
         HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, devPhyId, localIp);
-        res = HrtRaUbCtxInit(in);
+        EXECEPTION_CATCH(res = HrtRaUbCtxInit(in), return nullptr);
         rdmaHandleMap[devPhyId][LinkProtoType::UB][localIp] = res;
         tokenInfoMap[res] = std::make_unique<TokenInfoManager>(devPhyId, res);
         HCCL_INFO("Create one rdmahandle [%p], devPhyId [%u], ipAddr [%s]",
