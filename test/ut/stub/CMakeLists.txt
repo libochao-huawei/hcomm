@@ -337,12 +337,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu
-    ${HCCL_CODE_ROOT}/src/legacy/service/collective
-    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
-    ${HCCL_CODE_ROOT}/src/legacy/interface
-    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-
     #next
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
@@ -401,12 +395,17 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/device/framework
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
     ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
+    
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
+    ${HCCL_CODE_ROOT}/src/legacy/interface
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
-    ${HCCL_CODE_ROOT}/src/legacy/interface/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
 )
 
