@@ -49,5 +49,5 @@ TEST_F(CcuComponentTest, Ut_CcuComponent_Init_When_Mock_Is_Fine_Expect_Return_Ok
     hcomm::CcuComponent ccuComponent{};
     ccuComponent.devLogicId_ = devLogicId;
 
-    EXPECT_NO_THROW(ccuComponent.Init());
+    EXPECT_EQ(ccuComponent.Init(), HcclResult::HCCL_SUCCESS);
 }
