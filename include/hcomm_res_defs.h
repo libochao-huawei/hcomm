@@ -21,14 +21,19 @@
 extern "C" {
 #endif // __cplusplus
 
-static const uint32_t COMM_ADDR_EID_LEN = 16U;
-static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x010f0f0fU;
+enum {
+    COMM_ADDR_EID_LEN = 16U
+};
+
+static const uint32_t HCOMM_CHANNEL_MAGIC_WORD = 0x0f0f0f0fU;
 static const uint32_t HCOMM_CHANNEL_VERSION_ONE = 1U;
 static const uint32_t HCOMM_CHANNEL_VERSION = HCOMM_CHANNEL_VERSION_ONE;
 
-typedef enum {
-    HCOMM_SUCCESS = 0;
-} HcommResult;
+typedef int32_t HcommResult;
+
+enum {
+    HCOMM_SUCCESS = 0
+};
 
 /* 网络设备句柄 */
 typedef void *EndpointHandle;
@@ -149,6 +154,16 @@ typedef struct {
         uint8_t raws[52];   ///< 通用数据
     };
 } EndpointDesc;
+
+/**
+ * @enum HcclMemType
+ * @brief 兼容的内存类型枚举定义
+ */
+typedef enum {
+    HCCL_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
+    HCCL_MEM_TYPE_HOST = 1,   ///< 主机侧内存
+    HCCL_MEM_TYPE_NUM = 2     ///< 内存类型数量
+} HcclMemType;
 
 /**
  * @enum CommMemType

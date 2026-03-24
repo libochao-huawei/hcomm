@@ -12,21 +12,11 @@
 #define HCCL_MEM_DEFS_H
 
 #include <stdint.h>
-#include "hccl/hccl_types.h"
-#include "hcomm_res_defs.h"
+#include <hcomm_res_defs.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
-/**
- * @brief 内部内存类型定义（不对外暴露在公开include/pkg头）
- */
-typedef enum {
-    HCCL_MEM_TYPE_DEVICE = 0,
-    HCCL_MEM_TYPE_HOST = 1,
-    HCCL_MEM_TYPE_NUM = 2
-} HcclMemType;
 
 /* 网络设备句柄 */
 typedef void *HcclNetDev;

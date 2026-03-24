@@ -204,7 +204,8 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Allocate_MAXThreadNum_expect
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread;
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, hccl::HCOMM_THREADNUM_MAX_NUM + 1, 0, &thread);
+    HcommResult ret = HcommThreadAlloc(
+        COMM_ENGINE_CPU_TS, hccl::HCOMM_THREADNUM_MAX_NUM + 1, static_cast<uint32_t>(0), &thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
