@@ -190,35 +190,14 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::PrepareResForTemplate(
     const RankGraph *rankGraph, InsAlgTemplate0 &tempAlgIntraRS, InsAlgTemplate1 &tempAlgInterRS, InsAlgTemplate2 &tempAlgIntraAG, InsAlgTemplate3 &tempAlgInterAG)
 {
-    AlgTempResReq resReqIntraRS;
-    AlgTempResReq resReqInterRS;
-    AlgTempResReq resReqIntraAG;
-    AlgTempResReq resReqInterAG;
+    AlgTempResReq resReqIntraRS, resReqInterRS, resReqIntraAG, resReqInterAG;
 
     CHK_RET(tempAlgIntraRS.CalcRes(resReqIntraRS));
     CHK_RET(tempAlgInterRS.CalcRes(resReqInterRS));
     CHK_RET(tempAlgIntraAG.CalcRes(resReqIntraAG));
     CHK_RET(tempAlgInterAG.CalcRes(resReqInterAG));
 
-    // 申请算法模板所需资源
-    if (!(resReqIntraRS.queNum > 0 && resReqInterRS.queNum > 0 && resReqIntraAG.queNum > 0 && resReqInterAG.queNum > 0)) {
-        HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
-        return HcclResult::HCCL_E_INTERNAL;
-    }
-    u32 totalQueueNum = std::max(resReqIntraRS.queNum + resReqInterRS.queNum, resReqIntraAG.queNum + resReqInterAG.queNum);
-    CHK_RET(InitQueue(totalQueueNum, requiredQue_));
-
-    for (u32 i = 0; i < requiredQue_.size(); i++) {
-        unsigned int neededIntraQueNum = ((resReqIntraRS.queNum + resReqInterRS.queNum) > (resReqIntraAG.queNum + resReqInterAG.queNum)) ?
-        resReqIntraRS.queNum : resReqIntraAG.queNum;
-        if (i < neededIntraQueNum) {
-            intraQue_.push_back(requiredQue_[i]);
-        } else {
-            interQue_.push_back(requiredQue_[i]);
-        }
-    }
-    syncQueues_.emplace_back(intraQue_[0]);
-    syncQueues_.emplace_back(interQue_[0]);
+    CHK_RET(CalcQue(resReqIntraRS, resReqInterRS, resReqIntraAG, resReqInterAG));
 
     CHK_RET(PrepResLinks(myRank_, rankGraph, linkPriority_, resReqIntraRS.links, intraRSLinks_));
     CHK_RET(PrepResLinks(myRank_, rankGraph, linkPriority_, resReqInterRS.links, interRSLinks_));
@@ -239,34 +218,14 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
                                                                                                                InsAlgTemplate2 &tempAlgIntraAG,
                                                                                                                InsAlgTemplate3 &tempAlgInterAG)
 {
-    AlgTempResReq resReqIntraRS;
-    AlgTempResReq resReqInterRS;
-    AlgTempResReq resReqIntraAG;
-    AlgTempResReq resReqInterAG;
+    AlgTempResReq resReqIntraRS, resReqInterRS, resReqIntraAG, resReqInterAG;
 
     CHK_RET(tempAlgIntraRS.CalcRes(resReqIntraRS));
     CHK_RET(tempAlgInterRS.CalcRes(resReqInterRS));
     CHK_RET(tempAlgIntraAG.CalcRes(resReqIntraAG));
     CHK_RET(tempAlgInterAG.CalcRes(resReqInterAG));
 
-    // 申请算法模板所需资源
-    if(!(resReqIntraRS.queNum > 0 && resReqInterRS.queNum > 0 && resReqIntraAG.queNum > 0 && resReqInterAG.queNum > 0)) {
-        HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
-        return HcclResult::HCCL_E_INTERNAL;
-    }
-    u32 totalQueueNum = std::max(resReqIntraRS.queNum + resReqInterRS.queNum, resReqIntraAG.queNum + resReqInterAG.queNum);
-    CHK_RET(InitQueue(totalQueueNum, requiredQue_));
-    for(u32 i = 0 ; i < requiredQue_.size(); i++) {
-        unsigned int neededIntraQueNum = ((resReqIntraRS.queNum + resReqInterRS.queNum) > (resReqIntraAG.queNum + resReqInterAG.queNum)) ?
-        resReqIntraRS.queNum : resReqIntraAG.queNum;
-        if (i < neededIntraQueNum) {
-            intraQue_.push_back(requiredQue_[i]);
-        } else {
-            interQue_.push_back(requiredQue_[i]);
-        }
-    }
-    syncQueues_.emplace_back(intraQue_[0]);
-    syncQueues_.emplace_back(interQue_[0]);
+    CHK_RET(CalcQue(resReqIntraRS, resReqInterRS, resReqIntraAG, resReqInterAG));
 
     CHK_RET(PrepResLinks(myRank_, resReqIntraRS.links, linkMgr, intraRSLinks_));
     CHK_RET(PrepResLinks(myRank_, resReqInterRS.links, linkMgr, interRSLinks_));
@@ -288,150 +247,105 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     GetParallelDataSplitRate(dataSplitSize);
     SplitRate = dataSplitSize[0];
     uint64_t templateNum = 2; // 并行跑的template的数量
-    if (multipleIntraRS == 0 && multipleInterRS == 0 && multipleIntraAG == 0 && multipleInterAG == 0) {
-        memBlockSize = UB_MAX_DATA_SIZE + UB_MAX_DATA_SIZE; // 暂时先定这么大，小的话效率比较低
-    } else if (multipleIntraRS > 0 && multipleInterRS == 0 && multipleIntraAG == 0 && multipleInterAG == 0) {
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleIntraRS) * templateNum;
-        Intra0ScratchSize = maxTmpMemSize_;
-        Intra1ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS == 0 && multipleInterRS > 0 && multipleIntraAG == 0 && multipleInterAG == 0) {
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleInterRS) * templateNum;
-        Inter0ScratchSize = maxTmpMemSize_;
-        Inter1ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS == 0 && multipleInterRS == 0 && multipleIntraAG > 0 && multipleInterAG == 0) {
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleIntraAG) * templateNum;
-        Intra2ScratchSize = maxTmpMemSize_;
-        Intra3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS == 0 && multipleInterRS == 0 && multipleIntraAG == 0 && multipleInterAG > 0) {
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleInterAG) * templateNum;
-        Inter2ScratchSize = maxTmpMemSize_;
-        Inter3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS > 0 && multipleInterRS > 0 && multipleIntraAG == 0 && multipleInterAG == 0) {
-        // multipleIntra >0 && multipleInter >0, 理论上dataSplitSize[0]=0.5时，scratch buffer利用率最大
-        u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraRS + (1 - SplitRate) * multipleInterRS));
-        u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraRS + SplitRate * multipleInterRS));
-        u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/totalScratchMultiple);
+    int nonZeroCount = (multipleIntraRS > 0 ? 1 : 0) + (multipleInterRS > 0 ? 1 : 0) 
+                     + (multipleIntraAG > 0 ? 1 : 0) + (multipleInterAG > 0 ? 1 : 0);
 
-        interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraRS);
-        interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraRS);
-        Intra0ScratchSize = interScratchOffset0;
-        Inter0ScratchSize = interScratchOffset1;
-        Intra1ScratchSize = interScratchOffset1;
-        Inter1ScratchSize = interScratchOffset0;
-    } else if (multipleIntraRS > 0 && multipleInterRS == 0 && multipleIntraAG > 0 && multipleInterAG == 0) {
-        u32 multipleNum = std::max(multipleIntraRS, multipleIntraAG);
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
-        Intra0ScratchSize = maxTmpMemSize_;
-        Intra1ScratchSize = maxTmpMemSize_;
-        Intra2ScratchSize = maxTmpMemSize_;
-        Intra3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS > 0 && multipleInterRS == 0 && multipleIntraAG == 0 && multipleInterAG > 0) {
-        u32 multipleNum = std::max(multipleIntraRS, multipleIntraAG);
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
-        Intra0ScratchSize = maxTmpMemSize_;
-        Intra1ScratchSize = maxTmpMemSize_;
-        Inter2ScratchSize = maxTmpMemSize_;
-        Inter3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS == 0 && multipleInterRS > 0 && multipleIntraAG > 0 && multipleInterAG == 0) {
-        u32 multipleNum = std::max(multipleIntraRS, multipleIntraAG);
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
-        Inter0ScratchSize = maxTmpMemSize_;
-        Inter1ScratchSize = maxTmpMemSize_;
-        Intra2ScratchSize = maxTmpMemSize_;
-        Intra3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS == 0 && multipleInterRS > 0 && multipleIntraAG == 0 && multipleInterAG > 0) {
-        u32 multipleNum = std::max(multipleIntraRS, multipleIntraAG);
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
-        Inter0ScratchSize = maxTmpMemSize_;
-        Inter1ScratchSize = maxTmpMemSize_;
-        Inter2ScratchSize = maxTmpMemSize_;
-        Inter3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS == 0 && multipleInterRS == 0 && multipleIntraAG > 0 && multipleInterAG > 0) {
-        u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraAG + (1 - SplitRate) * multipleInterAG));
-        u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraAG + SplitRate * multipleInterAG));
-        u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
-        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/totalScratchMultiple);
+    if (nonZeroCount == 0) {
+        memBlockSize = UB_MAX_DATA_SIZE + UB_MAX_DATA_SIZE;
+    } else if (nonZeroCount == 1) {
+        u32 multiple = std::max(std::max(multipleIntraRS, multipleInterRS), std::max(multipleIntraAG, multipleInterAG));
+        memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multiple) * templateNum;
+        
+        if (multipleIntraRS > 0) {Intra0ScratchSize = Intra1ScratchSize = maxTmpMemSize_;} 
+        else if (multipleInterRS > 0) {Inter0ScratchSize = Inter1ScratchSize = maxTmpMemSize_;}
+        else if (multipleIntraAG > 0) {Intra2ScratchSize = Intra3ScratchSize = maxTmpMemSize_;} 
+        else if (multipleInterAG > 0) {Inter2ScratchSize = Inter3ScratchSize = maxTmpMemSize_;}
+    } else if (nonZeroCount == 2) {
+        if (multipleIntraRS > 0 && multipleInterRS > 0) {
+            u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraRS + (1 - SplitRate) * multipleInterRS));
+            u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraRS + SplitRate * multipleInterRS));
+            u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
+            memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/totalScratchMultiple);
 
-        interScratchOffset2 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraAG);
-        interScratchOffset3 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraAG);
-        Intra2ScratchSize = interScratchOffset2;
-        Inter2ScratchSize = interScratchOffset3;
-        Intra3ScratchSize = interScratchOffset3;
-        Inter3ScratchSize = interScratchOffset2;
-    } else if (multipleIntraRS > 0 && multipleInterRS > 0 && multipleIntraAG > 0 && multipleInterAG == 0) {
-        u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraRS + (1 - SplitRate) * multipleInterRS));
-        u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraRS + SplitRate * multipleInterRS));
-        u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
+            interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraRS);
+            interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraRS);
+            Intra0ScratchSize = Inter1ScratchSize = interScratchOffset0;
+            Inter0ScratchSize = Intra1ScratchSize = interScratchOffset1;
+        } else if (multipleIntraRS > 0 && multipleIntraAG > 0) {
+            u32 multipleNum = std::max(multipleIntraRS, multipleIntraAG);
+            memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
+            Intra0ScratchSize = Intra1ScratchSize = Intra2ScratchSize = Intra3ScratchSize = maxTmpMemSize_;
+        } else if (multipleIntraRS > 0 && multipleInterAG > 0) {
+            u32 multipleNum = std::max(multipleIntraRS, multipleInterAG);
+            memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
+            Intra0ScratchSize = Intra1ScratchSize = Inter2ScratchSize = Inter3ScratchSize = maxTmpMemSize_;
+        } else if (multipleInterRS > 0 && multipleIntraAG > 0) {
+            u32 multipleNum = std::max(multipleInterRS, multipleIntraAG);
+            memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
+            Inter0ScratchSize = Inter1ScratchSize = Intra2ScratchSize = Intra3ScratchSize = maxTmpMemSize_;
+        } else if (multipleInterRS > 0 && multipleInterAG > 0) {
+            u32 multipleNum = std::max(multipleInterRS, multipleInterAG);
+            memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleNum) * templateNum;
+            Inter0ScratchSize = Inter1ScratchSize = Inter2ScratchSize = Inter3ScratchSize = maxTmpMemSize_;
+        } else if (multipleIntraAG > 0 && multipleInterAG > 0) {
+            u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraAG + (1 - SplitRate) * multipleInterAG));
+            u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraAG + SplitRate * multipleInterAG));
+            u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
+            memBlockSize = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/totalScratchMultiple);
 
-        u64 memBlockSizeAG = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleIntraAG) * templateNum;
-        u64 memBlockSizeRS = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/ totalScratchMultiple);
-        memBlockSize = std::min(memBlockSizeRS, memBlockSizeAG);
+            interScratchOffset2 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraAG);
+            interScratchOffset3 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraAG);
+            Intra2ScratchSize = Inter3ScratchSize = interScratchOffset2;
+            Inter2ScratchSize = Intra3ScratchSize = interScratchOffset3;
+        }
+    } else if (nonZeroCount == 3) {
+        if (multipleInterAG == 0 || multipleIntraAG == 0) {
+            u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraRS + (1 - SplitRate) * multipleInterRS));
+            u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraRS + SplitRate * multipleInterRS));
+            u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
+            
+            u64 memBlockSizeRS = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/ totalScratchMultiple);
 
-        interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraRS);
-        interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraRS);
-        Intra0ScratchSize = interScratchOffset0;
-        Inter0ScratchSize = interScratchOffset1;
-        Intra1ScratchSize = interScratchOffset1;
-        Inter1ScratchSize = interScratchOffset0;
+            auto multipleAG = (multipleInterAG == 0) ? multipleIntraAG : multipleInterAG;
+            u64 memBlockSizeAG = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleAG) * templateNum;
+            memBlockSize = std::min(memBlockSizeRS, memBlockSizeAG);
 
-        Intra2ScratchSize = maxTmpMemSize_;
-        Intra3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS > 0 && multipleInterRS > 0 && multipleIntraAG == 0 && multipleInterAG > 0) {
-        u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraRS + (1 - SplitRate) * multipleInterRS));
-        u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraRS + SplitRate * multipleInterRS));
-        u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
+            interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraRS);
+            interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraRS);
+            Intra0ScratchSize = interScratchOffset0;
+            Inter0ScratchSize = interScratchOffset1;
+            Intra1ScratchSize = interScratchOffset1;
+            Inter1ScratchSize = interScratchOffset0;
 
-        u64 memBlockSizeAG = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleInterAG) * templateNum;
-        u64 memBlockSizeRS = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/ totalScratchMultiple);
-        memBlockSize = std::min(memBlockSizeRS, memBlockSizeAG);
+            if (multipleInterAG == 0) {
+                Intra2ScratchSize = Intra3ScratchSize = maxTmpMemSize_;
+            } else {
+                Inter2ScratchSize = Inter3ScratchSize = maxTmpMemSize_;
+            }
+        } else if (multipleInterRS == 0 || multipleIntraRS == 0) {
+            u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraAG + (1 - SplitRate) * multipleInterAG));
+            u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraAG + SplitRate * multipleInterAG));
+            u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
 
-        interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraRS);
-        interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraRS);
-        Intra0ScratchSize = interScratchOffset0;
-        Inter0ScratchSize = interScratchOffset1;
-        Intra1ScratchSize = interScratchOffset1;
-        Inter1ScratchSize = interScratchOffset0;
+            auto multipleRS = (multipleInterRS == 0) ? multipleIntraRS : multipleInterRS;
+            u64 memBlockSizeRS = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleRS) * templateNum;
+            u64 memBlockSizeAG = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/ totalScratchMultiple);
+            memBlockSize = std::min(memBlockSizeRS, memBlockSizeAG);
 
-        Inter2ScratchSize = maxTmpMemSize_;
-        Inter3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS > 0 && multipleInterRS == 0 && multipleIntraAG > 0 && multipleInterAG > 0) {
-        u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraAG + (1 - SplitRate) * multipleInterAG));
-        u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraAG + SplitRate * multipleInterAG));
-        u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
+            interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraRS);
+            interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraRS);
+            Intra2ScratchSize = interScratchOffset0;
+            Inter2ScratchSize = interScratchOffset1;
+            Intra3ScratchSize = interScratchOffset1;
+            Inter3ScratchSize = interScratchOffset0;
 
-        u64 memBlockSizeRS = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleInterRS) * templateNum;
-        u64 memBlockSizeAG = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/ totalScratchMultiple);
-        memBlockSize = std::min(memBlockSizeRS, memBlockSizeAG);
-
-        interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraRS);
-        interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraRS);
-        Intra0ScratchSize = interScratchOffset0;
-        Inter0ScratchSize = interScratchOffset1;
-        Intra1ScratchSize = interScratchOffset1;
-        Inter1ScratchSize = interScratchOffset0;
-
-        Inter2ScratchSize = maxTmpMemSize_;
-        Inter3ScratchSize = maxTmpMemSize_;
-    } else if (multipleIntraRS == 0 && multipleInterRS > 0 && multipleIntraAG > 0 && multipleInterAG > 0) {
-        u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraAG + (1 - SplitRate) * multipleInterAG));
-        u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraAG + SplitRate * multipleInterAG));
-        u64 totalScratchMultiple = std::max(subMultiple0, subMultiple1);
-
-        u64 memBlockSizeRS = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_ / multipleInterRS) * templateNum;
-        u64 memBlockSizeAG = std::min(static_cast<u64>(UB_MAX_DATA_SIZE), maxTmpMemSize_/ totalScratchMultiple);
-        memBlockSize = std::min(memBlockSizeRS, memBlockSizeAG);
-
-        interScratchOffset0 = static_cast<u64>(memBlockSize * SplitRate * multipleIntraAG);
-        interScratchOffset1 = static_cast<u64>(memBlockSize * (1 - SplitRate) * multipleIntraAG);
-        Intra0ScratchSize = interScratchOffset0;
-        Inter0ScratchSize = interScratchOffset1;
-        Intra1ScratchSize = interScratchOffset1;
-        Inter1ScratchSize = interScratchOffset0;
-
-        Inter2ScratchSize = maxTmpMemSize_;
-        Inter3ScratchSize = maxTmpMemSize_;
-    } else {  
+            if (multipleInterRS == 0) {
+                Intra0ScratchSize = Intra1ScratchSize = maxTmpMemSize_;
+            } else {
+                Inter0ScratchSize = Inter1ScratchSize = maxTmpMemSize_;
+            }
+        } 
+    } else { 
         u32 subMultiple0 = static_cast<u32>(std::ceil(SplitRate * multipleIntraRS + (1 - SplitRate) * multipleInterRS));
         u32 subMultiple1 = static_cast<u32>(std::ceil((1 - SplitRate) * multipleIntraRS + SplitRate * multipleInterRS));
         u32 subMultiple2 = static_cast<u32>(std::ceil(SplitRate * multipleIntraAG + (1 - SplitRate) * multipleInterAG));
@@ -454,7 +368,6 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
         Intra3ScratchSize = interScratchOffset3;
         Inter3ScratchSize = interScratchOffset2;
     }
-
     return HCCL_SUCCESS;
 }
 
@@ -483,7 +396,7 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     InsAlgTemplate2 tempAlgIntraAG(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);  // server内算法，比如mesh
     InsAlgTemplate3 tempAlgInterAG(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);  // server间算法，比如nhr
 
-    InitAlgCommonParams(tempAlgIntraRS, tempAlgInterAG, op);
+    InitAlgCommonParams(tempAlgIntraRS, tempAlgInterRS, tempAlgIntraAG, tempAlgInterAG, op);
 
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(rankGraph, tempAlgIntraRS, tempAlgInterRS, tempAlgIntraAG, tempAlgInterAG));
@@ -517,7 +430,7 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     InsAlgTemplate2 tempAlgIntraAG(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);  // server内算法，比如mesh
     InsAlgTemplate3 tempAlgInterAG(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);  // server间算法，比如nhr
 
-    InitAlgCommonParams(tempAlgIntraRS, tempAlgInterAG, op);
+    InitAlgCommonParams(tempAlgIntraRS, tempAlgInterRS, tempAlgIntraAG, tempAlgInterAG, op);
 
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntraRS, tempAlgInterRS, tempAlgIntraAG, tempAlgInterAG));
@@ -574,6 +487,8 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
         u64 currCount = (loopIndex == loopTimes - 1) ? (dataCount_ - loopIndex * maxCountPerLoop) : maxCountPerLoop;
         u64 dataCountPerLoopAixs0 = static_cast<u64>(dataSplitRate * currCount);
         u64 dataCountPerLoopAixs1 = currCount - dataCountPerLoopAixs0;
+
+        std::vector<InsQuePtr> intraRSQue(intraQue_.begin(), intraQue_.begin() + intraQue_.size() - 1);
         // 第一步开始前同步
         CHK_RET(PreSyncQues(syncQueues_, 0));
         u64 dataOffset0 = loopIndex * maxCountPerLoop * dataTypeSize_;
@@ -583,7 +498,7 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
         tempAlgParamsIntra0.buffInfo.scratchBuffSize = Intra0ScratchSize;
         GenTemplateAlgParams0(dataOffset0, dataCountPerLoopAixs0, 0, tempAlgParamsIntra0);
         // 把每个template需要的queue传进去，比如stars的mesh要传多条queue
-        CHK_RET(tempAlgIntraRS.GenExtIns(tempFuncs, tempAlgParamsIntra0, intraRSLinks_, intraQue_));
+        CHK_RET(tempAlgIntraRS.GenExtIns(tempFuncs, tempAlgParamsIntra0, intraRSLinks_, intraRSQue));
 
         tempAlgParamsInter0.buffInfo.scratchBuffSize = Inter0ScratchSize;
         GenTemplateAlgParams0(dataOffset1, dataCountPerLoopAixs1, interScratchOffset0, tempAlgParamsInter0);
@@ -598,7 +513,7 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
 
         tempAlgParamsIntra1.buffInfo.scratchBuffSize = Intra1ScratchSize;
         GenTemplateAlgParams1(dataOffset1, dataCountPerLoopAixs1, 0, tempAlgParamsIntra1);
-        CHK_RET(tempAlgIntraRS.GenExtIns(tempFuncs, tempAlgParamsIntra1, intraRSLinks_, intraQue_));
+        CHK_RET(tempAlgIntraRS.GenExtIns(tempFuncs, tempAlgParamsIntra1, intraRSLinks_, intraRSQue));
         CHK_RET(PostSyncQues(syncQueues_, 0));
 
         // 第三阶段：前50%的数据做框间AllGather，后50%的数据做框内AllGather

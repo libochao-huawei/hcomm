@@ -64,22 +64,55 @@ private:
         tempAlgParams.tailSize = totalSize;
         // 单 slice 场景：stride 固定为 0
         tempAlgParams.inputSliceStride = tempAlgParams.outputSliceStride = 0;
+        tempAlgParams.repeatNum = 1;
     }
 
-    template <typename TIntraRS, typename TInterAG>
     inline void InitAlgCommonParams(
-        TIntraRS& tempAlgIntraRS, 
-        TInterAG& tempAlgInterAG, 
+        InsAlgTemplate0& tempAlgIntraRS,
+        InsAlgTemplate1& tempAlgInterRS,
+        InsAlgTemplate2& tempAlgIntraAG,
+        InsAlgTemplate3& tempAlgInterAG,
         const CollAlgOperator& op) const
     {
-        // 仅初始化原逻辑中明确设置的两个实例（与原始行为严格一致）
         tempAlgIntraRS.SetDmaMode(dmaMode_);
         tempAlgIntraRS.InitReduceInfo(redOp_, dataType_);
         tempAlgIntraRS.SetCollOp(op);
 
+        tempAlgInterRS.SetDmaMode(dmaMode_);
+        tempAlgInterRS.InitReduceInfo(redOp_, dataType_);
+        tempAlgInterRS.SetCollOp(op);
+
+        tempAlgIntraAG.SetDmaMode(dmaMode_);
+        tempAlgIntraAG.InitReduceInfo(redOp_, dataType_);
+        tempAlgIntraAG.SetCollOp(op);
+
         tempAlgInterAG.SetDmaMode(dmaMode_);
         tempAlgInterAG.InitReduceInfo(redOp_, dataType_);
         tempAlgInterAG.SetCollOp(op);
+    }
+
+    inline HcclResult CalcQue(AlgTempResReq &resReqIntraRS, AlgTempResReq &resReqInterRS,
+                              AlgTempResReq &resReqIntraAG, AlgTempResReq &resReqInterAG)
+    {
+        // 申请算法模板所需资源
+        if(!(resReqIntraRS.queNum > 0 && resReqInterRS.queNum > 0 && resReqIntraAG.queNum > 0 && resReqInterAG.queNum > 0)) {
+            HCCL_ERROR("resReqIntra.queNum and resReqInter.queNum must larger than 0.");
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        u32 intraQueNum = std::max(resReqIntraRS.queNum, resReqIntraAG.queNum);
+        u32 interQueNum = std::max(resReqInterRS.queNum, resReqInterAG.queNum);
+        u32 totalQueNum = intraQueNum + interQueNum;
+        CHK_RET(InitQueue(totalQueNum, requiredQue_));
+        for(u32 i = 0 ; i < requiredQue_.size(); i++) {
+            if (i < intraQueNum) {
+                intraQue_.push_back(requiredQue_[i]);
+            } else {
+                interQue_.push_back(requiredQue_[i]);
+            }
+        }
+        syncQueues_.emplace_back(intraQue_[0]);
+        syncQueues_.emplace_back(interQue_[0]);
+        return HCCL_SUCCESS;
     }
 
     uint64_t rankSizeLevel0_{0};
