@@ -3949,6 +3949,7 @@ HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream
     GetAicpuStreamManager().AllocFreeStream();
     Stream *stream = GetAicpuStreamManager().GetFreeStream();
     *aiCpuStream = stream->GetPtr();
+    HCCL_INFO("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] end");
     return HCCL_SUCCESS;
 }
 
