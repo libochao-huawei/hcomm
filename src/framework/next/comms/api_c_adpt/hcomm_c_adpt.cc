@@ -13,6 +13,7 @@
 #include "hccl/hccl_res.h"
 #include "hcomm_res.h"
 #include "hcomm_res_defs.h"
+#include "hcomm_result_defs.h"
 #include "log.h"
 #include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
@@ -374,7 +375,7 @@ HcommResult HcommChannelGetRemoteMems(ChannelHandle channelHandle, uint32_t *mem
     return ChannelProcess::ChannelGetUserRemoteMem(channelHandle, remoteMems, memTags, memNum);
 }
 
-HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t *notifyNumPerThread,
+HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread,
     ThreadHandle *threads) {
     CHK_PTR_NULL(threads);
     CHK_PTR_NULL(notifyNumPerThread);
