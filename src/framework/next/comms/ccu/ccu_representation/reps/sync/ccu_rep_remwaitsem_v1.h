@@ -19,7 +19,7 @@ public:
     std::string Describe() override;
     uint32_t    GetMask() { return mask; };
     uint32_t    GetId() { return signalId; };
-    HcclResult    GetChannelId(uint16_t& channelId);
+    HcclResult  GetChannelId(uint16_t& channelId);
 
 
 private:
