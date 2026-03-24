@@ -63,9 +63,8 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
 };
 
 void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
-    std::vector<CcuErrorInfo> &errorInfo)
+                                     std::vector<CcuErrorInfo> &errorInfo)
 {
-    // zjwTODO: 在next目录下重新定义missionContext
     const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
     if (missionStatus == 0) {
         HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
@@ -73,9 +72,8 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, c
         return;
     }
 
-    // zjwTODO: 用cclkernelHandle
-    CcuRepContext *ctx =
-        CtxMgrImp::GetInstance(deviceId).GetCtx(ccuTaskParam.executeId, ccuTaskParam.dieId, ccuTaskParam.missionId);
+    CcuRepContext *ctx
+        = CtxMgrImp::GetInstance(deviceId).GetCtx(ccuTaskParam.executeId, ccuTaskParam.dieId, ccuTaskParam.missionId);
     if (ctx == nullptr) {
         THROW<CcuApiException>("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]",
                                deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
@@ -670,7 +668,7 @@ CcuMissionContext CcuErrorHandler::GetCcuMissionContext(int32_t deviceId, uint32
     inBuff.data.dataInfo.dataArraySize = 1; // 读1个MissionContext
     inBuff.data.dataInfo.dataLen       = sizeof(CcuMissionContext) * inBuff.data.dataInfo.dataArraySize;
 
-    HrtRaCustomChannel(info, &inBuff, &outBuff); // zjwTODO: 接异常
+    HrtRaCustomChannel(info, &inBuff, &outBuff);
 
     CcuMissionContext missionCtx{};
     (void)memcpy_s(&missionCtx, sizeof(missionCtx), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);

@@ -21,8 +21,8 @@ HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskP
 {
     TRY_CATCH_RETURN(
         HCCL_RUN_INFO(
-            "[CcuDfx]%s: deviceId[%d], dieId[%u], missionId[%u], execMissionId[%u], executeId[%llu].",
-            __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
+            "[CcuDfx]GetCcuErrorMsg: deviceId[%d], dieId[%u], missionId[%u], execMissionId[%u], executeId[%llu].",
+            deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
             static_cast<u32>(ccuTaskParam.execMissionId), ccuTaskParam.executeId);
 
         // 入参校验
@@ -31,7 +31,7 @@ HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskP
 
         CcuErrorHandler::GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo);
     );
-    return HCCL_SUCCESS;
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys)
