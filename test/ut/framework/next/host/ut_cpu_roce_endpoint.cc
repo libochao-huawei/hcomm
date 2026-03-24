@@ -69,7 +69,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
     endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
     void* endpointHandle{nullptr};
-    MOCKER(&Hccl::RdmaHandleManager::GetByIp).stubs().will(Throw(Hccl::NetworkApiException));
+    MOCKER(&Hccl::RdmaHandleManager::GetByIp).stubs().will(Throw(Hccl::NetworkApiException("error")));
     HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, 128003);
 }
