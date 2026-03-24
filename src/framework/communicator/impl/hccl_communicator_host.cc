@@ -6458,7 +6458,7 @@ namespace hccl
             {
                 rankListStr += (std::to_string(remoteRank) + ";");
             }
-            HCCL_DEBUG("identifier[%s] newTag[%s] rankList[%s]", identifier_.c_str(), newTag.c_str(), rankListStr.c_str());
+            HCCL_ERROR("identifier[%s] newTag[%s] rankList[%s]", identifier_.c_str(), newTag.c_str(), rankListStr.c_str());
             CHK_RET(OpRetryManager::AddLinkInfoByIdentifier(deviceLogicId_, identifier_, newTag, rankList, true));
         }
         if (IsEnableBackupLink()) {
