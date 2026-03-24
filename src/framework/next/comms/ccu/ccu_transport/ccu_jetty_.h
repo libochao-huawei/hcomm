@@ -14,6 +14,7 @@
 #include "ip_address.h"
 #include "ccu_dev_mgr_pub.h"
 #include "hcomm_adapter_hccp.h"
+#include "hccl_common.h"
 
 namespace hcomm {
 

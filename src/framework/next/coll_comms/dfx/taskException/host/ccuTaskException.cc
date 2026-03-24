@@ -255,7 +255,7 @@ uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint
     return static_cast<uint16_t>(ckeVal);
 }
 
-void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -263,14 +263,14 @@ void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo,
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocRecordEvent>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->GetId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
+    errorMsg.msg.waitSignal.signalId    = rep->GetEventId();
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetEventId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -278,14 +278,14 @@ void CcuTaskException::GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, s
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocWaitEvent>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->GetId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
+    errorMsg.msg.waitSignal.signalId    = rep->GetEventId();
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetEventId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -294,7 +294,7 @@ void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, 
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocWaitNotify>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->GetNotifyId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetNotifyId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
@@ -355,7 +355,7 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     return xnVal;
 }
 
-void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                                 vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -376,7 +376,7 @@ void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, sha
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                                 vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -390,7 +390,7 @@ void CcuTaskException::GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, 
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                        vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -409,7 +409,7 @@ void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_pt
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoWrite(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoWrite(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                         vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -429,7 +429,7 @@ void CcuTaskException::GenErrorInfoWrite(const ErrorInfoBase &baseInfo, shared_p
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                            vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -448,7 +448,7 @@ void CcuTaskException::GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, share
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                               vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -469,7 +469,7 @@ void CcuTaskException::GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, sh
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                           vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -487,7 +487,7 @@ void CcuTaskException::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                            vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -506,7 +506,7 @@ void CcuTaskException::GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, share
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -524,7 +524,7 @@ void CcuTaskException::GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, sha
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                               vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -542,7 +542,7 @@ void CcuTaskException::GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, sh
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                             vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -567,7 +567,7 @@ void CcuTaskException::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, shar
 
     errorInfo.push_back(errorMsg);
 }
-void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                           vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
@@ -576,10 +576,10 @@ void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> r
     errorInfo.push_back(errorMsg);
 }
 
-void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                             vector<CcuErrorInfo> &errorInfo)
 {
-    using GenErrorInfoFunc = void (*)(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
+    using GenErrorInfoFunc = void (*)(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                                        vector<CcuErrorInfo> &errorInfo);
     static const map<CcuRep::CcuRepType, GenErrorInfoFunc> handlerMap {
         // WAIT_SIGNAL
@@ -636,7 +636,7 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
     return loopCtx;
 }
 
-HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx,
+HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRep::CcuRepContext &ctx,
                                        vector<CcuErrorInfo> &errorInfo)
 {
     // 找LoopRep
@@ -678,8 +678,8 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
-    CcuRepContext &ctx, vector<CcuErrorInfo> &errorInfo)
+HcclResult CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
+    CcuRep::CcuRepContext &ctx, vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::LOOP_GROUP;
@@ -730,7 +730,7 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
     CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
                 __func__, deviceId, ccuTaskParam.ccuKernelHandle), HCCL_E_PARA);
 
-    CcuRepContext *ctx = reinterpret_cast<CcuRepContext *>(kernel);
+    CcuRep::CcuRepContext *ctx = reinterpret_cast<CcuRep::CcuRepContext *>(kernel);
     CHK_PRT_RET(ctx == nullptr, HCCL_ERROR("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]",
                                deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
                                ccuTaskParam.executeId), HCCL_E_PARA);

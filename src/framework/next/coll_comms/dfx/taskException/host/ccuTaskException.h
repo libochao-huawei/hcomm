@@ -71,30 +71,30 @@ private:
     static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(uint16_t channelId,
         const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
-    static HcclResult GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
-        CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
+    static HcclResult GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase,
+        CcuRep::CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
 
     // 生成Error Info
-    static void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+    static void GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase,
         std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase, vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
-    static void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase, vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase, vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoBufLocRead(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoBufLocWrite(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase, vector<CcuErrorInfo> &errorInfo);
 
     static uint64_t GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId);
-    static HcclResult GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
+    static HcclResult GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRep::CcuRepContext &ctx, std::vector<CcuErrorInfo> &errorInfo);
     static void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
     static CcuLoopContext GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId);
     static CcuMissionContext GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId);
