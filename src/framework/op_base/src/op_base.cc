@@ -3374,25 +3374,6 @@ HcclResult HcclCommDestroy(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
-switch(value) {
-        case defaultMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
-        case hostTsMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_HOST_TS;
-        case aicpuTsMode:
-        case aicpuMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AI_CPU;
-        case ccuMsMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_MS;
-        case ccuSchedMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
-        case aivMode:
-        case aivOnlyMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AIV;
-        default:
-            break;
-    }
-
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32_t value)
 {
