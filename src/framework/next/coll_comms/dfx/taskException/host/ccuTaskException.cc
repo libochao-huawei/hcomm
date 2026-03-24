@@ -147,6 +147,17 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
             __func__, dieId, devLogicId);
     }
 }
+std::string CcuTaskException::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
+{
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        return "";
+    }
+
+    hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
+    return Hccl::StringFormat("group:[%s], rankSize[%u], rankId[%d]",
+        communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
+}
 
 void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
 {
