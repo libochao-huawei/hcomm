@@ -18,6 +18,7 @@
 #include <atomic>
 #include <thread>
 #include "sal.h"
+#include "socket.h"
 #include "orion_adapter_hccp.h"
 #include "socket_handle_manager.h"
 #include "ip_address.h"
