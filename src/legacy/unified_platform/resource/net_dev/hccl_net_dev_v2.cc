@@ -138,15 +138,26 @@ HcclResult HcclNetDevGetAddrV2(const HcclNetDev netDev, HcclAddress *addr)
     if (ipAddr.GetFamily() == AF_INET) {
         addr->type = HCCL_ADDR_TYPE_IP_V4;
         addr->addr = ipAddr.GetBinaryAddress().addr;
+        unsigned char *ipv4Addr = reinterpret_cast<unsigned char*>(&addr->addr);
+        HCCL_DEBUG("HcclAddress Content:");
+        HCCL_DEBUG("    protoType: %d", addr->protoType);
+        HCCL_DEBUG("    type: %d (IPv4)", addr->type);
+        HCCL_DEBUG("    IPv4 Address: %d.%d.%d.%d", ipv4Addr[0], ipv4Addr[1], ipv4Addr[2], ipv4Addr[3]);
     } else if (ipAddr.GetFamily() == AF_INET6) {
         addr->type  = HCCL_ADDR_TYPE_IP_V6;
         addr->addr6 = ipAddr.GetBinaryAddress().addr6;
+        unsigned short *ipv6Addr = reinterpret_cast<unsigned short*>(&addr->addr6);
+        HCCL_DEBUG("HcclAddress Content:");
+        HCCL_DEBUG("    protoType: %d", addr->protoType);
+        HCCL_DEBUG("    type: %d (IPv6)", addr->type);
+        HCCL_DEBUG("    IPv6 Address: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x:",
+                    ipv6Addr[0], ipv6Addr[1], ipv6Addr[2], ipv6Addr[3],
+                    ipv6Addr[4], ipv6Addr[5], ipv6Addr[6], ipv6Addr[7]);
     } else {        
         HCCL_ERROR("HcclNetDevGetAddrV2 fail, devPhyId[%u]",
                            static_cast<HcclNetDevice *>(netDev)->GetNetDevInfo().devId);
         return HCCL_E_PARA;
     }
-
     return HCCL_SUCCESS;
 }
 
