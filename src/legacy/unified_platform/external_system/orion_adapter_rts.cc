@@ -633,7 +633,6 @@ void HrtDevMemAlignWithPage(void *ptr, u64 size, void *&ipcPtr, u64 &ipcSize, u6
 
 void *HrtMallocHost(u64 size)
 {
-    HCCL_INFO("[HrtMallocHost] size[%llu].", size);
     void *hostPtr = nullptr;
     aclrtMallocAttrValue moduleIdValue;
     moduleIdValue.moduleId = HCCL;
@@ -670,7 +669,6 @@ aclrtNotify HrtNotifyCreate(s32 deviceLogicId)
     aclrtNotify ptr = nullptr;
     // aclrtCreateNotify 中通过 aclrtGetDevice 获取 deviceId，所以要求当前线程设置过 setDevice
     aclError  ret = aclrtCreateNotify(&ptr, ACL_NOTIFY_DEFAULT);
-    HCCL_INFO("[HrtNotifyCreate] deviceId[%d].", deviceLogicId);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Notify][Create]errNo[0x%016llx] rtNotifyCreate error. "
                    "return[%d], deviceId[%d], ptr[%p].",
@@ -695,7 +693,6 @@ void HrtNotifyDestroy(RtNotify_t ptr)
 
 void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 {
-    HCCL_INFO("[HrtIpcSetNotifyName] ptr[%p], len[%u].", ptr, len);
     aclError ret = aclrtNotifyGetExportKey(ptr, name, len, 2UL);
     HCCL_INFO("Call aclrtNotifyGetExportKey, return value[%d].", ret);
     if (ret != ACL_SUCCESS) {
@@ -709,7 +706,6 @@ void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
 
 u32 HrtGetNotifyID(RtNotify_t notifyHandle)
 {
-    HCCL_INFO("[HrtGetNotifyID] notifyHandle[%p].", notifyHandle);
     u32       notifyID = 0;
     aclError  ret      = aclrtGetNotifyId(notifyHandle, &notifyID);
     if (ret != ACL_SUCCESS) {
@@ -718,6 +714,7 @@ u32 HrtGetNotifyID(RtNotify_t notifyHandle)
                                 notifyHandle, notifyID, ret);
         MACRO_THROW(RuntimeApiException, msg);
     }
+    HCCL_INFO("[HrtGetNotifyID] notifyHandle[%p], notifyID[%u].", notifyHandle, notifyID);
     return notifyID;
 }
 
@@ -737,9 +734,8 @@ u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
 
 void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
 {
-    HCCL_INFO("[HrtSetIpcNotifyPid] notify[%p], pid[%d].", notify, pid);
     aclError ret = aclrtNotifySetImportPid(notify, &pid, 1);
-    HCCL_INFO("Call rtSetIpcNotifyPid, return value[%d], Params: pid[%d].", ret, pid);
+    HCCL_INFO("[HrtSetIpcNotifyPid] notify[%p], pid[%d], ret[%d].", notify, pid, ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[Set][IpcNotifyPid]errNo[0x%016llx] "
                    "rtSet ipc Notify pid fail. notify[%p], return[%d], pid[%d].",
@@ -750,16 +746,14 @@ void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
 
 RtNotify_t HrtIpcOpenNotify(const char_t *name)
 {
-    HCCL_INFO("[HrtIpcOpenNotify] name[%s].", name);
-    RtNotify_t ptr = nullptr;
     uint64_t flags = 0;
     aclrtNotify* notify = nullptr;
     aclError ret = aclrtNotifyImportByKey(notify, name, static_cast<uint64_t>(flags));
-    HCCL_INFO("Call rtIpcOpenNotify, return value[%d], para: notify[%p], name[%s].", ret, ptr, name);
+    HCCL_INFO("[HrtIpcOpenNotify] ret[%d], para: notify[%p], name[%s].", ret, notify, name);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("[rt][IpcOpenNotify]errNo[0x%016llx] rt ipc notify open fail. "
                    "return[%d]. para: notify[%p], name[%s], flags[%llu].",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, name, flags);
+                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, notify, name, flags);
         MACRO_THROW(RuntimeApiException, msg);
     }
     return notify;
@@ -767,7 +761,6 @@ RtNotify_t HrtIpcOpenNotify(const char_t *name)
 
 u32 HrtNotifyGetOffset(RtNotify_t ptr)
 {
-    HCCL_INFO("[HrtNotifyGetOffset] ptr[%p].", ptr);
     uint32_t  offset = 0;
     aclError ret = aclrtGetNotifyId(ptr, &offset);
     if (ret != ACL_SUCCESS) {
@@ -776,15 +769,15 @@ u32 HrtNotifyGetOffset(RtNotify_t ptr)
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), ret, ptr, offset);
         MACRO_THROW(RuntimeApiException, msg);
     }
+    HCCL_INFO("[HrtNotifyGetOffset] ptr[%p], offset[%u].", ptr, offset);
     return offset;
 }
 
 void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint32_t timeOut)
 {
-    HCCL_INFO("[HrtNotifyWaitWithTimeOut] notifyPtr[%p], streamPtr[%p], timeOut[%u].", 
-                notifyPtr, streamPtr, timeOut);
     aclError ret = aclrtWaitAndResetNotify(notifyPtr, streamPtr, timeOut);
-    HCCL_INFO("Call aclrtWaitAndResetNotify, return value[%d].", ret);
+    HCCL_INFO("[HrtNotifyWaitWithTimeOut] notifyPtr[%p], streamPtr[%p], timeOut[%u], ret[%d].", 
+                notifyPtr, streamPtr, timeOut, ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("call aclrtWaitAndResetNotify failed. notifyPtr=%p, streamPtr=%p, timeout=%u, return=%d.",
                                 notifyPtr, streamPtr, timeOut, ret);
@@ -794,9 +787,8 @@ void HrtNotifyWaitWithTimeOut(RtNotify_t notifyPtr, aclrtStream streamPtr, uint3
 
 void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
 {
-    HCCL_INFO("[HrtNotifyRecord] notifyPtr[%p], streamPtr[%p].", notifyPtr, streamPtr);
     aclError ret = aclrtRecordNotify(notifyPtr, streamPtr);
-    HCCL_INFO("Call aclrtRecordNotify, return value[%d].", ret);
+    HCCL_INFO("[HrtNotifyRecord] notifyPtr[%p], streamPtr[%p], ret[%d].", notifyPtr, streamPtr, ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("call HrtNotifyRecord failed. notifyPtr=%p, streamPtr=%p, return=%d.", notifyPtr, streamPtr, ret);
         MACRO_THROW(RuntimeApiException, msg);
@@ -861,9 +853,8 @@ void HrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo, aclrtStream streamPtr)
 
 void HrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
 {
-    HCCL_INFO("[HrtGetTaskIdAndStreamID] taskId[%u], streamId[%u].", taskId, streamId);
     rtError_t ret = rtGetTaskIdAndStreamID(&taskId, &streamId);
-    HCCL_INFO("Call rtGetTaskIdAndStreamId, return value[%d], para: taskId[%u], streamId[%u].", ret, taskId, streamId);
+    HCCL_INFO("[HrtGetTaskIdAndStreamID] ret[%d], para: taskId[%u], streamId[%u].", ret, taskId, streamId);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("[Get][TaskIdAndStreamID]errNo[0x%016llx] "
                    "rt get task ID and stream ID fail. return[%d], taskId[%u], streamId[%u].",
@@ -896,10 +887,9 @@ aclrtCntNotify HrtCntNotifyCreate(u32 deviceId)
 
 u32 HrtGetCntNotifyId(const aclrtCntNotify inCntNotify)
 {
-    HCCL_INFO("[HrtGetCntNotifyId] inCntNotify[%p].", inCntNotify);
     u32       notifyId = 0; // 待接口rtGetCntNotifyId(inCntNotify, notifyId)上库，目前打桩;
     aclError ret      = aclrtCntNotifyGetId(inCntNotify, &notifyId);
-    HCCL_INFO("Call rtGetCntNotifyId, return value[%d], inCntNotify[%p], notifyId[%u]", ret, inCntNotify, notifyId);
+    HCCL_INFO("[HrtGetCntNotifyId] ret[%d], inCntNotify[%p], notifyId[%u]", ret, inCntNotify, notifyId);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call rtGetCntNotifyId failed. return[%d], inCntNotify[%p], notifyId[%u].", 
             ret, inCntNotify, notifyId);
@@ -910,9 +900,8 @@ u32 HrtGetCntNotifyId(const aclrtCntNotify inCntNotify)
 
 void HrtCntNotifyDestroy(const aclrtCntNotify inCntNotify)
 {
-    HCCL_INFO("[HrtCntNotifyDestroy] inCntNotify[%p].", inCntNotify);
     aclError ret = aclrtCntNotifyDestroy(inCntNotify);
-    HCCL_INFO("Call rtCntNotifyDestroy, return value[%d], inCntNotify[%p].", ret, inCntNotify);
+    HCCL_INFO("[HrtCntNotifyDestroy] ret[%d], inCntNotify[%p].", ret, inCntNotify);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call aclrtCntNotifyDestroy failed");
         THROW<RuntimeApiException>(msg);
@@ -924,13 +913,12 @@ const std::map<HrtCntNotifyRecordMode, aclrtCntNotifyRecordMode> HRT_CNT_NOTIFY_
        {HrtCntNotifyRecordMode::STORE, aclrtCntNotifyRecordMode::ACL_RT_CNT_NOTIFY_RECORD_SET_VALUE_MODE}};
 void HrtCntNotifyRecord(const aclrtCntNotify inCntNotify, const aclrtStream streamPtr, HrtCntNotifyRecordMode mode, u32 value)
 {
-    HCCL_INFO("[HrtCntNotifyRecord] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u].", 
-                inCntNotify, streamPtr, mode, value);
     aclrtCntNotifyRecordInfo recordInfo{};
     recordInfo.mode  = HRT_CNT_NOTIFY_RECORD_MODE_MAP.at(mode);
     recordInfo.value = value;
     aclError ret    = aclrtCntNotifyRecord(inCntNotify, streamPtr, &recordInfo);
-    HCCL_INFO("Call aclrtCntNotifyRecord, return valuee[%d], inCntNotify[%p]", ret, inCntNotify);
+    HCCL_INFO("[HrtCntNotifyRecord] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u], ret[%d].", 
+                inCntNotify, streamPtr, mode, value, ret);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("Call aclrtCntNotifyRecord failed");
         THROW<RuntimeApiException>(msg);
@@ -943,18 +931,18 @@ const std::map<HrtCntNotifyWaitMode, aclrtCntNotifyWaitMode> HRT_CNT_NOTIFY_WAIT
 void HrtCntNotifyWaitWithTimeOut(const aclrtCntNotify inCntNotify, const aclrtStream streamPtr, HrtCntNotifyWaitMode
                     mode, u32 value, u32 timeout, bool isClear)
 {
-    HCCL_INFO("[HrtCntNotifyWaitWithTimeOut] inCntNotify[%p], streamPtr[%p], mode[%d], value[%u], timeout[%u], isClear[%d].", 
-                inCntNotify, streamPtr, mode, value, timeout, isClear);
     aclrtCntNotifyWaitInfo waitInfo{};
     waitInfo.mode    = HRT_CNT_NOTIFY_WAIT_MODE_MAP.at(mode);
     waitInfo.value   = value;
     waitInfo.isClear = isClear;
     waitInfo.timeout = timeout;
     aclError ret    = aclrtCntNotifyWaitWithTimeout(inCntNotify, streamPtr, &waitInfo);
-    HCCL_INFO("Call aclrtCntNotifyWaitWithTimeout, return value[%d], inCntNotify[%p]", ret, inCntNotify);
+    HCCL_INFO("[HrtCntNotifyWaitWithTimeOut] inCntNotify[%p], streamPtr[%p], mode[%d], "
+                "value[%u], timeout[%u], isClear[%d], ret[%d].",
+                inCntNotify, streamPtr, mode, value, timeout, isClear, ret);
     if (ret != ACL_SUCCESS) {
-        string msg = StringFormat("Call rtCntNotifyWaitWithTimeout failed. return[%d], inCntNotify[%p], streamPtr[%p], "
-                    "mode[%d], value[%u], timeout[%u], isClear[%d].", 
+        string msg = StringFormat("Call rtCntNotifyWaitWithTimeout failed. return[%d], inCntNotify[%p], "
+                    "streamPtr[%p], mode[%d], value[%u], timeout[%u], isClear[%d].", 
                     ret, inCntNotify, streamPtr, mode, value, timeout, isClear);
         THROW<RuntimeApiException>(msg);
     }
@@ -962,7 +950,6 @@ void HrtCntNotifyWaitWithTimeOut(const aclrtCntNotify inCntNotify, const aclrtSt
 
 aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag)
 {
-    HCCL_INFO("[HrtNotifyCreateWithFlag] devId[%u], flag[%u].", devId, flag);
     aclrtNotify ptr = nullptr;
     aclError  ret = aclrtCreateNotify(&ptr, flag);
     HCCL_INFO("Call HrtNotifyCreateWithFlag, return value[%d], flag[%u] devid[%u].", ret, flag, devId);
@@ -1224,11 +1211,10 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
 
 HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
 {
-    HCCL_INFO("[HrtMemPrefetchToDevice] devPtr[%p], len[%llu].", devPtr, len);
     CHK_PRT_RET(aclrtMemP2PMap == nullptr, HCCL_ERROR("aclrtMemP2PMap is nullptr, "
             "Does not support this interface."), HCCL_E_RUNTIME);
 	aclError ret = aclrtMemP2PMap(devPtr, static_cast<size_t>(len), HrtGetDevice(), 0);
-    HCCL_INFO("Call [HrtMemPrefetchToDevice]aclrtMemP2PMap ret = %d", ret);
+    HCCL_INFO("[HrtMemPrefetchToDevice] devPtr[%p], len[%llu], ret[%d].", devPtr, len, ret);
     if (ret != ACL_SUCCESS) {
         HCCL_ERROR("aclrtMemP2PMap fail ret = %d", ret);
         return HCCL_E_RUNTIME;
