@@ -10,7 +10,7 @@
 #ifndef AICPU_SYMMETRIC_MEMORY_H_
 #define AICPU_SYMMETRIC_MEMORY_H_
 
-#include "hccl/hccl_sym_win.h"
+#include "hccl/hccl_sym_win_primitives.h"
 
 #ifdef __cplusplus
 extern "C" {

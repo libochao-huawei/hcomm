@@ -323,7 +323,7 @@ HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngi
         __func__, endpointHandle, engine, channelNum);
 
     std::vector<HcommChannelDesc> channelDescFinals;
-    CHK_RET(NormalizeHcommChannelDescs(channelDescs, channelNum, channelDescFinals));
+    CHK_RET(static_cast<HcclResult>(NormalizeHcommChannelDescs(channelDescs, channelNum, channelDescFinals)));
     return ChannelProcess::CreateChannelsLoop(endpointHandle, engine, channelDescFinals.data(), channelNum, channels);
 }
 
@@ -343,7 +343,7 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
         __func__, endpointHandle, engine, channelNum);
 
     std::vector<HcommChannelDesc> channelDescFinals;
-    CHK_RET(NormalizeHcommChannelDescs(channelDescs, channelNum, channelDescFinals));
+    CHK_RET(static_cast<HcclResult>(NormalizeHcommChannelDescs(channelDescs, channelNum, channelDescFinals)));
 
     std::vector<ChannelHandle> hostChannelHandles(channelNum);
     ChannelHandle* targetChannels = hostChannelHandles.data();
@@ -446,13 +446,6 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t not
     ThreadHandle *threads)
 {
     return ::HcommThreadAlloc(engine, threadNum, &notifyNumPerThread, threads);
-}
-
-HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, int notifyNumPerThread,
-    ThreadHandle *threads)
-{
-    uint32_t notifyNum = static_cast<uint32_t>(notifyNumPerThread);
-    return ::HcommThreadAlloc(engine, threadNum, &notifyNum, threads);
 }
 
 HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
