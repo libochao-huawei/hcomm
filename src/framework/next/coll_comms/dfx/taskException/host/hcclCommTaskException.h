@@ -25,12 +25,6 @@ namespace hcomm {
 using RdmaHandle = void*;
 using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>; 
 
-struct CcuHostParam {
-    CcuErrorInfo ccuErrorInfo;
-    TaskInfo taskInfo;
-    uint32_t deviceId;
-};
-
 class TaskExceptionHost {
 public:
     TaskExceptionHost() = default;
