@@ -9,35 +9,35 @@
  */
 
 #include "aiv_communication_base_v2.h"
- 
+
 using namespace AscendC;
- 
+
 // todo 简化参数
 
 class AivBroadcastMesh1D : public AivCommBase {
 public:
     __aicore__ inline AivBroadcastMesh1D() {}
- 
+
     template<typename T>
     __aicore__ inline void Process(uint64_t curCount, uint64_t curTag);
 
     template<typename T>
     __aicore__ inline void ProcessBigData(uint64_t curCount, uint64_t curTag);
 };
- 
+
 template<typename T>
 __aicore__ inline void AivBroadcastMesh1D::Process(uint64_t curCount, uint64_t curTag)
 {
     uint64_t dataTypeSize = sizeof(T);
-    uint64_t curStageCoreNum = numBlocks_ / rankSize_ * rankSize_;
-    if (block_idx >= curStageCoreNum) {
+    if (block_idx >= rankSize_)
+    {
         return;
     }
-    uint32_t peerRank = block_idx / (curStageCoreNum / rankSize_);
-    uint64_t offsetPerCore = curCount / curStageCoreNum * dataTypeSize;
+    uint32_t peerRank = block_idx;
+    uint64_t offsetPerCore = curCount / rankSize_ * dataTypeSize;
     uint64_t dataOffset = offsetPerCore * block_idx;
-    uint64_t countPerCore = block_idx == curStageCoreNum - 1 ? curCount - (curStageCoreNum - 1) * (curCount / curStageCoreNum)
-                                    : curCount / curStageCoreNum;
+    uint64_t countPerCore = block_idx == rankSize_ - 1 ? curCount - (rankSize_ - 1) * (curCount / rankSize_)
+                                                       : curCount / rankSize_;
     uint64_t flag_offset = block_idx;
     __gm__ T *inputGM = (__gm__ T *)(input_ + dataOffset);
     __gm__ T *cclGM = (__gm__ T *)(GM_IN[peerRank] + dataOffset);
@@ -49,11 +49,11 @@ __aicore__ inline void AivBroadcastMesh1D::Process(uint64_t curCount, uint64_t c
     }
 
     // allgather
-    WaitFlag(peerRank, flag_offset, curTag);  
+    WaitFlag(peerRank, flag_offset, curTag);
     CpGM2GM(inputGM, cclGM, countPerCore);
     PipeBarrier<PIPE_ALL>();
 }
- 
+
 template<typename T>
 __aicore__ inline void AivBroadcastMesh1D::ProcessBigData(uint64_t curCount, uint64_t curTag)
 {
