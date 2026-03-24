@@ -18,7 +18,7 @@ public:
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
     uint32_t    GetMask() { return mask; };
-    uint32_t    GetSignalId() { return signalId; };
+    uint32_t    GetId() { return signalId; };
     HcclResult  GetChannelId(uint16_t& channelId);
 
 private:

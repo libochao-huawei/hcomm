@@ -725,7 +725,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     //单算子模式，暂时覆盖opTag
     dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
     dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
-
+    dfxOpInfoOnce->engine = dfxOpInfo->engine;
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
     CHK_RET(hcclCommDfx->UpdateProfStat());

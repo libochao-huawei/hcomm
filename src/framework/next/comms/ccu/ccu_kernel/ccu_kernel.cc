@@ -319,7 +319,9 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling);
- 	AddProfiling("WaitEvent", rep->GetMask());
+    if (isProfiling) {
+        AddProfiling("WaitEvent", rep->GetMask());
+    }
  	Append(rep);
     return HCCL_SUCCESS;
 }
@@ -344,7 +346,9 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
 HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    AddProfiling(channel, "NotifyWait", localNotifyIdx, mask); // TODO:返回void
+    if (isProfiling) {
+        AddProfiling(channel, "NotifyWait", localNotifyIdx, mask);
+    }
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
@@ -830,13 +834,15 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
                 HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
                 return HCCL_E_PTR;
             }
-            auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitEvent*>(waitCkeRep.get());
-            if (localWaitRep) {
-                profInfo.ckeId = localWaitRep->GetId();
-            } else {
-                HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
-                return HCCL_E_PTR;
-            }
+            // auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitEvent*>(waitCkeRep.get());
+            // if (localWaitRep) {
+            //     profInfo.ckeId = localWaitRep->GetId();
+            // } else {
+            //     HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+            //     return HCCL_E_PTR;
+            // }
+            profInfo.ckeId = waitCkeRep->GetId();
+            HCCL_INFO("[CcuKernel][GetCcuProfilingInfo] waitcke[%u]", profInfo.ckeId);
         }
         allCcuProfilingInfos.push_back(profInfo);
         count++;
@@ -935,11 +941,6 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
     taskParam.taskPara.Ccu.execMissionId = streamProfilingInfo[0].missionId;
     taskParam.taskPara.Ccu.instrId   = streamProfilingInfo[0].instrId;
     taskParam.taskPara.Ccu.executeId = execId;
-    // TODO:需要修改
-    // CcuJettyMgr *ccuJettyMgr = dynamic_cast<CollServiceDeviceMode *>(comm.GetCollService())
-    //     ->GetCcuInsPreprocessor()->GetCcuComm()->GetCcuJettyMgr();
-    // CHK_PRT_RET(ccuJettyMgr,
-    //     HCCL_ERROR("[CcuKernel][%s] ccuJettyMgr is nullptr.", __func__), HcclResult::HCCL_E_PARA);    
     for (auto &profInfo : streamProfilingInfo) {
         for (int idx = 0; idx < CCU_MAX_CHANNEL_NUM; idx++) {
             if (profInfo.channelId[idx] == INVALID_VALUE_CHANNELID) {
@@ -950,8 +951,37 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
                 0;
         }
     }
-    // taskParam.ccuDetailInfo = std::make_shared<std::vector<CcuProfilingInfo>>(streamProfilingInfo);
-    // HCCL_INFO("Begin to SaveDfxTaskInfo. taskType[%d]", static_cast<int32_t>(TaskParamType::TASK_CCU));
+    //1.显式声明lambda的返回类型，避免歧义
+    auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
+        Hccl::CcuProfilingInfo dst;
+        dst.name = src.name;
+        dst.type = src.type;
+        dst.dieId = src.dieId;
+        dst.missionId = src.missionId;
+        dst.instrId = src.instrId;
+        dst.reduceOpType = src.reduceOpType;
+        dst.inputDataType = src.inputDataType;
+        dst.outputDataType = src.outputDataType;
+        dst.dataSize = src.dataSize;
+        dst.ckeId = src.ckeId;
+        dst.mask = src.mask;
+        HCCL_INFO("src.name %s, dst.name %s", dst.name.c_str(), src.name.c_str());
+        (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
+        (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
+        return dst;
+    }
+
+    // 2. 显式声明converted的类型，避免推导失败
+    std::vector<Hccl::CcuProfilingInfo> converted;
+    converted.reserve(streamProfilingInfo.size());
+
+    // 3. 使用transform
+    std::transform(streamProfilingInfo.begin(),
+                streamProfilingInfo.end(),
+                std::back_inserter(converted),
+                convertToHccl);
+    // 4.构建shared_ptr
+    taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
     CHK_RET(SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster));
     return HCCL_SUCCESS;
 }
