@@ -33,6 +33,7 @@ static bool g_init = false;
 static mutex g_mut;
 static aclrtBinHandle g_binHandle;
 static std::unordered_map<const s8*, aclrtFuncHandle> g_aivFuncMap;
+static std::unordered_map<const s8*, std::string> g_aivNameMap;
 
 using AivKernelInfo = struct AivKernelInfoDef {
     const char* kernelName;
@@ -87,6 +88,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_allreduce_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32},
     {"aiv_allreduce_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8},
     {"aiv_allreduce_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16},
+    {"aiv_allreduce_int64_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT64},
     //broadcast
     {"aiv_broadcast_half", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP16},
     {"aiv_broadcast_int16_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT16},
@@ -110,6 +112,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_allreduce_mesh1d_twoshot_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16,KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_allreduce_mesh1d_twoshot_int64_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT64,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     // alltoall
     {"aiv_alltoall_half", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP16},
     {"aiv_alltoall_int16_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT16},
@@ -149,6 +152,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_reduce_int32_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT32},
     {"aiv_reduce_int8_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT8},
     {"aiv_reduce_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::BFP16},
+    {"aiv_reduce_int64_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT64},
     //reducescatter
     {"aiv_reduce_scatter_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::FP16},
     {"aiv_reduce_scatter_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT16},
@@ -156,6 +160,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_reduce_scatter_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT32},
     {"aiv_reduce_scatter_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT8},
     {"aiv_reduce_scatter_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::BFP16},
+    {"aiv_reduce_scatter_int64_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT64},
     // send
     {"aiv_send_int8_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT8}, // hccl_types.h
     {"aiv_send_int16_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT16},
@@ -295,6 +300,7 @@ HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHa
         HCCL_E_NOT_FOUND);
     
     g_aivFuncMap[stubFunc] = funcHandle;
+    g_aivNameMap[stubFunc] = funcName;
 
     return HCCL_SUCCESS;
 }
@@ -424,12 +430,20 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, void* args, u32 arg
         attr[1].value.timeoutUs.timeoutHigh, attr[2].id, attr[2].value.engineType, cfg.numAttrs);
 
     aclrtFuncHandle funcHandle;
-    HcclResult ret = GetKernelFunc(funcHandle, GetStubFunc(opArgs.cmdType, opArgs.dataType, opArgs.argsType));
+    const s8* stubFunc = GetStubFunc(opArgs.cmdType, opArgs.dataType, opArgs.argsType);
+    HcclResult ret = GetKernelFunc(funcHandle, stubFunc);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner] errNo[0x%016llx] GetKernelFunc failed, "
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
     aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, opArgs.numBlocks, opArgs.stream,
         &cfg, args, argsSize, nullptr, 0);
+    if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandle, g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+            HCCL_E_NOT_FOUND);
+        aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, opArgs.numBlocks, opArgs.stream,
+            &cfg, args, argsSize, nullptr, 0);
+    }
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;

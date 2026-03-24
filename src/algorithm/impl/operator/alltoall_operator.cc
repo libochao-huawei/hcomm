@@ -641,7 +641,7 @@ bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpPara
 {
     bool cclBigEnough = cclBufferManager_.GetInCCLbufferSize() >= ALLTOALL_PIPELINE_MIN_CCL_SIZE;
     bool multiRankPerServer = meshAggregationRankSize_ > 1;
-    bool isMultiServer = ((userRankSize_ > meshAggregationRankSize_) &&
+    bool isMultiServer = (meshAggregationRankSize_ != 0) && ((userRankSize_ > meshAggregationRankSize_) &&
         (userRankSize_ % meshAggregationRankSize_) == 0);
     bool isDefaultAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)
         || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD);

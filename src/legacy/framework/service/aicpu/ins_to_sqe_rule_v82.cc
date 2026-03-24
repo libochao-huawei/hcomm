@@ -106,7 +106,6 @@ template <typename INS_TYPE> CntNto1NotifyLite &GetCntNto1NotifyLite(const INS_T
 
 void Interpret(const InsLocalPostTo &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto taskId   = stream.GetRtsq()->GetTaskId();
     u32  value    = 1;
     u32  notifyId = 0;
@@ -136,7 +135,6 @@ void Interpret(const InsLocalPostTo &ins, const StreamLite &stream, ResMgrFetche
 
 void Interpret(const InsLocalWaitFrom &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto taskId   = stream.GetRtsq()->GetTaskId();
     u32  value    = 1;
     u32  notifyId = 0;
@@ -166,7 +164,6 @@ void Interpret(const InsLocalWaitFrom &ins, const StreamLite &stream, ResMgrFetc
 
 void Interpret(const InsLocalCopy &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     if (UNLIKELY(ins.GetSrcSlice().GetSize() == 0)) {
         return;
     }
@@ -207,7 +204,6 @@ void Interpret(const InsLocalCopy &ins, const StreamLite &stream, ResMgrFetcher 
 
 void Interpret(const InsLocalCopyExtend &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     if (UNLIKELY(ins.GetSrcBuffer().GetSize() == 0)) {
         HCCL_WARNING("%s insLocalCopyExtend srcBuffer size is 0, return", __func__);
         return;
@@ -257,7 +253,6 @@ inline void AicpuCheckLocalReduceIns(const InsLocalReduce &ins)
 
 void Interpret(const InsLocalReduce &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     // SDMA支持的Reduce，则使用 sdmaReduce
     // SDMA不支持的Reduce，则使用 TBE算子(Asend C算子）
 
@@ -305,7 +300,6 @@ void Interpret(const InsLocalReduce &ins, const StreamLite &stream, ResMgrFetche
 
 void Interpret(const InsLocalWaitGroup &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto taskId = stream.GetRtsq()->GetTaskId();
     auto &notify = GetCntNto1NotifyLite(ins, resMgrFetcher);
     u32   value  = 0;
@@ -330,7 +324,6 @@ void Interpret(const InsLocalWaitGroup &ins, const StreamLite &stream, ResMgrFet
 
 void Interpret(const InsLocalBcastPost &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto taskId = stream.GetRtsq()->GetTaskId();
     auto &notify = GetCnt1toNNotifyLite(ins, resMgrFetcher);
     u32   value  = 0;
@@ -351,49 +344,42 @@ void Interpret(const InsLocalBcastPost &ins, const StreamLite &stream, ResMgrFet
 
 void Interpret(const InsPostReady &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.Post(NOTIFY_INDEX_READY, stream);
 }
 
 void Interpret(const InsWaitReady &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.Wait(NOTIFY_INDEX_READY, stream);
 }
 
 void Interpret(const InsPostFin &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.Post(NOTIFY_INDEX_FIN, stream);
 }
 
 void Interpret(const InsWaitFin &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.Wait(NOTIFY_INDEX_FIN, stream);
 }
 
 void Interpret(const InsPostFinAck &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.Post(NOTIFY_INDEX_FIN_ACK, stream);
 }
 
 void Interpret(const InsWaitFinAck &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.Wait(NOTIFY_INDEX_FIN_ACK, stream);
 }
 
 void Interpret(const InsRead &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     if (UNLIKELY(ins.GetLocalSlice().GetSize() == 0 && ins.GetRemoteSlice().GetSize() == 0)) {
         HCCL_WARNING("%s InsRead localSlice size is 0 and  remoteSlice size is 0, return", __func__);
         return;
@@ -408,7 +394,6 @@ void Interpret(const InsRead &ins, const StreamLite &stream, ResMgrFetcher *resM
 
 void Interpret(const InsReadReduce &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     if (UNLIKELY(ins.GetLocalSlice().GetSize() == 0 && ins.GetRemoteSlice().GetSize() == 0)) {
         HCCL_WARNING("%s InsReadReduce localSlice size is 0 and  remoteSlice size is 0, return", __func__);
         return;
@@ -424,7 +409,6 @@ void Interpret(const InsReadReduce &ins, const StreamLite &stream, ResMgrFetcher
 
 void Interpret(const InsBatchRead &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     std::vector<RmaBufferLite>                     locRmaBufferLites;
     std::vector<Buffer>                            rmtBuffers;
@@ -472,7 +456,6 @@ void Interpret(const InsBatchRead &ins, const StreamLite &stream, ResMgrFetcher 
 
 void Interpret(const InsReadExtend &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     DataBuffer localBuffer = ins.GetLocalBuffer();
     if (UNLIKELY(localBuffer.GetSize() == 0)) {
         HCCL_WARNING("%s insReadExtend localSlice size is 0, return", __func__);
@@ -493,7 +476,6 @@ void Interpret(const InsReadExtend &ins, const StreamLite &stream, ResMgrFetcher
 
 void Interpret(const InsWrite &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     if (UNLIKELY(ins.GetLocalSlice().GetSize() == 0 && ins.GetRemoteSlice().GetSize() == 0)) {
         HCCL_WARNING("%s InsWrite localSlice size is 0 and  remoteSlice size is 0, return", __func__);
         return;
@@ -508,7 +490,6 @@ void Interpret(const InsWrite &ins, const StreamLite &stream, ResMgrFetcher *res
 
 void Interpret(const InsBatchWrite &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     std::vector<RmaBufferLite>                     locRmaBufferLites;
     std::vector<Buffer>                            rmtBuffers;
@@ -556,7 +537,6 @@ void Interpret(const InsBatchWrite &ins, const StreamLite &stream, ResMgrFetcher
 
 void Interpret(const InsWriteExtend &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     DataBuffer localBuffer = ins.GetLocalBuffer();
     if (UNLIKELY(localBuffer.GetSize() == 0)) {
         HCCL_WARNING("%s insWriteExtend localSlice size is 0, return", __func__);
@@ -577,7 +557,6 @@ void Interpret(const InsWriteExtend &ins, const StreamLite &stream, ResMgrFetche
 
 void Interpret(const InsWriteWithFin &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
 
     if (UNLIKELY(ins.GetLocalSlice().GetSize() == 0)) {
@@ -592,7 +571,6 @@ void Interpret(const InsWriteWithFin &ins, const StreamLite &stream, ResMgrFetch
 
 void Interpret(const InsWriteWithFinExtend &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     DataBuffer localBuffer = ins.GetLocalBuffer();
     DataBuffer remoteBuffer = ins.GetRemoteBuffer();
     auto &transport = GetTransportLite(ins, resMgrFetcher);
@@ -617,8 +595,6 @@ void Interpret(const InsWriteWithFinExtend &ins, const StreamLite &stream, ResMg
 
 void Interpret(const InsWriteReduce &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
-
     if (UNLIKELY(ins.GetLocalSlice().GetSize() == 0 && ins.GetRemoteSlice().GetSize() == 0)) {
         HCCL_WARNING("%s InsWriteReduce localSlice size is 0 and  remoteSlice size is 0, return", __func__);
         return;
@@ -634,7 +610,6 @@ void Interpret(const InsWriteReduce &ins, const StreamLite &stream, ResMgrFetche
 
 void Interpret(const InsWriteReduceWithFin &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
 
     if (UNLIKELY(ins.GetLocalSlice().GetSize() == 0)) {
@@ -651,14 +626,12 @@ void Interpret(const InsWriteReduceWithFin &ins, const StreamLite &stream, ResMg
 
 void Interpret(const InsBatchOneSidedRead &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.BatchOneSidedRead(ins.GetLocalSlice(), ins.GetRemoteSlice(), stream);
 }
 
 void Interpret(const InsBatchOneSidedWrite &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, ins.Describe().c_str());
     auto &transport = GetTransportLite(ins, resMgrFetcher);
     transport.BatchOneSidedWrite(ins.GetLocalSlice(), ins.GetRemoteSlice(), stream);
 }
@@ -673,8 +646,7 @@ template <class InsType> InsToSqeRule91095 Rule91095()
 }
 
 void Interpret(const InsStreamSync &insStreamSync, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
-{   
-    HCCL_INFO("%s Instruction %s", __func__, insStreamSync.Describe().c_str());
+{
     (void)insStreamSync;
     constexpr uint64_t NANOSECOND_TO_SECOND = 1000000000U;
     const uint64_t kPrintSqInterval = 30U;
@@ -706,7 +678,6 @@ void Interpret(const InsStreamSync &insStreamSync, const StreamLite &stream, Res
 
 void Interpret(const InsPreStreamSync &insPreStreamSync, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, insPreStreamSync.Describe().c_str());
     HcclResult ret = stream.GetRtsq()->SetPreStreamSyncReady();
     stream.GetRtsq()->LaunchTask();
     if (UNLIKELY(ret != HCCL_SUCCESS)) {
@@ -717,7 +688,6 @@ void Interpret(const InsPreStreamSync &insPreStreamSync, const StreamLite &strea
 
 void Interpret(const InsAicpuReduce &insAicpuReduce, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
 {
-    HCCL_INFO("%s Instruction %s", __func__, insAicpuReduce.Describe().c_str());
     //使用aicpu进行reduce运算，支持int64 uint64 fp64
 
     if (UNLIKELY(insAicpuReduce.GetSrcSlice().GetSize() == 0)) {
