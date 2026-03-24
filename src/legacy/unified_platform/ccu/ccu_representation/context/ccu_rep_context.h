@@ -21,7 +21,7 @@
 #include "task_param.h"
 #include "ccu_ctx_arg.h"
 #include "const_val.h"
-#include "ccu_transport.h"
+
 namespace Hccl {
 namespace CcuRep {
 
@@ -69,7 +69,6 @@ public:
     void SetDependencyInfo(uint32_t id, uint32_t mask, std::shared_ptr<CcuRepBase> rep);
     std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>> GetDependencyInfo(uint32_t id);
     void ClearDependencyInfo();
-
 
 protected:
     std::set<std::string> registeredLoop;
