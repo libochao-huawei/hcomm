@@ -129,7 +129,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
+HcclResult MyRank::SetMemHandles(void **memHandles, std::vector<MemHandle> &memHandleVec,
     std::vector<CommMemHandle> &commMemHandles) const
 {
     CommMemHandle **handles = reinterpret_cast<CommMemHandle**>(memHandles);
@@ -137,10 +137,12 @@ HcclResult MyRank::SetMemHandles(void **memHandles, const std::vector<MemHandle>
     commMems_->GetMemoryHandles(mems);
     commMemHandles.emplace_back(mems[0].addr, mems[0].size, ConvertHcclToCommMemType(mems[0].memType),
         memHandleVec[0], "HcclBuffer");
+    MemHandleVec[0] = static_cast<void*>(&commMemHandles[0]);
     for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
         CHK_PTR_NULL(memHandleVec[i]);
         commMemHandles.emplace_back((*handles[i - 1]).addr, (*handles[i - 1]).size,
             (*handles[i - 1]).memType, memHandleVec[i], (*handles[i - 1]).memTag);
+        MemHandleVec[i] = static_cast<void*>(&commMemHandles[i]);
     }
     return HCCL_SUCCESS;
 }
@@ -275,13 +277,11 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             ret);
 
         hcommDescs[i].exchangeAllMems = false;
-        if (engine == COMM_ENGINE_CPU) {
-            hcommDescs[i].memHandles = memHandleVec.data();
-        } else {
+        if (engine != COMM_ENGINE_CPU) {
             std::vector<CommMemHandle> commMemHandles{};
             CHK_RET(SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
-            hcommDescs[i].memHandles = commMemHandles.data();
         }
+        hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
         hcomm::EndpointPair* endpointPair = nullptr;
