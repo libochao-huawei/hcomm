@@ -19,7 +19,7 @@
 #include "ccu_rep_type.h"
 #include "ccu_kernel_mgr.h"
 #include "hcomm_c_adpt.h"
-#include "ccu_urma_channel.h"
+#include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
 #include "orion_adpt_utils.h"
 #include "ccuTaskException.h"
 #include "hcomm_adapter_hccp.h"
@@ -294,7 +294,6 @@ void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo,
 void CcuTaskException::GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
                                              vector<CcuErrorInfo> &errorInfo)
 {
-    // TODO
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
@@ -508,11 +507,7 @@ void CcuTaskException::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared
     errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
     errorMsg.msg.bufTransMem.signalId = rep->GetSemId();
     errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
-    auto res = rep->GetChannelId(errorMsg.msg.bufTransMem.channelId);
-    if (res != HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuTaskException][GenErrorInfoBufRead] channelId get failed");
-    }
-
+    errorMsg.msg.bufTransMem.channelId = rep->GetChannelId();
     errorInfo.push_back(errorMsg);
 }
 

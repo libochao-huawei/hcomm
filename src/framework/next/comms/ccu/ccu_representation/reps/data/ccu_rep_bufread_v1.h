@@ -21,32 +21,16 @@ public:
     std::string Describe() override;
 
     uint16_t GetSrcAddrId() { return  src.addr.Id(); }
-    uint16_t GetSrcTokenId() {
-       return  src.token.Id();
-    }
-    uint16_t GetDstAddrId() {
-       return  dst.Id();
-    }
-    uint16_t GetDstTokenId() {
-       return  src.token.Id();
-    }
-    uint16_t GetLenId() {
-       return  len.Id();
-    }
-    uint16_t GetSemId() {
-       return  sem.Id();
-    }
-    uint32_t GetMask() {
-       return  mask;
-    }
-    uint32_t GetChannelId() {
-       return  channel;
-    }
-    HcclResult GetChannelId(uint16_t& channeId){
-       return  GetChannelIdByHandle(channel, channeId);
-    }
+    uint16_t GetSrcTokenId() { src.token.Id(); }
+    uint16_t GetDstAddrId() { dst.Id(); }
+    uint16_t GetDstTokenId() { src.token.Id(); }
+    uint16_t GetLenId() { len.Id(); }
+    uint16_t GetSemId() { sem.Id(); }
+    uint32_t GetMask() { mask; }
+    uint32_t GetChannelId() { channelId; }
 private:
     ChannelHandle channel;
+    uint32_t channelId{0};
 
     RemoteAddr    src;
     CcuBuf dst;
