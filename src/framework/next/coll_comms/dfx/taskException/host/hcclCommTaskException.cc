@@ -22,6 +22,7 @@
 #include "hcomm_c_adpt.h"
 #include "ccu_urma_channel.h"
 #include "orion_adpt_utils.h"
+#include "ccuTaskException.h"
 
 namespace hcomm {
 
@@ -152,7 +153,7 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
     } 
     HCCL_INFO("Start to the new process");
     if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_CCU) {
-        ProcessCcuException(exceptionInfo, *curTask); 
+        CcuTaskException::ProcessCcuException(exceptionInfo, *curTask); 
     } else {
         ProcessException(exceptionInfo, *curTask);
     }  

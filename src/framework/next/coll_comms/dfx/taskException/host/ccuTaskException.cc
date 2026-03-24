@@ -29,6 +29,7 @@
 #include "ccu_rep_loc_record_event.h"
 #include "ccu_rep_v1.h"
 #include "ccu_comp.h"
+#include "string_util.h"
 
 namespace hcomm {
 
@@ -82,6 +83,28 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP {
       {0x0c, "Read Local Mem Poison(0x0C)"}}},
 };
 
+MAKE_ENUM(AuxInfoInType, AUX_INFO_IN_TYPE_CQE, AUX_INFO_IN_TYPE_AE, AUX_INFO_IN_TYPE_MAX);
+struct AuxInfoIn {
+    AuxInfoInType auxInfoInType;
+    union {
+        struct {
+            uint32_t status;
+            uint8_t sR;
+        } cqe;
+        struct {
+            uint32_t eventType;
+        } ae;
+    };
+    u8 resv[7];
+};
+
+constexpr u32 MAX_AUX_INFO_NUM = 256;
+struct AuxInfoOut {
+    uint32_t auxInfoTypes[MAX_AUX_INFO_NUM];
+    uint32_t auxInfoValues[MAX_AUX_INFO_NUM];
+    uint32_t auxInfoNum{0};
+};
+
 struct ccum_dfx_info {
     unsigned int query_result; // 0:success, 1:fail
     unsigned int ccum_sqe_recv_cnt;
@@ -95,62 +118,6 @@ struct ccum_dfx_info {
     unsigned int ccum_cif_sqe_cnt;
     unsigned int ccum_cif_cqe_cnt;
 };
-template <typename... Args> inline std::string StringFormat(const char *format, Args... args)
-{
-    using namespace std;
-    constexpr size_t bufSize = BUFSIZ;
-    char             buffer[bufSize];
-    int result = snprintf_s(&buffer[0], bufSize, bufSize, format, args...);
-     if (result < 0) {
-        HCCL_ERROR("[StringFormat] data snprintf_s failed.");
-        return "";
-    }
-    size_t actualSize = static_cast<size_t>(result);
-    if (actualSize + 1 > bufSize) {
-        actualSize++;
-        std::vector<char> newbuffer(actualSize);
-        auto ret = snprintf_s(newbuffer.data(), actualSize, actualSize, format, args...);
-        if(ret != EOK){
-            HCCL_ERROR("[StringFormat] data snprintf_s failed.");
-            return "";
-        }
-        return newbuffer.data();
-    }
-    return buffer;
-}
-void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
-{
-    struct ccum_dfx_info *info = reinterpret_cast<struct ccum_dfx_info *>(const_cast<uint8_t*>(panicLog));
-    const uint16_t ccumIsEnable = info->lqc_ccu_sec_reg0 & 1;
-    if (info->query_result != 0) {
-        HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
-    }
-    HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u]"
-                "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u]"
-                "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u]",
-                info->ccum_sqe_recv_cnt, info->ccum_sqe_send_cnt, info->ccum_mission_dfx,
-                info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
-                info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
-}
-HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
-{
-    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%d]", deviceLogicId);
-    // 入参校验拦截
-    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
-        HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
-            HcclResult::HCCL_E_PARA);
-    return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
-}
-HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
-{
-    HCCL_INFO("[CcuCleanDieCkes] Input params: deviceLogicId[%d], dieId[%u]", deviceLogicId, dieId);
-    // 入参校验拦截
-    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
-        HCCL_ERROR("[CcuCleanDieCkes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
-            HcclResult::HCCL_E_PARA);
-    return CcuComponent::GetInstance(deviceLogicId).CleanDieCkes(dieId);
-}
-
 void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
 {
     auto deviceId = exceptionInfo->deviceid;
@@ -180,6 +147,41 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
         HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu die ckes, "
             "dieId[%u], devLogicId[%d].", __func__, dieId, devLogicId);
     }
+}
+
+void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
+{
+    struct ccum_dfx_info *info = reinterpret_cast<struct ccum_dfx_info *>(const_cast<uint8_t*>(panicLog));
+    const uint16_t ccumIsEnable = info->lqc_ccu_sec_reg0 & 1;
+    if (info->query_result != 0) {
+        HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
+    }
+    HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u]"
+                "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u]"
+                "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u]",
+                info->ccum_sqe_recv_cnt, info->ccum_sqe_send_cnt, info->ccum_mission_dfx,
+                info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
+                info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
+}
+
+HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
+{
+    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%d]", deviceLogicId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
+    return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
+}
+
+HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
+{
+    HCCL_INFO("[CcuCleanDieCkes] Input params: deviceLogicId[%d], dieId[%u]", deviceLogicId, dieId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuCleanDieCkes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
+    return CcuComponent::GetInstance(deviceLogicId).CleanDieCkes(dieId);
 }
 
 CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId)
@@ -383,15 +385,14 @@ void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, sha
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                     = static_pointer_cast<CcuRep::CcuRepRemPostVar>(repBase);
-    errorMsg.msg.waitSignal.signalId   = rep->GetSignalId();
+    errorMsg.msg.waitSignal.signalId   = rep->GetRmtCkeId();
     errorMsg.msg.waitSignal.signalMask = rep->GetMask();
     auto sret = memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
                    sizeof(errorMsg.msg.waitSignal.channelId));
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret),);
-                   
-    CHK_PRT_RET(rep->GetChannelId(errorMsg.msg.waitSignal.channelId[0]) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]GetChannelId fail, ", __func__),);
-    errorMsg.msg.waitSignal.paramId = rep->GetSignalId(); // zjwTODO：待和哲芃确认打印是否正确
+
+    errorMsg.msg.waitSignal.channelId[0] = rep->GetChannelId();
+    errorMsg.msg.waitSignal.paramId = rep->GetRmtXnId();
     errorMsg.msg.waitSignal.paramValue = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetParam().Id());
 
     errorInfo.push_back(errorMsg);
@@ -448,7 +449,7 @@ void CcuTaskException::GenErrorInfoWrite(const ErrorInfoBase &baseInfo, shared_p
     errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
     errorMsg.msg.transMem.signalId   = rep->GetSemId();
     errorMsg.msg.transMem.signalMask = rep->GetMask();
-    errorMsg.msg.transMem.channelId  = rep->GetTransportChannelId();
+    errorMsg.msg.transMem.channelId  = rep->GetChannelId();
 
     errorInfo.push_back(errorMsg);
 }
@@ -529,7 +530,7 @@ void CcuTaskException::GenErrorInfoBufWrite(const ErrorInfoBase &baseInfo, share
     errorMsg.msg.bufTransMem.len      = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
     errorMsg.msg.bufTransMem.signalId   = rep->GetSemId();
     errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
-    errorMsg.msg.bufTransMem.channelId  = rep->GetTransportChannelId();
+    errorMsg.msg.bufTransMem.channelId  = rep->GetChannelId();
 
     errorInfo.push_back(errorMsg);
 }
@@ -707,7 +708,7 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
 }
 
 HcclResult CcuTaskException::GenErrorInfoLoopGroup(const ErrorInfoBase &baseInfo, shared_ptr<CcuRepBase> repBase,
-                                            CcuRepContext &ctx, vector<CcuErrorInfo> &errorInfo)
+    CcuRepContext &ctx, vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::LOOP_GROUP;
@@ -1014,11 +1015,20 @@ string CcuTaskException::GetCcuErrorMsgLocPostSem(const CcuErrorInfo &ccuErrorIn
                         ccuErrorInfo.msg.waitSignal.signalMask);
 }
 
-string CcuTaskException::GetCcuErrorMsgLocWaitSem(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId)
+string CcuTaskException::GetCcuErrorMsgLocWaitEvent(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId)
 {
     (void)taskInfo;
     (void)deviceId;
-    return StringFormat("InstrId[%u]: Wait sem[%u], semValue[0x%04x], mask[0x%04x]", ccuErrorInfo.instrId,
+    return StringFormat("InstrId[%u]: LocWaitEvent[%u], semValue[0x%04x], mask[0x%04x]", ccuErrorInfo.instrId,
+                        ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalValue,
+                        ccuErrorInfo.msg.waitSignal.signalMask);
+}
+
+string CcuTaskException::GetCcuErrorMsgLocWaitNotify(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId)
+{
+    (void)taskInfo;
+    (void)deviceId;
+    return StringFormat("InstrId[%u]: LocWaitNotify[%u], semValue[0x%04x], mask[0x%04x]", ccuErrorInfo.instrId,
                         ccuErrorInfo.msg.waitSignal.signalId, ccuErrorInfo.msg.waitSignal.signalValue,
                         ccuErrorInfo.msg.waitSignal.signalMask);
 }
@@ -1260,7 +1270,6 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
         return dummy;
     }
 
-    u32 deviceId = 0; // zjwTODO: 临时打桩
     u64 channelHandle = INVALID_U64;
     if (GetCcuChannelHandleById(deviceId, channelId, taskInfo, channelHandle) != HCCL_SUCCESS) {
         HCCL_ERROR("[%s]GetCcuChannelHandleById fail, deviceId[%u], channelId[%u], channelHandle[0x%llx]",
@@ -1310,8 +1319,8 @@ string CcuTaskException::GetCcuErrorMsgByType(const CcuErrorInfo &ccuErrorInfo, 
         {CcuRep::CcuRepType::LOOP, &CcuTaskException::GetCcuErrorMsgLoop},
         {CcuRep::CcuRepType::LOOPGROUP, &CcuTaskException::GetCcuErrorMsgLoopGroup},
         {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GetCcuErrorMsgLocPostSem},
-        {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
-        {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GetCcuErrorMsgLocWaitSem},
+        {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GetCcuErrorMsgLocWaitEvent},
+        {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GetCcuErrorMsgLocWaitNotify},
         {CcuRep::CcuRepType::REM_POST_SEM, &CcuTaskException::GetCcuErrorMsgRemPostSem},
         {CcuRep::CcuRepType::REM_WAIT_SEM, &CcuTaskException::GetCcuErrorMsgRemWaitSem},
         {CcuRep::CcuRepType::REM_POST_VAR, &CcuTaskException::GetCcuErrorMsgRemPostVar},
