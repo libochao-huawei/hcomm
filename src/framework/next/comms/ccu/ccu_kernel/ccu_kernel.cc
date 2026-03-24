@@ -983,6 +983,7 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
                 convertToHccl);
     // 4.构建shared_ptr
     taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
+    HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
     CHK_RET(SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster));
     return HCCL_SUCCESS;
 }

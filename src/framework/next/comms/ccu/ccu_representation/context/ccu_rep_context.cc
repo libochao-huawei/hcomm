@@ -147,7 +147,8 @@ void CcuRepContext::AddSqeProfiling(const CcuKernelArg &arg)
     ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
     ccuProfilingInfoCache.name      = arg.GetKernelSignature().Describe();
     ccuProfilingInfoCache.dieId     = GetDieId();
-
+    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u]", __func__, ccuProfilingInfoCache.type,
+        ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId);
     profilingInfo.push_back(ccuProfilingInfoCache);
 }
     
