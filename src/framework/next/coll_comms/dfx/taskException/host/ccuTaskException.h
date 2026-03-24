@@ -21,6 +21,8 @@
 #include "ccu_error_info.h"
 #include "rank_pair.h"
 #include "ccu_error_info_v1.h"
+#include "ccu_rep_base_v1.h"
+#include "ccu_rep_context_v1.h"
 
 namespace hcomm {
 using RdmaHandle = void*;

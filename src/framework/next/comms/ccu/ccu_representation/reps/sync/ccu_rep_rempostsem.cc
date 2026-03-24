@@ -24,11 +24,6 @@ CcuRepRemPostSem::CcuRepRemPostSem(const ChannelHandle channel, uint16_t semInde
     instrCount = 1;
 }
 
- HcclResult CcuRepRemPostSem::GetChannelId(uint16_t& channelId)
- {
-    return GetChannelIdByHandle(channel, channelId);
- }
-
 bool CcuRepRemPostSem::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep)
 {
     this->instrId = instrId;
@@ -44,13 +39,13 @@ bool CcuRepRemPostSem::Translate(CcuInstr *&instr, uint16_t &instrId, const Tran
         Hccl::THROW<Hccl::CcuApiException>("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel",
             __func__, channel);
     }
+    channelId = channelImpl->GetChannelId();
     CHK_PRT_THROW(channelImpl->GetRmtCkeByIndex(semIndex, signalId) != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[CcuRepRemPostSem][%s] failed to get remote cke id, channelHandle[0x%llx].",
             __func__, channel),
         Hccl::InternalException, "failed to get remote cke id.");
 
-    SyncCKEInstr(instr++, signalId, dep.reserveCkeId, mask, channelImpl->GetChannelId(), 0,
-                 0, 0, 0, 1);
+    SyncCKEInstr(instr++, signalId, dep.reserveCkeId, mask, channelId, 0, 0, 0, 0, 1);
     CHK_PRT_THROW((instrId > UINT16_MAX - instrCount),
                         HCCL_ERROR("[CcuRepRemPostSem::Translate]uint16 integer overflow occurs, instrId = [%hu], instrCount = [%hu]", instrId, instrCount),
                           Hccl::InternalException, "integer overflow");
