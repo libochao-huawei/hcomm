@@ -139,13 +139,11 @@ protected:
     HcclResult WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::CcuBuf &loc,
                  const CcuRep::Variable &len, CcuRep::CompletedEvent event);
     // MsWriteNb: 本地 MS → 远端 MS（write-with-notify），对应 TransLocMSToRmtMSInstr。
-    // rmtMsId: 远端 MS 物理 ID，穿刺版本传 0，正式版本由建链时 transport 层交换后传入。
-    // MsWriteNb: 本地 MS → 远端 MS（write-with-notify），对应 TransLocMSToRmtMSInstr。
-    // rmtCkeIdx: 远端 CKE 逻辑索引（接收方用 NotifyWait(channel, rmtCkeIdx) 等待）。
-    // rmtMsId: 远端 MS 物理 ID，穿刺版本传 0，正式版本由建链时 transport 层交换后传入。
-    HcclResult MsWriteNb(const ChannelHandle channel, const CcuRep::CcuBuf &src,
-                         const CcuRep::Variable &len,
-                         uint32_t rmtCkeIdx, uint16_t mask, uint32_t rmtMsId);
+    // src: 本地 MS buffer（发送方）。
+    // dst: 远端对等 CcuBuf，hcomm 内部利用对称 MS 分配从 dst.Id() 获取远端物理 msId。
+    // remoteNotifyIdx: 远端 CKE 逻辑索引（接收方用 NotifyWait(channel, remoteNotifyIdx) 等待）。
+    HcclResult MsWriteNb(const ChannelHandle channel, const CcuRep::CcuBuf &src, const CcuRep::CcuBuf &dst,
+                         const CcuRep::Variable &len, uint32_t remoteNotifyIdx, uint32_t mask);
 
     HcclResult ReadNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
               const CcuRep::Variable &len, CcuRep::CompletedEvent event);

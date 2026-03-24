@@ -24,7 +24,7 @@ namespace hcomm {
 
 class CcuTransport {
 public:
-    static constexpr uint32_t INIT_CKE_NUM = 8;
+    static constexpr uint32_t INIT_CKE_NUM = 64;
     static constexpr uint32_t INIT_XN_NUM  = 8;
     MAKE_ENUM(TransStatus, INIT, SEND_DATA_SIZE, RECV_DATA_SIZE, SEND_ALL_INFO, RECV_ALL_INFO, SEND_TRANS_RES,
         RECV_TRANS_RES, SEND_FIN, RECV_FIN, RECVING_FIN, RECVING_TRANS_RES, READY, CONNECT_FAILED, SOCKET_TIMEOUT)
