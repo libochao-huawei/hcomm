@@ -99,24 +99,31 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
     HCCL_INFO("[UbConnLite::%s] start", __func__);
 
     // reduce操作需要保证切片大小是数据类型大小的整数倍
-    u32 sliceSize = UB_DMA_MAX_READ_WEITE_SIZE;
+    u64 sliceSize = UB_DMA_MAX_READ_WEITE_SIZE;
     if (dataType != DataType::INVALID) {
         u32 dataTypeSize = DATA_TYPE_SIZE_MAP.at(dataType);
         sliceSize        = UB_DMA_MAX_READ_WEITE_SIZE / dataTypeSize * dataTypeSize;
     }
 
-    u32 locBufSize    = loc.GetSize();
-    u32 sliceNum      = locBufSize / sliceSize;
-    u32 lastSliceSize = locBufSize % sliceSize;
+    u64 locBufSize    = loc.GetSize();
+    u64 sliceNum      = locBufSize / sliceSize;
+    u64 lastSliceSize = locBufSize % sliceSize;
 
-    u64 totalSize = static_cast<u64>(sliceNum) * static_cast<u64>(sliceSize);
+    u64 totalSize = sliceNum * sliceSize;
     if (UNLIKELY(loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize)) {
         THROW<InternalException>("integer overflow occurs");
     }
-    for (u32 sliceIdx = 0; sliceIdx < sliceNum; sliceIdx++) {
-        RmaBufSliceLite locSlice(loc.GetAddr() + sliceIdx * sliceSize, sliceSize, 0, loc.GetTokenId());
+    for (u64 sliceIdx = 0; sliceIdx < sliceNum; sliceIdx++) {
+        u64 offset = sliceIdx * sliceSize;
+        u64 locAddr = loc.GetAddr() + offset;
+        u64 rmtAddr = rmt.GetAddr() + offset;
+
+        HCCL_INFO("[UbConnLite::%s] Slice[%llu]: offset=0x%llx, locAddr=0x%llx, rmtAddr=0x%llx, size=0x%llx",
+                    __func__, sliceIdx, offset, locAddr, rmtAddr, sliceSize);
+
+        RmaBufSliceLite locSlice(locAddr, sliceSize, 0, loc.GetTokenId());
         
-        RmtRmaBufSliceLite rmtSlice(rmt.GetAddr() + sliceIdx * sliceSize, sliceSize, 0, rmt.GetTokenId(),
+        RmtRmaBufSliceLite rmtSlice(rmtAddr, sliceSize, 0, rmt.GetTokenId(),
                                     rmt.GetTokenValue());
         // 当前是最后一片，且没有lastSlice时，启用cqe
         u32 cqeEnable = (sliceIdx == sliceNum - 1 && lastSliceSize == 0) ? 1 : 0;
@@ -186,7 +193,7 @@ void UbConnLite::ProcessSlicesWithNotify(
 void UbConnLite::FillOneSqeWrite(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                                  UdmaSqeWrite *sqe, UdmaSqOpcode opCode, u32 cqeEnable)
 {
-    HCCL_INFO("[UbConnLite::%s] start, loc size[%u]", __func__, loc.GetSize());
+    HCCL_INFO("[UbConnLite::%s] start, loc size[%llu]", __func__, loc.GetSize());
 
     sqe->comm.inlineEn = 0;
     FillCommSqe(&(sqe->comm), rmt, cfg, opCode, cqeEnable);
@@ -311,7 +318,7 @@ void UbConnLite::ReadReduce(ReduceIn reduceIn, const RmaBufSliceLite &loc, const
 void UbConnLite::Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const SqeConfigLite &cfg,
                        const StreamLite &stream, ConnLiteOperationOut &out)
 {
-    HCCL_INFO("[UbConnLite::%s] start, loc size = %u", __func__, loc.GetSize());
+    HCCL_INFO("[UbConnLite::%s] start, loc size = %llu", __func__, loc.GetSize());
 
     ProcessSlices(loc, rmt, [&](const RmaBufSliceLite &locSlice, const RmtRmaBufSliceLite &rmtSlice, u32 cqeEnable) {
         UdmaSqeWrite sqe{};

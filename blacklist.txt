@@ -1,3 +1,0 @@
-src/legacy/framework/aiv/aiv_ins/hccl_aiv_utils.cc
-src/legacy/framework/service/coll_service_base.cc
-src/legacy/unified_platform/common/p2p_enable_manager.cc
