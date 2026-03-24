@@ -247,7 +247,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         uint32_t listenPort = 0;
         CHK_PTR_NULL(rankGraph_);
         CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
-        CHK_RET(HcommEndpointStartListen(epHandle, listenPort, nullptr));
+        CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(epHandle, listenPort, nullptr)));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
             __func__, i + 1, channelNum, remoteRank,
@@ -433,7 +433,7 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     u32 memNum = 0;
     CommMem *remoteMemList = nullptr;
     char **memTags = nullptr;
-    CHK_RET(HcommChannelGetRemoteMems(channel, &memNum, &remoteMemList, &memTags));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMems(channel, &memNum, &remoteMemList, &memTags)));
 
     for (u32 i = 0; i < memNum; i++) {
         HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
