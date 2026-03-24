@@ -80,7 +80,6 @@ protected:
         CcuRep::Variable residual;
     };
 
-
     // 使用Transport中的Variable
     CcuRep::Variable CreateVariable(const CcuTransport &transport, uint32_t varIndex) const;
     CcuRep::Variable CreateVariable();
@@ -219,7 +218,6 @@ private:
     uint32_t loadArgIndex{0};
     // ccu profiling相关缓存
     std::vector<GroupOpSize> groupOpSizeInfo;
-    
 };
 
 }; // namespace Hccl

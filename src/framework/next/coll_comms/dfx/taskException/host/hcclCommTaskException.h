@@ -18,13 +18,10 @@
 #include "error_message_v2.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
-#include "ccu_error_info.h"
-#include "rank_pair.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
 using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>; 
-
 class TaskExceptionHost {
 public:
     TaskExceptionHost() = default;
@@ -44,8 +41,6 @@ private:
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
 
-
-
 private:
     bool isRegistered_ {false};
 };
@@ -64,8 +59,6 @@ private:
     TaskExceptionHostManager(const TaskExceptionHostManager &)            = delete;
     TaskExceptionHostManager &operator=(const TaskExceptionHostManager &) = delete;
 };
-
-
 } // namespace hccl
 
-#endif // HCCL_TASK_EXCEPTION_HANDLER_H
+#endif

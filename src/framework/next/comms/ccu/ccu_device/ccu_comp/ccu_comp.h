@@ -26,9 +26,6 @@
 // 暂时引入orion仓
 #include "local_ub_rma_buffer.h"
 
-#include "orion_adapter_hccp.h"
-#include "ccu_device_manager.h"
-
 namespace hcomm {
 
 class CcuComponent {
@@ -60,15 +57,9 @@ public:
     HcclResult ReleaseCke(const uint8_t dieId, const std::vector<ResInfo> &ckeInfos);
     HcclResult AllocXn(const uint8_t dieId, const uint32_t num, std::vector<ResInfo> &xnInfos);
     HcclResult ReleaseXn(const uint8_t dieId, const std::vector<ResInfo> &xnInfos);
-    HcclResult SetTaskKillDone();
-
-    HcclResult SetTaskKillDone();
-    HcclResult CleanTaskKillState() const;
-    HcclResult SetProcess(CcuOpcodeType opCode) const;
-    HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
-    HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
-
     std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
+
+    HcclResult CleanTaskKillState() const;
     HcclResult CleanDieCkes(const uint8_t dieId) const;
 
 private:
@@ -96,6 +87,11 @@ private:
     HcclResult UnimportAllJettys();
     HcclResult ReleaseAllTpInfos();
     HcclResult DestroyAllJettys();
+
+    HcclResult SetProcess(CcuOpcodeType opCode) const;
+    HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
+    HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
+    HcclResult SetTaskKillDone();
 
 private:
     std::mutex innerMutex_;

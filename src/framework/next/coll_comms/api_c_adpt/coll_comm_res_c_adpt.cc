@@ -273,7 +273,7 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {
-    taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     constexpr uint32_t defaultTimeOutSec = 120; // 当前未支持从环境变量配置
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
@@ -303,7 +303,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
             return HcclResult::HCCL_E_RUNTIME;
         }
     }
-    taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     return HcclResult::HCCL_SUCCESS;
 }
