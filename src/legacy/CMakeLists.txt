@@ -216,11 +216,14 @@ target_link_libraries(hccl_v2 PRIVATE
     hccl_v2_alg_frame
     ccl_dpu
     tsdclient
-    ra
     -Wl,--as-needed
     hccl_headers
     topoaddrinfo
 )
+
+if (TARGET ra)
+    target_link_libraries(hccl_v2 PRIVATE ra)
+endif ()
 ENDIF ()
 
 # 将hccl编译出的动态库加入CANN的安装包
