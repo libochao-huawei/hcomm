@@ -314,7 +314,7 @@ void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, 
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocWaitNotify>(repBase);
     errorMsg.msg.waitSignal.signalId    = rep->GetId();
-    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->sem.Id());
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
@@ -323,11 +323,12 @@ void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, 
 uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId)
 {
     CcuMissionContext missionCtx{};
+    uint64_t gsaVal{0};
 
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), gsaVal);
 
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
@@ -341,7 +342,7 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
     ret = HccpRaCustomChannel(HrtNetworkMode::HDC, devicePhyId, &inBuff, &outBuff);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), INVALID_U64);
 
-    uint64_t gsaVal{0};
+    
     auto sret = memcpy_s(&gsaVal, sizeof(gsaVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), INVALID_U64);
     return gsaVal;
@@ -370,7 +371,7 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]HccpRaCustomChannel fail, ret[%u]", __func__, ret), INVALID_U64);
 
     auto sret = memcpy_s(&xnVal, sizeof(xnVal), outBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen);
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), missionCtx);
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), INVALID_U64);
     return xnVal;
 }
 
@@ -386,11 +387,12 @@ void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, sha
     errorMsg.msg.waitSignal.signalMask = rep->GetMask();
     auto sret = memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
                    sizeof(errorMsg.msg.waitSignal.channelId));
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret), errorMsg);
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret),);
                    
-    CHK_RET(rep->GetChannelId( errorMsg.msg.waitSignal.channelId[0]));
-    errorMsg.msg.waitSignal.paramId      = rep->transport.GetRmtXnByIndex(rep->GetParamIndex());
-    errorMsg.msg.waitSignal.paramValue   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetParam().Id());
+    CHK_PRT_RET(rep->GetChannelId(errorMsg.msg.waitSignal.channelId[0]) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]GetChannelId fail, ", __func__),);
+    errorMsg.msg.waitSignal.paramId = rep->GetSignalId(); // zjwTODO：待和哲芃确认打印是否正确
+    errorMsg.msg.waitSignal.paramValue = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetParam().Id());
 
     errorInfo.push_back(errorMsg);
 }
@@ -425,7 +427,7 @@ void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_pt
     errorMsg.msg.transMem.signalId   = rep->GetSemId();
     errorMsg.msg.transMem.signalMask = rep->GetMask();
     auto res = rep->GetChannelId(errorMsg.msg.transMem.channelId);
-    if (res! = HCCL_SUCCESS){
+    if (res != HCCL_SUCCESS){
         HCCL_ERROR("[CcuTaskException][GenErrorInfoRead] channelId get failed");
     }
     errorInfo.push_back(errorMsg);
@@ -506,7 +508,7 @@ void CcuTaskException::GenErrorInfoBufRead(const ErrorInfoBase &baseInfo, shared
     errorMsg.msg.bufTransMem.signalId = rep->GetSemId();
     errorMsg.msg.bufTransMem.signalMask = rep->GetMask();
     auto res = rep->GetChannelId(errorMsg.msg.bufTransMem.channelId);
-    if (res! = HCCL_SUCCESS){
+    if (res != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTaskException][GenErrorInfoBufRead] channelId get failed");
     }
 
@@ -586,7 +588,7 @@ void CcuTaskException::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, shar
     const auto &buffs                     = rep->GetMem();
     auto sret = memset_s(errorMsg.msg.bufReduce.bufIds, sizeof(errorMsg.msg.bufReduce.bufIds), 0xFF,
                    sizeof(errorMsg.msg.bufReduce.bufIds));
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memset failed. errorno[%d]:", __func__, sret), errorMsg);
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memset failed. errorno[%d]:", __func__, sret), );
     for (uint32_t i = 0; i < buffs.size() && i < BUF_REDUCE_ID_SIZE; ++i) {
         errorMsg.msg.bufReduce.bufIds[i] = GetMSIdPerDie(buffs[i].Id());
     }
@@ -678,10 +680,10 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, baseInfo.currentInsId);
 
     LoopXm loopXm{};
-    loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLoopParam().Id());
+    loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLoopParam()->Id());
     const auto ccuLoopContext        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
     errorMsg.msg.loop.startInstrId   = rep->GetLoopBlock()->StartInstrId();
-    errorMsg.msg.loop.endInstrId     = rep->GetLoopBlock()->StartInstrId() + rep->loopBlock()->InstrCount() - 1;
+    errorMsg.msg.loop.endInstrId     = rep->GetLoopBlock()->StartInstrId() + rep->GetLoopBlock()->InstrCount() - 1;
     errorMsg.msg.loop.loopEngineId   = loopXm.loopCtxId;
     errorMsg.msg.loop.loopCnt        = static_cast<uint16_t>(loopXm.loopCnt);
     errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
@@ -692,7 +694,7 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
     // 解析Loop内的异常Rep
     for (uint16_t loopCurrentIns = errorMsg.msg.loop.startInstrId; loopCurrentIns <= errorMsg.msg.loop.endInstrId;
          loopCurrentIns++) {
-        auto inLoopExRep = rep->loopBlock()->GetRepByInstrId(loopCurrentIns);
+        auto inLoopExRep = rep->GetLoopBlock()->GetRepByInstrId(loopCurrentIns);
         if (inLoopExRep == nullptr) {
             HCCL_ERROR("Failed to find REP from Loop, instrId[%u], Loop[%s]", loopCurrentIns,rep->GetLabel().c_str());
             return HCCL_E_PARA;

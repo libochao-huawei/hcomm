@@ -20,9 +20,7 @@ public:
                 CompletedEvent sem, uint16_t mask);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
-    uint16_t GetLocAddrId() {
-       return  loc.addr.Id();
-    }
+    uint16_t GetLocAddrId() { return  loc.addr.Id(); }
     uint16_t GetLocTokenId() {
        return  loc.token.Id();
     }
