@@ -87,10 +87,13 @@ int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 #include <iostream>
 
 >>>>>>> 17cd52f8 (bugfix(ccu): ccu c style fix llt example)
+=======
+>>>>>>> 67098c8a (feat(ccu): kernel launch)
 int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[],
     unsigned int *num)
 {

@@ -18,9 +18,12 @@
 #include "ccu_kernel.h"
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
+<<<<<<< HEAD
 
 #include "ccu_types.h"
 #include "ccu_log.h"
+=======
+>>>>>>> 67098c8a (feat(ccu): kernel launch)
 
 #include "ccu_types.h"
 #include "ccu_log.h"
