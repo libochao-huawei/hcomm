@@ -275,7 +275,7 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         }
         HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
         return HCCL_SUCCESS;
-    } else if (!useOneLevelAlgorithm && IsSatisfyAlltoallContinuousPipelineCondition(param)) {
+    } else if (IsSatisfyAlltoallContinuousPipelineCondition(param)) {
         algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
         HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
         return HCCL_SUCCESS ;
@@ -639,6 +639,11 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
 
 bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param)
 {
+    std::vector<HcclAlgoType> algoTypeArr = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALLV);
+ 	bool useOneLevelAlgorithm =
+ 	    algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
+ 	    algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE;
+
     bool cclBigEnough = cclBufferManager_.GetInCCLbufferSize() >= ALLTOALL_PIPELINE_MIN_CCL_SIZE;
     bool multiRankPerServer = meshAggregationRankSize_ > 1;
     bool isMultiServer = (meshAggregationRankSize_ != 0) && ((userRankSize_ > meshAggregationRankSize_) &&
@@ -650,10 +655,10 @@ bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpPara
     bool isAlltoAllv = param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV;
     bool res = (deviceType_ == DevType::DEV_TYPE_910B && isAlltoAllv && satisfyAlgType && multiRankPerServer &&
         GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && isMultiServer &&
-        !multiModuleDiffDeviceNumMode_ && cclBigEnough);
+        !multiModuleDiffDeviceNumMode_ && cclBigEnough && !useOneLevelAlgorithm);
     HCCL_DEBUG("[AlltoAllOperator][IsSatisfyAlltoallContinuousPipelineCondition] isSatisfy[%d], isAlltoAllv %u,"
-        "multiRankPerServer %u, isMultiServer %u, satisfyAlgType %u, multiModuleDiffDeviceNumMode_ %u",
-        res, isAlltoAllv, multiRankPerServer, isMultiServer, satisfyAlgType, multiModuleDiffDeviceNumMode_);
+        "multiRankPerServer %u, isMultiServer %u, satisfyAlgType %u, multiModuleDiffDeviceNumMode_ %u, useOneLevelAlgorithm %u.",
+        res, isAlltoAllv, multiRankPerServer, isMultiServer, satisfyAlgType, multiModuleDiffDeviceNumMode_, useOneLevelAlgorithm);
     return res;
 }
 
