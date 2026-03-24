@@ -83,16 +83,19 @@ static HcclResult EnsureKernelBinLoaded(CommEngine engine) {
 
 HcclResult HcommEndpointGet(const EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
+    EXCEPTION_HANDLE_BEGIN
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
         __func__, endpointHandle), HCCL_E_PARA);
 
     *endpoint = static_cast<void *>(it);
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(endpoint);
     CHK_PTR_NULL(endpointHandle);
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
@@ -122,11 +125,13 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(endpointHandle);
 
     auto ret = g_EndpointMap.RemoveEndpoint(endpointHandle);
@@ -136,6 +141,7 @@ HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle)
     }
     endpointHandle = nullptr;
 
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
