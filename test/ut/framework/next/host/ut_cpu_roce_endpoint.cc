@@ -63,10 +63,10 @@ TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
 {
     Hccl::IpAddress   localIp("223.0.0.1");
     EndpointDesc endpointDesc;
-    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
     endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
     endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
-    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
     HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
