@@ -3374,6 +3374,25 @@ HcclResult HcclCommDestroy(HcclComm comm)
     return HCCL_SUCCESS;
 }
 
+switch(value) {
+        case defaultMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+        case hostTsMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_HOST_TS;
+        case aicpuTsMode:
+        case aicpuMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AI_CPU;
+        case ccuMsMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_MS;
+        case ccuSchedMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+        case aivMode:
+        case aivOnlyMode:
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AIV;
+        default:
+            break;
+    }
+
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32_t value)
 {
@@ -3385,21 +3404,21 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
     constexpr uint32_t ccuMsMode = 5;
     constexpr uint32_t ccuSchedMode = 6;
     constexpr uint32_t aicpuMode = 7;
-    constexpr uint32_t legacyCcuMsMode = 4;
-    constexpr uint32_t legacyCcuSchedMode = 5;
+    constexpr uint32_t opExpansionModeCcuSched = 5;
+    constexpr uint32_t opExpansionModeCcuMs = 4;
 
     switch(value) {
         case defaultMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_HOST;
+            return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuSched);
         case hostTsMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_HOST_TS;
         case aicpuTsMode:
         case aicpuMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AI_CPU;
         case ccuMsMode:
-            return static_cast<HcclConfigTypeOpExpansionMode>(legacyCcuMsMode);
+            return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuMs);
         case ccuSchedMode:
-            return static_cast<HcclConfigTypeOpExpansionMode>(legacyCcuSchedMode);
+            return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuSched);
         case aivMode:
         case aivOnlyMode:
             return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AIV;

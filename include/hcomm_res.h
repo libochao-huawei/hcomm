@@ -36,11 +36,7 @@ extern HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine 
 
 extern HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
 
-extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
-
 extern HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
-
-extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
 
 extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t *notifyNumPerThread, ThreadHandle *threads);
 
