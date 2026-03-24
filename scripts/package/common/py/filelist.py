@@ -494,7 +494,12 @@ def generate_filelist(filelist: FileList, filename: str):
         )
     )
     content = '\n'.join(content_list)
-    filepath = os.path.join(TOP_DIR, "build", filename)
+    cwd = os.getcwd()
+    if os.path.exists(os.path.join(cwd, 'CMakeCache.txt')):
+        build_dir = cwd
+    else:
+        build_dir = os.path.join(TOP_DIR, 'build')
+    filepath = os.path.join(build_dir, filename)
     try:
         with open(filepath, 'w', encoding='utf-8') as file:
             file.write(content)

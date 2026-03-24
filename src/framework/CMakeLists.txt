@@ -297,6 +297,18 @@ endforeach()
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     add_library(ccl_kernel  SHARED)
 
+    # Public ccl_kernel headers for upper-layer hccl components.
+    set(CCL_KERNEL_PUBLIC_HEADERS
+        ${HCCL_BASE_DIR}/framework/device/hccl_aicpu_interface.h
+        ${HCCL_BASE_DIR}/framework/device/hccl_aicpu_transport_interface.h
+    )
+    install(FILES ${CCL_KERNEL_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hccl OPTIONAL
+    )
+    install(FILES ${CCL_KERNEL_PUBLIC_HEADERS}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl OPTIONAL
+    )
+
     set(CCL_KERNEL_SRC_LIST
         ${HCCL_BASE_DIR}/algorithm/impl/alg_env_config.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_alg_utils.cc
@@ -970,6 +982,9 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         target_compile_definitions(ccl_kernel PRIVATE
             OPEN_BUILD_PROJECT
             -D_GLIBCXX_USE_CXX11_ABI=1) # 链接ascendalog需要LOG_CPP，链接slog不需要
+        if(TARGET tracy_client)
+            target_compile_definitions(ccl_kernel PRIVATE TRACY_ENABLE)
+        endif()
         # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--allow-multiple-definition")
         message(STATUS "framework CMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}")
         if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
@@ -1000,6 +1015,19 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             -ldl
             -lpthread
         )
+        if(TARGET tracy_client)
+            target_link_libraries(ccl_kernel PRIVATE tracy_client)
+        endif()
+
+        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+            COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${HCCL_BASE_DIR}/../src/framework/device/framework/ccl_kernel.ini ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
+        add_dependencies(ccl_kernel ccl_kernel_json)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        )
 
         add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
             COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${HCCL_BASE_DIR}/../src/framework/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
@@ -1012,6 +1040,10 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
 
         target_link_directories(ccl_kernel PRIVATE
             ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        )
+
+        install(TARGETS ccl_kernel
+            LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
         )
     endif()
 endif()
@@ -1047,6 +1079,10 @@ if(DEVICE_MODE AND KERNEL_MODE)
         -ldl
         -lpthread
     )
+    if(TARGET tracy_client)
+        list(APPEND AICPU_CUSTOM_COMPILE_DEFINITIONS TRACY_ENABLE)
+        list(APPEND AICPU_CUSTOM_LINK_LIBRARIES tracy_client)
+    endif()
 
     add_library(aicpu_custom SHARED)
     get_target_property(CCL_KERNEL_ALL_SOURCES ccl_kernel SOURCES)
