@@ -89,6 +89,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     h->addr    = mem.addr;
     h->size    = static_cast<uint64_t>(mem.size);
     h->memType = static_cast<CommMemType>(mem.type);
+    h->memTag  = memTag;
  
     const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
  
@@ -197,6 +198,29 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
         memTag.push_back(opReverseBindings_[handles[i]]);
         memVec.push_back(mem);
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommMems::SetMemHandles(HcommChannelDesc &hcommDesc, const std::vector<MemHandle> &memHandleVec,
+    std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles) const
+{
+    if (memHandleVec.size() == 0) {
+        HCCL_ERROR("[CommMems][SetMemHandles] memHandleVecSize is 0.");
+        return HCCL_E_PARA;
+    }
+    CHK_PTR_NULL(memHandleVec[0]);
+    commMemHandles.emplace_back(std::make_unique<CommMemHandle>(addr_, size_, ConvertHcclToCommMemType(type_),
+        memHandleVec[0], "HcclBuffer"));
+
+    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(hcommDesc.memHandles);
+    for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
+        CHK_PTR_NULL(memHandleVec[i]);
+        (*handles[i - 1]).bufferHandle = memHandleVec[i];
+        commMemHandles.emplace_back(std::make_unique<CommMemHandle>((*handles[i - 1]).addr, (*handles[i - 1]).size,
+            (*handles[i - 1]).memType, memHandleVec[i], (*handles[i - 1]).memTag));
+    }
+
+    hcommDesc.memHandles = reinterpret_cast<void**>(commMemHandles.data());
     return HCCL_SUCCESS;
 }
 }
