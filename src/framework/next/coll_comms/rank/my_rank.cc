@@ -280,9 +280,9 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         if (engine == COMM_ENGINE_CPU) {
             hcommDescs[i].memHandles = memHandleVec.data();
         } else {
-            hcommDescs[i].memHandles = memHandleVec.data();
+            hcommDescs[i].memHandles = commMemHandles.data();
         }
-        hcommDescs[i].memHandleNum = commMemHandles.size();
+        hcommDescs[i].memHandleNum = memHandleVec.size();
 
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
