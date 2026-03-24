@@ -969,7 +969,7 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
         (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
         (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
         return dst;
-    }
+    };
 
     // 2. 显式声明converted的类型，避免推导失败
     std::vector<Hccl::CcuProfilingInfo> converted;
