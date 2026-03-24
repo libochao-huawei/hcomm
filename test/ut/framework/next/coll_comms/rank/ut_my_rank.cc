@@ -166,3 +166,29 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
 }
+
+TEST_F(MyRankTest, ut_SetMemHandles_When_NorMal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+
+    auto handle0 = std::make_unique<CommMemHandle>();
+    auto handle1 = std::make_unique<CommMemHandle>();
+    std::vector<CommMemHandle*> mems{};
+    mems.push_back(handle0.get());
+    mems.push_back(handle1.get());
+    void **memHandles = reinterpret_cast<void**>(mems.data());
+    std::vector<MemHandle> memHandleVec{};
+    memHandleVec.emplace_back((void*)0x100);
+    memHandleVec.emplace_back((void*)0x101);
+
+    HcclResult ret = myRank.SetMemHandles(memHandles, memHandleVec);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    EXPECT_NE(handles[0]->bufferHandle, nullptr);
+    EXPECT_NE(handles[1]->bufferHandle, nullptr);
+}
