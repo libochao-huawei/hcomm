@@ -13,6 +13,7 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
+#include "comm_mems.h"
 
 // Orion
 #include "coll_alg_param.h"
@@ -60,13 +61,12 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
         HCCL_INFO("[AicpuTsUrmaChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
-        // TODO: memHandle 强转成 Hccl::LocalUbRmaBuffer*, push_back 进去 commLocRes_.bufferVec
         for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
-            // HcclBuf* buf = static_cast<HcclBuf*>(channelDesc_.memHandles[i]);
-            auto *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(channelDesc_.memHandles[i]);
-            HCCL_INFO("HcclResult AicpuTsUrmaChannel::ParseInputParam() %s\n", localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+            auto *locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(channelDesc_.memHandles[i]);
+            HCCL_INFO("HcclResult AicpuTsUrmaChannel::ParseInputParam() %s\n", locMemInfo->memTag.c_str());
             bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                reinterpret_cast<uintptr_t>(localUbRmaBuffer->GetAddr()), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
+                reinterpret_cast<uintptr_t>(locMemInfo->addr), locMemInfo->size,
+                hccl::ConvertCommToHcclMemType(locMemInfo->memType), locMemInfo->memTag.c_str())
             ));
         }
     }
