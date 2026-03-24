@@ -15,6 +15,7 @@
 
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
+#include "enum_factory.h"
 
 namespace hcomm {
 
@@ -440,7 +441,7 @@ HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *custom
     CHK_PTR_NULL(customOut);
     struct RaInfo info {};
 
-    const std::unordered_map<HrtNetworkMode, NetworkMode> HRT_NETWORK_MODE_MAP = {
+    const std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP = {
         {HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE},
         {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
 
