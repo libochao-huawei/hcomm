@@ -696,14 +696,13 @@ CcuSharedResource &CcuKernel::GetImportedRes()
     return importedRes_;
 }
 
-uint64_t GetArgIndex(const std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap,
+HcclResult GetArgIndex(const std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap,
                                  const std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
-                                 const std::vector<uint64_t> &taskArgs, uint16_t varId)
+                                 const std::vector<uint64_t> &taskArgs, uint16_t varId, uint64_t& argIndex)
 {
     HCCL_INFO("[GetArgIndex] Enter varId(%u)", varId);
     auto item = varId2ArgIndexMap.find(varId);
     if (item == varId2ArgIndexMap.end()) {
-        std::string msg = Hccl::StringFormat("Invalid goSize variable id(%u).", varId);
         uint16_t oriVarId = varId;
         auto iter = varId2VarIdMap.find(varId);
         while (iter != varId2VarIdMap.end()) { // 循环查找中间assign Rep，找到起始varId
@@ -713,21 +712,24 @@ uint64_t GetArgIndex(const std::unordered_map<uint16_t, uint16_t> &varId2VarIdMa
         if (oriVarId != varId) { // 起始varId预期通过LoadArg赋值
             item = varId2ArgIndexMap.find(oriVarId);
             if (item == varId2ArgIndexMap.end()) {
-                Hccl::THROW<Hccl::CcuApiException>(msg);
+                HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u)", __func__, varId);
+                return HCCL_E_PARAM;
             }
         } else {
-            Hccl::THROW<Hccl::CcuApiException>(msg);
+            HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u)", __func__, varId)
+            return HCCL_E_PARAM;
         }
     }
     HCCL_INFO("[GetArgIndex] find end");
     if (item->second >= taskArgs.size()) {
-        std::string msg = Hccl::StringFormat("Invalid goSize variable index(%u).", item->second);
-        Hccl::THROW<Hccl::CcuApiException>(msg);
+        HCCL_ERROR("Invalid goSize variable index(%u).", item->second);
+        return HCCL_E_PARAM;
     }
     HCCL_INFO(
         "GetArgIndex success: varId(%u) varId2VarIdMapSize(%u) varId2ArgIndexMapSize(%u) taskArgsSize(%u)",
         varId, varId2VarIdMap.size(), varId2ArgIndexMap.size(), taskArgs.size());
-    return taskArgs[item->second];
+    argIndex = taskArgs[item->second];
+    return HCCL_SUCCESS;
 }
 
 void DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo)
@@ -834,13 +836,6 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
                 HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
                 return HCCL_E_PTR;
             }
-            // auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitEvent*>(waitCkeRep.get());
-            // if (localWaitRep) {
-            //     profInfo.ckeId = localWaitRep->GetId();
-            // } else {
-            //     HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
-            //     return HCCL_E_PTR;
-            // }
             profInfo.ckeId = waitCkeRep->GetId();
             HCCL_INFO("[CcuKernel][GetCcuProfilingInfo] waitcke[%u]", profInfo.ckeId);
         }
@@ -878,8 +873,10 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
         if (taskArgs.empty() || varId2ArgIndexMap.empty()) {
             continue;
         }
-    uint64_t loopParam = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].loopParamId);
-        uint64_t parallelParam = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].parallelParamId);
+        uint64_t loopParam {0};
+        CHK_RET(GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].loopParamId, loopParam));
+        uint64_t parallelParam {0};
+        CHK_RET(GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].parallelParamId, parallelParam));
         HCCL_INFO("Collect loopgroup profiling info: repSize[%u], index[%u], loopParam[%llu], parallelParam[%llu].",
                 lgProfInfo.lgProfilingReps.size(), i, loopParam, parallelParam);
 
@@ -891,7 +888,8 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
 
         if (parallelParam != 0) {
             HCCL_INFO("[GetCcuProfilingInfo] collect lg, residual start i=%lu", i);
-            uint64_t residual = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].residualId);
+            uint64_t residual {0};
+            CHK_RET(GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].residualId, residual));
             uint64_t repeatNum = Hccl::CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
             lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig.memSlice + residual;
             lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
