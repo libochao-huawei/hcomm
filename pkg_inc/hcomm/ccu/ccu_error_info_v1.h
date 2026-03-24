@@ -119,6 +119,16 @@ struct ErrorInfoBase {
     uint16_t status;
 };
 
+union LoopXm {
+    uint64_t value;
+    struct {
+        uint64_t loopCnt : 13;
+        uint64_t gsaStride : 32;
+        uint64_t loopCtxId : 8;
+        uint64_t reserved : 11;
+    };
+};
+
 struct CcuLoopContext {
     union {
         uint16_t value;
