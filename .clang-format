@@ -110,10 +110,10 @@ ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
 
 # C++11花括号列表样式
-CppllBracedListStyle: true
+Cpp11BracedListStyle: true
 
 # 派生指针对齐
-BerivePointerAlignment: false
+DerivePointerAlignment: false
 
 # 禁用格式化
 DisableFormat: false
