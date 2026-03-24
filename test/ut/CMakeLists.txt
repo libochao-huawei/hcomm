@@ -175,18 +175,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/framework
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
 
-    # framework/next
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
-    ${HCCL_CODE_ROOT}/src/framework/next/common/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
-
     # legacy include
     ${HCCL_CODE_ROOT}/src/legacy/common/
     ${HCCL_CODE_ROOT}/src/legacy/common/utils/
@@ -258,20 +246,23 @@ set(UT_COMMON_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
 
-    #next
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    # next
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
-    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/ns_recovery/aicpu
 
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx
@@ -292,6 +283,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
+
 
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/

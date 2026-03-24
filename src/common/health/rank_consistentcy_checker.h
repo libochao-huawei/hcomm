@@ -142,12 +142,12 @@ private:
     bool CompareCrcInfo(const  HcclCMDInfo &hcclCMDInfo, HcclCRCInfo &crcInfo, HcclCRCInfo &crcInfoRecv);
     void ReportCmdInfoCheckFailed(const HcclCMDInfo &hcclCMDInfo, const std::string &paraName,
         const std::string &localPara, const std::string &remotePara);
-    void ReportCmdInfoCheckFailed(const HcclCMDInfo &CMDInfoOutput, const std::string &paraName,
+    void ReportCmdInfoCheckFailed(const HcclCMDInfo &hcclCMDInfo, const std::string &paraName,
         uint32_t localPara, uint32_t remotePara);
     void ReportCrcCheckFailed(const HcclCMDInfo &hcclCMDInfo, HcclCrcRecordType crcType, const uint32_t localCrc,
         const uint32_t remoteCrc); // 打印CRC校验失败信息
     void ReportCommonError(const HcclCMDInfo &hcclCMDInfo, const std::string &paraName,
-        const std::string &localParaStr, const std::string &remoteParaStr, const std::string &errorMsg);
+        const std::string &localParaStr, const std::string &remoteParaStr, const std::string &errorMsg) const;
     void CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheckInfo &checkInfoRecv);
     bool CompareSection(const char *pRawData, const char *recvBuf, u32 len);
     HcclResult AddCrc(const u32 crcValue);

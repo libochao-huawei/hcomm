@@ -4871,6 +4871,9 @@ HcclResult HcclCommResume(HcclComm comm)
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         CHK_RET(HcclCommResumeV2(commV2));
+
+        CHK_RET(hcclComm->Resume());
+
         return HCCL_SUCCESS;
     }());
 #endif
