@@ -12,6 +12,7 @@
 #define CCU_CONTROL_API_H
 
 #include "ccu_types.h"
+#include "hccl_res.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,9 @@ extern CcuResult HcommCcuKernelRegister(CcuInsHandle insHandle,
     CcuKernelHandle *kernelHandle);
 
 extern CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle);
+
+extern CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
+    CcuKernelHandle kernelHandle, void *taskArgs, uint32_t argSize);
 
 #ifdef __cplusplus
 }

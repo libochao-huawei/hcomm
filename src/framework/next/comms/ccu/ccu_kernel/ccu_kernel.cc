@@ -153,34 +153,36 @@ HcclResult CcuKernel::SelectDie()
     return HcclResult::HCCL_SUCCESS;
 }
 
-// todo: 需要整改成算法生成sqe
-HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
+CcuResult CcuKernel::GeneTaskParams(uint64_t *taskArgs, uint32_t argsNum,
+    std::vector<CcuTaskParam> &taskParams)
 {
-    auto args    = std::vector<uint64_t>(); // GeneArgs(arg);
-    auto agrsNum = args.size();
-    if (agrsNum != loadArgIndex_) {
+    if (argsNum != loadArgIndex_) {
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
-            "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
-        return HcclResult::HCCL_E_INTERNAL;
+            "argsNum = %d, loadArgInstr= %u", __func__, argsNum, loadArgIndex_);
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
+    if (argsNum != 0) {
+        CCU_CHK_PTR_NULL(taskArgs);
     }
 
     if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
         HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
             "the kernel is not been translated yet.", __func__);
-        return HcclResult::HCCL_E_INTERNAL;
+        return CcuResult::CCU_E_INTERNAL;
     }
 
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
     const uint32_t seqNum
-        = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
+        = (argsNum / CCU_SQE_ARGS_LEN) + ((argsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (argsNum == 0 ? 1 : 0);
 
     const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
     if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
         HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
             "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
             preMissonSqeInsCnt);
-        return HcclResult::HCCL_E_INTERNAL;
+        return CcuResult::CCU_E_INTERNAL;
     }
 
     taskParams.resize(seqNum);
@@ -190,15 +192,22 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
         taskParams[index].key         = GetMissionKey();
         taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+
+        const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
+    
         if (index == seqNum - 1) {
-            // index 由计算得出，相乘结果不会溢出
-            const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
             taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
-            std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
         } else {
             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParams[index].args));
+        }
+        
+        // 统一处理参数拷贝
+        if (argsNum > preMissionInsCnt) {
+            const uint32_t argsToCopy = (index == seqNum - 1) 
+                ? std::min(argsNum - preMissionInsCnt, CCU_SQE_ARGS_LEN)
+                : CCU_SQE_ARGS_LEN;
+            std::copy(taskArgs + preMissionInsCnt, taskArgs + preMissionInsCnt + argsToCopy,
+                    std::begin(taskParams[index].args));
         }
 
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
@@ -210,7 +219,7 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         }
     }
 
-    return HcclResult::HCCL_SUCCESS;
+    return CcuResult::CCU_SUCCESS;
 }
 
 HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var)

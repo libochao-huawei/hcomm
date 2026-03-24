@@ -10,6 +10,8 @@
 
 #include "ccu_control_api.h"
 
+#include <vector>
+
 #include "ccu_primitives.h"
 
 #include "ccu_log.h"
@@ -19,6 +21,9 @@
 
 #include "ccu_kernel_mgr.h"
 #include "ccu_instance_mgr.h"
+
+#include "thread.h"
+#include "rt_external.h"
 
 CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle)
 {
@@ -111,5 +116,87 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle)
     CCU_CHK_RET(kernelMgr.Translate(newKernels));
     // EXCEPTION_HANDLE_END
 
+    return CcuResult::CCU_SUCCESS;
+}
+
+static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
+    const aclrtStream stream)
+{
+    constexpr uint32_t defaultTimeOutSec = 120; // 当前未支持从环境变量配置
+    for (auto it = params.begin(); it != params.end(); ++it) {
+        rtCcuTaskInfo_t taskInfo{};
+        taskInfo.dieId       = it->dieId;
+        taskInfo.missionId   = it->missionId;
+        taskInfo.instStartId = it->instStartId;
+        taskInfo.instCnt     = it->instCnt;
+        taskInfo.key         = it->key;
+        taskInfo.argSize     = it->argSize;
+        taskInfo.timeout     = defaultTimeOutSec;
+        std::copy(std::begin(it->args), std::end(it->args), std::begin(taskInfo.args));
+        
+        HCCL_INFO("[%s] start ccu task, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], "
+            "argSize[%u], timeout[%u]s", __func__, taskInfo.dieId, taskInfo.missionId,
+            taskInfo.instStartId, taskInfo.instCnt, taskInfo.argSize, taskInfo.timeout);
+ 
+        for (std::size_t i = 0; i < taskInfo.argSize; i++) { // args 大小为 13
+            constexpr std::size_t TOKEN_VALUE_INDEX = 2; // 与算法约束token index为 2
+            if (i == TOKEN_VALUE_INDEX) { continue; }
+            HCCL_INFO("[%s] arg[%lu] = %lu", __func__, i, taskInfo.args[i]);
+        }
+
+        auto ret = rtCCULaunch(&taskInfo, stream);
+        if (ret != RT_ERROR_NONE) {
+            HCCL_ERROR("[%s] failed to launch ccu, ret[%d]", __func__, ret);
+            return HcclResult::HCCL_E_RUNTIME;
+        }
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
+    CcuKernelHandle kernelHandle, void *taskArgs, uint32_t argSize)
+{
+    HCCL_RUN_INFO("Entry-%s", __func__);
+    const auto &startus = TIME_NOW();
+
+    CHK_PRT_RET(threadHandle == 0,
+        HCCL_ERROR("[%s] failed, thread handle is empty.", __func__),
+        CcuResult::CCU_E_PARA);
+
+    CHK_PRT_RET(kernelHandle == 0,
+        HCCL_ERROR("[%s] failed, kernel handle is empty.", __func__),
+        CcuResult::CCU_E_PARA);
+
+    const auto *rtsThread = reinterpret_cast<hccl::Thread *>(threadHandle);
+    const auto *threadStream = rtsThread->GetStream();
+    CCU_CHK_PTR_NULL(threadStream);
+    auto *streamPtr = threadStream->ptr();
+    CCU_CHK_PTR_NULL(streamPtr);
+
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    auto *kernel = kernelMgr.GetKernel(kernelHandle);
+    CCU_CHK_PTR_NULL(kernel);
+
+    // todo: 处理异常宏
+    // EXCEPTION_HANDLE_BEGIN
+    std::vector<hcomm::CcuTaskParam> taskParams{};
+    auto ret = kernel->GeneTaskParams(static_cast<uint64_t *>(taskArgs),
+        argSize, taskParams);
+    CHK_PRT_RET(ret != CcuResult::CCU_SUCCESS,
+        HCCL_ERROR("[%s] failed, threadHandle[0x%llx] kernelHandle[0x%llx].",
+            __func__, threadHandle, kernelHandle),
+        ret);
+
+    if (taskParams.empty()) {
+        HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
+        return CcuResult::CCU_SUCCESS;
+    }
+
+    CCU_CHK_RET(LaunchCcuTasks(taskParams, streamPtr));
+    // EXCEPTION_HANDLE_END
+    HCCL_INFO("[%s] success, take time [%lld]us.",
+        __func__, DURATION_US(TIME_NOW() - startus));
     return CcuResult::CCU_SUCCESS;
 }
