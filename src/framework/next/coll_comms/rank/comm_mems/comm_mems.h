@@ -83,7 +83,7 @@ public:
     HcclResult GetTagMemoryHandles(void** memHandles, uint32_t memHandleNum, std::vector<HcclMem> &mem, 
         std::vector<std::string> &memTag);
     HcclResult SetMemHandles(HcommChannelDesc &hcommDesc, std::vector<MemHandle> &memHandleVec,
-        std::vector<CommMemHandle> &commMemHandles) const
+        std::vector<CommMemHandle> &commMemHandles) const;
 
 private:
     uint64_t bufferSize_{};
