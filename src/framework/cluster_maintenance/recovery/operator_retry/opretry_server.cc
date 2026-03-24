@@ -520,6 +520,9 @@ HcclResult OpRetryServerWaitLinkInfo::ProcessEvent(RetryContext* retryCtx)
             HcclResult ret = WaitLinkPortCheckResult(agentRetryInfo.socket, agentRetryInfo.linkPortStatus);
             CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_AGAIN,
                 HCCL_ERROR("[OpRetry][Server]OpRetryServerWaitLinkCheckResult fail, ret[%u]", ret), ret);
+            for (auto &tmp : agentRetryInfo.linkPortStatus.rankList) {
+                HCCL_ERROR("TESTZJN --- agentRetryInfo.linkPortStatus.rankList[%u]", tmp);
+            }
             if (ret == HCCL_SUCCESS) {
                 recvVaild.insert(rank);
                 HCCL_INFO("[OpRetry][Server]OpRetryServerWaitLinkCheckResult recv success from dst[%u], ", rank);
