@@ -194,5 +194,38 @@ public:
     ChromeScopedZone& operator=( const ChromeScopedZone& ) = delete;
 };
 
+inline const uint64_t GetLogPid()
+{
+    static const uint64_t pid = getpid();
+    return pid;
+}
+
+inline const uint64_t GetLogTid()
+{
+    thread_local static const uint64_t tid = static_cast<uint64_t>(syscall(__NR_gettid));
+    return tid;
+}
+
+std::string g_fileName = "/var/log/npu/slog/" + std::to_string(GetLogPid()) + "_hccl.log";
+
+void logC(const char *format)
+{
+    FILE *file_fp;
+    time_t loacl_time;
+    char time_str[128];
+
+    // 获取本地时间
+    time(&loacl_time);
+    strftime(time_str, sizeof(time_str), "[%Y.%m.%d %X]", localtime(&loacl_time));
+
+    // 写日志文件
+    std::lock_guard<std::mutex> lk(g_logLock);
+    file_fp = fopen(g_fileName.c_str(), "a");
+    if (file_fp != NULL) {
+        fprintf(file_fp, "%s\n", fmt_str);
+        fclose(file_fp);
+    }
+}
+
 } // namespace chrome_export
 #endif //TRACY_TRACY_CHROME_EXPORT_H
