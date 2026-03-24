@@ -86,8 +86,6 @@ int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num)
     return 0;
 }
 
-#include <iostream>
-
 int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEidInfo info_list[],
     unsigned int *num)
 {
