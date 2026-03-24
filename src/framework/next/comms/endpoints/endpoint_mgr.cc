@@ -38,7 +38,7 @@ HcclResult EndpointMgr::Get(EndpointDesc epDesc, EndpointHandle &handle)
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[EndpointMgr::Get] create Endpoint");
-    CHK_RET(HcommEndpointCreate(&epDesc, &handle));
+    CHK_RET(static_cast<HcclResult>(HcommEndpointCreate(&epDesc, &handle)));
 
     endpointMap_.emplace(epDesc, handle);
     return HCCL_SUCCESS;
