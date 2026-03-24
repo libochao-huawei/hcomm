@@ -69,7 +69,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
     cntCkesGroupDieId = transports[0]->GetDieId();
     cntCkeNumTransportGroupUse = cntCkeNum;
 
-    if (CheckTransportCntCke()) {
+    if (CheckTransportCntCke() == HcclResult::HCCL_E_INTERNAL) {
         grpStatus = TransportGrpStatus::FAIL;
         HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransportCntCke failed, please check.", __func__);
         return;
