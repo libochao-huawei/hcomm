@@ -57,6 +57,8 @@ protected:
         hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, commName);
         HcclCommConfig config;
         config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+        config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level       
         ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
         CollComm* collComm = hcclCommPtr->GetCollComm();
         comm = static_cast<HcclComm>(hcclCommPtr.get());

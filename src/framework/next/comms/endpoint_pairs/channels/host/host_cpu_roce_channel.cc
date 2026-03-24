@@ -125,6 +125,13 @@ HcclResult HostCpuRoceChannel::BuildConnection()
         return HCCL_E_INTERNAL);
     CHK_PTR_NULL(conn);
     CHK_RET(conn->Init());
+    Hccl::QpInfo& qpInfo = conn->GetQpInfo();
+    qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
+    qpInfo.trafficClass = channelDesc_.roceAttr.tc;
+    qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
+    qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
+    HCCL_INFO("[HostCpuRoceChannel::BuildConnection] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
+        qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
     connections_.emplace_back(std::move(conn));
     connNum_ = connections_.size();
     return HCCL_SUCCESS;
@@ -333,7 +340,12 @@ HcclResult HostCpuRoceChannel::ConnVecPack(Hccl::BinaryStream &binaryStream)
     u32 pos = 0;
     for (auto &it : connections_) {
         binaryStream << pos;
-        
+
+        binaryStream << channelDesc_.roceAttr.retryCnt;
+        binaryStream << channelDesc_.roceAttr.retryInterval;
+        binaryStream << channelDesc_.roceAttr.sl;
+        binaryStream << channelDesc_.roceAttr.tc;
+
         std::unique_ptr<Hccl::Serializable> dto = nullptr;
         CHK_RET(it->GetExchangeDto(dto));
         dto->Serialize(binaryStream);
@@ -404,6 +416,10 @@ HcclResult HostCpuRoceChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStrea
     for (u32 i = 0; i < rmtConnNum; i++) {
         u32 pos;
         binaryStream >> pos;
+        binaryStream >> channelDesc_.roceAttr.retryCnt;
+        binaryStream >> channelDesc_.roceAttr.retryInterval;
+        binaryStream >> channelDesc_.roceAttr.sl;
+        binaryStream >> channelDesc_.roceAttr.tc;
         rmtConnDto_.Deserialize(binaryStream);
     }
     return HCCL_SUCCESS;
@@ -414,6 +430,13 @@ HcclResult HostCpuRoceChannel::ModifyQp() {
         Hccl::CHECK_NULLPTR(conn,
             Hccl::StringFormat("[HostCpuRoceChannel::%s] failed, connection pointer is nullptr", __func__));
         CHK_RET(conn->ParseRmtExchangeDto(rmtConnDto_));
+        Hccl::QpInfo& qpInfo = conn->GetQpInfo();
+        qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
+        qpInfo.trafficClass = channelDesc_.roceAttr.tc;
+        qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
+        qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
+        HCCL_INFO("[HostCpuRoceChannel::ModifyQp] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
+            qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
         HcclResult ret = conn->ModifyQp();
         if (ret == HCCL_E_AGAIN) {
             return HCCL_SUCCESS;
