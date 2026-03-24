@@ -29,6 +29,11 @@
 
 #include "ccu_kernel_impl/ccu_var_add_simple_demo.h"
 
+#include "adapter_rts.h"
+#include "adapter_hal_pub.h"
+
+#include "hcomm_primitives.h"
+
 #undef protected
 #undef private
 
@@ -99,7 +104,7 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
     return {srcEpHandle, channelHandle};
 }
 
-void MockChannelDestory(const std::pair<EndpointHandle, ChannelHandle> &handles)
+static void MockChannelDestory(const std::pair<EndpointHandle, ChannelHandle> &handles)
 {
     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
     constexpr uint32_t channelNum = 1;
@@ -108,6 +113,23 @@ void MockChannelDestory(const std::pair<EndpointHandle, ChannelHandle> &handles)
 
     hcclRet = HcommEndpointDestroy(handles.first);
     EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+}
+
+static ThreadHandle MockThreadAllocWithStream(CommEngine commEngine)
+{
+    // 选择调用Hcomm接口，而不是对具体的Thread实现打桩，减少内部依赖
+    MOCKER(aclrtStreamGetId).stubs().will(returnValue(0));
+    bool devRunning = false;
+    MOCKER(GetRunSideIsDevice).stubs().with(outBound(devRunning))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    
+    constexpr uint32_t fakeNotifyNum = 0;
+    aclrtStream fakeStream{(void *)0x12345678};
+    ThreadHandle fakeThreadHandle{};
+    EXPECT_EQ(HcommThreadAllocWithStream(commEngine, fakeStream,
+        fakeNotifyNum, &fakeThreadHandle), HcclResult::HCCL_SUCCESS);
+
+    return fakeThreadHandle;
 }
 
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_ReturnCcuSUCCESS)
@@ -162,10 +184,20 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
+    // 申请流，假定已经获取了threadHandle
+    auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
+
     // kernel下发
-    // todo:
+    // todo: 当前未适配LoadArgs，暂时使用空args
+    void *fakeTaskArgs = nullptr;
+    uint32_t fakeArgSize = 0;
+    EXPECT_EQ(HcommCcuKernelLaunch(fakeThreadHandle, kernelHandle,
+        fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
 
     // 清理各种资源，析构有时序要求
+    // 主线功能有bug，暂时不能主动释放stream
+    // constexpr uint32_t fakeThreadNum = 1;
+    // EXPECT_EQ(HcommThreadFree(&fakeThreadHandle, fakeThreadNum), HcclResult::HCCL_SUCCESS);
     MockChannelDestory(handlePair);
     ccuRet = HcommCcuInsDestroy(insHandle);
     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
