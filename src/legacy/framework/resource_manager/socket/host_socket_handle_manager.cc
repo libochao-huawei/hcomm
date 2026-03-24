@@ -12,7 +12,8 @@
 #include "exception_util.h"
 
 namespace Hccl {
-
+constexpr u32 ONE_MILLISECOND = 1000;
+constexpr u32 TIMEOUT_MS = 1000;
 HostSocketHandleManager::HostSocketHandleManager()
 {
     hostSocketHandleMap.resize(MAX_DEVICE_NUM);
@@ -132,6 +133,25 @@ void HostSocketHandleManager::Destroy(DevId devicePhyId, const IpAddress &hostIp
         HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] deinit success.", 
             __func__, devicePhyId, hostIp.GetIpStr().c_str());
     }
+}
+
+bool WaitForNoUsers(int timeoutMs)
+{
+    auto start = std::chrono::steady_clock::now();
+    
+    while (userCount.load(std::memory_order_acquire) > 0) {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+        
+        if (elapsed.count() > timeoutMs) {
+            HCCL_ERROR("[HostSocketHandleManager::%s] wait background thread timeout", __func__);
+            return false;  // 超时
+        }
+        
+        SaluSleep(ONE_MILLISECOND);
+    }
+    
+    return true;  // 成功等待
 }
 
 } // namespace Hccl

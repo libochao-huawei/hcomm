@@ -18,7 +18,6 @@
 #include <atomic>
 #include <thread>
 #include "sal.h"
-#include "socket.h"
 #include "orion_adapter_hccp.h"
 #include "socket_handle_manager.h"
 #include "ip_address.h"
@@ -43,24 +42,8 @@ public:
     void StopUsing() {
         userCount.fetch_sub(1, std::memory_order_relaxed);
     }
-    
-    // 等待所有用户完成，带超时
-    bool WaitForNoUsers(int timeoutMs = 5000) {
-        auto start = std::chrono::steady_clock::now();
-        
-        while (userCount.load(std::memory_order_acquire) > 0) {
-            auto now = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
-            
-            if (elapsed.count() > timeoutMs) {
-                return false;  // 超时
-            }
-            
-            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
-        }
-        
-        return true;  // 成功等待
-    }
+
+    bool WaitForNoUsers(int timeoutMs = TIMEOUT_MS);
 
 private:
     std::atomic<int> userCount{0};
