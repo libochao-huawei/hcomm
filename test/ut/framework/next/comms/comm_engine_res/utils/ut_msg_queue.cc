@@ -107,7 +107,7 @@ TEST_F(TestMsgQueue, Ut_When_MsgQueue_Empty_On_Normal_Expect_Correct)
     EXPECT_FALSE(isEmpty);
 }
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_Full_On_Normal_Expect_Correct)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Full_On_Normal_Expect_Correct)
 {
     MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
@@ -121,7 +121,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Full_On_Normal_Expect_Correct)
     EXPECT_FALSE(isFull);
 }
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
 {
     MOCKER(aclrtMalloc)
         .stubs()
@@ -149,7 +149,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_Push_MemcpyFailed_Expect_Return_HCCL_E_RUNTIME)
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_GetQueueInfo_On_Normal_Expect_Correct)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_GetQueueInfo_On_Normal_Expect_Correct)
 {
     MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
@@ -162,7 +162,7 @@ TEST_F(TestMsgQueue, Ut_MsgQueue_GetQueueInfo_On_Normal_Expect_Correct)
     EXPECT_EQ(info.msgSize, sizeof(ThreadMsgEntity));
 }
 
-TEST_F(TestMsgQueue, Ut_MsgQueue_Multiple_Push_And_Pop_Expect_Correct)
+TEST_F(TestMsgQueue, Ut_When_MsgQueue_Multiple_Push_And_Pop_Expect_Correct)
 {
     MOCKER_CPP(aclrtMalloc).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(aclrtMemcpy).stubs().will(returnValue(ACL_SUCCESS));
