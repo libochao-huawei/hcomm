@@ -26,6 +26,15 @@ struct CommMemHandle {
     CommMemType memType {COMM_MEM_TYPE_INVALID};
     void* bufferHandle {nullptr};
     std::string memTag {};
+
+    CommMemHandle()
+    {
+    }
+
+    CommMemHandle(void *addr, uint64_t size, CommMemType memType, void *bufferHandle, const std::string &memTag) :
+        addr(addr), size(size), memType(memType), bufferHandle(bufferHandle), memTag(memTag)
+    {
+    }
 };
 struct CommMemHandleEqual {
     bool operator()(const CommMemHandle& lhs, const CommMemHandle& rhs) const {
@@ -73,6 +82,8 @@ public:
     HcclResult CommUnregMem(const std::string& tag, const void* rawHandle);
     HcclResult GetTagMemoryHandles(void** memHandles, uint32_t memHandleNum, std::vector<HcclMem> &mem, 
         std::vector<std::string> &memTag);
+    HcclResult SetMemHandles(HcommChannelDesc &hcommDesc, std::vector<MemHandle> &memHandleVec,
+        std::vector<CommMemHandle> &commMemHandles) const
 
 private:
     uint64_t bufferSize_{};
