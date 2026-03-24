@@ -61,7 +61,7 @@ BinPackParameters: true
 # 开括号后对齐
 AlignAfterOpenBracket: DontAlign
 
-#大括号换行设置
+# 大括号换行设置
 BraceWrapping:
   AfterCaseLable: false
   AfterClass: false
