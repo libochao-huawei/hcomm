@@ -10,32 +10,32 @@ HCCL LLT（Low Level Test）是 HCCL 的测试框架，旨在系统化验证 HCC
 test/
 ├── legacy                                          # 历史版本兼容测试框架
 │   ├── algorithm                                   # 算法测试用例
-│   ├── common                                      # 公共测试用例
+│   ├── common                                      # 公共处理
 │   ├── depends                                     # 测试依赖其他组件头文件
 │   ├── st                                          # ST 集成测试用例
 │   │   ├── algorithm                               # 通信算法测试用例
 │   │   ├── fwk                                     # 通信框架测试用例
 │   │   ├── service                                 # 服务层测试用例
-│   │   └── test_case                               
+│   │   └── test_case                               # 测试用例
 │   └── ut                                          # UT 集成测试用例
 │       ├── aicpu                                   # AICPU 专用测试用例
 │       ├── all_source_code                         # 源码文件路径
-│       ├── common                                  # 公共测试用例
+│       ├── common                                  # 公共处理
 │       ├── framework                               # 通信框架测试用例
 │       ├── service                                 # 服务层测试用例
 │       └── unified_platform                        # 统一平台层测试用例
 ├── st/algorithm                                    # ST 集成测试用例 (算法分析器)
-│   ├── testcase
-│   └── utils
+│   ├── testcase                                    # 测试用例
+│   └── utils                                       # 通用处理
 └── ut                                              # UT 单元测试用例
-    ├── aicpu_kfc
-    ├── common                                      # 公共测试用例
+    ├── aicpu_kfc                                   # MC2相关测试
+    ├── common                                      # 公共处理
     ├── depends                                     # 测试依赖其他组件头文件
-    ├── device                                      
+    ├── device                                      # device测试
     ├── framework                                   # 通信框架测试用例
     ├── impl                                        # 通信算法实现测试用例
     ├── inter                                       # 接口适配层测试用例
-    ├── misc
+    ├── misc                                        # 其他测试用例
     ├── platform                                    # 通信平台实现测试用例
     └── stub                                        # 测试桩函数
 ```
