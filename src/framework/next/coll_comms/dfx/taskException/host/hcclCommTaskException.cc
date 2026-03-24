@@ -16,12 +16,6 @@
 #include <adapter_error_manager_pub.h>
 #include "op_type.h"
 #include "task_exception_handler.h"
-#include "task_param.h"
-#include "ccu_rep_type.h"
-#include "ccu_kernel_mgr.h"
-#include "hcomm_c_adpt.h"
-#include "ccu_urma_channel.h"
-#include "orion_adpt_utils.h"
 #include "ccuTaskException.h"
 
 namespace hcomm {
@@ -31,8 +25,6 @@ using namespace std;
 constexpr u32 MAX_MODULE_DEVICE_NUM_V2 = 65;
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
-constexpr int BYTE = 8;
-constexpr uint64_t CCU_MSG_256MB_LEN = 256 * 1024 * 1024; // CCU消息长度不能大于256MB
 
 std::mutex g_communicatorCallbackMapMutexV2;
 array<map<s32, GetAicpuTaskExceptionCallBackHcomm>, MAX_MODULE_DEVICE_NUM_V2> g_communicatorCallbackMapV2;
@@ -146,17 +138,17 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
     }
 
     bool isIndop_ = curTask->dfxOpInfo_->isIndop_;
+    HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
     if (!isIndop_) {
-        HCCL_INFO("Start to the old process");
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
         return;
-    } 
-    HCCL_INFO("Start to the new process");
+    }
+
     if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_CCU) {
         CcuTaskException::ProcessCcuException(exceptionInfo, *curTask); 
     } else {
         ProcessException(exceptionInfo, *curTask);
-    }  
+    }
 }
 
 std::string TaskExceptionHost::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
