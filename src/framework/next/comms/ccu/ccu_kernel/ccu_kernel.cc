@@ -22,11 +22,22 @@
 
 #include "hcomm_c_adpt.h"
 
+#include "ccu_rep_context_v1.h"
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
+#include "ccu_jetty_mgr.h"
+#include "ccu_assist.h"
+#include "hccl_comm_pub.h"
+#include "hcclCommDfx.h"
+#include "task_info.h"
+
+#include "task_param.h"
+#include "ccu_ctx.h"
+
 
 namespace hcomm {
 
-constexpr u32 TOKEN_VALUE_INDEX = 2;
+constexpr uint32_t TOKEN_VALUE_INDEX = 2;
+constexpr uint16_t INVALID_U16 = 65535;
 
 template <typename T> T CcuKernel::CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
 {
@@ -58,6 +69,8 @@ CcuKernel::CcuKernel(const CcuKernelArg &arg)
 {
     HCCL_INFO("Construct CcuKernel: %s", arg.GetKernelSignature().GetData().c_str());
     channels_ = arg.channels;
+    // 生成SQE粒度profiling信息
+    AddSqeProfiling(arg);
 }
 
 CcuKernel::~CcuKernel()
@@ -305,7 +318,11 @@ HcclResult CcuKernel::RecordEvent(CcuRep::CompletedEvent event)
 HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    Append(std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling));
+    auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling);
+    if (isProfiling) {
+        AddProfiling("WaitEvent", rep->GetMask());
+    }
+ 	Append(rep);
     return HCCL_SUCCESS;
 }
 
@@ -313,6 +330,7 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
 {
     Append(std::make_shared<CcuRep::CcuRepRemPostSem>(channel, remoteNotifyIdx, mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 /*WriteVariableWithSignal新接口*/
@@ -320,6 +338,7 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
                                         uint32_t remoteVarIdx, const CcuRep::Variable &var, uint32_t mask)
 {
     Append(std::make_shared<CcuRep::CcuRepRemPostVar>(var, channel, remoteVarIdx, remoteNotifyIdx, mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -327,7 +346,11 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
 HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
+    if (isProfiling) {
+        AddProfiling(channel, "NotifyWait", localNotifyIdx, mask);
+    }
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -336,6 +359,7 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, event.mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -344,6 +368,7 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, event.mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -441,6 +466,7 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAdd
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, event.mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -454,6 +480,7 @@ HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::Lo
 
     Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, CcuRep::GetUBDataType(dataType_),
                                                 CcuRep::GetUBReduceType(opType_), event, event.mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -462,6 +489,7 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, event.mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -475,6 +503,7 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
 
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, CcuRep::GetUBDataType(dataType_),
                                                  CcuRep::GetUBReduceType(opType_), event, event.mask));
+    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -666,5 +695,341 @@ CcuSharedResource &CcuKernel::GetImportedRes()
 {
     return importedRes_;
 }
+
+uint64_t GetArgIndex(const std::unordered_map<uint16_t, uint16_t> &varId2VarIdMap,
+                                 const std::unordered_map<uint16_t, uint32_t> &varId2ArgIndexMap,
+                                 const std::vector<uint64_t> &taskArgs, uint16_t varId)
+{
+    HCCL_INFO("[GetArgIndex] Enter varId(%u)", varId);
+    auto item = varId2ArgIndexMap.find(varId);
+    if (item == varId2ArgIndexMap.end()) {
+        std::string msg = Hccl::StringFormat("Invalid goSize variable id(%u).", varId);
+        uint16_t oriVarId = varId;
+        auto iter = varId2VarIdMap.find(varId);
+        while (iter != varId2VarIdMap.end()) { // 循环查找中间assign Rep，找到起始varId
+            oriVarId = iter->second;
+            iter = varId2VarIdMap.find(oriVarId);
+        }
+        if (oriVarId != varId) { // 起始varId预期通过LoadArg赋值
+            item = varId2ArgIndexMap.find(oriVarId);
+            if (item == varId2ArgIndexMap.end()) {
+                Hccl::THROW<Hccl::CcuApiException>(msg);
+            }
+        } else {
+            Hccl::THROW<Hccl::CcuApiException>(msg);
+        }
+    }
+    HCCL_INFO("[GetArgIndex] find end");
+    if (item->second >= taskArgs.size()) {
+        std::string msg = Hccl::StringFormat("Invalid goSize variable index(%u).", item->second);
+        Hccl::THROW<Hccl::CcuApiException>(msg);
+    }
+    HCCL_INFO(
+        "GetArgIndex success: varId(%u) varId2VarIdMapSize(%u) varId2ArgIndexMapSize(%u) taskArgsSize(%u)",
+        varId, varId2VarIdMap.size(), varId2ArgIndexMap.size(), taskArgs.size());
+    return taskArgs[item->second];
+}
+
+void DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo)
+{
+    auto dumpLinkInfo = [] (const CcuProfilingInfo &info) -> void {
+        for (int i = 0; i < CCU_MAX_CHANNEL_NUM; i++) {
+            if (info.channelId[i] == INVALID_VALUE_CHANNELID) {
+                continue;
+            }
+            HCCL_INFO("channelId(%u), remoteRankId(%u).", info.channelId[i], info.remoteRankId[i]);
+        }
+    };
+
+    for (const auto &profInfo : ccuProfilingInfo) {
+        if (profInfo.type == static_cast<uint8_t>(CcuProfilinType::CCU_TASK_PROFILING)) {
+            HCCL_INFO("Dump CCU Profiling Info:SQE Profiling Info: ctxSignautre(%s), "
+                       "dieId(%d), missionId(%d), instrId(%d).",
+                       profInfo.name.c_str(), static_cast<int>(profInfo.dieId), static_cast<int>(profInfo.missionId),
+                       static_cast<int>(profInfo.instrId));
+        } else if (profInfo.type == static_cast<uint8_t>(CcuProfilinType::CCU_WAITCKE_PROFILING)) {
+            HCCL_INFO("Microcode WaitCKE Profiling Info: name(%s), "
+                       "dieId(%d), missionId(%d), instrId(%d), ckeId(%u), mask(%u).",
+                       profInfo.name.c_str(), static_cast<int>(profInfo.dieId), static_cast<int>(profInfo.missionId),
+                       static_cast<int>(profInfo.instrId), profInfo.ckeId, profInfo.mask);
+            dumpLinkInfo(profInfo);
+        } else if (profInfo.type == static_cast<uint8_t>(CcuProfilinType::CCU_LOOPGROUP_PROFILING)) {
+            HCCL_INFO("Microcode LoopGroup Profiling Info: name(%s), "
+                       "dieId(%d), missionId(%d), instrId(%d), reduceOpType(%d), inputDataType(%d), "
+                       "outputDataType(%d), dataSize(%llu).",
+                       profInfo.name.c_str(), static_cast<int>(profInfo.dieId), static_cast<int>(profInfo.missionId),
+                       static_cast<int>(profInfo.instrId), static_cast<int>(profInfo.reduceOpType),
+                       static_cast<int>(profInfo.inputDataType), static_cast<int>(profInfo.outputDataType),
+                       profInfo.dataSize);
+            dumpLinkInfo(profInfo);
+        }
+    }
+}
+
+HcclResult CcuKernel::UpdateChannelIdMap()
+{
+    for (auto it : channelHandleToId_) {
+        uint64_t channelHandle = it.first;
+        uint16_t channelId = INVALID_U16;
+        CHK_RET(GetChannelIdByHandle(channelHandle, channelId));
+        channelHandleToId_[channelHandle] = channelId;
+        channelIdToHandle_[channelId] = channelHandle;
+        HCCL_INFO("[%s]channelHandle[0x%llx], channelId[%u]", __func__, channelHandle, channelId);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle)
+{
+    auto it = channelIdToHandle_.find(channelId);
+    CHK_PRT_RET(it == channelIdToHandle_.end(),
+        HCCL_ERROR("[%s]fail, channelId[%u] not found", __func__, channelId), HCCL_E_NOT_FOUND);
+    channelHandle = it->second;
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId)
+{
+    void *channelPtr{nullptr};
+    CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
+    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+    if (channelImpl == nullptr) {
+        HCCL_ERROR("[%s]failed to cast channelHandle[0x%llx] to CcuUrmaChannel", __func__, channelHandle);
+        return HCCL_E_PTR;
+    }
+    channelId = channelImpl->GetChannelId();
+    HCCL_DEBUG("[%s]success, channelHandle[0x%llx], channelId[%u]", __func__, channelHandle, channelId);
+    return HCCL_SUCCESS;
+}
+
+
+/*
+ 	* variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
+ 	* 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
+*/
+HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
+{
+ 	HCCL_INFO("[GetCcuProfilingInfo] Enter.");
+ 	std::vector<CcuProfilingInfo> allCcuProfilingInfos;
+ 	auto &ccuProfilingCache = GetProfilingInfo();
+ 	 
+ 	auto taskArgs = GeneArgs(arg);
+ 	uint32_t count {0};
+ 	HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
+    for (auto &profInfo : ccuProfilingCache) {
+        profInfo.missionId = GetMissionId();
+        if (profInfo.type == static_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
+            profInfo.instrId   = GetInstrId();
+            allCcuProfilingInfos.push_back(profInfo);
+            continue;
+        }
+        if (count >= GetWaiteCkeProfilingReps().size()) {
+            HCCL_ERROR("count[%u] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            return HCCL_E_INTERNAL;
+        }
+        auto waitCkeRep = GetWaiteCkeProfilingReps()[count];
+        profInfo.instrId = waitCkeRep->StartInstrId();
+        if (profInfo.ckeId == INVALID_CKE_ID) { // localWait Rep
+            if (waitCkeRep.get() == nullptr) {
+                HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+                return HCCL_E_PTR;
+            }
+            // auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitEvent*>(waitCkeRep.get());
+            // if (localWaitRep) {
+            //     profInfo.ckeId = localWaitRep->GetId();
+            // } else {
+            //     HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+            //     return HCCL_E_PTR;
+            // }
+            profInfo.ckeId = waitCkeRep->GetId();
+            HCCL_INFO("[CcuKernel][GetCcuProfilingInfo] waitcke[%u]", profInfo.ckeId);
+        }
+        allCcuProfilingInfos.push_back(profInfo);
+        count++;
+    }
+
+
+    // loopGroup
+    auto &lgProfInfo = GetLGProfilingInfo();
+    HCCL_INFO("[GetCcuProfilingInfo] create varId2ArgIndexMap start. size=%lu", lgProfInfo.loadRep2ArgIdxMap.size());
+    std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
+    for (auto &iter : lgProfInfo.loadRep2ArgIdxMap) {
+        if (iter.first.get() == nullptr) {
+            HCCL_ERROR("[GetCcuProfilingInfo] loadRep is nullptr.");
+            return HCCL_E_PTR;
+        }
+        auto loadRep = dynamic_cast<CcuRep::CcuRepLoadArg*>(iter.first.get());
+        varId2ArgIndexMap[loadRep->GetVarId()] = iter.second;
+    }
+
+    HCCL_INFO("[GetCcuProfilingInfo] create varId2VarIdMap start. size=%lu", lgProfInfo.assignProfilingReps.size());
+    std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
+    for (auto &iter : lgProfInfo.assignProfilingReps) {
+        if (iter.get() == nullptr) {
+            HCCL_ERROR("[GetCcuProfilingInfo] assignRep is nullptr.");
+            return HCCL_E_PTR;
+        }
+        auto assignRep = dynamic_cast<CcuRep::CcuRepAssign*>(iter.get());
+        varId2VarIdMap[assignRep->varB.Id()] = assignRep->varA.Id();
+    }
+
+    HCCL_INFO("[GetCcuProfilingInfo] process loop group profiling start: lgsize(%lu), goSize(%lu)", lgProfInfo.lgProfilingReps.size(), groupOpSizeInfo.size());
+    for (uint32_t i = 0; i < lgProfInfo.lgProfilingReps.size(); i += 2) { // 2: 一个goSize对应一个CcuProfilingInfo，对应1个loopGroup Rep
+        if (taskArgs.empty() || varId2ArgIndexMap.empty()) {
+            continue;
+        }
+    uint64_t loopParam = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].loopParamId);
+        uint64_t parallelParam = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].parallelParamId);
+        HCCL_INFO("Collect loopgroup profiling info: repSize[%u], index[%u], loopParam[%llu], parallelParam[%llu].",
+                lgProfInfo.lgProfilingReps.size(), i, loopParam, parallelParam);
+
+        if (loopParam != 0) {
+            lgProfInfo.ccuProfilingInfos[i].dataSize = loopParam * moConfig.loopCount * moConfig.memSlice;
+            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i].get())->StartInstrId();
+            allCcuProfilingInfos.push_back(lgProfInfo.ccuProfilingInfos[i]);
+        }
+
+        if (parallelParam != 0) {
+            HCCL_INFO("[GetCcuProfilingInfo] collect lg, residual start i=%lu", i);
+            uint64_t residual = GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo[i].residualId);
+            uint64_t repeatNum = Hccl::CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
+            lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig.memSlice + residual;
+            lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
+            allCcuProfilingInfos.push_back(lgProfInfo.ccuProfilingInfos[i]);
+        }
+    }
+    DumpCcuProfilingInfo(allCcuProfilingInfos);
+    allCcuProfilingInfo = allCcuProfilingInfos;
+    return HCCL_SUCCESS;
+}
+
+HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam, const hccl::RankId remoteRankId, bool isMaster = false)
+{
+    uint32_t taskId {0};
+    uint32_t streamId {0};
+    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    // 填入remoteRankId
+    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
+
+    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
+        hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), isMaster);
+ 
+    HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
+    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
+                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster)
+{
+    if (streamProfilingInfo.empty()) {
+        HCCL_INFO("There is no ccu profiling info.");
+        return HCCL_SUCCESS;
+    }
+    taskParam.taskPara.Ccu.dieId     = streamProfilingInfo[0].dieId;
+    taskParam.taskPara.Ccu.missionId = streamProfilingInfo[0].missionId;
+    taskParam.taskPara.Ccu.execMissionId = streamProfilingInfo[0].missionId;
+    taskParam.taskPara.Ccu.instrId   = streamProfilingInfo[0].instrId;
+    taskParam.taskPara.Ccu.executeId = execId;
+    for (auto &profInfo : streamProfilingInfo) {
+        for (int idx = 0; idx < CCU_MAX_CHANNEL_NUM; idx++) {
+            if (profInfo.channelId[idx] == INVALID_VALUE_CHANNELID) {
+                break;
+            }
+            // TODO:需要修改
+            profInfo.remoteRankId[idx] =
+                0;
+        }
+    }
+    //1.显式声明lambda的返回类型，避免歧义
+    auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
+        Hccl::CcuProfilingInfo dst;
+        dst.name = src.name;
+        dst.type = src.type;
+        dst.dieId = src.dieId;
+        dst.missionId = src.missionId;
+        dst.instrId = src.instrId;
+        dst.reduceOpType = src.reduceOpType;
+        dst.inputDataType = src.inputDataType;
+        dst.outputDataType = src.outputDataType;
+        dst.dataSize = src.dataSize;
+        dst.ckeId = src.ckeId;
+        dst.mask = src.mask;
+        HCCL_INFO("src.name %s, dst.name %s", dst.name.c_str(), src.name.c_str());
+        (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
+        (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
+        return dst;
+    };
+
+    // 2. 显式声明converted的类型，避免推导失败
+    std::vector<Hccl::CcuProfilingInfo> converted;
+    converted.reserve(streamProfilingInfo.size());
+
+    // 3. 使用transform
+    std::transform(streamProfilingInfo.begin(),
+                streamProfilingInfo.end(),
+                std::back_inserter(converted),
+                convertToHccl);
+    // 4.构建shared_ptr
+    taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
+    CHK_RET(SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName)
+{
+    CHK_PTR_NULL(channels);
+    ccuProfilingInfoCache.type           = (uint8_t)CcuProfilinType::CCU_LOOPGROUP_PROFILING;
+    ccuProfilingInfoCache.name           = opName;
+    ccuProfilingInfoCache.reduceOpType   = opType;
+    ccuProfilingInfoCache.inputDataType  = dataType;
+    ccuProfilingInfoCache.outputDataType = outputDataType;
+    ccuProfilingInfoCache.missionId      = GetMissionId();
+    
+    CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
+                                    INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
+    for (uint32_t i = 0; i < channelNum; i++) {
+        void *channelPtr{nullptr};
+        CHK_RET(HcommChannelGet(channels[i], &channelPtr));
+        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+        CHK_PTR_NULL(channelImpl);
+        ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+        ccuProfilingInfoCache.channelHandle[i] = channels[i];
+    }
+
+    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
+    lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
+                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName)
+{
+    CHK_RET(AddCcuProfiling(channelHandle.data(), channelHandle.size(), dataType, outputDataType, opType, opName));
+    groupOpSizeInfo.push_back(groupInfo);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuKernel::AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName)
+{
+    CHK_PTR_NULL(channels);
+    CHK_RET(AddProfilingInfo(channels, channelNum, dataType, outputDataType, opType, opName));
+    return HCCL_SUCCESS;
+}
+
+
+
 
 }; // namespace hcomm

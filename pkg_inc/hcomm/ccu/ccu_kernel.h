@@ -45,9 +45,26 @@
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
 
+
 using CcuKernelHandle = uint64_t;
 
+namespace Hccl {
+    class TaskParam;
+}
+
 namespace hcomm {
+
+struct GroupInfo {
+    uint16_t loopParamId;
+    uint16_t parallelParamId;
+    uint16_t residualId;
+};
+
+struct GroupOpConfig {
+    uint32_t msInterleave;
+    uint32_t loopCount;
+    uint64_t memSlice;
+};
 
 class CcuKernel : public CcuRep::CcuRepContext {
 public:
@@ -73,6 +90,24 @@ public:
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext *context);
 
+    HcclResult AddProfilingInfo(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
+
+    HcclResult AddCcuProfiling(GroupInfo groupInfo, const std::vector<ChannelHandle> channelHandle, HcclDataType dataType,
+                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
+    HcclResult AddCcuProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
+                                HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
+    HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
+
+    HcclResult ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
+                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
+
+    HcclResult UpdateChannelIdMap();
+    HcclResult GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle);
+    HcclResult GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId);
+    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
+    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
+    //                              DataType outputDataType, ReduceOp opType);
 protected:
     // 子类实现
     virtual HcclResult Algorithm() = 0;
@@ -156,6 +191,7 @@ private:
 
 protected:
     std::vector<ChannelHandle> channels_;
+    GroupOpConfig       moConfig{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF};
 
 private:
     template <typename T> T CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord);
@@ -172,6 +208,10 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
+    std::unordered_map<uint16_t, uint64_t> channelHandleToId_;
+    std::unordered_map<uint64_t, uint16_t> channelIdToHandle_;
+    std::vector<GroupInfo> groupOpSizeInfo;
+
 };
 
 // kernel构造函数的lambda函数
