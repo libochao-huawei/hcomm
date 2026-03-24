@@ -37,7 +37,7 @@ public:
         uint64_t countPerCore = count / numBlocks_;
         uint64_t curCountCore = block_idx == numBlocks_ - 1 ? count - countPerCore * (numBlocks_ - 1) : countPerCore;
         auto gmIn = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank_]) + block_idx * countPerCore * dataTypeSize);
-        CpGM2GM(gmIn, input + block_idx * countPerCore * dataTypeSize, curCountCore);
+        CpGM2GM(gmIn, input + block_idx * countPerCore, curCountCore);
         SyncAll<true>();
 
         uint32_t perCoreRankNum = rankSize_ / numBlocks_;
