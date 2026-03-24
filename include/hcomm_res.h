@@ -38,7 +38,7 @@ extern HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint3
 
 extern HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
-extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t *notifyNumPerThread, ThreadHandle *threads);
+extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread, ThreadHandle *threads);
 
 extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
