@@ -713,17 +713,17 @@ HcclResult GetArgIndex(const std::unordered_map<uint16_t, uint16_t> &varId2VarId
             item = varId2ArgIndexMap.find(oriVarId);
             if (item == varId2ArgIndexMap.end()) {
                 HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u)", __func__, varId);
-                return HCCL_E_PARAM;
+                return HCCL_E_PARA;
             }
         } else {
             HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u)", __func__, varId)
-            return HCCL_E_PARAM;
+            return HCCL_E_PARA;
         }
     }
     HCCL_INFO("[GetArgIndex] find end");
     if (item->second >= taskArgs.size()) {
         HCCL_ERROR("Invalid goSize variable index(%u).", item->second);
-        return HCCL_E_PARAM;
+        return HCCL_E_PARA;
     }
     HCCL_INFO(
         "GetArgIndex success: varId(%u) varId2VarIdMapSize(%u) varId2ArgIndexMapSize(%u) taskArgsSize(%u)",
