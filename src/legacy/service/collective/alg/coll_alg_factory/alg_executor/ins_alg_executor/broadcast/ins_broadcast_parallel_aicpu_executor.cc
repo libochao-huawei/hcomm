@@ -396,15 +396,32 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;
     tempFuncs.enableCounterNotify = false;
+    u64 sliceSize = dataTypeSize_ * dataCount_;
+    u64 part0SliceSize[] = {
+        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_,
+        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
+        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
+        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_};
+    u64 part1SliceSize[] = {
+        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_,
+        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
+        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
+        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_};
+    u64 part0InputStirde[] = {
+        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_,
+        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_, 0, 0};
+    u64 part1InputStride[] = {
+        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_,
+        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
     for (u32 i = 0; i < algParaVec.size(); i++) {
         bool isFirst = (i == 0);
         // 先处理part0数据
         CHK_RET(PreSyncQues(syncQueues_, 0));
         // 第一步的时候server间topo包含root_的rank进行展开，其它rank不展开
         if ((!isFirst || interLocalRoot_ == root_) && (dataParameters.CountPart0) > 0) {
-            GenDataParams(
-                dataParameters.dataOffset0, dataParameters.CountPart0, algParaVec.at(i).part0ScratchOffset,
-                tempAlgParams);
+            GenDataParamsStage(
+                part0SliceSize[i], part0InputStirde[i], dataParameters.dataOffset0, dataParameters.CountPart0,
+                algParaVec.at(i).part0ScratchOffset, tempAlgParams);
             CHK_RET(algParaVec.at(i).part0FuncPtr(
                 tempFuncs, tempAlgParams, algParaVec.at(i).part0links, algParaVec.at(i).part0Que));
         }
@@ -414,9 +431,9 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
         // 第一步的时候server内topo包含root_的rank进行展开，其它rank不展开
         if ((!isFirst || intraLocalRoot_ == root_) && dataParameters.CountPart1 > 0) {
             // 数据1的server内的scatter算法
-            GenDataParams(
-                dataParameters.dataOffset1, dataParameters.CountPart1, algParaVec.at(i).part1ScratchOffset,
-                tempAlgParams);
+            GenDataParamsStage0(
+                part1SliceSize[i], part1InputStride[i], dataParameters.dataOffset1, dataParameters.CountPart1,
+                algParaVec.at(i).part1ScratchOffset, tempAlgParams);
             CHK_RET(algParaVec.at(i).part1FuncPtr(
                 tempFuncs, tempAlgParams, algParaVec.at(i).part1links, algParaVec.at(i).part1Que));
         }

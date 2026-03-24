@@ -95,7 +95,7 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
 
 HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
 {
-    if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType) {
+    if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType && tempAlgParams_.buffInfo.inBuffBaseOff == tempAlgParams_.buffInfo.outBuffBaseOff) {
         return HcclResult::HCCL_SUCCESS;
     }
 

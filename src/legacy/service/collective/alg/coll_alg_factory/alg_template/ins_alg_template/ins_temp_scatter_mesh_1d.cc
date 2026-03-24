@@ -160,6 +160,9 @@ HcclResult InsTempScatterMesh1D::PreCopy(TemplateDataParams &tempAlgParams, std:
                         r * tempAlgParams.outputRepeatStride + buffInfo_.scratchBuffBaseOff :
                         r * tempAlgParams.outputRepeatStride + buffInfo_.outBuffBaseOff;
 
+        if (buffInfo_.outBuffType == buffInfo_.inBuffType && srcOffset == dstOffset) {
+            continue;
+        }
         DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, tempAlgParams.sliceSize);
         DataSlice dstSlice(buffInfo_.outBuffType, dstOffset, tempAlgParams.sliceSize);
         LocalCopy(tempInsQues[0], srcSlice, dstSlice);
@@ -175,7 +178,7 @@ HcclResult InsTempScatterMesh1D::PostCopy(const TemplateDataParams &tempAlgParam
     }
     u32 myAlgRank;
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
-    DataSlice dstSlice(BufferType::OUTPUT, buffInfo_.outBuffBaseOff, tempAlgParams.sliceSize * tempAlgParams.repeatNum);
+    DataSlice dstSlice(buffInfo_.outBuffType, buffInfo_.outBuffBaseOff, tempAlgParams.sliceSize * tempAlgParams.repeatNum);
     DataSlice srcSlice(BufferType::SCRATCH, buffInfo_.scratchBuffBaseOff, tempAlgParams.sliceSize * tempAlgParams.repeatNum);
     LocalCopy(tempInsQues[0], srcSlice, dstSlice);
 

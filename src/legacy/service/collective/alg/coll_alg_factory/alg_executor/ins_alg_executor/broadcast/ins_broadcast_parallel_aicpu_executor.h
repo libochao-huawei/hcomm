@@ -160,8 +160,7 @@ private:
                           splitDataSize.at(1) * float(scratchMultiple.intraScatter);
         float multiple1 = splitDataSize.at(0) * float(scratchMultiple.interAllGather / interLocalRankSize_) +
                           splitDataSize.at(1) * float(scratchMultiple.intraAllGather / intraLocalRankSize_);
-        // 因为broadcast没有output空间，需要预留1倍给做output使用
-        scratchMultiple.maxMultiple = std::max(multiple0, multiple1) + 1;
+        scratchMultiple.maxMultiple = std::max(multiple0, multiple1);
         return;
     }
     void CalcSlice(std::vector<float>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice);
@@ -211,20 +210,19 @@ private:
         ConnectedLinkMgr* linkMgr, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
         InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
 
-    void GenDataParams(
-        const u64 dataOffset, const u64 sliceCount, const u64 scratchOffsetCount, TemplateDataParams& dataParams) const
+    void GenDataParamsStage(
+        const u64 sliceSize, const u64 inputSliceStride, const u64 dataOffset, const u64 sliceCount,
+        const u64 scratchOffsetCount, TemplateDataParams& dataParams) const
     {
         dataParams.buffInfo.inBuffType = BufferType::INPUT;
-        dataParams.buffInfo.outBuffType = BufferType::SCRATCH;
+        dataParams.buffInfo.outBuffType = BufferType::INPUT;
         dataParams.buffInfo.scratBuffType = BufferType::SCRATCH;
         dataParams.buffInfo.inBuffBaseOff = dataOffset;
         dataParams.buffInfo.outBuffBaseOff = dataOffset;
-        // 因为broadcast没有output缓冲，需要预留给out使用
-        dataParams.buffInfo.scratchBuffBaseOff = (dataCount_ *  dataTypeSize_) + scratchOffsetCount * dataTypeSize_;
-        dataParams.sliceSize = sliceCount * dataTypeSize_;
-
-        dataParams.inputSliceStride = 0;
-        dataParams.outputSliceStride = 0;
+        dataParams.buffInfo.scratchBuffBaseOff = scratchOffsetCount * dataTypeSize_;
+        dataParams.sliceSize = sliceSize;
+        dataParams.inputSliceStride = inputSliceStride;
+        dataParams.outputSliceStride = sliceSize;
         dataParams.repeatNum = 1;
         dataParams.inputRepeatStride = 0;
         dataParams.outputRepeatStride = 0;
@@ -274,7 +272,7 @@ private:
     std::vector<std::vector<RankId>> virtRanks_;
     std::vector<std::map<RankId, u32>> virtRankMap_; // map<virtRank, virtRankOrder>
 
-    std::vector<InsQuePtr> requiredQue_;    
+    std::vector<InsQuePtr> requiredQue_;
     std::vector<InsQuePtr> intraQue_;
     std::vector<InsQuePtr> interQue_;
     std::vector<InsQuePtr> syncQueues_;
