@@ -61,6 +61,7 @@ public:
 
     HcclResult CleanTaskKillState() const;
     HcclResult CleanDieCkes(const uint8_t dieId) const;
+    HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
 
 private:
     explicit CcuComponent() = default;
@@ -90,7 +91,7 @@ private:
 
     HcclResult SetProcess(CcuOpcodeType opCode) const;
     HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
-    HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
+    
     HcclResult SetTaskKillDone();
 
 private:

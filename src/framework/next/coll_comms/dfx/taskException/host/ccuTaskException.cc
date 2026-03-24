@@ -137,15 +137,14 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
     }
 
     const int32_t devLogicId = static_cast<int32_t>(deviceId);
-    if (CcuCleanTaskKillState(devLogicId) != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu task kill state, "
-            "devLogicId[%d].", __func__, devLogicId);
+    if (CcuComponent::GetInstance(devLogicId).CleanTaskKillState() != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu task kill state, devLogicId[%d].", __func__, devLogicId);
     }
 
     const uint8_t dieId = taskInfo.taskParam_.taskPara.Ccu.dieId;
-    if (CcuCleanDieCkes(devLogicId, dieId) != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu die ckes, "
-            "dieId[%u], devLogicId[%d].", __func__, dieId, devLogicId);
+    if (CcuComponent::GetInstance(devLogicId).CleanDieCkes(dieId) != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuTaskException][%s] failed to clean ccu die ckes, dieId[%u], devLogicId[%d].",
+            __func__, dieId, devLogicId);
     }
 }
 
@@ -162,26 +161,6 @@ void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
                 info->ccum_sqe_recv_cnt, info->ccum_sqe_send_cnt, info->ccum_mission_dfx,
                 info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
                 info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
-}
-
-HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
-{
-    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%d]", deviceLogicId);
-    // 入参校验拦截
-    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
-        HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
-            HcclResult::HCCL_E_PARA);
-    return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
-}
-
-HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
-{
-    HCCL_INFO("[CcuCleanDieCkes] Input params: deviceLogicId[%d], dieId[%u]", deviceLogicId, dieId);
-    // 入参校验拦截
-    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
-        HCCL_ERROR("[CcuCleanDieCkes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
-            HcclResult::HCCL_E_PARA);
-    return CcuComponent::GetInstance(deviceLogicId).CleanDieCkes(dieId);
 }
 
 CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId)
@@ -314,7 +293,7 @@ void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, 
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocWaitNotify>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->GetId();
+    errorMsg.msg.waitSignal.signalId    = rep->GetNotifyId();
     errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetId());
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
@@ -405,7 +384,7 @@ void CcuTaskException::GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, 
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepRecordSharedNotify>(repBase);
-    errorMsg.msg.waitSignal.signalId    = rep->GetId();
+    errorMsg.msg.waitSignal.signalId    = rep->GetNotifyId();
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
 
     errorInfo.push_back(errorMsg);
@@ -426,10 +405,7 @@ void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_pt
     errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
     errorMsg.msg.transMem.signalId   = rep->GetSemId();
     errorMsg.msg.transMem.signalMask = rep->GetMask();
-    auto res = rep->GetChannelId(errorMsg.msg.transMem.channelId);
-    if (res != HCCL_SUCCESS){
-        HCCL_ERROR("[CcuTaskException][GenErrorInfoRead] channelId get failed");
-    }
+    errorMsg.msg.transMem.channelId = rep->GetChannelId();
     errorInfo.push_back(errorMsg);
 }
 
