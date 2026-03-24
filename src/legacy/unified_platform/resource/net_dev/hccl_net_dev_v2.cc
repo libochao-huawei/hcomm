@@ -144,7 +144,7 @@ HcclResult HcclNetDevGetAddrV2(const HcclNetDev netDev, HcclAddress *addr)
         addr->type  = HCCL_ADDR_TYPE_IP_V6;
         addr->addr6 = ipAddr.GetBinaryAddress().addr6;
         unsigned short *ipv6Addr = reinterpret_cast<unsigned short*>(&addr->addr6);
-        HCCL_DEBUG("IPv6 Address: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x:",
+        HCCL_DEBUG("IPv6 Address: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
                     ipv6Addr[0], ipv6Addr[1], ipv6Addr[2], ipv6Addr[3],
                     ipv6Addr[4], ipv6Addr[5], ipv6Addr[6], ipv6Addr[7]);
     } else {        
