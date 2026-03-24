@@ -74,7 +74,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
     HcclResult ret = CheckTransportCntCke();
     if (ret != HcclResult::HCCL_SUCCESS) {
         grpStatus = TransportGrpStatus::FAIL;
-        HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransportCntCke failed, ret=[%d], please check.", ret, __func__);
+        HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransportCntCke failed, ret=[%d], please check.", __func__, ret);
         return;
     }
 
