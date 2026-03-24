@@ -40,6 +40,9 @@ find_package_handle_standard_args(hcomm_utils
 message(STATUS "[ThirdParty] Found hcomm_utils: ${hcomm_utils_FOUND}")
 
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
+    if(NOT TARGET hcomm_utils)
+        add_custom_target(hcomm_utils)
+    endif()
     message(STATUS "[ThirdParty] hcomm_utils found in ${HCOMM_UTILS_INSTALL_PATH}, and not force rebuild cann third_party")
 else()
     file(GLOB HCOMM_UTILS_PKG
@@ -99,7 +102,7 @@ set_target_properties(ascend_kms PROPERTIES
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
 )
 
-if(${PRODUCT_SIDE} STREQUAL "device")
+if("${PRODUCT_SIDE}" STREQUAL "device")
     install(FILES  ${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so
         DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
     )
@@ -124,6 +127,10 @@ set_target_properties(hccl_legacy PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include"
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/host/lib/libhccl_legacy.so"  # 该动态库只有 host 有
 )
+if(TARGET tracy_client AND "${PRODUCT_SIDE}" STREQUAL "host")
+    add_dependencies(hccl_legacy tracy_client)
+    set_property(TARGET hccl_legacy APPEND PROPERTY INTERFACE_LINK_LIBRARIES tracy_client)
+endif()
 
 # 安装库文件到指定目录
 install(FILES  ${HCOMM_UTILS_INSTALL_PATH}/host/lib/libhccl_legacy.so

@@ -50,10 +50,10 @@ set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
 
 set(CMAKE_CXX_COMPILE_OBJECT
-    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$$(notdir $$(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
 )
 set(CMAKE_C_COMPILE_OBJECT
-    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$$(notdir $$(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
 )
 
 # 获取 CPU 核心数
@@ -62,7 +62,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         COMMAND nproc
         OUTPUT_VARIABLE CPU_CORES
         OUTPUT_STRIP_TRAILING_WHITESPACE
-    ) 
+    )
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     execute_process(
         COMMAND wmic cpu get NumberOfCores /value
@@ -89,6 +89,7 @@ if(ENABLE_TEST)
     include(cmake/third_party/gtest.cmake)
     include(cmake/third_party/mockcpp.cmake)
     include(cmake/third_party/rdma-core.cmake)
+    include(cmake/third_party/tracy.cmake)
     add_subdirectory(test)
     return()
 
@@ -97,6 +98,7 @@ elseif(BUILD_OPEN_PROJECT)
     include(cmake/third_party/ubengine.cmake)
     include(cmake/third_party/rdma-core.cmake)
     include(cmake/third_party/json.cmake)
+    include(cmake/third_party/tracy.cmake)
     include(cmake/hcomm_utils.cmake)
     include(cmake/config.cmake)
     include(cmake/package.cmake)
@@ -238,6 +240,11 @@ elseif(BUILD_OPEN_PROJECT)
         ${HCCL_HEAD}
         ${HCCL_JSON}
         DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ OPTIONAL
+    )
+    install(DIRECTORY
+        ${TRACY_INSTALL_PATH}/include/tracy
+        DESTINATION ${INSTALL_INCLUDE_DIR}
+        OPTIONAL
     )
 
     set(HCCL_PKG_HEAD
