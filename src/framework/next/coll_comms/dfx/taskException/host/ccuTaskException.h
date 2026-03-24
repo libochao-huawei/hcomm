@@ -110,7 +110,7 @@ private:
     static void GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                             std::vector<CcuErrorInfo> &errorInfo);
 
-    static HcclResult GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
+    static void GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
                                         std::vector<CcuErrorInfo> &errorInfo);
 
     static void GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRepBase> repBase,
