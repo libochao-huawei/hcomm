@@ -3944,4 +3944,12 @@ aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelNam
     return aicpuKernelHolder_.GetAicpuKernelFuncHandle(kernelName);
 }
 
+HcclResult HcclCommunicator::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream)
+{
+    GetAicpuStreamManager().AllocFreeStream();
+    Stream *stream = GetAicpuStreamManager().GetFreeStream();
+    *aiCpuStream = stream->GetPtr();
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl
