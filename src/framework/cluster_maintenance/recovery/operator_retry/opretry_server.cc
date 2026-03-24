@@ -275,28 +275,18 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
         }
 
         if (!isFoundSendRecv) {
-            // 如果没有找到send/recv算子，判断所有rank是否停在同一个算子
-            bool isAllTagSame = true;
             u32 firstErrorRank = *(errorRank.begin());
             auto curOpId = retryCtx->errorRankList_[firstErrorRank];
             auto curTag = std::string(reinterpret_cast<const char*>(curOpId.tag));
-            for (auto &it : retryCtx->serverSockets_) {
-                auto remoteTag = std::string(reinterpret_cast<const char*>(it.second.retryInfo.opInfo.opId.tag));
-                if (curTag != remoteTag) {
-                    isAllTagSame = false;
-                    break;
-                }
-            }
-            if (isAllTagSame) {
-                retryCtx->errorRankList_.clear();
-                // 所有rank停在同一个算子，开始重执行
-                HCCL_RUN_INFO("[OpRetry][Server]begin to exec retry of tag[%s] from rank[%u]",
-                    curTag.c_str(), firstErrorRank);
-                retryCtx->needRetryServerRanks_.clear();
-                CHK_PRT(SetNeedRetryServerRank(retryCtx, curOpId));
-                CHK_RET(CreateOpRetryServerByState(RETRY_STATE_CMD_STOP_AICPU, retryCtx));
-                return HCCL_SUCCESS;
-            }
+
+            retryCtx->errorRankList_.clear();
+            // 开始重执行
+            HCCL_RUN_INFO("[OpRetry][Server]begin to exec retry of tag[%s] from rank[%u]",
+                curTag.c_str(), firstErrorRank);
+            retryCtx->needRetryServerRanks_.clear();
+            CHK_PRT(SetNeedRetryServerRank(retryCtx, curOpId));
+            CHK_RET(CreateOpRetryServerByState(RETRY_STATE_CMD_STOP_AICPU, retryCtx));
+            return HCCL_SUCCESS;
         }
         errorRank.clear();
         SaluSleep(waitTime * TIME_MS_TO_US);
