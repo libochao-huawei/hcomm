@@ -194,7 +194,7 @@ extern uint32_t HcclGetCommConfigCapability() HCOMM_WEAK_SYMBOL;
  * @brief Initialize the comm configuration.
  * @param config Pointer to the comm configuration that needs to be initialized.
 */
-inline void HcclCommConfigInit(HcclCommConfig *config)
+static inline void HcclCommConfigInit(HcclCommConfig *config)
 {
     if (config == nullptr) {
         return;
