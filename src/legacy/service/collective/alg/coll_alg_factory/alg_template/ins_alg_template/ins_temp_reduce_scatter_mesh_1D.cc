@@ -59,7 +59,7 @@ HcclResult InsTempReduceScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, con
     HCCL_INFO("[InsTempReduceScatterMesh1D] Run Start");
     // 这里不支持绕路的时候，应该就用原始的tempInsQues就行
     CHK_PRT_RET(queNum_ != tempInsQues.size(),
-                HCCL_ERROR("[CollAlgFactory] [InsTempReduceScatterMesh1D] Rank [%d], requiredQue Error.", myRank_),
+                HCCL_ERROR("[CollAlgFactory] [InsTempReduceScatterMesh1D] Rank [%d], requiredQue Error. queNum is %d, tempInsQues.size is %d", myRank_, queNum_, tempInsQues.size()),
                 HcclResult::HCCL_E_INTERNAL);
     if (queNum_ > 1) {
         CHK_RET(PreSyncInterQueues(tempInsQues));
