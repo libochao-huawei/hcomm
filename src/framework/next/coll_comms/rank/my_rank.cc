@@ -129,12 +129,18 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::SetMemHandles(void **memHandles, const std::vector<MemHandle>& memHandleVec) const
+HcclResult MyRank::SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
+    std::vector<CommMemHandle> &commMemHandles) const
 {
-    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
-    for (uint32_t i = 0; i < memHandleVec.size(); ++i) {
+    CommMemHandle **handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    std::vector<HcclMem> mems{};
+    commMems_->GetMemoryHandles(mems);
+    commMemHandles.emplace_back(mems[0].addr, mems[0].size, ConvertHcclToCommMemType(mems[0].memType),
+        memHandleVec[0], "HcclBuffer");
+    for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
         CHK_PTR_NULL(memHandleVec[i]);
-        (*handles[i]).bufferHandle = memHandleVec[i];
+        commMemHandles.emplace_back((*handles[i - 1]).addr, (*handles[i - 1]).size,
+            (*handles[i - 1]).memType, memHandleVec[i], (*handles[i - 1]).memTag);
     }
     return HCCL_SUCCESS;
 }
@@ -267,13 +273,16 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             HCCL_ERROR("[%s] failed to register memory, channelIndex[%u], remoteRank[%u], memTagNum[%zu]",
                 __func__, i, remoteRank, memTag.size()),
             ret);
-        CHK_RET(SetMemHandles(channelDescs[i].memHandles, memHandleVec));
+        std::vector<CommMemHandle> commMemHandles{};
+        CHK_RET(SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
 
         hcommDescs[i].exchangeAllMems = false;
         if (engine == COMM_ENGINE_CPU) {
             hcommDescs[i].memHandles = memHandleVec.data();
+        } else {
+            hcommDescs[i].memHandles = memHandleVec.data();
         }
-        hcommDescs[i].memHandleNum = memHandleVec.size();
+        hcommDescs[i].memHandleNum = commMemHandles.size();
 
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);

@@ -61,7 +61,8 @@ private:
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
-    HcclResult SetMemHandles(void **memHandles, const std::vector<MemHandle>& memHandleVec) const;
+    HcclResult SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
+        std::vector<CommMemHandle> &commMemHandles) const;
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
