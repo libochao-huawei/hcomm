@@ -117,7 +117,7 @@ target_link_options(${target} PRIVATE
     -s
     -Wl,-z,relro,-z,now
     -Wl,-z,noexecstack
-    -pie
+    -fPIC
 )
 
 #链接动态库
