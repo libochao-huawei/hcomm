@@ -167,7 +167,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
 }
 
-TEST_F(MyRankTest, ut_SetMemHandles_When_NorMal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
