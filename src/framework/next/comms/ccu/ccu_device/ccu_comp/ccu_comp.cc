@@ -160,10 +160,10 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
         Hccl::IpAddress ipAddr{};
         CHK_RET(CommAddrToIpAddress(eidInfo.commAddr, ipAddr));
         const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+        CHK_PTR_NULL(rdmaHandle);
         const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
         if (!rtpEnable) {
-            HCCL_INFO("[CcuComponent][%s] ipAddr[%s] is not enable rtp, continue.",
-                __func__, ipAddr.Describe().c_str());
+            // 遍历端口可能较多，避免刷屏不打印
             continue;
         }
 
