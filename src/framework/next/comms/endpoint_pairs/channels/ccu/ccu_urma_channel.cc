@@ -36,9 +36,9 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto *locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
+        auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
         CHK_PTR_NULL(locMemInfo);
-        auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
+        auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
         CHK_PTR_NULL(locRmaBuffer);
         HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
 
