@@ -231,7 +231,6 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
 
 uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint32_t ckeId)
 {
-    CcuMissionContext missionCtx{};
     struct CustomChannelInfoIn  inBuff;
     struct CustomChannelInfoOut outBuff;
     u32 devicePhyId = 0;
@@ -302,7 +301,6 @@ void CcuTaskException::GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, 
 
 uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint32_t gsaId)
 {
-    CcuMissionContext missionCtx{};
     uint64_t gsaVal{0};
 
     u32 devicePhyId = 0;
@@ -330,7 +328,6 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
 
 uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint32_t xnId)
 {
-    CcuMissionContext missionCtx{};
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     uint64_t xnVal{0};
@@ -394,7 +391,7 @@ void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_pt
                                        vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
-    errorMsg.type    = CcuErrorType::TRANS_MEM;
+    errorMsg.type = CcuErrorType::TRANS_MEM;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
     const auto rep                   = static_pointer_cast<CcuRep::CcuRepRead>(repBase);
@@ -567,8 +564,8 @@ void CcuTaskException::GenErrorInfoBufReduce(const ErrorInfoBase &baseInfo, shar
 
     errorInfo.push_back(errorMsg);
 }
-void GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
-                                          vector<CcuErrorInfo> &errorInfo)
+void CcuTaskException::GenErrorInfoDefault(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
+    vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
     errorMsg.type    = CcuErrorType::DEFAULT;
@@ -612,7 +609,6 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
 
 CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t dieId, uint32_t loopCtxId)
 {
-    CcuMissionContext missionCtx{};
     CcuLoopContext loopCtx{};
 
     u32 devicePhyId = 0;
