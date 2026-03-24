@@ -42,12 +42,12 @@ public:
 
         virtual ~Iterator() = default;
 
-        reference operator*() const
+        virtual reference operator*() const
         {
             return *(this->it_);
         }
 
-        pointer operator->() const
+        virtual pointer operator->() const
         {
             return &*(this->it_);
         }
@@ -82,12 +82,12 @@ public:
             return temp;
         }
 
-        bool operator==(const Iterator &other) const
+        virtual bool operator==(const Iterator &other) const
         {
             return it_ == other.it_;
         }
 
-        bool operator!=(const Iterator &other) const
+        virtual bool operator!=(const Iterator &other) const
         {
             return it_ != other.it_;
         }
