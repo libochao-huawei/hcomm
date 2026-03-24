@@ -62,7 +62,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     channelDescFinal.memHandles  = channelDesc.memHandles;
     channelDescFinal.memHandleNum  = channelDesc.memHandleNum;
 
-    // 根据协议类型拷贝union中的相应成员
+     // 根据协议类型拷贝union中的相应成员
     switch (channelDesc.channelProtocol) {
         case COMM_PROTOCOL_HCCS:
         case COMM_PROTOCOL_PCIE:
@@ -72,9 +72,22 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
-        default:
-            HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.channelProtocol);
+        default: {
+            auto ProtocolToString = [](const CommProtocol proto) -> const char* {
+                switch (proto) {
+                    case COMM_PROTOCOL_HCCS:    return "COMM_PROTOCOL_HCCS";
+                    case COMM_PROTOCOL_PCIE:    return "COMM_PROTOCOL_PCIE";
+                    case COMM_PROTOCOL_SIO:     return "COMM_PROTOCOL_SIO";
+                    case COMM_PROTOCOL_UBC_CTP: return "COMM_PROTOCOL_UBC_CTP";
+                    case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
+                    case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
+                    default:                    return "UNKNOWN_PROTOCOL";
+                }
+            };
+            HCCL_ERROR("[%s] Unsupported protocol[%s] found in HcclChannelDesc.",
+                       __func__, ProtocolToString(channelDesc.channelProtocol));
             return HCCL_E_PARA;
+        }
     }
     return HCCL_SUCCESS;
 }
