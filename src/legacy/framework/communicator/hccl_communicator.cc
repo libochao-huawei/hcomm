@@ -530,4 +530,9 @@ u32 HcclCommunicator::GetRankInParentComm() {
     return pimpl->GetRankInParentComm();
 }
 
+HcclResult HcclCommunicator::Mc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtStream_t *aiCpuStream)
+{
+    return pimpl->Mc2AiCpuStreamAllocAndGet(group, streamMode, aiCpuStream);
+}
+
 } // namespace Hccl
