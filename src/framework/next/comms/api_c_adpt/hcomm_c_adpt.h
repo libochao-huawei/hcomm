@@ -114,8 +114,6 @@ HcommResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, 
 
 HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread,
     ThreadHandle *threads);
-HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, int notifyNumPerThread,
-    ThreadHandle *threads);
 #endif // __cplusplus
 
 #endif // HCOMM_C_ADPT_H

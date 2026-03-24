@@ -17,6 +17,11 @@
 extern "C" {
 #endif
 
+#ifndef MSG_HANDLE_DEFINED
+#define MSG_HANDLE_DEFINED
+typedef void *MsgHandle;
+#endif
+
 extern int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId);
 extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
 extern int32_t HcommThreadSynchronize(ThreadHandle thread);
