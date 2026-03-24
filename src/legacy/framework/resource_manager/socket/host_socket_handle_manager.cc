@@ -94,9 +94,9 @@ void HostSocketHandleManager::DestroyAll()
                          "devicePhyId[%u] hostIp[%s] ref[%u]", __func__, i, innerMap.first.c_str(), count));
             if (count == 0) {
                 DECTOR_TRY_CATCH("HrtRaSocketDeInit Exception", HrtRaSocketDeInit(innerMap.second.first));
-                hostSocketHandleMap[devicePhyId].erase(innerMap.first.GetIpStr());
+                hostSocketHandleMap[devicePhyId].erase(innerMap.first.c_str());
                 HCCL_INFO("[HostSocketHandleManager::%s] devicePhyId[%u] hostIp[%s] deinit success.", 
-                    __func__, devicePhyId, hostIp.GetIpStr().c_str());
+                    __func__, i, innerMap.first.c_str());
             }
         }
     }

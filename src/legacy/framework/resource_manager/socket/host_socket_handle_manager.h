@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <atomic>
 #include <thread>
-
+#include "sal.h"
 #include "orion_adapter_hccp.h"
 #include "socket_handle_manager.h"
 #include "ip_address.h"
@@ -35,7 +35,7 @@ public:
     SocketHandle Create(DevId devicePhyId, const IpAddress &hostIp);
     SocketHandle Get(DevId devicePhyId, const IpAddress &hostIp);
     void         Destroy(DevId devicePhyId, const IpAddress &hostIp);
-     void StartUsing() {
+    void StartUsing() {
         userCount.fetch_add(1, std::memory_order_relaxed);
     }
     
