@@ -209,7 +209,7 @@ HcclResult CommMems::SetMemHandles(HcommChannelDesc &hcommDesc, const std::vecto
         return HCCL_E_PARA;
     }
     CHK_PTR_NULL(memHandleVec[0]);
-    commMemHandles.emplace_back(std::make_unique<CommMemHandle>(addr_, size_, ConvertHcclToCommMemType(type_),
+    commMemHandles.emplace_back(std::make_unique<CommMemHandle>(addr_, size_, ConvertHcclToCommMemType(memType_),
         memHandleVec[0], "HcclBuffer"));
 
     CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(hcommDesc.memHandles);
