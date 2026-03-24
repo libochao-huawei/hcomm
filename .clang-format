@@ -38,19 +38,19 @@ AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionOnASingleLine: false
 
 # 允许短if语句在单行
-AllowShortIfStatementsOnASingLine: false
+AllowShortIfStatementsOnASingleLine: false
 
 # 允许短循环在单行
-AllowShortLoopOnASingLine: false
+AllowShortLoopsOnASingleLine: false
 
 # 总是在定义返回类型后换行
-AlwayBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterDefinitionReturnType: None
 
 # 总是在多行字符串前换行
-AlwayBreakBeforeMultilineStrings: false
+AlwaysBreakBeforeMultilineStrings: false
 
 # 总是换行模板声明
-AlwayBreakTemplateDeclarations: MultiLine
+AlwaysBreakTemplateDeclarations: MultiLine
 
 # 打包参数
 BinPackArguments: true
@@ -63,7 +63,7 @@ AlignAfterOpenBracket: DontAlign
 
 # 大括号换行设置
 BraceWrapping:
-  AfterCaseLable: false
+  AfterCaseLabel: false
   AfterClass: false
   AfterControlStatement: Never
   AfterEnum: false
