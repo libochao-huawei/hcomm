@@ -273,13 +273,13 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             HCCL_ERROR("[%s] failed to register memory, channelIndex[%u], remoteRank[%u], memTagNum[%zu]",
                 __func__, i, remoteRank, memTag.size()),
             ret);
-        std::vector<CommMemHandle> commMemHandles{};
-        CHK_RET(SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
 
         hcommDescs[i].exchangeAllMems = false;
         if (engine == COMM_ENGINE_CPU) {
             hcommDescs[i].memHandles = memHandleVec.data();
         } else {
+            std::vector<CommMemHandle> commMemHandles{};
+            CHK_RET(SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
             hcommDescs[i].memHandles = commMemHandles.data();
         }
         hcommDescs[i].memHandleNum = memHandleVec.size();
