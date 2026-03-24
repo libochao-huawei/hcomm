@@ -475,7 +475,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         auto dfxOpInfo = std::make_shared<DfxOpInfo>();
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
         dfxOpInfo->op_           = *GetCurrentCollOperator();
-        dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
+        dfxOpInfo->tag_          = dfxOpInfo->op_.opTag;
         dfxOpInfo->algType_      = AlgType::MESH;
         dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
