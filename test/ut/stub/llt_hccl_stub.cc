@@ -5493,17 +5493,4 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
     binaryPath = "./";
     return HCCL_SUCCESS;
 }
-
-extern "C" {
-HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads,
-    CommEngine dstCommEngine, ThreadHandle *exportedThreads)
-{
-    (void)comm;
-    (void)threadNum;
-    (void)threads;
-    (void)dstCommEngine;
-    (void)exportedThreads;
-    return HCCL_E_PARA;
-}
-}
 }
