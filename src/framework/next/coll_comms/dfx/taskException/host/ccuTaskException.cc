@@ -453,8 +453,8 @@ void CcuTaskException::GenErrorInfoRead(const ErrorInfoBase &baseInfo, shared_pt
     errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetRemAddrId());
     errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetRemTokenId());
     errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
-    errorMsg.msg.transMem.signalId   = rep->GetSemId();
     errorMsg.msg.transMem.signalMask = rep->GetMask();
+    errorMsg.msg.transMem.signalId   = rep->GetSemId();
     errorMsg.msg.transMem.channelId = rep->GetChannelId();
     errorInfo.push_back(errorMsg);
 }
@@ -488,8 +488,8 @@ void CcuTaskException::GenErrorInfoLocalCpy(const ErrorInfoBase &baseInfo, share
 
     const auto rep                   = static_pointer_cast<CcuRep::CcuRepLocCpy>(repBase);
     errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
-    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
     errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
+    errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
     errorMsg.msg.transMem.rmtToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstTokenId());
     errorMsg.msg.transMem.len        = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetLenId());
     errorMsg.msg.transMem.signalId   = rep->GetSemId();
@@ -505,7 +505,7 @@ void CcuTaskException::GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, sh
     errorMsg.type    = CcuErrorType::TRANS_MEM;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
-    const auto rep                   = static_pointer_cast<CcuRep::CcuRepLocCpy>(repBase);
+    const auto rep                   = static_pointer_cast<CcuRep::CcuRepBufReduce>(repBase);
     errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
     errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
     errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
@@ -994,7 +994,7 @@ HcclResult CcuTaskException::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHan
     AuxInfoOut auxInfo;
     auto ret = RaGetAuxInfo(rdmaHandle, in, auxInfo);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[PrintUbRegister]GetUbRegisterInfo failed, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
+        HCCL_ERROR("[PrintUbRegister] RaGetAuxInfo failed, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
         return ret;
     }
 
@@ -1002,8 +1002,8 @@ HcclResult CcuTaskException::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHan
     for (u32 i = 0; i < auxInfo.auxInfoNum; i++) {
         if (auxInfo.auxInfoValues[i]) { // 非零进行打印
             isAuxInfoExisted = true;
-            HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
- 	  	            devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
+            HCCL_ERROR("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]", devLogicId,
+                auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);
  	    } else {
  	        HCCL_INFO("devLogicId[%d], cqe_aux_info_type[%u], cqe_aux_info_value[0x%x]",
  	            devLogicId, auxInfo.auxInfoTypes[i], auxInfo.auxInfoValues[i]);

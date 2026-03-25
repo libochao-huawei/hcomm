@@ -231,7 +231,7 @@ HcclResult CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t c
     
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
                                     INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
-    for (u32 i = 0; i < channelNum; i++) {
+    for (u32 i = 0; i < channelNum; ++i) {
         void *channelPtr{nullptr};
         CHK_RET(HcommChannelGet(channels[i], &channelPtr));
         auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
