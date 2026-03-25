@@ -953,7 +953,7 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
 
             // TODO:需要修改
             profInfo.remoteRankId[idx] = 0;
-            HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[%u]",
+            HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
                 __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
         }
     }
