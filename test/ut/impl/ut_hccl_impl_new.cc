@@ -324,3 +324,54 @@ TEST_F(HcclImplTest, ut_CheckBatchSendRecvLinkStatus_When_LinkIsNullPtr_Return_H
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastMeshAivExecutor)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable, 1);
+    params.deviceType = DevType::DEV_TYPE_910_93;
+    std::unique_ptr<HcclCommunicator> implBase(new (std::nothrow) HcclCommunicator());
+
+    MOCKER_CPP(&HcclCommunicator::InitRaResource)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+
+    ret = implBase->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    std::unique_ptr<hcclImpl> &impl = implBase->implAlg_->pimpl_;
+    std::shared_ptr<AlgConfigurator> algConfigurator = implBase->implAlg_->algConfigurator_;
+    impl->deviceLogicId_ = 0;
+    impl->devicePhyId_ = 0;
+    algConfigurator->algType_[HcclCMDType::HCCL_CMD_BROADCAST].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_4P_MESH;
+    algConfigurator->algType_[HcclCMDType::HCCL_CMD_BROADCAST].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+    impl->topoType_ = TopoType::TOPO_TYPE_4P_MESH;
+    algConfigurator->topoType_ = TopoType::TOPO_TYPE_4P_MESH;
+    DeviceMem inputMem = DeviceMem::alloc(4096);
+    DeviceMem outputMem = DeviceMem::alloc(2048);
+    OpParam opParam;
+    opParam.tag = "test";
+    opParam.inputPtr = inputMem.ptr();
+    opParam.inputSize = 4096;
+    opParam.outputPtr = outputMem.ptr();
+    opParam.outputSize = 2048;
+    opParam.DataDes.count = 2048/4;
+    opParam.DataDes.dataType = HCCL_DATA_TYPE_FP32;
+    opParam.stream = Stream(StreamType::STREAM_TYPE_ONLINE);
+    opParam.root = 0;
+    std::string algName;
+    std::string newTag;
+    std::unique_ptr<TopoMatcher> &topoMatcher = implBase->implAlg_->topoMatcher_;
+    SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
+    topoMatcher->SetAivModeConfig(true);
+    CCLBufferManager &cclBufferManager = implBase->implAlg_->cclBufferManager_;
+    const HcclDispatcher dispatcher = implBase->implAlg_->dispatcher_;
+    std::unique_ptr<BroadCastOperator> operation(new (std::nothrow) BroadCastOperator(algConfigurator.get(), cclBufferManager, dispatcher, topoMatcher));
+    ret = operation->SelectAlg("", opParam, algName, newTag);
+    EXPECT_TRUE(algName == "BroadcastMeshAivExecutor");
+    operation = nullptr;
+    GlobalMockObject::verify();
+}

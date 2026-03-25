@@ -200,10 +200,11 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     // 单机仅支持单算子
     bool isAivSingleNode = (serverNum_ == 1) && isSingleMeshAggregation_ && isOpbase && isCCLBufferGE16M;
-
+    bool isOnlyAiv = topoMatcher_->GetIsOnlyAivConfig();
     isAivMode_ = topoMatcher_->GetAivModeConfig()
             && IsSupportAIVCopy(param.DataDes.dataType)
-            && isAivSingleNode;
+            && (isAivSingleNode || (serverNum_ == 1 && !isOpbase 
+                && (isOnlyAiv || (dataSize <= HCCL_MID_COUNT_16_MB))));
 
     bool smallCountOptimSingleServer =
         (serverNum_ == 1) &&
