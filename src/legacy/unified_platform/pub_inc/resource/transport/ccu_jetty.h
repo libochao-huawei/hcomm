@@ -44,7 +44,7 @@ public:
     {
         return jettyInfo_.taJettyId;
     }
-    HcclResult Clean();
+    void Clean();
     void GetJettyInfo(ConnJettyInfo& connJettyInfo);
 
 private:

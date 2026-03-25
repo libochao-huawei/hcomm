@@ -152,7 +152,7 @@ void CcuJetty::GetJettyInfo(ConnJettyInfo& connJettyInfo)
     }
 }
 
-HcclResult CcuJetty::Clean()
+void CcuJetty::Clean()
 {
     if (isCreated_ && outParam_.handle != 0) {
         isCreated_ = false;
@@ -161,6 +161,5 @@ HcclResult CcuJetty::Clean()
         reqDataBuffer_.clear();
     }
     isError_ = false;
-    return HcclResult::HCCL_SUCCESS;
 }
 } // namespace Hccl
