@@ -161,6 +161,10 @@ std::string CcuTaskException::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 
 void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
 {
+    if (panicLog == nullptr) {
+        HCCL_ERROR("[CcuTaskException][%s] panicLog is nullptr.", __func__);
+        return;
+    }
     struct ccum_dfx_info *info = reinterpret_cast<struct ccum_dfx_info *>(const_cast<uint8_t*>(panicLog));
     const uint16_t ccumIsEnable = info->lqc_ccu_sec_reg0 & 1;
     if (info->query_result != 0) {
@@ -183,8 +187,8 @@ CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint3
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), missionCtx);
 
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    struct CustomChannelInfoIn  inBuff{};
+    struct CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_MISSION_CTX;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -242,8 +246,8 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
 
 uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint32_t ckeId)
 {
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    struct CustomChannelInfoIn  inBuff{};
+    struct CustomChannelInfoOut outBuff{};
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -319,8 +323,8 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), gsaVal);
 
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    struct CustomChannelInfoIn  inBuff{};
+    struct CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_GSA;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -345,8 +349,8 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), xnVal);
 
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    struct CustomChannelInfoIn  inBuff{};
+    struct CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_XN;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -589,7 +593,7 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
 {
     using GenErrorInfoFunc = void (*)(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                                        vector<CcuErrorInfo> &errorInfo);
-    static const map<CcuRep::CcuRepType, GenErrorInfoFunc> handlerMap {
+    static const map<CcuRep::CcuRepType, GenErrorInfoFunc> HANDLER_MAP {
         // WAIT_SIGNAL
         {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GenErrorInfoLocRecordEvent},
         {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GenErrorInfoLocWaitEvent},
@@ -609,8 +613,8 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
         // BUF_REDUCE
         {CcuRep::CcuRepType::BUF_REDUCE, &CcuTaskException::GenErrorInfoBufReduce}
     };
-    const auto funcIt = handlerMap.find(repBase->Type());
-    if (funcIt == handlerMap.end()) {
+    const auto funcIt = HANDLER_MAP.find(repBase->Type());
+    if (funcIt == HANDLER_MAP.end()) {
         // DEFAULT, chip error
         GenErrorInfoDefault(baseInfo, repBase, errorInfo);
     } else {
@@ -627,8 +631,8 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), loopCtx);
 
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    struct CustomChannelInfoIn  inBuff{};
+    struct CustomChannelInfoOut outBuff{};
 
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_LOOP_CTX;
     inBuff.data.dataInfo.udieIdx       = dieId;
@@ -1293,7 +1297,7 @@ string CcuTaskException::GetCcuErrorMsgByType(const CcuErrorInfo &ccuErrorInfo, 
     }
 
     using GetCcuErrorMsgFunc = string (*)(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
-    static const map<CcuRep::CcuRepType, GetCcuErrorMsgFunc> handlerMap {
+    static const map<CcuRep::CcuRepType, GetCcuErrorMsgFunc> HANDLER_MAP {
         {CcuRep::CcuRepType::LOOP, &CcuTaskException::GetCcuErrorMsgLoop},
         {CcuRep::CcuRepType::LOOPGROUP, &CcuTaskException::GetCcuErrorMsgLoopGroup},
         {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GetCcuErrorMsgLocPostSem},
@@ -1314,8 +1318,8 @@ string CcuTaskException::GetCcuErrorMsgByType(const CcuErrorInfo &ccuErrorInfo, 
         {CcuRep::CcuRepType::BUF_REDUCE, &CcuTaskException::GetCcuErrorMsgBufReduce}
     };
 
-    const auto funcIt = handlerMap.find(ccuErrorInfo.repType);
-    if (funcIt == handlerMap.end()) {
+    const auto funcIt = HANDLER_MAP.find(ccuErrorInfo.repType);
+    if (funcIt == HANDLER_MAP.end()) {
         return GetCcuErrorMsgDefault(ccuErrorInfo);
     } else {
         return funcIt->second(ccuErrorInfo, taskInfo, deviceId);
