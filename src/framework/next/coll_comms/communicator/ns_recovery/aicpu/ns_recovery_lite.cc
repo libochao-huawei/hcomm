@@ -15,7 +15,7 @@ namespace hccl
 
 NsRecoveryLite::NsRecoveryLite(const HDCommunicatePtr& kfcControlTransferH2D, const HDCommunicatePtr& kfcStatusTransferD2H)
 {
-    hdcHandler_ = std::make_unique<hccl::AicpuHdcHandler>(kfcControlTransferH2D, kfcStatusTransferD2H);
+    hdcHandler_ = std::make_unique<HcclAicpuHdcHandler>(kfcControlTransferH2D, kfcStatusTransferD2H);
 }
 
 Hccl::KfcCommand NsRecoveryLite::BackGroundGetCmd()

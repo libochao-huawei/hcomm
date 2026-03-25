@@ -146,6 +146,11 @@ std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(RdmaHandle 
 {
     return {0x12345678, 12345678};
 }
+
+bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
+{
+    return true;
+}
  
 SocketStatus Socket::GetAsyncStatus()
 {
