@@ -320,7 +320,7 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling);
     if (isProfiling) {
-        AddProfiling("WaitEvent", rep->GetMask());
+        CHK_RET(AddProfiling("WaitEvent", rep->GetMask()));
     }
  	Append(rep);
     return HCCL_SUCCESS;
@@ -347,7 +347,7 @@ HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNoti
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     if (isProfiling) {
-        AddProfiling(channel, "NotifyWait", localNotifyIdx, mask);
+        CHK_RET(AddProfiling(channel, "NotifyWait", localNotifyIdx, mask));
     }
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     channelHandleToId_.insert({channel, INVALID_U16});
