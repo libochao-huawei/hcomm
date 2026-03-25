@@ -547,6 +547,15 @@ void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLin
         newIface = oldIface;
         newNode = tmpPeers.at(newRankId);
         tmpPeers.at(newRankId)->AddConnInterface(layer, newIface);
+        
+        const auto& oldEndpointMap = oldNode->GetEndpointToIfaceMap();
+        for (const auto& entry : oldEndpointMap) {
+            if (entry.second == oldIface) {
+                tmpPeers.at(newRankId)->SetEndpointToIface(entry.first.first, entry.first.second, newIface);
+                HCCL_DEBUG("[SubRankGraph][GetNewNodeInfo] endpointToIfaceMap: commAddr, protocol[%d] for newRankId[%d]",
+                           entry.first.second, newRankId);
+            }
+        }
     } else if (type == NetInstance::Node::NodeType::FABRIC) {
         newIface = nullptr;
         newNode = oldNode;
