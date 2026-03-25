@@ -23,6 +23,7 @@
 #include "ccu_error_info_v1.h"
 #include "ccu_rep_base_v1.h"
 #include "ccu_rep_context_v1.h"
+#include "ccu_dev_mgr_pub.h"
 
 namespace hcomm {
 using RdmaHandle = void*;
@@ -39,6 +40,8 @@ private:
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
     static HcclResult PrintCcuUbRegisters(const std::vector<CcuErrorInfo>& errorInfos, s32 devLogicId,
         const Hccl::TaskInfo& taskInfo);
+    static HcclResult GetCcuJettys(const CcuErrorInfo& errorInfo, s32 devLogicId,
+        const Hccl::TaskInfo& taskInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx);
 
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo, u32 deviceId);
