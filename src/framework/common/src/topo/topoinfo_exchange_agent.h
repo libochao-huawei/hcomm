@@ -86,6 +86,7 @@ private:
     HcclResult VerifyServerDevicePhysicID(const std::vector<RankInfo_t> &serverInfo) const;
     HcclResult VerifyClusterSuperPodInfo(const std::vector<RankInfo_t> &rankInfo) const;
     HcclResult VerifyClusterTlsConsistency(const RankTable_t &clusterInfo);
+    HcclResult GenerateMockRankTable(u32 rankNum, u32 serverNum, RankTable_t &clusterInfo);
     void AddRankInfoToTlsStatusMap(const RankInfo_t &rankInfo,
         std::unordered_map<std::string, std::vector<u32>> &tlsStatusRankMap);
     void GenerateTlsStatusStr(std::string &tlsStatusStr,

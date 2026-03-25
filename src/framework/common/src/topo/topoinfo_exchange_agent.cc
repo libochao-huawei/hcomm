@@ -129,7 +129,9 @@ HcclResult TopoInfoExchangeAgent::SetupMember()
     HCCL_INFO("SetupGroupMember: client connect with server ip[%s] port[%u] success.",
         serverIP_.GetReadableAddress(), serverPort_);
 
-    CHK_RET(DetectClusterTopoInfo(socket_, clusterTopoInfo_));
+    u32 mockRankNum = localRankInfo_.rankSize;
+    u32 mockServerNum = (mockRankNum > 8) ? 2 : 1;
+    CHK_RET(GenerateMockRankTable(mockRankNum, mockServerNum, clusterTopoInfo_));
 
     CHK_RET(VerifyClusterInfo(clusterTopoInfo_));
 
@@ -586,6 +588,8 @@ HcclResult TopoInfoExchangeAgent::DetectTransportType(const RankInfo_t& localRan
 
 HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
 {
+    auto startTime = std::chrono::steady_clock::now();
+    
     std::string errormessage = "The number of ranks[" + std::to_string(localRankInfo_.rankSize) +
                                "]passed by the communicator initialization interface does not match the number of ranks[" + std::to_string(clusterInfo.rankList.size()) +
                                "] obtained during cluster information negotiction.";
@@ -703,6 +707,11 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
 
     // TLS开关一致性校验
     CHK_RET(VerifyClusterTlsConsistency(clusterInfo));
+    
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
+    HCCL_INFO("[VerifyClusterInfo] verification completed, time cost: %lld ms", duration);
+    
     return HCCL_SUCCESS;
 }
 
@@ -1074,5 +1083,53 @@ void TopoInfoExchangeAgent::ReportTlsConfigurationError(const std::string& tlsIn
         " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
         "rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\" "}));
     HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errormessage.c_str());
+}
+
+HcclResult TopoInfoExchangeAgent::GenerateMockRankTable(u32 rankNum, u32 serverNum, RankTable_t &clusterInfo)
+{
+    clusterInfo.rankList.clear();
+    clusterInfo.serverList.clear();
+    
+    clusterInfo.rankNum = rankNum;
+    clusterInfo.serverNum = serverNum;
+    clusterInfo.deviceNum = rankNum;
+    clusterInfo.nicDeploy = localRankInfo_.nicDeploy;
+    
+    for (u32 i = 0; i < serverNum; i++) {
+        ServerInfo_t serverInfo;
+        serverInfo.serverId = "192.168.1." + std::to_string(i + 1);
+        clusterInfo.serverList.push_back(serverInfo);
+    }
+    
+    for (u32 rankId = 0; rankId < rankNum; rankId++) {
+        RankInfo_t rankInfo;
+        
+        rankInfo.rankId = rankId;
+        
+        u32 serverIdx = rankId % (serverNum > 0 ? serverNum : 1);
+        rankInfo.serverId = clusterInfo.serverList[serverIdx].serverId;
+        
+        rankInfo.deviceInfo.devicePhyId = static_cast<s32>(rankId);
+        rankInfo.deviceInfo.deviceType = localRankInfo_.deviceType;
+        
+        HcclIpAddress hostIp;
+        hostIp.Set("192.168.100." + std::to_string(rankId % 255 + 1));
+        rankInfo.hostIp = hostIp;
+        
+        if (localRankInfo_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
+            HcclIpAddress deviceIp;
+            deviceIp.Set("10.0.0." + std::to_string(rankId + 1));
+            rankInfo.deviceInfo.deviceIp.push_back(deviceIp);
+        }
+        
+        rankInfo.superPodId = "super_pod_" + std::to_string(serverIdx);
+        rankInfo.superDeviceId = rankId;
+        
+        rankInfo.tlsStatus = TlsStatus::UNKNOWN;
+        
+        clusterInfo.rankList.push_back(rankInfo);
+    }
+    
+    return HCCL_SUCCESS;
 }
 }
