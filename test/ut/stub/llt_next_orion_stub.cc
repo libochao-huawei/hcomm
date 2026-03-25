@@ -2128,3 +2128,12 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
+
+int RaGetSecRandom(struct RaInfo *info, uint32_t *value)
+{
+    return 0;
+}
+
+int RaCtxGetAuxInfo(void *ctx_handle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out) {
+    return 0;
+}
