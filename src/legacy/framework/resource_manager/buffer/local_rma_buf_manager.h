@@ -28,7 +28,7 @@ public:
 
     ~LocalRmaBufManager();
 
-    LocalRmaBuffer *Reg(const string &opTag, BufferType bufferType, std::shared_ptr<Buffer> buffer, const PortData &portData);
+    LocalRmaBuffer *Reg(const string &opTag, BufferType bufferType, std::shared_ptr<Buffer> buffer, const PortData &portData, LinkProtocol linkProtocol);
 
     HcclResult Dereg(const string &opTag);
 

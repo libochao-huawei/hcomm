@@ -28,7 +28,7 @@ using namespace std;
 
 MAKE_ENUM(PortDeploymentType, P2P, DEV_NET, HOST_NET)
 
-MAKE_ENUM(ConnectProtoType, HCCS, PCIE, TCP, RDMA, UB)
+MAKE_ENUM(ConnectProtoType, HCCS, PCIE, TCP, RDMA, UB, UBOE)
 
 MAKE_ENUM(LinkProtoType, HCCS_PCIE, TCP, RDMA, UB)
 
@@ -54,7 +54,7 @@ inline LinkProtoType LinkProtocol2LinkProtoType(LinkProtocol linkProtocol)
 {
     LinkProtoType linkType{};
     if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP
-                                             || linkProtocol == LinkProtocol::UB_MEM) {
+        || linkProtocol == LinkProtocol::UB_MEM || linkProtocol == LinkProtocol::UBOE) {
         linkType = LinkProtoType::UB;
     } else if (linkProtocol == LinkProtocol::ROCE) {
         linkType = LinkProtoType::RDMA;
@@ -64,6 +64,7 @@ inline LinkProtoType LinkProtocol2LinkProtoType(LinkProtocol linkProtocol)
         THROW<NotSupportException>(StringFormat("[LinkProtocol2LinkProtoType] linkProtocol[%s] don't support.",
             linkProtocol.Describe().c_str()));
     }
+    HCCL_INFO("[LinkProtocol2LinkProtoType] linkType is[%s]", linkType.Describe().c_str());
     return linkType;
 }
 
@@ -76,9 +77,10 @@ inline LinkProtoType ConnProto2LinkProto(ConnectProtoType connType)
         linkType = LinkProtoType::TCP;
     } else if (connType == ConnectProtoType::RDMA) {
         linkType = LinkProtoType::RDMA;
-    } else if (connType == ConnectProtoType::UB) {
+    } else if (connType == ConnectProtoType::UB || connType == ConnectProtoType::UBOE) {
         linkType = LinkProtoType::UB;
     }
+    HCCL_INFO("[ConnProto2LinkProto] linkType is[%s]", linkType.Describe().c_str());
     return linkType;
 }
 
@@ -94,7 +96,10 @@ inline LinkProtocol ConnProto2LinkProtocol(ConnectProtoType connType)
         linkProto = LinkProtocol::ROCE;
     } else if (connType == ConnectProtoType::UB) {
         linkProto = LinkProtocol::UB_CTP;
+    } else if (connType == ConnectProtoType::UBOE) {
+        linkProto = LinkProtocol::UBOE;
     }
+    HCCL_INFO("[ConnProto2LinkProtocol] linkProto is[%s]", linkProto.Describe().c_str());
     return linkProto;
 }
 
