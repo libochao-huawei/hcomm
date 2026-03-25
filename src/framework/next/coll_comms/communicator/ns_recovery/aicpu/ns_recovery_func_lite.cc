@@ -99,7 +99,7 @@ void NsRecoveryFuncLite::StreamClean(CollCommAicpu *deviceComm)
 constexpr u64 NSEC_PER_SEC = 1000000000U;
 inline u64 GetCurCpuTimestamp()
 {
-    struct timespec timestamp;
+    struct timespec timestamp{0, 0};
     (void)clock_gettime(CLOCK_MONOTONIC_RAW, &timestamp);
     return static_cast<u64>((timestamp.tv_sec * NSEC_PER_SEC) + (timestamp.tv_nsec));
 }

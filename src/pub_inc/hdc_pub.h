@@ -75,7 +75,5 @@ private:
     ReadWriteLockBase lock_;
 };
 
-using HDCommunicatePtr = std::shared_ptr<HDCommunicate>;
-
 }
 #endif // HCCL_HDC_PUB_H

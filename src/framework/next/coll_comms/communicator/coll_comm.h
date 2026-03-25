@@ -88,7 +88,7 @@ public:
     uint32_t UpdateIndex();
     
     // Todo:在这里做N秒快恢
-    HcclCommStatus GetCommStatus();
+    HcclCommStatus GetCommStatus() const;
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();

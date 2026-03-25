@@ -75,8 +75,8 @@ private:
 
     u32 devId_{0};
     //通用的通道
-    hccl::HDCommunicatePtr kfcControlTransferH2D_{nullptr};
-    hccl::HDCommunicatePtr kfcStatusTransferD2H_{nullptr};
+    std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
+    std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
 
     std::string identifier_;
     bool isReady_{ false }; // 独立算子流程通信域是否初始化
@@ -85,7 +85,7 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     std::unordered_map<s32, Thread*> streamIdToThreadMap_;
     // A5 独立算子
-    std::unordered_map<ChannelHandle, std::shared_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
 
     // N秒快恢相关
     hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};

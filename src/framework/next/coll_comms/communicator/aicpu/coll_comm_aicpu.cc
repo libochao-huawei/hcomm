@@ -58,7 +58,10 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
-    nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+
+    EXECEPTION_CATCH(nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(), return HCCL_E_PTR);
+    nsRecoveryLitePtr_->Init(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+    
     CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
     isReady_ = true;
@@ -214,8 +217,8 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::shared_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_shared<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 
@@ -317,7 +320,7 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    auto transPortPtr = ubTransportMap_[handle];
+    auto& transPortPtr = ubTransportMap_[handle];
     CHK_RET(transPortPtr->Resume(transpUniqueId));
     return HCCL_SUCCESS;
 }

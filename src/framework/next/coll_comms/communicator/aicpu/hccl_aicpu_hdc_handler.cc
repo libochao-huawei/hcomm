@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,30 +8,30 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "aicpu_hdc_handler.h"
+#include "hccl_aicpu_hdc_handler.h"
 #include "log.h"
 
 namespace hccl {
 
-HcclAicpuHdcHandler::HcclAicpuHdcHandler(const HDCommunicatePtr &h2dTransfer, const HDCommunicatePtr &d2hTransfer) :
-    h2dTransfer_(h2dTransfer), d2hTransfer_(d2hTransfer)
+HcclAicpuHdcHandler::HcclAicpuHdcHandler(const std::shared_ptr<HDCommunicate> &h2dTransfer, 
+    const std::shared_ptr<HDCommunicate> &d2hTransfer) 
+    :h2dTransfer_(h2dTransfer), d2hTransfer_(d2hTransfer)
 {
 }
 
-Hccl::KfcCommand HcclAicpuHdcHandler::GetKfcCommand()
+HcclResult HcclAicpuHdcHandler::GetKfcCommand(Hccl::KfcCommand &cmd) const
 {
-    Hccl::KfcCommand cmd;
     auto ret = h2dTransfer_->Get(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&cmd));
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[HcclAicpuHdcHandler] h2dTransfer Get fail, ret[%d]", ret);
-        return cmd;
+        HCCL_ERROR("[HcclAicpuHdcHandler][GetKfcCommand] h2dTransfer Get fail, ret[%d]", ret);
+        return ret;
     }
 
     if (lastCmd_ != cmd) {
-        HCCL_INFO("[HcclAicpuHdcHandler] Get new KfcCommand[%u], last KfcCommand[%u]", cmd, lastCmd_);
+        HCCL_INFO("[HcclAicpuHdcHandler][GetKfcCommand] Get new KfcCommand[%u], last KfcCommand[%u]", cmd, lastCmd_);
         lastCmd_ = cmd;
     }
-    return cmd;
+    return HCCL_SUCCESS;
 }
 
 void HcclAicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const
@@ -39,11 +39,11 @@ void HcclAicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrTy
     Hccl::KfcExecStatus status;
     status.kfcStatus = state;
     status.kfcError  = errorCode;
-    HCCL_INFO("[HcclAicpuHdcHandler] SetKfcExecStatus: state[%u], errorCode[%u]", state, errorCode);
+    HCCL_INFO("[HcclAicpuHdcHandler][SetKfcExecStatus] SetKfcExecStatus: state[%u], errorCode[%u]", state, errorCode);
     auto ret = d2hTransfer_->Put(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t *>(&status));
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[HcclAicpuHdcHandler] d2hTransfer Put fail, ret[%d]", ret);
+        HCCL_ERROR("[HcclAicpuHdcHandler][SetKfcExecStatus] d2hTransfer Put fail, ret[%d]", ret);
     }
 }
 
-} // namespace Hccl
+} // namespace hccl
