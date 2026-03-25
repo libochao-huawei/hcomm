@@ -52,21 +52,25 @@ public:
         }
     };
 
-    MAKE_ENUM(CcuConnectionType, UBC_TP, UBC_CTP);
+    MAKE_ENUM(CcuConnectionType, UBC_TP, UBC_CTP, UBC_UBOE);
     struct CcuConnectionInfo {
         CcuConnectionType type{CcuConnectionType::UBC_TP};
         IpAddress locAddr{};
         IpAddress rmtAddr{};
         CcuChannelInfo channelInfo{};
-        std::vector<CcuJetty *> ccuJettys;
+        std::vector<CcuJetty *> ccuJettys{};
+        IpAddress locIpv4Addr{};
+        IpAddress rmtIpv4Addr{};
 
         explicit CcuConnectionInfo() = default;
         CcuConnectionInfo(const CcuConnectionType type,
             const IpAddress &locAddr, const IpAddress &rmtAddr,
             const CcuChannelInfo &channelInfo,
-            const std::vector<CcuJetty *> &ccuJettys)
+            const std::vector<CcuJetty *> &ccuJettys,
+            const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress())
             : type(type), locAddr(locAddr), rmtAddr(rmtAddr),
-            channelInfo(channelInfo), ccuJettys(ccuJettys) {}
+            channelInfo(channelInfo), ccuJettys(ccuJettys),
+            locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr) {}
     };
 
     CcuTransport(const CcuTransport &that)             = delete;
