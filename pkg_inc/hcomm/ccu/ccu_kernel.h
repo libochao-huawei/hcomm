@@ -105,9 +105,7 @@ public:
     HcclResult UpdateChannelIdMap();
     HcclResult GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle);
     HcclResult GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId);
-    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn);
-    // void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport *> &transportsIn, DataType dataType,
-    //                              DataType outputDataType, ReduceOp opType);
+    
 protected:
     // 子类实现
     virtual HcclResult Algorithm() = 0;
