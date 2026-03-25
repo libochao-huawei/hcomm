@@ -654,6 +654,7 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
         {CcuRep::CcuRepType::BUF_REDUCE, &CcuTaskException::GenErrorInfoBufReduce}
     };
     const auto funcIt = HANDLER_MAP.find(repBase->Type());
+    HCCL_INFO("[%s]type[%d]", __func__, repBase->Type());
     if (funcIt == HANDLER_MAP.end()) {
         // DEFAULT, chip error
         GenErrorInfoDefault(baseInfo, repBase, errorInfo);
@@ -910,6 +911,8 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     }
 
     u32 jettyNum = ccuJettys.size();
+    CHK_PRT_RET(jettyNum == 0, HCCL_RUN_INFO("[%s]jettyNum[%u], skip", __func__, jettyNum), HCCL_SUCCESS);
+
     std::vector<JettyHandle> jettyHandles;
     for (auto &ccuJetty : ccuJettys) {
         jettyHandles.push_back(ccuJetty->GetJettyHandle());
