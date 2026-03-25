@@ -814,10 +814,7 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
         for (uint16_t i = 0; i < 16; ++i) { // CKE的bit数最多为16
             uint16_t mask = 1 << i; // 创建一个用于检查第 i 位的掩码
             if ((expValue & mask) != 0 && (actValue & mask) == 0) {
-                // auto depRepVec = std::static_pointer_cast<CcuRepLocWaitSem>(rep)->GetDependencyInfo(mask); // zjwTodo: 待和哲芃确认
-                // for (const auto& depRep : depRepVec) {
-                //     GenErrorInfoByRepType(baseInfo, depRep, errorInfo);
-                // }
+                HCCL_INFO("Do GenErrorInfoByRepType");
             }
         }
     } else {
