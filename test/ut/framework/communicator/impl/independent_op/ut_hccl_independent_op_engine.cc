@@ -10,6 +10,7 @@
 
 #include <gtest/gtest.h>
 #include "hccl/hccl_res.h"
+#include "hccl/hccl_res_expt.h"
 #include "../../hccl_api_base_test.h"
 #include "hccl_tbe_task.h"
 #include "adapter_hal.h"
