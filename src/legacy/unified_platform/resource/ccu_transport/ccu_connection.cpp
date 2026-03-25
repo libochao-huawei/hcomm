@@ -22,23 +22,35 @@
 
 namespace Hccl {
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+    const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys),
+    locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr)
 {
 }
 
 CcuTpConnection::CcuTpConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+    const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::TP;
 }
 
 CcuCtpConnection::CcuCtpConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+    const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, locIpv4Addr, rmtIpv4Addr)
 {
     tpProtocol = TpProtocol::CTP;
+}
+
+CcuUboeConnection::CcuUboeConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+    const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, locIpv4Addr, rmtIpv4Addr)
+{
+    tpProtocol = TpProtocol::UBOE;
 }
 
 HcclResult CcuConnection::Init()
@@ -398,7 +410,7 @@ void CcuConnection::ConfigChannel()
     ChannelCfg cfg{};
     cfg.channelId = channelInfo_.channelId;
     cfg.remoteEid = rmtAddr_.GetReverseEid();
-    HCCL_INFO("[CcuComponent::ConfigChannel] cfg.remoteEid=%s", cfg.remoteEid.Describe().c_str());
+    HCCL_INFO("[CcuConnection::ConfigChannel] cfg.remoteEid=%s", cfg.remoteEid.Describe().c_str());
     cfg.tpn       = importJettyCtxs[0].outParam.tpn; // tp handle复用所以tpn一致
     cfg.remoteCcuVa   = rmtCcuBufAddr;
     cfg.memTokenId    = rmtCcuBufTokenId;
@@ -523,6 +535,87 @@ void CcuConnection::Clean()
     for (auto &ccuJetty : ccuJettys_) {
         ccuJetty->Clean();
     }
+}
+
+HcclResult CcuConnection::Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U])
+{
+    if (ipv4Str == NULL || ipArr == NULL) {
+        HCCL_ERROR("[CcuConnection::%s] ipv4Str or ipArr is null", __func__);
+        return HCCL_E_PARA;
+    }
+
+    // inet_pton: 将点分十进制IP转为网络字节序的二进制(sip: 128 bit->16字节，IPv4填充后4字节，后12字节留0)
+    struct in_addr addr;
+    int ret = inet_pton(AF_INET, ipv4Str, &addr);
+    if (ret != 1) {
+        HCCL_ERROR("[%s] Failed to convert the ipv4Str[%s] to ipArr.", __func__, ipv4Str);
+        return HCCL_E_PARA;
+    }
+
+    // 将ipArr清零
+    memset_s(&ipArr[0], 16, 0, 16);
+
+    uint32_t ipNet = addr.s_addr;   // 网络字节序的 IP 整数
+    // 拆分网络序整数为4个字节，写入 ipArr 前4位（大端序）
+    // ipArr[15] = 最高位字节（如 192.168.100.2 的 2）
+    ipArr[12] = ipNet & 0xFF;           // 192
+    ipArr[13] = (ipNet >> 8) & 0xFF;    // 168
+    ipArr[14] = (ipNet >> 16) & 0xFF;   // 100
+    ipArr[15] = (ipNet >> 24) & 0xFF;   // 2
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::SetTpAttrAsync()
+{
+    RequestHandle reqHandle{0};
+    TpHandle tpHandle = tpInfo.tpHandle;
+    /*  bitmap 至少配置为1FC，转2进制: 0011 1111 1000(前两位retry_times_init+at不用配置、后三位at_times+sl+ttl不用配置)，转10进制:508 
+        0-retry_times_init: 3 bit   1-at: 5 bit             2-sip: 128 bit
+        3-dip: 128 bit              4-sma: 48 bit           5-dma: 48 bit
+        6-vlan_id: 12 bit           7-vlan_en: 1 bit        8-dscp: 6 bit
+        9-at_times: 5 bit           10-sl: 4 bit             11-ttl: 8 bit
+    */
+    uint32_t attrBitmap = 508;
+    struct TpAttr tpAttr = {0};
+
+    // 填充本端IP
+    // inet_pton: 将点分十进制IP转为网络字节序的二进制(sip: 128 bit->16字节，IPv4填充前4字节，后12字节留0)
+    const char* localIp = locIpv4Addr.GetIpStr().c_str();
+    CHK_RET(Ipv4ToIpArray(localIp, tpAttr.sip));
+    HCCL_INFO("[CcuConnection::%s] localIpv4Str[%s], sip[%u:%u:%u:%u]",
+        __func__, localIp, tpAttr.sip[12], tpAttr.sip[13], tpAttr.sip[14], tpAttr.sip[15]);
+
+    // 填充对端IP
+    const char* rmtIp = rmtIpv4Addr.GetIpStr().c_str();
+    CHK_RET(Ipv4ToIpArray(rmtIp, tpAttr.dip));
+    HCCL_INFO("[CcuConnection::%s] rmtIpv4Str[%s], dip[%u:%u:%u:%u]",
+        __func__, rmtIp, tpAttr.dip[12], tpAttr.dip[13], tpAttr.dip[14], tpAttr.dip[15]);
+
+    CHK_RET(HrtRaSetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CcuConnection::GetTpAttrAsync()
+{
+    RequestHandle reqHandle{0};
+    TpHandle tpHandle = tpInfo.tpHandle;
+    uint32_t attrBitmap = 0;
+    struct TpAttr tpAttr = {0};
+
+    CHK_RET(HrtRaGetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));
+    HCCL_INFO("[CcuConnection::%s] locIpv4Addr[%s], rmtIpv4Addr[%s], locAddr[%s], rmtAddr[%s]",
+        __func__, locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str(),
+        locAddr_.Describe().c_str(), rmtAddr_.Describe().c_str());
+
+    HCCL_INFO("[CcuConnection::%s] attrBitmap[%u], "
+        "sip[%u:%u:%u:%u], dip[%u:%u:%u:%u], "
+        "sma[%#x:%#x:%#x:%#x:%#x:%#x], dma[%#x:%#x:%#x:%#x:%#x:%#x]",
+        __func__, attrBitmap,
+        tpAttr.sip[12], tpAttr.sip[13], tpAttr.sip[14], tpAttr.sip[15],
+        tpAttr.dip[12], tpAttr.dip[13], tpAttr.dip[14], tpAttr.dip[15],
+        tpAttr.sma[0], tpAttr.sma[1], tpAttr.sma[2], tpAttr.sma[3], tpAttr.sma[4], tpAttr.sma[5],
+        tpAttr.dma[0], tpAttr.dma[1], tpAttr.dma[2], tpAttr.dma[3], tpAttr.dma[4], tpAttr.dma[5]);
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl
