@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "rootinfo_types.h"
+#include "rank_info_types.h"
 #include "eid_util.h"
 #include <map>
 #include <string>
