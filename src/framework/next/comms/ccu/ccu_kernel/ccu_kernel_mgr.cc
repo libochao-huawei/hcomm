@@ -248,7 +248,7 @@ static HcclResult AllocInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_
 HcclResult CcuKernelMgr::AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack)
 {
     CHK_RET(kernel->Init());
-    //CHK_RET(kernel->UpdateChannelIdMap());
+    CHK_RET(kernel->UpdateChannelIdMap());
 
     CHK_RET(InstantiationTranslator(kernel->GetDieId()));
 

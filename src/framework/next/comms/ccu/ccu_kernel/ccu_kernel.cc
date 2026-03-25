@@ -85,6 +85,7 @@ static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId
         return HcclResult::HCCL_E_PTR;
     }
     dieId = channelImpl->GetDieId();
+    HCCL_INFO("[%s]channelHandle[0x%llx], dieId[%u]", __func__, channel, dieId);
     return HcclResult::HCCL_SUCCESS;
 }
 
