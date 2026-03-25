@@ -317,7 +317,8 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     CHK_PTR_NULL(taskArgs);
     CHK_PRT_RET(threadHandle == 0, HCCL_ERROR("[%s] failed, thread handle is empty.", __func__), HCCL_E_PARA);
 
-    const auto *threadStream = reinterpret_cast<Thread *>(threadHandle)->GetStream();
+    const Thread *rtsThread = reinterpret_cast<Thread *>(threadHandle); 
+    const auto *threadStream = rtsThread->GetStream();
     CHK_PTR_NULL(threadStream);
     auto *streamPtr = threadStream->ptr();
     CHK_PTR_NULL(streamPtr);
