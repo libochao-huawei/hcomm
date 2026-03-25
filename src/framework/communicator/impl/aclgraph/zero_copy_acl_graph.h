@@ -17,6 +17,7 @@
 #include "hccl_communicator_attrs.h"
 #include "hccl/base.h"
 #include "hccl_impl_pub.h"
+#include "zero_copy/zero_copy_memory_agent.h"
 #include "coll_alg_operator.h"
 #include "hccl_alg.h"
 namespace hccl {

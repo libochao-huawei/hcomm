@@ -109,7 +109,7 @@ else()
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:cce_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers> 

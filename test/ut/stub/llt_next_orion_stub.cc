@@ -117,7 +117,7 @@ void *HrtMalloc(u64 size, aclrtMemType_t memType)
 {
     return (void*)0x12345678;
 }
- 
+
 RdmaHandleManager::RdmaHandleManager()
 {
 }
@@ -145,6 +145,11 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
 std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(RdmaHandle rdmaHandle, const BufferKey<uintptr_t, u64> &bufKey)
 {
     return {0x12345678, 12345678};
+}
+
+bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
+{
+    return true;
 }
  
 SocketStatus Socket::GetAsyncStatus()
@@ -386,8 +391,6 @@ HostSocketHandleManager::~HostSocketHandleManager()
 {}
 HostSocketHandleManager::HostSocketHandleManager()
 {}
-
-
 
 SocketStatus Socket::GetStatus()
 {
@@ -944,6 +947,11 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {}
 
+HcclResult UbMemTransport::FillTagVec()
+{
+    return HCCL_SUCCESS;
+}
+
 std::string UbMemTransport::Describe() const
 {
 
@@ -1133,6 +1141,11 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
     return HCCL_SUCCESS;
 }
 
+HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult UbMemTransport::Init()
 {
 
@@ -1301,6 +1314,15 @@ Socket *SocketManager::GetConnectedSocket(SocketConfig &socketConfig) const
     return nullptr;
 }
 
+bool SocketManager::CheckServerPortListening(const PortData &portData) const
+{
+    return true;
+}
+
+bool SocketManager::ServerDeInit(PortData &portData) const
+{
+    return true;
+}
 
 HccpTlvHdcManager &HccpTlvHdcManager::GetInstance()
 {
@@ -1349,6 +1371,10 @@ HccpPeerManager &HccpPeerManager::GetInstance()
 }
 
 HccpPeerManager::~HccpPeerManager()
+{
+}
+
+void HccpPeerManager::Init(s32 deviceLogicId)
 {
 }
 
@@ -1411,6 +1437,10 @@ TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
 {
     static TpManager tpManager;
     return tpManager;
+}
+
+void TpManager::Init()
+{
 }
 
 TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam,std::shared_ptr<DfxOpInfo> dfxOpInfo, bool isMaster)
@@ -2023,6 +2053,9 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInf
     return HCCL_SUCCESS;
 }
 
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP)
+{}
+
 extern "C" {
 aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback) 
 {
@@ -2038,6 +2071,26 @@ u32 Hccl::HcclCommunicator::GetRankInParentComm()
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommFlushV2()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }

@@ -26,6 +26,8 @@ public:
                    RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1,
                    std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
+    HcclResult FillTagVec();
+
     std::string Describe() const override;
 
     TransportStatus GetStatus() override;
@@ -70,6 +72,7 @@ public:
     }
 
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
+    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
 
     HcclResult Init();
     HcclResult DeInit() const;
@@ -86,7 +89,7 @@ private:
 
     static constexpr u64 NORMAL_NOTIFY_VAL = 1;
 
-    MAKE_ENUM(UbStatus, INIT, SOCKET_OK, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
+    MAKE_ENUM(UbStatus, INIT, SOCKET_OK, SEND_SIZE, RECV_SIZE, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
     UbStatus ubStatus{UbStatus::INIT};
 
     u32          cntNotifyNum{0};
@@ -105,7 +108,15 @@ private:
     RemoteBufferVec rmtBufferVec;    // 远端 buffer
     RemoteBufferVec rmtCntNotifyVec; // 远端 cnt Notify
     LocalBufferVec locBufferVec;    // 本端 buffer
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
+    bool                         cacheValid_ = false; // GetUserRemoteMem 的缓存标识
+    std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
+    std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
+    std::vector<char*>           tagPointers_;        // Tag 缓存
 
+    void SendDataSize();
+    void RecvDataSize();
     void SendExchangeData();
     void RecvExchangeData();
 

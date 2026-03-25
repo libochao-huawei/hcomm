@@ -15,7 +15,7 @@
 
 namespace Hccl {
 
-constexpr u32 MAX_TRANSFER_SIZE         = 3 * 1024;
+constexpr u32 MAX_TRANSFER_SIZE         = 5 * 1024 * 1024;
 constexpr u32 MAX_LOG_TIMEOUT_MS        = 30000;
 constexpr u32 ONE_MILLISECOND_OF_USLEEP = 1000;
 constexpr u32 AUTO_LISTEN_PORT          = 0;

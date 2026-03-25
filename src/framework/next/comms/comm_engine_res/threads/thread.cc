@@ -301,7 +301,7 @@ Thread *Thread::FindThreadByCommEngine(CommEngine commEngine)
     return nullptr;
 }
 
-HcclResult Thread::ReportNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 streamId) const
+HcclResult Thread::ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const
 {
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_WAIT;
@@ -310,8 +310,8 @@ HcclResult Thread::ReportNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId,
     taskParam.taskPara.Notify.value    = 1;
     taskParam.endTime                = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(callback_);
-    CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
-    HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], notifyId[%llu], %s", __func__, streamId, taskId,
+    CHK_RET(callback_(sqId, taskId, taskParam, INVALID_U64));
+    HCCL_INFO("[Thread][%s] sqId[%u], taskId[%u], notifyId[%llu], %s", __func__, sqId, taskId,
         notifyId, taskParam.Describe().c_str());
     return HCCL_SUCCESS;
 }
@@ -338,7 +338,7 @@ HcclResult Thread::ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool is
     return HCCL_SUCCESS;
 }
 
-HcclResult Thread::ReportNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 streamId) const
+HcclResult Thread::ReportAicpuNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const
 {
     Hccl::TaskParam taskParam{};
     taskParam.taskType                 = Hccl::TaskParamType::TASK_NOTIFY_RECORD;
@@ -347,8 +347,8 @@ HcclResult Thread::ReportNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskI
     taskParam.taskPara.Notify.value    = 1;
     taskParam.endTime  = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(callback_);
-    CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
-    HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], notifyId[%llu], %s", __func__, streamId, taskId,
+    CHK_RET(callback_(sqId, taskId, taskParam, INVALID_U64));
+    HCCL_INFO("[Thread][%s] sqId[%u], taskId[%u], notifyId[%llu], %s", __func__, sqId, taskId,
         notifyId, taskParam.Describe().c_str());
     return HCCL_SUCCESS;
 }
@@ -401,7 +401,7 @@ HcclResult Thread::ReportHostLocalCopyTask(void *dst, const void *src, uint64_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult Thread::ReportLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 streamId) const
+HcclResult Thread::ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 sqId) const
 {
     Hccl::TaskParam taskParam{};
     taskParam.taskType              = Hccl::TaskParamType::TASK_SDMA;
@@ -413,14 +413,15 @@ HcclResult Thread::ReportLocalCopyTask(void *dst, const void *src, uint64_t size
     taskParam.taskPara.DMA.linkType = Hccl::DfxLinkType::ONCHIP;
     taskParam.taskPara.DMA.dmaOp    = Hccl::DmaOp::HCCL_DMA_READ;
     taskParam.endTime  = ProfGetCurCpuTimestamp();
-    CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
-    HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], src[%p], dst[%p], len[%llu] %s", __func__, streamId, taskId,
+    CHK_PTR_NULL(callback_);
+    CHK_RET(callback_(sqId, taskId, taskParam, INVALID_U64));
+    HCCL_INFO("[Thread][%s] sqId[%u], taskId[%u], src[%p], dst[%p], len[%llu] %s", __func__, sqId, taskId,
         src, dst, sizeByte, taskParam.Describe().c_str());
     return HCCL_SUCCESS;
 }
 
-HcclResult Thread::ReportLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
-    HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 streamId) const
+HcclResult Thread::ReportAicpuLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
+    HcommReduceOp reduceOp, u64 beginTime, u32 taskId,u32 sqId) const
 {
     Hccl::TaskParam taskParam{};
     taskParam.taskType = Hccl::TaskParamType::TASK_REDUCE_INLINE;
@@ -432,9 +433,10 @@ HcclResult Thread::ReportLocalReduceTask(void *dst, const void *src, uint64_t si
     taskParam.taskPara.Reduce.linkType = Hccl::DfxLinkType::ONCHIP;
     taskParam.taskPara.Reduce.dataType = static_cast<HcclDataType>(dataType);
     taskParam.taskPara.Reduce.reduceOp = static_cast<HcclReduceOp>(reduceOp);
-    CHK_RET(callback_(streamId, taskId, taskParam, INVALID_U64));
-    HCCL_INFO("[Thread][%s] streamId[%u], taskId[%u], src[%p], dst[%p], len[%llu], dataType[%d], reduceOp[%d], %s",
-        __func__, streamId, taskId, src, dst, sizeByte, dataType, reduceOp, taskParam.Describe().c_str());
+    CHK_PTR_NULL(callback_);
+    CHK_RET(callback_(sqId, taskId, taskParam, INVALID_U64));
+    HCCL_INFO("[Thread][%s] sqId[%u], taskId[%u], src[%p], dst[%p], len[%llu], dataType[%d], reduceOp[%d], %s",
+        __func__, sqId, taskId, src, dst, sizeByte, dataType, reduceOp, taskParam.Describe().c_str());
     return HCCL_SUCCESS;
 }
 

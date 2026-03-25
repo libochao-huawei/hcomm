@@ -46,7 +46,8 @@ public:
         const HcclRankLinkInfo &remoteRankInfo, std::unique_ptr<HcclSocketManager> &socketManager,
         std::unique_ptr<NotifyPool> &notifyPool, const HcclDispatcher &dispatcher, const bool &useRdma, u32 sdid,
         u32 serverId, u32 trafficClass = HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET,
-        u32 serviceLevel = HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET, bool aicpuUnfoldMode = false, bool isStandardCard = false);
+        u32 serviceLevel = HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET, bool aicpuUnfoldMode = false,
+        bool isStandardCard = false, bool isNeedEnableP2P = false);
 
     ~HcclOneSidedConn();
 
@@ -103,6 +104,8 @@ private:
     TransportDeviceNormalData transportData_;
     DeviceMem transportDataDevice_;
     bool isStandardCard_{false};
+    bool isNeedEnableP2P_{false};
+    std::vector<u32> enableP2PDevices_;
 };
 }
 #endif

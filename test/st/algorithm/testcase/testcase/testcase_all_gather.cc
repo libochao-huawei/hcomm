@@ -822,7 +822,6 @@ TEST_F(AllGatherTest, allgather_mix_AllGatherMixExecutorComm)
 TEST_F(AllGatherTest, allgather_aiv_a3_AllGatherVMeshAivExecutor)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -846,7 +845,6 @@ TEST_F(AllGatherTest, allgather_aiv_a3_AllGatherVMeshAivExecutor)
 TEST_F(AllGatherTest, allgather_aiv_a3_AllGatherMeshAivFor91093Executor1)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -871,7 +869,6 @@ TEST_F(AllGatherTest, allgather_aiv_a3_AllGatherMeshAivFor91093Executor1)
 TEST_F(AllGatherTest, allgather_aiv_a3_AllGatherMeshAivFor91093Executor2)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -958,7 +955,6 @@ TEST_F(AllGatherTest, allgather_aiv_a3__AllGatherMeshAivExecutor)
 TEST_F(AllGatherTest, allgather_AllGatherAivRdmaExecutor)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1198,7 +1194,6 @@ TEST_F(AllGatherTest, allgather_91093_AllGatherRingZerocopyExchangeExecutor)
 TEST_F(AllGatherTest, allgather_aiv_a3_AllGatherMeshAivSmallCountExecutor)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;

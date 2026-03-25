@@ -33,6 +33,7 @@ static bool g_init = false;
 static mutex g_mut;
 static aclrtBinHandle g_binHandle;
 static std::unordered_map<const s8*, aclrtFuncHandle> g_aivFuncMap;
+static std::unordered_map<const s8*, std::string> g_aivNameMap;
 
 using AivKernelInfo = struct AivKernelInfoDef {
     const char* kernelName;
@@ -53,6 +54,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_scatter_int16_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::INT16},
     {"aiv_scatter_uint16_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::UINT16},
     {"aiv_scatter_float", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP32},
+    {"aiv_scatter_uint64_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP64},
     {"aiv_scatter_int32_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::INT32},
     {"aiv_scatter_uint32_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::UINT32},
     {"aiv_scatter_int8_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::INT8},
@@ -60,11 +62,16 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_scatter_bfloat16_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::BFP16},
     {"aiv_scatter_uint64_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::INT64},
     {"aiv_scatter_int64_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::UINT64},
+    {"aiv_scatter_hifloat8_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::HIF8},
+    {"aiv_scatter_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E4M3},
+    {"aiv_scatter_fp8_e5m2_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E5M2},
+    {"aiv_scatter_fp8_e8m0_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E8M0},
 
     {"aiv_all_gather_half", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP16},
     {"aiv_all_gather_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::INT16},
     {"aiv_all_gather_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::UINT16},
     {"aiv_all_gather_float", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP32},
+    {"aiv_all_gather_uint64_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP64},
     {"aiv_all_gather_int32_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::INT32},
     {"aiv_all_gather_uint32_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::UINT32},
     {"aiv_all_gather_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::INT8},
@@ -72,6 +79,10 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_gather_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::BFP16},
     {"aiv_all_gather_uint64_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::INT64},
     {"aiv_all_gather_int64_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::UINT64},
+    {"aiv_all_gather_hifloat8_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::HIF8},
+    {"aiv_all_gather_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E4M3},
+    {"aiv_all_gather_fp8_e5m2_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E5M2},
+    {"aiv_all_gather_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E8M0},
     //allreduce
     {"aiv_allreduce_half", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::FP16},
     {"aiv_allreduce_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT16},
@@ -79,11 +90,13 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_allreduce_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32},
     {"aiv_allreduce_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8},
     {"aiv_allreduce_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16},
+    {"aiv_allreduce_int64_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT64},
     //broadcast
     {"aiv_broadcast_half", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP16},
     {"aiv_broadcast_int16_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT16},
     {"aiv_broadcast_uint16_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::UINT16},
     {"aiv_broadcast_float", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP32},
+    {"aiv_broadcast_uint64_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP64},
     {"aiv_broadcast_int32_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT32},
     {"aiv_broadcast_uint32_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::UINT32},
     {"aiv_broadcast_int8_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT8},
@@ -91,6 +104,10 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_broadcast_bfloat16_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::BFP16},
     {"aiv_broadcast_uint64_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::INT64},
     {"aiv_broadcast_int64_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::UINT64},
+    {"aiv_broadcast_hifloat8_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::HIF8},
+    {"aiv_broadcast_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E4M3},
+    {"aiv_broadcast_fp8_e5m2_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E5M2},
+    {"aiv_broadcast_fp8_e8m0_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E8M0},
     // allreduce two shot
     {"aiv_allreduce_mesh1d_twoshot_half", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::FP16, KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT16,KernelArgsType::ARGS_TYPE_TWO_SHOT},
@@ -98,11 +115,13 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_allreduce_mesh1d_twoshot_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT32,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT8,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::BFP16,KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_allreduce_mesh1d_twoshot_int64_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT64,KernelArgsType::ARGS_TYPE_TWO_SHOT},
     // alltoall
     {"aiv_alltoall_half", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP16},
     {"aiv_alltoall_int16_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT16},
     {"aiv_alltoall_uint16_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::UINT16},
     {"aiv_alltoall_float", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP32},
+    {"aiv_alltoall_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP64},
     {"aiv_alltoall_int32_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT32},
     {"aiv_alltoall_uint32_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::UINT32},
     {"aiv_alltoall_int8_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT8},
@@ -110,11 +129,16 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_alltoall_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::BFP16},
     {"aiv_alltoall_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::INT64},
     {"aiv_alltoall_int64_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::UINT64},
+    {"aiv_alltoall_hifloat8_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::HIF8},
+    {"aiv_alltoall_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E4M3},
+    {"aiv_alltoall_fp8_e5m2_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E5M2},
+    {"aiv_alltoall_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E8M0},
     // alltoallv
     {"aiv_alltoallv_half", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP16},
     {"aiv_alltoallv_int16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::INT16},
     {"aiv_alltoallv_uint16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::UINT16},
     {"aiv_alltoallv_float", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP32},
+    {"aiv_alltoallv_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP64},
     {"aiv_alltoallv_int32_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::INT32},
     {"aiv_alltoallv_uint32_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::UINT32},
     {"aiv_alltoallv_int8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::INT8},
@@ -122,6 +146,10 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_alltoallv_bfloat16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::BFP16},
     {"aiv_alltoallv_uint64_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::INT64},
     {"aiv_alltoallv_int64_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::UINT64},
+    {"aiv_alltoallv_hifloat8_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::HIF8},
+    {"aiv_alltoallv_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E4M3},
+    {"aiv_alltoallv_fp8_e5m2_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E5M2},
+    {"aiv_alltoallv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E8M0},
     // reduce
     {"aiv_reduce_half", HcclCMDType::HCCL_CMD_REDUCE, DataType::FP16},
     {"aiv_reduce_int16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT16},
@@ -129,6 +157,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_reduce_int32_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT32},
     {"aiv_reduce_int8_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT8},
     {"aiv_reduce_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::BFP16},
+    {"aiv_reduce_int64_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT64},
     //reducescatter
     {"aiv_reduce_scatter_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::FP16},
     {"aiv_reduce_scatter_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT16},
@@ -136,12 +165,65 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_reduce_scatter_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT32},
     {"aiv_reduce_scatter_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT8},
     {"aiv_reduce_scatter_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::BFP16},
+    {"aiv_reduce_scatter_int64_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT64},
+    // send
+    {"aiv_send_int8_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT8}, // hccl_types.h
+    {"aiv_send_int16_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT16},
+    {"aiv_send_int32_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT32},
+    {"aiv_send_int64_t", HcclCMDType::HCCL_CMD_SEND, DataType::INT64},
+    {"aiv_send_uint8_t", HcclCMDType::HCCL_CMD_SEND, DataType::UINT8},
+    {"aiv_send_uint16_t", HcclCMDType::HCCL_CMD_SEND, DataType::UINT16},
+    {"aiv_send_uint32_t", HcclCMDType::HCCL_CMD_SEND, DataType::UINT32},
+    {"aiv_send_uint64_t", HcclCMDType::HCCL_CMD_SEND, DataType::UINT64},
+    {"aiv_send_half", HcclCMDType::HCCL_CMD_SEND, DataType::FP16},
+    {"aiv_send_float", HcclCMDType::HCCL_CMD_SEND, DataType::FP32},
+    {"aiv_send_uint64_t", HcclCMDType::HCCL_CMD_SEND, DataType::FP64},
+    {"aiv_send_bfloat16_t", HcclCMDType::HCCL_CMD_SEND, DataType::BFP16},
+    {"aiv_send_hifloat8_t", HcclCMDType::HCCL_CMD_SEND, DataType::HIF8},
+    {"aiv_send_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_SEND, DataType::FP8E4M3},
+    {"aiv_send_fp8_e5m2_t", HcclCMDType::HCCL_CMD_SEND, DataType::FP8E5M2},
+    {"aiv_send_fp8_e8m0_t", HcclCMDType::HCCL_CMD_SEND, DataType::FP8E8M0},
+    // recv
+    {"aiv_recv_int8_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::INT8},
+    {"aiv_recv_int16_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::INT16},
+    {"aiv_recv_int32_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::INT32},
+    {"aiv_recv_int64_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::INT64},
+    {"aiv_recv_uint8_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::UINT8},
+    {"aiv_recv_uint16_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::UINT16},
+    {"aiv_recv_uint32_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::UINT32},
+    {"aiv_recv_uint64_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::UINT64},
+    {"aiv_recv_half", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP16},
+    {"aiv_recv_float", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP32},
+    {"aiv_recv_uint64_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP64},
+    {"aiv_recv_bfloat16_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::BFP16},
+    {"aiv_recv_hifloat8_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::HIF8},
+    {"aiv_recv_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP8E4M3},
+    {"aiv_recv_fp8_e5m2_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP8E5M2},
+    {"aiv_recv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP8E8M0},
+    // batchSendRecv
+    {"aiv_batchSendRecv_int8_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::INT8},
+    {"aiv_batchSendRecv_int16_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::INT16},
+    {"aiv_batchSendRecv_int32_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::INT32},
+    {"aiv_batchSendRecv_int64_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::INT64},
+    {"aiv_batchSendRecv_uint8_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::UINT8},
+    {"aiv_batchSendRecv_uint16_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::UINT16},
+    {"aiv_batchSendRecv_uint32_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::UINT32},
+    {"aiv_batchSendRecv_uint64_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::UINT64},
+    {"aiv_batchSendRecv_half", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP16},
+    {"aiv_batchSendRecv_float", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP32},
+    {"aiv_batchSendRecv_uint64_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP64},
+    {"aiv_batchSendRecv_bfloat16_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::BFP16},
+    {"aiv_batchSendRecv_hifloat8_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::HIF8},
+    {"aiv_batchSendRecv_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP8E4M3},
+    {"aiv_batchSendRecv_fp8_e5m2_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP8E5M2},
+    {"aiv_batchSendRecv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP8E8M0},
 };
 using AivExtraKernelArgs = struct AivExtraKernelArgsDef {
     const void* buffersIn; // 注册的CCLIN地址，所有卡可访问
     u64 input;
     u64 output;
     u32 rank;
+    u32 sendRecvRemoteRank;
     u32 rankSize;
     u64 xRankSize;
     u64 yRankSize;
@@ -164,14 +246,14 @@ using AivExtraKernelArgs = struct AivExtraKernelArgsDef {
     bool isEnableCounter;
     ExtraArgsA2A extraArgs;
  
-    AivExtraKernelArgsDef(const void* buffIn, u64 input, u64 output, u32 rank,
+    AivExtraKernelArgsDef(const void* buffIn, u64 input, u64 output, u32 rank, u32 sendRecvRemoteRank,
         u32 rankSize, u64 xRankSize, u64 yRankSize, u64 zRankSize,
         u64 len, u32 dataType, u32 reduceOp, u32 root, u32 tag, 
         u64 inputSliceStride, u64 outputSliceStride, u64 repeatNum, u64 inputRepeatStride, u64 outputRepeatStride,
         bool isOpBase = true,
         const void* headCountMem = nullptr, const void* tailCountMem = nullptr, const void* addOneMem = nullptr,
         u32 counterMemSize = 0, const ExtraArgsA2A* extraArgsPtr = nullptr)
-        : buffersIn(buffIn),input(input), output(output), rank(rank), rankSize(rankSize), xRankSize(xRankSize), yRankSize(yRankSize), zRankSize(zRankSize),
+        : buffersIn(buffIn),input(input), output(output), rank(rank), sendRecvRemoteRank(sendRecvRemoteRank), rankSize(rankSize), xRankSize(xRankSize), yRankSize(yRankSize), zRankSize(zRankSize),
         len(len) ,dataType(dataType),
         reduceOp(reduceOp), root(root), tag(tag), 
         inputSliceStride(inputSliceStride), outputSliceStride(outputSliceStride), repeatNum(repeatNum), inputRepeatStride(inputRepeatStride), outputRepeatStride(outputRepeatStride),
@@ -226,6 +308,7 @@ HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHa
         HCCL_E_NOT_FOUND);
     
     g_aivFuncMap[stubFunc] = funcHandle;
+    g_aivNameMap[stubFunc] = funcName;
 
     return HCCL_SUCCESS;
 }
@@ -328,10 +411,10 @@ HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, const s8* stubFunc)
 HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, void* args, u32 argsSize)
 {
     constexpr u32 AIV_ATTRNUM_THREE = 3;
-    HCCL_INFO("[AIV][ExecuteKernelLaunch] sendbuff [%llu] recvbuff [%llu] rank [%u] rankSize [%u] count [%llu] "
+    HCCL_INFO("[AIV][ExecuteKernelLaunch] sendbuff [%llu] recvbuff [%llu] rank [%u] sendRecvRemoteRank [%u] rankSize [%u] count [%llu] "
         "dataType [%d] reduceOp [%d] root [%u] tag [%u] isOpBase [%d] "
         "extraArgsPtr [%p] argsSize [%u] numBlocks [%u]", opArgs.input,
-        opArgs.output, opArgs.rank, opArgs.rankSize, opArgs.count,
+        opArgs.output, opArgs.rank, opArgs.sendRecvRemoteRank, opArgs.rankSize, opArgs.count,
         opArgs.dataType, opArgs.op, opArgs.root,
         opArgs.aivTag, opArgs.isOpBase, args, argsSize, opArgs.numBlocks);
  
@@ -355,12 +438,20 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, void* args, u32 arg
         attr[1].value.timeoutUs.timeoutHigh, attr[2].id, attr[2].value.engineType, cfg.numAttrs);
 
     aclrtFuncHandle funcHandle;
-    HcclResult ret = GetKernelFunc(funcHandle, GetStubFunc(opArgs.cmdType, opArgs.dataType, opArgs.argsType));
+    const s8* stubFunc = GetStubFunc(opArgs.cmdType, opArgs.dataType, opArgs.argsType);
+    HcclResult ret = GetKernelFunc(funcHandle, stubFunc);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner] errNo[0x%016llx] GetKernelFunc failed, "
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
     aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, opArgs.numBlocks, opArgs.stream,
         &cfg, args, argsSize, nullptr, 0);
+    if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandle, g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+            HCCL_E_NOT_FOUND);
+        aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, opArgs.numBlocks, opArgs.stream,
+            &cfg, args, argsSize, nullptr, 0);
+    }
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
@@ -371,12 +462,12 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs)
 {
     AivExtraKernelArgs aivExtraKernelArgs {
         opArgs.buffersIn, opArgs.input, opArgs.output,
-        opArgs.rank, opArgs.rankSize, opArgs.xRankSize, opArgs.yRankSize, opArgs.zRankSize, opArgs.count, opArgs.dataType, opArgs.op, opArgs.root, opArgs.aivTag,
+        opArgs.rank, opArgs.sendRecvRemoteRank, opArgs.rankSize, opArgs.xRankSize, opArgs.yRankSize, opArgs.zRankSize, opArgs.count, opArgs.dataType, opArgs.op, opArgs.root, opArgs.aivTag,
         opArgs.inputSliceStride, opArgs.outputSliceStride, opArgs.repeatNum, opArgs.inputRepeatStride, opArgs.outputRepeatStride,
         opArgs.isOpBase, 
         reinterpret_cast<void*>(opArgs.counter.headCountMem),
         reinterpret_cast<void*>(opArgs.counter.tailCountMem), reinterpret_cast<void*>(opArgs.counter.addOneMem),
-        opArgs.counter.memSize, &opArgs.extraArgs
+        opArgs.counter.memSize, &opArgs.extraArgs // 这里是真正发送的地方，device侧单个kernel不能超过32K，先写死1024个结构体
     };
     CHK_RET(ExecuteKernelLaunchInner(opArgs, &aivExtraKernelArgs, sizeof(aivExtraKernelArgs)));
  

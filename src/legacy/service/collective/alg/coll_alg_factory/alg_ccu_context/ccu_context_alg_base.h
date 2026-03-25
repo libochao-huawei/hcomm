@@ -30,6 +30,10 @@ public:
     std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) override = 0;
  
 protected:
+    uint64_t rankSize_{0};
+    uint32_t rankId_{0};
+    ReduceOp reduceOp_;
+
     struct GroupOpSizeV2 {
         CcuRep::Variable baseIterNum;
         CcuRep::Variable tailLoopId;
