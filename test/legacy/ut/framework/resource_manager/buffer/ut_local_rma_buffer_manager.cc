@@ -76,7 +76,7 @@ TEST_F(LocalRmaBufManagerTest, reg_invalid_port)
     PortData           port(0, basePortType, 0, IpAddress());
     string             opTag = "optag";
 
-    EXPECT_THROW(localRmaBufManager.Reg(opTag, bufferType, devBuffer, port), InternalException);
+    EXPECT_THROW(localRmaBufManager.Reg(opTag, bufferType, devBuffer, port, LinkProtocol::UB_CTP), InternalException);
 }
 
 TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_throw)
@@ -93,7 +93,7 @@ TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_throw)
     MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(any(), any()).will(returnValue(rdmaHandle));
     RdmaHandleManager::GetInstance().tokenInfoMap[rdmaHandle] = make_unique<TokenInfoManager>(0, rdmaHandle);
 
-    auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port);
+    auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port, LinkProtocol::UB_CTP);
     EXPECT_NE(nullptr, res);
     EXPECT_EQ(RmaType::UB, res->GetRmaType());
 
@@ -117,14 +117,14 @@ TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_no_throw_a
     MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
     MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(any(), any()).will(returnValue(rdmaHandle));
  
-    auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port);
+    auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port, LinkProtocol::UB_CTP);
     EXPECT_NE(nullptr, res);
     EXPECT_EQ(RmaType::UB, res->GetRmaType());
     auto res2 = localRmaBufManager.Get(opTag, port, bufferType);
     EXPECT_EQ(res, res2);
 
     // 重复注册逻辑修改，不再抛异常，而是返回注册好的资源
-    EXPECT_NO_THROW(localRmaBufManager.Reg(opTag, bufferType, devBuffer, port));
+    EXPECT_NO_THROW(localRmaBufManager.Reg(opTag, bufferType, devBuffer, port, LinkProtocol::UB_CTP));
     auto res3 = localRmaBufManager.Get(opTag, port, bufferType);
     EXPECT_EQ(res, res3);
 }

@@ -121,6 +121,10 @@ private:
     void DestroyAllJetty();
 
     void SetProcess(CcuOpcodeType opCode) const;
+
+    HcclResult SetTpAttrAsync(const TpInfo& tpInfo, RdmaHandle rdmaHandle, const IpAddress& ipAddr);
+    HcclResult GetTpAttrAsync(const TpInfo& tpInfo, RdmaHandle rdmaHandle, const IpAddress& ipAddr);
+    HcclResult Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]);
 };
 
 }; // namespace Hccl
