@@ -49,7 +49,6 @@ HcclResult TopoinfoRanktablePartition::GenerateSubRankTable(const uint32_t rankN
                 "duplicated rankId[%u] in rankIds.",
                 HCCL_ERROR_CODE(HCCL_E_PARA), rankId),
             HCCL_E_PARA);
-
         auto iter = rankInfoMap.find(rankId);
         CHK_PRT_RET(
             iter == rankInfoMap.end(),
@@ -81,7 +80,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubRankTable(const uint32_t rankN
     subRankTable.serverNum = serverIdMap.size();
     subRankTable.superPodNum = superPodIdMap.size();
     subRankTable.rankNum = rankNum;
-
+    subRankTable.version = globalRankTable_.version;
     return HCCL_SUCCESS;
 }
 
@@ -204,7 +203,12 @@ HcclResult TopoinfoRanktablePartition::Struct2JsonRankTable(const RankTable_t &c
     ClusterJson[PROP_RANK_LIST] = rankListJson;
 
     ClusterJson[PROP_STATUS] = "completed";
-    ClusterJson[PROP_VERSION] = (deviceType == DevType::DEV_TYPE_910_93) ? "1.2" : "1.0";
+    if (!clusterInfo.version.empty()) {
+        ClusterJson[PROP_VERSION] = clusterInfo.version;
+    } else {
+        ClusterJson[PROP_VERSION] = (deviceType == DevType::DEV_TYPE_910_93) ? "1.2" : "1.0";
+    }
+
     return HCCL_SUCCESS;
 }
 }  // namespace hccl
