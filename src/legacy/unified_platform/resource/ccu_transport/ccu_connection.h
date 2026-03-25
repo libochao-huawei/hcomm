@@ -27,7 +27,8 @@ MAKE_ENUM(CcuConnStatus,
 class CcuConnection {
 public:
     CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
     CcuConnection(const CcuConnection &that)             = delete;
     CcuConnection &operator=(const CcuConnection &other) = delete;
     ~CcuConnection();
@@ -76,6 +77,8 @@ private:
     IpAddress               rmtAddr_{};
     CcuChannelInfo          channelInfo_{};
     std::vector<CcuJetty *> ccuJettys_;
+    IpAddress locIpv4Addr{};
+    IpAddress rmtIpv4Addr{};
 
     int32_t       devLogicId{0};
     uint32_t      dieId{0};
@@ -119,18 +122,30 @@ private:
     HcclResult    ReleaseConnRes();
     void          ThrowAbnormalStatus(const std::string &funcName);
     std::string   Describe();
+    HcclResult    Ipv4ToIpArray();
+    HcclResult    GetTpAttrAsync();
+    HcclResult    SetTpAttrAsync();
 };
 
 class CcuTpConnection : public CcuConnection {
 public:
     CcuTpConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
 };
 
 class CcuCtpConnection : public CcuConnection {
 public:
     CcuCtpConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+};
+
+class CcuUboeConnection : public CcuConnection {
+public:
+    CcuUboeConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys,
+        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
 };
 
 } // namespace Hccl
