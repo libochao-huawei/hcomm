@@ -1007,7 +1007,10 @@ HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t c
         CHK_PTR_NULL(channelImpl);
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
         ccuProfilingInfoCache.channelHandle[i] = channels[i];
-        
+        HCCL_INFO("[%s]type[%d], name[%s], opType[%d], dataType[%d], outputDataType[%d], missionId[%u], "
+            "channelHandle[0x%llx], channelId[%u]", __func__, ccuProfilingInfoCache.type,
+            ccuProfilingInfoCache.name.c_str(), opType, dataType, outputDataType, ccuProfilingInfoCache.missionId,
+            ccuProfilingInfoCache.channelHandle[i], ccuProfilingInfoCache.channelId[i]);
     }
 
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
