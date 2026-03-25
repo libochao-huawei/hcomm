@@ -19,6 +19,8 @@ target_include_directories(hccl_utest_framework_cluster_maintenance PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
 
+add_subdirectory(recovery/operator_retry)
+
 target_compile_definitions(hccl_utest_framework_cluster_maintenance PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
