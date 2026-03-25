@@ -81,6 +81,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubRankTable(const uint32_t rankN
     subRankTable.serverNum = serverIdMap.size();
     subRankTable.superPodNum = superPodIdMap.size();
     subRankTable.rankNum = rankNum;
+    subRankTable.version = globalRankTable_.version;
 
     return HCCL_SUCCESS;
 }
@@ -204,7 +205,12 @@ HcclResult TopoinfoRanktablePartition::Struct2JsonRankTable(const RankTable_t &c
     ClusterJson[PROP_RANK_LIST] = rankListJson;
 
     ClusterJson[PROP_STATUS] = "completed";
-    ClusterJson[PROP_VERSION] = (deviceType == DevType::DEV_TYPE_910_93) ? "1.2" : "1.0";
+    if (!clusterInfo->version.empty()) {
+        ClusterJson[PROP_VERSION] = clusterInfo->version;
+    } else {
+        ClusterJson[PROP_VERSION] = (deviceType == DevType::DEV_TYPE_910_93) ? "1.2" : "1.0";
+    }
+
     return HCCL_SUCCESS;
 }
 }  // namespace hccl
