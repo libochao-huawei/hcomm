@@ -69,7 +69,6 @@ BraceWrapping:
   AfterEnum: false
   AfterFunction: true
   AfterNamespace: false
-  # AfterObjCDeclaration: false
   AfterStruct: false
   AfterUnion: false
   AfterExternBlock: false
