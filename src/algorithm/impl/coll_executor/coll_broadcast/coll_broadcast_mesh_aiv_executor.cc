@@ -36,6 +36,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalcCommInfo(std::vector<LevelNSubCommT
     } else {
         inputType = TransportMemType::CCL_INPUT;
     }
+    TransportMemType outputType = TransportMemType::AIV_OUTPUT;
     HCCL_INFO("[CollBroadcastMeshAivExecutor][CalcTransportMemType] tag[%s] inputType[%d],"
         " outputType[%d].", tag_.c_str(), inputType, outputType);
     CHK_RET(CalcLevel0CommInfo(inputType, outputType, opTransport));
