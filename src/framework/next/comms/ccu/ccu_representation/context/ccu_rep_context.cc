@@ -159,8 +159,9 @@ HcclResult CcuRepContext::AddProfiling(const std::string &name, uint32_t mask)
     ccuProfilingInfoCache.ckeId = INVALID_CKE_ID;
     ccuProfilingInfoCache.mask  = mask;
     CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID,
-                        sizeof(ccuProfilingInfoCache.channelId)));
+        sizeof(ccuProfilingInfoCache.channelId)));
 
+    HCCL_INFO("[%s]name[%s], mask[%u], type[%d]", __func__, name.c_str(), mask, ccuProfilingInfoCache.type);
     profilingInfo.push_back(ccuProfilingInfoCache);
     return HCCL_SUCCESS;
 }
@@ -180,6 +181,9 @@ HcclResult CcuRepContext::AddProfiling(const ChannelHandle channel, const std::s
     ccuProfilingInfoCache.channelId[0] = channelImpl->GetChannelId();
     ccuProfilingInfoCache.channelHandle[0] = channel;
 
+    HCCL_INFO("[%s]channelHandle[0x%llx], name[%s], signalIndex[%u], mask[%u], type[%d], ckeId[%u], channelId[%u]",
+        __func__, channel, name.c_str(), signalIndex, mask, ccuProfilingInfoCache.type, ccuProfilingInfoCache.ckeId,
+        ccuProfilingInfoCache.channelId[0]);
     profilingInfo.push_back(ccuProfilingInfoCache);
     return HCCL_SUCCESS;
 }
@@ -204,6 +208,9 @@ HcclResult CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t c
         CHK_PTR_NULL(channelImpl);
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
         ccuProfilingInfoCache.channelHandle[i] = channels[i];
+        HCCL_INFO("[%s]type[%d], name[%s], missionId[%u], channelHandle[0x%llx], channelId[%u]",
+            __func__, ccuProfilingInfoCache.type, ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.missionId,
+            ccuProfilingInfoCache.channelHandle[i], ccuProfilingInfoCache.channelId[i]);
     }
 
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
@@ -231,6 +238,10 @@ HcclResult CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t c
         CHK_PTR_NULL(channelImpl);
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
         ccuProfilingInfoCache.channelHandle[i] = channels[i];
+        HCCL_INFO("[%s]type[%d], name[%s], opType[%d], dataType[%d], outputDataType[%d], missionId[%u], "
+            "channelHandle[0x%llx], channelId[%u]", __func__, ccuProfilingInfoCache.type,
+            ccuProfilingInfoCache.name.c_str(), opType, dataType, outputDataType, ccuProfilingInfoCache.missionId,
+            ccuProfilingInfoCache.channelHandle[i], ccuProfilingInfoCache.channelId[i]);
     }
 
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);

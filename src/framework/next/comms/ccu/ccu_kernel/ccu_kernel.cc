@@ -946,9 +946,9 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
             if (profInfo.channelId[idx] == INVALID_VALUE_CHANNELID) {
                 break;
             }
+
             // TODO:需要修改
-            profInfo.remoteRankId[idx] =
-                0;
+            profInfo.remoteRankId[idx] = 0;
         }
     }
     //1.显式声明lambda的返回类型，避免歧义
@@ -1007,6 +1007,7 @@ HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t c
         CHK_PTR_NULL(channelImpl);
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
         ccuProfilingInfoCache.channelHandle[i] = channels[i];
+        
     }
 
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
