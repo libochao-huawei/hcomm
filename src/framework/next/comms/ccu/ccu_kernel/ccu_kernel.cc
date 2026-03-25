@@ -124,7 +124,7 @@ HcclResult CcuKernel::Init()
     SetDieId(dieId);
     CHK_RET(Algorithm());
     // 生成SQE粒度profiling信息
-    AddSqeProfiling(arg);
+    AddSqeProfiling();
     return HcclResult::HCCL_SUCCESS;
 }
 
