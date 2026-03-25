@@ -941,6 +941,10 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
     taskParam.taskPara.Ccu.instrId   = streamProfilingInfo[0].instrId;
     taskParam.taskPara.Ccu.executeId = execId; // TODO: 传入是kernelHandle，不建议赋值给executeId
     taskParam.taskPara.Ccu.ccuKernelHandle = execId;
+    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
+        __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
+        taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
+
     for (auto &profInfo : streamProfilingInfo) {
         for (int idx = 0; idx < CCU_MAX_CHANNEL_NUM; idx++) {
             if (profInfo.channelId[idx] == INVALID_VALUE_CHANNELID) {
@@ -949,8 +953,11 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
 
             // TODO:需要修改
             profInfo.remoteRankId[idx] = 0;
+            HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[%u]",
+                __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
         }
     }
+    
     //1.显式声明lambda的返回类型，避免歧义
     auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
         Hccl::CcuProfilingInfo dst;
