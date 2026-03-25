@@ -1173,6 +1173,7 @@ namespace hccl
         rankTable.serverNum = serverNum_;
         rankTable.superPodNum = superPodNum_;
         rankTable.nicDeploy = nicDeployment_;
+        rankTable.version = attrCollector_.GetRankTableVersion();
         return HCCL_SUCCESS;
     }
 
