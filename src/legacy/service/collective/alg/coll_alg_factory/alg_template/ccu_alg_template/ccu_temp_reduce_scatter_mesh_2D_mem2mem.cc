@@ -121,17 +121,17 @@ HcclResult CcuTempReduceScatterMeshMem2Mem2D::Run(const TempFuncs &tempFuncs, co
 
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
+    uint64_t offset;
     uint64_t outputSize = static_cast<uint64_t>(op_.outputMem->GetSize());
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
             // 当前loop的size大小
-            offSet    = tempFuncs.usrData.usrOutSlices[0].GetOffset();
+            offset    = tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
             // 从inBuff获取数据，只需要加上rank偏移
-            offSet    = sliceInfoVec[myRank_][0].offset;
+            offset    = sliceInfoVec[myRank_][0].offset;
         }
         if (tempFuncs.isBottom) {
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
@@ -142,7 +142,7 @@ HcclResult CcuTempReduceScatterMeshMem2Mem2D::Run(const TempFuncs &tempFuncs, co
     } else {
         inputAddr  = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-        offSet     = tempFuncs.usrData.usrOutSlices[0].GetOffset();
+        offset     = tempFuncs.usrData.usrOutSlices[0].GetOffset();
     }
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
 
@@ -160,11 +160,11 @@ HcclResult CcuTempReduceScatterMeshMem2Mem2D::Run(const TempFuncs &tempFuncs, co
         CcuInstructionReduceScatterMeshMem2Mem2D ccuInsReduceScatterMeshMem2Mem2D;
 
         ccuInsReduceScatterMeshMem2Mem2D.Init(dimSize_, static_cast<uint32_t>(myRank_), inputAddr, outputAddr, axisId,
-					      outputSize, xAxisSize, yAxisSize, offSet, token, op_, tempVTopo_);
+					      outputSize, xAxisSize, yAxisSize, offset, token, op_, tempVTopo_);
 
         HCCL_INFO("[CcuTempReduceScatterMeshMem2Mem2D] Init: dimSize0[%llu], dimSize1[%llu], myRank_[%d], inputAddr[%llu],"\
             	  "outputAddr[%llu], sliceSize[%llu], xAxisSize[%llu], yAxisSize[%llu], offset[%llu],",
-        	  dimSize_[0], dimSize_[1], myRank_, inputAddr, outputAddr, outputSize, xAxisSize, yAxisSize, offSet);
+        	  dimSize_[0], dimSize_[1], myRank_, inputAddr, outputAddr, outputSize, xAxisSize, yAxisSize, offset);
 
         ccuInsReduceScatterMeshMem2Mem2D.SetLinks(axisId == 0 ? linksX_ : linksY_);
         ccuInsReduceScatterMeshMem2Mem2D.SetRankGroup(axisId == 0 ? rankGroupX : rankGroupY);
