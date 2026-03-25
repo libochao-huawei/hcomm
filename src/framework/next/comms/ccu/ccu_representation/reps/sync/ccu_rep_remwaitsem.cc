@@ -40,6 +40,7 @@ bool CcuRepRemWaitSem::Translate(CcuInstr *&instr, uint16_t &instrId, const Tran
         Hccl::THROW<Hccl::CcuApiException>("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel",
             __func__, channel);
     }
+    channelId = channelImpl->GetChannelId();
     CHK_PRT_THROW(channelImpl->GetLocCkeByIndex(semIndex, signalId) != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[CcuRepRemWaitSem][%s] failed to get to loc cke id.", __func__),
         Hccl::InternalException, "failed to get resource");

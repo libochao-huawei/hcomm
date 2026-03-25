@@ -367,6 +367,44 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     return xnVal;
 }
 
+void CcuTaskException::GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
+                                             vector<CcuErrorInfo> &errorInfo)
+{
+    CcuErrorInfo errorMsg{};
+    errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
+
+    const auto rep                     = static_pointer_cast<CcuRep::CcuRepRemPostSem>(repBase);
+    errorMsg.msg.waitSignal.signalId   = rep->GetId();
+    errorMsg.msg.waitSignal.signalMask = rep->GetMask();
+    auto sret = memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
+        sizeof(errorMsg.msg.waitSignal.channelId));
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memset_s failed. errorno[%d]:", __func__, sret),);
+    errorMsg.msg.waitSignal.channelId[0] = rep->GetChannelId();
+
+    errorInfo.push_back(errorMsg);
+}
+
+void CcuTaskException::GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
+                                             vector<CcuErrorInfo> &errorInfo)
+{
+    CcuErrorInfo errorMsg{};
+    errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
+    errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
+
+    const auto rep                     = static_pointer_cast<CcuRep::CcuRepRemWaitSem>(repBase);
+    errorMsg.msg.waitSignal.signalId    = rep->GetId();
+    errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId,
+        errorMsg.msg.waitSignal.signalId);
+    errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
+    auto sret = memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
+        sizeof(errorMsg.msg.waitSignal.channelId));
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memset_s failed. errorno[%d]:", __func__, sret),);
+    errorMsg.msg.waitSignal.channelId[0] = rep->GetChannelId();
+
+    errorInfo.push_back(errorMsg);
+}
+
 void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, shared_ptr<CcuRep::CcuRepBase> repBase,
                                                 vector<CcuErrorInfo> &errorInfo)
 {
@@ -378,8 +416,8 @@ void CcuTaskException::GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, sha
     errorMsg.msg.waitSignal.signalId   = rep->GetRmtCkeId();
     errorMsg.msg.waitSignal.signalMask = rep->GetMask();
     auto sret = memset_s(errorMsg.msg.waitSignal.channelId, sizeof(errorMsg.msg.waitSignal.channelId), 0xFF,
-                   sizeof(errorMsg.msg.waitSignal.channelId));
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memcpy failed. errorno[%d]:", __func__, sret),);
+        sizeof(errorMsg.msg.waitSignal.channelId));
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[%s]memset_s failed. errorno[%d]:", __func__, sret),);
 
     errorMsg.msg.waitSignal.channelId[0] = rep->GetChannelId();
     errorMsg.msg.waitSignal.paramId = rep->GetRmtXnId();
@@ -598,6 +636,8 @@ void CcuTaskException::GenErrorInfoByRepType(const ErrorInfoBase &baseInfo, shar
         {CcuRep::CcuRepType::LOC_RECORD_EVENT, &CcuTaskException::GenErrorInfoLocRecordEvent},
         {CcuRep::CcuRepType::LOC_WAIT_EVENT, &CcuTaskException::GenErrorInfoLocWaitEvent},
         {CcuRep::CcuRepType::LOC_WAIT_NOTIFY, &CcuTaskException::GenErrorInfoLocWaitNotify},
+        {CcuRep::CcuRepType::REM_POST_SEM, &CcuTaskException::GenErrorInfoRemPostSem},
+        {CcuRep::CcuRepType::REM_WAIT_SEM, &CcuTaskException::GenErrorInfoRemWaitSem},
         {CcuRep::CcuRepType::REM_POST_VAR, &CcuTaskException::GenErrorInfoRemPostVar},
         {CcuRep::CcuRepType::RECORD_SHARED_NOTIFY, &CcuTaskException::GenErrorInfoPostSharedSem},
         // TRANS_MEM
