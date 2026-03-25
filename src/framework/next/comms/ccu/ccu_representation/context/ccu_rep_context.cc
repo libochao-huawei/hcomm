@@ -12,7 +12,7 @@
 #include "ccu_rep_assign_v1.h"
 #include "const_val.h"
 
- #include "hcomm_c_adpt.h"  // 需优化
+#include "hcomm_c_adpt.h"  // 需优化
 #include "../../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"  // 需优化
 
 namespace hcomm {
@@ -140,14 +140,15 @@ LoopGroupProfilingInfo &CcuRepContext::GetLGProfilingInfo()
     return lgProfilingInfo;
 }
 
-void CcuRepContext::AddSqeProfiling(const CcuKernelArg &arg)
+void CcuRepContext::AddSqeProfiling()
 {
     profilingInfo.clear();
     // 生成SQE粒度profiling信息
     ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
-    ccuProfilingInfoCache.name      = arg.GetKernelSignature().Describe();
+    ccuProfilingInfoCache.name      = "CCU_KERNEL";
     ccuProfilingInfoCache.dieId     = GetDieId();
-
+    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u]", __func__, ccuProfilingInfoCache.type,
+        ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId);
     profilingInfo.push_back(ccuProfilingInfoCache);
 }
     

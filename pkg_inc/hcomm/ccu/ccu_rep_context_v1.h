@@ -86,7 +86,7 @@ public:
     const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &GetWaiteCkeProfilingReps() const;
     void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
 
-    void AddSqeProfiling(const CcuKernelArg &arg);
+    void AddSqeProfiling();
     HcclResult AddProfiling(const std::string &name, uint32_t mask);
     HcclResult AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
     HcclResult AddProfiling(const ChannelHandle *channels, uint32_t channelNum);

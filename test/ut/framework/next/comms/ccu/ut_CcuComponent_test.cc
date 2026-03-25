@@ -15,12 +15,14 @@
 #define private public
 #define protected public
 
-#include "ccu_dev_mgr.h"
+#include "ccu_comp.h"
 
 #undef protected
 #undef private
 
-class CcuDevMgrTest : public BaseInit {
+#include "mocks/ccu_device_mock_utils.h"
+
+class CcuComponentTest : public BaseInit {
 public:
     void SetUp() override {
         BaseInit::SetUp();
@@ -37,7 +39,15 @@ public:
 protected:
 };
 
-TEST_F(CcuDevMgrTest, Ut_CcuDevMgr)
+TEST_F(CcuComponentTest, Ut_CcuComponent_Init_When_Mock_Is_Fine_Expect_Return_Ok)
 {
-    std::cout << "Hello World" << std::endl;
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1; // 避免影响其他用例
+    const hcomm::CcuVersion ccuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(devLogicId); // 先处理网络设备，再初始化ccu
+    MockCcuResourcesDefault(devLogicId, ccuVersion);
+
+    hcomm::CcuComponent ccuComponent{};
+    ccuComponent.devLogicId_ = devLogicId;
+
+    EXPECT_EQ(ccuComponent.Init(), HcclResult::HCCL_SUCCESS);
 }

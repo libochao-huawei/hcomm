@@ -69,8 +69,6 @@ CcuKernel::CcuKernel(const CcuKernelArg &arg)
 {
     HCCL_INFO("Construct CcuKernel: %s", arg.GetKernelSignature().GetData().c_str());
     channels_ = arg.channels;
-    // 生成SQE粒度profiling信息
-    AddSqeProfiling(arg);
 }
 
 CcuKernel::~CcuKernel()
@@ -125,6 +123,8 @@ HcclResult CcuKernel::Init()
 
     SetDieId(dieId);
     CHK_RET(Algorithm());
+    // 生成SQE粒度profiling信息
+    AddSqeProfiling();
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -981,6 +981,7 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
                 convertToHccl);
     // 4.构建shared_ptr
     taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
+    HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
     CHK_RET(SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster));
     return HCCL_SUCCESS;
 }
