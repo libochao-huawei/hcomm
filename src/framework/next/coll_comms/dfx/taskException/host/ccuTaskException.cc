@@ -147,6 +147,17 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
             __func__, dieId, devLogicId);
     }
 }
+std::string CcuTaskException::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
+{
+    if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]TaskInfo communicator is nullptr.", __func__);
+        return "";
+    }
+
+    hccl::CollComm *communicator = static_cast<hccl::CollComm*>(taskInfo.dfxOpInfo_->comm_);
+    return Hccl::StringFormat("group:[%s], rankSize[%u], rankId[%d]",
+        communicator->GetCommId().c_str(), communicator->GetRankSize(), communicator->GetMyRankId());
+}
 
 void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
 {
@@ -715,7 +726,7 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
 
     const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
     if (missionStatus == 0) {
-        HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
+        HCCL_ERROR("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
         return HCCL_E_PARA;
     }
@@ -777,7 +788,6 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
                deviceId, ccuTaskParam.execMissionId, startIns, endIns, currIns);
     if (endIns == currIns) {
         HCCL_ERROR("[CcuErrorHandler]device %d SQE != CQE, endIns[%u], currIns[%u]", deviceId, endIns, currIns);
-        return HCCL_E_PARA;
     }
 
     // 安全地获取currIns - 10的值

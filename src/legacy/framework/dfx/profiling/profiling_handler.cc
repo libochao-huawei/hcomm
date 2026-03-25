@@ -310,8 +310,7 @@ void ProfilingHandler::GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfili
     MsprofCcuTaskInfo ccuTaskInfo{};
     ccuTaskInfo.version       = 0;
     ccuTaskInfo.workFlowMode  = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    std::string newName = "Ccu";
-    ccuTaskInfo.itemId        = GetProfHashId(newName.c_str(), newName.length());
+    ccuTaskInfo.itemId        = GetProfHashId(info.name.c_str(), info.name.length());
     uint64_t groupName        = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(),
                                               taskInfo.dfxOpInfo_->op_.opTag.length());
     ccuTaskInfo.groupName     = groupName;
@@ -340,8 +339,7 @@ void ProfilingHandler::GetCcuGroupInfo(const TaskInfo &taskInfo, const CcuProfil
     HCCL_INFO("[ProfilingHandler]GetCcuGroupInfo start.");
     MsprofCcuGroupInfo ccuGroupInfo{};
     ccuGroupInfo.version = 0;
-    std::string newName = "Ccu";
-    ccuGroupInfo.itemId  = GetProfHashId(newName.c_str(), newName.length());
+    ccuGroupInfo.itemId  = GetProfHashId(info.name.c_str(), info.name.length());
     uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
     ccuGroupInfo.groupName      = groupName;
     CommunicatorImpl *commImp        = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
@@ -399,8 +397,7 @@ void ProfilingHandler::GetCcuWaitSignalInfo(const TaskInfo &taskInfo, const CcuP
     HCCL_INFO("[ProfilingHandler]GetCcuWaitSignalInfo start.");
     MsprofCcuWaitSignalInfo waitSignalInfo{};
     waitSignalInfo.version      = 0;
-    std::string newName = "Ccu";
-    waitSignalInfo.itemId       = GetProfHashId(newName.c_str(), newName.length());
+    waitSignalInfo.itemId       = GetProfHashId(info.name.c_str(), info.name.length());
     uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
     waitSignalInfo.groupName    = groupName;
     CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);

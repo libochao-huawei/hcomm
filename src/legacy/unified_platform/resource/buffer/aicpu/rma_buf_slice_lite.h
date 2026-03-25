@@ -16,11 +16,11 @@
 namespace Hccl {
 class RmaBufSliceLite {
 public:
-    RmaBufSliceLite(u64 addr, u32 size, u32 lkey, u32 tokenId);
+    RmaBufSliceLite(u64 addr, u64 size, u32 lkey, u32 tokenId);
 
     u64 GetAddr() const;
 
-    u32 GetSize() const;
+    u64 GetSize() const;
 
     u32 GetLkey() const;
 
@@ -30,7 +30,7 @@ public:
 
 private:
     u64 addr_;
-    u32 size_;
+    u64 size_;
     u32 lkey_;
     u32 tokenId_;
 };
