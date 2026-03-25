@@ -4797,6 +4797,9 @@ HcclResult HcclDeviceRefresh(s32 &deviceLogicId)
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
 {
     HCCL_INFO("[HcclTaskRegister] start to register task");
@@ -4823,9 +4826,6 @@ int32_t HcclTaskUnRegister(HcclComm comm,  const char *msgTag)
     return HCCL_E_NOT_SUPPORT;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
 HcclResult HcclGetTopoDesc(HcclComm comm, HcclTopoDescs *topoDescs, uint32_t topoSize)
 {
     // 入参合法性校验
