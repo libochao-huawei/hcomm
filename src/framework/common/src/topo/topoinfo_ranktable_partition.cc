@@ -81,6 +81,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubRankTable(const uint32_t rankN
     subRankTable.serverNum = serverIdMap.size();
     subRankTable.superPodNum = superPodIdMap.size();
     subRankTable.rankNum = rankNum;
+    subRankTable.version = globalRankTable_.version;
 
     return HCCL_SUCCESS;
 }
@@ -92,7 +93,7 @@ HcclResult TopoinfoRanktablePartition::GenerateSubSuperPodId(hccl::RankTable_t &
         podGroupClusters[rankInfo.originalSuperPodId].emplace_back(&rankInfo);
     }
     std::set<std::string> superPodIdSet;
-    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // ¼ÇÂ¼Ã¿¸öÂß¼­³¬½ÚµãµÄrank id·¶Î§
+    std::map<std::string, std::pair<u32, u32>> superPodIdRanges; // ï¿½ï¿½Â¼Ã¿ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½rank idï¿½ï¿½Î§
     for (auto& subCluster : podGroupClusters) {
         auto& subClusterInfo = subCluster.second;
         if (subClusterInfo.size() <= 1) {
@@ -101,26 +102,26 @@ HcclResult TopoinfoRanktablePartition::GenerateSubSuperPodId(hccl::RankTable_t &
         u32 groupId = 0;
         superPodIdSet.insert(subCluster.first);
         RankInfo_t preRank = *(subClusterInfo[0]);
-        superPodIdRanges[preRank.superPodId] = {preRank.rankId, preRank.rankId}; // ³õÊ¼»¯·¶Î§
+        superPodIdRanges[preRank.superPodId] = {preRank.rankId, preRank.rankId}; // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Î§
         for (u32 i = 1; i < subClusterInfo.size(); ++i) {
             RankInfo_t& curRank = *(subClusterInfo[i]);
-            // µ±Ç°µÄcurRankºÍÉÏÒ»¸öpreRankµÄrankId²»Á¬Ðø£¬·ÖÅäÐÂµÄÂß¼­³¬½ÚµãID
+            // ï¿½ï¿½Ç°ï¿½ï¿½curRankï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½preRankï¿½ï¿½rankIdï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½ID
             if (curRank.rankId != preRank.rankId + 1) {
                 std::string newSuperPodId = curRank.originalSuperPodId + "_HCCLSPLIT_" + std::to_string(groupId);
                 curRank.superPodId = newSuperPodId;
                 groupId++;
-                superPodIdRanges[curRank.superPodId] = {curRank.rankId, curRank.rankId}; // ³õÊ¼»¯ÐÂµÄ·¶Î§
+                superPodIdRanges[curRank.superPodId] = {curRank.rankId, curRank.rankId}; // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ÂµÄ·ï¿½Î§
             } else {
-                // Í¬Ò»¸ösubÍ¨ÐÅÓòÁ½¸örankÔ­Ê¼Âß¼­³¬½ÚµãÊÇÒ»ÖÂµÄ
-                // rankIdÁ¬Ðø ÉÏÒ»¸örankµÄsuperPodId¿ÉÄÜÒÑ¾­ÖØÐÂ·ÖÅä£¬ÐèÒª¸üÐÂµ±Ç°superPodIdÎªÉÏÒ»¸örankµÄ
+                // Í¬Ò»ï¿½ï¿½subÍ¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½rankÔ­Ê¼ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½Ò»ï¿½Âµï¿½
+                // rankIdï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ò»ï¿½ï¿½rankï¿½ï¿½superPodIdï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ä£¬ï¿½ï¿½Òªï¿½ï¿½ï¿½Âµï¿½Ç°superPodIdÎªï¿½ï¿½Ò»ï¿½ï¿½rankï¿½ï¿½
                 curRank.superPodId = preRank.superPodId;
-                superPodIdRanges[curRank.superPodId].second = curRank.rankId; // ¸üÐÂ×î´órank id
+                superPodIdRanges[curRank.superPodId].second = curRank.rankId; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½rank id
             }
             superPodIdSet.insert(curRank.superPodId);
             preRank = curRank;
         }
     }
-    // ´òÓ¡Ã¿¸öÂß¼­³¬½ÚµãµÄrank id·¶Î§£¬Ö»´òÓ¡°üº¬_HCCLSPLIT_µÄÂß¼­³¬½Úµã
+    // ï¿½ï¿½Ó¡Ã¿ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½rank idï¿½ï¿½Î§ï¿½ï¿½Ö»ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½_HCCLSPLIT_ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ï¿½Úµï¿½
     for (const auto& entry : superPodIdRanges) {
         auto superPodId = entry.first;
         if (superPodId.find("_HCCLSPLIT_") != std::string::npos) {
@@ -204,7 +205,12 @@ HcclResult TopoinfoRanktablePartition::Struct2JsonRankTable(const RankTable_t &c
     ClusterJson[PROP_RANK_LIST] = rankListJson;
 
     ClusterJson[PROP_STATUS] = "completed";
-    ClusterJson[PROP_VERSION] = (deviceType == DevType::DEV_TYPE_910_93) ? "1.2" : "1.0";
+    if (!clusterInfo->version.empty()) {
+        ClusterJson[PROP_VERSION] = clusterInfo->version;
+    } else {
+        ClusterJson[PROP_VERSION] = (deviceType == DevType::DEV_TYPE_910_93) ? "1.2" : "1.0";
+    }
+    
     return HCCL_SUCCESS;
 }
 }  // namespace hccl
