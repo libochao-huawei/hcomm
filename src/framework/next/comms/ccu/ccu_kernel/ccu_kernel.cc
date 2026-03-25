@@ -950,7 +950,6 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
             if (profInfo.channelId[idx] == INVALID_VALUE_CHANNELID) {
                 break;
             }
-
             // TODO:需要修改
             profInfo.remoteRankId[idx] = 0;
             HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
@@ -983,10 +982,7 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
     converted.reserve(streamProfilingInfo.size());
 
     // 3. 使用transform
-    std::transform(streamProfilingInfo.begin(),
-                streamProfilingInfo.end(),
-                std::back_inserter(converted),
-                convertToHccl);
+    std::transform(streamProfilingInfo.begin(), streamProfilingInfo.end(), std::back_inserter(converted), convertToHccl);
     // 4.构建shared_ptr
     taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
     HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
@@ -1015,11 +1011,10 @@ HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t c
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
         ccuProfilingInfoCache.channelHandle[i] = channels[i];
         HCCL_INFO("[%s]type[%d], name[%s], opType[%d], dataType[%d], outputDataType[%d], missionId[%u], "
-            "channelHandle[0x%llx], channelId[%u]", __func__, ccuProfilingInfoCache.type,
-            ccuProfilingInfoCache.name.c_str(), opType, dataType, outputDataType, ccuProfilingInfoCache.missionId,
-            ccuProfilingInfoCache.channelHandle[i], ccuProfilingInfoCache.channelId[i]);
+                "channelHandle[0x%llx], channelId[%u]", __func__, ccuProfilingInfoCache.type, 
+                ccuProfilingInfoCache.name.c_str(), opType, dataType, outputDataType, ccuProfilingInfoCache.missionId,
+                ccuProfilingInfoCache.channelHandle[i], ccuProfilingInfoCache.channelId[i]);
     }
-
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
     lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
     return HCCL_SUCCESS;

@@ -315,30 +315,23 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     HcclUs startut = TIME_NOW();
     (void)comm;
     CHK_PTR_NULL(taskArgs);
+    CHK_PRT_RET(threadHandle == 0, HCCL_ERROR("[%s] failed, thread handle is empty.", __func__), HCCL_E_PARA);
 
-    CHK_PRT_RET(threadHandle == 0,
-        HCCL_ERROR("[%s] failed, thread handle is empty.", __func__),
-        HcclResult::HCCL_E_PARA);
-
-    const Thread *rtsThread = reinterpret_cast<Thread *>(threadHandle);
-    const auto *threadStream = rtsThread->GetStream();
+    const auto *threadStream = reinterpret_cast<Thread *>(threadHandle)->GetStream();
     CHK_PTR_NULL(threadStream);
     auto *streamPtr = threadStream->ptr();
     CHK_PTR_NULL(streamPtr);
 
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(devLogicId);
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(HcclGetThreadDeviceId());
     auto *kernel = kernelMgr.GetKernel(kernelHandle);
     CHK_PTR_NULL(kernel);
 
     EXCEPTION_HANDLE_BEGIN
-    const hcomm::CcuTaskArg *ccuTaskArgs =
-        reinterpret_cast<hcomm::CcuTaskArg *>(taskArgs);
+    const hcomm::CcuTaskArg *ccuTaskArgs = reinterpret_cast<hcomm::CcuTaskArg *>(taskArgs);
     std::vector<hcomm::CcuTaskParam> ccuParams{};
     auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
-    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
-        HcclResult::HCCL_SUCCESS);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
+    HcclResult::HCCL_SUCCESS);
 
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
@@ -364,11 +357,9 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         .ccuDetailInfo  = nullptr
     };
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
-
     CHK_RET(kernel->ReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo,
                                         comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
-    HCCL_INFO("[%s] success, take time [%lld]us.",
-        __func__, DURATION_US(TIME_NOW() - startut));
+    HCCL_INFO("[%s] success, take time [%lld]us.",  __func__, DURATION_US(TIME_NOW() - startut));
     return HcclResult::HCCL_SUCCESS;
 }
