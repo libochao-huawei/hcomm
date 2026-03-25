@@ -153,7 +153,7 @@ HcclResult hcclComm::Resume()
 }
 HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
 {
-    status = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
+    status = HcclCommStatus::HCCL_COMM_STATUS_READY;
     if (IsCommunicatorV2()) {
         ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
         ReadWriteLock rwlock(commAicpuMapMutex);
@@ -165,7 +165,7 @@ HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
             if (deviceComm.first != identifier_) {
                 continue;
             }
-            CollCommAicpu* aicpuCommPtr= deviceComm.second->GetCollCommAicpu();
+            CollCommAicpu* aicpuCommPtr = deviceComm.second->GetCollCommAicpu();
             CHK_PTR_NULL(aicpuCommPtr);
             status = aicpuCommPtr->GetCommmStatus();
             break;

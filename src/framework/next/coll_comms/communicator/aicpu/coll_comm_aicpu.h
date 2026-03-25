@@ -79,7 +79,7 @@ private:
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
 
     std::string identifier_;
-    commmStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
+    HcclCommStatus commmStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     HcclTopoInfo topoInfo_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;

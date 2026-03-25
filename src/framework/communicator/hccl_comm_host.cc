@@ -409,7 +409,7 @@ namespace hccl
         if (IsCommunicatorV2()) {
             status = collComm_->GetCommStatus();
         } else {
-            status = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
+            status = HcclCommStatus::HCCL_COMM_STATUS_READY;
         }
         return HCCL_SUCCESS;
     }

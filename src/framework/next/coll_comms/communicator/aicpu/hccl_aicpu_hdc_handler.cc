@@ -19,7 +19,7 @@ HcclAicpuHdcHandler::HcclAicpuHdcHandler(const std::shared_ptr<HDCommunicate> &h
 {
 }
 
-HcclResult HcclAicpuHdcHandler::GetKfcCommand(Hccl::KfcCommand &cmd) const
+HcclResult HcclAicpuHdcHandler::GetKfcCommand(Hccl::KfcCommand &cmd)
 {
     auto ret = h2dTransfer_->Get(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&cmd));
     if (ret != HcclResult::HCCL_SUCCESS) {
@@ -34,7 +34,7 @@ HcclResult HcclAicpuHdcHandler::GetKfcCommand(Hccl::KfcCommand &cmd) const
     return HCCL_SUCCESS;
 }
 
-void HcclAicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const
+void HcclAicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode)
 {
     Hccl::KfcExecStatus status;
     status.kfcStatus = state;

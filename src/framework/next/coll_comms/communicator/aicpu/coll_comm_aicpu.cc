@@ -76,7 +76,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
 void CollCommAicpu::SetCommmStatus(HcclCommStatus status)
 {
-    HCCL_INFO("[%s]group[%s], flag[%d]", __func__, identifier_.c_str(), flag);
+    HCCL_INFO("[%s]group[%s], flag[%d]", __func__, identifier_.c_str(), static_cast<int>(status));
     commmStatus_ = status;
 }
 
@@ -328,7 +328,6 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
 HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
 {
     CHK_RET(ProcessUrmaRes(commParam, false));
-    nsRecoveryLitePtr_->SetIsSuspended(false);
     nsRecoveryLitePtr_->SetNeedClean(false);
     nsRecoveryLitePtr_->ResetErrorReported();
 

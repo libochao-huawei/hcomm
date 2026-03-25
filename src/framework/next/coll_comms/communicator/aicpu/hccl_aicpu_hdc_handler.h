@@ -21,8 +21,8 @@ public:
     HcclAicpuHdcHandler(const std::shared_ptr<HDCommunicate> &h2dTransfer, const std::shared_ptr<HDCommunicate> &d2hTransfer);
     ~HcclAicpuHdcHandler() = default;
 
-    HcclResult GetKfcCommand(Hccl::KfcCommand &cmd) const;
-    void SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const;
+    HcclResult GetKfcCommand(Hccl::KfcCommand &cmd);
+    void SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode);
 
 private:
     std::shared_ptr<HDCommunicate> h2dTransfer_{nullptr};
