@@ -9,6 +9,8 @@
 #include "ip_address.h"
 #include "hccp.h"
 #include "buffer.h"
+#include "network_api_exception.h"
+#include "endpoint.h"
 
 class CpuRoceEndpointTest : public testing::Test {
 protected:
@@ -56,6 +58,21 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Normal_EXPECT_Return_HCCL_SUCCESS)
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
     HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// HcommEndpointCreate fail
+TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
+{
+    Hccl::IpAddress   localIp("223.0.0.1");
+    EndpointDesc endpointDesc;
+    endpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    void* endpointHandle{nullptr};
+    MOCKER(&Hccl::RdmaHandleManager::GetByIp).stubs().will(throws(Hccl::NetworkApiException("error")));
+    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    EXPECT_EQ(ret, 11);
 }
 
 // Device
