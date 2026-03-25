@@ -22,6 +22,7 @@
 #include "internal_exception.h"
 #include "coll_service_device_mode.h"
 #include "adapter_error_manager_pub.h"
+#include "rdma_handle_manager.h"
 
 namespace Hccl {
 
@@ -93,6 +94,47 @@ static HcclResult CheckIfLinkProtocolSupport(const LinkData &link)
     return HcclResult::HCCL_SUCCESS;
 }
 
+CcuTransport::CcuConnectionType LinkProtocol2ConnType(LinkProtocol linkProtocol)
+{
+    CcuTransport::CcuConnectionType type;
+    switch (linkProtocol) {
+        case LinkProtocol::UB_CTP:
+            type = CcuTransport::CcuConnectionType::UBC_CTP;
+            break;
+        case LinkProtocol::UB_TP:
+            type = CcuTransport::CcuConnectionType::UBC_TP;
+            break;
+        case LinkProtocol::UBOE:
+            type = CcuTransport::CcuConnectionType::UBC_UBOE;
+            break;
+        default:
+            type = CcuTransport::CcuConnectionType::UBC_TP;
+            break;
+    }
+    HCCL_INFO("[CcuTransportMgr::%s] CcuConnectionType[%s]", __func__, type.Describe().c_str());
+    return type;
+}
+
+HcclResult GeneratorLocCclBufInfo(const CommunicatorImpl *comm, CcuTransport::CclBufferInfo& locCclBufInfo)
+{
+    std::shared_ptr<LocalUbRmaBuffer> locCclRmaBuffer;
+    if (comm->GetCclBuffer() == nullptr) {
+        HCCL_ERROR("dataBuf[type=SCRATCH] is nullptr");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    HCCL_INFO("[CcuTransportMgr][%s] comm cclBuf[%s]", __func__, comm->GetCclBuffer()->Describe().c_str());
+    locCclRmaBuffer = make_shared<LocalUbRmaBuffer>(comm->GetCclBuffer());
+    HCCL_INFO("[CcuTransportMgr::%s] locCclRmaBuffer[%s]", __func__, locCclRmaBuffer->Describe().c_str());
+    CcuTransport::CclBufferInfo tempLocCclBufInfo {
+        locCclRmaBuffer->GetBuf()->GetAddr(),
+        static_cast<uint32_t>(locCclRmaBuffer->GetBuf()->GetSize()),
+        locCclRmaBuffer->GetTokenId(),
+        locCclRmaBuffer->GetTokenValue()
+    };
+    locCclBufInfo = tempLocCclBufInfo;
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuTransportMgr::CreateTransportByLink(const LinkData &link, CcuTransport *&transport)
 {
     HCCL_INFO("[CcuTransportMgr][%s] begain", __func__);
@@ -114,28 +156,28 @@ HcclResult CcuTransportMgr::CreateTransportByLink(const LinkData &link, CcuTrans
     const CcuChannelInfo &channelInfo = channelJettys.first;
     const std::vector<CcuJetty *> &ccuJettys = channelJettys.second;
 
-    const auto &locAddr = link.GetLocalAddr();
-    const auto &rmtAddr = link.GetRemoteAddr();
-    CcuTransport::CcuConnectionType type = link.GetLinkProtocol() == LinkProtocol::UB_CTP ?
-        CcuTransport::CcuConnectionType::UBC_CTP : CcuTransport::CcuConnectionType::UBC_TP;
-    CcuTransport::CcuConnectionInfo connectionInfo{type, locAddr, rmtAddr, channelInfo, ccuJettys};
+    locAddr = link.GetLocalAddr();
+    rmtAddr = link.GetRemoteAddr();
+    IpAddress locIpv4Addr = locAddr;
+    IpAddress rmtIpv4Addr = rmtAddr;
 
-    std::shared_ptr<LocalUbRmaBuffer> locCclRmaBuffer;
-    if (comm->GetCclBuffer() == nullptr) {
-        HCCL_ERROR("dataBuf[type=SCRATCH] is nullptr");
-        return HcclResult::HCCL_E_INTERNAL;
+    if (link.GetLinkProtocol() == LinkProtocol::UBOE) {
+        IpAddress eidAddress;
+        RdmaHandleManager::GetInstance().UboeIpv4ToEid(locAddr, eidAddress);
+        locAddr = eidAddress;
     }
-    HCCL_INFO("[CcuTransportMgr][%s] comm cclBuf[%s]", __func__, comm->GetCclBuffer()->Describe().c_str());
-    locCclRmaBuffer = make_shared<LocalUbRmaBuffer>(comm->GetCclBuffer());
 
-    HCCL_INFO("[CcuTransportMgr::CreateTransportByLink] locCclRmaBuffer[%s]", locCclRmaBuffer->Describe().c_str());
-    const CcuTransport::CclBufferInfo locCclBufInfo {
-        locCclRmaBuffer->GetBuf()->GetAddr(),
-        static_cast<uint32_t>(locCclRmaBuffer->GetBuf()->GetSize()),
-        locCclRmaBuffer->GetTokenId(),
-        locCclRmaBuffer->GetTokenValue()
-    };
+    HCCL_INFO("[CcuTransportMgr][%s] LinkProtocol[%s]", __func__, link.GetLinkProtocol().Describe().c_str());
+    // 根据locAddr获取EID
+    if (link.GetLinkProtocol() == LinkProtocol::UBOE) {
+        // socket建链状态ok，并交换数据
+ 	    WaitUboeSocketReady(socket, link);
+    }
 
+    CcuTransport::CcuConnectionType type = LinkProtocol2ConnType(link.GetLinkProtocol());
+    const CcuTransport::CcuConnectionInfo connectionInfo{type, locAddr, rmtAddr, channelInfo, ccuJettys, locIpv4Addr, rmtIpv4Addr};
+    CcuTransport::CclBufferInfo locCclBufInfo;
+    CHK_RET(GeneratorLocCclBufInfo(comm, locCclBufInfo));
     // 当前不支持创建非UBC协议的链路
     std::unique_ptr<CcuTransport> transportPtr = nullptr;
     auto ret = CcuCreateTransport(socket, connectionInfo, locCclBufInfo, transportPtr);
@@ -422,6 +464,126 @@ void CcuTransportMgr::WaitTransportsRecoverReady(vector<std::pair<CcuTransport*,
             THROW<InternalException>("WaitTransportReady timeout, commId[%s]", comm->GetId().c_str());
         }
     }
+}
+
+bool CcuTransportMgr::IsSocketReady(Socket *socket, const LinkData &linkData)
+{
+    if (socket == nullptr) {
+        MACRO_THROW(InternalException, StringFormat("%s socket is nullptr, please check", linkData.Describe().c_str()));
+    }
+
+    SocketStatus socketStatus = socket->GetAsyncStatus();
+    if (socketStatus == SocketStatus::OK) {
+        uboeStatus = UboeStatus::SOCKET_OK;
+        return true;
+    } else if (socketStatus == SocketStatus::TIMEOUT) {
+        uboeStatus = UboeStatus::SOCKET_TIMEOUT;
+        return false;
+    }
+
+    return false;
+}
+
+UboeStatus CcuTransportMgr::GetUboeSocketStatus(Socket *socket, const LinkData &linkData)
+{
+    if (uboeStatus == UboeStatus::READY) {
+        return uboeStatus;
+    } else if (uboeStatus == UboeStatus::INIT) {
+        ubStatus = UbStatus::INIT;
+    }
+
+    if (!IsSocketReady(socket, linkData)) {
+        return uboeStatus;
+    }
+
+    switch (ubStatus) {
+        case UbStatus::INIT:
+            ubStatus = UbStatus::SOCKET_OK;
+            uboeStatus = UboeStatus::SOCKET_OK;
+            break;
+        case UbStatus::SOCKET_OK:
+            ubStatus = UbStatus::SEND_DATA;
+            SendExchangeData(socket, linkData);
+            break;
+        case UbStatus::SEND_DATA:
+            RecvExchangeData(socket, linkData);
+            ubStatus = UbStatus::RECV_DATA;
+            break;
+        case UbStatus::RECV_DATA:
+            RecvDataProcess(linkData);
+            ubStatus = UbStatus::RECV_FIN;
+            uboeStatus = UboeStatus::READY;
+            break;
+        default:
+            break;
+    }
+    return uboeStatus;
+}
+
+void CcuTransportMgr::WaitUboeSocketReady(Socket *socket, const LinkData &linkData)
+{
+    HCCL_INFO("[CcuTransportMgr][%s] begain", __func__);
+    auto timeout   = std::chrono::seconds(EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    HcclUs startTime = std::chrono::steady_clock::now();
+    while (true) {
+        auto status = GetUboeSocketStatus(socket, linkData);
+        if (status == UboeStatus::READY) {
+            break;
+        }
+        if (status == UboeStatus::SOCKET_TIMEOUT) {
+            MACRO_THROW(TimeoutException,
+                        StringFormat("[CcuTransportMgr][%s] %s socket timeout, commId[%s], please check",
+                                        __func__, linkData.Describe().c_str(),
+                                        comm->GetId().c_str()));
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            string timeoutMsg = StringFormat("WaitUboeSocketReady timeout, commId[%s].", comm->GetId().c_str());
+            HCCL_ERROR(timeoutMsg.c_str());
+            THROW<InternalException>(timeoutMsg);
+        }
+    }
+    HCCL_INFO("[CcuTransportMgr][%s] end", __func__);
+}
+
+void CcuTransportMgr::Ipv4Pack()
+{
+    IpAddress locEidAddr;
+    RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locAddr, locEidAddr);
+    locAddr = locEidAddr;
+    HCCL_INFO("[RmaConnManager::%s] locAddr[%s]", __func__, locAddr.Describe().c_str());
+    sendData = locAddr.GetUniqueId();
+}
+
+void CcuTransportMgr::Ipv4UnPack(BinaryStream& binaryStream)
+{
+    IpAddress rmtEidAddr(binaryStream);
+    rmtAddr = rmtEidAddr;
+    HCCL_INFO("[RmaConnManager::%s] rmtAddr[%s]", __func__, rmtAddr.Describe().c_str());
+}
+
+void CcuTransportMgr::SendExchangeData(Socket *socket, const LinkData &linkData)
+{
+    Ipv4Pack();
+    socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
+    exchangeDataSize = sendData.size();
+
+    HCCL_INFO("send data %s, size=%llu", linkData.Describe().c_str(), exchangeDataSize);
+}
+
+void CcuTransportMgr::RecvExchangeData(Socket *socket, const LinkData &linkData)
+{
+    recvData.resize(exchangeDataSize);
+    socket->RecvAsync(reinterpret_cast<u8 *>(recvData.data()), recvData.size());
+
+    HCCL_INFO("recv data %s, size=%llu", linkData.Describe().c_str(), recvData.size());
+}
+
+void CcuTransportMgr::RecvDataProcess(const LinkData &linkData)
+{
+    HCCL_INFO("RecvDataProcess: link=%s, size=%llu, exchangeDataSize=%u", linkData.Describe().c_str(), recvData.size(),
+            exchangeDataSize);
+    BinaryStream binaryStream(recvData);
+    Ipv4UnPack(binaryStream);
 }
 
 } // namespace Hccl
