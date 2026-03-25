@@ -22,6 +22,7 @@
 #include "llt_hccl_stub_pub.h"
 #include "aicpu_hccl_process.h"
 #include "symmetric_memory.h"
+#include "hccl_sym_win.h"
 
 using namespace std;
 using namespace hccl;
