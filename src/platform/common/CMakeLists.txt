@@ -11,6 +11,7 @@ set(src_list
     externalinput.cc
     sal.cc
     log.cc
+    hccl_device.cc
     workflow.cc
     hccl_dl.cc
     hccl_ip_address.cc
@@ -56,6 +57,7 @@ target_sources(hccd PRIVATE
     dlprof_func.cc
     dlibv_function.cc
     dlhns_function.cc
+    hccl_device.cc
 )
 
 add_subdirectory(adapter)

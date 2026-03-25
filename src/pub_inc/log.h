@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <string>
 #include "dlog_pub.h"
+#include "hccl_device.h"
 #ifndef T_DESC
 #define T_DESC(_msg, _y) ((_y) ? true : false)
 #endif
@@ -88,24 +89,28 @@ const u64 HCCL_MODULE_ID = 5;
 #define HCCL_DEBUG(format, ...) do { \
     if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_DEBUG))) { \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_DEBUG, format, ##__VA_ARGS__); \
+        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_INFO(format, ...) do { \
     if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) { \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_INFO, format, ##__VA_ARGS__); \
+        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_WARNING(format, ...) do { \
     if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_WARN))) { \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_WARN, format, ##__VA_ARGS__); \
+        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_ERROR(format, ...) do { \
     if (LIKELY(HcclCheckLogLevel(HCCL_LOG_ERROR))) { \
         HCCL_ERROR_LOG_PRINT(format, ##__VA_ARGS__); \
+        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
     } \
 } while(0)
 
@@ -113,12 +118,14 @@ const u64 HCCL_MODULE_ID = 5;
 #define HCCL_RUN_INFO(format, ...) do { \
     if (LIKELY(HcclCheckLogLevel(HCCL_LOG_INFO, HCCL_LOG_MASK))) { \
         HCCL_RUN_LOG_PRINT(format, ##__VA_ARGS__); \
+        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_RUN_WARNING(format, ...) do { \
     if (LIKELY(HcclCheckLogLevel(HCCL_LOG_WARN, HCCL_LOG_MASK))) { \
         HCCL_LOG_PRINT(HCCL_LOG_MASK, HCCL_LOG_WARN, format, ##__VA_ARGS__); \
+        logC(__func__, __FILE__, __LINE__, "[ERROR]", format, ##__VA_ARGS__); \
     } \
 } while(0)
 
