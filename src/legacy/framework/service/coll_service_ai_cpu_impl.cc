@@ -90,6 +90,7 @@ DevBuffer *CollServiceAiCpuImpl::OpBasedCollProcess(CollOperator &op, const std:
         comm->GetMemTransportManager()->BatchBuildOffloadTransports(op.opTag, req.resReq.links);
         WaitOffloadTransportReady(op.opTag);
     }
+    HCCL_INFO("[CollServiceAiCpuImpl::%s] WaitTransportReady", __func__);
 
     u32 bsrRemoteRanksHashValue = 0;
     if (op.opType == OpType::BATCHSENDRECV) {
@@ -137,6 +138,7 @@ void CollServiceAiCpuImpl::LoadWithOpBasedMode(CollOperator &op, unique_ptr<Stre
     RegisterOpbasedStream(std::move(stream));
 
     LoadWithOpBasedModeNoRegister(op);
+    HCCL_INFO("[CollServiceAiCpuImpl::%s] success.", __func__);
 }
 
 void CollServiceAiCpuImpl::LoadWithOffloadModeNoRegister(CollOperator &op)
@@ -380,6 +382,7 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
     comm->SetAicpuKernelLaunched(true);
 
     comm->GetStreamManager().ResetSlaveIndex(0);
+    HCCL_INFO("[CollServiceAiCpuImpl::%s] success.", __func__);
 }
 
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
@@ -421,6 +424,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
 
     SaveDfxTaskInfo(taskParam, -1, mStream.IsMaster());
     AddWaitToUserStream(stream);
+    HCCL_INFO("[CollServiceAiCpuImpl::%s] success.", __func__);
 }
 
 constexpr u8 QUEUE_NOTIFY_POST_QID_POS = 0;
