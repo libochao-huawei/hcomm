@@ -548,6 +548,13 @@ target_compile_definitions(ccl_kernel_plf_a PRIVATE
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER
 )
+
+if(TARGET tracy_client)
+    target_compile_definitions(ccl_kernel_plf PRIVATE TRACY_ENABLE)
+    target_compile_definitions(ccl_kernel_plf_a PRIVATE TRACY_ENABLE)
+    target_include_directories(ccl_kernel_plf PRIVATE ${TRACY_SRC_INCLUDE})
+    target_include_directories(ccl_kernel_plf_a PRIVATE ${TRACY_SRC_INCLUDE})
+endif()
 # 向ccl_kernel_plf添加链接器选项
 target_link_options(ccl_kernel_plf PRIVATE
     -Wl,-z,relro,-z,now,-z,noexecstack
@@ -625,6 +632,11 @@ else()
         -lpthread
         ofed_headers
     )
+endif()
+
+if(TARGET tracy_client)
+    # Keep Tracy symbols resolved in FULL_MODE where ccl_kernel uses shared ccl_kernel_plf.
+    target_link_libraries(ccl_kernel_plf tracy_client)
 endif()
 
 # 将子目录添加到构建过程
