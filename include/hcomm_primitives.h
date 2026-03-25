@@ -413,7 +413,6 @@ extern int32_t HcommReleaseComm(const char* commId);
  */
 extern int32_t HcommFenceOnThread(ThreadHandle thread);
 
-// TODO: 两个Fence的接口都保留？
 /**
  * @brief 通信通道级内存屏障操作
  * @param[in] thread 线程句柄
