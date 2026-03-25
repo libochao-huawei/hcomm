@@ -160,7 +160,7 @@ private:
                           splitDataSize.at(1) * float(scratchMultiple.intraScatter);
         float multiple1 = splitDataSize.at(0) * float(scratchMultiple.interAllGather / interLocalRankSize_) +
                           splitDataSize.at(1) * float(scratchMultiple.intraAllGather / intraLocalRankSize_);
-        scratchMultiple.maxMultiple = std::max(multiple0, multiple1);
+        scratchMultiple.maxMultiple = std::max(multiple0, multiple1) + 1;
         return;
     }
     void CalcSlice(std::vector<float>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice);

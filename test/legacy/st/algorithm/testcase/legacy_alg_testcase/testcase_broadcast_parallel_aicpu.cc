@@ -74,7 +74,17 @@ protected:
     }
 };
 
-TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_2_mul_1_rank_ParallelMesh1DNHR)
+TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_2_mul_2_rank_ParallelMesh1DNHR)
 {
-    RunBroadcastTest(0, 1, 2, 2, CheckerOpMode::OPBASE, 96, "AiCpuInsBroadcastParallelMesh1DNHR", 200);
+    RunBroadcastTest(0, 1, 2, 2, CheckerOpMode::OPBASE, 100, "AiCpuInsBroadcastParallelMesh1DNHR", 200);
+}
+
+TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_2_mul_8_rank_ParallelMesh1DNHR)
+{
+    RunBroadcastTest(0, 1, 2, 8, CheckerOpMode::OPBASE, 100, "AiCpuInsBroadcastParallelMesh1DNHR", 200);
+}
+
+TEST_F(BroadcastParallelAiCpuTest, broadcast_aicpu_case_test_8_mul_8_rank_ParallelMesh1DNHR)
+{
+    RunBroadcastTest(0, 1, 8, 8, CheckerOpMode::OPBASE, 100, "AiCpuInsBroadcastParallelMesh1DNHR", 200);
 }

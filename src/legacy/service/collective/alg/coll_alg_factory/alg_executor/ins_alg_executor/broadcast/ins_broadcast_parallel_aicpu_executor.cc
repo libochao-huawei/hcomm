@@ -431,7 +431,7 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
         // 第一步的时候server内topo包含root_的rank进行展开，其它rank不展开
         if ((!isFirst || intraLocalRoot_ == root_) && dataParameters.CountPart1 > 0) {
             // 数据1的server内的scatter算法
-            GenDataParamsStage0(
+            GenDataParamsStage(
                 part1SliceSize[i], part1InputStride[i], dataParameters.dataOffset1, dataParameters.CountPart1,
                 algParaVec.at(i).part1ScratchOffset, tempAlgParams);
             CHK_RET(algParaVec.at(i).part1FuncPtr(
