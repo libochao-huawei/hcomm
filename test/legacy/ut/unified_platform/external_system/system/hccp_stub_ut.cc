@@ -727,3 +727,8 @@ int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int id
 {
     return 0;
 }
+
+int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[], unsigned int *num)
+{
+    return 0;
+}

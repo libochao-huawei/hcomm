@@ -220,7 +220,7 @@ void UbMemTransport::Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlic
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
     taskParam.taskPara.DMA.size = rmtSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp = DmaOp::HCCL_DMA_READ;
     SaveDfxTaskInfo(taskParam);
 }
@@ -243,7 +243,7 @@ void UbMemTransport::ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBuff
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
     taskParam.taskPara.DMA.size = rmtSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp = DmaOp::HCCL_DMA_READ;
  
     SaveDfxTaskInfo(taskParam);
@@ -264,7 +264,7 @@ void UbMemTransport::Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSli
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
     taskParam.taskPara.DMA.size = locSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp = DmaOp::HCCL_DMA_WRITE;
  
     SaveDfxTaskInfo(taskParam);
@@ -288,7 +288,7 @@ void UbMemTransport::WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBuf
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmtSlice.addr);
     taskParam.taskPara.DMA.size = locSlice.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp = DmaOp::HCCL_DMA_WRITE;
  
     SaveDfxTaskInfo(taskParam);
@@ -373,7 +373,7 @@ void UbMemTransport::SubmitWriteWithNotify(const MemoryBuffer &rmt, const Memory
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmt.addr);
     taskParam.taskPara.DMA.size = loc.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp = DmaOp::HCCL_DMA_WRITE;
  
     SaveDfxTaskInfo(taskParam);
@@ -398,7 +398,7 @@ void UbMemTransport::SubmitWriteReduceWithNotify(const MemoryBuffer &rmt, const 
     taskParam.taskPara.DMA.dst = reinterpret_cast<const void*>(rmt.addr);
     taskParam.taskPara.DMA.size = loc.size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
-    taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::UBoE;
     taskParam.taskPara.DMA.dmaOp = DmaOp::HCCL_DMA_WRITE;
  
     SaveDfxTaskInfo(taskParam);
@@ -866,7 +866,7 @@ std::vector<char> UbMemTransport::GetConnUniqueIds()
     HCCL_INFO("start packing all conn uniqueIds");
     std::vector<char> result(0);
     for (auto &it : commonLocRes.connVec) {
-        HCCL_INFO("ubMemTransport %s", it->Describe().c_str());
+        HCCL_INFO("[UbMemTransport::%s] conn[%s]", __func__, it->Describe().c_str());
         auto uniqueId = it->GetUniqueId();
         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
     }

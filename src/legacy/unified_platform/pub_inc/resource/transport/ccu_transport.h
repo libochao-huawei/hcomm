@@ -52,7 +52,7 @@ public:
         }
     };
 
-    MAKE_ENUM(CcuConnectionType, UBC_TP, UBC_CTP);
+    MAKE_ENUM(CcuConnectionType, UBC_TP, UBC_CTP, UBC_UBOE);
     struct CcuConnectionInfo {
         CcuConnectionType type{CcuConnectionType::UBC_TP};
         IpAddress locAddr{};
