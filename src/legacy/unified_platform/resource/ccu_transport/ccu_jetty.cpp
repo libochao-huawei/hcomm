@@ -161,7 +161,7 @@ HcclResult CcuJetty::Clean()
             jettyHandlePtr_ = nullptr;
             reqDataBuffer_.clear();
         }
-        isError_ = false;)
+        isError_ = false;);
     return HcclResult::HCCL_SUCCESS;
 }
 } // namespace Hccl
