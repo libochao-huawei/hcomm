@@ -717,7 +717,7 @@ HcclResult GetArgIndex(const std::unordered_map<uint16_t, uint16_t> &varId2VarId
                 return HCCL_E_PARA;
             }
         } else {
-            HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u)", __func__, varId)
+            HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u)", __func__, varId);
             return HCCL_E_PARA;
         }
     }
