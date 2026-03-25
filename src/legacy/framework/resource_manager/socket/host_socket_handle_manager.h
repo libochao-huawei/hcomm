@@ -48,6 +48,8 @@ public:
 private:
     std::atomic<int> userCount{0};
 
+    bool isDestroy{false};
+
     std::vector<unordered_map<string, hostSocketHandleRef>> hostSocketHandleMap;
     
     std::mutex socketHandleLock;

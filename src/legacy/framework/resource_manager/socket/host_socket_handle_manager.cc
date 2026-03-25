@@ -37,6 +37,11 @@ SocketHandle HostSocketHandleManager::Create(DevId devicePhyId, const IpAddress 
     // 加锁
     std::lock_guard<std::mutex> lock(socketHandleLock);
 
+    if (isDestroy) {
+        HCCL_WARNING("[HostSocketHandleManager::%s] devicePhyId[%u] HostSocketHandleManager has been detroy", __func__, devicePhyId);
+        return nullptr;
+    }
+
     // 校验devicePhyId
     CHK_PRT_THROW((devicePhyId > hostSocketHandleMap.size() - 1), 
         HCCL_ERROR("[HostSocketHandleManager::%s] devicePhyId[%u] error", __func__, devicePhyId),
@@ -70,6 +75,11 @@ SocketHandle HostSocketHandleManager::Get(DevId devicePhyId, const IpAddress &ho
 {
     std::lock_guard<std::mutex> lock(socketHandleLock);
 
+    if (isDestroy) {
+        HCCL_WARNING("[HostSocketHandleManager::%s] devicePhyId[%u] HostSocketHandleManager has been detroy", __func__, devicePhyId);
+        return nullptr;
+    }
+
     if (devicePhyId > hostSocketHandleMap.size() - 1) {
         HCCL_WARNING("HostSocketHandleManager for devicePhyId=%u dose not exist", devicePhyId);
         return nullptr;
@@ -87,6 +97,8 @@ SocketHandle HostSocketHandleManager::Get(DevId devicePhyId, const IpAddress &ho
 void HostSocketHandleManager::DestroyAll()
 {
     std::lock_guard<std::mutex> lock(socketHandleLock);
+
+    isDestroy = true;
 
     for (u32 i = 0; i < hostSocketHandleMap.size(); ++i) {
         for (const auto &innerMap : hostSocketHandleMap[i]) {
@@ -106,6 +118,11 @@ void HostSocketHandleManager::DestroyAll()
 void HostSocketHandleManager::Destroy(DevId devicePhyId, const IpAddress &hostIp)
 {
     std::lock_guard<std::mutex> lock(socketHandleLock);
+
+    if (isDestroy) {
+        HCCL_WARNING("[HostSocketHandleManager::%s] devicePhyId[%u] HostSocketHandleManager has been detroy", __func__, devicePhyId);
+        return;
+    }
 
     // 校验devicePhyId
     CHK_PRT_THROW((devicePhyId > hostSocketHandleMap.size() - 1), 

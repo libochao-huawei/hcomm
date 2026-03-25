@@ -73,7 +73,6 @@ void RankInfoDetect::SetupServer(HcclRootHandleV2 &rootHandle)
     thread threadHandle(&RankInfoDetect::SetupRankInfoDetectService, this, serverSocket, devLogicId_, devPhyId_,
                         identifier_, wlistInfo_);
     threadHandle.detach();
-    HostSocketHandleManager::GetInstance().WaitForNoUsers();
 
     HCCL_INFO("[RankInfoDetect::%s] setup server end.", __func__);
 }
