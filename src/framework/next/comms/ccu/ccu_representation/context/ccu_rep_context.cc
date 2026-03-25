@@ -145,7 +145,7 @@ void CcuRepContext::AddSqeProfiling()
     profilingInfo.clear();
     // 生成SQE粒度profiling信息
     ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
-    ccuProfilingInfoCache.name      = "Ccu";
+    ccuProfilingInfoCache.name      = "CCU_KERNEL";
     ccuProfilingInfoCache.dieId     = GetDieId();
     HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u]", __func__, ccuProfilingInfoCache.type,
         ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId);
