@@ -16,6 +16,7 @@
 #include "ccu_kernel_arg.h"
 #include "ccu_kernel_signature.h"
 #include "base.h"
+#define private public
 #include "ccu_task_param_v1.h"
 #include "ccu_kernel.h"
 #include "ccu_kernel_resource.h"
@@ -24,7 +25,15 @@
 #include "string_util.h"
 #include "task_param.h"
 #include "channel_process.h" 
-
+#include "hcomm_c_adpt.h"
+#include "local_notify_impl.h"
+#include "aicpu_launch_manager.h"
+#include "llt_hccl_stub_rank_graph.h"
+#include "../../hccl_api_base_test.h"
+#include "hccl_ccu_res.h"
+#include "ccu_kernel_mgr.h"
+#include "hcomm_c_adpt.h"
+#include "ccu_urma_channel.h"
 
 namespace hcomm {
 
@@ -74,10 +83,19 @@ public:
     // 暴露私有成员用于验证（利用-fno-access-control编译选项，无需修改源码）
     std::unordered_map<uint64_t, uint16_t>& GetChannelHandleToId() { return channelHandleToId_; }
     std::unordered_map<uint16_t, uint64_t>& GetChannelIdToHandle() { return channelIdToHandle_; }
+    HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
+    {
+    return HcclResult::HCCL_SUCCESS;
+    }
+
     void SetLoadArgIndex(uint32_t idx) { loadArgIndex_ = idx; }
     void SetMissionId(uint32_t id) { missionId = id; }
     void SetDieId(uint32_t id) { dieId = id; }
     uint32_t GetDieId() const { return dieId; }
+    void Work() {
+        std::shared_ptr<CcuRep::CcuRepBase> rep;
+        allLgProfilingReps.push_back(rep);
+    }
 };
 
 // 测试数据
@@ -88,10 +106,11 @@ public:
     }
 };
 
-// 测试夹具：复用CcuKernel实例与Mock对象
-class CcuKernelTest : public testing::Test {
-protected:
+
+class CcuKernelTest : public BaseInit {
+public:
     void SetUp() override {
+        BaseInit::SetUp();
         // 1. 初始化桩函数
         hcomm::ResetStubs();  
         // 2. 创建桩函数通道
@@ -107,14 +126,14 @@ protected:
         kernel_ ->SetDieId(0);
         kernel_ ->SetMissionId(100);
     }
-
     void TearDown() override {
-        // 清理桩函数
+        BaseInit::TearDown();
+        GlobalMockObject::verify();
+         // 清理桩函数
         delete mockChannel_;
         hcomm::ResetStubs();
-    }
-
-    // 修改 CcuKernelTest 类成员变量
+    };
+        // 修改 CcuKernelTest 类成员变量
     MockCcuKernelArg kernelArg_;
     std::unique_ptr<TestCcuKernel> kernel_;
     MockCcuUrmaChannel* mockChannel_ = nullptr;
@@ -127,6 +146,7 @@ protected:
     const HcclDataType testOutputDataType = HcclDataType::HCCL_DATA_TYPE_FP16;
     const HcclReduceOp testReduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
 };
+
 
 class Ccukernel_ReportProfilingTest : public hcomm::CcuKernelTest {
 protected:
@@ -161,17 +181,39 @@ protected:
     CcuProfilingInfo invalidChannelProfInfo;
 };
 
-// TEST_F(CcuKernelTest, AddCcuProfilingInfo_Normal) {
-//     HcclResult ret = kernel_->AddCcuProfiling(testGroupInfo, testChannelsVec, testDataType, 
-//         testOutputDataType, testReduceOp, "GroupReduce");
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-// }
+TEST_F(CcuKernelTest, AddCcuProfilingInfo_Normal) {
+    EndpointHandle locEndpointHandle;
+    HcommChannelDesc channelDesc;
+    Channel* channel = new (std::nothrow) CcuUrmaChannel(locEndpointHandle, channelDesc);
+    void *channelHandle = static_cast<void*>(channel);
+    void ** handle{nullptr};
+    handle = &channelHandle;
+    MOCKER_CPP(&ChannelProcess::ChannelGet)
+        .stubs()
+        .with(any(),outBoundP(handle, sizeof(handle)))
+        .will(returnValue(HCCL_SUCCESS));  
+    kernel_->Work();
+    HcclResult ret = kernel_->AddCcuProfiling(testGroupInfo, testChannelsVec, testDataType, 
+        testOutputDataType, testReduceOp, "GroupReduce");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
 
-// TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
-//     HcclResult ret = kernel_->AddCcuProfiling(&testChannelsArr, 2, testDataType, 
-//         testOutputDataType, testReduceOp, "GroupReduce");
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-// }
+TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
+    EndpointHandle locEndpointHandle;
+    HcommChannelDesc channelDesc;
+    Channel* channel = new (std::nothrow) CcuUrmaChannel(locEndpointHandle, channelDesc);
+    void *channelHandle = static_cast<void*>(channel);
+    void ** handle{nullptr};
+    handle = &channelHandle;
+    MOCKER_CPP(&ChannelProcess::ChannelGet)
+        .stubs()
+        .with(any(),outBoundP(handle, sizeof(handle)))
+        .will(returnValue(HCCL_SUCCESS));  
+    kernel_->Work();
+    HcclResult ret = kernel_->AddCcuProfiling(&testChannelsArr, 1, testDataType, 
+        testOutputDataType, testReduceOp, "GroupReduce");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
 
 TEST_F(CcuKernelTest, UpdateChannelIdMap_Normal) {
     kernel_->channels_.push_back(0x1001);
@@ -186,17 +228,6 @@ TEST_F(CcuKernelTest, UpdateChannelIdMap_ChannelCastFail) {
     HcclResult ret = kernel_->UpdateChannelIdMap();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
-
-// TEST_F(CcuKernelTest, GetChannelHandleById_Normal) {
-
-//     kernel_->channels_.push_back(0x1001);
-//     kernel_->UpdateChannelIdMap();
-    
-//     uint64_t channelHandle = 0;
-//     HcclResult ret = kernel_->GetChannelHandleById(101, channelHandle);
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-//     EXPECT_EQ(channelHandle, 4097);
-// }
 
 TEST_F(CcuKernelTest, GetChannelHandleById_InvalidId) {
     uint64_t channelHandle = 0;
@@ -290,4 +321,59 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) 
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
+
+TEST_F(Ccukernel_ReportProfilingTest, WhenReporccuprofiling_expect_HcclSucess) {
+using namespace hccl;
+using namespace CcuRep;
+  MockCcuKernelArg agrs;
+  CcuKernel * ccuKernel = new TestCcuKernel(agrs);
+  std::vector<CcuTaskParam> taskParams;
+  CcuTaskParam taskParam;
+  taskParams.push_back(taskParam);
+
+  MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+    MOCKER_CPP(&CcuKernelMgr::GetKernel)
+        .stubs()
+        .will(returnValue(ccuKernel));  
+     MOCKER_CPP(&CcuKernel::GeneTaskParam)
+        .stubs()
+        .with(any(),outBound(taskParams))
+        .will(returnValue(HCCL_SUCCESS));  
+    
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 6; 
+    config.hcclRdmaServiceLevel = 0; 
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CCU, 1, 2, &thread);
+    EXPECT_EQ(ret, 0);
+    CcuKernelHandle kernelHandle = 0;
+    void * taskArgs = (void*)0x12345678;
+    // hcomm::CcuKernelMgr::GetInstance(HcclGetThreadDeviceId());
+    ret =  HcclCcuKernelLaunch(comm, thread, kernelHandle, taskArgs);
+    EXPECT_EQ(ret, 0);
 }
+
+}
+
+#undef private

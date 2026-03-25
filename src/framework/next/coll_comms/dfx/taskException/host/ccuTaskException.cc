@@ -505,7 +505,7 @@ void CcuTaskException::GenErrorInfoLocalReduce(const ErrorInfoBase &baseInfo, sh
     errorMsg.type    = CcuErrorType::TRANS_MEM;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
 
-    const auto rep                   = static_pointer_cast<CcuRep::CcuRepBufReduce>(repBase);
+    const auto rep                   = static_pointer_cast<CcuRep::CcuRepLocCpy>(repBase);
     errorMsg.msg.transMem.locAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcAddrId());
     errorMsg.msg.transMem.locToken   = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->GetSrcTokenId());
     errorMsg.msg.transMem.rmtAddr    = GetCcuGSAValue(baseInfo.deviceId, baseInfo.dieId, rep->GetDstAddrId());
