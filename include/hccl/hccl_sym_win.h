@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_SYM_WIN_PRIMITIVES_H
-#define HCCL_SYM_WIN_PRIMITIVES_H
+#ifndef HCCL_SYM_WIN_H
+#define HCCL_SYM_WIN_H
 
 #include <stdint.h>
 #include <securec.h>
@@ -35,4 +35,4 @@ extern HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t o
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif // HCCL_SYM_WIN_PRIMITIVES_H
+#endif // HCCL_SYM_WIN_H
