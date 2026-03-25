@@ -39,6 +39,7 @@
 
 #include "adapter_rts.h"
 #include "adapter_hal.h"
+#include "hcomm_res_defs.h"
 
 #include "runtime/rt_error_codes.h"
 #include "mmpa_api.h"
@@ -5491,5 +5492,18 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
 {
     binaryPath = "./";
     return HCCL_SUCCESS;
+}
+
+extern "C" {
+HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads,
+    CommEngine dstCommEngine, ThreadHandle *exportedThreads)
+{
+    (void)comm;
+    (void)threadNum;
+    (void)threads;
+    (void)dstCommEngine;
+    (void)exportedThreads;
+    return HCCL_E_PARA;
+}
 }
 }
