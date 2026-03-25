@@ -11,7 +11,7 @@
 #include "log.h"
 #include "string_util.h"
 namespace Hccl {
-RmtRmaBufSliceLite::RmtRmaBufSliceLite(u64 addr, u32 size, u32 rkey, u32 tokenId, u32 tokenValue)
+RmtRmaBufSliceLite::RmtRmaBufSliceLite(u64 addr, u64 size, u32 rkey, u32 tokenId, u32 tokenValue)
     : addr_(addr), size_(size), rkey_(rkey), tokenId_(tokenId), tokenValue_(tokenValue)
 {
     HCCL_INFO("RmtRmaBufSliceLite::RmtRmaBufSliceLite:%s", Describe().c_str());
@@ -21,7 +21,7 @@ u64 RmtRmaBufSliceLite::GetAddr() const
     return addr_;
 }
 
-u32 RmtRmaBufSliceLite::GetSize() const
+u64 RmtRmaBufSliceLite::GetSize() const
 {
     return size_;
 }
@@ -43,7 +43,7 @@ u32 RmtRmaBufSliceLite::GetTokenValue() const
 
 std::string RmtRmaBufSliceLite::Describe() const
 {
-    return StringFormat("RmtRmaBufSliceLite[addr=0x%llx, size=0x%x, rkey=%u]", addr_, size_,
+    return StringFormat("RmtRmaBufSliceLite[addr=0x%llx, size=0x%llx, rkey=%u]", addr_, size_,
                         rkey_);
 }
 
