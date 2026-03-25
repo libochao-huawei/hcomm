@@ -80,6 +80,8 @@ private:
         std::vector<CcuErrorInfo> &errorInfo);
     static void GenErrorInfoLocWaitNotify(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
     static void GenErrorInfoLocWaitEvent(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoRemPostSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
+    static void GenErrorInfoRemWaitSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
     static void GenErrorInfoRemPostVar(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
     static void GenErrorInfoPostSharedSem(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
     static void GenErrorInfoRead(const ErrorInfoBase &baseInfo, std::shared_ptr<CcuRep::CcuRepBase> repBase, std::vector<CcuErrorInfo> &errorInfo);
