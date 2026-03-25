@@ -15,7 +15,7 @@
 #include "comm.h"
 #include "llt_hccl_stub_pub.h"
 GTEST_API_ int main(int argc, char **argv) {
-    printf("Running hccl_utest_framework_ccu_profiling\n");
+    printf("Running hccl_utest_dfx_profiling_ccu\n");
     // testing::GTEST_FLAG(filter) = "TestHcclGetHcclBuffer*";
     setTargetPort(27743, 31123);
     testing::InitGoogleTest(&argc, argv);

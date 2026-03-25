@@ -10,24 +10,24 @@
 
 set(src_to_test_list
     main.cc
-    #ut_HcommCcuProfiling_test.cc
+    ut_HcommCcuProfiling_test.cc
 )
 
-add_executable(hccl_utest_framework_ccu_profiling ${src_to_test_list})
+add_executable(hccl_utest_dfx_profiling_ccu ${src_to_test_list})
 
 #头文件搜索路径
-target_include_directories(hccl_utest_framework_ccu_profiling PRIVATE
+target_include_directories(hccl_utest_dfx_profiling_ccu PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
 
-target_compile_definitions(hccl_utest_framework_ccu_profiling PRIVATE
+target_compile_definitions(hccl_utest_dfx_profiling_ccu PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hccl_utest_framework_ccu_profiling PRIVATE
+target_compile_options(hccl_utest_dfx_profiling_ccu PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -35,10 +35,10 @@ target_compile_options(hccl_utest_framework_ccu_profiling PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_framework_ccu_profiling PRIVATE
+target_link_directories(hccl_utest_dfx_profiling_ccu PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-target_link_libraries(hccl_utest_framework_ccu_profiling PRIVATE
+target_link_libraries(hccl_utest_dfx_profiling_ccu PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -49,9 +49,9 @@ target_link_libraries(hccl_utest_framework_ccu_profiling PRIVATE
     -lrt
     -ldl
 )
-add_dependencies(hccl_utest_framework_ccu_profiling hccl_llt)
+add_dependencies(hccl_utest_dfx_profiling_ccu hccl_llt)
 
 run_llt_test(
-   TARGET  hccl_utest_framework_ccu_profiling
+   TARGET  hccl_utest_dfx_profiling_ccu
    TASK_NUM 1
 )

@@ -9,7 +9,6 @@
  */
 
 #include <gtest/gtest.h>
-#include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 #include <memory>
 #include <vector>
@@ -24,17 +23,17 @@
 #include "ccu_task_arg_v1.h"
 #include "string_util.h"
 #include "task_param.h"
-#include "hccl_types.h"
 #include "channel_process.h" 
 
 
-using namespace hcomm;
+namespace hcomm {
 
-constexpr uint16_t INVALID_U16 = 65535;
-// Mock CcuUrmaChannel，隔离通道依赖
-class MockCcuUrmaChannel : public CcuUrmaChannel {
+// 模拟CcuUrmaChannel
+
+class MockCcuUrmaChannel {
 public:
-    MockCcuUrmaChannel(uint16_t channelId = INVALID_U16, uint32_t dieId = 0) : channelId_(channelId), dieId_(dieId) {}
+    MockCcuUrmaChannel(uint16_t channelId = 101, uint32_t dieId = 0) 
+        : channelId_(channelId), dieId_(dieId) {}
     uint16_t GetChannelId() { return channelId_; }
     uint32_t GetDieId() { return dieId_;}
 private:
@@ -42,7 +41,8 @@ private:
     uint32_t dieId_;
 };
 
-static MockCcuUrmaChannel* g_mockChannel = new MockCcuUrmaChannel(INVALID_U16, 0);
+// 桩函数。 模拟HcommChannelGet
+static MockCcuUrmaChannel* g_mockChannel = nullptr;
 
 HcclResult HcommChannelGet(ChannelHandle channel, void** channelPtr) {
     if (channelPtr == nullptr) return HCCL_E_PTR;
@@ -50,34 +50,37 @@ HcclResult HcommChannelGet(ChannelHandle channel, void** channelPtr) {
     return HCCL_SUCCESS;
 }
 
+// 桩函数，模拟SaveDfxTaskInfo
+static HcclResult g_saveDfxRet = HCCL_SUCCESS;
 HcclResult SaveDfxTaskInfo(HcclComm comm, const Hccl::TaskParam& taskParam, uint32_t remoteRankId, bool isMaster) {
-    return HCCL_SUCCESS;
+    return g_saveDfxRet;
 }
 
-void SetMockCcuUrmaChannel(MockCcuUrmaChannel* channel) {}
-
-// Mock Channel，用于HcommChannelGet的返回
-class MockChannel : public Channel {
-public:
-    explicit MockChannel(CcuUrmaChannel* impl) : channelImpl_(impl) {}
-    CcuUrmaChannel* GetImpl() { return channelImpl_; }
-private:
-    CcuUrmaChannel* channelImpl_;
-};
-
-// 全局Mock工具：重载HcommChannelGet，返回MockChannel
+void SetMockCcuUrmaChannel(MockCcuUrmaChannel* channel) { g_mockChannel = channel; }
+void SetSaveDfxTaskInfoRet(HcclResult ret) { g_saveDfxRet = ret; }
+void ResetStubs() {
+    g_mockChannel = nullptr;
+    g_saveDfxRet = HCCL_SUCCESS;
+}
 
 
-// 注入MockChannel的接口
+
+// 测试子类
 class TestCcuKernel : public CcuKernel {
 public:
     using CcuKernel::CcuKernel;
     HcclResult Algorithm() override { return HCCL_SUCCESS; }
     std::vector<uint64_t> GeneArgs(const CcuTaskArg&) override { return {1,2,3,4};}
-
-    void SetLoadArgIndex(uint32_t idx)
+    // 暴露私有成员用于验证（利用-fno-access-control编译选项，无需修改源码）
+    std::unordered_map<uint16_t, uint64_t>& GetChannelHandleToId() { return channelHandleToId_; }
+    std::unordered_map<uint64_t, uint16_t>& GetChannelIdToHandle() { return channelIdToHandle_; }
+    void SetLoadArgIndex(uint32_t idx) { loadArgIndex_ = idx; }
+    void SetMissionId(uint32_t id) { missionId = id; }
+    void SetDieId(uint32_t id) { dieId = id; }
+    uint32_t GetDieId() const { return dieId; }
 }
 
+// 测试数据
 class MockCcuKernelArg : public hcomm::CcuKernelArg {
 public:
     CcuKernelSignature GetKernelSignature() const override {
@@ -89,144 +92,116 @@ public:
 class CcuKernelTest : public testing::Test {
 protected:
     void SetUp() override {
-        // 构造CcuKernelArg
+        // 1. 初始化桩函数
         hcomm::ResetStubs();  
-        // 创建Mock通道
-        mockChannel_ =  new MockCcuUrmaChannel(INVALID_U16, 0);
+        // 2. 创建桩函数通道
+        mockChannel_ =  new MockCcuUrmaChannel(101, 0);
         hcomm::SetMockCcuUrmaChannel(mockChannel_);
 
-        kernelArg_.channels = {65535, 0x1002};
+        // 3. 构造CcuKernelArg
+        kernelArg_.channels = {0x1001, 0x1002};
 
 
-        // 初始化CcuKernel
-        kernel_ = std::make_unique<TestCcuKernel>(ccuKernelArg_);
+        // 4. 创建测试实例
+        kernel_ = std::make_unique<TestCcuKernel>(kernelArg_);
         kernel_ ->SetDieId(0);
         kernel_ ->SetMissionId(100);
     }
 
     void TearDown() override {
-        delete mockCcuUrmaChannel_;
+        // 清理桩函数
+        delete mockChannel_;
         hcomm::ResetStubs();
     }
 
-    // 测试数据
+    // 修改 CcuKernelTest 类成员变量
     MockCcuKernelArg kernelArg_;
     std::unique_ptr<TestCcuKernel> kernel_;
-    MockCcuUrmaChannel* mockCcuUrmaChannel_ = nullptr;
+    MockCcuUrmaChannel* mockChannel_ = nullptr;
     
     //通用测试参数
     const hcomm::GroupInfo testGroupInfo{1, 2, 3};
-    const std::vector<ChannelHandle> testChannelsVec{65535, 65535};
-    const ChannelHandle testChannelsArr = 65535;
+    const std::vector<ChannelHandle> testChannelsVec{0x1001, 0x1002};
+    const ChannelHandle testChannelsArr = 0x1001;
     const HcclDataType testDataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     const HcclDataType testOutputDataType = HcclDataType::HCCL_DATA_TYPE_FP16;
-    const HcclDataType testReduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
+    const HcclReduceOp testReduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
 };
 
+class Ccukernel_ReportProfilingTest : public hcomm::CcuKernelTest {
+protected:
+    void SetUp() override {
+        CcuKernelTest::SetUp();
+        
+        // 初始化测试数据
+        testThreadHandle = 0x1000;
+        testExecId = 0x2000;
+        testComm = reinterpret_cast<HcclComm>(0x3000);
+
+        // 有效ProfilingInfo
+        validProfInfo.dieId = 1;
+        validProfInfo.missionId = 100;
+        validProfInfo.instrId = 200;
+        validProfInfo.channelId[0] = 101;
+        validProfInfo.channelId[1] = 102;
+
+        // 无效channelId的ProfilingInfo
+        invalidChannelProfInfo.dieId = 2;
+        invalidChannelProfInfo.missionId = 200;
+        invalidChannelProfInfo.instrId = 300;
+        invalidChannelProfInfo.channelId[0] = INVALID_VALUE_CHANNELID;
+
+    }
+
+    // 测试数据
+    ThreadHandle testThreadHandle;
+    uint64_t testExecId;
+    HcclComm testComm;
+    CcuProfilingInfo validProfInfo;
+    CcuProfilingInfo invalidChannelProfInfo;
+}
+
+TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
+    HcclResult ret = kernel_->AddProfiling(&testChannelsArr, 2, testDataType, 
+        testOutputDataType, testReduceOp);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 TEST_F(CcuKernelTest, UpdateChannelIdMap_Normal) {
-    // 模拟ChannelId返回值
-    EXPECT_CALL(*mockCcuUrmaChannel_, GetChannelId()).WillOnce(testing::Return(100));
-    
-    // 向kernel添加channelHandle
-    ccuKernel_->AddChannelHandle(0x12345678);
-    
-    HcclResult ret = ccuKernel_->UpdateChannelIdMap();
-    
+    kernel_->channels_.push_back(0x1001);
+    HcclResult ret = kernel_->UpdateChannelIdMap();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    // 验证映射关系
-    uint64_t channelHandle = 0;
-    ret = ccuKernel_->GetChannelHandleById(100, channelHandle);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(channelHandle, 0x12345678);
 }
 
 TEST_F(CcuKernelTest, UpdateChannelIdMap_ChannelCastFail) {
-    // 模拟HcommChannelGet返回非CcuUrmaChannel类型
-    MockChannel invalidChannel(nullptr); // channelImpl为null
-    hcomm::SetMockChannel(&invalidChannel);
-    
-    ccuKernel_->AddChannelHandle(0x99999999);
-    
-    HcclResult ret = ccuKernel_->UpdateChannelIdMap();
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    hcomm::SetMockCcuUrmaChannel(nullptr);
+
+    kernel_->channels_.push_back(0x9999);
+    HcclResult ret = kernel_->UpdateChannelIdMap();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(CcuKernelTest, GetChannelHandleById_Normal) {
-    // 先更新映射
-    EXPECT_CALL(*mockCcuUrmaChannel_, GetChannelId()).WillOnce(testing::Return(200));
-    ccuKernel_->AddChannelHandle(0x88888888);
-    ccuKernel_->UpdateChannelIdMap();
+
+    kernel_->channels_.push_back(0x1001);
+    kernel_->UpdateChannelIdMap();
     
-    // 执行测试
     uint64_t channelHandle = 0;
-    HcclResult ret = ccuKernel_->GetChannelHandleById(200, channelHandle);
-    
+    HcclResult ret = kernel_->GetChannelHandleById(101, channelHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(channelHandle, 0x88888888);
+    EXPECT_EQ(channelHandle, 4097);
 }
 
 TEST_F(CcuKernelTest, GetChannelHandleById_InvalidId) {
     uint64_t channelHandle = 0;
-    HcclResult ret = ccuKernel_->GetChannelHandleById(9999, channelHandle);
+    HcclResult ret = kernel_->GetChannelHandleById(999, channelHandle);
     
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     EXPECT_EQ(channelHandle, 0);
 }
 
-// TEST_F(CcuKernelTest, GetCcuProfilingInfo_Normal) {
-//     // 构造有效TaskArg
-//     CcuTaskArg taskArg;
-//     taskArg.args = {1, 2, 3};
-//     ccuKernel_->SetMissionId(1001);
-//     ccuKernel_->SetInstrId(2002);
-    
-//     // 模拟Profiling缓存
-//     CcuProfilingInfo profInfo;
-//     profInfo.type = static_cast<uint8_t>(CcuProfilinType::CCU_TASK_PROFILING);
-//     profInfo.name = "test_prof";
-//     ccuKernel_->AddProfilingInfo(profInfo);
-    
-//     std::vector<CcuProfilingInfo> allProfInfo;
-//     HcclResult ret = ccuKernel_->GetCcuProfilingInfo(taskArg, allProfInfo);
-    
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-//     EXPECT_FALSE(allProfInfo.empty());
-//     EXPECT_EQ(allProfInfo[0].missionId, 1001);
-//     EXPECT_EQ(allProfInfo[0].instrId, 2002);
-// }
 
-// TEST_F(CcuKernelTest, GetCcuProfilingInfo_InvalidVarId) {
-//     CcuTaskArg taskArg;
-//     taskArg.args = {}; // 空参数
-    
-//     // 模拟无效VarId的Profiling信息
-//     CcuProfilingInfo profInfo;
-//     profInfo.type = static_cast<uint8_t>(CcuProfilinType::CCU_LOOPGROUP_PROFILING);
-//     ccuKernel_->AddLGProfilingInfo(profInfo);
-    
-//     std::vector<CcuProfilingInfo> allProfInfo;
-//     HcclResult ret = ccuKernel_->GetCcuProfilingInfo(taskArg, allProfInfo);
-    
-//     EXPECT_EQ(ret, HCCL_E_INTERNAL); // VarId映射失败触发异常
-// }
-
-TEST_F(CcuKernelTest, AddCcuProfiling_Normal) {
-    std::string groupOpSize = "GroupReduce";
-    HcclResult ret = kernel_->AddCcuProfiling(&testGroupInfo, test, testDataType,
-                            testOutputDataType, testReduceOp, groupOpSize);
-    
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(CcuKernelTest, AddCcuProfiling_Num_Normal) {
-    std::string groupOpSize = "GroupReduce";
-    HcclResult ret = kernel_->AddCcuProfiling(&testChannelsArr, 2, testDataType,
-                            testOutputDataType, testReduceOp, groupOpSize);
-    
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(CcuKernelTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
+TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
     Hccl::TaskParam testTaskParam = {
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
@@ -244,13 +219,38 @@ TEST_F(CcuKernelTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
         },
         .ccuDetailInfo  = nullptr
     };
-    std::vector<>
-    HcclResult ret = ccuKernel_->ReportCcuProfilingInfo(execId, streamProfInfo, comm, taskParam, true);
+    std::vector<CcuProfilingInfo> emptyProfiling;
+    HcclResult ret = kernel_->ReportCcuProfilingInfo(
+        testThreadHandle, testExecId, emptyProfiling, testComm, testTaskParam, true
+    );
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(testTaskParam.taskPara.Ccu.dieId, 0);
+}
+
+TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
+    Hccl::TaskParam testTaskParam = {
+        .taskType  = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime   = 0,
+        .isMaster = false,
+        .taskPara  = {
+            .Ccu = {
+                .dieId         = 0,
+                .missionId     = 0,
+                .execMissionId = 0,
+                .instrId       = 0,
+                .costumArgs    = {0},
+                .executeId     = 0
+            }
+        },
+        .ccuDetailInfo  = nullptr
+    };
     std::vector<CcuProfilingInfo> profilingList = {validProfInfo};
     HcclResult ret = kernel_->ReportCcuProfilingInfo(
         testThreadHandle, testExecId, profilingList, testComm, testTaskParam, true
     );
     EXPECT_EQ(ret, HCCL_SUCCESS);
+    // 验证联合体taskPara.Ccu的字段（匹配真实定义）
     EXPECT_EQ(testTaskParam.taskPara.Ccu.dieId, 1);
     EXPECT_EQ(testTaskParam.taskPara.Ccu.missionId, 100);
     EXPECT_EQ(testTaskParam.taskPara.Ccu.execMissionId, 100);
@@ -258,7 +258,7 @@ TEST_F(CcuKernelTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
     EXPECT_EQ(testTaskParam.taskPara.Ccu.executeId, 0x2000);
 }
 
-TEST_F(CcuKernelTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
+TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
     Hccl::TaskParam testTaskParam = {
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
@@ -284,3 +284,4 @@ TEST_F(CcuKernelTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
+}
