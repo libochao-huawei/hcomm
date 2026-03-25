@@ -15,16 +15,13 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
-#include <atomic>
-#include <thread>
-#include "sal.h"
+
 #include "orion_adapter_hccp.h"
 #include "socket_handle_manager.h"
 #include "ip_address.h"
 #include "referenced.h"
 
 namespace Hccl {
-constexpr u32 TIMEOUT_MS = 1000;
 // socketHandle的计数器
 using hostSocketHandleRef = std::pair<SocketHandle, Referenced>;
 
@@ -35,19 +32,8 @@ public:
     SocketHandle Create(DevId devicePhyId, const IpAddress &hostIp);
     SocketHandle Get(DevId devicePhyId, const IpAddress &hostIp);
     void         Destroy(DevId devicePhyId, const IpAddress &hostIp);
-    void StartUsing() {
-        userCount.fetch_add(1, std::memory_order_relaxed);
-    }
-    
-    void StopUsing() {
-        userCount.fetch_sub(1, std::memory_order_relaxed);
-    }
-
-    bool WaitForNoUsers(int timeoutMs = TIMEOUT_MS);
 
 private:
-    std::atomic<int> userCount{0};
-
     bool isDestroy{false};
 
     std::vector<unordered_map<string, hostSocketHandleRef>> hostSocketHandleMap;

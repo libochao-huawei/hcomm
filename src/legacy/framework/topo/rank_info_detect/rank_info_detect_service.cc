@@ -71,7 +71,6 @@ void RankInfoDetectService::GetConnections()
         InternalException, "get socket handle error");
     std::string connSocketTag = RANK_INFO_DETECT_TAG + "_" + identifier_ + "_" + std::to_string(hostPort);
     SocketStatus status = SocketStatus::INVALID;
-    HostSocketHandleManager::GetInstance().StopUsing();
 
     // 连接rankSize个client
     while (expectedSocketNum > 0) {

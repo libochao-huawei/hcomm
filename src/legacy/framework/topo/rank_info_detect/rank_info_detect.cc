@@ -68,7 +68,6 @@ void RankInfoDetect::SetupServer(HcclRootHandleV2 &rootHandle)
     // 2. 构建rootHandle
     GetRootHandle(rootHandle);
 
-    HostSocketHandleManager::GetInstance().StartUsing();
     // 3. 拉起线程，调用RankInfoDetectService.Run()，注意新线程中需要HrtSetDevice
     thread threadHandle(&RankInfoDetect::SetupRankInfoDetectService, this, serverSocket, devLogicId_, devPhyId_,
                         identifier_, wlistInfo_);
