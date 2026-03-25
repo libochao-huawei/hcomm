@@ -132,11 +132,11 @@ bash ./build_out/cann-hcomm_<version>_linux-<arch>.run --full
 
 请注意：编译时需要将上述命令中的软件包名称替换为实际软件包名称。
 
-安装完成后，用户编译生成的HCOMM软件包会替换已安装CANN toolki软件包中的HCOMM相关软件。
+安装完成后，用户编译生成的HCOMM软件包会替换已安装CANN Toolkit开发套件包中的HCOMM相关软件。
 
 ### 卸载
 
-若您想卸载编译生成的HCOMM软件包，恢复到安装完CANN toolki软件包的状态，可参考如下命令：
+若您想卸载编译生成的HCOMM软件包，恢复到安装完CANN Toolkit开发套件包的状态，可参考如下命令：
 
 ```shell
 bash ./build_out/cann-hcomm_<version>_linux-<arch>.run --uninstall
