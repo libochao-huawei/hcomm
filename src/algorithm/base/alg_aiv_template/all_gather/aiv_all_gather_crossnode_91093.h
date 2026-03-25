@@ -36,6 +36,7 @@ __aicore__ inline void AivAllGatherCrossNode91093::Process(GM_ADDR buffIn0, GM_A
     uint64_t curCount;
     uint64_t curBlockOffset;
     uint32_t bufferLoopNum = (len + bufferCount - 1) / bufferCount;
+    uint64_t curCCLOffset = blockOffsetMid >= blockOffsetTail? blockOffsetMid: blockOffsetTail;
 
     for (uint32_t loop = 0; loop < bufferLoopNum; loop++) {
         if (loop == bufferLoopNum - 1) { // 最后一轮ccl填充
@@ -49,7 +50,7 @@ __aicore__ inline void AivAllGatherCrossNode91093::Process(GM_ADDR buffIn0, GM_A
         PipeBarrier<PIPE_ALL>();
 
         if (localCopyCores) {
-            CpGM2GM(cclGMSelf + curBlockOffset, inputGM + curOffset + curBlockOffset, curCount);
+            CpGM2GM(cclGMSelf + curCCLOffset, inputGM + curOffset + curBlockOffset, curCount);
             PipeBarrier<PIPE_ALL>();
         }
         
@@ -63,7 +64,7 @@ __aicore__ inline void AivAllGatherCrossNode91093::Process(GM_ADDR buffIn0, GM_A
             __gm__ T *cclGMOther = (__gm__ T *)(buffersIn[i]);
 
             uint64_t localRecvOffset = len * targetRanks[i];
-            CpGM2GM(outputGM + localRecvOffset + curOffset + curBlockOffset, cclGMOther + curBlockOffset, curCount);
+            CpGM2GM(outputGM + localRecvOffset + curOffset + curBlockOffset, cclGMOther + curCCLOffset, curCount);
         }
 
         PipeBarrier<PIPE_ALL>();
