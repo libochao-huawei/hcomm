@@ -10,6 +10,7 @@
 set(src_to_test_list
     main.cc
     aclgraph/ut_aclgraph_callback.cc
+    recovery/operator_retry/ut_opretry_server.cc
 )
 
 add_executable(hccl_utest_framework_cluster_maintenance ${src_to_test_list})
@@ -18,8 +19,6 @@ add_executable(hccl_utest_framework_cluster_maintenance ${src_to_test_list})
 target_include_directories(hccl_utest_framework_cluster_maintenance PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
-
-add_subdirectory(recovery/operator_retry)
 
 target_compile_definitions(hccl_utest_framework_cluster_maintenance PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
