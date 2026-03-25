@@ -140,6 +140,7 @@ enum HccnCfgKey {
     HCCN_CFG_UDP_PORT_MODE = 0,
     HCCN_CFG_MULTI_QP_COUNT = 1,
     HCCN_CFG_MULTI_QP_UDP_PORTS = 2,
+    HCCN_CFG_RESV_MEM_INFO = 3,
     HCCN_CFG_KEY_INVALID
 };
 
@@ -604,7 +605,8 @@ struct QpExtAttrs {
         } bs;
         uint32_t value;
     } cstmFlag; // only valid in RaQpCreateWithAttrs
-    uint32_t reserved[28U];
+    uint32_t resvMemPoolId; // valid when cstmFlag.bs.useResvMem was 1
+    uint32_t reserved[27U];
 };
 
 struct AiQpInfo {

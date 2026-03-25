@@ -28,7 +28,7 @@ constexpr u32 NOTIFY_SIZE_EIGHT = 8;
      std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，后续移动至Op.h
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
-    if (isReady_) {
+    if (commmStatus_ == HcclCommStatus::HCCL_COMM_STATUS_READY) {
         HCCL_RUN_INFO("[CollCommAicpu][%s]Group[%s] already initialized, skip reinit", __func__,
             identifier_.c_str());
         return HCCL_SUCCESS;
@@ -61,10 +61,10 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
     EXECEPTION_CATCH(nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(), return HCCL_E_PTR);
     nsRecoveryLitePtr_->Init(kfcControlTransferH2D_, kfcStatusTransferD2H_);
-    
+
     CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
-    isReady_ = true;
+    commmStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
 
     static std::once_flag onceFlag;
     std::call_once(onceFlag, [this]() { this->InitBackGroundThread();} );
@@ -74,10 +74,10 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     return HCCL_SUCCESS;
 }
 
-void CollCommAicpu::SetIsReady(bool flag)
+void CollCommAicpu::SetCommmStatus(HcclCommStatus status)
 {
     HCCL_INFO("[%s]group[%s], flag[%d]", __func__, identifier_.c_str(), flag);
-    isReady_ = flag;
+    commmStatus_ = status;
 }
 
 HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
@@ -331,9 +331,12 @@ HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
     nsRecoveryLitePtr_->SetIsSuspended(false);
     nsRecoveryLitePtr_->SetNeedClean(false);
     nsRecoveryLitePtr_->ResetErrorReported();
+
+    commmStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
     
     return HCCL_SUCCESS;
 }
+
 void CollCommAicpu::InitBackGroundThread()
 {
     static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;

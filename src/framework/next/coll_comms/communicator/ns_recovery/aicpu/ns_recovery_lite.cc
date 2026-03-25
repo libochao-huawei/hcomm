@@ -51,13 +51,5 @@ bool NsRecoveryLite::IsNeedClean() const
 {
     return needClean_;
 }
-void NsRecoveryLite::SetIsSuspended(bool status)
-{
-    isSuspended_ = status;
-}
-bool NsRecoveryLite::IsSuspended() const
-{
-    return isSuspended_;
-}
 
 }

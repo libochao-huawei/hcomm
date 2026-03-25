@@ -102,7 +102,7 @@ private:
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
-    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_UNKNOWN};
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};

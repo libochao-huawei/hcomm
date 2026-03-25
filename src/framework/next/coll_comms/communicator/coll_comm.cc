@@ -70,7 +70,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 
     myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     CollCommMgr::GetInstance()->RegisteCollComm(this); 
-    commStatus_ = HcclCommStatus::HCCL_COMM_READY;
+    commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
@@ -146,18 +146,18 @@ HcclCommStatus CollComm::GetCommStatus() const
 
 HcclResult CollComm::Suspend()
 {
-    if (commStatus_ == HcclCommStatus::HCCL_COMM_SUSPENDING) {
+    if (commStatus_ == HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_WARNING("[CollComm][Suspend] The current communication has been suspended, no need to suspend again.");
         return HcclResult::HCCL_SUCCESS;
     }
-    commStatus_ = HcclCommStatus::HCCL_COMM_SUSPENDING;
+    commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
 
     return myRank_->StopLaunch();
 }
 
 HcclResult CollComm::Clean()
 {
-    if (commStatus_ != HcclCommStatus::HCCL_COMM_SUSPENDING) {
+    if (commStatus_ != HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_ERROR("[CollComm][Clean] The current communication is not suspended, cannot clean.");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
@@ -173,11 +173,11 @@ HcclResult CollComm::Clean()
 
 HcclResult CollComm::Resume()
 {
-    if (commStatus_ == HcclCommStatus::HCCL_COMM_UNKNOWN) {
+    if (commStatus_ == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
         HCCL_ERROR("[CollComm][Resume] Comm has been error, can not resume now!");
         return HcclResult::HCCL_E_INTERNAL;
     }
-    if (commStatus_ != HcclCommStatus::HCCL_COMM_SUSPENDING) {
+    if (commStatus_ != HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         HCCL_WARNING("[CollComm][Resume] The current communication is normal, no need to resume.");
         return HcclResult::HCCL_SUCCESS;
     }
@@ -190,7 +190,7 @@ HcclResult CollComm::Resume()
         return ret;
     }
 
-    commStatus_ = HcclCommStatus::HCCL_COMM_READY;
+    commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
     isCleaned_ = false;
     HCCL_INFO("[CollComm][Resume] Resume success.");
     return HcclResult::HCCL_SUCCESS;

@@ -56,8 +56,8 @@ public:
     HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
     u32 UpdateIndex();
 
-    bool GetIsReady() { return isReady_; }
-    void SetIsReady(bool flag);
+    HcclCommStatus GetCommmStatus() { return commmStatus_; }
+    void SetCommmStatus(HcclCommStatus status);
 
     // N秒快恢
     hccl::NsRecoveryLitePtr GetNsRecoveryLitePtr();
@@ -79,7 +79,7 @@ private:
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
 
     std::string identifier_;
-    bool isReady_{ false }; // 独立算子流程通信域是否初始化
+    commmStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     HcclTopoInfo topoInfo_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;

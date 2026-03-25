@@ -408,11 +408,10 @@ namespace hccl
     {
         if (IsCommunicatorV2()) {
             status = collComm_->GetCommStatus();
-            return HCCL_SUCCESS;
         } else {
-            status = HcclCommStatus::HCCL_COMM_STATUS_UNKNOWN;
-            return HCCL_E_NOT_SUPPORT;
+            status = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
         }
+        return HCCL_SUCCESS;
     }
 
 } // namespace hccl
