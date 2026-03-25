@@ -649,10 +649,6 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommFlush()
-{
-    return HcommFenceOnThread(0);
-}
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
@@ -675,10 +671,6 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelFence(ChannelHandle channel)
-{
-    return HcommChannelFenceOnThread(0, channel);
-}
 
 HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
 {
