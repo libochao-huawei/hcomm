@@ -69,8 +69,6 @@ CcuKernel::CcuKernel(const CcuKernelArg &arg)
 {
     HCCL_INFO("Construct CcuKernel: %s", arg.GetKernelSignature().GetData().c_str());
     channels_ = arg.channels;
-    // 生成SQE粒度profiling信息
-    AddSqeProfiling(arg);
 }
 
 CcuKernel::~CcuKernel()
@@ -125,6 +123,8 @@ HcclResult CcuKernel::Init()
 
     SetDieId(dieId);
     CHK_RET(Algorithm());
+    // 生成SQE粒度profiling信息
+    AddSqeProfiling(arg);
     return HcclResult::HCCL_SUCCESS;
 }
 
