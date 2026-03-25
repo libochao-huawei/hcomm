@@ -891,34 +891,24 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     const Hccl::TaskInfo& taskInfo)
 {
     std::vector<CcuJetty *> ccuJettys;
+    const unordered_set<CcuRep::CcuRepType> REP_WITH_CHANNEL = {
+        {CcuRep::CcuRepType::REM_POST_SEM},
+        {CcuRep::CcuRepType::REM_WAIT_SEM},
+        {CcuRep::CcuRepType::REM_POST_VAR},
+        {CcuRep::CcuRepType::READ},
+        {CcuRep::CcuRepType::WRITE},
+        {CcuRep::CcuRepType::BUF_READ},
+        {CcuRep::CcuRepType::BUF_WRITE},
+    };
 
     for (const CcuErrorInfo& errorInfo : errorInfos) {
-        // channelId -> channelHandle
-        u64 channelHandle = INVALID_U64;
-        CHK_RET(GetCcuChannelHandleById(devLogicId, errorInfo.msg.transMem.channelId, taskInfo, channelHandle));
+        if (REP_WITH_CHANNEL.find(errorInfo.repType) == REP_WITH_CHANNEL.end()) {
+            HCCL_INFO("[%s]repType[%d] not found in REP_WITH_CHANNEL, skip", __func__, errorInfo.repType);
+            continue;
+        }
 
-        // channelHandle -> CcuUrmaChannel
-        void *channelPtr{nullptr};
-        CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
-        CHK_PTR_NULL(channelPtr);
-        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
-
-        // CcuUrmaChannel -> UrmaEndpoint
-        EndpointHandle locEndPointHandle = channelImpl->GetlocEndPointHandle();
-        void *endpoint{nullptr};
-        CHK_RET(HcommEndpointGet(locEndPointHandle, &endpoint));
-        CHK_PTR_NULL(endpoint);
-        UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
-
-        // UrmaEndpoint -> CcuChannelCtxPool
-        CcuChannelCtxPool *ccuChannelCtxPool = ccuEndpoint->GetCcuChannelCtxPool();
-        CHK_PTR_NULL(ccuChannelCtxPool);
-
-        // CcuChannelCtxPool -> CcuJetty
-        auto channelIdKey = std::make_pair(errorInfo.dieId, errorInfo.msg.transMem.channelId);
         std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
-        CHK_RET(ccuChannelCtxPool->GetCcuChannelCtxById(channelIdKey, ctx));
-
+        (void)GetCcuJettys(errorInfo, devLogicId, taskInfo, ctx);
         ccuJettys.insert(ccuJettys.end(), ctx.second.begin(), ctx.second.end());
     }
 
@@ -941,6 +931,37 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, s32 devLogicId,
+    const Hccl::TaskInfo& taskInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
+{
+    // channelId -> channelHandle
+    u64 channelHandle = INVALID_U64;
+    CHK_RET(GetCcuChannelHandleById(devLogicId, errorInfo.msg.transMem.channelId, taskInfo, channelHandle));
+
+    // channelHandle -> CcuUrmaChannel
+    void *channelPtr{nullptr};
+    CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
+    CHK_PTR_NULL(channelPtr);
+    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+
+    // CcuUrmaChannel -> UrmaEndpoint
+    EndpointHandle locEndPointHandle = channelImpl->GetlocEndPointHandle();
+    void *endpoint{nullptr};
+    CHK_RET(HcommEndpointGet(locEndPointHandle, &endpoint));
+    CHK_PTR_NULL(endpoint);
+    UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
+
+    // UrmaEndpoint -> CcuChannelCtxPool
+    CcuChannelCtxPool *ccuChannelCtxPool = ccuEndpoint->GetCcuChannelCtxPool();
+    CHK_PTR_NULL(ccuChannelCtxPool);
+
+    // CcuChannelCtxPool -> CcuJetty
+    auto channelIdKey = std::make_pair(errorInfo.dieId, errorInfo.msg.transMem.channelId);
+    CHK_RET(ccuChannelCtxPool->GetCcuChannelCtxById(channelIdKey, ctx));
+    return HCCL_SUCCESS;
+}
+
 HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
 {
     HccpAuxInfoIn in;
