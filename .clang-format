@@ -35,7 +35,7 @@ AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 
 # 允许短函数在单行
-AllowShortFunctionOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
 
 # 允许短if语句在单行
 AllowShortIfStatementsOnASingleLine: false
@@ -168,9 +168,6 @@ PenaltyReturnTypeOnItsOwnLine: 60
 # 指针对齐
 PointerAlignment: Right
 
-# 引用对其
-# ReferenceAlignment: Right
-
 # 重新格式化注释
 ReflowComments: true
 
@@ -202,10 +199,10 @@ SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 
 # 括号内空格
-SpaceInParentheses: false
+# SpaceInParentheses: false
 
 # 方括号内空格
-SpacesInSquareBrackets: false
+# SpacesInSquareBrackets: false
 
 # 标准
 Standard: Latest
