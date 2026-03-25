@@ -147,7 +147,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_Normal_Return_HCCL_SUCCESS)
     HcclResult ret = HCCL_SUCCESS;
     HcclCommParams params;
     RankTable_t rankTable;
-    TestConstructParam(params, rankTable. 3);
+    TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -222,7 +222,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_hrtSetDevice_Failed_Return_
     HcclResult ret = HCCL_SUCCESS;
     HcclCommParams params;
     RankTable_t rankTable;
-    TestConstructParam(params, rankTable. 3);
+    TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -295,7 +295,7 @@ TEST_F(HcclImplTest, ut_CheckBatchSendRecvLinkStatus_When_LinkIsNullPtr_Return_H
     HcclResult ret = HCCL_SUCCESS;
     HcclCommParams params;
     RankTable_t rankTable;
-    TestConstructParam(params, rankTable);
+    TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
