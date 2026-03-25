@@ -208,8 +208,8 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
-    std::unordered_map<uint16_t, uint64_t> channelHandleToId_;
-    std::unordered_map<uint64_t, uint16_t> channelIdToHandle_;
+    std::unordered_map<uint16_t, uint64_t> channelIdToHandle_;
+    std::unordered_map<uint64_t, uint16_t> channelHandleToId_;
     std::vector<GroupInfo> groupOpSizeInfo;
 
 };
