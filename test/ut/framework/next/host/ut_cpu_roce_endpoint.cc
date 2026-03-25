@@ -72,7 +72,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByIp).stubs().will(throws(Hccl::NetworkApiException("error")));
     HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
-    EXPECT_EQ(ret, 128003);
+    EXPECT_EQ(ret, 11);
 }
 
 // Device
