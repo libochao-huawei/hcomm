@@ -72,13 +72,13 @@ public:
     HcclResult Algorithm() override { return HCCL_SUCCESS; }
     std::vector<uint64_t> GeneArgs(const CcuTaskArg&) override { return {1,2,3,4};}
     // 暴露私有成员用于验证（利用-fno-access-control编译选项，无需修改源码）
-    std::unordered_map<uint16_t, uint64_t>& GetChannelHandleToId() { return channelHandleToId_; }
-    std::unordered_map<uint64_t, uint16_t>& GetChannelIdToHandle() { return channelIdToHandle_; }
+    std::unordered_map<uint64_t, uint16_t>& GetChannelHandleToId() { return channelHandleToId_; }
+    std::unordered_map<uint16_t, uint64_t>& GetChannelIdToHandle() { return channelIdToHandle_; }
     void SetLoadArgIndex(uint32_t idx) { loadArgIndex_ = idx; }
     void SetMissionId(uint32_t id) { missionId = id; }
     void SetDieId(uint32_t id) { dieId = id; }
     uint32_t GetDieId() const { return dieId; }
-}
+};
 
 // 测试数据
 class MockCcuKernelArg : public hcomm::CcuKernelArg {
@@ -86,7 +86,7 @@ public:
     CcuKernelSignature GetKernelSignature() const override {
         return CcuKernelSignature{};
     }
-}
+};
 
 // 测试夹具：复用CcuKernel实例与Mock对象
 class CcuKernelTest : public testing::Test {
@@ -159,7 +159,7 @@ protected:
     HcclComm testComm;
     CcuProfilingInfo validProfInfo;
     CcuProfilingInfo invalidChannelProfInfo;
-}
+};
 
 TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
     HcclResult ret = kernel_->AddProfiling(&testChannelsArr, 2, testDataType, 
@@ -201,7 +201,7 @@ TEST_F(CcuKernelTest, GetChannelHandleById_InvalidId) {
 }
 
 
-TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
+TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
     Hccl::TaskParam testTaskParam = {
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
@@ -227,7 +227,7 @@ TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
     EXPECT_EQ(testTaskParam.taskPara.Ccu.dieId, 0);
 }
 
-TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
+TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
     Hccl::TaskParam testTaskParam = {
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
@@ -258,7 +258,7 @@ TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess)
     EXPECT_EQ(testTaskParam.taskPara.Ccu.executeId, 0x2000);
 }
 
-TEST_F(CcuKernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
+TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
     Hccl::TaskParam testTaskParam = {
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
