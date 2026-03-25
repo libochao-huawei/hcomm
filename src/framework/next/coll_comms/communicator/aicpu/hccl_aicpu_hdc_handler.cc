@@ -8,41 +8,41 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "aicpu_hdc_handler.h"
+#include "hccl_aicpu_hdc_handler.h"
 #include "log.h"
 
 namespace hccl {
 
-AicpuHdcHandler::AicpuHdcHandler(const HDCommunicatePtr &h2dTransfer, const HDCommunicatePtr &d2hTransfer) :
+HcclAicpuHdcHandler::HcclAicpuHdcHandler(const HDCommunicatePtr &h2dTransfer, const HDCommunicatePtr &d2hTransfer) :
     h2dTransfer_(h2dTransfer), d2hTransfer_(d2hTransfer)
 {
 }
 
-Hccl::KfcCommand AicpuHdcHandler::GetKfcCommand()
+Hccl::KfcCommand HcclAicpuHdcHandler::GetKfcCommand()
 {
     Hccl::KfcCommand cmd;
     auto ret = h2dTransfer_->Get(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&cmd));
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[AicpuHdcHandler] h2dTransfer Get fail, ret[%d]", ret);
+        HCCL_ERROR("[HcclAicpuHdcHandler] h2dTransfer Get fail, ret[%d]", ret);
         return cmd;
     }
 
     if (lastCmd_ != cmd) {
-        HCCL_INFO("[AicpuHdcHandler] Get new KfcCommand[%u], last KfcCommand[%u]", cmd, lastCmd_);
+        HCCL_INFO("[HcclAicpuHdcHandler] Get new KfcCommand[%u], last KfcCommand[%u]", cmd, lastCmd_);
         lastCmd_ = cmd;
     }
     return cmd;
 }
 
-void AicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const
+void HcclAicpuHdcHandler::SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const
 {
     Hccl::KfcExecStatus status;
     status.kfcStatus = state;
     status.kfcError  = errorCode;
-    HCCL_INFO("[AicpuHdcHandler] SetKfcExecStatus: state[%u], errorCode[%u]", state, errorCode);
+    HCCL_INFO("[HcclAicpuHdcHandler] SetKfcExecStatus: state[%u], errorCode[%u]", state, errorCode);
     auto ret = d2hTransfer_->Put(0, sizeof(Hccl::KfcExecStatus), reinterpret_cast<uint8_t *>(&status));
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[AicpuHdcHandler] d2hTransfer Put fail, ret[%d]", ret);
+        HCCL_ERROR("[HcclAicpuHdcHandler] d2hTransfer Put fail, ret[%d]", ret);
     }
 }
 

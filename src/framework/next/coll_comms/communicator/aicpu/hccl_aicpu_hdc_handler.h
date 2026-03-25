@@ -16,10 +16,10 @@
 
 namespace hccl {
 
-class AicpuHdcHandler {
+class HcclAicpuHdcHandler {
 public:
-    AicpuHdcHandler(const HDCommunicatePtr &h2dTransfer, const HDCommunicatePtr &d2hTransfer);
-    ~AicpuHdcHandler() = default;
+    HcclAicpuHdcHandler(const HDCommunicatePtr &h2dTransfer, const HDCommunicatePtr &d2hTransfer);
+    ~HcclAicpuHdcHandler() = default;
 
     Hccl::KfcCommand GetKfcCommand();
     void SetKfcExecStatus(Hccl::KfcStatus state, Hccl::KfcErrType errorCode) const;

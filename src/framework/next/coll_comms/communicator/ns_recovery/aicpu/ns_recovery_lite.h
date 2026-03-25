@@ -35,7 +35,7 @@ private:
     bool isSuspended_{false};
     bool isErrorReported_{false};
 
-    std::unique_ptr<hccl::AicpuHdcHandler> hdcHandler_{nullptr};
+    std::unique_ptr<HcclAicpuHdcHandler> hdcHandler_{nullptr};
     std::mutex hdcShmLock_;
 };
 
