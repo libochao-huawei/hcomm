@@ -61,14 +61,14 @@ protected:
         std::cout << "A Test TearDown" << std::endl;
         unsetenv("HCCL_ALGO");
     }
-    static HcclResult TestConstructParam(HcclCommParams &params, RankTable_t &rankTable)
+    static HcclResult TestConstructParam(HcclCommParams &params, RankTable_t &rankTable, int serverNum)
     {
         string commId = "comm ";
         CHK_SAFETY_FUNC_RET(memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1));
         
         // 1. 更新总 Rank 数
         params.rank = 0;
-        params.totalRanks = 3; 
+        params.totalRanks = serverNum; 
         params.isHeterogComm = false;
         params.logicDevId = 0;
         params.commWorkMode = WorkMode::HCCL_MODE_NORMAL;
@@ -77,7 +77,7 @@ protected:
         rankTable.collectiveId = "192.168.0.101-8000-8001";
         
         // 2. 将 vector 容量改为 3
-        vector<RankInfo_t> rankVec(3);
+        vector<RankInfo_t> rankVec(serverNum);
         
         // Rank 0
         rankVec[0].rankId = 0;
@@ -86,27 +86,29 @@ protected:
         rankVec[0].deviceInfo.deviceIp.push_back(ipAddr1);
         rankVec[0].serverIdx = 0;
         rankVec[0].serverId = "192.168.0.101";
+        
+        if (serverNum == 3) {
+            // Rank 1
+            rankVec[1].rankId = 1;
+            rankVec[1].deviceInfo.devicePhyId = 0;
+            HcclIpAddress ipAddr2(1711319232); // 192.168.0.102
+            rankVec[1].deviceInfo.deviceIp.push_back(ipAddr2);
+            rankVec[1].serverIdx = 1;
+            rankVec[1].serverId = "192.168.0.102";
 
-        // Rank 1
-        rankVec[1].rankId = 1;
-        rankVec[1].deviceInfo.devicePhyId = 0;
-        HcclIpAddress ipAddr2(1711319232); // 192.168.0.102
-        rankVec[1].deviceInfo.deviceIp.push_back(ipAddr2);
-        rankVec[1].serverIdx = 1;
-        rankVec[1].serverId = "192.168.0.102";
-
-        //  Rank 2
-        rankVec[2].rankId = 2;
-        rankVec[2].deviceInfo.devicePhyId = 0;
-        HcclIpAddress ipAddr3(1728096448); 
-        rankVec[2].deviceInfo.deviceIp.push_back(ipAddr3);
-        rankVec[2].serverIdx = 2;
-        rankVec[2].serverId = "192.168.0.103";
-
+            //  Rank 2
+            rankVec[2].rankId = 2;
+            rankVec[2].deviceInfo.devicePhyId = 0;
+            HcclIpAddress ipAddr3(1728096448); 
+            rankVec[2].deviceInfo.deviceIp.push_back(ipAddr3);
+            rankVec[2].serverIdx = 2;
+            rankVec[2].serverId = "192.168.0.103";
+        }
+        
         // 4. 更新 rankTable 统计信息
         rankTable.rankList.assign(rankVec.begin(), rankVec.end());
-        rankTable.deviceNum = 3;
-        rankTable.serverNum = 3;
+        rankTable.deviceNum = serverNum;
+        rankTable.serverNum = serverNum;
 
         return HCCL_SUCCESS;
     }
@@ -145,7 +147,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_Normal_Return_HCCL_SUCCESS)
     HcclResult ret = HCCL_SUCCESS;
     HcclCommParams params;
     RankTable_t rankTable;
-    TestConstructParam(params, rankTable);
+    TestConstructParam(params, rankTable. 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -190,7 +192,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_GroupModeAndAllocSliceMemFa
     HcclResult ret = HCCL_SUCCESS;
     HcclCommParams params;
     RankTable_t rankTable;
-    TestConstructParam(params, rankTable);
+    TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -220,7 +222,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_hrtSetDevice_Failed_Return_
     HcclResult ret = HCCL_SUCCESS;
     HcclCommParams params;
     RankTable_t rankTable;
-    TestConstructParam(params, rankTable);
+    TestConstructParam(params, rankTable. 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
@@ -248,7 +250,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_CreateSingleLinkSocket_Fail
     HcclResult ret = HCCL_SUCCESS;
     HcclCommParams params;
     RankTable_t rankTable;
-    TestConstructParam(params, rankTable);
+    TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
