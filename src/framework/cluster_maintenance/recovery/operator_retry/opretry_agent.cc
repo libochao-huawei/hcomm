@@ -980,6 +980,9 @@ HcclResult ResumeAgentCheckLink::ProcessEvent(RetryContext* retryCtx)
     HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentWaitResume, start to check link");
     // 获取当前主备网口状态，并且回复Server
     CHK_RET(GetLinkPortStatus(retryCtx, retryCtx->linkPortStatus_));
+    for (auto &tmp : retryCtx->linkPortStatus_.rankList) {
+ 	    HCCL_ERROR("TESTZJN --- retryCtx->linkPortStatus_.rankList[%u]", tmp);
+ 	}
     HcclResult ret = IssueLinkPortCheckResult(retryCtx->agentSocket_, retryCtx->linkPortStatus_);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[OpRetry][Agent]ResumeAgentCheckLink IssueResponse fail"), ret);
     CHK_RET(CreateOpRetryAgentByState(nextState, retryCtx));
