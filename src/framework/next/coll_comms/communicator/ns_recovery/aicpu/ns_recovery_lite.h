@@ -13,7 +13,7 @@
 
 #include "hdc_pub.h"
 #include "kfc.h"
-#include "aicpu_hdc_handler.h"
+#include "hccl_aicpu_hdc_handler.h"
 #include <memory>
 
 namespace hccl {
