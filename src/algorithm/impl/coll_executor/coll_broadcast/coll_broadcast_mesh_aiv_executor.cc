@@ -31,6 +31,11 @@ HcclResult CollBroadcastMeshAivExecutor::CalcStreamNum(u32& streamNum)
 HcclResult CollBroadcastMeshAivExecutor::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
 {
     TransportMemType inputType = TransportMemType::CCL_INPUT;
+    if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+        inputType = TransportMemType::AIV_INPUT;
+    } else {
+        inputType = TransportMemType::CCL_INPUT;
+    }
     TransportMemType outputType = TransportMemType::AIV_OUTPUT;
     HCCL_INFO("[CollBroadcastMeshAivExecutor][CalcTransportMemType] tag[%s] inputType[%d],"
         " outputType[%d].", tag_.c_str(), inputType, outputType);
@@ -42,7 +47,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSi
 {
     numBlocks = rankSize; // 默认情况使用rankSize个AIV
     CHK_PRT_RET(numBlocks_ < numBlocks,
-        HCCL_WARNING("[CollBroadcastMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_ERROR("[CollBroadcastMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
 
     HCCL_INFO("[CollBroadcastMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
@@ -71,7 +76,11 @@ HcclResult CollBroadcastMeshAivExecutor::Orchestrate(OpParam& param, AlgResource
     execMem.inputPtr = param.inputPtr;
     execMem.outputPtr = param.inputPtr; // broadcast使用一块内存
  
-    execMem.inputMem = algRes.cclInputMem;
+    if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+        execMem.inputMem = algRes.aivInputMem;
+    } else {
+        execMem.inputMem = algRes.cclInputMem;
+    }
     execMem.outputMem = algRes.aivOutputMem;
  
     ret = KernelRun(param, execMem);
