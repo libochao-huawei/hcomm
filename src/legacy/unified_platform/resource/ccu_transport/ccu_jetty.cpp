@@ -156,7 +156,6 @@ HcclResult CcuJetty::Clean()
 {
     TRY_CATCH_RETURN(
         if (isCreated_ && outParam_.handle != 0) {
-            HrtRaUbDestroyJetty(outParam_.handle);
             isCreated_ = false;
             reqHandle_ = 0;
             jettyHandlePtr_ = nullptr;
