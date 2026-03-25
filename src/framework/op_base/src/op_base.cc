@@ -3057,6 +3057,7 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
 
 HcclResult HcclCommDestroy(HcclComm comm)
 {
+    HCCL_RUN_INFO("Entry-%s: op_base comm destroy begin", __func__);
     if(hcclGroupDepth > 0){
         std::shared_ptr<struct hcclCommDestroyAsyncJob> job;
         EXECEPTION_CATCH((job = std::make_shared<struct hcclCommDestroyAsyncJob>()), return HCCL_E_PARA);
@@ -3068,7 +3069,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
         ret = commInitTaskAppend(job, HcclCommDestroyWrapper, &comm);
         return ret;
     }
-    HCCL_RUN_INFO("Entry-%s: op_base comm destroy begin", __func__);
+    HCCL_RUN_INFO("TEST1");
 
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = 0;
