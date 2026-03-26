@@ -13,3 +13,10 @@ target_sources(hccl_v2 PRIVATE
         orion_adapter_tsd.cc
         orion_adapter_trace.cc
 )
+
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+target_sources(ccl_kernel PRIVATE
+        orion_adapter_hccp.cc
+        orion_adapter_rts.cc
+)
+endif()
