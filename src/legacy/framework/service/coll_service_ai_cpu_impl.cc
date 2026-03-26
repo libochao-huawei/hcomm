@@ -568,7 +568,7 @@ void CollServiceAiCpuImpl::AllocOpMem(const CollOperator &op)
     HCCL_INFO("[AllocOpMem] op.opType[%d]", op.opType);
 }
 
-u64 CollServiceAiCpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize)
+u64 CollServiceAiCpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize) const
 {
     u64 dynamicDataSize = 0ULL;
     switch (opType) {
