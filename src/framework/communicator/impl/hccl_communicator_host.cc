@@ -4186,6 +4186,10 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][SplitBsrData] rankSize %u", userRankSize_);
         HcclSendRecvItem* sendRecvInfo = opParam.BatchSendRecvDataDes.sendRecvItemsPtr;
         for (u32 i = 0; i < itemNum; i++) {
+            if (sendRecvInfo->buf == nullptr) {
+                sendRecvInfo++;
+                continue;
+            }
             if (remoteTransportMap_[sendRecvInfo->remoteRank] == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
                 //host 侧需要下发的数据
                 HCCL_INFO("[HcclCommunicator][SplitBsrData]host localRank %u remoteRank %u type %d sendRecvType %d count %llu",
