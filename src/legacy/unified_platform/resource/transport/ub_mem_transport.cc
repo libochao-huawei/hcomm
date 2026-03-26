@@ -959,7 +959,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::UpdateMemInfo(LocalBufferVec &bufferVecTemp)
+HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalUbRmaBuffer *> &bufferVecTemp)
 {
     CHK_RET(FillTagVec(bufferVecTemp, memTagTemp_));
     HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
