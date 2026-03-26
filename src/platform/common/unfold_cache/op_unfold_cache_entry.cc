@@ -637,7 +637,8 @@ namespace hccl {
         const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr,
         AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<FlipInfo>& flipInfos,
         const bool profL1Enable, std::vector<uint64_t>& profTimestamps, const bool isAlltoallv,
-        const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo) {
+        const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo,
+        std::vector<uint32_t>& alltoallvPlhOffsets) {
         HCCL_INFO("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update and get SQEs from %uth SQE array; isAlltoallv[%u]", arrayIdx, isAlltoallv);
 
         // 检验入参
@@ -660,6 +661,9 @@ namespace hccl {
         *sqeTypeArrayPtr = sqeTypeArrays_[arrayIdx];
         *sqeDfxInfoArrayPtr = sqeDfxInfoArrays_[arrayIdx];
         flipInfos.clear();
+        if (isAlltoallv) {
+            alltoallvPlhOffsets.clear(); // 用于alltoallv算子局部重执行
+        }
         if (profL1Enable) {
             profTimestamps.clear();
             profTimestamps.reserve(sqeCount); // 需要额外flip placeholder是小概率事件, 所以只reserve cached SQE个数 (即非flip placeholder类SQE)
@@ -691,7 +695,27 @@ namespace hccl {
         uint64_t sqeSrcAddr = 0;
         uint64_t sqeDstAddr = 0;
         uint8_t *sqePtr = (*sqeArrayPtr);
+        uint32_t curOffsetToSqTail = 0; // 用于alltoallv算子局部重执行 (当前SQE相对于sqTail的offset)
         for (size_t sqeIdx = 0 ; sqeIdx < sqeCount; ++sqeIdx){
+            // 当前SQE分配taskId前, 按需添加flip placeholder
+            if (curTaskId == 0 && curFlipNum != 0) { // 更新flipInfos和taskId
+                // 参考dispatcher_aicpu.cc中的GetStreamSqeBufferAddr
+                flipInfos.push_back(FlipInfo(sqeIdx, curFlipNum));
+
+                if (isAlltoallv) {
+                    curOffsetToSqTail += 1; // 考虑这里需要插入flip placeholder, 因此offset也要+1
+                }
+
+                // 为placeholder SQE预留task id = 0
+                curTaskId = 1;
+
+                // Flip placeholder SQE在外侧dispatcher aicpu中生成, 这里记录当前时间作为flip placeholder SQE的生成时间
+                if (profL1Enable) {
+                    const uint64_t curTime = ProfGetCurCpuTimestamp();
+                    profTimestamps.push_back(curTime);
+                }
+            }
+
             // 获取当前SQE的信息
             uint8_t& sqeType = (*sqeTypeArrayPtr)[sqeIdx];
             const RefreshAddrInfo& srcRefreshAddrInfo = srcRefreshAddrInfoArray[sqeIdx];
@@ -849,6 +873,20 @@ namespace hccl {
                         sqeType, sqeIdx, curTaskId);
                     return HCCL_E_NOT_SUPPORT;
                 }
+            } // switch(sqeType)
+
+            // 判断刷新后的SQE是否为alltoallv placeholder
+            if (isAlltoallv) {
+                bool isAlltoallvPlh = sqeType == SqeType::CACHE_MEMCPY_PLACEHOLDER_SQE ||
+                    sqeType == SqeType::CACHE_NOTIFY_PLACEHOLDER_SQE ||
+                    sqeType == SqeType::CACHE_WRITE_VALUE_PLACEHOLDER_SQE ||
+                    sqeType == SqeType::CACHE_MEMCPY_RECORD_PLACEHOLDER_SQE;
+                if (isAlltoallvPlh) {
+                    // 记录alltoallv placeholder SQE相对于当前sqTail的偏移量, 用于局部重执行
+                    alltoallvPlhOffsets.push_back(curOffsetToSqTail);
+                }
+
+                curOffsetToSqTail += 1;
             }
 
             // 记录SQE刷新时间用于profiling
@@ -857,23 +895,11 @@ namespace hccl {
                 profTimestamps.push_back(curTime);
             }
 
-            // 刷新taskId和flipNum
+            // 当前SQE分配taskId后, 刷新taskId和flipNum
             if (curTaskId == UINT16_MAX) { // 更新flipNum和taskId
                 // 参考stream.cc中的GetNextSqeBufferAddr
                 curFlipNum += 1;
                 curTaskId = 0;
-            } else if (curTaskId == 0 && curFlipNum != 0) { // 更新flipInfos和taskId
-                // 参考dispatcher_aicpu.cc中的GetStreamSqeBufferAddr
-                flipInfos.push_back(FlipInfo(sqeIdx, curFlipNum));
-
-                // 为placeholder SQE预留task id = 0
-                curTaskId = 1;
-
-                // Flip placeholder SQE在外侧dispatcher aicpu中生成, 这里记录当前时间作为flip placeholder SQE的生成时间
-                if (profL1Enable) {
-                    const uint64_t curTime = ProfGetCurCpuTimestamp();
-                    profTimestamps.push_back(curTime);
-                }
             } else { // 只更新taskid
                 curTaskId += 1;
             }
