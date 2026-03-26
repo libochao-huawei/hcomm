@@ -23,7 +23,6 @@ public:
     uint16_t GetSrcAddrId() { return src.addr.Id(); }
     uint16_t GetSrcTokenId() { return src.token.Id(); }
     uint16_t GetDstAddrId() { return dst.Id(); }
-    uint16_t GetDstTokenId() { return src.token.Id(); }
     uint16_t GetLenId() { return len.Id(); }
     uint16_t GetSemId() { return sem.Id(); }
     uint32_t GetMask() { return mask; }

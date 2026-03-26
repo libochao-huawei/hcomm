@@ -66,12 +66,12 @@ struct CcuErrorInfo {
 
         struct {
             uint16_t bufId;
-            uint64_t addr;
-            uint64_t token;
-            uint64_t len;
             uint16_t signalId;
             uint16_t signalMask;
             uint16_t channelId;
+            uint64_t addr;
+            uint64_t token;
+            uint64_t len;
         } bufTransMem;
 
         struct {

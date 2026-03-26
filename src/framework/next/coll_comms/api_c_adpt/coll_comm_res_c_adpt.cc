@@ -332,7 +332,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     std::vector<hcomm::CcuTaskParam> ccuParams{};
     auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
-    HcclResult::HCCL_SUCCESS);
+        HcclResult::HCCL_E_PARA);
 
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
@@ -351,7 +351,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
                 .missionId     = 0,
                 .execMissionId = 0,
                 .instrId       = 0,
-                .costumArgs    = {0},
+                .costumArgs    = {},
                 .executeId     = 0
             }
         },
