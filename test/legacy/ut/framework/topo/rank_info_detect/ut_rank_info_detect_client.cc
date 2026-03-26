@@ -221,7 +221,7 @@ TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_Normal_Expect_Succes
         .will(returnValue(0));
     MOCKER(TopoAddrInfoGet)
         .stubs()
-        .with(0, outBoundP(const_cast<char*>(testJsonContent.c_str), testJsonContent.size()), outBoundP(&expectedSize, sizeof(size_t)));
+        .with(0, outBoundP(const_cast<char*>(testJsonContent.c_str), testJsonContent.size()), outBoundP(&expectedSize, sizeof(size_t)))
         .will(returnValue(0));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->ConstructRankTable(localRankTable));
