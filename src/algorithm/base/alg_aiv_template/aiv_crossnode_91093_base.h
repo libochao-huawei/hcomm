@@ -29,26 +29,46 @@ input, output, rank, rankSize, len, \
 dataType, reduceOp, root, tag, numBlocks, isOpBase, \
 step, deterministic
 
+// __sk__函数参数 A3
+struct SkFuncArgsA3 {
+    GM_ADDR buffIn0; GM_ADDR buffIn1; GM_ADDR buffOut0; GM_ADDR buffOut1;
+    GM_ADDR bufferSize; GM_ADDR headCountMem; GM_ADDR tailCountMem; GM_ADDR addOneMem;
+    GM_ADDR isEnableCounter; GM_ADDR input; GM_ADDR output;
+    uint32_t rank;
+    uint32_t rankSize;
+    uint64_t len;
+    uint32_t dataType;
+    uint32_t reduceOp;
+    uint32_t root;
+    int32_t tag;
+    uint32_t numBlocks;
+    alignas(4) bool isOpBase;
+    int32_t step;
+    uint32_t deterministic;
+};
+
+// __sk__定义的函数参数
+#define SK_BIND_FUNC_ARGS_A3 \
+    __gm__ struct SkFuncArgsA3* args
+
 // 将__sk__参数转成__aicore__参数 A3
 #define CONVERT_SK_PARAM_TO_KERNEL_ARGS_A3 \
-GM_ADDR buffIn0 = args[0]; GM_ADDR buffIn1 = args[1]; GM_ADDR buffOut0 = args[2]; GM_ADDR buffOut1 = args[3]; \
-GM_ADDR bufferSize = args[4]; GM_ADDR headCountMem = args[5]; GM_ADDR tailCountMem = args[6]; GM_ADDR addOneMem = args[7]; \
-GM_ADDR isEnableCounter = args[8]; GM_ADDR input = args[9]; GM_ADDR output = args[10]; \
-uint32_t* param11 = (uint32_t*)(args + 11); uint32_t rank = param11[0]; \
-uint32_t* param12 = (uint32_t*)(param11 + 1); uint32_t rankSize = param12[0]; \
-uint64_t* param13 = (uint64_t*)(param12 + 1); uint64_t len = param13[0]; \
-uint32_t* param14 = (uint32_t*)(param13 + 1); uint32_t dataType = param14[0]; \
-uint32_t* param15 = (uint32_t*)(param14 + 1); uint32_t reduceOp = param15[0]; \
-uint32_t* param16 = (uint32_t*)(param15 + 1); uint32_t root = param16[0]; \
-int32_t* param17 = (int32_t*)(param16 + 1); int32_t tag = param17[0]; \
-uint32_t* param18 = (uint32_t*)(param17 + 1); uint32_t numBlocks = param18[0]; \
-bool* param19 = (bool*)(param18 + 1); bool isOpBase = param19[0]; \
-int32_t* param20 = (int32_t*)(param19 + 4); int32_t step = param20[0]; \
-uint32_t* param21 = (uint32_t*)(param20 + 1); uint32_t deterministic = param21[0]
+GM_ADDR buffIn0 = args->buffIn0; GM_ADDR buffIn1 = args->buffIn1;\
+GM_ADDR buffOut0 = args->buffOut0; GM_ADDR buffOut1 = args->buffOut1; \
+GM_ADDR bufferSize = args->bufferSize; GM_ADDR headCountMem = args->headCountMem; \
+GM_ADDR tailCountMem = args->tailCountMem; GM_ADDR addOneMem = args->addOneMem; \
+GM_ADDR isEnableCounter = args->isEnableCounter; \
+GM_ADDR input = args->input; GM_ADDR output = args->output; \
+uint32_t rank = args->rank; uint32_t rankSize = args->rankSize; \
+uint64_t len = args->len; uint32_t dataType = args->dataType; \
+uint32_t reduceOp = args->reduceOp; uint32_t root = args->root; \
+int32_t tag = args->tag; uint32_t numBlocks = args->numBlocks; \
+bool isOpBase = args->isOpBase; int32_t step = args->step; \
+uint32_t deterministic = args->deterministic
 
 // A3 sk 导出函数
 #define SK_BIND_FUNC_DEF_A3(kernel_name, postfix) \
-extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS) \
+extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS_A3) \
 { \
     CONVERT_SK_PARAM_TO_KERNEL_ARGS_A3; \
     kernel_name##_inner(KERNEL_ARGS_CALL_A3); \
