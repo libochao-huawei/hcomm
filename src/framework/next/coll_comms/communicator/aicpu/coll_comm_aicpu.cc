@@ -28,7 +28,7 @@ constexpr u32 NOTIFY_SIZE_EIGHT = 8;
      std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback); // 临时，后续移动至Op.h
 HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
-    if (isReady_) {
+    if (commmStatus_ == HcclCommStatus::HCCL_COMM_STATUS_READY) {
         HCCL_RUN_INFO("[CollCommAicpu][%s]Group[%s] already initialized, skip reinit", __func__,
             identifier_.c_str());
         return HCCL_SUCCESS;
@@ -58,10 +58,13 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
-    nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+
+    EXECEPTION_CATCH(nsRecoveryLitePtr_ = std::make_shared<NsRecoveryLite>(), return HCCL_E_PTR);
+    nsRecoveryLitePtr_->Init(kfcControlTransferH2D_, kfcStatusTransferD2H_);
+
     CHK_RET(Hccl::DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
-    isReady_ = true;
+    commmStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
 
     static std::once_flag onceFlag;
     std::call_once(onceFlag, [this]() { this->InitBackGroundThread();} );
@@ -71,10 +74,10 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     return HCCL_SUCCESS;
 }
 
-void CollCommAicpu::SetIsReady(bool flag)
+void CollCommAicpu::SetCommmStatus(HcclCommStatus status)
 {
-    HCCL_INFO("[%s]group[%s], flag[%d]", __func__, identifier_.c_str(), flag);
-    isReady_ = flag;
+    HCCL_INFO("[%s]group[%s], flag[%d]", __func__, identifier_.c_str(), static_cast<int>(status));
+    commmStatus_ = status;
 }
 
 HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
@@ -214,8 +217,8 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::shared_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_shared<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
         return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 
@@ -317,7 +320,7 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    auto transPortPtr = ubTransportMap_[handle];
+    auto& transPortPtr = ubTransportMap_[handle];
     CHK_RET(transPortPtr->Resume(transpUniqueId));
     return HCCL_SUCCESS;
 }
@@ -325,12 +328,14 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
 HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
 {
     CHK_RET(ProcessUrmaRes(commParam, false));
-    nsRecoveryLitePtr_->SetIsSuspended(false);
     nsRecoveryLitePtr_->SetNeedClean(false);
     nsRecoveryLitePtr_->ResetErrorReported();
+
+    commmStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
     
     return HCCL_SUCCESS;
 }
+
 void CollCommAicpu::InitBackGroundThread()
 {
     static auto commandToBackGroud = Hccl::CommandToBackGroud::Default;

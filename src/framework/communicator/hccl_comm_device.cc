@@ -11,6 +11,7 @@
 
 #include "hccl_comm_pub.h"
 #include "hccl_communicator.h"
+#include "aicpu_indop_process.h"
  
 namespace hccl {
 HcclResult hcclComm::RegistTaskAbortHandler() const
@@ -152,6 +153,24 @@ HcclResult hcclComm::Resume()
 }
 HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
 {
+    status = HcclCommStatus::HCCL_COMM_STATUS_READY;
+    if (IsCommunicatorV2()) {
+        ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
+        ReadWriteLock rwlock(commAicpuMapMutex);
+        rwlock.readLock();
+
+        std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+        CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
+        for (const auto& deviceComm : aicpuCommInfo) {
+            if (deviceComm.first != identifier_) {
+                continue;
+            }
+            CollCommAicpu* aicpuCommPtr = deviceComm.second->GetCollCommAicpu();
+            CHK_PTR_NULL(aicpuCommPtr);
+            status = aicpuCommPtr->GetCommmStatus();
+            break;
+        }
+    }
     return HCCL_SUCCESS;
 }
 

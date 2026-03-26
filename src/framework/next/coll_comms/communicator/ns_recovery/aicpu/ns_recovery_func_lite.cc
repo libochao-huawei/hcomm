@@ -22,21 +22,27 @@ NsRecoveryFuncLite &NsRecoveryFuncLite::GetInstance()
 
 void NsRecoveryFuncLite::Call()
 {
+    ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
+    ReadWriteLock rwlock(commAicpuMapMutex);
+    rwlock.readLock();
+
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
     AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu* deviceComm = commInfo.second->GetCollCommAicpu();
-        if (!deviceComm->GetIsReady()) {
+        if (deviceComm->GetCommmStatus() != HcclCommStatus::HCCL_COMM_STATUS_READY) {
             continue;
         }
         HandleStopLaunch(deviceComm);
         HandleClean(deviceComm);
     }
+
+    rwlock.readUnlock();
 }
 
 void NsRecoveryFuncLite::HandleStopLaunch(CollCommAicpu *deviceComm) const
 {
-    if (deviceComm->GetNsRecoveryLitePtr()->IsSuspended()) {
+    if (deviceComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
         return;
     }
 
@@ -46,7 +52,7 @@ void NsRecoveryFuncLite::HandleStopLaunch(CollCommAicpu *deviceComm) const
     }
     HCCL_INFO("[NsRecovery][BackGround] received KfcCommand[NS_STOP_LAUNCH]");
     deviceComm->GetNsRecoveryLitePtr()->SetNeedClean(true);
-    deviceComm->GetNsRecoveryLitePtr()->SetIsSuspended(true);
+    deviceComm->SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
     deviceComm->GetNsRecoveryLitePtr()->BackGroundSetStatus(Hccl::KfcStatus::STOP_LAUNCH_DONE);
     HCCL_INFO("[NsRecovery][BackGround] send KfcStatus[STOP_LAUNCH_DONE]");
 }
@@ -99,7 +105,7 @@ void NsRecoveryFuncLite::StreamClean(CollCommAicpu *deviceComm)
 constexpr u64 NSEC_PER_SEC = 1000000000U;
 inline u64 GetCurCpuTimestamp()
 {
-    struct timespec timestamp;
+    struct timespec timestamp{0, 0};
     (void)clock_gettime(CLOCK_MONOTONIC_RAW, &timestamp);
     return static_cast<u64>((timestamp.tv_sec * NSEC_PER_SEC) + (timestamp.tv_nsec));
 }

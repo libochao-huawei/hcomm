@@ -12,7 +12,7 @@
 #include "../coll_comm_mgr.h"
 
 using namespace hccl;
-//static std::unique_ptr<CollCommMgr> g_collCommMgr = std::make_unique<CollCommMgr>();
+// static std::unique_ptr<CollCommMgr> g_collCommMgr = std::make_unique<CollCommMgr>();
 
 /**
  * @note 职责：集合通信的通信域管理的C接口的C到C++适配

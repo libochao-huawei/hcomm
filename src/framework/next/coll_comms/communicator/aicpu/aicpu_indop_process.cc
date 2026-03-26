@@ -243,7 +243,7 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
     }
     CollCommAicpu* aicpuComm = iter->second->GetCollCommAicpu();
     CHK_PTR_NULL(aicpuComm);
-    aicpuComm->SetIsReady(false);
+    aicpuComm->SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_INVALID);
     HCCL_INFO("[AicpuIndopProcess][%s]Destroy comm group [%s] success.", __func__, group.c_str());
     return HCCL_SUCCESS;
 }

@@ -229,10 +229,10 @@ typedef enum {
 } HcclCMDType;
 
 typedef enum {
-    HCCL_COMM_READY = 0,
-    HCCL_COMM_SUSPENDING = 1,
-    HCCL_COMM_UNKNOWN = 254,
-    HCCL_COMM_RESERVED = 255
+    HCCL_COMM_STATUS_READY = 0,
+    HCCL_COMM_STATUS_SUSPENDING = 1,
+    HCCL_COMM_STATUS_INVALID = 254,
+    HCCL_COMM_STATUS_RESERVED = 255
 } HcclCommStatus;
 
 #ifdef __cplusplus

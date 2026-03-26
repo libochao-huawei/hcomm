@@ -21,18 +21,18 @@ namespace hccl {
 class NsRecoveryLite 
 {
 public:
-    NsRecoveryLite(const HDCommunicatePtr& kfcControlTransferH2D, const HDCommunicatePtr& kfcStatusTransferD2H);
+    NsRecoveryLite();
+    void Init(const std::shared_ptr<HDCommunicate>& kfcControlTransferH2D, 
+        const std::shared_ptr<HDCommunicate>& kfcStatusTransferD2H);
+
     Hccl::KfcCommand BackGroundGetCmd();
     void BackGroundSetStatus(Hccl::KfcStatus status, Hccl::KfcErrType errorCode = Hccl::KfcErrType::NONE);
     void ResetErrorReported();
     void SetNeedClean(bool flag);
     bool IsNeedClean() const;
-    void SetIsSuspended(bool status);
-    bool IsSuspended() const;
 
 private:
     bool needClean_{false};
-    bool isSuspended_{false};
     bool isErrorReported_{false};
 
     std::unique_ptr<HcclAicpuHdcHandler> hdcHandler_{nullptr};

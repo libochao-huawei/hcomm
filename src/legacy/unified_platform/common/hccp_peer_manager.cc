@@ -44,6 +44,11 @@ void HccpPeerManager::DeInit(s32 deviceLogicId)
 {
     std::lock_guard<std::mutex> lock(managerMutex_);
 
+    if (isDestroy) {
+        HCCL_WARNING("[HccpPeerManager::%s] HccpPeerManager has been detroy", __func__);
+        return;
+    }
+
     // 校验是否存在
     if (instances_.count(deviceLogicId) == 0) {
         HCCL_WARNING("[HccpPeerManager::%s] deviceLogicId[%d] not ra init", __func__, deviceLogicId);
@@ -69,6 +74,7 @@ void HccpPeerManager::DeInit(s32 deviceLogicId)
 void HccpPeerManager::DeInitAll()
 {
     std::lock_guard<std::mutex> lock(managerMutex_);
+    isDestroy = true;
 
     for (auto const &instance : instances_) {
         u32 count = instance.second.Count();

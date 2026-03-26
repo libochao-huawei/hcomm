@@ -12,7 +12,7 @@
 #define NS_RECOVERY_FUNC_LITE_H
 
 #include "coll_comm_aicpu.h"
-#include "../../../../../../legacy/framework/communicator/aicpu/daemon/daemon_func.h"
+#include "daemon_func.h"
 
 namespace hccl {
 

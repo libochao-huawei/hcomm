@@ -88,7 +88,7 @@ public:
     uint32_t UpdateIndex();
     
     // Todo:在这里做N秒快恢
-    HcclCommStatus GetCommStatus();
+    HcclCommStatus GetCommStatus() const;
     HcclResult Suspend();
     HcclResult Clean();
     HcclResult Resume();
@@ -102,7 +102,7 @@ private:
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
-    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_UNKNOWN};
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};

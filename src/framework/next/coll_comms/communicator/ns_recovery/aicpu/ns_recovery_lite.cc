@@ -13,7 +13,11 @@
 namespace hccl
 {
 
-NsRecoveryLite::NsRecoveryLite(const HDCommunicatePtr& kfcControlTransferH2D, const HDCommunicatePtr& kfcStatusTransferD2H)
+NsRecoveryLite::NsRecoveryLite()
+{}
+
+void NsRecoveryLite::Init(const std::shared_ptr<HDCommunicate>& kfcControlTransferH2D, 
+    const std::shared_ptr<HDCommunicate>& kfcStatusTransferD2H)
 {
     hdcHandler_ = std::make_unique<HcclAicpuHdcHandler>(kfcControlTransferH2D, kfcStatusTransferD2H);
 }
@@ -21,7 +25,12 @@ NsRecoveryLite::NsRecoveryLite(const HDCommunicatePtr& kfcControlTransferH2D, co
 Hccl::KfcCommand NsRecoveryLite::BackGroundGetCmd()
 {
     std::unique_lock<std::mutex> lock(hdcShmLock_);
-    return hdcHandler_->GetKfcCommand();
+    Hccl::KfcCommand cmd{Hccl::KfcCommand::NONE};
+    auto ret = hdcHandler_->GetKfcCommand(cmd);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("BackGroundGetCmd failed!");
+    }
+    return cmd;
 }
 
 void NsRecoveryLite::BackGroundSetStatus(Hccl::KfcStatus status, Hccl::KfcErrType errorCode)
@@ -41,14 +50,6 @@ void NsRecoveryLite::SetNeedClean(bool flag)
 bool NsRecoveryLite::IsNeedClean() const
 {
     return needClean_;
-}
-void NsRecoveryLite::SetIsSuspended(bool status)
-{
-    isSuspended_ = status;
-}
-bool NsRecoveryLite::IsSuspended() const
-{
-    return isSuspended_;
 }
 
 }
