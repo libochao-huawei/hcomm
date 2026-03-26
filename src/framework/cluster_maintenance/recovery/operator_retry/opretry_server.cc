@@ -146,6 +146,9 @@ HcclResult OpRetryServerRunning::ProcessEvent(RetryContext* retryCtx)
             RetryState nextState = RETRY_STATE_SERVER_RUNNING;
             CHK_RET(ParaseErrorCode(retryCtx, it.second, nextState));
             if (nextState != RETRY_STATE_SERVER_RUNNING) {
+                // 为当前agent更新局部重执行信息
+                CHK_RET(UpdatePartialOpRetryInfoForError(agentId, it.second, retryCtx));
+
                 // 收到第一个报错后加入errorRankList_中，并切换到RETRY_STETA_HANDLE_ALL_ERR状态
                 HCCL_RUN_INFO("[OpRetry][Server]agent[%u] tag[%s] index[%u] find error, insert to errorRankList_", 
                     agentId, it.second.retryInfo.opInfo.opId.tag, it.second.retryInfo.opInfo.opId.index);
@@ -207,6 +210,9 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
                 RetryState nextState = RETRY_STATE_SERVER_RUNNING;
                 CHK_RET(ParaseErrorCode(retryCtx, it.second, nextState));
                 if (nextState != RETRY_STATE_SERVER_RUNNING) {
+                    // 为当前agent更新局部重执行信息
+                    CHK_RET(UpdatePartialOpRetryInfoForError(agentId, it.second, retryCtx));
+
                     // 当前rank报错，收集到errorRankList_后统一处理
                     HCCL_RUN_INFO("[OpRetry][Server]agent[%u] tag[%s] index[%u] find error, insert to errorRankList_", 
                         agentId, it.second.retryInfo.opInfo.opId.tag, it.second.retryInfo.opInfo.opId.index);
@@ -275,6 +281,15 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
         }
 
         if (!isFoundSendRecv) {
+            // TODO: 先遍历errorRankList_, 确定opId最小的故障算子为errorOp
+            // TODO: 根据errorOp确定非故障卡中, 是否包含慢卡 (即opIdx < errorOpIdx), 如果有则进入sleep
+            // TODO: 如果只有errorOp同步卡/快卡, 则更新finalPartialOpRetryFlag (即errorOp同步卡应该>=2 ranks, 且都使能局部重执行)
+            // TODO: 使能局部重执行场景下, 对于errorRankList_中上报errorOp的ranks, 取rankId最小的更新partialOpRetryErrorRank;
+            //     根据errorOp, 更新partialOpRetryInfoMap_.isSameAsErrorOp (初始值一定为false);
+            //     更新errorRankList_, 只清理errorOp同步卡;
+            //     更新needRetryServerRanks_为errorOp同步卡
+            // TODO: 如果不使能局部重执行, 则回退到正常重执行快慢卡检查的逻辑进入sleep
+
             // 如果没有找到send/recv算子，判断所有rank是否停在同一个算子
             bool isAllTagSame = true;
             u32 firstErrorRank = *(errorRank.begin());
@@ -361,6 +376,44 @@ HcclResult OpRetryServerRunning::ParaseErrorCode(RetryContext* retryCtx, HcclAge
     return HCCL_SUCCESS;
 }
 
+HcclResult OpRetryServerRunning::UpdatePartialOpRetryInfoForError(const uint32_t agentId,
+    const HcclAgentRetryInfo& agentInfo, RetryContext* retryCtx)
+{
+    // 注意: RDMA error不应该触发局部重执行
+    const KfcError curKfcErr = agentInfo.retryInfo.opInfo.execStatus.kfcError;
+    const bool isEnablePartialOpRetry = agentInfo.retryInfo.opInfo.execStatus.retryInfo.isEnablePartialOpRetry;
+    CHK_PRT_RET(curKfcErr == KfcError::kRdma && isEnablePartialOpRetry,
+        HCCL_ERROR("[OpRetryServerRunning] kRdmaErr[%d] should not enablePartialOpRetry[%d]",
+            curKfcErr, isEnablePartialOpRetry),
+        HCCL_E_INTERNAL);
+
+    // opretry server收到发生error的opretry agent上报的局部重执行flag后, 会保存到对应rank的局部重执行信息中
+    if (curKfcErr == KfcError::kSdma) { // 只有SDMA error才会触发局部重执行
+        // RetryContext初始化时一定已经创建了partialOpRetryInfoMap_[agentId]
+        std::unordered_map<u32, HcclAgentPartialOpRetryInfo>::iterator partialOpRetryMapIter =
+            retryCtx->partialOpRetryInfoMap_.find(agentId);
+        CHK_PRT_RET(partialOpRetryMapIter == retryCtx->partialOpRetryInfoMap_.end(),
+            HCCL_ERROR("[OpRetryServerRunning] agentId[%u] not found in partialOpRetryInfoMap_", agentId),
+            HCCL_E_INTERNAL);
+        
+        // 注意: 初始化或者上一次重执行fail/succ时, partialOpRetryInfoMap_一定被重置了,
+        //     而在一次重执行流程中, server从每个agent至多读取一次error信息, 因此给定agent对应的局部重执行信息一定为默认值
+        CHK_PRT_RET(partialOpRetryMapIter->second.isEnablePartialOpRetry,
+            HCCL_ERROR("[OpRetryServerRunning] invalid isEnablePartialOpRetry[%d] for agentId[%d] before retry",
+                partialOpRetryMapIter->second.isEnablePartialOpRetry, agentId),
+            HCCL_E_INTERNAL);
+
+        // 保存发生error的opretry agent的局部重执行信息
+        partialOpRetryMapIter->second.isEnablePartialOpRetry = isEnablePartialOpRetry;
+        HCCL_INFO("[OpRetryServerRunning] agentId[%u] rank[%u] isEnablePartialOpRetry[%d] find kSdmaErr[%d]",
+            agentId, agentInfo.retryInfo.rankId, partialOpRetryMapIter->second.isEnablePartialOpRetry, curKfcErr);
+        
+        // 注意: 单个error report无法判断errorOp, 暂不设置isSameAsErrorOp (推迟到OpRetryServerHandleError收齐errors后处理)
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult OpRetryServerIssueCmd::ProcessEvent(RetryContext* retryCtx)
 {
     HcclResult ret = HCCL_SUCCESS;
@@ -443,7 +496,27 @@ HcclResult OpRetryServerWaitResp::ProcessEvent(RetryContext* retryCtx)
                 recvVaild.insert(rank);
                 HCCL_INFO("[OpRetry][Server]OpRetryServerWaitResp recv success from dst[%u], state[%s]",
                     rank, GetReadableState(dstState));
+                
+                // 如果是停卡对应的agent response, 且使能了局部重执行, 则更新局部重执行信息
+                if (dstState == RETRY_STATE_RESP_AICPU_STOPED && finalPartialOpRetryFlag) {
+                    // 如果使能局部重执行, partialOpRetryErrorRank在OpRetryServerHandleError时一定初始化过
+                    CHK_PRT_RET(partialOpRetryErrorRank == INVALID_UINT,
+                        HCCL_ERROR("[OpRetryServerWaitResp] invalid partialOpRetryErrorRank[%u] when recv state[%s] from "
+                            "agent[%u] rank[%u]",
+                            partialOpRetryErrorRank, GetReadableState(dstState), rank, agentRetryInfo.retryInfo.rankId),
+                        HCCL_E_INTERNAL);
+                    
+                    // TODO: 获取当前agent对应的opIdx
+                    // 注意: opIdx一定 >= errorOpIdx (OpRetryHandleError时已经判断过不存在比errorOp还小的慢卡)
+
+                    // TODO: 如果opIdx > errorOpIdx, 更新partialOpRetryInfoMap_ (isSameAsErrorOp = false)
+
+                    // TODO: 如果opIdx == errorOpIdx, 更新partialOpRetryInfoMap_ (isSameAsErrorOp = true)
+                    //     同时, 根据isEnablePartialOpRetry更新finalPartialOpRetryFlag
+                }
             } else if (ret == HCCL_SUCCESS && dstState == RETRY_STATE_RESP_RUNNING_ERR) { // 对端重执行失败
+                // TODO: 在CreateOpRetryServerByState里面判断是否为RETRY_STATE_SERVER_RETRY_FAIL, 并重置局部重执行信息
+
                 recvVaild.insert(rank);
                 PrintAgentInfoAfterFail(retryCtx->serverSockets_, recvVaild, agentRetryInfo);
                 HCCL_ERROR("[OpRetry][Server]OpRetryServerWaitResp dst rank[%u] with IpInfo[%s] retry fail, " \
