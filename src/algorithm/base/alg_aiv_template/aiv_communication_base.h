@@ -272,42 +272,61 @@ constexpr uint32_t MAX_FLAG_SIZE_PER_KERNEL = 6 * MAX_RANK_SIZE * FLAG_SIZE;
 #define DEV_TYPE_910B   2
 #define DEV_TYPE_910_93 4
 
-// __sk__定义的函数参数
+// __sk__函数参数 A2
+struct SkArgsStruct {
+    GM_ADDR buffIn0; GM_ADDR buffIn1; GM_ADDR buffIn2; GM_ADDR buffIn3;
+    GM_ADDR buffIn4; GM_ADDR buffIn5; GM_ADDR buffIn6; GM_ADDR buffIn7;
+    GM_ADDR buffIn8; GM_ADDR buffIn9; GM_ADDR buffIn10; GM_ADDR buffIn11;
+    GM_ADDR buffIn12; GM_ADDR buffIn13; GM_ADDR buffIn14; GM_ADDR buffIn15;
+    GM_ADDR buffOut0; GM_ADDR buffOut1; GM_ADDR buffOut2; GM_ADDR buffOut3;
+    GM_ADDR buffOut4; GM_ADDR buffOut5; GM_ADDR buffOut6; GM_ADDR buffOut7;
+    GM_ADDR buffOut8; GM_ADDR buffOut9; GM_ADDR buffOut10; GM_ADDR buffOut11;
+    GM_ADDR buffOut12; GM_ADDR buffOut13; GM_ADDR buffOut14; GM_ADDR buffOut15;
+    GM_ADDR input; GM_ADDR output;
+    uint32_t rank;
+    uint32_t rankSize;
+    uint64_t len;
+    uint32_t dataType;
+    uint32_t reduceOp;
+    uint32_t root;
+    int32_t tag;
+    uint32_t numBlocks;
+    alignas(4) bool isOpBase;
+    uint64_t bufferSize;
+    int32_t aivRdmaStep;
+    alignas(4) bool useAivRdmaSmall;
+    int32_t serverNum;
+    uint32_t devType;
+    GM_ADDR headCountMem;
+    GM_ADDR tailCountMem;
+    GM_ADDR addOneMem;
+    uint32_t counterMemSize;
+    alignas(4) bool isEnableCounter;
+    uint32_t deterministic;
+    uint64_t rmaInfo;
+};
+
+// __sk__定义的函数参数 A2
 #define SK_BIND_FUNC_ARGS \
-    GM_ADDR* args
+    __gm__ struct SkArgsStruct* args
 
 // 将__sk__参数转成__aicore__参数 A2
 #define CONVERT_SK_PARAM_TO_KERNEL_ARGS_A2 \
-GM_ADDR buffIn0 = args[0]; GM_ADDR buffIn1 = args[1]; GM_ADDR buffIn2 = args[2]; GM_ADDR buffIn3 = args[3]; \
-GM_ADDR buffIn4 = args[4]; GM_ADDR buffIn5 = args[5]; GM_ADDR buffIn6 = args[6]; GM_ADDR buffIn7 = args[7]; \
-GM_ADDR buffIn8 = args[8]; GM_ADDR buffIn9 = args[9]; GM_ADDR buffIn10 = args[10]; GM_ADDR buffIn11 = args[11]; \
-GM_ADDR buffIn12 = args[12]; GM_ADDR buffIn13 = args[13]; GM_ADDR buffIn14 = args[14]; GM_ADDR buffIn15 = args[15]; \
-GM_ADDR buffOut0 = args[16]; GM_ADDR buffOut1 = args[17]; GM_ADDR buffOut2 = args[18]; GM_ADDR buffOut3 = args[19]; \
-GM_ADDR buffOut4 = args[20]; GM_ADDR buffOut5 = args[21]; GM_ADDR buffOut6 = args[22]; GM_ADDR buffOut7 = args[23]; \
-GM_ADDR buffOut8 = args[24]; GM_ADDR buffOut9 = args[25]; GM_ADDR buffOut10 = args[26]; GM_ADDR buffOut11 = args[27]; \
-GM_ADDR buffOut12 = args[28]; GM_ADDR buffOut13 = args[29]; GM_ADDR buffOut14 = args[30]; GM_ADDR buffOut15 = args[31]; \
-GM_ADDR input = args[32]; GM_ADDR output = args[33]; \
-uint32_t* param34 = (uint32_t*)(args + 34); uint32_t rank = param34[0]; \
-uint32_t* param35 = (uint32_t*)(param34 + 1); uint32_t rankSize = param35[0]; \
-uint64_t* param36 = (uint64_t*)(param35 + 1); uint64_t len = param36[0]; \
-uint32_t* param37 = (uint32_t*)(param36 + 1); uint32_t dataType = param37[0]; \
-uint32_t* param38 = (uint32_t*)(param37 + 1); uint32_t reduceOp = param38[0]; \
-uint32_t* param39 = (uint32_t*)(param38 + 1); uint32_t root = param39[0]; \
-int32_t* param40 = (int32_t*)(param39 + 1); int32_t tag = param40[0]; \
-uint32_t* param41 = (uint32_t*)(param40 + 1); uint32_t numBlocks = param41[0]; \
-bool* param42 = (bool*)(param41 + 1); bool isOpBase = param42[0]; \
-uint64_t* param43 = (uint64_t*)(param42 + 4); uint64_t bufferSize = param43[0]; \
-int32_t* param44 = (int32_t*)(param43 + 1); int32_t aivRdmaStep = param44[0]; \
-bool* param45 = (bool*)(param44 + 1); bool useAivRdmaSmall = param45[0]; \
-int32_t* param46 = (int32_t*)(param45 + 4); int32_t serverNum = param46[0]; \
-uint32_t* param47 = (uint32_t*)(param46 + 1); uint32_t devType = param47[0]; \
-GM_ADDR* param48 = (GM_ADDR*)(param47 + 1); GM_ADDR headCountMem = param48[0]; \
-GM_ADDR* param49 = (GM_ADDR*)(param48 + 1); GM_ADDR tailCountMem = param49[0]; \
-GM_ADDR* param50 = (GM_ADDR*)(param49 + 1); GM_ADDR addOneMem = param50[0]; \
-uint32_t* param51 = (uint32_t*)(param50 + 1); uint32_t counterMemSize = param51[0]; \
-bool* param52 = (bool*)(param51 + 1); bool isEnableCounter = param52[0]; \
-uint32_t* param53 = (uint32_t*)(param52 + 4); uint32_t deterministic = param53[0]; \
-uint64_t* param54 = (uint64_t*)(param53 + 1); uint64_t rmaInfo = param54[0]
+GM_ADDR buffIn0 = args->buffIn0; GM_ADDR buffIn1 = args->buffIn1; GM_ADDR buffIn2 = args->buffIn2; GM_ADDR buffIn3 = args->buffIn3; \
+GM_ADDR buffIn4 = args->buffIn4; GM_ADDR buffIn5 = args->buffIn5; GM_ADDR buffIn6 = args->buffIn6; GM_ADDR buffIn7 = args->buffIn7; \
+GM_ADDR buffIn8 = args->buffIn8; GM_ADDR buffIn9 = args->buffIn9; GM_ADDR buffIn10 = args->buffIn10; GM_ADDR buffIn11 = args->buffIn11; \
+GM_ADDR buffIn12 = args->buffIn12; GM_ADDR buffIn13 = args->buffIn13; GM_ADDR buffIn14 = args->buffIn14; GM_ADDR buffIn15 = args->buffIn15; \
+GM_ADDR buffOut0 = args->buffOut0; GM_ADDR buffOut1 = args->buffOut1; GM_ADDR buffOut2 = args->buffOut2; GM_ADDR buffOut3 = args->buffOut3; \
+GM_ADDR buffOut4 = args->buffOut4; GM_ADDR buffOut5 = args->buffOut5; GM_ADDR buffOut6 = args->buffOut6; GM_ADDR buffOut7 = args->buffOut7; \
+GM_ADDR buffOut8 = args->buffOut8; GM_ADDR buffOut9 = args->buffOut9; GM_ADDR buffOut10 = args->buffOut10; GM_ADDR buffOut11 = args->buffOut11; \
+GM_ADDR buffOut12 = args->buffOut12; GM_ADDR buffOut13 = args->buffOut13; GM_ADDR buffOut14 = args->buffOut14; GM_ADDR buffOut15 = args->buffOut15; \
+GM_ADDR input = args->input; GM_ADDR output = args->output; uint32_t rank = args->rank; uint32_t rankSize = args->rankSize; \
+uint64_t len = args->len; uint32_t dataType = args->dataType; uint32_t reduceOp = args->reduceOp; uint32_t root = args->root; \
+int32_t tag = args->tag; uint32_t numBlocks = args->numBlocks; bool isOpBase = args->isOpBase; uint64_t bufferSize = args->bufferSize; \
+int32_t aivRdmaStep = args->aivRdmaStep; bool useAivRdmaSmall = args->useAivRdmaSmall; int32_t serverNum = args->serverNum; \
+uint32_t devType = args->devType; GM_ADDR headCountMem = args->headCountMem; GM_ADDR tailCountMem = args->tailCountMem; \
+GM_ADDR addOneMem = args->addOneMem; uint32_t counterMemSize = args->counterMemSize; bool isEnableCounter = args->isEnableCounter; \
+uint32_t deterministic = args->deterministic; uint64_t rmaInfo = args->rmaInfo
 
 // sk 绑定函数
 #define SuperKernelBind(kernel_name) \
