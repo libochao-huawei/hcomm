@@ -326,6 +326,7 @@ enum class HcclComSuspendingFlag : int64_t {
 
 // host向aicpu发送link状态
 using ChangeLinkInfo = struct ChangeLinkInfoDef {
+    u32 cmd = CHANGE_LINK_INFO_CMD;
     u32 remoteRankNum = 0;
     u32 remoteRankList[AICPU_MAX_RANK_NUM] = {};
     bool isUseDefaultPort[AICPU_MAX_RANK_NUM] = {};
