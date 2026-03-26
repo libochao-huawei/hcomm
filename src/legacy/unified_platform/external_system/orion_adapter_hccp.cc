@@ -1102,7 +1102,6 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
 {
     HCCL_INFO("[HrtRaUbCtxInit] Input params: mode=%d, phyId=%u, addr=%s", in.mode, in.phyId, in.addr.GetIpStr().c_str());
     struct CtxInitCfg initCfg {};
-    initCfg.rdma.disabledLiteThread = false;
     initCfg.mode                 = HRT_NETWORK_MODE_MAP.at(in.mode);
 
     struct CtxInitAttr ctxInfo {};
