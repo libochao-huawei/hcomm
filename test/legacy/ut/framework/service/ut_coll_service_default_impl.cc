@@ -41,8 +41,6 @@
 #include "hccl_comm.h"
 #include "coll_operator.h"
 #include "coll_service_base.h"
-#include "rank_table_info.h"
-#include "orion_adapter_hccp.h"
 
 using namespace Hccl;
 using namespace std;
@@ -65,7 +63,6 @@ protected:
         MOCKER_CPP(&CcuComponent::Init).stubs().will(ignoreReturnValue());
         MOCKER_CPP(&CcuResBatchAllocator::Init).stubs().will(ignoreReturnValue());
         MOCKER_CPP(&CtxMgrImp::Init).stubs().will(ignoreReturnValue());
-        MOCKER_CPP(&RankTableInfo::CheckAddrs).stubs().with().will(ignoreReturnValue());
         std::cout << "A Test case in CollServiceDefaultImpl SetUP" << std::endl;
     }
 
