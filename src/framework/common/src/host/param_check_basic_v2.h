@@ -13,11 +13,7 @@
 
 #define HCCLV2_FUNC_RUN(func, ...) \
     do { \
-        const char *socNamePtr = aclrtGetSocName(); \
-        CHK_PTR_NULL(socNamePtr); \
-        if (IsSupportHCCLV2(socNamePtr)) { \
-            return func; \
-        } \
+        return func; \
     } while (0)
     
 #endif //PARAM_CHECK_PUB_BASIC_V2_H
