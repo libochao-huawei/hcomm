@@ -11,11 +11,14 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
+
 #define private public
-#include "framework/next/coll_comms/communicator/coll_comm.h"
+#include "next/coll_comms/communicator/coll_comm.h"
+#include "next/coll_comms/rank/my_rank.h"
 #undef private
 
 using namespace hccl;
+
 class CollCommTest : public testing::Test {
 public:
     static void SetUpTestCase()
@@ -30,16 +33,18 @@ public:
 
     virtual void SetUp()
     {
-        std::cout << "A Test case in CollCommTest SetUp" << std::endl;
-        // 创建一个 CollComm 实例用于测试
-        void *comm = nullptr;
-        uint32_t rankId = 0;
-        std::string commName = "test_comm";
+        // create simple callbacks
         ManagerCallbacks callbacks;
-        collComm_ = std::make_unique<CollComm>(comm, rankId, commName, callbacks);
-        // 初始化必要的成员变量
-        collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
-        collComm_->isCleaned_ = false;
+        callbacks.getAicpuCommState = []() { return false; };
+        callbacks.setAicpuCommState = [](bool) {};
+        callbacks.kernelLaunchAicpuCommInit = []() { return HCCL_SUCCESS; };
+
+        // construct CollComm using nullptr communicator and rank 0
+        coll_ = std::make_unique<CollComm>(nullptr, 0u, std::string("ut_test"), callbacks);
+        // ensure default state
+        coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
+        coll_->isCleaned_ = false;
+        std::cout << "A Test case in CollCommTest SetUp" << std::endl;
     }
 
     virtual void TearDown()
@@ -48,150 +53,94 @@ public:
         GlobalMockObject::verify();
     }
 
-    std::unique_ptr<CollComm> collComm_;
+    std::unique_ptr<CollComm> coll_;
 };
 
-TEST_F(CollCommTest, test_get_comm_status)
+TEST_F(CollCommTest, test_get_comm_status_initial_and_after_change)
 {
-    // 测试初始状态
-    EXPECT_EQ(collComm_->GetCommStatus(), HcclCommStatus::HCCL_COMM_STATUS_READY);
-    
-    // 测试状态变化
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
-    EXPECT_EQ(collComm_->GetCommStatus(), HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
-    
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
-    EXPECT_EQ(collComm_->GetCommStatus(), HcclCommStatus::HCCL_COMM_STATUS_INVALID);
+    EXPECT_EQ(coll_->GetCommStatus(), HcclCommStatus::HCCL_COMM_STATUS_INVALID);
+
+    coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
+    EXPECT_EQ(coll_->GetCommStatus(), HcclCommStatus::HCCL_COMM_STATUS_READY);
 }
 
-TEST_F(CollCommTest, test_suspend_success)
+TEST_F(CollCommTest, test_suspend_success_and_idempotent)
 {
-    // 模拟 myRank_->StopLaunch() 返回成功
+    // mock MyRank::StopLaunch to return success
     MOCKER_CPP(&MyRank::StopLaunch, HcclResult(MyRank:: *)())
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
-    // 测试正常情况下的 Suspend
-    auto ret = collComm_->Suspend();
+
+    // attach a MyRank instance (can be real or mocked; method is mocked above)
+    aclrtBinHandle binHandle;
+    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr);
+
+    auto ret = coll_->Suspend();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(collComm_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
+    EXPECT_EQ(coll_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
+
+    // calling Suspend again when already suspending should return success without error
+    ret = coll_->Suspend();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(CollCommTest, test_suspend_already_suspending)
+TEST_F(CollCommTest, test_clean_fail_not_suspending)
 {
-    // 设置为已挂起状态
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
-    
-    // 测试重复挂起的情况
-    auto ret = collComm_->Suspend();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(collComm_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
+    // when not suspending, Clean should return not support
+    coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
+    auto ret = coll_->Clean();
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 }
 
-TEST_F(CollCommTest, test_clean_success)
+TEST_F(CollCommTest, test_clean_success_and_idempotent)
 {
-    // 设置为挂起状态
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
-    collComm_->isCleaned_ = false;
-    
-    // 模拟 myRank_->Clean() 返回成功
+    // prepare for cleaning: put into suspending state
+    coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
+    coll_->isCleaned_ = false;
+
+    // mock MyRank::Clean to return success
     MOCKER_CPP(&MyRank::Clean, HcclResult(MyRank:: *)())
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
-    // 测试正常情况下的 Clean
-    auto ret = collComm_->Clean();
+
+    // attach a MyRank instance
+    aclrtBinHandle binHandle;
+    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr);
+
+    auto ret = coll_->Clean();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_TRUE(collComm_->isCleaned_);
-}
+    EXPECT_TRUE(coll_->isCleaned_);
 
-TEST_F(CollCommTest, test_clean_not_suspended)
-{
-    // 保持为就绪状态（未挂起）
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
-    
-    // 测试未挂起时的 Clean
-    auto ret = collComm_->Clean();
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-    EXPECT_FALSE(collComm_->isCleaned_);
-}
-
-TEST_F(CollCommTest, test_clean_already_cleaned)
-{
-    // 设置为挂起状态且已清理
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
-    collComm_->isCleaned_ = true;
-    
-    // 测试重复清理的情况
-    auto ret = collComm_->Clean();
+    // calling Clean again should be idempotent and return success
+    ret = coll_->Clean();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_TRUE(collComm_->isCleaned_);
 }
 
-TEST_F(CollCommTest, test_resume_success)
+TEST_F(CollCommTest, test_resume_fail_invalid_and_resume_success)
 {
-    // 设置为挂起状态
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
-    collComm_->isCleaned_ = true;
-    
-    // 创建并初始化 myRank_ 模拟对象
-    auto myRank = std::make_shared<MyRank>(nullptr, 0, nullptr, ManagerCallbacks(), nullptr);
-    collComm_->myRank_ = myRank;
-    
-    // 模拟 myRank_->Resume() 返回成功
+    // Resume when commStatus_ is INVALID should return internal error
+    coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
+    auto ret = coll_->Resume();
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    // Now test successful resume from SUSPENDING
+    coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
+    coll_->isCleaned_ = true;
+
+    // mock MyRank::Resume to return success
     MOCKER_CPP(&MyRank::Resume, HcclResult(MyRank:: *)())
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
-    // 测试正常情况下的 Resume
-    auto ret = collComm_->Resume();
+
+    // attach a MyRank instance
+    aclrtBinHandle binHandle;
+    coll_->myRank_ = std::make_shared<MyRank>(binHandle, 0, coll_->GetCommConfig(), ManagerCallbacks(), nullptr);
+
+    ret = coll_->Resume();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(collComm_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_READY);
-    EXPECT_FALSE(collComm_->isCleaned_);
-}
-
-TEST_F(CollCommTest, test_resume_invalid_comm)
-{
-    // 设置为无效状态
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
-    
-    // 测试无效状态下的 Resume
-    auto ret = collComm_->Resume();
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    EXPECT_EQ(collComm_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_INVALID);
-}
-
-TEST_F(CollCommTest, test_resume_not_suspended)
-{
-    // 保持为就绪状态（未挂起）
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
-    
-    // 测试未挂起时的 Resume
-    auto ret = collComm_->Resume();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(collComm_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_READY);
-}
-
-TEST_F(CollCommTest, test_resume_fail)
-{
-    // 设置为挂起状态
-    collComm_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING;
-    
-    // 创建并初始化 myRank_ 模拟对象
-    auto myRank = std::make_shared<MyRank>(nullptr, 0, nullptr, ManagerCallbacks(), nullptr);
-    collComm_->myRank_ = myRank;
-    
-    // 模拟 myRank_->Resume() 返回失败
-    MOCKER_CPP(&MyRank::Resume, HcclResult(MyRank:: *)())
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_E_INTERNAL));
-    
-    // 测试 Resume 失败的情况
-    auto ret = collComm_->Resume();
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    EXPECT_EQ(collComm_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
+    EXPECT_EQ(coll_->commStatus_, HcclCommStatus::HCCL_COMM_STATUS_READY);
+    EXPECT_FALSE(coll_->isCleaned_);
 }

@@ -327,6 +327,7 @@ HcclResult CollCommAicpu::ResumePackData(std::vector<char> &data, ChannelHandle 
 
 HcclResult CollCommAicpu::Resume(HcclChannelUrmaRes *commParam)
 {
+    CHK_PTR_NULL(commParam);
     CHK_RET(ProcessUrmaRes(commParam, false));
     nsRecoveryLitePtr_->SetNeedClean(false);
     nsRecoveryLitePtr_->ResetErrorReported();

@@ -27,7 +27,11 @@ void NsRecoveryFuncLite::Call()
     rwlock.readLock();
 
     std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
-    AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
+    auto ret = AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][BackGround] AicpuGetCommAll failed, errNo[0x%016llx]", ret);
+        return;
+    }
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu* deviceComm = commInfo.second->GetCollCommAicpu();
         if (deviceComm->GetCommmStatus() != HcclCommStatus::HCCL_COMM_STATUS_READY) {

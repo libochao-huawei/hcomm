@@ -167,7 +167,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
 }
 
-TEST_F(MyRankTest, Ut_When_StopLaunch_No_Aicpu_Expect_SUCCESS)
+TEST_F(MyRankTest, Ut_StopLaunch_EmptyNsRecovery_Returns_SUCCESS)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -175,13 +175,13 @@ TEST_F(MyRankTest, Ut_When_StopLaunch_No_Aicpu_Expect_SUCCESS)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-    
-    // 测试没有 AICPU 引擎时的 StopLaunch
+
+    // 默认 nsRecoveryDatas_ 为空，StopLaunch 应直接返回成功
     auto ret = myRank.StopLaunch();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(MyRankTest, Ut_When_Clean_Empty_Channel_List_Expect_SUCCESS)
+TEST_F(MyRankTest, Ut_Clean_NoChannels_Returns_SUCCESS)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -189,13 +189,18 @@ TEST_F(MyRankTest, Ut_When_Clean_Empty_Channel_List_Expect_SUCCESS)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-    
-    // 测试通道列表为空时的 Clean
+
+    // 模拟 GetAllChannelList 返回空列表
+    MOCKER_CPP(&MyRank::GetAllChannelList, std::vector<ChannelHandle>(MyRank::*)())
+    .stubs()
+    .with(any())
+    .will(returnValue(std::vector<ChannelHandle>()));
+
     auto ret = myRank.Clean();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(MyRankTest, Ut_When_Resume_Empty_Channel_List_Expect_SUCCESS)
+TEST_F(MyRankTest, Ut_Clean_WithChannels_Calls_ChannelClean)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -203,8 +208,50 @@ TEST_F(MyRankTest, Ut_When_Resume_Empty_Channel_List_Expect_SUCCESS)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-    
-    // 测试通道列表为空时的 Resume
+
+    // 准备两条 channel handle
+    std::vector<ChannelHandle> channels = { (ChannelHandle)0x1, (ChannelHandle)0x2 };
+
+    // 模拟 MyRank::GetAllChannelList 返回这两条 channel
+    MOCKER_CPP(&MyRank::GetAllChannelList, std::vector<ChannelHandle>(MyRank::*)())
+    .stubs()
+    .with(any())
+    .will(returnValue(channels));
+
+    // 模拟 ChannelProcess::ChannelClean 被调用并返回成功
+    MOCKER_CPP(&ChannelProcess::ChannelClean, HcclResult(const ChannelHandle*, uint32_t))
+    .stubs()
+    .with(any(), any())
+    .will(returnValue(HCCL_SUCCESS));
+
+    auto ret = myRank.Clean();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(MyRankTest, Ut_Resume_WithChannels_Calls_ChannelResume)
+{
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+
+    std::vector<ChannelHandle> channels = { (ChannelHandle)0x1, (ChannelHandle)0x2 };
+
+    // 模拟 MyRank::GetAllChannelList 返回 channels
+    MOCKER_CPP(&MyRank::GetAllChannelList, std::vector<ChannelHandle>(MyRank::*)())
+    .stubs()
+    .with(any())
+    .will(returnValue(channels));
+
+    // 模拟 ChannelProcess::ChannelResume 返回成功
+    MOCKER_CPP(&ChannelProcess::ChannelResume, HcclResult(const ChannelHandle*, uint32_t))
+    .stubs()
+    .with(any(), any())
+    .will(returnValue(HCCL_SUCCESS));
+
     auto ret = myRank.Resume();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
