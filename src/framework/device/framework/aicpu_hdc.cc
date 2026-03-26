@@ -58,6 +58,23 @@ HcclResult AicpuHdc::SetOpExecStatus(std::shared_ptr<HDCommunicate> d2hTransfer,
     return d2hTransfer->Put(0, sizeof(status.opId) + sizeof(status.execStatus), reinterpret_cast<uint8_t *>(&status));
 }
 
+HcclResult AicpuHdc::SetOpExecStatus(std::shared_ptr<HDCommunicate> d2hTransfer, KfcStatus state,
+    KfcError errorCode, u32 retryCount, bool isEnablePartialOpRetry)
+{
+    if (!d2hTransfer) {
+        return HCCL_SUCCESS;
+    }
+    KfcExecStatus status;
+    status.execStatus.kfcStatus = state;
+    status.execStatus.kfcError = errorCode;
+    status.execStatus.retryInfo.retryCount = retryCount;
+    status.execStatus.retryInfo.isEnablePartialOpRetry = isEnablePartialOpRetry;
+    HCCL_INFO("SetOpExecStatus: state[%u] errorCode[%u] retryCount[%u] isEnablePartialOpRetry[%d].",
+        state, errorCode, retryCount, isEnablePartialOpRetry);
+    return d2hTransfer->Put(sizeof(status.opId), sizeof(status.execStatus),
+        reinterpret_cast<uint8_t *>(&status.execStatus));
+}
+
 HcclResult AicpuHdc::GetOpExecCtrlTargetOp(std::shared_ptr<HDCommunicate> h2dTransfer, HcclOpIdentifier &opId)
 {
     if (!h2dTransfer) {
@@ -83,5 +100,17 @@ HcclResult AicpuHdc::GetOpExecChangeLink(std::shared_ptr<HDCommunicate> h2dTrans
     KfcExecControl kfcExecControl;
     CHK_RET(h2dTransfer->Get(0, sizeof(KfcExecControl), reinterpret_cast<uint8_t *>(&kfcExecControl)));
     changeLinkInfo = kfcExecControl.changeLinkInfo;
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHdc::GetOpPartialRetryInfo(std::shared_ptr<hccl::HDCommunicate> h2dTransfer, PartialRetryInfo &partialRetryInfo)
+{
+    if (!h2dTransfer) {
+        return HCCL_SUCCESS;
+    }
+
+    KfcExecControl kfcExecControl;
+    CHK_RET(h2dTransfer->Get(0, sizeof(KfcExecControl), reinterpret_cast<uint8_t *>(&kfcExecControl)));
+    partialRetryInfo = kfcExecControl.partialRetryInfo;
     return HCCL_SUCCESS;
 }
