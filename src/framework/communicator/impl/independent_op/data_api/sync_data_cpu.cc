@@ -11,6 +11,9 @@
 
 #include "log.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId)
 {
     (void)handle;
@@ -38,3 +41,6 @@ int32_t HcommThreadSynchronize(ThreadHandle thread)
     HCCL_WARNING("[%s] No implementation, return SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus

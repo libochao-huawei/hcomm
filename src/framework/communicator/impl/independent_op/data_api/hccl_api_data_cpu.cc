@@ -649,10 +649,16 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommFlush()
 {
     return HcommFenceOnThread(0);
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
