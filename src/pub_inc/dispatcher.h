@@ -84,8 +84,11 @@ extern "C" {
         DispatcherType type = DispatcherType::DISPATCHER_AICPU);
     HcclResult AddRetryPreamble(HcclDispatcher dispatcherPtr, hccl::Stream &stream);
     HcclResult StreamSync(HcclDispatcher dispatcherPtr, hccl::Stream &stream);
-    HcclResult HcclSetOpExecStatusCallback(HcclDispatcher dispatcherPtr,
-        std::function<HcclResult()> checkOpExecStatusCallback);
+    HcclResult HcclSetDispatcherAicpuCallback(HcclDispatcher dispatcherPtr,
+        std::function<HcclResult()> checkOpExecStatusCallback,
+        std::function<HcclResult(const int32_t, const uint64_t)> updateTotalSqeCountCallback,
+        std::function<HcclResult(const int32_t, const int64_t, const bool)> updatePlaceholderSqIdxCallback,
+        std::function<HcclResult(const bool, hccl::Stream&, const bool, const uint32_t, const uint64_t, bool&, bool&)> applyBlocklistCallback);
     HcclResult HcclSetSqeTimeOut(HcclDispatcher dispatcherPtr, const u64 timeOut);
     HcclResult HcclSetSqFullWaitTimeOut(HcclDispatcher dispatcherPtr, const u64 timeOut);
     HcclResult HcclSetOpRingBufferIdx(HcclDispatcher dispatcherPtr, const u32 opRingBufferIdx);
