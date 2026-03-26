@@ -184,7 +184,7 @@ namespace hccl
 
     HcclCommunicator::~HcclCommunicator()
     {
-        HCCL_DEBUG("Enter ~HcclCommunicator.");
+        HCCL_ERROR("Enter ~HcclCommunicator.");
 
         DeinitZeroCopyMemoryAgent(true);
         if (!isInvalidComm_) {
@@ -253,6 +253,7 @@ namespace hccl
             }
         }
 
+        HCCL_ERROR("TESTZJN --- ~HcclCommunicator step 1.");
         (void)UnRegistTaskExceptionHandler();
         kfcControlTransferH2D_ = nullptr;
         kfcStatusTransferD2H_ = nullptr;
@@ -971,6 +972,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::DeinitZeroCopyMemoryAgent(bool inDestructor)
     {
+        HCCL_ERROR("TESTZJN --- DeinitZeroCopyMemoryAgent start.");
         if (zeroCopyMemoryAgent_ != nullptr) {
             if (!inDestructor && zeroCopyMemoryAgent_->IsResumed()) {
                 // 析构函数释放场景不做barrier close
@@ -979,6 +981,7 @@ namespace hccl
             CHK_RET(zeroCopyMemoryAgent_->DeInit());
             zeroCopyMemoryAgent_ = nullptr;
         }
+        HCCL_ERROR("TESTZJN --- DeinitZeroCopyMemoryAgent end.");
         return HCCL_SUCCESS;
     }
 
@@ -2086,7 +2089,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::UnRegistTaskExceptionHandler() const
     {
+        HCCL_ERROR("TESTZJN --- UnRegistTaskExceptionHandler start.");
         CHK_RET(TaskExceptionHandler::DeInit());
+        HCCL_ERROR("TESTZJN --- UnRegistTaskExceptionHandler end.");
         return HCCL_SUCCESS;
     }
 
@@ -2403,6 +2408,7 @@ namespace hccl
 
     void HcclCommunicator::DeleteOpInfoToHeartBeat()
     {
+        HCCL_ERROR("TESTZJN --- DeleteOpInfoToHeartBeat start.");
         if (Is310PDevice() || deviceType_ == DevType::DEV_TYPE_310P3 ||
             GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
             return ;
@@ -2411,6 +2417,7 @@ namespace hccl
             Heartbeat::GetInstance(deviceLogicId_).DeleteOpInfoToHeartBeat(identifier_, tag);
         }
         Heartbeat::GetInstance(deviceLogicId_).DeleteOpInfoToHeartBeat(identifier_, "");
+        HCCL_ERROR("TESTZJN --- DeleteOpInfoToHeartBeat end.");
     }
 
     HcclResult HcclCommunicator::RegisterToHeartBeat()
@@ -2430,15 +2437,19 @@ namespace hccl
 
     void HcclCommunicator::UnRegisterToHeartBeat()
     {
+        HCCL_ERROR("TESTZJN --- UnRegisterToHeartBeat start.");
         for (auto tag : hbSendRecvTags_) {
             Heartbeat::GetInstance(deviceLogicId_).UnRegisterToHeartBeat(deviceType_, identifier_, tag);
         }
         Heartbeat::GetInstance(deviceLogicId_).UnRegisterToHeartBeat(deviceType_, identifier_);
+        HCCL_ERROR("TESTZJN --- UnRegisterToHeartBeat end.");
     }
 
     void HcclCommunicator::UnRegisterToCommConfiger()
     {
+        HCCL_ERROR("TESTZJN --- UnRegisterToCommConfiger start.");
         CommConfiger::GetInstance().UnRegisterToCommConfiger(identifier_);
+        HCCL_ERROR("TESTZJN --- UnRegisterToCommConfiger end.");
     }
 
     HcclResult HcclCommunicator::SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr)

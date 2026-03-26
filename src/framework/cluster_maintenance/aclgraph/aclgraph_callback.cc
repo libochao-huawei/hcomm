@@ -54,7 +54,7 @@ void AclgraphCallback::CleanCaptureRes(HcclCommunicator *communicator)
         }
     }
 
-    HCCL_INFO("[%s] communicator[%p] resource release success", __func__, communicator);
+    HCCL_ERROR("[%s] communicator[%p] resource release success", __func__, communicator);
 }
 
 HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)

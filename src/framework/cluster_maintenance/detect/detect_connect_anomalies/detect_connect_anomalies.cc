@@ -654,7 +654,7 @@ void DetectConnectionAnomalies::Deinit()
         HCCL_WARNING("[DetectConnectionAnomalies]Deinit failed");
     }
     ThreadDestroy();
-    HCCL_INFO("DetectConnectionAnomalies[Deinit] count[%d]", count);
+    HCCL_ERROR("DetectConnectionAnomalies[Deinit] count[%d]", count);
     return;
 }
 

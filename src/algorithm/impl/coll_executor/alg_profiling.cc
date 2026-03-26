@@ -35,6 +35,7 @@ HcclResult AlgWrap::RegisterAlgCallBack(const std::string &comm, void *userPtr, 
 
 void AlgWrap::UnregisterAlgCallBack(const std::string &comm)
 {
+    HCCL_ERROR("TESTZJN --- UnregisterAlgCallBack start.");
     if (!initialized_) {
         HCCL_WARNING("[alg_profiling][UnRegisterAlgCallBack] AlgWrap has not initialized yet");
         return;
@@ -43,6 +44,7 @@ void AlgWrap::UnregisterAlgCallBack(const std::string &comm)
     std::lock_guard<std::mutex> lock(aivCallBackMutex_);
     aivCallBackMap_.erase(comm);
     aivCallBackUserPtrMap_.erase(comm);
+    HCCL_ERROR("TESTZJN --- UnregisterAlgCallBack end.");
 }
 
 HcclResult AlgWrap::TaskAivProfiler(const std::string &comm, struct TaskParaGeneral &taskParaGeneral)
