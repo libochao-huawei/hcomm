@@ -47,7 +47,13 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
-        CHK_RET(this->GetSocket(socketTag, listenPort, socket));
+        std::string socketTagPrefix = socketTag;
+        if (myRank <= rmtRank) {
+            socketTagPrefix += "_" + std::to_string(myRank) + "_" + std::to_string(rmtRank);
+        } else {
+            socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
+        }
+        CHK_RET(this->GetSocket(socketTagPrefix, listenPort, socket));
         return HCCL_SUCCESS;
     }
 
