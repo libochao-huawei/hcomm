@@ -1277,6 +1277,47 @@ void CommunicatorImpl::CheckRankGraph() const
     }
 }
 
+void CommunicatorImpl::CheckRankTableAddrs() const
+{
+    if (ranktableInfo == nullptr) {
+        HCCL_WARNING("[CommunicatorImpl][%s] ranktableInfo is nullptr, skip.", __func__);
+        return;
+    }
+    std::unordered_set<Eid> localEidSet;
+    NewRankInfo localRankInfo;
+    for (auto &rank : ranktableInfo->ranks) {
+        if (rank.deviceId == devPhyId) {  // 获取本卡的ip地址
+            HRaInfo info(HrtNetworkMode::HDC, rank.deviceId);
+            std::vector<HrtDevEidInfo> localEidInfos =  HrtRaGetDevEidInfoList(info);
+            for (auto &eidInfo : localEidInfos) {
+                localEidSet.insert(eidInfo.ipAddress.GetEid());
+            }
+            localRankInfo = rank;
+            break;
+        }
+    }
+
+    if (localEidSet.empty()) {
+        return;
+    }
+
+    // 仅能获取到当前进程所在卡的ip，每个卡独立check自己的部分
+    for (auto &levelInfo : localRankInfo.rankLevelInfos) {
+        for (auto &addressInfo : levelInfo.rankAddrs) {
+            HCCL_DEBUG("[CommunicatorImpl][%s]Ip addres check: devPhyId[%u], addressInfo %s", 
+                __func__, devPhyId, addressInfo.Describe().c_str());
+            if (localEidSet.count(addressInfo.addr.GetEid()) == 0) {
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({addressInfo.addr.GetIpStr(), "addr", "A right ip address"}));
+                THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"
+                    "the ip address %s of ranktable in rank %u is error!", 
+                    __func__, addressInfo.addr.Describe().c_str(), devPhyId));
+            }
+        }
+    }
+}
+
+
 u32 GetLocalDieId(PortData&& port)
 {
     auto     devLogicId = HrtGetDevice();
@@ -1346,6 +1387,7 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     topoInfo = rankGraphBuilder.GetTopoInfo(); // 获取topo信息
     HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] topoInfo[%s]", topoInfo->Describe().c_str());
     rankSize = rankGraph->GetRankSize();
+    CheckRankTableAddrs();
     CheckRankGraph();
     SaveTopoDesc(id);
     std::vector<LinkData> fullLinks = GetFullMeshLinks();
