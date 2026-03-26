@@ -441,7 +441,7 @@ HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *custom
     CHK_PTR_NULL(customOut);
     struct RaInfo info {};
 
-    const std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP = {
+    static std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP = {
         {HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE},
         {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
 
@@ -467,11 +467,11 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
         return HCCL_E_PARA;
     }
     std::vector<struct JettyAttr> raJettyAttrs(MAX_JETTY_QUERY_NUM);
-    void* qp_handle[jettyHandles.size()];
+    std::vector<void*> qp_handle(jettyHandles.size());
     for (size_t i = 0; i < jettyHandles.size(); ++i) {
         qp_handle[i] = reinterpret_cast<void*>(jettyHandles[i]);
     }
-    auto ret = RaCtxQpQueryBatch(qp_handle, raJettyAttrs.data(), &num);
+    auto ret = RaCtxQpQueryBatch(qp_handle.data(), raJettyAttrs.data(), &num);
     if (ret != 0) {
         HCCL_ERROR("RaBatchQueryJettyAttr failed.");
         return HCCL_E_NETWORK;

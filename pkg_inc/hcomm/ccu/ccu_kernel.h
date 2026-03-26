@@ -45,7 +45,6 @@
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
 
-
 using CcuKernelHandle = uint64_t;
 
 namespace Hccl {
@@ -189,7 +188,7 @@ private:
 
 protected:
     std::vector<ChannelHandle> channels_;
-    GroupOpConfig       moConfig{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF};
+    GroupOpConfig       moConfig_{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF};
 
 private:
     template <typename T> T CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord);
@@ -208,7 +207,7 @@ private:
     CcuSharedResource importedRes_{};
     std::unordered_map<uint16_t, uint64_t> channelIdToHandle_;
     std::unordered_map<uint64_t, uint16_t> channelHandleToId_;
-    std::vector<GroupInfo> groupOpSizeInfo;
+    std::vector<GroupInfo> groupOpSizeInfo_;
 
 };
 

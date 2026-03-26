@@ -21,7 +21,6 @@
 #include "hcomm_c_adpt.h"
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
 #include "orion_adpt_utils.h"
-#include "ccuTaskException.h"
 #include "hcomm_adapter_hccp.h"
 #include "adapter_rts_common.h"
 #include "ccu_rep_loopgroup_v1.h"
@@ -238,7 +237,7 @@ void CcuTaskException::GenStatusInfo(const ErrorInfoBase &baseInfo, vector<CcuEr
     const auto    sRet
         = strncpy_s(errorMsg.msg.mission.missionError, MISSION_STATUS_MSG_LEN, statusMsg.c_str(), statusMsg.length());
     if (sRet != EOK) {
-        HCCL_ERROR("[CcuErrorHandler][%s] strcpy failed, statusMsg: %s.", __func__, statusMsg.c_str());
+        HCCL_ERROR("[CcuErrorHandler][%s] strcpy failed, statusMsg: [%s].sRet:[%d]", __func__, statusMsg.c_str(), sRet);
     }
 
     errorInfo.push_back(errorMsg);
@@ -670,7 +669,7 @@ CcuLoopContext CcuTaskException::GetCcuLoopContext(int32_t deviceId, uint32_t di
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), loopCtx);
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s],ret[%d]", __func__, deviceId, ret), loopCtx);
 
     struct CustomChannelInfoIn  inBuff{};
     struct CustomChannelInfoOut outBuff{};
@@ -720,7 +719,7 @@ HcclResult CcuTaskException::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, Ccu
          loopCurrentIns++) {
         auto inLoopExRep = rep->GetLoopBlock()->GetRepByInstrId(loopCurrentIns);
         if (inLoopExRep == nullptr) {
-            HCCL_ERROR("Failed to find REP from Loop, instrId[%u], Loop[%s]", loopCurrentIns,rep->GetLabel().c_str());
+            HCCL_ERROR("Failed to find REP from Loop, instrId[%u], Loop[%s]", loopCurrentIns, rep->GetLabel().c_str());
             return HCCL_E_PARA;
         }
         ErrorInfoBase loopErrBase{baseInfo.deviceId, baseInfo.dieId, baseInfo.missionId, loopCurrentIns,

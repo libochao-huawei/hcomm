@@ -214,7 +214,9 @@ HcclResult CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t c
     }
 
     lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
-    lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
+    if (!allLgProfilingReps.empty()) {
+        lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
+    }
     return HCCL_SUCCESS;
 }
     
