@@ -308,6 +308,23 @@ TEST_F(TopoExchangeAgentTest, VerifyServerDevicePhysicID_DuplicateDevicePhyID_Re
 
 TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_MissingSuperPodId_ReturnParaError)
 {
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_910_93))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    s64 serverId = 1;
+    MOCKER(hrtGetDeviceInfo)
+        .stubs()
+        .with(eq(0), eq(HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM),
+              eq(HcclRtDeviceInfoType::HCCL_INFO_TYPE_SERVER_ID), outBound(serverId))
+        .will(returnValue(HCCL_SUCCESS));
+    
     HcclIpAddress localIp(1694542016);
     HcclNetDevCtx netDevCtx;
     HcclBasicRankInfo localRankInfo;
@@ -323,10 +340,29 @@ TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_MissingSuperPodId_Return
     TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
     HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
     EXPECT_EQ(ret, HCCL_E_PARA);
+    
+    GlobalMockObject::verify();
 }
 
 TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_DuplicateSuperDeviceId_ReturnParaError)
 {
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_910_93))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    MOCKER(hrtGetDevice)
+        .stubs()
+        .with(outBound(0))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    s64 serverId = 1;
+    MOCKER(hrtGetDeviceInfo)
+        .stubs()
+        .with(eq(0), eq(HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM),
+              eq(HcclRtDeviceInfoType::HCCL_INFO_TYPE_SERVER_ID), outBound(serverId))
+        .will(returnValue(HCCL_SUCCESS));
+    
     HcclIpAddress localIp(1694542016);
     HcclNetDevCtx netDevCtx;
     HcclBasicRankInfo localRankInfo;
@@ -345,4 +381,6 @@ TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_DuplicateSuperDeviceId_R
     TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
     HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
     EXPECT_EQ(ret, HCCL_E_PARA);
+    
+    GlobalMockObject::verify();
 }
