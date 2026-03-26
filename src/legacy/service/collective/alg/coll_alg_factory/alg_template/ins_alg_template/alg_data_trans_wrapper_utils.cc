@@ -74,8 +74,8 @@ HcclResult IndividualTransSlicesLists(const LinkData &link, InsQuePtr queue, con
 {
     CHK_PRT_RET(
         slices.dstSlices.size() != slices.srcSlices.size(),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] IndividualTransSlicesLists: recv slice num [%u] is not equal to "
-                   "send slice num [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] IndividualTransSlicesLists: recv slice num [%zu] is not equal to "
+                   "send slice num [%zu].",
                    slices.dstSlices.size(), slices.srcSlices.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -91,8 +91,8 @@ HcclResult IndividualTransSlicesLists(const LinkData &link, InsQuePtr queue, con
     for (u32 sliceIdx = 0; sliceIdx < slices.srcSlices.size(); sliceIdx++) {
         CHK_PRT_RET(
             slices.srcSlices[sliceIdx].GetSize() != slices.dstSlices[sliceIdx].GetSize(),
-            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] TransSlicesLists: [%u]-th slice, recv slice size [%u] "
-                       "is not equal to send slice size [%u].",
+            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] TransSlicesLists: [%u]-th slice, recv slice size [%zu] "
+                       "is not equal to send slice size [%zu].",
                        sliceIdx, slices.dstSlices[sliceIdx].GetSize(), slices.srcSlices[sliceIdx].GetSize()),
             HcclResult::HCCL_E_INTERNAL);
 
@@ -136,8 +136,8 @@ HcclResult IndividualWriteSlicesListsWithFin(const LinkData &link, InsQuePtr que
 
     CHK_PRT_RET(
         slices.dstSlices.size() != slices.srcSlices.size(),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] WriteSlicesListsWithFin: dst slice num [%u] is not equal to "
-                   "src slice num [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] WriteSlicesListsWithFin: dst slice num [%zu] is not equal to "
+                   "src slice num [%zu].",
                    slices.dstSlices.size(), slices.srcSlices.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -147,7 +147,7 @@ HcclResult IndividualWriteSlicesListsWithFin(const LinkData &link, InsQuePtr que
     for (u32 sliceIdx = 0; sliceIdx < slices.srcSlices.size(); sliceIdx++) {
         CHK_PRT_RET(slices.srcSlices[sliceIdx].GetSize() != slices.dstSlices[sliceIdx].GetSize(),
                     HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] WriteSlicesListsWithFin: [%u]-th slice, recv slice "
-                               "size [%u] is not equal to send slice size [%u].",
+                               "size [%zu] is not equal to send slice size [%zu].",
                                sliceIdx, slices.dstSlices[sliceIdx].GetSize(), slices.srcSlices[sliceIdx].GetSize()),
                     HcclResult::HCCL_E_INTERNAL);
 
@@ -191,8 +191,8 @@ HcclResult BatchTransSlicesLists(const LinkData &link, InsQuePtr queue, const Tr
 {
     CHK_PRT_RET(
         slices.dstSlices.size() != slices.srcSlices.size(),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] BatchTransSlicesLists: recv slice num [%u] is not equal to "
-                   "send slice num [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] BatchTransSlicesLists: recv slice num [%zu] is not equal to "
+                   "send slice num [%zu].",
                    slices.dstSlices.size(), slices.srcSlices.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -207,8 +207,8 @@ HcclResult BatchTransSlicesLists(const LinkData &link, InsQuePtr queue, const Tr
             CHK_PRT_RET(
                 slices.srcSlices[sliceIdx].GetSize() != slices.dstSlices[sliceIdx].GetSize(),
                 HCCL_ERROR(
-                    "[InsCollAlgFactory] [AlgDataTrans] BatchTransSlicesLists: [%u]-th slice, recv slice size [%u] "
-                    "is not equal to send slice size [%u].",
+                    "[InsCollAlgFactory] [AlgDataTrans] BatchTransSlicesLists: [%u]-th slice, recv slice size [%zu] "
+                    "is not equal to send slice size [%zu].",
                     sliceIdx, slices.dstSlices[sliceIdx].GetSize(), slices.srcSlices[sliceIdx].GetSize()),
                 HcclResult::HCCL_E_INTERNAL);
             if (!slices.reduceFlag) {
@@ -227,8 +227,8 @@ HcclResult BatchTransSlicesLists(const LinkData &link, InsQuePtr queue, const Tr
             CHK_PRT_RET(
                 slices.srcSlices[sliceIdx].GetSize() != slices.dstSlices[sliceIdx].GetSize(),
                 HCCL_ERROR(
-                    "[InsCollAlgFactory] [AlgDataTrans] BatchTransSlicesLists: [%u]-th slice, recv slice size [%u] "
-                    "is not equal to send slice size [%u].",
+                    "[InsCollAlgFactory] [AlgDataTrans] BatchTransSlicesLists: [%u]-th slice, recv slice size [%zu] "
+                    "is not equal to send slice size [%zu].",
                     sliceIdx, slices.dstSlices[sliceIdx].GetSize(), slices.srcSlices[sliceIdx].GetSize()),
                 HcclResult::HCCL_E_INTERNAL);
             if (!slices.reduceFlag) {
@@ -289,7 +289,7 @@ HcclResult ProceedMultiLinks(const std::vector<DataInfo> &dataInfo, const std::v
     for (; dataInfoIter != dataInfo.end(); dataInfoIter++, queIter++) {
         CHK_PRT_RET(dataInfoIter->link_.GetRemoteRankId() != remoteRank,
                     HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] Send/RecvThruMultiLinks: only support identical "
-                               "remote rank, now we have got rank [%d] and rank [%d].",
+                               "remote rank, now we have got rank [%u] and rank [%u].",
                                remoteRank, dataInfoIter->link_.GetRemoteRankId()),
                     HcclResult::HCCL_E_INTERNAL);
 
@@ -340,7 +340,7 @@ HcclResult ProceedMultiLinks(const std::vector<DataReduceInfo> &dataInfo, const 
     for (; dataInfoIter != dataInfo.end(); dataInfoIter++, queIter++) {
         CHK_PRT_RET(dataInfoIter->link_.GetRemoteRankId() != remoteRank,
                     HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] Send/RecvReduceThruMultiLinks: only support "
-                               "identical remote rank, now we have got rank [%d] and rank [%d].",
+                               "identical remote rank, now we have got rank [%u] and rank [%u].",
                                remoteRank, dataInfoIter->link_.GetRemoteRankId()),
                     HcclResult::HCCL_E_INTERNAL);
 

@@ -268,7 +268,8 @@ std::unordered_map<HcommDataType, Hccl::DataType> mapHcommDataTypeToA5 = {
     {HcommDataType::HCOMM_DATA_TYPE_HIF8,    Hccl::DataType::HIF8},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E4M3, Hccl::DataType::FP8E4M3},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E5M2, Hccl::DataType::FP8E5M2},
-    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0}
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0},
+    {HcommDataType::HCOMM_DATA_TYPE_MXFP8,   Hccl::DataType::MXFP8},
 #endif
 };
 

@@ -56,11 +56,13 @@ HcclResult CcuTempAllGatherMesh1DMem2MemWithStride::GenExtIns(const TempFuncs   
                                                               const ResLinks           &tempLinks,
                                                               std::vector<InsQuePtr>   &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllGatherMesh1DMem2MemWithStride] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
+
     opMode_   = tempFuncs.opMode;
     buffInfo_ = templateDataParams.buffInfo;
-
     CcuInstructionAllGatherMesh1DMem2MemWithStride ccuIns;
-
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 

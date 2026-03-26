@@ -74,7 +74,7 @@ private:
     void AllocNotifies(const vector<LinkData> &links);
     void AllocOpMem(const CollOperator &op);
     u32 GetRemoteRankIdsHashValue(const CollOperator &op) const;
-    u64 CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize) const;
+    u64 CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize);
     HcclResult FillBatchSendRecvData(const CollOperator &op);
     HcclResult FillAllToAllvData(const CollOperator &op);
     HcclResult FillAllToAllvcData(const CollOperator &op);

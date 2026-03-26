@@ -727,6 +727,7 @@ TEST_F(RetryTest, ut_retry_Server_handleErrTimeout)
     context10.serverSockets_.emplace(2, info2);
     // 超时场景模拟 OP_RETRY_WAIT_CAN_RETRY_RANK超时时长60s影响线上执行时长 无法临时只能下掉
 }
+
 TEST_F(RetryTest, ut_retry_base_function)
 {
     MOCKER_CPP(&HDCommunicate::Get).stubs().with(any()).will(returnValue(0));
