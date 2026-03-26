@@ -232,6 +232,6 @@ HcclResult AllGatherGraphPipeline::RunAsync()
     HCCL_INFO("[AllGatherGraphPipeline][RunAsync]AllGatherRingMesh finished groupRankId[%u]", userRank_);
     return HCCL_SUCCESS;
 }
-
 REGISTER_TEMPLATE(TemplateType::TEMPLATE_ALL_GATHER_GRAPH_PIPELINE, AllGatherGraphPipeline);
+
 }  // namespace hccl
