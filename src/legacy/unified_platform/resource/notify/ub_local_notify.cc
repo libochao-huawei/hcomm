@@ -30,6 +30,7 @@ UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     devResInfo.flag             = 0;
     auto resAddrInfo            = HrtGetDevResAddress(devResInfo);
     addr                        = resAddrInfo.address;
+    DevCapability::GetInstance().Init(DevType::DEV_TYPE_950); // 单例初始化
     size                        = DevCapability::GetInstance().GetNotifySize();
     auto tokenIdInfoPair        = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle);
     TokenIdHandle tokenIdHandle = tokenIdInfoPair.first;

@@ -88,11 +88,11 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Temp
     uint32_t axisSize = tempLinks.begin()->second.size();
 
     uint32_t myVirtRankId = tempVirtRankMap_[myRank_];
+    uint64_t inputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
+    uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
     uint64_t DataCount = (tempAlgParams.sliceSize / DataTypeSizeGet(dataType_));
     uint64_t die0Size = DataCount / axisSize * DataTypeSizeGet(dataType_);
     uint64_t die1Size = tempAlgParams.sliceSize - die0Size;
-    uint64_t inputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
-    uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
     uint64_t repeatNum = tempAlgParams.repeatNum;
     uint64_t token;
     CHK_RET(GetToken(op_, token));
@@ -119,7 +119,7 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Temp
 
     std::vector<LinkData> linksDie0;
     std::vector<LinkData> linksDie1;
-    RankGroup rankGroup;
+    RankGroup reduceRankGroup;
     std::map<u32, u32> indexMap;
     std::vector<NHRStepInfo> stepInfoVector;
     u32 nSteps = GetNHRStepNum(tempRankSize_) * 2; // 分为RS和AG两次NHR
@@ -135,7 +135,7 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Temp
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(fromRankIdx)[1]);
             }
-            rankGroup.AddRank(fromRankIdx);
+            reduceRankGroup.AddRank(fromRankIdx);
         }
         if (indexMap.count(stepInfo.toRank) == 0) {
             u32 toRankIdx = virtRankId2RankId(stepInfo.toRank);
@@ -144,10 +144,10 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Temp
             if (axisSize > 1) {
                 linksDie1.push_back(tempLinks.at(toRankIdx)[1]);
             }
-            rankGroup.AddRank(toRankIdx);
+            reduceRankGroup.AddRank(toRankIdx);
         }
     }
-    rankGroup.AddRank(myRank_);
+    reduceRankGroup.AddRank(myRank_);
 
     std::unique_ptr<CcuInsGroup> insGroupPtr = std::make_unique<CcuInsGroup>();
     for (uint32_t axisId = 0; axisId < axisSize; axisId++) {  // 2个die上各一个mission
@@ -158,7 +158,7 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, Temp
             die0SliceInfoVec[tempRankSize_-1][0].size, die1SliceInfoVec[tempRankSize_-1][0].size,
             stepInfoVector, indexMap, token, isInputOutputEqual, op_, tempVTopo_);
         ccuInstruction.SetLinks(axisId == 0 ? linksDie0 : linksDie1);
-        ccuInstruction.SetRankGroup(rankGroup);
+        ccuInstruction.SetRankGroup(reduceRankGroup);
         ccuInstruction.SetCntCkeNum(5);  // 每个transport用5个CKE
         insGroupPtr->Append(std::move(std::make_unique<CcuInstructionReduceNHR1D>(ccuInstruction)));
     }
@@ -188,12 +188,12 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GetReduceScatterStepInfo(u32 step, NHRStep
     stepInfo.step = step;
     stepInfo.myRank = virtRankIdx;
 
-    // 计算通信对象
+    // ReduceNHR计算通信对象
     u32 deltaRank = 1 << step;
     u32 sendTo = (virtRankIdx + tempRankSize_ - deltaRank) % tempRankSize_;
     u32 recvFrom = (virtRankIdx + deltaRank) % tempRankSize_;
 
-    // 数据份数和数据编号增量
+    // ReduceNHR数据份数和数据编号增量
     u32 nSlices = (tempRankSize_ - 1 + (1 << step)) / (1 << (step + 1));
     u32 deltaSliceIndex = 1 << (step + 1);
     u32 rxSliceIdx = virtRankIdx;
@@ -223,12 +223,12 @@ HcclResult CcuTempReduceNHRMem2Mem1D::GetAllGatherStepInfo(u32 step, u32 nSteps,
     stepInfo.step = step;
     stepInfo.myRank = virtRankIdx;
 
-    // 计算通信对象
+    // ReduceNHR计算通信对象
     u32 deltaRank = 1 << (nSteps - 1 - step);
     u32 recvFrom = (virtRankIdx + tempRankSize_ - deltaRank) % tempRankSize_;
     u32 sendTo = (virtRankIdx + deltaRank) % tempRankSize_;
 
-    // 数据份数和数据编号增量
+    // ReduceNHR数据份数和数据编号增量
     u32 nSlices = (tempRankSize_ - 1 + (1 << (nSteps - 1 - step))) / (1 << (nSteps - step));
     u32 deltaSliceIndex = 1 << (nSteps - step);
     u32 txSliceIdx = virtRankIdx;

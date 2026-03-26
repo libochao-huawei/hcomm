@@ -11,7 +11,7 @@
 #ifndef HCOMM_RES_H
 #define HCOMM_RES_H
  
-#include <hcomm_res_defs.h>
+#include "hcomm_res_defs.h"
  
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +22,25 @@ extern HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHand
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
+
+/**
+ * @brief 启动通信设备Endpoint监听
+ * @param[in] endpointHandle Endpoint句柄
+ * @param[in] port 监听端口号
+ * @param[in] config 监听配置参数（可为NULL，使用默认配置）
+ * @return HcclResult 执行结果状态码
+ * @note 启动指定Endpoint在指定端口上的监听服务
+ */
+HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port, HcommEndpointListenConfig* config);
+
+/**
+ * @brief 停止通信设备Endpoint监听
+ * @param[in] endpointHandle Endpoint句柄
+ * @param[in] port 监听端口号
+ * @return HcclResult 执行结果状态码
+ * @note 停止指定Endpoint在指定端口上的监听服务
+ */
+HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
@@ -50,9 +69,6 @@ extern HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
-
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **remoteMem, uint32_t *memNum, char **memTags);
 
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);

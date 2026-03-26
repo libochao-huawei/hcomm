@@ -136,7 +136,7 @@ elseif(BUILD_OPEN_PROJECT)
             OUTPUT_TARGET "generate_device_hccp_package"
             OUTPUT "cann-hcomm-compat.tar.gz"
             TARGETS hccp_service.bin
-            FILES  ${HCCP_TAR_DIR}/librs.so ${HCCP_TAR_DIR}/libra_adp.so ${HCCP_TAR_DIR}/libtls_adp.so ${HCCP_TAR_DIR}/libascend_kms.so
+            FILES  ${HCCP_TAR_DIR}/librs.so ${HCCP_TAR_DIR}/libra_adp.so ${HCCP_TAR_DIR}/libtls_adp.so ${HCCP_TAR_DIR}/libascend_kms.so ${HCCP_TAR_DIR}/libnet_co.so
             MANIFEST "hccp_compat_bin_hash.cfg"
         )
         add_dependencies(generate_device_hccp_package hccp_service.bin)

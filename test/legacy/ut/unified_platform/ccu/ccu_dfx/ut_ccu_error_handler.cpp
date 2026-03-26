@@ -216,7 +216,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_post_sem)
     utCcuTransport->rmtRes.cntCkes.push_back(100);
     utCcuTransport->rmtRes.cntCkes.push_back(101);
 
-    shared_ptr<CcuRepBase> rep = make_shared<CcuRepRemPostSem>(*utCcuTransport, semIndex, mask);
+    shared_ptr<CcuRepBase> rep = make_shared<CcuRepRemPostSem>(*utCcuTransport, semIndex, mask, false);
     ErrorInfoBase baseInfo{0, 0, 1, 10, 0};
     vector<CcuErrorInfo> errorInfo{};
     CcuErrorHandler::GenErrorInfoByRepType(baseInfo, rep, errorInfo);
@@ -312,7 +312,7 @@ TEST_F(CcuErrorHandlerTest, test_error_info_when_rep_type_is_rem_wait_group)
     vector<CcuTransport*> transports {utCcuTransport1.get(), utCcuTransport2.get(), utCcuTransport3.get()};
     // 打桩CcuTransportGroup构造函数与析构函数的调用
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().with(any()).will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(CcuDeviceManager::ReleaseCke).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
     CcuTransportGroup transportGroup{transports, 0};    // 创建CcuTransportGroup
     transportGroup.cntCkesGroup.push_back(100);

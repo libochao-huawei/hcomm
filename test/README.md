@@ -8,28 +8,36 @@ HCCL LLT（Low Level Test）是 HCCL 的测试框架，旨在系统化验证 HCC
 
 ```text
 test/
-├── ut                                                  # UT 单元测试用例
-|   ├── common                                          # 公共测试用例
-|   ├── framework                                       # 框架层测试用例
-|   |   ├── communicator                                # 通信域公开接口测试用例
-|   |   └── op_base_api                                 # 通信算子公开接口测试用例
-|   ├── platform                                        # 平台层测试用例
-|   |   ├── hcom                                        # hcom 公开接口测试用例
-|   |   └── resource                                    # Notify、Transport 等通信资源接口测试用例
-|   ├── stub                                            # 桩函数
-|   └── depends                                         # 依赖其他组件的头文件
-├── st/algorithm                                        # ST 集成测试用例（算法分析器）
-|   ├── testcase                                        # 
-|   |   ├── executor_alltoall_A3_pipeline_testcase      # 
-|   |   ├── executor_reduce_testcase_generalization     # 
-|   |   ├── executor_testcase_generalization            # 
-|   |   └── testcase                                    # 
-|   └── utils                                           # 
-|       ├── adapter_v1                                  # 
-|       ├── checker                                     # 
-|       ├── inc                                         # 
-|       └── pub_inc                                     # 
-└── CMakeLists.txt                                      # 编译/构建配置
+├── legacy                                          # 历史版本兼容测试框架
+│   ├── algorithm                                   # 算法测试用例
+│   ├── common                                      # 公共处理
+│   ├── depends                                     # 测试依赖其他组件头文件
+│   ├── st                                          # ST 集成测试用例
+│   │   ├── algorithm                               # 通信算法测试用例
+│   │   ├── fwk                                     # 通信框架测试用例
+│   │   ├── service                                 # 服务层测试用例
+│   │   └── test_case                               # 测试用例
+│   └── ut                                          # UT 集成测试用例
+│       ├── aicpu                                   # AICPU 专用测试用例
+│       ├── all_source_code                         # 源码文件路径
+│       ├── common                                  # 公共处理
+│       ├── framework                               # 通信框架测试用例
+│       ├── service                                 # 服务层测试用例
+│       └── unified_platform                        # 统一平台层测试用例
+├── st/algorithm                                    # ST 集成测试用例 (算法分析器)
+│   ├── testcase                                    # 测试用例
+│   └── utils                                       # 通用处理
+└── ut                                              # UT 单元测试用例
+    ├── aicpu_kfc                                   # MC2相关测试
+    ├── common                                      # 公共处理
+    ├── depends                                     # 测试依赖其他组件头文件
+    ├── device                                      # device测试
+    ├── framework                                   # 通信框架测试用例
+    ├── impl                                        # 通信算法实现测试用例
+    ├── inter                                       # 接口适配层测试用例
+    ├── misc                                        # 其他测试用例
+    ├── platform                                    # 通信平台实现测试用例
+    └── stub                                        # 测试桩函数
 ```
 
 ## 编译与运行
@@ -37,9 +45,6 @@ test/
 在仓库根目录下执行如下命令：
 
 ```bash
-# 下载并编译 GoogleTest、MockCPP、nlohmann_json 三方件
-bash build_third_party.sh
-
 # 编译并运行所有单元测试用例
 bash build.sh --ut
 

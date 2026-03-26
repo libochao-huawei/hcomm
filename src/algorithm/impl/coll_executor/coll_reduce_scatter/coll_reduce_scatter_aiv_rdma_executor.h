@@ -19,7 +19,7 @@ namespace hccl {
 class CollReduceScatterAivRdmaExecutor : public CollReduceScatterExecutor {
 public:
     CollReduceScatterAivRdmaExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterAivRdmaExecutor() = default;
+    ~CollReduceScatterAivRdmaExecutor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 private:

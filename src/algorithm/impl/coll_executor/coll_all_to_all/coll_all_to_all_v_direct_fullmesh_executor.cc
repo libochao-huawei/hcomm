@@ -120,7 +120,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetLocalSDMAGroupInfo(const u32 userRa
     (void) userRank;
     bool isA2MultiModule = topoAttr_.deviceType == DevType::DEV_TYPE_910B &&
                             !topoAttr_.isSingleMeshAggregation;
-    if (topoMatcher_->GetExternalInputInterHccsDisable() || isA2MultiModule) {
+    if (static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable()) || isA2MultiModule) {
         CHK_RET(topoMatcher_->GetLocalServerRankSize(topoAttr_.userRank, devNumInlocalPod, rankIdxInPod));
     } else {
         CHK_RET(topoMatcher_->GetLocalSuperPodRankSize(topoAttr_.userRank, devNumInlocalPod, rankIdxInPod));
@@ -329,9 +329,9 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     // isSuPodAsym 表示A2A3卡数不一致场景或者A3多超节点server数不同场景
     bool isSuPodAsym = false;
     if (topoAttr_.superPodNum > 1) {
-        isSuPodAsym = (topoAttr_.multiModuleDiffDeviceNumMode || topoAttr_.multiSuperPodDiffServerNumMode);
+        isSuPodAsym = (static_cast<bool>(topoAttr_.multiModuleDiffDeviceNumMode) || static_cast<bool>(topoAttr_.multiSuperPodDiffServerNumMode));
     } else {
-        isSuPodAsym = (topoMatcher_->GetExternalInputInterHccsDisable() || isA2MultiModule) && topoAttr_.multiModuleDiffDeviceNumMode;
+        isSuPodAsym = (static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable()) || isA2MultiModule) && static_cast<bool>(topoAttr_.multiModuleDiffDeviceNumMode);
     }
 
     // 执行

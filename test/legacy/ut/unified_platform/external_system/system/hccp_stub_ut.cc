@@ -380,6 +380,14 @@ int RaGetInterfaceVersion(unsigned int phy_id, unsigned int interface_opcode, un
     return 0;
 }
 
+int RaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
+{
+    if (tlsEnable != nullptr) {
+        *tlsEnable = false;
+    }
+    return 0;
+}
+
 int RaQpCreate(void *rdev_handle, int flag, int qp_mode, void **qp_handle)
 {
     return 0;
@@ -453,6 +461,7 @@ int RaSendWr(void *qp_handle, struct SendWr *wr, struct SendWrRsp *op_rsp)
 
 int RaCtxInit(struct CtxInitCfg *cfg, struct CtxInitAttr *info, void **ctx_handle)
 {
+    *ctx_handle = reinterpret_cast<void *>(0x12345678);
     return 0;
 }
 
@@ -709,6 +718,12 @@ int RaGetLbMax(void *rdevHandle, int *lbMax)
 }
 
 int RaCtxQpDestroyBatchAsync(void *ctx_handle, void*qp_handle[], unsigned int *num, void **req_handle)
+{
+    return 0;
+}
+
+int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[],
+    unsigned int num, struct IpInfo infos[])
 {
     return 0;
 }
