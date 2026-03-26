@@ -306,6 +306,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
 )
 
 add_subdirectory(stub)
