@@ -40,7 +40,7 @@ public:
     std::pair<Iterator, bool> Add(const KeyType& key, BufferArgs&&... bufferArgs)
     {
         KeyType regKey = key;
-        auto overlapResult = CheckOverlap(key, regKey);
+        // auto overlapResult = CheckOverlap(key, regKey);
         // if (overlapResult.second) {
         //     HCCL_ERROR("Error: Buffer key overlaps with existing buffer key.");
         //     return std::make_pair(intervalTree_.end(), false);
