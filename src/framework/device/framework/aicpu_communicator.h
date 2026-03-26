@@ -44,6 +44,7 @@
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
 #include "aicpu_cache_manager.h"
+#include "aicpu_blocklist_manager.h"
 
 namespace hccl {
 
@@ -575,6 +576,9 @@ private:
 
     // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
     size_t opUnfoldIdx_ = 0;
+
+    // 维护task blocklist用于A3局部重执行
+    AicpuBlocklistManager blocklistManager_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__
