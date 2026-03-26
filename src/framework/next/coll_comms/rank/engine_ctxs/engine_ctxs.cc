@@ -46,21 +46,21 @@ HcclResult EngineCtxs::GetCommEngineCtx(const std::string &tag, CommEngine engin
     // Ctx未创建返回
     const auto &tagIter = contextMap_.find(tag);
     if (tagIter == contextMap_.end()) {
-        HCCL_ERROR("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
-        return HCCL_E_PARA;
+        HCCL_INFO("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
+        return HCCL_E_NOT_FOUND;
     }
 
     const auto &tagMap = tagIter->second;
     const auto &engineIter = tagMap.find(engine);
     if (engineIter == tagMap.end()) {
-        HCCL_ERROR("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
-        return HCCL_E_PARA;
+        HCCL_INFO("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
+        return HCCL_E_NOT_FOUND;
     }
 
     const auto &ctxRes = engineIter->second;
     *ctx = ctxRes.addr;
     *size = ctxRes.size;
-    HCCL_INFO("[%s]get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);    
+    HCCL_INFO("[%s] get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);    
     return HCCL_SUCCESS;
 }
 
