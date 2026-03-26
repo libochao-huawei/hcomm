@@ -26,6 +26,8 @@ public:
         KfcError errorCode, u32 retryCount);
     HcclResult SetOpExecStatus(std::shared_ptr<hccl::HDCommunicate> d2hTransfer, HcclOpIdentifier &opId, KfcStatus state,
         KfcError errorCode, u32 retryCount);
+    HcclResult SetOpExecStatus(std::shared_ptr<hccl::HDCommunicate> d2hTransfer, KfcStatus state,
+        KfcError errorCode, u32 retryCount, bool isEnablePartialOpRetry);
     HcclResult GetOpExecCtrlTargetOp(std::shared_ptr<hccl::HDCommunicate> h2dTransfer, HcclOpIdentifier &opId);
     HcclResult GetOpExecChangeLink(std::shared_ptr<hccl::HDCommunicate> h2dTransfer, ChangeLinkInfo &changeLinkInfo);
     HcclResult SetErrorMessage(std::shared_ptr<hccl::HDCommunicate> d2hTransfer, ErrorMessageReport &emrInfo);
