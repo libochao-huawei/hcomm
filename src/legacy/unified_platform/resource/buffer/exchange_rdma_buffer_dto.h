@@ -43,7 +43,7 @@ public:
     }
 
     u64 addr{0};
-    u32 size{0};
+    u64 size{0};
     u32 rkey{0};
     std::string memTag{""};
 };

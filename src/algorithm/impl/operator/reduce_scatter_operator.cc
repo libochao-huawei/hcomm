@@ -407,6 +407,12 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                 && (!retryEnable_)
                 && !multiModuleDiffDeviceNumMode_;
 
+    if (isSupportAivDeter) {
+        algName = "ReduceScatterMeshAivFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s]", algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
             HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
@@ -414,12 +420,6 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
 
         algName = "ReduceScatterOrderPreservedFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s].", algName.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    if (isSupportAivDeter) {
-        algName = "ReduceScatterMeshAivFor91093Executor";
-        HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s]", algName.c_str());
         return HCCL_SUCCESS;
     }
 
