@@ -234,4 +234,5 @@ HcclResult AllGatherGraphPipeline::RunAsync()
 }
 
 REGISTER_TEMPLATE(TemplateType::TEMPLATE_ALL_GATHER_GRAPH_PIPELINE, AllGatherGraphPipeline);
+
 }  // namespace hccl
