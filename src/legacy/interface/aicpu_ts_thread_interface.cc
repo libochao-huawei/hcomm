@@ -39,7 +39,7 @@ std::unordered_map<uint32_t, DataType> mapU32ToDataType
        {4, DataType::FP32},    {5, DataType::INT64},  {6, DataType::UINT64},   {7, DataType::UINT8},
        {8, DataType::UINT16},  {9, DataType::UINT32}, {10, DataType::FP64},    {11, DataType::BFP16},
        {12, DataType::INT128}, {14, DataType::HIF8},  {15, DataType::FP8E4M3}, {16, DataType::FP8E5M2},
-       {17, DataType::FP8E8M0}};
+       {17, DataType::FP8E8M0},{14, DataType::MXFP8}};
 
 inline HcclResult CheckDataTypeAndReduceOp(uint32_t dataType, uint32_t reduceOp)
 {

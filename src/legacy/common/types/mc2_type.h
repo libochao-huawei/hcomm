@@ -181,7 +181,7 @@ constexpr DataType MC2_DATA_TYPE[]
     = {DataType::INT8,   DataType::INT16,    DataType::INT32,  DataType::FP16,    DataType::FP32,    DataType::INT64,
        DataType::UINT64, DataType::UINT8,    DataType::UINT16, DataType::UINT32,  DataType::FP64,    DataType::BFP16,
        DataType::INT128, DataType::BF16_SAT, DataType::HIF8,   DataType::FP8E4M3, DataType::FP8E5M2, DataType::FP8E8M0,
-       DataType::INVALID};
+       DataType::MXFP8,  DataType::INVALID};
 
 inline DataType MC2DataType(HcclDataType dataType)
 {
