@@ -595,6 +595,7 @@ std::string UbConnLite::Describe()
 constexpr uint32_t UB_WQE_NUM_PER_SQE = 4; // URMA约束每个SQE包含4个WQEBB
 UbConnLite::UbConnLite(const UbConnLiteParam &liteParam)
 {
+    HCCL_INFO("[UbConnLite::%s] liteParam[%s]", __func__, liteParam.Describe().c_str());
     dieId_           = liteParam.dieId;
     funcId_          = liteParam.funcId;
     jettyId_         = liteParam.jettyId;
@@ -643,6 +644,7 @@ UbConnLiteParam::UbConnLiteParam(std::vector<char> &uniqueId)
         HCCL_INFO("%s", Describe().c_str());
         lastPrintTime = now;
     }
+    HCCL_INFO("[UbConnLiteParam::%s] locEid[%s], rmtEid[%s]", __func__, locEid.Describe().c_str(), rmtEid.Describe().c_str());
 }
 
 } // namespace Hccl
