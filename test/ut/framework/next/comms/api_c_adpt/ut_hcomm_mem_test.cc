@@ -20,7 +20,7 @@ public:
     }
 };
 
-TEST_F(TestHcommMem, Ut_TestHcommMemReg_When_InvalidHandle_Return_HCCL_E_PTR)
+TEST_F(TestHcommMem, Ut_TestHcommMemReg_When_InvalidHandle_Return_HCCL_E_NOT_FOUND)
 {
     HcommMem mem;
     mem.addr = malloc(1024);
@@ -30,7 +30,7 @@ TEST_F(TestHcommMem, Ut_TestHcommMemReg_When_InvalidHandle_Return_HCCL_E_PTR)
 
     EndpointHandle invalidHandle = reinterpret_cast<EndpointHandle>(0xFFFFFFFFFFFFFFFF);
     HcclResult ret = HcommMemReg(invalidHandle, "test_mem", mem, &memHandle);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 
     free(mem.addr);
 }

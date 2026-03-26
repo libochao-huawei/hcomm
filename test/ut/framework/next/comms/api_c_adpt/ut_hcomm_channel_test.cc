@@ -91,10 +91,10 @@ TEST_F(TestHcommChannel, Ut_TestHcommChannelGetStatus_When_NumZero_Return_HCCL_E
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(TestHcommChannel, Ut_TestHcommChannelGetNotifyNum_When_NumNullptr_Return_HCCL_E_NOT_FOUND)
+TEST_F(TestHcommChannel, Ut_TestHcommChannelGetNotifyNum_When_NumNullptr_Return_HCCL_E_PTR)
 {
     HcclResult ret = HcommChannelGetNotifyNum(0, nullptr);
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestHcommChannel, Ut_TestHcommChannelDestroy_When_ChannelsNullptr_Return_HCCL_E_PTR)
@@ -110,18 +110,18 @@ TEST_F(TestHcommChannel, Ut_TestHcommChannelDestroy_When_NumZero_Return_HCCL_E_P
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(TestHcommChannel, Ut_TestHcommChannelGetRemoteMem_When_MemNullptr_Return_HCCL_E_NOT_FOUND)
+TEST_F(TestHcommChannel, Ut_TestHcommChannelGetRemoteMem_When_MemNullptr_Return_HCCL_E_PTR)
 {
     uint32_t memNum = 0;
     char* memTags = nullptr;
     HcclResult ret = HcommChannelGetRemoteMem(0, nullptr, &memNum, &memTags);
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(TestHcommChannel, Ut_TestHcommChannelGetRemoteMem_When_NumNullptr_Return_HCCL_E_NOT_FOUND)
+TEST_F(TestHcommChannel, Ut_TestHcommChannelGetRemoteMem_When_NumNullptr_Return_HCCL_E_PTR)
 {
     HcommMem* remoteMem = nullptr;
     char* memTags = nullptr;
     HcclResult ret = HcommChannelGetRemoteMem(0, &remoteMem, nullptr, &memTags);
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }

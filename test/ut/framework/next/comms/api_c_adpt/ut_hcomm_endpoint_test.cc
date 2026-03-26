@@ -36,8 +36,8 @@ TEST_F(TestHcommEndpoint, Ut_TestHcommEndpointCreate_When_HandleNullptr_Return_H
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(TestHcommEndpoint, Ut_TestHcommEndpointDestroy_When_HandleNullptr_Return_HCCL_E_PTR)
+TEST_F(TestHcommEndpoint, Ut_TestHcommEndpointDestroy_When_HandleNullptr_Return_HCCL_E_NOT_FOUND)
 {
     HcclResult ret = HcommEndpointDestroy(nullptr);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
