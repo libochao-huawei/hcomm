@@ -506,6 +506,7 @@ private:
     void InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph);
     void InitRankGraph(const RankTableInfo &ranktable);
     void CheckRankGraph() const;
+    void CheckRankTableAddrs() const;
     HcclResult CheckCommStatus();
     void InitDataBufferManager();
     void InitNotifyManager();
