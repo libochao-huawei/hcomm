@@ -325,6 +325,21 @@ public:
     bool isServerStateWaitResume_ = false;
     bool isNeedReportOpRetryErr = false; // 针对重执行算子不一致和inplace场景，上报故障
 
+    // opretry server维护信息, 用于A3 AICPU局部重执行
+    // 注意: 发生故障的ranks中, opId最小的算子为局部重执行的目标算子 (即errorOp),
+    //     上报errorOp且rankId最小的卡为故障卡 (即partialOpRetryFirstErrorRank_), 与errorOp的opId相同的ranks为errorOp同步卡
+    // (1) OpRetryRunning/HandleError: 收到KfcError后备份对应agent的局部重执行flag
+    // 注意: 不能直接使用serverSockets_中的HcclAgentRetryInfo, 避免被opretry agent response (e.g., 保活信息) 覆盖
+    std::unordered_map<u32, bool> partialOpRetryErrorAgentFlagMap_; // 每个error agent对应的局部重执行使能flag
+    // (2) OpRetryHandleError: 收齐KfcErrors后, 根据errorOp区分慢卡/同步卡/快卡, 校验errorOp同步故障卡的使能情况;
+    //     OpRetryWaitResp: 如果使能局部重执行, 收到故障/非故障卡的KfcStatus::kStoplaunch时, 如果是同步卡, 则更新flag (TODO)
+    bool partialOpRetryFlag_ = false; // 当前errorOp局部重执行是否使能的flag (要求errorOp同步卡全部使能局部重执行)
+    // (3) OpRetryHandleError: 如果使能局部重执行, 记录errorOp对应的故障agent ID与op index
+    uint32_t partialOpRetryFirstErrorAgent_ = INVALID_UINT; // 上报当前errorOp且rankId最小的卡为故障卡
+    uint32_t partialOpRetryErrorOpIdx_ = INVALID_UINT; // 当前errorOp的通信域内索引
+    // (4) OpRetryHandleError: 如果使能局部重执行, 按需等待慢卡
+    uint32_t partialOpRetryWaitCnt_ = 0; // 当前errorOp局部重执行等待慢卡的次数
+
     bool isOpRetryQuit = false;
     bool isPaused_ = false;
 private:
