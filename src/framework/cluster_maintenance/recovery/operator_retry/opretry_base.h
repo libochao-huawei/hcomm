@@ -49,6 +49,7 @@ struct OpRetryAgentParam {
 };
 
 struct LinkPortStatus {
+    u32 cmd = 1;
     bool defaultPort = false;
     bool backupPort = false;
     u32 rankSize = 0;
@@ -56,6 +57,7 @@ struct LinkPortStatus {
 };
 
 struct ActiveSwitchInfo {
+    u32 cmd = 3;
     u32 switchRankNum;
     u32 remoteRankNum;
     bool refreshTransportFin = false;

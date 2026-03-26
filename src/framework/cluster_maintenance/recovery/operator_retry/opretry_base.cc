@@ -96,7 +96,11 @@ HcclResult OpRetryBase::IssueResponse(std::shared_ptr<HcclSocket> socket, RetryI
 // 非阻塞接收, 若已经收到部分数据, 则变为阻塞接收, 直到收到完整数据或超时
 HcclResult OpRetryBase::WaitResponse(std::shared_ptr<HcclSocket> socket, RetryInfo &retryInfo)
 {
-    return Recv(socket, &retryInfo, sizeof(RetryInfo));
+    HcclResult ret = Recv(socket, &retryInfo, sizeof(RetryInfo));
+    if (ret == HCCL_SUCCESS) {
+        HCCL_ERROR("[TEST]cmd[%u]", retryInfo.cmd);
+    }
+    return ret;
 }
 
 HcclResult OpRetryBase::IssueCommand(std::shared_ptr<HcclSocket> socket, RetryCommand command)
@@ -148,6 +152,7 @@ HcclResult OpRetryBase::WaitLinkPortCheckResult(std::shared_ptr<HcclSocket> sock
 {
     HcclResult ret = Recv(socket, &linkPortStatus, sizeof(LinkPortStatus));
     if (ret == HCCL_SUCCESS) {
+        HCCL_ERROR("[TEST]cmd[%u]", linkPortStatus.cmd);
         HCCL_DEBUG("[OpRetry]WaitLinkPortCheckResult success");
     }
     return ret;
@@ -696,6 +701,7 @@ HcclResult OpRetryBase::WaitActiveSwitchInfo(std::shared_ptr<HcclSocket> socket,
 {
     HcclResult ret = Recv(socket, &switchInfo, sizeof(ActiveSwitchInfo));
     if (ret == HCCL_SUCCESS) {
+        HCCL_ERROR("[TEST]cmd[%u]", switchInfo.cmd);
         HCCL_INFO("[SwitchNic] recv success fin[%u], switchRankNm[%u], remoteRankNum[%u]",
             switchInfo.refreshTransportFin, switchInfo.switchRankNum, switchInfo.remoteRankNum);
     }
