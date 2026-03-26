@@ -87,10 +87,30 @@ public:
         HcclReduceOp redOp, Stream &stream, const void *dst);
     HcclResult AddRetryPreamble(Stream &stream) override;
     HcclResult StreamSync(Stream &stream) override;
-
+    
     void SetOpExecStatusCallback(std::function<HcclResult()> checkOpExecStatusCallback)
     {
         checkOpExecStatusCallback_ = checkOpExecStatusCallback;
+        return;
+    }
+    
+    // 用于A3局部重执行
+    void SetUpdateTotalSqeCountCallback(
+        std::function<HcclResult(const int32_t, const uint64_t)> updateTotalSqeCountCallback)
+    {
+        updateTotalSqeCountCallback_ = updateTotalSqeCountCallback;
+        return;
+    }
+    void SetUpdateFlipPlaceholderSqIdxCallback(
+        std::function<HcclResult(const int32_t, const int64_t)> updateFlipPlaceholderSqIdxCallback)
+    {
+        updateFlipPlaceholderSqIdxCallback_ = updateFlipPlaceholderSqIdxCallback;
+        return;
+    }
+    void SetApplyBlocklistCallback(
+        std::function<HcclResult(const bool, Stream&, const bool, const uint32_t, const uint64_t, bool&)> applyBlocklistCallback)
+    {
+        applyBlocklistCallback_ = applyBlocklistCallback;
         return;
     }
 
@@ -189,6 +209,12 @@ private:
     bool isAlltoallv_ = false;
     const AlltoallvMetadata* alltoallvMetadataPtr_ = nullptr; // alltoallv算子对应的metadata (与通信域绑定)
     bool needAddSqe_ = false;
+
+    // 用于A3局部重执行
+    std::function<HcclResult(const int32_t, const uint64_t)> updateTotalSqeCountCallback_ = nullptr;
+    std::function<HcclResult(const int32_t, const int64_t)> updateFlipPlaceholderSqIdxCallback_ = nullptr;
+    std::function<HcclResult(const bool, Stream&, const bool, const uint32_t, const uint64_t, bool&)>
+        applyBlocklistCallback_ = nullptr;
 };
 } // namespace hccl
 #endif // HCCL_DISPATCHER_AICPU_PUB_H
