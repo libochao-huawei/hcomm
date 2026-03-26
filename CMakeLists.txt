@@ -259,6 +259,9 @@ file(MAKE_DIRECTORY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl")
 file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_primitives.h")
 file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h")
 file(CREATE_LINK "../hcomm/hcomm_primitives.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h" SYMBOLIC)
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_res_defs.h")
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h")
+file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h" SYMBOLIC)
 ]])
 
     set(HCCL_PKG_HEAD
