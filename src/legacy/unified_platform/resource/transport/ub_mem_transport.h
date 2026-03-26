@@ -20,7 +20,7 @@ namespace Hccl {
 class UbMemTransport : public BaseMemTransport {
 public:
     UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, const Socket &socket,
-                   RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1);
+                   RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst);
 
     UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, const Socket &socket,
                    RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1,
@@ -89,8 +89,9 @@ private:
 
     static constexpr u64 NORMAL_NOTIFY_VAL = 1;
 
-    MAKE_ENUM(UbStatus, INIT, SOCKET_OK, SEND_SIZE, RECV_SIZE, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
+    MAKE_ENUM(UbStatus, INIT, SEND_SIZE, RECV_SIZE, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, SET_READY, READY)
     UbStatus ubStatus{UbStatus::INIT};
+    bool isRecvFirst_{false};
 
     u32          cntNotifyNum{0};
     u32          cntNotifyDescSize{0};

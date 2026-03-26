@@ -163,15 +163,19 @@ HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port)
 
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_RET(endpoint->RegisterMemory(mem, memTag, memHandle));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
 HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_RET(endpoint->UnregisterMemory(memHandle));
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
