@@ -285,7 +285,8 @@ DataTypeBitmap OpParamsChecker::dataTypeWithoutReduceAiv = DataTypeBitmap{}
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_HIF8))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E4M3))
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E5M2))
-                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E8M0));
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_FP8E8M0))
+                                    | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_MXFP8));
 
 DataTypeBitmap OpParamsChecker::dataTypeWithReduceCcu = DataTypeBitmap{}
                                     | DataTypeBitmap(1 << static_cast<int>(HcclDataType::HCCL_DATA_TYPE_INT8))
