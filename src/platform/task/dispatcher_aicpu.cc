@@ -483,6 +483,9 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
     CHK_RET(entryPtr->GetSqeArrayCount(sqeArrayCount));
     HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch new task for sqeArrayCount[%u] in the cache entry at 0x%016llx", sqeArrayCount, entryPtr);
     for (size_t arrayIdx = 0; arrayIdx < sqeArrayCount; ++arrayIdx) {
+        // 当前缓存的SQE数组实际下发的SQE count
+        uint64_t dispatchedSqeCount = 0; // 注意: dispatchedSqeCount可能会大于sqeCount (如果有flip placeholder SQE)
+
         // 刷新并获得对应信息 (之前下发到RTSQ的SQE正在异步被消费)
         CHK_RET(entryPtr->UpdateAndGetSqeArray(arrayIdx, userInputMemRanges, userOutputMemRanges, mainStream, slaveStreams,
             opRingBufferIdx_, sqeCount, &sqeArray, &sqeTypeArray, &sqeDfxInfoArray, &streamPtr, flipInfos,
@@ -572,6 +575,8 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             }
 
             sqeStartIdx = curZeroTaskidSqeIdx;
+
+            dispatchedSqeCount += curSqeCount; // sqeArray[sqeStartIdx, curZeroTaskidSqeIdx) + placeholder
         }
 
         // 按需下发剩余SQE
@@ -593,6 +598,23 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             if (profL1Enable) {
                 profTimestampStartIdx += remainSqeCount; // Remaining cached SQEs
             }
+
+            dispatchedSqeCount += remainSqeCount; // sqeArray[sqeStartIdx, sqeCount - 1]
+        }
+
+        // 检查是否为aicpu main/slave stream
+        CHK_PRT_RET(aicpuExecStreamSet_.size() == 0,
+            HCCL_ERROR("[DispatcherAiCpu][LaunchNewTask] aicpuExecStreamSet_ is empty"),
+            HCCL_E_INTERNAL);
+        bool isAicpuExecStream = (aicpuExecStreamSet_.find(streamId) != aicpuExecStreamSet_.end());
+        if (!isAicpuExecStream) { // 无需监控其他stream
+            HCCL_WARNING("[DispatcherAiCpu][LaunchNewTask] streamId[%d] is not aicpu main/slave stream", streamId);
+        } else { // 更新aicpu main/slave stream SQE count
+            CHK_PTR_NULL(updateSqeCountsCallback_);
+
+            HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] add sqeCount[%llu] to streamId[%d]",\
+                dispatchedSqeCount, streamId);
+            CHK_RET(updateSqeCountsCallback_(streamId, dispatchedSqeCount));
         }
 
         // 为下一段SQE数组的刷新清理变量
@@ -820,6 +842,21 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
                 isAlltoallv_, alltoallvMetadataPtr_
             ));
         }
+    }
+
+    // 检查是否为aicpu main/slave stream
+    CHK_PRT_RET(aicpuExecStreamSet_.size() == 0,
+        HCCL_ERROR("[DispatcherAiCpu][LaunchTask] aicpuExecStreamSet_ is empty"),
+        HCCL_E_INTERNAL);
+    const int32_t streamId = streamInfo.actualStreamId;
+    bool isAicpuExecStream = (aicpuExecStreamSet_.find(streamId) != aicpuExecStreamSet_.end());
+    if (!isAicpuExecStream) { // 无需监控其他stream
+        HCCL_WARNING("[DispatcherAiCpu][LaunchTask] streamId[%d] is not aicpu main/slave stream", streamId);
+    } else { // 更新aicpu main/slave stream SQE count
+        CHK_PTR_NULL(updateSqeCountsCallback_);
+
+        HCCL_INFO("[DispatcherAiCpu][LaunchTask] add sqeCount[%u] to streamId[%d]", cnt, streamId);
+        CHK_RET(updateSqeCountsCallback_(streamId, cnt));
     }
 
     CHK_RET(ConfigSqStatusByType(aicpuInfo_.devId, streamInfo.sqId, DRV_SQCQ_PROP_SQ_TAIL, newTail));
@@ -1332,6 +1369,27 @@ HcclResult DispatcherAiCpu::StreamSync(Stream &stream)
                 streamInfo->sqId, head, tail);
         }
     } while (head != tail);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult DispatcherAiCpu::SetSqeMonitorContext(const Stream &mainStream, const std::vector<Stream> &slaveStreams)
+{
+    // 一定调用过RegisterDispatcherCallback->HcclSetDispatcherAicpuCallback->SetUpdateSqeCountsCallback
+    CHK_PRT_RET(updateSqeCountsCallback_ == nullptr,
+        HCCL_ERROR("[DispatcherAiCpu][SetSqeMonitorContext] updateSqeCountsCallback_ is nullptr"),
+        HCCL_E_INTERNAL);
+
+    // 添加当前算子的aicpu main/slave stream ids
+    aicpuExecStreamSet_.clear();
+    const int32_t mainStreamId = mainStream.GetHcclStreamInfo().actualStreamId;
+    aicpuExecStreamSet_.insert(mainStreamId);
+    for (size_t i = 0; i < slaveStreams.size(); i++) {
+        const int32_t slaveStreamId = slaveStreams[i].GetHcclStreamInfo().actualStreamId;
+        aicpuExecStreamSet_.insert(slaveStreamId);
+    }
+
+    HCCL_INFO("[DispatcherAiCpu][SetSqeMonitorContext] aicpuExecStreamSet_.size[%d]", aicpuExecStreamSet_.size());
 
     return HCCL_SUCCESS;
 }

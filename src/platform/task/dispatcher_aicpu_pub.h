@@ -88,9 +88,18 @@ public:
     HcclResult AddRetryPreamble(Stream &stream) override;
     HcclResult StreamSync(Stream &stream) override;
 
+    // 用于A3局部重执行
+    HcclResult SetSqeMonitorContext(Stream &mainStream, std::vector<Stream> &slaveStreams);
+
     void SetOpExecStatusCallback(std::function<HcclResult()> checkOpExecStatusCallback)
     {
         checkOpExecStatusCallback_ = checkOpExecStatusCallback;
+        return;
+    }
+
+    void SetUpdateSqeCountsCallback(std::function<HcclResult(const int32_t, const uint64_t)> updateSqeCountsCallback)
+    {
+        updateSqeCountsCallback_ = updateSqeCountsCallback;
         return;
     }
 
@@ -189,6 +198,10 @@ private:
     bool isAlltoallv_ = false;
     const AlltoallvMetadata* alltoallvMetadataPtr_ = nullptr; // alltoallv算子对应的metadata (与通信域绑定)
     bool needAddSqe_ = false;
+
+    // 用于A3局部重执行
+    std::function<HcclResult(const int32_t, const uint64_t)> updateSqeCountsCallback_ = nullptr;
+    std::unordered_set<int32_t> aicpuExecStreamSet_; // 当前算子aicpu main/slave stream (A3局部重执行只需要监控这些流)
 };
 } // namespace hccl
 #endif // HCCL_DISPATCHER_AICPU_PUB_H

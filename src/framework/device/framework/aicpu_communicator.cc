@@ -138,6 +138,8 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitOpCounter(commParam->opCounterInfo));
     CHK_RET(InitUtraceInfo(commParam));
     CHK_RET(aicpuCacheManager_.InitOpUnfoldCache());
+    // 注意: dispatcher_和aicpu main/slave streams已经基于通信域资源commParam初始化
+    CHK_RET(aicpuBlocklistManager_.InitBlocklistManager(dispatcher_, mainStream_, slaveStreams_));
     CHK_RET(RegisterProfCallBack());
     InitCommInfoStatus(true);
     SetCommInfoStreamStatus(true);
@@ -329,7 +331,11 @@ HcclResult HcclCommAicpu::RegisterDispatcherCallback()
 {
     auto checkOpExecStatusCallback = [this](){ return this->CheckOpExecStatusCallback(); };
 
-    return HcclSetOpExecStatusCallback(dispatcher_, checkOpExecStatusCallback);
+    auto updateSqeCountsCallback = [this](const int32_t streamID, const uint64_t sqeCount) {
+        return this->aicpuBlocklistManager_.UpdateSqeCounts(streamID, sqeCount);
+    }
+
+    return HcclSetDispatcherAicpuCallback(dispatcher_, checkOpExecStatusCallback, updateSqeCountsCallback);
 }
 
 HcclResult HcclCommAicpu::RegisterProfCallBack() {
@@ -2392,6 +2398,10 @@ HcclResult HcclCommAicpu::HcclOpExecFsmLaunchProcess(const std::string &algName,
 {
     HCCL_DEBUG("hccl aicpu start launch task.");
 
+    // 正常展开前备份aicpu main/slave stream SQE信息
+    HCCL_INFO("[HcclCommAicpu][HcclOpExecFsmLaunchProcess] backup SQE counts");
+    CHK_RET(aicpuBlocklistManager_.BackupSqeCounts());
+
     HcclResult ret = OrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos);
     if (ret == HCCL_SUCCESS) { // 下发成功, 并且没有检测到异常cq或中断命令
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_WAIT_END;
@@ -3122,6 +3132,10 @@ HcclResult HcclCommAicpu::HcclOpExecFsmRetryProcess(const std::string &algName, 
         UpdateBSRRetryCnt();
     }
     HCCL_RUN_INFO("[OpRetry][AICPU]retry launch start, retryCnt:%u, tag[%s].", retryCnt, param.tag.c_str());
+
+    // 正常展开前备份aicpu main/slave stream SQE信息
+    HCCL_INFO("[HcclCommAicpu][HcclOpExecFsmRetryProcess] backup SQE counts");
+    CHK_RET(aicpuBlocklistManager_.BackupSqeCounts());
 
     auto ret = RetryOrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos);
     if (ret == HCCL_SUCCESS) {
