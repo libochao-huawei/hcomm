@@ -75,10 +75,11 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
         CollCommAicpu *aicpuComm = commInfo.second->GetCollCommAicpu();
         CHK_PTR_NULL(aicpuComm);
 
-        if (aicpuComm->GetIsReady() == false) {
+        if (aicpuComm->GetIsReady() == false) { // 通信域不可用，跳过
             continue;
         }
 
+        bool hasErrCqe = false;
         const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
         for (auto thread : threads) {
             rtLogicCqReport_t cqeException;
@@ -91,14 +92,52 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
                 __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId()), ret);
 
             if (cqeStatus != dfx::CqeStatus::kDefault) {
+                hasErrCqe = true;
                 ret = ProcessCqe(aicpuComm, cqeException);
                 CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]ProcessCqe fail, aicpuComm[%s], streamId[%u], "
                     "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
             }
         }
+
+        // 有err cqe，打印通信域内所有流的task序列
+        if (hasErrCqe) {
+            (void)PrintCommThreadTaskQue(aicpuComm);
+        }
     }
     rwlock.readUnlock();
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommTaskExceptionLite::PrintCommThreadTaskQue(CollCommAicpu *aicpuComm)
+{
+    CHK_PTR_NULL(aicpuComm);
+    if (aicpuComm->GetIsReady() == false) { // 通信域不可用，跳过
+        HCCL_RUN_INFO("[%s]aicpuComm[%s] is not ready", __func__, aicpuComm->GetIdentifier().c_str());
+        return HCCL_SUCCESS;
+    }
+
+    HCCL_ERROR("[TaskException][AICPU]print group[%s] other thread task que.", aicpuComm->GetIdentifier().c_str());
+    const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
+    for (auto thread : threads) {
+        rtLogicCqReport_t cqeException;
+        dfx::CqeStatus cqeStatus = dfx::CqeStatus::kDefault;
+        Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
+        CHK_PTR_NULL(streamLite);
+
+        // 从流上的cqe，获取当前执行task的sqeId
+        HcclResult ret = GetThreadCqe(thread.get(), cqeException, cqeStatus);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]GetThreadCqe fail, streamId[%u]",
+            __func__, streamLite->GetId()), ret);
+        const u32 sqeId = GetSqeId(cqeException);
+        if (errSqeId_.find(sqeId) != errSqeId_.end()) { // 避免重复打印task序列
+            HCCL_RUN_INFO("[%s]sqeId[0x%x], sqId[%u] taskException has been printed, skip", __func__, sqeId, cqeException.sqId);
+            return HCCL_SUCCESS;
+        }
+        errSqeId_.insert(sqeId);
+
+        // 打印流上当前task的算子信息和task序列
+        CHK_RET(PrintTaskContextInfo(cqeException.sqId, sqeId));
+    }
 }
 
 HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogicCqReport_t &cqeException,
@@ -130,18 +169,23 @@ HcclResult HcclCommTaskExceptionLite::GetThreadCqe(hccl::Thread* thread, rtLogic
 HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const rtLogicCqReport_t &exceptionInfo)
 {
     CHK_PTR_NULL(aicpuComm);
-
     // exceptionInfo->taskId和exceptionInfo->streamId拼成sqeId
-    const u32 sqeId = static_cast<uint32_t>(exceptionInfo.taskId << 16) | static_cast<uint32_t>(exceptionInfo.streamId);
-    HCCL_INFO("[%s]group[%s], sqeId[0x%x], taskId[%u], streamId[%u].",
-        __func__, aicpuComm->GetIdentifier().c_str(), sqeId, exceptionInfo.taskId, exceptionInfo.streamId);
-    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(devId_, exceptionInfo.sqId, sqeId);
-    if (curTask == nullptr) {
-        // 未找到异常对应的TaskInfo
-        HCCL_ERROR("[%s]Exception task not found. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
-            __func__, devId_, exceptionInfo.sqId, sqeId);
-        return HCCL_E_PARA;
+    const u32 sqeId = GetSqeId(exceptionInfo);
+    if (errSqeId_.find(sqeId) != errSqeId_.end()) {
+        HCCL_RUN_INFO("[%s]sqeId[0x%x], sqId[%u] taskException has been printed, skip", __func__, sqeId, exceptionInfo.sqId);
+        return HCCL_SUCCESS;
     }
+    errSqeId_.insert(sqeId);
+    HCCL_INFO("[%s]group[%s], sqeId[0x%x].", __func__, aicpuComm->GetIdentifier().c_str(), sqeId);
+
+    Hccl::TaskInfo* curTask = nullptr;
+    HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(devId_, exceptionInfo.sqId, sqeId, curTask);
+    CHK_PRT_RET(ret == HCCL_E_NOT_FOUND, HCCL_RUN_WARNING("[%s]FindTaskInfo not found, devId[%u] sqId[%u] sqeId[%u]",
+        __func__, devId_, exceptionInfo.sqId, sqeId), HCCL_SUCCESS);
+
+    CHK_PRT_RET(curTask == nullptr || ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]FindTaskInfo fail, curTask[%p], ret[%d], devId_[%u], sqId[%u], sqeId[%u].",
+        __func__, curTask, ret, devId_, exceptionInfo.sqId, sqeId), HCCL_E_PARA);
 
     // 每个通信域仅首次上报（N秒快恢时重置）
     if (!aicpuComm->IsErrorReported()) {
@@ -172,9 +216,18 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     if (curTask->taskParam_.taskType != Hccl::TaskParamType::TASK_NOTIFY_WAIT) { // 非notify场景，仅打印算子信息
         HCCL_ERROR("[TaskException][AICPU]opData information is %s.", GetOpDataInfo(*curTask).c_str());
     } else {
+        HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
+            "[SDMA:M(rank), RDMA:RS(rank,id), SendPayload:SP(rank), InlineReduce:IR(rank), Reduce:R(rank), "
+            "NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), SendNotify:SN(rank,id), "
+            "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
         CHK_RET(PrintTaskContextInfo(exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
     }
     return HCCL_SUCCESS;
+}
+
+u32 HcclCommTaskExceptionLite::GetSqeId(const rtLogicCqReport_t &exceptionInfo)
+{
+    return static_cast<uint32_t>(exceptionInfo.taskId << 16) | static_cast<uint32_t>(exceptionInfo.streamId);
 }
 
 std::string HcclCommTaskExceptionLite::GetBaseInfo(const Hccl::TaskInfo& taskInfo)
@@ -356,15 +409,8 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
                 __func__, (**taskItorPtr)->taskId_, taskId);
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
-        }
+        taskContext.emplace_back(**taskItorPtr);
     }
-
-    HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
-        "[SDMA:M(rank), RDMA:RS(rank,id), SendPayload:SP(rank), InlineReduce:IR(rank), Reduce:R(rank), "
-        "NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), SendNotify:SN(rank,id), "
-        "WriteWithNotify:WN(rank,id), WriteReduceWithNotify:WRN(rank,id)]:");
 
     std::string taskContextInfo = "";
     Hccl::TaskInfo* lastTask = taskContext[0].get();
@@ -409,13 +455,11 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
     }
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
-    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s]",
         opInfo->opIndex_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
-        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
-        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
         opInfo->op_.dataType.Describe().c_str());
 }
 
