@@ -308,21 +308,10 @@ TEST_F(TopoExchangeAgentTest, VerifyServerDevicePhysicID_DuplicateDevicePhyID_Re
 
 TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_MissingSuperPodId_ReturnParaError)
 {
-    MOCKER(hrtGetDeviceType)
+    bool useSuperPodMode = true;
+    MOCKER(IsSuperPodMode)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_93))
-        .will(returnValue(HCCL_SUCCESS));
-    
-    MOCKER(hrtGetDevice)
-        .stubs()
-        .with(outBound(0))
-        .will(returnValue(HCCL_SUCCESS));
-    
-    s64 serverId = 1;
-    MOCKER(hrtGetDeviceInfo)
-        .stubs()
-        .with(eq(0), eq(HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM),
-              eq(HcclRtDeviceInfoType::HCCL_INFO_TYPE_SERVER_ID), outBound(serverId))
+        .with(outBound(useSuperPodMode))
         .will(returnValue(HCCL_SUCCESS));
     
     HcclIpAddress localIp(1694542016);
@@ -331,12 +320,14 @@ TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_MissingSuperPodId_Return
     localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
     u32 serverPort = 60000;
     string identifier = "test";
+
     RankTable_t clusterInfo;
-    TestConstructRankTable(clusterInfo);
-    clusterInfo.rankList[0].deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
-    clusterInfo.rankList[0].superPodId = "";
-    clusterInfo.rankList[0].superDeviceId = INVALID_UINT;
-    
+    RankInfo_t info1;
+    info1.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    info1.superPodId = "";
+    info1.superDeviceId = INVALID_UINT;
+    clusterInfo.serverList.push_back(info1);
+
     TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
     HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
     EXPECT_EQ(ret, HCCL_E_PARA);
@@ -346,21 +337,10 @@ TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_MissingSuperPodId_Return
 
 TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_DuplicateSuperDeviceId_ReturnParaError)
 {
-    MOCKER(hrtGetDeviceType)
+    bool useSuperPodMode = true;
+    MOCKER(IsSuperPodMode)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_93))
-        .will(returnValue(HCCL_SUCCESS));
-    
-    MOCKER(hrtGetDevice)
-        .stubs()
-        .with(outBound(0))
-        .will(returnValue(HCCL_SUCCESS));
-    
-    s64 serverId = 1;
-    MOCKER(hrtGetDeviceInfo)
-        .stubs()
-        .with(eq(0), eq(HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM),
-              eq(HcclRtDeviceInfoType::HCCL_INFO_TYPE_SERVER_ID), outBound(serverId))
+        .with(outBound(useSuperPodMode))
         .will(returnValue(HCCL_SUCCESS));
     
     HcclIpAddress localIp(1694542016);
@@ -369,15 +349,18 @@ TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_DuplicateSuperDeviceId_R
     localRankInfo.deviceType = DevType::DEV_TYPE_910_93;
     u32 serverPort = 60000;
     string identifier = "test";
+
     RankTable_t clusterInfo;
-    TestConstructRankTable(clusterInfo);
-    clusterInfo.rankList[0].deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
-    clusterInfo.rankList[0].superPodId = "superpod1";
-    clusterInfo.rankList[0].superDeviceId = 0;
-    clusterInfo.rankList[1].deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
-    clusterInfo.rankList[1].superPodId = "superpod1";
-    clusterInfo.rankList[1].superDeviceId = 0;
-    
+    RankInfo_t info1, info2;
+    info1.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    info1.superPodId = "superpod1";
+    info1.superDeviceId = 0;
+    info2.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
+    info2.superPodId = "superpod1";
+    info2.superDeviceId = 0;
+    clusterInfo.serverList.push_back(info1);
+    clusterInfo.serverList.push_back(info2);
+
     TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
     HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
     EXPECT_EQ(ret, HCCL_E_PARA);
