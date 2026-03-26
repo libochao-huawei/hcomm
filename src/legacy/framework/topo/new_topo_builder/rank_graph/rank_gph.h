@@ -98,7 +98,7 @@ std::shared_ptr<NetInstance> GetOrCreateNetInstance(u32 netLayer, const string &
                                          Level2Id2NetInst &netInsts, RankGraph *rankGraph);
 RankId GetSubRankId(const vector<RankId> &rankIds, RankId rank);
 
-void GetNewNodeInfo(RankId newRankId, const NetInstance::Link &oldLink, shared_ptr<NetInstance> &newNetInstance,
+void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLink, shared_ptr<NetInstance> &newNetInstance,
                     RankId2PeerMap &tmpPeers, shared_ptr<NetInstance::Node> &newNode,
                     shared_ptr<NetInstance::ConnInterface> &newIface, bool isSource);
 
