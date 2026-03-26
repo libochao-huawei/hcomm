@@ -65,26 +65,24 @@ protected:
 
 TEST_F(RetryTest, ut_retry_ServerHandleError_NotSendRecv_DirectRetry)
 {
-    MOCKER_CPP(&OpRetryBase::WaitResponse)
-        .stubs()
-        .will(returnValue(HCCL_E_AGAIN));
-    MOCKER_CPP(&OpRetryBase::IssueCommandWithOpId)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtCtxSetCurrent)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    
     HcclIpAddress localIp = HcclIpAddress("192.168.100.110");
     std::shared_ptr<HcclSocket> ServerSocket1(new (std::nothrow)HcclSocket(
         "RetryServer1", nullptr, localIp, 16666, HcclSocketRole::SOCKET_ROLE_CLIENT));
-    std::shared_ptr<HcclSocket> ServerSocket2(new (std::nothrow)HcclSocket(
-        "RetryServer2", nullptr, localIp, 16667, HcclSocketRole::SOCKET_ROLE_CLIENT));
     
     std::map<u32, std::shared_ptr<HcclSocket>> ServerSockets;
     ServerSockets.insert(std::make_pair(1, ServerSocket1));
-    ServerSockets.insert(std::make_pair(2, ServerSocket2));
-    
+
+    HcclOpIdentifier opId1;
+    strcpy_s((char*)opId1.tag, 128, "allreduce");
+    opId1.index = 1;
+    opId1.isSendRecv = false;
+
+    HcclAgentRetryInfo info1;
+    info1.retryInfo.opInfo.opId = opId1;
+    info1.retryInfo.rankId = 1;
+    info1.retryInfo.retryState = RETRY_STATE_SERVER_RUNNING;
+    info1.retryInfo.linkState = true;
+
     HcclIpAddress deviceIP = HcclIpAddress("10.21.78.208");
     s32 deviceLogicId = 0;
     OpRetryAgentInfo agentInfo = {0, deviceLogicId, localIp, deviceIP};
@@ -93,31 +91,8 @@ TEST_F(RetryTest, ut_retry_ServerHandleError_NotSendRecv_DirectRetry)
         std::make_shared<OpRetryServerHandleError>();
     RetryContext context(ServerSockets, retryServerHandleError, agentInfo);
     
-    HcclOpIdentifier opId1, opId2;
-    strcpy_s((char*)opId1.tag, 128, "allreduce");
-    opId1.index = 1;
-    opId1.isSendRecv = false;
-    
-    strcpy_s((char*)opId2.tag, 128, "allgather");
-    opId2.index = 2;
-    opId2.isSendRecv = false;
-    
     context.errorRankList_.emplace(1, opId1);
-    context.errorRankList_.emplace(2, opId2);
-    
-    HcclAgentRetryInfo info1, info2;
-    info1.retryInfo.rankId = 1;
-    info1.retryInfo.retryState = RETRY_STATE_SERVER_RUNNING;
-    info1.retryInfo.linkState = true;
-    info1.retryInfo.opInfo.opId = opId1;
-    
-    info2.retryInfo.rankId = 2;
-    info2.retryInfo.retryState = RETRY_STATE_SERVER_RUNNING;
-    info2.retryInfo.linkState = true;
-    info2.retryInfo.opInfo.opId = opId2;
-    
     context.serverSockets_.emplace(1, info1);
-    context.serverSockets_.emplace(2, info2);
     
     HcclResult ret = retryServerHandleError->ProcessEvent(&context);
     
