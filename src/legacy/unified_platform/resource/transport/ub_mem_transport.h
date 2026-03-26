@@ -73,7 +73,7 @@ public:
 
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
-    HcclResult UpdateMemInfo(LocalBufferVec &bufferVecTemp);
+    HcclResult UpdateMemInfo(std::vector<LocalUbRmaBuffer *> &bufferVecTemp);
 
     HcclResult Init();
     HcclResult DeInit() const;
