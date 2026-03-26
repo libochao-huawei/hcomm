@@ -831,6 +831,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::DestroyAicpuComm()
     {
+        HCCL_ERROR("TESTZJN --- DestroyAicpuComm start.");
         CHK_PRT_RET(isInvalidComm_,
             HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
             "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
@@ -839,6 +840,7 @@ namespace hccl
         {
             CHK_RET(DestroyAicpuComm(customControlTransferH2D_, customStatusTransferD2H_));
         }
+        HCCL_ERROR("TESTZJN --- DestroyAicpuComm end.");
         return HCCL_SUCCESS;
     }
 
