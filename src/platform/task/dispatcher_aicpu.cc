@@ -190,6 +190,15 @@ HcclResult DispatcherAiCpu::SignalRecord(HcclRtNotify signal, hccl::Stream &stre
         // 不需要为inchip场景下LocalNotify::Post的SignalRecord调用addOneCacheNotifyRecordPlaceholderSqe_生成cache-notify placeholder
         CHK_PRT_RET(inchip, HCCL_ERROR("[DispatcherAiCpu][SignalRecord] isPlaceholder_[%u], inchip[%u]",
             isPlaceholder_, inchip), HCCL_E_INTERNAL);
+        
+        // 注意: 计算alltoallv placeholder sqIdx用于局部重执行 (计算原理参考AddFlipTask中的注释)
+        CHK_PTR_NULL(updatePlaceholderSqIdxCallback_);
+        const int32_t streamId = streamInfo.actualStreamId;
+        int64_t curAlltoallvPlaceholderSqIdx = stream.GetSqeContextPtr()->buffer.sqTail +
+            stream.GetSqeContextPtr()->buffer.sqeCnt; // uint32_t + uint16_t一定不溢出
+        HCCL_INFO("[DispatcherAicpu][SignalRecord] update alltoallvPlaceholderSqIdx[%lld] for streamId[%d]",
+            curAlltoallvPlaceholderSqIdx, streamId);
+        CHK_RET(updatePlaceholderSqIdxCallback_(streamId, curAlltoallvPlaceholderSqIdx, false));
 
         addOneCacheWriteValuePlaceholderSqe_(streamInfo.actualStreamId, taskId, signalAddr, sqeBuffer, sqeTypeAddr);
         HCCL_INFO("%s generate cache-write placeholder for signal record", __func__);
@@ -241,6 +250,15 @@ HcclResult DispatcherAiCpu::SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &
         CHK_PRT_RET(!(needAddSqe_ && isAlltoallv_), HCCL_ERROR("[DispatcherAiCpu][SignalRecord] isPlaceholder_[%u]"
             "needAddSqe_[%u] isAlltoallv_[%u]", isPlaceholder_, needAddSqe_, isAlltoallv_), HCCL_E_INTERNAL);
         
+        // 注意: 计算alltoallv placeholder sqIdx用于局部重执行 (计算原理参考AddFlipTask中的注释)
+        CHK_PTR_NULL(updatePlaceholderSqIdxCallback_);
+        const int32_t streamId = streamInfo.actualStreamId;
+        int64_t curAlltoallvPlaceholderSqIdx = stream.GetSqeContextPtr()->buffer.sqTail +
+            stream.GetSqeContextPtr()->buffer.sqeCnt; // uint32_t + uint16_t一定不溢出
+        HCCL_INFO("[DispatcherAicpu][SignalRecord] update alltoallvPlaceholderSqIdx[%lld] for streamId[%d]",
+            curAlltoallvPlaceholderSqIdx, streamId);
+        CHK_RET(updatePlaceholderSqIdxCallback_(streamId, curAlltoallvPlaceholderSqIdx, false));
+        
         addOneCacheMemcpyRecordPlaceholderSqe_(streamInfo.actualStreamId, taskId, src.ptr(), src.size() , ACL_FLOAT, rtReduceOp,
             dst.ptr(), 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr, SDMA_QOS_DEFAULT);
         HCCL_INFO("%s generate cache-memcpy-record placeholder for signal record", __func__);
@@ -281,6 +299,15 @@ HcclResult DispatcherAiCpu::SignalWait(HcclRtNotify signal, Stream &stream, u32 
             HCCL_ERROR("[DispatcherAiCpu][SignalWait] isPlaceholder_[%u] inchip[%u] devType[%u]",
                 isPlaceholder_, inchip, aicpuInfo_.devType),
             HCCL_E_INTERNAL);
+        
+        // 注意: 计算alltoallv placeholder sqIdx用于局部重执行 (计算原理参考AddFlipTask中的注释)
+        CHK_PTR_NULL(updatePlaceholderSqIdxCallback_);
+        const int32_t streamId = streamInfo.actualStreamId;
+        int64_t curAlltoallvPlaceholderSqIdx = stream.GetSqeContextPtr()->buffer.sqTail +
+            stream.GetSqeContextPtr()->buffer.sqeCnt; // uint32_t + uint16_t一定不溢出
+        HCCL_INFO("[DispatcherAicpu][SignalWait] update alltoallvPlaceholderSqIdx[%lld] for streamId[%d]",
+            curAlltoallvPlaceholderSqIdx, streamId);
+        CHK_RET(updatePlaceholderSqIdxCallback_(streamId, curAlltoallvPlaceholderSqIdx, false));
         
         addOneCacheNotifyWaitPlaceholderSqe_(streamInfo.actualStreamId, taskId, notifyId, sqeBuffer, sqeTypeAddr, dfxTimeOutConfig_);
         HCCL_INFO("%s generate cache-notify placeholder for signal wait", __func__);
@@ -331,6 +358,15 @@ HcclResult DispatcherAiCpu::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
         // 只有使能alltoallv类算子的aicpu cache才需要cache-memcpy placeholder
         CHK_PRT_RET(!(needAddSqe_ && isAlltoallv_), HCCL_ERROR("[DispatcherAiCpu][MemcpyAsync] isPlaceholder_[%u]"
             "needAddSqe_[%u] isAlltoallv_[%u]", isPlaceholder_, needAddSqe_, isAlltoallv_), HCCL_E_INTERNAL);
+        
+        // 注意: 计算alltoallv placeholder sqIdx用于局部重执行 (计算原理参考AddFlipTask中的注释)
+        CHK_PTR_NULL(updatePlaceholderSqIdxCallback_);
+        const int32_t streamId = stream.GetHcclStreamInfo().actualStreamId;
+        int64_t curAlltoallvPlaceholderSqIdx = stream.GetSqeContextPtr()->buffer.sqTail +
+            stream.GetSqeContextPtr()->buffer.sqeCnt; // uint32_t + uint16_t一定不溢出
+        HCCL_INFO("[DispatcherAicpu][MemcpyAsync] update alltoallvPlaceholderSqIdx[%lld] for streamId[%d]",
+            curAlltoallvPlaceholderSqIdx, streamId);
+        CHK_RET(updatePlaceholderSqIdxCallback_(streamId, curAlltoallvPlaceholderSqIdx, false));
         
         // 准备SQE, sqeType, dfxInfo
         uint8_t *sqeBuffer = nullptr;
@@ -468,6 +504,7 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
     Stream *streamPtr = nullptr;
     std::vector<FlipInfo> flipInfos; // taskid==0且flipnum!=0的SQE索引, 即它们前面需要添加placeholder
     std::vector<uint64_t> profTimestamps; // 只有当profiling L1 enable时, 才需要记录各SQE的刷新时间
+    std::vector<uint32_t> alltoallvPlhOffsets; // alltoallv placeholder相对于刷新时sqTail的偏移量
 
     // 准备placeholder需要的变量
     uint8_t placeholderSqe[HCCL_SQE_SIZE]; // placeholder SQE
@@ -483,10 +520,25 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
     CHK_RET(entryPtr->GetSqeArrayCount(sqeArrayCount));
     HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch new task for sqeArrayCount[%u] in the cache entry at 0x%016llx", sqeArrayCount, entryPtr);
     for (size_t arrayIdx = 0; arrayIdx < sqeArrayCount; ++arrayIdx) {
+        // 当前缓存的SQE数组实际下发的SQE count
+        uint64_t dispatchedSqeCount = 0; // 注意: dispatchedSqeCount可能会大于sqeCount (如果有flip placeholder SQE)
+
         // 刷新并获得对应信息 (之前下发到RTSQ的SQE正在异步被消费)
         CHK_RET(entryPtr->UpdateAndGetSqeArray(arrayIdx, userInputMemRanges, userOutputMemRanges, mainStream, slaveStreams,
             opRingBufferIdx_, sqeCount, &sqeArray, &sqeTypeArray, &sqeDfxInfoArray, &streamPtr, flipInfos,
-            profL1Enable, profTimestamps, isAlltoallv, alltoallvMetadata, alltoallvSendRecvInfo));
+            profL1Enable, profTimestamps, isAlltoallv, alltoallvMetadata, alltoallvSendRecvInfo, alltoallvPlhOffsets));
+        
+        // 针对A3 AICPU局部重执行, 更新alltoallv placeholder相关的局部重执行信息
+        if (isAlltoallv && alltoallvPlhOffsets.size() > 0) {
+            CHK_PTR_NULL(updatePlaceholderSqIdxCallback_);
+
+            const uint32_t curSqTail = streamPtr->GetSqeContextPtr()->buffer.sqTail;
+            const int32_t streamId = streamPtr->GetHcclStreamInfo().actualStreamId;
+            for (size_t plhIdx = 0; plhIdx < alltoallvPlhOffsets.size(); ++plhIdx) {
+                int64_t curSqIdx = alltoallvPlhOffsets[plhIdx] + curSqTail; // uint32_t + uint32_t一定不会溢出
+                CHK_RET(updatePlaceholderSqIdxCallback_(streamId, curSqIdx, false));
+            }
+        }
         
         // Profiling timestamp的个数应该等于缓存的SQE个数 + flip placeholder个数
         CHK_PRT_RET((!profL1Enable) && (profTimestamps.size() != 0),
@@ -562,6 +614,34 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] flip placeholder SQE with flipnum[%u] and streamid[%u]",
                 curFlipNum, streamId);
 
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+            static double updateFlipTotalUs = 0.0;
+            static double updateFlipCount = 0;
+            auto updateFlipStartTime = std::chrono::steady_clock::now();
+#endif
+            
+            // 针对A3 AICPU局部重执行, 计算当前flip placeholder SQE在RTSQ中的索引, 并更新aicpu blocklist manager
+            // 注意: stream.sqeContext_.buffer.sqBaseAddr[sqHead, sqTail-1]为已下发的SQE (RTSQ)
+            //     其中sqHead/sqTail为hccl维护的索引, STARS实际使用的RTSQ索引由driver维护;
+            //     当RTSQ空间不足时, hccl通过QuerySqStatusByType从driver获取并更新sqHead;
+            //     每次下发SQE时, 将待下发SQE从sqTail开始append到RTSQ之后 (含sqTail), hccl通过ConfigSqStatusByType同步driver
+            // 注意: MemcpyRtsq每次都会更新stream.sqeContext_.buffer.sqTail, 并通过ConfigSqStatusByType同步给driver;
+            //     因此接下来的MemcpyRtsq将会把flip placeholder SQE下发到RTSQ的sqTail位置
+            CHK_PTR_NULL(updatePlaceholderSqIdxCallback_);
+            int64_t curFlipPlaceholderSqIdx = streamPtr->GetSqeContextPtr()->buffer.sqTail; // uint32_t一定不溢出
+            HCCL_INFO("[DispatcherAicpu][LaunchNewTask] update flipPlaceholderSqIdx[%lld] for streamId[%d]",
+                curFlipPlaceholderSqIdx, streamId);
+            CHK_RET(updatePlaceholderSqIdxCallback_(streamId, curFlipPlaceholderSqIdx, true));
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+            auto updateFlipEndTime = std::chrono::steady_clock::now();
+            double updateFlipUs = std::chrono::duration<double, std::micro>(updateFlipEndTime - updateFlipStartTime).count();
+            updateFlipTotalUs += updateFlipUs;
+            updateFlipCount++;
+            HCCL_ERROR("[DispatcherAiCpu][LaunchNewTask] avg updateFlipPlaceholderSqIdxUs[%.2f] w/ %u updates",
+                updateFlipTotalUs / updateFlipCount, uint32_t(updateFlipCount));
+#endif
+
             // 下发placeholder SQE
             HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch placeholder SQE after %uth sqeArray[%u:%u)",
                 arrayIdx, sqeStartIdx, curZeroTaskidSqeIdx);
@@ -572,6 +652,8 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             }
 
             sqeStartIdx = curZeroTaskidSqeIdx;
+
+            dispatchedSqeCount += curSqeCount; // sqeArray[sqeStartIdx, curZeroTaskidSqeIdx) + placeholder
         }
 
         // 按需下发剩余SQE
@@ -593,7 +675,30 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             if (profL1Enable) {
                 profTimestampStartIdx += remainSqeCount; // Remaining cached SQEs
             }
+
+            dispatchedSqeCount += remainSqeCount; // sqeArray[sqeStartIdx, sqeCount - 1]
         }
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+        static double updateSqeTotalUs = 0.0;
+        static double updateSqeCount = 0;
+        auto updateSqeStartTime = std::chrono::steady_clock::now();
+#endif
+
+        // 针对A3 AICPU局部重执行, 更新各stream下发的SQE数量
+        CHK_PTR_NULL(updateTotalSqeCountCallback_);
+        HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] add sqeCount[%llu] to streamId[%d]",\
+            dispatchedSqeCount, streamId);
+        CHK_RET(updateTotalSqeCountCallback_(streamId, dispatchedSqeCount));
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+        auto updateSqeEndTime = std::chrono::steady_clock::now();
+        double updateSqeUs = std::chrono::duration<double, std::micro>(updateSqeEndTime - updateSqeStartTime).count();
+        updateSqeTotalUs += updateSqeUs;
+        updateSqeCount++;
+        HCCL_ERROR("[DispatcherAiCpu][LaunchNewTask] avg updateTotalSqeCountUs[%.2f] w/ %u updates",
+            updateSqeTotalUs / updateSqeCount, uint32_t(updateSqeCount));
+#endif
 
         // 为下一段SQE数组的刷新清理变量
         sqeCount = 0;
@@ -602,6 +707,7 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
         sqeDfxInfoArray = nullptr;
         streamPtr = nullptr;
         flipInfos.clear();
+        alltoallvPlhOffsets.clear();
     }
 
     // 下发完当前cache entry中所有SQE数组后, 更新input/output memory ranges, 与SQE中in-place update的addr-related fields保持一直
@@ -821,6 +927,27 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
             ));
         }
     }
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+    static double updateSqeTotalUs = 0.0;
+    static double updateSqeCount = 0;
+    auto updateSqeStartTime = std::chrono::steady_clock::now();
+#endif
+
+    // 针对A3 AICPU局部重执行, 更新各stream下发的SQE数量
+    const int32_t streamId = streamInfo.actualStreamId;
+    CHK_PTR_NULL(updateTotalSqeCountCallback_);
+    HCCL_INFO("[DispatcherAiCpu][LaunchTask] add sqeCount[%u] to streamId[%d]", cnt, streamId);
+    CHK_RET(updateTotalSqeCountCallback_(streamId, cnt));
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+    auto updateSqeEndTime = std::chrono::steady_clock::now();
+    double updateSqeUs = std::chrono::duration<double, std::micro>(updateSqeEndTime - updateSqeStartTime).count();
+    updateSqeTotalUs += updateSqeUs;
+    updateSqeCount++;
+    HCCL_ERROR("[DispatcherAiCpu][LaunchTask] avg updateTotalSqeCountUs[%.2f] w/ %u updates",
+        updateSqeTotalUs / updateSqeCount, uint32_t(updateSqeCount));
+#endif
 
     CHK_RET(ConfigSqStatusByType(aicpuInfo_.devId, streamInfo.sqId, DRV_SQCQ_PROP_SQ_TAIL, newTail));
     tail = newTail;
@@ -1273,6 +1400,38 @@ HcclResult DispatcherAiCpu::AddFlipTask(Stream &stream)
     }
 
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+    static double updateFlipTotalUs = 0.0;
+    static double updateFlipCount = 0;
+    auto updateFlipStartTime = std::chrono::steady_clock::now();
+#endif
+
+    // 针对A3 AICPU局部重执行, 计算当前flip placeholder SQE在RTSQ中的索引, 并更新aicpu blocklist manager
+    // 注意: stream.sqeContext_.buffer.localBuff[tailSqeIdx-sqeCnt, tailSqeIdx-1]为已生成待下发的SQE (SqeRingBuffer)
+    // 注意: stream.sqeContext_.buffer.sqBaseAddr[sqHead, sqTail-1]为已下发的SQE (RTSQ)
+    //     其中sqHead/sqTail为hccl维护的索引, STARS实际使用的RTSQ索引由driver维护;
+    //     当RTSQ空间不足时, hccl通过QuerySqStatusByType从driver获取并更新sqHead;
+    //     每次下发SQE时, 将待下发SQE从sqTail开始append到RTSQ之后 (含sqTail), hccl通过ConfigSqStatusByType将sqTail同步给driver
+    // 注意: 根据Stream::GetNextSqeBufferAddr, 当前即将创建的flip placeholder SQE在localBuff中的索引是tailSqeIdx;
+    //     localBuff的headSqeIdx: (tailSqeIdx < sqeCnt) ? HCCL_SQE_MAX_CNT : 0) + tailSqeIdx - sqeCnt;
+    //     该SQE相对headSqeIdx的偏移: (tailSqeIdx < headSqeIdx) ? HCCL_SQE_MAX_CNT : 0) + tailSqeIdx - headSqeIdx = sqeCnt;
+    //     该SQE在RTSQ中的索引: sqTail + sqeCnt
+    CHK_PTR_NULL(updatePlaceholderSqIdxCallback_);
+    const int32_t streamId = streamInfo.actualStreamId;
+    int64_t curFlipPlaceholderSqIdx = sqeContextBuffer->sqTail + sqeContextBuffer->sqeCnt; // uint32_t + uint16_t一定不溢出
+    HCCL_INFO("[DispatcherAicpu][AddFlipTask] update flipPlaceholderSqIdx[%lld] for streamId[%d]",
+        curFlipPlaceholderSqIdx, streamId);
+    CHK_RET(updatePlaceholderSqIdxCallback_(streamId, curFlipPlaceholderSqIdx, true));
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+    auto updateFlipEndTime = std::chrono::steady_clock::now();
+    double updateFlipUs = std::chrono::duration<double, std::micro>(updateFlipEndTime - updateFlipStartTime).count();
+    updateFlipTotalUs += updateFlipUs;
+    updateFlipCount++;
+    HCCL_ERROR("[DispatcherAiCpu][AddFlipTask] avg updateFlipPlaceholderSqIdxUs[%.2f] w/ %u updates",
+        updateFlipTotalUs / updateFlipCount, uint32_t(updateFlipCount));
+#endif
  
     uint8_t *sqeBufferAddr = nullptr;
     uint8_t *sqeTypeAddr = nullptr;

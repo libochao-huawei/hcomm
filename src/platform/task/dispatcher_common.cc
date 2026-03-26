@@ -245,13 +245,20 @@ HcclResult StreamSync(HcclDispatcher dispatcherPtr, Stream &stream)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSetOpExecStatusCallback(HcclDispatcher dispatcherPtr,
-    std::function<HcclResult()> checkOpExecStatusCallback)
+HcclResult HcclSetDispatcherAicpuCallback(HcclDispatcher dispatcherPtr,
+    std::function<HcclResult()> checkOpExecStatusCallback,
+    std::function<HcclResult(const int32_t, const uint64_t)> updateTotalSqeCountCallback,
+    std::function<HcclResult(const int32_t, const int64_t, const bool)> updatePlaceholderSqIdxCallback,
+    std::function<HcclResult(const bool, Stream&, const bool, const uint32_t, const uint64_t, bool&)> applyBlocklistCallback)
 {
     CHK_RET(CheckRunSideIsDevice());
     CHK_PTR_NULL(dispatcherPtr);
-
+    
     reinterpret_cast<DispatcherAiCpu*>(dispatcherPtr)->SetOpExecStatusCallback(checkOpExecStatusCallback);
+    reinterpret_cast<DispatcherAiCpu*>(dispatcherPtr)->SetUpdateTotalSqeCountCallback(updateTotalSqeCountCallback);
+    reinterpret_cast<DispatcherAiCpu*>(dispatcherPtr)->SetUpdatePlaceholderSqIdxCallback(
+        updatePlaceholderSqIdxCallback);
+    reinterpret_cast<DispatcherAiCpu*>(dispatcherPtr)->SetApplyBlocklistCallback(applyBlocklistCallback);
     return HCCL_SUCCESS;
 }
 
