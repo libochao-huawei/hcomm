@@ -80,7 +80,7 @@ public:
             if (portGroupSize != tgtPortGroupSize) {
                 HCCL_WARNING("[LinkData][Constructor]srcConnIface.portGroupSize[%u] is not euqal to targetConnIface.portGroupSize[%u]",
                     static_cast<u32>(portGroupSize), static_cast<u32>(tgtPortGroupSize));
-                HCCL_WARNING("Info: localRank[%d], rmtRank[%d], localDev[%u], rmtDev[%u], localAddr[%s], rmtAddr[%s]",
+                HCCL_WARNING("Info: localRank[%u], rmtRank[%u], localDev[%u], rmtDev[%u], localAddr[%s], rmtAddr[%s]",
                     localRankId_, remoteRankId_, localDeviceId_, remoteDeviceId_, localAddr_.Describe().c_str(),
                     remoteAddr_.Describe().c_str());
             }
