@@ -331,12 +331,14 @@ HcclResult OpRetryAgentRunning::ParseKfcErr(RetryContext* retryCtx, RetryState &
     CHK_RET(GetRetryInfo(retryCtx, retryCtx->localRetryInfo_));
     KfcError kfcError = retryCtx->localRetryInfo_.opInfo.execStatus.kfcError;
     uint32_t retryCnt = retryCtx->localRetryInfo_.opInfo.execStatus.retryInfo.retryCount;
+    bool isEnablePartialOpRetry = retryCtx->localRetryInfo_.opInfo.execStatus.retryInfo.isEnablePartialOpRetry;
     switch (kfcError) {
         case KfcError::kNone: {
             break;
         }
         case KfcError::kSdma: {
-            HCCL_RUN_INFO("[OpRetry][Agent]Get ErrorCode[%d] rertryCnt[%u]", kfcError, retryCnt);
+            HCCL_RUN_INFO("[OpRetry][Agent]Get ErrorCode[%d] rertryCnt[%u] isEnablePartialOpRetry[%d]",
+                kfcError, retryCnt, isEnablePartialOpRetry);
             nextState = RETRY_STATE_RESP_AICPU_ERR;
             break;
         }
@@ -362,9 +364,10 @@ HcclResult OpRetryAgentResponse::ProcessEvent(RetryContext* retryCtx)
     nextState = it->second;
     auto &opInfo = retryCtx->localRetryInfo_.opInfo;
     HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentResponse tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d],"\
-        "opExeState[%d], errorCode[%d], retryCount[%u], streamId[%u], isNeedReportOpRetryErr[%d]",
+        "opExeState[%d], errorCode[%d], retryCount[%u], isEnablePartialOpRetry[%d], streamId[%u], isNeedReportOpRetryErr[%d]",
         opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, opInfo.opId.isSendRecv,
         opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount,
+        opInfo.execStatus.retryInfo.isEnablePartialOpRetry,
         opInfo.opId.streamId, retryCtx->localRetryInfo_.isNeedReportOpRetryErr);
 
     // 发送数据
@@ -609,9 +612,10 @@ HcclResult OpRetryAgentPollAicpuStop::ProcessEvent(RetryContext* retryCtx)
             HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentPollAicpuStop success, retryState[%s], aicpuState[%d], "\
                 "tag[%s], index[%u]", GetReadableState(curState), aicpuState, tag, index);
             HCCL_RUN_INFO("[OpRetry][agent pollaicpu OpId]tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d],"
-                "streamid[%u], retryCnt[%u]",
+                "streamid[%u], retryCnt[%u], isEnablePartialOpRetry[%d]",
                 opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, 
-                opInfo.opId.isSendRecv, opInfo.opId.streamId, opInfo.execStatus.retryInfo.retryCount);
+                opInfo.opId.isSendRecv, opInfo.opId.streamId, opInfo.execStatus.retryInfo.retryCount,
+                opInfo.execStatus.retryInfo.isEnablePartialOpRetry);
             break;
         }
 
