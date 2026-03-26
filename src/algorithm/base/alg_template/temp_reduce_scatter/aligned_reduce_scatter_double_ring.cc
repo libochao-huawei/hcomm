@@ -437,7 +437,7 @@ HcclResult AlignedReduceScatterDoubleRing::ReducerRun(const u32 ringIndex, const
     CHK_PTR_NULL(stream.ptr());
     bool isSpInlineReduce = link->IsSpInlineReduce();
     HcclResult ret = HCCL_SUCCESS;
-    if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttr_)) {
+    if (isSpInlineReduce && static_cast<bool>((INLINE_REDUCE_BITMASK & reduceAttr_))) {
         void *remoteMem = nullptr;
         CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteMem));
         const u64 dataBytes = reduceMem.remoteRcvTemp.size();

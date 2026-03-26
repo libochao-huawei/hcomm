@@ -12,6 +12,7 @@
 #include "invalid_params_exception.h"
 #include "exception_util.h"
 #include "exchange_ipc_notify_dto.h"
+#include "dev_capability.h"
 namespace Hccl {
 
 IpcRemoteNotify::IpcRemoteNotify() : BaseRemoteNotify(RmaType::IPC)
@@ -25,8 +26,10 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
     handleAddr = dto.handleAddr;
     id         = dto.id;
     devUsed    = dto.devUsed;
+    rmtDevPhyId = dto.devPhyId;
     (void)memcpy_s(name, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
 
+    // OpenIpc
     u32 myPid = HrtDeviceGetBareTgid();
     if (rmtPid == myPid) {
         handle = reinterpret_cast<void *>(handleAddr);
@@ -37,6 +40,10 @@ IpcRemoteNotify::IpcRemoteNotify(const Serializable &rmtDto) : BaseRemoteNotify(
             handle = HrtIpcOpenNotify(name);
         }
     }
+    addr = HrtNotifyGetAddr(handle);
+    size = DevCapability::GetInstance().GetNotifySize();
+    HCCL_INFO("IpcRemoteNotify[name=%s, handleAddr=0x%llx, id=%u, rmtPid=%u, rmtDevPhyId=%u, devUsed=%d, addr=%d, "
+                        "handle=%p]", name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, addr, handle);
 }
 
 void IpcRemoteNotify::Post(const Stream &stream) const
@@ -47,8 +54,8 @@ void IpcRemoteNotify::Post(const Stream &stream) const
 string IpcRemoteNotify::Describe() const
 {
     return StringFormat("IpcRemoteNotify[name=%s, handleAddr=0x%llx, id=%u, rmtPid=%u, rmtDevPhyId=%u, devUsed=%d, "
-                        "handle=%p]",
-                        name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, handle);
+                        "handle=%p, addr=0x%llx, size=%llu]",
+                        name, handleAddr, id, rmtPid, rmtDevPhyId, devUsed, handle, addr, size);
 }
 
 } // namespace Hccl

@@ -35,7 +35,7 @@ HcclResult CollAllReduceMidCountFor91093Executor::CalcCommInfo(std::vector<Level
 }
 
 HcclResult CollAllReduceMidCountFor91093Executor::CalcTransportMemType(TransportMemType &inputType,
-    TransportMemType &outputType)
+    TransportMemType &outputType) const
 {
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         inputType = TransportMemType::CCL_INPUT;

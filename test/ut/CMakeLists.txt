@@ -59,6 +59,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/common/src/onesided_memory_management
     ${HCCL_CODE_ROOT}/src/framework/common/src/order_launch
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/resource_manager
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op
@@ -184,6 +185,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
 
     # legacy include
     ${HCCL_CODE_ROOT}/src/legacy/common/
@@ -200,7 +202,10 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/common/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_table_info/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/
+    ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
@@ -277,7 +282,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/dfx/taskException/host
     ${HCCL_CODE_ROOT}/src/framework/device/framework
-    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/slaves
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
@@ -299,10 +304,13 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
 )
 
 add_subdirectory(stub)
 add_subdirectory(framework/next)
+add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(misc)
@@ -320,6 +328,7 @@ add_subdirectory(framework/op_base_api)
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)
+add_subdirectory(framework/communicator/impl/independent_op/data_api_cpu)
 add_subdirectory(aicpu_kfc/aicpu)
 add_subdirectory(aicpu_kfc/misc)
 add_subdirectory(inter/comm)

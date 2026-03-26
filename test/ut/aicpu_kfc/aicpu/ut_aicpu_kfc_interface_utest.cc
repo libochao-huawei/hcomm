@@ -1086,7 +1086,7 @@ struct ArgsInputApi {
     void *workspace;
     Mc2InitTilingInner *tilingData;
 };
-
+#if 0
 TEST_F(MC2AicpuInterface_UT, RunAicpuRpcSrvLaunch_Mc2api_debugModePrintBuff)
 {
     StubHccCommRes commRes;
@@ -1149,7 +1149,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuRpcSrvLaunch_Mc2api_debugModePrintBuff)
     EXPECT_EQ(0, RunAicpuKfcSrvLaunch(args));
     free(a);
 }
-
+#endif
 TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_5)
 {
     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));

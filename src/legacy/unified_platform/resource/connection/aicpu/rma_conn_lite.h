@@ -24,10 +24,11 @@ namespace Hccl {
 MAKE_ENUM(RmaConnLiteType, P2P, RDMA, UB, CCU) // 需要和RmaConnType一一对应
 
 struct SqeConfigLite {
-    SqeConfigLite() : placeOdr(1), compOrder(1) {}
+    SqeConfigLite() : placeOdr(1), compOrder(1), fence(1) {}
     bool cqeEn{true};
     u8 placeOdr : 2;
     u8 compOrder : 1;
+    u8 fence : 1;
 };
 
 struct ConnLiteOperationOut {

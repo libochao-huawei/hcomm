@@ -22,7 +22,7 @@ struct ErrorMessageReport {
     u32 remoteUserRank = 0;
     s32 streamId = 0;
     u32 taskId = 0;
-    u32 notifyId = 0;
+    u64 notifyId = 0;
     s32 stage = 0;
     u32 notifyValue = 0;
     u32 rankId = 0;

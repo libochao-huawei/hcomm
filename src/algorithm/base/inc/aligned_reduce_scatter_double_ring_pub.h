@@ -33,7 +33,7 @@ public:
         const std::vector<std::vector<u32>> &ringsOrders,
         const std::vector<std::vector<Slice>> &userMemInputSlicesOfDoubleRing) override;
 
-    virtual HcclResult RunAsync(const u32 rank, const u32 rankSize, const std::vector<LINK> &links) override;
+    HcclResult RunAsync(const u32 rank, const u32 rankSize, const std::vector<LINK> &links) override;
 
 protected:
     HcclResult CheckParameters(const u32 rank, const u32 rankSize, const std::vector<LINK> &links);

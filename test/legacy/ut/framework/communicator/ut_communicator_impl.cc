@@ -435,27 +435,27 @@ TEST_F(CommunicatorImplTest, should_return_success_when_calling_suspend_with_aic
     std::unique_ptr<HDCommunicateLite> d2hTransfer = std::make_unique<HDCommunicateLite>();
     h2dTransfer->Init(kfcControlTransferH2DParams);
     d2hTransfer->Init(kfcStatusTransferD2HParams);
-    // KfcCommand cmd = KfcCommand::NONE;
-    // memset_s(&cmd, sizeof(KfcCommand), 0, sizeof(KfcCommand));
-    // KfcExecStatus response;
-    // memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-    // // 这里是模拟device背景线程的行为
-    // thread threadHandle([&] {
-    //     auto timeout = std::chrono::milliseconds(100);
-    //     auto startTime = std::chrono::steady_clock::now();
-    //     while (true) {
-    //         h2dTransfer->Get(0, sizeof(KfcCommand), (u8 *)&cmd);  // 从host侧拿到NS_STOP_LAUNCH的命令字
-    //         if (cmd != KfcCommand::NONE) {
-    //             break;
-    //         }
-    //         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-    //             break;
-    //         }
-    //     }
-    //     response.kfcStatus = KfcStatus::STOP_LAUNCH_DONE;
-    //     d2hTransfer->Put(0, sizeof(KfcExecStatus), (u8 *)&response);  // device就会把状态改为STOP_LAUNCH_DONE
-    //     EXPECT_EQ(cmd, KfcCommand ::NS_STOP_LAUNCH);  // 这个时候就是希望从host侧拿到的命令字NS_STOP_LAUNCH
-    // });
+    KfcCommand cmd = KfcCommand::NONE;
+    memset_s(&cmd, sizeof(KfcCommand), 0, sizeof(KfcCommand));
+    KfcExecStatus response;
+    memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
+    // 这里是模拟device背景线程的行为
+    thread threadHandle([&] {
+        auto timeout = std::chrono::milliseconds(100);
+        auto startTime = std::chrono::steady_clock::now();
+        while (true) {
+            h2dTransfer->Get(0, sizeof(KfcCommand), (u8 *)&cmd);  // 从host侧拿到NS_STOP_LAUNCH的命令字
+            if (cmd != KfcCommand::NONE) {
+                break;
+            }
+            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+                break;
+            }
+        }
+        response.kfcStatus = KfcStatus::STOP_LAUNCH_DONE;
+        d2hTransfer->Put(0, sizeof(KfcExecStatus), (u8 *)&response);  // device就会把状态改为STOP_LAUNCH_DONE
+        EXPECT_EQ(cmd, KfcCommand ::NS_STOP_LAUNCH);  // 这个时候就是希望从host侧拿到的命令字NS_STOP_LAUNCH
+    });
     usleep(1000);
 
     comm.isAicpuKernelLaunched = true;
