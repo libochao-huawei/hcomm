@@ -499,6 +499,8 @@ TEST_F(MemTransportManagerTest, MemTransportManager_UT_GetUrmaWqsAndCqs)
 {
     StubCommunicatorImplTransMgr comm;
     MemTransportManager          transportManager(comm);
+    comm.rankSize = 0;
+    
     MOCKER_CPP(&MemTransportManager::IsAllTransportReady).stubs().will(returnValue(true));
     EXPECT_NO_THROW(transportManager.GetUrmaWqs());
     EXPECT_NO_THROW(transportManager.GetUrmaCqs());
