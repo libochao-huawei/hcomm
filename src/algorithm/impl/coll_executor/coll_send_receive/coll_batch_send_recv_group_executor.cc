@@ -631,6 +631,13 @@ u64 CollBatchSendRecvGroupExecutor::CalcRecvLoopMaxCount(const u32 unitSize) con
 
 HcclResult CollBatchSendRecvGroupExecutor::CalcStreamNum(u32& streamNum)
 {
+    // if (topoAttr_.userRankSize == 1) {
+    //     sendStreamNum_ = 0;
+    //     recvStreamNum_ = 0;
+    //     streamNum = 0;
+    //     HCCL_INFO("[CollBatchSendRecvGroupExecutor] only one rank, do not need substream, streamNum[%u]", streamNum);
+    //     return HCCL_SUCCESS;
+    // }
     sendStreamNum_ = GROUP_MAX_CONCURRENT;
     recvStreamNum_ = GROUP_MAX_CONCURRENT;
     streamNum = sendStreamNum_ + recvStreamNum_; // 有限度并发
