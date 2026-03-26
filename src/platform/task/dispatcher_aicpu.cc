@@ -483,6 +483,9 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
     CHK_RET(entryPtr->GetSqeArrayCount(sqeArrayCount));
     HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] launch new task for sqeArrayCount[%u] in the cache entry at 0x%016llx", sqeArrayCount, entryPtr);
     for (size_t arrayIdx = 0; arrayIdx < sqeArrayCount; ++arrayIdx) {
+        // 当前缓存的SQE数组实际下发的SQE count
+        uint64_t dispatchedSqeCount = 0; // 注意: dispatchedSqeCount可能会大于sqeCount (如果有flip placeholder SQE)
+
         // 刷新并获得对应信息 (之前下发到RTSQ的SQE正在异步被消费)
         CHK_RET(entryPtr->UpdateAndGetSqeArray(arrayIdx, userInputMemRanges, userOutputMemRanges, mainStream, slaveStreams,
             opRingBufferIdx_, sqeCount, &sqeArray, &sqeTypeArray, &sqeDfxInfoArray, &streamPtr, flipInfos,
@@ -572,6 +575,8 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             }
 
             sqeStartIdx = curZeroTaskidSqeIdx;
+
+            dispatchedSqeCount += curSqeCount; // sqeArray[sqeStartIdx, curZeroTaskidSqeIdx) + placeholder
         }
 
         // 按需下发剩余SQE
@@ -593,7 +598,15 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
             if (profL1Enable) {
                 profTimestampStartIdx += remainSqeCount; // Remaining cached SQEs
             }
+
+            dispatchedSqeCount += remainSqeCount; // sqeArray[sqeStartIdx, sqeCount - 1]
         }
+
+        // 针对A3 AICPU局部重执行, 更新各stream下发的SQE数量
+        CHK_PTR_NULL(updateTotalSqeCountCallback_);
+        HCCL_INFO("[DispatcherAiCpu][LaunchNewTask] add sqeCount[%llu] to streamId[%d]",\
+            dispatchedSqeCount, streamId);
+        CHK_RET(updateTotalSqeCountCallback_(streamId, dispatchedSqeCount));
 
         // 为下一段SQE数组的刷新清理变量
         sqeCount = 0;
@@ -821,6 +834,12 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
             ));
         }
     }
+
+    // 针对A3 AICPU局部重执行, 更新各stream下发的SQE数量
+    const int32_t streamId = streamInfo.actualStreamId;
+    CHK_PTR_NULL(updateTotalSqeCountCallback_);
+    HCCL_INFO("[DispatcherAiCpu][LaunchTask] add sqeCount[%u] to streamId[%d]", cnt, streamId);
+    CHK_RET(updateTotalSqeCountCallback_(streamId, cnt));
 
     CHK_RET(ConfigSqStatusByType(aicpuInfo_.devId, streamInfo.sqId, DRV_SQCQ_PROP_SQ_TAIL, newTail));
     tail = newTail;
@@ -1273,6 +1292,8 @@ HcclResult DispatcherAiCpu::AddFlipTask(Stream &stream)
     }
 
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
+
+    // TODO: 针对A3 AICPU局部重执行, 计算当前flip placeholder SQE在RTSQ中的索引, 并更新aicpu blocklist manager
  
     uint8_t *sqeBufferAddr = nullptr;
     uint8_t *sqeTypeAddr = nullptr;
