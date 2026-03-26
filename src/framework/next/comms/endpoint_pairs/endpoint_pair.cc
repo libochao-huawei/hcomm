@@ -84,7 +84,11 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
         channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
     }
+
     channels[0] = channelHandles_[engine][reuseIdx];
+    if (channelDescs->memHandleNum != 1) {
+        CHK_RET(HcommChannelUpdateMemInfo(channelDesc->memHandles[1], channelDescs->memHandleNum, channels[0]));
+    }
     return HCCL_SUCCESS;
 }
 
