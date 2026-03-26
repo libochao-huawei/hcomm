@@ -282,7 +282,6 @@ HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, cons
     bool isAddrInRange = false;
     for (auto &it : locBufferVec) {
         Buffer iterBuf(it.addr, it.size);
-        HCCL_INFO("[UbTransportLiteImpl::%s] comparing to locBuffer: %s.", __func__, iterBuf.Describe().c_str());
         if (iterBuf.Contains(addr, size)) {
             rmaBufferLite = RmaBufferLite(addr, size, it.tokenId, it.tokenValue);
             isAddrInRange = true;

@@ -24,9 +24,10 @@ constexpr char_t FINISH_MSG[FINISH_MSG_SIZE] = "Ub Comm Pipe ready!";
 constexpr u32 ONE_MILLISECOND_OF_USLEEP      = 1000;
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                               const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1)
+                               const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, 
+                               bool isRecvFirst)
     : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB), rdmaHandle(rdmaHandle1),
-      locCntNotifyRes(locCntNotifyRes1)
+      locCntNotifyRes(locCntNotifyRes1), isRecvFirst_(isRecvFirst)
 {
     HCCL_INFO("source: %s", locCntNotifyRes.Describe().c_str());
     HcclResult result = FillTagVec();
@@ -452,48 +453,48 @@ TransportStatus UbMemTransport::GetStatus()
 
     switch (ubStatus) {
         case UbStatus::INIT:
-            ubStatus = UbStatus::SOCKET_OK;
+            ubStatus = UbStatus::SEND_SIZE;
             baseStatus = TransportStatus::SOCKET_OK;
             break;
-        case UbStatus::SOCKET_OK:
-            if (IsResReady()) {
-                ubStatus = UbStatus::SEND_SIZE;
-                SendDataSize();
-            }
-            break;
         case UbStatus::SEND_SIZE:
-            RecvDataSize();
-            ubStatus = UbStatus::RECV_SIZE;
+            if (IsResReady()) {
+                SendDataSize();
+                ubStatus = UbStatus::RECV_SIZE;
+            }
             break;
         case UbStatus::RECV_SIZE:
-            SendExchangeData();
-            ubStatus = UbStatus::SEND_DATA;
+            RecvDataSize();
+            ubStatus = isRecvFirst_ ? UbStatus::RECV_DATA : UbStatus::SEND_DATA;
             break;
         case UbStatus::SEND_DATA:
-            RecvExchangeData();
-            ubStatus = UbStatus::RECV_DATA;
+            SendExchangeData();
+            ubStatus = isRecvFirst_ ? UbStatus::PROCESS_DATA : UbStatus::RECV_DATA;
             break;
         case UbStatus::RECV_DATA:
-            if (RecvDataProcess()) { // 收消息中，如果设置到connection的建链，则需要发送 finish
-                ubStatus = UbStatus::PROCESS_DATA;
-            } else { // 不需要发送finish，则将transport状态调整为 ready
-                ubStatus = UbStatus::RECV_FIN;
-                SetBaseStatusReady();
-            }
+            RecvExchangeData();
+            ubStatus = isRecvFirst_ ? UbStatus::SEND_DATA : UbStatus::PROCESS_DATA;
             break;
         case UbStatus::PROCESS_DATA:
-            if (IsConnsReady()) {
-                ubStatus = UbStatus::CONN_OK;
-                SendFinish();
+            if (RecvDataProcess()) { // 收消息中，如果设置到connection的建链，则需要发送 finish
+                ubStatus = UbStatus::SEND_FIN;
+            } else { // 不需要发送finish，则将transport状态调整为 ready
+                SetBaseStatusReady();
+                ubStatus = UbStatus::READY;
             }
             break;
-        case UbStatus::CONN_OK:
-            RecvFinish();
-            ubStatus = UbStatus::SEND_FIN;
-            break;
         case UbStatus::SEND_FIN:
-            ubStatus = UbStatus::RECV_FIN;
+            if (IsConnsReady()) {
+                SendFinish();
+                ubStatus = UbStatus::RECV_FIN;
+            }
+            break;
+        case UbStatus::RECV_FIN:
+            RecvFinish();
+            ubStatus = UbStatus::SET_READY;
+            break;
+        case UbStatus::SET_READY:
             SetBaseStatusReady();
+            ubStatus = UbStatus::READY;
             break;
         default:
             break;
