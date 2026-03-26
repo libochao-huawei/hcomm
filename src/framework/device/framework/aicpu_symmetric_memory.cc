@@ -27,14 +27,17 @@ SymmetricMemory::~SymmetricMemory() {}
 
 using namespace hccl;
 
-static HcclResult GetSymWinPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr)
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
+HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void** ptr)
 {
     CHK_PTR_NULL(winHandle);
     CHK_PTR_NULL(ptr);
     SymmetricWindow *symWin = reinterpret_cast<SymmetricWindow *>(winHandle);
     CHK_PRT_RET(peerRank >= symWin->rankSize,
-        HCCL_ERROR("[HcclSymWinGetPeerPointer] Invalid peerRank: %d. rankSize[%u]", peerRank, symWin->rankSize),
-        HCCL_E_PARA);
+        HCCL_ERROR("[HcclSymWinGetPeerPointer] Invalid peerRank: %d. rankSize[%u]", peerRank, symWin->rankSize), HCCL_E_PARA);
 
     size_t peerOffset = peerRank * symWin->stride + offset;
     *ptr = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(symWin->baseVa) + peerOffset);
@@ -42,15 +45,6 @@ static HcclResult GetSymWinPeerPointer(HcclCommSymWindow winHandle, size_t offse
         *ptr, winHandle, peerRank, peerOffset);
 
     return HCCL_SUCCESS;
-}
-
-#ifdef __cplusplus
-extern "C" {
-#endif  // __cplusplus
-
-HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, uint32_t peerRank, void **ptr)
-{
-    return GetSymWinPeerPointer(winHandle, offset, peerRank, ptr);
 }
 
 #ifdef __cplusplus
