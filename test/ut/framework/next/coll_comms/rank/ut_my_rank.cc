@@ -6,9 +6,10 @@
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
 #include "my_rank.h"
-#include "next/comms/endpoint_pairs/channels/channel_process.h"
+#include "channel_process.h"
 #define private public
 using namespace hccl;
+using namespace hcomm;
 
 class MyRankTest : public testing::Test {
 protected:
