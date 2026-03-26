@@ -47,7 +47,9 @@ HcclResult AivTempAlltoAllVMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[AivTempAlltoAllVMesh1D] Run algorithm start: rank[%d]", myRank_);
-
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[AivTempAlltoAllVMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     std::vector<LinkData> allLinks;
     for (auto iter = tempLinks.begin(); iter != tempLinks.end(); ++iter) {
         allLinks.emplace_back(iter->second.at(0));

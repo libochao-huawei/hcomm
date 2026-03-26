@@ -56,6 +56,10 @@ HcclResult CcuTempReduceMeshMem2Mem1D::GenExtIns(const TempFuncs          &tempF
                                                  const TemplateDataParams &templateDataParams,
                                                  const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceMeshMem2Mem1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
+
     buffInfo_ = templateDataParams.buffInfo;
     opMode_   = tempFuncs.opMode;
     CcuInstructionReduceMeshMem2Mem1D ccuIns;
