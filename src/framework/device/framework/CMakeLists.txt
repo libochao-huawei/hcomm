@@ -8,6 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
+    aicpu_blocklist_manager.cc
     aicpu_hccl_process.cc
     aicpu_communicator.cc
     aicpu_hdc.cc
