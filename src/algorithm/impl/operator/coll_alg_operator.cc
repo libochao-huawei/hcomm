@@ -126,7 +126,7 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
                                param.opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
                                param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE);
     CHK_PRT_RET(isOnlyAiv && !supportOnlyAiv,
-            HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support onlyaiv",
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support aivonly",
                 GetCMDTypeEnumStr(param.opType).c_str()), HCCL_E_NOT_SUPPORT);
     CHK_PRT_RET(isOnlyAiv && userRankSize_ == 1 && supportOnlyAiv,
             HCCL_ERROR("[CollAlgOperator][SelectAlg] onlyaiv not support, please ensure rankNum is greater than one"),
