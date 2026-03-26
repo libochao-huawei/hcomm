@@ -22,7 +22,7 @@ struct CollCommAicpuInfo {
 };
 CollCommAicpuInfo g_commAicpuInfo;
 
-thread_local CollCommAicpuMgr *g_hcclComm = nullptr; // 记录当前线程通信域; AicpuGetCommbyGroup赋值，AicpuReleaseCommbyGroup置空
+thread_local CollCommAicpuMgr *g_hcclComm = nullptr; // 记录当前线程通信域; AicpuGetCommbyGroup赋值，AicpuReleaseCommMgrbyGroup置空
 }
 
 HcclResult AicpuIndopProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam) {
@@ -96,7 +96,7 @@ CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &g
 {
     auto startTime = std::chrono::steady_clock::now();
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
-    constexpr u32 pollTimeoutMs = 10; // 轮询超时时间10ms
+    constexpr u32 pollTimeoutMs = 10000; // 轮询超时时间10ms //临时规避host侧在临时流下发kernel获取锁超时的问题
     auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
 
@@ -144,7 +144,7 @@ void AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(const std::string &group)
         rwlock.readUnlock();
         return;
     }
-    g_hcclComm = iter->second.get();
+    g_hcclComm = nullptr;
     iter->second->SetUsed(false);
     rwlock.readUnlock();
 }

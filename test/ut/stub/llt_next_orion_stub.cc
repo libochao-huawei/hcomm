@@ -146,6 +146,11 @@ std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(RdmaHandle 
 {
     return {0x12345678, 12345678};
 }
+
+bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
+{
+    return true;
+}
  
 SocketStatus Socket::GetAsyncStatus()
 {
@@ -2071,6 +2076,21 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
 }
 
 HcclResult HcommFlushV2()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }

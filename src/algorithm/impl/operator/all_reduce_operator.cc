@@ -617,18 +617,18 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                     && (!retryEnable_)
                     && !multiModuleDiffDeviceNumMode_;
     
+    if (isSupportAivDeter) {
+        algName = "AllReduceMeshAivFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
             HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
             HCCL_E_NOT_SUPPORT);
 
         algName = "AllReduceOrderPreservedFor91093Executor";
-        HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
-        return HCCL_SUCCESS;
-    }
-
-    if (isSupportAivDeter) {
-        algName = "AllReduceMeshAivFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] allreduce SelectAlgfor91093 algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }
@@ -682,12 +682,13 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool useHostComm = !isSupportInlineReduce && ((serverNum_ != 1 && superPodNum_ == 1 && !GetExternalInputInterHccsDisable())
         || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
         && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB * deviceNumPerAggregation_));
+    bool isSupportAtomicWrite = topoMatcher_->GetAlgoInfo().isSupportAtomicWrite;
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && isSupportAtomicWrite && !retryEnable_; // 涉及ROCE平面
     // 多超节点 的中等数据量
     bool midCountOptimMultiPod = (superPodNum_ > 1) && isOpbase &&
         (param.DataDes.count * unitSize >= HCCL_SMALL_COUNT_GRAPH_64_KB) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_256_KB) && !retryEnable_; // 涉及ROCE平面
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_256_KB) && isSupportAtomicWrite && !retryEnable_; // 涉及ROCE平面
 
     if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceComm";

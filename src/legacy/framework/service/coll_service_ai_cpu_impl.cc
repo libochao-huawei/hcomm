@@ -16,6 +16,8 @@
 #include "env_config.h"
 #include "stl_util.h"
 #include "snap_shot_parse.h"
+#include "stream_utils.h"
+#include "runtime_api_exception.h"
 
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
@@ -409,7 +411,23 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
     const aclrtFuncHandle funcHandle = comm->GetAicpuKernelFuncHandle(param.kernelName);
-    auto& mStream = (opMode == OpMode::OPBASE) ? (*comm->GetAicpuStreamManager().GetFreeStream()) : stream;
+
+    bool isCapture = false;
+    rtModel_t rtModel = nullptr;
+    CHK_RET_THROW(
+        RuntimeApiException,
+        StringFormat("[CollServiceAiCpuImpl][%s] GetStreamCaptureInfo fail, streamId[%u]", __func__, stream.GetId()),
+        GetStreamCaptureInfo(stream.GetPtr(), rtModel, isCapture));
+    Stream *mStreamPtr = nullptr;
+    if (opMode == OpMode::OPBASE || isCapture) {
+        comm->GetAicpuStreamManager().AllocFreeStream();
+        mStreamPtr = comm->GetAicpuStreamManager().GetFreeStream();
+        comm->GetAicpuStreamManager().AclGraphCaptureFreeStream(&stream);
+    } else {
+        mStreamPtr = &stream;
+    }
+    auto& mStream = *mStreamPtr;
+
     std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
     constexpr u32 numBlocks = 1;
     HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,

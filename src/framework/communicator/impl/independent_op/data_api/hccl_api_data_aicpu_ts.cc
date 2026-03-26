@@ -268,7 +268,8 @@ std::unordered_map<HcommDataType, Hccl::DataType> mapHcommDataTypeToA5 = {
     {HcommDataType::HCOMM_DATA_TYPE_HIF8,    Hccl::DataType::HIF8},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E4M3, Hccl::DataType::FP8E4M3},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E5M2, Hccl::DataType::FP8E5M2},
-    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0}
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0},
+    {HcommDataType::HCOMM_DATA_TYPE_MXFP8,   Hccl::DataType::MXFP8},
 #endif
 };
 
@@ -758,11 +759,15 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
-    CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    DevType devType = hcclComm->GetDevType();
-    if (devType != DevType::DEV_TYPE_950){
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
+        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
         CHK_RET(hcclComm->SetDispatcherCtxOnThread());
+    } else {
+        CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
+        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
     }
     return HCCL_SUCCESS;
 }
@@ -788,8 +793,15 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
 int32_t HcommReleaseComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
-    AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
-    HCCL_INFO("%s success, commId[%s]", __func__, commId);
+    DevType deviceType;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    if (deviceType != DevType::DEV_TYPE_950) {
+        AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
+        HCCL_INFO("[%s] AicpuReleaseCommbyGroup success, commId[%s]", __func__, commId);
+    } else {
+        AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
+        HCCL_INFO("[%s] AicpuReleaseCommMgrbyGroup success, commId[%s]", __func__, commId);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -807,7 +819,15 @@ int32_t HcommFlush()
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
     HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
-    return HCCL_E_NOT_SUPPORT;
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    if (threadPtr->IsDeviceA5()) {
+        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(ubTransportLitePtr);
+        CHK_RET(ubTransportLitePtr->Fence());
+    }
+    
+    return HCCL_SUCCESS;
 }
 
 int32_t HcommChannelFence(ChannelHandle channel)

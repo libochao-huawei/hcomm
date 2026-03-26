@@ -21,6 +21,7 @@
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
 #include "rank_graph.h"
+#include "orion_adapter_hccp.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
@@ -51,7 +52,7 @@ public:
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
 private:
-    HcclResult BatchCreateSockets(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+    HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
@@ -59,6 +60,7 @@ private:
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
+    HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};

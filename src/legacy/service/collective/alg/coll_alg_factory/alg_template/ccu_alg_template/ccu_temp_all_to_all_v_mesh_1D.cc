@@ -154,9 +154,7 @@ HcclResult CcuTempAlltoAllVMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
     uint64_t srcOffset = 0; // alltoallv假设src起始地址为发送rank的对应块起始地址
     uint64_t dstOffset = 0; // alltoallv假设dst起始地址为接收rank的对应块起始地址
     uint64_t token = 0;
-    if (op_.inputMem != nullptr || op_.outputMem != nullptr) {
-        CHK_RET(GetToken(op_, token));
-    }
+    GetToken(op_, token);
 
     ccuInsAllToAllVMesh1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, token, srcOffset, dstOffset,
         op_, tempVTopo_, localSendRecvInfo_, loadFromMem_);

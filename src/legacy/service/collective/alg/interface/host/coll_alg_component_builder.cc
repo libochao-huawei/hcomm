@@ -82,6 +82,7 @@ CollAlgComponentBuilder &CollAlgComponentBuilder::SetMaxDepQueuePairs(u32 maxDep
 
 CollAlgComponentBuilder &CollAlgComponentBuilder::SetMainboardId(u64 mainBoardId)
 {
+    (void)mainBoardId;
     return *this;
 }
 
