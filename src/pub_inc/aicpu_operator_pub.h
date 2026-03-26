@@ -235,6 +235,7 @@ constexpr u32 TAG_MAX_LENGTH = 256;
 constexpr u32 AICPU_OP_NOTIFY_MAX_NUM = 2;
 constexpr u32 AICPU_ORDER_NOTIFY_MAX_NUM = 3;
 constexpr u32 AICPU_MAX_RANK_NUM = 128 * 1024;
+constexpr u32 AICPU_MAX_FAST_RANK_NUM = 128; // A3 AICPU局部重执行, 最大快卡 (即不参与局部重执行的卡) 数目; 超过则不使能局部重执行
 constexpr u32 MAX_RANK_NUM_A3 = 768;
 constexpr u32 HCOMID_MAX_LENGTH = 256;
 
@@ -324,6 +325,12 @@ enum class HcclComSuspendingFlag : int64_t {
     isSuspending,  // device侧感知是suspending状态
 };
 
+// A3 AICPU局部重执行信息 (快卡信息)
+using PartialRetryInfo = struct PartialRetryInfoDef {
+    uint32_t fastRankNum = 0;
+    uint32_t fastRankIdList[AICPU_MAX_FAST_RANK_NUM] = {};
+};
+
 // host向aicpu发送link状态
 using ChangeLinkInfo = struct ChangeLinkInfoDef {
     u32 remoteRankNum = 0;
@@ -394,6 +401,7 @@ using KfcTaskException = struct KfcTaskExceptionDef {
 };
 using KfcRetryInfo = struct KfcRetryStatusDef {
     uint32_t retryCount = 0;         // 已重试次数;
+    bool isEnablePartialOpRetry = false; // 是否使能局部重执行
 };
 
 struct ErrorMessageReport {
