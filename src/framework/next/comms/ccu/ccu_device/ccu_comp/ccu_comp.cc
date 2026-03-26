@@ -150,8 +150,20 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
     // 当前结论，除仅包含UBOE的FE外
     // 其他eid均支持源与目标eid一致时应用环回
     // 故当前版本选择首个可用eid即可
+    EXCEPTION_HANDLE_BEGIN
+    auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     for (auto &eidInfo : eidInfos) {
         if (eidInfo.dieId != dieId) {
+            continue;
+        }
+
+        Hccl::IpAddress ipAddr{};
+        CHK_RET(CommAddrToIpAddress(eidInfo.commAddr, ipAddr));
+        const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
+        CHK_PTR_NULL(rdmaHandle);
+        const bool rtpEnable = rdmaHandleMgr.GetRtpEnable(rdmaHandle);
+        if (!rtpEnable) {
+            // 遍历端口可能较多，避免刷屏不打印
             continue;
         }
 
@@ -160,6 +172,7 @@ static HcclResult FindOneUsableEid(const int32_t devLogicId, const uint32_t devP
         name = eidInfo.name;
         findFlag = true;
     }
+    EXCEPTION_HANDLE_END
 
     if (!findFlag) {
         HCCL_WARNING("[CcuComponent][%s] dieId[%u] doesn't have usable func ID, "
@@ -854,7 +867,7 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
         }
         const auto &commAddr = dieIdIter->second.second;
         const GetTpInfoParam tpParam = {commAddr, commAddr, LOOP_JETTY_PROTOCOL};
-        (void)TpMgr::GetInstance(devLogicId_).ReleaseTpInfo(tpParam, tpInfo);
+        (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(tpParam, tpInfo);
         item.second.tpHandle = 0; // 清理handle，避免重复释放
     }
     tpInfoMap_.clear();

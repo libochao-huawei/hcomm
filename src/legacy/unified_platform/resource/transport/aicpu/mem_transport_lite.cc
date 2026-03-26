@@ -4,12 +4,13 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "mem_transport_lite.h"
 #include "ub_transport_lite_impl.h"
+#include "p2p_transport_lite_impl.h"
 #include "binary_stream.h"
 #include "not_support_exception.h"
 #include "internal_exception.h"
@@ -31,6 +32,8 @@ MemTransportLite::MemTransportLite(std::vector<char>                            
 
     if (type == TransportType::UB) {
         impl = std::make_unique<UbTransportLiteImpl>(uniqueId, callback);
+    } else if(type == TransportType::P2P) {
+        impl = std::make_unique<P2PTransportLiteImpl>(uniqueId, callback);
     } else {
         THROW<NotSupportException>(StringFormat("%s doesnot support now", type.Describe().c_str()));
     }

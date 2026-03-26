@@ -662,11 +662,9 @@ prompt_set_env() {
     fi
     if [ "$hetero_arch" = "y" ]; then
         echo "Please make sure that
-            - PATH includes ${install_path}/share/info/hcomm/bin
             - LD_LIBRARY_PATH includes ${install_path}/lib64"
     else
         echo "Please make sure that
-            - PATH includes ${install_path}/share/info/hcomm/bin
             - LD_LIBRARY_PATH includes ${install_path}/lib64
             - PYTHONPATH includes ${install_path}/python/site-packages"
     fi
@@ -809,6 +807,10 @@ uninstall_run() {
         chmod_start "$upgrade_default_dir"
         new_echo "INFO" "uninstall ${hcomm_install_path_param} ${hcomm_install_type}"
         log "INFO" "uninstall ${hcomm_install_path_param} ${hcomm_install_type}"
+
+        # delete after toolkit upgraded
+        chmod u+w "$upgrade_default_dir/script"
+        sed -i '/libascend_kms\.so/d' "$upgrade_default_dir/script/filelist.csv"
 
         bash "$upgrade_default_dir/script/run_hcomm_uninstall.sh" "uninstall" "${hcomm_input_install_path}" "${hcomm_install_type}" "${is_quiet}" \
             "${is_docker_install}" "${docker_root}" "${is_recreate_softlink}" "$pkg_version_dir"

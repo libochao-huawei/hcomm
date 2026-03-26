@@ -205,6 +205,15 @@ const u64 HCCL_MODULE_ID       = 5;
         }                                                                                                              \
     } while (0)
 
+
+/* 检查result. 若错误, 则设置错误并break */
+#define CHK_PRT_BREAK(result, exeLog, exeCmd) \
+    if (UNLIKELY(result)) {                              \
+        exeLog;                                \
+        exeCmd;                                \
+        break;                                 \
+    }
+
 /* 检查函数返回值，HCCL_E_UNAVAIL时给Warning, 并返回指定错误码 */
 #define CHK_RET_UNAVAIL(call)                                                                                                  \
     do {                                                                                                               \

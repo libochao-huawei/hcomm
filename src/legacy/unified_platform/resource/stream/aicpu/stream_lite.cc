@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "stream_lite.h"
@@ -29,6 +29,11 @@ StreamLite::StreamLite(std::vector<char> &uniqueId)
 StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds) : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
 {
     rtsq = std::make_unique<RtsqA5>(phyId, id, sqIds);
+}
+
+StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds, bool launchFlag) : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
+{
+    rtsq = std::make_unique<RtsqA5>(phyId, id, sqIds, launchFlag);
 }
 
 u32 StreamLite::GetId() const

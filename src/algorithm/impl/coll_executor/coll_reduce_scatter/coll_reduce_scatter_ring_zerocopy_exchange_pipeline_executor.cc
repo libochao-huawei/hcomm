@@ -75,6 +75,10 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::CalcLevel0Comm
 {
     CommParaInfo commParaLevel0(COMM_LEVEL0, CommType::COMM_TAG_RING_INNER);
     CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel0, opTransport[COMM_LEVEL0], inputType, outputType));
+    LevelNSubCommTransport &commTransportLevel0 = opTransport[COMM_LEVEL0];
+    for (u32 subCommIndex = 0; subCommIndex < commTransportLevel0.size(); subCommIndex++) {
+        commTransportLevel0[subCommIndex].isZeroCopy = true;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -226,7 +230,7 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunSuperPodPos
 }
 
 HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunIntraServer(
-    const OpParam &param, ExecMem &execMem, u32 step)
+    const OpParam &param, const ExecMem &execMem, u32 step)
 {
     (void)execMem;
     // 计算slice信息, 将user in分成level2RankSize_块, 每个step处理一块blockIndex, 每个block需要分成level0RankSize_片

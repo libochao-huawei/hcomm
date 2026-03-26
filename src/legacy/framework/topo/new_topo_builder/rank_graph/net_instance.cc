@@ -391,6 +391,11 @@ DeviceId NetInstance::Peer::GetDeviceId() const
     return deviceId_;
 }
 
+u32 NetInstance::Peer::GetDevicePort() const
+{
+    return devicePort_;
+}
+
 RankId NetInstance::Peer::GetRankId() const
 {
     return rankId_;
@@ -436,12 +441,12 @@ void NetInstance::Peer::AddNetInstance(const std::shared_ptr<NetInstance> &netIn
     netLayers_.insert(netInst->GetNetLayer());
 }
 
-void NetInstance::Peer::SetPortPortAddrMapLayer0(std::unordered_map<std::string, IpAddress> portAddrMap)
+void NetInstance::Peer::SetPortPortAddrMapLayer0(std::map<std::string, IpAddress> portAddrMap)
 {
-    portAddrMapLayer0_ = portAddrMap;
+    portAddrMapLayer0_ = std::move(portAddrMap);
 }
 
-std::unordered_map<std::string, IpAddress> NetInstance::Peer::GetPortAddrMapLayer0() const
+std::map<std::string, IpAddress> NetInstance::Peer::GetPortAddrMapLayer0() const
 {
     return portAddrMapLayer0_;
 }
@@ -451,7 +456,7 @@ PlaneId NetInstance::Fabric::GetPlaneId() const
     return planeId_;
 }
 
-NodeId NetInstance::Fabric::GenerateNodeId(FabricId fabricId)
+NodeId NetInstance::Fabric::GenerateNodeId(FabricId fabricId) const
 {
     return (static_cast<u64>(fabricId) | static_cast<u64>(1) << 32); // 第32位为1 + netplaneId
 }

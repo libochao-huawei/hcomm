@@ -27,7 +27,7 @@
 #ifdef CONFIG_CGROUP
 typedef void (*SighandlerT)(int);
 
-STATIC int HccpAddToCgroup()
+STATIC int HccpAddToCgroup(void)
 {
     int ret;
     pid_t hccpPid;
@@ -51,7 +51,7 @@ STATIC int HccpAddToCgroup()
 }
 #endif
 
-STATIC int HccpChangeNumOfFile()
+STATIC int HccpChangeNumOfFile(void)
 {
     struct rlimit limit = {0, 0};
     int ret;
@@ -133,7 +133,6 @@ int llt_main(int argc, char *argv[])
 
     ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
-        ReportProcessStartUpErrorCode((uint32_t)param.logicId, 0, (uint32_t)param.pid, 0, ERR_EJ1, ERR_LEN);
         hccp_err("hccp init error[%d]", ret);
         goto hccp_init_fail;
     }

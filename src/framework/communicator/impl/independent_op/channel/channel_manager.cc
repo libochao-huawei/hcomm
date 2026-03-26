@@ -303,6 +303,8 @@ HcclResult ChannelManager::ParseChannelRemoteDataToMem(const OpCommTransport &op
         if (!transportRequest.isUsedRdma) {
             // sdma -> P2P
             CHK_RET(BuildOpRemoteChannelP2pResParam(tempLink, channelParam.remoteResV2[linkIdx]));
+            channelParam.remoteResV2[linkIdx].channelP2p.qos =  hcclQos_;
+            HCCL_INFO("[ChannelManager] [ParseChannelRemoteDataToMem] hcclQos[%u]", channelParam.remoteResV2[linkIdx].channelP2p.qos);
         } else {
             // rdma -> roce
             CHK_RET(BuildOpRemoteChannelRoceResParam(tempLink, channelParam.remoteResV2[linkIdx]));
@@ -580,7 +582,12 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     channelParam.listNum = listNum;
 
     // 将建链获取的远端数据填充到channelParam
-    CHK_RET(ParseChannelRemoteDataToMem(opTransportResponse, channelParam));
+    HcclResult ret = ParseChannelRemoteDataToMem(opTransportResponse, channelParam);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] ParseChannelRemoteDataToMem failed, return [%d].", __func__, ret);
+        ReleaseChannelParam(channelParam);
+        return ret;
+    }
 
     // 创建局部流
     Stream localStream(StreamType::STREAM_TYPE_ONLINE);
@@ -598,8 +605,7 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
 
     // 下kernel
     std::string kernelName = "RunAicpuIndOpChannelInit";
-    struct InitTask
-    {
+    struct InitTask {
         u64 context;
         bool isCustom;
     };
@@ -768,6 +774,13 @@ HcclResult ChannelManager::ReleaseChannel()
         }
     }
     channelLinks_.clear();
+    return HCCL_SUCCESS;
+}
+
+HcclResult ChannelManager::SetHcclQos(u32 hcclQos)
+{
+    HCCL_INFO("[ChannelManager] [SetHcclQos] hcclQos[%u]", hcclQos);
+    hcclQos_ = hcclQos;
     return HCCL_SUCCESS;
 }
 } // namespace hccl

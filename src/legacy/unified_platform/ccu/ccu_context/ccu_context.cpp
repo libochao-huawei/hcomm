@@ -46,25 +46,26 @@ CcuContext::~CcuContext()
     HCCL_DEBUG("~CcuContext");
 }
 
-void CcuContext::Init()
+HcclResult CcuContext::Init()
 {
-    Algorithm();
+    TRY_CATCH_RETURN(Algorithm());
+    return HCCL_SUCCESS;
 }
 
-std::vector<CcuTaskParam> CcuContext::GeneTaskParam(const CcuTaskArg &arg)
+HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
 {
     auto args    = GeneArgs(arg);
     auto agrsNum = args.size();
     if (agrsNum != loadArgIndex) {
-        THROW<CcuApiException>("Args number does not match the Load instruction, agrsNum = %d, loadArgInstr= %u",
-                               agrsNum, loadArgIndex);
+        HCCL_ERROR("Args number does not match the Load instruction, agrsNum = %lu, loadArgInstr= %u", agrsNum, loadArgIndex);
+        return HCCL_E_PARA;
     }
 
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
     uint32_t seqNum
         = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
-    std::vector<CcuTaskParam> taskParams(seqNum);
+    taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
         taskParams[index].dieId       = GetDieId();
         taskParams[index].missionId   = GetMissionId();
@@ -88,8 +89,7 @@ std::vector<CcuTaskParam> CcuContext::GeneTaskParam(const CcuTaskArg &arg)
             HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
         }
     }
-
-    return taskParams;
+    return HCCL_SUCCESS;
 }
 
 void CcuContext::AllocGoResource(uint32_t parallelDim, uint32_t msPerLoop)
@@ -119,38 +119,45 @@ void CcuContext::AllocGoResource(uint32_t parallelDim, uint32_t msPerLoop)
 
 std::vector<uint64_t> CcuContext::CalGoSize(uint64_t size)
 {
+    return CalGoSizeStatic(size, moConfig);
+}
+
+std::vector<uint64_t> CcuContext::CalGoSizeStatic(uint64_t size, GroupOpConfig &moCfg)
+{
     uint64_t offset        = 0;
     uint64_t loopIterNum   = 0;
     uint64_t loopExtendNum = 0;
     uint64_t tailSize      = 0;
 
-    uint64_t loopSize = moConfig.loopCount * moConfig.memSlice;
+    uint64_t loopSize = moCfg.loopCount * moCfg.memSlice;
     uint64_t maxSize = loopSize * (CcuRep::GetMaxLoopIterNum() + 1);
 
-    if (moConfig.loopCount == 0 || moConfig.memSlice == 0) {
-        THROW<CcuApiException>("Please Check Configure, loopCount = %u, memSlice = %u", moConfig.loopCount,
-                               moConfig.memSlice);
+    if (moCfg.loopCount == 0 || moCfg.memSlice == 0) {
+        THROW<CcuApiException>("Please Check Configure, loopCount = %u, memSlice = %u", moCfg.loopCount,
+                               moCfg.memSlice);
     }
     if (size > maxSize) {
         THROW<CcuApiException>("Too Large Size, size = %lu, maxSize = %lu", size, maxSize);
     }
 
     uint64_t m = size / loopSize;
-    uint64_t n = (size - m * loopSize) / moConfig.memSlice;
-    uint64_t p = size - m * loopSize - n * moConfig.memSlice;
+    uint64_t n = (size - m * loopSize) / moCfg.memSlice;
+    uint64_t p = size - m * loopSize - n * moCfg.memSlice;
 
     if (size == maxSize) {
         m = CcuRep::GetMaxLoopIterNum();
-        n = moConfig.loopCount - 1;
-        p = moConfig.memSlice;
+        n = moCfg.loopCount - 1;
+        p = moCfg.memSlice;
     }
 
+    HCCL_INFO("[CalGoSizeStatic] moCfg.memSlice[%u], moCfg.loopCount[%u], moCfg.msInterleave[%u]", 
+        moCfg.memSlice, moCfg.loopCount, moCfg.msInterleave);
     HCCL_INFO("Ccu Slice Split: m = %lu, n = %lu, p = %lu", m, n, p);
 
     // 数据量 < 256K, 跳过LoopGroup0
     // 此时loopIterNum == 0
     // 可以以此做为跳过LoopGroup0的条件
-    offset = moConfig.memSlice * moConfig.loopCount * m;
+    offset = moCfg.memSlice * moCfg.loopCount * m;
     // 未实现, 这里可以只传入m, 在内部通过加法获得完整的参数
     loopIterNum = m;
 
@@ -163,7 +170,7 @@ std::vector<uint64_t> CcuContext::CalGoSize(uint64_t size)
         // 数据量为256K * m + 4K * n
         // 因为p == 0, 所以只需要使用第一个Loop, 数据量4K, 展开成n次
         loopExtendNum = CcuRep::GetParallelParam(n - 1, 0, 1); // loopExtendNum 赋值
-        tailSize      = moConfig.memSlice;                     // tailSize 赋值
+        tailSize      = moCfg.memSlice;                     // tailSize 赋值
     } else if (n == 0 && p != 0) {
         // 数据量为256K * m + p
         // 因为n == 0, 所以只需要使用第一个Loop, 数据量p, 不展开
@@ -334,9 +341,9 @@ void CcuContext::LocalWait(const CcuRep::MaskSignal &sig, uint32_t mask)
     }
 }
 
-void CcuContext::RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask)
+void CcuContext::RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask, bool single)
 {
-    Append(std::make_shared<CcuRep::CcuRepRemPostSem>(transport, signalIndex, mask));
+    Append(std::make_shared<CcuRep::CcuRepRemPostSem>(transport, signalIndex, mask, single));
 }
 
 void CcuContext::WriteVariableWithSignal(const CcuTransport &transport, const CcuRep::Variable &var, uint32_t varIndex,
@@ -1043,14 +1050,14 @@ void CcuContext::SetResPack(CcuResPack &resPack)
     resPack_ = &resPack;
 }
 
-CcuResPack &CcuContext::GetResPack() const
+CcuResPack* CcuContext::GetResPack() const
 {
-    CHECK_NULLPTR(resPack_, "[CcuContext::GetResPack]resPack_ is nullptr!");
-    return *resPack_;
+    return resPack_;
 }
 
 void CcuContext::SetInstrId(uint32_t instrId)
 {
+    HCCL_INFO("[SetInstrId] Input params: instrId[%u]", instrId);
     instrInfo.startInstrId = instrId;
 }
 
@@ -1072,6 +1079,8 @@ uint32_t CcuContext::GetInstrCount()
 
 void CcuContext::SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo)
 {
+    HCCL_INFO("[SetCcuInstrInfo] Input params: instrVec size[%u], startInstrId[%u], instrCount[%u], missionStartInstrId[%u], missionInstrCount[%u]", 
+        instrInfo.instrVec.size(), instrInfo.startInstrId, instrInfo.instrCount, instrInfo.missionStartInstrId, instrInfo.missionInstrCount);
     this->instrInfo = instrInfo;
 }
 
@@ -1235,7 +1244,7 @@ void CcuContext::AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransp
  * variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
  * 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
  */
-std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg)
+HcclResult CcuContext::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
 {
     HCCL_INFO("[GetCcuProfilingInfo] Enter.");
     std::vector<CcuProfilingInfo> allCcuProfilingInfos;
@@ -1252,13 +1261,15 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
             continue;
         }
         if (count >= GetWaiteCkeProfilingReps().size()) {
-            THROW<CcuApiException>("count[%d] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            HCCL_ERROR("count[%u] out of range[0, %u], cache size(%u).", count, GetWaiteCkeProfilingReps().size(), ccuProfilingCache.size());
+            return HCCL_E_INTERNAL;
         }
         auto waitCkeRep = GetWaiteCkeProfilingReps()[count];
         profInfo.instrId = waitCkeRep->StartInstrId();
         if (profInfo.ckeId == INVALID_CKE_ID) { // localWait Rep
             if (waitCkeRep.get() == nullptr) {
-                THROW<CcuApiException>("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+                HCCL_ERROR("[GetCcuProfilingInfo] localWaitRep is nullptr.");
+                return HCCL_E_PTR;
             }
             auto localWaitRep = dynamic_cast<CcuRep::CcuRepLocWaitSem*>(waitCkeRep.get());
             profInfo.ckeId = localWaitRep->GetSemId();
@@ -1273,7 +1284,8 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
     std::unordered_map<uint16_t, uint32_t> varId2ArgIndexMap;
     for (auto &iter : lgProfInfo.loadRep2ArgIdxMap) {
         if (iter.first.get() == nullptr) {
-            THROW<CcuApiException>("[GetCcuProfilingInfo] loadRep is nullptr.");
+            HCCL_ERROR("[GetCcuProfilingInfo] loadRep is nullptr.");
+            return HCCL_E_PTR;
         }
         auto loadRep = dynamic_cast<CcuRep::CcuRepLoadArg*>(iter.first.get());
         varId2ArgIndexMap[loadRep->GetVarId()] = iter.second;
@@ -1283,7 +1295,8 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
     std::unordered_map<uint16_t, uint16_t> varId2VarIdMap;
     for (auto &iter : lgProfInfo.assignProfilingReps) {
         if (iter.get() == nullptr) {
-            THROW<CcuApiException>("[GetCcuProfilingInfo] assignRep is nullptr.");
+            HCCL_ERROR("[GetCcuProfilingInfo] assignRep is nullptr.");
+            return HCCL_E_PTR;
         }
         auto assignRep = dynamic_cast<CcuRep::CcuRepAssign*>(iter.get());
         varId2VarIdMap[assignRep->varB.Id()] = assignRep->varA.Id();
@@ -1315,7 +1328,8 @@ std::vector<CcuProfilingInfo> CcuContext::GetCcuProfilingInfo(const CcuTaskArg &
         }
     }
     DumpCcuProfilingInfo(allCcuProfilingInfos);
-    return allCcuProfilingInfos;
+    allCcuProfilingInfo = allCcuProfilingInfos;
+    return HCCL_SUCCESS;
 }
 
 void CcuContext::DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo) const

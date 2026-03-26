@@ -12,10 +12,12 @@
 #define HCCLV2_ADAPTER_HCCP_H
 #include <vector>
 #include <unordered_set>
+#include "hccp_common.h"
 #include "ip_address.h"
 #include "data_type.h"
 #include "reduce_op.h"
 #include "hccp_tlv.h"
+#include <mutex>
 
 namespace Hccl {
 using namespace std;
@@ -58,6 +60,11 @@ using FdHandle     = void *;
 using MrHandle = void *;
 
 MAKE_ENUM(HrtNetworkMode, PEER, HDC)
+enum DeviceIdType {
+    DEVICE_ID_TYPE_PHY_ID = 0,
+    DEVICE_ID_TYPE_SDID
+};
+
 
 inline s32 EnvLinkTimeoutGet();
 
@@ -81,6 +88,14 @@ HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_ms
 void HrtRaTlvDeInit(void* tlv_handle);
 
 u32 HrtRaGetInterfaceVersion(u32 phyId, u32 interfaceOpcode);
+
+enum class TlsStatus : int{
+    UNKNOWN = -1, // 不支持查询
+    DISABLE = 0, //  未使能
+    ENABLE,      //  使能
+};
+
+HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus);
 
 struct RaInterface {
     uint32_t  phyId;
@@ -138,16 +153,22 @@ using QpInfo = struct QpInfoDef {
     struct ibv_comp_channel *recvChannel;
     s32 flag = 0;
     s32 qpMode = 0;
+    u32 trafficClass = 0;
+    u32 serviceLevel = 0;
+    u32 retryCnt = 0;
+    u32 retryInterval = 0;
     QpInfoDef() : rdmaHandle(nullptr), qpHandle(nullptr), qp(nullptr), context(nullptr), sendCq(nullptr),
         recvCq(nullptr), srq(nullptr), srqCq(nullptr), srqContext(nullptr),
-        sendChannel(nullptr), recvChannel(nullptr) {}
+        sendChannel(nullptr), recvChannel(nullptr), trafficClass(HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET),
+        serviceLevel(HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {}
     QpInfoDef(QpConfig attr, RdmaHandle rdmaHandle, QpHandle qpHandle, struct ibv_qp* qp, void* context,
               struct ibv_cq* sendCq, struct ibv_cq* recvCq, struct ibv_srq *srq, struct ibv_cq* srqCq,
               void *srqContext = nullptr, struct ibv_comp_channel *sendChannel = nullptr,
-              struct ibv_comp_channel *recvChannel = nullptr)
+              struct ibv_comp_channel *recvChannel = nullptr, u32 tc = HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET,
+              u32 sl = HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET)
         : attr(attr), rdmaHandle(rdmaHandle), qpHandle(qpHandle), qp(qp), context(context), sendCq(sendCq),
         recvCq(recvCq), srq(srq), srqCq(srqCq), srqContext(srqContext),
-        sendChannel(sendChannel), recvChannel(recvChannel) {}
+        sendChannel(sendChannel), recvChannel(recvChannel), trafficClass(tc), serviceLevel(sl) {}
 };
 
 using CqInfo = struct CqInfoDef {
@@ -186,6 +207,7 @@ struct RaSocketWhitelist {
 
 void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists);
 void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists);
+void HrtRaSocketGetVnicIpInfos(u32 phyId, DeviceIdType deviceIdType, u32 deviceId, IpAddress &vnicIP);
 
 struct RaSocketConnectParam {
     SocketHandle socketHandle; /**< socket handle */
@@ -511,6 +533,7 @@ HrtRaUbSendWrRespParam HrtRaUbPostSend(JettyHandle jettyHandle, HrtRaUbSendWrReq
 void                   HrtRaUbPostNops(JettyHandle jettyHandle, JettyHandle remoteJettyHandle, const u32 numNop);
 
 std::pair<uint32_t, uint32_t> HraGetDieAndFuncId(RdmaHandle handle);
+bool HraGetRtpEnable(RdmaHandle handle);
 
 struct HRaInfo {
     HrtNetworkMode mode;
@@ -551,10 +574,8 @@ RequestHandle RaSocketCloseOneAsync(RaSocketCloseParam &in);
 RequestHandle RaSocketListenOneStartAsync(RaSocketListenParam &in);
 RequestHandle RaSocketListenOneStopAsync(RaSocketListenParam &in);
 
-RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u32 size,
-    unsigned long long &sentSize);
-RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size,
-    unsigned long long &recvSize);
+RequestHandle HrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u32 size, unsigned long long &sentSize);
+RequestHandle HrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u32 size, unsigned long long &recvSize);
 
 RequestHandle RaUbLocalMemRegAsync(RdmaHandle handle, const HrtRaUbLocMemRegParam &in,
     vector<char_t> &out, void* &lmemHandle);
@@ -627,11 +648,11 @@ struct AuxInfoOut {
     uint32_t auxInfoValues[MAX_AUX_INFO_NUM];
     uint32_t auxInfoNum{0};
 };
-HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn in, AuxInfoOut &out);
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut);
 
 MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
 constexpr u32 MAX_JETTY_QUERY_NUM = 128;
-HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyStatusVec, u32 &num);
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num);
 
 struct ConnJettyInfo {
     RdmaHandle rdmaHandle{nullptr};
@@ -645,5 +666,38 @@ struct BatchDeleteJettyInfo {
 };
 constexpr u32 MAX_DELETE_JETTY_NUMS = 768;
 HcclResult HrtRaCtxQpDestoryBatch(const RdmaHandle handle, const std::unordered_set<JettyHandle> &jettyHandles, std::vector<JettyHandle> &failJettyHandles);
+
+enum CcuMemTypeBitmap : uint64_t {
+    CCU_MEMTYPE_INVALID = 0,
+    CCU_MEMTYPE_INS = 1ULL << 0,
+    CCU_MEMTYPE_GSA = 1ULL << 1,
+    CCU_MEMTYPE_XN = 1ULL << 2,
+    CCU_MEMTYPE_CKE = 1ULL << 3,
+    CCU_MEMTYPE_LOOP_CKE = 1ULL << 4,
+    CCU_MEMTYPE_PFE = 1ULL << 5,
+    CCU_MEMTYPE_CHN = 1ULL << 6,
+    CCU_MEMTYPE_JETTY_CTX = 1ULL << 7,
+    CCU_MEMTYPE_MISSION_CTX = 1ULL << 8,
+    CCU_MEMTYPE_LOOP_CTX = 1ULL << 9,
+    CCU_MEMTYPE_MISSION_SQE = 1ULL << 10,
+    CCU_MEMTYPE_CQE_BLOCK0 = 1ULL << 11,
+    CCU_MEMTYPE_CQE_BLOCK1 = 1ULL << 12,
+    CCU_MEMTYPE_CQE_BLOCK2 = 1ULL << 13,
+    CCU_MEMTYPE_WQEBB = 1ULL << 14,
+    CCU_MEMTYPE_MS_BLOCK0 = 1ULL << 32,
+    CCU_MEMTYPE_MS_BLOCK1 = 1ULL << 33,
+    CCU_MEMTYPE_MS_BLOCK2 = 1ULL << 34,
+    CCU_MEMTYPE_MS_BLOCK3 = 1ULL << 35
+};
+
+struct CcuMemInfo {
+ 	CcuMemTypeBitmap memType{CcuMemTypeBitmap::CCU_MEMTYPE_INVALID};
+ 	uint64_t memVa{0};
+ 	uint32_t memSize{0};
+ 	uint32_t resv[1];
+};
+
+void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList);
+HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H

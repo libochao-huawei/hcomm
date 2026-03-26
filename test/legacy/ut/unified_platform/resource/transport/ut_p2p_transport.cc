@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -25,6 +25,8 @@
 #include "socket_exception.h"
 #include "local_ipc_rma_buffer.h"
 #include "ipc_local_notify.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 using namespace Hccl;
 
 static int memcpy_stub(void *dest, int dest_max, const void *src, int count)
@@ -124,7 +126,7 @@ protected:
         std::cout << "A Test case in P2PTransport SetUP" << std::endl;
         MOCKER(HrtMemAsyncCopy).stubs().with(any());
         MOCKER(HrtReduceAsync).stubs().with(any());
-        MOCKER(rtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue((void *)100));
+        MOCKER(aclrtCreateStreamWithConfig).stubs().with(any(), any()).will(returnValue((void *)100));
         MOCKER(HrtGetStreamId).stubs().with(any()).will(returnValue(0));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A2));
         MOCKER(HrtIpcOpenNotify).stubs().with(any()).will(returnValue((void *)fakeNotifyHandleAddr));

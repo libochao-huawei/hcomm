@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -45,8 +45,8 @@ protected:
 TEST_F(HccpPeerManagerTest, hccp_peer_manager_getInstance)
 {
     // Given
-    s32 fakedevPhyId  = 3;
-    s32 fakedevPhyId1  = 4;
+    DevId fakedevPhyId  = 3;
+	DevId fakedevPhyId1  = 4;
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
@@ -72,13 +72,13 @@ TEST_F(HccpPeerManagerTest, hccp_peer_manager_init)
     s32 deviceLogicId = 0;
     s32 deviceLogicId1 = 1;
     s32 deviceLogicId2 = 2;
-    s32 fakedevPhyId   = 3;
+	DevId fakedevPhyId   = 3;
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
         .will(returnValue(fakedevPhyId));
     MOCKER(HrtRaDeInit).stubs().with();
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(1)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
 
     // when
     HccpPeerManager::GetInstance().Init(deviceLogicId);

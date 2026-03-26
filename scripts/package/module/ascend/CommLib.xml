@@ -10,6 +10,7 @@
         <path value="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc/hcomm" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc/hcomm/ccu" install_type="devel"/>
+        <path value="$(TARGET_ENV)/devlib/device"/>
         <path value="compat"/>
         <path value="opp"/>
         <path value="opp/built-in"/>
@@ -43,6 +44,7 @@
         <file value="hccl_inner.h"/>
         <file value="hccl_ctrl_plane.h"/>
         <file value="hcomm_diag.h"/>
+        <file value="hccl_diag.h"/>
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm/ccu" dst_path="pkg_inc/hcomm/ccu" install_path="$(TARGET_ENV)/pkg_inc/hcomm/ccu" install_type="devel" install_mod="440">
         <file value="ccu_assist_pub.h"/>
@@ -89,11 +91,18 @@
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
     </file_info>
+    <file_info value="aicpu_custom" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="550">
+        <file value="libaicpu_custom.so" file_type="shared"/>
+        <file value="libaicpu_custom.json"/>
+    </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/dpu" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
         <file value="libccl_dpu.json"/>
     </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
         <file value="libccl_dpu.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libccl_dpu.so"/>
+    </file_info>
+    <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="devlib/device" install_type="all" install_mod="440">
+        <file value="libccl_kernel.so" file_type="shared"/>
     </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
@@ -105,6 +114,7 @@
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>
+        <file value="libtopoaddrinfo.so" file_type="shared"/>
         <file value="dynamic_mul_int8_v80.o"/>
         <file value="dynamic_minimum_int8_v80.o"/>
         <file value="dynamic_maximum_int8_v80.o"/>
@@ -163,7 +173,15 @@
         <file value="dynamic_maximum_float16_v51.o"/>
         <file value="dynamic_add_float16_v51.o"/>
         <file value="MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o"/>
-        <file value="hccl_aiv_op_ascend910B.o"/>
+        <file value="hccl_aiv_all_reduce_op.o"/>
+        <file value="hccl_aiv_reduce_scatter_op.o"/>
+        <file value="hccl_aiv_all_gather_op.o"/>
+        <file value="hccl_aiv_broadcast_op.o"/>
+        <file value="hccl_aiv_all_to_all_op.o"/>
+        <file value="hccl_aiv_all_to_all_v_op.o"/>
+        <file value="hccl_aiv_all_to_all_vc_op.o"/>
+        <file value="hccl_aiv_reduce_scatter_v_op.o"/>
+        <file value="hccl_aiv_all_gather_v_op.o"/>
         <file value="hccl_ag_superkernel_int8.o"/>
         <file value="hccl_ag_superkernel_int16.o"/>
         <file value="hccl_ag_superkernel_int32.o"/>
@@ -246,7 +264,6 @@
         <file value="libra_hdc.so" file_type="shared"/>
         <file value="librs.so" file_type="shared"/>
         <file value="libra_peer.so" file_type="shared"/>
-        <file value="libascend_kms.so" file_type="shared"/>
         <file value="libtls_adp.so" file_type="shared"/>
         <!-- python -->
         <file value="hccl-0.1.0-py3-none-any.whl" file_type="whl"/>

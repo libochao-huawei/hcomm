@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -34,6 +34,7 @@
 #include "ccu_context_mgr_imp.h"
 #include "coll_operator_check.h"
 #include "recover_info.h"
+#include "internal_exception.h"
 
 #undef private
 
@@ -126,8 +127,9 @@ HcclResult CcuJettyMgrPrepareCreateStub(CcuJettyMgr *self, const std::vector<Lin
 
 void MockCcuTransportMgrDevs()
 {
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue((int32_t)MAX_MODULE_DEVICE_NUM - 1));
-    
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(MAX_MODULE_DEVICE_NUM -
+	    1)));
+
     HcclResult OkResult = HcclResult::HCCL_SUCCESS;
     HcclResult AgainResult = HcclResult::HCCL_E_AGAIN;
     MOCKER(CcuDeviceManager::AllocCke).stubs().will(invoke(AllocCcuResStub));
@@ -152,6 +154,8 @@ void MockCcuTransportMgrDevs()
 
     MOCKER_CPP(&CcuTransport::Init).stubs().will(returnValue(OkResult));
     MOCKER_CPP(&CcuConnection::Init).stubs().will(returnValue(OkResult));
+
+    MOCKER(HrtRaUbUnimportJetty).stubs().with(any(), any()).will(ignoreReturnValue());
 }
 
 TEST_F(CcuTransportMgrTest, Ut_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
@@ -510,7 +514,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -593,7 +597,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_Uncompleted_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -631,7 +635,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -680,7 +684,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_no_delete_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -718,7 +722,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -767,7 +771,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_return_false_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -805,7 +809,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -854,7 +858,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     MOCKER(&RaCtxQpDestroyBatchAsync).stubs().with().will(invoke(RaCtxQpDestroyBatchAsync_num_false_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -892,7 +896,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -939,7 +943,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     auto commImpl = MockCommImpl();
     MockCcuTransportMgrDevs();
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(invoke(HrtRaGetAsyncReqResult_TimeOut_CCU));
-    
+
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
@@ -977,7 +981,7 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
     const uint32_t fakeSqDepth = 4;
     const IpAddress locAddr{"1.1.1.1"};
     const IpAddress rmtAddr{"2.2.2.2"};
-    
+
     vector<unique_ptr<CcuJetty>> ccuJettys;
     vector<CcuJetty *> ccuJettyPtrs;
     for (uint32_t i = 0; i < CCU_JETTY_GOURP_SIZE; i++) {
@@ -1008,4 +1012,21 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_Error_When_InterfaceOk_Expect_Return_Error_
         }
     }
     transportMgr.Clean();
+}
+TEST_F(CcuTransportMgrTest, Ut_DumpNotReadyTransport)
+{
+    MOCKER_CPP(&Socket::Describe).stubs().will(returnValue(StringFormat("Socket[role=...]")));
+    Socket socket{nullptr,IpAddress(),0,IpAddress(),"stub",SocketRole::CLIENT,NicType::DEVICE_NIC_TYPE};
+    CcuTransport::CclBufferInfo locCclBufInfo{};
+    CcuTransport ccuTransport{&socket, nullptr, locCclBufInfo}; 
+    BasePortType portType(PortDeploymentType::P2P, ConnectProtoType::UB);
+    LinkData fakeLinkData(portType,0,1,0,1);
+
+    auto transport = std::make_pair(&ccuTransport, fakeLinkData);
+    vector<std::pair<CcuTransport*, LinkData>> transports{transport};
+
+    int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    auto commImpl = MockCommImpl();
+    CcuTransportMgr transportMgr(*commImpl, devLogicId);
+    transportMgr.DumpNotReadyTransports(transports);
 }

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "rts_notify.h"
@@ -37,6 +37,12 @@ std::string RtsNotify::SetIpcName() const
     char ipcName[RTS_IPC_MEM_NAME_LEN] = {0};
     HrtIpcSetNotifyName(handle, ipcName, RTS_IPC_MEM_NAME_LEN);
     return ipcName;
+}
+
+
+void RtsNotify::SetIpcPid(s32 pid) const
+{
+    HrtSetIpcNotifyPid(handle, pid);
 }
 
 u32 RtsNotify::GetId() const

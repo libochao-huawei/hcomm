@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -83,8 +83,8 @@ void HcclStTestCase::InternalProcess(ThreadContext *ctx)
 
         // 3. 准备集合通信用到的入参
         Hccl::CollOpParams collOpParams = CreateCollOpParams(ctx);
-        rtStream_t         stream       = nullptr;
-        rtStreamCreateWithFlags(&stream, 0, 0);
+        aclrtStream         stream       = nullptr;
+        aclrtCreateStreamWithConfig(&stream, 0U, 0U);
 
         // 4. 执行集合通信
         auto res = communicator->LoadOpbasedCollOp(collOpParams, stream);

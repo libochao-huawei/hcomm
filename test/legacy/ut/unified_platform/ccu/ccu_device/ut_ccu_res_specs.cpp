@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -180,10 +180,10 @@ void PrepareInitMocker()
 
 void MockRtGetDeviceInfo(int64_t outVal)
 {
-    MOCKER(rtGetDeviceInfo)
+    MOCKER(aclrtGetDeviceInfo)
         .stubs()
-        .with(any(), any(), any(), outBoundP(&outVal, sizeof(outVal)))
-        .will(returnValue(RT_ERROR_NONE));
+        .with(any(), any(), outBoundP(&outVal, sizeof(outVal)))
+        .will(returnValue(ACL_SUCCESS));
 }
 
 TEST_F(CcuResSpecsTest, Ut_Init_When_CcuDriverOk_Expect_Return_Ok)

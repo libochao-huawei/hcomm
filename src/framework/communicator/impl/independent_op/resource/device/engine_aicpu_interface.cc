@@ -10,37 +10,57 @@
 
 #include "channel_aicpu_interface.h"
 #include "framework/aicpu_hccl_process.h"
+#include "adapter_rts.h"
+#include "aicpu_indop_process.h"
+#include "aicpu_thread_process.h"
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *args)
 {
-    if (args == nullptr) {
-        HCCL_ERROR("args is null.");
-        return HCCL_E_PARA;
+    CHK_PTR_NULL(args);
+    uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
+    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(devAddr);
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_950) {
+        HCCL_INFO("[RunAicpuIndOpThreadInit] group[%s], threadNum[%u], deviceType[%u]",
+                param->hcomId, param->threadNum, devType);
+        return AicpuIndopProcess::AicpuIndOpThreadInit(param);
     }
- 
-    struct InitTask {
-        u64 context;
-        bool isCustom;
-    };
-    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
 }
 
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
 {
-    if (args == nullptr) {
-        HCCL_ERROR("args is null.");
-        return HCCL_E_PARA;
+    CHK_PTR_NULL(args);
+    uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
+    NotifyMgrAicpuParam* param = reinterpret_cast<NotifyMgrAicpuParam*>(devAddr);
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_950) {
+        HCCL_INFO("[RunAicpuIndOpNotify] group[%s], notifyNum[%u], deviceType[%u]",
+        param->hcomId, param->notifyNum, devType);
+        return AicpuIndopProcess::AicpuIndOpNotifyInit(param);
     }
- 
-    struct InitTask {
-        u64 context;
-        bool isCustom;
-    };
-    InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    NotifyMgrAicpuParam* param = reinterpret_cast<NotifyMgrAicpuParam*>(ctxArgs->context);
     return AicpuHcclProcess::AicpuIndOpNotifyInit(param);
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuThreadInit(void* args)
+{
+    CHK_PTR_NULL(args);
+    uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
+    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(devAddr);
+    HCCL_INFO("[RunAicpuThreadInit] threadNum[%u], deviceLogicId[%d], deviceType[%u]", 
+        param->threadNum, param->deviceLogicId, param->deviceType);
+    return AicpuThreadProcess::AicpuThreadInit(param);
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuThreadDestroy(void* args) 
+{
+    CHK_PTR_NULL(args);
+    uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
+    ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(devAddr);
+    HCCL_INFO("[RunAicpuThreadDestroy] threadNum[%u]", param->threadNum);
+    return AicpuThreadProcess::AicpuThreadDestroy(param);
 }
 }

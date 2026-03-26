@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -285,7 +285,7 @@ TEST_F(OpbaseTestV2, HcclCommInitClusterInfoV2)
     char *identify = "0";
     s32 rankSize = 1;
     s32 rank = atoi(identify);
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
 
     char *clusterInfo = "./st_hcom_test_rank_table_1server_8rank_910D.json";
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue(devType));
@@ -445,7 +445,7 @@ TEST_F(OpbaseTestV2, HcclReduceV2_Sum_ShouldPass_WhenValidParams)
     hcclComm->pimpl->rankSize = 4;
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
@@ -465,7 +465,7 @@ TEST_F(OpbaseTestV2, HcclReduceV2_PROD_ShouldFail_WhenValidParams)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
@@ -487,7 +487,7 @@ TEST_F(OpbaseTestV2, HcclReduceV2_MAX_ShouldPass_WhenValidParams)
     hcclComm->pimpl->rankSize = 4;
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
@@ -509,7 +509,7 @@ TEST_F(OpbaseTestV2, HcclReduceV2_MIN_ShouldPass_WhenValidParams)
     hcclComm->pimpl->rankSize = 4;
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
@@ -528,7 +528,7 @@ TEST_F(OpbaseTestV2, HcclAllReduceV2_Sum_ShouldPass_WhenValidParams_v2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
@@ -546,7 +546,7 @@ TEST_F(OpbaseTestV2, HcclAllReduceV2_PROD_ShouldFail_WhenValidParams_v2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream);
     EXPECT_EQ(result, HCCL_E_NOT_SUPPORT);
@@ -564,7 +564,7 @@ TEST_F(OpbaseTestV2, HcclAllReduceV2_MAX_ShouldPass_WhenValidParams_v2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
@@ -582,7 +582,7 @@ TEST_F(OpbaseTestV2, HcclAllReduceV2_MIN_ShouldPass_WhenValidParams_v2)
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     aclrtStream stream = &count;
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
@@ -770,7 +770,7 @@ TEST_F(OpbaseTestV2, HcclReduceScatterV2)
     HcclComm comm = static_cast<HcclComm>(hcclComm.get());
     int a = 10;
     aclrtStream stream = static_cast<aclrtStream>(&a);
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     HcclReduceOp op = HCCL_REDUCE_SUM;
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
@@ -808,7 +808,7 @@ TEST_F(OpbaseTestV2, HcclGetRawCommHandle)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_OK)
+TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_OK)
 {
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
@@ -819,11 +819,11 @@ TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_OK)
     void *ccuTaskGroup = static_cast<void*>(&a);
     void *fusionArgs = static_cast<void*>(&a);
     MOCKER_CPP(&HcclCommunicator::GetCcuTaskInfo).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = HcclGetCcuTaskInfo(comm, fusionArgs, ccuTaskGroup);
+    HcclResult ret = HcclGetCcuTaskInfoLegacy(comm, fusionArgs, ccuTaskGroup);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_ERR)
+TEST_F(OpbaseTestV2, HcclGetCcuTaskInfoLegacy_ERR)
 {
     Hccl::CommParams commParams;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm_1 = std::make_shared<Hccl::HcclCommunicator>(commParams);
@@ -833,7 +833,7 @@ TEST_F(OpbaseTestV2, HcclGetCcuTaskInfo_ERR)
     void *ccuTaskGroup = static_cast<void*>(&a);
     void *fusionArgs = static_cast<void*>(&a);
     MOCKER_CPP(&HcclCommunicator::GetCcuTaskInfo).stubs().with(any(), any()).will(returnValue(HCCL_E_INTERNAL));
-    HcclResult ret = HcclGetCcuTaskInfo(comm, fusionArgs, ccuTaskGroup);
+    HcclResult ret = HcclGetCcuTaskInfoLegacy(comm, fusionArgs, ccuTaskGroup);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
@@ -942,7 +942,7 @@ TEST_F(OpbaseTestV2, SnapshotGenerate)
 
 TEST_F(OpbaseTestV2, HcclSnapshotGetBufSize_OK)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
 
     HcclGroupParamsV2 hcclGroupParamsV2;
     Hccl::CommParams commParams;
@@ -968,7 +968,7 @@ TEST_F(OpbaseTestV2, HcclSnapshotGetBufSize_OK)
 
 TEST_F(OpbaseTestV2, HcclSnapshotGetBufSize_HCCL_SUCCESS)
 {
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
 
     HcclGroupParamsV2 hcclGroupParamsV2;
     Hccl::CommParams commParams;
@@ -1085,7 +1085,7 @@ TEST_F(OpbaseTestV2, HcclCreateSubCommConfigV2_IDEL)
     hcclcomm.get()->GetCommImpl()->isWorldGroup = true;
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&CommunicatorImpl::RegisterAcceStateCallBack).stubs().will(ignoreReturnValue());
-    DevType devType = DevType::DEV_TYPE_910_95;
+    DevType devType = DevType::DEV_TYPE_950;
     MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue(devType));
     HcclResult ret = HcclCreateSubCommConfigV2(&comm, rankNum, &rankIds, subCommId, subCommRankId, &config, &subComm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -1656,7 +1656,7 @@ TEST_F(OpbaseTestV2, St_HcclGetRootInfoV2_When_NoNeedInput_Expect_Return_HCCL_SU
     HcclRootHandleV2 rootHandle{};
     MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(outBound(rootHandle)).will(ignoreReturnValue());
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     
     // then
     HcclRootInfo rootInfo{};
@@ -1668,7 +1668,7 @@ TEST_F(OpbaseTestV2, St_HcclGetRootInfoV2_When_Throw_Expect_Return_HCCL_E_INTERN
     // when
     MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(any(), any()).will(throws(InternalException("...")));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     
     // then
     HcclRootInfo rootInfo{};
@@ -1681,7 +1681,7 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoV2_When_InputValue_Expect_Return_HCC
     HcclRootHandleV2 rootHandle{};
     MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
     MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -1700,7 +1700,7 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoV2_When_Throw_Expect_Return_HCCL_E_I
     // when
     MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(throws(InternalException("...")));
     MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -1723,7 +1723,7 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoConfigV2_When_InputValue_Expect_Retu
     HcclRootHandleV2 rootHandle{};
     MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
     MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -1746,7 +1746,7 @@ TEST_F(OpbaseTestV2, St_HcclCommInitRootInfoConfigV2_When_Throw_Expect_Return_HC
     // when
     MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(throws(InternalException("...")));
     MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -1769,10 +1769,10 @@ TEST_F(OpbaseTestV2, St_HcclCommInitAllV2_When_InputValue_Expect_Return_HCCL_SUC
     HcclRootHandleV2 rootHandle{};
     MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(outBound(rootHandle)).will(ignoreReturnValue());
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
     MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -1791,10 +1791,10 @@ TEST_F(OpbaseTestV2, St_HcclCommInitAllV2_When_Throw_Expect_Return_HCCL_E_INTERN
     // when
     MOCKER_CPP(&RankInfoDetect::SetupServer).stubs().with(any(), any()).will(throws(InternalException("...")));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER_CPP(&RankInfoDetect::SetupAgent).stubs().with(any(), any(), any()).will(ignoreReturnValue());
     MOCKER_CPP(&RankInfoDetect::WaitComplete).stubs().with(any()).will(ignoreReturnValue());
-    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+    MOCKER(HrtGetDeviceType).stubs().with(any()).will(returnValue((DevType)DevType::DEV_TYPE_950));
     MOCKER(HrtGetDeviceCount).stubs().will(returnValue(1));
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const RankTableInfo &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());

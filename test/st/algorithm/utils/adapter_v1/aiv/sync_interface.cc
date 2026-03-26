@@ -36,7 +36,7 @@ template<HardEvent event> __aicore__ void SyncFunc()
 }
 
 // 在gm上设置同步信号的值
-__aicore__ void SetSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value)
+__aicore__ void SetSignalValue(__gm__ int32_t* gmSignalAddr, LocalTensor<int32_t>& localTensor, int32_t value, bool ifSet)
 {
     RankId curRank = RankInfoRecorder::Global()->GetRankId();
     std::shared_ptr<TaskStub> setValueTask(new TaskStubSetValue(value));

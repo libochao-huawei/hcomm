@@ -10,6 +10,9 @@
 #ifndef HCCL_MC2_TYPE_H
 #define HCCL_MC2_TYPE_H
 
+#include <string>
+#include <unordered_map>
+#include <vector>
 #include "exception_util.h"
 #include "ccu_api_exception.h"
 #include "op_type.h"
@@ -261,12 +264,12 @@ struct HcclCombinOpParam {
     uint64_t ckeAddr; // CKE寄存器其实地址
     uint64_t msAddr; // MS地址，预留
     uint64_t msSize; // 可写的MS个数，预留
-    
-    HcclAiRMAWQ wq[MAX_RANK_NUM];
- 	HcclAiRMACQ cq[MAX_RANK_NUM];
 
     uint32_t opType[MAX_OP_NUM];
     uint8_t  algorithmType[MAX_OP_NUM];
+
+    HcclAiRMAWQ wq[MAX_RANK_NUM];
+    HcclAiRMACQ cq[MAX_RANK_NUM];
 };
 
 struct Mc2ServerCfg {

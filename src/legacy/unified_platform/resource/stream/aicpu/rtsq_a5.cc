@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include <chrono>
@@ -19,6 +19,9 @@
 #include "sqe_build_a5.h"
 #include "sqe.h"
 #include "communicator_impl_lite_manager.h"
+#ifdef CCL_KERNEL_AICPU
+#include "hccl_api_data_aicpu_ts.h"
+#endif
 
 namespace Hccl {
 using namespace std;
@@ -29,6 +32,14 @@ RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId) : RtsqBase(devPhyId, stream
     if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
         taskId_ = 0;
     }
+}
+
+RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase(devPhyId, streamId, sqId)
+{
+    if (UNLIKELY(SetTaskIdBySqeId() != HCCL_SUCCESS)) {
+        taskId_ = 0;
+    }
+    launchFlag_ = launchFlag;
 }
 
 void RtsqA5::Reset()
@@ -154,7 +165,7 @@ void RtsqA5::LaunchTask()
     // 清空本地的locBuffer和sqeCnt数目
     pendingSqeCnt = 0;
     (void)memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt); // locBuffer清零
-    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqTail_[%u]", __func__, pendingSqeCnt, sqTail_);
+    HCCL_INFO("RtsqA5::%s: END, pendingSqeCnt[%u], sqHead_[%u] sqTail_[%u]", __func__, pendingSqeCnt, sqHead_, sqTail_);
 }
 
 u8 *RtsqA5::GetCurrSqeBuffer()
@@ -170,6 +181,13 @@ void RtsqA5::RefreshInfo()
     }
     pendingSqeCnt++;
     HCCL_INFO("RtsqA5::%s: Updated: taskId_[%u], pendingSqeCnt[%u]", __func__, taskId_, pendingSqeCnt);
+    
+#ifdef CCL_KERNEL_AICPU
+    if (launchFlag_ && !IsBatchLaunchMode()) {
+        LaunchTask();
+        return;
+    }
+#endif
 
     if (pendingSqeCnt != perLaunchSqeCnt) {
         return;
@@ -327,6 +345,15 @@ void RtsqA5::CCoreNotifyRecord(u64 recordAddr, u64 curTurnCntAddr)
     HCCL_INFO("RtsqA5::CCoreNotifyRecord: CCoreNotifyRecord Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     HCCL_INFO("RtsqA5::CCoreNotifyRecord: streamId %u, taskId %u, recordAddr %llu, curTurnCntAddr %llu", streamId_, taskId_,
               recordAddr, curTurnCntAddr);
+    RefreshInfo();
+}
+
+void RtsqA5::P2PWriteValue(u64 remoteAddr, u32 writeValue)
+{
+    BuildA5SqeP2pWriteValue(streamId_, taskId_, remoteAddr, writeValue, GetCurrSqeBuffer());
+    HCCL_INFO("RtsqA5::P2PWriteValue: P2PWriteValue Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
+    HCCL_INFO("RtsqA5::P2PWriteValue: streamId %u, taskId %u, remoteAddr %llu, writeValue %llu",
+        streamId_, taskId_, remoteAddr, writeValue);
     RefreshInfo();
 }
 }

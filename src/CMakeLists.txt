@@ -110,7 +110,7 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/hcom
     ${HCCL_BASE_DIR}/framework/communicator/impl/
     ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service/
-    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy_memory_agent
+    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy
     ${HCCL_BASE_DIR}/framework/communicator/impl/resource_manager
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
@@ -119,7 +119,8 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
     ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
-    ${HCCL_BASE_DIR}/framework/next/coll_comms
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/aicpu
     ${HCCL_BASE_DIR}/framework/op_base/src/
 
     ${HCCL_BASE_DIR}/platform/
@@ -209,6 +210,7 @@ else()
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/inc/aicpu/
         ${TOP_DIR}/abl/msprof/inc
+        ${TOP_DIR}/hcomm/src/framework/common/src
         ${TOP_DIR}/ace/npuruntime/inc
         ${TOP_DIR}/ace/npuruntime/inc/runtime
 
@@ -471,6 +473,10 @@ endif()
 
 add_dependencies(ccl_kernel_plf json)
 add_dependencies(hccd json)
+if(BUILD_OPEN_PROJECT)
+    add_dependencies(ccl_kernel_plf hccl_legacy)
+    add_dependencies(hccd hccl_legacy)
+endif()
 
 target_compile_definitions(ccl_kernel_plf PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
@@ -586,7 +592,7 @@ else()
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:hccl_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         -Wl,--no-as-needed
@@ -606,7 +612,7 @@ else()
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:hccl_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         -Wl,--no-as-needed

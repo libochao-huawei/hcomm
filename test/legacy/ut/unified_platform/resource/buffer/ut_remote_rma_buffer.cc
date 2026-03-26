@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -15,8 +15,11 @@
 #include "local_ub_rma_buffer.h"
 #include "exchange_ub_buffer_dto.h"
 #include "exchange_ipc_buffer_dto.h"
+#include "exchange_rdma_buffer_dto.h"
 #define private public
 #define protected public
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "buffer_type.h"
 #undef protected
@@ -48,6 +51,21 @@ protected:
         std::cout << "A Test case in RemoteRmaBuffer TearDown." << std::endl;
     }
     std::shared_ptr<DevBuffer> devBuf;
+};
+
+TEST_F(RemoteRmaBufferTest, remoterdmarmabuffer_construct_with_dto)
+{
+    ExchangeRdmaBufferDto dto;
+    dto.addr = 0x114;
+    dto.size = 0x514;
+    dto.rkey = 1919;
+    dto.memTag = "testTag";
+    RdmaHandle rdmaHandle = (RdmaHandle)0x1000000;
+    RemoteRdmaRmaBuffer buffer(rdmaHandle, dto);
+    EXPECT_EQ(dto.addr, buffer.GetAddr());
+    EXPECT_EQ(dto.size, buffer.GetSize());
+    EXPECT_EQ(dto.rkey, buffer.GetRkey());
+    EXPECT_STREQ(dto.memTag.c_str(), buffer.GetMemTag().c_str());
 };
 
 TEST_F(RemoteRmaBufferTest, remoteubrmabuffer_construct_error)

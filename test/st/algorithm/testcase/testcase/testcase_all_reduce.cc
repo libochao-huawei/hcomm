@@ -252,7 +252,6 @@ TEST_F(AllReduceTest, allreduce_allReduceComm_executor_test)
 
 TEST_F(AllReduceTest, allreduce_executor_test_loop)
 {
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1303,7 +1302,6 @@ TEST_F(AllReduceTest, allreduce_mix_AllReduceMixExecutor_deter_comm)
 
 TEST_F(AllReduceTest, allreduce_aiv_a2_AllReduceMeshAivExecutor)
 {
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     RankTable_For_LLT gen;
@@ -1329,7 +1327,6 @@ TEST_F(AllReduceTest, allreduce_aiv_a2_AllReduceMeshAivExecutor)
 
 TEST_F(AllReduceTest, allreduce_aiv_a3_graph_AllReduceMeshAivSmallCountExecutor)
 {
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     RankTable_For_LLT gen;
@@ -1723,7 +1720,6 @@ TEST_F(AllReduceTest, allreduce_aiv_determinstic_small_test)
 
     setenv("HCCL_DETERMINISTIC", "true", 1);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
 
@@ -1752,7 +1748,6 @@ TEST_F(AllReduceTest, allreduce_aiv_determinstic_test)
 
     setenv("HCCL_DETERMINISTIC", "true", 1);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
 
@@ -1781,7 +1776,6 @@ TEST_F(AllReduceTest, allreduce_aiv_determinstic_mid_test)
 
     setenv("HCCL_DETERMINISTIC", "true", 1);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
 
@@ -1948,6 +1942,78 @@ TEST_F(AllReduceTest, allreduce_A3_AllReducemidcountExecutor)
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
     checkerOpParam.algName = "AllReduceMidCountFor91093Executor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllReduceTest, AllReduceOrderPreservedFor91093Executor1)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 1, 8);
+    //setenv("HCCL_DETERMINISTIC", "STRICT", 1);
+    setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllREDUCE";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 1024;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "AllReduceOrderPreservedFor91093Executor";
+    checkerOpParam.aicpuUnfoldMode = true;
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllReduceTest, AllReduceOrderPreservedFor91093Executor2)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 4, 4);
+    //setenv("HCCL_DETERMINISTIC", "STRICT", 1);
+    setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllREDUCE";
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 1024;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "AllReduceOrderPreservedFor91093Executor";
+    checkerOpParam.aicpuUnfoldMode = true;
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllReduceTest, AllReduceOrderPreservedFor91093Executor3)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 2, 2, 8);
+    //setenv("HCCL_DETERMINISTIC", "STRICT", 1);
+    setenv("HCCL_OP_EXPANSION_MODE", "AI_CPU", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllREDUCE";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
+    checkerOpParam.DataDes.count = 1024;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "AllReduceOrderPreservedFor91093Executor";
+    checkerOpParam.aicpuUnfoldMode = true;
 
     Checker checker;
     HcclResult ret;

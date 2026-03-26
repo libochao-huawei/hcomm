@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -12,6 +12,7 @@
 #include "range_utils.h"
 #include "log.h"
 #include "internal_exception.h"
+#include "string_util.h"
 namespace Hccl {
 
 Buffer::Buffer(uintptr_t addr, std::size_t size) : addr_(addr), size_(size)
@@ -58,7 +59,7 @@ HcclMemType Buffer::GetMemType() const
     return memType_;
 }
 
-const char* Buffer::GetMemTag() const
+const std::string Buffer::GetMemTag() const
 {
     return mem_Tag_;
 }

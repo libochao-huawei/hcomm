@@ -4,12 +4,15 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef P2P_TRANSPORT_H
 #define P2P_TRANSPORT_H
+
 #include "base_mem_transport.h"
+#include "virtual_topo.h"
+
 namespace Hccl {
 class P2PTransport : public BaseMemTransport {
 public:
@@ -21,7 +24,7 @@ public:
 
     TransportStatus GetStatus() override;
 
-    // RemoteRmaBuffer *GetRmtRmaBuffer(u32 index) override // transport完成交换后该方法挪到父类中
+    std::vector<char> GetUniqueId() override;
 
     void Post(u32 index, const Stream &stream) override;
 
@@ -62,6 +65,12 @@ private:
 
     void RmtNotifyVecUnpackProc(BinaryStream &binaryStream);
     void RmtBufferVecUnpackProc(BinaryStream &binaryStream);
+
+    std::vector<char> GetSingleRmtNotifyUniqueId(u64 addr, u64 size, u32 notifyId) const;
+    std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size) const;
+    std::vector<char> GetNotifyUniqueIds();
+    std::vector<char> GetRmtNotifyUniqueIds() const;
+    std::vector<char> GetRmtBufferUniqueIds() const;
 };
 
 } // namespace Hccl

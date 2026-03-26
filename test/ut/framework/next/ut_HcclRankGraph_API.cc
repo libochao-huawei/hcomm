@@ -11,7 +11,7 @@ class HcclRankGraphTest: public BaseInit {
         GlobalMockObject::verify();
     }
     protected: void SetUpCommAndGraph(std::shared_ptr < hccl::hcclComm > &hcclCommPtr, std::shared_ptr < Hccl::RankGraph > &rankGraphV2, void* &comm, HcclResult &ret) {
-        MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_910_95)).will(returnValue(HCCL_SUCCESS));
+        MOCKER(hrtGetDeviceType).stubs().with(outBound(DevType::DEV_TYPE_950)).will(returnValue(HCCL_SUCCESS));
 
         bool isDeviceSide {
             false
@@ -31,6 +31,8 @@ class HcclRankGraphTest: public BaseInit {
         hcclCommPtr = std::make_shared<hccl::hcclComm>(1, 1, commName);
         HcclCommConfig config;
         config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+        config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+        config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
         ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
         CollComm* collComm = hcclCommPtr->GetCollComm();
         comm = static_cast<HcclComm>(hcclCommPtr.get());

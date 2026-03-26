@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -152,14 +152,16 @@ void CcuJetty::GetJettyInfo(ConnJettyInfo& connJettyInfo)
     }
 }
 
-void CcuJetty::Clean()
+HcclResult CcuJetty::Clean()
 {
-    if (isCreated_ && outParam_.handle != 0) {
-        isCreated_ = false;
-        reqHandle_ = 0;
-        jettyHandlePtr_ = nullptr;
-        reqDataBuffer_.clear();
-    }
-    isError_ = false;
+    TRY_CATCH_RETURN(
+        if (isCreated_ && outParam_.handle != 0) {
+            isCreated_ = false;
+            reqHandle_ = 0;
+            jettyHandlePtr_ = nullptr;
+            reqDataBuffer_.clear();
+        }
+        isError_ = false;);
+    return HcclResult::HCCL_SUCCESS;
 }
 } // namespace Hccl

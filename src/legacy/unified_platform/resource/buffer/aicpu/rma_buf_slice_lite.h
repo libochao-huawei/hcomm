@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef HCCLV2_RMA_BUFFER_SLICE_LITE_H
@@ -16,11 +16,11 @@
 namespace Hccl {
 class RmaBufSliceLite {
 public:
-    RmaBufSliceLite(u64 addr, u32 size, u32 lkey, u32 tokenId);
+    RmaBufSliceLite(u64 addr, u64 size, u32 lkey, u32 tokenId);
 
     u64 GetAddr() const;
 
-    u32 GetSize() const;
+    u64 GetSize() const;
 
     u32 GetLkey() const;
 
@@ -30,7 +30,7 @@ public:
 
 private:
     u64 addr_;
-    u32 size_;
+    u64 size_;
     u32 lkey_;
     u32 tokenId_;
 };

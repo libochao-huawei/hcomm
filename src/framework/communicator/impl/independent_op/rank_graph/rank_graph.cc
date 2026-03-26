@@ -24,7 +24,7 @@ const RankInfo_t* RankGraphV1::FindRank(uint32_t rankId) const {
     return &(it->second.rankInfo);
 }
 
-HcclResult RankGraphV1::DevTypeToCommProtocol(DevType &type, CommProtocol &protocol)
+HcclResult RankGraphV1::DevTypeToCommProtocol(DevType &type, CommProtocol &protocol) const
 {
     CHK_RET(hrtGetDeviceType(type));
     switch (type) {
@@ -40,7 +40,7 @@ HcclResult RankGraphV1::DevTypeToCommProtocol(DevType &type, CommProtocol &proto
         case DevType::DEV_TYPE_NOSOC:
             protocol = CommProtocol::COMM_PROTOCOL_PCIE;
             break;
-        case DevType::DEV_TYPE_910_95:
+        case DevType::DEV_TYPE_950:
             // 待扩展UB的协议，当前先不支持
             protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
             break;
@@ -52,7 +52,7 @@ HcclResult RankGraphV1::DevTypeToCommProtocol(DevType &type, CommProtocol &proto
 }
 
 HcclResult RankGraphV1::BuildRankGraphInfo(const RankInfo_t &rankItem,
-    const CommProtocol &protocol, RankGraphInfo &outInfo)
+    const CommProtocol &protocol, RankGraphInfo &outInfo) const
 {
     HCCL_INFO("[RankGraphV1][%s] rankId[%u] serverId[%s] serverIdx[%u] superDeviceId[%u] superPodId[%s] "
         "devicePhyId[%u]", __func__, rankItem.rankId, rankItem.serverId.c_str(), rankItem.serverIdx,
@@ -71,7 +71,6 @@ HcclResult RankGraphV1::BuildRankGraphInfo(const RankInfo_t &rankItem,
             point.commAddr.type = COMM_ADDR_TYPE_IP_V4;
             point.commAddr.addr = addr.GetBinaryAddress().addr;
         }
-        point.commAddr.id = rankItem.rankId;
         point.protocol = protocol;
         point.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
         point.loc.device.devPhyId = rankItem.deviceInfo.devicePhyId;
@@ -184,7 +183,7 @@ CommProtocol RankGraphV1::GetCommProtocolInSameServer(const RankInfo_t &srcInfo,
     return CommProtocol::COMM_PROTOCOL_RESERVED;
 }
 
-CommProtocol RankGraphV1::GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo)
+CommProtocol RankGraphV1::GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo) const
 {
     // srcInfo与dstInfo一定是相同数据类型
     if (devType_ == DevType::DEV_TYPE_310P3 || devType_ == DevType::DEV_TYPE_310P1) {
@@ -247,7 +246,7 @@ CommProtocol RankGraphV1::GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo,
     return CommProtocol::COMM_PROTOCOL_RESERVED;
 }
 
-bool RankGraphV1::NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol)
+bool RankGraphV1::NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol) const
 {
     if (srcProtocol != dstProtocol) {
         return true;
@@ -264,18 +263,17 @@ bool RankGraphV1::NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dst
     return false;
 }
 
-void RankGraphV1::PrintLinksInfo(CommLink &link)
+void RankGraphV1::PrintLinksInfo(CommLink &link) const
 {
     // 打印CommLink 头部基础信息
     HCCL_INFO("[RankGraphV1][%s] link.header.version[%u] magicWord[0x%08x] size[%u] reserved[%u]", __func__,
         link.header.version, link.header.magicWord, link.header.size, link.header.reserved);
 
     // 打印【源端】srcEndpointDesc 完整信息
-    HCCL_INFO("[RankGraphV1][%s] srcProtocol[%d] srcCommAddrType[%d] srcCommAddrId[%u] srcLocType[%d] srcDevPhyId[%u] "
+    HCCL_INFO("[RankGraphV1][%s] srcProtocol[%d] srcCommAddrType[%d] srcLocType[%d] srcDevPhyId[%u] "
         "srcSuperDevId[%u] srcServerIdx[%u] srcSuperPodIdx[%u]", __func__,
         link.srcEndpointDesc.protocol,
         link.srcEndpointDesc.commAddr.type,
-        link.srcEndpointDesc.commAddr.id,
         link.srcEndpointDesc.loc.locType,
         link.srcEndpointDesc.loc.device.devPhyId,
         link.srcEndpointDesc.loc.device.superDevId,
@@ -283,11 +281,10 @@ void RankGraphV1::PrintLinksInfo(CommLink &link)
         link.srcEndpointDesc.loc.device.superPodIdx);
 
     // 打印【目的端】dstEndpointDesc 完整信息
-    HCCL_INFO("[RankGraphV1][%s] dstProtocol[%d] dstCommAddrType[%d] dstCommAddrId[%u] dstLocType[%d] dstDevPhyId[%u] "
+    HCCL_INFO("[RankGraphV1][%s] dstProtocol[%d] dstCommAddrType[%d] dstLocType[%d] dstDevPhyId[%u] "
         "dstSuperDevId[%u] dstServerIdx[%u] dstSuperPodIdx[%u]", __func__,
         link.dstEndpointDesc.protocol,
         link.dstEndpointDesc.commAddr.type,
-        link.dstEndpointDesc.commAddr.id,
         link.dstEndpointDesc.loc.locType,
         link.dstEndpointDesc.loc.device.devPhyId,
         link.dstEndpointDesc.loc.device.superDevId,

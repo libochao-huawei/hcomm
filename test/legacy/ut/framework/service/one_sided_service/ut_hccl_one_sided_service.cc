@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -28,7 +28,8 @@
 #include "rank_table.h"
 #include "kfc.h"
 #include "transport_urma_mem.h"
-
+#include "dev_buffer.h"
+#include "rma_buffer.h"
 #undef protected
 #undef private
  
@@ -57,10 +58,10 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
     }
  
     virtual void TearDown()
@@ -202,6 +203,7 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), RankIdA, RankIdB, 0, 1);
     StubCommunicatorImplTransMgr fakeCommA;
     fakeCommA.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    fakeCommA.RegisterAicpuKernel();
     HcclOneSidedService oneSidedServiceA(fakeCommA);
     HcclMemDesc MemDescA;
     HcclMemDesc MemDescB;
@@ -258,7 +260,7 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     u32 descNum = 1;
 
     rtStream_t stream = nullptr;
-    MOCKER(rtStreamCreateWithFlags).stubs().with(outBoundP(&stream, sizeof(stream))).will(returnValue(RT_ERROR_NONE));
+    MOCKER(aclrtCreateStreamWithConfig).stubs().with(outBoundP(&stream, sizeof(stream))).will(returnValue(ACL_SUCCESS));
     fakeCommA.hostDeviceSyncNotifyManager = std::make_unique<HostDeviceSyncNotifyManager>();
 
     fakeCommA.InitStreamManager();

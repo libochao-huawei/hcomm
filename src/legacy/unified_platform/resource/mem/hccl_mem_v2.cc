@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hccl_mem_v2.h"
@@ -86,8 +86,8 @@ HcclResult HcclMemDeregV2(const HcclBuf *buf)
 HcclResult HcclMemExportV2(HcclBuf *buf, char **outDesc, uint64_t *outDescLen)
 {
     if (buf == nullptr || buf->handle == nullptr || outDesc == nullptr || outDescLen == nullptr) {
-        HCCL_ERROR("[%s] buf[%p] or hanele[%p] or outDesc[%p] or outDescLen[%p] is null",
-            __func__, buf->handle, buf, outDesc, outDescLen);
+        HCCL_ERROR("[%s] buf[%p] or buf->hanele or outDesc[%p] or outDescLen[%p] is null",
+            __func__, buf, outDesc, outDescLen);
         return HCCL_E_PTR;
     }
     HCCL_INFO("[%s] Begin, addr[%p], size[%llu], handle[%p]", __func__, buf->addr, buf->len, buf->handle);
@@ -141,7 +141,11 @@ HcclResult HcclMemImportV2(const char *description, uint64_t descLen, bool isRem
     dto.Deserialize(remoteRdmaRmaBufferStream);
 
     // 构造RemoteUbRmaBuffer
-    RemoteUbRmaBuffer *remoteUbRmaBuffer = new RemoteUbRmaBuffer(hcclNetDevice->GetRdmaHandle(), dto);
+    RemoteUbRmaBuffer *remoteUbRmaBuffer = new(std::nothrow) RemoteUbRmaBuffer(hcclNetDevice->GetRdmaHandle(), dto);
+    if(remoteUbRmaBuffer == nullptr) {
+        HCCL_ERROR("[%s] Failed to allocate RemoteUbRmaBuffer", __func__);
+        return HCCL_E_PTR;
+    }
 
     // 填充HcclBuf
     outBuf->addr   = reinterpret_cast<void *>(remoteUbRmaBuffer->GetAddr());
@@ -154,7 +158,7 @@ HcclResult HcclMemImportV2(const char *description, uint64_t descLen, bool isRem
 HcclResult HcclMemCloseV2(HcclBuf *buf)
 {
     if (buf == nullptr || buf->handle == nullptr) {
-        HCCL_ERROR("[%s] buf[%p] or buf->handle[%p] is null", __func__,  buf, buf->handle);
+        HCCL_ERROR("[%s] buf[%p] or buf->handle is null", __func__,  buf);
         return HCCL_E_PTR;
     }
     HCCL_INFO("[%s] Begin, addr[%p], size[%llu], handle[%p]", __func__, buf->addr, buf->len, buf->handle);

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -24,6 +24,7 @@ constexpr u32 UB_RELAX_ORDER       = 0X01; // Relax Order表示当前SQE与后�
 constexpr u32 UB_STRONG_ORDER      = 0X02; // Strong Order表示当前SQE有保序要求，该SQE不能超越前面的Relax Order SQE
 constexpr u32 UB_NO_COMPLETION     = 0;    // 表示当前报文和前面报文没有completion序要求，报文对应的CQE可以乱序上报
 constexpr u32 UB_COMPLETION        = 1;    // 表示当前报文和前面报文有completion序要求，报文对应的CQE需要保序上报
+constexpr u8  UB_FENCE_ENABLED     = 1;    // fence使能
 UbTransportLiteImpl::UbTransportLiteImpl(
     std::vector<char> &uniqueId, std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback)
 {
@@ -72,7 +73,7 @@ UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
     std::vector<char> locBufferUniqueIds;
     binaryStream >> locBufferUniqueIds;
     ParseLocBufferVec(locBufferUniqueIds, locBufferVec, RmaUbBufType::BUFFER);
- 
+
     std::vector<char> rmtBufferUniqueIds;
     binaryStream >> rmtBufferUniqueIds;
     ParseRmtBufferVec(rmtBufferUniqueIds, rmtBufferVec, RmaUbBufType::BUFFER);
@@ -80,6 +81,12 @@ UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
     std::vector<char> connUniqueIds;
     binaryStream >> connUniqueIds;
     ParseConnVec(connUniqueIds);
+}
+
+HcclResult UbTransportLiteImpl::SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback) {
+    CHK_PTR_NULL(callback);
+    newCallback_ = callback;
+    return HCCL_SUCCESS;
 }
 
 UbTransportLiteImpl::~UbTransportLiteImpl()
@@ -268,7 +275,7 @@ HcclResult UbTransportLiteImpl::BuildLocRmaBufferLite(const uintptr_t addr, cons
     HCCL_INFO("[UbTransportLiteImpl::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
         __func__, addr, size, locBufferVec.size());
     if (locBufferVec.empty()) {
-        HCCL_ERROR("[UbTransportLiteImpl::%s] locBufferVec is empty.");
+        HCCL_ERROR("[UbTransportLiteImpl::%s] locBufferVec is empty.", __func__);
         return HCCL_E_INTERNAL;
     }
 
@@ -336,13 +343,14 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     CheckConnVec("UbTransportLiteImpl::Post"); // 待修改优化, 检查connection
     auto taskId = stream.GetRtsq()->GetTaskId();
     // 当前使用1个connection，下标为0
-    connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, GetRmtNotifySliceLite(index),
+    auto rmtBuffSliceLite = GetRmtNotifySliceLite(index);
+    connVec[0]->InlineWrite(reinterpret_cast<u8 *>(&inlineData), UB_INLINE_WRITE_SIZE, rmtBuffSliceLite,
                             cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", GetRmtNotifySliceLite(index).GetAddr(), connOut.pi);
+    HCCL_INFO("UbTransportLiteImpl::Post notifyId[0x%llx], pi=%u", rmtBuffSliceLite.GetAddr(), connOut.pi);
  
-    if (callback_ == nullptr)
+    if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -351,15 +359,23 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_UB_INLINE_WRITE;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.DMA.dst         = reinterpret_cast<void*>(GetRmtNotifySliceLite(index).GetAddr());
-    taskParam.taskPara.DMA.size        = GetRmtNotifySliceLite(index).GetSize();
-    taskParam.taskPara.DMA.notifyID    = GetRmtNotifySliceLite(index).GetAddr();
+    taskParam.taskPara.DMA.dst         = reinterpret_cast<void*>(rmtBuffSliceLite.GetAddr());
+    taskParam.taskPara.DMA.size        = rmtBuffSliceLite.GetSize();
+    taskParam.taskPara.DMA.notifyID    = rmtBuffSliceLite.GetAddr();
+    taskParam.taskPara.DMA.notifyValue = 1;
     taskParam.taskPara.DMA.linkType    = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp       = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locEid      = GetLocEid();
     taskParam.taskPara.DMA.rmtEid      = GetRmtEid();
+ 
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
 
-    callback_(stream.GetSqId(), taskId, taskParam);
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
+    
 }
 
 void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
@@ -368,7 +384,7 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     auto notifyId = locNotifyVec[index]->GetId();
     BuildNotifyWaitTask(stream, notifyId);
 
-    if (callback_ == nullptr)
+    if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -379,54 +395,75 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = 1;
-    callback_(stream.GetSqId(), taskId, taskParam);
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
 }
 
-void UbTransportLiteImpl::ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream,
+void UbTransportLiteImpl::ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
-    if (callback_ == nullptr)
+    if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
     }
 
     TaskParam taskParam{};
-    taskParam.taskType = TaskParamType::TASK_RDMA;
+    taskParam.taskType = TaskParamType::TASK_UB;
     taskParam.beginTime = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.DMA.size     = GetRmaBufSlicelite(loc).GetSize();
+    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(loc.GetAddr());
+    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(rmt.GetAddr());
+    taskParam.taskPara.DMA.size     = loc.GetSize();
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
+    taskParam.taskPara.DMA.notifyValue = 0xffffffff;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp    = dmaOp;
-    callback_(stream.GetSqId(), taskId, taskParam);
+    taskParam.taskPara.DMA.locEid = GetLocEid();
+    taskParam.taskPara.DMA.rmtEid = GetRmtEid();
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
 }
 
 void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::Read"); // 待修改优化, 检查connection
     // 当前使用1个connection,下标为0
-    connVec[0]->Read(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), cfg, stream, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->Read(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ProfilingProcess(loc, rmt, stream, DmaOp::HCCL_DMA_READ, taskId);
+    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, stream, DmaOp::HCCL_DMA_READ, taskId);
 }
 
 void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::Write"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->Write(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), cfg, stream, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ProfilingProcess(loc, rmt, stream, DmaOp::HCCL_DMA_WRITE, taskId);
+    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, stream, DmaOp::HCCL_DMA_WRITE, taskId);
 }
 
 void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -434,31 +471,22 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::ReadReduce"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->ReadReduce(reduceIn, GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), stream, cfg, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->ReadReduce(reduceIn, locRmaBufSlicelite, rmtRmaBufSlicelite, stream, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ReduceProfilingProcess(loc, rmt, reduceIn, stream, taskId);
+    ReduceProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, reduceIn, stream, taskId);
 }
 
-HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
-{
-    static std::map<ReduceOp, HcclReduceOp> reduceTypeMap = {{ReduceOp::SUM, HcclReduceOp::HCCL_REDUCE_SUM},
-                                                             {ReduceOp::PROD, HcclReduceOp::HCCL_REDUCE_PROD},
-                                                             {ReduceOp::MAX, HcclReduceOp::HCCL_REDUCE_MAX},
-                                                             {ReduceOp::MIN, HcclReduceOp::HCCL_REDUCE_MIN}};
-    if (UNLIKELY(reduceTypeMap.find(reduceOp) == reduceTypeMap.end())) {
-        THROW<InternalException>(StringFormat("reduceOp[%u] is invalid", reduceOp));
-    }
-    return reduceTypeMap[reduceOp];
-}
-
-void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt,
+void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
                                                  const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
 {
-    if (callback_ == nullptr)
+    if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -467,16 +495,23 @@ void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufferLite &loc, const
     TaskParam taskParam {};
     taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
     taskParam.beginTime = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.Reduce.size = GetRmaBufSlicelite(loc).GetSize();
+    taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(loc.GetAddr());
+    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(rmt.GetAddr());
+    taskParam.taskPara.Reduce.size = loc.GetSize();
     taskParam.taskPara.Reduce.notifyID = INVALID_VALUE_NOTIFYID;
+    taskParam.taskPara.Reduce.notifyValue = 1;
     taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
     taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
     taskParam.taskPara.Reduce.locEid   = GetLocEid();
  	taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
-    callback_(stream.GetSqId(), taskId, taskParam);
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
 }
 
 void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -484,21 +519,28 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::WriteReduce"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->WriteReduce(reduceIn.dataType, reduceIn.reduceOp, GetRmaBufSlicelite(loc), stream,
-                            GetRmtRmaBufSliceLite(rmt), cfg, connOut);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    connVec[0]->WriteReduce(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite, stream,
+                            rmtRmaBufSlicelite, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ReduceProfilingProcess(loc, rmt, reduceIn, stream, taskId);
+    ReduceProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, reduceIn, stream, taskId);
 }
 
 void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
     const std::vector<BaseTransportLiteImpl::TransferOp> &transferOp, const StreamLite &stream)
 {
+    if (UNLIKELY(loc.empty())) {
+        return;
+    }
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::BatchTransfer"); // 待修改优化, 检查connection
     u32 insNum = loc.size();
@@ -532,9 +574,9 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
         if (transferOp[insNum - 1].transType == TransferType::READ) {
             dmaOp = DmaOp::HCCL_DMA_READ;
         }
-        ProfilingProcess(loc[insNum - 1], rmt[insNum - 1], stream, dmaOp, taskId);
+        ProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), stream, dmaOp, taskId);
     } else {
-        ReduceProfilingProcess(loc[insNum - 1], rmt[insNum - 1], transferOp[insNum - 1].reduceIn, stream, taskId);
+        ReduceProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), transferOp[insNum - 1].reduceIn, stream, taskId);
     }
 }
 
@@ -543,15 +585,19 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     u64           notifyData = 1; // 普通notify，固定1
     auto taskId = stream.GetRtsq()->GetTaskId();
     CheckConnVec("UbTransportLiteImpl::WriteWithNotify"); // 待修改优化, 检查connection
     // 当前使用1个connection，下标为0
-    connVec[0]->WriteWithNotify(GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt), cfg, connOut,
-                                GetRmtNotifySliceLite(withNotify.index_), stream, notifyData);
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    auto rmtNotifySliceLite = GetRmtNotifySliceLite(withNotify.index_);
+    connVec[0]->WriteWithNotify(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, connOut,
+                                rmtNotifySliceLite, stream, notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr)
+    if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -560,15 +606,22 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     TaskParam taskParam{};
     taskParam.taskType              = TaskParamType::TASK_WRITE_WITH_NOTIFY;
     taskParam.beginTime             = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.DMA.size     = GetRmaBufSlicelite(loc).GetSize();
-    taskParam.taskPara.DMA.notifyID = GetRmtNotifySliceLite(withNotify.index_).GetAddr();
+    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.DMA.size     = locRmaBufSlicelite.GetSize();
+    taskParam.taskPara.DMA.notifyID = rmtNotifySliceLite.GetAddr();
+    taskParam.taskPara.DMA.notifyValue = 1;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
-    callback_(stream.GetSqId(), taskId, taskParam);
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
 }
 
 void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -576,16 +629,20 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     u64           notifyData = 1;                               // 普通notify，固定1
     CheckConnVec("UbTransportLiteImpl::WriteReduceWithNotify"); // 待修改优化, 检查connection
     auto taskId = stream.GetRtsq()->GetTaskId();
     // 当前使用1个connection，下标为0
-    connVec[0]->WriteReduceWithNotify(reduceIn.dataType, reduceIn.reduceOp, GetRmaBufSlicelite(loc),
-                                      GetRmtRmaBufSliceLite(rmt), cfg, stream, connOut, GetRmtNotifySliceLite(withNotify.index_),
+    auto locRmaBufSlicelite = GetRmaBufSlicelite(loc);
+    auto rmtRmaBufSlicelite = GetRmtRmaBufSliceLite(rmt);
+    auto rmtNotifySliceLite = GetRmtNotifySliceLite(withNotify.index_);
+    connVec[0]->WriteReduceWithNotify(reduceIn.dataType, reduceIn.reduceOp, locRmaBufSlicelite,
+                                      rmtRmaBufSlicelite, cfg, stream, connOut, rmtNotifySliceLite,
                                       notifyData);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    if (callback_ == nullptr)
+    if (callback_ == nullptr && newCallback_ == nullptr)
     {
         HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
         return;
@@ -594,14 +651,23 @@ void UbTransportLiteImpl::WriteReduceWithNotify(const RmaBufferLite &loc, const 
     TaskParam taskParam{};
     taskParam.taskType                 = TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY;
     taskParam.beginTime                = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Reduce.src      = reinterpret_cast<void *>(GetRmaBufSlicelite(loc).GetAddr());
-    taskParam.taskPara.Reduce.dst      = reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt).GetAddr());
-    taskParam.taskPara.Reduce.size     = GetRmaBufSlicelite(loc).GetSize();
-    taskParam.taskPara.Reduce.notifyID = GetRmtNotifySliceLite(withNotify.index_).GetAddr();
+    taskParam.taskPara.Reduce.src      = reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.Reduce.dst      = reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr());
+    taskParam.taskPara.Reduce.size     = locRmaBufSlicelite.GetSize();
+    taskParam.taskPara.Reduce.notifyID = rmtNotifySliceLite.GetAddr();
+    taskParam.taskPara.Reduce.notifyValue = 1;
     taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
     taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
-    callback_(stream.GetSqId(), taskId, taskParam);
+    taskParam.taskPara.Reduce.locEid   = GetLocEid();
+    taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
 }
 
 void UbTransportLiteImpl::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, const vector<RmtRmaBufSliceLite> &rmt,
@@ -609,6 +675,7 @@ void UbTransportLiteImpl::BatchOneSidedRead(const vector<RmaBufSliceLite> &loc, 
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     CheckConnVec("UbTransportLiteImpl::BatchOneSidedRead");
     // 当前使用1个connection，下标为0
     connVec[0]->BatchOneSidedRead(loc, rmt, cfg, stream, connOut);
@@ -620,6 +687,7 @@ void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc,
 {
     ClearConnOut();
     SqeConfigLite cfg;
+    SetFenceConfig(cfg);
     CheckConnVec("UbTransportLiteImpl::BatchOneSidedRead");
     // 当前使用1个connection，下标为0
     connVec[0]->BatchOneSidedWrite(loc, rmt, cfg, stream, connOut);
@@ -643,5 +711,22 @@ Eid UbTransportLiteImpl::GetRmtEid() const
         return connVec[0]->GetRmtEid();
     }
     return eid;
+}
+
+HcclResult UbTransportLiteImpl::Fence()
+{
+    fence_ = true;
+    HCCL_INFO("[%s] SUCCESS. fence[%d]", __func__, fence_);
+    return HCCL_SUCCESS;
+}
+
+void UbTransportLiteImpl::SetFenceConfig(SqeConfigLite &cfg)
+{
+    if (fence_) {
+        cfg.fence = UB_FENCE_ENABLED;
+        cfg.placeOdr  = UB_STRONG_ORDER;
+        cfg.compOrder = UB_COMPLETION;
+    }
+    fence_ = false;
 }
 } // namespace Hccl

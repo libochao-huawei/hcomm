@@ -14,14 +14,17 @@
 #include "hcomm_res_defs.h"
 #include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
+#include "hccl_diag.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
+HcclResult HcommResMgrInit(uint32_t devPhyId);
+
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
-HcclResult HcommEndpointGet_(const EndpointHandle endpointHandle, void **endpoint);
+HcclResult HcommEndpointGet(const EndpointHandle endpointHandle, void **endpoint);
 
 HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
@@ -44,7 +47,7 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
 
 HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
 
-HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **remoteMem, uint32_t *memNum, char **memTags);
 
 HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
@@ -56,7 +59,21 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
 HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
- 
+
+HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
+
+HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
+
+HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
+
+
+// C函数
+HcclResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo);
+HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
+
+HcclResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngine engine, 
+    HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

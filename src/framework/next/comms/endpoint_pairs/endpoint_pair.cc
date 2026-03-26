@@ -12,12 +12,18 @@
 #include "socket_config.h"
 #include "hcomm_c_adpt.h"
 #include "orion_adpt_utils.h"
+#include "channel_process.h"
+
+#include "hcom_common.h"
+#include "exception_handler.h"
 
 namespace hcomm {
 
 EndpointPair::~EndpointPair() 
 {
-    (void)HcommChannelDestroy(channelHandles_.data(), channelHandles_.size());
+    for (auto &channels : channelHandles_) {
+        (void)ChannelProcess::ChannelDestroy(channels.second.data(), channels.second.size());
+    }
 }
 
 HcclResult EndpointPair::Init()
@@ -27,20 +33,64 @@ HcclResult EndpointPair::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& socket)
+HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t listenPort, Hccl::Socket*& socket)
 {
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData));
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag);
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, socketTag);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
+HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
+    const std::string &socketTag, const uint32_t listenPort, Hccl::Socket*& socket)
+{
+    // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
+    if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
+        std::string socketTagPrefix = socketTag;
+        if (myRank <= rmtRank) {
+            socketTagPrefix += "_" + std::to_string(myRank) + "_" + std::to_string(rmtRank);
+        } else {
+            socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
+        }
+        CHK_RET(this->GetSocket(socketTagPrefix, listenPort, socket));
+        return HCCL_SUCCESS;
+    }
+
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
+        localEndpointDesc_, remoteEndpointDesc_, linkData));
+    
+    // 复用orion流程可能抛异常
+    EXCEPTION_HANDLE_BEGIN
+    if (!socketMgrCompat_) {
+        int32_t devLogicId = HcclGetThreadDeviceId();
+        uint32_t devPhyId{0};
+        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId), devPhyId));
+
+        EXECEPTION_CATCH(socketMgrCompat_ =
+            std::make_unique<Hccl::SocketManager>(myRank, devPhyId, devLogicId, socketTag),
+            return HCCL_E_PTR);
+    }
+    
+    socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
+    Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, socketTag);
+    socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
+    CHK_PTR_NULL(socket);
+    EXCEPTION_HANDLE_END
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
-    channelHandles_.push_back(channels[0]);
+    if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_.size() <= reuseIdx) {
+        CHK_RET(HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+        channelHandles_[engine].push_back(channels[0]);
+        return HCCL_SUCCESS;
+    }
+    channels[0] = channelHandles_[engine][reuseIdx];
     return HCCL_SUCCESS;
 }
 

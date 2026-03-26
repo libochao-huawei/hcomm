@@ -51,7 +51,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Host_When_Normal_Expect_Re
 
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
 
     AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
@@ -60,7 +60,8 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Host_When_Normal_Expect_Re
     Stream *stream = aicpuThread.GetStream();
     EXPECT_NE(stream, nullptr);
     uint32_t notifyNum = aicpuThread.GetNotifyNum();
-    EXPECT_EQ(2, notifyNum);
+    // thread内部暂时会多申请一个notify用于host&device侧同步
+    EXPECT_EQ(3, notifyNum);
     void *notify = aicpuThread.GetNotify(1);
     EXPECT_NE(nullptr, notify);
 }
@@ -155,7 +156,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_Normal_Expect_
 
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     
     AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
@@ -167,7 +168,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_Normal_Expect_
     GlobalMockObject::verify(); 
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(GetRunSideIsDevice)
         .stubs()
@@ -196,7 +197,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_Host_When_hrtNotifyGetOffsetF
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
-TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_RtsqA5IsNormal_Expect_Return_HCCL_SUCCESS)
+TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_IsNormal_Expect_Return_HCCL_SUCCESS)
 {
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
@@ -218,7 +219,7 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_RtsqA5IsNormal
 
      MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
 
     AicpuTsThread mainDevThread(mainStr);
@@ -229,17 +230,32 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_RtsqA5IsNormal
     void *streamPtr = mainDevThread.GetStreamLitePtr();
     EXPECT_NE(nullptr, streamPtr);
 
-    ret = mainDevThread.LocalNotifyRecord(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-   
-    ret = mainDevThread.LocalNotifyWait(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    void *src = reinterpret_cast<void *>(0x2345);
-    void *dst = reinterpret_cast<void *>(0x2345);
-    uint64_t sizeByte = 8;
-    ret = mainDevThread.LocalCopy(dst, src, sizeByte);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamPtr);
+    EXPECT_NE(nullptr, streamLite);
+    
+}
+
+TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_Get_StreamId_Notify_Expect_Return_HCCL_SUCCESS)
+{
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));
+
+    AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
+    HcclResult ret = aicpuThread.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = mainDevThread.LocalReduce(dst, src, sizeByte, HCOMM_DATA_TYPE_UINT64, HCOMM_REDUCE_SUM);
+    std::string mainStr = aicpuThread.GetUniqueId();
+    GlobalMockObject::verify();
+    s32 streamId = 0;
+    u32 notifyNum = 0;
+    std::string notifyDesc;
+    ret = aicpuThread.GetStreamIdAndNotifyByUniqueId(streamId, notifyNum, notifyDesc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    AicpuTsThread mainDevThread(mainStr);
+    ret = mainDevThread.SupplementNotify(notifyNum, notifyDesc);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

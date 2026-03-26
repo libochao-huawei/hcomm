@@ -52,6 +52,9 @@
 #include "comm_topo_desc.h"
 #include "rt_external.h"
 #include "externalinput.h"
+#include "aclgraph_callback.h"
+#include "adapter_hal.h"
+#include "dlhal_function.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -75,6 +78,7 @@ namespace hccl
     constexpr u32 TYPE_USER_MEM = 1;
     constexpr u32 NON_BATCH_WRITE_MAX_STREAM_NUM = 19U;
     constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
+    constexpr u8 AICPU_ORDERLAUNCH_INVALID_HCOM_MODE = 255; // 图模式下无附属从流，不进行按序下发
     enum TransferMemInfoIdx
     {
         TRANSFER_MEM_INFO_KEY_IDX = 0,
@@ -100,6 +104,16 @@ namespace hccl
         // 用于控制图模式各通信域kernel按序占核的notify
         ORDER_INDEX_HCOM_0 = 6, // host_order流 record, kernel流 wait
         ORDER_INDEX_HCOM_1 = 7 // aicpu_order流 record, host_order流 wait
+    };
+
+    enum class AicpuLocalEventIdx : u32
+    {
+        /**
+         *@brief 用于控制Aclgraph模式按序下发控制流入图的event
+         *@note 通信域绑定Context，而Stream是Context管理的资源，因此对应下在Stream上的event与通信域强相关，需要communicator管理
+        **/
+        ORDER_INDEX_ACLGRAPH_EVENT_0 = 0, // kernel流 record, host_order流 wait
+        ORDER_INDEX_ACLGRAPH_EVENT_1 = 1, // host_order流 record, kernel流 wait
     };
 
     HcclCommunicator::HcclCommunicator()
@@ -187,6 +201,7 @@ namespace hccl
         AlgWrap::GetInstance().UnregisterAlgCallBack(identifier_);
         DetectConnectionAnomalies::GetInstance(deviceLogicId_).Deinit();
         UnRegisterToCommConfiger();
+        AclgraphCallback::GetInstance().CleanCaptureRes(this);
 
         if (zeroCopyAclGraph_ != nullptr) {
             zeroCopyAclGraph_ = nullptr;
@@ -231,6 +246,12 @@ namespace hccl
         }
 
         OrderLaunch::GetInstance(deviceLogicId_).UnRegisterOrderLaunch(identifier_);
+        for (u32 i = 0; i < AICPU_LOCAL_EVENT_SIZE; ++i) {
+            if (localAicpuOpEvent_[i] != nullptr) {
+                (void)hrtEventDestroy(localAicpuOpEvent_[i]);
+                localAicpuOpEvent_[i] = nullptr;
+            }
+        }
 
         (void)UnRegistTaskExceptionHandler();
         kfcControlTransferH2D_ = nullptr;
@@ -360,8 +381,8 @@ namespace hccl
         if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93){
             CHK_RET(RegisterKernel(deviceType_));
         }
-        CHK_RET(LoadAICPUKernel());
         CHK_RET(LoadCustomKernel());
+        CHK_RET(LoadAICPUKernel());
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
@@ -391,8 +412,8 @@ namespace hccl
         CHK_RET(InitTransportManager());
         CHK_RET(InitMemoryManagerSubGroup());
         CHK_RET(InitHcclAlg());
-        CHK_RET(LoadAICPUKernel());
         CHK_RET(LoadCustomKernel());
+        CHK_RET(LoadAICPUKernel());
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
@@ -409,14 +430,16 @@ namespace hccl
 
     HcclResult HcclCommunicator::LoadAICPUKernel(void)
     {
-        std::string jsonPath;
-        CHK_RET(GetKernelFilePath(jsonPath));
-        jsonPath += "ccl_kernel.json";
-        HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
-            binHandle_);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
-            "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+        if (binHandle_ == nullptr) {
+            std::string jsonPath;
+            CHK_RET(GetKernelFilePath(jsonPath));
+            jsonPath += "ccl_kernel.json";
+            HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
+                binHandle_);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+                "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+        }
         return HCCL_SUCCESS;
     }
 
@@ -430,6 +453,25 @@ namespace hccl
             }
             binHandle_ = nullptr;
         }
+        return;
+    }
+
+    HcclResult HcclCommunicator::LoadCustomKernel(void)
+    {
+        // 加载自定义算子
+        // 请勿删除，该函数为用户自定义算子时使用，应加载句柄
+        // 读取customEnable环境变量，开启了就执行
+        std::string jsonPath;
+        CHK_RET(GetCustomKernelFilePath(jsonPath));
+        jsonPath += "libaicpu_custom.json";
+        CHK_RET(LoadCustomFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 1, binHandle_));
+        return HCCL_SUCCESS;
+    }
+
+    void HcclCommunicator::UnloadCustomKernel(void)
+    {
+        // 卸载自定义算子
+        // 请勿删除，该函数为用户自定义算子时使用，应释放句柄：UnloadBinary(binCustomHandle_);
         return;
     }
 
@@ -454,7 +496,7 @@ namespace hccl
         HCCL_DEBUG("[%s]hcclRankLinkInfo_ userRank[%u], devicePhyId[%u], ip[%s], port[%u]", __func__,
                    hcclRankLinkInfo_.userRank, hcclRankLinkInfo_.devicePhyId, hcclRankLinkInfo_.ip.GetReadableIP(),
                    hcclRankLinkInfo_.port);
-        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, identifier_));
+        CHK_RET(oneSideService_->Config(dispatcher_, hcclRankLinkInfo_, &rankTable, identifier_, isStandardCard_, enableP2PRankIds_));
         return HCCL_SUCCESS;
     }
 
@@ -597,6 +639,7 @@ namespace hccl
         // 目前只支持allgather, allreduce, reducescatter
         CHK_PRT_RET(opType != HcclCMDType::HCCL_CMD_ALLGATHER && 
                     opType != HcclCMDType::HCCL_CMD_ALLREDUCE &&
+                    opType != HcclCMDType::HCCL_CMD_ALLTOALL &&
                     opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
                     HCCL_INFO("[%s] opType[%d] not support symmetric memory", 
                             __func__, opType),
@@ -809,33 +852,35 @@ namespace hccl
             std::sort(devIdList0.begin(), devIdList0.end());
             std::sort(devIdList1.begin(), devIdList1.end());
 
+            auto buildDeviceListStr = [](const std::vector<u32>& list) -> std::string {
+                std:: string result;
+                for(const auto& id : list) {
+                    if (!result.empty()) {
+                        result += " ";
+                    }
+                    result += std::to_string(id);
+                }
+                return result;
+            };
+
+            std::string devList0Str = buildDeviceListStr(devIdList0);
+            std::string devList1Str = buildDeviceListStr(devIdList1);
+
             if (devIdList0.size() != devIdList1.size()) {
-                char errorLogBuffer[LOG_TMPBUF_SIZE];
-                s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                     "errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                                     "deviceNum in module0:[%d] not equal to deviceNum in module1:[%d], "
-                                     "you can export HCCL_INTRA_ROCE_ENABLE=1 to enable this scenario.",
-                                     HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0.size(), devIdList1.size());
-                CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
+                std::string errormessage = "Device ID " + devList0Str + " in module 0 and device ID " + devList1Str + " in module 1 are not on the same plane.";
                 RPT_INPUT_ERR(true, "EI0010", std::vector<std::string>({"reason"}),
-                              std::vector<std::string>({std::string(errorLogBuffer)}));
+                              std::vector<std::string>({ errormessage }));
                 HCCL_ERROR("[%s][%s]%s",
-                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errorLogBuffer);
+                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errormessage.c_str());
                 return HCCL_E_NOT_SUPPORT;
             }
             for (size_t i = 0; i < devIdList0.size(); i++) {
                 if (devIdList0[i] % DEVICE_PER_MODULE != devIdList1[i] % DEVICE_PER_MODULE) {
-                    char errorLogBuffer[LOG_TMPBUF_SIZE];
-                    s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                         "errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                                         "deviceId[%d] in module0 and deviceId[%d] in module1 are not on the same plane, "
-                                         "you can export HCCL_INTRA_ROCE_ENABLE=1 to enable this scenario.",
-                                         HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0[i], devIdList1[i]);
-                    CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
+                    std::string errormessage = "Device ID " + std::to_string(devIdList0[i]) + " in module 0 and device ID " + std::to_string(devIdList1[i]) + " in module 1 are not on the same plane.";
                     RPT_INPUT_ERR(true, "EI0010", std::vector<std::string>({"reason"}),
-                                  std::vector<std::string>({std::string(errorLogBuffer)}));
+                                  std::vector<std::string>({ errormessage }));
                     HCCL_ERROR("[%s][%s]%s",
-                        LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errorLogBuffer);
+                        LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_TIMEOUT.c_str(), errormessage.c_str());
                     return HCCL_E_NOT_SUPPORT;
                 }
             }
@@ -845,7 +890,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::CheckDataType(const HcclDataType dataType, bool needReduce)
     {
-        const vector<string> infoTitle({"ccl_op", "parameter", "value", "tips"});
+        const vector<string> infoTitle({"ccl_op", "value", "parameter", "expect"});
         if (needReduce) {
             if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
                 if ((dataType == HCCL_DATA_TYPE_INT64) || (dataType == HCCL_DATA_TYPE_BFP16)) {
@@ -853,7 +898,8 @@ namespace hccl
                         "EI0003",
                         infoTitle,
                         vector<string>(
-                            {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                            {"CheckDataType", GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                            "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                     HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                         LOG_KEYWORDS_TASK_EXEC.c_str(),
                         LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -863,7 +909,6 @@ namespace hccl
                     return HCCL_E_NOT_SUPPORT;
                 }
             }
-
             if ((dataType == HCCL_DATA_TYPE_UINT64) ||
                 (dataType == HCCL_DATA_TYPE_UINT8) || (dataType == HCCL_DATA_TYPE_UINT16) ||
                 (dataType == HCCL_DATA_TYPE_UINT32) || (dataType == HCCL_DATA_TYPE_FP64) ||
@@ -872,7 +917,8 @@ namespace hccl
                     "EI0003",
                     infoTitle,
                     vector<string>(
-                        {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                        {"CheckDataType", GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                        "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -888,7 +934,8 @@ namespace hccl
                     "EI0003",
                     infoTitle,
                     vector<string>(
-                        {"CheckDataType", "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
+                        {"CheckDataType",  GetDataTypeEnumStr(dataType), "dataType", "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT16, HCCL_DATA_TYPE_INT32, "\
+                            "HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32, HCCL_DATA_TYPE_UINT8, HCCL_DATA_TYPE_UINT16, HCCL_DATA_TYPE_UINT32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] data type[%s] not supported, support range=[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1035,11 +1082,11 @@ namespace hccl
                 ((dataType == HCCL_DATA_TYPE_INT16) || (dataType == HCCL_DATA_TYPE_BFP16))) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "dataType",
                         GetDataTypeEnumStr(dataType),
-                        "please check dataType when optype is prod"}));
+                        "dataType",
+                        "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT32, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] and data "
                            "type[%s] for Op[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
@@ -1055,11 +1102,11 @@ namespace hccl
             if (dataType == HCCL_DATA_TYPE_INT16) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "dataType",
                         GetDataTypeEnumStr(dataType),
-                        "please check the data type when the device type is 910."}));
+                        "dataType",
+                        "HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_INT32, HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP32"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1072,11 +1119,11 @@ namespace hccl
             if (dataType == HcclDataType::HCCL_DATA_TYPE_INT16 && op != HcclReduceOp::HCCL_REDUCE_SUM) {
                 RPT_INPUT_ERR(true,
                     "EI0003",
-                    std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+                    std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
                     std::vector<std::string>({"CheckReduceDataType",
-                        "op",
                         GetReduceOpEnumStr(op),
-                        "please check operation type when the data type is int16."}));
+                        "op",
+                        "sum"}));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] for Op[%s]",
                     LOG_KEYWORDS_TASK_EXEC.c_str(),
                     LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
@@ -1259,20 +1306,21 @@ namespace hccl
         if (deviceType_ == DevType::DEV_TYPE_910_93) {
             uint32_t localRankServerId = 0;
             uint32_t remoteRankServerId = 0;
-            rtError_t ret = rtGetServerIDBySDID(rankInfoList_[realUserRank_].superDeviceId, &localRankServerId);
-            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[InitPreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
-                rankInfoList_[realUserRank_].superDeviceId, localRankServerId, ret), HCCL_E_RUNTIME);
+            rtError_t ret = rtGetServerIDBySDID(rankInfoList_[userRank_].superDeviceId, &localRankServerId);
+            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Init][PreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                rankInfoList_[userRank_].superDeviceId, localRankServerId, ret), HCCL_E_RUNTIME);
             for (size_t index = 0; index < rankInfoList_.size(); ++index)
             {
                 const RankInfo &rankInfo = rankInfoList_[index];
                 ret = rtGetServerIDBySDID(rankInfo.superDeviceId, &remoteRankServerId);
-                CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[InitPreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Init][PreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
                     rankInfo.superDeviceId, remoteRankServerId, ret), HCCL_E_RUNTIME);
                 if (serverId_ != rankInfo.serverId && localRankServerId == remoteRankServerId) {
                     enableP2PDevices_.push_back(rankInfo.devicePhyId);
-                    HCCL_INFO("[InitPreResource]localDevicePhyId[%u] needs to enable enablep2p for remoteDevicePhyId[%u], " \
+                    enableP2PRankIds_.insert(rankInfo.userRank);
+                    HCCL_INFO("[Init][PreResource]localRankID[%u]-localDevicePhyId[%u] needs to enablep2p with remoteRankId[%u]-remoteDevicePhyId[%u], " \
                         "and localServerId[%s], localServerIdBySDID[%u], remoteServerId[%s], remoteServerIdBySDID[%u]",
-                        rankInfoList_[realUserRank_].devicePhyId, rankInfo.devicePhyId,
+                        userRank_, rankInfoList_[userRank_].devicePhyId, rankInfo.userRank, rankInfo.devicePhyId,
                         serverId_.c_str(), localRankServerId, rankInfo.serverId.c_str(), remoteRankServerId);
                 }
             }
@@ -1287,8 +1335,14 @@ namespace hccl
         for (u32 i = 0; i < iterServ->second.size(); i++) {
             if (iterServ->second[i].deviceInfo.devicePhyId != HOST_DEVICE_ID) {
                 enableP2PDevices_.push_back(iterServ->second[i].deviceInfo.devicePhyId);
+                enableP2PRankIds_.insert(iterServ->second[i].rankId);
+                HCCL_INFO("[Init][PreResource]In the current server[%s], localRank[%u]-localDevicePhyId[%u] needs to enableP2P " \
+                    "with remoteRankId[%u]-remoteDevicePhyId[%u]",
+                    serverId_.c_str(), userRank_, rankInfoList_[userRank_].devicePhyId,
+                    iterServ->second[i].rankId, iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
+        HCCL_INFO("[Init][PreResource]Current deviceType[%d], isStandardCard[%s]", deviceType_, isStandardCard_ ? "true" : "false");
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
@@ -1433,6 +1487,7 @@ namespace hccl
                                deviceLogicId_, ret),
                     ret);
         enableP2PDevices_.clear();
+        enableP2PRankIds_.clear();
         return HCCL_SUCCESS;
     }
 
@@ -1828,6 +1883,7 @@ namespace hccl
         limit.ifLimit = true;
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
+        algDesc.isLastSelect = true;
         CHK_RET(algOperator->SelectAlg(param.tag, param, limit, algName, algDesc, newTag));
 
         // 资源创建
@@ -1849,12 +1905,14 @@ namespace hccl
         CHK_PRT_RET(algOperator->CalNumBlocks(algName, param, numBlocks, aivCoreLimit) != HCCL_SUCCESS,
             HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
             HCCL_E_PARA);
+        if (clearEnable) {
+            aivOffloadTag_ = 1;
+        }
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
-        aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
         aivSuperKernelArgs.numBlocks = numBlocks;
 
-        HCCL_INFO("SPK, Tag %llu clearEnable %llu, aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
-                  aivSuperKernelArgs.clearEnable, aivCoreLimit, aivSuperKernelArgs.numBlocks);
+        HCCL_INFO("SPK, Tag %llu  aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
+                  aivCoreLimit, aivSuperKernelArgs.numBlocks);
         // clearenable
         //  拷贝到Device
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -2469,6 +2527,8 @@ namespace hccl
             return HCCL_E_UNAVAIL;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         Stream streamObj(stream);
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
@@ -2489,6 +2549,7 @@ namespace hccl
         opParam.reduceType = HcclReduceOp::HCCL_REDUCE_RESERVED;
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
+        opParam.isCapture = isCapture;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER;
@@ -2528,6 +2589,8 @@ namespace hccl
             outputSize += counts[i] * perDataSize;
         }
 
+        bool isCapture = StreamIsCapture(stream);
+
         OpParam opParam;
         opParam.tag = tag;
         opParam.inputPtr = const_cast<void *>(sendBuf);
@@ -2541,6 +2604,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
         opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER_V;
 
@@ -2671,7 +2735,7 @@ namespace hccl
         CHK_RET(CheckSuspendingStatus());
         if (userRankSize_ == 1) {
             // rankSize为1时，退化为AllGather
-            return AllGather(tag, inputPtr, outputPtr, inputCount, dataType, stream);
+            return AllGatherOutPlace(tag, inputPtr, outputPtr, inputCount, dataType, stream);
         }
 
         if (!IsAtomicInit()) {
@@ -3059,8 +3123,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]AlltoAllVC is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3312,8 +3374,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]Scatter Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3361,8 +3421,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]ScatterOutPlace Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3418,8 +3476,6 @@ namespace hccl
     {
         CHK_RET(CheckSuspendingStatus());
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]Reduce Not Supported Yet",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3853,8 +3909,6 @@ namespace hccl
         }
 
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]SendOutPlace is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -3950,8 +4004,6 @@ namespace hccl
         }
 
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]ReceiveOutPlace is not supported",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -4064,7 +4116,7 @@ namespace hccl
         cacheInfo.newTag = newTag;
 
         if (hcclCacheMap_.size() > CACHEMAP_MAXSIZE) {
-            size_t clearCount = CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT;
+            size_t clearCount = static_cast<size_t>(CACHEMAP_MAXSIZE * CACHEMAP_CLEARPERCENT);
             for (auto it = hcclCacheMap_.begin(); clearCount > 0 && it != hcclCacheMap_.end(); clearCount--) {
                 it = hcclCacheMap_.erase(it);
             }
@@ -4101,9 +4153,6 @@ namespace hccl
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg));
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
-        if (aivClearEnable_) {
-            CHK_RET(ClearAivSyncBuf(cacheInfo.buffersOut, cacheInfo.resourceArgs, cacheInfo.topoArgs, cacheInfo.algArgs));
-        }
         u64 dataSize = (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL ?
             opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType] : 0);
         if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V || opType == HcclCMDType::HCCL_CMD_ALLGATHER_V ||
@@ -4207,7 +4256,7 @@ namespace hccl
 
         ForceProf(opParam.isCapture);
         opParam.supportSymmetricMemory = IsSupportSymmetricMemory(opType, opParam);
-        opParam.supportZeroCopy = !opParam.supportSymmetricMemory && !commConfig_.GetConfigDeterministic() && IsSupportZeroCopy(opParam);
+        opParam.supportZeroCopy = !opParam.supportSymmetricMemory && IsSupportZeroCopy(opParam);
         opParam.aclGraphZeroCopyEnable = GetConfigAclGraphZeroCopyEnable();
         bool isInGraphCaptureZeroCopy = false;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
@@ -4241,14 +4290,17 @@ namespace hccl
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
         if (isOnlyAiv_ && !algDesc.isAivMode) {
             std::string opTypeName = GetCMDTypeEnumStr(opType);
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, "
-                "aiv only not support, please ensure rankNum is greater than one",
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, aiv only not support.",
                 opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
-        newTag += !opParam.isCapture ? "" : "_Capture"; // aclgraph使用新的Tag，避免影响其他操作
+        if (opParam.isCapture) {
+            newTag += "_Capture" + std::to_string(captureCnt_);
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            captureCnt_++;
+        }
 
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && userRankSize_ > 1) {
             CHK_RET(CreateCommCCLbuffer());
@@ -4257,26 +4309,6 @@ namespace hccl
             NslbDp_CollectOperTable(opType, opParam, algOperator->GetAlgType(), algName);
         }
 
-        // 资源创建
-        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture)
-        {
-            auto resTmp = resMap_[newTag];
-            ++captureCnt_;
-            newTag += std::to_string(captureCnt_);
-            resMap_[newTag] = resTmp;
-            AlgResourceRequest resRequest;
-            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
-            if (IsEnableBackupLink()) {
-                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
-            }
-            // 记录指令信息用于一致性校验
-            CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            // 移除tag对应的指令信息
-            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
-        }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
@@ -4365,7 +4397,7 @@ namespace hccl
             inplaceSupportRetry_ = algOperator->SupportRetryWithInplaceCheck(
                 opType, opParam, algName, isInplaceStatus_, inPlaceSupportRetryStatus_);
             HCCL_INFO("[HcclCommunicator][ExecOp] aicpu Unfold mode algType[%s], inplaceSupportRetry_[%d], opType[%d], "
-                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d]",
+                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d].",
                       AlgTypeToStr(algType).c_str(), inplaceSupportRetry_, opType, isInplaceStatus_, inPlaceSupportRetryStatus_);
             CHK_RET(OrchestrateAicpu(opType, algName, opParam, resMap_[newTag], newTag, algType, isCustom,
                 needIncreLink));
@@ -4382,7 +4414,7 @@ namespace hccl
                 hostResMap_.insert(newTag);
             }
             CHK_RET(algOperator->GetNumBlocks(numBlocks_));
-            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !opParam.isCapture) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
@@ -4457,6 +4489,8 @@ namespace hccl
         ForceProf(opParam.isCapture);
         bool isInGraphCaptureZeroCopy = false;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
+        opParam.supportSymmetricMemory = IsSupportSymmetricMemory(opType, opParam);
+        opParam.supportZeroCopy = !opParam.supportSymmetricMemory && IsSupportZeroCopy(opParam);
         opParam.aclGraphZeroCopyEnable = GetConfigAclGraphZeroCopyEnable();
         isInGraphCaptureZeroCopy = zeroCopyAclGraph_->SetAclGraphZeroCopyMode(
             deviceType_, opType, opParam, implAlg_.get(), cclBufferManager_.GetOutCCLbufferSize());
@@ -4470,7 +4504,7 @@ namespace hccl
         AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
         CHK_PTR_NULL(alltoAllOperator);
 
-        if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition()) {
+        if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition(opParam)) {
             opParam.aicpuUnfoldMode = true;
             opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
@@ -4494,7 +4528,7 @@ namespace hccl
             }
         }
 
-        if (deviceType_ == DevType::DEV_TYPE_910B) {
+        if (deviceType_ == DevType::DEV_TYPE_910B && userRankSize_ > 1) {
             // 用于AIV支持Roce直驱判断
             CHK_RET(IsSupportAIVNormalQP(devicePhyId_, opParam.supportRoceDirect));
         }
@@ -4509,15 +4543,21 @@ namespace hccl
         opParam.isNpuDirectRoce = algName == "AlltoAllDirectFullmeshAIVExecutor";
         if (isOnlyAiv_ && !algDesc.isAivMode) {
             std::string opTypeName = GetCMDTypeEnumStr(opType);
-            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, "
-                "aiv only not support, please ensure rankNum is greater than one", opTypeName.c_str());
+            HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%s] currently do not select aiv mode, aiv only not support.",
+                opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
+        CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
-        newTag += !opParam.isCapture ? "" : "_Capture";
+        if (opParam.isCapture) {
+            newTag += "_Capture" + std::to_string(captureCnt_);
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            captureCnt_++;
+        }
+
         auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
             return ((algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllVTwoLevelPipeline") && aicpuUnfoldMode) ||
-                (algName == "RunAlltoAllDirectFullmesh");
+                (algName == "RunAlltoAllDirectFullmesh" || algName == "RunAlltoAllFullMeshSymmetricMemory");
         };
         bool isOpbaseMode = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
         if ((isOpbaseMode && userRankSize_ > 1) || (isSupportAlg(algName, opParam.aicpuUnfoldMode))) {
@@ -4525,23 +4565,6 @@ namespace hccl
         }
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
-        if (opParam.isCapture && (resMap_.find(newTag) != resMap_.end()))
-        {
-            auto resTmp = resMap_[newTag];
-            ++captureCnt_;
-            newTag += std::to_string(captureCnt_);
-            resMap_[newTag] = resTmp;
-            AlgResourceRequest resRequest;
-            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
-            if (IsEnableBackupLink()) {
-                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
-            }
-            CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
-        }
         InsertNewTagToTagMap(newTag, opParam.tag);
         if (resMap_.find(newTag) == resMap_.end()) {
             AlgResourceRequest resRequest;
@@ -4566,6 +4589,7 @@ namespace hccl
                 }
                 CHK_RET(RegisterToHeartBeat());
             }
+            CHK_RET(UpdateZeroCopy(opParam, resMap_[newTag]));
         }
         else
         {
@@ -4662,6 +4686,7 @@ namespace hccl
                 "RunAlltoAllVFullMesh",
                 "RunAlltoAllDirectFullmesh",
                 "RunAlltoAllVTwoLevelPipeline",
+                "RunAlltoAllFullMeshSymmetricMemory",
                 "RunAlltoAllVContinuousPipeline"
             };
             return aicpuAlgs.count(algName) > 0;
@@ -4674,7 +4699,7 @@ namespace hccl
             inplaceSupportRetry_ = algOperator->SupportRetryWithInplaceCheck(
                 opType, opParam, algName, isInplaceStatus_, inPlaceSupportRetryStatus_);
             HCCL_INFO("[HcclCommunicator][ExecOp] aicpu Unfold mode algType[%s], inplaceSupportRetry_[%d], opType[%d], "
-                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d]",
+                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d].",
                       AlgTypeToStr(algType).c_str(), inplaceSupportRetry_, opType, isInplaceStatus_, inPlaceSupportRetryStatus_);
             CHK_RET(OrchestrateAicpu(opType, algName, opParam, algRes, newTag, algType, isCustom));
         } else {
@@ -4688,7 +4713,7 @@ namespace hccl
             CHK_RET(algOperator->Orchestrate(algName, opParam, algRes));
             // for profiling, numBlocks upload
             CHK_RET(algOperator->GetNumBlocks(numBlocks_));
-            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !opParam.isCapture) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
@@ -4933,6 +4958,14 @@ namespace hccl
         CHK_RET(AllocAndGetStreamContextBuff(opResPara_.aicpuOrderStreamParam.streamInfo.streamIds,
             opResPara_.aicpuOrderStreamParam.sqCqContextAddr,
             opResPara_.aicpuOrderStreamParam.sqCqContextSize));
+        
+        #ifndef CCL_KERNEL_AICPU
+        for (u32 i = 0; i < AICPU_LOCAL_EVENT_SIZE; ++i) {
+            aclError ret = aclrtCreateEventExWithFlag(&localAicpuOpEvent_[i], ACL_EVENT_SYNC);
+            CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtCreateEventExWithFlag failed, ret[%d] event[%p].",
+                __func__, ret, localAicpuOpEvent_[i]), HCCL_E_RUNTIME);
+        }
+        #endif
 
         CHK_RET(BuildOpLocalScratchMemResParam(algResource, newTag, localResHostPtr));
         return HCCL_SUCCESS;
@@ -6325,7 +6358,7 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponse,
                                            opParam.aicpuUnfoldMode, false, opParam.isZeroCopy, opParam.opType,
-                                           opParam.isCapture, false, opParam.isNpuDirectRoce);
+                                           opParam.isCapture, false, opParam.isNpuDirectRoce, &opParam);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s]Alloc transports failed, tag[%s]", __func__, newTag.c_str()), ret);
         }
@@ -6372,8 +6405,8 @@ namespace hccl
                     auto tempLink = singleSubCommTransport.links[linkIdx];
                     MemDetails remoteMem;
                     u32 remoteId = tempLink->GetRemoteRank();
-                    CHK_PRT_RET((remoteId > MAX_RANK_NUM_A3),
-                        HCCL_ERROR("[%s]Invalid remoteId, valid range is [0, %u], remoteId[%u]", __func__,
+                    CHK_PRT_RET((remoteId >= MAX_RANK_NUM_A3),
+                        HCCL_ERROR("[%s]Invalid remoteId, valid range is [0, %u), remoteId[%u]", __func__,
                             MAX_RANK_NUM_A3, remoteId), HCCL_E_PARA);
                     void *userMemPtr = nullptr;
                     CHK_RET(tempLink->GetRemoteMem(UserMemType::INPUT_MEM, &userMemPtr));
@@ -7120,7 +7153,6 @@ namespace hccl
     u8 HcclCommunicator::GetOrderLaunchMode (bool isCapture)
     {
         bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
-        const u8 orderLaunchInvalidInHcom = 255;
         u8 orderLaunchMode = 0;
         HcclWorkflowMode mode = GetWorkflowMode();
         if (isCapture) {
@@ -7130,7 +7162,7 @@ namespace hccl
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::HCOM_MODE);
         } else {
-            orderLaunchMode = orderLaunchInvalidInHcom;
+            orderLaunchMode = AICPU_ORDERLAUNCH_INVALID_HCOM_MODE;
         }
 
         return orderLaunchMode;
@@ -7138,6 +7170,11 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode)
     {
+        if (orderLaunchMode == AICPU_ORDERLAUNCH_INVALID_HCOM_MODE) {
+            HCCL_INFO("[HcclCommunicator][InitAndCheckAicpuOrderNotify] orderLaunchMode is invalid in hcom "
+                      "for there is no attached stream included in this operator!");
+            return HCCL_SUCCESS;
+        }
         u32 idx0;
         u32 idx1;
         if (orderLaunchMode == 0) {
@@ -7244,7 +7281,9 @@ namespace hccl
         if (opParam.isCapture) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1)];
-            CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(identifier_, kfcOpStream, notify0, notify1, timeOut));
+            HcclRtEvent event0 = localAicpuOpEvent_[static_cast<u32>(AicpuLocalEventIdx::ORDER_INDEX_ACLGRAPH_EVENT_0)];
+            CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(
+                identifier_, kfcOpStream, notify0, notify1, timeOut, event0));
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
@@ -7259,7 +7298,8 @@ namespace hccl
                                                 reinterpret_cast<u64>(deviceContext.ptr()), opTilingDataMem.ptr(), opTilingDataSize,
                                                 kernelName, mode, opParam.tag, isCustom));
         if (opParam.isCapture) {
-            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream));
+            HcclRtEvent event1 = localAicpuOpEvent_[static_cast<u32>(AicpuLocalEventIdx::ORDER_INDEX_ACLGRAPH_EVENT_1)];
+            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream, event1));
         }
 
         uint64_t endTime = hrtMsprofSysCycleTime();
@@ -7925,8 +7965,6 @@ namespace hccl
                                                                    u64 *recvCounts, u64 *rdispls, HcclDataType recvType, u64 &memSize)
     {
         if (Is310P3Common(isHaveCpuRank_, deviceType_)) {
-            RPT_ENV_ERR(true, "EI0001", vector<string>({"env", "tips"}),
-                        vector<string>({"310P", std::string(__func__) + " is not supported"}));
             HCCL_ERROR("[%s][%s]GetAlltoAllStagedWorkSpaceMemSize Not Supported!",
                 LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_NOT_SUPPORTED.c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -8417,28 +8455,8 @@ namespace hccl
     HcclResult HcclCommunicator::LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
     {
-        s64 isOpenCustomSwitch = 0;
-        CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
-                                 HcclRtDeviceInfoType::HCCL_INFO_TYPE_CUST_OP_ENHANCE, isOpenCustomSwitch));
-        if (isOpenCustomSwitch == 1) {
-            std::string cannPath;
-            HcclResult ret = GetCannPath(binPath, cannPath);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                        HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
-                                   "cpuKernelMode[%u].",
-                                   ret, binPath, optionType, cpuKernelMode),
-                        ret);
-
-            ret = LoadBinaryFromFile(cannPath.c_str(), optionType, cpuKernelMode, binHandle);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                        HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
-                                   "cpuKernelMode[%u].",
-                                   ret, binPath, optionType, cpuKernelMode),
-                        ret);
-        } else {
-            binHandle = nullptr;
-            HCCL_RUN_WARNING("[LoadCustomFile]custom switch is not open, please confirm the switch.");
-        }
+        binHandle = nullptr;
+        HCCL_INFO("[LoadCustomFile]binPath[%s], optionType[%u], cpuKernelMode[%u]", binPath, optionType, cpuKernelMode);
         return HCCL_SUCCESS;
     }
 
@@ -8625,11 +8643,6 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         return topoAttr;
-    }
-
-    aclrtBinHandle HcclCommunicator::GetBinHandle()
-    {
-        return binHandle_;
     }
 
     HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
@@ -8976,5 +8989,13 @@ namespace hccl
         }
         HCCL_INFO("[%s] aicpuUnfoldConfig[%u]", __func__, GetAicpuUnfoldConfig());
         return GetAicpuUnfoldConfig();
+    }
+
+    aclrtBinHandle HcclCommunicator::GetBinHandle() {
+        if (binHandle_ == nullptr) {
+            HCCL_ERROR("[HcclCommunicator][GetBinHandle] GetBinHandle binHandle failed.binHandle is nullptr");
+            return nullptr;
+        }
+        return binHandle_;
     }
 }

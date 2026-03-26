@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -89,8 +89,13 @@ string LocalUbRmaBuffer::Describe() const
 
 std::unique_ptr<Serializable> LocalUbRmaBuffer::GetExchangeDto()
 {
-    std::unique_ptr<ExchangeUbBufferDto> dto
-        = make_unique<ExchangeUbBufferDto>(buf->GetAddr(), buf->GetSize(), buf->GetMemType(), buf->GetMemTag(), tokenValue, tokenId, keySize);
+    std::unique_ptr<ExchangeUbBufferDto> dto = make_unique<ExchangeUbBufferDto>(buf->GetAddr(),
+        buf->GetSize(),
+        buf->GetMemType(),
+        buf->GetMemTag().c_str(),
+        tokenValue,
+        tokenId,
+        keySize);
     (void)memcpy_s(dto->key, HRT_UB_MEM_KEY_MAX_LEN, key, HRT_UB_MEM_KEY_MAX_LEN);
     return std::unique_ptr<Serializable>(dto.release());
 }

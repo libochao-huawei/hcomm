@@ -23,11 +23,15 @@ Repeat::Repeat(CcuRepContext *context, CcuRelationalOperator<Variable, uint64_t>
     std::string label = "Repeat";
     beginLabel        = std::make_shared<CcuRepJumpLabel>(label);
     endLabel          = std::make_shared<CcuRepJumpLabel>("Break");
-
+    Variable tmp;
+    auto ret = CreateVariable(context, tmp);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("CreateVariable is failed. ret[%d]", ret);
+    }
     if (rel.type == CcuRelationalOperatorType::NOT_EQUAL) {
-        jump = std::make_shared<CcuRepJumpNE>(label, CreateVariable(context), rel.lhs, rel.rhs);
+        jump = std::make_shared<CcuRepJumpNE>(label, tmp, rel.lhs, rel.rhs);
     } else if (rel.type == CcuRelationalOperatorType::EQUAL) {
-        jump = std::make_shared<CcuRepJumpEQ>(label, CreateVariable(context), rel.lhs, rel.rhs);
+        jump = std::make_shared<CcuRepJumpEQ>(label, tmp, rel.lhs, rel.rhs);
     } else {
         THROW<CcuApiException>("Unsupported relational operation");
     }
@@ -44,7 +48,12 @@ Repeat::~Repeat()
 
 void Repeat::Break()
 {
-    auto jumpToEnd = std::make_shared<CcuRepJump>("Break", CreateVariable(context));
+    Variable tmp;
+    auto ret = CreateVariable(context, tmp);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("CreateVariable is failed. ret[%d]", ret);
+    }
+    auto jumpToEnd = std::make_shared<CcuRepJump>("Break", tmp);
     jumpToEnd->Reference(endLabel);
     AppendToContext(context, jumpToEnd);
 }

@@ -31,7 +31,7 @@ protected:
     // 获取device内存部分
     HcclResult GetRemoteCclbufferDeviceMem(u32 inputSliceIndex,
         LINK link, u32 outputSliceIndex, DeviceMem &remoteMem) override;
-    HcclResult GetLocalUserInDeviceMem(u32 rankIdInAllRanks, DeviceMem &locaMem) override;
+    HcclResult GetLocalUserInDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem) override;
     HcclResult GetLocalCclbufferDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem, u64 sliceOffset);
     HcclResult RunLocalCopy() override;
     HcclResult RunIntraAlltoallPreSync(u32 step) override;

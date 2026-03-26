@@ -14,9 +14,8 @@ namespace hcomm {
 
 HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out)
 {
-    auto iterPtr = endpointPairMap_.find(endpointDescPair);
-    if (iterPtr != endpointPairMap_.end()) {
-        out = iterPtr->second.get();
+    if (endpointPairMap_.find(endpointDescPair) != endpointPairMap_.end()) {
+        out = endpointPairMap_[endpointDescPair].get();
         return HCCL_SUCCESS;
     }
  

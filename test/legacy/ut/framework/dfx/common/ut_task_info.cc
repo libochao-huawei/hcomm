@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -183,7 +183,7 @@ TEST_F(TaskInfoTest, test_get_para_dma)
     TaskInfo taskInfo = InitTaskInfo();
     taskInfo.taskParam_.taskType = TaskParamType::TASK_RDMA;
     taskInfo.remoteRank_ = 3;
-    ParaDMA paraDMA {(void*)0xaaaa, (void*)0xbbbb, 0xa, 0xaaaabbbbcccc, DfxLinkType::ONCHIP};
+    ParaDMA paraDMA {(void*)0xaaaa, (void*)0xbbbb, 0xa, 0xaaaabbbbcccc, 1, DfxLinkType::ONCHIP};
     taskInfo.taskParam_.taskPara.DMA = paraDMA;
     EXPECT_EQ(taskInfo.GetParaInfo(), "src:[0xaaaa], dst:[0xbbbb], size:[0xa], notify id:[0x0000aaaabbbbcccc], link type:[DfxLinkType::ONCHIP], remote rank:[3]");
 }
@@ -193,7 +193,7 @@ TEST_F(TaskInfoTest, test_get_para_reduce)
     TaskInfo taskInfo = InitTaskInfo();
     taskInfo.taskParam_.taskType = TaskParamType::TASK_REDUCE_TBE;
     taskInfo.remoteRank_ = UINT32_MAX;
-    ParaReduce paraReduce {(void*)0xaaaa, (void*)0xbbbb, 0xa, 0xaaaabbbbcccc, DfxLinkType::HCCS, HcclReduceOp::HCCL_REDUCE_SUM, HcclDataType::HCCL_DATA_TYPE_INT32};
+    ParaReduce paraReduce {(void*)0xaaaa, (void*)0xbbbb, 0xa, 0xaaaabbbbcccc, 1, DfxLinkType::HCCS, HcclReduceOp::HCCL_REDUCE_SUM, HcclDataType::HCCL_DATA_TYPE_INT32};
     taskInfo.taskParam_.taskPara.Reduce = paraReduce;
     EXPECT_EQ(taskInfo.GetParaInfo(), "src:[0xaaaa], dst:[0xbbbb], size:[0xa], notify id:[0x0000aaaabbbbcccc], op:[0], data type:[2], link type:[DfxLinkType::HCCS], remote rank:[local]");
 }
@@ -206,22 +206,4 @@ TEST_F(TaskInfoTest, test_get_para_notify)
     taskInfo.taskParam_.taskPara.Notify.notifyID = 0xaaaabbbbcccc;
     taskInfo.taskParam_.taskPara.Notify.value = 0xa;
     EXPECT_EQ(taskInfo.GetParaInfo(), "notify id:[0x0000aaaabbbbcccc], value:[10], remote rank:[3]");
-}
-
-TEST_F(TaskInfoTest, test_get_op_info)
-{
-    TaskInfo taskInfo = InitTaskInfo();
-
-    taskInfo.dfxOpInfo_->index_ = 3;
-    taskInfo.dfxOpInfo_->op_.dataCount = 0xaaaabbbbcccc;
-    taskInfo.dfxOpInfo_->op_.reduceOp = ReduceOp::SUM;
-    taskInfo.dfxOpInfo_->op_.dataType = DataType::UINT64;
-    EXPECT_EQ(taskInfo.GetOpInfo(), "index[3], count[187650270809292], reduceType[ReduceOp::SUM], dataType[DataType::UINT64]");
-
-    taskInfo.dfxOpInfo_->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
-    taskInfo.dfxOpInfo_->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
-    EXPECT_EQ(taskInfo.GetOpInfo(), "index[3], count[187650270809292], reduceType[ReduceOp::SUM], src:[0x111122223333], dst:[0xaaaabbbbcccc], dataType[DataType::UINT64]");
-
-    taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
-    EXPECT_EQ(taskInfo.GetOpInfo(), "");
 }

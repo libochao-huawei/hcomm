@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -544,7 +544,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_when_task_more_than_50)
     GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
     MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);  // diveceId 0
     shared_ptr<DfxOpInfo> dfxOpInfo = make_shared<DfxOpInfo>();
-    dfxOpInfo->index_ = 3;
+    dfxOpInfo->commIndex_ = 3;
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::PROD;
     dfxOpInfo->op_.dataType = DataType::FP64;
@@ -596,7 +596,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_when_task_less_than_50)
     GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
     MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);  // diveceId 0
     shared_ptr<DfxOpInfo> dfxOpInfo = make_shared<DfxOpInfo>();
-    dfxOpInfo->index_ = 3;
+    dfxOpInfo->commIndex_ = 3;
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::PROD;
     dfxOpInfo->op_.dataType = DataType::FP64;
@@ -719,7 +719,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
     MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 1);  // diveceId 0
     shared_ptr<DfxOpInfo> dfxOpInfo = make_shared<DfxOpInfo>();
-    dfxOpInfo->index_ = 3;
+    dfxOpInfo->commIndex_ = 3;
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::PROD;
     dfxOpInfo->op_.dataType = DataType::FP64;
@@ -743,7 +743,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     // 打桩清除TaskKill状态, 清除表项, 清除CKE操作
     MOCKER(CcuCleanDieCkes).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuComponent::Init).stubs();
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(0));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(0)));
     MOCKER(HrtRaCustomChannel).stubs();
 
     // 调用 TaskExceptionHandler::Process() 打印异常DFX信息

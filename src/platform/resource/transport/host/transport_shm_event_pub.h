@@ -185,7 +185,7 @@ private:
     std::string linkTag_;
     s32 deviceLogicId_;
 
-    struct SocketWlistInfoT wlistInfo_;
+    struct SocketWlistInfoT wlistInfo_{};
     FdHandle fdHandle_ = nullptr;
     FdHandle socketHandle_ = nullptr;
     u32 role_ = 0;

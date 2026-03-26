@@ -37,6 +37,7 @@ BUILD_CB_TEST="false"
 
 ENABLE_UT="off"
 ENABLE_ST="off"
+ENABLE_GCOV="off"
 CMAKE_BUILD_TYPE="Debug"
 HCOMM_LIB_NAME="libhcomm.so"
 INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
@@ -81,6 +82,13 @@ function clean()
     mkdir -p ${BUILD_DIR}
 }
 
+function rmdir()
+{
+    if [ "${DO_NOT_CLEAN}" = "false" ] && [ $# -gt 0 ]; then
+        rm -rf "$@"
+    fi
+}
+
 function cmake_config()
 {
     local extra_option="$1"
@@ -103,7 +111,7 @@ function build_package(){
 function build_device(){
     cmake_config
     log "Info: build_device"
-    TARGET_LIST="hccp_service.bin rs ccl_kernel_plf ccl_kernel_plf_a ccl_kernel"
+    TARGET_LIST="hccp_service.bin rs net_co ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom"
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
@@ -181,12 +189,54 @@ function build_test() {
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
         && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
     fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_aicpu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_aicpu_2d_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/aicpu_2d_testcase/legacy_alg_aicpu_2d_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_hf16p_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_1d_hf16p_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_hf16p_testcase/legacy_alg_ccu_1d_hf16p_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part1" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_1d_testcase_part1
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part1/legacy_alg_ccu_1d_testcase_part1
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part2" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_1d_testcase_part2
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part2/legacy_alg_ccu_1d_testcase_part2
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_alg_ccu_reduce" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_reduce
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_reduce_testcase/legacy_alg_ccu_reduce
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_function_ut_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_function_ut_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/function_ut_testcase/legacy_alg_function_ut_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_alg_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/legacy_alg_testcase/legacy_alg_testcase
+    fi
 }
 
 function build_kernel() {
     cmake_config
     log "Info: build_kernel"
-    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json
+    build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom
 }
 
 function mk_dir() {
@@ -210,7 +260,7 @@ function build_ut() {
               -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
               -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
               -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-              -DENABLE_COV=${ENABLE_COV} \
+              -DENABLE_GCOV=${ENABLE_GCOV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
@@ -240,16 +290,14 @@ function build_ut() {
 }
 
 function make_ut_gov() {
-  if [[ "X$ENABLE_UT" = "Xon" || "X$ENABLE_COV" = "Xon" ]]; then
+  if [[ "X$ENABLE_UT" = "Xon" && "X$ENABLE_GCOV" = "Xon" ]]; then
     echo "Generated coverage statistics, please wait..."
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/all.info
-    lcov -r cov/all.info */src/platform/hccp/external_depends/* -o cov/tmp.info
-    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
-    # LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
-    # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${CANN_3RD_LIB_PATH}/*" -o cov/coverage.info
+    lcov -c -d ${BUILD_DIR}/test/ut/ -d ${BUILD_DIR}/test/legacy/ut/ -o cov/coverage.info
+    lcov -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
+    lcov -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
@@ -423,6 +471,46 @@ while [[ $# -gt 0 ]]; do
         TEST_TASK_NAME="executor_pipeline_hccl_test"
         shift
         ;;
+    --legacy_all_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_all_testcase"
+        shift
+        ;;
+    --legacy_aicpu_2d_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_aicpu_2d_testcase"
+        shift
+        ;;
+    --legacy_ccu_1d_hf16p_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_hf16p_testcase"
+        shift
+        ;;
+    --legacy_ccu_1d_testcase_part1)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_testcase_part1"
+        shift
+        ;;
+    --legacy_ccu_1d_testcase_part2)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_testcase_part2"
+        shift
+        ;;
+    --legacy_alg_ccu_reduce)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_alg_ccu_reduce"
+        shift
+        ;;
+    --legacy_function_ut_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_function_ut_testcase"
+        shift
+        ;;
+    --legacy_alg_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_alg_testcase"
+        shift
+        ;;
     --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
         KERNEL="true"
         shift
@@ -440,6 +528,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --cov)
+        ENABLE_GCOV="on"
         COV="true"
         shift
         ;;
@@ -542,7 +631,7 @@ cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
-    # make_ut_gov
+    make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
 elif [ "${KERNEL}" == "true" ]; then
@@ -577,8 +666,16 @@ elif [ "${FULL_MODE}" == "true" ]; then
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
+    rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
+    cd ..
+    mkdir -p ${BUILD_DEVICE_DIR}
+    cd ${BUILD_DEVICE_DIR}
+    CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
+    build_kernel
+    cd .. & cd ${BUILD_DIR}
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
+    rmdir ${BUILD_DEVICE_DIR}
 fi

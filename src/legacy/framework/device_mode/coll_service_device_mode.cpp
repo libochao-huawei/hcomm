@@ -81,7 +81,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
     // AIV aclgrah 流程
-    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV) {
+    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV 
+    || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         HandleAclGraphFirstOpAivBuff(stream->GetPtr());
     }
  
@@ -90,7 +91,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
  
     RegisterOpbasedStream(std::move(stream));
  
-    if(comm->GetOpExecuteConfig().accState == AcceleratorState::AIV){
+    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV 
+    || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         auto  insQueue = make_shared<InsQueue>();
  
         AivOpCacheArgs opCacheParam{comm->GetCurAlgName(), op.dataCount, op.dataType, op.opType, op.reduceOp, op.root, op.numBlocksLimit, op.outputDataType,{},{}};
@@ -103,7 +105,9 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
         }
         auto it = comm->hcclCacheMap_.find(opCacheParam);
         bool isCache = false;
-        if (it != comm->hcclCacheMap_.end()) {
+        bool isSendRecv = ((op.opType == OpType::SEND) || (op.opType == OpType::RECV) || (op.opType == OpType::BATCHSENDRECV));
+        bool isAlltoAllV = (op.opType == OpType::ALLTOALLV);
+        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv) && (!isAlltoAllV)) {
             isCache = true;
             insQueue = it->second;
         }  else{
@@ -564,7 +568,7 @@ void CollServiceDeviceMode::GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpAr
     superArgs.output             = aivOpArgs.output;
     superArgs.cclBufferSize      = comm->GetBufferSize();
 
-    HCCL_INFO("[CollServiceDeviceMode::%s] Tag %llu, clearEnable %llu, numBlocks %llu, dataCount %llu, cclBufferSize %llu.", __func__, superArgs.tag,
+    HCCL_INFO("[CollServiceDeviceMode::%s] Tag %lld, clearEnable %lld, numBlocks %llu, dataCount %llu, cclBufferSize %llu.", __func__, superArgs.tag,
               superArgs.clearEnable, superArgs.numBlocks, dataCount, superArgs.cclBufferSize);
 }
 
@@ -599,7 +603,7 @@ HcclResult CollServiceDeviceMode::GetAlgExecParam(bool clearEnable, u32 numBlock
 
     void *sendAlgParamMemPtr = nullptr;
     // alloc device 地址
-    sendAlgParamMemPtr = HrtMalloc(sizeof(AivSuperKernelArgs), RT_MEMORY_HBM);
+    sendAlgParamMemPtr = HrtMalloc(sizeof(AivSuperKernelArgs), static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH));
     CHK_PTR_NULL(sendAlgParamMemPtr);
     HCCL_INFO("SPK sendalgparam %p.", sendAlgParamMemPtr);
 

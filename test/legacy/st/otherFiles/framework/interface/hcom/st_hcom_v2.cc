@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -289,11 +289,11 @@ TEST_F(HcomTest, HcomGetWorkspaceMemSizeV2_func_err)
     char group[64] = "testGroup";
     u64 memSize = 0;
     HcclResult ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group, memSize);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
  
-    char group1[64];
+    char worldGroup[64] = "hccl_world_group";
     opType = "null";
-    ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, group1, memSize);
+    ret = HcomGetWorkspaceMemSizeV2(opType, count, dataType, worldGroup, memSize);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
  

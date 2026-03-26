@@ -32,7 +32,7 @@ public:
     ExecuteSelector &SetServerNum(u32 serverNum);
     ExecuteSelector &SetOpConfig(OpExecuteConfig opConfig);
     HcclResult       Run(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName);
-    AlgorithmType GetAlgorithmTypeForMC2CCU(const std::string& name);
+    AlgorithmType GetAlgorithmTypeForMC2CCU(const std::string& name) const;
 
 protected:
     RankGraph *rankGraph_ = nullptr;

@@ -92,7 +92,7 @@ HcclResult CallSingletons()
         }
         
         // 不同通信域初始化方式时序不同，hdc manager 重复 init 内部会跳过
-        HccpHdcManager::GetInstance();
+        HccpHdcManager::GetInstance().Init(deviceLogicId);
         HccpPeerManager::GetInstance(); // host网卡需要拉起peer模式hccp
         HccpTlvHdcManager::GetInstance();
         RdmaHandleManager::GetInstance();
@@ -302,7 +302,7 @@ HcclResult HcomCreateGroupImplV2(const std::string &group, u32 rankNum, const st
 
     /* 创建子通信域 */
     Hccl::CommParams subCommParams{group, static_cast<Hccl::RankId>(groupParamsV2Tem.groupRank),
-        rankNum, static_cast<Hccl::RankId>(groupParamsV2Tem.worldRank), Hccl::DevType::DEV_TYPE_910_95};
+        rankNum, static_cast<Hccl::RankId>(groupParamsV2Tem.worldRank), Hccl::DevType::DEV_TYPE_950};
     auto ret = hcomCommInfoV2.pComm->CreateSubComm(subCommParams, groupParamsV2Tem.groupRanks, groupParamsV2Tem.pComm);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Create][Group]errNo[0x%016llx] create group failed.", HCOM_ERROR_CODE(ret)), ret);
@@ -469,6 +469,33 @@ HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcomGetCommV2(void **commV2)
+{
+    CHK_PTR_NULL(commV2);
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    CHK_PTR_NULL(hcomCommInfoV2.pComm);
+    *commV2 = static_cast<void *>(hcomCommInfoV2.pComm.get());
+    HCCL_INFO("[HcomGetCommV2] success.");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
+{
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    auto iter = hcomCommInfoV2.hcclGroupMap.find(group);
+    if (iter == hcomCommInfoV2.hcclGroupMap.end()) {
+        HCCL_ERROR("[HcomGetGroupParamsV2] group[%s] not found", group);
+        return HCCL_E_PARA;
+    }
+    HcclGroupParamsV2 &groupParamsV2 = iter->second;
+    HcclGroupParamsV2 *groupParamsTem = static_cast<HcclGroupParamsV2*>(groupParams);
+    *groupParamsTem = groupParamsV2;
+    CHK_PTR_NULL(groupParamsV2.pComm);
+    *commV2 = static_cast<Hccl::HcclCommunicator*>(groupParamsV2.pComm.get());
+    HCCL_INFO("[HcomGetGroupParamsV2] success. group[%s]", group);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomDestroyV2(void)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
@@ -549,7 +576,7 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
     bool isWorldGroup = true;
     // 临时修改这个为4，后边要改掉这个，在初始流程中，解析完虚拟拓扑后，添加ranksize
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(myRank), 0, static_cast<Hccl::RankId>(myRank),
-        Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     hcomCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     CHK_PTR_NULL(hcomCommInfoV2.pComm);
     auto res = hcomCommInfoV2.pComm->Init(ranktableInfo);
@@ -607,7 +634,7 @@ HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
     bool isWorldGroup = true;
     // 临时修改这个为4，后边要改掉这个，在初始流程中，解析完虚拟拓扑后，添加ranksize
     Hccl::CommParams commParams{commId, static_cast<Hccl::RankId>(myRank), 0, static_cast<Hccl::RankId>(myRank),
-        Hccl::DevType::DEV_TYPE_910_95, devUsed, isWorldGroup};
+        Hccl::DevType::DEV_TYPE_950, devUsed, isWorldGroup};
     hcomCommInfoV2.pComm.reset(new (std::nothrow) Hccl::HcclCommunicator(commParams));
     CHK_PTR_NULL(hcomCommInfoV2.pComm);
     auto res = hcomCommInfoV2.pComm->Init(rankTableM);

@@ -295,7 +295,7 @@ HcclResult TransportHeterog::PrepareSocketInfo(s32 type, s32 linkNum, const stri
         }
 
         HCCL_INFO("link[%d] tag[%s]", i, tag.c_str());
-        SocketInfoT tmpInfo;
+        SocketInfoT tmpInfo = {};
         tmpInfo.socketHandle = nicSocketHandle_;
         tmpInfo.fdHandle = nullptr;
         tmpInfo.remoteIp.addr = peerAddr.addr;
@@ -490,9 +490,9 @@ HcclResult TransportHeterog::CheckConsistentFrame()
     if (remoteRankTableCrc != localRankTableCrc) {
         RPT_INPUT_ERR(true,
             "EI0005",
-            std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
+            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
             std::vector<std::string>(
-                {transTag_, "ranktable CRC", std::to_string(localRankTableCrc), std::to_string(remoteRankTableCrc)}));
+                {"HcomBatchGet", transTag_, "ranktable CRC", std::to_string(localRankTableCrc), std::to_string(remoteRankTableCrc)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] ranktable CRC check failed, crcValue[%u], receive crcvalue[%u].",
             LOG_KEYWORDS_INIT_CHANNEL.c_str(),
             LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),

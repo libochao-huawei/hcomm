@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef HCCLV2_RMA_DEV_NET_CONNECTION_H
@@ -13,6 +13,8 @@
 #include "rma_connection.h"
 #include "op_mode.h"
 #include "orion_adapter_hccp.h"
+#include "socket.h"
+#include "task.h"
 namespace Hccl {
 
 class DevRdmaConnection : public RmaConnection {

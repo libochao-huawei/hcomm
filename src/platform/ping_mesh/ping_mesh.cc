@@ -68,7 +68,7 @@ inline HcclResult GetUbToken(u32 devicePhyId, u32* client_qp_token, u32* client_
     std::lock_guard<std::mutex> lock(ubTokenMutex);
     if (!isInitialized) {
         u32 devPhyId = devicePhyId;
-        struct RaInfo raInfo;
+        struct RaInfo raInfo = {};
         raInfo.mode = HrtNetworkMode::HDC;
         raInfo.phyId = devPhyId;
         HcclResult ret = hrtRaGetSecRandom(&raInfo, client_qp_token);
@@ -350,7 +350,10 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     initAttr.version = 0; // 暂时无用，默认给0
     initAttr.mode = NETWORK_OFFLINE; // net work mode 枚举值
     initAttr.ub.phyId = deviceId;
-    HCCL_INFO("Input Eid %s", ipAddr.GetEid().Describe().c_str());
+    if (eidmap.find(ipAddr.GetEid()) == eidmap.end()) {
+        HCCL_ERROR("eidmap don't have input Eid,Input Eid %s", ipAddr.GetEid().Describe().c_str());
+        return HCCL_E_NOT_FOUND;
+    }
     initAttr.dev.ub.eidIndex = eidmap.at(ipAddr.GetEid());//从eid_list获取eidIndex
     u32 ret = memcpy_s(initAttr.dev.ub.eid.raw, sizeof(initAttr.dev.ub.eid.raw), 
             ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
@@ -365,10 +368,7 @@ inline HcclResult RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, 
     u32 client_qp_token, client_seg_token;
     u32 server_qp_token, server_seg_token;
     HcclResult token_ret = GetUbToken(deviceId, &client_qp_token, &client_seg_token, &server_qp_token, &server_seg_token);
-    if (token_ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[RpingUbAttrInit]GetUbToken failed, token_ret:%d", token_ret);
-        return token_ret;
-    }
+    CHK_RET(token_ret);
     // client的初始化信息
     initAttr.client.ub.cqAttr.sendCqDepth = maxWrDepth;
     initAttr.client.ub.cqAttr.recvCqDepth = maxWrDepth;
@@ -436,6 +436,7 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
             HCCL_ERROR("[RaGetEidMap]memcpy_s failed, error code = %d.", ret);
             return HCCL_E_INTERNAL;
         }
+        HCCL_RUN_INFO("[RaGetEidMap] eid[%s], eidIndex[%u] get.", eid.Describe().c_str(), infoList[i].eidIndex);
         eidmap.insert(std::make_pair(eid, infoList[i].eidIndex));
     }
 
@@ -537,7 +538,6 @@ HcclResult PingMesh::RpingResultInfoInit(PingTargetResult *resultInfo, std::map<
             resultInfo[i].remoteInfo.qpInfo.rdma.gid = rdmainfo->rdma.gid;
             resultInfo[i].remoteInfo.qpInfo.rdma.qpn = rdmainfo->rdma.qpn;
             resultInfo[i].remoteInfo.qpInfo.rdma.qkey = rdmainfo->rdma.qkey;
-
         }
         const char *socNamePtr = aclrtGetSocName();
         CHK_PTR_NULL(socNamePtr);
@@ -603,7 +603,6 @@ HcclResult PingMesh::RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipA
 {
     // 给当前线程添加名字
     SetThreadName("Hccl_PingMesh");
-
     // 等待client端发送的建链请求
     HcclIpAddress remoteIp = HcclIpAddress();
     std::string tag = "PingMesh" + std::string(ipAddr.GetReadableIP());
@@ -1024,7 +1023,6 @@ HcclResult PingMesh::HccnRpingAddTarget(u32 deviceId, u32 targetNum, RpingInput 
     PingTargetInfo target[1] = { {0} }; // hccp侧只能一个一个处理，因此数组大小固定为1
     
     ret = HccnTargetAttrInter(targetNum, input, config, target);
-
     if ((ret == HCCL_SUCCESS) && (rpingState_ == RpingState::INITED)) { // 从初始化完成的状态切换到ready to start的状态
         rpingState_ = RpingState::READY;
     }
@@ -1083,7 +1081,6 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
     // 判断当前状态
     CHK_RET(RpingstateCheck(rpingState_, RpingState::READY));
     CHK_RET(RpingstateCheck(rpingState_, RpingState::INITED)); // 所有目标都被移除时回到READY前的状态
-
     if (pingHandle_ == nullptr) {
         HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Device[%u] cannot add targets because it is not inited.", deviceId);
         return HCCL_E_NOT_FOUND;
@@ -1094,7 +1091,6 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
     PingTargetCommInfo *target = new (std::nothrow) PingTargetCommInfo[targetNum];
     std::shared_ptr<HcclSocket> socket = nullptr;
     ret = HccnTarRemoveAttrInter(targetNum, input, target, socket);
-    
     if (ret != HCCL_SUCCESS) {
         delete[] target;
         HCCL_ERROR("[HCCN][HccnRpingRemoveTarget]Target info is not correct, ret[%d].", ret);
@@ -1131,14 +1127,11 @@ HcclResult PingMesh::HccnRpingGetTarget(u32 deviceId, u32 targetNum, RpingInput 
             continue;
         }
         HcclSocketStatus socketStatus = socketMaps_[std::string(input[i].dip.GetReadableIP())]->GetStatus();
-
         // 转换状态信息
         RpingLinkState linkStatus = ConvertHcclSocketStatus(socketStatus);
-
         // 记录查询结果
         targetStat[i] = static_cast<int>(linkStatus);
     }
-
     return HCCL_SUCCESS;
 }
 
@@ -1153,7 +1146,6 @@ HcclResult PingMesh::HccnRpingBatchPingStart(u32 deviceId, u32 pktNum, u32 inter
         HCCL_ERROR("[HCCN][HccnRpingBatchPingStart]Device[%u] cannot start ping because it is not inited.", deviceId);
         return HCCL_E_NOT_FOUND;
     }
-
     // 计算内存空间能否保存全部的payload信息，内存不足的话不可以发起ping请求
     PingBufferInfo *bufferInfo = &(initInfo_.result);
     u32 targetNum = rpingTargetNum_;
@@ -1163,16 +1155,13 @@ HcclResult PingMesh::HccnRpingBatchPingStart(u32 deviceId, u32 pktNum, u32 inter
         payloadLen, bufferInfo->bufferSize, pktNum, targetNum);
         return HCCL_E_MEMORY;
     }
-
-    PingTaskAttr attr;
+    PingTaskAttr attr = {};
     attr.packetCnt = pktNum;
     attr.packetInterval = interval;
     attr.timeoutInterval = timeout;
-
     CHK_RET(hrtRaPingTaskStart(pingHandle_, &attr));
     HCCL_INFO("[HCCN][HccnRpingBatchPingStart]pingmesh task is started on device[%u].", deviceId);
     rpingState_ = RpingState::RUN;
-
     return HCCL_SUCCESS;
 }
 
@@ -1284,8 +1273,6 @@ HcclResult PingMesh::HccnRpingRefillPayloadHead(u8 *originalHead, u32 payloadNum
     return HCCL_SUCCESS;
 }
 
-
-
 HcclResult PingMesh::HccnRpingRefillUbPayloadHead(u8 *originalHead, u32 payloadNum)
 {
     for (u32 i = 0; i < payloadNum; i++) {
@@ -1341,7 +1328,6 @@ HcclResult PingMesh::HccnRpingRefillUbPayloadHead(u8 *originalHead, u32 payloadN
         head->addrType = HCCN_RPING_ADDR_TYPE_EID;
         originalHead += BYTE_PER_TARGET_DEFAULT;
     }
-
     return HCCL_SUCCESS;
 }
 

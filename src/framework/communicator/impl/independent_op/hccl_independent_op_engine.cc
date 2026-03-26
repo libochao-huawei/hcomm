@@ -14,15 +14,16 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "hccl_mem.h"
 #include "stream_pub.h"
 #include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
 #include "hccl_independent_common.h"
 #include "profiling/profiling.h"
-
+#include "aicpu_operator_pub.h"
 using namespace hccl;
+constexpr u32 MAX_EXPORT_THREAD_NUM = 40U;
 
 HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
     CommEngine engine, uint32_t *notifyNum)
@@ -59,6 +60,7 @@ HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
 HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum,
     uint32_t notifyNumPerThread, ThreadHandle *threads)
 {
+    u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(threads == nullptr,  HCCL_ERROR("[%s] threads is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(!IsValidCommEngine(engine), 
@@ -76,7 +78,40 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CHK_PTR_NULL(collComm);
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
-        ret = engineResMgr->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads, threadId);
+        ret = engineResMgr->HcclThreadAcquireV2(engine, threadNum, notifyNumPerThread, threads, threadId);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] failed to create threads for engine[%d],threadsNum[%u], notifyNumperThread[%u]",
+            __func__, engine, threadNum, notifyNumPerThread);
+            return ret;
+        }
+        Mc2CommInfo mc2CommInfo;
+        mc2CommInfo.FreeStreamId = 0;
+        mc2CommInfo.streamsId = threadId;
+        mc2CommInfo.groupname = commId;
+        mc2CommInfo.myRankId = collComm->GetMyRankId();
+        mc2CommInfo.rankSize = collComm->GetRankSize();
+        CHK_RET(collComm->GetParentRankId(mc2CommInfo.parentRankId));
+        HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclCommDfx);
+        hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
+        if (engine == CommEngine::COMM_ENGINE_AICPU_TS || engine == CommEngine::COMM_ENGINE_AICPU) {
+            HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel begin");
+            const std::string KernelName = "RunAicpuIndOpThreadInit";
+            CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
+            HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel success");
+        } else {
+            auto hcclCommDfxCallBack = collComm->GetDfxCallback();
+            for (u32 num = 0; num < threadNum; ++num) {
+                int hert = HcommThreadRegisterDfx(threads[num], hcclCommDfxCallBack);
+                if (hert != HCCL_SUCCESS) {
+                    HCCL_ERROR("[HcclThreadAciqure] ReportThreadAciqureKernel HcommThreadRegisterDfx failed hert:[%d],num:[%d]",
+                        hert, num);
+                    return HCCL_E_PTR;
+                }
+            }
+        }
+        return HCCL_SUCCESS;
+
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
@@ -119,6 +154,26 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
         CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadAcquireWithStream(engine, stream, notifyNum, thread);
+        auto hcclCommDfxCallback = collComm->GetDfxCallback();
+        int hret = HcommThreadRegisterDfx(*thread, hcclCommDfxCallback);
+        if (hret != 0) {
+            HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed");
+            return HCCL_E_PTR;
+        }
+        Thread *threadPtr = reinterpret_cast<Thread *>(*thread);
+        CHK_PTR_NULL(threadPtr);
+        Stream *threadStream = threadPtr->GetStream();
+        CHK_PTR_NULL(threadStream);
+        Mc2CommInfo mc2CommInfo;
+        mc2CommInfo.FreeStreamId = 0;
+        mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->id()));
+        mc2CommInfo.groupname = commId;
+        mc2CommInfo.myRankId = collComm->GetMyRankId();
+        mc2CommInfo.rankSize = collComm->GetRankSize();
+        CHK_RET(collComm->GetParentRankId(mc2CommInfo.parentRankId));
+        HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+        CHK_PTR_NULL(hcclCommDfx);
+        hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
@@ -135,7 +190,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
 {
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PARA);
@@ -150,12 +205,12 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType noti
 
     if (commEngine == CommEngine::COMM_ENGINE_CPU || commEngine == CommEngine::COMM_ENGINE_CPU_TS
         || commEngine == CommEngine::COMM_ENGINE_CCU) {
-        if (notifyType != NotifyType:: NOTIFY_TYPE_RTS_NOTIFY) {
+        if (notifyType != ::NOTIFY_TYPE_RTS_NOTIFY) {
             HCCL_ERROR("[%s] commEngine[%u] and notifyType[%u] are mismatch",  __func__, commEngine, notifyType);
             return HCCL_E_PARA;
         }
     } else {
-        if (notifyType != NotifyType:: NOTIFY_TYPE_DEVICE_MEM) {
+        if (notifyType != ::NOTIFY_TYPE_DEVICE_MEM) {
             HCCL_ERROR("[%s] commEngine[%u] and notifyType[%u] are mismatch",  __func__, commEngine, notifyType);
             return HCCL_E_PARA;
         }
@@ -225,8 +280,8 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     CHK_PTR_NULL(exportedThreads);
     CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
                 HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(dstCommEngine)), HCCL_E_PARA);
-    if (threadNum == 0) {
-        HCCL_ERROR("[%s] threadNum is 0", __func__);
+    if (threadNum == 0 || threadNum > MAX_EXPORT_THREAD_NUM) {
+        HCCL_ERROR("[%s] threadNum is 0 or greater than %u", __func__, MAX_EXPORT_THREAD_NUM);
         return HCCL_E_PARA;
     }
 
@@ -234,10 +289,45 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     std::string commId = hcclComm->GetIdentifier();
     HCCL_INFO("Entry-[%s]:comm[%s], threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]", 
              __func__, commId.c_str(), threadNum, dstCommEngine, threads, exportedThreads);
-    auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
-    HcclResult ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+    HcclResult ret;
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
+        CHK_PTR_NULL(engineResMgr);
+        ret = engineResMgr->HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+    } else {
+        auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
+        ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+    }
+
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Thread export failed. Export threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]",
          __func__, threadNum, dstCommEngine, threads, exportedThreads), ret);
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclThreadResGetInfo(HcclComm comm, ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(info);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    std::string commId = hcclComm->GetIdentifier();
+    HCCL_INFO("Entry-[%s]:comm[%s], thread[0x%llx], resType[%d], infoLen[%u], info[%p]",
+             __func__, commId.c_str(), thread, static_cast<int32_t>(resType), infoLen, info);
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommEngineResMgr* engineResMgr = collComm->GetCommEngineResMgr();
+        CHK_PTR_NULL(engineResMgr);
+        ret = engineResMgr->HcclThreadResGetInfo(thread, resType, infoLen, info);
+    } else {
+        HCCL_ERROR("[%s] communicatorType is not supported.", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] thread resource get info failed. thread[0x%llx], resType[%d], infoLen[%u], info[%p]",
+         __func__, thread, static_cast<int32_t>(resType), infoLen, info), ret);
+    HCCL_INFO("[%s]:comm[%s] get thread resource success. ", __func__, commId.c_str());
     return HCCL_SUCCESS;
 }

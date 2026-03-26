@@ -50,6 +50,7 @@
 #include "hccl_aiv_utils.h"
 #include "error_message_v2.h"
 #include "hccp.h"
+#include "aicpu/launch_device.h"
 
 namespace Hccl {
 
@@ -94,7 +95,7 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
-    HcclResult InitDeviceListenPort(u32 &linstenPort);
+    HcclResult InitDeviceListenPort(u32 &linstenPort) const;
 
     u32 GetCcuMc2ServerNum();
 
@@ -165,6 +166,8 @@ public:
     virtual Trace &GetTrace() const;
 
     virtual u32 GetOpBaseOpIndex() const;
+
+    virtual u32 GetOpIndex() const;
 
     u32 GetSubmittedOpCnt() const;
 
@@ -340,7 +343,8 @@ public:
     virtual CcuStreamSyncNotifyManager &GetCcuStreamSyncNotifyManager() const;
 
     void saveCCUParams(std::vector<std::vector<CcuTaskParam>> &&ccuParams,
-        std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, bool isSlave = false)
+                       std::vector<std::vector<CcuProfilingInfo>>&&ccuProfilingInfo, u64 execId, CcuInstType insType, 
+                       bool isSlave = false)
     {
         auto &ccuParamsMapping = colCcuParamMapping[currentCollOperator->opType];
         auto &ccuParamsNotCacheKey = colParamsNotCacheKey[currentCollOperator->opType];
@@ -348,7 +352,7 @@ public:
             ccuParamsNotCacheKey.find(ccuParamsMappingKey) == ccuParamsNotCacheKey.end()) {
             ccuParamsMapping.emplace(std::piecewise_construct, std::forward_as_tuple(ccuParamsMappingKey),
                                      std::forward_as_tuple(std::move(ccuParams), std::move(ccuProfilingInfo), execId,
-                                                           isSlave, static_cast<void*>(this)));
+                                                           insType, isSlave, static_cast<void *>(this)));
         } else {
             ccuParamsMapping.erase(ccuParamsMappingKey);
             if (ccuParamsMapping.empty()) {
@@ -373,9 +377,13 @@ public:
     
     HcclResult ClearOpResource(const std::string &opTag);// 清空opTag所属资源
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
-    std::string GetTopoFilePath();
+    std::string GetTopoFilePath() const;
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
+    u32 GetRankInParentComm();
+    aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
+    bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
+
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -424,12 +432,14 @@ private:
     std::vector<CommLink> linkListVec;
     std::vector<uint32_t> ranksVec;
     std::vector<uint32_t> topoInstsVec;
+    std::vector<u32> enableP2PDevices_;
 
     NotifyTimeoutCfg notifyTimeoutCfg;
 
     u32 step           = 0; // 全局device信息的step
     u32 opBaseOpIndex  = 0; // 单算子次数
     u32 collOpIndex    = 0; // 集合通信算子次数
+    u32 opIndex        = 0; // 下发算子总计数(单算子/图模式/CCU快速下发)
     u32 sendRecvIndex  = 0; // send/recv 算子次数
     u32 submittedOpCnt = 0;
     u32 aivCoreLimit   = MAX_NUM_BLOCKS;
@@ -487,6 +497,7 @@ private:
     CollOpParams                               curOpParams; // 当前算子参数
     std::map<std::pair<OpType, string>, std::pair<AcceleratorState, string>> 
         opAcceStateCache{}; // opType + algName --> acceleratorState + newAlgName
+    AicpuBinaryHolder aicpuKernelHolder_;
 
     void InitCommonData(const CommParams &commParams);
     void InitCommonDataNotInitDevType(const CommParams &commParams, const HcclCommConfig &commConfig);
@@ -502,6 +513,8 @@ private:
     void InitCollService();
     void InitHccpHdc() const;
     void InitCcuSuperFastLoad();
+    void InitPreResource();
+    void DeInitPreResource();
     void InitSocketManager();
     void InitRmaConnManager();
     void InitNotifyFixedValue();
@@ -522,9 +535,10 @@ private:
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
+    void RegisterAicpuKernel();
 
     // dpu相关
-    void InitHccpPeer();           // 拉起peer模式HCCP进程
+    void InitHccpPeer() const;           // 拉起peer模式HCCP进程
     bool IsNeedDpu();             // 判断是否需要Host网卡参与集合通信
     void InitDpuKernel();
     std::unordered_set<IpAddress> GetHostIpFromRankGraph();
@@ -559,6 +573,7 @@ private:
     bool taskExceptionEnv{true}; // 默认HCCL_DFS_CONFIG="task_exception:on" 且默认on下不开启快速下发
     bool enableProfilingEnv{false};
     bool TryFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream);
+    void FillAllToAllVArgs(const CollOpParams &opParams, rtCcuTaskInfo_t *&ccuParams) const;
     void ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtStream const stream, CachedCCUParams &params);
 
     void OpAcceleratorStateFallback(); // 算子粒度加速模式状态回退

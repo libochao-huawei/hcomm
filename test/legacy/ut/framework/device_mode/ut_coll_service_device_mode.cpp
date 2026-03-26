@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -21,6 +21,9 @@
 #include "communicator_callback.h"
 #include "stream_utils.h"
 #include "rdma_handle_manager.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef private
 #undef protected
 
@@ -70,10 +73,10 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
 
         // 资源初始化
         MOCKER_CPP(&AicpuInsPreprocessor::Preprocess).stubs().with().will(ignoreReturnValue());
@@ -160,7 +163,7 @@ protected:
         levelRankPairs.push_back({1, 1});
         collAlgOpReq.resReq.levelRankPairs = levelRankPairs;
 
-        CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+        CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
         MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::Orchestrate,
                            HcclResult(CollAlgComponent::*)(const CollAlgOperator &op, const CollAlgParams &params,
                                                            const string &algName, InsQuePtr queue))
@@ -295,7 +298,7 @@ TEST_F(CollServiceDeviceModeTest, test_alloc_comm_resource_by_tiling_success)
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     rtFusionArgsEx_t fusionArgs;
     rtCcuTaskGroup_t ccuTaskGroup;
@@ -394,12 +397,12 @@ TEST_F(CollServiceDeviceModeTest, test_GetSnapShotDynamicBuf)
     u32 utCntCke = 3;
     vector<CcuTransport *> utCcuTransportVec;
     MOCKER_CPP(&CcuTransportGroupMgr::GetAllTransportGroups).stubs().with().will(returnValue(utLinkGroups));
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
         .will(returnValue(collAlgOpReq));
-    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_950, 0, 1);
     CollOperator op;
     BinaryStream bs{};
 
@@ -452,12 +455,12 @@ TEST_F(CollServiceDeviceModeTest, test_IsAllTransportRecoveredReady)
     u32 utCntCke = 3;
     vector<CcuTransport *> utCcuTransportVec;
     MOCKER_CPP(&CcuTransportGroupMgr::GetAllTransportGroups).stubs().with().will(returnValue(utRankGroups));
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
         .will(returnValue(collAlgOpReq));
-    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP(&CcuInsPreprocessor::RecoverCcuTransportConfirm)
         .stubs()
         .with()
@@ -495,12 +498,12 @@ TEST_F(CollServiceDeviceModeTest, test_IsAllTransportRecoveredReady_false)
     u32 utCntCke = 3;
     vector<CcuTransport *> utCcuTransportVec;
     MOCKER_CPP(&CcuTransportGroupMgr::GetAllTransportGroups).stubs().with().will(returnValue(utRankGroups));
-    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP_VIRTUAL(collAlgComponent, &CollAlgComponent::GetCollAlgOpReq)
         .stubs()
         .with(any(), any())
         .will(returnValue(collAlgOpReq));
-    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_910_95, 0, 1);
+    comm.collAlgComponent = make_shared<CollAlgComponent>(nullptr, DevType::DEV_TYPE_950, 0, 1);
     MOCKER_CPP(&CcuInsPreprocessor::RecoverCcuTransportConfirm)
         .stubs()
         .with()
@@ -720,7 +723,7 @@ TEST_F(CollServiceDeviceModeTest, should_success_when_AllocCommResource_aiv)
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     rtFusionArgsEx_t fusionArgs;
     rtCcuTaskGroup_t ccuTaskGroup;
@@ -810,7 +813,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs0_Expect_TH
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     rtFusionArgsEx_t fusionArgs;
     rtCcuTaskGroup_t ccuTaskGroup;
@@ -916,7 +919,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs100_Expect_
     std::vector<Hccl::LinkData> linkVec;
     char *buf = new char[16 * 1024 * 1024];
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(buf)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x100000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x100000));
 
     void* mem = malloc(sizeof(Mc2InitTilingInner) + sizeof(Mc2CcTilingInner));
     Mc2InitTilingInner *mc2TilingPtr = reinterpret_cast<Mc2InitTilingInner *>(mem);
@@ -944,7 +947,7 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs100_Expect_
 
 TEST_F(CollServiceDeviceModeTest, ut_alloc_cnt_notify_for_single_queue_with_local_post_to)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
 
     CommunicatorImpl comm;
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
@@ -960,7 +963,7 @@ TEST_F(CollServiceDeviceModeTest, ut_alloc_cnt_notify_for_single_queue_with_loca
 
 TEST_F(CollServiceDeviceModeTest, ut_alloc_cnt_notify_for_single_queue_with_local_wait_from)
 {
-    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
+    MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_950)));
 
     CommunicatorImpl comm;
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);

@@ -18,7 +18,6 @@
 #include "global_mirror_tasks.h"
 #include "ccu_dfx.h"
 #include "ccu_task_param.h"
-#include "hccl_common_v2.h"
 #include "error_message_v2.h"
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
@@ -44,7 +43,7 @@ private:
     static void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId);
     static void ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionInfo);
     static std::vector<CcuTaskParam> GetMC2AlgTaskParam(const TaskInfo& taskInfo);
-    static void ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
+    static void ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const TaskInfo& taskInfo);
     static void ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
@@ -73,7 +72,7 @@ private:
     static std::string GetCcuErrorMsgBufLocWrite(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static std::string GetCcuErrorMsgBufReduce(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static RankId GetRankIdByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
-    static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo, string &groupRankContent, string &stageErrInfo);
+    static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, const TaskInfo &exceptionTaskInfo, string &groupRankContent, string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo);
     static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
     static std::string GetCcuLenErrorMsg(const uint64_t len);
@@ -94,11 +93,11 @@ private:
     // 私有拷贝构造函数和赋值运算符，防止对象被拷贝
     TaskExceptionHandlerManager(const TaskExceptionHandlerManager &)            = delete;
     TaskExceptionHandlerManager &operator=(const TaskExceptionHandlerManager &) = delete;
-    void RegisterGetAicpuTaskException(u32 streamId, ErrorMessageReport errorMessageReport);
 
 private:
     // 全局静态数组，存储异常处理器指针
-    static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> handlers_;
+    static constexpr u32 MAX_MODULE_DEVICE_NUMS = 65;
+    static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUMS> handlers_;
 };
 
 #ifdef __cplusplus

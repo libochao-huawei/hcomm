@@ -53,7 +53,7 @@ HcclResult TaskService::TaskUnRegister(std::string taskType)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag)
+HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
 {
     aclError ret = aclrtMemcpy(flagPtr, sizeof(newFlag), &newFlag, sizeof(newFlag), aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);
     if (ret != ACL_SUCCESS) {
@@ -63,7 +63,7 @@ HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag)
+HcclResult TaskService::ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag) const
 {
     CHK_PTR_NULL(srcFlagPtr);
     aclError ret
@@ -75,11 +75,12 @@ HcclResult TaskService::ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskService::ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr)
+HcclResult TaskService::ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr) const
 {
     CHK_PTR_NULL(srcTaskTypePtr);
     // 读 taskType
     char    *taskType = new char[TASKTYPE_ADDR_LENGTH];
+    CHK_PTR_NULL(taskType);
     aclError ret      = aclrtMemcpy(taskType, (sizeof(char) * TASKTYPE_ADDR_LENGTH), srcTaskTypePtr,
                                     (sizeof(char) * TASKTYPE_ADDR_LENGTH), aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST);
     if (ret != ACL_SUCCESS) {
@@ -162,7 +163,6 @@ HcclResult TaskService::SynchronizeControlInfo()
 
 HcclResult TaskService::TaskRun()
 {
-    // 检查shmem和hostMem是否非空
     CHK_PTR_NULL(hostMem_);
     CHK_PTR_NULL(npu2dpuMem_);
     CHK_PTR_NULL(dpu2npuMem_);
@@ -179,8 +179,10 @@ HcclResult TaskService::TaskRun()
     uint8_t flag{0};
     uint8_t *srcFlagPtr = static_cast<uint8_t *>(npu2dpuMem_);
     uint8_t *srcTaskTypePtr = srcFlagPtr + sizeof(flag);
-    HCCL_INFO("[TaskService::TaskRun] TaskService{shareHBM:%p}", srcFlagPtr);
     std::string taskTypeStr;
+
+    CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET)); // 初始化重置flag 为 0
+
     while (true) {
         CHK_RET(ReadFlag(srcFlagPtr, flag));
         switch (flag) {

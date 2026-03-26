@@ -4,16 +4,14 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "ccu_connection.h"
 
-#include <random>
-
+#include <cstdlib>
 #include "hccp_ctx.h"
-
 #include "buffer.h"
 #include "exception_util.h"
 #include "orion_adapter_rts.h"
@@ -81,7 +79,7 @@ CcuConnStatus CcuConnection::GetStatus()
 
     return status;
 }
-
+// 获取本端内存，为部分远端不可写的tokenId
 HcclResult CcuConnection::GetLocalCcuRmaBufferInfo()
 {
     uint64_t ccuBufSize = 0; // 暂未使用
@@ -162,7 +160,6 @@ bool CcuConnection::CreateJetty()
         }
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            isJettyCreated = true;
             HCCL_ERROR("[CcuConnection][%s] failed, hccl result[%d]", __func__, ret);
             ThrowAbnormalStatus(std::string(__func__));
         }
@@ -484,20 +481,33 @@ int32_t CcuConnection::GetDevLogicId() const
     return devLogicId;
 }
 
-std::vector<ConnJettyInfo> CcuConnection::GetJettyInfo()
+std::vector<ConnJettyInfo> CcuConnection::GetDeleteJettyInfo()
 {
-    std::vector<ConnJettyInfo> connJettyInfos;
+    std::vector<ConnJettyInfo> connDeleteJettyInfos;
     ConnJettyInfo jettyInfo;
-    for (size_t i = 0; i < jettyNum; i++) {
-        ccuJettys_[i]->GetJettyInfo(jettyInfo);
-        jettyInfo.rdmaHandle = rdmaHandle;
-        if (importJettyCtxs[i].outParam.handle != 0) {
-            jettyInfo.remoteJetty = importJettyCtxs[i].outParam.handle;
-            importJettyCtxs[i].outParam.handle = 0;
+    for (auto &ccuJetty : ccuJettys_) {
+        if (ccuJetty != nullptr) {
+            ccuJetty->GetJettyInfo(jettyInfo);
+            jettyInfo.rdmaHandle = rdmaHandle;
+            connDeleteJettyInfos.push_back(jettyInfo);
         }
-        connJettyInfos.push_back(jettyInfo);
     }
-    return connJettyInfos;
+    return connDeleteJettyInfos;
+}
+
+std::vector<ConnJettyInfo> CcuConnection::GetUnimportJettyInfo()
+{
+    std::vector<ConnJettyInfo> connUnimportJettyInfos;
+    ConnJettyInfo jettyInfo;
+    for (auto &item : importJettyCtxs) {
+        if (item.outParam.handle != 0) {
+            jettyInfo.remoteJetty = item.outParam.handle;
+            jettyInfo.rdmaHandle = rdmaHandle;
+            item.outParam.handle = 0;
+            connUnimportJettyInfos.push_back(jettyInfo);
+        }
+    }
+    return connUnimportJettyInfos;
 }
 
 void CcuConnection::Clean()

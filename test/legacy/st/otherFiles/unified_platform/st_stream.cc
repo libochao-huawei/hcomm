@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -48,12 +48,12 @@ TEST_F(StreamTest, Stream_selfownded_false)
     void* fakePtr      = (void *)1;
     u32        fakeId       = 1;
     s32        fakeDevLogId = 1;
-    u32        fakeDevPhyId = 1;
+    s32        fakeDevPhyId = 1;
     u32        fakeSqId     = 2;
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
     MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(fakePtr));
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
     MOCKER(HrtStreamDestroy).stubs();
@@ -74,12 +74,12 @@ TEST_F(StreamTest, stream_dev_used_false)
     void* fakePtr      = (void *)1;
     u32        fakeId       = 1;
     s32        fakeDevLogId = 1;
-    u32        fakeDevPhyId = 1;
+    s32        fakeDevPhyId = 1;
     u32        fakeSqId     = 2;
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
     MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(fakePtr));
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
     MOCKER(HrtStreamDestroy).stubs();
@@ -100,12 +100,12 @@ TEST_F(StreamTest, stream_dev_used_true)
     void* fakePtr      = (void *)1;
     u32        fakeId       = 1;
     s32        fakeDevLogId = 1;
-    u32        fakeDevPhyId = 1;
+    s32        fakeDevPhyId = 1;
     u32        fakeSqId     = 2;
     u64        fakeStmMode  = 3;
     MOCKER(HrtGetStreamId).stubs().will(returnValue(fakeId));
     MOCKER(HrtGetDevice).stubs().will(returnValue(fakeDevLogId));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
+    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(fakeDevPhyId)));
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(fakePtr));
     MOCKER(HrtStreamGetSqId).stubs().will(returnValue(fakeSqId));
     MOCKER(HrtStreamDestroy).stubs();

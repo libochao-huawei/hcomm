@@ -24,7 +24,7 @@ TaskInfo::TaskInfo(u32 streamId, u32 taskId, u32 remoteRank, TaskParam taskParam
 
 std::string TaskInfo::Describe() const
 {
-    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dftOpInfo:[%s], isMaster[%s]]",
+    return StringFormat("TaskInfo[streamId(sqId):[%u], taskId(sqeId):[%u], remoteRank:[%u], taskParam:[%s], dftOpInfo:[%s], isMaster[%d]]",
                         streamId_, taskId_, remoteRank_, taskParam_.Describe().c_str(), dfxOpInfo_->Describe().c_str(), isMaster_);
 }
 
@@ -58,6 +58,7 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_RDMA:
         case TaskParamType::TASK_SEND_PAYLOAD:
         case TaskParamType::TASK_UB_INLINE_WRITE:
+        case TaskParamType::TASK_UB:
             return GetParaDMA();
         case TaskParamType::TASK_REDUCE_INLINE:
         case TaskParamType::TASK_UB_REDUCE_INLINE:
@@ -118,17 +119,12 @@ string TaskInfo::GetOpInfo() const
         return "";
     }
     const auto opInfo = this->dfxOpInfo_;
-    string addr = "";
-    if (opInfo->op_.inputMem != nullptr && opInfo->op_.outputMem != nullptr) {
-        addr = StringFormat("src:[0x%llx], dst:[0x%llx], ",
-            static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
-            static_cast<u64>(opInfo->op_.outputMem->GetAddr()));
-    }
-    return StringFormat("index[%u], count[%llu], reduceType[%s], %sdataType[%s]",
-        opInfo->index_,
+    return StringFormat("commIndex[%u], opType[%s], commId[%s], count[%llu], reduceType[%s], dataType[%s]",
+        opInfo->commIndex_,
+        opInfo->op_.opType.Describe().c_str(),
+        opInfo->commId_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
-        addr.c_str(),
         opInfo->op_.dataType.Describe().c_str());
 }
 
@@ -146,6 +142,7 @@ string TaskInfo::GetTaskConciseName() const
             {TaskParamType::TASK_SEND_PAYLOAD, "SP"},
             {TaskParamType::TASK_REDUCE_INLINE, "IR"},
             {TaskParamType::TASK_UB_REDUCE_INLINE, "IR"},
+            {TaskParamType::TASK_UB, "WorR"},
             {TaskParamType::TASK_REDUCE_TBE, "R"},
             {TaskParamType::TASK_NOTIFY_RECORD, "NR"},
             {TaskParamType::TASK_NOTIFY_WAIT, "NW"},

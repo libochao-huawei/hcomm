@@ -324,7 +324,7 @@ HcclResult RankGraph::GetRanksByTopoInst(
     return HCCL_SUCCESS;
 }
 
-HcclResult RankGraph::GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num)
+HcclResult RankGraph::GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num) const
 {
     auto peer = GetPeer(myRank_);
     if (peer == nullptr) {
@@ -375,7 +375,7 @@ EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     }
 }
 
-HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc)
+HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc) const
 {
     auto peer = GetPeer(myRank_);
     CHK_PTR_NULL(peer);
@@ -422,10 +422,10 @@ HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint3
 }
 
 HcclResult RankGraph::GetEndpointInfo(uint32_t rankId,
-                                      const EndpointDesc* endpointDesc,
+                                      const EndpointDesc *endpointDesc,
                                       EndpointAttr endpointAttr,
                                       uint32_t infoLen,
-                                      void* info)
+                                      void *info) const
 {
     if (endpointDesc == nullptr || info == nullptr) {
         HCCL_ERROR("[GetEndpointInfo] Invalid parameter");
@@ -565,7 +565,7 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                 shared_ptr<NetInstance> &newNetInstance, RankId2PeerMap &tmpPeers)
 {
     // 不添加绕路link
-    if (oldLink.GetHop() > 1) {
+    if (oldLink.GetHop() > 1 && oldLink.GetType() != LinkType::PEER2NET) {
         return;
     }
 
@@ -584,17 +584,23 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                                       oldLink.GetLinkProtocols(), oldLink.GetLinkDirection(), oldLink.GetHop());
 
     newNetInstance->AddLink(link);
-    newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
-    newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+    if (newSourceIface != nullptr) {
+        newNetInstance->UpdateTopoInst(newSourceIface->GetTopoInstId(), newSourceIface->GetTopoType(), srcNewRankId);
+    }
+    if (newTargetIface != nullptr) {
+        newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+    }
+    
     for (const auto&pair: newNetInstance->topoInsts_){
         uint32_t topoInstId = pair.first;
         if(pair.second==nullptr){
-            HCCL_ERROR("topoInst of newNetInstance is nullptr");
+            THROW<NullPtrException>(StringFormat("[SubRankGraph][AddNewLink] topoInstId %u has no TopoInst", topoInstId));
         }
         auto topoType = pair.second->topoType;
-        HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
+        if (UNLIKELY(HcclCheckLogLevel(DLOG_DEBUG))) {
+            HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
+        }
     }
-
     HCCL_DEBUG("[RankGraph][AddNewLink] srcNewRankId[%d] dstNewRankId[%d] newLink[%s]", srcNewRankId, dstNewRankId,
                link->Describe().c_str());
 }
@@ -607,6 +613,12 @@ void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInsta
     if (oldNetInstance == nullptr) {
         THROW<NullPtrException>(StringFormat("[AddGroupLinks]oldNetInstance is nullptr"));
     }
+    if (newRankIds.size() == 1) { 
+         // 子通信域单卡场景直接返回1DMESH 
+         RankId singleId = *newRankIds.begin(); 
+         newNetInstance->UpdateTopoInst(0, TopoType::MESH_1D, singleId); 
+         return; 
+     }
     for (RankId srcRankId : newRankIds) {
         for (RankId dstRankId : newRankIds) {
             if (srcRankId == dstRankId) {
@@ -633,9 +645,16 @@ void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRa
         LocalId localId = oldPeer->GetLocalId();
         LocalId replacedLocalId = oldPeer->GetReplacedLocalId();
         DeviceId deviceId = oldPeer->GetDeviceId();
-        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId);
+        u32 devicePort = oldPeer->GetDevicePort();
+        shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort);
         subRankGraph->AddPeer(subPeer);
         peers.emplace(subRankId, subPeer);
+        const auto& oldEndpointMap = oldPeer->GetEndpointToIfaceMap();
+ 	    for (const auto& entry : oldEndpointMap) {
+ 	        subPeer->SetEndpointToIface(entry.first.first, entry.first.second, entry.second);
+ 	        HCCL_DEBUG("[SubRankGraph][AddSubPeers] endpointToIfaceMap: protocol[%d] for subRankId[%d]",
+ 	                        entry.first.second, subRankId);
+ 	    }
         HCCL_DEBUG("[RankGraph][AddSubPeers] oldRankId[%d] subPeer[%s] add success.", rankId,
                    subPeer->Describe().c_str());
     }
@@ -840,5 +859,21 @@ void RankGraph::Dump() const
         }
     }
 }
+CommProtocol LinkProtocolToCommProtocol(const LinkProtocol &linkProtocol)
+{
+    constexpr std::pair<LinkProtocol, CommProtocol> protocolPairs[] = {
+        {LinkProtocol::UB_CTP, COMM_PROTOCOL_UBC_CTP},
+        {LinkProtocol::UB_TP, COMM_PROTOCOL_UBC_TP},
+        {LinkProtocol::ROCE, COMM_PROTOCOL_ROCE},
+        {LinkProtocol::HCCS, COMM_PROTOCOL_HCCS},
+        {LinkProtocol::UB_MEM, COMM_PROTOCOL_UB_MEM}};
 
+    for (const auto &p : protocolPairs) {
+        if (p.first == linkProtocol) {
+            return p.second;
+        }
+    }
+
+    return COMM_PROTOCOL_RESERVED;
+}
 } // namespace Hccl

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef HCCLV2_STREAM_LITE_H
@@ -20,6 +20,7 @@ class StreamLite {
 public:
     explicit StreamLite(std::vector<char> &uniqueId);
     StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds);
+    StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds, bool launchFlag);
     u32 GetId() const;
     u32 GetSqId() const;    
     u32 GetCqId() const;

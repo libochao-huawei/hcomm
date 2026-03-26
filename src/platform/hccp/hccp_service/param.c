@@ -110,7 +110,7 @@ STATIC int HccpParseBackupPhyid(const char *input, struct HccpInitParam *param)
     unsigned int backupPhyId = 0;
     int ret;
 
-    ret = HccpParamParseId(input, (int *)&backupPhyId);
+    ret = HccpParamParseId(input, (int *)(void *)&backupPhyId);
     if (ret != 0) {
         hccp_warn("parse backup phy_id unsuccessful ret:%d", ret);
         return 0;

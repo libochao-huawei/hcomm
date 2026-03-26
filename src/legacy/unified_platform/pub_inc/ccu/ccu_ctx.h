@@ -27,13 +27,16 @@
 #include "ccu_rep_context.h"
 
 namespace Hccl {
+constexpr uint32_t LOCAL_COPY_MS_PER_LOOP = 8;
+constexpr uint32_t CCU_MS_LOCAL_COPY_LOOP_COUNT = 8;
+
 class CcuContext : public CcuRep::CcuRepContext {
 public:
     explicit CcuContext(const CcuCtxArg &arg, const std::vector<CcuTransport*> &transports,
                         const CcuTransportGroup &transportGroup);
     CcuContext() = default;
     ~CcuContext() override;
-    void            Init();
+    HcclResult      Init();
 
     CcuResReq                                    GetResourceRequest();
     CcuRepResource                              &GetResource();
@@ -41,18 +44,16 @@ public:
     CcuSharedResource                           &GetImportRes();
 
     void        SetResPack(CcuResPack &resPack);
-    CcuResPack &GetResPack() const;
+    CcuResPack* GetResPack() const;
     void        SetInstrId(uint32_t instrId);
     uint32_t    GetInstrId() const;
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
 
-    std::vector<CcuTaskParam> GeneTaskParam(const CcuTaskArg &arg);
+    HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
     // ccu profiling相关接口
-    std::vector<CcuProfilingInfo> GetCcuProfilingInfo(const CcuTaskArg &arg);
+    HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
-    // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
-    friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext* context);
     std::vector<CcuTransport *> GetCcuTransports() const
     {
         return transports;
@@ -98,7 +99,7 @@ protected:
     // 不同Device不同Context间同步操作
     void LocalPost(const CcuRep::MaskSignal &sig, uint32_t mask = 1);
     void LocalWait(const CcuRep::MaskSignal &sig, uint32_t mask = 1);
-    void RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask = 1);
+    void RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask = 1, bool single = false);
     void WriteVariableWithSignal(const CcuTransport &transport, const CcuRep::Variable &var, uint32_t varIndex,
                                  uint32_t signalIndex, uint32_t mask = 1);
     void RemoteWait(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask = 1);
@@ -156,6 +157,7 @@ protected:
                                const CcuRep::Variable &paraCfg, const CcuRep::Variable &offsetCfg);
     // 高阶操作
     std::vector<uint64_t> CalGoSize(uint64_t size);
+    static std::vector<uint64_t> CalGoSizeStatic(uint64_t size, GroupOpConfig &moCfg);
 
     void AllocGoResource(uint32_t parallelDim = CcuRep::CCU_MS_DEFAULT_LOOP_COUNT, uint32_t msPerLoop = 1);
     void Load(GroupOpSize moSize);
@@ -195,6 +197,8 @@ private:
     void AddCcuProfiling(GroupOpSize goSize, const std::vector<CcuTransport*> &transportsIn, DataType dataType,
                          DataType outputDataType, ReduceOp opType);
     void DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo) const;
+    // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
+    friend HcclResult CcuRep::CreateVariable(CcuRep::CcuRepContext* context, CcuRep::Variable &variable);
 
 protected:
     std::vector<CcuTransport*>            transports;
@@ -202,9 +206,6 @@ protected:
 
     GroupOpConfig       moConfig{0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFFFFFFFFFF};
     GroupOpSizeResource moRes;
-
-    const uint32_t LOCAL_COPY_MS_PER_LOOP = 8;
-    const uint32_t CCU_MS_LOCAL_COPY_LOOP_COUNT = 8;
 
 private:
     CcuSharedResource exportRes;

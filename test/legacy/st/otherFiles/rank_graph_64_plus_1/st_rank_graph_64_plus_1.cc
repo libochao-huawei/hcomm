@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -43,6 +43,7 @@ protected:
     virtual void SetUp() {
         PhyTopo::GetInstance()->Clear();   // PhyTopo是单例，每个用例开始前需要重置
         MOCKER_CPP(&DetourService::InsertDetourLinks).stubs();  // 64+1场景暂时不涉及绕路，将绕路接口打桩成空函数
+		MOCKER_CPP(&RankTableInfo::CheckAddrs).stubs().with().will(ignoreReturnValue());
         cout << "A Test case in RankGraph64Plus1Test SetUP" << endl;
     }
  

@@ -42,10 +42,10 @@ namespace hccl
         bool IsHugeData(const u64 curSize) override;
         HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
         HcclResult RunSingleMesh(const OpParam &param, ExecMem &execMem);
-        HcclResult RunLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo,
+        HcclResult RunLevel1(const OpParam &param, ExecMem &execMem, const SubCommInfo &level0CommInfo,
                              SubCommInfo &level1CommInfo);
         HcclResult RunLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo,
-                             SubCommInfo &level1CommInfo);
+                             const SubCommInfo &level1CommInfo);
     };
 
 } // namespace hccl

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -25,6 +25,7 @@
 #include "orion_adapter_rts.h"
 #include "invalid_params_exception.h"
 #include "host_ip_not_found_exception.h"
+#include "internal_exception.h"
 #include "null_ptr_exception.h"
 #include "env_config.h"
 #include "env_func.h"
@@ -62,10 +63,10 @@ protected:
         MOCKER_CPP(&HostSocketHandleManager::Create).stubs().with(any(), any()).will(returnValue(hostSocketHandle));
         MOCKER(HrtRaSocketWhiteListAdd).stubs().with(any(), any(), any()).will(ignoreReturnValue());
         MOCKER(HrtGetDevice).stubs().with().will(returnValue(0));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<s32>(0)));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<DevId>(0)));
         MOCKER(HrtRaInit).stubs().with(any()).will(ignoreReturnValue());
         MOCKER(HrtRaDeInit).stubs().with(any()).will(ignoreReturnValue());
-        MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910_95));
+        MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_950));
         std::vector<std::pair<std::string, IpAddress>> hostIfInfos;
         hostIfInfos.push_back(std::make_pair("lo", IpAddress("127.0.0.1")));
         MOCKER(HrtGetHostIf).stubs().with(any()).will(returnValue(hostIfInfos));

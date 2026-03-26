@@ -19,11 +19,11 @@
 
 namespace hccl{
 
-typedef enum hcclGroupJobState {
+using hcclGroupJobState_t = enum hcclGroupJobState {
     hcclGroupJobRunning = 0,
     hcclGroupJobDone = 1,
     hcclGroupJobJoined = 2,
-} hcclGroupJobState_t;
+};
 
 struct hcclAsyncJob {
     struct hcclAsyncJob *next;

@@ -105,7 +105,7 @@ void EnvRtsConfig::Parse()
 {
     execTimeOut.Parse();
     aivExecTimeOut.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u], aivExecTimeOut[%u]", GetExecTimeOut(), GetAivExecTimeOut());
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config execTimeOut[%u], aivExecTimeOut[%f]", GetExecTimeOut(), GetAivExecTimeOut());
 }
 
 u32 EnvRtsConfig::GetExecTimeOut() const
@@ -168,7 +168,7 @@ void EnvAlgoConfig::Parse()
         }
         hcclAlgoConfigOss << "]";
     }
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config primQueueGenName[%s], hcclAlgoConfig[%u], bufferSize[%llu], hcclAccelerator[%s]",
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config primQueueGenName[%s], hcclAlgoConfig[%s], bufferSize[%llu], hcclAccelerator[%s]",
                   GetPrimQueueGenName().c_str(), hcclAlgoConfigOss.str().c_str(), GetBuffSize(), GetHcclAccelerator().Describe().c_str());
 }
 
@@ -195,18 +195,11 @@ HcclAccelerator EnvAlgoConfig::GetHcclAccelerator() const
 // EnvLogConfig
 void EnvLogConfig::Parse()
 {
-    diagnoseEnable.Parse();
     entryLogEnable.Parse();
     cannVersion.Parse();
     dfsConfig.Parse();
-    HCCL_RUN_INFO("[Init][EnvVarParam]Env config diagnoseEnable[%d], entryLogEnable[%d], cannVersion[%s], dfsConfig[%d]",
-                  GetDiagnoseEnable(), GetEntryLogEnable(), GetCannVersion().c_str(),
-                  GetDfsConfig().taskExceptionEnable);
-}
-
-bool EnvLogConfig::GetDiagnoseEnable() const
-{
-    return diagnoseEnable.Get();
+    HCCL_RUN_INFO("[Init][EnvVarParam]Env config entryLogEnable[%d], cannVersion[%s], dfsConfig[%d]",
+                  GetEntryLogEnable(), GetCannVersion().c_str(), GetDfsConfig().taskExceptionEnable);
 }
 
 bool EnvLogConfig::GetEntryLogEnable() const

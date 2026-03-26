@@ -16,7 +16,7 @@
 #include <vector>
 #include <shared_mutex>
 
-#include "socket.h"
+#include "../../resource/socket/socket.h"
 #include "op_mode.h"
 #include "binary_stream.h"
 #include "ccu_connection.h"
@@ -122,7 +122,6 @@ public:
     {
         return ccuConnection.get();
     }
- 	
 
     // 下面接口为平台层接口，不能在框架层使用
     CcuTransport(Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);
@@ -140,7 +139,8 @@ public:
     TransStatus GetStatus();
     std::string Describe() const;
     HcclResult  Clean();
-    std::vector<ConnJettyInfo> GetJettyInfo();
+    std::vector<ConnJettyInfo> GetDeleteJettyInfo();
+    std::vector<ConnJettyInfo> GetUnimportJettyInfo();
 
 private:
     // 保存transport中需要使用的cke，xn等ccu资源

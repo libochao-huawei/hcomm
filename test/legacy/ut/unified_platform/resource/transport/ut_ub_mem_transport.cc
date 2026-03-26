@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -21,6 +21,9 @@
 #include "local_ub_rma_buffer.h"
 #include "socket_exception.h"
 #include "exchange_ub_conn_dto.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef protected
 #undef private
 #include "stub_communicator_impl_trans_mgr.h"
@@ -255,6 +258,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
 
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
 
+    MOCKER_CPP(&UbMemTransport::SendDataSize).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&UbMemTransport::RecvDataSize).stubs();
     MOCKER_CPP(&UbMemTransport::SendExchangeData).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemTransport::RecvExchangeData).stubs();
     MOCKER_CPP(&UbMemTransport::RecvDataProcess).stubs().will(returnValue(true));
@@ -279,6 +284,14 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     MOCKER(RaGetOneSocket).stubs()
         .with(any(), any())
         .will(returnValue(fakeParam));
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SEND_SIZE);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::RECV_SIZE);
 
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
@@ -310,6 +323,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     transport.socket = &fakeSocket;
     GlobalMockObject::verify();
 
+    MOCKER_CPP(&UbMemTransport::SendDataSize).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&UbMemTransport::RecvDataSize).stubs();
     MOCKER_CPP(&UbMemTransport::SendExchangeData).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&UbMemTransport::RecvExchangeData).stubs();
     MOCKER_CPP(&UbMemTransport::RecvDataProcess).stubs().will(returnValue(false));
@@ -324,6 +339,14 @@ TEST_F(UbMemTransportTest, UbMemTransport_get_status)
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
     EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SOCKET_OK);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::SEND_SIZE);
+
+    transStatus = transport.GetStatus();
+    EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
+    EXPECT_EQ(transport.ubStatus, UbMemTransport::UbStatus::RECV_SIZE);
 
     transStatus = transport.GetStatus();
     EXPECT_EQ(transStatus, TransportStatus::SOCKET_OK);
@@ -392,7 +415,7 @@ TEST_F(UbMemTransportTest, UbMemTransport_send_recv_exchange_data)
             break;
         }
     }
-    EXPECT_NO_THROW(transport.SendExchangeData());
+    EXPECT_NO_THROW(transport.SendDataSize());
 
     max_times = 10;
     while (!transport.IsSocketReady()) {
@@ -401,7 +424,7 @@ TEST_F(UbMemTransportTest, UbMemTransport_send_recv_exchange_data)
             break;
         }
     }
-    EXPECT_NO_THROW(transport.RecvExchangeData());
+    EXPECT_NO_THROW(transport.RecvDataSize());
     max_times = 10;
     while (!transport.IsSocketReady()) {
         if (max_times-- <= 0) {
@@ -489,12 +512,12 @@ TEST_F(UbMemTransportTest, UbMemTransport_read_write_read_reduce_write_reduce)
  
     UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, callback);
 
-    transport.Read(locSlice, rmtSlice, stream);
-    transport.Write(locSlice, rmtSlice, stream);
+	EXPECT_THROW(transport.Read(locSlice, rmtSlice, stream), NotSupportException);
+	EXPECT_THROW(transport.Write(locSlice, rmtSlice, stream), NotSupportException);
 
     ReduceIn reduceIn(DataType::INT8, ReduceOp::MAX);
-    transport.ReadReduce(locSlice, rmtSlice, reduceIn, stream);
-    transport.WriteReduce(locSlice, rmtSlice, reduceIn, stream);
+	EXPECT_THROW(transport.ReadReduce(locSlice, rmtSlice, reduceIn, stream), NotSupportException);
+	EXPECT_THROW(transport.WriteReduce(locSlice, rmtSlice, reduceIn, stream), NotSupportException);
 }
 
 TEST_F(UbMemTransportTest, UbMemTransport_post_wait)
@@ -525,9 +548,8 @@ TEST_F(UbMemTransportTest, UbMemTransport_post_wait)
 
     std::unique_ptr<RemoteUbRmaBuffer> remoteUbRmaBuffer = std::make_unique<RemoteUbRmaBuffer>(rdmaHandle);
     transport.rmtNotifyVec.push_back(std::move(remoteUbRmaBuffer));
-
-    transport.Post(0, stream);
-    transport.Wait(0, stream, 0);
+	EXPECT_THROW(transport.Post(0, stream), NotSupportException);
+	transport.Wait(0, stream, 0);
 }
 
 TEST_F(UbMemTransportTest, UbMemTransport_write_with_notify_write_reduce_with_notify)
@@ -572,8 +594,9 @@ TEST_F(UbMemTransportTest, UbMemTransport_write_with_notify_write_reduce_with_no
     
     // normal notify
     withNotify.notifyType_ = TransportNotifyType::NORMAL;
-    transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream);
-    transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream); // write empty case
+	EXPECT_THROW(transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream), NotSupportException);
+	// write empty case
+	EXPECT_THROW(transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream), NotSupportException);
 
     ReduceIn reduceIn(DataType::INT8, ReduceOp::MAX);
 
@@ -582,16 +605,20 @@ TEST_F(UbMemTransportTest, UbMemTransport_write_with_notify_write_reduce_with_no
     transport.rmtCntNotifyVec.push_back(std::move(remoteUbRmaBuffer2));
     transport.rmtCntNotifyVec.push_back(std::move(remoteUbRmaBuffer3));
 
-    transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
-    transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream); // write empty case
+	transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
+	// write empty case
+	EXPECT_THROW(transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream),
+				 NotSupportException);
 
     // count notify
     withNotify.notifyType_ = TransportNotifyType::COUNT;
-    transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream);
-    transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream); // write empty case
+	EXPECT_THROW(transport.WriteWithNotify(locSlice, rmtSlice, withNotify, stream), NotSupportException);
+	EXPECT_THROW(transport.WriteWithNotify(emptyLocSlice, rmtSlice, withNotify, stream), NotSupportException);
 
-    transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
-    transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream); // write empty case
+	transport.WriteReduceWithNotify(locSlice, rmtSlice, reduceIn, withNotify, stream);
+	// write empty case
+	EXPECT_THROW(transport.WriteReduceWithNotify(emptyLocSlice, rmtSlice, reduceIn, withNotify, stream),
+				 NotSupportException);
 
     // invalid notify type
     withNotify.notifyType_ = TransportNotifyType::INVALID;
@@ -656,4 +683,100 @@ TEST_F(UbMemTransportTest, UbMemTransport_ConnVecUnpackProc)
     ExchangeUbConnDto dto;
     dto.Serialize(binaryStream);
     EXPECT_NO_THROW(transport.ConnVecUnpackProc(binaryStream));
+}
+
+TEST_F(UbMemTransportTest, ut_UbMemTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    BaseMemTransport::CommonLocRes    locRes;
+    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::LocCntNotifyRes locCntRes;
+    LinkData                          link(BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1);
+    void                             *rdmaHandle = (void *)0x100;
+    IpAddress                         ipAddress("1.0.0.0");
+    Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+
+    std::shared_ptr<DevBuffer> buffer0 = DevBuffer::Create(0x100, 0x100);
+    strcpy(buffer0->mem_Tag_, "cclBuffer");
+    LocalUbRmaBuffer     ubLocalRmaBuffer0(buffer0, rdmaHandle);
+    LocalRmaBuffer      *validLocalRmaBuffer0 = &ubLocalRmaBuffer0;
+    locRes.bufferVec.push_back(validLocalRmaBuffer0);
+
+    std::shared_ptr<DevBuffer> buffer1 = DevBuffer::Create(0x101, 0x101);
+    strcpy(buffer1->mem_Tag_, "buffer1");
+    buffer1->memType_ = HcclMemType::HCCL_MEM_TYPE_HOST;
+    LocalUbRmaBuffer     ubLocalRmaBuffer1(buffer1, rdmaHandle);
+    LocalRmaBuffer      *validLocalRmaBuffer1 = &ubLocalRmaBuffer1;
+    locRes.bufferVec.push_back(validLocalRmaBuffer1);
+
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    u32 bufferNum = 2;
+    transport.bufferNum = bufferNum;
+
+    BinaryStream binaryStream;
+    EXPECT_NO_THROW(transport.BufferVecPack(binaryStream));
+    EXPECT_NO_THROW(transport.RmtBufferVecUnpackProc(bufferNum, binaryStream,
+        transport.rmtBufferVec, UbMemTransport::UbRmtBufType::BUFFER));
+    
+    CommMem *remoteMems;
+    char **memTags;
+    u32 memNum;
+    HcclResult ret = transport.GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::string memTag = memTags[0];
+    EXPECT_EQ(memTag, "buffer1");
+    EXPECT_EQ(remoteMems[0].type, HcclMemType::HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
+    EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
+}
+
+TEST_F(UbMemTransportTest, ut_UbMemTransport_GetUserRemoteMem_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
+{
+    BaseMemTransport::CommonLocRes    locRes;
+    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::LocCntNotifyRes locCntRes;
+    LinkData                          link(BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1);
+    void                             *rdmaHandle = (void *)0x100;
+    IpAddress                         ipAddress("1.0.0.0");
+    Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+
+    CommMem *remoteMems;
+    char **memTags;
+    u32 memNum;
+    HcclResult ret = transport.GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(UbMemTransportTest, ut_UbMemTransport_GetUserRemoteMem_When_userMemCountIs0_Expect_ReturnIsHCCL_SUCCESS)
+{
+    BaseMemTransport::CommonLocRes    locRes;
+    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::LocCntNotifyRes locCntRes;
+    LinkData                          link(BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1);
+    void                             *rdmaHandle = (void *)0x100;
+    IpAddress                         ipAddress("1.0.0.0");
+    Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+
+    LocalUbRmaBuffer     ubLocalRmaBuffer(devBuf, rdmaHandle);
+    LocalRmaBuffer      *validLocalRmaBuffer = &ubLocalRmaBuffer;
+    locRes.bufferVec.push_back(validLocalRmaBuffer);
+
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    u32 bufferNum = 1;
+    transport.bufferNum = bufferNum;
+
+    BinaryStream binaryStream;
+    EXPECT_NO_THROW(transport.BufferVecPack(binaryStream));
+    EXPECT_NO_THROW(transport.RmtBufferVecUnpackProc(bufferNum, binaryStream,
+        transport.rmtBufferVec, UbMemTransport::UbRmtBufType::BUFFER));
+
+    CommMem *remoteMems;
+    char **memTags;
+    u32 memNum;
+    HcclResult ret = transport.GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(remoteMems, nullptr);
+    EXPECT_EQ(memTags, nullptr);
+    EXPECT_EQ(memNum, 0);
 }

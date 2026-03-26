@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -138,9 +138,10 @@ TransportTuple MockMakeCcuTransport(bool allocCkeUnavailFlag, bool allocXnUnavai
         ccuJettyPtrs.emplace_back(ccuJetty.get());
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
-
-    unique_ptr<Socket> socket = make_unique<Socket>(nullptr, locAddr, 65001, rmtAddr,
+    SocketHandle socketHandle = reinterpret_cast<SocketHandle>(0x123);
+    unique_ptr<Socket> socket = make_unique<Socket>(socketHandle, locAddr, 65001, rmtAddr,
         string(), SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    socket->fdHandle = socketHandle;
     // 模拟CTP即可
     unique_ptr<CcuConnection> connection = make_unique<CcuCtpConnection>(
         locAddr, rmtAddr, channelInfo, ccuJettyPtrs);

@@ -30,7 +30,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_Normal_Return_HCCL_Succe
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(IsSupportHCCLV2)
         .stubs()
@@ -45,11 +45,13 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_Normal_Return_HCCL_Succe
     HcclMem cclBuffer;
     cclBuffer.size = 2;
     cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
-    cclBuffer.addr = (void*)0x1000;;
+    cclBuffer.addr = (void*)0x1000;
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     
@@ -68,7 +70,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommNullptr_Return_HCCL_
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
 
     void* comm = nullptr;
@@ -83,7 +85,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_bufferNullptr_Return_HCC
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
 
     void* comm = (void*)0x123456;
@@ -98,7 +100,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_sizeNullptr_Return_HCCL_
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
 
     void* comm = (void*)0x123456;
@@ -113,7 +115,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CollCommNullptr_Return_H
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(IsSupportHCCLV2)
         .stubs()
@@ -144,11 +146,14 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_MyRankNullptr_Return_HCC
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
-     MOCKER_CPP(&CollComm::Init)
+    MOCKER_CPP(&CollComm::Init)
         .stubs()
-        .will(returnValue(0));  
+        .will(returnValue(0)); 
+    MOCKER_CPP(&CollComm::GetHDCommunicate)
+        .stubs()
+        .will(returnValue(0)); 
     MOCKER(IsSupportHCCLV2)
         .stubs()
         .will(returnValue(true));
@@ -167,6 +172,8 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_MyRankNullptr_Return_HCC
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     
@@ -181,7 +188,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommMemsNullptr_Return_H
 {
     MOCKER(hrtGetDeviceType)
         .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
+        .with(outBound(DevType::DEV_TYPE_950))
         .will(returnValue(HCCL_SUCCESS));
      MOCKER_CPP(&MyRank::Init)
         .stubs()
@@ -204,6 +211,8 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommMemsNullptr_Return_H
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
     HcclCommConfig config;
     config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
+    config.hcclRdmaTrafficClass = 0xFFFFFFFF; // 不配置RDMA Traffic Class
+    config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 0);
     
@@ -217,13 +226,21 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommMemsNullptr_Return_H
 
 TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Success)
 {
-    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    DevType deviceType = DevType::DEV_TYPE_910_93;
+    MOCKER(hrtGetDeviceType)
+    .stubs()
+    .with(outBound(deviceType))
+    .will(returnValue(HCCL_SUCCESS));
 
-    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    HcclComm commHandle;
+    UT_USE_RANK_TABLE_910_1SERVER_1RANK;
+    UT_COMM_CREATE_DEFAULT(commHandle);
+
     void* buffer;
     uint64_t size;
-    int ret =  HcclGetHcclBuffer(comm, &buffer, &size);
-    EXPECT_EQ(ret, 0);
+    HcclResult ret = HcclGetHcclBuffer(commHandle, &buffer, &size);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 
+    Ut_Comm_Destroy(commHandle);
+    GlobalMockObject::verify();
 }

@@ -25,7 +25,7 @@ public:
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
 protected:
     /* *************** 资源计算 *************** */
-    virtual HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport);
+    HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
     virtual HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
 
     /* *************** 算法编排 *************** */

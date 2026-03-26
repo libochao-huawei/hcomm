@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -56,10 +56,15 @@ void PrepareCtxForAllReduce(ThreadContext *ctx)
     auto count        = ctx->situation.GetCount();
 
     uint64_t memSize = (u64)dataTypeSize * (u64)count;
-    rtMalloc(&sendBuf, memSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&recvBuf, memSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&expectedResBuf, memSize, RT_MEMORY_P2P_HBM, 2);
-
+    constexpr int policy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) | static_cast<int>
+    (ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMallocAttrValue moduleIdValue;
+    moduleIdValue.moduleId = HCCL;
+    aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
+    aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
+    aclrtMallocWithCfg(&sendBuf, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&recvBuf, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&expectedResBuf, memSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
     ctx->sendBuf        = sendBuf;
     ctx->recvBuf        = recvBuf;
     ctx->expectedResBuf = expectedResBuf;
@@ -133,10 +138,16 @@ void PrepareCtxForAllgather(ThreadContext *ctx)
 
     uint64_t sendMemSize = (u64)dataTypeSize * (u64)count;
     uint64_t recvMemSize = (u64)dataTypeSize * (u64)count * (u64)ctx->situation.GetRankSize();
-    rtMalloc(&sendBuf, sendMemSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&recvBuf, recvMemSize, RT_MEMORY_P2P_HBM, 2);
-    rtMalloc(&expectedResBuf, recvMemSize, RT_MEMORY_P2P_HBM, 2);
 
+    constexpr int policy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) | static_cast<int>
+    (ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMallocAttrValue moduleIdValue;
+    moduleIdValue.moduleId = HCCL;
+    aclrtMallocAttribute attrs{.attr = ACL_RT_MEM_ATTR_MODULE_ID, .value = moduleIdValue};
+    aclrtMallocConfig cfg{.attrs = &attrs, .numAttrs = 1};
+    aclrtMallocWithCfg(&sendBuf, sendMemSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&recvBuf, recvMemSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
+    aclrtMallocWithCfg(&expectedResBuf, recvMemSize, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
     ctx->sendBuf        = sendBuf;
     ctx->recvBuf        = recvBuf;
     ctx->expectedResBuf = expectedResBuf;

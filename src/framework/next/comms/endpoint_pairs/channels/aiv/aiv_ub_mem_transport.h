@@ -9,9 +9,9 @@
  */
 
 #ifndef AIV_UB_MEM_TRANSPORT_H
-
 #define AIV_UB_MEM_TRANSPORT_H
-#include "hccl_api.h"
+#include <mutex>
+#include "hccl/hccl_res.h"
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
 #include "../../../../../../legacy/unified_platform/resource/buffer/remote_rma_buffer.h"

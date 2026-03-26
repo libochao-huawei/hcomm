@@ -68,6 +68,7 @@ inline Hccl::CollOpParams GetHcclOpParams(void *inputPtr, void *outputPtr, u64 c
     opParams.sendBuf = inputPtr;
     opParams.recvBuf = outputPtr;
     opParams.count = count;
+    opParams.staticShape = true;
     if (dataType != HcclDataType::HCCL_DATA_TYPE_RESERVED) {
         opParams.dataType = HcclDataTypeToDataType(dataType);
     } else {
@@ -101,7 +102,9 @@ HcclResult HcomAllGatherV2(const char *tag, void *inputPtr, void *outputPtr, u64
     
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[AllGather] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, inputCount, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
@@ -125,7 +128,9 @@ HcclResult HcomAllGatherVV2(const char *tag, void *sendBuf, u64 sendCount, void 
     /* 获取通信域 */
     std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[AllGatherV] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     /* 获取rank信息 */ 
     uint32_t rankId;
     CHK_RET(hcclComm->GetRankId(rankId));
@@ -180,7 +185,9 @@ HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[AllReduce] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::ALLREDUCE, op);
@@ -208,7 +215,9 @@ HcclResult HcomReduceScatterV2(const char *tag, void *inputPtr, void *outputPtr,
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[ReduceScatter] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::REDUCESCATTER, op);
@@ -230,7 +239,9 @@ HcclResult HcomReduceScatterVV2(const char *tag, void *sendBuf, void *sendCounts
     /* 获取通信域 */
     std::string opTag = tag;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[ReduceScatterV] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     /* 获取rank信息 */
     uint32_t rankId;
     CHK_RET(hcclComm->GetRankId(rankId));
@@ -284,7 +295,9 @@ HcclResult HcomSendV2(const char *tag, void *inputPtr, u64 count, HcclDataType d
     
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[SendV2] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
  
     /* 入参的正确性由HCCL确保 */
@@ -309,7 +322,9 @@ HcclResult HcomReceiveV2(const char *tag, void *outputPtr, u64 count, HcclDataTy
 
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[Recv] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
@@ -360,7 +375,9 @@ HcclResult HcomGetWorkspaceSubStreamNumV2(const char *group, u64 &streamNum, u64
     HCCL_INFO("[%s] start.", __func__);
 
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(optype);
     
     if (OP_TYPE_MAP.find(optype) ==  OP_TYPE_MAP.end()) {
@@ -379,13 +396,15 @@ HcclResult HcomGetWorkspaceMemSizeV2(
     const std::string &opType, u64 count, HcclDataType dataType, const char *group, u64 &memSize)
 {
     HCCL_INFO("[%s] start.", __func__);
-    if ((dataType < HCCL_DATA_TYPE_INT8) || (dataType > HCCL_DATA_TYPE_FP8E8M0)) {
+    if ((dataType < HCCL_DATA_TYPE_INT8) || (dataType > HCCL_DATA_TYPE_MXFP8)) {
         HCCL_ERROR("[%s] not support data type[%s].", __func__, GetDataTypeEnumStrV2(dataType).c_str());
         return HCCL_E_PARA;
     }
 
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
  
     if (OP_TYPE_STR.find(opType) ==  OP_TYPE_STR.end()) {
         HCCL_ERROR("[%s] not support opType[%s].", __func__, opType.c_str());
@@ -406,7 +425,9 @@ HcclResult HcomSetWorkspaceResourceV2(
     HCCL_INFO("[%s] start.", __func__);
 
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
 
     /* 设定 workspace 内存资源 */
     CHK_RET(hcclComm->SetCollOffloadSlaveStreams(tag, stream));
@@ -426,7 +447,9 @@ HcclResult HcomAlltoAllVV2(const void *sendBuf, const void *sendCounts, const vo
 
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[AlltoAllV]comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataTypeV2(recvType));
  
@@ -465,7 +488,9 @@ HcclResult HcomAlltoAllVCV2(const void *sendBuf, const void *sendCountMatrix, Hc
 
     /* 获取通信域句柄并入参校验 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[AlltoAllVC]comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataTypeV2(recvType));
 
@@ -521,7 +546,9 @@ HcclResult HcomAlltoAllV2(const void *sendBuf, u64 sendCount, HcclDataType sendT
 
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[AlltoAll]comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, sendCount, sendType, stream));
     CHK_RET(HcomCheckOpParamV2(tag, recvCount, recvType, stream));
     
@@ -550,7 +577,9 @@ HcclResult HcomGetAlltoAllStagedWorkSpaceMemSizeV2(const char *group, u64 *sendC
     HCCL_INFO("[%s] start.", __func__);
 
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckDataTypeV2(sendType));
     CHK_RET(HcomCheckDataTypeV2(recvType));
  
@@ -570,7 +599,9 @@ HcclResult HcomGetAlltoAllvcStagedWorkSpaceMemSizeV2(const char *group, u64 &mem
     HCCL_INFO("[%s] start.", __func__);
 
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
 
     Hccl::CollOffloadOpResReq resReq;
     Hccl::OpType optype = Hccl::OpType::ALLTOALLVC;
@@ -594,7 +625,9 @@ HcclResult HcomBroadcastV2(const char *tag, void *ptr, u64 count, HcclDataType d
 
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[Broadcast] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
@@ -625,7 +658,9 @@ HcclResult HcomReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64 co
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("[Reduce] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
 
     /* 入参的正确性由HCCL确保 */
     u32 rankSize = INVALID_VALUE_RANKSIZE;
@@ -648,7 +683,9 @@ HcclResult HcomGetLocalRankSizeV2(const char *group, u32 *localRankSize)
 {
     CHK_RET(HcomCheckGroupNameV2(group));
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     u32 rankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET(hcclComm->GetRankSize(&rankSize));
     u32 layer0NetInstanceNum = 0;
@@ -660,7 +697,7 @@ HcclResult HcomGetLocalRankSizeV2(const char *group, u32 *localRankSize)
     }
     *localRankSize = rankSize / layer0NetInstanceNum;
     HCCL_INFO("[HcomGetLocalRankSizeV2] end, layer0NetInstanceNum[%u], localRankSize[%u], rankSize[%u], commId[%s]",
-        layer0NetInstanceNum, localRankSize, rankSize, hcclComm->GetId().c_str());
+        layer0NetInstanceNum, *localRankSize, rankSize, hcclComm->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -668,7 +705,9 @@ HcclResult HcomGetLocalRankIdV2(const char *group, u32 *localRankId)
 {
     CHK_RET(HcomCheckGroupNameV2(group));
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     u32 rankId = INVALID_VALUE_RANKID;
     CHK_RET(hcclComm->GetRankId(rankId));
     u32 localRankSize = INVALID_VALUE_RANKSIZE;
@@ -679,7 +718,7 @@ HcclResult HcomGetLocalRankIdV2(const char *group, u32 *localRankId)
     }
     *localRankId = rankId % localRankSize;
     HCCL_INFO("[HcomGetLocalRankIdV2] end, rankId[%u], localRankSize[%u], localRankId[%u], commId[%s]",
-        rankId, localRankSize, localRankId, hcclComm->GetId().c_str());
+        rankId, localRankSize, *localRankId, hcclComm->GetId().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -687,7 +726,9 @@ HcclResult HcomGetCommHandleByGroupV2(const char *group, HcclComm *commHandle)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+                HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+                HCCL_E_NOT_FOUND);
     *commHandle = static_cast<HcclComm>(hcclComm.get());
     return HCCL_SUCCESS;
 }
@@ -697,8 +738,11 @@ HcclResult HcomCalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum)
     /* 通信域 */
     HCCL_INFO("HcomCalcTaskNumV2 start.");
 	std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-	CHK_RET(GetHcclCommV2(hcomOpParam->group, hcclComm));
-
+    CHK_PRT_RET(GetHcclCommV2(hcomOpParam->group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", 
+                        hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group),
+            HCCL_E_NOT_FOUND);
+            
 	Hccl::DataType hcclDataType = Hccl::DataType::INVALID;
     if (hcomOpParam->dataType != HcclDataType::HCCL_DATA_TYPE_RESERVED) {
         hcclDataType = HcclDataTypeToDataType(hcomOpParam->dataType);
@@ -718,7 +762,9 @@ HcclResult HcomGetTopoDescV2(const char *group, HcclTopoDescs *topoDescs, uint32
     /* 通信域 */
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     
     CHK_RET(hcclComm->GetTopoDesc(topoDescs, topoSize));
  
@@ -730,7 +776,9 @@ HcclResult HcomCreateCommCclBufV2(const char *group)
     /* 通信域 */
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(hcclComm->CreateCommCclBuf());
     return HCCL_SUCCESS;
 }
@@ -740,7 +788,9 @@ HcclResult HcomGetInCclBufV2(const char *group, void *&commInputPtr, u64 &commIn
     /* 通信域 */
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(hcclComm->CreateCommCclBuf());
     CHK_RET(hcclComm->GetInCclBuf(commInputPtr, commInputSize));
     return HCCL_SUCCESS;
@@ -751,7 +801,9 @@ HcclResult HcomGetOutCclBufV2(const char *group, void *&commOutputPtr, u64 &comm
     /* 通信域 */
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(hcclComm->CreateCommCclBuf());
     CHK_RET(hcclComm->GetOutCclBuf(commOutputPtr, commOutputSize));
     return HCCL_SUCCESS;
@@ -762,7 +814,9 @@ HcclResult HcomGetIndirectInCclBufV2(const char *group, void *&commInputPtr, u64
     /* 通信域 */
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(hcclComm->CreateCommCclBuf());
     CHK_RET(hcclComm->GetIndirectInputCclBuf(commInputPtr, commInputSize));
     return HCCL_SUCCESS;
@@ -773,7 +827,9 @@ HcclResult HcomGetIndirectOutCclBufV2(const char *group, void *&commOutputPtr, u
     /* 通信域 */
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(hcclComm->CreateCommCclBuf());
     CHK_RET(hcclComm->GetIndirectOutputCclBuf(commOutputPtr, commOutputSize));
     return HCCL_SUCCESS;
@@ -1015,7 +1071,9 @@ HcclResult HcomGetDevIdV2(const char *group, s32 *devId)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     auto retDevId = static_cast<s32>(hcclComm->GetDeviceLogicId());
     *devId = retDevId;
     HCCL_INFO("HcomGetDeviceIdV2, devId[%d]", *devId);
@@ -1027,7 +1085,9 @@ HcclResult HcomSetGlobalWorkSpaceV2(const char *group, const std::vector<void *>
     HCCL_INFO("[%s] start.", __func__);
     (void)globalWorkSpaceAddr;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(hcclComm->SetGlobalWorkSpace());
     return HCCL_SUCCESS;
 }
@@ -1046,17 +1106,21 @@ HcclResult HcomCheckCommValidityV2(const char *group)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomSupportDeterministicOptimV2(const char *group, const bool &isDeterministicOptim)
+HcclResult HcomSupportDeterministicOptimV2(const char *group, bool &isDeterministicOptim)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
-    (void)isDeterministicOptim;
-    HCCL_WARNING("HcomSupportDeterministicOptimV2 is not support at A5!");
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
+    isDeterministicOptim = true;
+    HCCL_WARNING("HcomSupportDeterministicOptimV2 is not support at A5! set isDeterministicOptim to true.");
     return HCCL_SUCCESS;
 }
 
@@ -1066,7 +1130,9 @@ HcclResult HcomSetAivCoreLimitV2(const char *group, u32 aivCoreLimit)
     CHK_PRT_RET(aivCoreLimit == 0,
         HCCL_ERROR("[HcomSetAivCoreLimitV2] aivCoreLimit[%u] invalid", aivCoreLimit), HCCL_E_PARA);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(hcclComm->SetAivCoreLimit(aivCoreLimit));
     HCCL_RUN_INFO("HcomSetAivCoreLimitV2 group[%s] aivCoreLimit[%u]", group ? group : HCCL_WORLD_GROUP, aivCoreLimit);
     return HCCL_SUCCESS;
@@ -1076,7 +1142,9 @@ HcclResult HcomSetQosCfgV2(const char *group, const u32 qosCfg)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     (void)qosCfg;
     HCCL_WARNING("HcomSetQosCfgV2 is not support at A5!");
     return HCCL_SUCCESS;
@@ -1088,7 +1156,9 @@ HcclResult HcomGraphSelectAlgV2(s64 comm, const char *group, HcclCMDType opType,
     HCCL_INFO("[%s] start.", __func__);
     (void)comm;
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
 
     CHK_RET(HcomCheckOpParamV2(count, dataType, group));
 
@@ -1170,7 +1240,9 @@ HcclResult HcomSetAivClearEnableV2(const char *group, bool aivClearEnable)
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
     CHK_RET(HcomCheckGroupNameV2(group));
  
     CHK_RET(hcclComm->SetAivClearEnable(aivClearEnable));
@@ -1183,13 +1255,15 @@ HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count,
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
 
     CHK_RET(HcomCheckOpParamV2(count, dataType, group));
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%u].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1205,13 +1279,15 @@ HcclResult HcclGetAlgExecParamV2(const std::string &tag, const char *group, u64 
 {
     HCCL_INFO("[%s] start.", __func__);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
-    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
+            HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
+            HCCL_E_NOT_FOUND);
 
     CHK_RET(HcomCheckOpParamV2(count, dataType, group));
 
     HcclOpType hcclOpType = static_cast<HcclOpType::Value>(opType);
     if (OP_TYPE_MAP.find(opType) == OP_TYPE_MAP.end()) {
-        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%u].", hcclOpType.Describe().c_str());
+        HCCL_ERROR("[HcomGraphSelectAlgV2], not support opType[%s].", hcclOpType.Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     Hccl::OpType optype = OP_TYPE_MAP.at(opType);
@@ -1231,7 +1307,7 @@ HcclResult HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -1247,7 +1323,7 @@ HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t f
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
 
-    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    bool isSetDevice = static_cast<bool>(flag & (~(0xfffffffe)));
     if (isSetDevice) {
         HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
         return HCCL_E_PARA;
@@ -1259,8 +1335,23 @@ HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t f
 
 HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rtStream_t *aiCpuStream)
 {
+    (void)group;
+    (void)streamMode;
+    (void)aiCpuStream;
     HCCL_WARNING("[HcomMc2AiCpuStreamAllocAndGetV2] Not support");
     return HCCL_E_NOT_FOUND;
+}
+
+HcclResult HcomSetAttachedStreamV2()
+{
+    HCCL_RUN_INFO("HcomSetAttachedStreamV2 is not support!");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomReleaseSubCommsV2()
+{
+    HCCL_RUN_INFO("HcomReleaseSubCommsV2 is not support!");
+    return HCCL_SUCCESS;
 }
 
 #ifdef __cplusplus

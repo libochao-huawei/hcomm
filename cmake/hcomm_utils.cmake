@@ -98,9 +98,12 @@ set_target_properties(ascend_kms PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/include"
     IMPORTED_LOCATION "${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so"
 )
-install(FILES  ${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so
-    DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
-)
+
+if(${PRODUCT_SIDE} STREQUAL "device")
+    install(FILES  ${HCOMM_UTILS_INSTALL_PATH}/${PRODUCT_SIDE}/lib/libascend_kms.so
+        DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    )
+endif()
 
 add_library(tls_adp SHARED IMPORTED)
 add_dependencies(tls_adp hcomm_utils)

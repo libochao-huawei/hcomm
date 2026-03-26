@@ -12,7 +12,9 @@
 #define CCU_RES_REPO_H
 
 #include <array>
+#include <string>
 #include <sstream>
+#include <vector>
 
 #include "ccu_common.h"
 
@@ -24,12 +26,12 @@ namespace hcomm {
  * FUSION_ONE_DIE missionid连续，单die
  * NO_FUSION_ONE_DIE missionid不要求连续，单die
 */
-typedef enum {
+enum class MissionReqType {
     COMM_ENGINE_RESERVED = -1,
     FUSION_MULTIPLE_DIE = 0,
     FUSION_ONE_DIE = 1,
     NO_FUSION_ONE_DIE = 2,
-} MissionReqType;
+};
 
 class ResInfo {
 public:

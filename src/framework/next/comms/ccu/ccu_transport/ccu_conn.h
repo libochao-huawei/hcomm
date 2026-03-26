@@ -90,6 +90,7 @@ private:
     std::vector<CcuJetty *> ccuJettys_;
 
     int32_t       devLogicId_{0};
+    uint32_t      devPhyId_{0};
     uint32_t      dieId_{0};
     uint32_t      funcId_{0};
     CtxHandle     ctxHandle_{nullptr};

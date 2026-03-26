@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -45,7 +45,7 @@ protected:
         communicatorImplLite = new CommunicatorImplLite(0);
         kernelParam->envConfig.taskExceptionEnable = true;
         kernelParam->comm.idIndex = 0;
-        kernelParam->comm.devType = DevType::DEV_TYPE_910_95;
+        kernelParam->comm.devType = DevType::DEV_TYPE_950;
         kernelParam->op.algOperator.opMode = OpMode::OPBASE;
         std::cout << "A Test case in AicpuMc2HandlerTest SetUp" << std::endl;
     }
@@ -663,6 +663,8 @@ TEST_F(AicpuMc2HandlerTest, Ut_HcclLaunchOp_When_ALLTOALLVC_Expect_ReturnSuccess
     data.output = 0x2000000;
     data.all2AllVCDataDes.sendType = HcclDataType::HCCL_DATA_TYPE_INT8;
     data.all2AllVCDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_INT8;
+	uint64_t sendCountMatrixTmp = 0;
+	data.all2AllVCDataDes.sendCountMatrix = &sendCountMatrixTmp;
     kernelParam->op.algOperator.opType = OP_TYPE_MAP.at(HCCL_CMD_ALLTOALLVC);
     AicpuUtils::GetInstance().kernelParam_ = kernelParam;
     AicpuUtils::GetInstance().kernelParamMap_[0] = AicpuUtils::GetInstance().kernelParam_;

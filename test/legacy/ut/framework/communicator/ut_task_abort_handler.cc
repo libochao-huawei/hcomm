@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -47,7 +47,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_pre_success)
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_PRE;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_PRE;
     uint32_t time = 30U;
 
     CommParams commParams;
@@ -73,7 +73,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_pre_fail)
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_PRE;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_PRE;
     uint32_t time = 30U;
 
     CommParams commParams;
@@ -99,7 +99,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_success
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_POST;
     uint32_t time = 30U;
 
     CommParams commParams;
@@ -127,7 +127,7 @@ TEST_F(TaskAbortHandlerTest, test_task_abort_handle_call_back_stage_post_fail)
 {
     // 构造入参
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage = aclrtDeviceTaskAbortStage::ACL_RT_DEVICE_TASK_ABORT_POST;
     uint32_t time = 30U;
 
     CommParams commParams;

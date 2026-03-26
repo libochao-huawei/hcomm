@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -475,7 +475,7 @@ TEST_F(CcuContextTest, CtxTest)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;
@@ -557,7 +557,11 @@ TEST_F(CcuContextTest, CtxTest)
         ctx->SetCcuInstrInfo(instrInfo);
 
         CcuTaskArgTest taskArg(0, 0, 100);
-        auto taskParam = ctx->GeneTaskParam(taskArg);
+        std::vector<CcuTaskParam> tmp;
+        auto ret = ctx->GeneTaskParam(taskArg, tmp);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            THROW<CcuApiException>("GeneTaskParam is failed!");
+        }
     }
 }
 
@@ -628,7 +632,11 @@ void CreateTaskShareRes(CcuContextTestSharesRes& ctx, std::pair<uint64_t, uint64
     auto instrInfo = translator.Translate(ctx.GetRepSequence(), ctx.GetInstrId());
     ctx.SetCcuInstrInfo(instrInfo);
     CcuTaskArgSharedRes taskArg;
-    auto taskParam = ctx.GeneTaskParam(taskArg);
+    std::vector<CcuTaskParam> tmp;
+    auto ret = ctx.GeneTaskParam(taskArg, tmp);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        THROW<CcuApiException>("GeneTaskParam is failed!");
+    }
 }
 
 
@@ -637,7 +645,7 @@ TEST_F(CcuContextTest, TestSharedRes)
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::Destroy).stubs();
     MOCKER_CPP(&CcuTransport::ReleaseTransRes).stubs();
     MOCKER_CPP(&CcuConnection::ReleaseConnRes).stubs().will(returnValue((HcclResult)HcclResult::HCCL_SUCCESS));;

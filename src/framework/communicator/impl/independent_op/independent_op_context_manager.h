@@ -11,10 +11,12 @@
 #ifndef INDEPENDENT_OP_CONTEXT_MANAGER_H
 #define INDEPENDENT_OP_CONTEXT_MANAGER_H
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
+#include "hccl_mem_defs.h"
 #include <functional>
 #include <unordered_map>
 #include <mutex>
+#include <string>
 
 namespace hccl {
 struct HcclMemHash {
@@ -34,12 +36,6 @@ struct CommEngineHash {
     }
 };
 
-struct HcclMemEqual {
-    bool operator()(const HcclMem& lhm, const HcclMem& rhm) const {
-        return lhm.type == rhm.type && lhm.addr == rhm.addr && lhm.size == rhm.size;
-    }
-};
-
 class ContextManager {
 public:
     ContextManager();
@@ -48,11 +44,9 @@ public:
     HcclResult GetCommEngineCtx(const std::string &tag, CommEngine engine, void **ctx, uint64_t *size);
     HcclResult CopyCommEngineCtx(const std::string &tag, CommEngine engine, const void *srcCtx, uint64_t size,
         uint64_t dstCtxOffset);
-    HcclResult DestroyCommEngineCtx(const HcclMem *engineCtx);
+    HcclResult DestroyCommEngineCtx(const std::string &tag, CommEngine engine);
 private:
     std::unordered_map<std::string, std::unordered_map<CommEngine, HcclMem, CommEngineHash>> contextMap_;
-    std::unordered_map<HcclMem, std::string, HcclMemHash, HcclMemEqual> tagMap_;
-    std::unordered_map<HcclMem, CommEngine, HcclMemHash, HcclMemEqual> engineMap_;
     std::mutex mutex_;
 };
 }

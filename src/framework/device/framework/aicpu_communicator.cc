@@ -494,22 +494,24 @@ HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const
 {
     const u8 orderLaunchInvalidInHcom = 255;
     if (orderLaunchMode == orderLaunchInvalidInHcom) {
-        HCCL_INFO("[%s] attachedStreams_ is invalid in graph mode", __func__);
+        HCCL_INFO("[%s] attachedStreams_[%d] is invalid in graph mode", __func__, orderStream_.id());
         return HCCL_SUCCESS;
     }
     if (orderNotifies_[orderLaunchMode] == nullptr) {
         std::shared_ptr<LocalNotify> notify;
         HcclSignalInfo *aicpuOrderNotify = reinterpret_cast<HcclSignalInfo*>(static_cast<u64>(commParam->aicpuOrderNotifyAddr) +
             (sizeof(HcclSignalInfo) * orderLaunchMode));
-
+        HCCL_INFO("[%s] attachedStreams_[%d] aicpuOrderNotify resId[%llu], addr[0x%llx], flag[%u], devId[%u], tsId[%u], rankId[%u]",
+            __func__, orderStream_.id(), aicpuOrderNotify->resId, aicpuOrderNotify->addr,
+            aicpuOrderNotify->flag, aicpuOrderNotify->devId, aicpuOrderNotify->tsId, aicpuOrderNotify->rankId);
         HcclResult ret = InitAndVerifySingleSignal(*aicpuOrderNotify, notify);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] check localRes noftify failed, resId[%u], group[%s]",
             __func__, aicpuOrderNotify->resId, identifier_.c_str()), ret);
         orderNotifies_[orderLaunchMode] = notify;
-        HCCL_INFO("%s success, group[%s], resId[%u]", __func__, identifier_.c_str(), aicpuOrderNotify->resId);
+        HCCL_INFO("%s success, group[%s], resId[%llu]", __func__, identifier_.c_str(), aicpuOrderNotify->resId);
     }
 
-    HCCL_INFO("%s group[%s] tag[%s] isDeviceMode[%d] orderLaunchMode[%d] mode[%d] streamId[%d] notifyId[%d]",
+    HCCL_INFO("%s group[%s] tag[%s] isDeviceMode[%d] orderLaunchMode[%u] mode[%d] streamId[%d] notifyId[%u]",
             __func__, identifier_.c_str(), tag.c_str(), isDeviceMode_, orderLaunchMode, GetWorkflowMode(), orderStream_.id(),
             orderNotifies_[orderLaunchMode]->notifyId_);
     CHK_RET(LocalNotify::Post(orderStream_, dispatcher_, orderNotifies_[orderLaunchMode]));
@@ -1879,24 +1881,28 @@ HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTra
         HCCL_E_PARA);
     
     const std::unordered_set<LinkType> supportedLinkTypes = {LinkType::LINK_HCCS, LinkType::LINK_SIO, LinkType::LINK_HCCS_SW};
-
-    for (auto &singleSubCommTransport : opTransportResponse[COMM_LEVEL0]) {
-        for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
-            LINK &link = singleSubCommTransport.links[i];
-            if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
-                continue;   // 无效或者不支持的链路
+    for (u32 levelIdx = 0; levelIdx < opTransportResponse.size(); levelIdx ++) {
+        for (auto &singleSubCommTransport : opTransportResponse[levelIdx]) {
+            if (singleSubCommTransport.isZeroCopy == false) {
+                continue;
             }
-            u32 peerRank = link->GetRemoteRank();
-            void *remoteIn = nullptr;
-            CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
-            void *remoteOut = nullptr;
-            CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
+            for (u64 i = 0; i < singleSubCommTransport.links.size(); ++i) {
+                LINK &link = singleSubCommTransport.links[i];
+                if (link == nullptr || !singleSubCommTransport.transportRequests[i].isValid || supportedLinkTypes.count(link->GetLinkType()) == 0) {
+                    continue;   // 无效或者不支持的链路
+                }
+                u32 peerRank = link->GetRemoteRank();
+                void *remoteIn = nullptr;
+                CHK_RET(HcommSymWinGetPeerPointer(param.inputSymWindow, param.inputOffset, peerRank, &remoteIn));
+                void *remoteOut = nullptr;
+                CHK_RET(HcommSymWinGetPeerPointer(param.outputSymWindow, param.outputOffset, peerRank, &remoteOut));
 
-            CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
-                HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
-                HCCL_E_INTERNAL);
-            HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
-            CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+                CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
+                    HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
+                    HCCL_E_INTERNAL);
+                HCCL_INFO("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p]", peerRank, remoteIn, remoteOut);
+                CHK_RET(link->UpdateRemoteAddr(remoteIn, remoteOut));
+            }
         }
     }
     return HCCL_SUCCESS;
@@ -2885,7 +2891,8 @@ HcclResult HcclCommAicpu::StreamTaskMonitor(void)
         }
 
         auto timeVal = DURATION_US(curTime - streamMontior.historyTime).count();
-        if (timeVal >= taskMonitorInterval_ * 1000) {
+        const int TIME_CONVERSION = 1000;
+        if (timeVal >= taskMonitorInterval_ * TIME_CONVERSION) {
             HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor streamId:%d, sqid:%d, head:%u, tail:%u, time %s us, %s",
                 stream.id(), stream.sqId(), sqHead, sqTail, std::to_string(timeVal).c_str(), tmp.c_str());
             HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor %s", GetTaskExceptionOpInfo(sqHead,sqeContextBuffer).c_str());
@@ -5023,7 +5030,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     identifier_ = std::string(commAicpuParam->hcomId);
     topoInfo_.userRankSize = commAicpuParam->userRankSize;
     topoInfo_.userRank = commAicpuParam->userRank; 
-    notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
+    notifys_.reserve(hccl::HCCL_THREAD_NOTIFY_MAX_NUM);
     if (topoInfo_.deviceType == DevType::DEV_TYPE_910_93 || topoInfo_.deviceType == DevType::DEV_TYPE_910B) {
         notifySize_ = NOTIFY_SIZE_FOUR;
     } else {
@@ -5037,7 +5044,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
     CHK_RET(RegisterProfCallBack());
 
-    if (topoInfo_.deviceType == DevType::DEV_TYPE_910_95) {
+    if (topoInfo_.deviceType == DevType::DEV_TYPE_950) {
         HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOpV2 start");
         indOpCommInitialized_ = true;
         return HCCL_SUCCESS;
@@ -5115,7 +5122,7 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     // 为上报翻转初始化资源
-    if (topoInfo_.deviceType != DevType::DEV_TYPE_910_95) {
+    if (topoInfo_.deviceType != DevType::DEV_TYPE_950) {
         CHK_RET(InitProfthreadResource(threadNum));
     }
     return HCCL_SUCCESS;
@@ -5168,69 +5175,6 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::AllocChannelResourceV2(HcclChannelUrmaRes *commParam)
-{
-    HCCL_INFO("[HcclCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
-        "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
-        __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
-        commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    CHK_PRT(InitUrmaChannel(commParam));
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
-{
-    HCCL_INFO("[HcclCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
-        __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-
-    for (u32 index = 0; index < commParam->listNum; index++) {
-        std::vector<char> data(commParam->singleUniqueIdSize);
-
-        // 计算地址块的偏移
-        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
-        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
-
-        // 反序列化得到device侧transport对象
-        Hccl::AicpuResPackageHelper helper;
-        auto dataVec = helper.ParsePackedData(data);
-
-        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
-        if (static_cast<u32>(resType) >= dataVec.size()) {
-            HCCL_ERROR("[HcclCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
-            return HCCL_E_PARA;
-        }
-        ChannelHandle channelHandle;
-        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
-
-        // 恢复出的channelHandle回填到commParam中
-        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
-        channelList[index] = channelHandle;
-        HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
-            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
-{
-    HCCL_DEBUG("[HcclCommAicpu][%s] data: ptr[%p], size[%u]", __func__, data.data(), data.size());
-    Hccl::BinaryStream binaryStream(data);
-
-    std::vector<char> transpUniqueId;
-    binaryStream >> transpUniqueId;
-
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
-
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
-
-    return HCCL_SUCCESS;
-}
-
 HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex)
 {
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
@@ -5270,6 +5214,7 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     TransportPara para{};
     const std::unique_ptr<NotifyPool> notifyPool;
     DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    CHK_PRT(ctx->SetDispatcherHcclQos(remoteResV2.channelP2p.qos)); // 调度器添加hcclQos
     CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
         TransportType::TRANS_TYPE_DEVICE_P2P, para, ctx->GetDispatcher(), notifyPool, machinePara, transDevP2pData));

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -54,7 +54,7 @@ TEST_F(HccpTlvHdcManagerTest, should_successfully_init_HccpTlvHdcManager) {
     MOCKER(HrtGetDevicePhyIdByIndex)
         .stubs()
         .with(any())
-        .will(returnValue(0));
+        .will(returnValue(static_cast<DevId>(0)));
     MOCKER(RaTlvInit).stubs().will(returnValue(0));
     HccpTlvHdcManager::GetInstance().Init(deviceLogicId);
 }

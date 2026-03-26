@@ -18,13 +18,13 @@ namespace hccl {
 class CollBatchSendRecvGroupExecutor : public CollBatchSendRecvExecutor {
 public:
     CollBatchSendRecvGroupExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollBatchSendRecvGroupExecutor() = default;
+    ~CollBatchSendRecvGroupExecutor() override = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
 protected:
 
     /* *************** 算法编排 *************** */
-    u64 CalcSendLoopMaxCount(const u32 unitSize);
-    u64 CalcRecvLoopMaxCount(const u32 unitSize);
+    u64 CalcSendLoopMaxCount(const u32 unitSize) const;
+    u64 CalcRecvLoopMaxCount(const u32 unitSize) const;
     HcclResult ProcessSendStreamDataSlice(Stream& stream, u32 sendStreamId, bool needStreamSync, bool retryEnable);
     HcclResult ProcessRecvStreamDataSlice(Stream& stream, u32 recvStreamId, bool needStreamSync, bool retryEnable);
     HcclResult ProcessSendDataSliceSmall(Stream& stream, bool needStreamSync, bool retryEnable);
@@ -56,14 +56,14 @@ private:
     HcclResult RunTasksBig(OpParam& param);
     HcclResult RunLoopSmall(OpParam& param);
     HcclResult CalcStreamNum(u32& streamNum) override;
-    HcclResult isGroupBigCount(HcclSendRecvItem *sendRecvInfo, u32 itemNum, bool& isSmall);
+    HcclResult isGroupBigCount(HcclSendRecvItem *sendRecvInfo, u32 itemNum, bool& isBig) const;
     HcclResult CalcBufferSliceSize();
 
     HcclResult MainPostSubWait(Stream& mainStream);
     HcclResult MainWaitSubPost(Stream& mainStream);
-    HcclResult SubNotifyMain(Stream& stream, u32 streamId);
-    HcclResult MainPostSubWaitSmall(Stream& mainStream, Stream& subStream);
-    HcclResult MainWaitSubPostSmall(Stream& mainStream, Stream& subStream);
+    HcclResult SubNotifyMain(Stream& stream, u32 streamId) const;
+    HcclResult MainPostSubWaitSmall(Stream& mainStream, Stream& subStream) const;
+    HcclResult MainWaitSubPostSmall(Stream& mainStream, Stream& subStream) const;
 
 private:
 

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -23,6 +23,9 @@
 #include "mc2_compont.h"
 #include "communicator_impl.h"
 #include "ccu_ins_preprocessor.h"
+#include "dev_buffer.h"
+#include "rma_buffer.h"
+#include "internal_exception.h"
 #undef private
 #undef protected
 
@@ -57,7 +60,7 @@ protected:
 
 class FakeCollAlgComponent : public CollAlgComponent {
 public:
-    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_910_95, 0, 1){};
+    FakeCollAlgComponent() : CollAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1){};
     HcclResult Orchestrate(const CollAlgOperator &op, const CollAlgParams &params,
                                    InsQuePtr queue, string &algName)
     {
@@ -97,7 +100,7 @@ TEST_F(AivMc2CompontTest, should_return_success_when_calling_GenerateCommContext
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     CommunicatorImpl comm{};
@@ -128,7 +131,7 @@ TEST_F(AivMc2CompontTest, should_throw_InternalException_when_calling_GenerateCo
     MOCKER(CcuRep::GetTokenInfo).stubs().with(any(), any()).will(returnValue(1000));
     HcclCombinOpParam opParam;
     MOCKER(HrtMallocHost).stubs().with(any()).will(returnValue(static_cast<void *>(&opParam)));
-    MOCKER(HrtMalloc).stubs().with(any(), any()).will(returnValue((void *)0x10000));
+    MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue((void *)0x10000));
 
     // then
     std::unique_ptr<CommunicatorImpl> comm = std::make_unique<CommunicatorImpl>();

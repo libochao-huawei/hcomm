@@ -144,11 +144,21 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
 
     ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads/slaves/
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
-    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/communicator/aicpu
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank
     ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank_pairs
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/profiling
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/profiling/aicpu
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/profiling/host
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/taskException
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/taskException/aicpu
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/dfx/taskException/host
+    ${HCOMM_CODE_FRAMEWORK}/device/framework
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/slaves
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/
@@ -217,6 +227,13 @@ set(HCOMM_LEGACY_INCLUDE_LIST
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/buffer
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel/dpu_notify
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel
+    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/profiling
+    ${HCOMM_CODE_LEGACY}/framework/dfx/task_exception
+    ${HCOMM_CODE_LEGACY}/framework/dfx/profiling
+    ${HCOMM_CODE_LEGACY}/framework/dfx/common
+    ${HCOMM_CODE_LEGACY}/framework/dfx
+    ${HCOMM_CODE_LEGACY}/framework/resource_manager/stream
+    
 )
 
 add_subdirectory(testcase)

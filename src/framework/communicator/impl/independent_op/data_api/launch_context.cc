@@ -13,6 +13,15 @@
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 
+bool LaunchContext::IsBatchLaunchMode() const
+{
+    if (mode_ == HCOMM_LAUNCH_MODE_BATCH) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void LaunchContext::AddThread(ThreadHandle thread)
 {
     if (mode_ != HCOMM_LAUNCH_MODE_BATCH) {
@@ -63,7 +72,7 @@ HcclResult LaunchContext::HandleClear()
 
     DevType devType = DevType::DEV_TYPE_COUNT;
     hrtGetDeviceType(devType);
-    if (devType == DevType::DEV_TYPE_910_95) {
+    if (devType == DevType::DEV_TYPE_950) {
         HCCL_INFO("[%s] Running on A5, HcclTaskClear skipped.", __func__);
         return HCCL_SUCCESS;
     }
@@ -115,7 +124,7 @@ HcclResult LaunchContext::SetLaunchMode(const char* launchTag, HcommLaunchMode m
         case HCOMM_LAUNCH_MODE_BATCH:
 #ifndef CCL_KERNEL_AICPU
             hrtGetDeviceType(devType);
-            if (devType == DevType::DEV_TYPE_910_95) {
+            if (devType == DevType::DEV_TYPE_950) {
                 HCCL_INFO("[%s] Running on A5, CommTaskPrepare skipped.", __func__);
                 return HCCL_SUCCESS;
             }

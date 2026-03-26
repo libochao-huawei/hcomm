@@ -35,12 +35,13 @@ public:
         HCCL_ERROR("[%s] === VA Allocator Dump (Total: %zu) ===", tag, totalSize_);
         size_t freeSum = 0;
         int i = 0;
+        constexpr double kPercentageMultiplier = 100.0;
         for (auto &block : freeList_) {
             HCCL_ERROR("  Block[%d]: offset %zu (0x%zx) -> size %zu (0x%zx) | end: %zu", 
                 i++, block.offset, block.offset, block.size, block.size, block.offset + block.size);
             freeSum += block.size;
         }
-        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, static_cast<double>(freeSum) / totalSize_ * 100.0);
+        HCCL_ERROR("  Total Free: %zu (%.2f%%)", freeSum, static_cast<double>(freeSum) / totalSize_ * kPercentageMultiplier);
         HCCL_ERROR("==========================================");
     }
 
@@ -431,7 +432,7 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
                  baseVaSize,  baseVaSize, granularity_, stride_);
             return HCCL_E_MEMORY;
         }
-        paMapInfo = std::make_shared<PaMappingInfo>();
+        EXECEPTION_CATCH((paMapInfo = std::make_shared<PaMappingInfo>()), return HCCL_E_PTR);
         paMapInfo->paHandle = paHandle;
         paMapInfo->origAllocBaseVa = baseUserVa;
         paMapInfo->origAllocSize = baseVaSize;
@@ -439,7 +440,8 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
         paMapInfo->refCount = 1;
         paMappingMap_.emplace(paHandle, paMapInfo);
     }
-    std::shared_ptr<SymmetricWindow> pWin(new (std::nothrow) SymmetricWindow());
+    std::shared_ptr<SymmetricWindow> pWin = nullptr;
+    EXECEPTION_CATCH((pWin = std::make_shared<SymmetricWindow>()), return HCCL_E_PTR);
     pWin->userVa = baseUserVa;
     pWin->userSize = baseVaSize;
     pWin->baseVa = static_cast<uint8_t*>(heapBase_) + paMapInfo->heapBaseOffset;

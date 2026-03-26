@@ -27,6 +27,7 @@ public:
     std::string &GetUniqueId() override;
     uint32_t GetNotifyNum() const override;
     LocalNotify *GetNotify(uint32_t index) const override;
+    HcclResult SupplementNotify(uint32_t notifyNum) override;
 
     // A3 Stream & A5 Stream
     bool IsDeviceA5() const override;
@@ -37,11 +38,18 @@ public:
     // Local Data Plane Functions
     HcclResult LocalNotifyRecord(uint32_t notifyId) const override;
     HcclResult LocalNotifyWait(uint32_t notifyId) const override;
+
+    HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const override;
+    HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const override;
+
     HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override;
     HcclResult LocalReduce(
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
+    bool GetMaster() const override;
+    void SetIsMaster(bool isMaster) override;
 
 private:
+    bool isMaster_{false};
     struct HcclStreamInfo {
         s32 streamIds;
         uint32_t sqIds;
@@ -54,6 +62,7 @@ private:
         uint64_t sqCqContextAddr = 0;  // 记录sqeContext地址
         uint64_t sqCqContextSize = 0;  // 记录sqeContext大小
     };
+    std::string &UpdateUniqueId();
     rtStream_t rtStream_ = nullptr;
     bool isDeviceSide_ = false;
     StreamType streamType_ = StreamType::STREAM_TYPE_RESERVED;

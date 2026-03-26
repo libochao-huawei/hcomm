@@ -21,8 +21,24 @@ GlobalMemRegMgr::~GlobalMemRegMgr()
 
 GlobalMemRegMgr& GlobalMemRegMgr::GetInstance()
 {
-    static GlobalMemRegMgr instance;
-    return instance;
+    // reserve 1 instance for invalid deviceid and host
+    static GlobalMemRegMgr instance[MAX_MODULE_DEVICE_NUM + 1];
+    s32 deviceLogicID = 0;
+
+    HcclResult hcclRet = hrtGetDeviceRefresh(&deviceLogicID);
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_RUN_WARNING("GlobalMemRegMgr::GetInstance hrtGetDeviceRefresh failed, ret[%d], "
+            "return reserve instance", hcclRet);
+        return instance[MAX_MODULE_DEVICE_NUM];
+    }
+
+    if (static_cast<u32>(deviceLogicID) >= MAX_MODULE_DEVICE_NUM || deviceLogicID <= HOST_DEVICE_ID) {
+        HCCL_RUN_WARNING("[Get][Instance]deviceLogicID[%d] is invalid, return reserve instance", deviceLogicID);
+        return instance[MAX_MODULE_DEVICE_NUM];
+    }
+
+    HCCL_INFO("GlobalMemRegMgr::GetInstance deviceLogicID[%d].", deviceLogicID);
+    return instance[deviceLogicID];
 }
 
 HcclResult GlobalMemRegMgr::Destroy()
@@ -99,12 +115,6 @@ HcclResult GlobalMemRegMgr::Reg(const HcclMem* mem, void** memRecordHandle)
     CHK_PRT_RET(mem->size == 0,
         HCCL_ERROR("[GlobalMemRegMgr][Reg] The size of mem[%p] to register is 0.", mem),
         HCCL_E_PARA);
-
-    // 进程粒度最多注册MAX_GLOBAL_MEM_REG_COUNT块独立的内存，若超过则报错退出
-    CHK_PRT_RET(memRecordSet_.size() == MAX_GLOBAL_MEM_REG_COUNT,
-        HCCL_ERROR("[GlobalMemRegMgr][Reg] The number of memory registered in the process has reached the maximum"
-                   " value[%u]. Cannot register more memories.", MAX_GLOBAL_MEM_REG_COUNT),
-        HCCL_E_UNAVAIL);
 
     GlobalMemRecord newRecord(mem);
     const auto memInfo = newRecord.PrintInfo();

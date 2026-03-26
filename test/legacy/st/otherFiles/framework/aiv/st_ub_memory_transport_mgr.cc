@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -126,7 +126,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
  
     u64 res = 1;
     MOCKER(&CheckCollOperator).stubs().with().will(ignoreReturnValue());
-    MOCKER(&HrtGetDevicePhyIdByIndex).stubs().with().will(returnValue(1));
+    MOCKER(&HrtGetDevicePhyIdByIndex).stubs().with().will(returnValue(static_cast<DevId>(1)));
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
     transportManager.ubMemLink2TransportMap[linkData]->rmtHandshakeMsg=comm.GetCurrentCollOperator()->GetUniqueId();

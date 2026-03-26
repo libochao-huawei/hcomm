@@ -96,6 +96,13 @@ HcclResult ReduceScatterOperator::SelectAlg(const std::string& tag, const OpPara
 HcclResult ReduceScatterOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
     (void) param;
+
+    // 混合组网场景不支持规约保序
+    if (IsNeedStrictMode(param)) {
+        HCCL_ERROR("[ReduceScatterOperator][SelectAlgforMix] not support DETERMINISTIC_STRICT mode.");
+        return HCCL_E_NOT_SUPPORT;
+    }
+
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[ReduceScatterOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
@@ -220,7 +227,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
         if (isSupportAivDeter) {
             if (dataSize * userRankSize_ <= HCCL_SMALL_COUNT_8_MB){
                 algName = "ReduceScatterAivDeterSmallExecutor";
-            }else{
+            } else {
                 algName = "ReduceScatterAivDeterExecutor"; 
             }
             HCCL_INFO("[SelectAlgfor910B] ReduceScatter SelectAlgfor910B is algName [%s].", algName.c_str());
@@ -400,9 +407,19 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                 && (!retryEnable_)
                 && !multiModuleDiffDeviceNumMode_;
 
-    if (isSupportAivDeter){
+    if (isSupportAivDeter) {
         algName = "ReduceScatterMeshAivFor91093Executor";
         HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s]", algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    if (IsNeedStrictMode(param)) {
+        CHK_PRT_RET(!CheckStrictCondition(param), 
+            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
+            HCCL_E_NOT_SUPPORT);
+
+        algName = "ReduceScatterOrderPreservedFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }
 
@@ -464,10 +481,11 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
         && ((isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB)
         || (!isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_2_MB))));
+    bool isSupportAtomicWrite = topoMatcher_->GetAlgoInfo().isSupportAtomicWrite;
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && isSupportAtomicWrite && !retryEnable_; // 涉及ROCE平面
 
-    isHccsPlusSio = false; //待适配
+    isHccsPlusSio = false;
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
     } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {

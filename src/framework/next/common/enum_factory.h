@@ -11,7 +11,7 @@
 #ifndef HCCLV2_ENUM_FACTORY_H
 #define HCCLV2_ENUM_FACTORY_H
 
-#include "string_util.h"
+#include "vector"
 
 #include <string>
 #include <sstream>

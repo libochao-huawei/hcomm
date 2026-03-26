@@ -22,6 +22,7 @@
 #include "dlprof_function.h"
 #include "hccl_aiv_utils.h"
 #include "sal.h"
+#include "ccu_ins_group.h"
 
 namespace Hccl {
 
@@ -619,6 +620,32 @@ static void GetCcuProfilingInfo(const CcuInstruction &ccuInstruction, const vect
     }
 }
 
+static void FastLoadSaveParams(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, 
+                            const Stream &stream, std::vector<std::vector<CcuTaskParam>> &ccuParams,
+                            std::vector<std::vector<CcuProfilingInfo>> &ccuProfilingInfo)
+{
+    std::size_t totalSize = 0;
+    for (const auto &ccuParam : ccuParams) {
+        totalSize += ccuParam.size();
+    }
+    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
+        CcuInstType insType = ccuInstruction.GetInstType();
+        if (ccuInstruction.GetInstType() == CcuInstType::CCU_INS_GROUP) {
+            const CcuInsGroup *insGroup = dynamic_cast<const CcuInsGroup *>(&ccuInstruction);
+            if (insGroup == nullptr) {
+                THROW<NullPtrException>(StringFormat("%s CcuInsGroup trans failed", __func__));
+            } 
+            if (insGroup->GetCcuInstructions().empty()) {
+                THROW<InvalidParamsException>(StringFormat("%s insGroup CcuInstructions isEmpty", __func__));
+            }
+            insType = insGroup->GetCcuInstructions()[0]->GetInstType();
+        }
+        HCCL_RUN_INFO("current CcuInstType: %d", static_cast<int>(insType));
+        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(), insType,
+                           stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
+    }
+}
+
 void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, 
                             const Stream &stream, std::vector<std::vector<CcuTaskParam>> &ccuParams)
 {
@@ -626,6 +653,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
+        .isMaster = false,
         .taskPara  = {
             .Ccu = {
                 .dieId         = 0,
@@ -654,7 +682,7 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
     // launch ccu task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.IsMaster());
 
     // launch LocalWaitFrom on stream
     RtsCntNotify *cntNotifyNTo1 = comm.GetCcuStreamSyncNotifyManager().GetRtsNTo1CntNotify(stream.GetId());
@@ -682,20 +710,12 @@ void SubmitCcuInsGroupTasks(const CcuInstruction &ccuInstruction, CommunicatorIm
 
         // launch ccu task
         LaunchCcuTasks(ccuParams[ccuProfIdx], slave, taskParam, taskConfig);
-        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->GetIsMaster());
+        ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[ccuProfIdx], comm, taskParam, slave->IsMaster());
 
         // launch localPostTo on extra streams
         cntNotifyNTo1->PostBits(bitValue, *slave);
     }    
-
-    std::size_t totalSize = 0;
-    for (const auto &ccuParam : ccuParams) {
-        totalSize += ccuParam.size();
-    }
-    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
-        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(),
-                    stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
-    }
+    FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 
 static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const OpTaskConfig &taskConfig, const Stream &stream)
@@ -716,6 +736,7 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
         .taskType  = TaskParamType::TASK_CCU,
         .beginTime = 0,
         .endTime   = 0,
+        .isMaster = false,
         .taskPara  = {
             .Ccu = {
                 .dieId         = 0,
@@ -733,16 +754,8 @@ static void SubmitCcuTasks(const CcuInstruction &ccuInstruction, CommunicatorImp
     
     //esl 2die适配，先申请从流再启动task
     LaunchCcuTasks(*ccuParams.begin(), &stream, taskParam, taskConfig);
-    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.GetIsMaster());
-
-    std::size_t totalSize = 0;
-    for (const auto &ccuParam : ccuParams) {
-        totalSize += ccuParam.size();
-    }
-    if (totalSize != 0 && comm.isEnableSuperFasterLoad()) {
-        comm.saveCCUParams(std::move(ccuParams), std::move(ccuProfilingInfo), ccuInstruction.GetExecId(),
-                    stream.GetId() != comm.GetStreamManager().GetMaster()->GetId());
-    }
+    ReportCcuProfilingInfo(ccuInstruction.GetExecId(), ccuProfilingInfo[0], comm, taskParam, stream.IsMaster());
+    FastLoadSaveParams(ccuInstruction, comm, taskConfig, stream, ccuParams, ccuProfilingInfo);
 }
 
 void Interpret(const CcuInstruction &ccuInstruction, CommunicatorImpl &comm, const Stream &stream,
@@ -768,6 +781,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .taskType  = TaskParamType::TASK_AIV,
         .beginTime = aivOpArgs.beginTime,
         .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
+        .isMaster = false,
         .taskPara  = {
             .Aiv = {
                     .cmdType     = aivOpArgs.cmdType,
@@ -779,6 +793,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
                                            reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_ADDR_OFFSET),
                     .flagMemSize = AIV_FLAG_AREA_SIZE,
                     .rank        = aivOpArgs.rank,
+                    .sendRecvRemoteRank = aivOpArgs.sendRecvRemoteRank,
                     .isOpbase    = aivOpArgs.isOpBase,
                     .dataType    = DataTypeToHcclDataType(aivOpArgs.dataType),
             }
@@ -801,8 +816,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
     aivOpArgs.aivTag = aivOpArgs.isOpBase ? (static_cast<uint32_t>(comm.GetAivTag()) << AIV_TAG_MOVE_LEFT_BITS) | static_cast<uint32_t>(aivOpArgs.aivTag):
                         (static_cast<uint32_t>(comm.GetAivOffloadTag()) << AIV_TAG_MOVE_LEFT_BITS) | static_cast<uint32_t>(aivOpArgs.aivTag);                        
     HCCL_INFO("%s AivTag[%u]", __func__, aivOpArgs.aivTag);
-    void* buffersInAddr;
-    buffersInAddr = aivOpArgs.isOpBase ? reinterpret_cast<void*>(comm.GetAivTagBuffer()->GetAddr()) : reinterpret_cast<void*>(comm.GetAivOffloadTagBuffer()->GetAddr());
+    void* buffersInAddr = aivOpArgs.isOpBase ? reinterpret_cast<void*>(comm.GetAivTagBuffer()->GetAddr()) : reinterpret_cast<void*>(comm.GetAivOffloadTagBuffer()->GetAddr());
     aivOpArgs.buffersIn = buffersInAddr;
 
     if((aivOpArgs.aivTag & AIV_LOW_16_BITS) == 1 && (aivOpArgs.aivTag >> AIV_TAG_MOVE_LEFT_BITS) == 1){

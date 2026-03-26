@@ -97,7 +97,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::CalcScratchMemSize(u64& scr
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterMeshAivFor91093Executor::CalNumBlocksDeter(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollReduceScatterMeshAivFor91093Executor::CalNumBlocksDeter(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType) const
 {
     (void) dataSize;
     (void) cmdType;
@@ -334,9 +334,6 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::KernelRun(const OpParam &pa
     algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
-    if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
-    }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,

@@ -115,7 +115,7 @@ bool CollAllGatherVMeshExecutor::IsHugeData(const u64 curSize)
 }
 
 HcclResult CollAllGatherVMeshExecutor::RunLevel0(const OpParam &param, ExecMem &execMem,
-                                                        SubCommInfo &level0CommInfo, SubCommInfo &level1CommInfo)
+                                                        SubCommInfo &level0CommInfo, const SubCommInfo &level1CommInfo)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllGatherVMeshExecutor][KernelRun] userRank[%u] starts.", topoAttr_.userRank);
     u32 perDataSize = SIZE_TABLE[param.VDataDes.dataType];
@@ -172,7 +172,7 @@ HcclResult CollAllGatherVMeshExecutor::RunLevel0(const OpParam &param, ExecMem &
 }
 
 HcclResult CollAllGatherVMeshExecutor::RunLevel1(const OpParam &param, ExecMem &execMem,
-                                                        SubCommInfo &level0CommInfo, SubCommInfo &level1CommInfo)
+                                                 const SubCommInfo &level0CommInfo, SubCommInfo &level1CommInfo)
 {
     std::unique_ptr<AlgTemplateBase> level1TempAlg;
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING || (topoAttr_.isDiffDeviceModule && topoAttr_.serverNum == 1)) {

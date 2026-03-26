@@ -4,27 +4,23 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #ifndef HCCLV2_SOCKET_BASE_H
 #define HCCLV2_SOCKET_BASE_H
 
-#include <map>
 #include <chrono>
-#include <string>
-#include <arpa/inet.h>
 
 #include "ip_address.h"
 #include "socket_config.h"
 #include "orion_adapter_hccp.h"
-#include "socket_handle_manager.h"
 
 namespace Hccl {
 
 MAKE_ENUM(SocketStatus, INIT, LISTEN_STARTING, LISTENING, CONNECT_STARTING, CONNECTING, SENDING, RECVING, OK, TIMEOUT)
 
-MAKE_ENUM(NicType, DEVICE_NIC_TYPE, HOST_NIC_TYPE)
+MAKE_ENUM(NicType, DEVICE_NIC_TYPE, HOST_NIC_TYPE, DEVICE_VNIC_TYPE)
 
 using FdHandle = void *;
 class Socket {
@@ -59,6 +55,11 @@ public:
     
     bool Listen(u32 &port);
     bool ISend(void *data, u64 size, u64& compSize) const;
+
+    bool IsListen() const
+    {
+        return isListening;
+    }
 
     SocketStatus GetAsyncStatus();
 

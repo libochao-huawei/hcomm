@@ -10,6 +10,7 @@
 
 #ifndef BUFFER_KEY_V2_H
 #define BUFFER_KEY_V2_H
+
 #include <string>
 
 namespace Hccl {

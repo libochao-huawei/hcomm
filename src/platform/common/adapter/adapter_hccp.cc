@@ -703,26 +703,23 @@ HcclResult HrtRaInit(struct RaInitConfig *config)
 HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHandle &rdmaHandle)
 {
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInit(mode, notifyType, rdevInfo, &rdmaHandle);
-
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
-        "EJ0002",
-        vector<string>({"suggest"}),
-        vector<string>({
-            "Run the following hccn_tool commands: 1. for i in {0..7}; do hccn_tool -i $i "\
-            "-optical -g ; done | grep present: Check whether the optical module is in position."\
-            "2. for i in {0..7}; do hccn_tool -i $i -ip -g ; done. Check whether the "\
-            "IP address is configured. 3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check "\
-            "whether the switch is connected"
-        })
+        "EI0009",
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
-
+#ifndef HCCD
+    vector<HcclIpAddress> deviceIp;
+    CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
+    CHK_PRT_RET(deviceIp.size() < 1,
+        HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
-        "EJ0004",
-        vector<string>({"reason"}),
-        vector<string>({
-        "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
-        })
+        "EI0014",
+        vector<string>({ "value", "variable" ,"expect" }),
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()),
+        "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
+#endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
@@ -741,29 +738,25 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         init_info.enabled2mbLite);
 
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInitWithAttr(init_info, rdevInfo, &rdmaHandle);
-
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
-        "EJ0002",
-        vector<string>({"suggest"}),
-        vector<string>({
-            "Run the following hccn_tool commands: 1. for i in {0..7}; do hccn_tool -i $i "\
-            "-optical -g ; done | grep present: Check whether the optical module is in position."\
-            "2. for i in {0..7}; do hccn_tool -i $i -ip -g ; done. Check whether the "\
-            "IP address is configured. 3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check "\
-            "whether the switch is connected"
-        })
+        "EI0009",
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
-
+#ifndef HCCD
+    vector<HcclIpAddress> deviceIp;
+    CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
+    CHK_PRT_RET(deviceIp.size() < 1,
+        HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
-        "EJ0004",
-        vector<string>({"reason"}),
-        vector<string>({
-        "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
-        })
+        "EI0014",
+        vector<string>({ "value", "variable" ,"expect" }),
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
+#endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
@@ -789,29 +782,25 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
     }
 
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInitWithBackupAttr(&init_info, &rdevInfo, &backupRdevInfo, &rdmaHandle);
-
     RPT_INPUT_ERR(ret == HCCP_ELINKDOWN,
-        "EJ0002",
-        vector<string>({"suggest"}),
-        vector<string>({
-            "Run the following hccn_tool commands: 1. for i in {0..7}; do hccn_tool -i $i "\
-            "-optical -g ; done | grep present: Check whether the optical module is in position."\
-            "2. for i in {0..7}; do hccn_tool -i $i -ip -g ; done. Check whether the "\
-            "IP address is configured. 3. for i in {0..7}; do hccn_tool -i $i -lldp -g: Check "\
-            "whether the switch is connected"
-        })
+        "EI0009",
+        vector<string>({"device_id", "reason"}),
+        vector<string>({std::to_string(rdevInfo.phyId), "The network port is down"})
     );
     CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
         HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
-
+#ifndef HCCD
+    vector<HcclIpAddress> deviceIp;
+    CHK_RET(hrtRaGetDeviceIP(rdevInfo.phyId, deviceIp));
+    CHK_PRT_RET(deviceIp.size() < 1,
+        HCCL_ERROR("Get ip address failed, phyId[%u]", rdevInfo.phyId), HCCL_E_INTERNAL);
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
-        "EJ0004",
-        vector<string>({"reason"}),
-        vector<string>({
-        "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
-        })
+        "EI0014",
+        vector<string>({ "value", "variable" ,"expect" }),
+        vector<string>({ string(HcclIpAddress(rdevInfo.localIp.addr.s_addr).GetReadableIP()), "[IP]", string(deviceIp[0].GetReadableIP()) })
     );
+#endif
     CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
         HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
@@ -1894,7 +1883,7 @@ map<string, vector<CqInfo>> g_qpRecords;
 mutex g_qpRecordsMutex;
 HcclResult CreateCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
-    struct CqAttr attr;
+    struct CqAttr attr = {};
     attr.qpContext = &cq.context;
     attr.ibSendCq = &cq.sq;
     attr.ibRecvCq = &cq.rq;
@@ -2664,7 +2653,7 @@ HcclResult hrtRaGetSocketVnicIpInfos(u32 phyId, enum IdType type, vector<u32> de
             HCCL_INFO("[hrtRaGetSocketVnicIpInfos] vnicInfoMap deviceIds[%u] found, Ip[%s]",
                 deviceIds[i], vnicIP.GetReadableAddress());
         } else {
-            struct IpInfo vnicIpInfo;
+            struct IpInfo vnicIpInfo = {};
             s32 sRet = memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
             CHK_PRT_RET(sRet != EOK,
                 HCCL_ERROR("[hrtRaGetSocketVnicIpInfos]errNo[0x%016llx] memset vnicIpInfo to 0 failed."
@@ -2960,7 +2949,7 @@ HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
 HcclResult SnapShotSaveAction(s32 networkMode, u32 devicePhyId, HcclSaveSnapShotAction action)
 {
     HCCL_INFO("%s networkMode[%d], devicePhyId[%u], action[%d]", __func__, networkMode, devicePhyId, action);
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
     s32 ret = DlRaFunction::GetInstance().dlRaSaveSnapShot(&raInfo, static_cast<enum SaveSnapshotAction>(action));
@@ -2997,7 +2986,7 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         }
         return HCCL_SUCCESS;
     }
-    struct RaInfo raInfo;
+    struct RaInfo raInfo = {};
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
 

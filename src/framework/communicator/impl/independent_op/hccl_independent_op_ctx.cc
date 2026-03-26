@@ -8,77 +8,108 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "hccl_api.h"
+#include "hccl/hccl_res.h"
 #include "independent_op_context_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
 #include "independent_op.h"
 #include <string>
+#include "param_check_pub.h"
 
 using namespace hccl;
+
+const char *COMM_RESERVE_CTX_TAG = "";
 
 HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine engine, uint64_t size, void **ctx)
 {
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(ctxTag);
     CHK_PTR_NULL(ctx);
-    CHK_PRT_RET(strlen(ctxTag) > HCCL_RES_TAG_MAX_LEN,
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
+    CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
-            __func__,  strlen(ctxTag), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
+            __func__,  strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s]Invalid CtxSize, CtxSize[%u]", __func__, size), HCCL_E_PARA);
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = HCCL_SUCCESS;
-    if (hcclComm->IsCommunicatorV2()) {
-        CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        ContextManager* contextMgr = collComm->GetContextManager();
-        CHK_PTR_NULL(contextMgr);
-        ret = contextMgr->CreateCommEngineCtx(std::string(ctxTag), engine, size, ctx);
-    }
-    else {
-        auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
-        ret = contextMgr.CreateCommEngineCtx(std::string(ctxTag), engine, size, ctx);
-    }
-    if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%d], ctx size[%llu], ret[%d]",
-            __func__, ctxTag, engine, size, ret);
-            return ret;
-        }
 
-    HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], size[%llu], ctx[%p], group[%s]", __func__, ctxTag, engine,
-    size, *ctx, hcclComm->GetIdentifier().c_str());
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            hccl::CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            EngineCtxs* engineCtxs = myRank->GetEngineCtxs();
+            CHK_PTR_NULL(engineCtxs);
+            HcclResult ret = HCCL_SUCCESS;
+            ret = engineCtxs->CreateCommEngineCtx(ctxTagTmp, engine, size, ctx);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%d], ctx size[%llu], ret[%d]",
+                __func__, ctxTagTmp, engine, size, ret), ret);
+            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], size[%llu], ctx[%p], group[%s]", __func__, ctxTagTmp, 
+                engine, size, *ctx, hcclComm->GetIdentifier().c_str());
+            return HCCL_SUCCESS;
+        }());
+#endif
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.CreateCommEngineCtx(ctxTagTmp, engine, size, ctx);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%d], ctx size[%llu], ret[%d]",
+            __func__, ctxTagTmp, engine, size, ret);
+        return ret;
+    }
+
+    HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], size[%llu], ctx[%p], group[%s]", __func__, ctxTagTmp, engine,
+        size, *ctx, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine, void **ctx, uint64_t *size)
 {
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(ctxTag);
     CHK_PTR_NULL(ctx);
     CHK_PTR_NULL(size);
-    CHK_PRT_RET(strlen(ctxTag) > HCCL_RES_TAG_MAX_LEN,
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
+    CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
-            __func__, strlen(ctxTag), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
+            __func__, strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            hccl::CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            EngineCtxs* engineCtxs = myRank->GetEngineCtxs();
+            CHK_PTR_NULL(engineCtxs);
+            HcclResult ret = HCCL_SUCCESS;
+            ret = engineCtxs->GetCommEngineCtx(ctxTagTmp, engine, ctx, size);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_WARNING("[%s] Failed to get CommEngineCtx with ctxTag[%s], engine[%d], ret[%d]", __func__, ctxTagTmp, 
+                engine, ret), ret);
+            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], ctx[%p], size[%llu], group[%s]", __func__, ctxTagTmp, engine,
+                *ctx, *size, hcclComm->GetIdentifier().c_str());
+            return HCCL_SUCCESS;
+        }());
+#endif
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = HCCL_SUCCESS;
-    if (hcclComm->IsCommunicatorV2()) {
-        CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        ContextManager* contextMgr = collComm->GetContextManager();
-        CHK_PTR_NULL(contextMgr);
-        ret = contextMgr->GetCommEngineCtx(std::string(ctxTag), engine, ctx, size);
-    }
-    else {
-        auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
-        ret = contextMgr.GetCommEngineCtx(std::string(ctxTag), engine, ctx, size);
-    }
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.GetCommEngineCtx(std::string(ctxTagTmp), engine, ctx, size);
     if (ret != HCCL_SUCCESS) {
-        HCCL_WARNING("[%s] Failed to get CommEngineCtx with ctxTag[%s], engine[%d], ret[%d]", __func__, ctxTag, engine,
+        HCCL_WARNING("[%s] Failed to get CommEngineCtx with ctxTag[%s], engine[%d], ret[%d]", __func__, ctxTagTmp, engine,
             ret);
         return ret;
     }
 
-    HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], ctx[%p], size[%llu], group[%s]", __func__, ctxTag, engine,
+    HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], ctx[%p], size[%llu], group[%s]", __func__, ctxTagTmp, engine,
         *ctx, *size, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
@@ -87,62 +118,89 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
     uint64_t size, uint64_t dstCtxOffset)
 {
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(ctxTag);
     CHK_PTR_NULL(srcCtx);
-    CHK_PRT_RET(strlen(ctxTag) > HCCL_RES_TAG_MAX_LEN,
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
+    CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
-            __func__,  strlen(ctxTag), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
+            __func__,  strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s]Invalid size, size[%llu]", __func__, size), HCCL_E_PARA);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            hccl::CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            EngineCtxs* engineCtxs = myRank->GetEngineCtxs();
+            CHK_PTR_NULL(engineCtxs);
+            HcclResult ret = HCCL_SUCCESS;
+            ret = engineCtxs->CopyCommEngineCtx(ctxTagTmp, engine, srcCtx, size, dstCtxOffset);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_WARNING("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%d], size[%llu], dstCtxOffset[%llu],"
+                " ret[%d]", __func__, ctxTagTmp, engine, size, dstCtxOffset, ret), ret);
+            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], srcCtx[%p], size[%llu], dstCtxOffset[%llu], group[%s]", 
+                __func__, ctxTagTmp, engine, srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
+            return HCCL_SUCCESS;
+        }());
+#endif
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = HCCL_SUCCESS;
-    if (hcclComm->IsCommunicatorV2()) {
-        CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        ContextManager* contextMgr = collComm->GetContextManager();
-        CHK_PTR_NULL(contextMgr);
-        ret = contextMgr->CopyCommEngineCtx(std::string(ctxTag), engine, srcCtx, size, dstCtxOffset);
-    }
-    else {
-        auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
-        ret = contextMgr.CopyCommEngineCtx(std::string(ctxTag), engine, srcCtx, size, dstCtxOffset);
-    }
-    
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.CopyCommEngineCtx(std::string(ctxTagTmp), engine, srcCtx, size, dstCtxOffset);
     if (ret != HCCL_SUCCESS) {
-        HCCL_WARNING("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%d], size[%llu], dstCtxOffset[%llu],"
-            " ret[%d]", __func__, ctxTag, engine, size, dstCtxOffset, ret);
+        HCCL_ERROR("[%s] Failed to copy CommEngineCtx with ctxTag[%s], engine[%d], size[%llu], dstCtxOffset[%llu],"
+            " ret[%d]", __func__, ctxTagTmp, engine, size, dstCtxOffset, ret);
         return ret;
     }
 
     HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], srcCtx[%p], size[%llu], dstCtxOffset[%llu], group[%s]", 
-        __func__, ctxTag, engine, srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
+        __func__, ctxTagTmp, engine, srcCtx, size, dstCtxOffset, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx)
+HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine engine)
 {
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(engineCtx);
+    const char *ctxTagTmp = (ctxTag == nullptr) ? COMM_RESERVE_CTX_TAG : ctxTag;
+    CHK_PRT_RET(strlen(ctxTagTmp) > HCCL_RES_TAG_MAX_LEN,
+        HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
+            __func__,  strlen(ctxTagTmp), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            hccl::CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            EngineCtxs* engineCtxs = myRank->GetEngineCtxs();
+            HcclResult ret = HCCL_SUCCESS;
+            ret = engineCtxs->DestroyEngineCtx(ctxTagTmp, engine);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, ctxTag[%s], engine[%d], ret[%d]",
+                __func__, ctxTagTmp, engine, ret), ret);
+            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], group[%s]", 
+                __func__, ctxTagTmp, engine, hcclComm->GetIdentifier().c_str());
+            return HCCL_SUCCESS;
+        }());
+#endif
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = HCCL_SUCCESS;
-    if (hcclComm->IsCommunicatorV2()) {
-        CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        ContextManager* contextMgr = collComm->GetContextManager();
-        CHK_PTR_NULL(contextMgr);
-        ret = contextMgr->DestroyCommEngineCtx(engineCtx);
-    }
-    else {
-        auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
-        ret = contextMgr.DestroyCommEngineCtx(engineCtx);
-    }
-    
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.DestroyCommEngineCtx(ctxTagTmp, engine);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, engineCtx[type:%d, addr:%p, size:%lu], ret[%d]",
-           __func__, engineCtx->type, engineCtx->addr, engineCtx->size, ret);
+        HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, ctxTag[%s], engine[%d], ret[%d]",
+           __func__, ctxTagTmp, engine, ret);
         return ret;
     }
-
-    HCCL_RUN_INFO("[%s] success, engineCtx[type:%d, addr:%p, size:%lu], group[%s]", 
-        __func__, engineCtx->type, engineCtx->addr, engineCtx->size, hcclComm->GetIdentifier().c_str());
+    HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], group[%s]", 
+        __func__, ctxTagTmp, engine, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
