@@ -68,6 +68,10 @@ public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
     HcclResult ParaseErrorCode(RetryContext* retryCtx, HcclAgentRetryInfo &agentInfo, RetryState &nextState);
 protected:
+    // 对于给定故障rank, 收到SDMA error后更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForSingleError(const uint32_t agentId, const HcclAgentRetryInfo& agentInfo,
+        RetryContext* retryCtx);
+
     std::map<u32, std::chrono::steady_clock::time_point> lastRecvTimes_;
     std::unordered_set<u32> disableAgent_; // 记录已经关闭的对端, 不再轮询, 避免刷屏
 };
@@ -77,6 +81,9 @@ class OpRetryServerHandleError : public OpRetryServerRunning {
 public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
 private:
+    // 收齐所有errors后, 更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForAllErrors(RetryContext* retryCtx);
+
     HcclResult SetNeedRetryServerRank(RetryContext* retryCtx, const HcclOpIdentifier &opId);
 };
 
