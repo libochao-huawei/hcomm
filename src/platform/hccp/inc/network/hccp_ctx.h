@@ -13,26 +13,11 @@
 
 #include "hccp_common.h"
 #include "hccp_ctx_data_plane.h"
+#include "hccp_tp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-/**
- * @ingroup libinit
- * rdma/ub gid/eid
- */
-union HccpEid {
-    uint8_t raw[16U]; /* Network Order */
-    struct {
-        uint64_t reserved; /* If IPv4 mapped to IPv6, == 0 */
-        uint32_t prefix;   /* If IPv4 mapped to IPv6, == 0x0000ffff */
-        uint32_t addr;     /* If IPv4 mapped to IPv6, == IPv4 addr */
-    } in4;
-    struct {
-        uint64_t subnetPrefix;
-        uint64_t interfaceId;
-    } in6;
-};
 
 #define GET_EID_BY_IP_MAX_NUM 32
 #define DEV_EID_INFO_MAX_NAME 64
@@ -315,11 +300,6 @@ enum JettyMode {
     JETTY_MODE_MAX
 };
 
-enum TransportModeT {
-    CONN_RM = 1, /**< only for UB, Reliable Message */
-    CONN_RC = 2, /**< Reliable Connection */
-};
-
 union JettyFlag {
     struct {
         uint32_t shareJfr       : 1;  /* 0: URMA_NO_SHARE_JFR.
@@ -475,19 +455,6 @@ enum JettyImportMode {
 };
 
 #define HCCP_MAX_TPID_INFO_NUM 128
-
-union GetTpCfgFlag {
-    struct {
-        uint32_t ctp : 1;
-        uint32_t rtp : 1;
-        uint32_t utp : 1;
-        uint32_t uboe : 1;
-        uint32_t preDefined : 1;
-        uint32_t dynamicDefined : 1;
-        uint32_t reserved : 26;
-    } bs;
-    uint32_t value;
-};
 
 struct HccpTpInfo {
     uint64_t tpHandle;
@@ -845,6 +812,46 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpQueryBatch(void *qpHandle[], struct JettyAttr att
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaCtxQpDestroy(void *qpHandle);
+
+/**
+ * @ingroup libudma
+ * @brief get tp info list
+ * @param ctxHandle [IN] ctx handle
+ * @param cfg [IN] get tp cfg
+ * @param infoList [IN/OUT] corresponding tp info list
+ * @param num [IN/OUT] size of infoList, max num is HCCP_MAX_TPID_INFO_NUM
+ * @see RaCtxInit
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num);
+
+/**
+ * @ingroup libudma
+ * @brief get tp attr
+ * @param ctxHandle [IN] ctx handle
+ * @param tpHandle [IN] see struct tp_info
+ * @param attrBitmap [IN/OUT] see struct TpAttr
+ * @param attr [IN/OUT] see struct TpAttr
+ * @see RaCtxGetTpInfoList
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr);
+
+/**
+ * @ingroup libudma
+ * @brief set tp attr
+ * @param ctxHandle [IN] ctx handle
+ * @param tpHandle [IN] see struct tp_info
+ * @param attrBitmap [IN] see struct TpAttr
+ * @param attr [IN] see struct TpAttr
+ * @see RaCtxGetTpInfoList
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int RaCtxSetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr);
 
 /**
  * @ingroup libudma
