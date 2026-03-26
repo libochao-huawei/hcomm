@@ -15,6 +15,9 @@
 
 namespace hccl {
 
+// 局部重执行慢卡等待次数: 最多等待1次, 一次等待HCCL_OP_RETRY_PARAMS.HoldTime (默认为5000 ms)
+#define PARTIAL_OPRETRY_MAX_WAITCNT 1
+
 HcclResult CreateOpRetryServerByState(RetryState state, RetryContext* retryCtx)
 {
     HCCL_INFO("[OpRetry][Server]CreateOpRetryServerByState state[%s]", GetReadableState(state));
@@ -42,8 +45,14 @@ HcclResult CreateOpRetryServerByState(RetryState state, RetryContext* retryCtx)
         case RETRY_STATE_WAIT_NOTIFY_RESETED:
         case RETRY_STATE_WAIT_RESUME_TRANSPORT:
         case RETRY_STATE_WAIT_CHECK_INFO:
+        case RETRY_STATE_WAIT_CAN_PARTIAL_RETRY:
+        case RETRY_STATE_WAIT_ISSUE_PARTIAL_RETRY_INFO:
         case RETRY_STATE_WAIT_CAN_RETRY: {
             EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerWaitResp>()), return HCCL_E_PTR);
+            break;
+        }
+        case RETRY_STATE_ISSUE_PARTIAL_RETRY_INFO: {
+            EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssuePartialRetryInfo>()), return HCCL_E_PTR);
             break;
         }
         case RETRY_STATE_CHECK_ALL_LINK:
@@ -60,6 +69,7 @@ HcclResult CreateOpRetryServerByState(RetryState state, RetryContext* retryCtx)
         case RETRY_STATE_CMD_CHECK_LINK:
         case RETRY_STATE_CMD_RESET_NOTIFY:
         case RETRY_STATE_CMD_CHECK:
+        case RETRY_STATE_CMD_CAN_PARTIAL_RETRY:
         case RETRY_STATE_CMD_CAN_RETRY: {
             EXECEPTION_CATCH((retryPtr = std::make_shared<OpRetryServerIssueCmd>()), return HCCL_E_PTR);
             break;
@@ -146,6 +156,12 @@ HcclResult OpRetryServerRunning::ProcessEvent(RetryContext* retryCtx)
             RetryState nextState = RETRY_STATE_SERVER_RUNNING;
             CHK_RET(ParaseErrorCode(retryCtx, it.second, nextState));
             if (nextState != RETRY_STATE_SERVER_RUNNING) {
+                // RUNNING状态下, 进入新的局部重执行流程前, 重置局部重执行信息
+                CHK_RET(ServerResetPartialOpRetryInfo(retryCtx));
+
+                // 为当前agent更新局部重执行信息
+                CHK_RET(UpdatePartialOpRetryInfoForSingleError(agentId, it.second, retryCtx));
+
                 // 收到第一个报错后加入errorRankList_中，并切换到RETRY_STETA_HANDLE_ALL_ERR状态
                 HCCL_RUN_INFO("[OpRetry][Server]agent[%u] tag[%s] index[%u] find error, insert to errorRankList_", 
                     agentId, it.second.retryInfo.opInfo.opId.tag, it.second.retryInfo.opInfo.opId.index);
@@ -207,6 +223,9 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
                 RetryState nextState = RETRY_STATE_SERVER_RUNNING;
                 CHK_RET(ParaseErrorCode(retryCtx, it.second, nextState));
                 if (nextState != RETRY_STATE_SERVER_RUNNING) {
+                    // 为当前agent更新局部重执行信息
+                    CHK_RET(UpdatePartialOpRetryInfoForSingleError(agentId, it.second, retryCtx));
+
                     // 当前rank报错，收集到errorRankList_后统一处理
                     HCCL_RUN_INFO("[OpRetry][Server]agent[%u] tag[%s] index[%u] find error, insert to errorRankList_", 
                         agentId, it.second.retryInfo.opInfo.opId.tag, it.second.retryInfo.opInfo.opId.index);
@@ -275,23 +294,293 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
         }
 
         if (!isFoundSendRecv) {
-            u32 firstErrorRank = *(errorRank.begin());
-            auto curOpId = retryCtx->errorRankList_[firstErrorRank];
-            auto curTag = std::string(reinterpret_cast<const char*>(curOpId.tag));
+            bool isWait = false;
+            CHK_RET(UpdatePartialOpRetryInfoForAllErrors(retryCtx, isWait));
+            HCCL_RUN_INFO("[OpRetryServerHandleError][ProcessEvent] partialOpRetryFlag_[%d], isWait[%d]",
+                retryCtx->partialOpRetryFlag_, isWait);
 
-            retryCtx->errorRankList_.clear();
-            // 开始重执行
-            HCCL_RUN_INFO("[OpRetry][Server]begin to exec retry of tag[%s] from rank[%u]",
-                curTag.c_str(), firstErrorRank);
-            retryCtx->needRetryServerRanks_.clear();
-            CHK_PRT(SetNeedRetryServerRank(retryCtx, curOpId));
-            CHK_RET(CreateOpRetryServerByState(RETRY_STATE_CMD_STOP_AICPU, retryCtx));
-            return HCCL_SUCCESS;
+            // 如果使用正常重执行, 或者局部重执行不需要等待, 则一定会进入RETRY_STATE_CMD_STOP_AICPU状态
+            if (!retryCtx->partialOpRetryFlag_ || !isWait) {
+                if (retryCtx->partialOpRetryFlag_) { // 使能局部重执行
+                    // 校验局部重执行firstErrorAgent一定合法
+                    std::map<u32, HcclAgentRetryInfo>::const_iterator socketIter =
+                        retryCtx->serverSockets_.find(retryCtx->partialOpRetryFirstErrorAgent_);
+                    CHK_PRT_RET(socketIter == retryCtx->serverSockets_.cend(),
+                        HCCL_ERROR("[OpRetryServerHandleError][ProcessEvent] partialOpRetryFirstErrorAgent_[%u] "
+                            "not found in serverSockets_", retryCtx->partialOpRetryFirstErrorAgent_),
+                        HCCL_E_INTERNAL);
+                    
+                    // 打印局部重执行执行信息
+                    const std::string curTag = std::string(reinterpret_cast<const char*>(
+                        socketIter->second.retryInfo.opInfo.opId.tag));
+                    HCCL_RUN_INFO("[OpRetry][Server] begin to exec partial retry of op tag[%s]/index[%u] "
+                        "from agent[%u]/rank[%u]",
+                        curTag.c_str(), retryCtx->partialOpRetryErrorOpIdx_,
+                        retryCtx->partialOpRetryFirstErrorAgent_, socketIter->second.retryInfo.rankId);
+                    
+                    // 清理errorRankList前, 备份error op info
+                    std::map<u32, HcclOpIdentifier>::const_iterator errorIter =
+                        retryCtx->errorRankList_.find(retryCtx->partialOpRetryFirstErrorAgent_);
+                    CHK_PRT_RET(errorIter == retryCtx->errorRankList_.cend(),
+                        HCCL_ERROR("[OpRetryServerHandleError][ProcessEvent] partialOpRetryFirstErrorAgent_[%u] "
+                            "not found in errorRankList_", retryCtx->partialOpRetryFirstErrorAgent_),
+                        HCCL_E_INTERNAL);
+                    const HcclOpIdentifier curOpId = errorIter->second; // Deep copy
+                    
+                    // 更新errorRankList_, 只清理errorOp慢卡/同步卡
+                    CHK_RET(ClearErrorRankListForPartialOpRetry(retryCtx));
+
+                    // 更新needRetryServerRanks_为errorOp慢卡/同步卡 (同时更新局部重执行信息中的快卡信息)
+                    retryCtx->needRetryServerRanks_.clear();
+                    CHK_RET(SetNeedRetryServerRankForPartialOpRetry(retryCtx, curOpId));
+                    
+                    // 进入RETRY_STATE_CMD_STOP_AICPU状态, 开始局部重执行
+                    CHK_RET(CreateOpRetryServerByState(RETRY_STATE_CMD_STOP_AICPU, retryCtx));
+                } else { // 正常重执行
+                    u32 firstErrorRank = *(errorRank.begin());
+                    auto curOpId = retryCtx->errorRankList_[firstErrorRank];
+                    auto curTag = std::string(reinterpret_cast<const char*>(curOpId.tag));
+
+                    retryCtx->errorRankList_.clear();
+                    // 开始重执行
+                    HCCL_RUN_INFO("[OpRetry][Server]begin to exec retry of tag[%s] from rank[%u]",
+                        curTag.c_str(), firstErrorRank);
+                    retryCtx->needRetryServerRanks_.clear();
+                    CHK_PRT(SetNeedRetryServerRank(retryCtx, curOpId));
+                    CHK_RET(CreateOpRetryServerByState(RETRY_STATE_CMD_STOP_AICPU, retryCtx));
+                    return HCCL_SUCCESS;
+                }
+            }
         }
         errorRank.clear();
         SaluSleep(waitTime * TIME_MS_TO_US);
         HCCL_INFO("[OpRetry][Server]no rank can retry, wait for [%u]ms for collect all error rank", waitTime);
     }
+}
+
+HcclResult OpRetryServerHandleError::UpdatePartialOpRetryInfoForAllErrors(RetryContext* retryCtx, bool& isWait)
+{
+    // 进入OpRetryServerHandleError的前提是至少有一个KfcError
+    CHK_PRT_RET(retryCtx->errorRankList_.size() == 0,
+            HCCL_ERROR("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] empty errorRankList"),
+        HCCL_E_INTERNAL);
+    
+    // 注意: 如果partialOpRetryErrorAgentFlagMap_为空, 说明无SDMA error, 则不使能局部重执行
+    if (retryCtx->partialOpRetryErrorAgentFlagMap_.size() == 0) {
+        retryCtx->partialOpRetryFlag_ = false;
+        isWait = false;
+            HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] "
+                "empty partialOpRetryErrorAgentFlagMap_ -> no sdma error, disable partialOpRetryFlag_[%d]",
+                retryCtx->partialOpRetryFlag_);
+        return HCCL_SUCCESS;
+    }
+    
+    // 先遍历errorRankList_, 确定opId最小的故障算子为errorOp, 同为errorOp时rankId最小的为firstErrorRank
+    // 根据errorOp区分所有卡为慢卡 (opIdx < errorOpIdx), 同步卡 (opIdx == errorOpIdx), 或者快卡 (opIdx > errorOpIdx)
+    uint32_t minErrorOpIdx = 0;
+    uint32_t minErrorRankId = 0;
+    uint32_t firstErrorAgentId = 0;
+    for (std::map<u32, HcclOpIdentifier>::const_iterator constIter = retryCtx->errorRankList_.cbegin();
+        constIter != retryCtx->errorRankList_.cend(); ++constIter) {
+        const uint32_t agentId = constIter->first;
+        const HcclOpIdentifier &opId = constIter->second;
+        const uint32_t curErrorOpIdx = opId.index;
+        const uint32_t curErrorRankId = retryCtx->serverSockets_[agentId].retryInfo.rankId;
+        if ((constIter == retryCtx->errorRankList_.cbegin()) || (curErrorOpIdx < minErrorOpIdx)) {
+            minErrorOpIdx = curErrorOpIdx;
+            minErrorRankId = curErrorRankId;
+            firstErrorAgentId = agentId;
+        } else if (curErrorOpIdx == minErrorOpIdx && curErrorRankId < minErrorRankId) {
+            minErrorRankId = curErrorRankId;
+            firstErrorAgentId = agentId;
+        }
+    }
+    HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] minErrorOpIdx[%u] "
+        "minErrorRankId[%u] firstErrorAgentId[%u]",
+        minErrorOpIdx, minErrorRankId, firstErrorAgentId);
+    
+    // 根据errorOp同步故障卡的使能flag, 确定是否使能局部重执行 (即同步故障卡都使能局部重执行)
+    // 注意: errorOp慢卡/同步非故障卡的使能flag需要在停卡阶段才会上传, 这里只检查同步故障卡
+    uint32_t sameErrorOpRankCnt = 0; // 同步故障卡个数
+    for (std::unordered_map<u32, bool>::const_iterator constIter =
+        retryCtx->partialOpRetryErrorAgentFlagMap_.cbegin(); constIter != retryCtx->partialOpRetryErrorAgentFlagMap_.cend(); ++constIter) {
+        const uint32_t agentId = constIter->first;
+        const bool isEnablePartialOpRetry = constIter->second;
+
+        // 注意: 该agent一定在errorRankList_中
+        std::map<u32, HcclOpIdentifier>::const_iterator tmpIter = retryCtx->errorRankList_.find(agentId);
+        CHK_PRT_RET(tmpIter == retryCtx->errorRankList_.end(),
+            HCCL_ERROR("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] "
+                "error agent[%u] not in errorRankList", agentId),
+            HCCL_E_INTERNAL);
+
+        HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] agent[%u] opIdx[%u] "
+            "isEnablePartialOpRetry[%d] minErrorOpIdx[%u]",
+            agentId, tmpIter->second.index, isEnablePartialOpRetry, minErrorOpIdx);
+        if (tmpIter->second.index == minErrorOpIdx) { // 故障卡中的errorOp同步卡
+            sameErrorOpRankCnt += 1;
+            if (!isEnablePartialOpRetry) {
+                HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] "
+                    "agent[%u] rank[%u] not enable partial op retry",
+                    agentId, retryCtx->serverSockets_[agentId].retryInfo.rankId);
+                retryCtx->partialOpRetryFlag_ = false;
+                isWait = false;
+                return HCCL_SUCCESS;
+            }
+        }
+    }
+
+    // 至少有一个同步故障卡
+    CHK_PRT_RET(sameErrorOpRankCnt == 0,
+        HCCL_ERROR("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] "
+            "no error agent with minErrorOpIdx[%u] from minErrorRankId[%u]",
+            minErrorOpIdx, minErrorRankId),
+        HCCL_E_INTERNAL);
+    
+    // 到这里, 同步故障卡都使能了局部重执行
+    retryCtx->partialOpRetryFlag_ = true;
+    retryCtx->partialOpRetryFirstErrorAgent_ = firstErrorAgentId;
+    retryCtx->partialOpRetryErrorOpIdx_ = minErrorOpIdx;
+    HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] sameErrorOpRankCnt[%u] "
+        "-> all enable partial op retry flag", sameErrorOpRankCnt);
+    
+    // 检查慢卡是否需要等待
+    uint32_t nonFastRankCnt = 0; // errorOp慢卡/同步卡数量
+    for (std::map<u32, HcclAgentRetryInfo>::const_iterator constIter = retryCtx->serverSockets_.cbegin();
+        constIter != retryCtx->serverSockets_.cend(); ++constIter) {
+        const uint32_t agentId = constIter->first;
+        const HcclAgentRetryInfo &agentInfo = constIter->second;
+        const uint64_t curOpIdx = agentInfo.retryInfo.opInfo.opId.index;
+    
+        // 存在慢卡 (一定是非故障卡)
+        if (curOpIdx < minErrorOpIdx) {
+            HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] agent[%u] is a slow rank: "
+                "curOpIdx[%u] < minErrorOpIdx[%u], partialOpRetryWaitCnt_[%u], PARTIAL_OPRETRY_MAX_WAITCNT[%u]",
+                agentId, curOpIdx, minErrorOpIdx, retryCtx->partialOpRetryWaitCnt_, PARTIAL_OPRETRY_MAX_WAITCNT);
+            if (retryCtx->partialOpRetryWaitCnt_ < PARTIAL_OPRETRY_MAX_WAITCNT) { // 需要进入等待流程
+                HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] "
+                    "partialOpRetryWaitCnt_[%u] < PARTIAL_OPRETRY_MAX_WAITCNT[%u], "
+                    "wait for slow agent[%u]/rank[%u] with opIdx[%u] < error opIdx[%u]",
+                    retryCtx->partialOpRetryWaitCnt_, PARTIAL_OPRETRY_MAX_WAITCNT,
+                    agentId, agentInfo.retryInfo.rankId, curOpIdx, minErrorOpIdx);
+                isWait = true;
+                retryCtx->partialOpRetryWaitCnt_ += 1; // 限制等待次数 (默认为1次5000 ms, 足够慢卡正常算子执行完毕)
+                return HCCL_SUCCESS;
+            }
+        }
+        
+        if (curOpIdx <= minErrorOpIdx) { // 慢卡/同步卡
+            nonFastRankCnt += 1;
+        }
+    }
+
+    HCCL_RUN_INFO("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] nonFastRankCnt[%u]",
+        nonFastRankCnt);
+
+    // 注意: errorOp慢卡/同步卡应该 >= 2 ranks (single rank无法局部重执行)
+    if (UNLIKELY(nonFastRankCnt <= 1)) {
+        HCCL_ERROR("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] "
+            "nonFastRankCnt[%u] <= 1, minErrorOpIdx[%u], minErrorRankId[%u]",
+            nonFastRankCnt, minErrorOpIdx, minErrorRankId);
+        for (std::map<u32, HcclAgentRetryInfo>::const_iterator constIter = retryCtx->serverSockets_.cbegin();
+            constIter != retryCtx->serverSockets_.cend(); ++constIter) {
+            HCCL_ERROR("[OpRetryServerHandleError][UpdatePartialOpRetryInfoForAllErrors] "
+                "agent[%u] rank[%u] opIdx[%u] isEnablePartialOpRetry[%d]",
+                constIter->first, constIter->second.retryInfo.rankId,
+                constIter->second.retryInfo.opInfo.opId.index,
+                constIter->second.retryInfo.opInfo.execStatus.retryInfo.isEnablePartialOpRetry
+            );
+        }
+        return HCCL_E_INTERNAL;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult OpRetryServerHandleError::ClearErrorRankListForPartialOpRetry(RetryContext* retryCtx)
+{
+    // 更新errorRankList_, 只清理errorOp慢卡/同步卡
+    for (std::map<u32, HcclOpIdentifier>::const_iterator tmpIter = retryCtx->errorRankList_.cbegin();
+            tmpIter != retryCtx->errorRankList_.cend();) {
+        // 备份next iterator
+        std::map<u32, HcclOpIdentifier>::const_iterator nextIter = std::next(tmpIter);
+
+        // 如果为errorOp慢卡/同步卡, 则从errorRankList_中移除
+        const uint32_t curOpIdx = tmpIter->second.index;
+        if (curOpIdx <= retryCtx->partialOpRetryErrorOpIdx_) {
+            HCCL_RUN_INFO("[OpRetryServerHandleError][ProcessEvent] "
+                "clear agent[%u] with opIdx[%u] <= errorOpIdx[%u] from errorRankList_",
+                tmpIter->first, curOpIdx, retryCtx->partialOpRetryErrorOpIdx_);
+            retryCtx->errorRankList_.erase(tmpIter);
+        } else {
+            HCCL_RUN_INFO("[OpRetryServerHandleError][ProcessEvent] "
+                "agent[%u] with opIdx[%u] > errorOpIdx[%u] remains in errorRankList_",
+                tmpIter->first, curOpIdx, retryCtx->partialOpRetryErrorOpIdx_);
+        }
+
+        // 切换next iterator
+        tmpIter = nextIter;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult OpRetryServerHandleError::SetNeedRetryServerRankForPartialOpRetry(RetryContext* retryCtx,
+    const HcclOpIdentifier &opId)
+{
+    // 一定是局部重执行
+    CHK_PRT_RET(!retryCtx->partialOpRetryFlag_,
+        HCCL_ERROR("[OpRetryServerHandleError][SetNeedRetryServerRankForPartialOpRetry] partialOpRetryFlag_[%d]",
+            retryCtx->partialOpRetryFlag_),
+        HCCL_E_INTERNAL);
+    
+    // 校验局部重执行firstErrorAgent一定合法
+    std::map<u32, HcclAgentRetryInfo>::const_iterator socketIter =
+        retryCtx->serverSockets_.find(retryCtx->partialOpRetryFirstErrorAgent_);
+    CHK_PRT_RET(socketIter == retryCtx->serverSockets_.cend(),
+        HCCL_ERROR("[OpRetryServerHandleError][SetNeedRetryServerRankForPartialOpRetry] "
+            "partialOpRetryFirstErrorAgent_[%u] not found in serverSockets_", retryCtx->partialOpRetryFirstErrorAgent_),
+        HCCL_E_INTERNAL);
+    
+    // 更新curFaultOpId
+    retryCtx->curFaultOpId = opId;
+    CHK_PRT_RET(retryCtx->curFaultOpId.index != retryCtx->partialOpRetryErrorOpIdx_,
+        HCCL_ERROR("[OpRetryServerHandleError][SetNeedRetryServerRankForPartialOpRetry] "
+            "curFaultOpId.index[%u] != partialOpRetryErrorOpIdx_[%u]",
+            retryCtx->curFaultOpId.index, retryCtx->partialOpRetryErrorOpIdx_),
+        HCCL_E_INTERNAL);
+
+    // 更新needRetryServerRanks_为errorOp慢卡/同步卡
+    PartialRetryInfo& partialRetryInfo = retryCtx->partialRetryInfo_;
+    partialRetryInfo.fastRankNum = 0;
+    for (socketIter = retryCtx->serverSockets_.cbegin(); socketIter != retryCtx->serverSockets_.cend(); ++socketIter) {
+        const uint32_t curOpIdx = socketIter->second.retryInfo.opInfo.opId.index;
+        const uint32_t curRankId = socketIter->second.retryInfo.rankId;
+        if (curOpIdx <= retryCtx->partialOpRetryErrorOpIdx_) { // 慢卡/同步卡
+            retryCtx->needRetryServerRanks_.push_back(socketIter->first);
+            HCCL_RUN_INFO("[OpRetryServerHandleError][SetNeedRetryServerRankForPartialOpRetry] "
+                "add agent[%u]/rank[%u] with opIdx[%u] <= partialOpRetryErrorOpIdx_[%u] to needRetryServerRanks_",
+                socketIter->first, curRankId, curOpIdx, retryCtx->partialOpRetryErrorOpIdx_);
+        } else { // 快卡
+            // 更新快卡信息
+            partialRetryInfo.fastRankIdList[partialRetryInfo.fastRankNum] = curRankId;
+            partialRetryInfo.fastRankNum += 1;
+            HCCL_RUN_INFO("[OpRetryServerHandleError][SetNeedRetryServerRankForPartialOpRetry] "
+                "add agent[%u]/rank[%u] with opIdx[%u] > partialOpRetryErrorOpIdx_[%u] to partialRetryInfo.fastRankIdList",
+                socketIter->first, curRankId, curOpIdx, retryCtx->partialOpRetryErrorOpIdx_);
+        }
+    }
+    HCCL_RUN_INFO("[OpRetry][Server]set needRetryServerRanks_.size[%u] partialRetryInfo.fastRankNum[%u] success",
+        retryCtx->needRetryServerRanks_.size(), partialRetryInfo.fastRankNum);
+    
+    // 慢卡/同步卡 + 快卡数量 = 所有rank数量
+    CHK_PRT_RET((retryCtx->needRetryServerRanks_.size() + partialRetryInfo.fastRankNum) != retryCtx->serverSockets_.size(),
+        HCCL_ERROR("[OpRetryServerHandleError][SetNeedRetryServerRankForPartialOpRetry] "
+            "needRetryServerRanks_.size[%u] + partialRetryInfo.fastRankNum[%u] != serverSockets_.size[%u]",
+            retryCtx->needRetryServerRanks_.size(), partialRetryInfo.fastRankNum, retryCtx->serverSockets_.size()),
+        HCCL_E_INTERNAL);
+
+    return HCCL_SUCCESS;
 }
 
 HcclResult OpRetryServerHandleError::SetNeedRetryServerRank(RetryContext* retryCtx, const HcclOpIdentifier &opId)
@@ -351,31 +640,109 @@ HcclResult OpRetryServerRunning::ParaseErrorCode(RetryContext* retryCtx, HcclAge
     return HCCL_SUCCESS;
 }
 
+HcclResult OpRetryServerRunning::ServerResetPartialOpRetryInfo(RetryContext* retryCtx)
+{
+    HCCL_RUN_INFO("[OpRetryServerRunning][ServerResetPartialOpRetryInfo] reset for partial op retry");
+
+    retryCtx->partialOpRetryErrorAgentFlagMap_.clear();
+    retryCtx->partialOpRetryFlag_ = false;
+    retryCtx->partialOpRetryFirstErrorAgent_ = INVALID_UINT;
+    retryCtx->partialOpRetryErrorOpIdx_ = INVALID_UINT;
+    retryCtx->partialOpRetryWaitCnt_ = 0;
+
+    retryCtx->partialRetryInfo_.partialOpRetryFlag = false;
+    retryCtx->partialRetryInfo_.fastRankNum = 0;
+    CHK_SAFETY_FUNC_RET(memset_s(retryCtx->partialRetryInfo_.fastRankIdList,
+        sizeof(retryCtx->partialRetryInfo_.fastRankIdList), 0, sizeof(retryCtx->partialRetryInfo_.fastRankIdList[0])));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult OpRetryServerRunning::UpdatePartialOpRetryInfoForSingleError(const uint32_t agentId,
+    const HcclAgentRetryInfo& agentInfo, RetryContext* retryCtx)
+{
+    // 注意: RDMA error不应该触发局部重执行
+    const KfcError curKfcErr = agentInfo.retryInfo.opInfo.execStatus.kfcError;
+    const bool isEnablePartialOpRetry = agentInfo.retryInfo.opInfo.execStatus.retryInfo.isEnablePartialOpRetry;
+    CHK_PRT_RET(curKfcErr == KfcError::kRdma && isEnablePartialOpRetry,
+        HCCL_ERROR("[OpRetryServerRunning][UpdatePartialOpRetryInfoForSingleError] "
+            "kRdmaErr[%d] should not enablePartialOpRetry[%d]", curKfcErr, isEnablePartialOpRetry),
+        HCCL_E_INTERNAL);
+
+    // opretry server收到发生error的opretry agent上报的局部重执行flag后, 会保存到对应rank的局部重执行信息中
+    if (curKfcErr == KfcError::kSdma) { // 只有SDMA error才会触发局部重执行
+        HCCL_RUN_INFO("[OpRetryServerRunning][UpdatePartialOpRetryInfoForSingleError] "
+            "agentId[%u] rank[%u] isEnablePartialOpRetry[%d] find kSdmaErr[%d]",
+            agentId, agentInfo.retryInfo.rankId, isEnablePartialOpRetry, curKfcErr);
+
+        std::unordered_map<u32, bool>::iterator mapIter = retryCtx->partialOpRetryErrorAgentFlagMap_.find(agentId);
+        if (mapIter == retryCtx->partialOpRetryErrorAgentFlagMap_.end()) { // 该opretry agent首次上报KfcError
+            // 保存发生error的opretry agent的局部重执行信息
+            retryCtx->partialOpRetryErrorAgentFlagMap_.insert(std::make_pair(agentId, isEnablePartialOpRetry));
+        } else { // 该opretry agent上报多个KfcError
+            // 注意: 该故障卡应该被卡在故障算子, 因此即使上报多个KfcError, 也不会改变局部重执行flag
+            CHK_PRT_RET(mapIter->second != isEnablePartialOpRetry,
+                HCCL_ERROR("[OpRetryServerRunning][UpdatePartialOpRetryInfoForSingleError] "
+                    "mapIter->second[%d] != isEnablePartialOpRetry[%d] for agentId[%u] rank[%u] KfcErr[%d]",
+                    mapIter->second, isEnablePartialOpRetry, agentId, agentInfo.retryInfo.rankId, curKfcErr),
+                HCCL_E_INTERNAL);
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult OpRetryServerIssueCmd::ProcessEvent(RetryContext* retryCtx)
 {
     HcclResult ret = HCCL_SUCCESS;
     RetryState curState = retryCtx->GetRetryState();
+
     // 获取下一个状态
-    auto itState = RETRY_SERVER_STATE_TRANSFER_LABEL.find(curState);
-    CHK_PRT_RET(itState == RETRY_SERVER_STATE_TRANSFER_LABEL.end(),
-        HCCL_ERROR("[OpRetry][Server]OpRetryServerIssueCmd fail, state[%s] is not in RETRY_SERVER_STATE_TRANSFER_LABEL",
-            GetReadableState(curState)), HCCL_E_INTERNAL);
-    RetryState nextState = itState->second;
+    RetryState nextState = RETRY_STATE_RESERVED;
+    HCCL_RUN_INFO("[OpRetryServerIssueCmd][ProcessEvent] TMPDEBUG");
+    auto itStatePartial = RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL.find(curState);
+    HCCL_RUN_INFO("[OpRetryServerIssueCmd][ProcessEvent] TMPDEBUG partialOpRetryFlag_[%d] itStatePartial != RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL.end()[%d]",
+        retryCtx->partialOpRetryFlag_, itStatePartial != RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL.end());
+    if (retryCtx->partialOpRetryFlag_ && itStatePartial != RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL.end()) {
+        // 局部重执行对应的状态
+        nextState = itStatePartial->second;
+    } else {
+        // 正常重执行对应的状态
+        auto itState = RETRY_SERVER_STATE_TRANSFER_LABEL.find(curState);
+        CHK_PRT_RET(itState == RETRY_SERVER_STATE_TRANSFER_LABEL.end(),
+            HCCL_ERROR("[OpRetry][Server]OpRetryServerIssueCmd fail, state[%s] is not in "
+                "RETRY_SERVER_STATE_TRANSFER_LABEL (partialOpRetryFlag_[%d])",
+                GetReadableState(curState), retryCtx->partialOpRetryFlag_),
+            HCCL_E_INTERNAL);
+        nextState = itState->second;
+    }
+    HCCL_RUN_INFO("[OpRetryServerIssueCmd][ProcessEvent] TMPDEBUG nextState[%s]", GetReadableState(nextState));
+    CHK_PRT_RET(nextState == RETRY_STATE_RESERVED,
+        HCCL_ERROR("[OpRetryServerIssueCmd][ProcessEvent] invalid nextState[%d] for curState[%s]",
+            GetReadableState(nextState), GetReadableState(curState)),
+        HCCL_E_INTERNAL);
 
     // 发送命令
     auto itCommand = RETRY_SERVER_STATE_TO_CMD_LABEL.find(curState);
+    HCCL_RUN_INFO("[OpRetryServerIssueCmd][ProcessEvent] TMPDEBUG itCommand == RETRY_SERVER_STATE_TO_CMD_LABEL.end()[%d]", itCommand == RETRY_SERVER_STATE_TO_CMD_LABEL.end());
     CHK_PRT_RET(itCommand == RETRY_SERVER_STATE_TO_CMD_LABEL.end(),
         HCCL_ERROR("[OpRetry][Server]OpRetryServerIssueCmd fail, state[%s] is not in RETRY_SERVER_STATE_TO_CMD_LABEL",
             GetReadableState(curState)), HCCL_E_INTERNAL);
     RetryCommand command = itCommand->second;
-    HCCL_INFO("[OpRetry][Server]OpRetryServerIssueCmd curState[%s], command[%s]", GetReadableState(curState),
-        GetReadableCmd(command));
+    HCCL_RUN_INFO("[OpRetryServerIssueCmd][ProcessEvent] TMPDEBUG command[%s]", GetReadableCmd(command));
+    CHK_PRT_RET(command == RETRY_CMD_RESERVED,
+        HCCL_ERROR("[OpRetryServerIssueCmd][ProcessEvent] invalid command[%d] for curState[%s]",
+            GetReadableCmd(command), GetReadableState(curState)),
+        HCCL_E_INTERNAL);
+
+    HCCL_RUN_INFO("[OpRetry][Server]OpRetryServerIssueCmd curState[%s], command[%s], nextState[%s], partialOpRetryFlag_[%d]",
+        GetReadableState(curState), GetReadableCmd(command), GetReadableState(nextState), retryCtx->partialOpRetryFlag_);
 
     for (auto rank : retryCtx->needRetryServerRanks_) {
         RetryCommandInfo commandInfo;
         commandInfo.command = command;
         commandInfo.opId = retryCtx->curFaultOpId;
-        HCCL_INFO("[OpRetry][Server]IssueCommandWithOpId tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d]," 
+        HCCL_RUN_INFO("[OpRetry][Server]IssueCommandWithOpId tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d]," 
             "streamid[%u]",
             commandInfo.opId.tag, commandInfo.opId.index, commandInfo.opId.srcRank, 
             commandInfo.opId.detRank,commandInfo.opId.isSendRecv, commandInfo.opId.streamId);
@@ -394,13 +761,23 @@ HcclResult OpRetryServerWaitResp::ProcessEvent(RetryContext* retryCtx)
     const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
     const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     RetryState curState = retryCtx->GetRetryState();
-
+    
     // 获取预期的下一个server状态
-    auto serverTransferIt = RETRY_SERVER_STATE_TRANSFER_LABEL.find(curState);
-    CHK_PRT_RET(serverTransferIt == RETRY_SERVER_STATE_TRANSFER_LABEL.end(),
-        HCCL_ERROR("[OpRetry][Server]OpRetryServerWaitResp fail, state[%s] is not in RETRY_SERVER_STATE_TRANSFER_LABEL",
-        GetReadableState(curState)), HCCL_E_INTERNAL);
-    RetryState expectNextState = serverTransferIt->second;
+    RetryState expectNextState = RETRY_STATE_RESERVED;
+    auto serverTransferItPartial = RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL.find(curState);
+    if (retryCtx->partialOpRetryFlag_ && serverTransferItPartial != RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL.end()) {
+        // 局部重执行对应的状态
+        expectNextState = serverTransferItPartial->second;
+    } else {
+        // 正常重执行对应的状态
+        auto serverTransferIt = RETRY_SERVER_STATE_TRANSFER_LABEL.find(curState);
+        CHK_PRT_RET(serverTransferIt == RETRY_SERVER_STATE_TRANSFER_LABEL.end(),
+            HCCL_ERROR("[OpRetry][Server]OpRetryServerWaitResp fail, state[%s] is not in "
+                "RETRY_SERVER_STATE_TRANSFER_LABEL (partialOpRetryFlag_[%d])",
+                GetReadableState(curState), retryCtx->partialOpRetryFlag_),
+            HCCL_E_INTERNAL);
+        expectNextState = serverTransferIt->second;
+    }
 
     // 获取预期的对端agent状态
     auto agentStateIt = RETRY_SERVER_WAIT_AGENT_STATE_LABEL.find(curState);
@@ -408,8 +785,10 @@ HcclResult OpRetryServerWaitResp::ProcessEvent(RetryContext* retryCtx)
         HCCL_ERROR("[OpRetry][Server]OpRetryServerWaitResp fail, state[%s] is not in RETRY_SERVER_WAIT_AGENT_STATE_LABEL",
         GetReadableState(curState)), HCCL_E_INTERNAL);
     RetryState expectagentState = agentStateIt->second;
-    HCCL_DEBUG("[OpRetry][Server]OpRetryServerWaitResp state[%s], expect next state[%s], expect peer state[%s]",
-        GetReadableState(curState), GetReadableState(expectNextState), GetReadableState(expectagentState));
+    HCCL_RUN_INFO("[OpRetry][Server]OpRetryServerWaitResp state[%s], expect next state[%s], expect peer state[%s] "
+        "partialOpRetryFlag_[%d]",
+        GetReadableState(curState), GetReadableState(expectNextState), GetReadableState(expectagentState),
+        retryCtx->partialOpRetryFlag_);
 
     std::set<u32> recvVaild;
     while (recvVaild.size() < retryCtx->needRetryServerRanks_.size()) {
@@ -431,8 +810,24 @@ HcclResult OpRetryServerWaitResp::ProcessEvent(RetryContext* retryCtx)
             RetryState dstState = agentRetryInfo.retryInfo.retryState;
             if (ret == HCCL_SUCCESS && dstState == expectagentState) { // 接收到对端信息且状态有效
                 recvVaild.insert(rank);
-                HCCL_INFO("[OpRetry][Server]OpRetryServerWaitResp recv success from dst[%u], state[%s]",
-                    rank, GetReadableState(dstState));
+                HCCL_RUN_INFO("[OpRetry][Server]OpRetryServerWaitResp recv success from dstAgent[%u], dstRank[%u], "
+                    "dstState[%s], partialOpRetryFlag_[%d] enablePartialOpRetry[%d]",
+                    rank, agentRetryInfo.retryInfo.rankId, GetReadableState(dstState), retryCtx->partialOpRetryFlag_,
+                    agentRetryInfo.retryInfo.opInfo.execStatus.retryInfo.isEnablePartialOpRetry);
+                
+                // 如果是停卡对应的agent response, 且使能了局部重执行, 则更新局部重执行信息
+                if (dstState == RETRY_STATE_RESP_AICPU_STOPED && retryCtx->partialOpRetryFlag_) {
+                    CHK_RET(UpdatePartialOpRetryInfoForStopAicpuResp(rank, agentRetryInfo, retryCtx));
+                } else if (dstState == RETRY_STATE_RESP_CAN_PARTIAL_RETRY ||
+                    dstState == RETRY_STATE_RESP_PARTIAL_RETRY_INFO) {
+                    // 注意: 上述状态 (agent准备局部重执行完毕, agent接收局部重执行信息完毕) 只有使能局部重执行时才有可能触发
+                    CHK_PRT_RET(!retryCtx->partialOpRetryFlag_,
+                        HCCL_ERROR("[OpRetryServerWaitResp][ProcessEvent] partialOpRetryFlag_[%d] is not enabled "
+                            "for curState[%s] agentState[%s] from agent[%u]/rank[%u]",
+                            retryCtx->partialOpRetryFlag_, GetReadableState(curState), GetReadableState(dstState),
+                            rank, agentRetryInfo.retryInfo.rankId),
+                        HCCL_E_INTERNAL);
+                }
             } else if (ret == HCCL_SUCCESS && dstState == RETRY_STATE_RESP_RUNNING_ERR) { // 对端重执行失败
                 recvVaild.insert(rank);
                 PrintAgentInfoAfterFail(retryCtx->serverSockets_, recvVaild, agentRetryInfo);
@@ -445,8 +840,70 @@ HcclResult OpRetryServerWaitResp::ProcessEvent(RetryContext* retryCtx)
             }
         }
     }
+    
+    // NOTE: curState为RETRY_STATE_WAIT_ISSUE_PARTIAL_RETRY_INFO时, nextState是RETRY_STATE_CMD_CAN_RETRY;
+    // 虽然进入OpRetryServerIssueCmd后, partialOpRetryFlag_仍然是true, 但是RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL中,
+    // 不存在RETRY_STATE_CMD_CAN_RETRY对应的nextState, 因此会回到正常重执行的流程中, 发送cmd后进入RETRY_STATE_WAIT_CAN_RETRY;
+    // 因此, curState为RETRY_STATE_WAIT_ISSUE_PARTIAL_RETRY_INFO时, 不需要重置局部重执行信息;
+    // -> 统一在触发重执行成功/fail并进入RUNNING状态后, 进行清理
 
     CHK_RET(CreateOpRetryServerByState(expectNextState, retryCtx));
+    return HCCL_SUCCESS;
+}
+
+HcclResult OpRetryServerWaitResp::UpdatePartialOpRetryInfoForStopAicpuResp(const uint32_t agentId,
+    const HcclAgentRetryInfo& agentInfo, RetryContext* retryCtx)
+{
+    // 如果使能局部重执行, 相关局部重执行信息在OpRetryServerHandleError时一定初始化过
+    RetryState dstState = agentInfo.retryInfo.retryState;
+    CHK_PRT_RET(retryCtx->partialOpRetryFirstErrorAgent_ == INVALID_UINT ||
+        retryCtx->partialOpRetryErrorOpIdx_ == INVALID_UINT,
+        HCCL_ERROR("[OpRetryServerWaitResp][ProcessEvent] "
+            "invalid partialOpRetryFirstErrorAgent_[%u] or partialOpRetryErrorOpIdx_[%u] "
+            "when recv state[%s] from agent[%u] rank[%u]",
+            retryCtx->partialOpRetryFirstErrorAgent_, retryCtx->partialOpRetryErrorOpIdx_,
+            GetReadableState(dstState), agentId, agentInfo.retryInfo.rankId),
+        HCCL_E_INTERNAL);
+    
+    // 获取当前agent对应的opIdx
+    // 注意: opIdx一定 <= errorOpIdx, 因为局部重执行已经通过SetNeedRetryServerRankForPartialOpRetry
+    //     限制只对errorOp慢卡/同步卡发送停卡命令
+    const uint32_t curOpIdx = agentInfo.retryInfo.opInfo.opId.index;
+    CHK_PRT_RET(curOpIdx > retryCtx->partialOpRetryErrorOpIdx_,
+        HCCL_ERROR("[OpRetryServerWaitResp][ProcessEvent] curOpIdx[%u] > partialOpRetryErrorOpIdx_[%u] "
+            "when recv state[%s] from agent[%u] rank[%u]",
+            curOpIdx, retryCtx->partialOpRetryErrorOpIdx_,
+            GetReadableState(dstState), agentId, agentInfo.retryInfo.rankId),
+        HCCL_E_INTERNAL);
+    
+    // 对errorOp慢卡/同步卡, 更新partialOpRetryErrorAgentFlagMap_
+    const bool isEnablePartialOpRetry = agentInfo.retryInfo.opInfo.execStatus.retryInfo.isEnablePartialOpRetry;
+    HCCL_RUN_INFO("[OpRetryServerWaitResp][UpdatePartialOpRetryInfoForStopAicpuResp] "
+        "agentId[%u] rank[%u] isEnablePartialOpRetry[%d] recv stop aicpu resp",
+        agentId, agentInfo.retryInfo.rankId, isEnablePartialOpRetry);
+    std::unordered_map<u32, bool>::iterator mapIter = retryCtx->partialOpRetryErrorAgentFlagMap_.find(agentId);
+    if (mapIter == retryCtx->partialOpRetryErrorAgentFlagMap_.end()) { // 慢卡/同步卡首次上报停卡回复
+        // 保存停卡的opretry agent的局部重执行信息
+        retryCtx->partialOpRetryErrorAgentFlagMap_.insert(std::make_pair(agentId, isEnablePartialOpRetry));
+    } else { // 该opretry agent上报多个停卡回复
+        // 注意: 该慢卡/同步卡应该被卡在停卡算子, 因此即使上报多个停卡回复, 也不会改变局部重执行flag
+        CHK_PRT_RET(mapIter->second != isEnablePartialOpRetry,
+            HCCL_ERROR("[OpRetryServerWaitResp][UpdatePartialOpRetryInfoForStopAicpuResp] "
+                "mapIter->second[%d] != isEnablePartialOpRetry[%d] for agentId[%u] rank[%u]",
+                mapIter->second, isEnablePartialOpRetry, agentId, agentInfo.retryInfo.rankId),
+            HCCL_E_INTERNAL);
+    }
+
+    // 对errorOp同步卡, 更新partialOpRetryFlag_
+    if (curOpIdx == retryCtx->partialOpRetryErrorOpIdx_ && !isEnablePartialOpRetry) {
+        HCCL_RUN_INFO("[OpRetryServerWaitResp][UpdatePartialOpRetryInfoForStopAicpuResp] "
+            "agent[%u] rank[%u] curOpIdx[%u] partialOpRetryErrorOpIdx_[%u] isEnablePartialOpRetry[%d] "
+            "-> disable partialOpRetryFlag_[%d]",
+            agentId, agentInfo.retryInfo.rankId, curOpIdx, retryCtx->partialOpRetryErrorOpIdx_, isEnablePartialOpRetry,
+            retryCtx->partialOpRetryFlag_);
+        retryCtx->partialOpRetryFlag_ = false;
+    }
+
     return HCCL_SUCCESS;
 }
 
@@ -469,6 +926,43 @@ void OpRetryServerWaitResp::PrintAgentInfoAfterFail(std::map<u32, HcclAgentRetry
         HCCL_RUN_INFO("[OpRetry][Server]Print rank[%u], tag[%s], index[%u], aicpuStatus[%d]",
             it->first, tag, index, aicpuState);
     }
+}
+
+// A3 AICPU局部重执行下, server发送快卡信息 (即不参与局部重执行的ranks) 给agent
+HcclResult OpRetryServerIssuePartialRetryInfo::ProcessEvent(RetryContext* retryCtx)
+{
+    // 注意: 只有使能局部重执行时才有可能触发OpRetryServerIssuePartialRetryInfo
+    CHK_PRT_RET(!retryCtx->partialOpRetryFlag_,
+        HCCL_ERROR("[OpRetryServerIssuePartialRetryInfo][ProcessEvent] partialOpRetryFlag_[%d] is not enabled",
+            retryCtx->partialOpRetryFlag_),
+        HCCL_E_INTERNAL);
+    
+    // 更新flag, 告诉aicpu kfc使能局部重执行
+    // 注意: partialRetryInfo_的快卡信息在OpRetryServerHandleError中已经设置
+    retryCtx->partialRetryInfo_.partialOpRetryFlag = true;
+
+    // 发送局部重执行信息
+    for (auto agent : retryCtx->needRetryServerRanks_) {
+        // 打印发送日志
+        HCCL_RUN_INFO("[OpRetryServerIssuePartialRetryInfo][ProcessEvent] fastRankNum[%u] target agent[%u]/rank[%u]",
+            retryCtx->partialRetryInfo_.fastRankNum, agent, retryCtx->serverSockets_[agent].retryInfo.rankId);
+        
+        // 向当前agent发送局部重执行信息
+        HcclResult ret = IssuePartialRetryInfo(retryCtx->serverSockets_[agent].socket, retryCtx->partialRetryInfo_);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[OpRetryServerIssuePartialRetryInfo][ProcessEvent] IssuePartialRetryInfo fail, "
+                "curState[%s], fastRankNum[%u], target agent[%u]/rank[%u]",
+                GetReadableState(retryCtx->GetRetryState()), retryCtx->partialRetryInfo_.fastRankNum, agent,
+                retryCtx->serverSockets_[agent].retryInfo.rankId),
+            ret);
+    }
+
+    // 切换到下一状态
+    RetryState nextState = RETRY_STATE_WAIT_ISSUE_PARTIAL_RETRY_INFO;
+    HCCL_RUN_INFO("[OpRetryServerIssuePartialRetryInfo][ProcessEvent] nextState[%s]",
+        GetReadableState(nextState));
+    CHK_RET(CreateOpRetryServerByState(nextState, retryCtx));
+    return HCCL_SUCCESS;
 }
 
 HcclResult OpRetryServerCheckOp::ProcessEvent(RetryContext* retryCtx)
