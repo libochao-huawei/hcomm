@@ -141,6 +141,24 @@ HcclResult OpRetryBase::WaitCommandWithOpId(std::shared_ptr<HcclSocket> socket, 
     return ret;
 }
 
+HcclResult OpRetryBase::IssuePartialRetryInfo(std::shared_ptr<HcclSocket> socket, PartialRetryInfo &partialRetryInfo)
+{
+    HcclResult ret = Send(socket, &partialRetryInfo, sizeof(PartialRetryInfo));
+    if (ret == HCCL_SUCCESS) {
+        HCCL_DEBUG("[OpRetry]IssuePartialRetryInfo success, fastRankNum[%u]", partialRetryInfo.fastRankNum);
+    }
+    return ret;
+}
+
+HcclResult OpRetryBase::WaitPartialRetryInfo(std::shared_ptr<HcclSocket> socket, PartialRetryInfo &partialRetryInfo)
+{
+    HcclResult ret = Recv(socket, &partialRetryInfo, sizeof(PartialRetryInfo));
+    if (ret == HCCL_SUCCESS) {
+        HCCL_DEBUG("[OpRetry]WaitPartialRetryInfo success, fastRankNum[%u]", partialRetryInfo.fastRankNum);
+    }
+    return ret;
+}
+
 HcclResult OpRetryBase::IssueLinkPortCheckResult(std::shared_ptr<HcclSocket> socket, LinkPortStatus &linkPortStatus)
 {
     HcclResult ret = Send(socket, &linkPortStatus, sizeof(LinkPortStatus));
@@ -185,11 +203,12 @@ HcclResult OpRetryBase::CheckRetryInfo(RetryContext &retryCtx)
         auto &retryInfoStand = retryCtx.serverSockets_[*(retryCtx.needRetryServerRanks_.begin())].retryInfo;
         auto &retryInfo = retryCtx.serverSockets_[rank].retryInfo;
         u32 retryCnt = retryInfo.opInfo.execStatus.retryInfo.retryCount;
-        HCCL_RUN_INFO("[OpRetry][Server][CheckRetryInfo]rankId[%u], opName[%s], index[%u], retryCnt[%u], linkState[%d]",
+        HCCL_RUN_INFO("[OpRetry][Server][CheckRetryInfo]rankId[%u], opName[%s], index[%u], retryCnt[%u], "
+            "isEnablePartialOpRetry[%d], linkState[%d]",
             retryInfo.rankId, retryInfo.opInfo.opId.tag, retryInfo.opInfo.opId.index,
-            retryCnt, retryInfo.linkState);
+            retryCnt, retryInfo.opInfo.execStatus.retryInfo.isEnablePartialOpRetry, retryInfo.linkState);
 
-        CHK_RET(CheckOpName(retryInfo, retryInfoStand));
+        CHK_RET(CheckOpName(retryCtx, retryInfo, retryInfoStand));
         // 校验重传次数
         CHK_RET(CheckMaxRetryCnt(retryInfo, retryCtx.group_));
         // 校验链路状态
@@ -198,7 +217,7 @@ HcclResult OpRetryBase::CheckRetryInfo(RetryContext &retryCtx)
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::CheckOpName(const RetryInfo &retryInfo1, const RetryInfo &retryInfo2)
+HcclResult OpRetryBase::CheckOpName(RetryContext &retryCtx, const RetryInfo &retryInfo1, const RetryInfo &retryInfo2)
 {
     if (retryInfo1.opInfo.opId.isSendRecv == true && retryInfo2.opInfo.opId.isSendRecv == true){
         const char* tag1 = reinterpret_cast<const char*>(retryInfo1.opInfo.opId.tag);
@@ -230,11 +249,43 @@ HcclResult OpRetryBase::CheckOpName(const RetryInfo &retryInfo1, const RetryInfo
     u32 index1 = retryInfo1.opInfo.opId.index;
     u32 index2 = retryInfo2.opInfo.opId.index;
     bool isEqual = (strcmp(tag1, tag2) == 0) && (index1 == index2);
+
+    // 局部重执行场景下, 需要校验局部重执行flag
+    HCCL_INFO("[OpRetry][CheckOpName] before checking partial opretry flags: isEqual[%d] partialOpRetryFlag_[%d] "
+        "partialOpRetryFirstErrorAgent_[%u] partialOpRetryErrorOpIdx_[%u]",
+        isEqual, retryCtx.partialOpRetryFlag_,
+        retryCtx.partialOpRetryFirstErrorAgent_, retryCtx.partialOpRetryErrorOpIdx_);
+    const bool flag1 = retryInfo1.opInfo.execStatus.retryInfo.isEnablePartialOpRetry;
+    const bool flag2 = retryInfo2.opInfo.execStatus.retryInfo.isEnablePartialOpRetry;
+    if (isEqual && retryCtx.partialOpRetryFlag_) {
+        // 注意: 如果使能局部重执行, partialOpRetryFirstErrorAgent_一定在serverSockets_中
+        CHK_PRT_RET(retryCtx.serverSockets_.find(retryCtx.partialOpRetryFirstErrorAgent_) == retryCtx.serverSockets_.end(),
+            HCCL_ERROR("[OpRetry][CheckOpName]hccl aicpu can not retry, "
+                "partialOpRetryFirstErrorAgent[%u] is not in serverSockets_",
+                retryCtx.partialOpRetryFirstErrorAgent_),
+            HCCL_E_OPRETRY_FAIL);
+
+        // 打印局部重执行信息
+        const char* errorOpTag = reinterpret_cast<const char*>(
+            retryCtx.serverSockets_[retryCtx.partialOpRetryFirstErrorAgent_].retryInfo.opInfo.opId.tag);
+        HCCL_INFO("[OpRetry][CheckOpName] partialOpRetry errorOp rank[%u] tag[%s] index[%u]; "
+            "rank1[%u] tag1[%s] index1[%u] isEnablePartialOpRetry1[%d]; "
+            "rank2[%u] tag2[%s] index2[%u] isEnablePartialOpRetry2[%d]",
+            retryCtx.serverSockets_[retryCtx.partialOpRetryFirstErrorAgent_].retryInfo.rankId, errorOpTag,
+            retryCtx.serverSockets_[retryCtx.partialOpRetryFirstErrorAgent_].retryInfo.opInfo.opId.index,
+            retryInfo1.rankId, tag1, index1, flag1, retryInfo2.rankId, tag2, index2, flag2);
+        
+        // 校验局部重执行flag是否一致
+        if (UNLIKELY(!flag1 || !flag2)) {
+            isEqual = false;
+        }
+    }
+
     CHK_PRT_RET(isEqual == false,
         HCCL_ERROR("[OpRetry][CheckOpName]hccl aicpu can not retry, opName is inconsistent: "\
-        "rank[%u] tag1[%s] index1[%u] IpInfo1[%s], rank[%u] tag2[%s] index2[%u], IpInfo2[%s]",
-        retryInfo1.rankId, tag1, index1, retryInfo1.dfxIpInfo, retryInfo2.rankId, tag2, index2,
-        retryInfo2.dfxIpInfo), HCCL_E_OPRETRY_FAIL);
+        "rank[%u] tag1[%s] index1[%u] IpInfo1[%s], flag1[%d]; rank[%u] tag2[%s] index2[%u], IpInfo2[%s], flag2[%d]",
+        retryInfo1.rankId, tag1, index1, retryInfo1.dfxIpInfo, flag1, retryInfo2.rankId, tag2, index2,
+        retryInfo2.dfxIpInfo, flag2), HCCL_E_OPRETRY_FAIL);
     return HCCL_SUCCESS;
 }
 
@@ -275,9 +326,10 @@ HcclResult OpRetryBase::GetRetryInfo(RetryContext* retryCtx, RetryInfo &retryInf
     
     KfcExecStatus opInfo = retryInfo.opInfo;
     HCCL_DEBUG("[OpRetry][GetRetryInfo]tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d], opExeState[%d], "
-        "errorCode[%d], retryCount[%u], streamid[%u]",
+        "errorCode[%d], retryCount[%u], isEnablePartialOpRetry[%d], streamid[%u]",
     opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, opInfo.opId.isSendRecv,
-    opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount, opInfo.opId.streamId);
+    opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount, 
+    opInfo.execStatus.retryInfo.isEnablePartialOpRetry, opInfo.opId.streamId);
 
     return HCCL_SUCCESS;
 }
@@ -287,9 +339,10 @@ HcclResult OpRetryBase::GetOpExecInfo(std::shared_ptr<HDCommunicate> hdcPtr, Kfc
     CHK_SMART_PTR_NULL(hdcPtr);
     CHK_RET(hdcPtr->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
     HCCL_DEBUG("[OpRetry][GetOpExecInfo]tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d], opExeState[%d], "
-        "errorCode[%d], retryCount[%u]",
+        "errorCode[%d], retryCount[%u], isEnablePartialOpRetry[%d]",
         opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, opInfo.opId.isSendRecv,
-        opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount);
+        opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount,
+        opInfo.execStatus.retryInfo.isEnablePartialOpRetry);
     return HCCL_SUCCESS;
 }
 
