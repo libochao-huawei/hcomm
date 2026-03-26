@@ -10,7 +10,11 @@
 set(src_to_test_list
     main.cc
     aclgraph/ut_aclgraph_callback.cc
+<<<<<<< HEAD
     snapshot/ut_snapshot.cc
+=======
+    recovery/operator_retry/ut_opretry_server.cc
+>>>>>>> pr_1221
 )
 
 add_executable(hccl_utest_framework_cluster_maintenance ${src_to_test_list})
