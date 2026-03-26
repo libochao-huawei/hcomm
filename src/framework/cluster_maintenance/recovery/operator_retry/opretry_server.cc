@@ -146,6 +146,9 @@ HcclResult OpRetryServerRunning::ProcessEvent(RetryContext* retryCtx)
             RetryState nextState = RETRY_STATE_SERVER_RUNNING;
             CHK_RET(ParaseErrorCode(retryCtx, it.second, nextState));
             if (nextState != RETRY_STATE_SERVER_RUNNING) {
+                // 注意: opretry server收到故障卡opretry agent上报的局部重执行flag后, 会保存到对应rank的局部重执行信息中
+                // TODO
+
                 // 收到第一个报错后加入errorRankList_中，并切换到RETRY_STETA_HANDLE_ALL_ERR状态
                 HCCL_RUN_INFO("[OpRetry][Server]agent[%u] tag[%s] index[%u] find error, insert to errorRankList_", 
                     agentId, it.second.retryInfo.opInfo.opId.tag, it.second.retryInfo.opInfo.opId.index);

@@ -323,6 +323,11 @@ public:
     bool isServerStateWaitResume_ = false;
     bool isNeedReportOpRetryErr = false; // 针对重执行算子不一致和inplace场景，上报故障
 
+    // opretry server维护信息, 用于A3 AICPU局部重执行
+    // 注意: 局部重执行使能flag单独维护, 避免HcclAgentRetryInfo被opretry agent response覆盖掉
+    // TODO
+    std::unordered_map<u32, HcclAgentPartialOpRetryInfo>; // 每个opretry agent对应的局部重执行信息 (包括是否为快卡, 使能flag)
+
     bool isOpRetryQuit = false;
     bool isPaused_ = false;
 private:
