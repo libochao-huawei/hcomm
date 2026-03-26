@@ -18,6 +18,7 @@ hcomm:
       - src/legacy/framework/ccu/ccu_ins/ccu_ins.h
       - src/legacy/service/
       - src/algorithm/
+      - src/platform/hccp/
   llt:
     ut_check: true
     st_check: false
