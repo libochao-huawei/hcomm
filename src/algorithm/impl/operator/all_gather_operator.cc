@@ -244,13 +244,20 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
     return HCCL_SUCCESS;
 }
 
-bool AllGatherOperator::SmallCountOptimMultiServer(const OpParam& param)
+bool AllGatherOperator::SmallCountOptimSinglePod(const OpParam& param)
 {
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
     u64 totalSize = param.DataDes.count * unitSize * userRankSize_;
     void *commInputPtr = nullptr;
     u64 commInputSize = 0;
     CHK_RET(cclBufferManager_.GetInCCLbuffer(commInputPtr, commInputSize));
+
+    bool smallCountOptimSingleServer = (serverNum_ == 1) &&
+        ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && commInputSize >= totalSize) ||
+        (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !param.aicpuUnfoldMode)) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_512_KB) &&
+        (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && !GetExternalInputInterHccsDisable();
+
     bool dmaReduceLimit= (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
         (((deviceNumPerAggregation_ % HCCL_DEVICE_NUM_FOUR == 0) && (commInputSize * HCCL_DEVICE_NUM_FOUR < totalSize)) ||
         ((deviceNumPerAggregation_ % HCCL_DEVICE_NUM_TWO == 0) && (commInputSize * HCCL_DEVICE_NUM_TWO < totalSize)) ||
@@ -260,7 +267,7 @@ bool AllGatherOperator::SmallCountOptimMultiServer(const OpParam& param)
         (((deviceNumPerAggregation_ % HCCL_DEVICE_NUM_FOUR == 0) && (param.DataDes.count * unitSize * serverNum_ <= HCCL_SMALL_COUNT_1_MB)) ||
         ((deviceNumPerAggregation_ % HCCL_DEVICE_NUM_FOUR != 0) && (param.DataDes.count * unitSize * serverNum_ <= HCCL_SMALL_COUNT_512_KB))) &&
         !dmaReduceLimit && !GetExternalInputInterHccsDisable();
-    return smallCountOptimMultiServer;
+    return smallCountOptimSingleServer || smallCountOptimMultiServer;
 }
 
 HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::string& algName)
@@ -307,12 +314,8 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }  
-    bool smallCountOptimSingleServer = (serverNum_ == 1) &&
-        ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) ||
-        (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !param.aicpuUnfoldMode)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_512_KB) &&
-        (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && !GetExternalInputInterHccsDisable();
-    bool smallCountOptimMultiServer = SmallCountOptimMultiServer(param);
+
+    bool smallCountOptimSinglePod = SmallCountOptimSinglePod(param);
 
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
@@ -355,7 +358,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     } else if (smallCountOptimMultiPod) {
         algName = "AllGatherComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
-    } else if (smallCountOptimMultiServer || smallCountOptimSingleServer) {
+    } else if (smallCountOptimSinglePod) {
         algName = "AllGatherSmallCount";
     } else if (midCountOptimMultiPod) {
         algName = "AllGatherMidCountFor91093Executor";

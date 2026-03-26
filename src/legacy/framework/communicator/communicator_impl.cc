@@ -476,7 +476,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         auto dfxOpInfo = std::make_shared<DfxOpInfo>();
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
         dfxOpInfo->op_           = *GetCurrentCollOperator();
-        dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
+        dfxOpInfo->tag_          = dfxOpInfo->op_.opTag;
         dfxOpInfo->algType_      = AlgType::MESH;
         dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
@@ -2488,7 +2488,7 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
         return HCCL_E_RUNTIME;
     }
     HcclUs        startTime                   = std::chrono::steady_clock::now();
-    constexpr u32 waitTransportReadyTimeoutMs = 10 * 1000; // 定义最大等待10秒
+    constexpr u32 waitTransportReadyTimeoutMs = 200 * 1000; // 定义最大等待200秒
     auto          timeout                     = std::chrono::milliseconds(waitTransportReadyTimeoutMs);
     do {
         if (std::chrono::steady_clock::now() - startTime >= timeout) {
