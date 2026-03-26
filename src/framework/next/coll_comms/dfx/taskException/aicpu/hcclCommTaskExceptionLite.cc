@@ -356,9 +356,7 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
                 __func__, (**taskItorPtr)->taskId_, taskId);
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
-        }
+        taskContext.emplace_back(**taskItorPtr);
     }
 
     HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
