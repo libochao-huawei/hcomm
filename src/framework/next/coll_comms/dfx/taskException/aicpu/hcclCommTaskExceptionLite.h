@@ -44,11 +44,13 @@ private:
 
     void PrintEid(const Hccl::TaskInfo& taskInfo);
     std::string GetBaseInfo(const Hccl::TaskInfo& taskInfo);
+    u32 GetSqeId(const rtLogicCqReport_t &exceptionInfo);
 
     bool initFlag_{false};
     bool stopCall_{false};
     u32 devId_{INVALID_UINT};
     Hccl::MirrorTaskManager* mirrorTaskManager_{nullptr};  // 使用原始指针，不管理生命周期
+    std::unordered_set<u32> errSqeId_; // 记录触发过的errSqeId，避免重复打印
 };
 
 }
