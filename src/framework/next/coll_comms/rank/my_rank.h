@@ -46,7 +46,7 @@ public:
         return opExpansionMode_;
     }
 
-    HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
+    HcclResult CreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
@@ -54,7 +54,7 @@ public:
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
-    HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+    HcclResult BatchCreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);

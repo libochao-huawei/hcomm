@@ -203,7 +203,7 @@ HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &c
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+HcclResult MyRank::BatchCreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles)
 {
     CHK_PTR_NULL(channelDescs);
@@ -266,6 +266,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].exchangeAllMems = false;
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
+        hcommDescs[i].hccsAttr.qos = hcclComm->GetHcclQos();
 
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
@@ -366,7 +367,7 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
+HcclResult MyRank::CreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const std::string &commTag,
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channelHandles)
 {
     CHK_PTR_NULL(channelDescs);
@@ -383,7 +384,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
 
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
-    CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
+    CHK_RET(BatchCreateChannels(hcclComm, engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {

@@ -214,7 +214,8 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     hccl::DeviceMem &devicePackBuf,
     uint32_t listNum, 
     uint32_t totalListNum,
-    uint32_t singleUniqueIdSize)
+    uint32_t singleUniqueIdSize,
+    u32 qos)
 {
     // channelParam资源参数填充
     s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
@@ -225,6 +226,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
     channelParam.singleUniqueIdSize = singleUniqueIdSize;
+    channelParam.qos = qos;
 
     CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
     DevType devType;
@@ -268,7 +270,7 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
 }
 
 HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling)
+    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling,u32 qos)
 {
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
@@ -304,7 +306,7 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
 
     // 填充channelParam参数
     CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf, 
-        listNum, totalListNum, totalListNum / hostPackBuffers.size()));
+        listNum, totalListNum, totalListNum / hostPackBuffers.size(), qos));
     
     // profiling信息
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
@@ -345,17 +347,18 @@ HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHand
 }
 
 HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle) 
+    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle, u32 qos) 
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, "", 
-        binHandle, "RunAicpuChannelInitV2", false);
+        binHandle, "RunAicpuChannelInitV2", false, qos);
 }
 
 HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
-    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle) 
+    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle, HcommChannelDesc *channelDescs) 
 {
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle));
+        uint32_t qos = channelDescs[0].hccsAttr.qos;
+        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle, qos));
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {

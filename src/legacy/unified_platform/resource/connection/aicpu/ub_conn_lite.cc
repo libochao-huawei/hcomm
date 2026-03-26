@@ -61,7 +61,7 @@ void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, 
     }
 
     sqe->sgeNum        = 1;
-    sqe->targetHint    = 0;
+    sqe->targetHint    = static_cast<u32>(cfg.hcclQos & 0xFU);
     sqe->rmtObjId      = rmt.GetTokenId();
     sqe->tokenEn       = 1;
     sqe->rmtTokenValue = rmt.GetTokenValue();

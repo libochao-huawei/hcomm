@@ -42,10 +42,16 @@ RtsqA5::RtsqA5(u32 devPhyId, u32 streamId, u32 sqId, bool launchFlag) : RtsqBase
     launchFlag_ = launchFlag;
 }
 
+void RtsqA5::SetSdmaHcclQos(u32 qos)
+{
+    sdmaHcclQos_ = qos & 0xFU;
+}
+
 void RtsqA5::Reset()
 {
     RtsqBase::Reset();
     pendingSqeCnt = 0;
+    sdmaHcclQos_  = 6;
     s32 sRet      = memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
     if (UNLIKELY(sRet != EOK)) {
         auto msg = StringFormat("[RtsqA5][Reset] locBuf memset fail. errorno[%d]", sRet);
@@ -252,7 +258,7 @@ void RtsqA5::SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
 {
     // 不带reduce的拷贝，opcode填0
     (void)partId;
-    BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, 0, GetCurrSqeBuffer());
+    BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, 0, sdmaHcclQos_, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::SdmaCopy: SdmaCopy Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     RefreshInfo();
 }
@@ -284,7 +290,8 @@ void RtsqA5::SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const Re
     u8 op   = static_cast<u8>(ReduceOpToStarsOpKindMap.at(reduceIn.reduceOp));
     u8 type = static_cast<u8>(DataTypeToStarsDataTypeMap.at(reduceIn.dataType));
 
-    BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, (op | type), GetCurrSqeBuffer());
+    BuildA5SqeSdmaCopy(streamId_, taskId_, dstAddr, srcAddr, size, RTSQ_A5_PART_ID, (op | type), sdmaHcclQos_,
+                       GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::SdmaReduce: SdmaReduce Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
     RefreshInfo();
 }

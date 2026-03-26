@@ -229,6 +229,7 @@ void UbTransportLiteImpl::ParseConnVec(std::vector<char> &data)
 
 void UbTransportLiteImpl::BuildUbDbSendTask(const StreamLite &stream, const UbJettyLiteId &jettyLiteId, u32 pi)
 {
+    SyncRtsqSdmaHcclQos(stream);
     stream.GetRtsq()->UbDbSend(jettyLiteId, pi);
 }
 
@@ -339,6 +340,7 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
         cfg.placeOdr  = UB_STRONG_ORDER;
         cfg.compOrder = UB_COMPLETION;
     }
+    ApplyHcclQosToSqeCfg(cfg);
     u32           inlineData = 1;
     CheckConnVec("UbTransportLiteImpl::Post"); // 待修改优化, 检查connection
     auto taskId = stream.GetRtsq()->GetTaskId();
@@ -728,5 +730,16 @@ void UbTransportLiteImpl::SetFenceConfig(SqeConfigLite &cfg)
         cfg.compOrder = UB_COMPLETION;
     }
     fence_ = false;
+    ApplyHcclQosToSqeCfg(cfg);
+}
+
+void UbTransportLiteImpl::ApplyHcclQosToSqeCfg(SqeConfigLite &cfg) const
+{
+    cfg.hcclQos = static_cast<u8>(GetHcclQos() & 0xFU);
+}
+
+void UbTransportLiteImpl::SyncRtsqSdmaHcclQos(const StreamLite &stream) const
+{
+    stream.SetSdmaHcclQos(GetHcclQos());
 }
 } // namespace Hccl

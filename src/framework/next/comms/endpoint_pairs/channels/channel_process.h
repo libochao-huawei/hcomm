@@ -25,7 +25,7 @@ public:
         HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *outHandles);
     static HcclResult ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum, CommEngine engine);
     static HcclResult SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
-        uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle);
+        uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle, HcommChannelDesc *channelDescs);
     static HcclResult ChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
     static HcclResult ChannelKernelLaunchForComm(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
@@ -44,9 +44,9 @@ private:
     static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, 
         uint32_t listNum);
     static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-        uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling);
+        uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling, u32 qos);
     static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, 
-        uint32_t listNum, aclrtBinHandle binHandle);
+        uint32_t listNum, aclrtBinHandle binHandle, u32 qos);
 
     static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
     static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;

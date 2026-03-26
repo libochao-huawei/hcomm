@@ -110,6 +110,11 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    virtual void SetSdmaHcclQos(u32 qos)
+    {
+        (void)qos;
+    }
+
     virtual void SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId)
     {
         (void)srcAddr;
