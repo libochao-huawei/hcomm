@@ -202,7 +202,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
 }
 
 HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
-    std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles) const
+    std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles)
 {
     if (memHandleVec.size() == 0) {
         HCCL_ERROR("[CommMems][SetMemHandles] memHandleVecSize is 0.");
