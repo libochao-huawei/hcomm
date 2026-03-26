@@ -77,6 +77,12 @@ using HcclAgentRetryInfo = struct HcclAgentRetryInfoDef {
     ActiveSwitchInfo switchInfo;
 };
 
+struct HcclAgentPartialOpRetryInfo {
+    // 每一个rank / opretry agent对应的局部重执行信息
+    bool isSameAsErrorOp = false; // 是否与故障卡算子相同 (相同的rank对应的agent才需要参与局部重执行; 快卡不参与; 慢卡进sleep)
+    bool isEnablePartialOpRetry = false; // 是否使能局部重执行
+};
+
 inline const char *GetReadableState(RetryState retryState) {
     auto it = RETRY_STATE_STR_MAP.find(retryState);
     return (it != RETRY_STATE_STR_MAP.end()) ? it->second.c_str() : "unknown state";
@@ -206,6 +212,9 @@ public:
             HcclAgentRetryInfo tempAgentInfo;
             tempAgentInfo.socket = it->second;
             serverSockets_.insert(std::make_pair(it->first, std::move(tempAgentInfo)));
+
+            // 用于A3 AICPU局部重执行
+            partialOpRetryInfoMap_.insert(std::make_pair(it->first, HcclAgentPartialOpRetryInfo()));
         }
         rankId_ = agentInfo.userRank;
         deviceLogicId_ = agentInfo.deviceLogicId;
@@ -324,6 +333,14 @@ public:
     std::map<u32, ActiveSwitchInfo> switchInfoMap_;
     bool isServerStateWaitResume_ = false;
     bool isNeedReportOpRetryErr = false; // 针对重执行算子不一致和inplace场景，上报故障
+
+    // opretry server维护信息, 用于A3 AICPU局部重执行
+    // 注意: 发生故障的ranks中, opId最小的算子为局部重执行的目标算子 (即errorOp),
+    //     上报errorOp且rankId最小的卡为故障卡 (即partialOpRetryErrorRank), 与errorOp的opId相同的ranks为errorOp同步卡
+    bool finalPartialOpRetryFlag = false; // 最终局部重执行是否使能的flag (要求errorOp同步卡全部使能局部重执行)
+    uint32_t partialOpRetryErrorRank = INVALID_UINT; // 上报errorOp且rankId最小的卡为故障卡
+    // 注意: 局部重执行使能flag单独维护, 避免HcclAgentRetryInfo被opretry agent response覆盖掉
+    std::unordered_map<u32, HcclAgentPartialOpRetryInfo> partialOpRetryInfoMap_; // 每个opretry agent对应的局部重执行信息
 
     bool isOpRetryQuit = false;
     bool isPaused_ = false;
