@@ -3711,6 +3711,7 @@ namespace hccl
         for (u32 i = 0; i < userRankSize_; i++) {
             inputSize += counts[i] * perDataSize;
         }
+        CHK_PRT_RET(inputSize == 0, HCCL_WARNING("inputSize is 0, return ReduceScatterV success"), HCCL_SUCCESS);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -4182,6 +4183,13 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][SplitBsrData] rankSize %u", userRankSize_);
         HcclSendRecvItem* sendRecvInfo = opParam.BatchSendRecvDataDes.sendRecvItemsPtr;
         for (u32 i = 0; i < itemNum; i++) {
+            HCCL_ERROR("lkytest 1");
+            if (sendRecvInfo->buf == nullptr) {
+                HCCL_ERROR("lkytest 2");
+                sendRecvInfo++;
+                HCCL_ERROR("lkytest 3");
+                continue;
+            }
             if (remoteTransportMap_[sendRecvInfo->remoteRank] == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
                 //host 侧需要下发的数据
                 HCCL_INFO("[HcclCommunicator][SplitBsrData]host localRank %u remoteRank %u type %d sendRecvType %d count %llu",
@@ -4199,6 +4207,7 @@ namespace hccl
             }
             sendRecvInfo++;
         }
+        HCCL_ERROR("lkytest 4");
         HCCL_INFO("[HcclCommunicator][SplitBsrData] itemNum %u hostItemNum %zu aicpuItemNum %zu", itemNum, hostSendRecvInfo.size(),
             aicpuSendRecvInfo.size());
         return;
