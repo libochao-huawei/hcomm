@@ -43,6 +43,15 @@ const std::map<RetryState, RetryState> RETRY_SERVER_STATE_TRANSFER_LABEL {
     {RETRY_STATE_SERVER_RETRY_FAIL, RETRY_STATE_SERVER_RUNNING}
 };
 
+// 只用于局部重执行下的server状态切换 (额外维护一张表, 因为RETRY_STATE_CHECK_OP对应两个可能的状态)
+const std::map<RetryState, RetryState> RETRY_SERVER_STATE_TRANSFER_LABEL_PARTIAL {
+    {RETRY_STATE_CHECK_OP, RETRY_STATE_CMD_CAN_PARTIAL_RETRY}, // 通知agent准备局部重执行
+    {RETRY_STATE_CMD_CAN_PARTIAL_RETRY, RETRY_STATE_WAIT_CAN_PARTIAL_RETRY}, // 等待agent准备局部重执行完毕
+    {RETRY_STATE_WAIT_CAN_PARTIAL_RETRY, RETRY_STATE_ISSUE_PARTIAL_RETRY_INFO}, // 发送局部重执行信息
+    {RETRY_STATE_ISSUE_PARTIAL_RETRY_INFO, RETRY_STATE_WAIT_ISSUE_PARTIAL_RETRY_INFO}, // 等待agent接收局部重执行信息
+    {RETRY_STATE_WAIT_ISSUE_PARTIAL_RETRY_INFO, RETRY_STATE_CMD_CAN_RETRY} // 通知agent继续重执行
+};
+
 // server状态机 IssueCmd状态对应的command
 const std::map<RetryState, RetryCommand> RETRY_SERVER_STATE_TO_CMD_LABEL {
     {RETRY_STATE_CMD_CHECK_LINK, RETRY_CMD_CHECK_LINK},
@@ -53,6 +62,7 @@ const std::map<RetryState, RetryCommand> RETRY_SERVER_STATE_TO_CMD_LABEL {
     {RETRY_STATE_CMD_RESET_NOTIFY, RETRY_CMD_RESET_NOTIFY},
     {RETRY_STATE_CMD_RESUME_TRANSPORT, RETRY_CMD_RESUME_TRANSPORT},
     {RETRY_STATE_CMD_CHECK, RETRY_CMD_CHECK_OPNAME},
+    {RETRY_STATE_CMD_CAN_PARTIAL_RETRY, RETRY_CMD_CAN_PARTIAL_RETRY}, // 通知agent准备局部重执行
     {RETRY_STATE_CMD_CAN_RETRY, RETRY_CMD_CAN_RETRY}
 };
 
@@ -68,6 +78,10 @@ public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
     HcclResult ParaseErrorCode(RetryContext* retryCtx, HcclAgentRetryInfo &agentInfo, RetryState &nextState);
 protected:
+    // 对于给定故障rank, 收到SDMA error后更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForSingleError(const uint32_t agentId, const HcclAgentRetryInfo& agentInfo,
+        RetryContext* retryCtx);
+
     std::map<u32, std::chrono::steady_clock::time_point> lastRecvTimes_;
     std::unordered_set<u32> disableAgent_; // 记录已经关闭的对端, 不再轮询, 避免刷屏
 };
@@ -77,6 +91,11 @@ class OpRetryServerHandleError : public OpRetryServerRunning {
 public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
 private:
+    // 收齐所有errors后, 更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForAllErrors(RetryContext* retryCtx, bool& isWait);
+    HcclResult ClearErrorRankListForPartialOpRetry(RetryContext* retryCtx);
+    HcclResult SetNeedRetryServerRankForPartialOpRetry(RetryContext* retryCtx, const HcclOpIdentifier &opId);
+
     HcclResult SetNeedRetryServerRank(RetryContext* retryCtx, const HcclOpIdentifier &opId);
 };
 
@@ -91,8 +110,18 @@ class OpRetryServerWaitResp : public OpRetryServerBase {
 public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
 private:
+    // 对于errorOp慢卡(一定是非故障卡)/同步卡(故障卡或非故障卡), 收到停卡回复RETRY_STATE_RESP_AICPU_STOPED后, 更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForStopAicpuResp(const uint32_t agentId, const HcclAgentRetryInfo& agentInfo,
+        RetryContext* retryCtx);
+
     // 接收到对端重执行失败的信息后，打印当前接收到的Agent节点信息
     void PrintAgentInfoAfterFail(std::map<u32, HcclAgentRetryInfo> &serverSockets, std::set<u32> &recvVaild, HcclAgentRetryInfo &agentRetryInfo);
+};
+
+// A3 AICPU局部重执行下, server发送快卡信息 (即不参与局部重执行的ranks) 给agent
+class OpRetryServerIssuePartialRetryInfo : public OpRetryServerBase {
+public:
+    HcclResult ProcessEvent(RetryContext* retryCtx) override;
 };
 
 class OpRetryServerCheckOp : public OpRetryServerBase {
