@@ -188,3 +188,20 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_FindSymmetricW
     EXPECT_EQ(retBool, false);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclCommunicatorHostTest, Ut_SplitBsrData_When_countEqualZero_Expect_ReturnIsHCCL_SUCCESS) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->superPodNum_ = 2;
+    hcclCommunicator->userRankSize_ = 2;
+    hcclCommunicator->userRank_ = 0;
+    OpParam opParam;
+    opParam.BatchSendRecvDataDes.itemNum = 2;
+    HcclSendRecvItem sendRecvItems[2];
+    sendRecvItems[0].buf = nullptr;
+    opParam.BatchSendRecvDataDes.sendRecvItemsPtr = sendRecvItems;
+    std::vector<u8> isDirectRemoteRank;
+    std::vector<HcclSendRecvItem> hostSendRecvInfo;
+    std::vector<HcclSendRecvItem> deviceSendRecvInfo;
+    hcclCommunicator->SplitBsrData(opParam, isDirectRemoteRank, hostSendRecvInfo, deviceSendRecvInfo);
+    EXPECT_EQ(hostSendRecvInfo.size(), 0);
+}
