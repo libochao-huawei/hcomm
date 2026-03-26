@@ -494,3 +494,12 @@ TEST_F(MemTransportManagerTest, MemTransportManager_batch_build_oneSide_transpor
     EXPECT_NO_THROW(transportManager.BatchBuildOneSidedTransports(links));
     transportManager.Clear();
 }
+
+TEST_F(MemTransportManagerTest, MemTransportManager_UT_GetUrmaWqsAndCqs)
+{
+    StubCommunicatorImplTransMgr comm;
+    MemTransportManager          transportManager(comm);
+    MOCKER_CPP(&MemTransportManager::IsAllTransportReady).stubs().will(returnValue(true));
+    EXPECT_NO_THROW(transportManager.GetUrmaWqs());
+    EXPECT_NO_THROW(transportManager.GetUrmaCqs());
+}
