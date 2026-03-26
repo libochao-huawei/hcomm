@@ -547,15 +547,6 @@ void GetNewNodeInfo(u32 layer, RankId newRankId, const NetInstance::Link &oldLin
         newIface = oldIface;
         newNode = tmpPeers.at(newRankId);
         tmpPeers.at(newRankId)->AddConnInterface(layer, newIface);
-        
-        const auto& oldEndpointMap = oldNode->GetEndpointToIfaceMap();
-        for (const auto& entry : oldEndpointMap) {
-            if (entry.second == oldIface) {
-                tmpPeers.at(newRankId)->SetEndpointToIface(entry.first.first, entry.first.second, newIface);
-                HCCL_DEBUG("[SubRankGraph][GetNewNodeInfo] endpointToIfaceMap: commAddr, protocol[%d] for newRankId[%d]",
-                           entry.first.second, newRankId);
-            }
-        }
     } else if (type == NetInstance::Node::NodeType::FABRIC) {
         newIface = nullptr;
         newNode = oldNode;
@@ -646,7 +637,6 @@ void AddGroupLinks(const vector<RankId> &rankIds, const NetInstance *oldNetInsta
 
 void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRankGraph, RankId2PeerMap &peers) const
 {
-    // 遍历rankIds将索引作为子虚拟拓扑的rankId构造subPeer并添加到subRankGraph
     s32 rankSize = rankIds.size();
     for (RankId subRankId = 0; subRankId < rankSize; ++subRankId) {
         RankId rankId  = rankIds[subRankId];
@@ -658,6 +648,14 @@ void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRa
         shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort);
         subRankGraph->AddPeer(subPeer);
         peers.emplace(subRankId, subPeer);
+        
+        const auto& oldEndpointMap = oldPeer->GetEndpointToIfaceMap();
+        for (const auto& entry : oldEndpointMap) {
+            subPeer->SetEndpointToIface(entry.first.first, entry.first.second, entry.second);
+            HCCL_DEBUG("[SubRankGraph][AddSubPeers] Copy endpointToIfaceMap: protocol[%d] for subRankId[%d]",
+                       entry.first.second, subRankId);
+        }
+        
         HCCL_DEBUG("[RankGraph][AddSubPeers] oldRankId[%d] subPeer[%s] add success.", rankId,
                    subPeer->Describe().c_str());
     }
