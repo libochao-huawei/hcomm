@@ -326,7 +326,7 @@ TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_MissingSuperPodId_Return
     info1.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
     info1.superPodId = "";
     info1.superDeviceId = INVALID_UINT;
-    clusterInfo.serverList.push_back(info1);
+    clusterInfo.rankList.push_back(info1);
 
     TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
     HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
@@ -351,15 +351,15 @@ TEST_F(TopoExchangeAgentTest, VerifyClusterSuperPodInfo_DuplicateSuperDeviceId_R
     string identifier = "test";
 
     RankTable_t clusterInfo;
-    RankInfo_t info1, info2;
+    RankInfo_t info1,info2;
     info1.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
     info1.superPodId = "superpod1";
     info1.superDeviceId = 0;
     info2.deviceInfo.deviceType = DevType::DEV_TYPE_910_93;
     info2.superPodId = "superpod1";
     info2.superDeviceId = 0;
-    clusterInfo.serverList.push_back(info1);
-    clusterInfo.serverList.push_back(info2);
+    clusterInfo.rankList.push_back(info1);
+    clusterInfo.rankList.push_back(info2);
 
     TopoInfoExchangeAgent agent(localIp, serverPort, identifier, netDevCtx, localRankInfo);
     HcclResult ret = agent.VerifyClusterSuperPodInfo(clusterInfo.rankList);
