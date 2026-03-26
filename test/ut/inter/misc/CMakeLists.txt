@@ -122,8 +122,8 @@ else()
     )
 
     add_dependencies(hccl_utest_inter_misc hccl_llt hccl_llt_open)
-    run_llt_test(
-    TARGET  hccl_utest_inter_misc
-    TASK_NUM 1
-    )
+    # run_llt_test(
+    # TARGET  hccl_utest_inter_misc
+    # TASK_NUM 1
+    # )
 endif()

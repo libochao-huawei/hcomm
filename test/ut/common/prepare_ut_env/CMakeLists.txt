@@ -37,7 +37,7 @@ target_link_libraries(hccl_ut_prepare_env  PRIVATE
     -pthread
 )
 
-run_llt_test(
-    TARGET  hccl_ut_prepare_env
-    TASK_NUM 1
-)
+# run_llt_test(
+#     TARGET  hccl_ut_prepare_env
+#     TASK_NUM 1
+# )

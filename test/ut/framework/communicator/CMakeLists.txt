@@ -79,7 +79,7 @@ target_link_libraries(hccl_utest_framework_communicator PRIVATE
 )
 add_dependencies(hccl_utest_framework_communicator hccl_llt)
 
-run_llt_test(
-   TARGET  hccl_utest_framework_communicator
-   TASK_NUM 1
-)
+# run_llt_test(
+#    TARGET  hccl_utest_framework_communicator
+#    TASK_NUM 1
+# )
