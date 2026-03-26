@@ -331,12 +331,15 @@ HcclResult OpRetryAgentRunning::ParseKfcErr(RetryContext* retryCtx, RetryState &
     CHK_RET(GetRetryInfo(retryCtx, retryCtx->localRetryInfo_));
     KfcError kfcError = retryCtx->localRetryInfo_.opInfo.execStatus.kfcError;
     uint32_t retryCnt = retryCtx->localRetryInfo_.opInfo.execStatus.retryInfo.retryCount;
+    bool isEnablePartialOpRetry = retryCtx->localRetryInfo_.opInfo.execStatus.retryInfo.isEnablePartialOpRetry;
     switch (kfcError) {
         case KfcError::kNone: {
             break;
         }
         case KfcError::kSdma: {
-            HCCL_RUN_INFO("[OpRetry][Agent]Get ErrorCode[%d] rertryCnt[%u]", kfcError, retryCnt);
+            // 注意: 故障卡对应的opretry agent会切换至OpRetryAgentResponse, 并将局部重执行flag上报给opretry server
+            HCCL_RUN_INFO("[OpRetry][Agent]Get ErrorCode[%d] rertryCnt[%u] isEnablePartialOpRetry[%d]",
+                kfcError, retryCnt, isEnablePartialOpRetry);
             nextState = RETRY_STATE_RESP_AICPU_ERR;
             break;
         }
@@ -362,12 +365,14 @@ HcclResult OpRetryAgentResponse::ProcessEvent(RetryContext* retryCtx)
     nextState = it->second;
     auto &opInfo = retryCtx->localRetryInfo_.opInfo;
     HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentResponse tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d],"\
-        "opExeState[%d], errorCode[%d], retryCount[%u], streamId[%u], isNeedReportOpRetryErr[%d]",
+        "opExeState[%d], errorCode[%d], retryCount[%u], isEnablePartialOpRetry[%d], streamId[%u], isNeedReportOpRetryErr[%d]",
         opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, opInfo.opId.isSendRecv,
         opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount,
+        opInfo.execStatus.retryInfo.isEnablePartialOpRetry,
         opInfo.opId.streamId, retryCtx->localRetryInfo_.isNeedReportOpRetryErr);
 
     // 发送数据
+    // 注意: 故障卡opretry agent收到KfcError, 或者故障/非故障卡收到KfcStatus::kStoplaunch后, 会通过socket上报局部重执行flag
     HcclResult ret = IssueResponse(retryCtx->agentSocket_, retryCtx->localRetryInfo_);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[OpRetry][Agent]OpRetryAgentResponse IssueResponse fail"), ret);
     CHK_RET(CreateOpRetryAgentByState(nextState, retryCtx));
@@ -565,6 +570,14 @@ HcclResult OpRetryAgentPollAicpuStop::ProcessEvent(RetryContext* retryCtx)
             case RETRY_STATE_POLL_AICPU_STOPED:
                 if (aicpuState == KfcStatus::kStoplaunch ||
                     aicpuState == KfcStatus::kStopExec) {
+                    // 注意: 故障/非故障卡收到RETRY_CMD_STOP_AICPU后都会进入当前OpRetryAgentPollAicpuStop的处理逻辑,
+                    //     对应opretry agent收到kfcStatus::kStoplaunch后, 会切换至OpRetryAgentResponse,
+                    //     并将局部重执行flag上报给opretry server
+                    HCCL_INFO("[OpRetryAgentPollAicpuStop][ProcessEvent] curState[%d] aicpuState[%d], "
+                        "retryCount[%u] isEnablePartialOpRetry[%d]",
+                        curState, aicpuState, opInfo.execStatus.retryInfo.retryCount,
+                        opInfo.execStatus.retryInfo.isEnablePartialOpRetry);
+
                     if ((retryCtx->curFaultOpId.isSendRecv && curFaultTag == curd2hTag) || !opInfo.opId.isSendRecv)
                     {
                         HCCL_RUN_INFO("[OpRetry][Agent]curFaultTag[%s] curd2hTag[%s], isSendRecv[%u]",
@@ -609,9 +622,10 @@ HcclResult OpRetryAgentPollAicpuStop::ProcessEvent(RetryContext* retryCtx)
             HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentPollAicpuStop success, retryState[%s], aicpuState[%d], "\
                 "tag[%s], index[%u]", GetReadableState(curState), aicpuState, tag, index);
             HCCL_RUN_INFO("[OpRetry][agent pollaicpu OpId]tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d],"
-                "streamid[%u], retryCnt[%u]",
+                "streamid[%u], retryCnt[%u], isEnablePartialOpRetry[%d]",
                 opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, 
-                opInfo.opId.isSendRecv, opInfo.opId.streamId, opInfo.execStatus.retryInfo.retryCount);
+                opInfo.opId.isSendRecv, opInfo.opId.streamId, opInfo.execStatus.retryInfo.retryCount,
+                opInfo.execStatus.retryInfo.isEnablePartialOpRetry);
             break;
         }
 
