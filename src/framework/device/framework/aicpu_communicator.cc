@@ -138,6 +138,8 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitOpCounter(commParam->opCounterInfo));
     CHK_RET(InitUtraceInfo(commParam));
     CHK_RET(aicpuCacheManager_.InitOpUnfoldCache());
+    // 注意: dispatcher_和aicpu main/slave streams已经基于通信域资源commParam初始化
+    CHK_RET(aicpuBlocklistManager_.InitBlocklistManager(mainStream_, slaveStreams_));
     CHK_RET(RegisterProfCallBack());
     InitCommInfoStatus(true);
     SetCommInfoStreamStatus(true);
@@ -331,7 +333,21 @@ HcclResult HcclCommAicpu::RegisterDispatcherCallback()
 {
     auto checkOpExecStatusCallback = [this](){ return this->CheckOpExecStatusCallback(); };
 
-    return HcclSetOpExecStatusCallback(dispatcher_, checkOpExecStatusCallback);
+    // 用于A3 AICPU局部重执行
+    auto updateTotalSqeCountCallback = [this](const int32_t streamID, const uint64_t sqeCount) {
+        return this->aicpuBlocklistManager_.UpdateTotalSqeCount(streamID, sqeCount);
+    };
+    auto updatePlaceholderSqIdxCallback = [this](const int32_t streamID, const int64_t firstFlipPlaceholderSqIdx,
+        const bool isFlip) {
+        return this->aicpuBlocklistManager_.UpdatePlaceholderSqIdx(streamID, firstFlipPlaceholderSqIdx, isFlip);
+    };
+    auto applyBlocklistCallback = [this](const bool isCopySqe, Stream& stream, const bool isWaitSqe,
+        const uint32_t notifyId, const uint64_t signalAddr, bool& isEnable, bool& isFilter) {
+        return this->aicpuBlocklistManager_.ApplyBlocklist(isCopySqe, stream, isWaitSqe, notifyId, signalAddr, isEnable, isFilter);
+    };
+
+    return HcclSetDispatcherAicpuCallback(dispatcher_, checkOpExecStatusCallback, updateTotalSqeCountCallback,
+        updatePlaceholderSqIdxCallback, applyBlocklistCallback);
 }
 
 HcclResult HcclCommAicpu::RegisterProfCallBack() {
@@ -2333,8 +2349,8 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                 break;
             case HcclOpExecFSM::HCCL_OP_EXEC_FSM_RETRY:
                 // 重执行前清理当前算子展开的SQE缓存 (if any), 防止命中非完整的cache
-                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, topoInfo_,
-                    topoMatcher_, algOpContext_, GetWorkflowMode()));
+                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, dispatcher_,
+                    topoInfo_, topoMatcher_, algOpContext_, GetWorkflowMode()));
                 ret = HcclOpExecFsmRetryProcess(algName, param, executor, algResource, state, errorCode, retryCnt,
                     beginSqePos, endSqePos);
                 break;
@@ -2357,12 +2373,18 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                         retryCnt, param.tag.c_str(), duration);
                 }
                 CHK_RET(CombineReportOpInfo(param, (retryCnt > 0), false));
+
+                // 正常算子展开/故障算子重执行结束, 所有SQE均已正常执行完毕, 重置和备份局部重执行信息
+                HCCL_INFO("[HcclCommAicpu][Orchestrate] reset and backup for partial op retry at FSM_END");
+                CHK_RET(aicpuBlocklistManager_.ResetAndBackupAtEnd(opUnfoldIdx_, algName, param, devId_,
+                    mainStream_, slaveStreams_));
+
                 return HcclOpExecFsmEndProcess(retryCnt);
             case HcclOpExecFSM::HCCL_OP_EXEC_STOP_LAUNCH:
                 HCCL_DEBUG("[NsRecovery][AICPU] stop the kernel");
                 // 停止前清理当前算子展开的SQE缓存 (if any), 防止host侧重新展开该算子并命中非完整的cache (例如step快恢)
-                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, topoInfo_,
-                    topoMatcher_, algOpContext_, GetWorkflowMode()));
+                CHK_RET(aicpuCacheManager_.ClearOpUnfoldCacheEntry(algName, param, algResource, isDeviceMode_, dispatcher_,
+                    topoInfo_, topoMatcher_, algOpContext_, GetWorkflowMode()));
                 if (!needsResponseStopLaunch_) {
                     return HCCL_E_SUSPENDING;
                 } else {
@@ -2476,6 +2498,25 @@ HcclResult HcclCommAicpu::HcclOpExecFsmLaunchProcess(const std::string &algName,
     KfcError &errorCode, uint32_t &beginSqePos, uint32_t &endSqePos, uint32_t retryCnt)
 {
     HCCL_DEBUG("hccl aicpu start launch task.");
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+    // static double resetTotalUs = 0.0;
+    // static double resetCount = 0;
+    // auto resetStartTime = std::chrono::steady_clock::now();
+#endif
+
+    // 正常展开前校验局部重执行约束
+    HCCL_INFO("[HcclCommAicpu][HcclOpExecFsmLaunchProcess] check constraints for partial op retry");
+    CHK_RET(aicpuBlocklistManager_.CheckConstraints(opUnfoldIdx_, algName, param, topoInfo_, isDeviceMode_));
+
+#ifdef ENABLE_PARTIAL_OPRETRY_BREAKDOWN
+    // auto resetEndTime = std::chrono::steady_clock::now();
+    // double resetUs = std::chrono::duration<double, std::micro>(resetEndTime - resetStartTime).count();
+    // resetTotalUs += resetUs;
+    // resetCount++;
+    // HCCL_ERROR("[HcclCommAicpu][HcclOpExecFsmLaunchProcess] avg resetUs[%.2f] w/ %u resets",
+    //     resetTotalUs / resetCount, uint32_t(resetCount));
+#endif
 
     HcclResult ret = OrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos);
     if (ret == HCCL_SUCCESS) { // 下发成功, 并且没有检测到异常cq或中断命令
@@ -2752,10 +2793,15 @@ HcclResult HcclCommAicpu::HcclOpExecFsmStoppedProcess(HcclOpExecFSM &fsmState, K
         if (IsTaskExceptionForHccs()) {
             HCCL_RUN_INFO("[OpRetry][AICPU]hccl aicpu stop by sdma/write task exception, can retry.");
         }
+
+        // A3 AICPU局部重执行, 计算成功执行的non-flip SQE count, 构建黑名单-拷贝类信息
+        CHK_RET(aicpuBlocklistManager_.CalcExecSqeCount(devId_, mainStream_, slaveStreams_));
+
         errorCode = KfcError::kNone;
         CHK_RET(UpdateOpExecStatus(fsmState, KfcStatus::kStopExec, errorCode, retryCnt));
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_WAIT_RETRY;
     }
+
     return HCCL_SUCCESS;
 }
 
@@ -3086,6 +3132,28 @@ HcclResult HcclCommAicpu::UpdateOpExecStatus(HcclOpExecFSM &fsmState, HcclOpIden
 }
 
 HcclResult HcclCommAicpu::UpdateOpExecStatus(HcclOpExecFSM &fsmState, KfcStatus state, KfcError &errorCode,
+    uint32_t retryCnt, bool isEnablePartialOpRetry, bool isRetry)
+{
+    // 注意: 如果不满足局部重执行约束, 或者当前为故障算子重执行, 则不使能局部重执行
+    bool finalPartialOpRetryFlag = isEnablePartialOpRetry && !isRetry;
+
+    // 注意: 只有FSM_LAUNCH/WAIT_END/RETRY通过CheckOpExecStatus收到error CQE或者kStopLaunch命令;
+    // 或者FSM_STOPPING收到kStopLaunch命令, 才会调用本函数 (即一定处在重执行流程中);
+    // 因此直接使用RUN_INFO (非性能瓶颈)
+    HCCL_RUN_INFO("UpdateOpExecStatus fsmState %d, state %d, errorCode %d, retryCnt %u, "
+        "isEnablePartialOpRetry %d, isRetry %d, finalPartialOpRetryFlag %d.",
+        fsmState, state, errorCode, retryCnt, isEnablePartialOpRetry, isRetry, finalPartialOpRetryFlag);
+
+    auto ret = aicpuHdc_.SetOpExecStatus(kfcStatusTransferD2H_, state, errorCode, retryCnt, finalPartialOpRetryFlag);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("SetOpExecStatus failed, ret:%u", ret);
+        errorCode = KfcError::kExec;
+        fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR;
+    }
+    return ret;
+}
+
+HcclResult HcclCommAicpu::UpdateOpExecStatus(HcclOpExecFSM &fsmState, KfcStatus state, KfcError &errorCode,
     uint32_t retryCnt)
 {
     HCCL_INFO("UpdateOpExecStatus fsmState %d, state %d, errorCode %d, retryCnt %u.",
@@ -3210,6 +3278,28 @@ HcclResult HcclCommAicpu::HcclOpExecFsmRetryProcess(const std::string &algName, 
         UpdateBSRRetryCnt();
     }
     HCCL_RUN_INFO("[OpRetry][AICPU]retry launch start, retryCnt:%u, tag[%s].", retryCnt, param.tag.c_str());
+
+    // 故障算子重执行前, 标记当前为重执行展开流程
+    HCCL_RUN_INFO("[HcclCommAicpu][HcclOpExecFsmRetryProcess] mark isRetry for partial op retry");
+    CHK_RET(aicpuBlocklistManager_.MarkIsRetry(opUnfoldIdx_, algName, param));
+
+    // 重执行前, 通过H2D读取局部重执行信息
+    PartialRetryInfo partialRetryInfo;
+    CHK_RET(aicpuHdc_.GetOpPartialRetryInfo(kfcControlTransferH2D_, partialRetryInfo));
+    HCCL_RUN_INFO("[HcclCommAicpu][HcclOpExecFsmRetryProcess] get partial retry info from H2D: "
+        "fastRankNum[%u], partialOpRetryFlag[%d].",
+        partialRetryInfo.fastRankNum, partialRetryInfo.partialOpRetryFlag);
+
+    // 同步本地使能flag, 控制后续流程是否走局部重执行逻辑
+    CHK_RET(aicpuBlocklistManager_.SyncPartialOpRetry(partialRetryInfo.partialOpRetryFlag));
+
+    if (partialRetryInfo.partialOpRetryFlag) {
+        // 根据快卡信息和通信主流信息, 构建黑名单-同步类信息
+        // 注意: 理论上RetryOrchestrateHcclOp不会调用NotifyWait下发通信主流的wait信号, 但保险起见还是把它加入黑名单-同步类信息
+        const uint32_t mainWaitParamStreamNotifyId = opNotifies_[0]->notifyId_; // param.stream wait信号
+        CHK_RET(aicpuBlocklistManager_.CalcBlockSet(algResource, topoInfo_,
+            partialRetryInfo, mainWaitParamStreamNotifyId));
+    }
 
     auto ret = RetryOrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos);
     if (ret == HCCL_SUCCESS) {
@@ -3897,6 +3987,8 @@ HcclResult HcclCommAicpu::CheckOpExecStatus()
 HcclResult HcclCommAicpu::UpdateSuspendStatus(const OpParam &param, HcclOpExecFSM &fsmState, KfcError &errorCode,
     uint32_t retryCnt)
 {
+    HCCL_RUN_INFO("[HcclCommAicpu][UpdateSuspendStatus] needsResponseStopLaunch_[%d] retryEnable_[%d] opType[%u]",
+        needsResponseStopLaunch_, retryEnable_, param.opType);
     if (needsResponseStopLaunch_ == true) {
         HCCL_RUN_INFO("[NsRecovery][AICPU]hccl aicpu force stop in launch loop");
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_STOP_LAUNCH;
@@ -3916,7 +4008,21 @@ HcclResult HcclCommAicpu::UpdateSuspendStatus(const OpParam &param, HcclOpExecFS
             HCCL_RETRY_CHK_RET_AND_TRANS_FSM(ret, HCCL_ERROR("SetOpExecStatus failed, ret:%u", ret), KfcError::kExec,
                 HcclOpExecFSM::HCCL_OP_EXEC_FSM_ERROR);
         } else {
-            CHK_RET(UpdateOpExecStatus(fsmState, KfcStatus::kStoplaunch, errorCode, retryCnt));
+            // 本函数调用场景如下:
+            // 在正常展开 (FsmLaunch), 循环等待KfcCmd (FsmStopping), 等待SQE执行 (FsmWaitEnd), 以及重执行展开 (FsmRetry)时,
+            // 如果遇到error CQE或者KfcCmd::kStopLaunch, 需要上报KfcStatus::kStoplaunch以及KfcError, 并进入FsmStopping;
+
+            // 获取局部重执行使能与否的flag
+            // 注意: 当执行此函数时, aicpu kfc一定收到了error CQE / kStopLaunch, 一定不会继续展开新的SQE并下发,
+            //     所以totalSqeCount约束的检查结果不再改变; 而其他约束在算子展开前就已经检查, 因此使能与否的flag不再改变
+            bool isEnablePartialOpRetry = aicpuBlocklistManager_.IsEnablePartialOpRetry();
+
+            // 获取当前是否为故障算子重执行
+            // 注意: 故障算子重执行一定不走局部重执行, 避免嵌套错误
+            bool isRetry = aicpuBlocklistManager_.IsRetry();
+
+            // 对于A3 AICPU局部重执行, 将使能与否的flag通过kfcStatusTransferD2H_.ExecStatusDef.KfcRetryInfo上报给agent及server
+            CHK_RET(UpdateOpExecStatus(fsmState, KfcStatus::kStoplaunch, errorCode, retryCnt, isEnablePartialOpRetry, isRetry));
         }
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_STOPPING;
     } else {

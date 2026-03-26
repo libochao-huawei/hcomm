@@ -147,7 +147,8 @@ public:
         const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr,
         AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<FlipInfo>& flipInfos,
         const bool profL1Enable, std::vector<uint64_t>& profTimestamps, const bool isAlltoallv,
-        const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo);
+        const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo,
+        std::vector<uint32_t>& alltoallvPlhOffsets);
 
     // Cache hit更新并下发entry中所有的SQE后, 由于缓存的SQE的addr-related fields被in-place更新, 需要把userInputMemRanges_/userOutputMemRanges_为当前执行对应的memory ranges
     HcclResult SetInputOutputMemRanges(const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges);
