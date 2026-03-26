@@ -615,7 +615,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         -fstack-protector-strong
         -fno-strict-aliasing
         -pipe
-        -O3
+        -g
+        -O0
         -std=c++14
     )
 
@@ -623,7 +624,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
-    -s
 )
     
     target_compile_definitions(ccl_kernel PRIVATE

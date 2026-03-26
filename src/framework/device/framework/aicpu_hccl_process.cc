@@ -377,7 +377,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     std::string tag = reinterpret_cast<char *>(tilingData->tag);
     std::string newTag = reinterpret_cast<char *>(tilingData->newTag);
 
-    HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2]Entry AicpuRunRpcServerV2, group[%s], tag[%s], newTag[%s]",
+    HCCL_RUN_INFO("TESTMXY [AicpuHcclProcess][AicpuRunRpcServerV2]Entry AicpuRunRpcServerV2, group[%s], tag[%s], newTag[%s]",
         hcclCommAicpu->GetGroupName().c_str(), tag.c_str(), newTag.c_str());
 
     HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2]Entry AicpuRunRpcServerV2, algName[%s], algtype[%llu],"\
