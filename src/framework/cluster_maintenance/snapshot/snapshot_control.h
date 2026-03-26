@@ -14,6 +14,7 @@
 #include <mutex>
 #include <functional>
 #include "hccl_common.h"
+#include "rt_external.h"
 #include "referenced.h"
 
 namespace hccl {
