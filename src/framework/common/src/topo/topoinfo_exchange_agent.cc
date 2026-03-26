@@ -610,7 +610,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
         return HCCL_E_PARA;
     }
 
-    if (clusterInfo.serverNum != localRankInfo_.serverSize) {
+    if (clusterInfo.serverNum != clusterInfo.serverList.size()) {
         errormessage = "server num[" + std::to_string(clusterInfo.serverNum) + "] is different with server list size[" +
                        std::to_string(clusterInfo.serverList.size()) + "] in total topo rank info";
         RPT_INPUT_ERR(true, "EI0015",
