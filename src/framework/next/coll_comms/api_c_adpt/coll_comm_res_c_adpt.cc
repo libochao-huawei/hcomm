@@ -358,9 +358,82 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
         .ccuDetailInfo  = nullptr
     };
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr, taskParam));
-    CHK_RET(kernel->ReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo,
-                                        comm, taskParam, rtsThread->GetMaster()));
+    CHK_PRT(HcclReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo.data(), allCcuProfilingInfo.size(),
+                                        comm, taskParam, rtsThread->GetMaster()) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] failed to report ccu profiling info, kernleHandle[0x%llx].", __func__, kernelHandle));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] success, take time [%lld]us.",  __func__, DURATION_US(TIME_NOW() - startut));
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, void *streamProfilingInfos, size_t infoNum,
+                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster)
+{
+    if (infoNum == 0) {
+        HCCL_INFO("There is no ccu profiling info.");
+        return HCCL_SUCCESS;
+    }
+    CHK_PTR_NULL(streamProfilingInfos);
+
+    // 将 void* 转换为 CcuProfilingInfo 数组指针
+    hcomm::CcuProfilingInfo* profilingArray = reinterpret_cast<hcomm::CcuProfilingInfo*>(streamProfilingInfos);
+    
+    // 设置任务参数的基本信息
+    taskParam.taskPara.Ccu.dieId     = profilingArray[0].dieId;
+    taskParam.taskPara.Ccu.missionId = profilingArray[0].missionId;
+    taskParam.taskPara.Ccu.execMissionId = profilingArray[0].missionId;
+    taskParam.taskPara.Ccu.instrId   = profilingArray[0].instrId;
+    taskParam.taskPara.Ccu.executeId = execId; // TODO: 传入是kernelHandle，不建议赋值给executeId
+    taskParam.taskPara.Ccu.ccuKernelHandle = execId;
+    HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
+        __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
+        taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
+
+    // 处理每个性能信息条目
+    for (size_t i = 0; i < infoNum; ++i) {
+        hcomm::CcuProfilingInfo& profInfo = profilingArray[i];
+        for (int idx = 0; idx < CCU_MAX_CHANNEL_NUM; idx++) {
+            if (profInfo.channelId[idx] == INVALID_VALUE_CHANNELID) {
+                break;
+            }
+            // TODO:需要修改
+            profInfo.remoteRankId[idx] = 0;
+            HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
+                __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
+        }
+    }
+    
+    // 转换函数：将 hcomm::CcuProfilingInfo 转换为 Hccl::CcuProfilingInfo
+    auto convertToHccl = [](const hcomm::CcuProfilingInfo& src) -> Hccl::CcuProfilingInfo {
+        Hccl::CcuProfilingInfo dst;
+        dst.name = src.name;
+        dst.type = src.type;
+        dst.dieId = src.dieId;
+        dst.missionId = src.missionId;
+        dst.instrId = src.instrId;
+        dst.reduceOpType = src.reduceOpType;
+        dst.inputDataType = src.inputDataType;
+        dst.outputDataType = src.outputDataType;
+        dst.dataSize = src.dataSize;
+        dst.ckeId = src.ckeId;
+        dst.mask = src.mask;
+        HCCL_INFO("src.name %s, dst.name %s", src.name.c_str(), dst.name.c_str());
+        (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
+        (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
+        return dst;
+    };
+
+    // 转换所有性能信息
+    std::vector<Hccl::CcuProfilingInfo> converted;
+    converted.reserve(infoNum);
+
+    for (size_t i = 0; i < infoNum; ++i) {
+        converted.push_back(convertToHccl(profilingArray[i]));
+    }
+    
+    // 构建shared_ptr并保存到任务参数
+    taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
+    HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
+    CHK_RET(SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster));
+    return HCCL_SUCCESS;
 }
