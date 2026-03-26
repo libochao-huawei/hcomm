@@ -379,33 +379,36 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
     std::string errormessage = "";
     for (u32 index = 0; index < rankList.size(); index++) {
         if (!rankList[index].hostIp.IsInvalid()) {
-            RPT_INPUT_ERR(
-                ((rankList[index].hostIp.GetFamily() != AF_INET) && (rankList[index].hostIp.GetFamily() != AF_INET6)),
-                "EI0014",
-                std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
-                " \"Device Id of server Id " + rankList[index].serverId + "\" ", "is unique"}));
-            errormessage = "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
-                "server Id " + rankList[index].serverId + "\" is invalid, expected value is unique.";
-            CHK_PRT_RET(
-                ((rankList[index].hostIp.GetFamily() != AF_INET) && (rankList[index].hostIp.GetFamily() != AF_INET6)),
+            if ((rankList[index].hostIp.GetFamily() != AF_INET) && (rankList[index].hostIp.GetFamily() != AF_INET6)) {
+                RPT_INPUT_ERR(true,
+                    "EI0014",
+                    std::vector<std::string>({ "value", "variable" ,"expect" }),
+                    std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
+                    " \"Device Id of server Id " + rankList[index].serverId + "\" ", "is unique"}));
+                errormessage = "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
+                    "server Id " + rankList[index].serverId + "\" is invalid, expected value is unique.";
                 HCCL_ERROR("[%s][%s] %s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;        
+            }
 
-            RPT_INPUT_ERR((hostFamily != 0 && hostFamily != rankList[index].hostIp.GetFamily()),
-                "EI0014",
-                std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
-                " \"Device Id of server Id " + rankList[index].serverId + "\" ", "is unique"}));
-            CHK_PRT_RET((hostFamily != 0 && hostFamily != rankList[index].hostIp.GetFamily()),
+            if (hostFamily != 0 && hostFamily != rankList[index].hostIp.GetFamily()) {
+                RPT_INPUT_ERR(true,
+                    "EI0014",
+                    std::vector<std::string>({ "value", "variable" ,"expect" }),
+                    std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()),
+                    " \"Device Id of server Id " + rankList[index].serverId + "\" ", "is unique"}));
+                errormessage = "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
+                    "server Id " + rankList[index].serverId + "\" is invalid, expected value is unique.";
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;
+            }
+
             hostFamily = rankList[index].hostIp.GetFamily();
         }
 
@@ -416,19 +419,20 @@ HcclResult CheckRankIpFamily(const std::vector<RankInfo_t> &rankList)
         }
 
         for (auto &iter : rankList[index].deviceInfo.deviceIp) {
-            RPT_INPUT_ERR(((iter.GetFamily() != AF_INET) && (iter.GetFamily() != AF_INET6)),
-                "EI0014",
-                std::vector<std::string>({ "value", "variable" ,"expect" }),
-                std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()), " \"Device Id of "\
-                "server Id " + rankList[index].serverId + " \" ", "is unique"}));
-            errormessage =  "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
-                "server Id " + rankList[index].serverId + " \" is invalid, expected value is unique.";
-            CHK_PRT_RET(((iter.GetFamily() != AF_INET) && (iter.GetFamily() != AF_INET6)),
+            if ((iter.GetFamily() != AF_INET) && (iter.GetFamily() != AF_INET6)) {
+                RPT_INPUT_ERR(true,
+                    "EI0014",
+                    std::vector<std::string>({ "value", "variable" ,"expect" }),
+                    std::vector<std::string>({std::to_string(rankList[index].hostIp.GetFamily()), " \"Device Id of "\
+                    "server Id " + rankList[index].serverId + " \" ", "is unique"}));
+                errormessage =  "Value " + std::to_string(rankList[index].hostIp.GetFamily()) + " for rankTable variable \"Device Id of "\
+                    "server Id " + rankList[index].serverId + " \" is invalid, expected value is unique.";
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;        
+            }
             if (deviceFamily != 0 && deviceFamily != iter.GetFamily()) {
                 RPT_ENV_ERR(true, "EI0001", std::vector<std::string>({"value", "env", "expect"}),
                     std::vector<std::string>({std::to_string(iter.GetFamily()), "RankIpFamily", std::to_string(deviceFamily)}));
