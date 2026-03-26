@@ -81,8 +81,8 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
-            std::string commId = hcclComm->GetIdentifier();
-            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            const std::string &commId = hcclComm->GetIdentifier();
+            // HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
             hccl::CollComm* collComm = hcclComm->GetCollComm();
             CHK_PTR_NULL(collComm);
             auto myRank = collComm->GetMyRank();
@@ -94,8 +94,8 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_WARNING("[%s] Failed to get CommEngineCtx with ctxTag[%s], engine[%d], ret[%d]", __func__, ctxTagTmp, 
                 engine, ret), ret);
-            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], ctx[%p], size[%llu], group[%s]", __func__, ctxTagTmp, engine,
-                *ctx, *size, hcclComm->GetIdentifier().c_str());
+            // HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], ctx[%p], size[%llu], group[%s]", __func__, ctxTagTmp, engine,
+            //     *ctx, *size, hcclComm->GetIdentifier().c_str());
             return HCCL_SUCCESS;
         }());
 #endif
