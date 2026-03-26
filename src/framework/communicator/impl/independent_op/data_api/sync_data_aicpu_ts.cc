@@ -27,6 +27,9 @@ constexpr size_t MSG_TAG_SIZE_BYTE = 256;
 // ^
 // handle
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId)
 {
     uint8_t *const dstOnDevShmem = reinterpret_cast<uint8_t *>(handle);
@@ -150,3 +153,6 @@ int32_t HcommThreadSynchronize(ThreadHandle thread)
     HCCL_INFO("[%s] NOT Running on A5. No implementation, return SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
