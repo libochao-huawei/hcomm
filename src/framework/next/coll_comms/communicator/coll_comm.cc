@@ -27,6 +27,8 @@ CollComm::~CollComm()
 
 HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
 {
+    CHK_PTR_NULL(rankGraph);
+
     EXCEPTION_HANDLE_BEGIN
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
