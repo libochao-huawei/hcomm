@@ -13,6 +13,8 @@
 
 #include <chrono>
 #include <thread>
+#include "thread/thread_aicpu_ts.h"
+#include "thread/thread.h"
 
 using namespace hccl;
 
@@ -130,4 +132,25 @@ TEST_F(SyncDataDeviceTest, ut_HcommWaitResponse_When_Normal_Expect_ReturnIsHCCL_
 
     free(devShmem);
     devShmem = nullptr;
+}
+
+TEST_F(SyncDataDeviceTest, ut_HcommThreadSynchronize_When_ThreadIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    ThreadHandle thread = nullptr;
+    int32_t ret = HcommThreadSynchronize(thread);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(SyncDataDeviceTest, ut_HcommThreadSynchronize_When_ThreadIsValid_Expect_ReturnIsHCCL_SUCCESS)
+{
+    hccl::Thread *threadPtr = new (std::nothrow) hccl::AicpuTsThread(nullptr);
+    ASSERT_NE(threadPtr, nullptr);
+
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(threadPtr);
+    int32_t ret = HcommThreadSynchronize(thread);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    delete threadPtr;
+    threadPtr = nullptr;
 }
