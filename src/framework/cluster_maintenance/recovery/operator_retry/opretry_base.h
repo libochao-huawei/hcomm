@@ -114,6 +114,13 @@ protected:
     // agent轮询命令,携带opid
     HcclResult WaitCommandWithOpId(std::shared_ptr<HcclSocket> socket, RetryCommandInfo &commandInfo);
 
+    // server向agent发送局部重执行信息
+    HcclResult IssuePartialRetryInfo(std::shared_ptr<HcclSocket> socket, PartialRetryInfo &partialRetryInfo);
+    // agent 轮询局部重执行信息
+    HcclResult WaitPartialRetryInfo(std::shared_ptr<HcclSocket> socket, PartialRetryInfo &partialRetryInfo);
+    // agent向device发送局部重执行信息
+    HcclResult SetOpPartialRetryInfo(std::shared_ptr<HDCommunicate> hdcPtr, PartialRetryInfo &partialRetryInfo);
+
     // server向agent发送借轨信息
     HcclResult IssueChangeLink(std::shared_ptr<HcclSocket> socket, ChangeLinkInfo &changeLinkInfo);
     // agent轮询借轨信息
@@ -159,7 +166,7 @@ private:
     HcclResult Send(std::shared_ptr<HcclSocket> socket, void *data, u64 size);
     HcclResult Recv(std::shared_ptr<HcclSocket> socket, void *data, u64 size);
 
-    HcclResult CheckOpName(const RetryInfo &opInfo1, const RetryInfo &opInfo2); // 校验算子一致
+    HcclResult CheckOpName(RetryContext &retryCtx, const RetryInfo &opInfo1, const RetryInfo &opInfo2); // 校验算子一致
     HcclResult CheckMaxRetryCnt(const RetryInfo &retryInfo, const std::string& identifier = HCCL_WORLD_GROUP); // 校验重执行次数
     HcclResult CheckLinkStates(const RetryInfo &retryInfo); // 校验link状态
     void CheckSnapshotStatus(RetryContext* retryCtx);
@@ -316,7 +323,7 @@ public:
     bool isRecivedCmdToCheckLink = false;
     // server状态机储存信息
     std::map<u32, HcclAgentRetryInfo> serverSockets_;
-    std::vector<u32> needRetryServerRanks_;
+    std::vector<u32> needRetryServerRanks_; // 保存的是agentId
     HcclOpIdentifier curFaultOpId;
     std::map<u32, HcclOpIdentifier> errorRankList_;
     bool isRdmaError = false;
@@ -324,6 +331,27 @@ public:
     std::map<u32, ActiveSwitchInfo> switchInfoMap_;
     bool isServerStateWaitResume_ = false;
     bool isNeedReportOpRetryErr = false; // 针对重执行算子不一致和inplace场景，上报故障
+
+    // opretry server维护信息, 用于A3 AICPU局部重执行
+    // 注意: 发生故障的ranks中, opId最小的算子为局部重执行的目标算子 (即errorOp),
+    //     上报errorOp且rankId最小的卡为故障卡 (即partialOpRetryFirstErrorRank_), 与errorOp的opId相同的ranks为errorOp同步卡
+    // (1) OpRetryRunning/HandleError: 收到KfcError后备份对应agent的局部重执行flag
+    // 注意: 不能直接使用serverSockets_中的HcclAgentRetryInfo, 避免被opretry agent response (e.g., 保活信息) 覆盖
+    std::unordered_map<u32, bool> partialOpRetryErrorAgentFlagMap_; // 每个error agent对应的局部重执行使能flag
+    // (2) OpRetryHandleError: 收齐KfcErrors后, 根据errorOp区分慢卡/同步卡/快卡, 校验errorOp同步故障卡的使能情况;
+    //     OpRetryWaitResp: 如果使能局部重执行, 收到故障/非故障卡的KfcStatus::kStoplaunch时, 如果是同步卡, 则更新flag (TODO)
+    bool partialOpRetryFlag_ = false; // 当前errorOp局部重执行是否使能的flag (要求errorOp同步卡全部使能局部重执行)
+    // (3) OpRetryHandleError: 如果使能局部重执行, 记录errorOp对应的故障agent ID与op index
+    uint32_t partialOpRetryFirstErrorAgent_ = INVALID_UINT; // 上报当前errorOp且rankId最小的卡为故障卡
+    uint32_t partialOpRetryErrorOpIdx_ = INVALID_UINT; // 当前errorOp的通信域内索引
+    // (4) OpRetryHandleError: 如果使能局部重执行, 按需等待慢卡
+    uint32_t partialOpRetryWaitCnt_ = 0; // 当前errorOp局部重执行等待慢卡的次数
+    // (5) OpRetryHandleError: 如果使能局部重执行, 将快卡信息记录到局部重执行信息中, 用于OpRetryServerIssuePartialRetryInfo
+    PartialRetryInfo partialRetryInfo_;
+
+    // opretry agent维护信息, 用于A3 AICPU局部重执行
+    // 注意: agent不需要记录局部重执行使能flag, 根据server下发的cmd执行相应操作即可
+    bool recvCmdCanPartialRetry_ = false; // 是否已经接收过RETRY_CMD_CAN_PARTIAL_RETRY
 
     bool isOpRetryQuit = false;
     bool isPaused_ = false;
