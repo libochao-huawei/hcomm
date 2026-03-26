@@ -81,7 +81,6 @@ private:
     bool isErrorReported_{false}; // 是否上报了taskException信息
     HcclCommDfxLite dfx_;
     u32 index_{0};
-
 };
 
 #endif // __COLL_COMM_AICPU_H__

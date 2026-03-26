@@ -36,6 +36,8 @@ public:
 
     void CntNto1NotifyRecord(u32 notifyId, u32 value) override;
 
+    void SetSdmaHcclQos(u32 qos) override;
+
     void SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId) override;
 
     void SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn) override;
@@ -76,6 +78,8 @@ private:
     bool isPreStreamSync = false;
 
     bool launchFlag_ = false;
+
+    u32 sdmaHcclQos_{6};
 
     static constexpr u32 rtsqSqeSize     = 64;
     static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE

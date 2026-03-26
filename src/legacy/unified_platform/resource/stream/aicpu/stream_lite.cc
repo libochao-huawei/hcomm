@@ -61,6 +61,13 @@ RtsqBase *StreamLite::GetRtsq() const
     return rtsq.get();
 }
 
+void StreamLite::SetSdmaHcclQos(u32 qos) const
+{
+    if (rtsq != nullptr) {
+        rtsq->SetSdmaHcclQos(qos);
+    }
+}
+
 std::string StreamLite::Describe() const
 {
     return StringFormat("StreamLite[id=%u, sqid=%u, devPhyId=%u]", id, sqId, devPhyId);
