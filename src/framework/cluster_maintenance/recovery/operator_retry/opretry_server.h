@@ -68,6 +68,10 @@ public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
     HcclResult ParaseErrorCode(RetryContext* retryCtx, HcclAgentRetryInfo &agentInfo, RetryState &nextState);
 protected:
+    // 对于给定故障rank, 收到SDMA error后更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForSingleError(const uint32_t agentId, const HcclAgentRetryInfo& agentInfo,
+        RetryContext* retryCtx);
+
     std::map<u32, std::chrono::steady_clock::time_point> lastRecvTimes_;
     std::unordered_set<u32> disableAgent_; // 记录已经关闭的对端, 不再轮询, 避免刷屏
 };
@@ -77,6 +81,11 @@ class OpRetryServerHandleError : public OpRetryServerRunning {
 public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
 private:
+    // 收齐所有errors后, 更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForAllErrors(RetryContext* retryCtx, bool& isWait);
+    HcclResult ClearErrorRankListForPartialOpRetry(RetryContext* retryCtx);
+    HcclResult SetNeedRetryServerRankForPartialOpRetry(RetryContext* retryCtx, const HcclOpIdentifier &opId);
+
     HcclResult SetNeedRetryServerRank(RetryContext* retryCtx, const HcclOpIdentifier &opId);
 };
 
@@ -91,6 +100,10 @@ class OpRetryServerWaitResp : public OpRetryServerBase {
 public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
 private:
+    // 对于errorOp慢卡(一定是非故障卡)/同步卡(故障卡或非故障卡), 收到停卡回复RETRY_STATE_RESP_AICPU_STOPED后, 更新局部重执行信息
+    HcclResult UpdatePartialOpRetryInfoForStopAicpuResp(const uint32_t agentId, const HcclAgentRetryInfo& agentInfo,
+        RetryContext* retryCtx);
+
     // 接收到对端重执行失败的信息后，打印当前接收到的Agent节点信息
     void PrintAgentInfoAfterFail(std::map<u32, HcclAgentRetryInfo> &serverSockets, std::set<u32> &recvVaild, HcclAgentRetryInfo &agentRetryInfo);
 };

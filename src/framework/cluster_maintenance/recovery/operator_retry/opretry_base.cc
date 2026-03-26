@@ -185,9 +185,10 @@ HcclResult OpRetryBase::CheckRetryInfo(RetryContext &retryCtx)
         auto &retryInfoStand = retryCtx.serverSockets_[*(retryCtx.needRetryServerRanks_.begin())].retryInfo;
         auto &retryInfo = retryCtx.serverSockets_[rank].retryInfo;
         u32 retryCnt = retryInfo.opInfo.execStatus.retryInfo.retryCount;
-        HCCL_RUN_INFO("[OpRetry][Server][CheckRetryInfo]rankId[%u], opName[%s], index[%u], retryCnt[%u], linkState[%d]",
+        HCCL_RUN_INFO("[OpRetry][Server][CheckRetryInfo]rankId[%u], opName[%s], index[%u], retryCnt[%u], "
+            "isEnablePartialOpRetry[%d], linkState[%d]",
             retryInfo.rankId, retryInfo.opInfo.opId.tag, retryInfo.opInfo.opId.index,
-            retryCnt, retryInfo.linkState);
+            retryCnt, retryInfo.opInfo.execStatus.retryInfo.isEnablePartialOpRetry, retryInfo.linkState);
 
         CHK_RET(CheckOpName(retryInfo, retryInfoStand));
         // 校验重传次数
@@ -275,9 +276,10 @@ HcclResult OpRetryBase::GetRetryInfo(RetryContext* retryCtx, RetryInfo &retryInf
     
     KfcExecStatus opInfo = retryInfo.opInfo;
     HCCL_DEBUG("[OpRetry][GetRetryInfo]tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d], opExeState[%d], "
-        "errorCode[%d], retryCount[%u], streamid[%u]",
+        "errorCode[%d], retryCount[%u], isEnablePartialOpRetry[%d], streamid[%u]",
     opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, opInfo.opId.isSendRecv,
-    opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount, opInfo.opId.streamId);
+    opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount, 
+    opInfo.execStatus.retryInfo.isEnablePartialOpRetry, opInfo.opId.streamId);
 
     return HCCL_SUCCESS;
 }
@@ -287,9 +289,10 @@ HcclResult OpRetryBase::GetOpExecInfo(std::shared_ptr<HDCommunicate> hdcPtr, Kfc
     CHK_SMART_PTR_NULL(hdcPtr);
     CHK_RET(hdcPtr->Get(0, sizeof(KfcExecStatus), reinterpret_cast<uint8_t *>(&opInfo)));
     HCCL_DEBUG("[OpRetry][GetOpExecInfo]tag[%s], index[%u], srcRank[%u], detRank[%u], isSendRecv[%d], opExeState[%d], "
-        "errorCode[%d], retryCount[%u]",
+        "errorCode[%d], retryCount[%u], isEnablePartialOpRetry[%d]",
         opInfo.opId.tag, opInfo.opId.index, opInfo.opId.srcRank, opInfo.opId.detRank, opInfo.opId.isSendRecv,
-        opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount);
+        opInfo.execStatus.kfcStatus, opInfo.execStatus.kfcError, opInfo.execStatus.retryInfo.retryCount,
+        opInfo.execStatus.retryInfo.isEnablePartialOpRetry);
     return HCCL_SUCCESS;
 }
 

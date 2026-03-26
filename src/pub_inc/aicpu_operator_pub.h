@@ -394,6 +394,7 @@ using KfcTaskException = struct KfcTaskExceptionDef {
 };
 using KfcRetryInfo = struct KfcRetryStatusDef {
     uint32_t retryCount = 0;         // 已重试次数;
+    bool isEnablePartialOpRetry = false; // 是否使能局部重执行
 };
 
 struct ErrorMessageReport {
