@@ -383,9 +383,6 @@ void CollServiceDeviceMode::GetCcuTaskInfo(void *tilingData, void *ccuTaskGroup)
                   std::begin(group->ccuTaskInfo[index].args));
         HCCL_INFO("ccu task info, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u]", taskParams[index].dieId,
                   taskParams[index].missionId, taskParams[index].instStartId, taskParams[index].instCnt);
-        for (uint64_t i = 0; i < taskParams[index].argSize; i++) {
-            HCCL_INFO("arg[%u] = %lu", i, taskParams[index].args[i]);
-        }
     }
 
     HCCL_INFO("[CollServiceDeviceMode::%s] end.", __func__);
