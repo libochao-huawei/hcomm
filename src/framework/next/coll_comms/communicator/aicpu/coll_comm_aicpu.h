@@ -30,6 +30,7 @@
 #include "error_message_v2.h"
 #include "kfc.h"
 #include "aicpu_hdc.h"
+#include "hccl/hccl_types.h"
 
 using namespace hccl;
 class CollCommAicpu {
@@ -56,7 +57,7 @@ public:
     HcclResult BackGroundSetStatus(Hccl::KfcStatus state);
     u32 UpdateIndex();
 
-    HcclCommStatus GetCommmStatus() { return commmStatus_; }
+    HcclCommStatus GetCommmStatus() { return commStatus_; }
     void SetCommmStatus(HcclCommStatus status);
 
     // N秒快恢
@@ -79,7 +80,7 @@ private:
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
 
     std::string identifier_;
-    HcclCommStatus commmStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
     HcclTopoInfo topoInfo_;
     std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;

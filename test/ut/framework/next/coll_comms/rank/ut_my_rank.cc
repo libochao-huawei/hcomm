@@ -6,6 +6,7 @@
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
 #include "my_rank.h"
+#include "next/comms/endpoint_pairs/channels/channel_process.h"
 #define private public
 using namespace hccl;
 
