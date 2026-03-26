@@ -43,10 +43,10 @@ struct CcuProfilingInfo {
     uint32_t remoteRankId[CCU_MAX_CHANNEL_NUM]; // LoopGroup所包含的搬运指令的对端
     uint64_t channelHandle[CCU_MAX_CHANNEL_NUM]; // channelhandle句柄
 
-    CcuProfilingInfo() : name(""), type(0), dieId(0), missionId(0), instrId(0), reduceOpType(0), inputDataType(0), outputDataType(0), dataSize(0), ckeId(0), mask(0) {
+    CcuProfilingInfo() : name(""), type(0), dieId(0), missionId(0), reduceOpType(0), inputDataType(0), outputDataType(0), instrId(0), ckeId(0), mask(0), dataSize(0) {
         (void)memset_s(channelId, sizeof(channelId), INVALID_VALUE_CHANNELID, sizeof(channelId));
         (void)memset_s(remoteRankId, sizeof(remoteRankId), INVALID_RANKID, sizeof(remoteRankId));
-        (void)memset_s(channelHandle, sizeof(channelHandle), INVALID_VALUE_NOTIFYID, sizeof(channelHandle));
+        (void)memset_s(channelHandle, sizeof(channelHandle), static_cast<int>(INVALID_VALUE_NOTIFYID), sizeof(channelHandle));
     }
 };
 namespace CcuRep {

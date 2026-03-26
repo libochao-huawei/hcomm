@@ -902,33 +902,6 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
     return HCCL_SUCCESS;
 }
 
-HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam, const hccl::RankId remoteRankId, bool isMaster = false)
-{
-    uint32_t taskId {0};
-    uint32_t streamId {0};
-    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
-    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    // 填入remoteRankId
-    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
-    CHK_PTR_NULL(hcclComm);
-    if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-        return HCCL_E_NOT_SUPPORT;
-    }
-    hccl::CollComm* collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-    hccl::HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
-    CHK_PTR_NULL(hcclCommDfx);
-
-    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
-        hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), isMaster);
- 
-    HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
-    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
-    return HCCL_SUCCESS;
-}
-
-
 HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType,
                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName)
 {
