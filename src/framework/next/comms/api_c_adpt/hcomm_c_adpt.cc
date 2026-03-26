@@ -162,6 +162,7 @@ HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port)
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
 }
@@ -169,6 +170,7 @@ HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommM
 HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->UnregisterMemory(memHandle));
     return HCCL_SUCCESS;
 }
@@ -176,6 +178,7 @@ HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle)
 HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->MemoryExport(memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
 }
@@ -183,6 +186,7 @@ HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void *
 HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->MemoryImport(memDesc, descLen, outMem));
     return HCCL_SUCCESS;
 }
@@ -190,6 +194,7 @@ HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, ui
 HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
 }
@@ -209,6 +214,7 @@ HcclResult HcommMemRemap(const EndpointHandle endpointHandle, const HcommMem *me
 HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
+    CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
@@ -340,6 +346,7 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
 
 HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx)
 {
+    CHK_PTR_NULL(ctx);
     if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS
         || engine == COMM_ENGINE_CCU) {
         *ctx = malloc(size);
@@ -373,6 +380,8 @@ HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx)
 
 HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size)
 {
+    CHK_PTR_NULL(dstCtx);
+    CHK_PTR_NULL(srcCtx);
     if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU
         || engine == COMM_ENGINE_AIV) {
         // 从Host内存拷贝到Device Context内存上
