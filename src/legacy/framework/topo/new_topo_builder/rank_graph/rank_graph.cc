@@ -649,6 +649,12 @@ void RankGraph::AddSubPeers(const std::vector<RankId> &rankIds, RankGraph *subRa
         shared_ptr<NetInstance::Peer> subPeer = make_shared<NetInstance::Peer>(subRankId, localId, replacedLocalId, deviceId, devicePort);
         subRankGraph->AddPeer(subPeer);
         peers.emplace(subRankId, subPeer);
+        const auto& oldEndpointMap = oldPeer->GetEndpointToIfaceMap();
+ 	    for (const auto& entry : oldEndpointMap) {
+ 	        subPeer->SetEndpointToIface(entry.first.first, entry.first.second, entry.second);
+ 	        HCCL_DEBUG("[SubRankGraph][AddSubPeers] endpointToIfaceMap: protocol[%d] for subRankId[%d]",
+ 	                        entry.first.second, subRankId);
+ 	    }
         HCCL_DEBUG("[RankGraph][AddSubPeers] oldRankId[%d] subPeer[%s] add success.", rankId,
                    subPeer->Describe().c_str());
     }
