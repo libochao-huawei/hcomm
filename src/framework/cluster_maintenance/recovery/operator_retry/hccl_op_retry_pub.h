@@ -236,6 +236,7 @@ struct OpRetryAgentInfo {
     HcclNetDevCtx backUpNetDevCtx;
 };
 struct RetryInfo {
+    u32 cmd = 2;
     u32 rankId = 0;
     RetryState retryState = RETRY_STATE_RESERVED; // 重执行状态机当前状态
     bool linkState = true; // 预留, link状态

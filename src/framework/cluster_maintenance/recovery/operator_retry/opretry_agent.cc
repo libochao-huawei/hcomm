@@ -757,18 +757,18 @@ HcclResult OpRetryAgentWaitResume::ProcessEvent(RetryContext* retryCtx)
         CHK_RET(CreateOpRetryAgentByState(RETRY_RESUME_STATE_AGENT_CHECK_LINK, retryCtx));
         HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentWaitResume, set state to check link");
     }
-    if (ret == HCCL_SUCCESS && commandInfo.command == RETRY_CMD_RUNNING) {
-        // 接收到RUN命令时发送保活数据
-        const auto keepTime = std::chrono::duration_cast<std::chrono::seconds>(curTime - lastKeepTime_);
-        if (keepTime > keepTimeout_) {
-            CHK_RET(GetRetryInfo(retryCtx, retryCtx->localRetryInfo_));
-            ret = IssueResponse(retryCtx->agentSocket_, retryCtx->localRetryInfo_);
-            if (ret != HCCL_SUCCESS) {  // 发送保活数据失败, 打印warning
-                HCCL_WARNING("[OpRetry][Agent]OpRetryAgentWaitResume issue response fail, ret[%d]", ret);
-            }
-            lastKeepTime_ = curTime;
-        }
-    }
+    // if (ret == HCCL_SUCCESS && commandInfo.command == RETRY_CMD_RUNNING) {
+    //     // 接收到RUN命令时发送保活数据
+    //     const auto keepTime = std::chrono::duration_cast<std::chrono::seconds>(curTime - lastKeepTime_);
+    //     if (keepTime > keepTimeout_) {
+    //         CHK_RET(GetRetryInfo(retryCtx, retryCtx->localRetryInfo_));
+    //         ret = IssueResponse(retryCtx->agentSocket_, retryCtx->localRetryInfo_);
+    //         if (ret != HCCL_SUCCESS) {  // 发送保活数据失败, 打印warning
+    //             HCCL_WARNING("[OpRetry][Agent]OpRetryAgentWaitResume issue response fail, ret[%d]", ret);
+    //         }
+    //         lastKeepTime_ = curTime;
+    //     }
+    // }
     return HCCL_SUCCESS;
 }
 
