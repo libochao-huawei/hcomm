@@ -4422,7 +4422,10 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
     }
 
     for (u32 i = 0; i < itemNum; i++) {
-        CHK_PTR_NULL((sendRecvInfo + i)->buf);
+        // 支持数据量为0的场景，buf为空的item跳过
+        if ((sendRecvInfo + i)->buf == nullptr) {
+            continue;
+        }
         CHK_RET(HcomCheckDataType((sendRecvInfo + i)->dataType));
         CHK_RET(HcomCheckCount((sendRecvInfo + i)->count));
         CHK_RET(HcomCheckUserRank(rankSize, (sendRecvInfo + i)->remoteRank));
