@@ -18,6 +18,7 @@
 #include "reduce_op.h"
 #include "hccp_tlv.h"
 #include <mutex>
+#include "hccp_async_ctx.h"
 
 namespace Hccl {
 using namespace std;
@@ -394,7 +395,7 @@ JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo);
 void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle);
 
 MAKE_ENUM(HrtTransportMode, RM, RC)
-MAKE_ENUM(TpProtocol, CTP, TP);
+MAKE_ENUM(TpProtocol, CTP, TP, UBOE);
 
 // STANDARD: URMA标准CreateJetty
 // HOST_OFFLOAD: HOST侧展开下沉算子，需要指定sqeBbNum
@@ -699,5 +700,10 @@ struct CcuMemInfo {
 
 void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList);
 HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count);
+
+HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList);
+
+HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
+HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H
