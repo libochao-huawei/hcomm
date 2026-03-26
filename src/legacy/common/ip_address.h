@@ -56,16 +56,6 @@ union Eid {
                             static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
                             static_cast<unsigned long long>(be64toh(in6.interfaceId)));
     }
-
-    bool operator==(const Eid &that) const
-    {
-        return memcmp(&raw, &that.raw, sizeof(raw)) == 0;
-    }
-
-    bool operator<(const Eid &that) const
-    {
-        return memcmp(&raw, &that.raw, sizeof(raw)) < 0;
-    }
 };
 
 union BinaryAddr {
@@ -400,25 +390,6 @@ private:
 } // namespace Hccl
 
 namespace std {
-
-template <> class equal_to<Hccl::Eid> {
-public:
-    bool operator()(const Hccl::Eid &p1, const Hccl::Eid &p2) const
-    {
-        return p1 == p2;
-    }
-};
-
-template <> class hash<Hccl::Eid> {
-public:
-    size_t operator()(const Hccl::Eid &eid) const
-    {
-        auto subnetPrefixHash = hash<uint64_t>{}(be64toh(eid.in6.subnetPrefix));
-        auto interfaceIdHash = hash<uint64_t>{}(be64toh(eid.in6.interfaceId));
-        return Hccl::HashCombine({subnetPrefixHash, interfaceIdHash});
-    }
-};
-    
 template <> class equal_to<Hccl::IpAddress> {
 public:
     bool operator()(const Hccl::IpAddress &p1, const Hccl::IpAddress &p2) const

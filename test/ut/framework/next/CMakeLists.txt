@@ -25,7 +25,7 @@ set(src_to_test_list
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
     coll_comms/communicator/ut_coll_comm.cc
-    coll_comms/communicator/aicpu/ut_hccl_task_abort_handler.cc
+    coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})

@@ -180,7 +180,6 @@ __aicore__ inline void SmallCoreReduceScatter(uint32_t stepTag)
             = ((rank_ + 1) * rankChunkStride <= dataCount)
                   ? rankChunkStride
                   : (dataCount <= rank_ * rankChunkStride ? 0 : (dataCount - rank_ * rankChunkStride));
-        ;
         if (myRankChuckSize > 0) {
             for (uint32_t i = 0; i < rankSize_; i++) {
                 WaitFlag(rank_, i, curTag);

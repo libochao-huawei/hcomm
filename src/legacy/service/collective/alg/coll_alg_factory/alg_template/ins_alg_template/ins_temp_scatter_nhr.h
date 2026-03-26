@@ -47,4 +47,4 @@ private:
 
 } // namespace Hccl
 
-#endif // !HCCLV2_INS_TEMP_REDUCE_SCATTER_NHR
+#endif // !HCCLV2_INS_TEMP_SCATTER_NHR

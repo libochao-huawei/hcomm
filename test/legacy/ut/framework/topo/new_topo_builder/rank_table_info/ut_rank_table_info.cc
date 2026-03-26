@@ -13,7 +13,6 @@
 #include <mockcpp/mockcpp.hpp>
 #include "json_parser.h"
 #include "orion_adapter_rts.h"
-#include "orion_adapter_hccp.h"
 #include "ip_address.h"
 
 #include "rank_table_info.h"
@@ -43,17 +42,6 @@ protected:
 TEST_F(RankTableInfoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
-    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(0)));
-    vector<HrtDevEidInfo> eidInfoListStbu;
-    HrtDevEidInfo         eidInfo;
-    eidInfo.name    = "udma0";
-    eidInfo.ipAddress = IpAddress("192.168.100.100");
-    eidInfo.dieId    = 0;
-    eidInfo.funcId    = 3;
-
-    eidInfoListStbu.push_back(eidInfo);
-    MOCKER(HrtRaGetDevEidInfoList).stubs().with(any()).will(returnValue(eidInfoListStbu));
 
     std::string rankTableString = R"(
     {
@@ -175,7 +163,6 @@ TEST_F(RankTableInfoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
 TEST_F(RankTableInfoParserTest, Ut_Deserialize_When_OptionalFieldsMissing_Expect_Success) {
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
-    MOCKER_CPP(&RankTableInfo::CheckAddrs).stubs().with().will(ignoreReturnValue());
 
     std::string rankTableString = R"(
     {
@@ -286,7 +273,6 @@ TEST_F(RankTableInfoParserTest, Ut_Deserialize_When_OptionalFieldsMissing_Expect
 TEST_F(RankTableInfoParserTest, Ut_GetBinStream_When_Normal_Expect_Success) {
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
-    MOCKER_CPP(&RankTableInfo::CheckAddrs).stubs().with().will(ignoreReturnValue());
 
     std::string rankTableString = R"(
     {
@@ -361,63 +347,6 @@ TEST_F(RankTableInfoParserTest, Ut_GetBinStream_When_Normal_Expect_Success) {
 TEST_F(RankTableInfoParserTest, Ut_Deserialize_When_InvalidParameter_Expect_Exception) {
     DevType devType = DevType::DEV_TYPE_910A;
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
-
- std::string rankTableString = R"(
-    {
-    "status": "completed",         
-    "detour": "true",  
-    "rank_count": 1,
-    "rank_list": [
-      {
-        "rank_id": 0,
-        "device_id": 0,  
-        "local_id": 0,   
-        "replaced_loacl_id": 0,    
-        "device_port": 6666,     
-        "level_list": [
-          {
-            "net_layer": 0,
-            "net_instance_id": "superPod0-rack3",
-            "net_type": "TOPO_FILE_DESC",  
-            "net_attr": "",
-            "rank_addr_list": [
-              {
-               "addr_type": "IPV4",
-                "addr": "192.168.100.100",
-                "ports": [ "0/1", "0/2" ],
-                "plane_id": "planeA"
-              },
-              {
-               "addr_type": "IPV4",
-                "addr": "192.168.100.100",
-                "ports": [ "1/1", "1/2" ],
-                "plane_id": "planeB"
-              }
-            ]
-          }
-        ],
-        "controle_plane":{  
-               "addr_type": "IPV4",
-                "addr": "192.168.100.100",
-                "listen_port": 8000
-           }
-      }
-      ]
-     }
-    )";
-    JsonParser rankTableParser;
-    RankTableInfo rankTableInfo;
-
-    EXPECT_THROW(rankTableParser.ParseString(rankTableString, rankTableInfo), InvalidParamsException);
-}
-
-TEST_F(RankTableInfoParserTest, Ut_Deserialize_When_Addr_InvalidParameter_Expect_Exception) {
-  DevType devType = DevType::DEV_TYPE_910A;
-  MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
-  MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-  MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(0)));
-  vector<HrtDevEidInfo> eidInfoListStbu;
-  MOCKER(HrtRaGetDevEidInfoList).stubs().with(any()).will(returnValue(eidInfoListStbu));
 
  std::string rankTableString = R"(
     {
