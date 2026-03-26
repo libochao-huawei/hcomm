@@ -22,6 +22,8 @@ const std::map<RetryState, RetryState> RETRY_AGENT_RESP_STATE_LABEL {
     {RETRY_STATE_RESP_CHECK_INFO, RETRY_STATE_WAIT_CMD_CHECK_LINK},
     {RETRY_STATE_RESP_RESUME_TRANSPORT, RETRY_STATE_WAIT_CMD_RESET_NOTIFY},
     {RETRY_STATE_RESP_NOTIFY_RESETED, RETRY_STATE_WAIT_CMD_CAN_RETRY},
+    {RETRY_STATE_RESP_CAN_PARTIAL_RETRY, RETRY_STATE_WAIT_PARTIAL_RETRY_INFO}, // 准备局部重执行完毕, 等待局部重执行信息
+    {RETRY_STATE_RESP_PARTIAL_RETRY_INFO, RETRY_STATE_WAIT_CMD_CAN_RETRY}, // 局部重执行信息接收完毕, 等待触发重执行命令
     {RETRY_STATE_RESP_AICPU_RETRYEND, RETRY_STATE_AGENT_RUNNING},
     {RETRY_STATE_RESP_RUNNING_ERR, RETRY_STATE_WAIT_CMD_RETRY_FAIL}
 };
@@ -42,6 +44,9 @@ public:
     OpRetryAgentRunning();
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
 protected:
+    // OpRetryAgent重置局部重执行信息 (Response/RetryFail回到RUNNING状态, 进入新的局部重执行流程前)
+    HcclResult AgentResetPartialOpRetryInfo(RetryContext* retryCtx);
+
     HcclResult ParseKfcErr(RetryContext* retryCtx, RetryState &nextState); // 轮询aicpu状态
     HcclResult ParseRdmaErr(RetryContext* retryCtx, RetryState &nextState);// 轮询RDMA状态
     std::chrono::steady_clock::time_point lastRecvCmdTime_; // 上一次收到server端命令的时间
@@ -71,6 +76,12 @@ private:
 
 // 公共状态-轮询AicpuCtx中的Status字段
 class OpRetryAgentPollAicpuStop : public OpRetryAgentBase {
+public:
+    HcclResult ProcessEvent(RetryContext* retryCtx) override;
+};
+
+// A3 AICPU局部重执行下, agent从server接收快卡信息 (即不参与局部重执行的ranks)
+class OpRetryAgentWaitPartialRetryInfo : public OpRetryAgentBase {
 public:
     HcclResult ProcessEvent(RetryContext* retryCtx) override;
 };

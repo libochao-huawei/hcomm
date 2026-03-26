@@ -59,7 +59,7 @@ public:
 
     // 故障快恢/重执行时清理中断的cache entry (if any), 避免命中不完整的缓存
     HcclResult ClearOpUnfoldCacheEntry(const std::string& algName, const OpParam &param,
-        const AlgResourceResponse& algResource, const bool isDeviceMode, const HcclTopoInfo& topoinfo,
+        const AlgResourceResponse& algResource, const bool isDeviceMode, void* dispatcherPtr, const HcclTopoInfo& topoinfo,
         std::unique_ptr<TopoMatcher>& topoMatcherPtr, const AlgOpContext& algContext, const HcclWorkflowMode workflowMode);
 private:
     // 故障快恢/重执行时清理alltoallv metadata, 避免复用不完整的metadata
