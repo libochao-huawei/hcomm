@@ -13,6 +13,7 @@ TEST(NsRecoveryFuncLiteTest, DeviceQuery_DrvError)
     auto ret = NsRecoveryFuncLite::GetInstance().DeviceQuery(0, 0, 0);
     EXPECT_EQ(ret, HcclResult::HCCL_E_DRV);
     GlobalMockObject::verify();
+    GlobalMockObject::reset();
 }
 
 TEST(NsRecoveryFuncLiteTest, DeviceQuery_Success)
@@ -22,4 +23,5 @@ TEST(NsRecoveryFuncLiteTest, DeviceQuery_Success)
     auto ret = NsRecoveryFuncLite::GetInstance().DeviceQuery(0, 0, 0);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
     GlobalMockObject::verify();
+    GlobalMockObject::reset();
 }

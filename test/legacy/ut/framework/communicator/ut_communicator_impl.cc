@@ -465,59 +465,59 @@ TEST_F(CommunicatorImplTest, should_return_success_when_calling_suspend_with_aic
     EXPECT_EQ(HCCL_E_SUSPENDING, ret);
 }
 
-//TEST_F(CommunicatorImplTest, should_return_success_when_calling_clean_with_aicpu_kernel_launched)
-//{
-//    HdcBufMocker hdcBufMocker;
-//
-//    MockCommunicatorImpl();
-//    CommunicatorImpl comm;
-//    comm.devLogicId = 0;
-//    comm.InitRmaConnManager();
-//    comm.InitMemTransportManager();
-//    // 实现host侧对应的内容
-//    comm.kfcControlTransferH2D = std::make_unique<HDCommunicate>(0, HCCL_HDC_TYPE_H2D, h2dBufferSize);
-//    comm.kfcStatusTransferD2H = std::make_unique<HDCommunicate>(0, HCCL_HDC_TYPE_D2H, d2hBufferSize);
-//    comm.kfcControlTransferH2D->Init();
-//    comm.kfcStatusTransferD2H->Init();
-//    comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-//    auto kfcControlTransferH2DParams = comm.kfcControlTransferH2D->GetCommunicateParams();
-//    auto kfcStatusTransferD2HParams = comm.kfcStatusTransferD2H->GetCommunicateParams();
-//    // 实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
-//    std::unique_ptr<HDCommunicateLite> h2dTransfer = std::make_unique<HDCommunicateLite>();
-//    std::unique_ptr<HDCommunicateLite> d2hTransfer = std::make_unique<HDCommunicateLite>();
-//    h2dTransfer->Init(kfcControlTransferH2DParams);
-//    d2hTransfer->Init(kfcStatusTransferD2HParams);
-//    KfcCommand cmd = KfcCommand::NONE;
-//    memset_s(&cmd, sizeof(KfcCommand), 0, sizeof(KfcCommand));
-//    KfcExecStatus response;
-//    memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
-//    // 这里是模拟device背景线程的行为
-//    thread threadHandle([&] {
-//        response.kfcStatus = KfcStatus::STOP_LAUNCH_DONE;
-//        d2hTransfer->Put(0, sizeof(KfcExecStatus), (u8 *)&response);  // device先把状态改为STOP_LAUNCH_DONE
-//        auto timeout = std::chrono::milliseconds(100);
-//        auto startTime = std::chrono::steady_clock::now();
-//        while (true) {
-//            h2dTransfer->Get(0, sizeof(KfcCommand), (u8 *)&cmd);  // 从host侧拿到NS_CLEAN的命令字
-//            if (cmd != KfcCommand::NONE) {
-//                break;
-//            }
-//            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-//                break;
-//            }
-//        }
-//        response.kfcStatus = KfcStatus::CLEAN_DONE;
-//        d2hTransfer->Put(0, sizeof(KfcExecStatus), (u8 *)&response);  // device就会把状态改为CLEAN_DONE
-//        EXPECT_EQ(cmd, KfcCommand ::NS_CLEAN);  // 这个时候就是希望从host侧拿到的命令字NS_CLEAN
-//    });
-//    usleep(1000);
-//
-//    comm.isSuspended = true;
-//    comm.isAicpuKernelLaunched = true;
-//    auto ret = comm.Clean();
-//    threadHandle.join();
-//    EXPECT_EQ(HCCL_E_SUSPENDING, ret);
-//}
+TEST_F(CommunicatorImplTest, should_return_success_when_calling_clean_with_aicpu_kernel_launched)
+{
+    HdcBufMocker hdcBufMocker;
+
+    MockCommunicatorImpl();
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+    comm.InitRmaConnManager();
+    comm.InitMemTransportManager();
+    // 实现host侧对应的内容
+    comm.kfcControlTransferH2D = std::make_unique<HDCommunicate>(0, HCCL_HDC_TYPE_H2D, h2dBufferSize);
+    comm.kfcStatusTransferD2H = std::make_unique<HDCommunicate>(0, HCCL_HDC_TYPE_D2H, d2hBufferSize);
+    comm.kfcControlTransferH2D->Init();
+    comm.kfcStatusTransferD2H->Init();
+    comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    auto kfcControlTransferH2DParams = comm.kfcControlTransferH2D->GetCommunicateParams();
+    auto kfcStatusTransferD2HParams = comm.kfcStatusTransferD2H->GetCommunicateParams();
+    // 实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
+    std::unique_ptr<HDCommunicateLite> h2dTransfer = std::make_unique<HDCommunicateLite>();
+    std::unique_ptr<HDCommunicateLite> d2hTransfer = std::make_unique<HDCommunicateLite>();
+    h2dTransfer->Init(kfcControlTransferH2DParams);
+    d2hTransfer->Init(kfcStatusTransferD2HParams);
+    KfcCommand cmd = KfcCommand::NONE;
+    memset_s(&cmd, sizeof(KfcCommand), 0, sizeof(KfcCommand));
+    KfcExecStatus response;
+    memset_s(&response, sizeof(KfcExecStatus), 0, sizeof(KfcExecStatus));
+    // 这里是模拟device背景线程的行为
+    thread threadHandle([&] {
+        response.kfcStatus = KfcStatus::STOP_LAUNCH_DONE;
+        d2hTransfer->Put(0, sizeof(KfcExecStatus), (u8 *)&response);  // device先把状态改为STOP_LAUNCH_DONE
+        auto timeout = std::chrono::milliseconds(100);
+        auto startTime = std::chrono::steady_clock::now();
+        while (true) {
+            h2dTransfer->Get(0, sizeof(KfcCommand), (u8 *)&cmd);  // 从host侧拿到NS_CLEAN的命令字
+            if (cmd != KfcCommand::NONE) {
+                break;
+            }
+            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+                break;
+            }
+        }
+        response.kfcStatus = KfcStatus::CLEAN_DONE;
+        d2hTransfer->Put(0, sizeof(KfcExecStatus), (u8 *)&response);  // device就会把状态改为CLEAN_DONE
+        EXPECT_EQ(cmd, KfcCommand ::NS_CLEAN);  // 这个时候就是希望从host侧拿到的命令字NS_CLEAN
+    });
+    usleep(1000);
+
+    comm.isSuspended = true;
+    comm.isAicpuKernelLaunched = true;
+    auto ret = comm.Clean();
+    threadHandle.join();
+    EXPECT_EQ(HCCL_E_SUSPENDING, ret);
+}
 
 TEST_F(CommunicatorImplTest, Ut_NsRecovery_Clean_When_Not_Load_Op_Expect_Success)
 {
