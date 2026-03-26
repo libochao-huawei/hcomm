@@ -92,7 +92,6 @@ TEST_F(RetryTest, ut_retry_ServerHandleError_NotSendRecv_DirectRetry)
     RetryContext context(ServerSockets, retryServerHandleError, agentInfo);
     
     context.errorRankList_.emplace(1, opId1);
-    context.serverSockets_.emplace(1, info1);
     
     HcclResult ret = retryServerHandleError->ProcessEvent(&context);
     
