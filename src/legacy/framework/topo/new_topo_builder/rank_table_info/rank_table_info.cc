@@ -22,8 +22,6 @@
 #include "dev_type.h"
 #include "exception_util.h"
 #include "adapter_error_manager_pub.h"
-#include "orion_adapter_hccp.h"
-#include "orion_adapter_rts.h"
 
 namespace Hccl {
 
@@ -124,45 +122,6 @@ void RankTableInfo::Check()
         THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with configuring "
                                                    "same local_id[%u] with replaced one simutaneously",
                                                     __func__, recordedReplaceLocalId));
-    }
-    CheckAddrs();
-}
-
-void RankTableInfo::CheckAddrs() const
-{
-    auto devLogicId = HrtGetDevice();
-    u32 devPhyId   = HrtGetDevicePhyIdByIndex(devLogicId);
-    std::unordered_set<Eid> localEidSet;
-    NewRankInfo localRankInfo;
-    for (auto &rank : ranks) {
-        if (rank.deviceId == devPhyId) {  // 获取本卡的ip地址
-            HRaInfo info(HrtNetworkMode::HDC, rank.deviceId);
-            std::vector<HrtDevEidInfo> localEidInfos =  HrtRaGetDevEidInfoList(info);
-            for (auto &eidInfo : localEidInfos) {
-                localEidSet.insert(eidInfo.ipAddress.GetEid());
-            }
-            localRankInfo = rank;
-            break;
-        }     
-    }
-
-    if (localEidSet.empty()) {
-        return;
-    }
-
-    // 仅能获取到当前进程所在卡的ip，每个卡独立check自己的部分
-    for (auto &levelInfo : localRankInfo.rankLevelInfos) {
-        for (auto &addressInfo : levelInfo.rankAddrs) {
-            HCCL_DEBUG("RankTableInfo::%s ip addres check: devPhyId[%u], addressInfo %s", 
-                __func__, devPhyId, addressInfo.Describe().c_str());
-            if (localEidSet.count(addressInfo.addr.GetEid()) == 0) {
-                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
-                            std::vector<std::string>({addressInfo.addr.GetIpStr(), "addr", "A right ip address"}));
-                THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] "
-                    "the ip address %s of ranktable in rank %u is error!", 
-                    __func__, addressInfo.addr.Describe().c_str(), devPhyId));
-            }
-        }
     }
 }
 
