@@ -174,7 +174,7 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
     // make_unique / make_shared / release 包一层抛异常的宏
     EXECEPTION_CATCH(
         memTransport_ = std::make_unique<Hccl::UbMemTransport>(
-            commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes
+            commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes, socket.GetRole()
         ),
         return HCCL_E_PTR
     );
