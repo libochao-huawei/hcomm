@@ -20,11 +20,12 @@
 #include "ub_jetty_lite.h"
 #include "kernel_param_lite.h"
 #include "stream_lite.h"
+#include "mem_transport_common.h"
 namespace Hccl {
 MAKE_ENUM(RmaConnLiteType, P2P, RDMA, UB, CCU) // 需要和RmaConnType一一对应
 
 struct SqeConfigLite {
-    SqeConfigLite() : placeOdr(1), compOrder(1), fence(1), hcclQos(6) {}
+    SqeConfigLite() : placeOdr(1), compOrder(1), fence(1), hcclQos(static_cast<u8>(HCCL_A5_DEFAULT_QOS)) {}
     bool cqeEn{true};
     u8 placeOdr : 2;
     u8 compOrder : 1;

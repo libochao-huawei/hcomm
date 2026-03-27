@@ -187,6 +187,7 @@ void P2PTransportLiteImpl::BuildP2PRead(const StreamLite &stream, const RmaBuffe
         }
 
         auto taskId = stream.GetRtsq()->GetTaskId();
+        stream.SetSdmaHcclQos(GetHcclQos());
         stream.GetRtsq()->SdmaCopy(src, dst, blockSize, 0);
         HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, taskId=%u",
             __func__, src, dst, blockSize, taskId);
@@ -243,6 +244,7 @@ void P2PTransportLiteImpl::BuildP2PReadReduce(const StreamLite &stream, const Rm
         }
 
         auto taskId = stream.GetRtsq()->GetTaskId();
+        stream.SetSdmaHcclQos(GetHcclQos());
         stream.GetRtsq()->SdmaReduce(src, dst, blockSize, 0, reduceIn);
 
         HCCL_INFO("P2PTransportLiteImpl::%s, srcA:0x%llx dstA:0x%llx,size=0x%llx, reduceIn=%s, taskId=%u",

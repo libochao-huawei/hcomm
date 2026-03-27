@@ -51,7 +51,7 @@ void RtsqA5::Reset()
 {
     RtsqBase::Reset();
     pendingSqeCnt = 0;
-    sdmaHcclQos_  = 6;
+    sdmaHcclQos_  = HCCL_A5_DEFAULT_QOS;
     s32 sRet      = memset_s(locBuf, rtsqSqeSize * perLaunchSqeCnt, 0, rtsqSqeSize * perLaunchSqeCnt);
     if (UNLIKELY(sRet != EOK)) {
         auto msg = StringFormat("[RtsqA5][Reset] locBuf memset fail. errorno[%d]", sRet);

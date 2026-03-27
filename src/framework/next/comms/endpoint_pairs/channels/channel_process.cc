@@ -270,9 +270,15 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
 }
 
 HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling,u32 qos)
+    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling)
 {
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
+    CHK_PTR_NULL(hostChannelHandles);
+    CHK_PRT_RET(listNum == 0,
+        HCCL_ERROR("[%s] listNum is zero", __func__), HCCL_E_PARA);
+    auto *aicpuTsUrmaChannel0 = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[0]);
+    u32 qos = static_cast<u32>(aicpuTsUrmaChannel0->GetHccsQos());
+
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
@@ -347,18 +353,17 @@ HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHand
 }
 
 HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle, u32 qos) 
+    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle) 
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, "", 
-        binHandle, "RunAicpuChannelInitV2", false, qos);
+        binHandle, "RunAicpuChannelInitV2", false);
 }
 
 HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
-    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle, HcommChannelDesc *channelDescs) 
+    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle) 
 {
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        uint32_t qos = channelDescs[0].hccsAttr.qos;
-        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle, qos));
+        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle));
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {
