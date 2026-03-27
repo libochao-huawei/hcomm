@@ -162,6 +162,7 @@ HcclResult DispatcherGraph::SignalTaskParaSave(HcclRtNotify signal, Stream &stre
 HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u32 userRank, u64 offset, s32 stage,
     bool inchip, u64 signalAddr, u32 notifyId)
 {
+    HcclUs startut = TIME_NOW();
     uint64_t beginTime = GetMsprofSysCycleTime();
     (void)notifyId;
     if (UNLIKELY(disableFfts_)) {
@@ -186,6 +187,7 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
             "%s para: notifyId[0x%016llx] streamId[%u] userRank[%u] remoteUserRank[%u] offset[%llu] stage[%d] inchip[%d]",
             __func__, notifyID, stream.id(), userRank, remoteUserRank, offset, stage, inchip);
     }
+    HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

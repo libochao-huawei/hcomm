@@ -169,6 +169,7 @@ HcclResult DispatcherAiCpu::WriteValue(hccl::Stream &stream, u64 writeAddr, u64 
 HcclResult DispatcherAiCpu::SignalRecord(HcclRtNotify signal, hccl::Stream &stream, u32 userRank, u64 offset, s32 stage,
     bool inchip, u64 signalAddr, u32 notifyId)
 {
+    HcclUs startut = TIME_NOW();
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
     uint8_t *sqeBuffer = nullptr;
     uint8_t *sqeTypeAddr = nullptr;
@@ -200,6 +201,7 @@ HcclResult DispatcherAiCpu::SignalRecord(HcclRtNotify signal, hccl::Stream &stre
             addOneWriteValueRecordSqe_(streamInfo.actualStreamId, taskId, signalAddr, sqeBuffer, sqeTypeAddr);
         }
     }
+    HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     PLF_CONFIG_INFO(PLF_TASK,
         "%s para: streamId[%d] remoteRank[%u] inchip[%d] devType[%d] notifyId[%u]",
