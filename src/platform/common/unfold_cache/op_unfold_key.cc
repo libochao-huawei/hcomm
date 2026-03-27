@@ -16,11 +16,11 @@
 
 namespace hccl {
     OpUnfoldKey::OpUnfoldKey()
-        : opType(HcclCMDType::HCCL_CMD_INVALID), dataType(HcclDataType::HCCL_DATA_TYPE_RESERVED), reduceType(HcclReduceOp::HCCL_REDUCE_RESERVED), isZeroCopy(false), inputSize(0), isInplacePreSync(false), workflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED) {
+        : opType(HcclCMDType::HCCL_CMD_INVALID), dataType(HcclDataType::HCCL_DATA_TYPE_RESERVED), reduceType(HcclReduceOp::HCCL_REDUCE_RESERVED), isZeroCopy(false), inputSize(0), isInplacePreSync(false), workflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED), isCapture(false) {
     }
 
     OpUnfoldKey::OpUnfoldKey(const OpUnfoldKey& other)
-        : opType(other.opType), dataType(other.dataType), reduceType(other.reduceType), isZeroCopy(other.isZeroCopy), inputSize(other.inputSize), isInplacePreSync(other.isInplacePreSync), workflowMode(other.workflowMode) {
+        : opType(other.opType), dataType(other.dataType), reduceType(other.reduceType), isZeroCopy(other.isZeroCopy), inputSize(other.inputSize), isInplacePreSync(other.isInplacePreSync), workflowMode(other.workflowMode), isCapture(other.isCapture) {
         CHK_PRT_CONT(opType == HcclCMDType::HCCL_CMD_INVALID, HCCL_ERROR("[OpUnfoldKey][OpUnfoldKey] opType is invalid"));
         if (opType != HcclCMDType::HCCL_CMD_ALLTOALLV && opType != HcclCMDType::HCCL_CMD_ALLTOALLVC) { // 非V类算子, dataType一定不是RESERVED; 如果是alltoallv类算子 (alltoallv/alltoallvc), dataType一定是RESERVED
             CHK_PRT_CONT(dataType == HcclDataType::HCCL_DATA_TYPE_RESERVED, HCCL_ERROR("[OpUnfoldKey][OpUnfoldKey] dataType is reserved"));
@@ -30,7 +30,8 @@ namespace hccl {
         // 注意: 当算子不涉及reduce操作时, reduceType为HcclReduceOp::HCCL_REDUCE_RESERVED
     }
 
-    HcclResult OpUnfoldKey::Init(const HcclCMDType curOpType, const HcclDataType curDataType, const HcclReduceOp curReduceType, const bool curIsZeroCopy, const uint64_t curInputSize, const bool curIsInplacePreSync, const HcclWorkflowMode curWorkflowMode) {
+    HcclResult OpUnfoldKey::Init(const HcclCMDType curOpType, const HcclDataType curDataType, const HcclReduceOp curReduceType, const bool curIsZeroCopy,
+        const uint64_t curInputSize, const bool curIsInplacePreSync, const HcclWorkflowMode curWorkflowMode, const bool curIsCapture) {
         CHK_PRT_RET(curOpType == HcclCMDType::HCCL_CMD_INVALID, HCCL_ERROR("[OpUnfoldKey][OpUnfoldKey] opType is invalid"), HCCL_E_INTERNAL);
         if (curOpType != HcclCMDType::HCCL_CMD_ALLTOALLV && curOpType != HcclCMDType::HCCL_CMD_ALLTOALLVC) { // 非V类算子, dataType一定不是RESERVED; 如果是alltoallv类算子 (alltoallv/alltoallvc), dataType一定是RESERVED
             CHK_PRT_RET(curDataType == HcclDataType::HCCL_DATA_TYPE_RESERVED, HCCL_ERROR("[OpUnfoldKey][OpUnfoldKey] dataType is reserved"), HCCL_E_INTERNAL);
@@ -46,6 +47,7 @@ namespace hccl {
         inputSize = curInputSize;
         isInplacePreSync = curIsInplacePreSync;
         workflowMode = curWorkflowMode;
+        isCapture = curIsCapture;
 
         return HCCL_SUCCESS;
     }
@@ -58,7 +60,8 @@ namespace hccl {
             << "-isZeroCopy" << isZeroCopy
             << "-inputSize" << inputSize
             << "-isInplacePreSync" << isInplacePreSync
-            << "-workflowMode" << static_cast<uint32_t>(workflowMode);
+            << "-workflowMode" << static_cast<uint32_t>(workflowMode)
+            << "-isCapture" << isCapture;
         return oss.str();
     }
 
@@ -69,7 +72,8 @@ namespace hccl {
             isZeroCopy == other.isZeroCopy &&
             inputSize == other.inputSize &&
             isInplacePreSync == other.isInplacePreSync &&
-            workflowMode == other.workflowMode;
+            workflowMode == other.workflowMode &&
+            isCapture == other.isCapture;
     }
 
     const OpUnfoldKey& OpUnfoldKey::operator=(const OpUnfoldKey& other) {
@@ -81,6 +85,7 @@ namespace hccl {
             this->inputSize = other.inputSize;
             this->isInplacePreSync = other.isInplacePreSync;
             this->workflowMode = other.workflowMode;
+            this->isCapture = other.isCapture;
         }
         return *this;
     }

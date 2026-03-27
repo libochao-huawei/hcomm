@@ -171,10 +171,12 @@ HcclResult AicpuTsUrmaChannel::BuildUbMemTransport()
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
 
+    bool isRecvFirst = socket.GetRole() == Hccl::SocketRole::CLIENT ? true : false;
+
     // make_unique / make_shared / release 包一层抛异常的宏
     EXECEPTION_CATCH(
         memTransport_ = std::make_unique<Hccl::UbMemTransport>(
-            commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes
+            commonRes_, attr_, linkData, socket, rdmaHandle_, locCntNotifyRes, isRecvFirst
         ),
         return HCCL_E_PTR
     );
