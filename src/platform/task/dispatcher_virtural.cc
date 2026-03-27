@@ -11,6 +11,7 @@
 #include "dispatcher_virtural.h"
 #include "externalinput_pub.h"
 #include "hccl_tbe_task.h"
+#include "sal_pub.h"
  
 namespace hccl {
 DispatcherVirtural::DispatcherVirtural(const s32 deviceLogicId)
