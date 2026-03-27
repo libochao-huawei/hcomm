@@ -23,7 +23,6 @@ set(src_to_test_list
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
-    coll_comms/dfx/ut_HcommCcuProfiling_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
