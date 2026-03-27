@@ -26,6 +26,8 @@ set(src_to_test_list
     coll_comms/rank/ut_my_rank_tls.cc
     coll_comms/communicator/ut_coll_comm.cc
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
+    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
+ 	coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
