@@ -85,7 +85,7 @@ HcclResult CollAllGatherMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSi
         numBlocks = numBlocks_ / rankSize * rankSize;
     }
 
-    HCCL_INFO("[CollAllGatherMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollAllGatherMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
