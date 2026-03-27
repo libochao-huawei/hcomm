@@ -12,6 +12,7 @@
 #define TRANSPORT_PUB_H
 
 #include <initializer_list>
+#include <vector>
 #include <hccl/hccl_types.h>
 #include "hccl_common.h"
 #include "sal_pub.h"
@@ -147,6 +148,11 @@ struct MemDetails {
 
 namespace hccl {
 
+/** 仅承载 RDMA key，供 TransportDeviceIbverbs 按 MemDetails 区间查表（方案 B）。 */
+struct MemDetailsRmaKeyEntry {
+    u32 key{0};
+};
+
 class TransportBase;
 struct RxMemoryInfo;
 struct TxMemoryInfo;
@@ -242,6 +248,7 @@ public:
     LinkTypeInServer specifyLink{LinkTypeInServer::RESERVED_LINK_TYPE}; // 指定链路类型
     bool enableAtomicWrite{false}; // 使能atomicWrite
     QueueDepthAttr queueDepthAttr{}; // QP深度配置
+    bool userMemEnable{true};
     TagMachinePara() {}
 
     TagMachinePara(const struct TagMachinePara &that)
@@ -283,6 +290,7 @@ public:
         specifyLink = that.specifyLink;
         enableAtomicWrite = that.enableAtomicWrite;
         queueDepthAttr = that.queueDepthAttr;
+        userMemEnable = that.userMemEnable;
     }
 
     struct TagMachinePara &operator=(struct TagMachinePara &that)
@@ -324,6 +332,7 @@ public:
             specifyLink = that.specifyLink;
             enableAtomicWrite = that.enableAtomicWrite;
             queueDepthAttr = that.queueDepthAttr;
+            userMemEnable = that.userMemEnable;
         }
 
         return *this;
@@ -430,6 +439,9 @@ struct TransportDeviceIbverbsData {
     u32 multiQpThreshold;
     u32 qpsPerConnection;
     bool useAtomicWrite = false;
+    std::vector<MemDetails> localMemDetailsList;
+    std::vector<MemDetails> remoteMemDetailsList;
+    bool useMemDetailsMgr{false};
 
     TransportDeviceIbverbsData()
     {}
@@ -498,7 +510,10 @@ struct TransportDeviceIbverbsData {
           notifySize(that.notifySize),
           multiQpThreshold(that.multiQpThreshold),
           qpsPerConnection(that.qpsPerConnection),
-          useAtomicWrite(that.useAtomicWrite)
+          useAtomicWrite(that.useAtomicWrite),
+          localMemDetailsList(that.localMemDetailsList),
+          remoteMemDetailsList(that.remoteMemDetailsList),
+          useMemDetailsMgr(that.useMemDetailsMgr)
     {}
 };
 using CqeInfo =  struct tagCqeInfo {

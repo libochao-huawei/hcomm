@@ -12,6 +12,7 @@ set(src_list
     cpu_roce_endpoint.cc
     urma_endpoint.cc
     ub_mem_endpoint.cc
+    aicputs_roce_endpoint.cc
     endpoint.cc
 )
 
