@@ -1258,16 +1258,23 @@ HcclResult AlltoAllVDirectFullMesh::RunRDMA()
 
 HcclResult AlltoAllVDirectFullMesh::RunSDMATasks(u32 roundIdx, u32 step, u32 groupRankSize, u32 leftRankSize)
 {
+    HcclUs startut = TIME_NOW();
     if (isBigCount_) {
         if (roundIdx == 0) {
+            HCCL_RUN_INFO("[jjy][103]before InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             UpdatePartialCommunicationRankSet(roundIdx, groupRankSize, partialCommRankSet_);
+            HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         }
         if (roundIdx < commRounds_ - 1) {
             u32 nextgroupRankSize = (leftRankSize - groupRankSize > sdmaConcurrentNum_) ?
                 sdmaConcurrentNum_ : leftRankSize - groupRankSize;
+            HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             UpdatePartialCommunicationRankSet(roundIdx + 1, nextgroupRankSize, nextPartialCommRankSet_);
+            HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         }
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(RunGroupFullMeshAlltoall(roundIdx, step));
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         if (roundIdx < commRounds_ - 1) {
             partialCommRankSet_ = nextPartialCommRankSet_;
@@ -1278,10 +1285,15 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMATasks(u32 roundIdx, u32 step, u32 gro
                 subStreamZcopyReadInfo_ = nextSubStreamZcopyReadInfo_;
             }
         }
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, localSubStream_));
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     } else {
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         UpdatePartialCommunicationRankSet(roundIdx, groupRankSize, partialCommRankSet_);
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(RunGroupFullMeshAlltoall(roundIdx, step));
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     return HCCL_SUCCESS;
 }
