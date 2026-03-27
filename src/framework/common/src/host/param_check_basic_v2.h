@@ -13,7 +13,17 @@
 
 #define HCCLV2_FUNC_RUN(func, ...) \
     do { \
-        return func; \
+        static thread_local bool isSupportV2 = false; \
+        static thread_local bool isInited = false; \
+        if (!isInited) { \
+            const char *socNamePtr = aclrtGetSocName(); \
+            CHK_PTR_NULL(socNamePtr); \
+            isSupportV2 = IsSupportHCCLV2(socNamePtr); \
+            isInited = true; \
+        } \
+        if (isSupportV2) { \
+            return func; \
+        } \
     } while (0)
     
 #endif //PARAM_CHECK_PUB_BASIC_V2_H
