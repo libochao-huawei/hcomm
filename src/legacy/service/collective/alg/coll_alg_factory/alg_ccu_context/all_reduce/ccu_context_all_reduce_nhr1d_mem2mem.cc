@@ -289,12 +289,12 @@ void CcuContextAllReduceNHR1D::DoSendRecvSlice(const u32 &toRank, CcuRep::Memory
 {
     bool          islastSlice;
     CcuTransport *sendTransport = transports[indexMap_[toRank]];
+    islastSlice = (sendSliceIdx + 1 == dimSize_);
     // 添加 die1 偏移
     if (axisId_ == 1) {
         dst.addr += die0Size_;
         src.addr += die0Size_;
     }
-    islastSlice = (sendSliceIdx + 1 == dimSize_);
     const CcuRep::Variable &sliceSize = axisId_ == 0? (islastSlice? die0LastSliceSize_ : die0SliceSize_)
                                                     : (islastSlice? die1LastSliceSize_ : die1SliceSize_);
     CCU_IF(sliceSize != 0)
