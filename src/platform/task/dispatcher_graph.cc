@@ -171,8 +171,10 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
     u32 ctxIdx;
     if (GraphAddRecordTaskWithSignalAddr != nullptr) {
         CHK_RET(GraphAddRecordTaskWithSignalAddr(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, signalAddr, &ctxIdx));
+        HCCL_RUN_INFO("[jjy][110]after GraphAddRecordTaskWithSignalAddr, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     } else {
         CHK_RET(GraphAddRecordTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
+        HCCL_RUN_INFO("[jjy][110]after GraphAddRecordTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     HCCL_RUN_INFO("[jjy][109]after GraphAddRecordTaskWithSignalAddr, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (!inchip && ctxIdx > 0) {
