@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#ifndef CCU_VAR_ADD_SIMPLE_DEMO_H
+#define CCU_VAR_ADD_SIMPLE_DEMO_H
+
 #include "ccu_data_api.h"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
 
@@ -44,3 +47,5 @@ CcuResult CcuVarAddDemoGenTaskArgs(CcuVarAddTaskArg arg, uint64_t *vars, uint32_
     // vars
     return CcuResult::CCU_SUCCESS;
 }
+
+#endif // CCU_VAR_ADD_SIMPLE_DEMO_H
