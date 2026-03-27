@@ -55,7 +55,7 @@ void CollServiceBase::RegisterCclLocRmaBuffer() const // 注册CCL buffer
             HCCL_INFO("rmaBufManager reg");
             PortData portData(comm->GetMyRank(), *connIface);
             HCCL_INFO("rmaBufManager reg portData[%s]", portData.Describe().c_str());
-            rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
+            rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData, *(protocols.begin()));
         }
     }
 }
@@ -75,7 +75,7 @@ void CollServiceBase::RegisterCclBuffer(const std::vector<LinkData> &links) cons
                 comm->GetId().c_str(), portData.Describe().c_str());
             continue;
         }
-        rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
+        rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData, link.GetLinkProtocol());
     }
 }
 
@@ -114,6 +114,7 @@ void CollServiceBase::RegisterOpbasedLocalRmaBuf(const std::string &opTag) const
         const auto &ifaceVec = pair.second;
         for (const auto &connIface : ifaceVec) {
             PortData portData(comm->GetMyRank(), *connIface);
+            std::set<LinkProtocol> protocols = connIface->GetLinkProtocols();
             for (auto &devBuf : devBuffers) {
                 if (localRmaBufManager.Get(comm->GetId(), portData, devBuf.first) != nullptr) {
                     HCCL_WARNING("RegisterOpbasedLocalRmaBuf has reged, bufferType[%s], optag[%s] portData[%s]",
@@ -124,7 +125,7 @@ void CollServiceBase::RegisterOpbasedLocalRmaBuf(const std::string &opTag) const
                     HCCL_WARNING("Input and Output Mem will not be reged at P2P");
                     continue;
                 }
-                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData);
+                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData, *(protocols.begin()));
             }
         }
     }
@@ -157,9 +158,10 @@ void CollServiceBase::RegisterOffloadLocalRmaBuf(const std::string &opTag) const
         const auto &ifaceVec = pair.second;
         for (const auto &connIface : ifaceVec) {
             PortData portData(comm->GetMyRank(), *connIface);
+            std::set<LinkProtocol> protocols = connIface->GetLinkProtocols();
             for (auto &devBuf : devBuffers) {
                 HCCL_INFO("CollServiceBase::RegisterOffloadLocalRmaBuf, devBuf[%s]", devBuf.second->Describe().c_str());
-                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData);
+                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData, *(protocols.begin()));
             }
         }
     }
