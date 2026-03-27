@@ -10,7 +10,6 @@
 #ifndef HCCLV2_RTSQ_A5_H
 #define HCCLV2_RTSQ_A5_H
 #include "rtsq_base.h"
-#include "mem_transport_common.h"
 namespace Hccl {
 
 class RtsqA5 : public RtsqBase {
@@ -36,8 +35,6 @@ public:
     void CntNto1NotifyWait(u32 notifyId, u32 value) override;
 
     void CntNto1NotifyRecord(u32 notifyId, u32 value) override;
-
-    void SetSdmaHcclQos(u32 qos) override;
 
     void SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId) override;
 
@@ -79,8 +76,6 @@ private:
     bool isPreStreamSync = false;
 
     bool launchFlag_ = false;
-
-    u32 sdmaHcclQos_{HCCL_A5_DEFAULT_QOS};
 
     static constexpr u32 rtsqSqeSize     = 64;
     static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE

@@ -52,6 +52,20 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     return HCCL_SUCCESS;
 }
 
+HcclResult ProcessUbcChannelDesc(HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
+{
+    CHK_PTR_NULL(hcclComm);
+    hccl::CollComm *collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::CommConfig commConfig = collComm->GetCommConfig();
+    channelDescFinal.ubcAttr.qos = (commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET)
+        ? EnvConfig::HCCL_QOS_DEFAULT
+        : commConfig.GetConfigHcclQos();
+    HCCL_INFO("[%s] channelProtocol[%d] qos[%u]", __func__,
+        static_cast<int>(channelDescFinal.channelProtocol), channelDescFinal.ubcAttr.qos);
+    return HCCL_SUCCESS;
+}
+
 HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
     channelDescFinal.remoteRank = channelDesc.remoteRank;
@@ -67,9 +81,11 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_HCCS:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
-        case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
             break;
+        case COMM_PROTOCOL_UBC_CTP:
+        case COMM_PROTOCOL_UBC_TP:
+            return ProcessUbcChannelDesc(channelDescFinal, hcclComm);
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
         default: {
@@ -79,6 +95,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_PCIE:    return "COMM_PROTOCOL_PCIE";
                     case COMM_PROTOCOL_SIO:     return "COMM_PROTOCOL_SIO";
                     case COMM_PROTOCOL_UBC_CTP: return "COMM_PROTOCOL_UBC_CTP";
+                    case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
                     case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     default:                    return "UNKNOWN_PROTOCOL";

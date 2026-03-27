@@ -98,6 +98,9 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
 
+    /** HCCL 通信域 QoS；低 4bit 映射到 RA attr.ub.priority，0 表示使用默认 priority(2) */
+    u32 hcclQos{0};
+
     HrtRaUbJettyCreateParamDef() {}
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,

@@ -72,10 +72,6 @@ public:
 
     HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback); // 自定义算子流程上报task的Callback
 
-    /** Host 经 HcclChannelUrmaRes 下发的 HCCL QoS；4bit 有效范围由硬件/上层约定，默认 6 与 legacy SDMA 一致 */
-    void SetHcclQos(u32 qos) override { hcclQos_ = qos & 0xFU; }
-    u32 GetHcclQos() const override { return hcclQos_; }
-
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -132,8 +128,6 @@ private:
     
     std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
 
-    u32 hcclQos_{HCCL_A5_DEFAULT_QOS};
-
     void ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
 
@@ -155,10 +149,6 @@ private:
     void CheckConnVec(const std::string &desc);
 
     void SetFenceConfig(SqeConfigLite &cfg);
-
-    void ApplyHcclQosToSqeCfg(SqeConfigLite &cfg) const;
-
-    void SyncRtsqSdmaHcclQos(const StreamLite &stream) const;
 };
 
 } // namespace Hccl

@@ -137,7 +137,7 @@ void SetSqeHeaderTaskFields(void* sqe, u32 taskId)
 }
 
 void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 size, u32 partId, u32 opcode,
-                        u32 hcclQos, uint8_t * const sqeIn)
+    uint8_t * const sqeIn)
 {
     Rt91095StarsMemcpySqe *sqe = (Rt91095StarsMemcpySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);
@@ -149,7 +149,6 @@ void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 
     sqe->sns                   = 1U;
     sqe->dns                   = 1U;
     sqe->mapamPartId           = partId; // 这里走的memcpy，如果走withcfg,需要传入qoscfg
-    sqe->qos                   = static_cast<uint8_t>(hcclQos & 0xFU);
     sqe->header.wrCqe          = 1U;
 
     sqe->u.strideMode0.lengthMove  = size;

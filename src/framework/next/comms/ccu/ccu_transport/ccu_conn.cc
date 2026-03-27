@@ -26,21 +26,21 @@
 namespace hcomm {
 
 CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos)
+    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), hcclQos_(hcclQos)
 {
 }
 
 CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, hcclQos)
 {
     tpProtocol_ = TpProtocol::RTP;
 }
 
 CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, hcclQos)
 {
     tpProtocol_ = TpProtocol::CTP;
 }
@@ -169,6 +169,7 @@ HcclResult CcuConnection::CreateJetty()
 
     isJettyCreated_ = true;
     for (size_t i = 0; i < jettyNum_; i++) {
+        ccuJettys_[i]->SetHcclQosForCreate(hcclQos_); //Jetty中携带hcclQos
         auto ret = ccuJettys_[i]->CreateJetty();
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏

@@ -145,9 +145,8 @@ public:
         (void)stream;
     }
 
-    /** HCCL QoS（4bit）用于 A5 SDMA SQE；UB/P2P 实现会覆盖；默认 6 与 legacy 一致 */
+    /** 设备侧仍可调用；不再写入 UDMA/SDMA SQE */
     virtual void SetHcclQos(u32 qos) { (void)qos; }
-    virtual u32 GetHcclQos() const { return HCCL_A5_DEFAULT_QOS; }
 
 private:
 };

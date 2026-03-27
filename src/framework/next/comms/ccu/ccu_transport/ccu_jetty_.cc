@@ -63,6 +63,11 @@ HcclResult CcuJetty::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
+void CcuJetty::SetHcclQosForCreate(uint32_t qos)
+{
+    inParam_.hcclQos = static_cast<u32>(qos);
+}
+
 CcuJetty::~CcuJetty()
 {
     (void)Clean();

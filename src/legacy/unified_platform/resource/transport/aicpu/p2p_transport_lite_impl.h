@@ -47,9 +47,6 @@ public:
     void BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
                         const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
 
-    void SetHcclQos(u32 qos) override { hcclQos_ = qos & 0xFU; }
-    u32 GetHcclQos() const override { return hcclQos_; }
-
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
@@ -79,8 +76,6 @@ private:
     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
 
     std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback_{nullptr};
-
-    u32 hcclQos_{HCCL_A5_DEFAULT_QOS};
 
     void ParseLocNotifyVec(std::vector<char> &data);
 
