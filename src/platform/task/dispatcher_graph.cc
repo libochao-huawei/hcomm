@@ -16,7 +16,7 @@
 #include "hccl_tbe_task.h"
 #include "graph_ctx_mgr_common.h"
 #include "config_plf_log.h"
-
+#include "sal_pub.h"
 constexpr u32 UB_BLOCK_SIZE = 32;
 constexpr u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
@@ -168,16 +168,18 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
         return DispatcherPub::SignalRecord(signal, stream, userRank, offset, stage, inchip);
     }
     u32 ctxIdx;
+    HcclUs startut = TIME_NOW();
     if (GraphAddRecordTaskWithSignalAddr != nullptr) {
         CHK_RET(GraphAddRecordTaskWithSignalAddr(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, signalAddr, &ctxIdx));
+        HCCL_RUN_INFO("SignalRecord GraphAddRecordTaskWithSignalAddr [%lld]us.", DURATION_US(TIME_NOW() - startut));
     } else {
         CHK_RET(GraphAddRecordTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
+        HCCL_RUN_INFO("SignalRecord GraphAddRecordTask [%lld]us.", DURATION_US(TIME_NOW() - startut));
     }
     if (!inchip && ctxIdx > 0) {
         CHK_RET(SignalTaskParaSave(signal, stream, userRank, INVALID_UINT,
                 offset, stage, TaskType::TASK_NOTIFY_RECORD, beginTime, ctxIdx));
     }
-
     if (HcclCheckLogLevel(HCCL_LOG_INFO) || (GetExternalInputDebugConfig() & PLF_TASK)) {
         u64 notifyID = userRank;
         u32 remoteUserRank = INVALID_UINT;
