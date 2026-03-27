@@ -590,8 +590,8 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
 {
     if(hcclGroupDepth > 0){
         HcclResult ret = HCCL_SUCCESS;
-        std::shared_ptr<struct hcclCommInitRankTableConfigAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
+        std::shared_ptr<struct hcclCommInitRankTableAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableAsyncJob>()), return HCCL_E_PARA);
         job->clusterInfo = clusterInfo;
         job->rank = rank;
         job->initComm = comm;
