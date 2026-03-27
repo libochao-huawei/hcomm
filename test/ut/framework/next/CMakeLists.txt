@@ -21,6 +21,8 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
     comms/endpoint_pairs/ut_endpoint_pair.cc
+    comms/endpoint_pairs/channels/ut_channel_process.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
@@ -28,6 +30,7 @@ set(src_to_test_list
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
  	coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
+    coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
