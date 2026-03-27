@@ -528,20 +528,28 @@ std::vector<char> AicpuResPackageHelper::GetPackedData(
 
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr), rmtEid(rmtAddr.GetReverseEid())
 {}
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
+
+DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                         const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+{
+    tpProtocol = TpProtocol::UBOE;
+}
 
 std::vector<char> DevUbConnection::GetUniqueId() const
 {
