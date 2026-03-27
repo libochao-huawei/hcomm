@@ -23,7 +23,6 @@
 #include "communicator/ns_recovery/ns_recovery.h"
 #include "hdc_pub.h"
 #include "rank_graph.h"
-#include "kfc.h"
 #include "orion_adapter_hccp.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
@@ -60,6 +59,7 @@ public:
     // Ns recovery
     void SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 
         std::shared_ptr<HDCommunicate> kfcStatusTransferD2H);
+    std::vector<ChannelHandle> GetAllChannelList();
     HcclResult StopLaunch();
     HcclResult Clean();
     HcclResult Resume();
@@ -74,11 +74,6 @@ private:
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
-
-    // Ns recovery
-    HcclResult ListenBackGround(Hccl::KfcExecStatus& opInfo);
-    HcclResult PollStopStatus();
-    std::vector<ChannelHandle> GetAllChannelList();
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -97,13 +92,11 @@ private:
 
     ManagerCallbacks callbacks_;
 
-    // Ns recovery的临时数据，后续channel会维护自己的数据，此数据会删掉
-    std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
-    std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
-    std::unordered_map<CommEngine, std::vector<NsRecoveryData>> nsRecoveryDatas_;
-
     // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
     RankGraph* rankGraph_{nullptr};
+
+    // Ns recovery
+    std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
 };
 
 } // namespace hccl
