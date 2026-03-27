@@ -26,6 +26,9 @@
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
 namespace hccl {
+
+class hcclComm;
+
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
  */
@@ -46,7 +49,7 @@ public:
         return opExpansionMode_;
     }
 
-    HcclResult CreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const std::string &commTag, 
+    HcclResult CreateChannels(hcclComm *hcclComm, CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
@@ -54,7 +57,7 @@ public:
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
-    HcclResult BatchCreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+    HcclResult BatchCreateChannels(hcclComm *hcclComm, CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
