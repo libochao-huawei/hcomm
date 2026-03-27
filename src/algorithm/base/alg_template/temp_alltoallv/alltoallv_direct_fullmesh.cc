@@ -902,6 +902,7 @@ HcclResult AlltoAllVDirectFullMesh::SendRecvData(u32 step, u32 roundIdx)
 
 HcclResult AlltoAllVDirectFullMesh::LocalCopy()
 {
+    HcclUs startut = TIME_NOW();
     const SendRecvInfo& localSendRecvInfo = *localSendRecvInfoPtr_;
     DeviceMem src = userInput_.range(localSendRecvInfo.sendOffset[userRank_],
         localSendRecvInfo.sendLength[userRank_]);
@@ -915,10 +916,12 @@ HcclResult AlltoAllVDirectFullMesh::LocalCopy()
     if (needAlltoallvCache_ && localSendRecvInfo.sendLength[userRank_] == 0) {
         reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
     }
+    HCCL_RUN_INFO("[jjy][101]before HcclD2DMemcpyAsync, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, mainStream_));
     if (needAlltoallvCache_ && localSendRecvInfo.sendLength[userRank_] == 0) {
         reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
     }
+    HCCL_RUN_INFO("[jjy][101]after HcclD2DMemcpyAsync, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     return HCCL_SUCCESS;
 }
@@ -954,8 +957,11 @@ HcclResult AlltoAllVDirectFullMesh::RunGroupFullMeshAlltoall(u32 roundIdx, u32 s
 // 主流通知RDMA控制流启动
 HcclResult AlltoAllVDirectFullMesh::MainNotifyRdmaControlStart()
 {
+    HcclUs startut = TIME_NOW();
     CHK_RET(LocalNotify::Post(mainStream_, dispatcher_, rdmaControl2MainStreamNotify_, INVALID_VALUE_STAGE));
+    HCCL_RUN_INFO("[jjy][101]after Post, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(LocalNotify::Wait(rdmaSubStreams_[0], dispatcher_, rdmaControl2MainStreamNotify_, INVALID_VALUE_STAGE));
+    HCCL_RUN_INFO("[jjy][101]after Wait, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -1234,11 +1240,17 @@ HcclResult AlltoAllVDirectFullMesh::ProcessRdmaData()
 
 HcclResult AlltoAllVDirectFullMesh::RunRDMA()
 {
+    HcclUs startut = TIME_NOW();
     // 先启动RDMA通信
+    HCCL_RUN_INFO("[jjy][101]before MainNotifyRdmaControlStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(MainNotifyRdmaControlStart());
+    HCCL_RUN_INFO("[jjy][101]after MainNotifyRdmaControlStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ProcessRdmaData());
+    HCCL_RUN_INFO("[jjy][101]after ProcessRdmaData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
+    HCCL_RUN_INFO("[jjy][101]after ExecEmptyTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(LocalCopy());
+    HCCL_RUN_INFO("[jjy][101]after LocalCopy, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     islocalCpyDone_ = true;
     HCCL_INFO("[AlltoAllVDirectFullMesh][RunRDMA] finished.");
     return HCCL_SUCCESS;
