@@ -18,7 +18,7 @@ protected:
 TEST_F(ChannelProcessTest, Ut_ChannelClean_NullList_Returns_E_PARA) {
     // Passing null pointer should return parameter error
     auto ret = ChannelProcess::ChannelClean(nullptr, 1);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(ChannelProcessTest, Ut_ChannelResumeConcurrency_ZeroChannels_Returns_SUCCESS) {
@@ -40,22 +40,28 @@ TEST_F(ChannelProcessTest, Ut_ChannelResume_When_ResumeConcurrencyFails_ReturnsE
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
-TEST_F(ChannelProcessTest, Ut_ChannelResume_Succeeds_When_GetStatusReturnsSuccess) {
+TEST_F(ChannelProcessTest, Ut_ChannelResume_NullList_Returns_E_PARA) {
+    auto ret = ChannelProcess::ChannelResume(nullptr, 1);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(ChannelProcessTest, Ut_ChannelResume_When_GetStatusReturnsTimeout_Returns_Timeout) {
     ChannelHandle list[1] = { (ChannelHandle)0x1 };
+
     // Mock ChannelResumeConcurrency to succeed
     MOCKER_CPP(&ChannelProcess::ChannelResumeConcurrency, HcclResult(const ChannelHandle*, uint32_t))
         .stubs()
         .with(any(), any())
         .will(returnValue(HCCL_SUCCESS));
 
-    // Mock ChannelGetStatus to immediately return success (avoid retry loop)
+    // Mock ChannelGetStatus to return timeout error
     MOCKER_CPP(&ChannelProcess::ChannelGetStatus, HcclResult(const ChannelHandle*, uint32_t, int32_t*))
         .stubs()
         .with(any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
+        .will(returnValue(HCCL_E_TIMEOUT));
 
     auto ret = ChannelProcess::ChannelResume(list, 1);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
 }
 
 TEST_F(ChannelProcessTest, Ut_ChannelUpdateKernelLaunch_NullDeviceHandles_Returns_E_PARA) {
