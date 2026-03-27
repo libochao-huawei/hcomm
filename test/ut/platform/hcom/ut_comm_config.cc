@@ -352,3 +352,130 @@ TEST_F(CommConfigTest, utCommConfig_deterministic_strcit_fail)
 }
 
 #endif
+
+TEST_F(CommConfigTest, CheckRankIpFamily_ValidIPv4_Success)
+{
+    std::vector<RankInfo_t> rankList(2);
+    
+    HcclIpAddress ip1(0x7f000001);
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    HcclIpAddress ip2(0x7f000002);
+    rankList[1].hostIp = ip2;
+    rankList[1].serverId = "server2";
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommConfigTest, CheckRankIpFamily_ValidIPv6_Success)
+{
+    std::vector<RankInfo_t> rankList(2);
+    
+    HcclIpAddress ip1("::1");
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    HcclIpAddress ip2("::2");
+    rankList[1].hostIp = ip2;
+    rankList[1].serverId = "server2";
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommConfigTest, CheckRankIpFamily_InvalidHostIpFamily_ReturnParaError)
+{
+    std::vector<RankInfo_t> rankList(1);
+    
+    HcclIpAddress ip1(0x7f000001);
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    rankList[0].hostIp.family = 100;
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CommConfigTest, CheckRankIpFamily_InconsistentHostIpFamily_ReturnParaError)
+{
+    std::vector<RankInfo_t> rankList(2);
+    
+    HcclIpAddress ip1(0x7f000001);
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    HcclIpAddress ip2("::1");
+    rankList[1].hostIp = ip2;
+    rankList[1].serverId = "server2";
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CommConfigTest, CheckRankIpFamily_InvalidDeviceIpFamily_ReturnParaError)
+{
+    std::vector<RankInfo_t> rankList(1);
+    
+    HcclIpAddress ip1(0x7f000001);
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    HcclIpAddress deviceIp(0x7f000002);
+    deviceIp.family = 100;
+    rankList[0].deviceInfo.deviceIp.push_back(deviceIp);
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CommConfigTest, CheckRankIpFamily_InconsistentDeviceIpFamily_ReturnParaError)
+{
+    std::vector<RankInfo_t> rankList(2);
+    
+    HcclIpAddress ip1(0x7f000001);
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    HcclIpAddress deviceIp1(0x7f000002);
+    rankList[0].deviceInfo.deviceIp.push_back(deviceIp1);
+    
+    HcclIpAddress ip2(0x7f000003);
+    rankList[1].hostIp = ip2;
+    rankList[1].serverId = "server2";
+    
+    HcclIpAddress deviceIp2("::1");
+    rankList[1].deviceInfo.deviceIp.push_back(deviceIp2);
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CommConfigTest, CheckRankIpFamily_EmptyDeviceIp_Success)
+{
+    std::vector<RankInfo_t> rankList(1);
+    
+    HcclIpAddress ip1(0x7f000001);
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommConfigTest, CheckRankIpFamily_InvalidDeviceIp_Success)
+{
+    std::vector<RankInfo_t> rankList(1);
+    
+    HcclIpAddress ip1(0x7f000001);
+    rankList[0].hostIp = ip1;
+    rankList[0].serverId = "server1";
+    
+    HcclIpAddress invalidIpDevice;
+    rankList[0].deviceInfo.deviceIp.push_back(invalidIpDevice);
+    
+    HcclResult ret = CheckRankIpFamily(rankList);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
