@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <securec.h>
 #include <chrono>
+#include <memory>
 #include "network/hccp.h"
 #include "network/hccp_common.h"
 #include "device_capacity.h"
@@ -69,6 +70,9 @@ TransportDeviceIbverbs::~TransportDeviceIbverbs()
 HcclResult TransportDeviceIbverbs::Init()
 {
     HCCL_DEBUG("TransportDeviceIbverbs Init Enter! notifyNum[%u]",  machinePara_.notifyNum);
+    if (transDevIbverbsData_.useMemDetailsMgr) {
+        return InitMemDetails();
+    }
     CHK_RET(SignalInit(transDevIbverbsData_.ackNotify, ackNotify_));
     CHK_RET(SignalInit(transDevIbverbsData_.dataNotify, dataNotify_));
     CHK_RET(SignalInit(transDevIbverbsData_.dataAckNotify, dataAckNotify_));
@@ -227,6 +231,85 @@ HcclResult TransportDeviceIbverbs::Init()
         "transporttype[%s], atomicWrite[%d]", machinePara_.tag.c_str(), machinePara_.localUserrank,
         machinePara_.remoteUserrank, GetLinkTypeEnumStr(GetLinkType()).c_str(), useAtomicWrite_);
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDeviceIbverbs::InitMemDetails()
+{
+    constexpr u32 QPINFO_SIZE_MAX = 33;
+    constexpr u32 QPINFO_SIZE_MIN = 1;
+    constexpr u32 QP_PERCONNECTION_MAX = 32;
+    constexpr u32 QP_PERCONNECTION_MIN = 1;
+    u32 qpInfoSize = transDevIbverbsData_.qpInfo.size();
+    if (transDevIbverbsData_.qpsPerConnection + static_cast<u32>(qpInfoSize > 1) != qpInfoSize ||
+        qpInfoSize > QPINFO_SIZE_MAX || qpInfoSize < QPINFO_SIZE_MIN ||
+        transDevIbverbsData_.qpsPerConnection > QP_PERCONNECTION_MAX ||
+        transDevIbverbsData_.qpsPerConnection < QP_PERCONNECTION_MIN) {
+        HCCL_ERROR("[TransportDeviceIbverbs][InitMemDetails]QPNum[%d] or qpInfos size[%u] is invalid",
+            transDevIbverbsData_.qpsPerConnection,
+            qpInfoSize);
+        return HCCL_E_INTERNAL;
+    }
+    combineAiQpInfo_.aiQpInfo.aiQpAddr = transDevIbverbsData_.qpInfo[0].qpPtr;
+    combineAiQpInfo_.aiQpInfo.sqIndex = transDevIbverbsData_.qpInfo[0].sqIndex;
+    combineAiQpInfo_.aiQpInfo.dbIndex = transDevIbverbsData_.qpInfo[0].dbIndex;
+    combineAiQpInfos_.resize(transDevIbverbsData_.qpsPerConnection);
+    for (u32 i = 1, j = 0; i < qpInfoSize; i++, j++) {
+        combineAiQpInfos_[j].aiQpInfo.aiQpAddr = transDevIbverbsData_.qpInfo[i].qpPtr;
+        combineAiQpInfos_[j].aiQpInfo.sqIndex = transDevIbverbsData_.qpInfo[i].sqIndex;
+        combineAiQpInfos_[j].aiQpInfo.dbIndex = transDevIbverbsData_.qpInfo[i].dbIndex;
+    }
+
+    CHK_RET(CheckDeviceId());
+    CHK_RET(DlHnsFunction::GetInstance().DlHnsFunctionInit());
+    transportAttr_.linkType = LinkType::LINK_ROCE;
+    multiQpThreshold_ = transDevIbverbsData_.multiQpThreshold;
+    qpsPerConnection_ = transDevIbverbsData_.qpsPerConnection;
+    useAtomicWrite_ = transDevIbverbsData_.useAtomicWrite;
+    HCCL_USER_CRITICAL_LOG("create hccl transport:communicator[%s], local rank[%u], remote rank[%u],"\
+        "transporttype[%s], atomicWrite[%d]", machinePara_.tag.c_str(), machinePara_.localUserrank,
+        machinePara_.remoteUserrank, GetLinkTypeEnumStr(GetLinkType()).c_str(), useAtomicWrite_);
+    CHK_RET(BuildMemDetailsRmaMgrs());
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDeviceIbverbs::BuildMemDetailsRmaMgrs()
+{
+    localMemDetailsRmaMgr_.reset();
+    remoteMemDetailsRmaMgr_.reset();
+    useMemDetailsLookup_ = false;
+    if (!transDevIbverbsData_.useMemDetailsMgr) {
+        return HCCL_SUCCESS;
+    }
+    localMemDetailsRmaMgr_ = std::make_unique<DeviceMemDetailsRmaMgr>();
+    remoteMemDetailsRmaMgr_ = std::make_unique<DeviceMemDetailsRmaMgr>();
+    for (const auto &md : transDevIbverbsData_.localMemDetailsList) {
+        if (md.size == 0U) {
+            continue;
+        }
+        BufferKey<uintptr_t, u64> bk(static_cast<uintptr_t>(md.addr), md.size);
+        auto ent = std::make_shared<MemDetailsRmaKeyEntry>();
+        ent->key = md.key;
+        auto pr = localMemDetailsRmaMgr_->Add(bk, ent);
+        if (pr.first == localMemDetailsRmaMgr_->End()) {
+            HCCL_ERROR("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add local mem range failed");
+            return HCCL_E_INTERNAL;
+        }
+    }
+    for (const auto &md : transDevIbverbsData_.remoteMemDetailsList) {
+        if (md.size == 0U) {
+            continue;
+        }
+        BufferKey<uintptr_t, u64> bk(static_cast<uintptr_t>(md.addr), md.size);
+        auto ent = std::make_shared<MemDetailsRmaKeyEntry>();
+        ent->key = md.key;
+        auto pr = remoteMemDetailsRmaMgr_->Add(bk, ent);
+        if (pr.first == remoteMemDetailsRmaMgr_->End()) {
+            HCCL_ERROR("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add remote mem range failed");
+            return HCCL_E_INTERNAL;
+        }
+    }
+    useMemDetailsLookup_ = true;
     return HCCL_SUCCESS;
 }
 
@@ -1082,34 +1165,56 @@ HcclResult TransportDeviceIbverbs::WriteCommon(const void *remoteAddr, const voi
 
         unsigned int dstKey;
         unsigned int srcKey;
-        u64 dstAddr = reinterpret_cast<u64>(remoteAddr);
-        u64 remoteInputAddr = reinterpret_cast<u64>(remoteMemMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].addr);
-        u64 remoteInputSize = localInputMem_.size;
-        u64 remoteInputLkey = remoteMemMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].lkey;
-        u64 remoteOutputAddr = reinterpret_cast<u64>(remoteMemMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].addr);
-        u64 remoteOutputSize = localOutputMem_.size;
-        u64 remoteOutputLkey = remoteMemMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].lkey;
-        if (dstAddr >= remoteInputAddr && dstAddr < remoteInputAddr + remoteInputSize) {
-            dstKey = remoteInputLkey;
-        } else if (dstAddr >= remoteOutputAddr && dstAddr <= remoteOutputAddr + remoteOutputSize) {
-            dstKey = remoteOutputLkey;
-        } else {
-            HCCL_ERROR("[TransportDeviceIbverbs][TxAsync]src_ptr=%p is out of range, inputmem src[%p], size[%llu];"
-                " outputmem src[%p] size[%llu]", remoteAddr, remoteInputAddr, remoteInputSize,
-                remoteOutputAddr, remoteOutputSize);
-            return HCCL_E_INTERNAL;
-        }
+        if (useMemDetailsLookup_) {
+            BufferKey<uintptr_t, u64> lookupRemote(static_cast<uintptr_t>(reinterpret_cast<uintptr_t>(remoteAddr)),
+                length);
+            auto rf = remoteMemDetailsRmaMgr_->Find(lookupRemote);
+            if (!rf.first || rf.second != nullptr) {
+                HCCL_ERROR("[TransportDeviceIbverbs]Can't find remoteBuffer key by addr and size {%p, %llu}",
+                    remoteAddr, length);
+                return HCCL_E_INTERNAL; 
+            }
+            dstKey = rf.second->key;
 
-        u64 srcAddr = reinterpret_cast<u64>(localAddr);
-        if (srcAddr >= localInputMem_.addr && srcAddr < localInputMem_.addr + localInputMem_.size) {
-            srcKey = localInputMem_.key;
-        } else if (srcAddr >= localOutputMem_.addr && srcAddr <= localOutputMem_.addr + localOutputMem_.size) {
-            srcKey = localOutputMem_.key;
+            BufferKey<uintptr_t, u64> lookupLocal(static_cast<uintptr_t>(reinterpret_cast<uintptr_t>(localAddr)),
+                length);
+            auto lf = localMemDetailsRmaMgr_->Find(lookupLocal);
+            if (!lf.first || lf.second != nullptr) {
+                HCCL_ERROR("[TransportDeviceIbverbs]Can't find localBuffer key by addr and size {%p, %llu}",
+                    localAddr, length);
+                return HCCL_E_INTERNAL;
+            }
+            srcKey = lf.second->key;
         } else {
-            HCCL_ERROR("[TransportDeviceIbverbs][TxAsync]src_ptr=%p is out of range, inputmem src[%p], size[%llu];"
-                " outputmem src[%p] size[%llu]", localAddr, localInputMem_.addr, localInputMem_.size,
-                localOutputMem_.addr, localOutputMem_.size);
-            return HCCL_E_INTERNAL;
+            u64 dstAddr = reinterpret_cast<u64>(remoteAddr);
+            u64 remoteInputAddr = reinterpret_cast<u64>(remoteMemMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].addr);
+            u64 remoteInputSize = localInputMem_.size;
+            u64 remoteInputLkey = remoteMemMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].lkey;
+            u64 remoteOutputAddr = reinterpret_cast<u64>(remoteMemMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].addr);
+            u64 remoteOutputSize = localOutputMem_.size;
+            u64 remoteOutputLkey = remoteMemMsg_[static_cast<u32>(MemType::USER_OUTPUT_MEM)].lkey;
+            if (dstAddr >= remoteInputAddr && dstAddr < remoteInputAddr + remoteInputSize) {
+                dstKey = remoteInputLkey;
+            } else if (dstAddr >= remoteOutputAddr && dstAddr <= remoteOutputAddr + remoteOutputSize) {
+                dstKey = remoteOutputLkey;
+            } else {
+                HCCL_ERROR("[TransportDeviceIbverbs][TxAsync]src_ptr=%p is out of range, inputmem src[%p], size[%llu];"
+                    " outputmem src[%p] size[%llu]", remoteAddr, remoteInputAddr, remoteInputSize,
+                    remoteOutputAddr, remoteOutputSize);
+                return HCCL_E_INTERNAL;
+            }
+
+            u64 srcAddr = reinterpret_cast<u64>(localAddr);
+            if (srcAddr >= localInputMem_.addr && srcAddr < localInputMem_.addr + localInputMem_.size) {
+                srcKey = localInputMem_.key;
+            } else if (srcAddr >= localOutputMem_.addr && srcAddr <= localOutputMem_.addr + localOutputMem_.size) {
+                srcKey = localOutputMem_.key;
+            } else {
+                HCCL_ERROR("[TransportDeviceIbverbs][TxAsync]src_ptr=%p is out of range, inputmem src[%p], size[%llu];"
+                    " outputmem src[%p] size[%llu]", localAddr, localInputMem_.addr, localInputMem_.size,
+                    localOutputMem_.addr, localOutputMem_.size);
+                return HCCL_E_INTERNAL;
+            }
         }
 
         CHK_RET(ConstructPayLoadWqe(const_cast<void *>(remoteAddr), dstKey,
