@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "my_rank.h"
+#include "hccl_comm_pub.h"
 #include "hcomm_c_adpt.h"
 #include "hcomm_res.h"
 #include "channel.h"
@@ -203,9 +204,10 @@ HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &c
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::BatchCreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+HcclResult MyRank::BatchCreateChannels(hcclComm *hcclComm, CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles)
 {
+    CHK_PTR_NULL(hcclComm);
     CHK_PTR_NULL(channelDescs);
     CHK_PTR_NULL(channelHandles);
     CHK_PRT_RET(channelNum == 0,
@@ -367,9 +369,10 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::CreateChannels(hccl::hcclComm *hcclComm, CommEngine engine, const std::string &commTag,
+HcclResult MyRank::CreateChannels(hcclComm *hcclComm, CommEngine engine, const std::string &commTag,
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channelHandles)
 {
+    CHK_PTR_NULL(hcclComm);
     CHK_PTR_NULL(channelDescs);
     CHK_PTR_NULL(channelHandles);
     CHK_PRT_RET(channelNum == 0,
