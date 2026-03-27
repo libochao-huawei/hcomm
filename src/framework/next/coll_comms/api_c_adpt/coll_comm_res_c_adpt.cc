@@ -424,9 +424,16 @@ HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t 
             if (profInfo.channelId[idx] == hcomm::INVALID_VALUE_CHANNELID) {
                 break;
             }
-            // TODO:需要修改
-            CHK_RET(Hccl::HcclCommDfx::GetChannelRemoteRankId
-                                            (hcclComm->GetIdentifier(), profInfo.channelHandle[idx], &profInfo.remoteRankId[idx]));
+            // 获取 remoteRankId
+            u32 remoteRankId = hcomm::INVALID_RANKID;
+            HcclResult ret = hccl::HcclCommDfx::GetChannelRemoteRankId(
+                hcclComm->GetIdentifier(), profInfo.channelHandle[idx], remoteRankId);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s] Failed to get remote rank for channelHandle[0x%llx], using default 0",
+                    __func__, profInfo.channelHandle[idx]);
+                return HCCL_E_PARA;
+            }
+            profInfo.remoteRankId[idx] = remoteRankId;
             HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
                 __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
         }
