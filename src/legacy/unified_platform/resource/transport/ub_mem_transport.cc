@@ -867,7 +867,7 @@ std::vector<char> UbMemTransport::GetConnUniqueIds()
     HCCL_INFO("start packing all conn uniqueIds");
     std::vector<char> result(0);
     for (auto &it : commonLocRes.connVec) {
-        HCCL_INFO("ubMemTransport %s", it->Describe().c_str());
+        HCCL_INFO("[UbMemTransport::%s] conn[%s]", __func__, it->Describe().c_str());
         auto uniqueId = it->GetUniqueId();
         result.insert(result.end(), uniqueId.begin(), uniqueId.end());
     }
