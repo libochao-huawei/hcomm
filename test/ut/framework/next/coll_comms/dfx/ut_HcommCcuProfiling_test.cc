@@ -29,11 +29,12 @@
 #include "local_notify_impl.h"
 #include "aicpu_launch_manager.h"
 #include "llt_hccl_stub_rank_graph.h"
-#include "../../hccl_api_base_test.h"
+#include "hccl_api_base_test.h"
 #include "hccl_ccu_res.h"
 #include "ccu_kernel_mgr.h"
 #include "hcomm_c_adpt.h"
 #include "ccu_urma_channel.h"
+#include "ccu_comp.h"
 
 namespace hcomm {
 
@@ -236,6 +237,9 @@ TEST_F(CcuKernelTest, GetChannelHandleById_InvalidId) {
 
 
 TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
+    MOCKER_CPP(&CcuComponent::CheckDiesEnable)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -280,6 +284,9 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
 }
 
 TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
+    MOCKER_CPP(&CcuComponent::CheckDiesEnable)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -334,6 +341,9 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess)
 }
 
 TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
+    MOCKER_CPP(&CcuComponent::CheckDiesEnable)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -398,11 +408,15 @@ using namespace CcuRep;
         .will(returnValue(HCCL_SUCCESS));  
     MOCKER_CPP(&CcuKernelMgr::GetKernel)
         .stubs()
-        .will(returnValue(ccuKernel));  
-     MOCKER_CPP(&CcuKernel::GeneTaskParam)
+        .will(returnValue(ccuKernel));
+    MOCKER_CPP(&CcuKernel::GeneTaskParam)
         .stubs()
         .with(any(),outBound(taskParams))
-        .will(returnValue(HCCL_SUCCESS));  
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CcuComponent::CheckDiesEnable)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+        
     
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
