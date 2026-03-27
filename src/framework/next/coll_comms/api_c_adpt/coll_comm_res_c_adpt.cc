@@ -400,7 +400,6 @@ HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t 
     }
     CHK_PTR_NULL(streamProfilingInfos);
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    // 填入remoteRankId
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
 
@@ -426,8 +425,8 @@ HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t 
                 break;
             }
             // TODO:需要修改
-            profInfo.remoteRankId[idx] = Hccl::HcclCommDfx::GetChannelRemoteRankId
-                                            (hcclComm->GetIdentifier(), profInfo.channelHandle[idx], channelRemoteRankId_);
+            CHK_RET(Hccl::HcclCommDfx::GetChannelRemoteRankId
+                                            (hcclComm->GetIdentifier(), profInfo.channelHandle[idx], &profInfo.remoteRankId[idx]));
             HCCL_INFO("[%s]idx[%u]: channelId[%u], remoteRankId[%u], channelHandle[0x%llx]",
                 __func__, idx, profInfo.channelId[idx], profInfo.remoteRankId[idx], profInfo.channelHandle[idx]);
         }
