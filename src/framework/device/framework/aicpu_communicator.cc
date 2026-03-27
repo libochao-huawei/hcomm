@@ -1909,7 +1909,7 @@ HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTra
 }
 
 HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &algName,
-                                            OpParam &opParam, const HcclOpResParam *commParam)
+                                            OpParam &opParam, const HcclOpResParam *commParam, HcclUs &toLaunch, HcclUs &launchFinish)
 {
     std::unique_ptr<CollExecutorBase> executor;
     hccl::AlgResourceResponse *algResResponse;
@@ -1940,7 +1940,7 @@ HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &a
     }
 
     hcclOpExecIndex_ = CalculateOpExecIndex(opParam, localUserRank_);
-    HcclResult ret = Orchestrate(newTag, algName, opParam, executor, *algResResponse, commParam);
+    HcclResult ret = Orchestrate(newTag, algName, opParam, executor, *algResResponse, commParam, toLaunch, launchFinish);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclCommAicpu][ExecOp] executor op fail, tag[%s], algName[%s], identifier[%s]",
             newTag.c_str(), algName.c_str(), identifier_.c_str());
@@ -2117,7 +2117,7 @@ HcclResult HcclCommAicpu::UpdateProfReportStartSqeIdx()
 }
 
 HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::string &algName, OpParam &param,
-    std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, const HcclOpResParam *commParam)
+    std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, const HcclOpResParam *commParam, HcclUs &toLaunch, HcclUs &launchFinish)
 {
     // 算子下发信息记录在共享内存区
     UpdateOpRingBufferIdx();
@@ -2201,7 +2201,7 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                 break;
             case HcclOpExecFSM::HCCL_OP_EXEC_FSM_LAUNCH:
                 ret = HcclOpExecFsmLaunchProcess(
-                    algName, param, executor, algResource, state, errorCode, beginSqePos, endSqePos, retryCnt);
+                    algName, param, executor, algResource, state, errorCode, beginSqePos, endSqePos, retryCnt, toLaunch, launchFinish);
                 if (ret == HCCL_E_SUSPENDING && isDeviceMode_ && retryEnable_) {
                     return HCCL_E_SUSPENDING;
                 }
@@ -2388,11 +2388,11 @@ bool HcclCommAicpu::HcclOpCheckSupportRetry(HcclCMDType opType)
 
 HcclResult HcclCommAicpu::HcclOpExecFsmLaunchProcess(const std::string &algName, OpParam &param,
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, HcclOpExecFSM &fsmState,
-    KfcError &errorCode, uint32_t &beginSqePos, uint32_t &endSqePos, uint32_t retryCnt)
+    KfcError &errorCode, uint32_t &beginSqePos, uint32_t &endSqePos, uint32_t retryCnt, HcclUs &toLaunch, HcclUs &launchFinish)
 {
     HCCL_DEBUG("hccl aicpu start launch task.");
 
-    HcclResult ret = OrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos);
+    HcclResult ret = OrchestrateHcclOp(algName, param, executor, algResource, beginSqePos, endSqePos, toLaunch, launchFinish);
     if (ret == HCCL_SUCCESS) { // 下发成功, 并且没有检测到异常cq或中断命令
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_WAIT_END;
     } else if (ret == HCCL_E_SUSPENDING) { // 检测到异常cq或中断命令
@@ -3310,7 +3310,7 @@ void HcclCommAicpu::PrepareMc2Handler()
 
 HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam &param,
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
-    uint32_t &endSqePos)
+    uint32_t &endSqePos, HcclUs &toLaunch, HcclUs &launchFinish)
 {
     LogControl logControl(false, false); // 重执行ERROR日志控制，析构时重置日志设置
     PrepareMc2Handler();
@@ -3390,6 +3390,7 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
         CHK_RET(NotifyPost());
     }
     (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeOrch, {});
+    toLaunch = TIME_NOW();
     ret = LaunchTask(dispatcher_, const_cast<Stream &>(mainStream_));
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclCommAicpu][LaunchTask]algName[%s] ret = %u", algName.c_str(), ret);
@@ -3402,6 +3403,7 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
         printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
         return ret;
     }
+    launchFinish = TIME_NOW();
     (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeEnd, {});
     if (retryForBatchSndRcv) {
         CHK_RET(QueryBatchSendRecvPairEndPos());

@@ -123,7 +123,7 @@ public:
     DevType GetDevType(void) const { return topoInfo_.deviceType; }
     uint32_t GetRankSize(void) const { return topoInfo_.userRankSize; }
     HcclResult ExecOp(const std::string &newTag, const std::string &algName, OpParam &opParam,
-                      const HcclOpResParam *commParam);
+                      const HcclOpResParam *commParam, HcclUs &toLaunch, HcclUs &launchFinish);
     HcclResult GetAlgResponseRes(const std::string &newTag, const std::string &algName, const OpParam &opParam,
         const HcclOpResParam *commParam, std::unique_ptr<CollExecutorBase> &executor,
         AlgResourceResponse *&algResResponse);
@@ -150,7 +150,7 @@ public:
     void RecordReportStatus(dfx::ReportStatus status);
     void GetReportStatusQueue(std::queue<dfx::ReportStatus> &reportStatusQue);
     HcclResult Orchestrate(const std::string &newTag, const std::string &algName, OpParam &param, std::unique_ptr<CollExecutorBase> &executor,
-                           AlgResourceResponse &algResource, const HcclOpResParam *commParam);
+                           AlgResourceResponse &algResource, const HcclOpResParam *commParam, HcclUs &toLaunch, HcclUs &launchFinish);
     HcclResult SaveTraceInfo(std::string &logInfo);
     HcclResult FlushUtraceInfo();
     std::string GetExcuteOp();
@@ -268,7 +268,7 @@ private:
         uint32_t &retryCnt, AlgResourceResponse &algResource, const HcclOpResParam *commParam, const OpParam &param);
     HcclResult HcclOpExecFsmLaunchProcess(const std::string &algName, OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, HcclOpExecFSM &fsmState,
-        KfcError &errorCode, uint32_t &beginSqePos, uint32_t &endSqePos, uint32_t retryCnt);
+        KfcError &errorCode, uint32_t &beginSqePos, uint32_t &endSqePos, uint32_t retryCnt, HcclUs &toLaunch, HcclUs &launchFinish);
     HcclResult HcclOpExecFsmWaitEndProcess(OpParam &param, AlgResourceResponse &algResource, HcclOpExecFSM &fsmState,
         KfcError &errorCode, uint32_t retryCnt, std::string &tag, const uint32_t &beginSqePos);
     HcclResult HcclOpExecFsmStoppingProcess(const OpParam &param, HcclOpExecFSM &fsmState, KfcError &errorCode, uint32_t retryCnt);
@@ -293,7 +293,7 @@ private:
     bool HcclOpCheckNsRecovery();
     HcclResult OrchestrateHcclOp(const std::string &algName, OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
-        uint32_t &endSqePos);
+        uint32_t &endSqePos, HcclUs &toLaunch, HcclUs &launchFinish);
     HcclResult LaunchSlaveStreamTask(AlgResourceResponse &algResource);
     HcclResult GetAlltoAllvSendRecvInfo(const void* sendRecvInfoPtr, HcclDataType sendType, HcclDataType recvType);
     HcclResult GetAlltoAllvcSendRecvInfo(const void *sendCountMatrix, HcclDataType sendType, HcclDataType recvType);

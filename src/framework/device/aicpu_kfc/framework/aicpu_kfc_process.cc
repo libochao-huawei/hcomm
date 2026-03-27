@@ -1038,7 +1038,9 @@ HcclResult AddTaskForHcclMsgV2(hccl::HcclCommAicpu *comm, AicpuKfcRpcServerV2 *r
         curTurnCntForKernel++;
         rpc->SetMsgPosForKernel(curTurnCntForKernel);
         CHK_RET(comm->GetAlgResponseRes(newTag, algName, opParam, commParam, executor, algResResponse));
-        HcclResult hcclRet = comm->Orchestrate(newTag, algName, opParam, executor, *algResResponse, commParam);
+        std::chrono::steady_clock::time_point tm1;
+        std::chrono::steady_clock::time_point tm2;
+        HcclResult hcclRet = comm->Orchestrate(newTag, algName, opParam, executor, *algResResponse, commParam,tm1,tm2);
         AicpuKfcProf::GetCurrentAicpuProf()->workCnt++;
         CHK_PRT_RET(hcclRet != HCCL_SUCCESS,
                     HCCL_ERROR("Executor op fail, opParam.tag[%s], algName[%s]",
