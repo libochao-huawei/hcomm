@@ -35,6 +35,7 @@ public:
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
+    HcommChannelKind GetChannelKind() const override;
 
 private:
     HcclResult ParseInputParam();

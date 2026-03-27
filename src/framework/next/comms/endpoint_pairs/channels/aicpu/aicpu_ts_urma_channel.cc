@@ -309,4 +309,9 @@ HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***mem
 {
     return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
+
+HcommChannelKind AicpuTsUrmaChannel::GetChannelKind() const
+{
+    return HcommChannelKind::AICPU_TS_URMA;
+}
 } // namespace hcomm

@@ -47,6 +47,9 @@ private:
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling);
     static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, 
         uint32_t listNum, aclrtBinHandle binHandle);
+    /** AICPU 系引擎下按通道种类选择 HcommChannelRes 或旧 HcclChannelUrmaRes 路径，便于后续扩展 */
+    static HcclResult LaunchChannelKernel(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+        uint32_t listNum, aclrtBinHandle binHandle);
 
     static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
     static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
