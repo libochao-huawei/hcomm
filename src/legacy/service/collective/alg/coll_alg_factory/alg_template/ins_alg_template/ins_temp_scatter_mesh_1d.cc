@@ -102,6 +102,8 @@ HcclResult InsTempScatterMesh1D::RunMesh(
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
     for (u32 r = 0; r < tempAlgParams.repeatNum; r++) {
         if (root_ == u32(myRank_)) {
+            // root卡需要将发送的数据刷新为尾部数据长度
+            u64 sliceSize = tempAlgParams.tailSize;
             u32 count = 0;
             for (u32 algRank = 0; algRank < tempVTopo_[0].size(); algRank++) {
                 if (myAlgRank == algRank) {
@@ -123,8 +125,8 @@ HcclResult InsTempScatterMesh1D::RunMesh(
                 u64 dstOffset = isZeroCopy_ ? buffInfo_.outBuffBaseOff + r * tempAlgParams.outputRepeatStride :
                                               buffInfo_.scratchBuffBaseOff + r * tempAlgParams.outputRepeatStride;
                 BufferType dstBuffType = isZeroCopy_ ? BufferType::OUTPUT : BufferType::SCRATCH;
-                DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, tempAlgParams.sliceSize);
-                DataSlice dstSlice(dstBuffType, dstOffset, tempAlgParams.sliceSize);
+                DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
+                DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
                 SlicesList txSlicesList({srcSlice}, {dstSlice});
                 DataInfo sendData(linkSend, txSlicesList);
                 CHK_PRT_RET(
@@ -142,8 +144,11 @@ HcclResult InsTempScatterMesh1D::RunMesh(
             u64 dstOffset = isZeroCopy_ ? buffInfo_.outBuffBaseOff + r * tempAlgParams.outputRepeatStride :
                                           buffInfo_.scratchBuffBaseOff + r * tempAlgParams.outputRepeatStride;
             BufferType dstBuffType = isZeroCopy_ ? BufferType::OUTPUT : BufferType::SCRATCH;
-            DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, tempAlgParams.sliceSize);
-            DataSlice dstSlice(dstBuffType, dstOffset, tempAlgParams.sliceSize);
+            // 如果本卡是最后一张卡需要将数据大小刷新为tailSize
+            u64 sliceSize = tempAlgParams.sliceSize;
+            UpdateRxSliceSize(tempAlgParams, sliceSize);
+            DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
+            DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
             SlicesList rxSlicesList({srcSlice}, {dstSlice});
             DataInfo recvData(linkRecv, rxSlicesList);
             CHK_PRT_RET(
@@ -159,20 +164,26 @@ HcclResult InsTempScatterMesh1D::PreCopy(TemplateDataParams& tempAlgParams, std:
     if (u32(myRank_) != root_) {
         return HCCL_SUCCESS;
     }
+    u64 sliceSize = tempAlgParams.tailSize;
     u32 myAlgRank;
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
+    // 零拷贝而且不是最后一张卡的情况需要拷贝sliceSize
+    if (isZeroCopy_ && myAlgRank != tempVTopo_[0].size() - 1) {
+        u64 sliceSize = tempAlgParams.sliceSize;
+    }
+
     for (u32 r = 0; r < tempAlgParams.repeatNum; r++) {
         u64 srcOffset =
             buffInfo_.inBuffType == BufferType::SCRATCH ? buffInfo_.scratchBuffBaseOff : buffInfo_.inBuffBaseOff;
         srcOffset += r * tempAlgParams.inputRepeatStride + tempAlgParams.inputSliceStride * myAlgRank;
-        DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, tempAlgParams.sliceSize);
-        u64 dstOffset = isZeroCopy_ ? buffInfo_.outBuffBaseOff : buffInfo_.scratchBuffBaseOff;
-        dstOffset += r * tempAlgParams.outputRepeatStride;
-        BufferType dstBufferType = isZeroCopy_ ? buffInfo_.outBuffType : buffInfo_.scratBuffType;
-        if (dstBufferType == buffInfo_.inBuffType && srcOffset == dstOffset) {
-            continue;
-        }
-        DataSlice dstSlice(dstBufferType, dstOffset, tempAlgParams.sliceSize);
+        DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
+        BufferType dstBufferType =
+            buffInfo_.outBuffType == BufferType::INPUT ? buffInfo_.scratBuffType : buffInfo_.outBuffType;
+        u64 dstOffset = buffInfo_.outBuffType == BufferType::SCRATCH || buffInfo_.outBuffType == BufferType::INPUT ?
+                            r * tempAlgParams.outputRepeatStride + buffInfo_.scratchBuffBaseOff :
+                            r * tempAlgParams.outputRepeatStride + buffInfo_.outBuffBaseOff;
+        DataSlice dstSlice(dstBufferType, dstOffset, sliceSize);
+
         LocalCopy(tempInsQues[0], srcSlice, dstSlice);
     }
 
@@ -181,21 +192,39 @@ HcclResult InsTempScatterMesh1D::PreCopy(TemplateDataParams& tempAlgParams, std:
 
 HcclResult InsTempScatterMesh1D::PostCopy(const TemplateDataParams& tempAlgParams, std::vector<InsQuePtr>& tempInsQues)
 {
-    if (isZeroCopy_) {
+    // 零拷贝或者输出地址是SCRATCH场景在PreCopy阶段就已经拷贝完了
+    if (isZeroCopy_ || buffInfo_.outBuffType == BufferType::SCRATCH) {
         return HCCL_SUCCESS;
     }
-    u32 myAlgRank;
-    GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
-    DataSlice dstSlice(
-        buffInfo_.outBuffType, buffInfo_.outBuffBaseOff, tempAlgParams.sliceSize * tempAlgParams.repeatNum);
-    DataSlice srcSlice(
-        buffInfo_.scratBuffType, buffInfo_.scratchBuffBaseOff, tempAlgParams.sliceSize * tempAlgParams.repeatNum);
+
+    if (buffInfo_.outBuffType == BufferType::OUTPUT && myRank_ == root_) {
+        return HCCL_SUCCESS;
+    }
+
+    // 如果本卡是最后一张卡需要将数据大小刷新为tailSize
+    u64 sliceSize = tempAlgParams.sliceSize;
+    UpdateRxSliceSize(tempAlgParams, sliceSize);
+
+    DataSlice dstSlice(buffInfo_.outBuffType, buffInfo_.outBuffBaseOff, sliceSize * tempAlgParams.repeatNum);
+    DataSlice srcSlice(buffInfo_.scratBuffType, buffInfo_.scratchBuffBaseOff, sliceSize * tempAlgParams.repeatNum);
     if (buffInfo_.outBuffType == buffInfo_.scratBuffType && buffInfo_.outBuffBaseOff == buffInfo_.scratchBuffBaseOff) {
         return HCCL_SUCCESS;
     }
     LocalCopy(tempInsQues[0], srcSlice, dstSlice);
 
     return HcclResult::HCCL_SUCCESS;
+}
+
+void InsTempScatterMesh1D::UpdateRxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize)
+{
+    // 根据传入参数的tailSize和当前是否是最后一张卡刷新
+    u32 myAlgRank;
+    GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
+    // 支持不均匀切分的情况下需要把尾部数据放到最后一张卡上
+    if (myAlgRank == tempVTopo_[0].size() - 1) {
+        sliceSize = tempAlgParams.tailSize;
+    }
+    return;
 }
 
 } // namespace Hccl

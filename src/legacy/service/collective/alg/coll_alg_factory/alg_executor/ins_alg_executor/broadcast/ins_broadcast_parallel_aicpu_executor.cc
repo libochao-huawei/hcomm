@@ -337,21 +337,24 @@ void InsBroadcastParallelAiCpuExecutor<
     }
     /* 刷新slicecout0 和slicecout1确保是interLocalRankSize_ * intraLocalRankSize_整倍数 */
     u64 sliceCountPart0 = static_cast<u64>(float(sliceCount) * splitDataSize.at(0));
-    u64 sliceCountPart1 = sliceCount - sliceCountPart0;
     sliceCountPart0 =
         (sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
+    u64 sliceCountPart1 = static_cast<u64>(float(sliceCount) * splitDataSize.at(1));
     sliceCountPart1 =
         (sliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
-    if (sliceCountPart0 != 0 && sliceCountPart1 != 0) {
-        /*如果sliceCountPart0或者sliceCountPart1为0说明只有一块数据都是尾块*/
-        sliceCount = sliceCountPart0 + sliceCountPart1;
-    }
-    // 计算循环次数
-    u32 loopTimes = (dataCount_ + sliceCount - 1) / sliceCount;
+    sliceCount = sliceCountPart0 + sliceCountPart1;
+    // 计算循环次数, 如果sliceCountPart0和liceCountPart1为0说明只有一块数据都是尾块
+    u32 loopTimes = sliceCount == 0 ? 1 : (dataCount_ + sliceCount - 1) / sliceCount;
     // 计算尾块
     u64 finalSliceCount = dataCount_ - (loopTimes - 1) * sliceCount;
     u64 finalSliceCountPart0 = static_cast<u64>(float(finalSliceCount) * splitDataSize.at(0));
-    u64 finalSliceCountPart1 = finalSliceCount - finalSliceCountPart0;
+    //  刷新slicecout0 和slicecout1确保是interLocalRankSize_ * intraLocalRankSize_整倍数
+    finalSliceCountPart0 =
+        (finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
+    u64 finalSliceCountPart1 = static_cast<u64>(float(finalSliceCount) * splitDataSize.at(1));
+    finalSliceCountPart1 =
+        (finalSliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
+    u64 finalTailCount = finalSliceCount - finalSliceCountPart0 - finalSliceCountPart1;
     slice.loopTimes = loopTimes;
     slice.sliceCount = sliceCount;
     slice.sliceCountPart0 = sliceCountPart0;
@@ -359,29 +362,8 @@ void InsBroadcastParallelAiCpuExecutor<
     slice.finalSliceCount = finalSliceCount;
     slice.finalSliceCountPart0 = finalSliceCountPart0;
     slice.finalSliceCountPart1 = finalSliceCountPart1;
-    return;
-}
-
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
-    typename InsAlgTemplate3>
-void InsBroadcastParallelAiCpuExecutor<
-    AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    CalcScratchOffset(SliceConfig& slice, ScratchMultiple& scratchMultiple, ScratchOffset& scratchOffset)
-{
-    // 计算Scratch偏移，数据尾块必然小于常规块，不用额外计算尾块时的Scratch偏移
-    scratchOffset.interScatterStage0 = 0;
-    scratchOffset.intraScatterStage0 = slice.sliceCountPart0 * scratchMultiple.interScatter;
-
-    scratchOffset.intraScatterStage1 = 0;
-    scratchOffset.interScatterStage1 = slice.sliceCountPart0 / interLocalRankSize_ * scratchMultiple.intraScatter;
-
-    scratchOffset.intraAllGatherStage2 = 0;
-    scratchOffset.interAllGatherStage2 =
-        (slice.sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather;
-
-    scratchOffset.interAllGatherStage3 = 0;
-    scratchOffset.intraAllGatherStage3 = (slice.sliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather;
+    // 结构体定义中必须确保finalTailCountPart0和finalTailCountPart1初始化为0
+    (finalTailCount < finalSliceCountPart0 ? slice.finalTailCountPart0 : slice.finalTailCountPart1) = finalTailCount;
     return;
 }
 
@@ -396,46 +378,27 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
     TempFuncs tempFuncs;
     tempFuncs.opMode = opMode_;
     tempFuncs.enableCounterNotify = false;
-    u64 sliceSize = dataTypeSize_ * dataCount_;
-    u64 part0SliceSize[] = {
-        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_,
-        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
-        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
-        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_};
-    u64 part1SliceSize[] = {
-        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_,
-        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
-        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
-        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_};
-    u64 part0InputStirde[] = {
-        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_,
-        dataParameters.CountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_, 0, 0};
-    u64 part1InputStride[] = {
-        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_,
-        dataParameters.CountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
-    for (u32 i = 0; i < algParaVec.size(); i++) {
-        bool isFirst = (i == 0);
+    for (u32 step = 0; step < algParaVec.size(); step++) {
+        bool isFirst = (step == 0);
         // 先处理part0数据
         CHK_RET(PreSyncQues(syncQueues_, 0));
         // 第一步的时候server间topo包含root_的rank进行展开，其它rank不展开
-        if ((!isFirst || interLocalRoot_ == root_) && (dataParameters.CountPart0) > 0) {
-            GenDataParamsStage(
-                part0SliceSize[i], part0InputStirde[i], dataParameters.dataOffset0, dataParameters.CountPart0,
-                algParaVec.at(i).part0ScratchOffset, tempAlgParams);
-            CHK_RET(algParaVec.at(i).part0FuncPtr(
-                tempFuncs, tempAlgParams, algParaVec.at(i).part0links, algParaVec.at(i).part0Que));
+        u64 sliceSizePart0 = max(dataParameters.sliceSize.at(0).at(step), dataParameters.tailSize.at(0).at(step));
+        if ((!isFirst || interLocalRoot_ == root_) && (sliceSizePart0 > 0)) {
+            GenDataParamsStage(0, step, dataParameters, tempAlgParams);
+            CHK_RET(algParaVec.at(step).part0FuncPtr(
+                tempFuncs, tempAlgParams, algParaVec.at(step).part0links, algParaVec.at(step).part0Que));
         }
         CHK_RET(PostSyncQues(syncQueues_, 0));
         // 再处理part1数据
         CHK_RET(PreSyncQues(syncQueues_, 0));
         // 第一步的时候server内topo包含root_的rank进行展开，其它rank不展开
-        if ((!isFirst || intraLocalRoot_ == root_) && dataParameters.CountPart1 > 0) {
+        u64 sliceSizePart1 = max(dataParameters.sliceSize.at(1).at(step), dataParameters.tailSize.at(1).at(step));
+        if ((!isFirst || intraLocalRoot_ == root_) && sliceSizePart1 > 0) {
             // 数据1的server内的scatter算法
-            GenDataParamsStage(
-                part1SliceSize[i], part1InputStride[i], dataParameters.dataOffset1, dataParameters.CountPart1,
-                algParaVec.at(i).part1ScratchOffset, tempAlgParams);
-            CHK_RET(algParaVec.at(i).part1FuncPtr(
-                tempFuncs, tempAlgParams, algParaVec.at(i).part1links, algParaVec.at(i).part1Que));
+            GenDataParamsStage(1, step, dataParameters, tempAlgParams);
+            CHK_RET(algParaVec.at(step).part1FuncPtr(
+                tempFuncs, tempAlgParams, algParaVec.at(step).part1links, algParaVec.at(step).part1Que));
         }
         CHK_RET(PostSyncQues(syncQueues_, 0));
     }
@@ -461,30 +424,20 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
         interAllGatherTempAlg);
     SliceConfig slice;
     CalcSlice(dataSplitSize, scratchMultiple.maxMultiple, slice);
-    if (slice.sliceCount == 0) {
-        HCCL_WARNING("The divisor cannot be zero.");
-        return HcclResult::HCCL_SUCCESS;
-    }
-    ScratchOffset scratchOffset;
-    CalcScratchOffset(slice, scratchMultiple, scratchOffset);
 
     std::vector<StageProcAlgPara> stageProcAlgParaVec;
     InitStageProcAlgParaVec(
-        stageProcAlgParaVec, scratchOffset, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg,
-        interAllGatherTempAlg);
-
+        stageProcAlgParaVec, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg);
     DataParameters dataParameters;
-    dataParameters.CountPart0 = slice.sliceCountPart0;
-    dataParameters.CountPart1 = slice.sliceCountPart1;
+    InitDataParameters(slice, scratchMultiple, dataParameters);
     for (u32 loopIndex = 0; loopIndex < slice.loopTimes - 1; loopIndex++) {
-        dataParameters.dataOffset0 = loopIndex * slice.sliceCount * dataTypeSize_;
-        dataParameters.dataOffset1 = dataParameters.dataOffset0 + dataParameters.CountPart0 * dataTypeSize_;
+        dataParameters.dataOffset[0] = loopIndex * slice.sliceCount * dataTypeSize_;
+        dataParameters.dataOffset[1] = dataParameters.dataOffset[0] + slice.sliceCountPart0 * dataTypeSize_;
         CHK_RET(StageProcess(dataParameters, stageProcAlgParaVec));
     }
-    dataParameters.CountPart0 = slice.finalSliceCountPart0;
-    dataParameters.CountPart1 = slice.finalSliceCountPart1;
-    dataParameters.dataOffset0 = (slice.loopTimes - 1) * slice.sliceCount * dataTypeSize_;
-    dataParameters.dataOffset1 = dataParameters.dataOffset0 + dataParameters.CountPart0 * dataTypeSize_;
+    InitFinalSliceDataParameters(slice, scratchMultiple, dataParameters);
+    dataParameters.dataOffset[0] = (slice.loopTimes - 1) * slice.sliceCount * dataTypeSize_;
+    dataParameters.dataOffset[1] = dataParameters.dataOffset[0] + slice.finalSliceCountPart0 * dataTypeSize_;
     CHK_RET(StageProcess(dataParameters, stageProcAlgParaVec));
     return HcclResult::HCCL_SUCCESS;
 }
