@@ -28,8 +28,6 @@ public:
 
     RtsqBase *GetRtsq() const;
 
-    void SetSdmaHcclQos(u32 qos) const;
-
     std::string Describe() const;
 
 private:

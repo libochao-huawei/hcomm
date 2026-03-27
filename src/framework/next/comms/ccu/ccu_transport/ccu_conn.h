@@ -27,7 +27,7 @@ MAKE_ENUM(CcuConnStatus,
 class CcuConnection {
 public:
     CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos = 0);
     CcuConnection(const CcuConnection &that)             = delete;
     CcuConnection &operator=(const CcuConnection &other) = delete;
     ~CcuConnection();
@@ -88,6 +88,7 @@ private:
     CommAddr         rmtAddr_{};
     CcuChannelInfo          channelInfo_{};
     std::vector<CcuJetty *> ccuJettys_;
+    uint32_t      hcclQos_{0};
 
     int32_t       devLogicId_{0};
     uint32_t      devPhyId_{0};
@@ -121,13 +122,13 @@ private:
 class CcuRtpConnection : public CcuConnection {
 public:
     CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos = 0);
 };
 
 class CcuCtpConnection : public CcuConnection {
 public:
     CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos = 0);
 };
 
 } // namespace hcomm

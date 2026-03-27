@@ -19,21 +19,25 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 
-using namespace hcomm;
 
 namespace MyRankUtils {
 
 HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 {
-    HcommChannelDesc hcommDesc;
+    HcommChannelDesc hcommDesc{};
     hcommDesc.remoteEndpoint = hcclDesc.remoteEndpoint;
     hcommDesc.notifyNum = hcclDesc.notifyNum;
     hcommDesc.memHandles = hcclDesc.memHandles;
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
-    hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
-    hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
-    hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
-    hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
+    if (hcclDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+        hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
+        hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
+        hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
+        hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
+    } else if (hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_CTP ||
+               hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_TP) {
+        hcommDesc.ubcAttr.qos = hcclDesc.ubcAttr.qos;
+    }
     return hcommDesc;
 }
 
@@ -204,10 +208,9 @@ HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &c
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::BatchCreateChannels(hcclComm *hcclComm, CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles)
 {
-    CHK_PTR_NULL(hcclComm);
     CHK_PTR_NULL(channelDescs);
     CHK_PTR_NULL(channelHandles);
     CHK_PRT_RET(channelNum == 0,
@@ -268,7 +271,6 @@ HcclResult MyRank::BatchCreateChannels(hcclComm *hcclComm, CommEngine engine, co
         hcommDescs[i].exchangeAllMems = false;
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
-        hcommDescs[i].hccsAttr.qos = hcclComm->GetHcclQos();
 
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
@@ -387,7 +389,7 @@ HcclResult MyRank::CreateChannels(hcclComm *hcclComm, CommEngine engine, const s
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
 
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
-    CHK_RET(BatchCreateChannels(hcclComm, engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
+    CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {

@@ -138,9 +138,18 @@ const std::map<HrtJettyMode, JettyMode> HRT_JETTY_MODE_MAP
 
 constexpr uint8_t  RNR_RETRY = 7;
 constexpr uint32_t RQ_DEPTH  = 256;
+constexpr u32      CCU_UB_DEFAULT_JETTY_PRIORITY = 2u;
+
+static u32 UbJettyPriorityFromHcclQos(u32 hcclQos)
+{
+    if (hcclQos == 0U) {
+        return CCU_UB_DEFAULT_JETTY_PRIORITY;
+    }
+    return hcclQos & 0xFU;
+}
 
 HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJettyParam &in, HrtRaUbJettyCreatedOutParam &out)
-{
+{HrtRaUbCreateJettyParam
     struct QpCreateAttr attr{};
     attr.scqHandle     = reinterpret_cast<void *>(in.sjfcHandle);
     attr.rcqHandle     = reinterpret_cast<void *>(in.rjfcHandle);
@@ -160,8 +169,7 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
        24-31代表芯片配置值b11:64s
     */
     attr.ub.errTimeout       = 16;
-    // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
-    attr.ub.priority          = 2;
+    attr.ub.priority         = UbJettyPriorityFromHcclQos(in.hcclQos);
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
@@ -187,10 +195,10 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
         "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
         "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u].",
+        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u], in.hcclQos[%u].",
         attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode,
         attr.ub.mode, attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa,
-        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType);
+        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType, attr.ub.priority, in.hcclQos);
 
     struct QpCreateInfo info {};
     void *qpHandle = nullptr;
@@ -248,8 +256,7 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
        24-31代表芯片配置值b11:64s
     */
     attr.ub.errTimeout       = 16;
-    // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
-    attr.ub.priority          = 2;
+    attr.ub.priority         = UbJettyPriorityFromHcclQos(in.hcclQos);
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
@@ -275,10 +282,10 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u], in.hcclQos[%u].",
               attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
               attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
-              attr.ub.extMode.piType, attr.ub.priority);
+              attr.ub.extMode.piType, attr.ub.priority, in.hcclQos);
 
     void *raReqHandle = nullptr;
     out.resize(sizeof(QpCreateInfo));

@@ -24,6 +24,9 @@ public:
 
     HcclResult Init();
 
+    /** 建链前写入 HcclChannelDesc::ubcAttr.qos，供 HccpUbCreateJettyAsync 映射 attr.ub.priority */
+    void SetHcclQosForCreate(uint32_t qos);
+
     HcclResult CreateJetty();
 
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;

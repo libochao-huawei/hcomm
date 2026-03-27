@@ -36,8 +36,8 @@ public:
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
-    /** HCCL QoS（与建链时 HcommChannelDesc::hccsAttr.qos 一致） */
-    uint32_t GetHccsQos() const { return channelDesc_.hccsAttr.qos; }
+    /** HCCL QoS（与建链时 HcommChannelDesc::ubcAttr.qos 一致） */
+    uint32_t GetHccsQos() const { return channelDesc_.ubcAttr.qos; }
 
 private:
     HcclResult ParseInputParam();

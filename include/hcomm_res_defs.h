@@ -102,6 +102,9 @@ typedef struct {
         {
             uint32_t qos;
         } hccsAttr;
+        struct {
+            uint32_t qos;             ///< 通信域 QoS（UBC_CTP / UBC_TP，与 HcommChannelDesc::hccsAttr.qos 对齐）
+        } ubcAttr;
     };
 
     HcommSocket socket;
