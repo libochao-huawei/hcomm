@@ -351,7 +351,7 @@ struct HcclOpArgs {
     DataType     srcDataType;
     DataType     dstDataType;
     ReduceOp    reduceType;
-    uint64_t    count;
+    uint64_t    count{0};
     char        algConfig[ALG_CONFIG_SIZE];
     HcclAccelerator     commEngine;
     uint64_t    reverse;
@@ -360,6 +360,7 @@ struct HcclOpArgs {
         srcDataType = DataType::FP16;
         dstDataType = DataType::FP16;
         reduceType = ReduceOp::SUM;
+        count = 0;
     }
 };
 

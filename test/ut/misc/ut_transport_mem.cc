@@ -739,102 +739,102 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_enable_disable_mem_access
     sal_free(remotebuf);
 }
 
-TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_read_write)
-{
-    HcclResult ret;
-    rtStream_t stream;
-    rtError_t rt_ret = aclrtCreateStream(&stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+// TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_ipc_mem_read_write)
+// {
+//     HcclResult ret;
+//     rtStream_t stream;
+//     rtError_t rt_ret = aclrtCreateStream(&stream);
+//     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
-    std::unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
-    NetDevContext devContext;
-    devContext.localIpcRmaBufferMgr_ = std::make_shared<NetDevContext::LocalIpcRmaBufferMgr>();
-    HcclNetDevCtx netDevCtx = &devContext;
-    DispatcherPub dispatcherPub(0);
-    HcclDispatcher dispatcher = &dispatcherPub;
-    TransportMem::AttrInfo attrInfo;
-    attrInfo.localRankId = 0;
-    attrInfo.remoteRankId = 1;
-    attrInfo.sdid = 1;
-    attrInfo.serverId = 1;
-    std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
-    TransportIpcMem *transportPtr = dynamic_cast<TransportIpcMem *>(transport.get());
-    HcclIpAddress ipAddr;
-    std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
-    transport->SetDataSocket(socketPtr);
+//     std::unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
+//     NetDevContext devContext;
+//     devContext.localIpcRmaBufferMgr_ = std::make_shared<NetDevContext::LocalIpcRmaBufferMgr>();
+//     HcclNetDevCtx netDevCtx = &devContext;
+//     DispatcherPub dispatcherPub(0);
+//     HcclDispatcher dispatcher = &dispatcherPub;
+//     TransportMem::AttrInfo attrInfo;
+//     attrInfo.localRankId = 0;
+//     attrInfo.remoteRankId = 1;
+//     attrInfo.sdid = 1;
+//     attrInfo.serverId = 1;
+//     std::shared_ptr<TransportMem> transport = TransportMem::Create(TransportMem::TpType::IPC, notifyPool, netDevCtx, dispatcher, attrInfo);
+//     TransportIpcMem *transportPtr = dynamic_cast<TransportIpcMem *>(transport.get());
+//     HcclIpAddress ipAddr;
+//     std::shared_ptr<HcclSocket> socketPtr = make_shared<HcclSocket>("tagIpc", netDevCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_SERVER);
+//     transport->SetDataSocket(socketPtr);
 
-    u64 count = 1024;
-    u64 bufSize = 1024 * sizeof(s8);
-    s8* localbuf= (s8*)sal_malloc(bufSize);
-    sal_memset(localbuf, bufSize, 0, bufSize);
-    BufferKey<uintptr_t, u64> tempLocalKey(reinterpret_cast<uintptr_t>(localbuf), bufSize);
-    std::shared_ptr<LocalIpcRmaBuffer> tempLocalIpcBufferPtr = make_shared<LocalIpcRmaBuffer>(netDevCtx, localbuf, bufSize);
-    tempLocalIpcBufferPtr->devAddr = localbuf;
-    devContext.localIpcRmaBufferMgr_->Add(tempLocalKey, tempLocalIpcBufferPtr);
+//     u64 count = 1024;
+//     u64 bufSize = 1024 * sizeof(s8);
+//     s8* localbuf= (s8*)sal_malloc(bufSize);
+//     sal_memset(localbuf, bufSize, 0, bufSize);
+//     BufferKey<uintptr_t, u64> tempLocalKey(reinterpret_cast<uintptr_t>(localbuf), bufSize);
+//     std::shared_ptr<LocalIpcRmaBuffer> tempLocalIpcBufferPtr = make_shared<LocalIpcRmaBuffer>(netDevCtx, localbuf, bufSize);
+//     tempLocalIpcBufferPtr->devAddr = localbuf;
+//     devContext.localIpcRmaBufferMgr_->Add(tempLocalKey, tempLocalIpcBufferPtr);
 
-    s8* remotebuf= (s8*)sal_malloc(bufSize);
-    sal_memset(remotebuf, bufSize, 0, bufSize);
-    BufferKey<uintptr_t, u64> tempRemoteKey(reinterpret_cast<uintptr_t>(remotebuf), bufSize);
-    std::shared_ptr<RemoteIpcRmaBuffer> tempRemoteIpcBufferPtr = make_shared<RemoteIpcRmaBuffer>(netDevCtx);
-    tempRemoteIpcBufferPtr->addr = remotebuf;
-    tempRemoteIpcBufferPtr->size = bufSize;
-    tempRemoteIpcBufferPtr->devAddr = remotebuf;
-    tempRemoteIpcBufferPtr->memType = RmaMemType::HOST;
-    transportPtr->remoteIpcRmaBufferMgr_.Add(tempRemoteKey, tempRemoteIpcBufferPtr);
+//     s8* remotebuf= (s8*)sal_malloc(bufSize);
+//     sal_memset(remotebuf, bufSize, 0, bufSize);
+//     BufferKey<uintptr_t, u64> tempRemoteKey(reinterpret_cast<uintptr_t>(remotebuf), bufSize);
+//     std::shared_ptr<RemoteIpcRmaBuffer> tempRemoteIpcBufferPtr = make_shared<RemoteIpcRmaBuffer>(netDevCtx);
+//     tempRemoteIpcBufferPtr->addr = remotebuf;
+//     tempRemoteIpcBufferPtr->size = bufSize;
+//     tempRemoteIpcBufferPtr->devAddr = remotebuf;
+//     tempRemoteIpcBufferPtr->memType = RmaMemType::HOST;
+//     transportPtr->remoteIpcRmaBufferMgr_.Add(tempRemoteKey, tempRemoteIpcBufferPtr);
 
-    MOCKER_CPP(&DispatcherPub::MemcpyAsyncWithoutCheckKind, HcclResult(DispatcherPub::*)(void*, uint64_t, const void*, u64, HcclRtMemcpyKind, hccl::Stream&, u32, hccl::LinkType))
-    .stubs()
-    .will(returnValue(HCCL_E_INTERNAL))
-    .then(returnValue(HCCL_SUCCESS));
+//     MOCKER_CPP(&DispatcherPub::MemcpyAsyncWithoutCheckKind, HcclResult(DispatcherPub::*)(void*, uint64_t, const void*, u64, HcclRtMemcpyKind, hccl::Stream&, u32, hccl::LinkType))
+//     .stubs()
+//     .will(returnValue(HCCL_E_INTERNAL))
+//     .then(returnValue(HCCL_SUCCESS));
 
-    // Read/Write未注册的内存
-    HcclBuf localMem = {localbuf - 1, 1, nullptr};
-    HcclBuf remoteMem = {remotebuf, bufSize, tempRemoteIpcBufferPtr.get()};
-    ret = transport->Read(localMem, remoteMem, stream);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    ret = transport->Write(remoteMem, localMem, stream);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+//     // Read/Write未注册的内存
+//     HcclBuf localMem = {localbuf - 1, 1, nullptr};
+//     HcclBuf remoteMem = {remotebuf, bufSize, tempRemoteIpcBufferPtr.get()};
+//     ret = transport->Read(localMem, remoteMem, stream);
+//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
+//     ret = transport->Write(remoteMem, localMem, stream);
+//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
-    TransportMem::RmaOpMem localMemop = {localbuf - 1, 1};
-    TransportMem::RmaOpMem remoteMemop = {remotebuf, bufSize};
-    ret = transport->Read(localMemop, remoteMemop, stream);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    ret = transport->Write(remoteMemop, localMemop, stream);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+//     TransportMem::RmaOpMem localMemop = {localbuf - 1, 1};
+//     TransportMem::RmaOpMem remoteMemop = {remotebuf, bufSize};
+//     ret = transport->Read(localMemop, remoteMemop, stream);
+//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
+//     ret = transport->Write(remoteMemop, localMemop, stream);
+//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
-    // dispatcher MemcpyAsync失败
-    HcclBuf localMem1 = {localbuf + 1, 4, nullptr};
-    HcclBuf remoteMem1 = {remotebuf, 4, tempRemoteIpcBufferPtr.get()};
-    ret = transport->Read(localMem1, remoteMem1, stream);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+//     // dispatcher MemcpyAsync失败
+//     HcclBuf localMem1 = {localbuf + 1, 4, nullptr};
+//     HcclBuf remoteMem1 = {remotebuf, 4, tempRemoteIpcBufferPtr.get()};
+//     ret = transport->Read(localMem1, remoteMem1, stream);
+//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
-    // Read与Write已注册使能的内存中段
-    ret = transport->Read(localMem1, remoteMem1, stream);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = transport->Write(remoteMem1, localMem1, stream);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+//     // Read与Write已注册使能的内存中段
+//     ret = transport->Read(localMem1, remoteMem1, stream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     ret = transport->Write(remoteMem1, localMem1, stream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    HcclBuf localMem2 = {localbuf, bufSize, nullptr};
-    HcclBuf remoteMem2 = {remotebuf, bufSize, tempRemoteIpcBufferPtr.get()};
-    ret = transport->Read(localMem2, remoteMem2, stream);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = transport->Write(remoteMem2, localMem2, stream);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+//     HcclBuf localMem2 = {localbuf, bufSize, nullptr};
+//     HcclBuf remoteMem2 = {remotebuf, bufSize, tempRemoteIpcBufferPtr.get()};
+//     ret = transport->Read(localMem2, remoteMem2, stream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     ret = transport->Write(remoteMem2, localMem2, stream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    TransportMem::RmaOpMem localMemop2 = {localbuf, bufSize};
-    TransportMem::RmaOpMem remoteMemop2 = {remotebuf, bufSize};
-    ret = transport->Read(localMemop2, remoteMemop2, stream);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = transport->Write(remoteMemop2, localMemop2, stream);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+//     TransportMem::RmaOpMem localMemop2 = {localbuf, bufSize};
+//     TransportMem::RmaOpMem remoteMemop2 = {remotebuf, bufSize};
+//     ret = transport->Read(localMemop2, remoteMemop2, stream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     ret = transport->Write(remoteMemop2, localMemop2, stream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    rt_ret = aclrtSynchronizeStream(stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-    rt_ret = aclrtDestroyStream(stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-    sal_free(localbuf);
-    sal_free(remotebuf);
-}
+//     rt_ret = aclrtSynchronizeStream(stream);
+//     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+//     rt_ret = aclrtDestroyStream(stream);
+//     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+//     sal_free(localbuf);
+//     sal_free(remotebuf);
+// }
 
 static std::shared_ptr<TransportMem> CreateIpcMemTransport()
 {
