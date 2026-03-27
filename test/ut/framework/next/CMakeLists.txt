@@ -31,6 +31,7 @@ set(src_to_test_list
     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
  	coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
+    coll_comms/communicator/ut_coll_comm_mgr.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})

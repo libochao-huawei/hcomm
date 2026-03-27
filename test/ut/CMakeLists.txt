@@ -205,6 +205,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
