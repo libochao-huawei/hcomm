@@ -33,7 +33,7 @@ public:
     template <typename T> void ParseString(const std::string &jsonString, T &info) const;
     template <typename T> void ParseFile(const std::string &filePath, T &info) const;
     template <typename T> void GetString(const T &info, std::string &infoStr) const;
-    void ParseFileToJson(const std::string &filePath, nlohmann::json &parseInformation) const;
+    HcclResult ParseFileToJson(const std::string &filePath, nlohmann::json &parseInformation) const;
 
 private:
     template <typename T> void ParseInformation(nlohmann::json &parseInformation, T &information) const;
