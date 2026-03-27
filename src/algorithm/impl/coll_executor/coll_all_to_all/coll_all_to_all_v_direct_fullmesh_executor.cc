@@ -34,7 +34,6 @@ HcclResult CollRunAlltoAllDirectFullmesh::Orchestrate(OpParam& param, AlgResourc
     execMem.inputMem = algRes.cclInputMem;
     execMem.outputMem = algRes.cclOutputMem;
     ret = KernelRun(param, execMem);
-    HCCL_RUN_INFO("before LaunchTaskExtend take time [%lld]us.", DURATION_US(TIME_NOW() - startut));
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollRunAlltoAllDirectFullmesh][Orchestrate]errNo[0x%016llx]executor run failed",
@@ -321,11 +320,9 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     u32 devNumInlocalPod = INVALID_VALUE_RANKSIZE;
     u32 rankIdxInPod = INVALID_VALUE_RANKID;
     CHK_RET(GetLocalSDMAGroupInfo(topoAttr_.userRank, devNumInlocalPod, rankIdxInPod));
-    HCCL_RUN_INFO("[jjy] after GetLocalSDMAGroupInfo[%lld]us", DURATION_US(TIME_NOW() - startut));
     // 获取通信域
     CHK_RET(CheckCommSize(COMM_COMBINE_ORDER, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);
-    HCCL_RUN_INFO("[jjy] after GetSubCommInfo[%lld]us", DURATION_US(TIME_NOW() - startut));
     bool isA2MultiModule = topoAttr_.deviceType == DevType::DEV_TYPE_910B &&
                             !topoAttr_.isSingleMeshAggregation;
     // isSuPodAsym 表示A2A3卡数不一致场景或者A3多超节点server数不同场景
@@ -342,7 +339,6 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
         TemplateType::TEMPLATE_ALL_2_ALL_V_DIRECT_FULL_MESH, dispatcher_);
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_2_ALL_V_DIRECT_FULL_MESH in COMM_COMBINE_ORDER", __func__);
     CHK_SMART_PTR_NULL(tempAlg);
-    HCCL_RUN_INFO("[jjy] after GetAlgTemplate[%lld]us", DURATION_US(TIME_NOW() - startut));
 
     PrepareData prepareData;
     prepareData.stream = param.stream;
@@ -378,13 +374,10 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     } else {
         prepareData.needAlltoallvCache = false;
     }
-    HCCL_RUN_INFO("[jjy] before Prepare[%lld]us", DURATION_US(TIME_NOW() - startut));
 
     CHK_RET(tempAlg->Prepare(prepareData));
-    HCCL_RUN_INFO("[jjy] before RunAsync[%lld]us", DURATION_US(TIME_NOW() - startut));
 
     CHK_RET(tempAlg->RunAsync());
-    HCCL_RUN_INFO("[jjy] after RunAsync[%lld]us", DURATION_US(TIME_NOW() - startut));
 
     if (needAlltoallvCache_) {
         // 在tempAlg被销毁前保存hcclOffset-dstRank之间的mapping信息
@@ -404,7 +397,6 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
             CHK_RET(PostSyncWithSubstream(postSyncParam, execMem, postSyncPrepareData));
         }
     }
-    HCCL_RUN_INFO("[jjy] after kernelrun[%lld]us", DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 HcclResult CollRunAlltoAllDirectFullmesh::Getlevel1CommRank(SubCommInfo& level1CommInfo)
