@@ -80,7 +80,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::CalNumBlocks(u32& numBlocks, 
         }
     }
 
-    HCCL_INFO("[CollAllGatherMeshAivSmallCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollAllGatherMeshAivSmallCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

@@ -88,7 +88,7 @@ HcclResult CollReduceScatterAivRdmaExecutor::CalNumBlocks(u32& numBlocks, u32 ra
         HCCL_WARNING("[CollReduceScatterAivRdmaExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
     
-    HCCL_INFO("[CollReduceScatterAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollReduceScatterAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
