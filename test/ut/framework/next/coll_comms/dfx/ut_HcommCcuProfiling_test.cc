@@ -148,11 +148,13 @@ class Ccukernel_ReportProfilingTest : public hcomm::CcuKernelTest {
 protected:
     void SetUp() override {
         CcuKernelTest::SetUp();
-        
+        MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
         // 初始化测试数据
         testThreadHandle = 0x1000;
         testExecId = 0x2000;
-        testComm = reinterpret_cast<HcclComm>(0x3000);
 
         // 有效ProfilingInfo
         validProfInfo.dieId = 1;
@@ -172,7 +174,6 @@ protected:
     // 测试数据
     ThreadHandle testThreadHandle;
     uint64_t testExecId;
-    HcclComm testComm;
     CcuProfilingInfo validProfInfo;
     CcuProfilingInfo invalidChannelProfInfo;
 };
@@ -235,6 +236,24 @@ TEST_F(CcuKernelTest, GetChannelHandleById_InvalidId) {
 
 
 TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 6; 
+    config.hcclRdmaServiceLevel = 0; 
+    config.hcclRdmaTrafficClass = 0; 
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    HcclComm testComm = static_cast<HcclComm>(hcclCommPtr.get());
     Hccl::TaskParam testTaskParam = {
         .taskType  = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
@@ -260,115 +279,157 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
     EXPECT_EQ(testTaskParam.taskPara.Ccu.dieId, 0);
 }
 
-// TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
-//     Hccl::TaskParam testTaskParam = {
-//         .taskType  = Hccl::TaskParamType::TASK_CCU,
-//         .beginTime = 0,
-//         .endTime   = 0,
-//         .isMaster = false,
-//         .taskPara  = {
-//             .Ccu = {
-//                 .dieId         = 0,
-//                 .missionId     = 0,
-//                 .execMissionId = 0,
-//                 .instrId       = 0,
-//                 .costumArgs    = {},
-//                 .executeId     = 0
-//             }
-//         },
-//         .ccuDetailInfo  = nullptr
-//     };
-//     std::vector<CcuProfilingInfo> profilingList = {validProfInfo};
-//     HcclResult ret = HcclReportCcuProfilingInfo(
-//         testThreadHandle, testExecId, profilingList.data(), profilingList.size(), testComm, testTaskParam, true
-//     );
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-//     // 验证联合体taskPara.Ccu的字段（匹配真实定义）
-//     EXPECT_EQ(testTaskParam.taskPara.Ccu.dieId, 1);
-//     EXPECT_EQ(testTaskParam.taskPara.Ccu.missionId, 100);
-//     EXPECT_EQ(testTaskParam.taskPara.Ccu.execMissionId, 100);
-//     EXPECT_EQ(testTaskParam.taskPara.Ccu.instrId, 200);
-//     EXPECT_EQ(testTaskParam.taskPara.Ccu.executeId, 0x2000);
-// }
+TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess) {
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 6; 
+    config.hcclRdmaServiceLevel = 0; 
+    config.hcclRdmaTrafficClass = 0; 
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    HcclComm testComm = static_cast<HcclComm>(hcclCommPtr.get());
+    u32 rankId = 1;
+    MOCKER_CPP(&HcclCommDfx::GetChannelRemoteRankId)
+        .stubs()
+        .with(any(),any(),outBound(rankId))
+        .will(returnValue(HCCL_SUCCESS));  
+    Hccl::TaskParam testTaskParam = {
+        .taskType  = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime   = 0,
+        .isMaster = false,
+        .taskPara  = {
+            .Ccu = {
+                .dieId         = 0,
+                .missionId     = 0,
+                .execMissionId = 0,
+                .instrId       = 0,
+                .costumArgs    = {},
+                .executeId     = 0
+            }
+        },
+        .ccuDetailInfo  = nullptr
+    };
+    std::vector<CcuProfilingInfo> profilingList = {validProfInfo};
+    HcclResult ret = HcclReportCcuProfilingInfo(
+        testThreadHandle, testExecId, profilingList.data(), profilingList.size(), testComm, testTaskParam, true
+    );
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    // 验证联合体taskPara.Ccu的字段（匹配真实定义）
+    EXPECT_EQ(testTaskParam.taskPara.Ccu.dieId, 1);
+    EXPECT_EQ(testTaskParam.taskPara.Ccu.missionId, 100);
+    EXPECT_EQ(testTaskParam.taskPara.Ccu.execMissionId, 100);
+    EXPECT_EQ(testTaskParam.taskPara.Ccu.instrId, 200);
+    EXPECT_EQ(testTaskParam.taskPara.Ccu.executeId, 0x2000);
+}
 
-// TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
-//     Hccl::TaskParam testTaskParam = {
-//         .taskType  = Hccl::TaskParamType::TASK_CCU,
-//         .beginTime = 0,
-//         .endTime   = 0,
-//         .isMaster = false,
-//         .taskPara  = {
-//             .Ccu = {
-//                 .dieId         = 0,
-//                 .missionId     = 0,
-//                 .execMissionId = 0,
-//                 .instrId       = 0,
-//                 .costumArgs    = {},
-//                 .executeId     = 0
-//             }
-//         },
-//         .ccuDetailInfo  = nullptr
-//     };
-//     std::vector<CcuProfilingInfo> profilingList = {validProfInfo};
-//     hcomm::SetSaveDfxTaskInfoRet(HCCL_E_PARA);
-//     HcclResult ret = HcclReportCcuProfilingInfo(
-//         testThreadHandle, testExecId, profilingList.data(), profilingList.size(), testComm, testTaskParam, false
-//     );
-//     EXPECT_EQ(ret, HCCL_E_PARA);
-// }
+TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) {
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 6; 
+    config.hcclRdmaServiceLevel = 0; 
+    config.hcclRdmaTrafficClass = 0; 
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    HcclComm testComm = static_cast<HcclComm>(hcclCommPtr.get());
+    Hccl::TaskParam testTaskParam = {
+        .taskType  = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime   = 0,
+        .isMaster = false,
+        .taskPara  = {
+            .Ccu = {
+                .dieId         = 0,
+                .missionId     = 0,
+                .execMissionId = 0,
+                .instrId       = 0,
+                .costumArgs    = {},
+                .executeId     = 0
+            }
+        },
+        .ccuDetailInfo  = nullptr
+    };
+    std::vector<CcuProfilingInfo> profilingList = {validProfInfo};
+    hcomm::SetSaveDfxTaskInfoRet(HCCL_E_PARA);
+    HcclResult ret = HcclReportCcuProfilingInfo(
+        testThreadHandle, testExecId, profilingList.data(), profilingList.size(), testComm, testTaskParam, false
+    );
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
 
 
-// TEST_F(Ccukernel_ReportProfilingTest, WhenReporccuprofiling_expect_HcclSucess) {
-// using namespace hccl;
-// using namespace CcuRep;
-//   MockCcuKernelArg agrs;
-//   CcuKernel * ccuKernel = new TestCcuKernel(agrs);
-//   std::vector<CcuTaskParam> taskParams;
-//   CcuTaskParam taskParam;
-//   taskParams.push_back(taskParam);
+TEST_F(Ccukernel_ReportProfilingTest, WhenReporccuprofiling_expect_HcclSucess) {
+using namespace hccl;
+using namespace CcuRep;
+  MockCcuKernelArg agrs;
+  CcuKernel * ccuKernel = new TestCcuKernel(agrs);
+  std::vector<CcuTaskParam> taskParams;
+  CcuTaskParam taskParam;
+  taskParams.push_back(taskParam);
 
-//   MOCKER(hrtGetDeviceType)
-//         .stubs()
-//         .with(outBound(DevType::DEV_TYPE_950))
-//         .will(returnValue(HCCL_SUCCESS));
-//     bool isDeviceSide{false};
-//     MOCKER(GetRunSideIsDevice)
-//         .stubs()
-//         .with(outBound(isDeviceSide))
-//         .will(returnValue(HCCL_SUCCESS));  
-//     MOCKER_CPP(&CcuKernelMgr::GetKernel)
-//         .stubs()
-//         .will(returnValue(ccuKernel));  
-//      MOCKER_CPP(&CcuKernel::GeneTaskParam)
-//         .stubs()
-//         .with(any(),outBound(taskParams))
-//         .will(returnValue(HCCL_SUCCESS));  
+  MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+    MOCKER_CPP(&CcuKernelMgr::GetKernel)
+        .stubs()
+        .will(returnValue(ccuKernel));  
+     MOCKER_CPP(&CcuKernel::GeneTaskParam)
+        .stubs()
+        .with(any(),outBound(taskParams))
+        .will(returnValue(HCCL_SUCCESS));  
     
-//     void* commV2 = (void*)0x2000;
-//     RankGraphStub rankGraphStub;
-//     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
-//     u32 rank = 1;
-//     HcclMem cclBuffer;
-//     cclBuffer.size = 1;
-//     cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
-//     cclBuffer.addr = (void*)0x1000;;
-//     char commName[128] = {};
-//     std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
-//     HcclCommConfig config;
-//     config.hcclOpExpansionMode = 6; 
-//     config.hcclRdmaServiceLevel = 0; 
-//     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
-//     EXPECT_EQ(ret, 0);
-//     ThreadHandle thread;
-//     void* comm = static_cast<HcclComm>(hcclCommPtr.get());
-//     ret =  HcclThreadAcquire(comm, COMM_ENGINE_CCU, 1, 2, &thread);
-//     EXPECT_EQ(ret, 0);
-//     CcuKernelHandle kernelHandle = 0;
-//     void * taskArgs = (void*)0x12345678;
-//     // hcomm::CcuKernelMgr::GetInstance(HcclGetThreadDeviceId());
-//     ret =  HcclCcuKernelLaunch(comm, thread, kernelHandle, taskArgs);
-//     EXPECT_EQ(ret, 0);
-// }
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 6; 
+    config.hcclRdmaServiceLevel = 0; 
+    config.hcclRdmaTrafficClass = 0;
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CCU, 1, 2, &thread);
+    EXPECT_EQ(ret, 0);
+    CcuKernelHandle kernelHandle = 0;
+    void * taskArgs = (void*)0x12345678;
+    // hcomm::CcuKernelMgr::GetInstance(HcclGetThreadDeviceId());
+    ret =  HcclCcuKernelLaunch(comm, thread, kernelHandle, taskArgs);
+    EXPECT_EQ(ret, 0);
+}
 
 }
 
