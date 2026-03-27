@@ -289,7 +289,7 @@ HcclResult ProceedMultiLinks(const std::vector<DataInfo> &dataInfo, const std::v
     for (; dataInfoIter != dataInfo.end(); dataInfoIter++, queIter++) {
         CHK_PRT_RET(dataInfoIter->link_.GetRemoteRankId() != remoteRank,
                     HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] Send/RecvThruMultiLinks: only support identical "
-                               "remote rank, now we have got rank [%u] and rank [%u].",
+                               "remote rank, now we have got rank [%d] and rank [%d].",
                                remoteRank, dataInfoIter->link_.GetRemoteRankId()),
                     HcclResult::HCCL_E_INTERNAL);
 
@@ -340,7 +340,7 @@ HcclResult ProceedMultiLinks(const std::vector<DataReduceInfo> &dataInfo, const 
     for (; dataInfoIter != dataInfo.end(); dataInfoIter++, queIter++) {
         CHK_PRT_RET(dataInfoIter->link_.GetRemoteRankId() != remoteRank,
                     HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] Send/RecvReduceThruMultiLinks: only support "
-                               "identical remote rank, now we have got rank [%u] and rank [%u].",
+                               "identical remote rank, now we have got rank [%d] and rank [%d].",
                                remoteRank, dataInfoIter->link_.GetRemoteRankId()),
                     HcclResult::HCCL_E_INTERNAL);
 

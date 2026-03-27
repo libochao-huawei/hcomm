@@ -104,7 +104,6 @@ public:
         return std::make_unique<CcuTaskArgAllReduceMesh1D>(inputAddr_, outputAddr_, sliceSize_, offset_, token_);
     }
 
-
 private:
     CcuInstType instType_ = CcuInstType::CCU_ALL_REDUCE_MESH_1D_DIRECT;
     std::vector<uint64_t> dimSize_;

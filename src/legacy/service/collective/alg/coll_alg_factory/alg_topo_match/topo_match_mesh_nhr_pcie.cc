@@ -19,7 +19,7 @@ TopoMatchMeshNHRPcie::TopoMatchMeshNHRPcie(
 TopoMatchMeshNHRPcie::~TopoMatchMeshNHRPcie()
 {}
 
-HcclResult TopoMatchMeshNHRPcie::LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType)
+HcclResult TopoMatchMeshNHRPcie::LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType) const
 {
     std::vector<u32> ranksInTopo;
     u32 rankNum;
