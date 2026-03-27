@@ -335,8 +335,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     const CcuKernelHandle kernelHandle, void *taskArgs)
 {
-    HCCL_RUN_INFO("Entry-%s", __func__);
-    HcclUs startut = TIME_NOW();
+    // 性能关键路径，禁止打印算子粒度频次的日志
     (void)comm;
     CHK_PTR_NULL(taskArgs);
 
@@ -362,7 +361,7 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
     CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
-        HcclResult::HCCL_SUCCESS);
+        ret);
 
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
@@ -370,7 +369,5 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     }
     CHK_RET(LaunchCcuTasks(ccuParams, streamPtr));
     EXCEPTION_HANDLE_END
-    HCCL_INFO("[%s] success, take time [%lld]us.",
-        __func__, DURATION_US(TIME_NOW() - startut));
     return HcclResult::HCCL_SUCCESS;
 }
