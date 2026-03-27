@@ -40,6 +40,7 @@
 class HcommCcuControlApiTest : public BaseInit {
 public:
     void SetUp() override {
+        GlobalMockObject::verify();
         BaseInit::SetUp();
         // 将enableEntryLog默认返回为true
         MOCKER(GetExternalInputHcclEnableEntryLog)
@@ -137,11 +138,18 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     // 整体打桩，处理ccu资源
     HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
-    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM;
+    constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 2;
     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
     int32_t fakeDeviceLogicId = static_cast<int32_t>(fakeDevId);
-    MOCKER(hrtGetDevice).stubs().with(outBound(&fakeDeviceLogicId)).will(returnValue(HcclResult::HCCL_SUCCESS));
-    EXPECT_EQ(MockCcuResources(fakeDeviceLogicId, hcomm::CcuVersion::CCU_V1), HcclResult::HCCL_SUCCESS);
+    MOCKER(hrtGetDevice).stubs()
+        .with(outBoundP(&fakeDeviceLogicId))
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs()
+        .with(any(), outBound(static_cast<uint32_t>(fakeDeviceLogicId)), any())
+        .will(returnValue(HcclResult::HCCL_SUCCESS));
+    constexpr hcomm::CcuVersion fakeCcuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(fakeDeviceLogicId); // 先处理网络设备，再初始化ccu
+    EXPECT_EQ(MockCcuResourcesDefault(fakeDeviceLogicId, fakeCcuVersion), HcclResult::HCCL_SUCCESS);
     MockCcuChannelGetRes();
     MOCKER(hrtMemcpy).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
 

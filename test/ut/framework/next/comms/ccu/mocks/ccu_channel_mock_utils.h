@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#ifndef CCU_CHANNEL_MOCK_UTILS_H
+#define CCU_CHANNEL_MOCK_UTILS_H
+
 #include <memory>
 
 #define private public
@@ -121,3 +124,5 @@ void MockCcuChannelGetRes()
     MOCKER_CPP(&hcomm::CcuTransport::GetRmtCkeByIndex).stubs().will(invoke(MockCcuTransportGetRmtCke));
     MOCKER_CPP(&hcomm::CcuTransport::GetRmtXnByIndex).stubs().will(invoke(MockCcuTransportGetRmtXn));
 }
+
+#endif // CCU_CHANNEL_MOCK_UTILS_H
