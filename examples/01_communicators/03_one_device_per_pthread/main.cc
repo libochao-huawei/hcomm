@@ -17,8 +17,8 @@
 #include <atomic>
 #include <cstring>
 
-#include "hccl/hccl.h"
-#include "hccl/hccl_types.h"
+#include <hccl/hccl.h>
+#include <hccl/hccl_types.h>
 
 #define ACLCHECK(ret)                                                                          \
     do {                                                                                       \
