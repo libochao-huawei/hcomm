@@ -294,6 +294,11 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
         return HCCL_SUCCESS;
     }
 
+    if (locRank.userRank == 0) {
+        HCCL_RUN_INFO("locRank.userRank == 0, return.");
+        return HCCL_SUCCESS;
+    }
+
     std::map<UIDType, ConnInfo> needConnectRank;
     CHK_RET(GetConnectRank(locRank, rankInfos, needConnectRank, useSuperPodMode, isUsedRdma));
 
