@@ -755,6 +755,7 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
 
     // 当前算子展开的SQE需要被动态缓存
     if (needAddSqe_) {
+        HcclUs startut = TIME_NOW();
         CHK_PTR_NULL(cachePtr_);
 
         // 查找key对应的cache entry, 如果不存在 (即当前算子第一次LaunchTask), 创建新的cache entry
@@ -820,6 +821,9 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
                 isAlltoallv_, alltoallvMetadataPtr_
             ));
         }
+        HcclUs endut = TIME_NOW();
+ 	    std::string endInfo = "cache take time: " + std::to_string(DURATION_US(endut - startut).count());
+ 	        HCCL_RUN_INFO("LIP %s", endInfo.c_str());
     }
 
     CHK_RET(ConfigSqStatusByType(aicpuInfo_.devId, streamInfo.sqId, DRV_SQCQ_PROP_SQ_TAIL, newTail));

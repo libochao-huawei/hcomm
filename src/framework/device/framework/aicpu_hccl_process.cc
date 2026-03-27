@@ -517,17 +517,18 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     /* 接口交互信息日志 */
     std::string logInfo = std::string(stackLogBuffer);
     CHK_RET_AND_PRINT_IDE(hcclCommAicpu->SaveTraceInfo(logInfo), opParam.tag.c_str());
-
+    HcclUs toLaunch;
+ 	HcclUs launchFinish;
     HcclUs startut = TIME_NOW();
-    HcclResult ret = hcclCommAicpu->ExecOp(newTag, algName, opParam, commParam);
+    HcclResult ret = hcclCommAicpu->ExecOp(newTag, algName, opParam, commParam,toLaunch,launchFinish);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AicpuHcclProcess][AicpuRunRpcServerV2] newTag[%s] algName[%s]",
         newTag.c_str(), algName.c_str()), ret);
     HcclUs endut = TIME_NOW();
     /* 关键状态记录 */
     std::string endInfo = "AicpuRunRpcServerV2:success,take time: " +
-        std::to_string(DURATION_US(endut - startut).count()) + " us";
+        std::to_string(DURATION_US(endut - startut).count()) + " us"+ "beforce launch" + std::to_string(DURATION_US(toLaunch - startut).count())+"after launch"+std::to_string(DURATION_US(endut - launchFinish).count());
     CHK_RET_AND_PRINT_IDE(hcclCommAicpu->SaveTraceInfo(endInfo), opParam.tag.c_str());
-
+    HCCL_RUN_INFO("LIP %s", endInfo.c_str());
     HCCL_INFO("[AicpuHcclProcess][AicpuRunRpcServerV2]AicpuRunRpcServerV2 process end-------");
     return HCCL_SUCCESS;
 }
