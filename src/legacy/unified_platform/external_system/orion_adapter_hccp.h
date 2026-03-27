@@ -12,6 +12,7 @@
 #define HCCLV2_ADAPTER_HCCP_H
 #include <vector>
 #include <unordered_set>
+#include "hccp_common.h"
 #include "ip_address.h"
 #include "data_type.h"
 #include "reduce_op.h"
@@ -88,6 +89,14 @@ void HrtRaTlvDeInit(void* tlv_handle);
 
 u32 HrtRaGetInterfaceVersion(u32 phyId, u32 interfaceOpcode);
 
+enum class TlsStatus : int{
+    UNKNOWN = -1, // 不支持查询
+    DISABLE = 0, //  未使能
+    ENABLE,      //  使能
+};
+
+HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus);
+
 struct RaInterface {
     uint32_t  phyId;
     IpAddress address;
@@ -144,16 +153,22 @@ using QpInfo = struct QpInfoDef {
     struct ibv_comp_channel *recvChannel;
     s32 flag = 0;
     s32 qpMode = 0;
+    u32 trafficClass = 0;
+    u32 serviceLevel = 0;
+    u32 retryCnt = 0;
+    u32 retryInterval = 0;
     QpInfoDef() : rdmaHandle(nullptr), qpHandle(nullptr), qp(nullptr), context(nullptr), sendCq(nullptr),
         recvCq(nullptr), srq(nullptr), srqCq(nullptr), srqContext(nullptr),
-        sendChannel(nullptr), recvChannel(nullptr) {}
+        sendChannel(nullptr), recvChannel(nullptr), trafficClass(HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET),
+        serviceLevel(HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {}
     QpInfoDef(QpConfig attr, RdmaHandle rdmaHandle, QpHandle qpHandle, struct ibv_qp* qp, void* context,
               struct ibv_cq* sendCq, struct ibv_cq* recvCq, struct ibv_srq *srq, struct ibv_cq* srqCq,
               void *srqContext = nullptr, struct ibv_comp_channel *sendChannel = nullptr,
-              struct ibv_comp_channel *recvChannel = nullptr)
+              struct ibv_comp_channel *recvChannel = nullptr, u32 tc = HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET,
+              u32 sl = HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET)
         : attr(attr), rdmaHandle(rdmaHandle), qpHandle(qpHandle), qp(qp), context(context), sendCq(sendCq),
         recvCq(recvCq), srq(srq), srqCq(srqCq), srqContext(srqContext),
-        sendChannel(sendChannel), recvChannel(recvChannel) {}
+        sendChannel(sendChannel), recvChannel(recvChannel), trafficClass(tc), serviceLevel(sl) {}
 };
 
 using CqInfo = struct CqInfoDef {

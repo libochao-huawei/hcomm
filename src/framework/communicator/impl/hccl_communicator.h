@@ -69,6 +69,7 @@ constexpr u8 INPLACE_PRESYNC_STATUS_SEVEN = 7;
 constexpr u32 NSLBDP_HCCP_VERSION = 1;
 constexpr u32 NSLBDP_HCCP_NICPOSION = 1;
 constexpr u32 AICPU_LOCAL_NOTIFY_SIZE = 8; // aicpu场景本地控制时序的notify数量，对应枚举：enum AicpuLocalNotifyIdx
+constexpr u32 AICPU_LOCAL_EVENT_SIZE = 2; // aicpu场景本地控制时序的event数量，对应枚举：enum AicpuLocalEventIdx
 constexpr u32 CACHEMAP_MAXSIZE = 65536;
 constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
@@ -920,6 +921,7 @@ private:
     std::vector<Stream> attachedStreams_;
     std::vector<std::shared_ptr<LocalNotify>> localAiCpuNotifyRes_;
     std::shared_ptr<LocalNotify> localAiCpuOpNotify_[AICPU_LOCAL_NOTIFY_SIZE] = { nullptr };
+    HcclRtEvent localAicpuOpEvent_[AICPU_LOCAL_EVENT_SIZE] = { nullptr }; // 用于控制Aclgraph模式按序下发控制流入图的event
     u32 workSpaceSize_;
     DeviceMem workSpace_;
     DeviceMem mc2DeviceMem_;

@@ -68,12 +68,14 @@ public:
                         const std::vector<TransferOp> &transferOp, const StreamLite &stream) override;
 
     HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
+    HcclResult Fence();
 
     HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const TaskParam&, u64)> callback); // 自定义算子流程上报task的Callback
 private:
     u32 notifyNum{0};
     u32 bufferNum{0};
     u32 connNum{0};
+    bool fence_{false};
 
     struct RmtUbBufLite {
         u64         addr;
@@ -125,10 +127,10 @@ private:
     
     std::function<HcclResult(u32, u32, const TaskParam&, u64)> newCallback_{nullptr};
 
-    void ProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream, DmaOp dmaOp,
+    void ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream, DmaOp dmaOp,
                             u32 taskId);
 
-    void ReduceProfilingProcess(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
+    void ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const ReduceIn &reduceIn,
                                       const StreamLite &stream, u32 taskId);
 
     void ParseLocNotifyVec(std::vector<char> &data);
@@ -144,6 +146,8 @@ private:
     void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId);
 
     void CheckConnVec(const std::string &desc);
+
+    void SetFenceConfig(SqeConfigLite &cfg);
 };
 
 } // namespace Hccl

@@ -73,7 +73,7 @@ void CollServiceBase::RegisterCclBuffer(const std::vector<LinkData> &links) cons
         if (rmaBufManager.Get(comm->GetId(), portData, BufferType::SCRATCH) != nullptr) {
             HCCL_WARNING("RegisterCclBuffer has reged, optag(%s) portData[%s]",
                 comm->GetId().c_str(), portData.Describe().c_str());
-            return;
+            continue;
         }
         rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
     }
@@ -118,6 +118,10 @@ void CollServiceBase::RegisterOpbasedLocalRmaBuf(const std::string &opTag) const
                 if (localRmaBufManager.Get(comm->GetId(), portData, devBuf.first) != nullptr) {
                     HCCL_WARNING("RegisterOpbasedLocalRmaBuf has reged, bufferType[%s], optag[%s] portData[%s]",
                                  devBuf.first.Describe().c_str(), comm->GetId().c_str(), portData.Describe().c_str());
+                    continue;
+                }
+                if (devBuf.first != BufferType::SCRATCH && portData.GetType() == PortDeploymentType::P2P) {
+                    HCCL_WARNING("Input and Output Mem will not be reged at P2P");
                     continue;
                 }
                 localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData);
@@ -365,7 +369,7 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     CHECK_NULLPTR(comm, "[CollServiceBase::SaveMirrorDfxOpInfo] comm is nullptr!");
 
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
-    dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
+    dfxOpInfo->tag_ = dfxOpInfo->op_.opTag;
     dfxOpInfo->algType_ = AlgType::MESH;
     dfxOpInfo->commIndex_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;

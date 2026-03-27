@@ -34,6 +34,8 @@ SelectorStatus AlltoAllVCAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AlltoAllVCAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // aiv 直接走打平 mesh

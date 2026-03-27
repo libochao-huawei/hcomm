@@ -118,7 +118,7 @@ void SocketManager::ServerInit(PortData &localPort)
     SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
     IpAddress    ipAddress        = localPort.GetAddr();
     u32 serverListenPort          = DEFAULT_VALUE_DEVICEPORT;
-    auto iter = rankListenPortMap.find(devicePhyId);
+    auto iter = rankListenPortMap.find(localPort.GetRankId());
     if (iter != rankListenPortMap.end()) {
         serverListenPort = iter->second;
     }
@@ -344,6 +344,17 @@ std::unordered_map<PortData, shared_ptr<Socket>> &SocketManager::GetServerSocket
 {
     static std::unordered_map<PortData, shared_ptr<Socket>> serverSocketMap;
     return serverSocketMap;
+}
+
+bool SocketManager::CheckServerPortListening(const PortData &portData) const
+{
+    std::lock_guard<std::mutex> lock(socketLock);
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    auto iterSocket = serverSocketMap.find(portData);
+    if (iterSocket == serverSocketMap.end()) {
+        return false;
+    }
+    return true;
 }
 
 } // namespace Hccl

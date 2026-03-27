@@ -21,6 +21,7 @@ set(src_to_test_list
     ut_aicpu_ts_HcommWriteReduceOnThread.cc
     ut_aicpu_ts_HcommReadOnThread.cc
     ut_aicpu_ts_HcommReadReduceOnThread.cc
+    ut_aicpu_ts_HcommChannelFenceOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/rtsq_base.cc
 

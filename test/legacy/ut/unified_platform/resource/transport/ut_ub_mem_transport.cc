@@ -684,3 +684,99 @@ TEST_F(UbMemTransportTest, UbMemTransport_ConnVecUnpackProc)
     dto.Serialize(binaryStream);
     EXPECT_NO_THROW(transport.ConnVecUnpackProc(binaryStream));
 }
+
+TEST_F(UbMemTransportTest, ut_UbMemTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    BaseMemTransport::CommonLocRes    locRes;
+    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::LocCntNotifyRes locCntRes;
+    LinkData                          link(BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1);
+    void                             *rdmaHandle = (void *)0x100;
+    IpAddress                         ipAddress("1.0.0.0");
+    Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+
+    std::shared_ptr<DevBuffer> buffer0 = DevBuffer::Create(0x100, 0x100);
+    strcpy(buffer0->mem_Tag_, "cclBuffer");
+    LocalUbRmaBuffer     ubLocalRmaBuffer0(buffer0, rdmaHandle);
+    LocalRmaBuffer      *validLocalRmaBuffer0 = &ubLocalRmaBuffer0;
+    locRes.bufferVec.push_back(validLocalRmaBuffer0);
+
+    std::shared_ptr<DevBuffer> buffer1 = DevBuffer::Create(0x101, 0x101);
+    strcpy(buffer1->mem_Tag_, "buffer1");
+    buffer1->memType_ = HcclMemType::HCCL_MEM_TYPE_HOST;
+    LocalUbRmaBuffer     ubLocalRmaBuffer1(buffer1, rdmaHandle);
+    LocalRmaBuffer      *validLocalRmaBuffer1 = &ubLocalRmaBuffer1;
+    locRes.bufferVec.push_back(validLocalRmaBuffer1);
+
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    u32 bufferNum = 2;
+    transport.bufferNum = bufferNum;
+
+    BinaryStream binaryStream;
+    EXPECT_NO_THROW(transport.BufferVecPack(binaryStream));
+    EXPECT_NO_THROW(transport.RmtBufferVecUnpackProc(bufferNum, binaryStream,
+        transport.rmtBufferVec, UbMemTransport::UbRmtBufType::BUFFER));
+    
+    CommMem *remoteMems;
+    char **memTags;
+    u32 memNum;
+    HcclResult ret = transport.GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::string memTag = memTags[0];
+    EXPECT_EQ(memTag, "buffer1");
+    EXPECT_EQ(remoteMems[0].type, HcclMemType::HCCL_MEM_TYPE_HOST);
+    EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
+    EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
+}
+
+TEST_F(UbMemTransportTest, ut_UbMemTransport_GetUserRemoteMem_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
+{
+    BaseMemTransport::CommonLocRes    locRes;
+    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::LocCntNotifyRes locCntRes;
+    LinkData                          link(BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1);
+    void                             *rdmaHandle = (void *)0x100;
+    IpAddress                         ipAddress("1.0.0.0");
+    Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+
+    CommMem *remoteMems;
+    char **memTags;
+    u32 memNum;
+    HcclResult ret = transport.GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(UbMemTransportTest, ut_UbMemTransport_GetUserRemoteMem_When_userMemCountIs0_Expect_ReturnIsHCCL_SUCCESS)
+{
+    BaseMemTransport::CommonLocRes    locRes;
+    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::LocCntNotifyRes locCntRes;
+    LinkData                          link(BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1);
+    void                             *rdmaHandle = (void *)0x100;
+    IpAddress                         ipAddress("1.0.0.0");
+    Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+
+    LocalUbRmaBuffer     ubLocalRmaBuffer(devBuf, rdmaHandle);
+    LocalRmaBuffer      *validLocalRmaBuffer = &ubLocalRmaBuffer;
+    locRes.bufferVec.push_back(validLocalRmaBuffer);
+
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    u32 bufferNum = 1;
+    transport.bufferNum = bufferNum;
+
+    BinaryStream binaryStream;
+    EXPECT_NO_THROW(transport.BufferVecPack(binaryStream));
+    EXPECT_NO_THROW(transport.RmtBufferVecUnpackProc(bufferNum, binaryStream,
+        transport.rmtBufferVec, UbMemTransport::UbRmtBufType::BUFFER));
+
+    CommMem *remoteMems;
+    char **memTags;
+    u32 memNum;
+    HcclResult ret = transport.GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(remoteMems, nullptr);
+    EXPECT_EQ(memTags, nullptr);
+    EXPECT_EQ(memNum, 0);
+}

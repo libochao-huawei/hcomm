@@ -14,6 +14,7 @@
 #include "hccl/hccl_res.h"
 #include "reged_mems/urma_mem.h"
 #include "adapter_rts_common.h"
+#include "server_socket_manager.h"
  
 namespace hcomm {
 
@@ -63,7 +64,6 @@ HcclResult UrmaEndpoint::Init()
     HCCL_INFO("%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__, devPhyId, ipAddr.Describe().c_str(), ctxHandle_);
 
-    CHK_RET(ServerSocketListen());
     EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
@@ -74,13 +74,8 @@ HcclResult UrmaEndpoint::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::ServerSocketListen()
+HcclResult UrmaEndpoint::ServerSocketListen(const uint32_t port)
 {
-    // 临时方案：为支持混跑，复用原有的orion通信域 socketMgr
-    // endpoint中避免重复拉起socket，跳过原有流程
-    HCCL_RUN_INFO("[UrmaEndpoint][%s] passed, now running on compatible mode.", __func__);
-    return HcclResult::HCCL_SUCCESS;
-#if (false)
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
         HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
         return HCCL_SUCCESS;
@@ -94,35 +89,24 @@ HcclResult UrmaEndpoint::ServerSocketListen()
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
 
-    Hccl::SocketHandle socketHandle = Hccl::SocketHandleManager::GetInstance().Create(endpointDesc_.loc.device.devPhyId, localPort);
-    auto &serverSocketMap = UrmaEndpoint::GetServerSocketMap();
-    if (serverSocketMap.find(localPort) != serverSocketMap.end()){
-        HCCL_INFO("[UrmaEndpoint][%s] reuse serverSocket", __func__);
-        return HCCL_SUCCESS;
-    }
-    
-
-    HCCL_INFO("[UrmaEndpoint][%s] socketHandle[%p] devicePhyId[%u] localPort[%s]", 
+    HCCL_INFO("[UrmaEndpoint][%s] devicePhyId[%u] localPort[%s]", 
         __func__, 
-        socketHandle, 
         endpointDesc_.loc.device.devPhyId, 
         localPort.Describe().c_str()
     );
-
-    std::unique_ptr<Hccl::Socket> serverSocket;
-    EXECEPTION_CATCH(serverSocket = std::make_unique<Hccl::Socket>(socketHandle, ipaddr, 60001, ipaddr, "server", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE), return HCCL_E_PARA); //端口号可能冲突，需要SE做决定
-    HCCL_INFO("[UrmaEndpoint][%s] listen_socket_info[%s]", __func__, serverSocket->Describe().c_str());
-    EXECEPTION_CATCH(serverSocket->Listen(), return HCCL_E_INTERNAL);
-    serverSocketMap[localPort] = std::move(serverSocket);
-
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, endpointDesc_.loc.device.devPhyId, port));
     return HCCL_SUCCESS;
-#endif
 }
 
-std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> &UrmaEndpoint::GetServerSocketMap()
+HcclResult UrmaEndpoint::ServerSocketStopListen(const uint32_t port)
 {
-    static std::unordered_map<Hccl::PortData, std::unique_ptr<Hccl::Socket>> serverSocketMap;
-    return serverSocketMap;
+    Hccl::IpAddress ipAddr{};
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
+    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
+    Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipAddr);
+
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, port));
+    return HCCL_SUCCESS;
 }
 
 HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)

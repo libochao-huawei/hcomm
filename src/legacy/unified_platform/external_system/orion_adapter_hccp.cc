@@ -42,6 +42,8 @@ constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
+constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
+constexpr u32 GET_TLS_ENABLE_VERSION = 1;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -51,6 +53,34 @@ inline s32 EnvLinkTimeoutGet()
 {
     g_linkTimeout = g_linkTimeout != 0 ? g_linkTimeout : EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut();
     return g_linkTimeout;
+}
+
+HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
+{
+    tlsStatus = TlsStatus::UNKNOWN;
+    CHK_PTR_NULL(info);
+
+    u32 tlsVersion = 0;
+    s32 versionRet = RaGetInterfaceVersion(info->phyId, GET_TLS_ENABLE_OPCODE, &tlsVersion);
+    if (versionRet != 0 || tlsVersion < GET_TLS_ENABLE_VERSION) {
+        HCCL_WARNING("[HrtRaGetTlsStatus] this package does not support RaGetTlsEnable for device, "
+            "please change new package. ret[%d], tlsVersion[%u].", versionRet, tlsVersion);
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    bool tlsEnable = false;
+    s32 ret = RaGetTlsEnable(info, &tlsEnable);
+    if (ret != 0) {
+        tlsStatus = TlsStatus::DISABLE;
+        HCCL_ERROR("[HrtRaGetTlsStatus] errNo[0x%016llx] failed ret[%d], phyId[%u]",
+            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, info->phyId);
+        return HCCL_E_NETWORK;
+    }
+
+    tlsStatus = tlsEnable ? TlsStatus::ENABLE : TlsStatus::DISABLE;
+    HCCL_INFO("[HrtRaGetTlsStatus] phyId[%u], tlsEnable[%d], tlsStatus[%d]",
+        info->phyId, tlsEnable, static_cast<s32>(tlsStatus));
+    return HCCL_SUCCESS;
 }
 
 inline union HccpIpAddr IpAddressToHccpIpAddr(IpAddress &addr)
@@ -332,6 +362,9 @@ static bool RaSocketTryListenStart(struct SocketListenInfoT conn[], u32 num)
         HCCL_INFO("[%s]ra socket listen could not start, due to the port[%u] has already been bound. please try"
                     " another port or check the port status", __func__, (num > 0 ? conn[0].port : HCCL_INVALID_PORT));
         return false;
+    } else if (ret == SOCK_EADDRNOTAVAIL){
+        MACRO_THROW(NetworkApiException, StringFormat("[%s] Socket listen start fail: " 
+            "IP address is not available, please check the IP address configuration, return[%d]", __func__, ret));
     } else {
         // 非ra限速场景错误，不轮询，直接退出
         MACRO_THROW(NetworkApiException, StringFormat("[TryListenStart][RaSocket]errNo[0x%016llx] ra socket listen start fail, return[%d], params: num[%u]", 
@@ -1069,7 +1102,6 @@ RdmaHandle HrtRaUbCtxInit(const HrtRaUbCtxInitParam &in)
 {
     HCCL_INFO("[HrtRaUbCtxInit] Input params: mode=%d, phyId=%u, addr=%s", in.mode, in.phyId, in.addr.GetIpStr().c_str());
     struct CtxInitCfg initCfg {};
-    initCfg.rdma.disabledLiteThread = false;
     initCfg.mode                 = HRT_NETWORK_MODE_MAP.at(in.mode);
 
     struct CtxInitAttr ctxInfo {};

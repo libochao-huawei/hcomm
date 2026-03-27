@@ -64,6 +64,7 @@ typedef enum {
     HCOMM_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
     HCOMM_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
     HCOMM_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
+    HCOMM_DATA_TYPE_MXFP8 = 18,     /**< mxfp8 */
 #endif
     HCOMM_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcommDataType;

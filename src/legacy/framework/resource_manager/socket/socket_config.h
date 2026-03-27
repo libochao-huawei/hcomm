@@ -21,6 +21,7 @@ class SocketConfig {
 public:
     RankId            remoteRank;
     LinkData          link;
+    uint32_t          listeningPort{DEFAULT_LISTENING_PORT};
     const std::string tag;
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
@@ -54,6 +55,21 @@ public:
     }
 
 
+    SocketConfig(const LinkData &link, const uint32_t listenPort, const std::string &tag)
+        : link(link), listeningPort(listenPort), tag(tag)
+    {
+        remoteRank = link.GetRemoteRankId();
+        role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
+ 
+        if (role == SocketRole::SERVER) { // server: tag_local_remote
+            hccpTag = tag + "_" + link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr() + 
+                      "_" + to_string(listenPort);
+        } else { // client: tag_remote_local
+            hccpTag = tag + "_" + link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr() + 
+                      "_" + to_string(listenPort);
+        }
+    }
+
     SocketRole GetRole() const
     {
         return role;
@@ -80,8 +96,9 @@ public:
         auto localPortHash  = hash<Hccl::PortData>{}(socketConfig.link.GetLocalPort());
         auto remotePortHash = hash<Hccl::PortData>{}(socketConfig.link.GetRemotePort());
         auto tagHash        = hash<string>{}(socketConfig.tag);
+        auto portHash       = hash<uint32_t>{}(socketConfig.listeningPort);
 
-        return Hccl::HashCombine({remoteRankHash, localPortHash, remotePortHash, tagHash});
+        return Hccl::HashCombine({remoteRankHash, localPortHash, remotePortHash, tagHash, portHash});
     }
 };
 
@@ -92,7 +109,7 @@ public:
         return config.remoteRank == otherConfig.remoteRank
                && config.link.GetLocalPort().GetAddr() == otherConfig.link.GetLocalPort().GetAddr()
                && config.link.GetRemotePort().GetAddr() == otherConfig.link.GetRemotePort().GetAddr()
-               && config.tag == config.tag;
+               && config.tag == otherConfig.tag && config.listeningPort == otherConfig.listeningPort;
     }
 };
 } // namespace std

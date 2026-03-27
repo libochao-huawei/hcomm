@@ -74,11 +74,11 @@ public:
     ~EndpointPair();
 
     HcclResult Init();
-    HcclResult GetSocket(const std::string &socketTag, Hccl::Socket *&socket);
+    HcclResult GetSocket(const std::string &socketTag, const uint32_t listenPort, Hccl::Socket *&socket);
     
     // 临时方案：新增临时接口用于支持混跑
     HcclResult GetSocket(const uint32_t myRank, const uint32_t rmtRank,
-        const std::string &socketTag, Hccl::Socket *&socket);
+        const std::string &socketTag, const uint32_t listenPort, Hccl::Socket *&socket);
 
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
@@ -88,7 +88,7 @@ private:
     EndpointDesc remoteEndpointDesc_{};
     std::unique_ptr<SocketMgr> socketMgr_;
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
-    std::vector<ChannelHandle> channelHandles_{};
+    std::unordered_map<CommEngine, std::vector<ChannelHandle>> channelHandles_{};
 };
 
 } // namespace hcomm

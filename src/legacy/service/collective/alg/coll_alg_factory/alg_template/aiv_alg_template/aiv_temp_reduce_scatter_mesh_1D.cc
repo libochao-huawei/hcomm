@@ -43,11 +43,12 @@ HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
 
 HcclResult AivTempReduceScatterMesh1D::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
-    (void) dataSize;
     numBlocks = numBlocksLimit;
-    constexpr uint32_t stepNum = 2;
-    if (numBlocks > stepNum * tempRankSize_) {
-        numBlocks = stepNum * tempRankSize_;
+    if (dataSize < REDUCE_SCATTER_SMALL_COUNT_512KB) { // 小数据量，走原来极致低时延的流程
+        constexpr uint32_t stepNum = 2;
+        if (numBlocks > stepNum * tempRankSize_) {
+            numBlocks = stepNum * tempRankSize_;
+        }
     }
     HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", numBlocks);
     return HcclResult::HCCL_SUCCESS;
@@ -57,7 +58,9 @@ HcclResult AivTempReduceScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, con
     const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[AivTempReduceScatterMesh1D] GenExtIns start");
-
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[AivTempReduceScatterMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     std::vector<LinkData> allLinks;
     for (auto iter = tempLinks.begin(); iter != tempLinks.end(); ++iter) {
         allLinks.emplace_back(iter->second.at(0));
