@@ -116,9 +116,11 @@ elseif(BUILD_OPEN_PROJECT)
         src/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
-        include/hccl/hcomm_primitives.h
-        include/hcomm_res.h
-        include/hcomm_res_defs.h
+        include/hccl/hccl_sym_win.h
+    )
+
+    set(HCOMM_HEAD
+        include/hcomm_primitives.h
     )
 
     set(HCCL_JSON
@@ -231,11 +233,34 @@ elseif(BUILD_OPEN_PROJECT)
         ${HCCL_JSON}
         DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ OPTIONAL
     )
+    install(FILES
+        ${HCOMM_HEAD}
+        DESTINATION ${INSTALL_INCLUDE_DIR}/ OPTIONAL
+    )
+    install(FILES
+        include/hcomm_primitives.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+    )
+    install(FILES
+        include/hcomm_res.h
+        include/hcomm_res_defs.h
+        DESTINATION ${INSTALL_INCLUDE_DIR}/hcomm/ OPTIONAL
+    )
+    install(CODE [[
+file(MAKE_DIRECTORY "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl")
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_primitives.h")
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h")
+file(CREATE_LINK "../hcomm/hcomm_primitives.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_primitives.h" SYMBOLIC)
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hcomm_res_defs.h")
+file(REMOVE "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h")
+file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/hcomm/include/hccl/hcomm_res_defs.h" SYMBOLIC)
+]])
 
     set(HCCL_PKG_HEAD
         pkg_inc/hccl/base.h
         pkg_inc/hccl/hccl_ex.h
         pkg_inc/hccl/hccl_one_sided_services.h
+        pkg_inc/hccl/hccl_res_expt.h
         pkg_inc/hccl/hcom.h
         pkg_inc/hccl/hcomm_diag.h
         pkg_inc/hccl/dtype_common.h
@@ -285,5 +310,12 @@ elseif(BUILD_OPEN_PROJECT)
     install(FILES
         ${HCCL_PKG_CCU_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+    )
+    set(HCOMM_PKG_HEAD
+        pkg_inc/hcomm/hcomm_primitives_expt.h
+    )
+    install(FILES
+        ${HCOMM_PKG_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ OPTIONAL
     )
 endif()

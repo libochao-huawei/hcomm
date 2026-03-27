@@ -122,7 +122,7 @@ HcclResult CcuUrmaChannel::Init()
 
     CHK_PTR_NULL(locEndpointHandle_);
     void *endpoint{nullptr};
-    CHK_RET(HcommEndpointGet_(locEndpointHandle_, &endpoint));
+    CHK_RET(static_cast<HcclResult>(HcommEndpointGet(locEndpointHandle_, &endpoint)));
     UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
     CHK_PTR_NULL(ccuEndpoint);
     const auto &locEndpointDesc = ccuEndpoint->GetEndpointDesc();

@@ -52,10 +52,28 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Normal_EXPECT_Return_HCCL_SUCCESS)
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
+<<<<<<< HEAD
+=======
+// HcommEndpointCreate fail
+TEST_F(CpuRoceEndpointTest, Ut_When_wrongIp_EXPECT_Return_128003)
+{
+    Hccl::IpAddress   localIp("223.0.0.1");
+    EndpointDesc endpointDesc;
+    endpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    void* endpointHandle{nullptr};
+    MOCKER(&Hccl::RdmaHandleManager::GetByIp).stubs().will(throws(Hccl::NetworkApiException("error")));
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    EXPECT_EQ(ret, 11);
+}
+
+>>>>>>> f22d15cf (squash: merge hcomm-api-fix 37 commits into one)
 // Device
 TEST_F(CpuRoceEndpointTest, Ut_When_Endpoint_LocType_Device_Expect_Return_HCCL_E_PARA)
 {
@@ -66,7 +84,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Endpoint_LocType_Device_Expect_Return_HCCL_E
     endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
     void* endpointHandle = malloc(sizeof(hcomm::CpuRoceEndpoint));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_E_PARA);
     free(endpointHandle);
 }
@@ -83,10 +101,30 @@ TEST_F(CpuRoceEndpointTest, Ut_When_RdmaHandle_Init_Fail_Expect_Return_HCCL_E_PT
     void* endpointHandle{nullptr};
     RdmaHandle rdmaHandle2{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle2));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
+<<<<<<< HEAD
+=======
+// HcommEndpointStartListen
+TEST_F(CpuRoceEndpointTest, Ut_When_HcommEndpointStartListen_EXPECT_Return_HCCL_SUCCESS)
+{
+    Hccl::IpAddress   localIp("1.0.0.0");
+    EndpointDesc endpointDesc;
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    void* endpointHandle{nullptr};
+    MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcommEndpointStartListen(endpointHandle, 60001, nullptr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+>>>>>>> f22d15cf (squash: merge hcomm-api-fix 37 commits into one)
 // Ip重复监听
 TEST_F(CpuRoceEndpointTest, Ut_When_Listen_Repeat_Ip_EXPECT_Return_HCCL_SUCCESS)
 {
@@ -98,7 +136,7 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Listen_Repeat_Ip_EXPECT_Return_HCCL_SUCCESS)
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -115,11 +153,11 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Register_Memory_Fail_Expect_Return_HCCL_E_PT
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::CpuRoceEndpoint* endpoint = static_cast<hcomm::CpuRoceEndpoint*>(endpointHandle);
     HcommMem mem;
-    mem.type = HCCL_MEM_TYPE_DEVICE;
+    mem.type = COMM_MEM_TYPE_DEVICE;
     mem.addr = malloc(10);
     mem.size = 10;
     ret = endpoint->RegisterMemory(mem, "HcclBuffer", nullptr);
@@ -127,7 +165,19 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Register_Memory_Fail_Expect_Return_HCCL_E_PT
     free(mem.addr);
 }
 
-// 内存解注册失败
+TEST_F(CpuRoceEndpointTest, ut_HcommResMgrInit_When_Normal_Expect_ReturnSuccess)
+{
+    HcommResult ret = HcommResMgrInit(0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGet_When_EndpointNotFound_Expect_ReturnHCCL_E_PARA)
+{
+    void *endpoint = nullptr;
+    HcommResult ret = HcommEndpointGet(reinterpret_cast<EndpointHandle>(0x12345678), &endpoint);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
 TEST_F(CpuRoceEndpointTest, Ut_When_Unregister_Memory_Fail_Expect_Return_HCCL_E_PTR)
 {
     Hccl::IpAddress   localIp("1.0.0.0");
@@ -138,11 +188,11 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Unregister_Memory_Fail_Expect_Return_HCCL_E_
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
     void* endpointHandle{nullptr};
     MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::CpuRoceEndpoint* endpoint = static_cast<hcomm::CpuRoceEndpoint*>(endpointHandle);
     HcommMem mem;
-    mem.type = HCCL_MEM_TYPE_DEVICE;
+    mem.type = COMM_MEM_TYPE_DEVICE;
     mem.addr = malloc(10);
     mem.size = 10;
     void* memHandle{nullptr};
@@ -155,4 +205,63 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Unregister_Memory_Fail_Expect_Return_HCCL_E_
     ret = endpoint->UnregisterMemory(memHandle);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     free(mem.addr);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGet_When_EndpointPtrIsNull_Expect_ReturnHCCL_E_PARA)
+{
+    EndpointHandle handle = reinterpret_cast<EndpointHandle>(0x12345678);
+    HcommResult ret = HcommEndpointGet(handle, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointDestroy_When_EndpointNotFound_Expect_ReturnHCCL_E_INTERNAL)
+{
+    EndpointHandle handle = reinterpret_cast<EndpointHandle>(0x12345678);
+    HcommResult ret = HcommEndpointDestroy(handle);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointStartListen_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    HcommResult ret = HcommEndpointStartListen(nullptr, 100, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointStopListen_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    HcommResult ret = HcommEndpointStopListen(nullptr, 100);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommMemReg_When_MemIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    HcommMemHandle memHandle;
+    HcommResult ret = HcommMemReg(nullptr, "tag", nullptr, &memHandle);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommMemReg_When_MemHandleIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    HcommMem mem;
+    mem.type = COMM_MEM_TYPE_DEVICE;
+    mem.addr = malloc(10);
+    mem.size = 10;
+    HcommResult ret = HcommMemReg(nullptr, "tag", &mem, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    free(mem.addr);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommMemUnreg_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    HcommMemHandle memHandle = reinterpret_cast<HcommMemHandle>(0x12345678);
+    HcommResult ret = HcommMemUnreg(nullptr, memHandle);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+{
+    void *memDesc = nullptr;
+    uint32_t memDescLen = 0;
+    HcommResult ret = HcommMemExport(nullptr, reinterpret_cast<HcommMemHandle>(0x12345678), &memDesc, &memDescLen);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
