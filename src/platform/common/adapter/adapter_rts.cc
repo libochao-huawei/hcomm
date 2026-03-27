@@ -21,7 +21,6 @@
 #include "device_capacity.h"
 #include "config_plf_log.h"
 #include "adapter_rts.h"
-#include "sal_pub.h"
 
 using namespace hccl;
 using namespace std;
@@ -2080,10 +2079,8 @@ HcclResult hrtGetDeviceSatMode(aclrtFloatOverflowMode *floatOverflowMode)
 HcclResult hrtNotifyGetAddr(HcclRtNotify signal, u64 *notifyAddr)
 {
 #ifndef HCCD
-    HcclUs startut = TIME_NOW();
     uint64_t* const addr = reinterpret_cast<uint64_t*>(notifyAddr);
     rtError_t ret = rtGetNotifyAddress(signal, addr);
-    HCCL_RUN_INFO("hrtNotifyGetAddr total cost time[%llu]", DURATION_US(TIME_NOW() - startut));
     HCCL_DEBUG("Call rtGetNotifyAddress, signal[%p], notifyAddr[%016llx]", signal, *notifyAddr);
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[rtGetNotifyAddress]rt get notify address failed."), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
