@@ -48,7 +48,7 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
         result);
 }
 
-HcclResult UbMemTransport::FillTagVec(LocalBufferVec &bufferVec,
+HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {
     bufferNum += bufferVec.size();
@@ -571,7 +571,7 @@ bool UbMemTransport::RecvDataProcess()
     return ConnVecUnpackProc(binaryStream);
 }
 
-void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, LocalBufferVec &bufferVec,
+void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {
     binaryStream << bufferNum;
@@ -959,7 +959,41 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalUbRmaBuffer *> &bufferVecTemp)
+HcclResult UbMemTransport::CheckSocketStatus()
+{
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto startTime = std::chrono::steady_clock::now();
+    uint32_t retryCount = 0;
+    while (true) {
+        SocketStatus socketStatus = socket->GetAsyncStatus();
+
+        // 1. 检查超时
+        if (socketStatus == SocketStatus::TIMEOUT) {
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count();
+        HCCL_ERROR("[%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
+            __func__, timeout, elapsed, retryCount);
+        Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+        CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+            HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+        return HCCL_E_TIMEOUT;
+        }
+
+        retryCount++;
+
+        // 2. 正常情况：所有通道连接成功
+        if (socketStatus == SocketStatus::OK){
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_INFO("[%s] all channels connected successfully, elapsed[%lld]ms, retryCount[%u]",
+                __func__, elapsed, retryCount);
+            break;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp)
 {
     CHK_RET(FillTagVec(bufferVecTemp, memTagTemp_));
     HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
@@ -971,12 +1005,28 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalUbRmaBuffer *> &buffer
             sendStream.Dump(sendData);
             u32 sendSize = sendData.size();
             socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
-            HCCL_INFO("[UbMemTransport::%s] Send size[%u] of data success. [%zu] bytes sent.",
+            HCCL_INFO("[UbMemTransport][UpdateMemInfo] Send size[%u] of data success. [%zu] bytes sent.",
                 __func__, sendSize, sizeof(sendSize));
+            HcclResult result = CheckSocketStatus();
+            CHK_RET_THROW(InternalException,
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                result);
             recvData.clear();
             RecvDataSize();
+            result = CheckSocketStatus();
+            CHK_RET_THROW(InternalException,
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                result);
             SendExchangeData();
+            result = CheckSocketStatus();
+            CHK_RET_THROW(InternalException,
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                result);
             RecvExchangeData();
+            result = CheckSocketStatus();
+            CHK_RET_THROW(InternalException,
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                result);
             BinaryStream recvStream;
             RmtBufferVecUnpackProc(bufferVecTemp.size(), recvStream, rmtBufferVec, UbRmtBufType::BUFFER);
         }());
