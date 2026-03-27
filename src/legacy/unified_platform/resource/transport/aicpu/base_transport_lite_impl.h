@@ -145,9 +145,6 @@ public:
         (void)stream;
     }
 
-    /** 设备侧仍可调用；不再写入 UDMA/SDMA SQE */
-    virtual void SetHcclQos(u32 qos) { (void)qos; }
-
 private:
 };
 

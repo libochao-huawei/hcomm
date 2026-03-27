@@ -26,7 +26,6 @@
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
 namespace hccl {
-
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
  */
