@@ -439,7 +439,7 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
     /* 实现获取buffer Num的接口，此处Size为10的vector暂存 */
     std::vector<CommMem *> remoteMemList(10);
     std::vector<char *> memTags(10);
-    CHK_RET(static_cast<HcommResult>(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data())));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data())));
 
     for (u32 i = 0; i < memNum; i++) {
         HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
