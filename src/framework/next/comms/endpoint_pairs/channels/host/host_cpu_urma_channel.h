@@ -73,13 +73,7 @@ private:
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
 
     HcclResult UrmaPostJfr();
-    HcclResult PrepareNotifyWrResource(const uint32_t remoteNotifyIdx, urma_jfs_wr_t &notifyRecordWr);
-    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
-                                    urma_jfs_wr_t &writeWithNotifyWr);
 
-    urma_jfc_t jfc_;
-    urma_jetty_t jetty_;
-    urma_target_jetty_t tjetty_;
     uint32_t wqeNum_{0};
     bool fenceFlag_{false};
 

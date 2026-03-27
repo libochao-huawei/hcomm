@@ -208,180 +208,25 @@ ChannelStatus HostCpuUrmaChannel::GetStatus()
     return out;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::PrepareNotifyWrResource(const uint32_t remoteNotifyIdx, urma_jfs_wr_t &notifyRecordWr)
+HcclResult HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
-    // 构造 urma_jfs_wr_t
-    notifyRecordWr.opcode = URMA_OPC_WRITE_IMM;
-    notifyRecordWr.flag.bs.place_order = (fenceFlag_ == true ? 2 : 1);
-    notifyRecordWr.flag.bs.comp_order = 1; // comp_order要一直保持为1,
-    notifyRecordWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
-    notifyRecordWr.flag.bs.solicited_enable = 1;
-    notifyRecordWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa());
-    notifyRecordWr.user_ctx = 0; // 跟ibvs中的wr_id对应
-    notifyRecordWr.rw.src.sge->len = 0;
-    notifyRecordWr.rw.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    notifyRecordWr.rw.src.sge->user_tseg = nullptr;
-    notifyRecordWr.rw.src.num_sge = 1;
-    notifyRecordWr.rw.dst.sge->len = 0;
-    notifyRecordWr.rw.dst.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    notifyRecordWr.rw.dst.sge->user_tseg = nullptr;
-
-    notifyRecordWr.rw.target_hint = 0;
-    notifyRecordWr.rw.notify_data = remoteNotifyIdx;
-    notifyRecordWr.send.src.sge->len = 0;
-    notifyRecordWr.send.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    notifyRecordWr.send.src.sge->user_tseg = nullptr;
-    notifyRecordWr.send.src.num_sge = 1;
-    notifyRecordWr.send.imm_data = remoteNotifyIdx;
-    notifyRecordWr.send.target_hint = 0;
-    notifyRecordWr.send.tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    notifyRecordWr.next = nullptr;
-
-    fenceFlag_ = false;
-
-    return HCCL_SUCCESS;
+    HCCL_ERROR("[HostCpuUrmaChannel][%s] host ub does not support NotifyRecord.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx, urma_jfs_wr_t &writeWithNotifyWr)
+HcclResult HostCpuUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
 {
-    CHK_PRT_RET(len > UINT32_MAX, HCCL_ERROR("[HostCpuUrmaChannel][%s] the len[%llu] exceeds the size of u32.",
-        __func__, len), HCCL_E_PARA);
-    
-    // 构造 urma_jfs_wr_t
-    writeWithNotifyWr.opcode = URMA_OPC_WRITE_IMM;
-    writeWithNotifyWr.flag.bs.place_order = (fenceFlag_ == true ? 2 : 1);//需要一个标志位，正常情况下是relax_order就是place_order是relax_order，除非加了fence,在调用fence后的第一个post_wr需要设置成strong order,随后又是relax_order.
-    // comp_order要一直保持为1,
-    writeWithNotifyWr.flag.bs.comp_order = 1;
-    writeWithNotifyWr.flag.bs.fence = (fenceFlag_ == true ? 1 : 0);
-    writeWithNotifyWr.tjetty = reinterpret_cast<urma_target_jetty_t*>(connections_[0]->GetTJettyVa()); // 控制面建链时放到channel里，直接从channel里拿到(唯一的对端信息，如果创建的模式rc的话是不用填target_jetty的),在控制面urma_import_jetty时会拿到这个target_jetty
-    writeWithNotifyWr.user_ctx = 0; // 跟ibvs中的wr_id对应
-    writeWithNotifyWr.rw.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
-    writeWithNotifyWr.rw.src.sge->len = len;
-    writeWithNotifyWr.rw.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    writeWithNotifyWr.rw.src.sge->user_tseg = nullptr;
-    writeWithNotifyWr.rw.src.num_sge = 1;
-    writeWithNotifyWr.rw.dst.sge->addr = reinterpret_cast<uint64_t>(dst); // 远端地址
-    writeWithNotifyWr.rw.dst.sge->len = len;
-    writeWithNotifyWr.rw.dst.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    writeWithNotifyWr.rw.dst.sge->user_tseg = nullptr;
-
-    writeWithNotifyWr.rw.target_hint = 0;
-    writeWithNotifyWr.rw.notify_data = remoteNotifyIdx;
-    writeWithNotifyWr.send.src.sge->addr = reinterpret_cast<uint64_t>(src); // 源地址
-    writeWithNotifyWr.send.src.sge->len = len;
-    writeWithNotifyWr.send.src.sge->tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    writeWithNotifyWr.send.src.sge->user_tseg = nullptr;
-    writeWithNotifyWr.send.src.num_sge = 1;
-    writeWithNotifyWr.send.target_hint = 0;
-    writeWithNotifyWr.send.imm_data = remoteNotifyIdx;
-    writeWithNotifyWr.send.tseg = reinterpret_cast<urma_target_seg_t*>(localRmaBuffers_[0]->GetTargetSeg());
-    writeWithNotifyWr.next = nullptr;
-    
-    fenceFlag_ = false;
-
-    return HCCL_SUCCESS;
+    HCCL_ERROR("[HostCpuUrmaChannel][%s] host ub does not support NotifyWait.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
+HcclResult HostCpuUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
 {
-    HCCL_INFO("[HostCpuUrmaChannel::%s] start, remoteNotifyIdx[%u]", __func__, remoteNotifyIdx);
-    // 补充jfr中消耗的rqe
-    // 1. 准备jfr_wr
-    CHK_RET(UrmaPostJfr());
-
-    // 2.构造jfs_wr
-    urma_jfs_wr_t  notifyRecordWr {};
-    urma_jfs_wr_t *badWr = nullptr;
-
-    CHK_RET(PrepareNotifyWrResource(remoteNotifyIdx, notifyRecordWr));
-
-    // 3.调用urma_post_jetty_send_wr	 
-    HCCL_INFO("[HostCpuUrmaChannel::%s] call urma_post_jetty_send_wr.", __func__);	 
-    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &notifyRecordWr, &badWr);
-    if (ret != 0 && badWr == nullptr) {
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed while badWr is nullptr", __func__);
-        return HCCL_E_INTERNAL;
-    }
-
-    CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed. ret:%d, "
-        "badWr->rw.src.sge->addr[%llu], badWr->rw.dst.sge->addr[%llu]",
-        __func__, ret, badWr->rw.src.sge->addr, badWr->rw.dst.sge->addr));
-    
-    wqeNum_++;
-    HCCL_INFO("[HostCpuUrmaChannel::%s] end.", __func__);
-    return HCCL_SUCCESS;
+    HCCL_ERROR("[HostCpuUrmaChannel][%s] host ub does not support WriteWithNotify.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
-{
-    HCCL_INFO("[HostCpuUrmaChannel::%s] start. localNotifyIdx[%u], timeout[%u]", __func__, localNotifyIdx, timeout);
-
-    // 1. 准备WR
-    urma_cr_t wc{};
-    std::lock_guard<std::mutex> lock(jfcMutex_);
-
-    // 2.轮询jfr对应的jfc
-    auto startTime = std::chrono::steady_clock::now();
-    auto waitTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(timeout));
-    while (true) {
-        HCCL_INFO("[HostCpuUrmaChannel::%s] start to poll jfc", __func__);
-        
-        auto actualNum = urma_poll_jfc(reinterpret_cast<urma_jfc_t*>(connections_[0]->GetCqVa()), 1, &wc);
-        CHK_PRT_RET(wc.status != URMA_CR_SUCCESS,
-            HCCL_ERROR("[HostCpuUrmaChannel][%s] urma_poll_jfc return wc.status is [%d].",
-            __func__, wc.status), HCCL_E_NETWORK);
-
-        HCCL_INFO("[HostCpuUrmaChannel::%s] actualNum = %d; imm_data = %u", actualNum, wc.imm_data);
-
-        if (actualNum > 0 && wc.imm_data == localNotifyIdx) {
-            HCCL_INFO("[HostCpuUrmaChannel::%s] poll jfc success.", __func__);
-            break;
-        }
-
-        if ((std::chrono::steady_clock::now() - startTime) >= waitTime) {
-            HCCL_ERROR("[HostCpuUrmaChannel][%s] call urma_poll_jfc timeout.", __func__);
-            return HCCL_E_TIMEOUT;
-        }
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult hcomm::HostCpuUrmaChannel::WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx)
-{
-    HCCL_INFO("[HostCpuUrmaChannel::%s] start.", __func__);
-    CHK_PTR_NULL(src);
-    CHK_PTR_NULL(dst);
-
-    // 1.补充jfr中消耗的rqe
-    CHK_RET(UrmaPostJfr());
-
-    // 2.构造jfs_wr
-    urma_jfs_wr_t writeWithNotifyWr {};
-    urma_jfs_wr_t *badWr = nullptr;
-
-    CHK_RET(PrepareWriteWrResource(dst, src, len, remoteNotifyIdx, writeWithNotifyWr));
-
-    // 3.调用urma_post_jetty_send_wr	 
-    auto ret = urma_post_jetty_send_wr(reinterpret_cast<urma_jetty_t*>(connections_[0]->GetJettyVa()), &writeWithNotifyWr, &badWr);
-    if (ret != 0 && badWr == nullptr) {
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed while badWr is nullptr", __func__);
-        return HCCL_E_INTERNAL;
-    }
-
-    CHK_PRT_CONT(ret != 0,
-        HCCL_ERROR("[HostCpuUrmaChannel::%s] urma_post_jetty_send_wr failed. ret:%d, "
-        "badWr->rw.src.sge->addr[%llu], badWr->rw.dst.sge->addr[%llu]",
-        __func__, ret, badWr->rw.src.sge->addr, badWr->rw.dst.sge->addr));
-
-    HCCL_INFO("[HostCpuUrmaChannel::%s] end.", __func__);
-    wqeNum_++;
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t len)
+HcclResult HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[HostCpuUrmaChannel::%s] start. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
 
@@ -437,7 +282,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t
     return HCCL_SUCCESS;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t len)
+HcclResult HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[HostCpuUrmaChannel::%s] START. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
 
@@ -492,7 +337,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::ChannelFence()
+HcclResult HostCpuUrmaChannel::ChannelFence()
 {
     std::lock_guard<std::mutex> lock(fenceMutex_);
     HCCL_INFO("[HostCpuUrmaChannel::%s] start, wqeNum_ = %u", __func__, wqeNum_);
@@ -538,7 +383,7 @@ HcclResult hcomm::HostCpuUrmaChannel::ChannelFence()
     return HCCL_SUCCESS;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::UrmaPostJfr()
+HcclResult HostCpuUrmaChannel::UrmaPostJfr()
 {
     // 1. 准备jfr_wr
     urma_jfr_wr_t jfrWr{};
