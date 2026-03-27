@@ -98,9 +98,6 @@ public:
                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
-    HcclResult ReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, std::vector<CcuProfilingInfo> &streamProfilingInfo,
-                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
-
     HcclResult UpdateChannelIdMap();
     HcclResult GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle);
     HcclResult GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId);
