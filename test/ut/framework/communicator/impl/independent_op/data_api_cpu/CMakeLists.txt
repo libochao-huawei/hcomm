@@ -57,7 +57,7 @@ target_link_libraries(hcomm_utest_api_data_cpu PRIVATE
 )
 add_dependencies(hcomm_utest_api_data_cpu hccl_llt)
 
-run_llt_test(
-   TARGET  hcomm_utest_api_data_cpu
-   TASK_NUM 1
-)
+# run_llt_test(
+#    TARGET  hcomm_utest_api_data_cpu
+#    TASK_NUM 1
+# )

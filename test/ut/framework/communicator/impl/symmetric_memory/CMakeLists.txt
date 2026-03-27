@@ -56,7 +56,7 @@ target_link_libraries(hccl_utest_framework_symmetric_memory PRIVATE
 )
 add_dependencies(hccl_utest_framework_symmetric_memory hccl_llt)
 
-run_llt_test(
-    TARGET  hccl_utest_framework_symmetric_memory
-    TASK_NUM 1
-)
+# run_llt_test(
+#     TARGET  hccl_utest_framework_symmetric_memory
+#     TASK_NUM 1
+# )

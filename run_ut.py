@@ -32,7 +32,7 @@ def find_ut_binaries(test_dir):
             result = subprocess.run(
                 ["file", "-b", str(f)], capture_output=True, text=True, timeout=5
             )
-            if "ELF" in result.stdout and "executable" in result.stdout:
+            if "ELF" in result.stdout:
                 binaries.append(f)
         except Exception:
             continue
