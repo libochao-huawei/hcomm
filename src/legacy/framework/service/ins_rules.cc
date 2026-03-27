@@ -771,7 +771,7 @@ void Interpret(const AicpuInstruction &aicpuInstruction, CommunicatorImpl &comm,
     aicpuKernelLauncher.AicpuKernelLaunch(stream, aicpuInstruction.GetAlgName());
 }
 
-static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs)
+static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs, bool isMaster)
 {
     HCCL_DEBUG("Begin to SaveAivDfxTaskInfo taskType[%d]", static_cast<int32_t>(TaskParamType::TASK_AIV));
     //flagMem每个stream的中的任务复用，异常时只有最后一个task的信息
@@ -798,7 +798,7 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         .ccuDetailInfo  = nullptr
     };
  
-    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID);
+    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster);
 }
 
 void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &comm, const Stream &stream,
@@ -865,8 +865,9 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
         u64 localOutputAddr = static_cast<uint64_t>(comm.GetCurrentCollOperator()->outputMem->GetAddr());
         aivOpArgs.output += localOutputAddr;
     }
+    aivOpArgs.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();   
     ExecuteKernelLaunch(aivOpArgs);
-    ReportAivTaskInfo(comm, aivOpArgs);
+    ReportAivTaskInfo(comm, aivOpArgs, stream.IsMaster());
 }
 
 } // namespace Hccl
