@@ -214,8 +214,8 @@ CollAlgOpReq CollAlgComponent::GetCollAlgOpReq(const CollAlgOperator &op, const 
     insGenFunc->SetOp(op);
     insGenFunc->SetSendRecvRemoteRank(op.sendRecvRemoteRank);
     auto req = insGenFunc->CalcRes(rankGraph_, collAlgOpReq.resReq);
-        if (req != HcclResult::HCCL_SUCCESS) {
-        THROW<InvalidParamsException>(StringFormat("CollAlgComponent::CalcRes ptr failed"));
+    if (req != HcclResult::HCCL_SUCCESS) {
+        THROW<InvalidParamsException>(StringFormat("CollAlgComponent::CalcRes failed"));
     }
 
     algName2Res[collAlgOpReq.algName] = collAlgOpReq.resReq;

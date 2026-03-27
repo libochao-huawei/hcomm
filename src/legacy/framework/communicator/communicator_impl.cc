@@ -63,6 +63,7 @@
 #include "adapter_error_manager_pub.h"
 #include "ccu_context_all_to_all_v_mesh1d.h"
 #include "topo_addr_info.h"
+#include "invalid_params_exception.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -2134,11 +2135,7 @@ HcclResult CommunicatorImpl::GetSnapShotDynamicBuf(BinaryStream &buf) const
         buf << static_cast<u32>(currentCollOperator->opMode);
 
         HCCL_INFO("[CommunicatorImpl][%s] rank[%d], currentCollOperator", __func__, myRank);
-        try {collService->GetSnapShotDynamicBuf(*currentCollOperator, buf);
-        } catch (std::exception& e) {
-        HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
-        rwlock.writeUnlock();
-        return HCCL_E_PTR;
+        TRY_CATCH_RETURN(collService->GetSnapShotDynamicBuf(*currentCollOperator, buf));
     }
     return HcclResult::HCCL_SUCCESS;
 }
