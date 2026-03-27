@@ -352,8 +352,7 @@ HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
         targetChannels));
     CHK_RET(ChannelProcess::ConnectChannels(targetChannels, channelNum, engine));
     CHK_RET(EnsureKernelBinLoaded(engine));
-    CHK_RET(ChannelProcess::SaveChannels(targetChannels, channels, channelNum, engine, g_BinHandle,
-        channelDescFinals.data()));
+    CHK_RET(ChannelProcess::SaveChannels(targetChannels, channels, channelNum, engine, g_BinHandle));
 
     return HCCL_SUCCESS;
 }

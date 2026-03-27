@@ -10,6 +10,7 @@
 #ifndef HCCLV2_RTSQ_A5_H
 #define HCCLV2_RTSQ_A5_H
 #include "rtsq_base.h"
+#include "mem_transport_common.h"
 namespace Hccl {
 
 class RtsqA5 : public RtsqBase {
@@ -79,7 +80,7 @@ private:
 
     bool launchFlag_ = false;
 
-    u32 sdmaHcclQos_{6};
+    u32 sdmaHcclQos_{HCCL_A5_DEFAULT_QOS};
 
     static constexpr u32 rtsqSqeSize     = 64;
     static constexpr u32 perLaunchSqeCnt = 128; // 最大launch 128个SQE
