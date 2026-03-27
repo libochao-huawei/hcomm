@@ -107,7 +107,6 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     } else {
         HCCL_DEBUG("[InsAllGatherParallelExecutor] Rank[%d], CalcRes with detouring disabled."
                    "rankSizeLevel0[%u] rankSizeLevel1[%u]",
-                    __func__,
                     myRank_,
                     rankSizeLevel0_,
                     rankSizeLevel1_);
