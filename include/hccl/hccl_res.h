@@ -12,183 +12,21 @@
 #define HCCL_RES_H
 
 #include <stdint.h>
-#include <arpa/inet.h>
-#include "securec.h"
 #include "acl/acl_rt.h"
 #include "hccl_types.h"
+#include "hcomm_res_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
 
 /**
- * @brief 通信域句柄类型（不透明结构）
- */
-typedef void *HcclComm;
-
-#ifndef CHANNEL_HANDLE_DEFINED
-#define CHANNEL_HANDLE_DEFINED
-/**
- * @brief 通道句柄类型
- */
-typedef uint64_t ChannelHandle;
-#endif
-
-#ifndef THREAD_HANDLE_DEFINED
-#define THREAD_HANDLE_DEFINED
-/**
- * @brief 线程句柄类型
- */
-typedef uint64_t ThreadHandle;
-#endif
-
-/**
  * @brief 内存句柄类型（不透明结构）
  */
 typedef void *HcclMemHandle;
 
-/**
- * @enum CommMemType
- * @brief 内存类型枚举定义
- */
-typedef enum {
-    COMM_MEM_TYPE_INVALID = -1, ///< 无效的内存类别
-    COMM_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
-    COMM_MEM_TYPE_HOST,   ///< 主机侧内存
-} CommMemType;
-
-/**
- * @brief 内存段元数据描述结构体
- */
-typedef struct {
-    CommMemType type; ///< 内存物理位置类型，参见CommMemType
-    void *addr;       ///< 内存地址
-    uint64_t size;    ///< 内存区域字节数
-} CommMem;
- 
-/**
- * @brief 通信引擎类型枚举
- */
-typedef enum {
-    COMM_ENGINE_RESERVED = -1,    ///< 保留的通信引擎
-    COMM_ENGINE_CPU = 0,          ///< HOST CPU引擎
-    COMM_ENGINE_CPU_TS = 1,       ///< HOST CPU TS引擎
-    COMM_ENGINE_AICPU = 2,        ///< AICPU引擎
-    COMM_ENGINE_AICPU_TS = 3,     ///< AICPU TS引擎
-    COMM_ENGINE_AIV = 4,          ///< AIV引擎
-    COMM_ENGINE_CCU = 5,          ///< CCU引擎
-} CommEngine;
-
 /// HCCL资源标识最大长度（字节）
 const uint32_t HCCL_RES_TAG_MAX_LEN = 255;
-
-/**
- * @brief 兼容Abi字段结构体
- */
-typedef struct {
-    uint32_t version;
-    uint32_t magicWord;
-    uint32_t size;
-    uint32_t reserved;
-} CommAbiHeader;
-
-/**
- * @brief 通信协议类型枚举
- */
-typedef enum {
-    COMM_PROTOCOL_RESERVED = -1,  ///< 保留协议类型
-    COMM_PROTOCOL_HCCS = 0,       ///< HCCS协议
-    COMM_PROTOCOL_ROCE = 1,       ///< RDMA over Converged Ethernet
-    COMM_PROTOCOL_PCIE = 2,       ///< PCIE协议
-    COMM_PROTOCOL_SIO = 3,        ///< SIO协议
-    COMM_PROTOCOL_UBC_CTP = 4,    ///< 华为统一总线UBC_CTP
-    COMM_PROTOCOL_UBC_TP = 5,     ///< 华为统一总线UBC_CP
-    COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
-} CommProtocol;
-
-/**
- * @brief 通信设备地址类别
- */
-typedef enum {
-    COMM_ADDR_TYPE_RESERVED = -1, ///< 保留地址类型
-    COMM_ADDR_TYPE_IP_V4 = 0,     ///< IPv4地址类型
-    COMM_ADDR_TYPE_IP_V6 = 1,     ///< IPv6地址类型
-    COMM_ADDR_TYPE_ID = 2,         ///< ID地址类型
-    COMM_ADDR_TYPE_EID = 3,        ///< EID地址类型
-} CommAddrType;
-
-/**
- * @brief 通信设备地址描述结构体
- * @note 支持CommAddrType的扩展，地址最大长度36字节
- */
-constexpr uint32_t COMM_ADDR_EID_LEN = 16;
-typedef struct {
-    CommAddrType type;         ///< 通信地址类别
-    union {
-        uint8_t raws[36];      ///< 通用数据
-        struct in_addr addr;   ///< IPv4地址结构
-        struct in6_addr addr6; ///< IPv6地址结构
-        uint32_t id;           ///< 标识
-        uint8_t eid[COMM_ADDR_EID_LEN];  ///< EID地址类型
-    };
-} CommAddr;
-
-/**
- * @brief 通信设备Endpoint位置类型枚举
- */
-typedef enum {
-    ENDPOINT_LOC_TYPE_RESERVED = -1, ///< 保留的Endpoint位置
-    ENDPOINT_LOC_TYPE_DEVICE = 0,    ///< Endpoint在Device上
-    ENDPOINT_LOC_TYPE_HOST = 1,      ///< Endpoint在Host上
-} EndpointLocType;
-
-/**
- * @brief Endpoint位置类型结构体
- * @note 支持EndpointLocType的扩展，最大60字节内容
- */
-typedef struct {
-    EndpointLocType locType;        ///< Endpoint的位置类别
-    union {
-        uint8_t raws[60];           ///< 通用数据
-        struct {
-            uint32_t devPhyId;      ///< 设备物理Id
-            uint32_t superDevId;    ///< 超节点deviceId
-            uint32_t serverIdx;     ///< Server的索引
-            uint32_t superPodIdx;   ///< 超节点位置索引
-        } device;                   ///< 当locType为DEVICE时使用
-        struct {
-            uint32_t id;            ///< 普通Id，当locType为HOST等时可能使用
-        } host;
-    };
-} EndpointLoc;
-
-typedef struct {
-    CommProtocol protocol;  ///< 通信协议
-    CommAddr commAddr;      ///< 通信地址
-    EndpointLoc loc;        ///< Endpoint的位置信息
-    union {
-        uint8_t raws[52];   ///< 通用数据
-    };
-} EndpointDesc;
-
-inline HcclResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
-{
-    for (uint32_t idx = 0; idx < num; idx++) {
-        if (endpoint != nullptr) {
-            // 用0xFF填充整个结构体
-            (void)memset_s(endpoint, sizeof(EndpointDesc), 0xFF, sizeof(EndpointDesc));
-            
-            // 显式设置关键字段为无效值
-            endpoint->protocol = COMM_PROTOCOL_RESERVED;
-            endpoint->commAddr.type = COMM_ADDR_TYPE_RESERVED;
-            endpoint->loc.locType = ENDPOINT_LOC_TYPE_RESERVED;
-            endpoint++;  // 移动到下一个描述符
-        } else {
-            return HCCL_E_PTR;
-        }
-    }
-    return HCCL_SUCCESS;
-}
 
 const uint32_t HCCL_CHANNEL_MAGIC_WORD = 0x0f0f0f0f;
 const uint32_t HCCL_CHANNEL_VERSION = 1;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
@@ -232,7 +70,7 @@ typedef struct {
  * @param[in] descNum 描述数量
  * @return HcclResult 执行结果状态码
  */
-inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
+static inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 {
     for (uint32_t idx = 0; idx < descNum; idx++) {
         if (channelDesc != nullptr) {
@@ -278,17 +116,6 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
  * @warning 重要约束：返回的buffer内存由库内管理，调用者严禁释放
  */
 extern HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size);
-
-/**
- * @brief 获取通信域中对端的Hccl缓存(HCCL Buffer)
- * @param[in] comm 通信域句柄
- * @param[in] remoteRank 远端rankId
- * @param[out] addr Hccl缓存地址
- * @param[out] size Hccl缓存大小
- * @return HcclResult 执行结果状态码
- * @warning 重要约束：返回的addr内存由库内管理，调用者严禁释放
- */
-extern HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
 
 /**
  * @defgroup 通信引擎资源管理
@@ -393,74 +220,14 @@ extern HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine
 extern HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTag, const void *srcCtx,
     uint64_t size, uint64_t dstCtxOffset);
 
-/* 控制面host kfc server算子注册函数 */
 /**
- * @brief 定义一个回调函数类型，
- * @param uint64_t 从共享内存中拷贝到DDR上数据段的地址
- *  @param int32_t 数据段大小
- * @return HcclResult
- */
-typedef int32_t(Callback)(uint64_t, int32_t);
-/**
- * @brief 注册一个任务到指定的通信域中。
- * @param comm 通信域对象，用于标识任务注册的目标通信域。
- * @param msgTag 操作标签，用于标识和区分不同的任务。
- * @param cb 回调函数，任务完成时将被调用。
- * @return HcclResult。
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
-/**
- * @brief 从指定的通信域中注销一个已注册的任务。
- * @param comm 通信域对象，用于标识任务注销的目标通信域。
- * @param msgTag 操作标签，用于标识要注销的任务。
- * @param cb 回调函数，任务完成时将被调用。
- * @return HcclResult。
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
- 
-/**
- * @brief 获取mc2场景下AICPU展开的workspace
+ * @brief 销毁通信引擎资源上下文
  * @param[in] comm 通信域句柄
- * @param[in] memTag 全局标签为nullptr, 单算子标签不为空
- * @param[in] size 未申请过对应memTga的资源会根据size自动创建device mem, 否则校验旧的device mem是否一致。
- * @param[out] addr 对应的workspace起始地址
- * @param[out] newCreated 可为nullptr, 不为nullptr时会返回是否新创建的workspace
+ * @param[in] ctxTag 引擎标签（最大字符长度为HCCL_RES_TAG_MAX_LEN）
+ * @param[in] engine 通信引擎类型
  * @return HcclResult 执行结果状态码
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
-
-/**
- * @brief 将Thread资源导出到指定通信引擎上
- * @param[in] comm 通信域句柄
- * @param[in] threadNum 通知数量
- * @param[in] threads Thread句柄列表
- * @param[in] dstCommEngine 目标通信引擎
- * @param[out] exportedThreads 导出的Thread列表
- * @return HcclResult 执行结果状态码
- * @note 导出到目标通信引擎之后，在目标通信引擎直接引用，不需要导入操作
- * 
- * WARNING: experimental API, No compatibility is currently guaranteed for this API
- */
-extern HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
-
-/**
- * @brief 获取channel中全部交换获得的远端内存信息
- * @param[in] comm 通信域句柄
- * @param[in] channel 通道句柄
- * @param[out] memNum 内存数量
- * @param[out] remoteMems 远端内存列表
- * @param[out] memTags 远端内存字符串标签列表
- * @return HcclResult 执行结果状态码
- * @warning
- */
-extern HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems,
-    char ***memTags);
+extern HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine engine);
 
 /**
  * @brief 向通信域注册内存
@@ -475,13 +242,17 @@ extern HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel,
 extern HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem, HcclMemHandle *memHandle);
 
 /**
- * @brief 销毁通信引擎资源上下文
+ * @brief 获取channel中全部交换获得的远端内存信息
  * @param[in] comm 通信域句柄
- * @param[in] ctxTag 引擎标签（最大字符长度为HCCL_RES_TAG_MAX_LEN）
- * @param[in] engine 通信引擎类型
+ * @param[in] channel 通道句柄
+ * @param[out] memNum 内存数量
+ * @param[out] remoteMems 远端内存列表
+ * @param[out] memTags 远端内存字符串标签列表
  * @return HcclResult 执行结果状态码
+ * @warning
  */
-extern HcclResult HcclEngineCtxDestroy(HcclComm comm, const char *ctxTag, CommEngine engine);
+extern HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems,
+    char ***memTags);
 
 #ifdef __cplusplus
 }
