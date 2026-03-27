@@ -48,13 +48,15 @@ private:
         float maxMultiple;
     };
     struct SliceConfig {
-        u32 loopTimes;
-        u64 sliceCount;           // 正常切分大小
-        u64 sliceCountPart0;      // 正常切块第一部分大小
-        u64 sliceCountPart1;      // 正常切块第二部分大小
-        u64 finalSliceCount;      // 尾块切分大小
-        u64 finalSliceCountPart0; // 尾块第一部分切分大小
-        u64 finalSliceCountPart1; // 尾块第二部分切分大小
+        u32 loopTimes = 0;
+        u64 sliceCount = 0;           // 正常切分个数
+        u64 sliceCountPart0 = 0;      // 正常切块第一部分个数
+        u64 sliceCountPart1 = 0;      // 正常切块第二部分个数
+        u64 finalSliceCount = 0;      // 尾块切分个数
+        u64 finalSliceCountPart0 = 0; // 尾块第一部分切分个数
+        u64 finalSliceCountPart1 = 0; // 尾块第二部分切分个数
+        u64 finalTailCountPart0 = 0;  // 尾块非卡整数倍尾巴
+        u64 finalTailCountPart1 = 0;  // 尾块非卡整数倍尾巴
     };
     struct ScratchOffset {
         u64 interScatterStage0;
@@ -67,11 +69,12 @@ private:
         u64 intraAllGatherStage3;
     };
     struct DataParameters {
-        u64 CountPart0;
-        u64 CountPart1;
-        u64 dataOffset0;
-        u64 dataOffset1;
+        u64 dataOffset[2] = {0, 0};                   // 每个part数据偏移
+        std::vector<std::vector<u64>> sliceSize{2};   // 正常分块part每个阶段数据大小
+        std::vector<std::vector<u64>> inputStride{2}; // 正常分块partInputStride大小
+        std::vector<std::vector<u64>> tailSize{2};    // 尾片的整数倍数据大小
     };
+
     struct StageProcAlgPara {
         std::function<HcclResult(TempFuncs&, TemplateDataParams&, ResLinks&, std::vector<InsQuePtr>&)> part0FuncPtr;
         u64 part0ScratchOffset;
@@ -125,6 +128,56 @@ private:
         double splitData = 0.5;
         splitDataSize.push_back(splitData);
         splitDataSize.push_back(splitData);
+        return;
+    }
+    void InitDataParameters(SliceConfig& slice, DataParameters& dataParameters)
+    {
+        dataParameters.sliceSize.at(0) = {
+            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
+            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
+            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_};
+        dataParameters.sliceSize.at(1) = {
+            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
+            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
+            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_};
+        dataParameters.inputStride.at(0) = {
+            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+            slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_, 0, 0};
+        dataParameters.inputStride.at(1) = {
+            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+            slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
+        dataParameters.tailSize = dataParameters.sliceSize;
+        return;
+    }
+    void InitFinalSliceDataParameters(SliceConfig& slice, DataParameters& dataParameters)
+    {
+        dataParameters.sliceSize.at(0) = {
+            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
+            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_,
+            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_};
+        dataParameters.sliceSize.at(1) = {
+            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
+            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_,
+            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_};
+        dataParameters.inputStride.at(0) = {
+            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
+            slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_ / intraLocalRankSize_, 0, 0};
+        dataParameters.inputStride.at(1) = {
+            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
+            slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
+        // 只有最后一片数据的part1部分存在尾片数据，scatter算子和allgather算子都需要支持该数据收集
+        for (auto i = 0; i < dataParameters.sliceSize.at(0).size(); i++) {
+            dataParameters.tailSize.at(0).at(i) =
+                dataParameters.sliceSize.at(0).at(i) + slice.finalTailCountPart0 * dataTypeSize_;
+        }
+        for (auto i = 0; i < dataParameters.sliceSize.at(1).size(); i++) {
+            dataParameters.tailSize.at(1).at(i) =
+                dataParameters.sliceSize.at(1).at(i) + slice.finalTailCountPart1 * dataTypeSize_;
+        }
         return;
     }
     HcclResult CalcLocalRoot()
@@ -211,21 +264,22 @@ private:
         InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
 
     void GenDataParamsStage(
-        const u64 sliceSize, const u64 inputSliceStride, const u64 dataOffset, const u64 sliceCount,
-        const u64 scratchOffsetCount, TemplateDataParams& dataParams) const
+        const u32 part, const u32 stage, const u64 scratchOffsetCount, DataParameters& dataParameters,
+        TemplateDataParams& dataParams) const
     {
         dataParams.buffInfo.inBuffType = BufferType::INPUT;
         dataParams.buffInfo.outBuffType = BufferType::INPUT;
         dataParams.buffInfo.scratBuffType = BufferType::SCRATCH;
-        dataParams.buffInfo.inBuffBaseOff = dataOffset;
-        dataParams.buffInfo.outBuffBaseOff = dataOffset;
+        dataParams.buffInfo.inBuffBaseOff = dataParameters.dataOffset[part];
+        dataParams.buffInfo.outBuffBaseOff = dataParameters.dataOffset[part];
         dataParams.buffInfo.scratchBuffBaseOff = scratchOffsetCount * dataTypeSize_;
-        dataParams.sliceSize = sliceSize;
-        dataParams.inputSliceStride = inputSliceStride;
-        dataParams.outputSliceStride = sliceSize;
+        dataParams.sliceSize = dataParameters.sliceSize.at(part).at(stage);
+        dataParams.inputSliceStride = dataParameters.inputStride.at(part).at(stage);
+        dataParams.outputSliceStride = dataParameters.sliceSize.at(part).at(stage);
         dataParams.repeatNum = 1;
         dataParams.inputRepeatStride = 0;
         dataParams.outputRepeatStride = 0;
+        dataParams.tailSize = dataParameters.tailSize.at(part).at(stage);
         return;
     }
     void InitStageProcAlgParaVec(
