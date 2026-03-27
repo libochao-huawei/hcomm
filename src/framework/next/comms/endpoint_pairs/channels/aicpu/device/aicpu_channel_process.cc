@@ -59,10 +59,6 @@ HcclResult AicpuChannelProcess::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         }
         ChannelHandle channelHandle;
         CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
-        auto itUb = ubTransportMap_.find(channelHandle);
-        if (itUb != ubTransportMap_.end() && itUb->second != nullptr) {
-            itUb->second->SetHcclQos(commParam->qos);
-        }
 
         // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);

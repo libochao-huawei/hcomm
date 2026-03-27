@@ -94,8 +94,6 @@ public:
         impl->BatchTransfer(loc, rmt, transferOp, stream);
     }
 
-    void SetHcclQos(u32 qos) { impl->SetHcclQos(qos); }
-
 private:
     TransportType type;
 

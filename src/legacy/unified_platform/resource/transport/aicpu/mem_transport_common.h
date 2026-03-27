@@ -13,11 +13,6 @@
 #include "string_util.h"
 #include "reduce_in.h"
 
-/** A5/legacy transport 侧 HCCL QoS（4bit）默认值，与框架 EnvConfig::HCCL_QOS_DEFAULT 保持一致 */
-#ifndef HCCL_A5_DEFAULT_QOS
-#define HCCL_A5_DEFAULT_QOS (6u)
-#endif
-
 namespace Hccl {
 MAKE_ENUM(TransportType, P2P, UB)
 MAKE_ENUM(TransportNotifyType, NORMAL, COUNT)

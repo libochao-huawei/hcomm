@@ -150,7 +150,7 @@ static u32 UbJettyPriorityFromHcclQos(u32 hcclQos)
 }
 
 HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJettyParam &in, HrtRaUbJettyCreatedOutParam &out)
-{HrtRaUbCreateJettyParam
+{
     struct QpCreateAttr attr{};
     attr.scqHandle     = reinterpret_cast<void *>(in.sjfcHandle);
     attr.rcqHandle     = reinterpret_cast<void *>(in.rjfcHandle);
