@@ -188,8 +188,10 @@ public:
 
     const NotifyTimeoutCfg &GetNotifyTimeoutCfg() const;
 
-    const shared_ptr<DevBuffer> GetCclBuffer() const
+    const shared_ptr<DevBuffer> &GetCclBuffer() const
     {
+        // 接口设计不合理，其他数据结构无权管理hccl buffer生命周期
+        // 因传递裸指针；影响范围较大，本次性能优化暂不处理
         return cclBuffer;
     }
 
