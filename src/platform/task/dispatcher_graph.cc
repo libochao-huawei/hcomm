@@ -174,9 +174,11 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
     } else {
         CHK_RET(GraphAddRecordTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
     }
+    HCCL_RUN_INFO("[jjy][109]after GraphAddRecordTaskWithSignalAddr, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (!inchip && ctxIdx > 0) {
         CHK_RET(SignalTaskParaSave(signal, stream, userRank, INVALID_UINT,
                 offset, stage, TaskType::TASK_NOTIFY_RECORD, beginTime, ctxIdx));
+        HCCL_RUN_INFO("[jjy][109]after SignalTaskParaSave, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
 
     if (HcclCheckLogLevel(HCCL_LOG_INFO) || (GetExternalInputDebugConfig() & PLF_TASK)) {
@@ -186,6 +188,7 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
         PLF_CONFIG_INFO(PLF_TASK,
             "%s para: notifyId[0x%016llx] streamId[%u] userRank[%u] remoteUserRank[%u] offset[%llu] stage[%d] inchip[%d]",
             __func__, notifyID, stream.id(), userRank, remoteUserRank, offset, stage, inchip);
+        HCCL_RUN_INFO("[jjy][109]after GetNotifyDfxInfo, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
