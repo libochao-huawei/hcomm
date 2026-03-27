@@ -68,6 +68,7 @@
 #include "exception_handler.h"
 #include "plugin_runner_pub.h"
 #include "task_exception_handler_pub.h"
+#include "hccl_group.h"
 
 using namespace std;
 using namespace hccl;
@@ -3574,6 +3575,48 @@ TEST_F(OpbaseTest, ut_HcclCommInitClusterInfo)
     unsetenv("HCCL_WHITELIST_DISABLE");
     SalSleep(1);
     GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclGroupCommInitClusterInfo)
+{
+    MOCKER(GetExternalInputHcclEnableEntryLog)
+    .stubs()
+    .with(any())
+    .will(returnValue(true));
+    nlohmann::json rank_table = rank_table_1server_8rank;
+
+    char file_name_t[] = "./st_opbase_test.json";
+    std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
+
+    if (outfile.is_open())
+    {
+        outfile << std::setw(1) << rank_table << std::endl;
+        HCCL_INFO("open %s success", file_name_t);
+    }
+    else
+    {
+        HCCL_ERROR("open %s failed", file_name_t);
+    }
+
+    outfile.close();
+
+    int ret = HCCL_SUCCESS;
+    rtError_t rt_ret = RT_ERROR_NONE;
+    ret = hrtSetDevice(0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    void* comm;
+
+    // 走1910 8pring
+    const char* rank_table_file = "./st_opbase_test.json";
+
+    ret = HcclGroupStart();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcclCommInitClusterInfo(rank_table_file, 0, comm);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(OpbaseTest, ut_check_alltoallv_external_mem)
