@@ -112,6 +112,7 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(void **memHandles, uint32_t memH
         return HcclResult::HCCL_E_INTERNAL;
     }
     CHK_RET(itC->second->UpdateMemInfo(memHandles, memHandleNum));
+    return HCCL_SUCCESS;
 }
 
 HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList)

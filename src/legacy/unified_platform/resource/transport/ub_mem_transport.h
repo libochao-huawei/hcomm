@@ -26,7 +26,8 @@ public:
                    RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1,
                    std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
-    HcclResult FillTagVec();
+    HcclResult FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
 
     std::string Describe() const override;
 
@@ -73,7 +74,8 @@ public:
 
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
-    HcclResult UpdateMemInfo(std::vector<LocalUbRmaBuffer *> &bufferVecTemp);
+    HcclResult CheckSocketStatus();
+    HcclResult UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp);
 
     HcclResult Init();
     HcclResult DeInit() const;
@@ -126,7 +128,7 @@ private:
     void SendFinish();
     void RecvFinish();
 
-    void BufferVecPack(BinaryStream &binaryStream, LocalBufferVec &bufferVec,
+    void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
     void CntNotifyVecPack(BinaryStream &binaryStream);
 
