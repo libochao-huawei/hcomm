@@ -27,8 +27,6 @@
 
 namespace hccl {
 
-class hcclComm;
-
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
  */
@@ -49,7 +47,7 @@ public:
         return opExpansionMode_;
     }
 
-    HcclResult CreateChannels(hcclComm *hcclComm, CommEngine engine, const std::string &commTag, 
+    HcclResult CreateChannels(CommEngine engine, const std::string &commTag,
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
