@@ -104,18 +104,18 @@ struct AuxInfoOut {
     uint32_t auxInfoNum{0};
 };
 
-struct ccum_dfx_info {
-    unsigned int query_result; // 0:success, 1:fail
-    unsigned int ccum_sqe_recv_cnt;
-    unsigned int ccum_sqe_send_cnt;
-    unsigned int ccum_mission_dfx;
-    unsigned int ccum_sqe_drop_cnt;
-    unsigned int ccum_sqe_addr_len_err_drop_cnt;
-    unsigned int lqc_ccu_sec_reg0;
-    unsigned int ccum_tif_sqe_cnt;
-    unsigned int ccum_tif_cqe_cnt;
-    unsigned int ccum_cif_sqe_cnt;
-    unsigned int ccum_cif_cqe_cnt;
+struct ccumDfxInfo {
+    unsigned int queryResult; // 0:success, 1:fail
+    unsigned int ccumSqeRecvCnt;
+    unsigned int ccumSqeSendCnt;
+    unsigned int ccumMissionDfx;
+    unsigned int ccumSqeDropCnt;
+    unsigned int ccumSqeAddrLenErrDropCnt;
+    unsigned int lqcCcuSecReg0;
+    unsigned int ccumTifSqeCnt;
+    unsigned int ccumTifCqeCnt;
+    unsigned int ccumCifSqeCnt;
+    unsigned int ccumCifCqeCnt;
 };
 void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
 {
@@ -164,17 +164,17 @@ void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
         HCCL_ERROR("[CcuTaskException][%s] panicLog is nullptr.", __func__);
         return;
     }
-    struct ccum_dfx_info *info = reinterpret_cast<struct ccum_dfx_info *>(const_cast<uint8_t*>(panicLog));
-    const uint16_t ccumIsEnable = info->lqc_ccu_sec_reg0 & 1;
-    if (info->query_result != 0) {
+    struct ccumDfxInfo *info = reinterpret_cast<struct ccumDfxInfo *>(const_cast<uint8_t*>(panicLog));
+    const uint16_t ccumIsEnable = info->lqcCcuSecReg0 & 1;
+    if (info->queryResult != 0) {
         HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
     }
     HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u]"
                 "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u]"
                 "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u]",
-                info->ccum_sqe_recv_cnt, info->ccum_sqe_send_cnt, info->ccum_mission_dfx,
-                info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
-                info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
+                info->ccumSqeRecvCnt, info->ccumSqeSendCnt, info->ccumMissionDfx,
+                info->ccumTifSqeCnt, info->ccumTifCqeCnt, info->ccumCifSqeCnt, info->ccumCifCqeCnt,
+                info->ccumSqeDropCnt, info->ccumSqeAddrLenErrDropCnt, ccumIsEnable);
 }
 
 CcuMissionContext CcuTaskException::GetCcuMissionContext(int32_t deviceId, uint32_t dieId, uint32_t missionId)
@@ -320,7 +320,7 @@ uint64_t CcuTaskException::GetCcuGSAValue(int32_t deviceId, uint32_t dieId, uint
     u32 devicePhyId = 0;
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), gsaVal);
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), INVALID_U64);
 
     struct CustomChannelInfoIn  inBuff{};
     struct CustomChannelInfoOut outBuff{};
@@ -346,7 +346,7 @@ uint64_t CcuTaskException::GetCcuXnValue(int32_t deviceId, uint32_t dieId, uint3
     HcclResult ret = hrtGetDevicePhyIdByIndex(deviceId, devicePhyId);
     uint64_t xnVal{0};
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), xnVal);
+        HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%s]", __func__, deviceId), INVALID_U64);
 
     struct CustomChannelInfoIn  inBuff{};
     struct CustomChannelInfoOut outBuff{};
@@ -835,7 +835,7 @@ HcclResult CcuTaskException::GetCcuErrorMsg(int32_t deviceId, uint16_t missionSt
     uint16_t loopUpInstrNum = 10; // 获取出错指令前10条指令
     uint16_t beginIns = (currIns < loopUpInstrNum) ? startIns : ((currIns - loopUpInstrNum) > startIns ? (currIns - loopUpInstrNum) : startIns); 
     // 打印报错的前10条指令，并且从第一个非空rep开始
-    for (uint16_t instrId = currIns - 1; instrId >= beginIns; instrId--) {
+    for (uint16_t instrId = currIns; instrId >= beginIns; instrId--) {
         auto rep = ctx->GetRepByInstrId(instrId);
         if (rep == nullptr) {
            beginIns = instrId + 1;
@@ -859,14 +859,13 @@ void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, con
     const Hccl::ParaCcu& ccuTaskParam = taskInfo.taskParam_.taskPara.Ccu;
     vector<CcuErrorInfo> errorInfos {};
     HcclResult ret = GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfos);
-    const uint8_t missionStatus = (status >> 8) & 0xFF;
     if (ret != HcclResult::HCCL_SUCCESS || errorInfos.empty()) {
         HCCL_ERROR("Get CCU error info failed. deviceId[%u], dieId[%u], missionId[%u], executeId[%llu].",
             deviceId, ccuTaskParam.dieId, ccuTaskParam.missionId, ccuTaskParam.executeId);
         return;
     }
     PrintCcuErrorLog(errorInfos, taskInfo, deviceId);
-
+    const uint8_t missionStatus = (status >> 8) & 0xFF;
     if (missionStatus >= 0x01 && missionStatus <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
         PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
     }
@@ -975,7 +974,7 @@ HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInf
     HccpAuxInfoOut out;
     auto ret = RaCtxGetAuxInfo(rdmaHandle, &in, &out);
     if (ret != 0) {
-        HCCL_ERROR("RaGetAuxInfo failed.");
+        HCCL_ERROR("RaGetAuxInfo failed.ret=[%d]", ret);
         return HCCL_E_NETWORK;
     }
 
@@ -996,7 +995,8 @@ HcclResult CcuTaskException::PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHan
     AuxInfoOut auxInfo;
     auto ret = RaGetAuxInfo(rdmaHandle, in, auxInfo);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[PrintUbRegister] RaGetAuxInfo failed, devLogicId[%d], rdmaHandle[%p]", devLogicId, rdmaHandle);
+        HCCL_ERROR("[PrintUbRegister] RaGetAuxInfo failed, devLogicId[%d], rdmaHandle[%p], ret[%d]", devLogicId,
+            rdmaHandle, ret);
         return ret;
     }
 

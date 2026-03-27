@@ -473,7 +473,7 @@ HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles,
     }
     auto ret = RaCtxQpQueryBatch(qp_handle.data(), raJettyAttrs.data(), &num);
     if (ret != 0) {
-        HCCL_ERROR("RaBatchQueryJettyAttr failed.");
+        HCCL_ERROR("RaBatchQueryJettyAttr failed.ret[%d]", ret);
         return HCCL_E_NETWORK;
     }
     if (num != jettyHandles.size()) {

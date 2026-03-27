@@ -46,7 +46,7 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     // 新老流程判断
     if (opInfo->isIndop_ == true) {
         if (opInfo->engine == COMM_ENGINE_AICPU_TS || opInfo->engine == COMM_ENGINE_AICPU) {
-            HCCL_INFO("[ProfilingReporter][ReportOp] ReportOp Aicpu");
+            HCCL_INFO("[ProfilingReporter][ReportOp] ReportOp Aicpu,opInfo->engine:[%d]", opInfo->engine);
             isAiCpu = true;
         }
     } else {
