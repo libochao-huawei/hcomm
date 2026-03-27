@@ -1346,9 +1346,9 @@ std::string CommunicatorImpl::GetTopoFilePath() const
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
-    try {
-        jsonParser.ParseFileToJson(filePath, parseJson);
-    } catch (...) {
+    HcclResult ret = jsonParser.ParseFileToJson(filePath, parseJson);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_INFO("[CommunicatorImpl::%s] Parse rankinfo another method.", __func__);
         const u32 maxBuffLen = 10 * 1024 * 1024;
         size_t bufSize;
         s32 result = TopoAddrInfoGetSize(devPhyId, &bufSize); // 获取rankInfo大小，用于提前分配内存

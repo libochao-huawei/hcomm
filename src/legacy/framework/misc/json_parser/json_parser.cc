@@ -69,28 +69,35 @@ void GetJsonPropertyList(const nlohmann::json &obj, const char *propName, nlohma
     }
 }
 
-
-void JsonParser::ParseFileToJson(const std::string &filePath, nlohmann::json &parseInformation) const
+/**
+ * 此函数不打印错误日志，外层需要捕捉结果是否成功只需额外的策略，如需错误日志，外层自行打印。
+ */
+HcclResult JsonParser::ParseFileToJson(const std::string &filePath, nlohmann::json &parseInformation) const
 {
     // 校验文件是否存在
     char resolvedPath[PATH_MAX] = {0};
     if (realpath(filePath.c_str(), resolvedPath) == nullptr) {
-        RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({"error_reason", "ranktable_path"}), 
-            std::vector<std::string>({filePath, "The rankTable file path is not a valid real path or the permission is insufficient."}));
-        THROW<InvalidParamsException>(
-            StringFormat("[Get][RanktableRealPath]errNo[0x%016llx] path %s is not a valid real path",
-                         HCOM_ERROR_CODE(HcclResult::HCCL_E_PARA), filePath.c_str()));
+        HCCL_WARNING("[Get][RanktableRealPath] path %s is not a valid real path.", filePath.c_str());
+        return HcclResult::HCCL_E_PARA;
     }
 
     HCCL_INFO("waiting for json file load complete");
     std::ifstream infoFile(resolvedPath, std::ifstream::in);
     if (!infoFile) {
-        THROW<InternalException>(StringFormat("[Read][File]errNo[0x%016llx],open file %s failed",
-                                              HCOM_ERROR_CODE(HcclResult::HCCL_E_OPEN_FILE_FAILURE), resolvedPath));
+        HCCL_WARNING("[Read][RanktableFile] open file %s failed.", resolvedPath);
+        return HcclResult::HCCL_E_OPEN_FILE_FAILURE;
     }
 
-    ParseInformation(parseInformation, infoFile);
+    try {
+        parseInformation = nlohmann::json::parse(infoFile);
+    } catch (...) {
+        HCCL_WARNING("[Parse][RanktableInformation] load allocated resource to json fail. please check json input!");
+        return HcclResult::HCCL_E_PARA;
+    };
+
     infoFile.close();
+    HCCL_INFO("[Parse][RanktableInformation] json file %s load complete.", resolvedPath);
+    return HcclResult::HCCL_SUCCESS;
 }
 
 } // namespace Hccl
