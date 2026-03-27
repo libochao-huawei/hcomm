@@ -39,6 +39,7 @@ HcclResult AicpuTsUrmaChannel::Makebufs(void **memHandles, uint32_t memHandleNum
             hccl::ConvertCommToHcclMemType(locMemInfo->memType), locMemInfo->memTag.c_str())
         ));
     }
+    return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsUrmaChannel::ParseInputParam() 
@@ -75,7 +76,7 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
         HCCL_INFO("[AicpuTsUrmaChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
-        CHK_RET(Makebufs(channelDesc.memHandles, channelDesc.memHandleNum, bufs_));
+        CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
         // for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
         //     auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(channelDesc_.memHandles[i]);
         //     HCCL_INFO(" [AicpuTsUrmaChannel][%s] [%s]", __func__, locMemInfo->memTag.c_str());
