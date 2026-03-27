@@ -560,6 +560,7 @@ u32 AlltoAllVDirectFullMesh::CalcNumSubStep()
 
 HcclResult AlltoAllVDirectFullMesh::NotifyRemoteRankStart(u32 step)
 {
+    HcclUs startut = TIME_NOW();
     u32 streamIndex = 0;
     for (auto& sendRecvSide : partialCommRankSet_) {
         for (auto& sendRecvPair : sendRecvSide) {
@@ -596,9 +597,11 @@ HcclResult AlltoAllVDirectFullMesh::NotifyRemoteRankStart(u32 step)
                     reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
                 }
             }
+            HCCL_RUN_INFO("[jjy][105]after needAlltoallvCache_, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             if (step < sendInfo.size()) {
                 CHK_RET(sendTransport->TxAck(currStream));
             }
+            HCCL_RUN_INFO("[jjy][105]after TxAck, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
             if (needAlltoallvCache_) {
                 std::unordered_map<u32, ReadDataBlock>::const_iterator mapIter = subStreamZcopyReadInfo_.find(recvRank);
@@ -615,10 +618,12 @@ HcclResult AlltoAllVDirectFullMesh::NotifyRemoteRankStart(u32 step)
                     CHK_RET(readTransport->RxAck(currStream));
                     reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
                 }
+                HCCL_RUN_INFO("[jjy][105]after RxAck, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             }
             if (step < readInfo.size()) {
                 CHK_RET(readTransport->RxAck(currStream));
             }
+            HCCL_RUN_INFO("[jjy][105]after RxAck, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             streamIndex ++;
         }
     }
@@ -762,11 +767,13 @@ HcclResult AlltoAllVDirectFullMesh::SetPostSyncTasks(u32 step, u32 roundIdx)
 
 HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32 roundIdx)
 {
+    HcclUs startut = TIME_NOW();
     bool isPostSyncEnable = IsPostSyncEnable(step, roundIdx);
     if (isPostSyncEnable) {
         // 下发主流上的后同步wait和post
         CHK_RET(SetPostSyncTasks(step, roundIdx));
     }
+    HCCL_RUN_INFO("[jjy][106]after SetPostSyncTasks, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     u32 streamIndex = 0;
     for (auto& sendRecvSide : partialCommRankSet_) {
         for (auto& sendRecvPair : sendRecvSide) {
@@ -814,6 +821,7 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
                     HCCL_INFO("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] generate cache-write placeholder for recvRank[%u]", recvRank);
                     CHK_RET(readTransport->TxDataSignal(currStream));
                     reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
+                    HCCL_RUN_INFO("[jjy][106]after SetPlaceholder, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
                     // 正常下NotifyRecord/Wait SQE (本地主从流同步, 从流不存在跨卡数据拷贝, 下发placeholder后会立刻post主流并进入wait)
                     HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] userRank [%u], recvRank[%u], sendRank[%u]," \
@@ -828,6 +836,7 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
                         CHK_RET(LocalNotify::Wait(currStream, dispatcher_, sdmaMeshSignalSubToMain_[streamIndex],
                             INVALID_VALUE_STAGE));
                     }
+                    HCCL_RUN_INFO("[jjy][106]after isPostSyncEnable, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 }
             }
             
@@ -841,6 +850,7 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
                 DeviceMem dstMem = userOutput_.range(readInfo[step].recvOffset, readInfo[step].recvLen);
                 CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, currStream,
                     readTransport->GetRemoteRank(), readTransport->GetLinkType()));
+                HCCL_RUN_INFO("[jjy][106]after HcclD2DMemcpyAsync, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd] userRank [%u], recvRank[%u], sendRank[%u]," \
                     "sdma stream [%u] read data from remote offset [%llu] len [%llu] to local [%llu], "
                     "post sync info: step[%u], roundIdx[%u], lastStep_[%u], lastRoundIdx_[%u]",
@@ -853,7 +863,9 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
                     CHK_RET(LocalNotify::Wait(currStream, dispatcher_, sdmaMeshSignalSubToMain_[streamIndex],
                         INVALID_VALUE_STAGE));
                 }
+                HCCL_RUN_INFO("[jjy][106]after isPostSyncEnable, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 CHK_RET(readTransport->TxDataSignal(currStream));
+                HCCL_RUN_INFO("[jjy][106]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             }
 
             if (needAlltoallvCache_) {
@@ -872,10 +884,12 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
                     reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
                 }
             }
+            HCCL_RUN_INFO("[jjy][106]after needAlltoallvCache_, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
             if (step < sendInfo.size()) {
                 CHK_RET(sendTransport->RxDataSignal(currStream));
             }
+            HCCL_RUN_INFO("[jjy][106]after RxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             streamIndex ++;
         }
     }
@@ -885,23 +899,29 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
 
 HcclResult AlltoAllVDirectFullMesh::SendRecvData(u32 step, u32 roundIdx)
 {
+    HcclUs startut = TIME_NOW();
     HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvData] userRank [%u] sdma stream [%s] wait main stream",
         userRank_, GetStreamIndexString().c_str());
     CHK_RET(NotifyRemoteRankStart(step));
+    HCCL_RUN_INFO("[jjy][105]after NotifyRemoteRankStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(WaitSubStreamFinish());
+    HCCL_RUN_INFO("[jjy][105]after WaitSubStreamFinish, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     CHK_RET(NotifySubStreamStart());
+    HCCL_RUN_INFO("[jjy][105]after NotifySubStreamStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (isBigCount_ && (roundIdx < commRounds_ - 1)) {
         CHK_RET(NotifyLocalSubStreamStart());
         CHK_RET(PrepareIntraData(step, nextSubStreamSendInfo_, nextSubStreamZcopySendInfo_));
     }
     CHK_RET(SDMAwithRemoteRankAndNotifyEnd(step, roundIdx));
+    HCCL_RUN_INFO("[jjy][105]after NotifySubStreamStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     return HCCL_SUCCESS;
 }
 
 HcclResult AlltoAllVDirectFullMesh::LocalCopy()
 {
+    HcclUs startut = TIME_NOW();
     const SendRecvInfo& localSendRecvInfo = *localSendRecvInfoPtr_;
     DeviceMem src = userInput_.range(localSendRecvInfo.sendOffset[userRank_],
         localSendRecvInfo.sendLength[userRank_]);
@@ -915,37 +935,50 @@ HcclResult AlltoAllVDirectFullMesh::LocalCopy()
     if (needAlltoallvCache_ && localSendRecvInfo.sendLength[userRank_] == 0) {
         reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(true);
     }
+    HCCL_RUN_INFO("[jjy][101]before HcclD2DMemcpyAsync, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, mainStream_));
     if (needAlltoallvCache_ && localSendRecvInfo.sendLength[userRank_] == 0) {
         reinterpret_cast<DispatcherPub*>(dispatcher_)->SetPlaceholder(false);
     }
+    HCCL_RUN_INFO("[jjy][101]after HcclD2DMemcpyAsync, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     return HCCL_SUCCESS;
 }
 
 HcclResult AlltoAllVDirectFullMesh::RunGroupFullMeshAlltoall(u32 roundIdx, u32 step)
 {
+    HcclUs startut = TIME_NOW();
     UpdateOpBaseSubStreamInfo(step, roundIdx);
+    HCCL_RUN_INFO("[jjy][104]after UpdateOpBaseSubStreamInfo, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     if (isBigCount_ && (roundIdx == 0) ) {
         CHK_RET(NotifyLocalSubStreamStart());
+        HCCL_RUN_INFO("[jjy][104]after NotifyLocalSubStreamStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(PrepareIntraData(step, subStreamSendInfo_, subStreamZcopySendInfo_));
+        HCCL_RUN_INFO("[jjy][104]after PrepareIntraData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(WaitLocalSubStreamFinish());
+        HCCL_RUN_INFO("[jjy][104]after WaitLocalSubStreamFinish, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     } else if (!isBigCount_) {
         CHK_RET(PrepareIntraData(step, subStreamSendInfo_, subStreamZcopySendInfo_));
+        HCCL_RUN_INFO("[jjy][104]after PrepareIntraData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     CHK_RET(NotifySubStreamStart());
+    HCCL_RUN_INFO("[jjy][104]after NotifySubStreamStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     CHK_RET(SendRecvData(step, roundIdx));
+    HCCL_RUN_INFO("[jjy][104]after SendRecvData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (step == 0 && !islocalCpyDone_) {
         CHK_RET(LocalCopy());
+        HCCL_RUN_INFO("[jjy][104]after LocalCopy, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         islocalCpyDone_ = true;
     }
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     CHK_RET(WaitSubStreamFinish());
+    HCCL_RUN_INFO("[jjy][104]after WaitSubStreamFinish, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (isBigCount_ && (roundIdx < commRounds_ - 1)) {
         CHK_RET(WaitLocalSubStreamFinish());
+        HCCL_RUN_INFO("[jjy][104]after WaitLocalSubStreamFinish, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     return HCCL_SUCCESS;
@@ -954,8 +987,11 @@ HcclResult AlltoAllVDirectFullMesh::RunGroupFullMeshAlltoall(u32 roundIdx, u32 s
 // 主流通知RDMA控制流启动
 HcclResult AlltoAllVDirectFullMesh::MainNotifyRdmaControlStart()
 {
+    HcclUs startut = TIME_NOW();
     CHK_RET(LocalNotify::Post(mainStream_, dispatcher_, rdmaControl2MainStreamNotify_, INVALID_VALUE_STAGE));
+    HCCL_RUN_INFO("[jjy][101]after Post, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(LocalNotify::Wait(rdmaSubStreams_[0], dispatcher_, rdmaControl2MainStreamNotify_, INVALID_VALUE_STAGE));
+    HCCL_RUN_INFO("[jjy][101]after Wait, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -1234,11 +1270,17 @@ HcclResult AlltoAllVDirectFullMesh::ProcessRdmaData()
 
 HcclResult AlltoAllVDirectFullMesh::RunRDMA()
 {
+    HcclUs startut = TIME_NOW();
     // 先启动RDMA通信
+    HCCL_RUN_INFO("[jjy][101]before MainNotifyRdmaControlStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(MainNotifyRdmaControlStart());
+    HCCL_RUN_INFO("[jjy][101]after MainNotifyRdmaControlStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ProcessRdmaData());
+    HCCL_RUN_INFO("[jjy][101]after ProcessRdmaData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
+    HCCL_RUN_INFO("[jjy][101]after ExecEmptyTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(LocalCopy());
+    HCCL_RUN_INFO("[jjy][101]after LocalCopy, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     islocalCpyDone_ = true;
     HCCL_INFO("[AlltoAllVDirectFullMesh][RunRDMA] finished.");
     return HCCL_SUCCESS;
@@ -1246,16 +1288,23 @@ HcclResult AlltoAllVDirectFullMesh::RunRDMA()
 
 HcclResult AlltoAllVDirectFullMesh::RunSDMATasks(u32 roundIdx, u32 step, u32 groupRankSize, u32 leftRankSize)
 {
+    HcclUs startut = TIME_NOW();
     if (isBigCount_) {
         if (roundIdx == 0) {
+            HCCL_RUN_INFO("[jjy][103]before InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             UpdatePartialCommunicationRankSet(roundIdx, groupRankSize, partialCommRankSet_);
+            HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         }
         if (roundIdx < commRounds_ - 1) {
             u32 nextgroupRankSize = (leftRankSize - groupRankSize > sdmaConcurrentNum_) ?
                 sdmaConcurrentNum_ : leftRankSize - groupRankSize;
+            HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             UpdatePartialCommunicationRankSet(roundIdx + 1, nextgroupRankSize, nextPartialCommRankSet_);
+            HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         }
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(RunGroupFullMeshAlltoall(roundIdx, step));
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         if (roundIdx < commRounds_ - 1) {
             partialCommRankSet_ = nextPartialCommRankSet_;
@@ -1266,10 +1315,15 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMATasks(u32 roundIdx, u32 step, u32 gro
                 subStreamZcopyReadInfo_ = nextSubStreamZcopyReadInfo_;
             }
         }
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, localSubStream_));
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     } else {
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         UpdatePartialCommunicationRankSet(roundIdx, groupRankSize, partialCommRankSet_);
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(RunGroupFullMeshAlltoall(roundIdx, step));
+        HCCL_RUN_INFO("[jjy][103]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     return HCCL_SUCCESS;
 }
@@ -1318,6 +1372,7 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMAFineGrained(u32 totalStep, HcclOpMeta
 
 HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
 {
+    HcclUs startut = TIME_NOW();
     u32 totalStep = CalcNumSubStep();
     lastStep_ = totalStep - 1;
     // 计算每个rank分组fullmesh后需要通信的轮次，向上取整
@@ -1329,25 +1384,35 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
         userRank_, commRounds_, totalStep, algOpContext_.mc2Handler.stepSize,
         lastStep_, lastRoundIdx_, devNumInlocalPod_, sdmaConcurrentNum_);
 
+    HCCL_RUN_INFO("[jjy][102]before RunSDMAFineGrained, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (UNLIKELY(algOpContext_.mc2Handler.stepSize > 0)){
         CHK_RET(RunSDMAFineGrained(totalStep, opMeta));
+        HCCL_RUN_INFO("[jjy][102]after RunSDMAFineGrained, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     } else {
         if (totalStep == 0 && !islocalCpyDone_) {
             CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
+            HCCL_RUN_INFO("[jjy][102]after InitTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             CHK_RET(LocalCopy());
+            HCCL_RUN_INFO("[jjy][102]after LocalCopy, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             islocalCpyDone_ = true;
             CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, sdmaSubStream_));
+            HCCL_RUN_INFO("[jjy][102]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             return HCCL_SUCCESS;
         }
 
         for (u32 step = 0; step < totalStep; step++) {
+            HCCL_RUN_INFO("[jjy][102]before devNumInlocalPod_, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             u32 currentLeftRankSize = devNumInlocalPod_ - 1; // leftRankSize中去掉本卡
             for (u32 roundIdx = 0; roundIdx < commRounds_ && currentLeftRankSize > 0; roundIdx++) {
+                HCCL_RUN_INFO("[jjy][102]before InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
+                HCCL_RUN_INFO("[jjy][102]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 u32 groupRankSize = (currentLeftRankSize > sdmaConcurrentNum_) ? sdmaConcurrentNum_ : currentLeftRankSize;
                 CHK_RET(RunSDMATasks(roundIdx, step, groupRankSize, currentLeftRankSize));
+                HCCL_RUN_INFO("[jjy][102]after RunSDMATasks, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 currentLeftRankSize -= groupRankSize;
                 CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, sdmaSubStream_));
+                HCCL_RUN_INFO("[jjy][102]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             }
         }
     }
@@ -1358,8 +1423,10 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
 
 HcclResult AlltoAllVDirectFullMesh::RunAsync()
 {   
+    HcclUs startut = TIME_NOW();
     HcclOpMetaInfoDef opMeta = HcclOpMetaInfo::GetOneForAllToAllV(CopyPattern::ZCOPY, cclInMem_.size(), true);
     CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
+    HCCL_RUN_INFO("[jjy][100]after InitTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (algOpContext_.mc2Handler.stepSize > 0){
         if(algOpContext_.mc2Handler.stepSize > userRankSize_ || userRankSize_ % algOpContext_.mc2Handler.stepSize != 0){
@@ -1376,23 +1443,28 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
             return HCCL_SUCCESS;
         }
     }
+    HCCL_RUN_INFO("[jjy][100]after LocalCopy1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (userRankSize_ == 1) {
         HCCL_INFO("[AlltoAllVDirectFullMesh][RunAsync] do localcopy with 1 rank");
         CHK_RET(LocalCopy());
         return HCCL_SUCCESS;
     }
+    HCCL_RUN_INFO("[jjy][100]after LocalCopy2, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     if (totalRdmaRankNum_ > 0) {
         CHK_RET(RunRDMA());
     }
+    HCCL_RUN_INFO("[jjy][100]after ExecEmptyTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
+    HCCL_RUN_INFO("[jjy][100]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (devNumInlocalPod_ > 1) {
         CHK_RET(RunSDMA(opMeta));
     }
+    HCCL_RUN_INFO("[jjy][100]after RunSDMA, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (totalRdmaRankNum_ > 0) {
         // 等待RDMA通信结束
@@ -1400,6 +1472,7 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
         CHK_RET(RdmaControlNotifyMainFinish());
         CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
     }
+    HCCL_RUN_INFO("[jjy][100]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     HCCL_INFO("[AlltoAllVDirectFullMesh][RunAsync] finished.");
     return HCCL_SUCCESS;

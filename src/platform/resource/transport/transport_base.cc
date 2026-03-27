@@ -944,6 +944,7 @@ HcclResult TransportBase::RecvAndCheckExchangeData(void)
 HcclResult TransportBase::OpenRemoteNotify(const std::vector<u8>& byteVector,
     std::shared_ptr<RemoteNotify> &remoteNotify)
 {
+    HcclUs startut = TIME_NOW();
     EXECEPTION_CATCH((remoteNotify = std::make_shared<RemoteNotify>()), return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(remoteNotify);
 
@@ -953,6 +954,7 @@ HcclResult TransportBase::OpenRemoteNotify(const std::vector<u8>& byteVector,
         ret = remoteNotify->Init(byteVector);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[TransportBase][OpenRemoteNotify]remoteNotify init failed, "
             "ret[%d]", ret), errorFlag = true);
+    HCCL_RUN_INFO("[jjy][111]after Init, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         ret = remoteNotify->Open();
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[TransportBase][OpenRemoteNotify]remoteNotify open failed, "
@@ -964,6 +966,7 @@ HcclResult TransportBase::OpenRemoteNotify(const std::vector<u8>& byteVector,
         remoteNotify = nullptr;
         return ret;
     }
+    HCCL_RUN_INFO("[jjy][111]after OpenRemoteNotify, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

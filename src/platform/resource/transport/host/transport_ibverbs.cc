@@ -1755,6 +1755,7 @@ HcclResult TransportIbverbs::RxAck(Stream &stream)
 
 HcclResult TransportIbverbs::TxDataSignal(Stream &stream)
 {
+    HcclUs startut = TIME_NOW();
     // 发送data notify同步信息
     void *remoteNotifyaddr = remoteDataNotifyMsg_.addr;
     HcclResult ret = TxSendWqe(remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_, stream,
@@ -1764,6 +1765,7 @@ HcclResult TransportIbverbs::TxDataSignal(Stream &stream)
         "wqe failed. dstMemPtr[%p], srcMemPtr[%p], srcMemSize[%llu Byte]", HCCL_ERROR_CODE(ret), remoteNotifyaddr,
         notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_), ret);
     // 每发送一个data notify wqe, count 自增
+    HCCL_RUN_INFO("[jjy][107]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

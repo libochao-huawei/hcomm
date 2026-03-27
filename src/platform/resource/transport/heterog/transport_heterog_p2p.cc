@@ -459,11 +459,13 @@ HcclResult TransportHeterogP2P::WaitPeerMemConfig(void **memPtr, const u8 *memNa
 
 HcclResult TransportHeterogP2P::TxDataSignal(Stream &stream)
 {
+    HcclUs startut = TIME_NOW();
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     HcclResult ret = remoteSendReadyNotify_->Post(stream, dispatcher_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportHeterogP2P][TxDataSignal]errNo[0x%016llx]In tx data signal, signal record failed.",
         HCCL_ERROR_CODE(ret)), ret);
+    HCCL_RUN_INFO("[jjy][107]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

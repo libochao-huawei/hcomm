@@ -812,12 +812,14 @@ HcclResult TransportP2p::SignalRecord(std::shared_ptr<RemoteNotify> &remoteSigna
 
 HcclResult TransportP2p::TxDataSignal(Stream &stream)
 {
+    HcclUs startut = TIME_NOW();
     HcclResult ret;
     /* 发起send_ready_event事件 */
     ret = SignalRecord(remoteSendReadyNotify_, remoteSendReadyAddress_, remoteSendReadyOffset_, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportP2p][TxDataSignal]errNo[0x%016llx]In tx data signal, signal record failed.",
             HCCL_ERROR_CODE(ret)), ret);
+    HCCL_RUN_INFO("[jjy][107]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

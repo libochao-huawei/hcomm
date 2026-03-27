@@ -11,6 +11,7 @@
 #include "dispatcher_virtural.h"
 #include "externalinput_pub.h"
 #include "hccl_tbe_task.h"
+#include "sal_pub.h"
  
 namespace hccl {
 DispatcherVirtural::DispatcherVirtural(const s32 deviceLogicId)
@@ -44,9 +45,11 @@ HcclResult DispatcherVirtural::Init()
 HcclResult DispatcherVirtural::SignalRecord(HcclRtNotify signal, Stream &stream, u32 userRank, u64 offset, s32 stage,
     bool inchip, u64 signalAddr, u32 notifyId)
 {
+    HcclUs startut = TIME_NOW();
     TaskLogicInfo info(0, TaskLogicType::DISPATCHER_TYPE, TaskLogicFuncType::DISPATCHER_SIGNALRECORD_TYPE,
         signal, userRank, offset, stage);
     stream.PushTaskLogicInfo(info);
+    HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
  
     return HCCL_SUCCESS;
 }

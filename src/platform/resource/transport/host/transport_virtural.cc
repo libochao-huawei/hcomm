@@ -60,8 +60,10 @@ HcclResult TransportVirtural::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream 
 
 HcclResult TransportVirtural::TxDataSignal(Stream &stream)
 {
+    HcclUs startut = TIME_NOW();
     TaskLogicInfo info(currentIndex_, TaskLogicType::TRANSPORT_TYPE, TaskLogicFuncType::TRANSPORT_TXDATASIGNAL_TYPE);
     stream.PushTaskLogicInfo(info);
+    HCCL_RUN_INFO("[jjy][107]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

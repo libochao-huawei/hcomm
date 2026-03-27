@@ -3054,8 +3054,9 @@ namespace hccl
                                  *(static_cast<const u64 *>(opParam.All2AllDataDes.rdispls) + i));
             }
         }
-
+        HcclUs startut = TIME_NOW();
         CHK_RET(ExecOpAlltoAll(HcclCMDType::HCCL_CMD_ALLTOALLV, opParam));
+        HCCL_RUN_INFO("[jjy]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         return HCCL_SUCCESS;
     }
 
@@ -4462,6 +4463,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::ExecOpAlltoAll(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
+        HcclUs startut = TIME_NOW();
         CHK_PRT_RET(isInvalidComm_,
             HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
             "this comm is invalid, no operator is allowed to execute.",
@@ -4485,7 +4487,7 @@ namespace hccl
                 return HCCL_SUCCESS;
             }
         }
-
+        HCCL_RUN_INFO("[jjy][1]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         ForceProf(opParam.isCapture);
         bool isInGraphCaptureZeroCopy = false;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
@@ -4503,6 +4505,7 @@ namespace hccl
         std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
         AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
         CHK_PTR_NULL(alltoAllOperator);
+        HCCL_RUN_INFO("[jjy][2]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition(opParam)) {
             opParam.aicpuUnfoldMode = true;
@@ -4510,6 +4513,7 @@ namespace hccl
         }
 
         // 算法选择
+        HCCL_RUN_INFO("[jjy][3]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         std::string algName;
         std::string newTag;
         if (opParam.aicpuUnfoldMode) {
@@ -4518,6 +4522,7 @@ namespace hccl
         }
         std::unique_ptr<PreProcessMetaInfo> preMetaInfo = std::make_unique<PreProcessMetaInfo>();
         CHK_SMART_PTR_NULL(preMetaInfo);
+        HCCL_RUN_INFO("[jjy][4]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         bool preProcessFlag = alltoAllOperator->JudgeIfNeedPreProcessAndGetParam(opParam, preMetaInfo);
         if (preProcessFlag) {
@@ -4527,6 +4532,7 @@ namespace hccl
                 CHK_RET(RegressCalPreOp(alltoAllOperator, opParam, preMetaInfo));
             }
         }
+        HCCL_RUN_INFO("[jjy][5]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         if (deviceType_ == DevType::DEV_TYPE_910B && userRankSize_ > 1) {
             // 用于AIV支持Roce直驱判断
@@ -4539,6 +4545,7 @@ namespace hccl
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
+        HCCL_RUN_INFO("[jjy][6]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         // 是否是AIV直驱Roce场景
         opParam.isNpuDirectRoce = algName == "AlltoAllDirectFullmeshAIVExecutor";
         if (isOnlyAiv_ && !algDesc.isAivMode) {
@@ -4547,7 +4554,9 @@ namespace hccl
                 "aiv only not support.", opTypeName.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
+        HCCL_RUN_INFO("[jjy][7]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
+        HCCL_RUN_INFO("[jjy][8]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         if (opParam.isCapture) {
             newTag += "_Capture" + std::to_string(captureCnt_);
@@ -4563,6 +4572,7 @@ namespace hccl
         if ((isOpbaseMode && userRankSize_ > 1) || (isSupportAlg(algName, opParam.aicpuUnfoldMode))) {
             CHK_RET(CreateCommCCLbuffer());
         }
+        HCCL_RUN_INFO("[jjy][9]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
         InsertNewTagToTagMap(newTag, opParam.tag);
@@ -4622,6 +4632,7 @@ namespace hccl
             }
         }
         auto &algRes = resMap_[newTag];
+        HCCL_RUN_INFO("[jjy][10]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
             /* NSLB 填充 表  */
@@ -4630,6 +4641,7 @@ namespace hccl
             AlgType nslbAlgType = algOperator->GetAlgType();
             AlgTypeLevel1 algValue = nslbAlgType.algoLevel1;
             uint8_t nslbAlg = hcclNslbDp::GetInstance().GetNslbLevel1AlgType(algValue);
+            HCCL_RUN_INFO("[jjy][11]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
             if (algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllDirectFullmesh") {
                 nslbAlg = NSLBDP_PAIRWISE;
@@ -4637,6 +4649,7 @@ namespace hccl
                     nslbAlg = NSLB_ALGO_TYPE_FULLMESH;
                 }
             }
+            HCCL_RUN_INFO("[jjy][12]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
             std::string nslb_identifier = identifier_;
             HCCL_INFO("NSLBDP-SWK NslbDp_CollectOperTable nslb_identifier[%s] .", nslb_identifier.c_str());
@@ -4653,6 +4666,7 @@ namespace hccl
             /*发送流程*/
             hcclNslbDp::GetInstance().SendAlgorithmInfoTable();
         }
+        HCCL_RUN_INFO("[jjy][13]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         // 算法执行
         if (opParam.isNpuDirectRoce) {
             // AIV直驱roce多机场景，需要生成RMAInfo并拷贝至Device
@@ -4675,6 +4689,7 @@ namespace hccl
             opParam.aicpuCacheEnable = 0;
             CHK_RET(algOperator->SetNumBlocks(aivCoreLimit));
         }
+        HCCL_RUN_INFO("[jjy][14]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, algRes.slaveStreams, selectAivAlg, tag));
@@ -4691,6 +4706,7 @@ namespace hccl
             };
             return aicpuAlgs.count(algName) > 0;
         };
+        HCCL_RUN_INFO("[jjy][15]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         if (opParam.aicpuUnfoldMode && isSupportAicpuAlg(algName)) {
             isInplaceStatus_ = 0;
             inPlaceSupportRetryStatus_ = InplaceSupportRetryStatus::INPLACE_STATUS_END;
@@ -4717,6 +4733,7 @@ namespace hccl
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
+        HCCL_RUN_INFO("[jjy][16]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         // 尾计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, algRes.slaveStreams));
@@ -4728,6 +4745,7 @@ namespace hccl
         if (isInGraphCaptureZeroCopy) {
             SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
         }
+        HCCL_RUN_INFO("[jjy][17]executor orchestrate success, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         return HCCL_SUCCESS;
     }
 

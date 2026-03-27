@@ -262,14 +262,17 @@ void DispatcherPub::SetupTaskParaDma(hccl::TaskPara& taskPara, hccl::TaskParaDMA
 HcclResult DispatcherPub::SignalRecord(HcclRtNotify signal, HcclRtStream stream, \
     u32 userRank, u64 offset, s32 stage, bool isMainStream)
 {
+    HcclUs startut = TIME_NOW();
     uint64_t beginTime = GetMsprofSysCycleTime();
     CHK_RET(hrtNotifyRecord(static_cast<HcclRtNotify>(signal), stream));
+    HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     // 若没有输入offset， 则认为record的为本地notify，直接获取其offset
     u64 NotifyID = userRank;
     if (offset == INVALID_U64) {
         CHK_RET(hrtNotifyGetOffset(static_cast<HcclRtNotify>(signal), offset));
     }
+    HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     NotifyID = (NotifyID << 32) | (offset & 0x00000000FFFFFFFF);  // 0x00000000FFFFFFFF用于取offset的低32位
     // 调用回调来保存task信息
     if (callback_ != nullptr) {
@@ -280,6 +283,7 @@ HcclResult DispatcherPub::SignalRecord(HcclRtNotify signal, HcclRtStream stream,
         taskPara.isMainStream = isMainStream;
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
     }
+    HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     u32 taskID = 0;
     u32 streamID = 0;
@@ -287,6 +291,7 @@ HcclResult DispatcherPub::SignalRecord(HcclRtNotify signal, HcclRtStream stream,
     PLF_CONFIG_INFO(PLF_TASK,
         "%s para: notifyId[0x%016llx] taskId[%u] streamID[%u] userRank[%u] offset[%llu] stage[%d]",
         __func__, NotifyID, taskID, streamID, userRank, offset, stage);
+    HCCL_RUN_INFO("[jjy][108]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 

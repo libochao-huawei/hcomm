@@ -94,6 +94,7 @@ HcclResult Transport::DeInit()
 
 HcclResult Transport::TxDataSignal(Stream &stream)
 {
+    HcclUs startut = TIME_NOW();
     // 同步量p2p与TxAck相同，ibverbs与PostFin相同
     RankId curRank = RankInfoRecorder::Global()->GetRankId();
     RankId remoteRank = links2TransportCompare_[this]->remoteRank;
@@ -102,6 +103,7 @@ HcclResult Transport::TxDataSignal(Stream &stream)
     CHK_RET(GenLinkInfo(transportType_, link));
     std::shared_ptr<TaskStub> taskpost(new TaskStubPost(remoteRank, link, 0, NotifyTypeStub::FIN, "TXDATASIGNAL"));
     TaskQueueStub::AppendTask(curRank, &stream, taskpost);
+    HCCL_RUN_INFO("[jjy][107]after TxDataSignal, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     return HcclResult::HCCL_SUCCESS;
 }
