@@ -393,7 +393,7 @@ TEST_F(CommConfigTest, CheckRankIpFamily_InvalidHostIpFamily_ReturnParaError)
     rankList[0].hostIp = ip1;
     rankList[0].serverId = "server1";
     
-    rankList[0].hostIp.SetFamily(100);
+    rankList[0].hostIp.family = 100;
     
     HcclResult ret = CheckRankIpFamily(rankList);
     EXPECT_EQ(ret, HCCL_E_PARA);
@@ -424,7 +424,7 @@ TEST_F(CommConfigTest, CheckRankIpFamily_InvalidDeviceIpFamily_ReturnParaError)
     rankList[0].serverId = "server1";
     
     HcclIpAddress deviceIp(0x7f000002);
-    deviceIp.SetFamily(100);
+    deviceIp.family = 100;
     rankList[0].deviceInfo.deviceIp.push_back(deviceIp);
     
     HcclResult ret = CheckRankIpFamily(rankList);
