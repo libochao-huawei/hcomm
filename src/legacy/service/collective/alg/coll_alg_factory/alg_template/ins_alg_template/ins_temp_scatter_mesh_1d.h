@@ -41,7 +41,7 @@ private:
                     ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues);
     HcclResult PreCopy(TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues);
     HcclResult PostCopy(const TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues);
-
+    void UpdateRxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize);
     u32 majorQueNum_       = 0;
     u32 queNumPerNeighbor_ = 1;
     bool enableInterRankCounterNotify_ = false;
