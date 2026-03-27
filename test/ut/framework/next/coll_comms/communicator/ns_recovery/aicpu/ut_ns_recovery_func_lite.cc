@@ -4,6 +4,7 @@
 
 #include "ns_recovery_func_lite.h"
 #include "aicpu_indop_process.h"
+#include "coll_comm_aicpu_mgr.h"
 
 #define private public
 using namespace hccl;

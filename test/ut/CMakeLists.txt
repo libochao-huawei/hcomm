@@ -205,10 +205,12 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/task/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/
 
     # tbe头文件
     ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
