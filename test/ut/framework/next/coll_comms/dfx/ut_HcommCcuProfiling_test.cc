@@ -253,8 +253,8 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
         .ccuDetailInfo  = nullptr
     };
     std::vector<CcuProfilingInfo> emptyProfiling;
-    HcclResult ret = kernel_->ReportCcuProfilingInfo(
-        testThreadHandle, testExecId, emptyProfiling, testComm, testTaskParam, true
+    HcclResult ret = HcclReportCcuProfilingInfo(
+        testThreadHandle, testExecId, emptyProfiling.data(), emptyProfiling.size(), testComm, testTaskParam, true
     );
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(testTaskParam.taskPara.Ccu.dieId, 0);
@@ -279,8 +279,8 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess)
         .ccuDetailInfo  = nullptr
     };
     std::vector<CcuProfilingInfo> profilingList = {validProfInfo};
-    HcclResult ret = kernel_->ReportCcuProfilingInfo(
-        testThreadHandle, testExecId, profilingList, testComm, testTaskParam, true
+    HcclResult ret = HcclReportCcuProfilingInfo(
+        testThreadHandle, testExecId, profilingList.data(), profilingList.size(), testComm, testTaskParam, true
     );
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // 验证联合体taskPara.Ccu的字段（匹配真实定义）
@@ -311,8 +311,8 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) 
     };
     std::vector<CcuProfilingInfo> profilingList = {validProfInfo};
     hcomm::SetSaveDfxTaskInfoRet(HCCL_E_PARA);
-    HcclResult ret = kernel_->ReportCcuProfilingInfo(
-        testThreadHandle, testExecId, profilingList, testComm, testTaskParam, false
+    HcclResult ret = HcclReportCcuProfilingInfo(
+        testThreadHandle, testExecId, profilingList.data(), profilingList.size(), testComm, testTaskParam, false
     );
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
