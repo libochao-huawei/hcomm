@@ -235,8 +235,7 @@ HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const
     CHK_PTR_NULL(memHandle);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PTR_NULL(endpoint);
-    HcommMem internalMem = ConvertToInternalMem(*mem);
-    CHK_RET(endpoint->RegisterMemory(internalMem, memTag, reinterpret_cast<void **>(memHandle)));
+    CHK_RET(endpoint->RegisterMemory(*mem, memTag, reinterpret_cast<void **>(memHandle)));
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
