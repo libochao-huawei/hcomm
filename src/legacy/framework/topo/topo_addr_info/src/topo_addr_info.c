@@ -21,6 +21,7 @@
 
 #define MAX_DUMP_FILE_LEN (256)
 #define DEFAULT_RANKINFO_FILE_PATH "/etc/hccl_rootinfo.json"
+#define DEFAULT_RANKINFO_SIZE (4096)
 
 int TopoAddrInfoGetSize(int phyId, size_t* size)
 {
@@ -39,12 +40,17 @@ int TopoAddrInfoGetSize(int phyId, size_t* size)
     if (ret != 0) {
         return ret;
     }
-    if (mainboard_id == MAIN_BOARD_ID_CARD_4PMESH) {
-        return GetCardRankInfoLen(size);
-    }
+
     if (mainboard_id == MAIN_BOARD_ID_SERVER_8PMESH) {
         return ServerGetRootinfoLen(size);
     }
+
+    if ((mainboard_id == MAIN_BOARD_ID_CARD_NOMESH)
+      ||(mainboard_id ==  MAIN_BOARD_ID_CARD_2PMESH)
+      ||(mainboard_id ==  MAIN_BOARD_ID_CARD_4PMESH)) {
+        return GetCardRankInfoLen(size);
+    }
+    (*size) = DEFAULT_RANKINFO_SIZE;
     return 0;
 }
 
