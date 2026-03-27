@@ -1358,8 +1358,10 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
 
 HcclResult AlltoAllVDirectFullMesh::RunAsync()
 {   
+    HcclUs startut = TIME_NOW();
     HcclOpMetaInfoDef opMeta = HcclOpMetaInfo::GetOneForAllToAllV(CopyPattern::ZCOPY, cclInMem_.size(), true);
     CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
+    HCCL_RUN_INFO("[jjy][100]after InitTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (algOpContext_.mc2Handler.stepSize > 0){
         if(algOpContext_.mc2Handler.stepSize > userRankSize_ || userRankSize_ % algOpContext_.mc2Handler.stepSize != 0){
@@ -1376,23 +1378,28 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
             return HCCL_SUCCESS;
         }
     }
+    HCCL_RUN_INFO("[jjy][100]after LocalCopy1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (userRankSize_ == 1) {
         HCCL_INFO("[AlltoAllVDirectFullMesh][RunAsync] do localcopy with 1 rank");
         CHK_RET(LocalCopy());
         return HCCL_SUCCESS;
     }
+    HCCL_RUN_INFO("[jjy][100]after LocalCopy2, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     if (totalRdmaRankNum_ > 0) {
         CHK_RET(RunRDMA());
     }
+    HCCL_RUN_INFO("[jjy][100]after ExecEmptyTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
+    HCCL_RUN_INFO("[jjy][100]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (devNumInlocalPod_ > 1) {
         CHK_RET(RunSDMA(opMeta));
     }
+    HCCL_RUN_INFO("[jjy][100]after RunSDMA, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     if (totalRdmaRankNum_ > 0) {
         // 等待RDMA通信结束
@@ -1400,6 +1407,7 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
         CHK_RET(RdmaControlNotifyMainFinish());
         CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
     }
+    HCCL_RUN_INFO("[jjy][100]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
 
     HCCL_INFO("[AlltoAllVDirectFullMesh][RunAsync] finished.");
     return HCCL_SUCCESS;
