@@ -928,27 +928,38 @@ HcclResult AlltoAllVDirectFullMesh::LocalCopy()
 
 HcclResult AlltoAllVDirectFullMesh::RunGroupFullMeshAlltoall(u32 roundIdx, u32 step)
 {
+    HcclUs startut = TIME_NOW();
     UpdateOpBaseSubStreamInfo(step, roundIdx);
+    HCCL_RUN_INFO("[jjy][104]after UpdateOpBaseSubStreamInfo, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     if (isBigCount_ && (roundIdx == 0) ) {
         CHK_RET(NotifyLocalSubStreamStart());
+        HCCL_RUN_INFO("[jjy][104]after NotifyLocalSubStreamStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(PrepareIntraData(step, subStreamSendInfo_, subStreamZcopySendInfo_));
+        HCCL_RUN_INFO("[jjy][104]after PrepareIntraData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(WaitLocalSubStreamFinish());
+        HCCL_RUN_INFO("[jjy][104]after WaitLocalSubStreamFinish, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     } else if (!isBigCount_) {
         CHK_RET(PrepareIntraData(step, subStreamSendInfo_, subStreamZcopySendInfo_));
+        HCCL_RUN_INFO("[jjy][104]after PrepareIntraData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     CHK_RET(NotifySubStreamStart());
+    HCCL_RUN_INFO("[jjy][104]after NotifySubStreamStart, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     CHK_RET(SendRecvData(step, roundIdx));
+    HCCL_RUN_INFO("[jjy][104]after SendRecvData, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (step == 0 && !islocalCpyDone_) {
         CHK_RET(LocalCopy());
+        HCCL_RUN_INFO("[jjy][104]after LocalCopy, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
         islocalCpyDone_ = true;
     }
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     CHK_RET(WaitSubStreamFinish());
+    HCCL_RUN_INFO("[jjy][104]after WaitSubStreamFinish, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (isBigCount_ && (roundIdx < commRounds_ - 1)) {
         CHK_RET(WaitLocalSubStreamFinish());
+        HCCL_RUN_INFO("[jjy][104]after WaitLocalSubStreamFinish, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     }
     CHK_RET(ExecEmptyTask(userInput_, userOutput_, mainStream_, dispatcher_));
     return HCCL_SUCCESS;
