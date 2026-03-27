@@ -61,7 +61,7 @@ target_link_libraries(hccl_utest_impl PRIVATE
 )
 add_dependencies(hccl_utest_impl hccl_llt)
 
-run_llt_test(
-   TARGET hccl_utest_impl
-   TASK_NUM 1
-)
+# run_llt_test(
+#    TARGET hccl_utest_impl
+#    TASK_NUM 1
+# )

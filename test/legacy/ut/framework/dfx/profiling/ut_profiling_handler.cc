@@ -98,6 +98,8 @@ TEST_F(ProfilingHandlerTest, ReportHcclTaskApi_test)
 
 TEST_F(ProfilingHandlerTest, ReportHcclTaskApi1_test)
 {
+    MOCKER(MsprofReportApi).stubs().will(returnValue(0));
+
     ProfilingHandler &handler = Hccl::ProfilingHandler::GetInstance();
     // 初始化TaskParam
     TaskParam taskParam = {.taskType = TaskParamType::TASK_NOTIFY_RECORD,

@@ -162,15 +162,28 @@ def main():
         script_dir = Path(__file__).resolve().parent
         test_dir = script_dir / "build" / "test"
 
+    script_dir = Path(__file__).resolve().parent
+    os.makedirs(script_dir / LOG_DIR, exist_ok=True)
+
     if not test_dir.exists():
-        print(f"[ERROR] 目录不存在: {test_dir}")
+        msg = f"[ERROR] 目录不存在: {test_dir}"
+        print(msg)
+        log_file = str(script_dir / LOG_DIR / "run_ut_error.log")
+        with open(log_file, "w", encoding="utf-8") as f:
+            f.write(msg + "\n")
+        print(f"[INFO] 错误日志已保存: {log_file}")
         sys.exit(1)
 
     print(f"[INFO] 扫描目录: {test_dir}")
     binaries = find_ut_binaries(test_dir)
 
     if not binaries:
-        print("[INFO] 未找到 UT 可执行文件")
+        msg = "[INFO] 未找到 UT 可执行文件"
+        print(msg)
+        log_file = str(script_dir / LOG_DIR / "run_ut_error.log")
+        with open(log_file, "w", encoding="utf-8") as f:
+            f.write(msg + "\n")
+        print(f"[INFO] 错误日志已保存: {log_file}")
         sys.exit(0)
 
     print(f"[INFO] 找到 {len(binaries)} 个 UT 可执行文件")

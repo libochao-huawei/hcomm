@@ -308,11 +308,11 @@ function run_ut() {
   if [[ "X$ENABLE_UT" = "Xon" ]]; then
     local ut_dir="${BUILD_DIR}/test"
     echo "ut_dir = ${ut_dir}"
-    find "$ut_dir" -type f -executable | while read -r ut_exec; do
-        filename=$(basename "$ut_exec")
-        echo "Executing: $filename"
-        ${ut_exec}
-    done
+    python3 ${CURRENT_DIR}/run_ut.py --test-dir ${ut_dir}
+    if [ $? -ne 0 ]; then
+      echo "[ERROR] run_ut.py 执行失败"
+      exit 1
+    fi
   else
     echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
   fi
@@ -631,6 +631,7 @@ cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
+    run_ut
     make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
