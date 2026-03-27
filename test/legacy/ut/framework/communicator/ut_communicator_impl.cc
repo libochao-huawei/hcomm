@@ -3487,3 +3487,33 @@ TEST_F(CommunicatorImplTest, Ut_GetInfo_When_endpointDecsNull_Return_Hccl_E_PTR)
     HcclResult ret = comm.GetEndpointInfo(0, nullptr, ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+
+TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enough)
+{
+    vector<HrtDevEidInfo> eidInfoListStbu;
+    HrtDevEidInfo         eidInfo;
+    eidInfo.name    = "udma0";
+    eidInfo.dieId   = 0;
+    eidInfo.funcId  = 3;
+    eidInfo.chipId  = static_cast<uint32_t>(0);
+    eidInfo.ipAddress = IpAddress("192.168.100.10");
+    eidInfoListStbu.push_back(eidInfo);
+
+    MOCKER(HrtRaGetDevEidInfoList)
+        .stubs()
+        .with(any())
+        .will(returnValue(eidInfoListStbu));
+
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+    HcclCommConfig config;
+    CommParams params;
+
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
+    comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
+    comm.ranktableInfo = rankGraphBuilder.GetRankTableInfo();
+    EXPECT_NE(comm.rankGraph, nullptr);
+
+    EXPECT_THROW(comm.CheckRankGraphAddrs(), InvalidParamsException);
+}
