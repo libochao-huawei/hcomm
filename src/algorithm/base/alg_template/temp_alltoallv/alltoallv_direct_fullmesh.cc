@@ -1330,6 +1330,7 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMAFineGrained(u32 totalStep, HcclOpMeta
 
 HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
 {
+    HcclUs startut = TIME_NOW();
     u32 totalStep = CalcNumSubStep();
     lastStep_ = totalStep - 1;
     // 计算每个rank分组fullmesh后需要通信的轮次，向上取整
@@ -1341,25 +1342,35 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
         userRank_, commRounds_, totalStep, algOpContext_.mc2Handler.stepSize,
         lastStep_, lastRoundIdx_, devNumInlocalPod_, sdmaConcurrentNum_);
 
+    HCCL_RUN_INFO("[jjy][102]before RunSDMAFineGrained, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     if (UNLIKELY(algOpContext_.mc2Handler.stepSize > 0)){
         CHK_RET(RunSDMAFineGrained(totalStep, opMeta));
+        HCCL_RUN_INFO("[jjy][102]after RunSDMAFineGrained, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
     } else {
         if (totalStep == 0 && !islocalCpyDone_) {
             CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
+            HCCL_RUN_INFO("[jjy][102]after InitTask, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             CHK_RET(LocalCopy());
+            HCCL_RUN_INFO("[jjy][102]after LocalCopy, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             islocalCpyDone_ = true;
             CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, sdmaSubStream_));
+            HCCL_RUN_INFO("[jjy][102]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             return HCCL_SUCCESS;
         }
 
         for (u32 step = 0; step < totalStep; step++) {
+            HCCL_RUN_INFO("[jjy][102]before devNumInlocalPod_, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             u32 currentLeftRankSize = devNumInlocalPod_ - 1; // leftRankSize中去掉本卡
             for (u32 roundIdx = 0; roundIdx < commRounds_ && currentLeftRankSize > 0; roundIdx++) {
+                HCCL_RUN_INFO("[jjy][102]before InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
+                HCCL_RUN_INFO("[jjy][102]after InitTask1, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 u32 groupRankSize = (currentLeftRankSize > sdmaConcurrentNum_) ? sdmaConcurrentNum_ : currentLeftRankSize;
                 CHK_RET(RunSDMATasks(roundIdx, step, groupRankSize, currentLeftRankSize));
+                HCCL_RUN_INFO("[jjy][102]after RunSDMATasks, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
                 currentLeftRankSize -= groupRankSize;
                 CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, sdmaSubStream_));
+                HCCL_RUN_INFO("[jjy][102]after LaunchTaskExtend, take time [%lld]us",DURATION_US(TIME_NOW() - startut));
             }
         }
     }
