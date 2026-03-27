@@ -213,7 +213,7 @@ CollAlgOpReq CollAlgComponent::GetCollAlgOpReq(const CollAlgOperator &op, const 
     SetInsCollAlgExecutor(insGenFunc);
     insGenFunc->SetOp(op);
     insGenFunc->SetSendRecvRemoteRank(op.sendRecvRemoteRank);
-    insGenFunc->CalcRes(rankGraph_, collAlgOpReq.resReq);
+    CHK_RET(insGenFunc->CalcRes(rankGraph_, collAlgOpReq.resReq););
     algName2Res[collAlgOpReq.algName] = collAlgOpReq.resReq;
 
     if (rankSize_ == 1) {

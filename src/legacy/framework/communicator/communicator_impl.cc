@@ -2134,7 +2134,11 @@ HcclResult CommunicatorImpl::GetSnapShotDynamicBuf(BinaryStream &buf) const
         buf << static_cast<u32>(currentCollOperator->opMode);
 
         HCCL_INFO("[CommunicatorImpl][%s] rank[%d], currentCollOperator", __func__, myRank);
-        collService->GetSnapShotDynamicBuf(*currentCollOperator, buf);
+        try {collService->GetSnapShotDynamicBuf(*currentCollOperator, buf);
+        } catch (std::exception& e) {
+        HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
+        rwlock.writeUnlock();
+        return HCCL_E_PTR;
     }
     return HcclResult::HCCL_SUCCESS;
 }
