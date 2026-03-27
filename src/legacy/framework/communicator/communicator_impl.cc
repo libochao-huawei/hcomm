@@ -64,6 +64,7 @@
 #include "ccu_context_all_to_all_v_mesh1d.h"
 #include "topo_addr_info.h"
 
+
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
 constexpr u64 HCCL_AIV_OFFLOAD_TAG_BUFFER_SIZE = (4 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -2176,7 +2177,7 @@ HcclResult CommunicatorImpl::GetSnapShotDynamicBuf(BinaryStream &buf) const
         buf << static_cast<u32>(currentCollOperator->opMode);
 
         HCCL_INFO("[CommunicatorImpl][%s] rank[%d], currentCollOperator", __func__, myRank);
-        collService->GetSnapShotDynamicBuf(*currentCollOperator, buf);
+        TRY_CATCH_RETURN(collService->GetSnapShotDynamicBuf(*currentCollOperator, buf));
     }
     return HcclResult::HCCL_SUCCESS;
 }
