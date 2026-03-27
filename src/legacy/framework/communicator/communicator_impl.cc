@@ -1275,14 +1275,16 @@ void CommunicatorImpl::CheckRankGraph() const
                            num);
         THROW<InvalidParamsException>(msg);
     }
+    CheckRankGraphAddrs();
 }
 
-void CommunicatorImpl::CheckRankTableAddrs() const
+void CommunicatorImpl::CheckRankGraphAddrs() const
 {
-    if (ranktableInfo == nullptr) {
-        HCCL_WARNING("[CommunicatorImpl][%s] ranktableInfo is nullptr, skip.", __func__);
+    if (rankGraph == nullptr) {
+        HCCL_WARNING("[CommunicatorImpl][%s] rankGraph is nullptr, skip.", __func__);
         return;
     }
+    // 仅能获取到当前进程所在卡的ip，每个卡独立check自己的部分
     std::unordered_set<Eid> localEidSet;
     NewRankInfo localRankInfo;
     for (auto &rank : ranktableInfo->ranks) {
@@ -1301,18 +1303,15 @@ void CommunicatorImpl::CheckRankTableAddrs() const
         return;
     }
 
-    // 仅能获取到当前进程所在卡的ip，每个卡独立check自己的部分
-    for (auto &levelInfo : localRankInfo.rankLevelInfos) {
-        for (auto &addressInfo : levelInfo.rankAddrs) {
-            HCCL_DEBUG("[CommunicatorImpl][%s]Ip addres check: devPhyId[%u], addressInfo %s", 
-                __func__, devPhyId, addressInfo.Describe().c_str());
-            if (localEidSet.count(addressInfo.addr.GetEid()) == 0) {
-                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
-                            std::vector<std::string>({addressInfo.addr.GetIpStr(), "addr", "A right ip address"}));
+    std::shared_ptr<NetInstance::Peer> peer = rankGraph->GetPeer(GetMyRank);
+    std::vector<std::shared_ptr<NetInstance::ConnInterface>> interfaces = GetIfaces();
+    for(auto &interface : interfaces) {
+        if (interface.pos == AddrPosition::DEVICE && localEidSet.count(interface.addr.GetEid()) == 0) {
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                            std::vector<std::string>({interface.addr.GetIpStr(), "addr", "A right ip address"}));
                 THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"
                     "the ip address %s of ranktable in rank %u is error!", 
-                    __func__, addressInfo.addr.Describe().c_str(), devPhyId));
-            }
+                    __func__, interface.addr.Describe().c_str(), devPhyId));
         }
     }
 }
@@ -1387,7 +1386,6 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     topoInfo = rankGraphBuilder.GetTopoInfo(); // 获取topo信息
     HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] topoInfo[%s]", topoInfo->Describe().c_str());
     rankSize = rankGraph->GetRankSize();
-    CheckRankTableAddrs();
     CheckRankGraph();
     SaveTopoDesc(id);
     std::vector<LinkData> fullLinks = GetFullMeshLinks();
