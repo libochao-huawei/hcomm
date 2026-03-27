@@ -844,7 +844,6 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
         count++;
     }
 
-
     // loopGroup
     auto &lgProfInfo = GetLGProfilingInfo();
     HCCL_INFO("[GetCcuProfilingInfo] create varId2ArgIndexMap start. size=%lu", lgProfInfo.loadRep2ArgIdxMap.size());
@@ -971,7 +970,7 @@ HcclResult CcuKernel::ReportCcuProfilingInfo(const ThreadHandle threadHandle, ui
         dst.dataSize = src.dataSize;
         dst.ckeId = src.ckeId;
         dst.mask = src.mask;
-        HCCL_INFO("src.name %s, dst.name %s", dst.name.c_str(), src.name.c_str());
+        HCCL_INFO("src.name %s, dst.name %s", src.name.c_str(), dst.name.c_str());
         (void)memcpy_s(dst.channelId, sizeof(dst.channelId), src.channelId, sizeof(src.channelId));
         (void)memcpy_s(dst.remoteRankId, sizeof(dst.remoteRankId), src.remoteRankId, sizeof(src.remoteRankId));
         return dst;
@@ -1035,8 +1034,5 @@ HcclResult CcuKernel::AddCcuProfiling(const ChannelHandle *channels, uint32_t ch
     CHK_RET(AddProfilingInfo(channels, channelNum, dataType, outputDataType, opType, opName));
     return HCCL_SUCCESS;
 }
-
-
-
 
 }; // namespace hcomm

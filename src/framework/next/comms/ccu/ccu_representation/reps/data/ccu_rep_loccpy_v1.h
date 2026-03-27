@@ -30,7 +30,6 @@ public:
     uint16_t GetDataType() { return dataType; }
     uint16_t GetOpType() { return opType; }
 
-
 private:
     LocalAddr   dst;
     LocalAddr   src;

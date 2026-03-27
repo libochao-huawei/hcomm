@@ -187,7 +187,6 @@ HcclResult CcuRepContext::AddProfiling(const ChannelHandle channel, const std::s
     profilingInfo.push_back(ccuProfilingInfoCache);
     return HCCL_SUCCESS;
 }
-
     
 HcclResult CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channelNum)
 {

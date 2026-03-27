@@ -72,8 +72,6 @@ void ResetStubs() {
     g_saveDfxRet = HCCL_SUCCESS;
 }
 
-
-
 // 测试子类
 class TestCcuKernel : public CcuKernel {
 public:
@@ -105,7 +103,6 @@ public:
         return CcuKernelSignature{};
     }
 };
-
 
 class CcuKernelTest : public BaseInit {
 public:
@@ -146,7 +143,6 @@ public:
     const HcclDataType testOutputDataType = HcclDataType::HCCL_DATA_TYPE_FP16;
     const HcclReduceOp testReduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
 };
-
 
 class Ccukernel_ReportProfilingTest : public hcomm::CcuKernelTest {
 protected:
@@ -250,7 +246,7 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
                 .missionId     = 0,
                 .execMissionId = 0,
                 .instrId       = 0,
-                .costumArgs    = {0},
+                .costumArgs    = {},
                 .executeId     = 0
             }
         },
@@ -276,7 +272,7 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveSuccess)
                 .missionId     = 0,
                 .execMissionId = 0,
                 .instrId       = 0,
-                .costumArgs    = {0},
+                .costumArgs    = {},
                 .executeId     = 0
             }
         },
@@ -307,7 +303,7 @@ TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_Normal_SaveFailed) 
                 .missionId     = 0,
                 .execMissionId = 0,
                 .instrId       = 0,
-                .costumArgs    = {0},
+                .costumArgs    = {},
                 .executeId     = 0
             }
         },
