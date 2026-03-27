@@ -161,18 +161,26 @@ HcclResult InsTempScatterMesh1D::PreCopy(TemplateDataParams& tempAlgParams, std:
     }
     u32 myAlgRank;
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
+
     for (u32 r = 0; r < tempAlgParams.repeatNum; r++) {
         u64 srcOffset =
             buffInfo_.inBuffType == BufferType::SCRATCH ? buffInfo_.scratchBuffBaseOff : buffInfo_.inBuffBaseOff;
         srcOffset += r * tempAlgParams.inputRepeatStride + tempAlgParams.inputSliceStride * myAlgRank;
         DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, tempAlgParams.sliceSize);
-        u64 dstOffset = isZeroCopy_ ? buffInfo_.outBuffBaseOff : buffInfo_.scratchBuffBaseOff;
-        dstOffset += r * tempAlgParams.outputRepeatStride;
+
         BufferType dstBufferType = isZeroCopy_ ? buffInfo_.outBuffType : buffInfo_.scratBuffType;
+        u64 dstOffset = r * tempAlgParams.outputRepeatStride;
+        // 零拷贝或者是最终输出地址是SCRATCH场景就直接输出到目的内存，否则需要利用Scratch中转
+        if (isZeroCopy_ || buffInfo_.outBuffType == BufferType::SCRATCH) {
+            dstOffset += buffInfo_.outBuffBaseOff;
+        } else {
+            dstOffset += buffInfo_.scratchBuffBaseOff;
+        }
+        DataSlice dstSlice(dstBufferType, dstOffset, tempAlgParams.sliceSize);
+
         if (dstBufferType == buffInfo_.inBuffType && srcOffset == dstOffset) {
             continue;
         }
-        DataSlice dstSlice(dstBufferType, dstOffset, tempAlgParams.sliceSize);
         LocalCopy(tempInsQues[0], srcSlice, dstSlice);
     }
 
@@ -181,7 +189,8 @@ HcclResult InsTempScatterMesh1D::PreCopy(TemplateDataParams& tempAlgParams, std:
 
 HcclResult InsTempScatterMesh1D::PostCopy(const TemplateDataParams& tempAlgParams, std::vector<InsQuePtr>& tempInsQues)
 {
-    if (isZeroCopy_) {
+    // 零拷贝或者输出地址是SCRATCH场景在PreCopy阶段就已经拷贝完了
+    if (isZeroCopy_ || buffInfo_.outBuffType == BufferType::SCRATCH) {
         return HCCL_SUCCESS;
     }
     u32 myAlgRank;
