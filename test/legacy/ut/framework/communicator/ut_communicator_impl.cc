@@ -135,7 +135,7 @@ protected:
         MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
         MOCKER_CPP(&LocalRmaBufManager::Reg,
                    LocalRmaBuffer *
-                       (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+                       (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
             .stubs()
             .with(any(), any(), any())
             .will(returnValue(rmaBuf));
@@ -1258,7 +1258,7 @@ TEST_F(CommunicatorImplTest, should_no_throw_exception_when_only_ccu_enabled)
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
