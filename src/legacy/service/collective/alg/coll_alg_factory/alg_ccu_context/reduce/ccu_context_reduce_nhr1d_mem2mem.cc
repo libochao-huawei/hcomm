@@ -177,7 +177,7 @@ void CcuContextReduceNHR1DMem2mem::DoReduceScatterNHRSingleStep(const NHRStepInf
     uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
     if (nhrStepInfo.step != 0) {
         // 通知fromRank，可以写入
-        RemotePost(*recvTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+        RemotePost(*recvTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
 
         // 等待toRank通知其可以写入
         RemoteWait(*sendTransport, sendSignalId + signalNum_ * CKE_IDX_3, sendBit);
@@ -208,7 +208,7 @@ void CcuContextReduceNHR1DMem2mem::DoReduceScatterNHRSingleStep(const NHRStepInf
     }
     LocalWait(localSignal_, (1 << (sendSliceIdxList.size() % RANK_NUM_PER_CKE)) - 1);
     // 通知toRank数据写入完毕
-    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit);
+    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit, true);
     // 等待fromRank通知数据写入完毕
     uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
     uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
@@ -286,7 +286,7 @@ void CcuContextReduceNHR1DMem2mem::DoGatherNHRSingleStep(const NHRStepInfo &nhrS
 
     if (nhrStepInfo.step + 1 != stepInfoVector_.size()) {   // 最后一步不需要同步
         // 通知toRank，写入完毕
-        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
         // 等待fromRank通知写入完毕
         uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
         uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
