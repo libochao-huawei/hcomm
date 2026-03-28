@@ -109,6 +109,7 @@ static void PrintBackTrace(HcclException &e)
 HcclResult CommunicatorImpl::Init(const CommParams &commParams, const std::string &ranktableM, 
     const HcclCommConfig &config)
 {
+    // init
     if (!initFlag) {
         initFlag = true;
         try {
