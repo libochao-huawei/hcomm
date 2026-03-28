@@ -43,7 +43,7 @@ TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    MyRank myRank(binHandle, 0, config, callbacks);
     EndpointDesc localEp;
     localEp.protocol = COMM_PROTOCOL_ROCE;
     localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
@@ -82,7 +82,7 @@ TEST_F(MyRankTest, Ut_When_QueryListenPort_InValid_Port_Expect_E_PARA)
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    MyRank myRank(binHandle, 0, config, callbacks);
     EndpointDesc localEp;
     localEp.protocol = COMM_PROTOCOL_ROCE;
     localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
@@ -118,7 +118,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    MyRank myRank(binHandle, 0, config, callbacks);
     HcclMem cclBuffer;
     cclBuffer.addr = (void*)0xab;
     cclBuffer.size = 1024;
@@ -182,7 +182,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_Normal_Expect_SUCCESS)
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    MyRank myRank(binHandle, 0, config, callbacks);
 
     ChannelHandle channel = 0x12345;
     CommMem* remoteMem = nullptr;
@@ -199,7 +199,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_RemoteMemNull_Expect_E_PTR)
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    MyRank myRank(binHandle, 0, config, callbacks);
 
     ChannelHandle channel = 0x12345;
     char** memTag = nullptr;
@@ -215,7 +215,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_MemTagNull_Expect_E_PTR)
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    MyRank myRank(binHandle, 0, config, callbacks);
 
     ChannelHandle channel = 0x12345;
     CommMem* remoteMem = nullptr;
@@ -231,7 +231,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_MemNumNull_Expect_E_PTR)
     ManagerCallbacks callbacks;
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    MyRank myRank(binHandle, 0, config, callbacks);
 
     ChannelHandle channel = 0x12345;
     CommMem* remoteMem = nullptr;
