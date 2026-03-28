@@ -411,7 +411,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
             channelNum, commTag, binHandle_));
 
         // ns recovery
-        nsRecoveryProcessor_->AddRecoveryData(engine, channelHandles, hostChannelHandleList, channelNum, commTag);
+        nsRecoveryProcessor_->AddNsRecoveryData(engine, channelHandles, hostChannelHandleList, channelNum, commTag);
 
         return HCCL_SUCCESS;
     }
@@ -498,7 +498,7 @@ HcclResult MyRank::StopLaunch()
 {
     HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch start!");
     auto ret = nsRecoveryProcessor_->StopLaunch();
-    if (ret != HCCLResult::HCCL_SUCCESS) {
+    if (ret != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[NsRecovery][StopLaunch] MyRank::StopLaunch failed!");
     }
     HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch success!");
