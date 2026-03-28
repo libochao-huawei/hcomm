@@ -418,8 +418,11 @@ private:
     HcclResult PrepareSymmetricMemRanges(const AlgResourceResponse &algResource, uint64_t inputSize, uint64_t outputSize,
                                         std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
 
+    HcclResult CalSendRecvInfoForAlltoall(const OpParam &param);
     HcclResult CalSendRecvInfoFor910B(const std::string &algName, const OpParam &param,
         std::unique_ptr<CollExecutorBase> &executor);
+    void HandleExistTagReAlloc(HccltagLocalResV2* tagRes, const std::string& tag, bool reAllocFlag, 
+        ListCommon*& curList, bool& needSkip);
 
     std::unordered_map<s32, u32> opExecIndexMap_;
 
