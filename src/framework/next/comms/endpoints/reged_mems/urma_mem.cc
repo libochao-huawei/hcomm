@@ -56,7 +56,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     }
     
     // 注册到LocalUbRmaBuffer计数器
-    auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
+    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(tempKey, localUbRmaBuffer);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);
