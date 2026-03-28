@@ -315,53 +315,50 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     std::vector<int32_t> statusVec(channelNum, 0);
     int32_t* statusList = statusVec.data();
     uint32_t retryCount = 0;
-    for (uint32_t i = 0; i < channelNum; ++i) {
-        while (true) {
-            HcclResult ret =  ChannelProcess::ChannelGetStatus(channelHandles + i, 1, statusList + i);
 
-            // 卫语句：先处理异常情况
-
-            // 1. 检查超时
-            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - startTime).count();
-                HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+    while (true) {
+        HcclResult ret = HcommChannelGetStatus(channelHandles, channelNum, statusList);
+        // 卫语句：先处理异常情况
+        // 1. 检查超时
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+        HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
                     __func__, timeout, channelNum, elapsed, retryCount);
                 Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
                 CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
                     HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
                 logger::ChannelLogger::PrintChannelErrorDetails(
                     rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
-                return HCCL_E_TIMEOUT;
-            }
+            return HCCL_E_TIMEOUT;
+        }
 
-            // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
-            if (ret == HCCL_E_AGAIN) {
-                retryCount++;
-                continue;
-            }
+        // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
+        if (ret == HCCL_E_AGAIN) {
+            retryCount++;
+            continue;
+        }
 
-            // 3. 处理失败
-            if (ret != HCCL_SUCCESS) {
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - startTime).count();
-                HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
-                    __func__, channelNum, ret, elapsed, retryCount);
+        // 3. 处理失败
+        if (ret != HCCL_SUCCESS) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
+                __func__, channelNum, ret, elapsed, retryCount);
                 Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
                 CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
                     HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
                 logger::ChannelLogger::PrintChannelErrorDetails(
                     rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
-                return ret;
-            }
-
-            // 4. 正常情况：所有通道连接成功
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
-                __func__, channelNum, elapsed, retryCount);
-            break;
+            return ret;
         }
+
+        // 4. 正常情况：所有通道连接成功
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count();
+        HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+            __func__, channelNum, elapsed, retryCount);
+        break;
     }
     return HCCL_SUCCESS;
 }
