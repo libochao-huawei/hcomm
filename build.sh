@@ -263,6 +263,7 @@ function build_ut() {
               -DENABLE_GCOV=${ENABLE_GCOV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
+              -DENABLE_ASAN=$([ "${ASAN}" == "true" ] && echo "ON" || echo "OFF") \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
               -DLLT_KILL_TIME=${LLT_KILL_TIME}"
 
@@ -295,12 +296,18 @@ function make_ut_gov() {
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov -c -d ${BUILD_DIR}/test/ut/ -d ${BUILD_DIR}/test/legacy/ut/ -o cov/coverage.info
-    lcov -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
-    lcov -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
+    lcov -q --rc branch_coverage=1 --rc geninfo_unexecuted_blocks=1 --ignore-errors mismatch,mismatch,unused,unused -c -d ${BUILD_DIR}/test/ut/ -o cov/coverage.info
+    lcov -q --rc branch_coverage=1 --ignore-errors unused,unused -r cov/coverage.info \
+        */src/platform/hccp/external_depends/* \
+        */third_party/mockcpp/* \
+        */test/ut/stub/* \
+        */test/ut/depends/* \
+        -o cov/coverage.info
+    lcov -q --rc branch_coverage=1 --ignore-errors unused,unused -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
-    genhtml coverage.info
+    genhtml -q --branch-coverage coverage.info 2>/dev/null
+    echo "Coverage report generated in ${CURRENT_DIR}/cov"
   fi
 }
 

@@ -29,6 +29,8 @@ int tc_device_hdc_flag = 0;
 int tc_host_recv_flag = 0;
 int tc_device_recv_flag = 0;
 
+int tc_force_exit = 0;
+
 static int counter = 0;
 int tc_hdc_get_msg_error_flag = 0;
 
@@ -99,10 +101,11 @@ DLLEXPORT hdcError_t drvHdcSessionConnect(int peer_node, int peer_devid,
 {
 	do {
 		*session = tc_host_hdc_session;
-	}while (tc_host_hdc_flag);
-
+		if (tc_force_exit) return DRV_ERROR_RESERVED;
+		if (tc_host_hdc_flag)
+			usleep(100000);
+	} while (tc_host_hdc_flag);
 	tc_host_hdc_flag = 1;
-
 	return DRV_ERROR_NONE;
 }
 
@@ -118,11 +121,17 @@ DLLEXPORT hdcError_t drvHdcServerDestroy(HDC_SERVER server)
 
 DLLEXPORT hdcError_t drvHdcSessionAccept(HDC_SERVER server, HDC_SESSION *session)
 {
+	if (server == NULL) {
+		return DRV_ERROR_RESERVED;
+	}
 	do {
 		*session = tc_device_hdc_session;
+		if (tc_force_exit) {
+			return DRV_ERROR_RESERVED;
+		}
 		if (tc_device_hdc_flag)
-			sleep(5);
-	}while (tc_device_hdc_flag);
+			usleep(100000);
+	} while (tc_device_hdc_flag);
 	tc_device_hdc_flag = 1;
 	return DRV_ERROR_NONE;
 };
@@ -182,6 +191,9 @@ DLLEXPORT hdcError_t halHdcRecv(HDC_SESSION session, struct drvHdcMsg *msg, int 
 {
 	if (session == tc_host_hdc_session) {
 		while (!tc_host_recv_flag) {
+			if (tc_force_exit) {
+				return DRV_ERROR_RESERVED;
+			}
 			usleep(100000);
 		}
 
@@ -193,6 +205,9 @@ DLLEXPORT hdcError_t halHdcRecv(HDC_SESSION session, struct drvHdcMsg *msg, int 
 	}
 	else if (session == tc_device_hdc_session) {
 		while (!tc_device_recv_flag) {
+			if (tc_force_exit) {
+				return DRV_ERROR_RESERVED;
+			}
 			usleep(100000);
 		}
 

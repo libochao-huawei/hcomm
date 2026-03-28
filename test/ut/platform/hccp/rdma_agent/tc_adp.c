@@ -13,6 +13,9 @@
 #include <stdlib.h>
 #include <sched.h>
 #include <stdint.h>
+#include <pthread.h>
+#include <time.h>
+#include <string.h>
 #include "ut_dispatch.h"
 #include "rs.h"
 #include "rs_ping.h"
@@ -31,8 +34,15 @@
 #include "errno.h"
 #undef TOKEN_RATE
 #define TOKEN_RATE
+
+extern struct RaHdcInitPara gHdcInitPara;
+extern struct RaHdcServer gHdcServer[64];
+extern struct RsPthreadInfo gRaThreadInfo;
 extern struct RsCtxOps gRaRsCtxOps;
 extern int RecvHandleSendPkt(HDC_SESSION session, unsigned int *chipId);
+extern int tc_device_hdc_flag;
+extern int tc_host_hdc_flag;
+extern int tc_force_exit;
 static int counter = 0;
 int StubRecvHandleSendPkt0(HDC_SESSION session, unsigned int *closeSession)
 {
@@ -59,12 +69,31 @@ static int gAcceptTimes = 0;
 static HDC_SESSION gTestSession;
 static pid_t gHostTgid = 0;
 
+static pthread_mutex_t gMsgProcessMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t gMsgProcessCond = PTHREAD_COND_INITIALIZER;
+static int gMsgProcessCount = 0;
+static int gExpectedMsgCount = 0;
+
 DLLEXPORT drvError_t StubGetMsgBuffer(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen)
 {
     usleep(10*1000);
+    if (gCurrentMsgIndex >= MAX_TEST_MESSAGE) {
+        return DRV_ERROR_RESERVED;
+    }
     *pBuf = gTestMsg[gCurrentMsgIndex++];
+    if (*pBuf == NULL) {
+        return DRV_ERROR_RESERVED;
+    }
     struct MsgHead* tmsg = (struct MsgHead*)*pBuf;
     *pLen = tmsg->msgDataLen + sizeof(struct MsgHead);
+
+    pthread_mutex_lock(&gMsgProcessMutex);
+    gMsgProcessCount++;
+    if (gMsgProcessCount >= gExpectedMsgCount) {
+        pthread_cond_signal(&gMsgProcessCond);
+    }
+    pthread_mutex_unlock(&gMsgProcessMutex);
+
     return 0;
 }
 
@@ -116,6 +145,8 @@ void MsgClear()
 
 void TcAdpEnvInit()
 {
+    int tryAgain;
+
     mocker_clean();
     MsgClear();
     mocker((stub_fn_t)halHdcRecv, 10, 0);
@@ -123,14 +154,62 @@ void TcAdpEnvInit()
     mocker_invoke((stub_fn_t)drvHdcGetMsgBuffer, (stub_fn_t)StubGetMsgBuffer, 10);
     mocker_invoke((stub_fn_t)drvHdcSessionAccept, (stub_fn_t)StubAcceptSession, 10);
     gAcceptTimes = 1;
+
+    if (gHdcInitPara.threadStatus != THREAD_HALT || gHdcInitPara.hdcFlag != 0) {
+        tc_force_exit = 1;
+        (void)pthread_mutex_init(&gHdcInitPara.mutex, NULL);
+        gHdcInitPara.connectStatus = 0;
+    }
+
+    tryAgain = HDC_TRY_TIME;
+    while ((gHdcInitPara.threadStatus != THREAD_HALT) && tryAgain != 0) {
+        usleep(HDC_USLEEP_TIME);
+        tryAgain--;
+    }
+
+    tryAgain = HDC_TRY_TIME;
+    while ((gHdcInitPara.hdcFlag != 0) && tryAgain != 0) {
+        usleep(HDC_USLEEP_TIME);
+        tryAgain--;
+    }
+
+    (void)memset(&gHdcInitPara, 0, sizeof(gHdcInitPara));
+    (void)memset(gHdcServer, 0, sizeof(gHdcServer));
+    (void)memset(&gRaThreadInfo, 0, sizeof(gRaThreadInfo));
+    tc_device_hdc_flag = 0;
+    tc_host_hdc_flag = 0;
+    tc_force_exit = 0;
 }
+
+void WaitForMsgProcessComplete(int expectedCount)
+{
+    struct timespec timeout;
+    clock_gettime(CLOCK_REALTIME, &timeout);
+    timeout.tv_nsec += 100000000;
+    if (timeout.tv_nsec >= 1000000000) {
+        timeout.tv_sec += 1;
+        timeout.tv_nsec -= 1000000000;
+    }
+
+    pthread_mutex_lock(&gMsgProcessMutex);
+    gExpectedMsgCount = expectedCount;
+    gMsgProcessCount = 0;
+    while (gMsgProcessCount < gExpectedMsgCount) {
+        int ret = pthread_cond_timedwait(&gMsgProcessCond, &gMsgProcessMutex, &timeout);
+        if (ret == ETIMEDOUT) {
+            break;
+        }
+    }
+    pthread_mutex_unlock(&gMsgProcessMutex);
+}
+
 void TcCommonTest()
 {
     unsigned int devid = 0;
     AddTestMsg(RA_RS_HDC_SESSION_CLOSE, sizeof(union OpHdcCloseData));
     int ret = HccpInit(devid, gHostTgid, HDC_SERVICE_TYPE_RDMA, WHITE_LIST_ENABLE);
     EXPECT_INT_EQ(ret , 0);
-    sleep(1);
+    WaitForMsgProcessComplete(1);
     ret = HccpDeinit(devid);
     EXPECT_INT_EQ(ret, 0);
     MsgClear();

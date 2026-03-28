@@ -44,6 +44,7 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
+set(CMAKE_DISABLE_DELETE_ON_ERROR ON)
 project(hcomm)
 
 set(CMAKE_C_FLAGS_RELEASE "")
@@ -62,7 +63,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         COMMAND nproc
         OUTPUT_VARIABLE CPU_CORES
         OUTPUT_STRIP_TRAILING_WHITESPACE
-    ) 
+    )
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     execute_process(
         COMMAND wmic cpu get NumberOfCores /value
@@ -80,6 +81,9 @@ math(EXPR JOBS "${CPU_CORES} * 2")
 message(STATUS "Detected JOBS: ${JOBS}")
 set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
 set(CMAKE_JOB_POOL_LINK "${JOBS}")
+
+option(ENABLE_ASAN "Enable AddressSanitizer for memory checking" OFF)
+message(STATUS "ENABLE_ASAN=${ENABLE_ASAN}")
 
 if(ENABLE_TEST)
     include(cmake/config.cmake)

@@ -35,7 +35,7 @@ set(OPENSSL_INCLUDE_DIR
 # 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] OPENSSL_INSTALL_PATH=${OPENSSL_INSTALL_PATH}")
 find_path(CRYPTO_INCLUDE
-    NAMES crypto/x509.h
+    NAMES openssl/x509.h
     PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
@@ -67,7 +67,7 @@ find_library(SSL_STATIC_LIBRARY
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(openssl
     FOUND_VAR
-    openssl_FOUND 
+    openssl_FOUND
     REQUIRED_VARS
     CRYPTO_INCLUDE
     SSL_INCLUDE
@@ -137,10 +137,10 @@ else()
             export NO_OSSL_RENAME_VERSION=1 &&
             ${OPENSSL_CONFIGURE_PUB_COMMAND}
         )
-        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64") 
-            set(OPENSSL_INSTALL_LIBPATH lib64) 
-        else() 
-            set(OPENSSL_INSTALL_LIBPATH lib) 
+        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+            set(OPENSSL_INSTALL_LIBPATH lib64)
+        else()
+            set(OPENSSL_INSTALL_LIBPATH lib)
         endif()
     endif()
 

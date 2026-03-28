@@ -435,6 +435,7 @@ void TcRsSocketDeinit2()
 	accept->ssl = malloc(sizeof(SSL_CTX));
 	accept->list = list;
 
+	free(accept->ssl);
 	RsFreeAcceptOneNode(rsCb, accept);
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
@@ -3651,7 +3652,9 @@ void TcRsSslFree()
 	rscb.serverSslCtx = serverSslCtx;
 	mocker(memset_s, 1, 1);
 	RsSslFree(&rscb);
-    mocker_clean();
+	mocker_clean();
+	free(clientSslCtx);
+	free(serverSslCtx);
 	return;
 }
 
@@ -3699,6 +3702,7 @@ void TcRsSslDeinit()
 	mocker(SSL_CTX_free, 20, 1);
 	rs_ssl_deinit(&rscb);
 	mocker_clean();
+	free(rscb.skidSubjectCb);
 	return;
 }
 
@@ -4190,7 +4194,7 @@ void TcRsGetVnicIp()
 
 int RsDev2rscb_stub(uint32_t devId, struct rs_cb **rsCb, bool initFlag)
 {
-	struct rs_cb rsCbTmp = {0};
+	static struct rs_cb rsCbTmp = {0};
 	*rsCb = &rsCbTmp;
 	return 0;
 }

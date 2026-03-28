@@ -550,6 +550,9 @@ void TcRaHdcSocketWhiteListDel()
 void TcRaHdcSocketAcceptCreditAdd()
 {
     struct SocketListenInfoT conn[1];
+    struct RaSocketHandle socketHandle = {0};
+    conn[0].socketHandle = &socketHandle;
+
     int ret;
     mocker(RaGetSocketListenInfo, 1, -1);
     ret = RaHdcSocketAcceptCreditAdd(1, conn, 1, 1);

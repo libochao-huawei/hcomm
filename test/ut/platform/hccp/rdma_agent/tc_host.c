@@ -604,8 +604,9 @@ void TcHost()
     ret = RaGetQpAttr(qpHandle1, &qpNum);
     EXPECT_INT_NE(0, ret);
 
-    struct QpAttr attr;
-    struct RaQpHandle qpHandleTmp;
+    struct QpAttr attr = {0};
+    struct RaQpHandle qpHandleTmp = {0};
+    qpHandleTmp.rdmaHandle = rdmaHandle;
     ret = RaGetQpAttr(&qpHandleTmp, &attr);
     EXPECT_INT_EQ(0, ret);
 
