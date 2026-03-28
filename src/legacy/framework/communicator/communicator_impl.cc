@@ -477,7 +477,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
         dfxOpInfo->op_           = *GetCurrentCollOperator();
         dfxOpInfo->tag_          = dfxOpInfo->op_.opTag;
-        dfxOpInfo->algType_      = AlgType::MESH;
+        dfxOpInfo->algType_      = AlgType{AlgType::MESH}.Describe();
         dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
