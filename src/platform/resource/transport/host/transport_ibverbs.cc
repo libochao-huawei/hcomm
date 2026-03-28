@@ -511,10 +511,12 @@ void TransportIbverbs::ModifyAtomicWriteAfterReduce(u32 &preWrOpcode, u64 wqeTyp
                        wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA_ACK_NOTIFY);
     if (useAtomicWrite_ && preWrOpcode == RA_WR_RDMA_REDUCE_WRITE && isNotifyWqe) {
         opcode = RA_WR_RDMA_ATOMIC_WRITE;
-        immData = htobe32(0x1);
-        if (SalGetEnv("TEST_SWITCH_SET_IMM_DATA") == "1") {
-            immData = 1;
-            HCCL_INFO("[CAINE] set immData to 1");
+        if(machinePara_.isAicpuModeEn) {
+            // HCCL直调RoCE驱动，需要进行字节序转换
+            immData = htobe32(0x1);
+        } else {
+            // Host展开模式下，这里immData设为0x1，HCCP会进行转换
+            immData = 0x1;
         }
     }
     HCCL_DEBUG("%s preWrOpcode[%u] useAtomicWrite[%d] wqeType[%d] opcode[0x%x] immdata[%u]",
