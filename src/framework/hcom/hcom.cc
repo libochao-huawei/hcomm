@@ -38,6 +38,7 @@
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
 #include "hcom_common.h"
+#include "hcom_pub.h"
 
 using namespace std;
 using namespace hccl;
