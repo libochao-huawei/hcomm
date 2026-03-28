@@ -278,13 +278,23 @@ void RankTableInfo::UpdateRankTable(const RankTableInfo &localRankInfo)
     HCCL_INFO("[%s] success, current rankTableInfo[%s]", __func__, Describe().c_str());
 }
 
-std::unordered_map<u32, u32> RankTableInfo::GetRankDeviceListenPortMap() 
+std::unordered_map<PortData, u32> RankTableInfo::GetRankDeviceListenPortMap() 
 {
-    std::unordered_map<u32, u32> rankIdPortMap;
+    std::unordered_map<PortData, u32> localPortMap;
     for (auto &rankinfo : ranks) {
-        rankIdPortMap.insert(std::make_pair(rankinfo.rankId, rankinfo.devicePort));
+        u32 rankId = rankinfo.rankId;
+        for (auto &rankLevelInfo : rankinfo.rankLevelInfos) {
+            if (rankLevelInfo.netLayer != 0) {
+                continue;
+            }
+            for (auto &rankAddr : rankLevelInfo.rankAddrs) {
+                // 实际rankId不做索引, 只有addr作为索引
+                PortData localPort{static_cast<RankId>(rankId), PortDeploymentType::DEV_NET, LinkProtoType::UB, 0, rankAddr.addr};
+                localPortMap.insert(std::make_pair(localPort, rankAddr.listenPort));
+            }
+        }
     }
-    return rankIdPortMap;
+    return localPortMap;
 }
 
 } // namespace Hccl
