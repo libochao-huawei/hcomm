@@ -33,18 +33,9 @@ public:
     using Iterator = typename MapType::iterator;
     using ConstIterator = typename MapType::const_iterator;
 
-    // 1.添加成功：输入key是表中某一最相近key的空集。 计数+1，返回添加成功的迭代器，及true
-    // 2.添加已存在：输入key是表中某一最相近key的全集。 计数+1，返回添加该key的迭代器，及false
-    // 3.添加失败：输入key是表中某一个最相近key的交集、子集、超集。返回空迭代器，及false
     template<typename... BufferArgs>
-    std::pair<Iterator, bool> Add(const KeyType& key, BufferArgs&&... bufferArgs)
+    std::pair<Iterator, bool> AddToTree(const KeyType& key, BufferArgs&&... bufferArgs)
     {
-        auto overlapResult = CheckOverlap(key);
-        if (overlapResult.second) {
-            HCCL_ERROR("Error: Buffer key overlaps with existing buffer key.");
-            return std::make_pair(intervalTree_.end(), false);
-        }
-
         auto result = intervalTree_.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(key),
@@ -64,6 +55,26 @@ public:
         }
 
         return result;
+    }
+
+    template<typename... BufferArgs>
+    std::pair<Iterator, bool> AddWithoutCheck(const KeyType& key, BufferArgs&&... bufferArgs)
+    {
+        return AddToTree(key, std::forward<BufferArgs>(bufferArgs)...);
+    }
+
+    // 1.添加成功：输入key是表中某一最相近key的空集。 计数+1，返回添加成功的迭代器，及true
+    // 2.添加已存在：输入key是表中某一最相近key的全集。 计数+1，返回添加该key的迭代器，及false
+    // 3.添加失败：输入key是表中某一个最相近key的交集、子集、超集。返回空迭代器，及false
+    template<typename... BufferArgs>
+    std::pair<Iterator, bool> Add(const KeyType& key, BufferArgs&&... bufferArgs)
+    {
+        auto overlapResult = CheckOverlap(key);
+        if (overlapResult.second) {
+            HCCL_ERROR("Error: Buffer key overlaps with existing buffer key.");
+            return std::make_pair(intervalTree_.end(), false);
+        }
+        return AddToTree(key, std::forward<BufferArgs>(bufferArgs)...);
     }
 
     // 1.查询成功：输入key是表中某一最相近key的子集、全集。 返回true，最相近key的bufferType
