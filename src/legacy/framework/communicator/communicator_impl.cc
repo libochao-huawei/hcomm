@@ -2186,7 +2186,7 @@ HcclResult CommunicatorImpl::GetSnapShotDynamicBuf(BinaryStream &buf) const
         buf << static_cast<u32>(currentCollOperator->opMode);
 
         HCCL_INFO("[CommunicatorImpl][%s] rank[%d], currentCollOperator", __func__, myRank);
-        collService->GetSnapShotDynamicBuf(*currentCollOperator, buf);
+        TRY_CATCH_RETURN(collService->GetSnapShotDynamicBuf(*currentCollOperator, buf));
     }
     return HcclResult::HCCL_SUCCESS;
 }
