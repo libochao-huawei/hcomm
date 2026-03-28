@@ -227,6 +227,14 @@ static inline HcommResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
     const HcommResult hcommEPointer = (HcommResult)2; // 对齐HCCL_E_PTR
 
     for (uint32_t idx = 0; idx < num; ++idx) {
+        if (endpoint == NULL) {
+            return hcommEPointer;
+        }
+
+        // 用0xFF填充整个结构体 
+        (void)memset_s(endpoint, sizeof(EndpointDesc), 0xFF, sizeof(EndpointDesc));
+
+        // 显式设置关键字段为无效值 
         endpoint->protocol = COMM_PROTOCOL_RESERVED;
         endpoint->commAddr.type = COMM_ADDR_TYPE_RESERVED;
         endpoint->loc.locType = ENDPOINT_LOC_TYPE_RESERVED;
