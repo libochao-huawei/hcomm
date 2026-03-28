@@ -310,7 +310,7 @@ TEST_F(RtsqA5Test, write_value)
 
     u64 addr  = 0x100000;
     u16 value = 42;
-    rtsq.WriteValue(addr, value);
+    rtsq.WriteValue1B(addr, value);
 }
 
 TEST_F(RtsqA5Test, Ut_CopyLocBufToSq_THROW)

@@ -61,5 +61,5 @@ rtError_t rtGetDevResAddress(rtDevResInfo * const resInfo, rtDevResAddrInfo * co
 
 aclError aclrtMalloc(void **devPtr, size_t size, aclrtMemMallocPolicy policy)
 {
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
