@@ -132,6 +132,20 @@ TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_ValidAddrAnd
     GlobalMockObject::verify();
 }
 
+TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_GetRemoteCCLBufReturnsNullAddr_Expect_ReturnIsHCCL_E_PTR)
+{
+    void *addr = reinterpret_cast<void *>(0x1111);
+    uint64_t size = 0;
+
+    MOCKER_CPP(&HcclCommunicator::GetRemoteCCLBuf).stubs().will(invoke(GetRemoteCCLBufStubWithNullAddr));
+
+    HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, &size);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(addr, nullptr);
+    EXPECT_EQ(size, 0);
+    GlobalMockObject::verify();
+}
+
 TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_GetRemoteCCLBufFails_Expect_ReturnIsError)
 {
     void *addr = nullptr;
