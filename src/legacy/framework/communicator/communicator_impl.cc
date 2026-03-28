@@ -361,44 +361,6 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
     return HcclResult::HCCL_E_INTERNAL;
 }
 
-void CommunicatorImpl::TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const
-{
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], rankInGroup[%d],"
-                             " rankSizeInGroup[%u], devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
-                             opParams.opType.Describe().c_str(), GetOpBaseOpIndex(), GetId().c_str(),
-                             GetMyRank(), GetRankSize(), devLogicId, streamId,
-                             opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
-    GetTrace().Save(info);
-}
-
-void CommunicatorImpl::TraceOpInfo(const CollOpParams &opParams) const
-{
-    if (opParams.opType == OpType::BATCHSENDRECV) {
-        auto              itemNum = opParams.batchSendRecvDataDes.itemNum;
-        HcclSendRecvItem *sendRecvItems
-            = static_cast<HcclSendRecvItem *>(opParams.batchSendRecvDataDes.sendRecvItemsPtr);
-        for (u32 i = 0; i < itemNum; ++i) {
-            if ((sendRecvItems + i)->buf == nullptr) {
-                continue;
-            }
-            auto info
-                = StringFormat("Entry-Hccl(SendRecvType[%s], remoteRank[%d], count[%llu], dataType[%d], buf[%p].",
-                               (sendRecvItems + i)->sendRecvType == 1 ? "RECV" : "SEND",
-                               (sendRecvItems + i)->remoteRank, (sendRecvItems + i)->count,
-                               (sendRecvItems + i)->dataType, (sendRecvItems + i)->buf);
-            GetTrace().Save(info);
-        }
-    }
-}
-
-void CommunicatorImpl::TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const
-{
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]) success: group[%s], take time[%lld]us",
-                             opParams.opType.Describe().c_str(), GetOpBaseOpIndex(), GetId().c_str(),
-                             std::chrono::duration_cast<std::chrono::microseconds>(endut - startut).count());
-    GetTrace().Save(info);
-}
-
 void CommunicatorImpl::RefreshSubmittedOpcnt()
 {
     if (currentCollOperator->opType == OpType::SEND || currentCollOperator->opType == OpType::RECV) {
@@ -687,12 +649,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OPBASE);
-            TraceOpInfo(opParams);
-            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
-            HcclUs endut = std::chrono::steady_clock::now();
-            TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
         // 判断是否为aclgraph
@@ -724,15 +681,12 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
 
         // 避免transport建链前，通讯域被摧毁
         status = CommStatus::COMM_INUSE;
-        TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OPBASE);
         if (opParams.sendBuf != nullptr) {
             PrintMemoryAttr(opParams.sendBuf);
         }
         if (opParams.recvBuf != nullptr) {
             PrintMemoryAttr(opParams.recvBuf);
         }
-        TraceOpInfo(opParams);
-        HcclUs startut = std::chrono::steady_clock::now();
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
         // 更新开关状态
@@ -744,8 +698,6 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         // ReportProfInfok:opinfo, allTaskInfo
         bool cachedReq = opParams.staticShape || isCapture;
         ReportProfInfo(beginTime, cachedReq, true);
-        HcclUs endut = std::chrono::steady_clock::now();
-        TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
         opIndex++;
@@ -810,12 +762,8 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), false));
         status = CommStatus::COMM_INUSE;
-        TraceOpInfo(opParams);
-        HcclUs startut = std::chrono::steady_clock::now();
         std::string opAlgTag = opParams.opTag + "_" + curAlgName;
         CHK_RET(collService->AllocCollOpResource(*currentCollOperator, opAlgTag, addr));
-        HcclUs endut = std::chrono::steady_clock::now();
-        TraceEndInfo(startut, endut, opParams);
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -950,12 +898,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OFFLOAD);
-            TraceOpInfo(opParams);
-            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
-            HcclUs endut = std::chrono::steady_clock::now();
-            TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -984,13 +927,6 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
             currentCollOperator->numBlocksLimit = aivCoreLimit;
             HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%u].", aivCoreLimit);
         }
-
-        auto info = StringFormat("Entry-Hccl(opType[%s]): group[%s], rankInGroup[%d], rankSizeInGroup[%u], "
-                                 "devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
-                                 currentCollOperator->opType.Describe().c_str(), GetId().c_str(), GetMyRank(),
-                                 GetRankSize(), devLogicId, HrtGetStreamId(stream),
-                                 currentCollOperator->opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
-        GetTrace().Save(info);
         if (isAiv && aivClearEnable) {
             aivOffloadTag = 1;
         } else if (isAiv) {
@@ -999,14 +935,10 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         
         // 避免transport建链前，通讯域被摧毁
         status = CommStatus::COMM_INUSE;
-        HcclUs startut = std::chrono::steady_clock::now();
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;
-        // ReportProfInfok:opinfo, allTaskInfo
         bool cachedReq = opParams.staticShape || isCapture;
         ReportProfInfo(beginTime, cachedReq, isCapture); // profiling对于aclgraph场景的处理与单算子一致
-        HcclUs endut = std::chrono::steady_clock::now();
-        TraceEndInfo(startut, endut, opParams);
         opIndex++;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -3416,6 +3348,7 @@ HcclResult CommunicatorImpl::GetDevMemWorkSpace(const std::string &memTag, uint6
  
 HcclResult CommunicatorImpl::GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const
 {
+    HCCL_ERROR("[GetAicpuOpStreamNotify] begin to AllocFreeStream");
     GetAicpuStreamManager().AllocFreeStream();
     Stream *stream = GetAicpuStreamManager().GetFreeStream();
     *opStream = stream->GetPtr();
@@ -3998,6 +3931,21 @@ void CommunicatorImpl::RegisterAicpuKernel()
 aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelName) const
 {
     return aicpuKernelHolder_.GetAicpuKernelFuncHandle(kernelName);
+}
+
+HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream)
+{
+    HCCL_INFO("Mc2AiCpuStreamAllocAndGetV2 start");
+    if (aicpuStreamManager == nullptr)
+    {
+        HCCL_INFO("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] aicpuStreamManager is nullPtr!");
+        return HCCL_E_PTR;
+    }
+    aicpuStreamManager->AllocFreeStream();
+    Stream *stream = aicpuStreamManager->GetFreeStream();
+    *aiCpuStream = stream->GetPtr();
+    HCCL_INFO("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] end, stream %s", stream->Describe().c_str());
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl
