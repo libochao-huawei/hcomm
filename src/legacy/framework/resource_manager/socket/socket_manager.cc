@@ -80,7 +80,8 @@ void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
         wlistInfo.connLimit = 1;
         wlistInfo.remoteIp = link.GetRemoteAddr();
 
-        SocketConfig socketConfig(link.GetRemoteRankId(), link, socketTag_);
+        std::string  linkTag  = socketTag_ + "_" + link.GetReuseIdx();
+        SocketConfig socketConfig(link.GetRemoteRankId(), link, linkTag);
         string       hccpSocketTag = socketConfig.GetHccpTag();
 
         wlistInfo.tag = hccpSocketTag;
@@ -98,7 +99,7 @@ void SocketManager::BatchCreateConnectedSockets(const vector<LinkData> &links)
 {
     for (auto &link : links) {
         auto         remoteRank = link.GetRemoteRankId();
-        std::string  socketTag  = socketTag_;
+        std::string  socketTag  = socketTag_ + "_" + link.GetReuseIdx();
         SocketConfig socketConfig(remoteRank, link, socketTag);
         CreateConnectedSocket(socketConfig);
     }
