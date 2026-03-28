@@ -50,6 +50,7 @@ using HcclException = Hccl::HcclException;
 
 namespace hcomm {
 static std::unordered_map<ThreadHandle, std::shared_ptr<hccl::Thread>> g_ThreadMap;
+static std::mutex g_ThreadMapMtx;
 static aclrtBinHandle g_BinHandle;
 static std::mutex g_BinHandleMtx;
 }  // namespace hcomm
@@ -372,7 +373,10 @@ HcclResult HcommThreadAllocWithStream(CommEngine engine,
  
     // 返回第一个句柄
     *thread = reinterpret_cast<ThreadHandle>(handle.get());
-    hcomm::g_ThreadMap.emplace(*thread , handle);
+    {
+        std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
+        hcomm::g_ThreadMap.emplace(*thread, handle);
+    }
  
     HCCL_INFO("[ThreadMgr]  ThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]",  engine, stream, notifyNum);
@@ -440,7 +444,10 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
         } else {
             threads[i] = reinterpret_cast<ThreadHandle>(hostHandle.get()); // 越界风险
         }
-        hcomm::g_ThreadMap.emplace(threads[i], hostHandle);
+        {
+            std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
+            hcomm::g_ThreadMap.emplace(threads[i], hostHandle);
+        }
     }
 
     HCCL_INFO("[HcommThreadAlloc] ThreadAcquire done: engine[%d] threadNum[%u],"
@@ -450,11 +457,16 @@ HcclResult HcommThreadAllocWithConfig(CommEngine engine, uint32_t threadNum, con
 
 HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService service, ThreadServiceHandle *serviceHandle)
 {
-    if (hcomm::g_ThreadMap.find(threadHandle) == hcomm::g_ThreadMap.end()) {
-        HCCL_ERROR("Unknown ThreadHandle");
-        return HCCL_E_NOT_FOUND;
+    std::shared_ptr<hccl::Thread> hostThread;
+    {
+        std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
+        auto it = hcomm::g_ThreadMap.find(threadHandle);
+        if (it == hcomm::g_ThreadMap.end()) {
+            HCCL_ERROR("Unknown ThreadHandle");
+            return HCCL_E_NOT_FOUND;
+        }
+        hostThread = it->second;
     }
-    auto hostThread = hcomm::g_ThreadMap[threadHandle];
     hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
     CHK_PTR_NULL(cpuThread);
     ThreadServiceHandle deviceServiceHandle{};
@@ -466,11 +478,16 @@ HcclResult HcommThreadServiceRegister(ThreadHandle threadHandle, ThreadService s
 
 HcclResult HcommThreadServiceUnregister(ThreadHandle threadHandle, ThreadServiceHandle serviceHandle)
 {
-    if (hcomm::g_ThreadMap.find(threadHandle) == hcomm::g_ThreadMap.end()) {
-        HCCL_ERROR("Unknown ThreadHandle");
-        return HCCL_E_NOT_FOUND;
+    std::shared_ptr<hccl::Thread> hostThread;
+    {
+        std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
+        auto it = hcomm::g_ThreadMap.find(threadHandle);
+        if (it == hcomm::g_ThreadMap.end()) {
+            HCCL_ERROR("Unknown ThreadHandle");
+            return HCCL_E_NOT_FOUND;
+        }
+        hostThread = it->second;
     }
-    auto hostThread = hcomm::g_ThreadMap[threadHandle];
     hccl::CpuThread* cpuThread = dynamic_cast<hccl::CpuThread*>(hostThread.get());
     CHK_PTR_NULL(cpuThread);
     CHK_RET(cpuThread->ServiceUnregister(serviceHandle));
@@ -547,12 +564,18 @@ HcclResult RecordService(void *args, uint64_t argsSizeByte)
     const uint32_t     dstNotifyIdx = serviceArgs.dstNotifyIdx;
     HCCL_INFO("[%s] START. srcThreadHandle[0x%llx], dstThreadHandle[0x%llx], dstNotifyIdx[%u]",
         __func__, srcThreadHdl, dstThreadHdl, dstNotifyIdx);
-    
-    if (hcomm::g_ThreadMap.find(dstThreadHdl) == hcomm::g_ThreadMap.end()) {
-        HCCL_ERROR("[%s] FAIL. dstThreadHandle[0x%llx] not found in g_ThreadMap.", __func__, dstThreadHdl);
-        return HCCL_E_NOT_FOUND;
+
+    std::shared_ptr<hccl::Thread> dstThreadHolder;
+    {
+        std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
+        auto it = hcomm::g_ThreadMap.find(dstThreadHdl);
+        if (it == hcomm::g_ThreadMap.end()) {
+            HCCL_ERROR("[%s] FAIL. dstThreadHandle[0x%llx] not found in g_ThreadMap.", __func__, dstThreadHdl);
+            return HCCL_E_NOT_FOUND;
+        }
+        dstThreadHolder = it->second;
     }
-    hccl::Thread *const dstThread = hcomm::g_ThreadMap[dstThreadHdl].get();
+    hccl::Thread *const dstThread = dstThreadHolder.get();
     auto *const dstAicpuTsThread = dynamic_cast<hccl::AicpuTsThread *>(dstThread);
     if (dstAicpuTsThread == nullptr) {
         HCCL_ERROR("[%s] FAIL. g_ThreadMap.at(dstThreadHandle) is not AicpuTsThread.", __func__);
@@ -585,11 +608,17 @@ HcclResult WaitService(void *args, uint64_t argsSizeByte)
     const uint32_t     notifyIdx = serviceArgs.notifyIdx;
     HCCL_INFO("[%s] START. threadHandle[0x%llx], notifyIdx[%u]", __func__, threadHdl, notifyIdx);
 
-    if (hcomm::g_ThreadMap.find(threadHdl) == hcomm::g_ThreadMap.end()) {
-        HCCL_ERROR("[%s] FAIL. threadHandle[0x%llx] not found in g_ThreadMap.", __func__, threadHdl);
-        return HCCL_E_NOT_FOUND;
+    std::shared_ptr<hccl::Thread> threadHolder;
+    {
+        std::lock_guard<std::mutex> lock(hcomm::g_ThreadMapMtx);
+        auto it = hcomm::g_ThreadMap.find(threadHdl);
+        if (it == hcomm::g_ThreadMap.end()) {
+            HCCL_ERROR("[%s] FAIL. threadHandle[0x%llx] not found in g_ThreadMap.", __func__, threadHdl);
+            return HCCL_E_NOT_FOUND;
+        }
+        threadHolder = it->second;
     }
-    hccl::Thread *const thread = hcomm::g_ThreadMap[threadHdl].get();
+    hccl::Thread *const thread = threadHolder.get();
     hccl::CpuThread *const cpuThread = dynamic_cast<hccl::CpuThread *>(thread);
     if (cpuThread == nullptr) {
         HCCL_ERROR("[%s] FAIL. thread[0x%llx] is not CpuThread.", __func__, threadHdl);

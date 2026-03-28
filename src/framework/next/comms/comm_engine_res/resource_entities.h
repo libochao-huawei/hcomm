@@ -60,7 +60,7 @@ typedef struct {
     uint32_t notifyNum;
     NotifyEntity notifies[0];  // 变长数据区
 
-    std::string DescribeAttr() {
+    std::string DescribeAttr() const {
         return "engine=" + std::to_string(engine) + ", type=" + std::to_string(type);
     }
 } ThreadEntity;

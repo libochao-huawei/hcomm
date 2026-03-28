@@ -53,7 +53,7 @@ public:
         return HCCL_SUCCESS;
     }
 
-    HcclResult WriteValue(uint64_t addr, uint64_t value) const
+    HcclResult WriteValue(uint64_t addr, uint16_t value) const
     {
         return HCCL_SUCCESS;
     }
