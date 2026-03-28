@@ -6,6 +6,8 @@
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
 #include "my_rank.h"
+#include "channel_process.h"
+#include "base_config.h"
 #define private public
 using namespace hccl;
 
@@ -165,4 +167,10 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
+
+    MOCKER_CPP(&ChannelProcess::ChannelGetStatus).stubs().with(any()).will(returnValue(HCCL_E_AGAIN));
+    MOCKER_CPP(&EnvSocketConfig::GetLinkTimeOut).stubs().with(any()).will(returnValue((s32)(1)));
+    EXPECT_EQ(myRank.BatchConnectChannels(channelDesc, hostChannelHandleList, 3), HCCL_E_TIMEOUT);
+    MOCKER_CPP(&ChannelProcess::ChannelGetStatus).stubs().with(any()).will(returnValue(HCCL_E_TIMEOUT));
+    EXPECT_EQ(myRank.BatchConnectChannels(channelDesc, hostChannelHandleList, 3), HCCL_E_TIMEOUT);
 }
