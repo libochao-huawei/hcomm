@@ -4481,6 +4481,48 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::HandleExistAlgResource(const std::string& newTag, const std::string& algName,
+        HcclCMDType opType, const OpParam& opParam, bool selectAivAlg, bool aicpuUnfoldModeFor910B,
+        bool needRecreateAlltoallComm)
+    {
+        if (needRecreateAlltoallComm) {
+            CHK_RET(hcclStreamSynchronize(opParam.stream.ptr(), commConfig_.GetConfigExecTimeOut()));
+
+            AlgResourceRequest resRequest;
+            std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
+            AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
+            CHK_PTR_NULL(alltoAllOperator);
+            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+
+            // 释放旧内存防止泄漏
+            CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
+
+            if (aicpuUnfoldModeFor910B) {
+                CHK_RET(ReAllocScratchMemForAlltoall(opType, opParam, resRequest, resMap_[newTag]));
+                isContextLaunched_ = true;
+            } else {
+                CHK_RET(RecordOpPara(opType, opParam));
+                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
+                CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+
+                if (!isHaveCpuRank_) {
+                    if (isUseRankPort_) {
+                        std::vector<u32>& nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+                        std::vector<u32>& vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+                        Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(
+                            isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
+                    }
+                    CHK_RET(RegisterToHeartBeat());
+                }
+            }
+        } else {
+            DeviceMem tinySendRecvMem;
+            CHK_RET(implAlg_->GetTinyMem(tinySendRecvMem));
+            CHK_RET(CalcTinySendRecvMem(opParam, resMap_[newTag], tinySendRecvMem));
+        }
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::ExecOpAlltoAll(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
         CHK_PRT_RET(isInvalidComm_,
@@ -4614,40 +4656,13 @@ namespace hccl
                 CHK_RET(RegisterToHeartBeat());
             }
             CHK_RET(UpdateZeroCopy(opParam, resMap_[newTag]));
-        }
-        else
-        {
+        } else {
             CHK_RET(alltoAllOperator->CheckNeedRecreateComm(algName, opParam, resMap_[newTag].scratchMem.size(),
                                                             needRecreateAlltoallComm));
             HCCL_INFO("resMap_ find this newTag[%s], and need to judge whether recreate comm [%d]", newTag.c_str(),
                       needRecreateAlltoallComm);
-            if (needRecreateAlltoallComm) {
-                CHK_RET(hcclStreamSynchronize(opParam.stream.ptr(), commConfig_.GetConfigExecTimeOut()));
-                AlgResourceRequest resRequest;
-                CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-                // alltoall算子重分配内存前需清除scratchMMem，防止内存泄漏
-                CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
-                if (aicpuUnfoldModeFor910B) {
-                    CHK_RET(ReAllocScratchMemForAlltoall(opType, opParam, resRequest, resMap_[newTag]));
-                    isContextLaunched_ = true;
-                } else {
-                    CHK_RET(RecordOpPara(opType, opParam));
-                    CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
-                    CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
-                    if (!isHaveCpuRank_) {
-                        if (isUseRankPort_) {
-                            std::vector<u32> &nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-                            std::vector<u32> &vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
-                            Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
-                        }
-                        CHK_RET(RegisterToHeartBeat());
-                    }
-                }
-            } else {
-                DeviceMem tinySendRecvMem;
-                CHK_RET(implAlg_->GetTinyMem(tinySendRecvMem));
-                CHK_RET(CalcTinySendRecvMem(opParam, resMap_[newTag], tinySendRecvMem));
-            }
+            CHK_RET(HandleExistAlgResource(newTag, algName, opType, opParam, selectAivAlg, aicpuUnfoldModeFor910B,
+                needRecreateAlltoallComm));
         }
         auto &algRes = resMap_[newTag];
 

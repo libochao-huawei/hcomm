@@ -939,6 +939,30 @@ HcclResult HcclCommAicpu::InitAndVerifySignal(const HcclSignalInfo &signalInfo, 
     return HCCL_SUCCESS;
 }
 
+void HcclCommAicpu::HandleExistTagReAlloc(HccltagLocalResV2* tagRes, const std::string& tag, bool reAllocFlag, 
+    ListCommon*& curList, bool& needSkip)
+{
+    needSkip = false;
+    // 如果 tag 已经存在且需要重新申请内存, 删除旧的资源与记录
+    if (localTagResToObj_.find(tag) != localTagResToObj_.end() && reAllocFlag) {
+        u64 currSize = tagRes->ScratchmemSize;
+        u64 existSize = tagScratchMem_[tag]->size();
+        // 新内存更大，删除旧记录，保留新的
+        if (currSize > existSize) {
+            localTagResToObj_.erase(tag);
+            tagScratchMem_.erase(tag);
+            HCCL_DEBUG("[HcclCommAicpu][%s] tag exists, replace old small mem, tag[%s], old[%lu] new[%lu]",
+                __func__, tag.c_str(), existSize, currSize);
+        } else {
+            // 旧内存更大，需要跳过
+            HCCL_DEBUG("[HcclCommAicpu][%s] tag exists, keep larger old mem, skip new, tag[%s], old[%lu] new[%lu]",
+                __func__, tag.c_str(), existSize, currSize);
+            curList = reinterpret_cast<ListCommon *>(curList->nextDevice);
+            needSkip = true;
+        }
+    }
+}
+
 HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head, bool reAllocFlag)
 {
     ListCommon *curList = reinterpret_cast<ListCommon *>(head.nextDevice);
@@ -949,22 +973,10 @@ HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head, bool reAllocFl
     while (curList != &head) {
         HccltagLocalResV2 *tagRes = list_entry(curList, HccltagLocalResV2, nextTagRes);
         std::string tag = tagRes->tag;
-         // 如果 tag 已经存在且需要重新申请内存, 删除旧的资源与记录
-        if (localTagResToObj_.find(tag) != localTagResToObj_.end() && reAllocFlag) {
-            u64 currSize = tagRes->ScratchmemSize;
-            u64 existSize = tagScratchMem_[tag]->size();
-            // 新内存更大，删除旧记录，保留新的
-            if (currSize > existSize) {
-                localTagResToObj_.erase(tag);
-                tagScratchMem_.erase(tag);
-                HCCL_DEBUG("[HcclCommAicpu][%s] tag exists, replace old small mem, tag[%s], old[%lu] new[%lu]",
-                    __func__, tag.c_str(), existSize, currSize);
-            } else {
-                HCCL_DEBUG("[HcclCommAicpu][%s] tag exists, keep larger old mem, skip new, tag[%s], old[%lu] new[%lu]",
-                    __func__, tag.c_str(), existSize, currSize);
-                curList = reinterpret_cast<ListCommon *>(curList->nextDevice);
-                continue;
-            }
+        bool needSkip = false;
+        HandleExistTagReAlloc(tagRes, tag, reAllocFlag, curList, needSkip);
+        if (needSkip) {
+            continue;
         }
         if (localTagResToObj_.find(tag) == localTagResToObj_.end() ||
             localTagResToObj_[tag].find(tagRes->Scratchmem) == localTagResToObj_[tag].end()) {
@@ -985,10 +997,7 @@ HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head, bool reAllocFl
             tmpTagRes.insert(tagRes->Scratchmem);
             localTagResToObj_[tag] = tmpTagRes;
             HCCL_DEBUG("[HcclCommAicpu][InitLocalTagRes] parse remote resource, tag[%s],  Scratchmem[%p], "
-                       "ScratchmemSize[%lu]",
-                tag.c_str(),
-                tagRes->Scratchmem,
-                tagRes->ScratchmemSize);
+                "ScratchmemSize[%lu]", tag.c_str(), tagRes->Scratchmem, tagRes->ScratchmemSize);
         }
         curList = reinterpret_cast<ListCommon *>(curList->nextDevice);
         if (curList == nullptr) {
@@ -2023,6 +2032,24 @@ HcclResult HcclCommAicpu::RefreshAlgResponseTransportRes(const std::string &newT
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommAicpu::CalSendRecvInfoForAlltoall(const OpParam &param)
+{
+    if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
+        std::vector<u64> sendCountMatrix(topoInfo_.userRankSize * topoInfo_.userRankSize,
+            param.All2AllDataDes.sendCount);
+        CHK_RET(GetAlltoAllvcSendRecvInfo(static_cast<void *>(sendCountMatrix.data()),
+            param.All2AllDataDes.sendType, param.All2AllDataDes.recvType));
+    } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
+        CHK_PTR_NULL(sendRecvInfoPtr_);
+        CHK_RET(GetAlltoAllvSendRecvInfo(sendRecvInfoPtr_, param.All2AllDataDes.sendType,
+            param.All2AllDataDes.recvType));
+    } else {
+        CHK_RET(GetAlltoAllvcSendRecvInfo(param.All2AllDataDes.sendCountMatrix, param.All2AllDataDes.sendType,
+            param.All2AllDataDes.recvType));
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::CalSendRecvInfoFor910B(const std::string &algName, const OpParam &param,
     std::unique_ptr<CollExecutorBase> &executor)
 {
@@ -2031,19 +2058,7 @@ HcclResult HcclCommAicpu::CalSendRecvInfoFor910B(const std::string &algName, con
         CHK_PRT_RET(executor.get() == nullptr,
             HCCL_ERROR("[HcclCommAicpu][%s]Fail to find executor for algName[%s]", __func__, algName.c_str()),
             HCCL_E_PARA);
-        if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-            std::vector<u64> sendCountMatrix(topoInfo_.userRankSize * topoInfo_.userRankSize,
-                param.All2AllDataDes.sendCount);
-            CHK_RET(GetAlltoAllvcSendRecvInfo(static_cast<void *>(sendCountMatrix.data()),
-                param.All2AllDataDes.sendType, param.All2AllDataDes.recvType));
-        } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
-            CHK_PTR_NULL(sendRecvInfoPtr_);
-            CHK_RET(GetAlltoAllvSendRecvInfo(sendRecvInfoPtr_, param.All2AllDataDes.sendType,
-                param.All2AllDataDes.recvType));
-        } else {
-            CHK_RET(GetAlltoAllvcSendRecvInfo(param.All2AllDataDes.sendCountMatrix, param.All2AllDataDes.sendType,
-                param.All2AllDataDes.recvType));
-        }
+        CHK_RET(CalSendRecvInfoForAlltoall(param));
         CollAlltoAllExecutor* alltoAllExecutor = dynamic_cast<CollAlltoAllExecutor *>(executor.get());
         CHK_PTR_NULL(alltoAllExecutor);
         CHK_RET(alltoAllExecutor->SetExcutorExtraInfo(allMeshAggregationSendRecvInfo_, cclbufferSize_));
@@ -2226,19 +2241,7 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
         CHK_RET(CalSendRecvInfoFor910B(algName, param, executor));
         CHK_RET(SetAlltoAllInputAndOutPutMem(param, algResource));
         if (algName == "RunAlltoAllVTwoLevelPipeline") {
-            if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-                std::vector<u64> sendCountMatrix(topoInfo_.userRankSize * topoInfo_.userRankSize,
-                    param.All2AllDataDes.sendCount);
-                CHK_RET(GetAlltoAllvcSendRecvInfo(static_cast<void *>(sendCountMatrix.data()),
-                    param.All2AllDataDes.sendType, param.All2AllDataDes.recvType));
-            } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
-                CHK_PTR_NULL(sendRecvInfoPtr_);
-                CHK_RET(GetAlltoAllvSendRecvInfo(sendRecvInfoPtr_, param.All2AllDataDes.sendType,
-                    param.All2AllDataDes.recvType));
-            } else {
-                CHK_RET(GetAlltoAllvcSendRecvInfo(param.All2AllDataDes.sendCountMatrix, param.All2AllDataDes.sendType,
-                    param.All2AllDataDes.recvType));
-            }
+            CHK_RET(CalSendRecvInfoForAlltoall(param));
             HCCL_DEBUG("[HcclCommAicpu][Orchestrate] running RunAlltoAllVTwoLevelPipeline, prepare SendRecvInfo.");
             CollAlltoAllExecutor* alltoAllExecutor = dynamic_cast<CollAlltoAllExecutor *>(executor.get());
             CHK_PTR_NULL(alltoAllExecutor);
