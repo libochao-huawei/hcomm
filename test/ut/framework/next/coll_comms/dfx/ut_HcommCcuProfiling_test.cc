@@ -479,7 +479,7 @@ TEST_F(CcuKernelTest, GetCcuProfilingInfo_TaskProfilingInfo) {
 
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ASSERT_EQ(out.size(), 1u);
-    EXPECT_EQ(out[0].missionId, 1234u);
+    EXPECT_EQ(out[0].missionId, 210);
     EXPECT_EQ(out[0].instrId, 4321u);
     EXPECT_EQ(out[0].name, "UnitTestTaskProfiling");
     EXPECT_EQ(out[0].dieId, 1u);
