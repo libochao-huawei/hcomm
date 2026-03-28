@@ -178,16 +178,17 @@ HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64
     HCCL_INFO("[%s] start.", __func__);
 
     HcclUs startut = TIME_NOW();
-    
-    /* 入参校验 */
-    CHK_RET(HcomCheckReductionOpV2(op));
-    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
-    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
+
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
                 HCCL_ERROR("[AllReduce] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
                 HCCL_E_NOT_FOUND);
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckReductionOpV2(op));
+    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::ALLREDUCE, op);
@@ -209,15 +210,16 @@ HcclResult HcomReduceScatterV2(const char *tag, void *inputPtr, void *outputPtr,
 
     HcclUs startut = TIME_NOW();
 
-    /* 入参校验 */
-    CHK_RET(HcomCheckReductionOpV2(op));
-    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
-    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
                 HCCL_ERROR("[ReduceScatter] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
                 HCCL_E_NOT_FOUND);
+
+                /* 入参校验 */
+    CHK_RET(HcomCheckReductionOpV2(op));
+    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
     Hccl::CollOpParams opParams = GetHcclOpParams(inputPtr, outputPtr, count, dataType, Hccl::OpType::REDUCESCATTER, op);
@@ -652,15 +654,16 @@ HcclResult HcomReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64 co
 
     HcclUs startut = TIME_NOW();
 
-    /* 入参校验 */
-    CHK_RET(HcomCheckReductionOpV2(op));
-    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
-    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
                 HCCL_ERROR("[Reduce] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
                 HCCL_E_NOT_FOUND);
+
+    /* 入参校验 */
+    CHK_RET(HcomCheckReductionOpV2(op));
+    CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
+    CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
 
     /* 入参的正确性由HCCL确保 */
     u32 rankSize = INVALID_VALUE_RANKSIZE;

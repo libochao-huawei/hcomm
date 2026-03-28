@@ -98,7 +98,7 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::CalNumBlocks(u32& numBlocks, u3
         HCCL_WARNING("[CollRunAlltoAllStagedAivRdmaExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
 
-    HCCL_INFO("[CollRunAlltoAllStagedAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollRunAlltoAllStagedAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

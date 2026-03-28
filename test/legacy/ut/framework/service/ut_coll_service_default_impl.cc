@@ -41,8 +41,6 @@
 #include "hccl_comm.h"
 #include "coll_operator.h"
 #include "coll_service_base.h"
-#include "rank_table_info.h"
-#include "orion_adapter_hccp.h"
 
 using namespace Hccl;
 using namespace std;
@@ -65,7 +63,6 @@ protected:
         MOCKER_CPP(&CcuComponent::Init).stubs().will(ignoreReturnValue());
         MOCKER_CPP(&CcuResBatchAllocator::Init).stubs().will(ignoreReturnValue());
         MOCKER_CPP(&CtxMgrImp::Init).stubs().will(ignoreReturnValue());
-        MOCKER_CPP(&RankTableInfo::CheckAddrs).stubs().with().will(ignoreReturnValue());
         std::cout << "A Test case in CollServiceDefaultImpl SetUP" << std::endl;
     }
 
@@ -499,6 +496,13 @@ TEST_F(CollServiceDefaultImplTest, test_init)
     MOCKER_CPP(&CommunicatorImpl::GetTopoFilePath).stubs().will(returnValue(topoInfoPath));
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
 
+    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
+    RdmaHandle handlePtr = handle.get();
+    MOCKER(HrtRaUbCtxInit)
+        .stubs()
+        .with(any())
+        .will(returnValue(handlePtr));
+
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_950;
@@ -541,6 +545,13 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
+
+    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
+    RdmaHandle handlePtr = handle.get();
+    MOCKER(HrtRaUbCtxInit)
+        .stubs()
+        .with(any())
+        .will(returnValue(handlePtr));
 
     GenRankTableFile4p();
     GenTopoFile();
@@ -632,6 +643,13 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
     MOCKER(HrtIpcSetMemoryName).stubs();
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
+
+    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
+    RdmaHandle handlePtr = handle.get();
+    MOCKER(HrtRaUbCtxInit)
+        .stubs()
+        .with(any())
+        .will(returnValue(handlePtr));
 
     GenRankTableFile4p();
     GenTopoFile();
@@ -824,6 +842,12 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
     MOCKER_CPP(&CommunicatorImpl::GetTopoFilePath).stubs().will(returnValue(topoInfoPath));
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
 
+    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
+    RdmaHandle handlePtr = handle.get();
+    MOCKER(HrtRaUbCtxInit)
+        .stubs()
+        .with(any())
+        .will(returnValue(handlePtr));
 
     GenRankTableFile4p();
     GenTopoFile();

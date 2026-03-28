@@ -41,7 +41,6 @@ public:
 private:
     void CheckAndInsert(const std::string& levelId, u32 rankAddrSize,
                         std::unordered_map<std::string, u32>& idRankSizeMap) const;
-    void CheckAddrs() const;
     void InsertToRank(const std::string& levelId, u32 rankAddrSize,
                         std::vector<std::unordered_map<std::string, u32>>& rankLists, u32 levelNum) const;
 };

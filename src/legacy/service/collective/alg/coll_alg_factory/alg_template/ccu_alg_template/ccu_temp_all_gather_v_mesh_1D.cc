@@ -49,6 +49,9 @@ HcclResult CcuTempAllGatherVMesh1D::GenExtIns(const TempFuncs          &tempFunc
                                                   const TemplateDataParams &templateDataParams,
                                                   const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllGatherVMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_   = tempFuncs.opMode;
     buffInfo_ = templateDataParams.buffInfo;
     CcuInstructionAllGatherVMesh1D ccuIns;

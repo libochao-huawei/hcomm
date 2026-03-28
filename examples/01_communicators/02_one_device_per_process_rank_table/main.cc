@@ -15,9 +15,10 @@
 #include <chrono>
 #include <cstring>
 
-#include "hccl/hccl.h"
-#include "hccl/hccl_types.h"
-#include "mpi.h"
+#include <acl/acl_rt.h>
+#include <hccl/hccl.h>
+#include <hccl/hccl_types.h>
+#include <mpi.h>
 
 #define ACLCHECK(ret)                                                                          \
     do {                                                                                       \
@@ -110,7 +111,15 @@ int main()
     ACLCHECK(aclrtSetDevice(static_cast<int32_t>(devId)));
 
     // 指定 rank_table.json 文件路径
-    const char *rankTableFile = "./rank_table.json";
+    const char *socNamePtr = aclrtGetSocName();
+    if (socNamePtr == nullptr) {
+        return HCCL_E_RUNTIME;
+    }
+    std::string socName(socNamePtr);
+    const char *rankTableFile = (socName.find("Ascend950") == std::string::npos)
+                                    ? "./rank_table.json"
+                                    : "./rank_table_v2.json";
+
     // 创建并初始化通信域配置项
     HcclCommConfig config;
     HcclCommConfigInit(&config);
