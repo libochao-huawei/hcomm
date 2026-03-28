@@ -610,6 +610,9 @@ private:
 
     HcclResult SetAicpuUnfoldFlag();
     bool GetAicpuUnfoldFlag();
+
+    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, OpParam &opParam,
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     u32 deviceNumPerServer_;
     HcclDispatcher dispatcher_; // dispatcher放到最后析构
     DispatcherCtxPtr dispatcherCtx_{nullptr};
@@ -821,7 +824,7 @@ private:
         const HcclCMDType opType);
     HcclResult OrchestrateAicpu(const HcclCMDType &opType, const std::string &algName, const OpParam &param,
         const AlgResourceResponse &algResource, const std::string &newTag, AlgType algType, bool isCustom = false,
-        bool needIncreLink = false);
+        bool needIncreLink = false, bool needRecreateAlltoallComm = false);
     template <typename T>
     HcclResult CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDeviceMem, const std::vector<T> &srcVec);
     template <typename T>
