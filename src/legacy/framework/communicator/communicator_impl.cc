@@ -2823,6 +2823,10 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] internal error", hcclAccelerator.Describe().c_str());
             return HCCL_E_INTERNAL;
     }
+    if (commAccelerator == AcceleratorState::AICPU_TS && IsCommWithPCIEProtocol() && HrtGetDeviceCount() > 8) {
+        // 当通信域存在PCIE链路且当前环境节点数大于8卡时，暂不支持aicpu展开，仅支持aiv展开
+        commAccelerator = AcceleratorState::AIV_ONLY;
+    }
     OpExecuteConfig inCommExecuteConfig;
     inCommExecuteConfig.accState = commAccelerator;
     HCCL_DEBUG("[CommunicatorImpl][%s] inCommExecuteConfig[%s]", __func__, inCommExecuteConfig.accState.Describe().c_str());
