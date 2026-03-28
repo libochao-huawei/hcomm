@@ -30,7 +30,8 @@ HcclResult UbMemRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, vo
 
     // 构造LocalUbRmaBuffer
     std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-    EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
+    EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
+        mem.size, static_cast<HcclMemType>(mem.type), memTag)),
         return HCCL_E_PTR);
     
     // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过

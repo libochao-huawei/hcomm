@@ -178,7 +178,7 @@ HcclResult HcomAllReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64
     HCCL_INFO("[%s] start.", __func__);
 
     HcclUs startut = TIME_NOW();
-
+    
     /* 通信域 */
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 

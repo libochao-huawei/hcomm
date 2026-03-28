@@ -471,10 +471,10 @@ public:
 
     void SetHcclQos(u32 hcclQos);
  	u32 GetHcclQos();
-    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
-    HcclResult DeregisterWindow(CommSymWindow winHandle);
+    HcclResult RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle);
+    HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
     HcclResult InitSymmetricMemory();
-    HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+    HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
 private:
 
     bool IsEnableRoce();
