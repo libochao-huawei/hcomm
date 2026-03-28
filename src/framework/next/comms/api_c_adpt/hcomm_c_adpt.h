@@ -102,8 +102,6 @@ HcommResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
 HcommResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
 
-HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binHandle, HcclDfxOpInfo dfxOpInfo);
-
 HcommResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
 
 #ifdef __cplusplus
