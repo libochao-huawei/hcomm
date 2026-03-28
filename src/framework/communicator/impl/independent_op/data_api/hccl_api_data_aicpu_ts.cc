@@ -761,6 +761,7 @@ int32_t HcommAcquireComm(const char* commId)
     CHK_PTR_NULL(commId);
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
+    HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
     if (deviceType != DevType::DEV_TYPE_950) {
         HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
         CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
@@ -795,6 +796,7 @@ int32_t HcommReleaseComm(const char* commId)
     CHK_PTR_NULL(commId);
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
+    HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
     if (deviceType != DevType::DEV_TYPE_950) {
         AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
         HCCL_INFO("[%s] AicpuReleaseCommbyGroup success, commId[%s]", __func__, commId);
