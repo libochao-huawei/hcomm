@@ -1019,7 +1019,6 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
                 result);
             SendExchangeData();
-            recvData.clear();
             result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
