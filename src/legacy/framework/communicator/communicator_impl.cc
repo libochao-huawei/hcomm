@@ -1350,7 +1350,7 @@ void CommunicatorImpl::InitRankGraph(const string &ranktableM)
     InitRankGraph(rankTableInfo);
 }
 
-std::string CommunicatorImpl::GetTopoFilePath() const
+std::string CommunicatorImpl::GetTopoFilePath()
 {
     HCCL_INFO("[CommunicatorImpl::%s] start.", __func__);
 
@@ -1405,13 +1405,6 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     for (auto link : fullLinks) {
         HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] link[%s]", link.Describe().c_str());
     }
-}
-
-HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort) const
-{
-    std::vector<LinkData> fullLinks = GetFullMeshLinks();
-    TRY_CATCH_RETURN(GetSocketManager().ServerInitAll(fullLinks, linstenPort));
-    return HCCL_SUCCESS;
 }
 
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)
