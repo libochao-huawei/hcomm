@@ -15,6 +15,7 @@
 #include "task_info.h"
 #include "aicpu_launch_manager.h"
 using namespace std;
+#include "cpu_thread.h"
 
 namespace hccl {
 static unordered_map<ThreadHandle, shared_ptr<Thread>> g_ThreadMap;
@@ -22,17 +23,26 @@ static unordered_map<ThreadHandle, ThreadHandle> g_ThreadD2HMap;
 static mutex g_ThreadMapMtx;
 
 HcclResult CreateThread(CommEngine engine, StreamType streamType,
-    uint32_t notifyNum, NotifyLoadType loadType, shared_ptr<Thread>& out_thread)  
+    uint32_t notifyNum, const NotifyLoadType loadType, const ThreadType threadType, std::shared_ptr<Thread>& out_thread)  
 {
     out_thread = nullptr;  // 初始化出参
  
-    if (engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CPU
-        || engine == COMM_ENGINE_CCU) {
-        EXECEPTION_CATCH(out_thread = make_shared<CpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
-    } else if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
-        EXECEPTION_CATCH(out_thread = make_shared<AicpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+    if (threadType == THREAD_TYPE_TS) {
+        if (engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CCU) {
+            EXECEPTION_CATCH(out_thread = std::make_shared<CpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+        } else if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
+            EXECEPTION_CATCH(out_thread = std::make_shared<AicpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+        } else {
+            return HCCL_E_NOT_SUPPORT;
+        }
+    } else if (threadType == THREAD_TYPE_CPU) {
+        if (engine == COMM_ENGINE_AICPU) {
+            EXECEPTION_CATCH(out_thread = std::make_shared<CpuThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+        } else {
+            return HCCL_E_NOT_SUPPORT;
+        }
     } else {
-        return HCCL_E_NOT_SUPPORT;
+        return HCCL_E_PARA;
     }
  
     return HCCL_SUCCESS;
@@ -144,7 +154,7 @@ HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
         // 创建线程
         HcclResult ret = CreateThread(params.engine, params.streamType, 
                                       params.notifyNumPerThread, 
-                                      params.notifyLoadType, threadPtr);
+                                      params.notifyLoadType, ThreadType::THREAD_TYPE_TS, threadPtr);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Failed to create thread at index %u, error: %d", 
             __func__, i, ret), ret);
 

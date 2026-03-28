@@ -19,10 +19,15 @@ set(src_to_test_list
     comms/aiv/ut_AivUbMemTransport_API_test.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
+    comms/comm_engine_res/threads/test_cpu_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
     comms/endpoint_pairs/ut_endpoint_pair.cc
     coll_comms/rank/ut_my_rank.cc
+    comms/comm_engine_res/utils/ut_msg_queue.cc
+    comms/comm_engine_res/utils/ut_service_scheduler.cc
+    comms/comm_engine_res/utils/ut_data_ring.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
+    coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/ut_my_rank_tls.cc
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc

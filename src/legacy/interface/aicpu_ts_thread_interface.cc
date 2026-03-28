@@ -12,9 +12,13 @@
 
 #include <memory>
 #include <limits>
+#include <algorithm>
 
 #include "stream_lite.h"
 #include "rtsq_a5.h"
+
+using string = std::string;
+using exception = std::exception;
 
 namespace Hccl {
 
@@ -181,6 +185,23 @@ HcclResult IAicpuTsThread::SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64
 
     return HCCL_SUCCESS;
 }
+
+HcclResult IAicpuTsThread::WriteValue(uint64_t addr, uint16_t value) const
+{
+    RtsqBase *rtsqA5 = nullptr;
+    CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
+
+    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], addr [%llx], value [%u]",
+        __func__,
+        static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(),
+        addr,
+        value);
+
+    TRY_CATCH_RETURN(rtsqA5->WriteValue1B(addr, value));
+
+    return HCCL_SUCCESS;
+}
+
 
 HcclResult IAicpuTsThread::GetStreamLitePtr(void **streamLitePtrPtr) const
 {

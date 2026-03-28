@@ -27,6 +27,8 @@
 #include "task_info.h"
 #include "adapter_prof.h"
 #include "../../../../../legacy/framework/dfx/profiling/dlprof_function.h"
+#include "hccl/hccl_res.h"
+#include "resource_entities.h"
 
 namespace hccl {
 
@@ -75,6 +77,9 @@ public:
     virtual uint32_t GetNotifyNum() const = 0;
     virtual LocalNotify *GetNotify(uint32_t index) const = 0;
     virtual HcclResult SupplementNotify(uint32_t notifyNum) = 0;
+    virtual HcclResult GetThreadEntity(void* &threadEntity) {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
     // A3 Stream & A5 Stream
     virtual bool IsDeviceA5() const = 0;
@@ -83,15 +88,27 @@ public:
     virtual void LaunchTask() const = 0;
 
     // Local Data Plane Functions
-    virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;
-    virtual HcclResult LocalNotifyWait(uint32_t notifyId) const = 0;
+    virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
+    virtual HcclResult LocalNotifyWait(uint32_t notifyId) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
-    virtual HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const = 0;
-    virtual HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const = 0;
+    virtual HcclResult LocalNotifyRecord(ThreadHandle dstThread, uint32_t dstNotifyIdx) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
+    virtual HcclResult LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
-    virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const = 0;
+    virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
     virtual HcclResult LocalReduce(
-        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const = 0;
+        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const {
+        return HCCL_E_NOT_SUPPORT;
+    };
     virtual bool GetMaster() const = 0;
     virtual void SetIsMaster(bool isMaster) = 0;
 
@@ -143,7 +160,8 @@ inline LocalNotify *GetNotify(uint64_t thread, uint32_t index)
 }
 
 HcclResult CreateThread(CommEngine engine, StreamType streamType, uint32_t notifyNum,
-                        NotifyLoadType loadType, std::shared_ptr<Thread>& out_thread);
+                        const NotifyLoadType loadType, const ThreadType threadType,
+                        std::shared_ptr<Thread>& out_thread);
 HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);

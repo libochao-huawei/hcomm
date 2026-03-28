@@ -31,6 +31,8 @@ public:
         uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
     HcclResult HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *threads, std::vector<uint32_t> &threadId);
+    HcclResult HcclThreadAcquireWithConfig(CommEngine engine, uint32_t threadNum,
+        const ThreadConfig config, const ThreadType type, ThreadHandle *threads);
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
@@ -57,6 +59,7 @@ private:
     u64 usedNotifyNum_ = 0;
     std::mutex threadMutex_;
     std::vector<std::shared_ptr<Thread>> threads_;
+    uint32_t threadTotalCount = 0;
 
     std::mutex mainThreadMutex_;
     std::map<rtStream_t, std::shared_ptr<Thread>> mainThread_;
