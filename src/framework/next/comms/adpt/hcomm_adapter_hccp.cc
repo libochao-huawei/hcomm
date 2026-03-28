@@ -169,7 +169,8 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
        24-31代表芯片配置值b11:64s
     */
     attr.ub.errTimeout       = 16;
-    attr.ub.priority         = UbJettyPriorityFromHcclQos(in.hcclQos);
+    attr.ub.priority         = in.jettyPriorityIsRaw ? (in.hcclQos & 0xFU) :
+        UbJettyPriorityFromHcclQos(in.hcclQos);
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
@@ -256,7 +257,8 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
        24-31代表芯片配置值b11:64s
     */
     attr.ub.errTimeout       = 16;
-    attr.ub.priority         = UbJettyPriorityFromHcclQos(in.hcclQos);
+    attr.ub.priority         = in.jettyPriorityIsRaw ? (in.hcclQos & 0xFU) :
+        UbJettyPriorityFromHcclQos(in.hcclQos);
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;

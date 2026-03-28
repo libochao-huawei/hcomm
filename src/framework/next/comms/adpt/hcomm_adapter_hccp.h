@@ -99,6 +99,8 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
 
     /** HCCL 通信域 QoS；低 4bit 映射到 RA attr.ub.priority，0 表示使用默认 priority(2) */
     u32 hcclQos{0};
+    /** 为 true 时 hcclQos 低 4bit 直接作为 attr.ub.priority（UBC EID QoS→SL 映射路径） */
+    bool jettyPriorityIsRaw{false};
 
     HrtRaUbJettyCreateParamDef() {}
 
