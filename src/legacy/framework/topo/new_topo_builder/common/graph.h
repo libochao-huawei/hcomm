@@ -21,7 +21,8 @@
 
 namespace Hccl {
 
-template <typename NodeType, typename EdgeType> class Graph {
+template <typename NodeType, typename EdgeType> 
+class Graph {
 public:
     bool HasNode(const NodeId nodeId) const
     {
@@ -39,6 +40,18 @@ public:
             return {};
         }
         return edges.at(srcNodeId).at(dstNodeId);
+    }
+
+    std::vector<std::shared_ptr<EdgeType>> GetEdges(const NodeId srcNodeId) const
+    {
+        if (edges.find(srcNodeId) == edges.end()) {
+            return {};
+        }
+        std::vector<std::shared_ptr<EdgeType>> nodeEdges;
+        for (const auto &it : edges.at(srcNodeId)) {
+            nodeEdges.insert(nodeEdges.end(), it.second.begin(), it.second.end());
+        }
+        return nodeEdges;
     }
 
     void TraverseNode(std::function<void(NodeId nodeId, const std::shared_ptr<NodeType> &)> func) const
