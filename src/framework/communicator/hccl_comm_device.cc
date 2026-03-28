@@ -170,6 +170,7 @@ HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
             status = aicpuCommPtr->GetCommmStatus();
             break;
         }
+        rwlock.readUnlock();
     }
     return HCCL_SUCCESS;
 }

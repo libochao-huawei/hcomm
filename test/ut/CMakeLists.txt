@@ -187,6 +187,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/common/
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/
@@ -205,9 +206,12 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/task/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/
 
     # tbe头文件
     ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
@@ -289,7 +293,6 @@ set(UT_COMMON_INCLUDE_LIST
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
- 
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/
