@@ -119,6 +119,7 @@ void CollServiceAiCpuImpl::LoadWithOpBasedModeNoRegister(CollOperator &op)
 {
     RegisterOpbasedLocalRmaBuf(op.opTag);
 
+    HCCL_ERROR("[OpBasedCLoadWithOpBasedModeNoRegisterollProcess] begin to AllocFreeStream");
     comm->GetAicpuStreamManager().AllocFreeStream();
     Stream *lanchStream = comm->GetAicpuStreamManager().GetFreeStream();
     comm->GetAicpuStreamManager().AclGraphCaptureFreeStream(comm->GetStreamManager().opbase->GetMaster());
@@ -167,14 +168,11 @@ void CollServiceAiCpuImpl::LoadWithOffloadMode(CollOperator &op, std::unique_ptr
 HcclResult CollServiceAiCpuImpl::AllocCollOpResourceNoRegister(CollOperator &op, const std::string &opAlgTag, void **addr)
 {
     RegisterOpbasedLocalRmaBuf(op.opTag);
+    HCCL_ERROR("[AllocCollOpResourceNoRegister] begin to AllocFreeStream");
     comm->GetAicpuStreamManager().AllocFreeStream();
     DevBuffer *mem = nullptr;
     comm->SetCommStatus(CommStatus::COMM_BUILDING);
     mem = OpBasedCollProcess(op, comm->GetCurAlgName());
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s], opAlgTag[%s]",
-                             op.opType.Describe().c_str(), comm->GetOpBaseOpIndex(), comm->GetId().c_str(),
-                             comm->GetCurAlgName().c_str(), opAlgTag.c_str());
-    comm->GetTrace().Save(info);
     CHK_RET(AicpuMc2CommResourcePrepare(op, comm->GetCurAlgName(), mem, opAlgTag, addr));
     return HCCL_SUCCESS;
 }
@@ -399,7 +397,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     
     HCCL_INFO("[CollServiceAiCpuImpl][%s] args timeout[%u]s", __func__, attr.value.timeout);
 
-    AddPostToUserStream(stream);
+    //AddPostToUserStream(stream);
     TaskParam taskParam {};
     taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
@@ -428,6 +426,15 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     }
     auto& mStream = *mStreamPtr;
 
+    if (comm->GetAicpuStreamManager().GetFreeStream() != nullptr)
+    {
+        HCCL_ERROR("AicpuKernelLaunch freeStream is %s", comm->GetAicpuStreamManager().GetFreeStream()->Describe().c_str());
+    }
+    if (mStreamPtr != nullptr)
+    {
+        HCCL_ERROR("AicpuKernelLaunch launch stream is %s", mStream.Describe().c_str());
+    }
+
     std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
     constexpr u32 numBlocks = 1;
     HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
@@ -438,7 +445,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     SaveDfxTaskInfo(taskParam, -1, mStream.IsMaster());
-    AddWaitToUserStream(stream);
+    //AddWaitToUserStream(stream);
 }
 
 constexpr u8 QUEUE_NOTIFY_POST_QID_POS = 0;

@@ -45,37 +45,36 @@ uint32_t HcclKernelEntrance(void *args)
         HCCL_ERROR("HcclKernelEntrance Args is null.");
         return 1;
     }
-    
     auto *kernelParam = reinterpret_cast<HcclKernelParamLite *>(args);
-    AicpuUtils::GetInstance().CreateSingleInstance(args);
-    NsRecoveryHandlerFunc::GetInstance();
-    CHK_RET(DlHalFunctionV2::GetInstance().DlHalFunctionInit());
-
     u32 commIdIndex = kernelParam->comm.idIndex;
     HCCL_RUN_INFO("HcclKernelEntrance begin, OpType[%s] algName[%s] commIdIndex[%u] commId[%s] opTag[%s], devPhyId[%u] myRank[%u] rankSize[%u] oneSidedComm[%d] opIndex[%u]",
         kernelParam->op.algOperator.opType.Describe().c_str(), kernelParam->algName, commIdIndex, kernelParam->comm.commId,
         kernelParam->opTag, kernelParam->comm.devPhyId, kernelParam->comm.myRank, kernelParam->comm.rankSize, kernelParam->oneSidedComm, kernelParam->comm.opIndex);
-    Hccl::CommunicatorImplLite *communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
-    if (communicatorImplLite == nullptr) {
-        HCCL_ERROR("HcclKernelEntrance communicatorImplLite is null.");
-        return 1;
-    }
+    // AicpuUtils::GetInstance().CreateSingleInstance(args);
+    // NsRecoveryHandlerFunc::GetInstance();
+    // CHK_RET(DlHalFunctionV2::GetInstance().DlHalFunctionInit());
 
-    if (SetOldA5CommToCommMgr(kernelParam->comm.commId, communicatorImplLite) != 0) {
-        HCCL_ERROR("SetOldA5CommToCommMgr failed.");
-        return 1;
-    }
+    // Hccl::CommunicatorImplLite *communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
+    // if (communicatorImplLite == nullptr) {
+    //     HCCL_ERROR("HcclKernelEntrance communicatorImplLite is null.");
+    //     return 1;
+    // }
 
-    CHK_RET(AicpuUtils::GetInstance().WaitCommFree(communicatorImplLite, __func__));
-    if (communicatorImplLite->LoadWithOpBasedMode(kernelParam) != 0) {
-        HCCL_ERROR("HcclKernelEntrance LoadWithOpBasedMode failed.");
-        return 1;
-    }
+    // if (SetOldA5CommToCommMgr(kernelParam->comm.commId, communicatorImplLite) != 0) {
+    //     HCCL_ERROR("SetOldA5CommToCommMgr failed.");
+    //     return 1;
+    // }
 
-    HCCL_INFO("HcclKernelEntrance success.");
-    unique_lock<std::mutex> aicpuLock(communicatorImplLite->GetAicpuMc2Mutex());
-    communicatorImplLite->SetIsUsed(false);
-    aicpuLock.unlock();
+    // CHK_RET(AicpuUtils::GetInstance().WaitCommFree(communicatorImplLite, __func__));
+    // if (communicatorImplLite->LoadWithOpBasedMode(kernelParam) != 0) {
+    //     HCCL_ERROR("HcclKernelEntrance LoadWithOpBasedMode failed.");
+    //     return 1;
+    // }
+
+    // HCCL_INFO("HcclKernelEntrance success.");
+    // unique_lock<std::mutex> aicpuLock(communicatorImplLite->GetAicpuMc2Mutex());
+    // communicatorImplLite->SetIsUsed(false);
+    // aicpuLock.unlock();
     return 0;
 }
 
