@@ -1103,9 +1103,10 @@ u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, 
 
 bool CollAlgOperator::IsNeedStrictMode(const OpParam& param)
 {
+    HcclDataType dataType = param.GetDataType();
     bool isStrictMode = (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT)
-                        && (param.DataDes.dataType == HCCL_DATA_TYPE_FP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP32 ||
-                            param.DataDes.dataType == HCCL_DATA_TYPE_BFP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP64)
+                        && (dataType == HCCL_DATA_TYPE_FP16 || dataType == HCCL_DATA_TYPE_FP32 ||
+                            dataType == HCCL_DATA_TYPE_BFP16 || dataType == HCCL_DATA_TYPE_FP64)
                         && (param.reduceType == HCCL_REDUCE_SUM || param.reduceType == HCCL_REDUCE_PROD)
                         && userRankSize_ >= MIN_STRICT_RANK_NUM;
 
@@ -1122,7 +1123,8 @@ bool CollAlgOperator::CheckStrictCondition(const OpParam& param) const
         HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support PROD."),
         false);
 
-    CHK_PRT_RET(param.DataDes.dataType == HCCL_DATA_TYPE_FP64, 
+    HcclDataType dataType = param.GetDataType();
+    CHK_PRT_RET(dataType == HCCL_DATA_TYPE_FP64, 
         HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support FP64."),
         false);
 
