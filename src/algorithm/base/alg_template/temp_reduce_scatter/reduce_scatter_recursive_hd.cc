@@ -131,6 +131,9 @@ HcclResult ReduceScatterRecursiveHalvingDoubling::ReduceInPartOne(u32 rank, cons
                 "failed", 0), ret);
             CHK_RET(reducerInfo_->run(dispatcher_, links[peerRank], baseOffset_,
                 inputMem_, inputMem_, scratchMem_, stream_));
+            ret = links[peerRank]->DataReceivedAck(stream_);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[Reduce][InPartOne]ExecuteTxSync: data received ack failed"), ret);
             ret = links[peerRank]->RxWaitDone(stream_);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Reduce][InPartOne]RxWaitDone failed"), ret);
         }
