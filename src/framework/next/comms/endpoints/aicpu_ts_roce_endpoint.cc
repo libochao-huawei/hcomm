@@ -71,7 +71,7 @@ HcclResult AicpuTsRoceEndpoint::Init()
     EXECEPTION_CATCH(regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(netDev_), return HCCL_E_PTR);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
-    constexpr uint32_t defaultPort = 60001;
+    constexpr uint32_t defaultPort = 16666;
     CHK_RET(ServerSocketListen(defaultPort));
     return HCCL_SUCCESS;
 }
