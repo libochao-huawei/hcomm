@@ -17,6 +17,7 @@
 #include <climits>
 #include "nlohmann/json.hpp"
 #include "new_rank_info.h"
+#include "port.h"
 
 namespace Hccl {
 constexpr unsigned int MAX_RANKCOUNT = 65536;
@@ -36,7 +37,7 @@ public:
     void                       GetBinStream(bool isContainLocId, BinaryStream& binaryStream) const;
     void                       Check();
     void                       UpdateRankTable(const RankTableInfo &localRankInfo);
-    std::unordered_map<u32, u32>         GetRankDeviceListenPortMap();
+    std::unordered_map<u32, std::unordered_map<IpAddress, u32>> GetRankDeviceListenPortMap();
 
 private:
     void CheckAndInsert(const std::string& levelId, u32 rankAddrSize,
