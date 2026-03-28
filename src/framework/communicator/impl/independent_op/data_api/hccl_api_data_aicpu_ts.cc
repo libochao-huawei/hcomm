@@ -1102,7 +1102,8 @@ int32_t HcommRequestServiceOnThread(ThreadHandle dstThreadHandle, ThreadServiceH
     HCCL_INFO("[%s] Wrote args to DataRing at offset[%llu], bufPos[%llu], alignedSize[%llu].",
         __func__, argsOffset, argsOffset % ringCapacity, alignedSize);
 
-    // Push service request to thread entity's send queue
+    // Push service request to thread entity's send queue.
+    // s_msgId is only used as a trace id in logs; 32-bit wraparound is acceptable and does not affect queue semantics.
     static uint32_t s_msgId = 0;
     ThreadMsgEntity *const msgQueueBasePtr = reinterpret_cast<ThreadMsgEntity *>(queueInfo.addr);
     ThreadMsgEntity tempMsgEnt = {s_msgId, serviceHandle, argsOffset, argsSizeByte};
