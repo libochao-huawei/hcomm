@@ -22,6 +22,7 @@ add_executable(hccl_utest_framework_independent_op ${src_to_test_list})
 target_include_directories(hccl_utest_framework_independent_op PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/test/ut/framework/communicator
+    ${HCCL_CODE_ROOT}/pkg_inc
 )
 
 target_compile_definitions(hccl_utest_framework_independent_op PRIVATE
