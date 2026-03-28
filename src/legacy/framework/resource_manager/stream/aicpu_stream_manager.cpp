@@ -68,7 +68,9 @@ std::vector<char> AicpuStreamManager::GetPackedData()
 void AicpuStreamManager::AllocFreeStream()
 {
     if (freeStream  == nullptr) {
+        HCCL_ERROR("AicpuStreamManager freeStream  == nullptr, begin to alloc freeStream");
         freeStream = std::make_unique<Stream>(false, false);
+        HCCL_ERROR("AicpuStreamManager freeStream allocted: %s", freeStream->Describe());
     }
 }
 

@@ -361,16 +361,6 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
     return HcclResult::HCCL_E_INTERNAL;
 }
 
-void CommunicatorImpl::TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const
-{
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], rankInGroup[%d],"
-                             " rankSizeInGroup[%u], devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
-                             opParams.opType.Describe().c_str(), GetOpBaseOpIndex(), GetId().c_str(),
-                             GetMyRank(), GetRankSize(), devLogicId, streamId,
-                             opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
-    GetTrace().Save(info);
-}
-
 void CommunicatorImpl::TraceOpInfo(const CollOpParams &opParams) const
 {
     if (opParams.opType == OpType::BATCHSENDRECV) {
@@ -691,7 +681,6 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OPBASE);
             TraceOpInfo(opParams);
             HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
@@ -725,7 +714,6 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
 
         // 避免transport建链前，通讯域被摧毁
         status = CommStatus::COMM_INUSE;
-        TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OPBASE);
         if (opParams.sendBuf != nullptr) {
             PrintMemoryAttr(opParams.sendBuf);
         }
@@ -950,7 +938,6 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OFFLOAD);
             TraceOpInfo(opParams);
             HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
