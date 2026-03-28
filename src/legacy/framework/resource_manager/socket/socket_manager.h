@@ -47,7 +47,7 @@ public:
 
     void ServerInit(PortData &localPort);
 
-    void ServerInitAll(const vector<LinkData> &links, u32 &linstenPort) const;
+    static void ServerInitAll(RankTableInfo &localRankTable);
 
     bool ServerDeInit(PortData &localPort) const;
 

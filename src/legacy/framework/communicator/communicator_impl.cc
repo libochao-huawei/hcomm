@@ -1407,13 +1407,6 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     }
 }
 
-HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort) const
-{
-    std::vector<LinkData> fullLinks = GetFullMeshLinks();
-    TRY_CATCH_RETURN(GetSocketManager().ServerInitAll(fullLinks, linstenPort));
-    return HCCL_SUCCESS;
-}
-
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)
 {
     if (inputRankGraph != nullptr) {

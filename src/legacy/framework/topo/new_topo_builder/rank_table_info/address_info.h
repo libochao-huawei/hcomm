@@ -34,6 +34,7 @@ public:
     ~AddressInfo() {};
     
     IpAddress                  addr;
+    u32                        listenPort{DEFAULT_VALUE_DEVICEPORT};
     AddrType                   addrType;
     std::set<std::string>      ports;
     std::string                planeId{"0"};
