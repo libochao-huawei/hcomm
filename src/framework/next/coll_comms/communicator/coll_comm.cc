@@ -83,11 +83,17 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
  	CHK_RET(hcclCommDfx_->Init(deviceLogicId_, commId_));
     CHK_RET(InitTaskExceptionHandler());
 
+    CHK_RET(InitKfcAndRegisterCollComm());
+
+    EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::InitKfcAndRegisterCollComm()
+{
     myRank_->SetKfcControlTransfer(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     CollCommMgr::GetInstance()->RegisteCollComm(this); 
     commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
-
-    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 

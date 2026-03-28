@@ -11,7 +11,8 @@
 #include "rank_graph_c_adpt.h"
 #include "../coll_comm_mgr.h"
 
-using namespace hccl;extern std::unique_ptr<CollCommMgr> g_collCommMgr;
+using namespace hccl;
+extern std::unique_ptr<CollCommMgr> g_collCommMgr;
 
 /**
  * @note 职责：集合通信的RankGraph信息获取的C接口的C到C++适配
