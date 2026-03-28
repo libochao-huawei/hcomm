@@ -383,6 +383,7 @@ public:
     u32 GetRankInParentComm();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
     bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
+    HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
 
 private:
     std::string                                id;
@@ -525,9 +526,6 @@ private:
     void InitHDCommunicate();
     void InitOneSidedService();
     void InitUbMemoryTransportMgr();
-    void TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const;
-    void TraceOpInfo(const CollOpParams &opParams) const;
-    void TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const;
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
     void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);

@@ -25,6 +25,7 @@ AicpuStreamManager::~AicpuStreamManager()
 
 void AicpuStreamManager::AllocStreams(u32 num)
 {
+    HCCL_ERROR("AicpuStreamManager begin to AllocStreams");
     int size = streams.size();
     if (static_cast<int>(num) <= size) {
         return;
@@ -67,8 +68,11 @@ std::vector<char> AicpuStreamManager::GetPackedData()
 
 void AicpuStreamManager::AllocFreeStream()
 {
+    HCCL_ERROR("AicpuStreamManager AllocFreeStream begin");
     if (freeStream  == nullptr) {
+        HCCL_ERROR("AicpuStreamManager freeStream  == nullptr, begin to alloc freeStream");
         freeStream = std::make_unique<Stream>(false, false);
+        HCCL_ERROR("AicpuStreamManager freeStream allocted: %s", freeStream->Describe().c_str());
     }
 }
 
