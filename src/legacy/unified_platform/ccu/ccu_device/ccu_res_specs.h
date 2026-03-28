@@ -122,7 +122,7 @@ public:
     CcuResSpecifications &operator=(const CcuResSpecifications &that) = delete;
     ~CcuResSpecifications() = default;
 
-    void DeInit();
+    void Deinit();
     void Init();
 
     static CcuResSpecifications& GetInstance(const int32_t deviceLogicId);
