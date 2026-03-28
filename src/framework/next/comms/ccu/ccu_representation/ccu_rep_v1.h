@@ -39,6 +39,7 @@
 #include "ccu_rep_bufreduce_v1.h"
 #include "ccu_rep_bufread_v1.h"
 #include "ccu_rep_bufwrite_v1.h"
+#include "ccu_rep_ms_write_v1.h"
 #include "ccu_rep_remMem_v1.h"
 
 #include "ccu_rep_funccall_v1.h"

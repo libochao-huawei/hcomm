@@ -108,9 +108,15 @@ protected:
 
     // 数据操作
     HcclResult WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
-                 const CcuRep::Variable &len, CcuRep::CompletedEvent event);   
+                 const CcuRep::Variable &len, CcuRep::CompletedEvent event);
     HcclResult WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::CcuBuf &loc,
                  const CcuRep::Variable &len, CcuRep::CompletedEvent event);
+    // MsWriteNb: 本地 MS → 远端 MS（write-with-notify），对应 TransLocMSToRmtMSInstr。
+    // src: 本地 MS buffer（发送方）。
+    // dst: 远端对等 CcuBuf，hcomm 内部利用对称 MS 分配从 dst.Id() 获取远端物理 msId。
+    // remoteNotifyIdx: 远端 CKE 逻辑索引（接收方用 NotifyWait(channel, remoteNotifyIdx) 等待）。
+    HcclResult MsWriteNb(const ChannelHandle channel, const CcuRep::CcuBuf &src, const CcuRep::CcuBuf &dst,
+                         const CcuRep::Variable &len, uint32_t remoteNotifyIdx, uint32_t mask);
 
     HcclResult ReadNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
               const CcuRep::Variable &len, CcuRep::CompletedEvent event);
