@@ -3856,17 +3856,9 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::CCU_SCHED;
             break;
         case HcclAccelerator::AIV:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             acceleratorState = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:
