@@ -582,9 +582,9 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
     return HcommChannelNotifyRecordOnThread(0, channel, remoteNotifyIdx);
 }
 
-int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut);
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -592,7 +592,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeout);
+        ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeOut);
     } else {  // Non-950 devices use thread-based notify.
         AddThread(thread);
 
@@ -602,21 +602,21 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
 
-        ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeout);
+        ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeOut);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType != DevType::DEV_TYPE_950) {
         return HCCL_E_NOT_SUPPORT;
     }
-    return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeout);
+    return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeOut);
 }
 
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
