@@ -548,7 +548,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_when_task_more_than_50)
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::PROD;
     dfxOpInfo->op_.dataType = DataType::FP64;
-    dfxOpInfo->algType_ = AlgType::RING;
+    dfxOpInfo->algType_ = AlgType{AlgType::RING}.Describe();
     dfxOpInfo->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
     dfxOpInfo->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
     CommunicatorImpl communicator{};    // Mock CommunicatorImpl
@@ -600,7 +600,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_when_task_less_than_50)
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::PROD;
     dfxOpInfo->op_.dataType = DataType::FP64;
-    dfxOpInfo->algType_ = AlgType::RING;
+    dfxOpInfo->algType_ =  AlgType{AlgType::RING}.Describe();
     dfxOpInfo->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
     dfxOpInfo->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
     CommunicatorImpl communicator{};    // Mock CommunicatorImpl
@@ -723,7 +723,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::PROD;
     dfxOpInfo->op_.dataType = DataType::FP64;
-    dfxOpInfo->algType_ = AlgType::RING;
+    dfxOpInfo->algType_ = AlgType{AlgType::RING}.Describe();
     dfxOpInfo->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
     dfxOpInfo->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
     CommunicatorImpl communicator{};    // Mock CommunicatorImpl
