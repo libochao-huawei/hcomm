@@ -605,14 +605,18 @@ private:
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup,
         std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H);
     HcclResult SaveRankInfoHasLinked(const AlgResourceRequest& resRequest);
-    HcclResult RecordOpPara(HcclCMDType opType, OpParam &opParam);
+    HcclResult RecordOpPara(HcclCMDType opType, const OpParam &opParam);
     HcclResult SaveTopoDesc(std::string &identifier);
 
     HcclResult SetAicpuUnfoldFlag();
     bool GetAicpuUnfoldFlag();
 
-    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, OpParam &opParam,
+    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
+
+    HcclResult HandleExistAlgResource(const std::string& newTag, const std::string& algName,
+        HcclCMDType opType, const OpParam& opParam, bool selectAivAlg, bool aicpuUnfoldModeFor910B,
+        bool needRecreateAlltoallComm);
     u32 deviceNumPerServer_;
     HcclDispatcher dispatcher_; // dispatcher放到最后析构
     DispatcherCtxPtr dispatcherCtx_{nullptr};
