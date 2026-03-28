@@ -1625,8 +1625,15 @@ namespace hccl
         return false;
     }
 
-    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, OpParam &opParam,
+    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::HandleExistAlgResource(const std::string& newTag, const std::string& algName,
+        HcclCMDType opType, const OpParam& opParam, std::unique_ptr<CollAlgOperator> algOperator,
+        bool selectAivAlg, bool aicpuUnfoldModeFor910B, bool needRecreateAlltoallComm)
     {
         return HCCL_SUCCESS;
     }
