@@ -525,9 +525,6 @@ private:
     void InitHDCommunicate();
     void InitOneSidedService();
     void InitUbMemoryTransportMgr();
-    void TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const;
-    void TraceOpInfo(const CollOpParams &opParams) const;
-    void TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const;
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
     void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);

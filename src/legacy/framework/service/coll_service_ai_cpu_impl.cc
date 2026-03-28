@@ -166,6 +166,7 @@ void CollServiceAiCpuImpl::LoadWithOffloadMode(CollOperator &op, std::unique_ptr
 HcclResult CollServiceAiCpuImpl::AllocCollOpResourceNoRegister(CollOperator &op, const std::string &opAlgTag, void **addr)
 {
     RegisterOpbasedLocalRmaBuf(op.opTag);
+    HCCL_ERROR("[AllocCollOpResourceNoRegister] begin to AllocFreeStream");
     comm->GetAicpuStreamManager().AllocFreeStream();
     DevBuffer *mem = nullptr;
     comm->SetCommStatus(CommStatus::COMM_BUILDING);

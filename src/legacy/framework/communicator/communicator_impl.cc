@@ -653,9 +653,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
-            HcclUs endut = std::chrono::steady_clock::now();
             return HcclResult::HCCL_SUCCESS;
         }
         if (TryFastCcuLaunch(opParams, stream)) {
@@ -690,7 +688,6 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         if (opParams.recvBuf != nullptr) {
             PrintMemoryAttr(opParams.recvBuf);
         }
-        HcclUs startut = std::chrono::steady_clock::now();
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
         // 更新开关状态
@@ -701,7 +698,6 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         }
         // ReportProfInfok:opinfo, allTaskInfo
         ReportProfInfo(beginTime, opParams.staticShape, true);
-        HcclUs endut = std::chrono::steady_clock::now();
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
         opIndex++;
@@ -766,10 +762,8 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), false));
         status = CommStatus::COMM_INUSE;
-        HcclUs startut = std::chrono::steady_clock::now();
         std::string opAlgTag = opParams.opTag + "_" + curAlgName;
         CHK_RET(collService->AllocCollOpResource(*currentCollOperator, opAlgTag, addr));
-        HcclUs endut = std::chrono::steady_clock::now();
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -904,9 +898,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
-            HcclUs endut = std::chrono::steady_clock::now();
             return HcclResult::HCCL_SUCCESS;
         }
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -940,12 +932,10 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         
         // 避免transport建链前，通讯域被摧毁
         status = CommStatus::COMM_INUSE;
-        HcclUs startut = std::chrono::steady_clock::now();
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;
         // ReportProfInfok:opinfo, allTaskInfo
         ReportProfInfo(beginTime, opParams.staticShape, false);
-        HcclUs endut = std::chrono::steady_clock::now();
         opIndex++;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -3303,6 +3293,7 @@ HcclResult CommunicatorImpl::GetDevMemWorkSpace(const std::string &memTag, uint6
  
 HcclResult CommunicatorImpl::GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const
 {
+    HCCL_ERROR("[GetAicpuOpStreamNotify] begin to AllocFreeStream");
     GetAicpuStreamManager().AllocFreeStream();
     Stream *stream = GetAicpuStreamManager().GetFreeStream();
     *opStream = stream->GetPtr();
