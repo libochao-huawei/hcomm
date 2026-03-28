@@ -1027,7 +1027,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::OrchestrateAicpu(const HcclCMDType &opType, const std::string &algName,
                                                   const OpParam &param, const AlgResourceResponse &algResource, const std::string &newTag, AlgType algType,
-                                                  bool isCustom, bool needIncreLink)
+                                                  bool isCustom, bool needIncreLink, bool needRecreateAlltoallComm)
     {
         return HCCL_SUCCESS;
     }
@@ -1623,5 +1623,11 @@ namespace hccl
     bool HcclCommunicator::EnableAicpuUnfold()
     {
         return false;
+    }
+
+    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, OpParam &opParam,
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse)
+    {
+        return HCCL_SUCCESS;
     }
 }
