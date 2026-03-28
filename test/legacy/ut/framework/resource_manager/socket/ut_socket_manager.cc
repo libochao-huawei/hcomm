@@ -16,6 +16,8 @@
 #include "socket_manager.h"
 #include "socket_handle_manager.h"
 #include "communicator_impl.h"
+#include "ranktable_stub_clos.h"
+#include "preempt_port_manager.h"
 #undef protected
 #undef private
 
@@ -41,6 +43,9 @@ protected:
             .stubs()
             .with(any(), any())
             .will(returnValue(hccpSocketHandle));
+        MOCKER_CPP(&PreemptPortManager::ListenPreempt)
+            .stubs()
+            .will(ignoreReturnValue());
         SetLinks();
 
         std::cout << "A Test case in SocketManagerTest SetUP" << std::endl;
@@ -115,4 +120,37 @@ TEST_F(SocketManagerTest, test_ServerDeInit_and_GetServerListenSocket) {
         socketMgr.ServerDeInit(portData);
         socketMgr.GetServerListenSocket(portData);
     }
+}
+
+TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_not_Config) {
+    EnvHostNicConfig envConfig;
+    EnvHostNicConfig &fakeEnvConfig = envConfig;
+    fakeEnvConfig.hcclDeviceSocketPortRange = CfgField<std::vector<SocketPortRange>>{"HCCL_NPU_SOCKET_PORT_RANGE", {}, 
+        [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE"); }};
+    fakeEnvConfig.hcclDeviceSocketPortRange.isParsed = true;
+    MOCKER_CPP(&EnvConfig::GetHostNicConfig).stubs().will(returnValue(fakeEnvConfig));
+    NewRankInfo rankInfo;
+    EXPECT_NO_THROW(SocketManager::ServerInitAll(rankInfo));
+}
+
+TEST_F(SocketManagerTest, Ut_ServerInitAll_Skip_Init_When_Env_Config) {
+    EnvHostNicConfig envConfig;
+    EnvHostNicConfig &fakeEnvConfig = envConfig;
+    fakeEnvConfig.hcclDeviceSocketPortRange = CfgField<std::vector<SocketPortRange>>{"HCCL_NPU_SOCKET_PORT_RANGE", {{16666, 18888}}, 
+        [] (const std::string &s) -> std::vector<SocketPortRange> { return CastSocketPortRange(s, "HCCL_NPU_SOCKET_PORT_RANGE"); }};
+    fakeEnvConfig.hcclDeviceSocketPortRange.isParsed = true;
+    MOCKER_CPP(&EnvConfig::GetHostNicConfig).stubs().will(returnValue(fakeEnvConfig));
+
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
+    MOCKER_CPP(&CommunicatorImpl::GetTopoFilePath)
+        .stubs()
+        .will(returnValue(topoFilePath));
+    MOCKER(HrtGetDevice)
+        .stubs()
+        .will(returnValue(0));
+    RankGraphBuilder rankGraphBuilder;
+    unique_ptr<RankGraph> graph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
+    EXPECT_NE(nullptr, graph);
+    NewRankInfo rankInfo = rankGraphBuilder.GetRankTableInfo()->ranks[0];
+    EXPECT_NO_THROW(SocketManager::ServerInitAll(rankInfo));
 }
