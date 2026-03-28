@@ -26,6 +26,13 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
 
+    /** EID + UBC CTP/RTP：按 commHcclQoS 与 TP/SL 能力做映射；否则保持 false 走旧路径 */
+    bool useUbTpSlMapping{false};
+    /** 通信域 QoS，参与分组时按 0–7 解释 */
+    uint32_t commHcclQos{0};
+    /** SL 档位数 M：0 表示映射路径下由首个 TP 的 get_tp_attr 推导；非 0 为显式覆盖/兜底上限 */
+    uint32_t slLevelCount{0};
+
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
         : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
@@ -34,9 +41,11 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
         Hccl::IpAddress locIpAddr{}, rmtIpAddr{};
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
-        return Hccl::StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
+        return Hccl::StringFormat(
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, ubMap=%u qos=%u mSl=%u]",
             locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+            tpProtocol.Describe().c_str(), static_cast<unsigned>(useUbTpSlMapping),
+            commHcclQos, slLevelCount);
     }
 };
 
@@ -47,6 +56,9 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 using TpHandle = uint64_t;
 struct TpInfo {
     TpHandle tpHandle{0};
+    /** 与 set_tp_attr 应对齐的 SL，经 Jetty priority 下发；非映射路径不设置 */
+    uint8_t mappedJettyPriority{0};
+    bool hasMappedJettyPriority{false};
 
     TpInfo() = default;
     TpInfo(const TpHandle handle)
@@ -61,6 +73,11 @@ public:
     HcclResult ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInfo);
 
 private:
+    enum class TpInfoReqPhase : uint8_t {
+        kWaitList = 0,
+        kWaitTpAttr = 1,
+    };
+
      struct TpInfoCtx {
         TpInfo tpInfo{};
         uint32_t useCnt{0};
@@ -73,19 +90,26 @@ private:
     /*
     * Request上下文，保存查询TP信息相关调用异步接口出参
     * handle: 异步接口调用handle，用于查询处理结果
-    * tpInfoNum: 查询到的TP信息个数，当前为复用TP，只会申请1个
+    * tpInfoNum: 查询到的TP信息个数（RaGetTpInfoListAsync 回填）
     * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
     */
     struct RequestCtx {
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
         std::vector<char> dataBuffer;
+        TpInfoReqPhase reqPhase{TpInfoReqPhase::kWaitList};
+        uint32_t tpAttrBitmap{0};
+        std::vector<char> tpAttrBuf;
+        /** 非 0：来自首个 TP 的 get_tp_attr 或失败兜底，供 K=min(N,M) */
+        uint32_t resolvedSlLevelCount{0};
     };
 
-    using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
-    using ReqCtxMap  = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, RequestCtx>>;
+    using TpInfoByQosKey    = std::unordered_map<uint32_t, TpInfoCtx>;
+    using TpInfoByRmt       = std::unordered_map<Hccl::IpAddress, TpInfoByQosKey>;
+    using InfoCtxMap        = std::unordered_map<Hccl::IpAddress, TpInfoByRmt>;
+    using RequestByQosKey   = std::unordered_map<uint32_t, RequestCtx>;
+    using RequestByRmt      = std::unordered_map<Hccl::IpAddress, RequestByQosKey>;
+    using ReqCtxMap         = std::unordered_map<Hccl::IpAddress, RequestByRmt>;
 
 private:
     TpMgr() = default;
@@ -95,6 +119,8 @@ private:
 
     HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
+    static HcclResult StartGetTpAttrForFirstTp(uint32_t devPhyId, const GetTpInfoParam &param,
+        RequestCtx &reqCtx);
     HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const GetTpInfoParam &param,
         TpInfo &tpInfo);
 

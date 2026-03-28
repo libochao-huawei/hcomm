@@ -27,6 +27,8 @@ public:
 
     /** 建链前写入 HcclChannelDesc::ubcAttr.qos，供 HccpUbCreateJettyAsync 映射 attr.ub.priority */
     void SetHcclQosForCreate(uint32_t qos);
+    /** EID UBC：使用已映射的 SL/priority 直接下发 Jetty，不经 UbJettyPriorityFromHcclQos */
+    void SetMappedJettyPriority(uint8_t priority);
 
     HcclResult CreateJetty();
 

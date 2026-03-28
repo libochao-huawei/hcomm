@@ -124,32 +124,30 @@ HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
         case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
-
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::TP_INFO_GETTING: {
+            auto ret = GetTpInfo();
             if (ret == HcclResult::HCCL_E_AGAIN) {
                 innerStatus_ = InnerStatus::TP_INFO_GETTING;
                 break;
             }
             CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
+
+            ret = CreateJetty();
+            if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::JETTY_CREATING;
+                break;
+            }
+            CHK_RET(ret);
             innerStatus_ = InnerStatus::EXCHANGEABLE;
             status_      = CcuConnStatus::EXCHANGEABLE;
             break;
         }
-        case InnerStatus::TP_INFO_GETTING: {
-            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::JETTY_CREATING: {
+            auto ret = CreateJetty();
             if (ret == HcclResult::HCCL_E_AGAIN) {
-                break; // 状态不改变退出，下轮状态机进入继续执行
+                break;
             }
             CHK_RET(ret);
-
             innerStatus_ = InnerStatus::EXCHANGEABLE;
             status_      = CcuConnStatus::EXCHANGEABLE;
             break;
@@ -169,7 +167,11 @@ HcclResult CcuConnection::CreateJetty()
 
     isJettyCreated_ = true;
     for (size_t i = 0; i < jettyNum_; i++) {
-        ccuJettys_[i]->SetHcclQosForCreate(hcclQos_); //Jetty中携带hcclQos
+        if (tpInfo_.hasMappedJettyPriority) {
+            ccuJettys_[i]->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
+        } else {
+            ccuJettys_[i]->SetHcclQosForCreate(hcclQos_);
+        }
         auto ret = ccuJettys_[i]->CreateJetty();
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏
@@ -199,6 +201,17 @@ void CcuConnection::GenerateLocalPsn()
     jettyImportCfg_.localPsn = GetRandomNum();
 }
 
+GetTpInfoParam CcuConnection::MakeGetTpInfoParam() const
+{
+    GetTpInfoParam param{locAddr_, rmtAddr_, tpProtocol_};
+    const bool eidPair = (locAddr_.type == COMM_ADDR_TYPE_EID && rmtAddr_.type == COMM_ADDR_TYPE_EID);
+    param.useUbTpSlMapping = eidPair && hcclQos_ <= 7U;
+    param.commHcclQos = hcclQos_ & 7U;
+    /** 0：M 由 TpMgr 对首个 tp_handle 的 RaGetTpAttrAsync 返回 attrBitmap 推导；非 0 可与推导值取 min 作上限 */
+    param.slLevelCount = 0U;
+    return param;
+}
+
 HcclResult CcuConnection::GetTpInfo()
 {
     if (tpProtocol_ == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
@@ -208,7 +221,7 @@ HcclResult CcuConnection::GetTpInfo()
     }
 
     HcclResult ret = TpMgr::GetInstance(devPhyId_)
-        .GetTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+        .GetTpInfo(MakeGetTpInfoParam(), tpInfo_);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         // 此处可能刷屏，非必要勿加日志
         return ret;
@@ -475,7 +488,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 
     if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
         (void)TpMgr::GetInstance(devPhyId_)
-            .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+            .ReleaseTpInfo(MakeGetTpInfoParam(), tpInfo_);
         tpInfo_.tpHandle = 0;
     }
 

@@ -69,6 +69,7 @@ private:
     HcclResult    GetLocalCcuRmaBufferInfo();
     HcclResult    CreateJetty();
     HcclResult    GetTpInfo();
+    GetTpInfoParam MakeGetTpInfoParam() const;
     void          GenerateLocalPsn();
     void          ResetRequestCtxs();
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
