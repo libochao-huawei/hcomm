@@ -325,7 +325,7 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(&HcclOneSidedService::AddOpCounterMems).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
 

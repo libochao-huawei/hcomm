@@ -651,15 +651,11 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
     return HCCL_SUCCESS;
 }
 
-bool CommunicatorImpl::IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const
+static HcclResult MatchAclgraph(const rtStream_t stream, bool &isCapture)
 {
-    bool isCapture = false;
     rtModel_t rtModel = nullptr;
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
-    if (isCapture && opWhiteSet.find(opParams.opType) != opWhiteSet.end()) {
-        return true;
-    }
-    return false;
+    return HCCL_SUCCESS;
 }
 
 HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOpParams &opParams)
@@ -699,7 +695,10 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
-        if (TryFastCcuLaunch(opParams, stream)) {
+        // 判断是否为aclgraph
+        bool isCapture = false; // isCapture为true表示aclgraph
+        CHK_RET(MatchAclgraph(stream, isCapture));
+        if (!isCapture && TryFastCcuLaunch(opParams, stream)) { // 若是aclgraph则不走快速下发
             return HcclResult::HCCL_SUCCESS;
         }
         curOpParams = opParams;
@@ -715,7 +714,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
 
         // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的,会切换到图模式
-        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && IsOpSupportZeroCopyAlg(opParams, stream)) {
+        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && isCapture && (opWhiteSet.find(opParams.opType) != opWhiteSet.end())) {
             std::string tag = opParams.opTag + "_" + std::to_string(tagResourceIndex_++);
             OffloadResourcePre(tag, opParams);
             HCCL_INFO("[CommunicatorImpl][%s]current op support zero copy in aicpu aclgraph, change to offload", __func__);
@@ -743,7 +742,8 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             aivTag = 1;
         }
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, true);
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, true);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
@@ -962,6 +962,9 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
 
         // 更新开关状态
         UpdateProfStat();
+        // 判断是否为aclgraph(aicpu场景零拷贝会切图模式)
+        bool isCapture = false; // isCapture为true表示aclgraph，profiling需要
+        CHK_RET(MatchAclgraph(stream, isCapture));
         HCCL_INFO("CommunicatorImpl::LoadOffloadCollOp opParams dataType[%s]", opParams.dataType.Describe().c_str());
         CovertToCurrentCollOperator(opTag, opParams, OpMode::OFFLOAD);
         HCCL_INFO("CommunicatorImpl::LoadOffloadCollOp currentCollOperator dataType[%s]", currentCollOperator->dataType.Describe().c_str());
@@ -1000,7 +1003,8 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, false);
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, isCapture); // profiling对于aclgraph场景的处理与单算子一致
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         opIndex++;
@@ -1227,7 +1231,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
             }
         }
     }
-    HCCL_INFO("CommunicatorImpl::CovertToCurrentCollOperator currentCollOperator dataType[%s]", currentCollOperator->dataType.Describe().c_str());
+    HCCL_INFO("CommunicatorImpl::%s op dataType[%s], dataCount[%llu]", __func__, currentCollOperator->dataType.Describe().c_str(), currentCollOperator->dataCount);
 }
 
 void CommunicatorImpl::InitCommonData(const CommParams &commParams, const HcclCommConfig &commConfig)
@@ -1277,14 +1281,22 @@ void CommunicatorImpl::CheckRankGraph() const
                            num);
         THROW<InvalidParamsException>(msg);
     }
+    CheckRankGraphAddrs();
 }
 
-void CommunicatorImpl::CheckRankTableAddrs() const
+void CommunicatorImpl::CheckRankGraphAddrs() const
 {
-    if (ranktableInfo == nullptr) {
-        HCCL_WARNING("[CommunicatorImpl][%s] ranktableInfo is nullptr, skip.", __func__);
+    if (rankGraph == nullptr || ranktableInfo == nullptr) {
+        HCCL_WARNING("[CommunicatorImpl][%s] rankGraph or ranktableInfo is nullptr, skip.", __func__);
         return;
     }
+
+    if (rankGraph->GetRankSize() == 1) {
+        HCCL_WARNING("[CommunicatorImpl][%s] single rank no need do this check!", __func__);
+        return;
+    }
+    
+    // 仅能获取到当前进程所在卡的ip，每个卡独立check自己的部分
     std::unordered_set<Eid> localEidSet;
     NewRankInfo localRankInfo;
     for (auto &rank : ranktableInfo->ranks) {
@@ -1303,30 +1315,27 @@ void CommunicatorImpl::CheckRankTableAddrs() const
         return;
     }
 
-    // 仅能获取到当前进程所在卡的ip，每个卡独立check自己的部分
-    for (auto &levelInfo : localRankInfo.rankLevelInfos) {
-        for (auto &addressInfo : levelInfo.rankAddrs) {
-            HCCL_DEBUG("[CommunicatorImpl][%s]Ip addres check: devPhyId[%u], addressInfo %s", 
-                __func__, devPhyId, addressInfo.Describe().c_str());
-            if (localEidSet.count(addressInfo.addr.GetEid()) == 0) {
-                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
-                            std::vector<std::string>({addressInfo.addr.GetIpStr(), "addr", "A right ip address"}));
-                THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"
-                    "the ip address %s of ranktable in rank %u is error!", 
-                    __func__, addressInfo.addr.Describe().c_str(), devPhyId));
-            }
+    const std::shared_ptr<NetInstance::Peer> &peer = rankGraph->GetPeer(myRank);
+    const std::vector<std::shared_ptr<NetInstance::ConnInterface>> &interfaces = peer->GetIfaces();
+    for(auto &interface : interfaces) {
+        if (interface->GetPos() == AddrPosition::DEVICE && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                          std::vector<std::string>({interface->GetAddr().GetIpStr(), "addr", "A right ip address"}));
+            THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"
+                                                       "the ip address %s of ranktable in rank %u is error!",
+                                                       __func__, interface->GetAddr().Describe().c_str(), devPhyId));
         }
     }
 }
 
 
-u32 GetLocalDieId(PortData&& port)
+u32 GetLocalDieId(PortData&& port, LinkProtocol linkProtocol)
 {
     auto     devLogicId = HrtGetDevice();
     uint32_t devPhyId   = HrtGetDevicePhyIdByIndex(devLogicId);
  
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
-    auto  rdmaHandle    = rdmaHandleMgr.Get(devPhyId, port);
+    auto  rdmaHandle    = rdmaHandleMgr.Get(devPhyId, port, linkProtocol);
     auto  dieId         = rdmaHandleMgr.GetDieAndFuncId(rdmaHandle).first;
     return dieId;
 }
@@ -1348,9 +1357,10 @@ std::string CommunicatorImpl::GetTopoFilePath() const
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
-    try {
+    std::ifstream file(filePath);
+    if (file.good()) {
         jsonParser.ParseFileToJson(filePath, parseJson);
-    } catch (...) {
+    } else {
         const u32 maxBuffLen = 10 * 1024 * 1024;
         size_t bufSize;
         s32 result = TopoAddrInfoGetSize(devPhyId, &bufSize); // 获取rankInfo大小，用于提前分配内存
@@ -1389,7 +1399,6 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     topoInfo = rankGraphBuilder.GetTopoInfo(); // 获取topo信息
     HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] topoInfo[%s]", topoInfo->Describe().c_str());
     rankSize = rankGraph->GetRankSize();
-    CheckRankTableAddrs();
     CheckRankGraph();
     SaveTopoDesc(id);
     std::vector<LinkData> fullLinks = GetFullMeshLinks();
@@ -3339,7 +3348,7 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
             if (iface->GetPos() == AddrPosition::HOST || *(iface->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
                 continue;
             }
-            u32 dieId = GetLocalDieId({myRank, *iface});
+            u32 dieId = GetLocalDieId({myRank, *iface}, *(link->GetLinkProtocols().begin()));
             HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get link dieid[%u]", dieId);
             iface->SetLocalDieId(dieId); 
         }

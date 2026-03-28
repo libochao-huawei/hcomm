@@ -60,6 +60,8 @@ HcclResult ChannelProcess::WithChannelByHandleLocked(ChannelHandle inHandle, Fun
 HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, CommEngine engine,
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *outHandles)
 {
+    CHK_PTR_NULL(endpointHandle);
+
     for (uint32_t i = 0; i < channelNum; ++i) {
         std::unique_ptr<Channel> tmpPtr = nullptr;
         CHK_RET(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
@@ -130,9 +132,12 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum, 
-    CommEngine engine) 
+HcclResult ChannelProcess::ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum,
+    CommEngine engine)
 {
+    CHK_PTR_NULL(targetChannels);
+    CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);
+
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
 
@@ -194,6 +199,10 @@ HcclResult ChannelProcess::CombineHostMemory(const std::vector<std::vector<char>
 HcclResult ChannelProcess::FillChannelD2HMap(ChannelHandle *deviceChannelHandles,
     ChannelHandle *hostChannelHandles, uint32_t listNum)
 {
+    CHK_PTR_NULL(deviceChannelHandles);
+    CHK_PTR_NULL(hostChannelHandles);
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
+
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
     for (uint32_t idx = 0; idx < listNum; idx++) {
         auto deviceChannelHandle = deviceChannelHandles[idx];
@@ -270,6 +279,10 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
 HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
     uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling)
 {
+    CHK_PTR_NULL(channelHandles);
+    CHK_PTR_NULL(hostChannelHandles);
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
+
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
@@ -351,9 +364,13 @@ HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHand
         binHandle, "RunAicpuChannelInitV2", false);
 }
 
-HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
-    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle) 
+HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
+    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle)
 {
+    CHK_PTR_NULL(targetChannels);
+    CHK_PTR_NULL(userChannels);
+    CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);
+
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle));
     } else {
@@ -387,6 +404,10 @@ HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, Hcom
 
 HcclResult ChannelProcess::ChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
+    CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(memNum);
+
     return WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
         channel.GetUserRemoteMem(remoteMem, memTag, memNum);

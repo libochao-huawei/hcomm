@@ -20,6 +20,9 @@ struct rdma_lite_device_cq_init_attr {
     unsigned int ai_op_support;
     unsigned int grp_id;
     unsigned int cq_cstm_flag;
+    unsigned int use_resv_mem;
+    unsigned int resv_mem_pool_id;
+    unsigned int resv[16U];
 };
 
 struct rdma_lite_device_buf {
@@ -78,6 +81,9 @@ struct roce_mem_cq_qp_attr {
     unsigned int recv_qp_depth;
     unsigned int recv_sge_num;
     int mem_align; // 0,1:4KB, 2:2MB
+    unsigned int use_resv_mem;
+    unsigned int resv_mem_pool_id;
+    unsigned int resv[16U];
 };
 
 struct dev_cap_info {

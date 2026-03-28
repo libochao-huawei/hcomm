@@ -22,18 +22,22 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_thread_api.cc
     comms/endpoint_pairs/ut_endpoint_pair.cc
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
-    comms/endpoint_pairs/channels/ut_channel_process.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
     coll_comms/rank_pairs/ut_rank_pair.cc
-    coll_comms/communicator/ut_coll_comm.cc
-    coll_comms/communicator/ut_coll_comm_mgr.cc
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
-    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
- 	coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
+    comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
+    comms/api_c_adpt/ut_hcomm_endpoint_test.cc
+    comms/api_c_adpt/ut_hcomm_mem_test.cc
+    comms/api_c_adpt/ut_hcomm_channel_test.cc
+    comms/api_c_adpt/ut_hcomm_engine_ctx_test.cc
+    comms/api_c_adpt/ut_hcomm_dfx_test.cc
+    coll_comms/communicator/ut_coll_comm_test.cc
+    comms/endpoint_pairs/channels/ut_channel_process_test.cc
+    coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})

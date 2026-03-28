@@ -46,7 +46,7 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
     return res;
 }
 
-RdmaHandle RdmaHandleManager::Get(u32 devPhyId, const PortData &localPort)
+RdmaHandle RdmaHandleManager::Get(u32 devPhyId, const PortData &localPort, LinkProtocol linkProtocol)
 {
     LinkProtoType localProto = localPort.GetProto();
     if (devPhyId > rdmaHandleMap.size() - 1 || localProto == LinkProtoType::HCCS_PCIE) {

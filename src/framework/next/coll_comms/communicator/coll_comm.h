@@ -99,6 +99,7 @@ private:
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
+    HcclResult InitKfcAndRegisterCollComm();
 
     void* comm_{nullptr};
     uint32_t rankId_{};
