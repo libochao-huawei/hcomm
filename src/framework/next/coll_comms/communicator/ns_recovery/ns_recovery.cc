@@ -137,7 +137,7 @@ HcclResult NsRecoveryProcessor::Resume(aclrtBinHandle binHandle)
     for (auto& recoveryData : nsRecoveryDatas_) {
         if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
             for (auto& handleData : recoveryData.second) {
-                CHK_RET(ChannelProcess::ChannelUpdateKernelLaunch(handleData.channelHandles_.data(), handleData.hostChannelHandleList_.data(), 
+                CHK_RET(hcomm::ChannelProcess::ChannelUpdateKernelLaunch(handleData.channelHandles_.data(), handleData.hostChannelHandleList_.data(), 
                 handleData.channelNum_, handleData.commTag_, binHandle));
             }
         }
