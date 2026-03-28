@@ -33,17 +33,19 @@ HcclResult EndpointPair::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t listenPort, Hccl::Socket*& socket)
+HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t listenPort,
+    u32 reuseIdx, Hccl::Socket*& socket)
 {
     Hccl::LinkData linkData = BuildDefaultLinkData();
-    CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData));
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, socketTag);
+    CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
+    std::string linkTag = socketTag + "_" + linkData.GetReuseId();
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
 
 HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
-    const std::string &socketTag, const uint32_t listenPort, Hccl::Socket*& socket)
+    const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket)
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
@@ -53,13 +55,13 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
         } else {
             socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
         }
-        CHK_RET(this->GetSocket(socketTagPrefix, listenPort, socket));
+        CHK_RET(this->GetSocket(socketTagPrefix, listenPort, reuseIdx, socket));
         return HCCL_SUCCESS;
     }
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
-        localEndpointDesc_, remoteEndpointDesc_, linkData));
+        localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
     
     // 复用orion流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
@@ -74,7 +76,8 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
     }
     
     socketMgrCompat_->BatchCreateSockets({linkData}); // 内部同时处理server端和connect端两类socket
-    Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, socketTag);
+    std::string linkTag = socketTag + "_" + linkData.GetReuseId();
+    Hccl::SocketConfig socketConfig(linkData.GetRemoteRankId(), linkData, linkTag);
     socket = socketMgrCompat_->GetConnectedSocket(socketConfig);
     CHK_PTR_NULL(socket);
     EXCEPTION_HANDLE_END
