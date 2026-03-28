@@ -87,7 +87,7 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_Normal_Expect_SUCCESS)
 
 TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_InnerReturnsError_Expect_ForwardError)
 {
-    MOCKER_CPP(&HcommChannelGetUserRemoteMem).stubs().will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(&HcommChannelGetUserRemoteMem).stubs().will(returnValue(static_cast<HcommResult>(HCCL_E_INTERNAL)));
 
     auto myRank = CreateMyRank();
     ChannelHandle channel = 0x12345;
