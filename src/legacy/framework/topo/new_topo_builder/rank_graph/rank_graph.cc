@@ -283,7 +283,7 @@ HcclResult RankGraph::GetNetInstanceList(const u32 netLayer, vector<u32> &instSi
     instSizeList.clear();
     listSize = 0;
     if(netInsts_.at(netLayer).size() == 0){
-        HCCL_WARNING("[RankGraph][GetLayerRanks] Rankgraph has no net instance on layer %u");
+        HCCL_WARNING("[RankGraph][GetLayerRanks] Rankgraph has no net instance on layer %u", netLayer);
         return HCCL_E_PARA;
     }
     for (const auto& netInst : netInsts_.at(netLayer)) {
