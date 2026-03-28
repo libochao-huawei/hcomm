@@ -39,15 +39,15 @@ public:
 
     SocketManager(u32 localRank, u32 devicePhyId, u32 deviceLogicId, const std::string &socketTag);
 
-    static void SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap);
+    static void SetDeviceServerListenPortMap(const std::unordered_map<PortData, u32> &rankListenPortMap);
 
-    static std::unordered_map<u32, u32>& GetDeviceServerListenPortMap();
+    static std::unordered_map<PortData, u32>& GetDeviceServerListenPortMap();
 
     void BatchCreateSockets(const vector<LinkData> &links);
 
     void ServerInit(PortData &localPort);
 
-    void ServerInitAll(const vector<LinkData> &links, u32 &linstenPort) const;
+    static void ServerInitAll(NewRankInfo &rankInfo);
 
     bool ServerDeInit(PortData &localPort) const;
 
