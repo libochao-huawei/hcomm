@@ -25,6 +25,8 @@ CollComm::~CollComm()
 
 HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
 {
+    CHK_PTR_NULL(rankGraph);
+
     EXCEPTION_HANDLE_BEGIN
 
     EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);

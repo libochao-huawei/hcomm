@@ -303,7 +303,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNum_Is_0_expect_Return_HCCL
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNullptr_expect_Return_HCCL_E_PARA)
+TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNullptr_expect_Return_HCCL_E_PTR)
 {
     std::shared_ptr<Thread> Handle;
     bool isDeviceSide{false};
