@@ -10,7 +10,7 @@
 
 #include "ns_recovery.h"
 #include "env_config/env_config.h"
-#include "next/comms/endpoint_pairs/channels/channel_process.h"
+#include "channel_process.h"
 #include "log.h"
 
 namespace hccl 
