@@ -200,13 +200,11 @@ HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle)
 HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem,
     HcommMemHandle *memHandle)
 {
-    EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(mem);
     CHK_PTR_NULL(memHandle);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PTR_NULL(endpoint);
     CHK_RET(endpoint->RegisterMemory(*mem, memTag, reinterpret_cast<void **>(memHandle)));
-    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -372,7 +370,7 @@ HcommResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandl
     // 分配连续的host内存，将序列化的地址放入其中
     hccl::HostMem hostPackBuf = hccl::HostMem::alloc(totalListNum);
     CHK_PTR_NULL(hostPackBuf.ptr());
-    CHK_RET(CombineHostMemory(hostPackBuffers, hostPackBuf));
+    CHK_RET(static_cast<HcclResult>(CombineHostMemory(hostPackBuffers, hostPackBuf)));
     hccl::DeviceMem devicePackBuf = hccl::DeviceMem::alloc(totalListNum);
     CHK_PTR_NULL(devicePackBuf.ptr());
 
@@ -441,7 +439,7 @@ HcommResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandl
         listNum * sizeof(ChannelHandle),
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
 
-    CHK_RET(FillChannelD2HMap(channelHandles, hostChannelHandles, listNum));
+    CHK_RET(static_cast<HcclResult>(FillChannelD2HMap(channelHandles, hostChannelHandles, listNum)));
 
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
@@ -625,7 +623,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32
         if (ret != HCCL_SUCCESS ) {
             HCCL_ERROR("[HcommThreadAlloc] Failed to create thread index %u", i);
             if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
+                CHK_RET(static_cast<HcclResult>(HcommThreadFree(threads, i)));
             }
             return ret;
         }
@@ -633,7 +631,7 @@ HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32
         if (ret != HCCL_SUCCESS ) {
             HCCL_ERROR("[HcommThreadAlloc] Failed to init thread index %u", i);
             if (i != 0) {
-                CHK_RET(HcommThreadFree(threads, i));
+                CHK_RET(static_cast<HcclResult>(HcommThreadFree(threads, i)));
             }
             return ret;
         }
