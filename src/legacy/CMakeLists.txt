@@ -118,6 +118,14 @@ target_compile_options(hccl_v2 PRIVATE
     $<$<CONFIG:Debug>:-g>
 )
 
+target_link_options(hccl_v2 PRIVATE
+ 	-Wl,-z,relro
+ 	-Wl,-z,now
+ 	-Wl,-z,noexecstack
+ 	-Wl,--build-id=none
+ 	$<$<CONFIG:Release>:-s>
+)
+
 # 创建 ccl_dpu 共享动态库
 add_library(ccl_dpu SHARED)
 # 指定 ccl_dpu 需要包含的文件搜索路径
