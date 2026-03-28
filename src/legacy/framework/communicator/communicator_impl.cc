@@ -145,9 +145,6 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitStreamManager();
     InitPreResource();
     InitSocketManager();
-    if (ranktableInfo != nullptr) {
-        SocketManager::SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
-    }
     InitRmaConnManager();
     InitDataBufferManager();
     InitNotifyFixedValue();
@@ -330,6 +327,7 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetSubCommDeviceServerListenPortMap(rankIds));
             return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
@@ -351,6 +349,7 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             HCCL_INFO("[%s]rankIds size[%u], rankIdsVec size[%u]", __func__, rankIds.size(), subCommImpl->rankIdsVec.size());
             // 初始化子通信域
             CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetSubCommDeviceServerListenPortMap(rankIds));
             return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
@@ -1350,7 +1349,7 @@ void CommunicatorImpl::InitRankGraph(const string &ranktableM)
     InitRankGraph(rankTableInfo);
 }
 
-std::string CommunicatorImpl::GetTopoFilePath() const
+std::string CommunicatorImpl::GetTopoFilePath()
 {
     HCCL_INFO("[CommunicatorImpl::%s] start.", __func__);
 
@@ -1361,6 +1360,8 @@ std::string CommunicatorImpl::GetTopoFilePath() const
     if (file.good()) {
         jsonParser.ParseFileToJson(filePath, parseJson);
     } else {
+        auto devLogicId  = HrtGetDevice();
+        auto devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
         const u32 maxBuffLen = 10 * 1024 * 1024;
         size_t bufSize;
         s32 result = TopoAddrInfoGetSize(devPhyId, &bufSize); // 获取rankInfo大小，用于提前分配内存
@@ -1405,13 +1406,6 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     for (auto link : fullLinks) {
         HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] link[%s]", link.Describe().c_str());
     }
-}
-
-HcclResult CommunicatorImpl::InitDeviceListenPort(u32 &linstenPort) const
-{
-    std::vector<LinkData> fullLinks = GetFullMeshLinks();
-    TRY_CATCH_RETURN(GetSocketManager().ServerInitAll(fullLinks, linstenPort));
-    return HCCL_SUCCESS;
 }
 
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)
@@ -1608,6 +1602,9 @@ void CommunicatorImpl::DeInitPreResource()
 void CommunicatorImpl::InitSocketManager()
 {
     socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
+    if (ranktableInfo != nullptr) {
+        socketManager->SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+    }
 }
 
 void CommunicatorImpl::InitRmaConnManager()

@@ -121,8 +121,15 @@ void AddressInfo::IPV6ToAddr(std::string address)
 
 std::string AddressInfo::Describe() const
 {
-    return StringFormat("AddressInfo[addrType=%s, addr=%s, planeId=%s,portsize=%u]",
-                        addrType.Describe().c_str(), addr.Describe().c_str(), planeId.c_str(),ports.size());
+    std::string portStr = "";
+    for (auto &p : ports) {
+        if (!portStr.empty()) {
+            protocolStr += "|";
+        }
+        portStr += p;
+    }
+    return StringFormat("AddressInfo[addrType=%s, addr=%s, planeId=%s, portsize=%u, ports=%s listenPort=%u]",
+                        addrType.Describe().c_str(), addr.Describe().c_str(), planeId.c_str(), ports.size(), portStr.c_str(), listenPort);
 }
 
 AddressInfo::AddressInfo(BinaryStream &binStream)
@@ -140,6 +147,7 @@ AddressInfo::AddressInfo(BinaryStream &binStream)
         ports.emplace(port);
     }
     binStream>>planeId;
+    binStream>>listenPort;
 }
 
 void AddressInfo::GetBinStream(BinaryStream &binStream) const
@@ -155,6 +163,7 @@ void AddressInfo::GetBinStream(BinaryStream &binStream) const
         binStream<<it;
     }
     binStream<<planeId;
+    binStream<<listenPort;
 }   
 
 } // namespace Hccl
