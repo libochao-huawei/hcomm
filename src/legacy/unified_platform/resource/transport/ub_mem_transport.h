@@ -107,7 +107,6 @@ private:
 
     MAKE_ENUM(UbRmtBufType, NOTIFY, BUFFER, CNT_NOTIFY)
  
-    u32             bufferPos_{0};    // 打包使用的 buffer pos
     std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
     RemoteBufferVec rmtNotifyVec;     // 远端普通 notify
     RemoteBufferVec rmtBufferVec;     // 远端 buffer
