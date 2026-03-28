@@ -17,6 +17,7 @@
 #include "dlprof_func.h"
 #include "user_remote_mem_getter.h"
 #include "exception_util.h"
+#include "env_config/env_config.h"
 
 namespace Hccl {
 constexpr u32    FINISH_MSG_SIZE             = 128;
@@ -62,7 +63,7 @@ HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
     }
     HCCL_INFO("[UbMemTransport][FillTagVec] bufferNum[%u]", bufferNum);
     localUserMemTag_.reserve(bufferNum);
-    memTagTemp_.clear();
+    locMemTagTemp_.clear();
     uint32_t index = 0;
     for (auto &localRmaBuffer : bufferVec) {
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
@@ -575,7 +576,7 @@ bool UbMemTransport::RecvDataProcess()
 void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {
-    binaryStream << bufferNum;
+    binaryStream << static_cast<u32>(bufferVec.size());
     HCCL_INFO("start pack %s bufferVec", transportType.Describe().c_str());
     u32 pos = 0;
     for (auto &it : bufferVec) {
@@ -678,9 +679,10 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
         }
     }
 
+    rmtMemTagTemp_.clear();
     if (type == UbRmtBufType::BUFFER) {
-        remoteUserMemTag_.resize(rmtNum);
-        for (auto& tag : remoteUserMemTag_) {
+        rmtMemTagTemp_.resize(rmtNum);
+        for (auto& tag : rmtMemTagTemp_) {
             for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; ++i) {
                 u8 byte;
                 binaryStream >> byte;
@@ -688,6 +690,7 @@ void UbMemTransport::RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStre
             }
         }
     }
+    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtMemTagTemp_.begin(), rmtMemTagTemp_.end());
 }
 
 bool UbMemTransport::ConnVecUnpackProc(BinaryStream &binaryStream)
@@ -970,14 +973,11 @@ HcclResult UbMemTransport::CheckSocketStatus()
 
         // 1. 检查超时
         if (socketStatus == SocketStatus::TIMEOUT) {
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - startTime).count();
-        HCCL_ERROR("[%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
-            __func__, timeout, elapsed, retryCount);
-        Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
-        CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
-            HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
-        return HCCL_E_TIMEOUT;
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, elapsed, retryCount);
+            return HCCL_E_TIMEOUT;
         }
 
         retryCount++;
@@ -986,7 +986,7 @@ HcclResult UbMemTransport::CheckSocketStatus()
         if (socketStatus == SocketStatus::OK){
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[%s] all channels connected successfully, elapsed[%lld]ms, retryCount[%u]",
+            HCCL_INFO("[%s] success, elapsed[%lld]ms, retryCount[%u]",
                 __func__, elapsed, retryCount);
             break;
         }
@@ -996,13 +996,14 @@ HcclResult UbMemTransport::CheckSocketStatus()
 
 HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp)
 {
-    CHK_RET(FillTagVec(bufferVecTemp, memTagTemp_));
+    CHK_RET(FillTagVec(bufferVecTemp, locMemTagTemp_));
     HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
     sendData.clear();
     BinaryStream sendStream;
+    std::vector<std::unique_ptr<RemoteUbRmaBuffer>> rmtBufferTemp{};
     TRY_CATCH_RETURN(
         [&]() -> void {
-            BufferVecPack(sendStream, bufferVecTemp, memTagTemp_);
+            BufferVecPack(sendStream, bufferVecTemp, locMemTagTemp_);
             sendStream.Dump(sendData);
             u32 sendSize = sendData.size();
             socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
@@ -1012,13 +1013,13 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
                 result);
-            recvData.clear();
             RecvDataSize();
             result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
                 result);
             SendExchangeData();
+            recvData.clear();
             result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
@@ -1028,11 +1029,13 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
             CHK_RET_THROW(InternalException,
                 StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
                 result);
-            BinaryStream recvStream;
-            RmtBufferVecUnpackProc(bufferVecTemp.size(), recvStream, rmtBufferVec, UbRmtBufType::BUFFER);
+            BinaryStream recvStream(recvData);
+            RmtBufferVecUnpackProc(bufferNum, recvStream, rmtBufferTemp, UbRmtBufType::BUFFER);
         }());
+    rmtBufferVec.insert(rmtBufferVec.end(), std::make_move_iterator(rmtBufferTemp.begin()),
+        std::make_move_iterator(rmtBufferTemp.end()));
     commonLocRes.bufferVec.insert(commonLocRes.bufferVec.end(), bufferVecTemp.begin(), bufferVecTemp.end());
-    localUserMemTag_.insert(localUserMemTag_.end(), memTagTemp_.begin(), memTagTemp_.end());
+    localUserMemTag_.insert(localUserMemTag_.end(), locMemTagTemp_.begin(), locMemTagTemp_.end());
     cacheValid_ = false;
     return HCCL_SUCCESS;
 }

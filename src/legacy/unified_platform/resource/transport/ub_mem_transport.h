@@ -107,14 +107,16 @@ private:
 
     MAKE_ENUM(UbRmtBufType, NOTIFY, BUFFER, CNT_NOTIFY)
  
-    std::mutex remoteMemsMutex_;     // 远端内存列表互斥锁
-    RemoteBufferVec rmtNotifyVec;    // 远端普通 notify
-    RemoteBufferVec rmtBufferVec;    // 远端 buffer
-    RemoteBufferVec rmtCntNotifyVec; // 远端 cnt Notify
-    LocalBufferVec  locBufferVec;    // 本端 buffer
+    u32             bufferPos_{0};    // 打包使用的 buffer pos
+    std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
+    RemoteBufferVec rmtNotifyVec;     // 远端普通 notify
+    RemoteBufferVec rmtBufferVec;     // 远端 buffer
+    RemoteBufferVec rmtCntNotifyVec;  // 远端 cnt Notify
+    LocalBufferVec  locBufferVec;     // 本端 buffer
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> memTagTemp_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locMemTagTemp_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> rmtMemTagTemp_{};
     bool                         cacheValid_ = false; // GetUserRemoteMem 的缓存标识
     std::vector<CommMem>         remoteUserMems_;     // 内存基本信息缓存
     std::vector<std::string>     tagCopies_;          // 储存 Tag 字符串副本
