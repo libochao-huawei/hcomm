@@ -424,6 +424,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     } else {
         mStreamPtr = &stream;
     }
+    HCCL_ERROR("AicpuKernelLaunch freeStream is %s", comm->GetAicpuStreamManager().GetFreeStream()->Describe().c_str());
     auto& mStream = *mStreamPtr;
 
     std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
