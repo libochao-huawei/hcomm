@@ -112,28 +112,6 @@ inline HcclResult CommLinkInit(CommLink *commLink, uint32_t linkNum)
 }
 
 /**
- * @brief 获取通信域中自己的rankId
- * @param[in] comm 通信域句柄
- * @param[out] rank 自己的rankId
- * @return HcclResult 执行结果状态码
- */
-extern HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank);
-
-/**
- * @brief 给定通信域，返回该通信域的rank数量
- * @param[in] comm 通信域
- * @param[out] rankSize 该通信域包含的rank数量
- * @return HcclResult 执行结果状态码
- * @code {.c}
- * // 例如4个server(8卡)的通信域
- * uint32_t rankSize;
- * HcclGetRankSize(comm, &rankSize);
- * // rankSize = 32
- * @endcode
- */
-extern HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize);
-
-/**
  * @brief 给定通信域，查询本rank在该通信域中的网络层次，返回分层信息
  * @param[in] comm 通信域
  * @param[out] netLayers 通信域中包含的通信网络层次，返回一个list，包含layer编号

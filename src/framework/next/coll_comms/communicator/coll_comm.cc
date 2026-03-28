@@ -31,6 +31,8 @@ CollComm::~CollComm()
 
 HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
 {
+    CHK_PTR_NULL(rankGraph);
+
     EXCEPTION_HANDLE_BEGIN
 
     CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
@@ -91,6 +93,7 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 
 HcclResult CollComm::DestroyAicpuComm()
 {
+    CHK_PTR_NULL(callbacks_.getAicpuCommState);
     if (callbacks_.getAicpuCommState()) {
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);

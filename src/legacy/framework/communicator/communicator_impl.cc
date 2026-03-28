@@ -1231,7 +1231,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
             }
         }
     }
-    HCCL_INFO("CommunicatorImpl::CovertToCurrentCollOperator currentCollOperator dataType[%s]", currentCollOperator->dataType.Describe().c_str());
+    HCCL_INFO("CommunicatorImpl::%s op dataType[%s], dataCount[%llu]", __func__, currentCollOperator->dataType.Describe().c_str(), currentCollOperator->dataCount);
 }
 
 void CommunicatorImpl::InitCommonData(const CommParams &commParams, const HcclCommConfig &commConfig)
@@ -1329,13 +1329,13 @@ void CommunicatorImpl::CheckRankGraphAddrs() const
 }
 
 
-u32 GetLocalDieId(PortData&& port)
+u32 GetLocalDieId(PortData&& port, LinkProtocol linkProtocol)
 {
     auto     devLogicId = HrtGetDevice();
     uint32_t devPhyId   = HrtGetDevicePhyIdByIndex(devLogicId);
  
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
-    auto  rdmaHandle    = rdmaHandleMgr.Get(devPhyId, port);
+    auto  rdmaHandle    = rdmaHandleMgr.Get(devPhyId, port, linkProtocol);
     auto  dieId         = rdmaHandleMgr.GetDieAndFuncId(rdmaHandle).first;
     return dieId;
 }
@@ -3348,7 +3348,7 @@ void CommunicatorImpl::AppendLocalDieIdForLinks()
             if (iface->GetPos() == AddrPosition::HOST || *(iface->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
                 continue;
             }
-            u32 dieId = GetLocalDieId({myRank, *iface});
+            u32 dieId = GetLocalDieId({myRank, *iface}, *(link->GetLinkProtocols().begin()));
             HCCL_INFO("[CommunicatorImpl][AppendLocalDieIdForLinks] get link dieid[%u]", dieId);
             iface->SetLocalDieId(dieId); 
         }
