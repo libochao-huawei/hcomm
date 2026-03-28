@@ -30,8 +30,8 @@
 #include "aiv_reduce_scatter_crossnode_91093_graph.h"
 #include "aiv_reduce_scatter_91093_deter.h"
 
-#define AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF(type) \
-extern "C" __global__ __aicore__ void aiv_reduce_scatter_##type(KERNEL_ARGS_DEF) { \
+#define AIV_REDUCE_SCATTER_KERNEL_DEF(type) \
+__aicore__ inline void aiv_reduce_scatter_##type##_inner(KERNEL_ARGS_DEF) { \
     if (devType == DEV_TYPE_910B && deterministic == 1) { \
         if (rankSize * len * sizeof(type) < AIV_REDUCE_SCATTER_DETER_SMALL_SIZE) { \
             return aiv_reduce_scatter_deter_910b_smalldata<type>(KERNEL_ARGS_CALL); \
@@ -60,11 +60,10 @@ extern "C" __global__ __aicore__ void aiv_reduce_scatter_##type(KERNEL_ARGS_DEF)
             return aiv_reduce_scatter_91093_smalldata<type>(KERNEL_ARGS_CALL); \
         } \
     } \
-} \
-EXPORT_AIV_META_INFO(aiv_reduce_scatter_##type)
+}
 
-#define AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF_A3(type) \
-extern "C" __global__ __aicore__ void aiv_reduce_scatter_cn_##type(KERNEL_ARGS_DEF_A3) { \
+#define AIV_REDUCE_SCATTER_KERNEL_DEF_A3(type) \
+__aicore__ inline void aiv_reduce_scatter_cn_##type##_inner(KERNEL_ARGS_DEF_A3) { \
     if (deterministic == 1){ \
         return aiv_reduce_scatter_91093_deter<type>(KERNEL_ARGS_CALL_A3); \
     } \
@@ -72,8 +71,25 @@ extern "C" __global__ __aicore__ void aiv_reduce_scatter_cn_##type(KERNEL_ARGS_D
         return aiv_reduce_scatter_crossnode_91093<type>(KERNEL_ARGS_CALL_A3); \
     } \
     return aiv_reduce_scatter_crossnode_91093_graph<type>(KERNEL_ARGS_CALL_A3); \
-} \
-EXPORT_AIV_META_INFO(aiv_reduce_scatter_cn_##type)
+}
+
+#define AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF(type) \
+    AIV_REDUCE_SCATTER_KERNEL_DEF(type); \
+    GLOBAL_FUNC_DEF_A2(aiv_reduce_scatter_##type); \
+    SK_BIND_FUNC_DEF_A2(aiv_reduce_scatter_##type, 1); \
+    SK_BIND_FUNC_DEF_A2(aiv_reduce_scatter_##type, 2); \
+    SK_BIND_FUNC_DEF_A2(aiv_reduce_scatter_##type, 3); \
+    SK_BIND_FUNC_DEF_A2(aiv_reduce_scatter_##type, 4); \
+    SuperKernelBind(aiv_reduce_scatter_##type)
+
+#define AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF_A3(type) \
+    AIV_REDUCE_SCATTER_KERNEL_DEF_A3(type); \
+    GLOBAL_FUNC_DEF_A3(aiv_reduce_scatter_cn_##type); \
+    SK_BIND_FUNC_DEF_A3(aiv_reduce_scatter_cn_##type, 1); \
+    SK_BIND_FUNC_DEF_A3(aiv_reduce_scatter_cn_##type, 2); \
+    SK_BIND_FUNC_DEF_A3(aiv_reduce_scatter_cn_##type, 3); \
+    SK_BIND_FUNC_DEF_A3(aiv_reduce_scatter_cn_##type, 4); \
+    SuperKernelBind(aiv_reduce_scatter_cn_##type)
 
 // 定义算子各数据类型Kernel入口
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF);

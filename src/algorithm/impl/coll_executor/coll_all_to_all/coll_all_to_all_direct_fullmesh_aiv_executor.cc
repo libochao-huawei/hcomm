@@ -105,7 +105,7 @@ HcclResult CollAlltoAllDirectFullmeshAIVExecutor::CalNumBlocks(u32& numBlocks, u
         HCCL_ERROR("[CollAlltoAllDirectFullmeshAIVExecutor][%s]aivCore[%u] is invalid, at least need[%u].", __func__,
         numBlocks_, numBlocks), HCCL_E_PARA);
  
-    HCCL_INFO("[CollAlltoAllDirectFullmeshAIVExecutor][%s] numBlocks is set to [%u], limit[%u], best[%u]", __func__,
+    HCCL_INFO("[CollAlltoAllDirectFullmeshAIVExecutor][%s] numBlocks is set to [%u], limit[%u], recommanded[%u]", __func__,
         numBlocks, numBlocks_, numBlocks);
     return HCCL_SUCCESS;
 }

@@ -18,7 +18,7 @@
 namespace Hccl {
 
 HcclResult CcuResIdAllocator::Alloc(const uint32_t num, const bool consecutive,
-    std::vector<ResInfo> &allocatedResInfos)
+    std::vector<ResInfo> &allocatedResInfos, const std::string &dfxInfo)
 {
     CHK_PRT_RET(num == 0,
         HCCL_ERROR("[CcuResIdAllocator][%s] failed, request num is 0.", __func__),
@@ -27,10 +27,13 @@ HcclResult CcuResIdAllocator::Alloc(const uint32_t num, const bool consecutive,
     std::unique_lock<std::mutex> lock(innerMutex);
     // 快速判断是否可以分配
     const uint32_t freeSize = capacity_ - allocatedSize;
-    CHK_PRT_RET(num > freeSize,
-        HCCL_WARNING("[CcuResIdAllocator][%s] failed, requeste num[%u] exceeds "
-            "currently free size[%u].", __func__, num, freeSize),
-        HcclResult::HCCL_E_UNAVAIL);
+    if (num > freeSize) {
+        HCCL_WARNING("[CcuResIdAllocator][%s] failed, resType[%s], requeste num[%u] exceeds "
+            "currently free size[%u].", __func__, dfxInfo.c_str(), num, freeSize);
+        HCCL_RUN_INFO("Insufficient CCU Resource: %s, requestNum[%u], freeNum[%u].",
+            dfxInfo.c_str(), num, freeSize);
+        return HcclResult::HCCL_E_UNAVAIL;
+    }
 
     vector<ResInfo> newResInfos;
     uint32_t leftNum = num;
@@ -54,10 +57,13 @@ HcclResult CcuResIdAllocator::Alloc(const uint32_t num, const bool consecutive,
     }
     resInfos.pop_back(); // 删除临时添加的尾资源
     // 只有连续要求的资源才可能剩余，此时分配失败，新块为空
-    CHK_PRT_RET(leftNum != 0,
+    if (leftNum != 0) {
         HCCL_WARNING("[CcuResIdAllocator][%s] failed, no enough consecutive free "
-            "resource ids for requested num[%u].", __func__, num),
-        HcclResult::HCCL_E_UNAVAIL);
+            "resource ids for requested num[%u].", __func__, num);
+        HCCL_RUN_INFO("Insufficient CCU Resource: consecutived %s, requestNum[%u], freeNum[%u].",
+            dfxInfo.c_str(), num, freeSize);
+        return HcclResult::HCCL_E_UNAVAIL;
+    }
 
     allocatedSize += num;
     AllocResInfo(newResInfos); // 将分配的所有资源记录
@@ -225,7 +231,7 @@ HcclResult CcuResAllocator::Alloc(const ResType resType, const uint32_t num,
             __func__, resType.Describe().c_str());
         return HcclResult::HCCL_E_PARA;
     }
-    return resTypeIter->second->Alloc(num, consecutive, resInfos);
+    return resTypeIter->second->Alloc(num, consecutive, resInfos, resType.Describe());
 }
 
 HcclResult CcuResAllocator::Release(const ResType resType, const uint32_t startId,

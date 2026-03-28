@@ -8,36 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "hccl_api_base_test.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <fstream>
+#include <gtest/gtest.h>
 
-#include <iostream>
+#include "llt_hccl_stub_pub.h"
 
-#define private public
-#define protected public
-
-#include "ccu_dev_mgr.h"
-
-#undef protected
-#undef private
-
-class CcuDevMgrTest : public BaseInit {
-public:
-    void SetUp() override {
-        BaseInit::SetUp();
-        // 将enableEntryLog默认返回为true
-        MOCKER(GetExternalInputHcclEnableEntryLog)
-            .stubs()
-            .with(any())
-            .will(returnValue(true));
-    }
-    void TearDown() override {
-        BaseInit::TearDown();
-        GlobalMockObject::verify();
-    }
-protected:
-};
-
-TEST_F(CcuDevMgrTest, Ut_CcuDevMgr)
-{
-    std::cout << "Hello World" << std::endl;
+GTEST_API_ int main(int argc, char **argv) {
+    printf("Running main() from gtest_main.cc\n");
+    testing::InitGoogleTest(&argc, argv);
+    setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
+    return RUN_ALL_TESTS();
 }
