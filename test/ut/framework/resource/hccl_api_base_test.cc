@@ -195,6 +195,12 @@ void Ut_MultiServer_MOCK_And_Clusterinfo_File_Create(const char *filename, nlohm
         .with(outBound(deviceType))
         .will(returnValue(HCCL_SUCCESS));
 
+    u32 ifnumVersion = 3;
+    MOCKER(hrtRaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&ifnumVersion))
+        .will(returnValue(HCCL_SUCCESS));
+
     Ut_Clusterinfo_File_Create(filename, rankTable);
 }
 
