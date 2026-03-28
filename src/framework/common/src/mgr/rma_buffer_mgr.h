@@ -61,7 +61,7 @@ public:
     template<typename... BufferArgs>
     std::pair<Iterator, bool> AddWithoutCheck(const KeyType& key, BufferArgs&&... bufferArgs)
     {
-        return AddToTree(key, bufferArgs);
+        return AddToTree(key, std::forward<BufferArgs>(bufferArgs)...);
     }
 
     // 1.添加成功：输入key是表中某一最相近key的空集。 计数+1，返回添加成功的迭代器，及true
@@ -75,7 +75,7 @@ public:
             HCCL_ERROR("Error: Buffer key overlaps with existing buffer key.");
             return std::make_pair(intervalTree_.end(), false);
         }
-        return AddToTree(key, bufferArgs);
+        return AddToTree(key, std::forward<BufferArgs>(bufferArgs)...);
     }
 
     // 1.查询成功：输入key是表中某一最相近key的子集、全集。 返回true，最相近key的bufferType
