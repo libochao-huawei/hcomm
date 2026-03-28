@@ -8,18 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-<<<<<<<< HEAD:src/framework/next/comms/endpoint_pairs/channels/slaves/aicpu_ts_urma_channel_kernel.h
-#ifndef AICPU_TS_URMA_CAHNNEL_KERNEL_H
-#define AICPU_TS_URMA_CAHNNEL_KERNEL_H
-
-#include <cstdint>
-
-extern "C" {
-__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void *args);
-}
-
-#endif // AICPU_TS_URMA_CAHNNEL_KERNEL_H
-========
 #ifndef HCOMM_PRIMITIVES_EXPT_H
 #define HCOMM_PRIMITIVES_EXPT_H
 
@@ -47,4 +35,3 @@ extern int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout);
 #endif  // __cplusplus
 
 #endif
->>>>>>>> f22d15cf (squash: merge hcomm-api-fix 37 commits into one):pkg_inc/hcomm/hcomm_primitives_expt.h

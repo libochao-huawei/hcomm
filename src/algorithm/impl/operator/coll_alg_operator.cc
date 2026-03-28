@@ -129,7 +129,7 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
             HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support aivonly",
                 GetCMDTypeEnumStr(param.opType).c_str()), HCCL_E_NOT_SUPPORT);
     CHK_PRT_RET(isOnlyAiv && userRankSize_ == 1 && supportOnlyAiv,
-            HCCL_ERROR("[CollAlgOperator][SelectAlg] onlyaiv not support, please ensure rankNum is greater than one"),
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] aivonly not support, please ensure rankNum is greater than one"),
                 HCCL_E_NOT_SUPPORT);
 
     // 兼容老接口
