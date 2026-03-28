@@ -10,7 +10,7 @@
 #ifndef ERROR_MESSAGE_H
 #define ERROR_MESSAGE_H
 #include "task_param.h"
-
+#include "kernel_param_lite.h"
 namespace Hccl {
 
 constexpr u32 TAG_MAX_LENGTH = 256;
@@ -27,7 +27,7 @@ struct ErrorMessageReport {
     u32 notifyValue = 0;
     u32 rankId = 0;
     u32 rankSize = 0;
-    AlgType algType;
+    char algType[MAX_NAME_LEN]{0};
     TaskParamType taskType = TaskParamType::TASK_SDMA;
     DfxLinkType linkType;
  	std::size_t size;

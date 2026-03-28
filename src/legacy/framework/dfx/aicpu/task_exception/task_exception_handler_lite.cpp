@@ -80,7 +80,7 @@ HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std
     errMsgInfo.taskId = taskInfo->taskId_;
     errMsgInfo.rankId = aicpuComm->GetMyRank();
     errMsgInfo.rankSize = aicpuComm->GetRankSize();
-    errMsgInfo.algType = taskInfo->dfxOpInfo_ == nullptr ? static_cast<Hccl::AlgType>(AlgType::MESH) : taskInfo->dfxOpInfo_->algType_;
+    strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo->dfxOpInfo_ == nullptr ? "MESH" : taskInfo->dfxOpInfo_->algType_.c_str());
     errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->commIndex_;
     errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
