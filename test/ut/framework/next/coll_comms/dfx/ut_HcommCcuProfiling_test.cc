@@ -445,6 +445,46 @@ using namespace CcuRep;
     EXPECT_EQ(ret, 0);
 }
 
+TEST_F(CcuKernelTest, GetCcuProfilingInfo_EmptyCache) {
+    // Ensure profiling cache is empty
+    kernel_->GetProfilingInfo().clear();
+
+    std::vector<CcuProfilingInfo> out;
+    CcuTaskArg arg{}; // default task arg
+    HcclResult ret = kernel_->GetCcuProfilingInfo(arg, out);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(out.empty());
+}
+
+TEST_F(CcuKernelTest, GetCcuProfilingInfo_TaskProfilingInfo) {
+    // Prepare a task profiling entry in the kernel's profiling cache
+    kernel_->GetProfilingInfo().clear();
+    CcuProfilingInfo prof;
+    prof.type = static_cast<uint8_t>(CcuProfilinType::CCU_TASK_PROFILING);
+    prof.name = "UnitTestTaskProfiling";
+    prof.dieId = 1;
+    prof.missionId = 0; // will be overwritten by GetCcuProfilingInfo
+    prof.instrId = 0;   // will be overwritten by GetCcuProfilingInfo
+
+    kernel_->GetProfilingInfo().push_back(prof);
+
+    // Set expected mission and instr ids
+    kernel_->SetMissionId(1234);
+    kernel_->SetInstrId(4321);
+
+    std::vector<CcuProfilingInfo> out;
+    CcuTaskArg arg{};
+    HcclResult ret = kernel_->GetCcuProfilingInfo(arg, out);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ASSERT_EQ(out.size(), 1u);
+    EXPECT_EQ(out[0].missionId, 1234u);
+    EXPECT_EQ(out[0].instrId, 4321u);
+    EXPECT_EQ(out[0].name, "UnitTestTaskProfiling");
+    EXPECT_EQ(out[0].dieId, 1u);
+}
+
 }
 
 #undef private
