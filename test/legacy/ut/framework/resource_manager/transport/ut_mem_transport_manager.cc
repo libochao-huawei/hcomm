@@ -499,6 +499,23 @@ TEST_F(MemTransportManagerTest, MemTransportManager_UT_GetUrmaWqsAndCqs)
 {
     StubCommunicatorImplTransMgr comm;
     MemTransportManager          transportManager(comm);
+
+    LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
+
+    // 打桩 SocketManager::GetConnectedSocket
+    IpAddress          ipAddress("1.0.0.0");
+    shared_ptr<Socket> fakeSocket = make_shared<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    SocketConfig       socketConfig(linkData.GetRemoteRankId(), linkData, comm.GetEstablishLinkSocketTag());
+    comm.GetSocketManager().connectedSocketMap[socketConfig] = std::move(fakeSocket);
+
+    // 打桩 RmaConnManager::Get
+    RdmaHandle      rdmaHandle = (void *)0x1000000;
+    RdmaHandleManager::GetInstance().tokenInfoMap[rdmaHandle] = make_unique<TokenInfoManager>(0, rdmaHandle);
+    DevUbConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
+    MOCKER_CPP(&RmaConnManager::Get).stubs().will(returnValue(dynamic_cast<RmaConnection *>(&devUbConnection)));
+
+    SocketStatus fakeSocketStatus = SocketStatus::OK;
+    MOCKER_CPP(&Socket::GetStatus).stubs().will(returnValue(fakeSocketStatus));
     comm.rankSize = 0;
     
     MOCKER_CPP(&MemTransportManager::IsAllTransportReady).stubs().will(returnValue(true));
