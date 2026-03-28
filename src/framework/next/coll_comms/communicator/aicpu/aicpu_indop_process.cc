@@ -131,6 +131,7 @@ CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &g
         }
         g_hcclComm = iter->second.get();
         iter->second->SetUsed(true);
+        HCCL_INFO("[AicpuIndopProcess][%s]success, group[%s]", __func__, group.c_str());
         rwlock.readUnlock();
         return iter->second.get();
     }

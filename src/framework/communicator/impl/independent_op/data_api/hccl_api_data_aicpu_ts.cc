@@ -799,10 +799,8 @@ int32_t HcommReleaseComm(const char* commId)
     HCCL_INFO("[%s]comId[%s], devType[%d]", __func__, commId, deviceType);
     if (deviceType != DevType::DEV_TYPE_950) {
         AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
-        HCCL_INFO("[%s] AicpuReleaseCommbyGroup success, commId[%s]", __func__, commId);
     } else {
         AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(commId);
-        HCCL_INFO("[%s] AicpuReleaseCommMgrbyGroup success, commId[%s]", __func__, commId);
     }
     return HCCL_SUCCESS;
 }
