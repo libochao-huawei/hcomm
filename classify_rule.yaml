@@ -19,10 +19,7 @@ hcomm:
       - src/legacy/service/
       - src/algorithm/
       - src/platform/hccp/
-      - src/framework/next/coll_comms/api_c_adpt/coll_comm_c_adpt.cc
-      - src/framework/communicator/hccl_comm_device.cc
-      - src/framework/next/coll_comms/api_c_adpt/rank_graph_c_adpt.cc
-      - src/framework/next/coll_comms/communicator/ns_recovery/ns_recovery.cc
+      
   llt:
     ut_check: true
     st_check: false

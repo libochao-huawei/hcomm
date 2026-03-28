@@ -21,10 +21,6 @@ namespace hccl {
  * @note 职责：实现多个集合通信通信域上下文的创建、销毁管理，及多通信域资源、信息的共享等。
  */
 class CollCommMgr {
-private:
-    CollCommMgr();
-    ~CollCommMgr();
-
 public:
     static CollCommMgr *GetInstance();
     void RegisteCollComm(CollComm* collComm);
