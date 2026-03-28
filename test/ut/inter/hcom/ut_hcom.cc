@@ -4611,6 +4611,99 @@ TEST_F(HcomTest, ut_hcom_reducescatterv)
     remove(file_name);
 }
 
+TEST_F(HcomTest, ut_abnormal_param_hcom_reducescatterv)
+{
+    nlohmann::json rank_table = rank_table_910_2server_8rank;
+    char file_name[] = "./st_hcom.json";
+    std::ofstream outfile(file_name, std::ios::out | std::ios::trunc | std::ios::binary);
+    if (outfile.is_open()) {
+        HCCL_INFO("open %s success", file_name);
+    } else {
+        HCCL_INFO("open %s failed", file_name);
+    }
+    outfile << std::setw(4) << rank_table << std::endl;
+    outfile.close();
+
+    HcclCommunicator impl;
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
+    .expects(atMost(1))
+    .will(returnValue(0));
+    char* rank_table_file = "./st_hcom.json";
+    char* rank_ID = "0";
+    hrtSetDevice(0);
+    HcclResult ret = HcomInitByFile(rank_table_file, rank_ID);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+
+    s8* sendbuf = (s8*)sal_malloc(16 * 10 * sizeof(s8));
+    sal_memset(sendbuf, 16 * 10 * sizeof(s8), 0, 16 * 10 * sizeof(s8));
+    s8* recvbuf = (s8*)sal_malloc(10 * sizeof(s8));
+    sal_memset(recvbuf, 10 * sizeof(s8), 0, 10 * sizeof(s8));
+
+    rtStream_t stream;
+ 
+    rtError_t rt_ret = aclrtCreateStream(&stream);
+    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+ 
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::ReduceScatterV)
+    .expects(atMost(1))
+    .will(returnValue(0));
+ 
+    MOCKER_CPP(&hcclComm::GetRankTableCrc)
+    .stubs()
+    .will(returnValue(0));
+ 
+    MOCKER_CPP(&hcclComm::GetAlgType)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+ 
+    MOCKER_CPP(&hcclComm::GetRankSize)
+    .expects(atMost(1))
+    .will(returnValue(0));
+ 
+    MOCKER_CPP(&hcclComm::GetGroupRank)
+    .expects(atMost(1))
+    .will(returnValue(0));
+ 
+    // 构造入参
+    int32_t rankSize = 2;
+    vector<u64> sendCounts(rankSize, 10);
+    vector<u64> sdispls(rankSize, 0);
+    for (int i = 0; i < rankSize; i++) {
+        sdispls[i] = 10 * i;
+    }
+ 
+
+    ret = HcomReduceScatterV("tag", sendbuf, nullptr, sdispls.data(), recvbuf, 10,
+        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcomReduceScatterV("tag", sendbuf, sendCounts.data(), nullptr, recvbuf, 10,
+        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcomReduceScatterV("tag", sendbuf, sendCounts.data(), sdispls.data(), recvbuf, 10,
+        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcomReduceScatterV("tag", nullptr, sendCounts.data(), sdispls.data(), recvbuf, 10,
+        HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, HCCL_WORLD_GROUP, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    GlobalMockObject::verify();
+ 
+    aclrtSynchronizeStream(stream);
+    rt_ret = aclrtDestroyStream(stream);
+ 
+    ret = HcomDestroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+ 
+    sal_free(sendbuf);
+    sal_free(recvbuf);
+
+    remove(file_name);
+}
+
+
 TEST_F(HcomTest, ut_hcom_reducescatterv_check_int64)
 {
     nlohmann::json rank_table = rank_table_910_2server_8rank;
@@ -5073,6 +5166,82 @@ TEST_F(HcomTest, ut_hcom_allgatherv)
     sal_free(sendbuf);
     sal_free(recv);
     //remove(file_name);
+}
+
+TEST_F(HcomTest, ut_abnormal_param_hcom_allgatherv)
+{
+    HcclCommunicator impl;
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::Init,HcclResult(HcclCommunicator::*)(HcclCommParams &params, const RankTable_t &rankTable))
+    .expects(atMost(1))
+    .will(returnValue(0));
+    char* rank_table_file = "./ut_hcom.json";
+    char* rank_ID = "0";
+    hrtSetDevice(0);
+    HcclResult ret = HcomInitByFile(rank_table_file, rank_ID);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+
+    s8* sendbuf = (s8*)sal_malloc(10 * sizeof(s8));
+    sal_memset(sendbuf, 10 * sizeof(s8), 0, 10 * sizeof(s8));
+    s8* recv = (s8*)sal_malloc(16 * 10 * sizeof(s8));
+    sal_memset(recv, 16 * 10 * sizeof(s8), 0, 16 * 10 * sizeof(s8));
+
+    rtStream_t stream;
+
+    rtError_t rt_ret = aclrtCreateStream(&stream);
+    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+
+    MOCKER_CPP_VIRTUAL(impl, &HcclCommunicator::AllGatherV)
+    .expects(atMost(1))
+    .will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetRankTableCrc)
+    .stubs()
+    .will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetAlgType)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER_CPP(&hcclComm::GetRankSize)
+    .expects(atMost(1))
+    .will(returnValue(0));
+
+    MOCKER_CPP(&hcclComm::GetGroupRank)
+    .expects(atMost(1))
+    .will(returnValue(0));
+
+    // 构造入参
+    int32_t rankSize = 2;
+    vector<u64> recvCounts(rankSize, 10);
+    vector<u64> rdispls(rankSize, 0);
+    for (int i = 0; i < rankSize; i++) {
+        rdispls[i] = 10 * i;
+    }
+
+    ret = HcomAllGatherV("tag", sendbuf, 10, recv, nullptr, rdispls.data(), HCCL_DATA_TYPE_INT8,NULL, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcomAllGatherV("tag", sendbuf, 10, recv, recvCounts.data(), nullptr, HCCL_DATA_TYPE_INT8,NULL, stream);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcomAllGatherV("tag", sendbuf, 10, recv, recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT8,NULL, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = HcomAllGatherV("tag", nullptr, 10, recv, recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT8,NULL, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    GlobalMockObject::verify();
+
+    aclrtSynchronizeStream(stream);
+    rt_ret = aclrtDestroyStream(stream);
+
+
+    ret = HcomDestroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    sal_free(sendbuf);
+    sal_free(recv);
 }
 
 TEST_F(HcomTest, ut_hcom_reduce)
