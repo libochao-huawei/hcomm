@@ -18,7 +18,7 @@
 #include "env_config/env_config.h"
 #include "channel_process.h"
 
-
+using namespace hcomm;
 namespace MyRankUtils {
 
 HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
