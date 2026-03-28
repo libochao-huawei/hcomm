@@ -121,8 +121,8 @@ void AddressInfo::IPV6ToAddr(std::string address)
 
 std::string AddressInfo::Describe() const
 {
-    return StringFormat("AddressInfo[addrType=%s, addr=%s, planeId=%s,portsize=%u]",
-                        addrType.Describe().c_str(), addr.Describe().c_str(), planeId.c_str(),ports.size());
+    return StringFormat("AddressInfo[addrType=%s, addr=%s, planeId=%s, portsize=%u, listenPort=%u]",
+                        addrType.Describe().c_str(), addr.Describe().c_str(), planeId.c_str(),ports.size(), listenPort);
 }
 
 AddressInfo::AddressInfo(BinaryStream &binStream)
