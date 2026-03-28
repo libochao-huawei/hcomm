@@ -1,13 +1,26 @@
 #include "gtest/gtest.h"
-#include <mockcpp/mokc.h>
-#include <mockcpp/mockcpp.hpp>
+#include <memory>
 
 #include "ns_recovery_lite.h"
+#include "hdc_pub.h"
 
 using namespace hccl;
 
-TEST(NsRecoveryLiteTest, DefaultAndNeedCleanFlag)
+class NsRecoveryLiteTest : public testing::Test {
+protected:
+    void SetUp() override {}
+    void TearDown() override {}
 
+    // 初始化 NsRecoveryLite 并用两个默认构造的 HDCommunicate 填充 hdcHandler_
+    void InitWithDefaultHdc(NsRecoveryLite &lite)
+    {
+        auto h2d = std::make_shared<HDCommunicate>();
+        auto d2h = std::make_shared<HDCommunicate>();
+        lite.Init(h2d, d2h);
+    }
+};
+
+TEST_F(NsRecoveryLiteTest, Ut_IsNeedCleanWhenDefaultAndToggledExpectReflect)
 {
     NsRecoveryLite lite;
     // 默认不需要清理
@@ -22,8 +35,7 @@ TEST(NsRecoveryLiteTest, DefaultAndNeedCleanFlag)
     EXPECT_FALSE(lite.IsNeedClean());
 }
 
-TEST(NsRecoveryLiteTest, ResetErrorReportedDoesNotCrash)
-
+TEST_F(NsRecoveryLiteTest, Ut_ResetErrorReportedWhenCalledExpectNoCrash)
 {
     NsRecoveryLite lite;
     // ResetErrorReported 只是将内部标识复位，不应引发异常或崩溃
@@ -31,5 +43,23 @@ TEST(NsRecoveryLiteTest, ResetErrorReportedDoesNotCrash)
     SUCCEED();
 }
 
-// 注意：BackGroundGetCmd/BackGroundSetStatus 依赖于内部的 hdcHandler_
-// 必须先通过 Init 提供有效的 HDCommunicate 对象后才能调用。当前测试避免对未初始化的 hdcHandler_ 调用以防崩溃。
+TEST_F(NsRecoveryLiteTest, Ut_BackGroundGetCmdWhenHdcGetFailsExpectNoneReturned)
+{
+    NsRecoveryLite lite;
+    // 使用默认 HDCommunicate（未初始化共享内存），会导致 HcclAicpuHdcHandler::GetKfcCommand 返回非 HCCL_SUCCESS
+    InitWithDefaultHdc(lite);
+
+    auto cmd = lite.BackGroundGetCmd();
+    // 在失败路径中，函数会返回默认初始化的 NONE
+    EXPECT_EQ(cmd, Hccl::KfcCommand::NONE);
+}
+
+TEST_F(NsRecoveryLiteTest, Ut_BackGroundSetStatusWhenCalledWithHdcExpectNoCrash)
+{
+    NsRecoveryLite lite;
+    InitWithDefaultHdc(lite);
+
+    // 仅验证调用不崩溃；内部会尝试向 d2hTransfer 写入状态，写失败时会记录错误但不抛出
+    lite.BackGroundSetStatus(Hccl::KfcStatus::STOP_LAUNCH_DONE, Hccl::KfcErrType::NONE);
+    SUCCEED();
+}

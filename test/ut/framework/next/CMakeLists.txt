@@ -32,8 +32,8 @@ set(src_to_test_list
     #coll_comms/communicator/ut_coll_comm.cc
     #coll_comms/communicator/ut_coll_comm_mgr.cc
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
-    #coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
- 	#coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
+    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
+ 	coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc
