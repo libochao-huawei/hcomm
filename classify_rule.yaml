@@ -19,7 +19,6 @@ hcomm:
       - src/legacy/service/
       - src/algorithm/
       - src/platform/hccp/
-      
   llt:
     ut_check: true
     st_check: false
