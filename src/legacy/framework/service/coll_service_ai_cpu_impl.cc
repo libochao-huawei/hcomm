@@ -117,6 +117,7 @@ void CollServiceAiCpuImpl::LoadWithOpBasedModeNoRegister(CollOperator &op)
 {
     RegisterOpbasedLocalRmaBuf(op.opTag);
 
+    HCCL_ERROR("[OpBasedCLoadWithOpBasedModeNoRegisterollProcess] begin to AllocFreeStream");
     comm->GetAicpuStreamManager().AllocFreeStream();
     Stream *lanchStream = comm->GetAicpuStreamManager().GetFreeStream();
     comm->GetAicpuStreamManager().AclGraphCaptureFreeStream(comm->GetStreamManager().opbase->GetMaster());
@@ -169,10 +170,6 @@ HcclResult CollServiceAiCpuImpl::AllocCollOpResourceNoRegister(CollOperator &op,
     DevBuffer *mem = nullptr;
     comm->SetCommStatus(CommStatus::COMM_BUILDING);
     mem = OpBasedCollProcess(op, comm->GetCurAlgName());
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s], opAlgTag[%s]",
-                             op.opType.Describe().c_str(), comm->GetOpBaseOpIndex(), comm->GetId().c_str(),
-                             comm->GetCurAlgName().c_str(), opAlgTag.c_str());
-    comm->GetTrace().Save(info);
     CHK_RET(AicpuMc2CommResourcePrepare(op, comm->GetCurAlgName(), mem, opAlgTag, addr));
     return HCCL_SUCCESS;
 }
