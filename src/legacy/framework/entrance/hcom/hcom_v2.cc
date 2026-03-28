@@ -139,6 +139,15 @@ HcclResult HcomAllGatherVV2(const char *tag, void *sendBuf, u64 sendCount, void 
     /* 参数合法性校验 */
     if (rankSize == 1) {
         /* rankSize为1时，退化为AllGather */
+        // 检查异常回退AGV的情况
+        if (sendCount == 0) {
+            HCCL_WARNING("[AllGatherV] sendCount is 0 when single rank");
+            return HCCL_SUCCESS;
+        } else {
+            CHK_PRT_RET(sendBuf == nullptr || recvBuf == nullptr, 
+                        HCCL_ERROR("[AllGatherV] either sendBuf or recvBuf is null when single rank"),
+                        HCCL_E_PTR);
+        }
         return HcomAllGatherV2(tag, sendBuf, recvBuf, sendCount, dataType, group, stream);
     }
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag, sendCount, dataType, stream), tag);
@@ -216,7 +225,7 @@ HcclResult HcomReduceScatterV2(const char *tag, void *inputPtr, void *outputPtr,
                 HCCL_ERROR("[ReduceScatter] comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
                 HCCL_E_NOT_FOUND);
 
-                /* 入参校验 */
+    /* 入参校验 */
     CHK_RET(HcomCheckReductionOpV2(op));
     CHK_RET(HcomCheckReduceDataTypeV2(dataType, op));
     CHK_RET(HcomCheckOpParamV2(tag, count, dataType, group, stream));
@@ -252,6 +261,15 @@ HcclResult HcomReduceScatterVV2(const char *tag, void *sendBuf, void *sendCounts
     /* 入参校验 */
     if (rankSize == 1) {
         /* rankSize为1时，退化为ReduceScatter */
+        // 检查异常回退RSV的情况
+        if (recvCount == 0) {
+            HCCL_WARNING("[ReduceScatterV] recvCount is 0 when single rank");
+            return HCCL_SUCCESS;
+        } else {
+            CHK_PRT_RET(sendBuf == nullptr || recvBuf == nullptr, 
+                        HCCL_ERROR("[ReduceScatterV] either sendBuf or recvBuf is null when single rank"),
+                        HCCL_E_PTR);
+        }
         return HcomReduceScatterV2(tag, sendBuf, recvBuf, recvCount, dataType, op, group, stream);
     }
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag, recvCount, dataType, stream), tag);
