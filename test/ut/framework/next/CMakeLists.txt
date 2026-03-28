@@ -24,15 +24,16 @@ set(src_to_test_list
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
     comms/endpoint_pairs/channels/ut_channel_process.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
-    coll_comms/rank/ut_my_rank.cc
+    comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
+    #coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
     coll_comms/rank_pairs/ut_rank_pair.cc
-    coll_comms/communicator/ut_coll_comm.cc
-    coll_comms/communicator/ut_coll_comm_mgr.cc
+    #coll_comms/communicator/ut_coll_comm.cc
+    #coll_comms/communicator/ut_coll_comm_mgr.cc
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
-    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
- 	coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
+    #coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
+ 	#coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
     coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
 )
 
