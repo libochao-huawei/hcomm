@@ -178,16 +178,6 @@ void RankInfoDetect::SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2
     HCCL_INFO("[RankInfoDetect::%s] setup agent end.", __func__);
 }
 
-HcclResult RankInfoDetect::UpdateAgent(u32 devicePort)
-{
-    CHK_PTR_NULL(rankInfoDetectClient);
-
-    // 1. 创建RankInfoDetectClient对象
-    rankInfoDetectClient->Update(devicePort, rankTable_);
-    HCCL_INFO("[RankInfoDetect::%s] update agent end.", __func__);
-    return HCCL_SUCCESS;
-}
-
 void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
     std::string identifier, vector<RaSocketWhitelist> wlistInfo)
 {
@@ -220,23 +210,6 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
         hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_IDLE; });
 
     HCCL_INFO("[RankInfoDetect::%s] end, status idle.", __func__);
-
-    // 第二次发送的ranktable带有端口信息
-    EXECEPTION_CATCH(rankInfoDetectService->Update(), hasException = true);
-    HrtResetDevice(devLogicId);
-
-    // 若有异常则设置error状态退出
-    if(hasException == true) {
-        g_detectServerStatus_.EmplaceAndUpdate(hostPort, 
-            [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_ERROR; });
-        HCCL_ERROR("[RankInfoDetect::%s] end, status error.", __func__);
-        return;
-    }
-
-    g_detectServerStatus_.EmplaceAndUpdate(
-        hostPort, [](volatile u32 &status) { status = RANKINFO_DETECT_SERVER_STATUS_UPDATE; });
-    
-    HCCL_INFO("[RankInfoDetect::%s] end, status update.", __func__);  
 }
 
 u32 RankInfoDetect::GetHostListenPort()

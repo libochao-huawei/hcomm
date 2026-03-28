@@ -18,6 +18,7 @@
 #include "preempt_port_manager.h"
 #include "timeout_exception.h"
 #include "p2p_enable_manager.h"
+#include "rank_table_info.h"
 
 namespace Hccl {
 
@@ -135,7 +136,7 @@ void SocketManager::ServerInit(PortData &localPort)
     serverSocketMap[localPort] = std::move(serverSocket);
 }
 
-void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPort) const
+void SocketManager::ServerInitAll(RankTableInfo &localRankTable)
 {
     std::lock_guard<std::mutex> lock(socketLock);
     vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
@@ -144,35 +145,38 @@ void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPor
         return;
     }
 
-    auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    std::set<PortData> newPorts;
-    bool useOld = false;  // 旧端口抢占过，就沿用旧端口
-    for(uint32_t i = 0; i < links.size(); i++) {
-        LinkData link = links[i];
-        auto localPort = link.GetLocalPort();
-        auto iter = serverSocketMap.find(localPort);
-        if (iter != serverSocketMap.end()) {
-            linstenPort = serverSocketMap[localPort]->GetListenPort();  
-            useOld = true;
-            HCCL_INFO("[SocketManager::%s] Device %u use the old device port %u in same process.", __func__, deviceLogicId_, linstenPort);
-        } else {
-            newPorts.insert(localPort);
-        }
+    if (localRankTable.ranks.size() != 1) {
+        HCCL_WARNING("[SocketManager::%s]Not a local ranktable, check the invoked stack.", __func__);
+        return;
     }
 
-    for(auto it = newPorts.begin(); it != newPorts.end(); ++it)
-    {
-        auto localPort = *it;
-        SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
-        IpAddress ipAddress = localPort.GetAddr();
-        auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, linstenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-        if (!useOld && it == newPorts.begin()) { // 首个链接抢占，其余继承
-            PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges, linstenPort);
-            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, linstenPort);
-        } else {
-            serverSocket->Listen(linstenPort);
+    auto devLogicId = HrtGetDevice();
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    for (auto &rankLevelInfo : localRankTable.ranks[0].rankLevelInfos) {
+        u32 rankId = rankLevelInfo.rankId;
+        u32 devicePhyId = rankLevelInfo.deviceId;
+        if (rankLevelInfo.netLayer != 0) {
+            continue;
         }
-        serverSocketMap[localPort] = std::move(serverSocket);
+        for (auto &rankAddr : rankLevelInfo.rankAddrs) {
+            PortData localPort{rankId, PortDeploymentType::DEV_NET, LinkProtoType::UB, 0, rankAddr.addr};
+            u32 listenPort = DEFAULT_VALUE_DEVICEPORT;
+            if (serverSocketMap.find(localPort) != serverSocketMap.end()) {
+                // 单进程多通信域，找到老端口直接返回老端口
+                listenPort = serverSocketMap[localPort]->GetListenPort();
+                HCCL_INFO("[SocketManager::%s] Device %s use the old device port %u in same process.", 
+                    __func__, localPort.Describe().c_str(), listenPort);
+            } else {
+                // 首次执行启用新端口
+                SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
+                IpAddress ipAddress = localPort.GetAddr();
+                auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, listenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+                PreemptPortManager::GetInstance(devLogicId).ListenPreempt(serverSocket, listenPortRanges, listenPort);
+                serverSocketMap[localPort] = std::move(serverSocket);
+                HCCL_RUN_INFO("[SocketManager::%s] Device %s listen the preempt port %u", __func__, localPort.Describe().c_str(), listenPort);
+            }
+            rankAddr.listenPort = listenPort;
+        }
     }
 }
 
