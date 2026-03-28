@@ -20,6 +20,14 @@ set(src_to_test_list
     comms/api_c_adpt/ut_hcomm_c_adpt.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
+    # comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
+    comms/api_c_adpt/ut_hcomm_endpoint_test.cc
+    comms/api_c_adpt/ut_hcomm_mem_test.cc
+    comms/api_c_adpt/ut_hcomm_channel_test.cc
+    comms/api_c_adpt/ut_hcomm_engine_ctx_test.cc
+    comms/api_c_adpt/ut_hcomm_dfx_test.cc
+    coll_comms/communicator/ut_coll_comm_test.cc
+    coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
