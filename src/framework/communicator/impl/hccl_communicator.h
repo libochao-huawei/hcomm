@@ -613,6 +613,10 @@ private:
 
     HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
+
+    HcclResult HandleExistAlgResource(const std::string& newTag, const std::string& algName,
+        OpType opType, const OpParam& opParam, bool selectAivAlg, bool aicpuUnfoldModeFor910B,
+        bool needRecreateAlltoallComm);
     u32 deviceNumPerServer_;
     HcclDispatcher dispatcher_; // dispatcher放到最后析构
     DispatcherCtxPtr dispatcherCtx_{nullptr};
