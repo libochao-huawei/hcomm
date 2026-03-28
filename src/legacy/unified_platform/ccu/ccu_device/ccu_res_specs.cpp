@@ -26,7 +26,7 @@ CcuResSpecifications &CcuResSpecifications::GetInstance(const int32_t deviceLogi
             "devLogicId should be less than %u.", MAX_MODULE_DEVICE_NUM));
     }
 
-    ccuResSpecifications[deviceLogicId].deviceLogicId = deviceLogicId;
+    ccuResSpecifications[deviceLogicId].devLogicId = deviceLogicId;
 
     return ccuResSpecifications[deviceLogicId];
 }
