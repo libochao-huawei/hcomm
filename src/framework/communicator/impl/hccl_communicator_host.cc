@@ -3641,10 +3641,6 @@ namespace hccl
             aicpuUnfoldMode = true;
         }
 
-        if (SalGetEnv("TEST_SWITCH_USE_AICPU_UNFOLD") == "1") {
-            aicpuUnfoldMode = true;
-        }
-
         bool isCapture = StreamIsCapture(stream);
 
         if (!IsAtomicInit()) {

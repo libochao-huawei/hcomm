@@ -515,7 +515,7 @@ void TransportIbverbs::ModifyAtomicWriteAfterReduce(u32 &preWrOpcode, u64 wqeTyp
             // HCCL直调RoCE驱动，需要进行字节序转换
             immData = htobe32(0x1);
         } else {
-            // Host展开模式下，这里immData设为0x1，HCCP会进行转换
+            // Host展开模式下，由HCCP进行字节序转换，这里immData设为0x1
             immData = 0x1;
         }
     }
