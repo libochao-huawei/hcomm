@@ -11,6 +11,7 @@
 #include "ns_recovery.h"
 #include "env_config/env_config.h"
 #include "channel_process.h"
+#include "log.h"
 
 namespace hccl 
 {
@@ -22,9 +23,11 @@ void NsRecoveryProcessor::SetKfcControlTransfer(std::shared_ptr<HDCommunicate> k
     kfcStatusTransferD2H_ = kfcStatusTransferD2H;
 }
 
-void NsRecoveryProcessor:: AddNsRecoveryData(const CommEngine& engine, const ChannelHandle *const channelHandles, 
+void NsRecoveryProcessor::AddNsRecoveryData(const CommEngine& engine, const ChannelHandle *const channelHandles, 
     const ChannelHandle *const hostChannelHandleList, uint32_t channelNum, const std::string &commTag)
 {
+    HCCL_INFO("[NsRecovery][AddData] AddNsRecoveryData for engine[%d], channelNum[%u], commTag[%s]", 
+        static_cast<int>(engine), channelNum, commTag.c_str());
     std::vector<ChannelHandle> deviceList;
     std::vector<ChannelHandle> hostList;
     for (uint32_t index = 0; index < channelNum; ++index) {
@@ -58,7 +61,7 @@ HcclResult NsRecoveryProcessor::PollStopStatus()
             continue;
         }
     }
-    return HcclResult::HCCL_SUCCESS;
+    return HcclResult::HCCL_E_INTERNAL;
 }
 
 HcclResult NsRecoveryProcessor::ListenBackGround(Hccl::KfcExecStatus& opInfo)
@@ -82,7 +85,7 @@ HcclResult NsRecoveryProcessor::ListenBackGround(Hccl::KfcExecStatus& opInfo)
             continue;
         }
     }
-    return HcclResult::HCCL_SUCCESS;
+    return HcclResult::HCCL_E_INTERNAL;
 }
 
 HcclResult NsRecoveryProcessor::StopLaunch()
@@ -94,7 +97,12 @@ HcclResult NsRecoveryProcessor::StopLaunch()
             CHK_RET(kfcControlTransferH2D_->Put(0, sizeof(Hccl::KfcCommand), reinterpret_cast<uint8_t *>(&opCmd)));
             HCCL_INFO("[NsRecovery][Suspend] send KfcCommand[%d] success, which is NS_STOP_LAUNCH.", opCmd);
 
-            return PollStopStatus();  // todo：多CommEngine的管理存在问题
+            auto ret = PollStopStatus();  // todo：多CommEngine的管理存在问题
+            if (ret != HcclResult::HCCL_E_SUSPENDING) {
+                HCCL_ERROR("[NsRecovery][Suspend] PollStopStatus failed, ret[%d]", ret);
+                return ret;
+            }
+            return HcclResult::HCCL_SUCCESS;
         } else {
             HCCL_INFO("[NsRecovery][Suspend] Aicpu kernel is not launched yet. Suspend host only.");
         }
@@ -119,7 +127,12 @@ HcclResult NsRecoveryProcessor::Clean()
                 HCCL_INFO("[NsRecovery][Clean] send KfcCommand [%d] success, which is NS_CLEAN", opCmd);
                 
                 // 监听背景线程状态
-                return ListenBackGround(opInfo);
+                auto ret = ListenBackGround(opInfo);
+                if (ret != HcclResult::HCCL_E_SUSPENDING) {
+                    HCCL_ERROR("[NsRecovery][Clean] ListenBackGround failed, ret[%d]", ret);
+                    return ret;
+                }
+                return HcclResult::HCCL_SUCCESS;
             } else {
                 HCCL_ERROR("[NsRecovery][Clean] Aicpu kernel is not stopped yet. Cannot clean.");
                 return HcclResult::HCCL_E_INTERNAL;
@@ -136,7 +149,7 @@ HcclResult NsRecoveryProcessor::Resume(aclrtBinHandle binHandle)
     for (auto& recoveryData : nsRecoveryDatas_) {
         if (recoveryData.first == COMM_ENGINE_AICPU || recoveryData.first == COMM_ENGINE_AICPU_TS) {
             for (auto& handleData : recoveryData.second) {
-                CHK_RET(ChannelProcess::ChannelUpdateKernelLaunch(handleData.channelHandles_.data(), handleData.hostChannelHandleList_.data(), 
+                CHK_RET(hcomm::ChannelProcess::ChannelUpdateKernelLaunch(handleData.channelHandles_.data(), handleData.hostChannelHandleList_.data(), 
                 handleData.channelNum_, handleData.commTag_, binHandle));
             }
         }

@@ -23,13 +23,6 @@ CollCommMgr* CollCommMgr::GetInstance()
     return instance_;
 }
 
-CollCommMgr::CollCommMgr()
-{
-}
-CollCommMgr::~CollCommMgr()
-{
-}
-
 void CollCommMgr::RegisteCollComm(CollComm* collComm)
 {
     allCollComms_[collComm->GetCommId()] = collComm;

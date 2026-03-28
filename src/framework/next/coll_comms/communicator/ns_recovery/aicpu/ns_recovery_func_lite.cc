@@ -34,7 +34,7 @@ void NsRecoveryFuncLite::Call()
     }
     for (auto &commInfo : aicpuCommInfo) {
         CollCommAicpu* deviceComm = commInfo.second->GetCollCommAicpu();
-        if (deviceComm->GetCommmStatus() != HcclCommStatus::HCCL_COMM_STATUS_READY) {
+        if (deviceComm->GetCommmStatus() == HcclCommStatus::HCCL_COMM_STATUS_INVALID) {
             continue;
         }
         HandleStopLaunch(deviceComm);
