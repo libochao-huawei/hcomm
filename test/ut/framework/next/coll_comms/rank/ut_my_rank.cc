@@ -61,12 +61,12 @@ protected:
         GlobalMockObject::verify();
     }
 
-    MyRank CreateMyRank()
+    std::unique_ptr<MyRank> CreateMyRank()
     {
         aclrtBinHandle binHandle = nullptr;
         CommConfig config;
         ManagerCallbacks callbacks;
-        return MyRank(binHandle, 0, config, callbacks);
+        return std::make_unique<MyRank>(binHandle, 0, config, callbacks);
     }
 };
 
@@ -74,13 +74,13 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_Normal_Expect_SUCCESS)
 {
     MOCKER_CPP(&HcommChannelGetUserRemoteMem).stubs().will(invoke(StubChannelGetUserRemoteMemSuccess));
 
-    MyRank myRank = CreateMyRank();
+    auto myRank = CreateMyRank();
     ChannelHandle channel = 0x12345;
     CommMem *remoteMem = nullptr;
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
+    HcclResult ret = myRank->ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(memNum, 0U);
 }
@@ -89,13 +89,13 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_InnerReturnsError_Expect_ForwardE
 {
     MOCKER_CPP(&HcommChannelGetUserRemoteMem).stubs().will(returnValue(HCCL_E_INTERNAL));
 
-    MyRank myRank = CreateMyRank();
+    auto myRank = CreateMyRank();
     ChannelHandle channel = 0x12345;
     CommMem *remoteMem = nullptr;
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
+    HcclResult ret = myRank->ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
@@ -103,13 +103,13 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_RemoteMemNull_Expect_E_PTR)
 {
     MOCKER_CPP(&HcommChannelGetUserRemoteMem).stubs().will(invoke(StubChannelGetUserRemoteMemRemoteMemNull));
 
-    MyRank myRank = CreateMyRank();
+    auto myRank = CreateMyRank();
     ChannelHandle channel = 0x12345;
     CommMem *remoteMem = nullptr;
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
+    HcclResult ret = myRank->ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -117,45 +117,45 @@ TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_MemTagNull_Expect_E_PTR)
 {
     MOCKER_CPP(&HcommChannelGetUserRemoteMem).stubs().will(invoke(StubChannelGetUserRemoteMemMemTagNull));
 
-    MyRank myRank = CreateMyRank();
+    auto myRank = CreateMyRank();
     ChannelHandle channel = 0x12345;
     CommMem *remoteMem = nullptr;
     char **memTag = nullptr;
     uint32_t memNum = 0;
 
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
+    HcclResult ret = myRank->ChannelGetRemoteMem(channel, &remoteMem, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_ParamRemoteMemNull_Expect_E_PTR)
 {
-    MyRank myRank = CreateMyRank();
+    auto myRank = CreateMyRank();
 
     ChannelHandle channel = 0x12345;
     char **memTag = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, nullptr, &memTag, &memNum);
+    HcclResult ret = myRank->ChannelGetRemoteMem(channel, nullptr, &memTag, &memNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_ParamMemTagNull_Expect_E_PTR)
 {
-    MyRank myRank = CreateMyRank();
+    auto myRank = CreateMyRank();
 
     ChannelHandle channel = 0x12345;
     CommMem *remoteMem = nullptr;
     uint32_t memNum = 0;
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, nullptr, &memNum);
+    HcclResult ret = myRank->ChannelGetRemoteMem(channel, &remoteMem, nullptr, &memNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(MyRankTest, Ut_When_ChannelGetRemoteMem_ParamMemNumNull_Expect_E_PTR)
 {
-    MyRank myRank = CreateMyRank();
+    auto myRank = CreateMyRank();
 
     ChannelHandle channel = 0x12345;
     CommMem *remoteMem = nullptr;
     char **memTag = nullptr;
-    HcclResult ret = myRank.ChannelGetRemoteMem(channel, &remoteMem, &memTag, nullptr);
+    HcclResult ret = myRank->ChannelGetRemoteMem(channel, &remoteMem, &memTag, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }

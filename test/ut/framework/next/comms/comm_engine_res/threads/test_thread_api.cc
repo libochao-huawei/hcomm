@@ -178,7 +178,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_AicpuTsThread_Allocate_expec
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
-    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
+    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
