@@ -13,6 +13,7 @@
 #include "hccp_ctx.h"
 #include "hccp_async_ctx.h"
 #include "hccp_tlv.h"
+#include "hccp_nda.h"
 
 /**
  * @ingroup libsocket
@@ -739,6 +740,29 @@ int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, st
 }
 
 int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
+{
+    return 0;
+}
+
+int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
+{
+    if (directFlag != nullptr) {
+        *directFlag = 0;
+    }
+    return 0;
+}
+
+int RaNdaCqCreate(void *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo *info, void **cqHandle)
+{
+    return 0;
+}
+
+int RaNdaCqDestroy(void *rdmaHandle, void *cqHandle)
+{
+    return 0;
+}
+
+int RaNdaQpCreate(void *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info, void **qpHandle)
 {
     return 0;
 }
