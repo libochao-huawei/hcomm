@@ -19,6 +19,7 @@
 #include "common.h"
 #include "channel_param.h"
 #include "ub_transport_lite_impl.h"
+#include "dev_aicpu_ts_roce_channel_v2.h"
 
 class AicpuChannelProcess {
 public:
