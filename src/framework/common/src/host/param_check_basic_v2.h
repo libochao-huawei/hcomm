@@ -13,14 +13,8 @@
 
 #define HCCLV2_FUNC_RUN(func, ...) \
     do { \
-        static thread_local bool isSupportV2 = false; \
-        static thread_local bool isInited = false; \
-        if (!isInited) { \
-            const char *socNamePtr = aclrtGetSocName(); \
-            CHK_PTR_NULL(socNamePtr); \
-            isSupportV2 = strstr(socNamePtr, "Ascend950") != nullptr; \
-            isInited = true; \
-        } \
+        bool isSupportV2 = false; \
+        CHK_RET(hrtGetHcclV2Support(&isSupportV2)); \
         if (isSupportV2) { \
             return func; \
         } \
