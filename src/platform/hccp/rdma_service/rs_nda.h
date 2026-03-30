@@ -11,17 +11,30 @@
 #ifndef RS_NDA_H
 #define RS_NDA_H
 
+#include "ibv_extend.h"
 #include "hccp_nda.h"
+#include "rs_rdma_inner.h"
 #include "rs_list.h"
 #include "rs.h"
 
 #define RS_VENDOR_ID_19E5 0x19E5
+
+struct RsNdaCb {
+    struct ibv_extend_ops ibvExOps;
+    struct NdaOps ndaOps;
+    pthread_mutex_t ndaMutex;
+    struct RsListHead ndaDbHostList;
+    struct RsListHead ndaDbGuidList;
+    uint16_t ndaDbGuidCnt;
+};
 
 static inline int rsNdaGetDirectFlagByVendorId(uint32_t vendorId)
 {
     return (vendorId == RS_VENDOR_ID_19E5) ? DIRECT_FLAG_UB : DIRECT_FLAG_PCIE;
 }
 
+int RsInitNdaCb(struct RsRdevCb *rdevCb);
+void RsFreeNdaCb(struct RsRdevCb *rdevCb);
 RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, struct NdaCqInitAttr *attr, 
     struct NdaCqInfo *info, void **ibvCqExt);
 RS_ATTRI_VISI_DEF int RsNdaCqDestroy(unsigned int phyId, unsigned int rdevIndex, void *ibvCqExt);
