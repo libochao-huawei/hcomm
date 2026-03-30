@@ -6608,4 +6608,104 @@ TEST_F(OpbaseTest, ut_HcclGetCommConfig_HCCL_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
+
+TEST_F(OpbaseTest, ut_HcclCollCommInitAll_When_Normal_Expect_Success)
+{
+    u32 ndev = 1;
+    s32 devices[1] = {0};
+    HcclComm comms[1] = {nullptr};
+
+    MOCKER(hrtSetDevice)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtResetDevice)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = HcclCollCommInitAll(ndev, devices, comms);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclCollCommInitAll_When_NdevZero_Expect_E_PARA)
+{
+    u32 ndev = 0;
+    s32 devices[1] = {0};
+    HcclComm comms[1] = {nullptr};
+
+    HcclResult ret = HcclCollCommInitAll(ndev, devices, comms);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclCollCommInitAll_When_CommsNull_Expect_E_PARA)
+{
+    u32 ndev = 1;
+    s32 devices[1] = {0};
+
+    HcclResult ret = HcclCollCommInitAll(ndev, devices, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclCollCommInitAll_When_DevicesNull_Expect_E_PARA)
+{
+    u32 ndev = 1;
+    HcclComm comms[1] = {nullptr};
+
+    HcclResult ret = HcclCollCommInitAll(ndev, nullptr, comms);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclGetCollCommAll_When_Normal_Expect_Success)
+{
+    u32 ndev = 1;
+    s32 devices[1] = {0};
+    HcclComm comms[1] = {nullptr};
+
+    MOCKER(hrtSetDevice)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtResetDevice)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = HcclGetCollCommAll(ndev, devices, comms);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclGetCollCommAll_When_NdevZero_Expect_E_PARA)
+{
+    u32 ndev = 0;
+    s32 devices[1] = {0};
+    HcclComm comms[1] = {nullptr};
+
+    HcclResult ret = HcclGetCollCommAll(ndev, devices, comms);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclGetCollCommAll_When_CommsNull_Expect_E_PARA)
+{
+    u32 ndev = 1;
+    s32 devices[1] = {0};
+
+    HcclResult ret = HcclGetCollCommAll(ndev, devices, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    GlobalMockObject::verify();
+}
+
+TEST_F(OpbaseTest, ut_HcclGetCollCommAll_When_DevicesNull_Expect_E_PARA)
+{
+    u32 ndev = 1;
+    HcclComm comms[1] = {nullptr};
+
+    HcclResult ret = HcclGetCollCommAll(ndev, nullptr, comms);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    GlobalMockObject::verify();
+}
 #endif

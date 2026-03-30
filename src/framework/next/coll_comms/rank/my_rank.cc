@@ -24,15 +24,19 @@ namespace MyRankUtils {
 
 HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 {
-    HcommChannelDesc hcommDesc;
+    HcommChannelDesc hcommDesc{};
+    (void)HcommChannelDescInit(&hcommDesc, 1);
     hcommDesc.remoteEndpoint = hcclDesc.remoteEndpoint;
     hcommDesc.notifyNum = hcclDesc.notifyNum;
-    hcommDesc.memHandles = hcclDesc.memHandles;
+    hcommDesc.memHandles = reinterpret_cast<HcommMemHandle *>(hcclDesc.memHandles);
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
+    (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcommDesc.raws));
+
     hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
     hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
     hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
     hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
+    
     return hcommDesc;
 }
 
@@ -243,7 +247,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         uint32_t listenPort = 0;
         CHK_PTR_NULL(rankGraph_);
         CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
-        CHK_RET(HcommEndpointStartListen(epHandle, listenPort, nullptr));
+        CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(epHandle, listenPort, nullptr)));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",
             __func__, i + 1, channelNum, remoteRank,
@@ -433,9 +437,9 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
 
     u32 memNum = 0;  // 接收内存块数量
     /* 实现获取buffer Num的接口，此处Size为10的vector暂存 */
-    std::vector<HcommMem *> remoteMemList(10);
+    std::vector<CommMem *> remoteMemList(10);
     std::vector<char *> memTags(10);
-    CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data()));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data())));
 
     for (u32 i = 0; i < memNum; i++) {
         HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);

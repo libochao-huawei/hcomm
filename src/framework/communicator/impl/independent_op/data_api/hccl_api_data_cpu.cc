@@ -649,10 +649,16 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommFlush()
 {
     return HcommFenceOnThread(0);
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
@@ -736,7 +742,8 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     // 下发device侧
     if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS || dfxOpInfo->engine == COMM_ENGINE_AICPU) {
         u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-        CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
+        CHK_RET(static_cast<HcclResult>(HcommDfxKernelLaunch(
+            hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), *dfxOpInfo)));
         const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
         CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
     }
