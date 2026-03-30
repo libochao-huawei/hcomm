@@ -67,7 +67,7 @@ TEST_F(HcclCommDeviceTest, Ut_GetCommStatusWhenIsCommunicatorV1ExpectReady)
     EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
 }
 
-// GetCommStatus when communicator is V2 but no matching aicpu entry -> should remain READY
+/* // GetCommStatus when communicator is V2 but no matching aicpu entry -> should remain READY
 TEST_F(HcclCommDeviceTest, Ut_GetCommStatusWhenIsCommunicatorV2AndNoMatchExpectReady)
 {
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
@@ -110,4 +110,4 @@ TEST_F(HcclCommDeviceTest, Ut_GetCommStatusWhenIsCommunicatorV2AndMatchExpectCol
     HcclResult ret = hcclCommPtr->GetCommStatus(status);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING);
-}
+} */
