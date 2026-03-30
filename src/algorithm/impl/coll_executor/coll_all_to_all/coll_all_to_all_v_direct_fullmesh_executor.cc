@@ -311,6 +311,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetAlltoAllvTmpRankSendRecvInfo(const 
 HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllToAll fullmesh start.", __func__);
+
     // 准备数据
     CHK_RET(ActiveSlaveStreams(param.stream));
     CHK_RET(GetAlltoAllvTmpRankSendRecvInfo(param));
@@ -319,7 +320,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     u32 devNumInlocalPod = INVALID_VALUE_RANKSIZE;
     u32 rankIdxInPod = INVALID_VALUE_RANKID;
     CHK_RET(GetLocalSDMAGroupInfo(topoAttr_.userRank, devNumInlocalPod, rankIdxInPod));
-    
+
     // 获取通信域
     CHK_RET(CheckCommSize(COMM_COMBINE_ORDER, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);
