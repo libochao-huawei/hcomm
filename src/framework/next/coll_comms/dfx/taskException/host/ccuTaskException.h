@@ -11,13 +11,7 @@
 #define CCU_TASKEXCEPTION_H
 
 #include <array>
-#include "types.h"
-#include "hccl_types.h"
-#include "orion_adapter_rts.h"
 #include "global_mirror_tasks.h"
-#include "error_message_v2.h"
-#include "orion_adapter_hccp.h"
-#include "rdma_handle_manager.h"
 #include "ccu_error_info.h"
 #include "rank_pair.h"
 #include "ccu_error_info_v1.h"
@@ -36,13 +30,13 @@ public:
     static void ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo);
 
 private:
+    static HcclResult InitChannelMap(s32 deviceId, u64 ccuKernelHandle);
     static std::string GetGroupRankInfo(const Hccl::TaskInfo& taskInfo);
 
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
     static HcclResult PrintCcuUbRegisters(const std::vector<CcuErrorInfo>& errorInfos, s32 devLogicId,
         const Hccl::TaskInfo& taskInfo);
-    static HcclResult GetCcuJettys(const CcuErrorInfo& errorInfo, s32 devLogicId,
-        const Hccl::TaskInfo& taskInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx);
+    static HcclResult GetCcuJettys(const CcuErrorInfo& errorInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx);
 
  	static void PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const Hccl::TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const Hccl::TaskInfo& taskInfo, u32 deviceId);
@@ -70,7 +64,7 @@ private:
     static std::string GetCcuErrorMsgBufLocWrite(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::string GetCcuErrorMsgBufReduce(const CcuErrorInfo &ccuErrorInfo, const Hccl::TaskInfo &taskInfo, u32 deviceId);
 
-    static HcclResult GetCcuChannelHandleById(u32 deviceId, u16 channelId, const Hccl::TaskInfo &taskInfo, u64& channelHandle);
+    static HcclResult GetCcuChannelHandleById(u16 channelId, u64& channelHandle);
     static RankId GetRankIdByChannelId(uint16_t channelId, const Hccl::TaskInfo &taskInfo, u32 deviceId);
     static std::pair<Hccl::IpAddress, Hccl::IpAddress> GetAddrPairByChannelId(uint16_t channelId,
         const Hccl::TaskInfo &taskInfo, u32 deviceId);

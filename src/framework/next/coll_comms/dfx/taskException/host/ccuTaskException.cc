@@ -117,6 +117,10 @@ struct ccumDfxInfo {
     unsigned int ccumCifSqeCnt;
     unsigned int ccumCifCqeCnt;
 };
+
+std::mutex g_channelMapMutex;
+std::unordered_map<uint16_t, uint64_t> g_channelIdToHandle;
+
 void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInfo, const Hccl::TaskInfo& taskInfo)
 {
     auto deviceId = exceptionInfo->deviceid;
@@ -126,6 +130,7 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
     HCCL_ERROR("[CcuTaskException]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
     HCCL_ERROR("[CcuTaskException]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
+    CHK_PRT(InitChannelMap(deviceId, taskInfo.taskParam_.taskPara.Ccu.ccuKernelHandle));
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
@@ -146,6 +151,30 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
             __func__, dieId, devLogicId);
     }
 }
+
+HcclResult CcuTaskException::InitChannelMap(s32 deviceId, u64 ccuKernelHandle)
+{
+    std::lock_guard<std::mutex> lock(g_channelMapMutex);
+
+    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
+    auto *kernel = kernelMgr.GetKernel(ccuKernelHandle);
+    CHK_PRT_RET(kernel == nullptr, HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]",
+        __func__, deviceId, ccuKernelHandle), HCCL_E_PARA);
+
+    const std::vector<CcuProfilingInfo> ccuProfilingInfos = kernel->GetAllCcuProfilingInfo();
+    for (const CcuProfilingInfo& profInfo : ccuProfilingInfos) {
+        for (u32 idx = 0; idx < CCU_MAX_CHANNEL_NUM; ++idx) {
+            if (profInfo.channelId[idx] == hcomm::INVALID_VALUE_CHANNELID) {
+                break;
+            }
+            g_channelIdToHandle[profInfo.channelId[idx]] = profInfo.channelHandle[idx];
+            HCCL_INFO("[%s]deviceId[%d], ccuKernelHandle[0x%llx], idx[%u], channelId[%u], channelHandle[0x%llx]",
+                __func__, deviceId, ccuKernelHandle, idx, profInfo.channelId[idx], profInfo.channelHandle[idx]);
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 std::string CcuTaskException::GetGroupRankInfo(const Hccl::TaskInfo& taskInfo)
 {
     if (taskInfo.dfxOpInfo_ == nullptr || taskInfo.dfxOpInfo_->comm_ == nullptr) {
@@ -904,7 +933,7 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
         }
 
         std::pair<CcuChannelInfo, std::vector<CcuJetty *>> ctx;
-        (void)GetCcuJettys(errorInfo, devLogicId, taskInfo, ctx);
+        (void)GetCcuJettys(errorInfo, ctx);
         ccuJettys.insert(ccuJettys.end(), ctx.second.begin(), ctx.second.end());
     }
 
@@ -930,12 +959,12 @@ HcclResult CcuTaskException::PrintCcuUbRegisters(const std::vector<CcuErrorInfo>
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo, s32 devLogicId,
-    const Hccl::TaskInfo& taskInfo, std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
+HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo,
+    std::pair<CcuChannelInfo, std::vector<CcuJetty *>> &ctx)
 {
     // channelId -> channelHandle
     u64 channelHandle = INVALID_U64;
-    CHK_RET(GetCcuChannelHandleById(devLogicId, errorInfo.msg.transMem.channelId, taskInfo, channelHandle));
+    CHK_RET(GetCcuChannelHandleById(errorInfo.msg.transMem.channelId, channelHandle));
 
     // channelHandle -> CcuUrmaChannel
     void *channelPtr{nullptr};
@@ -1246,23 +1275,18 @@ string CcuTaskException::GetCcuErrorMsgMission(const CcuErrorInfo &ccuErrorInfo)
         ccuErrorInfo.msg.mission.missionError);
 }
 
-HcclResult CcuTaskException::GetCcuChannelHandleById(u32 deviceId, u16 channelId, const Hccl::TaskInfo &taskInfo,
-    u64& channelHandle)
+HcclResult CcuTaskException::GetCcuChannelHandleById(u16 channelId, u64& channelHandle)
 {
-    u64 ccuKernelHandle = taskInfo.taskParam_.taskPara.Ccu.ccuKernelHandle;
-    auto &kernelMgr = hcomm::CcuKernelMgr::GetInstance(deviceId);
-    auto *kernel = kernelMgr.GetKernel(ccuKernelHandle);
-    if (kernel == nullptr) {
-        HCCL_ERROR("[%s]GetKernel nullptr, deviceId[%u], ccuKernelHandle[0x%llx]", __func__, deviceId, ccuKernelHandle);
-        return HCCL_E_PARA;
+    std::lock_guard<std::mutex> lock(g_channelMapMutex);
+    auto it = g_channelIdToHandle.find(channelId);
+    if (it == g_channelIdToHandle.end()) {
+        HCCL_ERROR("[%s]channelId[%u] not found", __func__, channelId);
+        for (auto info : g_channelIdToHandle) {
+            HCCL_ERROR("[%s]g_channelIdToHandle[%u]=[0x%llx]", __func__, info.first, info.second);
+        }
+        return HCCL_E_NOT_FOUND;
     }
-
-    uint64_t handle = 0;
-    if (kernel->GetChannelHandleById(channelId, handle) != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s]GetChannelHandleById fail, channelId[%u], handle[0x%llx]", __func__, channelId, handle);
-        return HCCL_E_PARA;
-    }
-    channelHandle = handle;
+    channelHandle = it->second;
     return HCCL_SUCCESS;
 }
 
@@ -1278,7 +1302,7 @@ RankId CcuTaskException::GetRankIdByChannelId(uint16_t channelId, const Hccl::Ta
     }
 
     u64 channelHandle = INVALID_U64;
-    if (GetCcuChannelHandleById(deviceId, channelId, taskInfo, channelHandle) != HCCL_SUCCESS) {
+    if (GetCcuChannelHandleById(channelId, channelHandle) != HCCL_SUCCESS) {
         HCCL_ERROR("[%s]GetCcuChannelHandleById fail, deviceId[%u], channelId[%u], channelHandle[0x%llx]",
             __func__, deviceId, channelId, channelHandle);
         return INVALID_UINT;
@@ -1312,7 +1336,7 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
     }
 
     u64 channelHandle = INVALID_U64;
-    if (GetCcuChannelHandleById(deviceId, channelId, taskInfo, channelHandle) != HCCL_SUCCESS) {
+    if (GetCcuChannelHandleById(channelId, channelHandle) != HCCL_SUCCESS) {
         HCCL_ERROR("[%s]GetCcuChannelHandleById fail, deviceId[%u], channelId[%u], channelHandle[0x%llx]",
             __func__, deviceId, channelId, channelHandle);
         return dummy;
