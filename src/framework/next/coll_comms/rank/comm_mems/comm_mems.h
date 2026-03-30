@@ -18,6 +18,7 @@
 #include "log.h"
 #include "hccl_mem_defs.h"
 #include "rma_buffer_mgr.h"
+#include "hcomm_c_adpt.h"
 
 namespace hccl { 
 struct CommMemHandle {
