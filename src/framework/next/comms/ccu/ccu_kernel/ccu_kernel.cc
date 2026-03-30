@@ -321,7 +321,7 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     auto rep = std::make_shared<CcuRep::CcuRepLocWaitEvent>(event, isProfiling);
     if (isProfiling) {
-        CHK_RET(AddProfiling("WaitEvent", rep->GetMask()));
+        CHK_RET(static_cast<HcclResult>(AddProfiling("WaitEvent", rep->GetMask())));
     }
  	Append(rep);
     return HCCL_SUCCESS;
@@ -346,7 +346,7 @@ HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNoti
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     if (isProfiling) {
-        CHK_RET(AddProfiling(channel, "NotifyWait", localNotifyIdx, mask));
+        CHK_RET(static_cast<HcclResult>(AddProfiling(channel, "NotifyWait", localNotifyIdx, mask)));
     }
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     return HCCL_SUCCESS;
@@ -869,7 +869,7 @@ HcclResult CcuKernel::AddProfilingInfo(const ChannelHandle *channels, uint32_t c
                                     INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
     for (uint32_t i = 0; i < channelNum; i++) {
         void *channelPtr{nullptr};
-        CHK_RET(HcommChannelGet(channels[i], &channelPtr));
+        CHK_RET(static_cast<HcclResult>(HcommChannelGet(channels[i], &channelPtr)));
         auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
         CHK_PTR_NULL(channelImpl);
         ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();

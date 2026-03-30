@@ -87,11 +87,11 @@ public:
     void CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep);
 
     void AddSqeProfiling();
-    HcclResult AddProfiling(const std::string &name, uint32_t mask);
-    HcclResult AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
-    HcclResult AddProfiling(const ChannelHandle *channels, uint32_t channelNum);
-    HcclResult AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcclDataType dataType, HcclDataType outputDataType,
-                    HcclReduceOp opType);
+    int32_t AddProfiling(const std::string &name, uint32_t mask);
+    int32_t AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask);
+    int32_t AddProfiling(const ChannelHandle *channels, uint32_t channelNum);
+    int32_t AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcommDataType hcommDataType,
+        HcommDataType hcommOutputDataType, HcommReduceOp hcommOpType);
 public:
     // CCU Profiling相关数据
     CcuProfilingInfo ccuProfilingInfoCache;
