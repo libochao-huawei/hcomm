@@ -33,9 +33,6 @@ public:
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
 
-    virtual HcclResult Clean() override;
-    virtual HcclResult Resume() override;
-
 private:
     HcclResult ParseInputParam();
     HcclResult BuildTransport();
