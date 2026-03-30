@@ -13,46 +13,18 @@
 
 #include <cstring>
 
-enum class HcclV2SupportStatus {
-    UNKNOWN,  // 获取socName失败
-    SUPPORTED,  // 支持V2
-    NOT_SUPPORTED  // 不支持V2
-};
-
-inline static bool IsChipSupportHCCLV2(const char *socNamePtr)
-{
-    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, socNamePtr);
-    return std::strstr(socNamePtr, "Ascend950") != nullptr;
-}
-
-inline HcclV2SupportStatus IsSupportHCCLV2Cached()
-{
-    static thread_local HcclV2SupportStatus cachedStatus = HcclV2SupportStatus::UNKNOWN;
-    static thread_local bool isInited = false;
-    
-    if (!isInited) {
-        const char *socNamePtr = aclrtGetSocName();
-        if (socNamePtr == nullptr) {
-            // 获取socName失败，返回UNKNOWN状态
-            return HcclV2SupportStatus::UNKNOWN;
-        }
-        cachedStatus = IsChipSupportHCCLV2(socNamePtr) ?
-                      HcclV2SupportStatus::SUPPORTED :
-                      HcclV2SupportStatus::NOT_SUPPORTED;
-        isInited = true;
-    }
-    return cachedStatus;
-}
-
 #define HCCLV2_FUNC_RUN(func, ...) \
     do { \
-        const auto status = IsSupportHCCLV2Cached(); \
-        if (status == HcclV2SupportStatus::SUPPORTED) { \
-            return func; \
+        static thread_local bool isSupportV2 = false; \
+        static thread_local bool isInited = false; \
+        if (!isInited) { \
+            const char *socNamePtr = aclrtGetSocName(); \
+            CHK_PTR_NULL(socNamePtr); \
+            isSupportV2 = IsSupportHCCLV2(socNamePtr); \
+            isInited = true; \
         } \
-        if (status == HcclV2SupportStatus::UNKNOWN) { \
-            HCCL_ERROR("[%s] Failed to get socName", __func__); \
-            return HCCL_E_INTERNAL; \
+        if (isSupportV2) { \
+            return func; \
         } \
     } while (0)
     

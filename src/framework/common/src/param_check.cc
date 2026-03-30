@@ -463,10 +463,7 @@ HcclResult HcclParseRanktable(const std::string &rankTableM, const std::string &
 
 bool IsSupportHCCLV2(const char *socNamePtr)
 {
-    std::string targetChipVerStr = socNamePtr;
-    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
-    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
-        return true;
-    }
-    return false;
+    constexpr char *v2SocNamePrefix = "Ascend950";
+    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, socNamePtr);
+    return std::strstr(socNamePtr, v2SocNamePrefix) != nullptr;
 }
