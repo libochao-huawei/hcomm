@@ -465,5 +465,5 @@ HcclResult HcclParseRanktable(const std::string &rankTableM, const std::string &
 bool IsSupportHCCLV2(const char *socNamePtr)
 {
     HCCL_DEBUG("[%s]SocVersion = %s.", __func__, socNamePtr);
-    return std::strstr(socNamePtr, "Ascend950") != nullptr;
+    return strstr(socNamePtr, "Ascend950") != nullptr;
 }
