@@ -195,6 +195,10 @@ custom_uninstall() {
         remove_empty_dir "${common_parse_dir}/python"
     fi
 
+    if [ -d "${WHL_INSTALL_DIR_PATH}/${HCOMM_NAME}/__pycache__" ]; then
+        rm -rf "${WHL_INSTALL_DIR_PATH}/${HCOMM_NAME}/__pycache__"
+    fi
+
     return 0
 }
 
