@@ -11,11 +11,22 @@
 #ifndef RS_NDA_H
 #define RS_NDA_H
 
+#include "ibv_extend.h"
 #include "hccp_nda.h"
 #include "rs_list.h"
 #include "rs.h"
 
 #define RS_VENDOR_ID_19E5 0x19E5
+
+struct RsNdaCb {
+    struct ibv_extend_ops ibvExOps;
+    struct NdaOps ndaOps;
+    pthread_mutex_t ndaMutex;
+    struct RsListHead ndaDbHostList;
+    struct RsListHead ndaDbGuidList;
+    uint16_t ndaDbGuidCnt;
+};
+
 
 static inline int rsNdaGetDirectFlagByVendorId(uint32_t vendorId)
 {

@@ -29,7 +29,6 @@
 #include "stub_ssl.h"
 #endif
 #include "ascend_hal_external.h"
-#include "ibv_extend.h"
 #ifndef HNS_ROCE_LLT
 #include "dlog_pub.h"
 #endif
@@ -604,12 +603,7 @@ struct rs_cb {
     pid_t hostPid;
     bool grpSetupFlag;
 
-    struct ibv_extend_ops ibvExOps;
- 	struct NdaOps ndaOps;
-    pthread_mutex_t ndaMutex;
-    struct RsListHead ndaDbHostList;
-    struct RsListHead ndaDbGuidList;
-    uint16_t ndaDbGuidCnt;
+    struct RsNdaCb ndaCb;
 };
 
 extern __thread struct rs_cb *gRsCb;
