@@ -110,9 +110,8 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     ChannelHandle channelHandle = 0xab;
-    MOCKER(HcommCollectiveChannelCreate)
+    MOCKER(ChannelProcess::CreateChannelsLoop)
         .stubs()
-        .with(any(), any(), any(), any(), outBoundP(&channelHandle))
         .will(returnValue(HCCL_SUCCESS));
     aclrtBinHandle binHandle;
     CommConfig config;
