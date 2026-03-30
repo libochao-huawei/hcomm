@@ -81,11 +81,9 @@ public:
     HcclResult Algorithm() override { return HCCL_SUCCESS; }
     std::vector<uint64_t> GeneArgs(const CcuTaskArg&) override { return {1,2,3,4};}
     // 暴露私有成员用于验证（利用-fno-access-control编译选项，无需修改源码）
-    std::unordered_map<uint64_t, uint16_t>& GetChannelHandleToId() { return channelHandleToId_; }
-    std::unordered_map<uint16_t, uint64_t>& GetChannelIdToHandle() { return channelIdToHandle_; }
     HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
     {
-    return HcclResult::HCCL_SUCCESS;
+        return HcclResult::HCCL_SUCCESS;
     }
 
     void SetLoadArgIndex(uint32_t idx) { loadArgIndex_ = idx; }
@@ -213,29 +211,6 @@ TEST_F(CcuKernelTest, AddProfilingInfo_Normal) {
         testOutputDataType, testReduceOp, "GroupReduce");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
-
-TEST_F(CcuKernelTest, UpdateChannelIdMap_Normal) {
-    kernel_->channels_.push_back(0x1001);
-    HcclResult ret = kernel_->UpdateChannelIdMap();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(CcuKernelTest, UpdateChannelIdMap_ChannelCastFail) {
-    hcomm::SetMockCcuUrmaChannel(nullptr);
-
-    kernel_->channels_.push_back(0x9999);
-    HcclResult ret = kernel_->UpdateChannelIdMap();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(CcuKernelTest, GetChannelHandleById_InvalidId) {
-    uint64_t channelHandle = 0;
-    HcclResult ret = kernel_->GetChannelHandleById(999, channelHandle);
-    
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
-    EXPECT_EQ(channelHandle, 0);
-}
-
 
 TEST_F(Ccukernel_ReportProfilingTest, ReportCcuProfilingInfo_EmptyProfiling) {
     MOCKER_CPP(&CcuComponent::CheckDiesEnable)
@@ -846,19 +821,8 @@ TEST_F(CcuTaskExceptionTest, GenStatusInfo_Normal) {
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuChannelHandleById_Normal) {
-    Hccl::ParaCcu paraCcu = {};
-    Hccl::TaskParam taskParam = {
-        .taskType = Hccl::TaskParamType::TASK_CCU,
-        .beginTime = 0,
-        .endTime = 0,
-        .isMaster = false,
-        .taskPara = {.Ccu = paraCcu},
-        .ccuDetailInfo = nullptr
-    };
-    Hccl::TaskInfo taskInfo(1,2,3, taskParam, nullptr, false);
-
     u64 channelHandle = 0;
-    HcclResult ret = CcuTaskException::GetCcuChannelHandleById(0, 101, taskInfo, channelHandle);
+    HcclResult ret = CcuTaskException::GetCcuChannelHandleById(101, channelHandle);
 
     // 验证输出
     EXPECT_TRUE(true);

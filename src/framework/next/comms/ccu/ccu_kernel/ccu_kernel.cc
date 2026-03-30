@@ -331,7 +331,6 @@ HcclResult CcuKernel::WaitEvent(CcuRep::CompletedEvent event)
 HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
 {
     Append(std::make_shared<CcuRep::CcuRepRemPostSem>(channel, remoteNotifyIdx, mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 /*WriteVariableWithSignal新接口*/
@@ -339,7 +338,6 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
                                         uint32_t remoteVarIdx, const CcuRep::Variable &var, uint32_t mask)
 {
     Append(std::make_shared<CcuRep::CcuRepRemPostVar>(var, channel, remoteVarIdx, remoteNotifyIdx, mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -351,7 +349,6 @@ HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNoti
         CHK_RET(AddProfiling(channel, "NotifyWait", localNotifyIdx, mask));
     }
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -360,7 +357,6 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, event.mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -369,7 +365,6 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, event.mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -467,7 +462,6 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAdd
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, event.mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -481,7 +475,6 @@ HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::Lo
 
     Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, CcuRep::GetUBDataType(dataType_),
                                                 CcuRep::GetUBReduceType(opType_), event, event.mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -490,7 +483,6 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, event.mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -504,7 +496,6 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
 
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, CcuRep::GetUBDataType(dataType_),
                                                  CcuRep::GetUBReduceType(opType_), event, event.mask));
-    channelHandleToId_.insert({channel, INVALID_U16});
     return HCCL_SUCCESS;
 }
 
@@ -768,44 +759,6 @@ void DumpCcuProfilingInfo(const std::vector<CcuProfilingInfo> &ccuProfilingInfo)
         }
     }
 }
-
-HcclResult CcuKernel::UpdateChannelIdMap()
-{
-    for (auto it : channelHandleToId_) {
-        uint64_t channelHandle = it.first;
-        uint16_t channelId = INVALID_U16;
-        CHK_RET(GetChannelIdByHandle(channelHandle, channelId));
-        channelHandleToId_[channelHandle] = channelId;
-        channelIdToHandle_[channelId] = channelHandle;
-        HCCL_INFO("[%s]channelHandle[0x%llx], channelId[%u]", __func__, channelHandle, channelId);
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult CcuKernel::GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle)
-{
-    auto it = channelIdToHandle_.find(channelId);
-    CHK_PRT_RET(it == channelIdToHandle_.end(),
-        HCCL_ERROR("[%s]fail, channelId[%u] not found", __func__, channelId), HCCL_E_NOT_FOUND);
-    channelHandle = it->second;
-    return HCCL_SUCCESS;
-}
-
-HcclResult CcuKernel::GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId)
-{
-    void *channelPtr{nullptr};
-    CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
-    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
-    if (channelImpl == nullptr) {
-        HCCL_ERROR("[%s]failed to cast channelHandle[0x%llx] to CcuUrmaChannel", __func__, channelHandle);
-        return HCCL_E_PTR;
-    }
-    channelId = channelImpl->GetChannelId();
-    HCCL_DEBUG("[%s]success, channelHandle[0x%llx], channelId[%u]", __func__, channelHandle, channelId);
-    return HCCL_SUCCESS;
-}
-
-
 /*
  	* variable/maskSignal等资源变量Id，一定要在获取ccu profiling时才获取；
  	* 原因：在创建context Rep时，其资源Id属于虚拟资源；翻译时，才会绑定固定的物理资源。
@@ -813,7 +766,7 @@ HcclResult CcuKernel::GetChannelIdByHandle(uint64_t channelHandle, uint16_t& cha
 HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo)
 {
  	HCCL_INFO("[GetCcuProfilingInfo] Enter.");
- 	std::vector<CcuProfilingInfo> allCcuProfilingInfos;
+    allCcuProfilingInfos_.clear();
  	auto &ccuProfilingCache = GetProfilingInfo();
  	 
  	auto taskArgs = GeneArgs(arg);
@@ -823,7 +776,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
         profInfo.missionId = GetMissionId();
         if (profInfo.type == static_cast<uint8_t>(hcomm::CcuProfilinType::CCU_TASK_PROFILING)) {
             profInfo.instrId   = GetInstrId();
-            allCcuProfilingInfos.push_back(profInfo);
+            allCcuProfilingInfos_.push_back(profInfo);
             continue;
         }
         if (count >= GetWaiteCkeProfilingReps().size()) {
@@ -840,7 +793,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
             profInfo.ckeId = waitCkeRep->GetId();
             HCCL_INFO("[CcuKernel][GetCcuProfilingInfo] waitcke[%u]", profInfo.ckeId);
         }
-        allCcuProfilingInfos.push_back(profInfo);
+        allCcuProfilingInfos_.push_back(profInfo);
         count++;
     }
 
@@ -883,7 +836,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
         if (loopParam != 0) {
             lgProfInfo.ccuProfilingInfos[i].dataSize = loopParam * moConfig_.loopCount * moConfig_.memSlice;
             lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i].get())->StartInstrId();
-            allCcuProfilingInfos.push_back(lgProfInfo.ccuProfilingInfos[i]);
+            allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
 
         if (parallelParam != 0) {
@@ -893,11 +846,11 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
             uint64_t repeatNum = Hccl::CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
             lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig_.memSlice + residual;
             lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
-            allCcuProfilingInfos.push_back(lgProfInfo.ccuProfilingInfos[i]);
+            allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
         }
     }
-    DumpCcuProfilingInfo(allCcuProfilingInfos);
-    allCcuProfilingInfo = allCcuProfilingInfos;
+    DumpCcuProfilingInfo(allCcuProfilingInfos_);
+    allCcuProfilingInfo = allCcuProfilingInfos_;
     return HCCL_SUCCESS;
 }
 
