@@ -26,8 +26,8 @@ class CcuTransport {
 public:
     static constexpr uint32_t INIT_CKE_NUM = 8;
     static constexpr uint32_t INIT_XN_NUM  = 8;
-    MAKE_ENUM(TransStatus, INIT, SEND_ALL_INFO, RECV_ALL_INFO, SEND_TRANS_RES, RECV_TRANS_RES, SEND_FIN, RECV_FIN,
-              RECVING_FIN, RECVING_TRANS_RES, READY, CONNECT_FAILED, SOCKET_TIMEOUT)
+    MAKE_ENUM(TransStatus, INIT, SEND_DATA_SIZE, RECV_DATA_SIZE, SEND_ALL_INFO, RECV_ALL_INFO, SEND_TRANS_RES,
+        RECV_TRANS_RES, SEND_FIN, RECV_FIN, RECVING_FIN, RECVING_TRANS_RES, READY, CONNECT_FAILED, SOCKET_TIMEOUT)
 
     struct CclBufferInfo {
         uint64_t addr{0};
@@ -134,6 +134,7 @@ public:
     }
 
 private:
+    HcclResult CheckSocketStatus();
     HcclResult StatusMachine();
     HcclResult AppendCkes(uint32_t ckesNum);
     HcclResult AppendXns(uint32_t xnsNum);
@@ -145,12 +146,14 @@ private:
     HcclResult ReleaseTransRes();
     HcclResult SendConnAndTransInfo();
     HcclResult RecvConnAndTransInfo();
+    HcclResult SendDataSize();
+    HcclResult RecvDataSize();
     HcclResult SendTransInfo();
     HcclResult RecvTransInfo();
     HcclResult HandshakeMsgPack(Hccl::BinaryStream &binaryStream);
     HcclResult ConnInfoPack(Hccl::BinaryStream &binaryStream) const;
     HcclResult TransResPack(Hccl::BinaryStream &binaryStream);
-    HcclResult BufferInfoPack(Hccl::BinaryStream &binaryStream) const;
+    HcclResult BufferInfoPack(Hccl::BinaryStream &binaryStream, std::vector<CclBufferInfo> &bufferVec) const;
     HcclResult HandshakeMsgUnpack(Hccl::BinaryStream &binaryStream);
     HcclResult ConnInfoUnpackProc(Hccl::BinaryStream &binaryStream) const;
     HcclResult TransResUnpackProc(Hccl::BinaryStream &binaryStream);

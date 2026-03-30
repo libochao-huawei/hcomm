@@ -191,7 +191,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
 }
 
 HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
-    std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles)
+    std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles, std::vector<MemHandle> &commMemHandleVec)
 {
     if (memHandleVec.size() == 0) {
         HCCL_ERROR("[CommMems][SetMemHandles] memHandleVecSize is 0.");
@@ -207,6 +207,7 @@ HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<MemHandl
         (*handles[i - 1]).bufferHandle = memHandleVec[i];
         commMemHandles.emplace_back(std::make_unique<CommMemHandle>((*handles[i - 1]).addr, (*handles[i - 1]).size,
             (*handles[i - 1]).memType, memHandleVec[i], (*handles[i - 1]).memTag));
+        commMemHandleVec.push_back(static_cast<void*>(commMemHandles.back().get()));
     }
     return HCCL_SUCCESS;
 }

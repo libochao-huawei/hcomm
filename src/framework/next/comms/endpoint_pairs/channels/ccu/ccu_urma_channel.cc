@@ -291,4 +291,11 @@ HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag,
 {
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
+
+HcclResult CcuUrmaChannel::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+{
+    std::vector<CcuTransport::CclBufferInfo> bufferVecTemp{};
+    CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferVecTemp));
+    return impl_->UpdateMemInfo(bufferVecTemp);
+}
 }  // namespace hcomm
