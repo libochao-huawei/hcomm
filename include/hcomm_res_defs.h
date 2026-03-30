@@ -46,6 +46,11 @@ typedef void *HcommSocket;
 typedef uint64_t ChannelHandle;
 #endif
 
+/**
+ * @brief 通道实体句柄类型
+ */
+typedef void *ChannelEntitiesHandle;
+
 #ifndef THREAD_HANDLE_DEFINED
 #define THREAD_HANDLE_DEFINED
 /**

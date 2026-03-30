@@ -36,6 +36,10 @@ set(src_to_test_list
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel.cc
+    comms/endpoint_pairs/channels/aicpu/ut_dev_rdma_connection.cc
+    comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_ts_roce_channel_lite.cc
+    comms/endpoint_pairs/channels/aicpu/device/ut_dev_rdma_conn_lite.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
     comms/endpoints/reged_mems/ut_roce_mem_test.cc
     coll_comms/api_c_adpt/ut_coll_comm_res_c_adpt.cc
