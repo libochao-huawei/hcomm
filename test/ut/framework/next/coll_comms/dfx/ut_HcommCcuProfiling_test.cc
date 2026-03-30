@@ -1682,7 +1682,6 @@ TEST_F(CcuTaskExceptionTest, GetGroupRankInfo_WithValidComm) {
     EXPECT_TRUE(result.find("rankId[7]") != std::string::npos);
 }
 
-<<<<<<< HEAD
 namespace CcuRep {
 
 class MockCcuRepBase : public CcuRepBase {
@@ -1892,7 +1891,6 @@ TEST_F(CcuRepContextTest, AddProfiling_WithChannelsNullPtr) {
     CcuRep::CcuRepContext context;
     HcclResult ret = context.AddProfiling(nullptr, 2);
     EXPECT_NE(ret, HCCL_SUCCESS);
-=======
 // ========== GenErrorInfo系列函数测试 ==========
 
 class GenErrorInfoTest : public BaseInit {
@@ -2427,7 +2425,6 @@ TEST_F(GenErrorInfoTest, GenErrorInfoByRepType_UnknownType_FallsToDefault) {
     CcuTaskException::GenErrorInfoByRepType(baseInfo_, rep, errorInfo);
     EXPECT_EQ(errorInfo.size(), 1u);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
->>>>>>> 5868946cd486379639fc51ec2e206c6ea32024f9
 }
 
 } // namespace hcomm
