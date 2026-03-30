@@ -11,6 +11,8 @@
 #ifndef PARAM_CHECK_PUB_BASIC_V2_H
 #define PARAM_CHECK_PUB_BASIC_V2_H
 
+#include "adapter_rts.h"
+
 #define HCCLV2_FUNC_RUN(func, ...) \
     do { \
         bool isSupportV2 = false; \
