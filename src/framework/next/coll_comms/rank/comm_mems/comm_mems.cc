@@ -104,8 +104,8 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     auto& reg = tagRegs_[memTag];
  
     // 同tag内做区间冲突/幂等复用
-    auto res = reg.table.AddWithoutCheck(key, h);
- 
+    reg.table.AddWithoutCheck(key, h);
+
     // 加入绑定map
     opBindings_.emplace(memTag, h);
 
