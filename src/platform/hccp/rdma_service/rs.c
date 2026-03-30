@@ -1010,6 +1010,34 @@ STATIC int RsRdevCbInfoInit(struct rdev rdevInfo, struct rs_cb *rsCb, struct RsR
     return 0;
 }
 
+STATIC int RsInitNdaCb(struct RsRdevCb *rdevCb)
+{
+    int ret = 0;
+
+    rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
+    if (rdevCb->ibCtxEx != NULL) {
+        rdevCb->rsCb->ndaCb = (struct RsNdaCb *)calloc(1, sizeof(struct RsNdaCb));
+        if (rdevCb->rsCb->ndaCb == NULL) {
+            hccp_err("calloc for ndaCb failed");
+            ret = -ENOMEM;
+            RsNdaIbvCloseExtend(rdevCb->ibCtxEx);
+            rdevCb->ibCtxEx = NULL;
+        }
+    }
+
+    return ret;
+}
+
+STATIC void RsFreeNdaCb(struct RsRdevCb *rdevCb)
+{
+    if (rdevCb->rsCb->ndaCb != NULL) {
+        free(rdevCb->rsCb->ndaCb);
+        rdevCb->rsCb->ndaCb = NULL;
+    }
+    (void)RsNdaIbvCloseExtend(rdevCb->ibCtxEx);
+    rdevCb->ibCtxEx = NULL;
+}
+
 STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs_cb *rsCb,
     unsigned int *rdevIndex)
 {
@@ -1054,16 +1082,22 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
     }
 #endif
 
-    ret = RsSetupPdAndNotify(rdevCb);
+    ret = RsInitNdaCb(rdevCb);
     if (ret) {
-        hccp_err("rs_get_sq_depth_and_qp_max_num failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
+        hccp_err("RsInitNdaCb failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
         goto unmmap_ai_db;
     }
 
-    rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
+    ret = RsSetupPdAndNotify(rdevCb);
+    if (ret) {
+        hccp_err("RsSetupPdAndNotify failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
+        goto free_nda_cb;
+    }
 
     return 0;
 
+free_nda_cb:
+    RsFreeNdaCb(rdevCb);
 unmmap_ai_db:
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
@@ -1338,7 +1372,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 
     RsIbvDeallocPd(rdevCb->ibPd);
 
-    (void)RsNdaIbvCloseExtend(rdevCb->ibCtxEx);
+    RsFreeNdaCb(rdevCb);
 
     RsIbvCloseDevice(rdevCb->ibCtx);
 
