@@ -47,7 +47,6 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
             HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
                 HCCL_ERROR_CODE(HCCL_E_PARA), tc),
             HCCL_E_PARA);
-        CHK_RET(config_.SetConfigTrafficClass(tc));
 
         u32 sl = commConfig.GetConfigServiceLevel();
         CHK_PRT_RET((sl != 0xFFFFFFFFu) && (sl > 7u),
