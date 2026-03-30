@@ -144,7 +144,7 @@ void hcclComm::BinaryUnLoad()
     binHandle_ = nullptr;
 }
 
-HcclResult hcclComm::Resume()
+/* HcclResult hcclComm::Resume()
 {
     if (!IsCommunicatorV2()) {
         CHK_RET(communicator_->Resume());
@@ -174,6 +174,6 @@ HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
     }
     return HCCL_SUCCESS;
 }
-
+ */
 }  // namespace hccl
  
