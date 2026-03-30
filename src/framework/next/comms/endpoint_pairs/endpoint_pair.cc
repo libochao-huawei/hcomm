@@ -47,7 +47,13 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
-        CHK_RET(this->GetSocket(socketTag, listenPort, socket));
+        std::string socketTagPrefix = socketTag;
+        if (myRank <= rmtRank) {
+            socketTagPrefix += "_" + std::to_string(myRank) + "_" + std::to_string(rmtRank);
+        } else {
+            socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
+        }
+        CHK_RET(this->GetSocket(socketTagPrefix, listenPort, socket));
         return HCCL_SUCCESS;
     }
 
@@ -80,11 +86,16 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
     if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_.size() <= reuseIdx) {
-        CHK_RET(HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+        CHK_RET(static_cast<HcclResult>(
+            HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
     }
+
     channels[0] = channelHandles_[engine][reuseIdx];
+    if (channelDescs->memHandleNum > 1) {
+        CHK_RET(static_cast<HcclResult>(HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0])));
+    }
     return HCCL_SUCCESS;
 }
 

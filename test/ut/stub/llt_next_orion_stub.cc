@@ -529,20 +529,28 @@ std::vector<char> AicpuResPackageHelper::GetPackedData(
 
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr), rmtEid(rmtAddr.GetReverseEid())
 {}
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
+
+DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                         const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+{
+    tpProtocol = TpProtocol::UBOE;
+}
 
 std::vector<char> DevUbConnection::GetUniqueId() const
 {
@@ -936,9 +944,9 @@ RtsNotify::~RtsNotify()
 {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-    const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1)
+    const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
     : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB), rdmaHandle(rdmaHandle1),
-      locCntNotifyRes(locCntNotifyRes1)
+      locCntNotifyRes(locCntNotifyRes1), isRecvFirst_(isRecvFirst)
 {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
@@ -948,7 +956,8 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {}
 
-HcclResult UbMemTransport::FillTagVec()
+HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {
     return HCCL_SUCCESS;
 }
@@ -1045,7 +1054,8 @@ bool UbMemTransport::RecvDataProcess()
     return ConnVecUnpackProc(binaryStream);
 }
 
-void UbMemTransport::BufferVecPack(BinaryStream &binaryStream)
+void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {}
 
 void UbMemTransport::CntNotifyVecPack(BinaryStream &binaryStream)
@@ -1143,6 +1153,16 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 }
 
 HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::CheckSocketStatus()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp)
 {
     return HCCL_SUCCESS;
 }

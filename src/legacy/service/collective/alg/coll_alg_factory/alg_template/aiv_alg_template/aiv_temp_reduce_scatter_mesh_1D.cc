@@ -29,7 +29,8 @@ u32 AivTempReduceScatterMesh1D::CalcScratchMultiple(BufferType inBuffType, Buffe
 {
     (void) inBuffType;
     (void) outBuffType;
-    return tempRankSize_;
+    // 小数据量下，这里是2*rankSize基本不影响，大数据量下，需要2倍的cclBuffer去并发读
+    return 2 * tempRankSize_;
 }
 
 HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
@@ -58,7 +59,9 @@ HcclResult AivTempReduceScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, con
     const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[AivTempReduceScatterMesh1D] GenExtIns start");
-
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[AivTempReduceScatterMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     std::vector<LinkData> allLinks;
     for (auto iter = tempLinks.begin(); iter != tempLinks.end(); ++iter) {
         allLinks.emplace_back(iter->second.at(0));

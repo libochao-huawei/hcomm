@@ -31,7 +31,7 @@ private:
 
     HcclResult SelectAlgfor91093(const OpParam& param, std::string& algName);
     
-    bool SmallCountOptimMultiServer(const OpParam& param);
+    bool SmallCountOptimSinglePod(const OpParam& param);
 };
 
 }

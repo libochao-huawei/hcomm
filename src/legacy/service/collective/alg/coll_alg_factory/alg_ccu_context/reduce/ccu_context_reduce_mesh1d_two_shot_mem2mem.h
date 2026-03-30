@@ -38,7 +38,7 @@ protected:
     void PostSync();
     void DoRepeatReduceTwoShot();
     void ReduceRmtToLoc(const std::vector<CcuRep::Variable> &srcAddr, const CcuRep::Variable &dstAddr);
-    void GatherFromRmt(const std::vector<CcuRep::Variable> &srcAddr, const CcuRep::Variable &dstAddr);
+    void BcastLocToRmt(const CcuRep::Variable &srcAddr, const std::vector<CcuRep::Variable> &dstAddr);
 
 private:
     uint64_t                      rankSize_{0};
