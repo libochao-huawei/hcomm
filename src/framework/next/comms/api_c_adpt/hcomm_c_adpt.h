@@ -111,6 +111,8 @@ HcommResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, 
 
 HcclResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, ChannelEntity **channelEntityList);
 
+HcclResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, ChannelEntity **channelEntityList);
+
 #ifdef __cplusplus
 }
 

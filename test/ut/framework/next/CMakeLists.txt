@@ -12,6 +12,10 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
+    host/ut_cpu_roce_endpoint.cc
+    host/ut_host_cpu_roce_channel.cc
+    host/ut_host_rdma_connection.cc
+    host/ut_server_socket_manager.cc
     aicpu/ut_aicpu_ts_roce_channel.cc
     aicpu/ut_dev_rdma_connection.cc
     aicpu/device/ut_aicpu_ts_roce_channel_lite.cc
