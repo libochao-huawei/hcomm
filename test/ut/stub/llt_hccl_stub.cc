@@ -5492,4 +5492,9 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
     binaryPath = "./";
     return HCCL_SUCCESS;
 }
+
+HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *worldRank)
+{
+    return HCCL_SUCCESS;
+}
 }
