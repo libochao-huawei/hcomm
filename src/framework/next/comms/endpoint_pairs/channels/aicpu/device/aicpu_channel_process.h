@@ -15,6 +15,8 @@
 #include "common.h"
 #include "channel_param.h"
 #include "ub_transport_lite_impl.h"
+#include "dev_aicpu_ts_roce_channel_v2.h"
+
 class AicpuChannelProcess {
 public:
     ~AicpuChannelProcess() = default;
@@ -25,5 +27,6 @@ public:
 private:
     static std::mutex mutex_;
     static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::DevAicpuTsRoceChannelV2>> devAicpuTsRoceChannelV2Map_;
 };
 #endif // __AICPU_CHANNEL_PROCESS_H__

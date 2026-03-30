@@ -7,14 +7,14 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef AICPU_TS_ROCE_CHANNEL_KERNEL_H
-#define AICPU_TS_ROCE_CHANNEL_KERNEL_H
+#ifndef AICPU_TS_ROCE_CHANNEL_V2_KERNEL_H
+#define AICPU_TS_ROCE_CHANNEL_V2_KERNEL_H
 
 #include <vector>
 namespace hcomm {
 /**
- * @note 职责：AicpuTsRoceChannel的Device Aicpu kernel的数据结构、函数声明。
+ * @note 职责：AicpuTsRoceChannelV2的Device Aicpu kernel的数据结构、函数声明。
  */
 }
 
-#endif // AICPU_TS_ROCE_CHANNEL_KERNEL_H
+#endif // AICPU_TS_ROCE_CHANNEL_V2_KERNEL_H
