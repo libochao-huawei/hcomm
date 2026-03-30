@@ -23,6 +23,12 @@
 #include "notify_count.h"
 #include "base_mem_transport.h"
 #include "recover_info.h"
+#include "rank_graph_builder.h"
+#include "rank_gph.h"
+#include "phy_topo_builder.h"
+#include "phy_topo.h"
+#include "detour_service.h"
+#include "ranktable_stub_64_plus_1.h"
 #undef protected
 #undef private
 
@@ -498,25 +504,14 @@ TEST_F(MemTransportManagerTest, MemTransportManager_batch_build_oneSide_transpor
 TEST_F(MemTransportManagerTest, MemTransportManager_UT_GetUrmaWqsAndCqs)
 {
     StubCommunicatorImplTransMgr comm;
+    comm.rankSize = 4;
+    comm.myRank = 0;
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_4p.json"};
+    unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RANK_TABLE_4P, topoFilePath, 0);
+    comm.rankGraph = std::move(rankGraph);
     MemTransportManager          transportManager(comm);
-
-    LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-
-    // 打桩 SocketManager::GetConnectedSocket
-    IpAddress          ipAddress("1.0.0.0");
-    shared_ptr<Socket> fakeSocket = make_shared<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    SocketConfig       socketConfig(linkData.GetRemoteRankId(), linkData, comm.GetEstablishLinkSocketTag());
-    comm.GetSocketManager().connectedSocketMap[socketConfig] = std::move(fakeSocket);
-
-    // 打桩 RmaConnManager::Get
-    RdmaHandle      rdmaHandle = (void *)0x1000000;
-    RdmaHandleManager::GetInstance().tokenInfoMap[rdmaHandle] = make_unique<TokenInfoManager>(0, rdmaHandle);
-    DevUbConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OPBASE);
-    MOCKER_CPP(&RmaConnManager::Get).stubs().will(returnValue(dynamic_cast<RmaConnection *>(&devUbConnection)));
-
-    SocketStatus fakeSocketStatus = SocketStatus::OK;
-    MOCKER_CPP(&Socket::GetStatus).stubs().will(returnValue(fakeSocketStatus));
-    comm.rankSize = 0;
+    
     
     MOCKER_CPP(&MemTransportManager::IsAllTransportReady).stubs().will(returnValue(true));
     EXPECT_NO_THROW(transportManager.GetUrmaWqs());
