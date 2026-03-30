@@ -815,10 +815,10 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     u32 streamId;
     Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
 
-    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, INVALID_RANKID, taskParam
+    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, Hccl::INVALID_RANKID, taskParam,
                                                 hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), false);
 
     hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
-}   
+} 

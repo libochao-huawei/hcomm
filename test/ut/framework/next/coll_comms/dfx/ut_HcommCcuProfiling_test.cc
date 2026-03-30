@@ -548,7 +548,7 @@ TEST_F(CcuTaskExceptionTest, GetGroupRankInfo_Normal) {
         .taskPara = {.Ccu = paraCcu},
         .ccuDetailInfo = nullptr
     };
-    Hccl::TaskInfo taskInfo{1,2,3, taskParam, nullptr, true};
+    Hccl::TaskInfo taskInfo(1,2,3, taskParam, nullptr, false);
     taskInfo.dfxOpInfo_ = std::make_shared<Hccl::DfxOpInfo>();
     hccl::ManagerCallbacks callbacks;
     callbacks.getAicpuCommState = []() { return true; };
@@ -607,8 +607,8 @@ struct CcumDfxInfoForTest {
 
 TEST_F(CcuTaskExceptionTest, PrintPanicLogInfo_Normal) {
     uint8_t panicLog[128] = {};
-    struct CcumDfxInfoForTest *info = reinterpret_cast<struct CcumDfxInfoForTest*>(panicLog);
-    info->queryResult = 0;
+    struct CcumDfxInfoForTest *info = reinterpret_cast<struct CcumDfxInfoForTest *>(panicLog);
+    info->queryResult = 0; // success
     info->ccumSqeRecvCnt = 100;
     info->ccumSqeSendCnt = 200;
     info->ccumMissionDfx = 300;
@@ -618,12 +618,194 @@ TEST_F(CcuTaskExceptionTest, PrintPanicLogInfo_Normal) {
     info->ccumCifCqeCnt = 700;
     info->ccumSqeDropCnt = 800;
     info->ccumSqeAddrLenErrDropCnt = 900;
-    info->lqcCcuSecReg0 = 1;
+    info->lqcCcuSecReg0 = 1; // enable
 
-    CcuTaskException::PrintPanicLogInfo(panicLog);
+    // 调用函数
+    EXPECT_NO_THROW(CcuTaskException::PrintPanicLogInfo(panicLog));
+ 	 
+}
+ 	 
+TEST_F(CcuTaskExceptionTest, PrintPaniclogInfo) {
+    EXPECT_NO_THROW(CcuTaskException::PrintPanicLogInfo(nullptr));
+}
 
-     // 验证输出
-     EXPECT_TRUE(true);
+TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_Normal) {
+    // 模拟hrtGetDevicePhyIdByIndex
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    // 模拟HccpRaCustomChannel
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    uint16_t result = CcuTaskException::GetCcuCKEValue(0, 0, 0);
+    EXPECT_EQ(result, 0); // INVALID_U16
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_GetDevicePhyIdFail) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    uint16_t result = CcuTaskException::GetCcuCKEValue(0, 0, 0);
+    EXPECT_EQ(result, 65535);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuCKEValue_CustomChannelFail) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    uint16_t result = CcuTaskException::GetCcuCKEValue(0, 0, 0);
+    EXPECT_EQ(result, 65535);
+}
+
+TEST_F(CcuTaskExceptionTest, GetMissContectF) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
+    EXPECT_EQ(result.part0.value, 0u);
+}
+
+TEST_F(CcuTaskExceptionTest, GetDevidFail) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
+    EXPECT_EQ(result.part0.value, 0u);
+}
+
+TEST_F(CcuTaskExceptionTest, GetMissContectFail) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    CcuMissionContext result = CcuTaskException::GetCcuMissionContext(0, 0, 0);
+    EXPECT_EQ(result.part0.value, 0u);
+}
+
+constexpr uint64_t INVALID_U64_VAL = 18446744073709551615ULL;
+TEST_F(CcuTaskExceptionTest, GetCcuGSAValue) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    uint64_t result = CcuTaskException::GetCcuGSAValue(0, 0, 0);
+    EXPECT_EQ(result, 0u);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuGSAValuegetdevidfailed) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    uint64_t result = CcuTaskException::GetCcuGSAValue(0, 0, 0);
+    EXPECT_EQ(result, INVALID_U64_VAL);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuGSAValuechannelfail) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    uint64_t result = CcuTaskException::GetCcuGSAValue(0, 0, 0);
+    EXPECT_EQ(result, INVALID_U64_VAL);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuXnValue) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    uint64_t result = CcuTaskException::GetCcuXnValue(0, 0, 0);
+    EXPECT_EQ(result, 0u);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuXnValuedevidfailed) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    uint64_t result = CcuTaskException::GetCcuXnValue(0, 0, 0);
+    EXPECT_EQ(result, INVALID_U64_VAL);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuXnValuechannelfail) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_E_PARA));
+
+    uint64_t result = CcuTaskException::GetCcuXnValue(0, 0, 0);
+    EXPECT_EQ(result, INVALID_U64_VAL);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuErrorMsg) {
+    string result = CcuTaskException::GetCcuLenErrorMsg(1024);
+    EXPECT_EQ(result, "");
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgzero) {
+    string result = CcuTaskException::GetCcuLenErrorMsg(0);
+    EXPECT_FALSE(result.empty());
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgDefault) {
+    CcuErrorInfo ccuErrorInfo = {};
+    string  result = CcuTaskException::GetCcuErrorMsgDefault(ccuErrorInfo);
+    EXPECT_FALSE(result.empty());
+}
+ 	 
+TEST_F(CcuTaskExceptionTest, GetCcuErrorMsgMission) {
+    CcuErrorInfo ccuErrorInfo = {};
+    ccuErrorInfo.type = CcuErrorType::MISSION;
+    string result = CcuTaskException::GetCcuErrorMsgMission(ccuErrorInfo);
+    EXPECT_FALSE(result.empty());
 }
 
 TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
