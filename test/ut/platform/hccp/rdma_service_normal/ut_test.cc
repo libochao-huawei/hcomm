@@ -77,7 +77,7 @@ TEST_M(RS, Tcrs_check_pridata);
 TEST_M(RS, Tctls_load_cert);
 TEST_M(RS, Tcrs_ssl_err_string);
 TEST_M(RS, tc_rs_socket_fill_wlist_by_phyID);
- TEST_M(RS, TcRsNotifyCfgSet);
+TEST_M(RS, TcRsNotifyCfgSet);
 TEST_M(RS, TcRsServerSendWlistCheckResult);
 
 TEST_M(RS, TcRsSocketDeinit2);
