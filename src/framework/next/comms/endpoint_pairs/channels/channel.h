@@ -29,6 +29,8 @@
 
 namespace hcomm {
 
+MAKE_ENUM(ChannelType, HOST_CPU_ROCE_CHANNEL, AICPU_TS_URMA_CHANNEL, AIV_UB_MEM_CHANNEL, CCU_URMA_CHANNEL, AICPU_TS_ROCE_CHANNEL)
+
 MAKE_ENUM(ChannelStatus, INIT, SOCKET_OK, SOCKET_TIMEOUT, READY, FAILED)
 
 /**
@@ -65,6 +67,14 @@ public:
                                     CommEngine engine, 
                                     HcommChannelDesc channelDesc,
                                     std::unique_ptr<Channel>& out);
+
+    ChannelType GetChannelType() const
+    {
+        return channelType_;
+    }
+
+protected:
+    ChannelType channelType_;
 };
 
 } // namespace hcomm
