@@ -22,6 +22,7 @@
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
+#include "aicpu_ts_roce_channel.h"
 #include "mem_device_pub.h"
 #include "channel_param.h"
 #include "launch_aicpu.h"
@@ -575,4 +576,30 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommChannelGetEntities(const ChannelHandle *channelList, uint32_t listNum, ChannelEntitiesHandle *channelEntityList)
+{
+    CHK_PTR_NULL(channelList);
+    CHK_PTR_NULL(channelEntityList);
+    CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
+        __func__, listNum), HCCL_E_PARA);
+     
+    for (uint32_t i = 0; i < listNum; ++i) {
+        void *channelPtr;
+        const ChannelHandle channelHandle = channelList[i];
+        HcommResult hcommRet = HcommChannelGet(channelHandle, &channelPtr);
+        CHK_PRT_RET(hcommRet != HCOMM_SUCCESS,
+            HCCL_ERROR("%s HcommChannelGet failed, ret[%d]", __func__, hcommRet),
+            HCCL_E_NOT_FOUND);
+        Channel *baseChannel = static_cast<Channel*>(channelPtr);
+        if (baseChannel->GetChannelType() == ChannelType::AICPU_TS_ROCE_CHANNEL) {
+            AicpuTsRoceChannel* aicpuTsRoceChannel = static_cast<AicpuTsRoceChannel*>(baseChannel);
+            CHK_RET(aicpuTsRoceChannel->BuildAndGetDevChannelEntity(&channelEntityList[i]));
+        } else {
+            HCCL_ERROR("%s channel type not support, type[%d]", __func__, baseChannel->GetChannelType());
+            return HCCL_E_PARA;
+        }
+    }
+    return HCOMM_SUCCESS;
 }
