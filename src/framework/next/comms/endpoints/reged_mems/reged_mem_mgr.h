@@ -11,7 +11,8 @@
 #define REGED_MEM_MGR_H
 
 #include <memory>
-#include "hcomm_c_adpt.h"
+#include "hccl_types.h"
+#include "hcomm_res_defs.h"
 
 using RdmaHandle = void *;
 
