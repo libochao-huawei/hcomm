@@ -98,10 +98,8 @@ public:
                                 HcclDataType outputDataType, HcclReduceOp opType, const std::string& opName);
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
-    HcclResult UpdateChannelIdMap();
-    HcclResult GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle);
-    HcclResult GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId);
-    
+    const std::vector<CcuProfilingInfo> &GetAllCcuProfilingInfo() { return allCcuProfilingInfos_; };
+
 protected:
     // 子类实现
     virtual HcclResult Algorithm() = 0;
@@ -202,10 +200,8 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
-    std::unordered_map<uint16_t, uint64_t> channelIdToHandle_;
-    std::unordered_map<uint64_t, uint16_t> channelHandleToId_;
     std::vector<GroupInfo> groupOpSizeInfo_;
-
+    std::vector<CcuProfilingInfo> allCcuProfilingInfos_;
 };
 
 // kernel构造函数的lambda函数
