@@ -537,56 +537,61 @@ HcclResult TopoInfoExchangeAgent::DetectTransportType(const RankInfo_t& localRan
 
 HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
 {
-    std::string errormessage = "rank num[" + std::to_string(localRankInfo_.rankSize) +
-                               "]is different with rank list size[" + std::to_string(clusterInfo.rankList.size()) +
-                               "] in total topo rank info.";
-    RPT_INPUT_ERR((clusterInfo.rankList.size() != localRankInfo_.rankSize),
-        "EI0015",
-        std::vector<std::string>({"error_reason"}),
-        std::vector<std::string>({errormessage}));
-    CHK_PRT_RET((clusterInfo.rankList.size() != localRankInfo_.rankSize),
+    std::string errormessage = "";
+    if (clusterInfo.rankList.size() != localRankInfo_.rankSize) {
+        std::string errormessage = "rank num[" + std::to_string(localRankInfo_.rankSize) +
+                            "]is different with rank list size[" + std::to_string(clusterInfo.rankList.size()) +
+                            "] in total topo rank info.";
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({errormessage}));
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-            errormessage.c_str()),
-        HCCL_E_PARA);
+            errormessage.c_str());
+        return HCCL_E_PARA;
+    }
 
-    errormessage = "rank num[" + std::to_string(localRankInfo_.rankSize) + "] is different with rank num[" +
-                   std::to_string(clusterInfo.rankNum) + "] in total topo rank info.";
-    RPT_INPUT_ERR((clusterInfo.rankNum != localRankInfo_.rankSize), "EI0015",
-        std::vector<std::string>({ "error_reason"}),
-        std::vector<std::string>({ errormessage }));
-    CHK_PRT_RET((clusterInfo.rankNum != localRankInfo_.rankSize),
+    if (clusterInfo.rankNum != localRankInfo_.rankSize) {
+        errormessage = "rank num[" + std::to_string(localRankInfo_.rankSize) + "] is different with rank num[" +
+                std::to_string(clusterInfo.rankNum) + "] in total topo rank info.";
+        RPT_INPUT_ERR(true, "EI0015",
+            std::vector<std::string>({ "error_reason"}),
+            std::vector<std::string>({ errormessage }));
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-            errormessage.c_str()),
-        HCCL_E_PARA);
+            errormessage.c_str());
+        return HCCL_E_PARA;
+    }
 
-    errormessage = "server num[" + std::to_string(clusterInfo.serverNum) + "] is different with server list size[" +
-                   std::to_string(clusterInfo.serverList.size()) + "] in total topo rank info.";
-    RPT_INPUT_ERR((clusterInfo.serverList.size() != clusterInfo.serverNum), "EI0015",
-        std::vector<std::string>({ "error_reason"}),
-        std::vector<std::string>({ errormessage }));
-    CHK_PRT_RET((clusterInfo.serverList.size() != clusterInfo.serverNum),
+    if (clusterInfo.serverList.size() != clusterInfo.serverNum) {
+        errormessage = "server num[" + std::to_string(clusterInfo.serverNum) + "] is different with server list size[" +
+                    std::to_string(clusterInfo.serverList.size()) + "] in total topo rank info.";
+        RPT_INPUT_ERR(true, "EI0015",
+            std::vector<std::string>({ "error_reason"}),
+            std::vector<std::string>({ errormessage }));
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-            errormessage.c_str()),
-        HCCL_E_PARA);
+            errormessage.c_str());
+        return HCCL_E_PARA;
+    }
 
-    errormessage = "nicDeploy[" + std::to_string(static_cast<int>(localRankInfo_.nicDeploy)) +
-                   "] is different with nicDeploy[" + std::to_string(static_cast<int>(clusterInfo.nicDeploy)) +
-                   "] in total topo rank info.";
-    RPT_INPUT_ERR((clusterInfo.nicDeploy != localRankInfo_.nicDeploy), "EI0015",
-        std::vector<std::string>({ "error_reason"}),
-        std::vector<std::string>({ errormessage }));
-    CHK_PRT_RET((clusterInfo.nicDeploy != localRankInfo_.nicDeploy),
+    if (clusterInfo.nicDeploy != localRankInfo_.nicDeploy) {
+        errormessage = "nicDeploy[" + std::to_string(static_cast<int>(localRankInfo_.nicDeploy)) +
+                    "] is different with nicDeploy[" + std::to_string(static_cast<int>(clusterInfo.nicDeploy)) +
+                    "] in total topo rank info.";
+        RPT_INPUT_ERR(true, "EI0015",
+            std::vector<std::string>({ "error_reason"}),
+            std::vector<std::string>({ errormessage }));
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-            errormessage.c_str()),
-        HCCL_E_PARA);
+            errormessage.c_str());
+        return HCCL_E_PARA;
+    }
 
     CHK_RET(VerifyClusterRankID(clusterInfo));
     if (localRankInfo_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
@@ -605,20 +610,22 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
         }
     }
 
-    errormessage = "server num[" + std::to_string(clusterInfo.serverNum) +
-                   "] is "
-                   "different with server num[" +
-                   std::to_string(serverMap.size()) + "] in total topo rank info.";
-    RPT_INPUT_ERR((clusterInfo.serverNum != serverMap.size()),
-        "EI0015",
-        std::vector<std::string>({"error_reason"}),
-        std::vector<std::string>({ errormessage }));
-    CHK_PRT_RET((clusterInfo.serverNum != serverMap.size()),
+    if (clusterInfo.serverNum != serverMap.size()) {
+        errormessage = "server num[" + std::to_string(clusterInfo.serverNum) +
+                    "] is "
+                    "different with server num[" +
+                    std::to_string(serverMap.size()) + "] in total topo rank info.";
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({ errormessage }));
+
         HCCL_ERROR("[%s][%s]%s",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-            errormessage.c_str()),
-        HCCL_E_PARA);
+            errormessage.c_str());
+        return HCCL_E_PARA;
+    }
 
     uint32_t deviceNumInServer = 0;
     for (auto &server : serverMap) {
@@ -681,21 +688,22 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterDeviceIP(const RankTable_t &clust
     }
     for (u32 i = 0; i < (clusterInfo.rankList.size() - 1); i++) {
         for (u32 j = (i + 1); j < clusterInfo.rankList.size(); j++) {
-            bool err = HasRepeatedIP(clusterInfo.rankList[i].deviceInfo.deviceIp,
+            bool isErr = HasRepeatedIP(clusterInfo.rankList[i].deviceInfo.deviceIp,
                 clusterInfo.rankList[j].deviceInfo.deviceIp);
-            std::string errormessage = "rank[" + std::to_string(clusterInfo.rankList[i].rankId) +
-                                       "]'s device ip is repeated with rank[" +
-                                       std::to_string(clusterInfo.rankList[j].rankId) + "].";
-            RPT_INPUT_ERR(err,
-                "EI0015",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
-            CHK_PRT_RET(err,
+            if (isErr) {
+                std::string errormessage = "rank[" + std::to_string(clusterInfo.rankList[i].rankId) +
+                                        "]'s device ip is repeated with rank[" +
+                                        std::to_string(clusterInfo.rankList[j].rankId) + "].";
+                RPT_INPUT_ERR(true,
+                    "EI0015",
+                    std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({errormessage}));
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;
+            }
         }
     }
     return HCCL_SUCCESS;
@@ -741,41 +749,45 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clust
             }
 
             s32 backupDevPhyId = devIp2PhyId[backupIpStr];
-            std::string errormessage = "PhyId[" + std::to_string(backupDevPhyId) + "] for backup devIp[" + backupIpStr +
-                                       "] is the same with self devicephyId[" +
-                                       std::to_string(rankInfo.deviceInfo.devicePhyId) +
-                                       "]. Please do not use self ip as backup ip!";
-            RPT_INPUT_ERR((backupDevPhyId == rankInfo.deviceInfo.devicePhyId),
-                "EI0015",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({ errormessage }));
-            CHK_PRT_RET(backupDevPhyId == rankInfo.deviceInfo.devicePhyId,
+            std::string errormessage = "";
+            if (backupDevPhyId == rankInfo.deviceInfo.devicePhyId) {
+                errormessage = "PhyId[" + std::to_string(backupDevPhyId) + "] for backup devIp[" + backupIpStr +
+                                "] is the same with self devicephyId[" +
+                                std::to_string(rankInfo.deviceInfo.devicePhyId) +
+                                "]. Please do not use self ip as backup ip!";
+                RPT_INPUT_ERR(true,
+                    "EI0015",
+                    std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({ errormessage }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx], %s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
                     HCOM_ERROR_CODE(HCCL_E_PARA),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;
+            }
+
 
             LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
             CHK_RET(hrtGetPairDeviceLinkType(rankInfo.deviceInfo.devicePhyId, backupDevPhyId, linkType));
-            errormessage = "link between device phyId[" + std::to_string(rankInfo.deviceInfo.devicePhyId) +
-                           "] and backup device phyId[" + std::to_string(backupDevPhyId) +
-                           "] is not sio link, backup device ip[" + backupIpStr +
-                           "]. "
-                           "Please check backup ip validation and whether it is on a pair device!";
-            RPT_INPUT_ERR((backupDevPhyId == rankInfo.deviceInfo.devicePhyId),
-                "EI0014",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({ errormessage }));
-            CHK_PRT_RET(linkType != LinkTypeInServer::SIO_TYPE,
+            if (backupDevPhyId == rankInfo.deviceInfo.devicePhyId) {
+                errormessage = "link between device phyId[" + std::to_string(rankInfo.deviceInfo.devicePhyId) +
+                            "] and backup device phyId[" + std::to_string(backupDevPhyId) +
+                            "] is not sio link, backup device ip[" + backupIpStr +
+                            "]. "
+                            "Please check backup ip validation and whether it is on a pair device!";
+                RPT_INPUT_ERR(true,
+                    "EI0014",
+                    std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({ errormessage }));
                 HCCL_ERROR(
                     "[%s][%s]errNo[0x%016llx], %s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
                     HCOM_ERROR_CODE(HCCL_E_PARA),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;
+            }
         }
     }
     return HCCL_SUCCESS;
@@ -802,18 +814,19 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterRankID(const RankTable_t &cluster
     }
     for (u32 i = 0; i < (clusterInfo.rankList.size() - 1); i++) {
         for (u32 j = (i + 1); j < clusterInfo.rankList.size(); j++) {
-            bool err = (clusterInfo.rankList[i].rankId == clusterInfo.rankList[j].rankId);
-            std::string errormessage = "rank id[" + std::to_string(clusterInfo.rankList[i].rankId) +"] is repeated.";
-            RPT_INPUT_ERR(err,
-                "EI0015",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({ errormessage }));
-            CHK_PRT_RET(err,
+            bool isErr = (clusterInfo.rankList[i].rankId == clusterInfo.rankList[j].rankId);
+            if (isErr) {
+                std::string errormessage = "rank id[" + std::to_string(clusterInfo.rankList[i].rankId) +"] is repeated.";
+                RPT_INPUT_ERR(true,
+                    "EI0015",
+                    std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({ errormessage }));
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;
+            }
         }
     }
     return HCCL_SUCCESS;
@@ -826,23 +839,24 @@ HcclResult TopoInfoExchangeAgent::VerifyServerDevicePhysicID(const std::vector<R
     }
     for (u32 i = 0; i < (serverInfo.size() - 1); i++) {
         for (u32 j = (i + 1); j < serverInfo.size(); j++) {
-            bool err = (serverInfo[i].deviceInfo.devicePhyId == serverInfo[j].deviceInfo.devicePhyId);
-            std::string errormessage = "rank[" + std::to_string(serverInfo[i].rankId) + "] and rank[" +
-                                       std::to_string(serverInfo[j].rankId) +
-                                       "] has the same device "
-                                       "physic id[" +
-                                       std::to_string(serverInfo[i].deviceInfo.devicePhyId) + "].";
-            RPT_INPUT_ERR(err,
-                "EI0015",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
-            CHK_PRT_RET(err,
+            bool isErr = (serverInfo[i].deviceInfo.devicePhyId == serverInfo[j].deviceInfo.devicePhyId);
+            if (isErr) {
+                std::string errormessage = "rank[" + std::to_string(serverInfo[i].rankId) + "] and rank[" +
+                                        std::to_string(serverInfo[j].rankId) +
+                                        "] has the same device "
+                                        "physic id[" +
+                                        std::to_string(serverInfo[i].deviceInfo.devicePhyId) + "].";
+                RPT_INPUT_ERR(true,
+                    "EI0015",
+                    std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({errormessage}));
                 HCCL_ERROR("[%s][%s]rank[%u] and rank[%u] has the same device "
                            "physic id[%d].",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;
+            }
         }
     }
     return HCCL_SUCCESS;
@@ -864,25 +878,27 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
         HCCL_DEBUG("[Verify][SuperPodInfo] does not need verify superPod info"), HCCL_SUCCESS);
 
     // 获取每个超节点内的serverId
+    std::string errormessage = "";
     std::map<std::string, std::set<std::string>> superPodSrvIdMap; // super_pod_id -> serverId
     std::map<std::string, std::unordered_map<u32, u32>> superPodSdidMap; // super_pod_id -> superDeviceId
     for (u32 i = 0; i < rankInfo.size(); i++) {
-        std::string errormessage = "superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) + "] or superPod[" +
-                                   rankInfo[i].superPodId + "] in rank[" + std::to_string(rankInfo[i].rankId) +
-                                   "] is invalid.";
         // 超节点模式下, 校验superPodId和sdid值有效
-        RPT_INPUT_ERR((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
-                          rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93,
-            "EI0014",
-            std::vector<std::string>({"error_reason"}),
-            std::vector<std::string>({errormessage}));
-        CHK_PRT_RET((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
-                        rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93,
+        if ((rankInfo[i].superPodId.empty() || rankInfo[i].superDeviceId == INVALID_UINT) &&
+                          rankInfo[i].deviceInfo.deviceType == DevType::DEV_TYPE_910_93) {
+            errormessage = "superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) + "] or superPod[" +
+                                    rankInfo[i].superPodId + "] in rank[" + std::to_string(rankInfo[i].rankId) +
+                                    "] is invalid.";
+            RPT_INPUT_ERR(true,
+                "EI0014",
+                std::vector<std::string>({"error_reason"}),
+                std::vector<std::string>({errormessage}));
             HCCL_ERROR("[%s][%s]%s",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-                errormessage.c_str()),
-            HCCL_E_PARA);
+                errormessage.c_str());
+            return HCCL_E_PARA;
+        }
+
 
         auto iter = superPodSrvIdMap.find(rankInfo[i].superPodId);
         if (iter == superPodSrvIdMap.end()) {
@@ -901,21 +917,22 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
         } else if (it->second.find(rankInfo[i].superDeviceId) == it->second.end()) {
             it->second.insert({rankInfo[i].superDeviceId, rankInfo[i].rankId});
         } else {
-            errormessage = "devices have same superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) +
-				"] in superPod[" + it->first + "]. Current device info: serverId[" + rankInfo[i].serverId +
-				"], rankId[" + std::to_string(rankInfo[i].rankId) + "], group[" + rankInfo[i].groupName +
-				"]. Another device info: rankId[" + std::to_string(it->second[rankInfo[i].superDeviceId]) + "].";
-            // 超节点内superDeviceId在超节点内唯一
-            RPT_INPUT_ERR(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
-                "EI0014",
-                std::vector<std::string>({"error_reason"}),
-                std::vector<std::string>({errormessage}));
-            CHK_PRT_RET(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
+            if (it->second.find(rankInfo[i].superDeviceId) != it->second.end()) {
+                errormessage = "devices have same superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) +
+                    "] in superPod[" + it->first + "]. Current device info: serverId[" + rankInfo[i].serverId +
+                    "], rankId[" + std::to_string(rankInfo[i].rankId) + "], group[" + rankInfo[i].groupName +
+                    "]. Another device info: rankId[" + std::to_string(it->second[rankInfo[i].superDeviceId]) + "].";
+                // 超节点内superDeviceId在超节点内唯一
+                RPT_INPUT_ERR(true,
+                    "EI0014",
+                    std::vector<std::string>({"error_reason"}),
+                    std::vector<std::string>({errormessage}));
                 HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
-                    errormessage.c_str()),
-                HCCL_E_PARA);
+                    errormessage.c_str());
+                return HCCL_E_PARA;
+            }
         }
     }
 
