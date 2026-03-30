@@ -235,11 +235,11 @@ TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGet_When_EndpointPtrIsNull_Expect_Re
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcommEndpointDestroy_When_EndpointNotFound_Expect_ReturnHCCL_E_INTERNAL)
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointDestroy_When_EndpointNotFound_Expect_ReturnHCCL_E_NOT_FOUND)
 {
     EndpointHandle handle = reinterpret_cast<EndpointHandle>(0x12345678);
     HcommResult ret = HcommEndpointDestroy(handle);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
 TEST_F(CpuRoceEndpointTest, ut_HcommEndpointStartListen_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)

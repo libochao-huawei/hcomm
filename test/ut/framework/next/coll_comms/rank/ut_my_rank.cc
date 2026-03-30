@@ -105,15 +105,15 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     uint32_t devPort = 60001;
     MOCKER_CPP(&Hccl::IRankGraph::GetDevicePort).stubs().with(any(), outBoundP(&devPort)).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any()).will(returnValue((Hccl::Socket*)0xab));
-    MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     ChannelHandle channelHandle = 0xab;
-    MOCKER_CPP(&HcommCollectiveChannelCreate)
+    MOCKER(HcommCollectiveChannelCreate)
         .stubs()
         .with(any(), any(), any(), any(), outBoundP(&channelHandle))
-        .will(returnValue(static_cast<HcclResult>(HCCL_SUCCESS)));
+        .will(returnValue(HCCL_SUCCESS));
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
