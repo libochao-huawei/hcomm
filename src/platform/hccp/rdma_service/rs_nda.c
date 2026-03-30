@@ -41,10 +41,11 @@ STATIC void *RsNdaUbAlloc(size_t size)
     void *ptr = NULL;
     int ret = 0;
 
-    CHK_PRT_RETURN(gRsCb->ndaOps.alloc == NULL, hccp_err("ndaOps.alloc is NULL"), NULL);
-    CHK_PRT_RETURN(gRsCb->ndaOps.free == NULL, hccp_err("ndaOps.free is NULL"), NULL);
+    CHK_PRT_RETURN(gRsCb->ndaCb == NULL, hccp_err("gRsCb->ndaCb is NULL"), NULL);
+    CHK_PRT_RETURN(gRsCb->ndaCb->ndaOps.alloc == NULL, hccp_err("ndaOps.alloc is NULL"), NULL);
+    CHK_PRT_RETURN(gRsCb->ndaCb->ndaOps.free == NULL, hccp_err("ndaOps.free is NULL"), NULL);
 
-    ptr = gRsCb->ndaOps.alloc(size);
+    ptr = gRsCb->ndaCb->ndaOps.alloc(size);
     CHK_PRT_RETURN(ptr == NULL, hccp_err("ptr alloc failed"), NULL);
 
     ret = DlDrvMemGetAttribute((uint64_t)(uintptr_t)ptr, &attr);
@@ -64,7 +65,7 @@ STATIC void *RsNdaUbAlloc(size_t size)
     return ptr;
 
 free_ptr:
-    gRsCb->ndaOps.free(ptr);
+    gRsCb->ndaCb->ndaOps.free(ptr);
     ptr = NULL;
     return NULL;
 }
@@ -74,8 +75,8 @@ STATIC void RsNdaUbFree(void *ptr)
     struct DVattribute attr = {0};
     int ret = 0;
 
-    if (gRsCb->ndaOps.free == NULL) {
-        hccp_err("ndaOps.free is NULL");
+    if (gRsCb->ndaCb == NULL || gRsCb->ndaCb->ndaOps.free == NULL) {
+        hccp_err("gRsCb->ndaCb or ndaOps.free is NULL");
         return;
     }
 
@@ -89,30 +90,29 @@ STATIC void RsNdaUbFree(void *ptr)
         (void)DlHalMemUnRegUbSegment(attr.devId, (uint64_t)(uintptr_t)ptr);
     }
 
-    gRsCb->ndaOps.free(ptr);
+    gRsCb->ndaCb->ndaOps.free(ptr);
 }
 
-STATIC void RsNdaCqInitExPrepare(struct RsRdevCb *rdevCb, struct NdaCqInitAttr *attr,
-    struct ibv_cq_init_attr_extend *cqInitAttrEx)
+STATIC void RsNdaCqInitExPrepare(struct NdaCqInitAttr *attr, struct ibv_cq_init_attr_extend *cqInitAttrEx)
 {
     if (attr->dmaMode == QBUF_DMA_MODE_DEFAULT) {
-        gRsCb->ibvExOps.alloc = attr->ops->alloc;
-        gRsCb->ibvExOps.free = attr->ops->free;
+        gRsCb->ndaCb->ibvExOps.alloc = attr->ops->alloc;
+        gRsCb->ndaCb->ibvExOps.free = attr->ops->free;
     } else if (attr->dmaMode == QBUF_DMA_MODE_INDEP_UB) {
-        gRsCb->ndaOps.alloc = attr->ops->alloc;
-        gRsCb->ndaOps.free = attr->ops->free;
-        gRsCb->ibvExOps.alloc = RsNdaUbAlloc;
-        gRsCb->ibvExOps.free = RsNdaUbFree;
+        gRsCb->ndaCb->ndaOps.alloc = attr->ops->alloc;
+        gRsCb->ndaCb->ndaOps.free = attr->ops->free;
+        gRsCb->ndaCb->ibvExOps.alloc = RsNdaUbAlloc;
+        gRsCb->ndaCb->ibvExOps.free = RsNdaUbFree;
     }
-    gRsCb->ibvExOps.memset_s = attr->ops->memset_s;
-    gRsCb->ibvExOps.memcpy_s = attr->ops->memcpy_s;
-    gRsCb->ibvExOps.db_mmap = NULL;
-    gRsCb->ibvExOps.db_unmap = NULL;
+    gRsCb->ndaCb->ibvExOps.memset_s = attr->ops->memset_s;
+    gRsCb->ndaCb->ibvExOps.memcpy_s = attr->ops->memcpy_s;
+    gRsCb->ndaCb->ibvExOps.db_mmap = NULL;
+    gRsCb->ndaCb->ibvExOps.db_unmap = NULL;
 
     (void)memcpy_s(&cqInitAttrEx->attr, sizeof(struct ibv_cq_init_attr_ex), &attr->attr, sizeof(struct ibv_cq_init_attr_ex));
     cqInitAttrEx->cq_cap_flag = attr->cqCapFlag;
     cqInitAttrEx->type = attr->dmaMode;
-    cqInitAttrEx->ops = &gRsCb->ibvExOps;
+    cqInitAttrEx->ops = &gRsCb->ndaCb->ibvExOps;
 }
 
 STATIC int RsNdaCqCreateEx(struct RsRdevCb *rdevCb, struct ibv_cq_init_attr_extend *cqInitAttrEx, struct NdaCqInfo *info,
@@ -140,11 +140,12 @@ RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, 
     CHK_PRT_RETURN(attr == NULL || info == NULL, hccp_err("attr or info is NULL, phyId:%u", phyId), -EINVAL);
     CHK_PRT_RETURN(attr->dmaMode >= QBUF_DMA_MODE_MAX, hccp_err("param err, dmaMode:%u >= %u, phyId:%u",
         attr->dmaMode, QBUF_DMA_MODE_MAX, phyId), -EINVAL);
+    CHK_PRT_RETURN(gRsCb->ndaCb == NULL, hccp_err("ndaCb is NULL, do not support nda, phyId:%u", phyId), -ENOTSUPP);
 
     ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsQueryRdevCb failed, phyId:%u rdevIndex:%u ret:%d", phyId, rdevIndex, ret), ret);
 
-    RsNdaCqInitExPrepare(rdevCb, attr, &cqInitAttrEx);
+    RsNdaCqInitExPrepare(attr, &cqInitAttrEx);
 
     ret = RsNdaCqCreateEx(rdevCb, &cqInitAttrEx, info, ibvCqExt);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsNdaCqCreateEx failed, phyId:%u rdevIndex:%u ret:%d", phyId, rdevIndex, ret), ret);
