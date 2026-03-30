@@ -113,7 +113,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     MOCKER_CPP(&HcommCollectiveChannelCreate)
         .stubs()
         .with(any(), any(), any(), any(), outBoundP(&channelHandle))
-        .will(returnValue(static_cast<HcommResult>(HCOMM_SUCCESS)));
+        .will(returnValue(static_cast<HcclResult>(HCOMM_SUCCESS)));
     aclrtBinHandle binHandle;
     CommConfig config;
     ManagerCallbacks callbacks;
