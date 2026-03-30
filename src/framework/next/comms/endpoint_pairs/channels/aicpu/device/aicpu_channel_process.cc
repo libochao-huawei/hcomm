@@ -22,8 +22,14 @@
 #include <cstdint>
 #include <vector>
 
+constexpr u32 AICPU_TS_URMA_CHANNEL_TYPE = 1;
+constexpr u32 AICPU_TS_ROCE_CHANNEL_V2_TYPE = 4; // 跟ChannelType对应
+
 std::mutex AicpuChannelProcess::mutex_;
-std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> AicpuChannelProcess::ubTransportMap_;
+std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> 
+    AicpuChannelProcess::ubTransportMap_;
+std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::DevAicpuTsRoceChannelV2>> 
+    AicpuChannelProcess::devAicpuTsRoceChannelV2Map_;
 
 HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
 {
@@ -33,13 +39,30 @@ HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHa
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+    Hccl::BinaryStream binaryStreamForType(transpUniqueId);
+    u32 transType;
+    binaryStreamForType >> transType;
+    HCCL_INFO("[CollCommAicpu][ParsePackData] transType[%u]", transType);
+    if (transType == Hccl::TransportType::UB) {
+        std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+        EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+        handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+        ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+    } else if (transType == Hccl::TransportType::ROCE) {
+        std::unique_ptr<Hccl::DevAicpuTsRoceChannelV2> devAicpuTsRoceChannelV2;
+        EXECEPTION_CATCH((devAicpuTsRoceChannelV2 = std::make_unique<Hccl::DevAicpuTsRoceChannelV2>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(devAicpuTsRoceChannelV2);
+
+        handle = reinterpret_cast<uint64_t>(devAicpuTsRoceChannelV2.get());
+        devAicpuTsRoceChannelV2Map_.insert({handle, std::move(devAicpuTsRoceChannelV2)});
+    } else {
+        HCCL_ERROR("[AicpuChannelProcess][%s] transType[%u] is invalid", __func__, transType);
+        return HCCL_E_PARA;
+    }
 
     return HCCL_SUCCESS;
 }

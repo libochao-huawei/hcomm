@@ -14,8 +14,10 @@
 #include <vector>
 #include "exception_handler.h"
 #include "channel_param.h"
+#include "channel.h"
 #include "aicpu_ts_urma_channel.h"
 #include "aicpu_ts_uboe_channel.h"
+#include "aicpu_ts_roce_channel_v2.h"
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
@@ -272,7 +274,8 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     hccl::DeviceMem &devicePackBuf,
     uint32_t listNum, 
     uint32_t totalListNum,
-    hccl::DeviceMem &channelSizeAddr)
+    hccl::DeviceMem &channelSizeAddr,
+    uint32_t channelType)
 {
     // channelParam资源参数填充
     s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
@@ -283,6 +286,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
     channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
+    channelParam.channelType = static_cast<u32>(channelType);
 
     CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
     DevType devType;
@@ -352,6 +356,9 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
         } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
             auto aicpuTsUboeChannel = reinterpret_cast<AicpuTsUboeChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUboeChannel->H2DResPack(hostPackBuffers[index]));
+        } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_ROCE) {
+            auto aicpuTsRoceChannelV2 = reinterpret_cast<AicpuTsRoceChannelV2 *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsRoceChannelV2->H2DResPack(hostPackBuffers[index]));
         } else {
             auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
@@ -387,9 +394,12 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
     CHK_PTR_NULL(deviceChannelList.ptr());
 
+    Channel *baseChannel = reinterpret_cast<Channel *>(hostChannelHandles[0]);
+    ChannelType channelType = baseChannel->GetChannelType();
+
     // 填充channelParam参数
     CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf, 
-        listNum, totalListNum, channelSizeAddr));
+        listNum, totalListNum, channelSizeAddr, channelType));
     
     // profiling信息
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
