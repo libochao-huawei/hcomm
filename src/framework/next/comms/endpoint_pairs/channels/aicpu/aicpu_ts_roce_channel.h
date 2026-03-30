@@ -25,7 +25,7 @@
 
 namespace hcomm {
 /**
- * @note 职责：Channel的AicpuTs通信引擎、RoCE协议的类派生
+ * @note 职责：Channel的AicpuTs通信引擎、RoCE协议的类派生 
  */
 constexpr u32 RDMA_NOTIFY_NUM = 3;
 
