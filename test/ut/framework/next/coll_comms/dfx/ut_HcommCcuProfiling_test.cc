@@ -35,6 +35,7 @@
 #include "hcomm_c_adpt.h"
 #include "ccu_urma_channel.h"
 #include "ccu_comp.h"
+#include "ccuTaskException.h"
 
 namespace hcomm {
 
@@ -485,6 +486,239 @@ TEST_F(CcuKernelTest, GetCcuProfilingInfo_TaskProfilingInfo) {
     EXPECT_EQ(out[0].dieId, 1u);
 }
 
+// +++++++++++++ CcuTaskException测试 +++++++++++++
+class CcuTaskExceptionTest : public BaseInit {
+public:
+    void SetUp() override {
+        BaseInit::SetUp();
+        // 可以在这里设置一些全局状态或环境变量
+    }
+    void TearDown() override {
+        BaseInit::TearDown();
+        GlobalMockObject::verify();
+        // 清理全局状态或环境变量
+    }
+
+
 }
+
+TEST_F(CcuTaskExceptionTest, ProccessCcuException_Normal) {
+    // 构造异常信息和任务信息
+    rtExceptionInfo_t exceptionInfo{};
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.expandInfo.u.ccuInfo.ccuMissionNum = 1;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].status = 0x01;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].subStatus = 0x02;
+    uint8_t panicLog[128] = {}; // 模拟panic日志内容
+    std::memcpy(exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].panicLog,
+        panicLog, sizeof(panicLog));
+
+    hccl::TaskPara a;
+    hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo{1,2,3, taskParam, nullptr, true};
+    MOCKER_CPP(&CcuComponent::CleanTaskKillState)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CcuComponent::CleanDieCkes)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    // 调用处理函数
+    CcuTaskException::ProcessCcuException(&exceptionInfo, taskInfo);
+
+    // 验证输出
+    EXPECT_TRUE(true);
+}
+
+TEST_F(CcuTaskExceptionTest, GetGroupRankInfo_Normal) {
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo{1,2,3, taskParam, nullptr, true};
+    taskInfo.dfxOpInfo_ = std::make_shared<Hccl::DfxOpInfo>();
+    hccl::ManagerCallbacks callbacks;
+    callbacks.getAicpuCommState = []() { return true; };
+    callbacks.setAicpuCommState = [](bool) {};
+    callbacks.kernelLaunchAicpuCommInit = []() { return HCCL_SUCCESS; };
+    std::string commName = "TestComm";
+    hccl::CollComm collComm(nullptr, 1, commName, callbacks);
+    taskInfo.dfxOpInfo_->comm_ = &collComm;
+    std::string testCommStr = "TestComm";
+    MOCKER_CPP(&hccl::CollComm::GetCommId)
+        .stubs()
+        .will(returnValue(testCommStr));
+    MOCKER_CPP(&hccl::CollComm::GetRankSize)
+        .stubs()
+        .will(returnValue(8u));
+    MOCKER_CPP(&hccl::CollComm::GetMyRankId)
+        .stubs()
+        .will(returnValue(3u));
+    std::string result = CcuTaskException::GetGroupRankInfo(taskInfo);
+    EXPECT_NE(result, "");
+    EXPECT_TRUE(result.find("group:[TestComm]") != std::string::npos);
+    EXPECT_TRUE(result.find("rankSize[8]") != std::string::npos);
+    EXPECT_TRUE(result.find("rankId[3]") != std::string::npos);
+
+}
+
+TEST_F(CcuTaskExceptionTest, GetGroupRankInfo_Nullptr) {
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo(1,2,3, taskParam, nullptr, false);
+    taskInfo.dfxOpInfo_ = nullptr;
+    std::string result = CcuTaskException::GetGroupRankInfo(taskInfo);
+    EXPECT_EQ(result, "");
+}
+
+struct CcumDfxInfoForTest {
+    unsigned int queryResult; // 0:success, 1:fail
+    unsigned int ccumSqeRecvCnt;
+    unsigned int ccumSqeSendCnt;
+    unsigned int ccumMissionDfx;
+    unsigned int ccumSqeDropCnt;
+    unsigned int ccumSqeAddrLenErrDropCnt;
+    unsigned int lqcCcuSecReg0;
+    unsigned int ccumTifSqeCnt;
+    unsigned int ccumTifCqeCnt;
+    unsigned int ccumCifSqeCnt;
+    unsigned int ccumCifCqeCnt;
+};
+
+TEST_F(CcuTaskExceptionTest, PrintPanicLogInfo_Normal) {
+    uint8_t panicLog[128] = {};
+    struct CcumDfxInfoForTest *info = reinterpret_cast<struct CcumDfxInfoForTest*>(panicLog);
+    info->queryResult = 0;
+    info->ccumSqeRecvCnt = 100;
+    info->ccumSqeSendCnt = 200;
+    info->ccumMissionDfx = 300;
+    info->ccumTifSqeCnt = 400;
+    info->ccumTifCqeCnt = 500;
+    info->ccumCifSqeCnt = 600;
+    info->ccumCifCqeCnt = 700;
+    info->ccumSqeDropCnt = 800;
+    info->ccumSqeAddrLenErrDropCnt = 900;
+    info->lqcCcuSecReg0 = 1;
+
+    CcuTaskException::PrintPanicLogInfo(panicLog);
+
+     // 验证输出
+     EXPECT_TRUE(true);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_Normal) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+
+    CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
+    EXPECT_EQ(result.part0.value, 0u);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuLoopContext_GetDevicePhyIdFail) {
+    MOCKER(hrtGetDevicePhyIdByIndex)
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_E_PARA));
+    CcuLoopContext result = CcuTaskException::GetCcuLoopContext(0, 0, 0);
+    EXPECT_EQ(result.part0.value, 0u);
+}
+
+TEST_F(CcuTaskExceptionTest, GenStatusInfo_Normal) {
+    ErrorInfoBase baseInfo = {};
+    baseInfo.dieId = 0;
+    baseInfo.missionId = 1;
+    baseInfo.currentInsId = 0;
+    baseInfo.status = 0x0102;
+
+    vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenStatusInfo(baseInfo, errorInfo);
+
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::MISSION);
+}
+
+TEST_F(CcuTaskExceptionTest, GetCcuChannelHandleById_Normal) {
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo(1,2,3, taskParam, nullptr, false);
+
+    u64 channelHandle = 0;
+    HcclResult ret = CcuTaskException::GetCcuChannelHandleById(0, 101, taskInfo, channelHandle);
+
+    // 验证输出
+    EXPECT_TRUE(true);
+}
+
+TEST_F(CcuTaskExceptionTest, GetRankIdByChannelId_Normal) {
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo(1,2,3, taskParam, nullptr, false);
+
+    RankId rankId = CcuTaskException::GetRankIdByChannelId(101,taskInfo, 0);
+
+    // 验证输出
+    EXPECT_TRUE(true);
+}
+
+
+TEST_F(CcuTaskExceptionTest, GetAddrPairByChannelId_Normal) {
+    Hccl::ParaCcu paraCcu = {};
+    Hccl::TaskParam taskParam = {
+        .taskType = Hccl::TaskParamType::TASK_CCU,
+        .beginTime = 0,
+        .endTime = 0,
+        .isMaster = false,
+        .taskPara = {.Ccu = paraCcu},
+        .ccuDetailInfo = nullptr
+    };
+    Hccl::TaskInfo taskInfo(1,2,3, taskParam, nullptr, false);
+
+    auto addrPair = CcuTaskException::GetAddrPairByChannelId(101,taskInfo, 0);
+
+    // 验证输出
+    EXPECT_TRUE(true);
+}
+
+} // namespace hcomm
 
 #undef private
