@@ -86,7 +86,7 @@ TEST_F(TestHcclThread, UT_When_DeviceSide_ResourceAllocateFail_expect_return_Hcc
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
 
@@ -106,7 +106,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_ThreadIsNullptr_Allocate_exp
     .will(returnValue(HCCL_SUCCESS)); 
 
     uint64_t* thread=nullptr;
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
 }
@@ -124,7 +124,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_WithUnsupportedEngine_expect
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AIV , 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AIV , 2, 3, thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -141,7 +141,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Thread_Allocate_0Num_expect_
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AIV , 0, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AIV , 0, 3, thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -161,7 +161,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_WithNotifyInitFail_expect_re
     .stubs()
     .will(returnValue(HCCL_E_RUNTIME));
     ThreadHandle thread[3];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
 
@@ -178,7 +178,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_AicpuTsThread_Allocate_expec
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
@@ -204,7 +204,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_CpuTsThread_Allocate_expect_
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[3];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
@@ -230,8 +230,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Allocate_MAXThreadNum_expect
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread;
-    HcommResult ret = HcommThreadAlloc(
-        COMM_ENGINE_CPU_TS, hccl::HCOMM_THREADNUM_MAX_NUM + 1, static_cast<uint32_t>(0), &thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, hccl::HCOMM_THREADNUM_MAX_NUM + 1, 0, &thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -248,7 +247,7 @@ TEST_F(TestHcclThread, Ut_TestHcommThreadAlloc_When_Allocate_MaxNotifyNum_expect
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread;
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 1, hccl::HCOMM_NOTIFY_MAX_NUM + 1, &thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 1, hccl::HCOMM_NOTIFY_MAX_NUM + 1, &thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -265,7 +264,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_expect_Return_HCCL_Success)
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[2];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
@@ -291,7 +290,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNum_Is_0_expect_Return_HCCL
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle thread[2];
-    HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
+    HcclResult ret =  HcommThreadAlloc(COMM_ENGINE_CPU_TS, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     Thread * threadptr0 = reinterpret_cast<Thread *>(thread[0]);
@@ -316,7 +315,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNullptr_expect_Return_HCCL_
     .with(outBound(DevType::DEV_TYPE_950))
     .will(returnValue(HCCL_SUCCESS)); 
     ThreadHandle* thread = nullptr;
-    HcommResult ret =  HcommThreadFree(thread, 0);
+    HcclResult ret =  HcommThreadFree(thread, 0);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -333,7 +332,7 @@ TEST_F(TestHcclThread, UT_TestHcommThreadAllocWithStream_When_Allocate_WithStrea
     stream = new (std::nothrow) Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     void* rtStream = stream->ptr();
     ThreadHandle thread;
-    HcommResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, &thread);
+    HcclResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, &thread);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret =  HcommThreadFree(&thread, 1);
@@ -353,7 +352,7 @@ TEST_F(TestHcclThread, UT_TestHcommThreadAllocWithStream_When_ThreadNullptr_expe
     stream = new (std::nothrow) Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     void* rtStream = stream->ptr();
     ThreadHandle* thread{nullptr};
-    HcommResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, thread);
+    HcclResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, thread);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
 }
@@ -370,7 +369,7 @@ TEST_F(TestHcclThread, UT_TestHcommThreadAllocWithStream_When_WithInvalidEngine_
     stream = new (std::nothrow) Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     void* rtStream = stream->ptr();
     ThreadHandle thread;
-    HcommResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_AICPU_TS, rtStream, 3, &thread);
+    HcclResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_AICPU_TS, rtStream, 3, &thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
 }
@@ -390,7 +389,7 @@ TEST_F(TestHcclThread, UT_TestHcommThreadAllocWithStream_When_NotifyInitFailed_e
     stream = new (std::nothrow) Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     void* rtStream = stream->ptr();
     ThreadHandle thread;
-    HcommResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, &thread);
+    HcclResult ret =  HcommThreadAllocWithStream(COMM_ENGINE_CPU_TS, rtStream, 3, &thread);
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 
 }

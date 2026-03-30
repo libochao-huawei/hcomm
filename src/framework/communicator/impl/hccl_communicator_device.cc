@@ -1605,17 +1605,17 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::DeregisterWindow(HcclCommSymWindow winHandle)
+    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
     {
         return HCCL_SUCCESS;
     }
