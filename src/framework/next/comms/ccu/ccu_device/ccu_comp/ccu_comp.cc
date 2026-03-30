@@ -14,6 +14,7 @@
 
 #include "../../../../../legacy/common/sal.h"
 #include "hccl_common.h"
+#include "hccl_res.h"
 #include "adapter_rts.h"
 #include "rdma_handle_manager.h"
 
@@ -37,6 +38,20 @@ constexpr uint32_t LOOP_CHANNEL_USE_SQSIZE = 16;
 constexpr uint32_t LOOP_CHANNEL_WAIT_TIMEOUT_MS = 10000;
 // 环回获取TP信息间隔100us
 constexpr u32 ONE_HUNDRED_MICROSEC_OF_USLEEP = 100;
+
+/** 集合通信 Init 阶段每 die 公共环回：get_tp_list+get_tp_attr 后固定首 TPID/最低 SL，缓存键 commHcclQos=0 */
+static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
+{
+    GetTpInfoParam p{};
+    p.locAddr = commAddr;
+    p.rmtAddr = commAddr;
+    p.tpProtocol = LOOP_JETTY_PROTOCOL;
+    p.useUbTpSlMapping = (commAddr.type == COMM_ADDR_TYPE_EID);
+    p.commHcclQos = 0U;
+    p.slLevelCount = 0U;
+    p.loopFirstTpLowestSl = p.useUbTpSlMapping;
+    return p;
+}
 
 // 环境是ARM+X86时，配置 die0 的 MS 交织粒度为 1<<6 = 64
 constexpr uint32_t MSID_CONFIG_ARMX86_MAINBOARD = 6;
@@ -422,23 +437,28 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
     const auto &ccuRmaBuffer = rmaBufferIter->second;
     const auto ccuBufTokenValue = ccuRmaBuffer->GetTokenValue();
     const auto tokenIdHandle = reinterpret_cast<void *>(ccuRmaBuffer->GetTokenIdHandle());
-    
+
+    TpInfo loopTpInfo{};
+    CHK_RET(GetLoopTpInfo(dieId, commAddr, loopTpInfo));
+
     auto &createdVec = createdOutParamMap_[dieId];
     auto &importedVec = importedOutParamMap_[dieId];
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
+        HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
             jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+        if (loopTpInfo.hasMappedJettyPriority) {
+            req.hcclQos = static_cast<u32>(loopTpInfo.mappedJettyPriority & 0xFU);
+            req.jettyPriorityIsRaw = true;
+        }
 
         HrtRaUbJettyCreatedOutParam createdOutParam{};
         CHK_RET(HccpUbCreateJetty(ctxHandle, req, createdOutParam));
         createdVec.emplace_back(createdOutParam);
 
-        TpInfo tpInfo{};
-        CHK_RET(GetLoopTpInfo(dieId, commAddr, tpInfo));
         const auto psn = GetNewPsn();
-        const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
+        const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
 
         HrtRaUbJettyImportedOutParam importedOutParam{};
         CHK_RET(HccpUbTpImportJetty(ctxHandle, createdOutParam.key,
@@ -456,7 +476,7 @@ static HcclResult RequestNewLoopTpInfo(const uint32_t devPhyId,
     const auto startTime = std::chrono::steady_clock::now();
 
     auto &tpMgr = TpMgr::GetInstance(devPhyId);
-    const GetTpInfoParam tpParam = {commAddr, commAddr, LOOP_JETTY_PROTOCOL};
+    const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
     HcclResult ret = HcclResult::HCCL_SUCCESS;
     do {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
@@ -872,7 +892,7 @@ HcclResult CcuComponent::ReleaseAllTpInfos()
             return HcclResult::HCCL_E_NOT_FOUND;
         }
         const auto &commAddr = dieIdIter->second.second;
-        const GetTpInfoParam tpParam = {commAddr, commAddr, LOOP_JETTY_PROTOCOL};
+        const GetTpInfoParam tpParam = MakeLoopGetTpInfoParam(commAddr);
         (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(tpParam, tpInfo);
         item.second.tpHandle = 0; // 清理handle，避免重复释放
     }

@@ -21,6 +21,11 @@
 
 namespace hcomm {
 
+/**
+ * 同一对 EID 上可有 1～N 个通信域（N 无固定上限）。映射路径下：相同 (locAddr,rmtAddr,tpProtocol)
+ * 且相同 commHcclQos → TpMgr 缓存命中，复用同一 tpHandle（TPID）与 mappedJettyPriority（SL）；
+ * TpInfoCtx::useCnt 引用计数，ReleaseTpInfo 须与 GetTpInfo 使用一致的 GetTpInfoParam。
+ */
 using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr locAddr{};
     CommAddr rmtAddr{};
@@ -28,10 +33,15 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 
     /** EID + UBC CTP/RTP：按 commHcclQoS 与 TP/SL 能力做映射；否则保持 false 走旧路径 */
     bool useUbTpSlMapping{false};
-    /** 通信域 QoS，参与分组时按 0–7 解释 */
+    /** 通信域 QoS（0–7），映射路径下参与 TpInfoCacheKey 分桶；同键多连接共享 TPID/SL */
     uint32_t commHcclQos{0};
     /** SL 档位数 M：0 表示映射路径下由首个 TP 的 get_tp_attr 推导；非 0 为显式覆盖/兜底上限 */
     uint32_t slLevelCount{0};
+    /**
+     * 环回（loc==rmt）：在 useUbTpSlMapping 且完成 list+get_tp_attr 后，固定使用列表第 0 个 TPID
+     * 与最低 SL 槽位（策略顺序下标 0，mappedJettyPriority=0），不走 ApplyUbcQosTpSlPolicy。
+     */
+    bool loopFirstTpLowestSl{false};
 
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
@@ -42,10 +52,10 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
         return Hccl::StringFormat(
-            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, ubMap=%u qos=%u mSl=%u]",
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, ubMap=%u qos=%u mSl=%u loop1st=%u]",
             locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
             tpProtocol.Describe().c_str(), static_cast<unsigned>(useUbTpSlMapping),
-            commHcclQos, slLevelCount);
+            commHcclQos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
     }
 };
 
@@ -78,6 +88,7 @@ private:
         kWaitTpAttr = 1,
     };
 
+     /** 同一 (loc,rmt,qosKey) 多路 GetTpInfo 共用条目，useCnt 递减至 0 才 erase */
      struct TpInfoCtx {
         TpInfo tpInfo{};
         uint32_t useCnt{0};
