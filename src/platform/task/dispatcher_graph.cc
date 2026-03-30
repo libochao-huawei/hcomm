@@ -168,6 +168,7 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
         return DispatcherPub::SignalRecord(signal, stream, userRank, offset, stage, inchip);
     }
     u32 ctxIdx;
+
     if (GraphAddRecordTaskWithSignalAddr != nullptr) {
         CHK_RET(GraphAddRecordTaskWithSignalAddr(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, signalAddr, &ctxIdx));
     } else {
@@ -177,7 +178,6 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
         CHK_RET(SignalTaskParaSave(signal, stream, userRank, INVALID_UINT,
                 offset, stage, TaskType::TASK_NOTIFY_RECORD, beginTime, ctxIdx));
     }
-
     if (HcclCheckLogLevel(HCCL_LOG_INFO) || (GetExternalInputDebugConfig() & PLF_TASK)) {
         u64 notifyID = userRank;
         u32 remoteUserRank = INVALID_UINT;
