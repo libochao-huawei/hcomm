@@ -20,6 +20,8 @@ class RdmaLocalNotify : public BaseLocalNotify {
 public:
     explicit RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed = false);
 
+    ~RdmaLocalNotify() override;
+
     RdmaLocalNotify(const RdmaLocalNotify &that) = delete;
 
     RdmaLocalNotify &operator=(const RdmaLocalNotify &that) = delete;
@@ -30,11 +32,16 @@ public:
 
     string Describe() const override;
 
+    std::unique_ptr<Serializable> GetExchangeDto() override;
+
 private:
     RdmaHandle                 rdmaHandle;
-    std::unique_ptr<RtsNotify> notify;
-    u64                        addr{0};
-    u8                         key[RDMA_MEM_KEY_MAX_LEN]{0};
+    u64        addr{0};
+    u32        size{0};
+    u8         key[RDMA_MEM_KEY_MAX_LEN]{0};
+    u32        lkey{0};
+    u32        rkey{0};
+    MrHandle   mrHandle{nullptr};
 };
 
 } // namespace Hccl

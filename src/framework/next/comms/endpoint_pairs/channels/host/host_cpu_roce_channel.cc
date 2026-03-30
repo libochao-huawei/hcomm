@@ -29,7 +29,10 @@ constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 constexpr u32 SEND_RQE_COUNT = 16;
 
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
-    : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
+    : endpointHandle_(endpointHandle), channelDesc_(channelDesc) 
+{
+    channelType_ = ChannelType::HOST_CPU_ROCE_CHANNEL;
+}
 
 HostCpuRoceChannel::~HostCpuRoceChannel() {
     HcclResult ret = DpuNotifyManager::GetInstance().FreeNotifyIds(notifyNum_, localDpuNotifyIds_);

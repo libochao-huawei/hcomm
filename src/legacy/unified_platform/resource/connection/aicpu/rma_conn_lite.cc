@@ -9,7 +9,7 @@
  */
 #include "rma_conn_lite.h"
 #include "ipc_conn_lite.h"
-#include "rdma_conn_lite.h"
+#include "dev_rdma_conn_lite.h"
 #include "ub_conn_lite.h"
 #include "binary_stream.h"
 #include "exception_util.h"
@@ -35,7 +35,7 @@ std::unique_ptr<RmaConnLite> RmaConnLite::Create(std::vector<char> &uniqueId)
     binaryStream >> type;
     auto connType =  static_cast<RmaConnLiteType::Value>(type);
     if (connType == RmaConnLiteType::RDMA) {
-        return std::make_unique<RdmaConnLite>(0); // 待RdmaConnLite构造实现
+        return std::make_unique<RdmaConnLite>();
     }
     if (connType == RmaConnLiteType::P2P) {
         return std::make_unique<IpcConnLite>(); // 待IpcConnLite构造实现

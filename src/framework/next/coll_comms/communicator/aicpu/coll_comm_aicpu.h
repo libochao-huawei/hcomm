@@ -28,8 +28,10 @@
 #include "error_message_v2.h"
 #include "kfc.h"
 #include "aicpu_hdc.h"
+#include "aicpu_ts_roce_channel_lite.h"
 
 using namespace hccl;
+
 class CollCommAicpu {
 public:
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
@@ -59,7 +61,7 @@ public:
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
-    HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle, u32 channelType);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     void InitBackGroundThread();
@@ -77,6 +79,7 @@ private:
     std::unordered_map<s32, Thread*> streamIdToThreadMap_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::AicpuTsRoceChannelLite>> aicpuTsRoceChannelMap_;
 
     // dfx
     bool isErrorReported_{false}; // 是否上报了taskException信息
