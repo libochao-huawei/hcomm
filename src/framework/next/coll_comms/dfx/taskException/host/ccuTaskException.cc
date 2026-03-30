@@ -968,14 +968,14 @@ HcclResult CcuTaskException::GetCcuJettys(const CcuErrorInfo& errorInfo,
 
     // channelHandle -> CcuUrmaChannel
     void *channelPtr{nullptr};
-    CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGet(channelHandle, &channelPtr)));
     CHK_PTR_NULL(channelPtr);
     auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
 
     // CcuUrmaChannel -> UrmaEndpoint
     EndpointHandle locEndPointHandle = channelImpl->GetlocEndPointHandle();
     void *endpoint{nullptr};
-    CHK_RET(HcommEndpointGet(locEndPointHandle, &endpoint));
+    CHK_RET(static_cast<HcclResult>(HcommEndpointGet(locEndPointHandle, &endpoint)));
     CHK_PTR_NULL(endpoint);
     UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
 
@@ -1343,7 +1343,7 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
     }
 
     void *channelPtr{nullptr};
-    HcclResult ret = HcommChannelGet(channelHandle, &channelPtr);
+    HcclResult ret = static_cast<HcclResult>(HcommChannelGet(channelHandle, &channelPtr));
     if (ret != HCCL_SUCCESS || channelPtr == nullptr) {
         HCCL_ERROR("[%s]HcommChannelGet failed, ret[%d], channelHandle[0x%llx], channelPtr[%p]",
             __func__, ret, channelHandle, channelPtr);
@@ -1354,7 +1354,7 @@ std::pair<Hccl::IpAddress, Hccl::IpAddress> CcuTaskException::GetAddrPairByChann
     // 获取locAddr
     EndpointHandle locEndPointHandle = channelImpl->GetlocEndPointHandle();
     void *endpoint{nullptr};
-    ret = HcommEndpointGet(locEndPointHandle, &endpoint);
+    ret = static_cast<HcclResult>(HcommEndpointGet(locEndPointHandle, &endpoint));
     if (ret != HCCL_SUCCESS || endpoint == nullptr) {
         HCCL_ERROR("[%s]HcommEndpointGet failed, ret[%d], locEndPointHandle[%p], endpoint[%p], channelId[%u]",
             __func__, ret, locEndPointHandle, endpoint, channelId);
