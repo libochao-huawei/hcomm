@@ -13,12 +13,42 @@
 
 #include "rma_conn_lite.h"
 
+struct RdmaSqContextLite {
+    uint32_t qpn;
+    uint64_t sqVa;
+    uint32_t wqeSize;
+    uint32_t depth;
+    uint64_t headAddr;
+    uint64_t tailAddr;
+    uint8_t sl;
+    uint64_t dbVa;
+    int8_t dbMode; // 0-hw/1-sw
+};
+
+struct RdmaCqContextLite{
+    uint32_t cqn;
+    uint64_t cqVa;
+    uint32_t cqeSize;
+    uint32_t cqDepth;
+    uint64_t headAddr;
+    uint64_t tailAddr;
+    uint64_t dbVa;
+    int8_t dbMode; // 0-hw/1-sw
+};
+
 namespace Hccl {
 class RdmaConnLite : public RmaConnLite {
 public:
-    explicit RdmaConnLite(u64 qpVa) : RmaConnLite(qpVa)
-    {
-    }
+    RdmaConnLite() = default;
+    explicit RdmaConnLite(std::vector<char>& uniqueId);
+    ~RdmaConnLite();
+
+    std::string Describe() final;
+
+private:
+    uint32_t            dmaMode_{0};
+    RdmaSqContextLite   sqContext{};
+    RdmaCqContextLite   cqContext{};
 };
 
 } // namespace Hccl

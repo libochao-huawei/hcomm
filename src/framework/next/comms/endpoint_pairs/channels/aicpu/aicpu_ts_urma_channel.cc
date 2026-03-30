@@ -24,7 +24,10 @@
 namespace hcomm {
 
 AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
-    endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
+    endpointHandle_(endpointHandle), channelDesc_(channelDesc)
+{
+    channelType_ = ChannelType::AICPU_TS_URMA_CHANNEL;
+}
 
 HcclResult AicpuTsUrmaChannel::ParseInputParam() 
 {

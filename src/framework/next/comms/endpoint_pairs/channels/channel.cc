@@ -16,6 +16,7 @@
 #include "./host/host_cpu_roce_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
+#include "./aicpu/aicpu_ts_roce_channel.h"
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
@@ -42,14 +43,24 @@ HcclResult Channel::CreateChannel(
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
-            channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(
-                endpointHandle, channelDesc
-            ));
-            break; 
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<AicpuTsRoceChannel>(endpointHandle, channelDesc, engine),
+                    return HCCL_E_PARA);
+            } else {
+                channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(
+                    endpointHandle, channelDesc
+                ));
+            }
+            break;
         case COMM_ENGINE_AIV:
-            channelPtr.reset(
-                new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
-            break; 
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<AicpuTsRoceChannel>(endpointHandle, channelDesc, engine),
+                    return HCCL_E_PARA);
+            } else {
+                channelPtr.reset(
+                    new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
+            }
+            break;
         case COMM_ENGINE_CCU:
             channelPtr.reset(
                 new (std::nothrow) CcuUrmaChannel(endpointHandle, channelDesc));

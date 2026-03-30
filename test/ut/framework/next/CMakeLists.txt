@@ -14,6 +14,9 @@ set(src_to_test_list
     host/ut_host_cpu_roce_channel.cc
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
+    aicpu/ut_aicpu_ts_roce_channel.cc
+    aicpu/ut_dev_rdma_connection.cc
+    aicpu/device/ut_aicpu_ts_roce_channel_lite.cc
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc

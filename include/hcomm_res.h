@@ -76,6 +76,9 @@ extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32
 // WARNING: experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
+// WARNING: experimental API, No compatibility is currently guaranteed for this API
+extern HcclResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, ChannelEntity **channelEntityList);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
