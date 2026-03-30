@@ -292,6 +292,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
 
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
@@ -307,8 +309,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
-    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
 )
 
 add_subdirectory(stub)
