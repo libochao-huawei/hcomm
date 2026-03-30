@@ -98,6 +98,7 @@ namespace {
 static thread_local s32 g_deviceLogicId = INVALID_INT;
 static thread_local u32 g_devicePhyId = INVALID_UINT;
 static thread_local DevType g_deviceType = DevType::DEV_TYPE_COUNT;
+}
 
 // 根据soc name判断是否支持 hccl v2流程，使用全局变量减少重复调用aclrt接口
 enum class HcclV2SupportStatus {
@@ -107,6 +108,31 @@ enum class HcclV2SupportStatus {
 };
 
 static thread_local HcclV2SupportStatus g_socV2SupportStatus = HcclV2SupportStatus::UNKNOWN;
+
+HcclResult hrtGetHcclV2Support(bool *isSupport)
+{
+#ifndef HCCD
+    CHK_PTR_NULL(isSupport);
+    if (LIKELY(g_socV2SupportStatus != HcclV2SupportStatus::UNKNOWN)) {
+        *isSupport = g_socV2SupportStatus == HcclV2SupportStatus::SUPPORTED;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    if (strstr(socNamePtr, "Ascend950") != nullptr) {
+        g_socV2SupportStatus = HcclV2SupportStatus::SUPPORTED;
+        *isSupport = true;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    g_socV2SupportStatus = HcclV2SupportStatus::NOT_SUPPORTED;
+    *isSupport = false;
+    return HcclResult::HCCL_SUCCESS;
+
+#endif
+    HCCL_WARNING("[%s] Does does not support this interface.", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 #if T_DESC("Device管理", true)
@@ -216,32 +242,6 @@ HcclResult hrtSetlocalDevice(s32 deviceLogicId)
     g_localDeviceLogicId = deviceLogicId;
 #endif
     return HCCL_SUCCESS;
-}
-
-HcclResult hrtGetHcclV2Support(bool *isSupport)
-{
-#ifndef HCCD
-    CHK_PTR_NULL(isSupport);
-    if (LIKELY(g_socV2SupportStatus != HcclV2SupportStatus::UNKNOWN)) {
-        *isSupport = g_socV2SupportStatus == HcclV2SupportStatus::SUPPORTED;
-        return HcclResult::HCCL_SUCCESS;
-    }
-
-    const char *socNamePtr = aclrtGetSocName();
-    CHK_PTR_NULL(socNamePtr);
-    if (strstr(socNamePtr, "Ascend950") != nullptr) {
-        g_socV2SupportStatus = HcclV2SupportStatus::SUPPORTED;
-        *isSupport = true;
-        return HcclResult::HCCL_SUCCESS;
-    }
-
-    g_socV2SupportStatus = HcclV2SupportStatus::NOT_SUPPORTED;
-    *isSupport = false;
-    return HcclResult::HCCL_SUCCESS;
-
-#endif
-    HCCL_WARNING("[%s] Does does not support this interface.", __func__);
-    return HCCL_E_NOT_SUPPORT;
 }
 
 /* 查询当前线程目前操作的目标设备编号 */
