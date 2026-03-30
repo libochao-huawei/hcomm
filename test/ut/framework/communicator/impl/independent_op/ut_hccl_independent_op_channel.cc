@@ -55,3 +55,26 @@ TEST_F(HcclIndependentOpChannelTest, Ut_HcclChannelAcquire_When_NotifyNum_Is_Inv
     HcclResult ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+TEST_F(HcclIndependentOpChannelTest, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_Is_False)
+{
+    std::vector<HcclChannelDesc> channelDescFinal(1);
+    HcclChannelDescInit(channelDescFinal.data(), 1);
+
+    std::vector<HcclChannelDesc> channelDesc(1);
+    HcclChannelDescInit(channelDesc.data(), 1);
+
+    channelDesc[0].roceAttr.queueNum = 3;
+    channelDesc[0].roceAttr.retryInterval = 7;
+    channelDesc[0].roceAttr.retryCount = 3;
+    channelDesc[0].roceAttr.tc = 120;
+    channelDesc[0].roceAttr.sl = 4;
+
+    hccl::hcclComm *hcclCommTest = new hccl::hcclComm(1, 1, "123");
+    MOCKER_CPP(&hcclComm::IsCommunicatorV2())
+    .stubs()
+    .will(returnValue(false));
+
+    HcclResult ret = ProcessRoceChannelDesc(channelDesc[0], channelDescFinal[0], hcclCommTest);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
