@@ -10,6 +10,7 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
+    ut_hccl_comm_device.cc
     ut_HcclCommActivateCommMemory_API_test.cc
     ut_HcclCommChannel_API_test.cc
     ut_HcclCommConfigInit_API_test.cc
@@ -17,6 +18,7 @@ set(src_to_test_list
     ut_HcclCommDestroy_API_test.cc
     ut_HcclCommEngineCtx_API_test.cc
     ut_HcclCommGetHandleWithName_API_test.cc
+    ut_HcclCommGetStatus_API_test.cc
     ut_HcclCommInitAll_API_test.cc
     ut_HcclCommInitClusterInfoConfig_API_test.cc
     ut_HcclCommInitClusterInfo_API_test.cc

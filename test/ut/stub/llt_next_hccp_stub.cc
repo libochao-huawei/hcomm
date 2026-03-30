@@ -129,5 +129,4 @@ void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args
 {
     return;
 }
-
 } // namespace Hccl

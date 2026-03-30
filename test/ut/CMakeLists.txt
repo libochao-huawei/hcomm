@@ -185,6 +185,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/daemon
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/

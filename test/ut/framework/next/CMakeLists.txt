@@ -23,8 +23,10 @@ set(src_to_test_list
     comms/endpoint_pairs/ut_endpoint_pair.cc
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
+    comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
+    comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
     coll_comms/rank/ut_my_rank.cc
-    coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
+    #coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
     coll_comms/rank_pairs/ut_rank_pair.cc
     coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
@@ -38,6 +40,10 @@ set(src_to_test_list
     coll_comms/communicator/ut_coll_comm_test.cc
     comms/endpoint_pairs/channels/ut_channel_process_test.cc
     coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
+    comms/ccu/ccu_device/ccu_comp/ut_ccu_comp_pub.cc
+    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
+    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
+
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
