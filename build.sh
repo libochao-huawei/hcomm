@@ -37,7 +37,7 @@ BUILD_CB_TEST="false"
 
 ENABLE_UT="off"
 ENABLE_ST="off"
-CMAKE_BUILD_TYPE="Release"
+CMAKE_BUILD_TYPE="Debug"
 HCOMM_LIB_NAME="libhcomm.so"
 INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
 ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
