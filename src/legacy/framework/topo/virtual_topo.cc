@@ -41,6 +41,7 @@ LinkData::LinkData(vector<char> &data)
     binaryStream >> writable;
     binaryStream >> hop;
     binaryStream >> localDieId_;
+    binaryStream >> fullmesh;
 
     u32 offset;
     u32 addrSize;
@@ -79,12 +80,14 @@ std::vector<char> LinkData::GetUniqueId() const
     binaryStream << writable;
     binaryStream << hop;
     binaryStream << localDieId_;
+    binaryStream << fullmesh;
 
     vector<char> result;
     binaryStream.Dump(result);
 
     auto loc = localAddr_.GetUniqueId();
     auto rmt = remoteAddr_.GetUniqueId();
+    HCCL_INFO("[LinkData::%s] localAddr[%s], remoteAddr[%s].", __func__, localAddr_.Describe().c_str(), remoteAddr_.Describe().c_str());
 
     u32 offset   = result.size();
     u32 addrSize = loc.size();

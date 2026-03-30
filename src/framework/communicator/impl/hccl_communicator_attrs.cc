@@ -332,6 +332,7 @@ HcclResult HcclCommunicatorAttrs::InitRankInfo(const RankTable_t &rankTable)
 
     interServer_ = rankTable.serverNum > 1; // serverNum为1时，不进行roce初始化
     nicDeployment_ = rankTable.nicDeploy;
+    rankTableVersion_ = rankTable.version;
     return HCCL_SUCCESS;
 }
 
@@ -644,6 +645,11 @@ u32 HcclCommunicatorAttrs::GetLocalRank()
 std::string HcclCommunicatorAttrs::GetCollectiveId()
 {
     return collectiveId_;
+}
+
+std::string HcclCommunicatorAttrs::GetRankTableVersion()
+{
+    return rankTableVersion_;
 }
 
 s32 HcclCommunicatorAttrs::GetDeviceLogicId()

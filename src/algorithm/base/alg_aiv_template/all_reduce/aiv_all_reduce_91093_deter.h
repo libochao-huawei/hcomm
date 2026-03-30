@@ -20,8 +20,8 @@ public:
     template<typename T>
     __aicore__ inline void InitDataCopyOffset(uint64_t perRankBufferCount, uint64_t halfBufferCount, uint64_t len);
 
-    __aicore__ inline int64_t GetDeterministicRankOffset(int64_t x);
-    __aicore__ inline int64_t GetDeterministicRank(int64_t x);
+    __aicore__ inline uint32_t CeilLog2(uint32_t n);
+    __aicore__ inline uint32_t GetLargestPowerOf2(uint32_t n);
 
     template<typename T>
     __aicore__ inline void Process(GM_ADDR buffIn0, GM_ADDR buffOut0, GM_ADDR commInfoAddr, GM_ADDR input,
@@ -108,23 +108,26 @@ __aicore__ inline void AivAllReduce91093Deter::InitDataCopyOffset(uint64_t perRa
     }
 }
 
-__aicore__ inline int64_t AivAllReduce91093Deter::GetDeterministicRankOffset(int64_t x)
+__aicore__ inline uint32_t AivAllReduce91093Deter::CeilLog2(uint32_t n)
 {
-    int64_t tmp = 1;
-    while(!(x & 1)) {
-        x >>= 1;
-        tmp <<= 1;
+    if (n <= 1) return 0;
+    uint32_t result = 0;
+    uint32_t value = 1;
+    while (value < n) {
+        value <<= 1;
+        result++;
     }
-    return tmp;
+    return result;
 }
 
-__aicore__ inline int64_t AivAllReduce91093Deter::GetDeterministicRank(int64_t x)
+__aicore__ inline uint32_t AivAllReduce91093Deter::GetLargestPowerOf2(uint32_t n)
 {
-    int64_t tmp = 1;
-    while(DOUBLE*tmp <x){
-        tmp <<=1;
+    if (n <= 1) return 0;
+    uint32_t result = 1;
+    while (result * 2 < n) {  // 严格小于
+        result <<= 1;
     }
-    return tmp;
+    return result;
 }
 
 template<typename T>
@@ -216,74 +219,83 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
         PipeBarrier<PIPE_ALL>();
         BatchRecordWait(curTag, buffersOut, AivNotifyType::DataSignal);
 
-        // step3 本端ccl local reduce
-        // step3.1 每个核先处理自己targets, 串行加
-        for (int32_t i = numTargets-1; i >= 1; --i) {
-            PipeBarrier<PIPE_ALL>();
-            uint64_t dataNum = curGroupCount;
-            if (rank_ == rankSize_ - 1){
-                dataNum = curGroupCountLast;
-            }
-            uint64_t preDataOffset = dataNum * targetRanks[0];
-            uint64_t curDataOffset = dataNum * targetRanks[i];
-            CpGM2GM(cclGMSelf + halfBufferCount + preDataOffset, 
-                    cclGMSelf + halfBufferCount + curDataOffset, dataNum, true, reduceOp_);
-        }
-
         // 卡内每个核同步一次
         PipeBarrier<PIPE_ALL>();
         SyncAll(syncGlobal, workLocal, numBlocks_);
         PipeBarrier<PIPE_ALL>();
 
-        // step3.2 归约为numReduce份数据的reduce
+        // step3 新的二分归约算法
+        // 每轮: 后半部分(offset powerOf2 到 curBlocks-1) 加到 前半部分(offset 0 到 powerOf2-1)
+        // 每个核负责连续的offset，每轮重新划分
         uint32_t numReduce = rankSize_ < usedBlockNum_ ? rankSize_ : usedBlockNum_;
-        if (GetBlockIdx() < numReduce && GetBlockIdx() != 0){
+        uint32_t totalRounds = CeilLog2(rankSize_);
+        
+        if (GetBlockIdx() < numReduce) {
             uint64_t dataNum = curGroupCount;
             if (rank_ == rankSize_ - 1){
                 dataNum = curGroupCountLast;
             }
-            int x = GetBlockIdx();
-            int64_t multiple = GetDeterministicRankOffset(x);
-            int64_t target = x - multiple;
-    
-            if (x & 1) {
-                CpGM2GM<T>(cclGMSelf + halfBufferCount + dataNum * target, cclGMSelf + halfBufferCount + dataNum * x, 
-                            dataNum, true, reduceOp_);
-                PipeBarrier<PIPE_ALL>();
-                SetSyncRecord(curTag, flagAddrSelf_, 1, x, pingpong); 
-            } else {
-                int64_t multipleTemp = multiple / DOUBLE;
-                WaitSyncFlag(curTag, flagAddrSelf_, 1, x - multipleTemp, pingpong); 
-
-                while (x + multipleTemp >= numReduce) {
-                    multipleTemp /= DOUBLE;
+            uint32_t curBlocks = rankSize_;
+            for (uint32_t round = 0; round < totalRounds; round++) {
+                uint32_t powerOf2 = GetLargestPowerOf2(curBlocks);
+                if (powerOf2 == 0) break;
+                
+                // 计算当前核负责的offset范围
+                uint32_t offsetsPerCore = (curBlocks + numReduce - 1) / numReduce;
+                uint32_t startOffset = GetBlockIdx() * offsetsPerCore;
+                uint32_t endOffset = startOffset + offsetsPerCore;
+                if (endOffset > curBlocks) endOffset = curBlocks;
+                
+                // 再处理前半部分的offset: 等待并执行reduce
+                for (uint32_t offset = startOffset; offset < endOffset; offset++) {
+                    if (offset < powerOf2) {
+                        // 处理所有对应的后半部分offset
+                        uint32_t backIdx = powerOf2 + offset;
+                        // 等待后半部分对应offset
+                        if (round > 0) {
+                            WaitSyncFlag(curTag + round, flagAddrSelf_, 1, backIdx, pingpong);
+                            WaitSyncFlag(curTag + round, flagAddrSelf_, 1, offset, pingpong);
+                        }
+                        
+                        // 后半部分reduce到前半部分
+                        uint64_t frontOffset = dataNum * offset;
+                        uint64_t backOffset = dataNum * backIdx;
+                        
+                        if (backIdx < curBlocks) {
+                            PipeBarrier<PIPE_ALL>();
+                            CpGM2GM<T>(cclGMSelf + halfBufferCount + frontOffset,
+                                        cclGMSelf + halfBufferCount + backOffset,
+                                        dataNum, true, reduceOp_);
+                            PipeBarrier<PIPE_ALL>();
+                        }
+                        SetSyncRecord(curTag + round + 1, flagAddrSelf_, 1, offset, pingpong);
+                    }
                 }
-                if (multipleTemp >= 1) {
-                    WaitSyncFlag(curTag, flagAddrSelf_, 1, x + multipleTemp, pingpong);
-                }
-
+                
+                curBlocks = powerOf2;
                 PipeBarrier<PIPE_ALL>();
-                CpGM2GM<T>(cclGMSelf + halfBufferCount + dataNum * target, cclGMSelf + halfBufferCount + dataNum * x, 
-                            dataNum, true, reduceOp_);
-                PipeBarrier<PIPE_ALL>();
-                SetSyncRecord(curTag, flagAddrSelf_, 1, x, pingpong);
             }
         }
 
         // step4 对端ccl -> 本端 output
         for (uint32_t i = 0; i < numTargets; i++) {
-            // 等待对端完成
-            int64_t waitblock = GetDeterministicRank(numReduce);
-            WaitSyncFlag(curTag, buffersOut[i], 1, waitblock, pingpong);
-
-            // 搬运数据
+            uint32_t targetRank = targetRanks[i];
             __gm__ T *cclGMOther = (__gm__ T *)(buffersIn[i]);
-            uint64_t localRecvOffset = curGroupCount * targetRanks[i];
+            
+            // 等待对端完成reduce (最后一轮核0的同步)
+            WaitSyncFlag(curTag + totalRounds, buffersOut[i], 1, 0, pingpong);
+            
+            // 从对端的offset 0拷贝结果
+            uint64_t srcOffset = 0;
+            uint64_t dstOffset = curGroupCount * targetRank;
+            
             PipeBarrier<PIPE_ALL>();
-            if (targetRanks[i] == rankSize_ - 1){
-                CpGM2GM(outputGM + curOffset + localRecvOffset + curBlockOffsetLast, cclGMOther + halfBufferCount + curBlockOffsetLast, curCountLast);
-            }else{
-                CpGM2GM(outputGM + curOffset + localRecvOffset + curBlockOffset, cclGMOther + halfBufferCount + curBlockOffset, curCount);
+            if (targetRank == rankSize_ - 1) {
+                CpGM2GM(outputGM + curOffset + dstOffset + curBlockOffsetLast, 
+                        cclGMOther + halfBufferCount + srcOffset + curBlockOffsetLast, curCountLast);
+            } else {
+                CpGM2GM(outputGM + curOffset + dstOffset + curBlockOffset, 
+                        cclGMOther + halfBufferCount + srcOffset + curBlockOffset, curCount);
             }
         }
 
@@ -297,7 +309,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
         }
 
         syncQue.FreeTensor(workLocal);
-        curTag += 1;
+        curTag += totalRounds + 1;
         curOffset += halfBufferCount;
     }
 }

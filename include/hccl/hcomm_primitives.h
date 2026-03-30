@@ -64,6 +64,7 @@ typedef enum {
     HCOMM_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
     HCOMM_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
     HCOMM_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
+    HCOMM_DATA_TYPE_MXFP8 = 18,     /**< mxfp8 */
 #endif
     HCOMM_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcommDataType;
@@ -122,7 +123,7 @@ extern int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle
  * @brief 本地等待通知
  * @param[in] thread 线程句柄
  * @param[in] notifyIdx 通知索引
- * @param[in] timeout 超时时间(毫秒)
+ * @param[in] timeOut 超时时间(毫秒)
  * @return int32_t 执行结果状态码
  * @note 配合HcommThreadNotifyRecordOnThread使用
  */
@@ -348,21 +349,21 @@ extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNo
  * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
  * @param[in] localNotifyIdx 本地通知索引
- * @param[in] timeout 超时时间(毫秒)
+ * @param[in] timeOut 超时时间(毫秒)
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
+extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut);
 
 /**
  * @brief 等待通知事件
  * @param[in] channel 通道句柄
  * @param[in] localNotifyIdx 本地通知索引
- * @param[in] timeout 超时时间(毫秒)
+ * @param[in] timeOut 超时时间(毫秒)
  * @return int32_t 执行结果状态码
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
-extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
+extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut);
 
 /** @} */  // 通知
 

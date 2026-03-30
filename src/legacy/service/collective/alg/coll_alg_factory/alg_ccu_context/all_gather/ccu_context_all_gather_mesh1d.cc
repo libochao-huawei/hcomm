@@ -62,13 +62,13 @@ void CcuContextAllGatherMesh1D::Algorithm()
             transportIdx++;
         }
     }
-    offSet_ = CreateVariable();
+    offset_ = CreateVariable();
     groupOpSize_ = CreateGroupOpSize();
 
     Load(input_[0]);
     Load(output_[rankId_]);
     Load(token_[rankId_]);
-    Load(offSet_);
+    Load(offset_);
     Load(groupOpSize_);
 
     for (auto t : transports) {
@@ -95,7 +95,7 @@ void CcuContextAllGatherMesh1D::Algorithm()
             curId = rankSize_ - 1;
         }
         dst[curId].addr = output_[rankIdx];
-        dst[curId].addr += offSet_;
+        dst[curId].addr += offset_;
         dst[curId].token = token_[rankIdx];
     }
     GroupBroadcast(transports, dst, src, groupOpSize_);
@@ -117,7 +117,7 @@ std::vector<uint64_t> CcuContextAllGatherMesh1D::GeneArgs(const CcuTaskArg &arg)
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
     uint64_t sliceSize  = taskArg->sliceSize_;
     auto     goSize     = CalGoSize(sliceSize);
     return {inputAddr, outputAddr, tokenInfo, offset, goSize[0], goSize[1], goSize[2], goSize[3]};

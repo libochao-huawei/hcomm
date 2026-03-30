@@ -56,7 +56,7 @@ HcclResult AllGatherVMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize,
         HCCL_WARNING("[AllGatherVMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
     
-    HCCL_INFO("[AllGatherVMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[AllGatherVMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

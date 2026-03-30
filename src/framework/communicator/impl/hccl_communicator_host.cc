@@ -393,9 +393,7 @@ namespace hccl
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(rankTable, topoAttr));
         CHK_RET(SaveTopoDesc(params.identifier));
-        if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93) {
-            CHK_RET(RegisterToSnapshot());
-        }
+        CHK_RET(RegisterToSnapshot());
         CHK_RET(InitSymmetricMemory());
         return HCCL_SUCCESS;
     }
@@ -425,9 +423,7 @@ namespace hccl
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(topoAttr));
         CHK_RET(SaveTopoDesc(params.identifier));
-        if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93) {
-            CHK_RET(RegisterToSnapshot());
-        }
+        CHK_RET(RegisterToSnapshot());
         CHK_RET(InitSymmetricMemory());
         return HCCL_SUCCESS;
     }
@@ -1173,6 +1169,7 @@ namespace hccl
         rankTable.serverNum = serverNum_;
         rankTable.superPodNum = superPodNum_;
         rankTable.nicDeploy = nicDeployment_;
+        rankTable.version = attrCollector_.GetRankTableVersion();
         return HCCL_SUCCESS;
     }
 
@@ -3715,6 +3712,7 @@ namespace hccl
         for (u32 i = 0; i < userRankSize_; i++) {
             inputSize += counts[i] * perDataSize;
         }
+        CHK_PRT_RET(inputSize == 0, HCCL_WARNING("inputSize is 0, return ReduceScatterV success"), HCCL_SUCCESS);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -4186,6 +4184,10 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][SplitBsrData] rankSize %u", userRankSize_);
         HcclSendRecvItem* sendRecvInfo = opParam.BatchSendRecvDataDes.sendRecvItemsPtr;
         for (u32 i = 0; i < itemNum; i++) {
+            if (sendRecvInfo->buf == nullptr) {
+                sendRecvInfo++;
+                continue;
+            }
             if (remoteTransportMap_[sendRecvInfo->remoteRank] == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
                 //host 侧需要下发的数据
                 HCCL_INFO("[HcclCommunicator][SplitBsrData]host localRank %u remoteRank %u type %d sendRecvType %d count %llu",
@@ -4300,7 +4302,11 @@ namespace hccl
         }
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
-        newTag += !opParam.isCapture ? "" : "_Capture"; // aclgraph使用新的Tag，避免影响其他操作
+        if (opParam.isCapture) {
+            newTag += "_Capture" + std::to_string(captureCnt_);
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            captureCnt_++;
+        }
 
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && userRankSize_ > 1) {
             CHK_RET(CreateCommCCLbuffer());
@@ -4309,30 +4315,7 @@ namespace hccl
             NslbDp_CollectOperTable(opType, opParam, algOperator->GetAlgType(), algName);
         }
 
-        // 资源创建
-        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture)
-        {
-            auto resTmp = resMap_[newTag];
-            ++captureCnt_;
-            newTag += std::to_string(captureCnt_);
-            resMap_[newTag] = resTmp;
-            AlgResourceRequest resRequest;
-            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
-            if (IsEnableBackupLink()) {
-                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
-            }
-            // 记录指令信息用于一致性校验
-            CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            // 移除tag对应的指令信息
-            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
-        }
         InsertNewTagToTagMap(newTag, opParam.tag);
-        if (opParam.isCapture) {
-            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-        }
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
         bool selectAivAlg = algDesc.isAivMode;
@@ -4420,7 +4403,7 @@ namespace hccl
             inplaceSupportRetry_ = algOperator->SupportRetryWithInplaceCheck(
                 opType, opParam, algName, isInplaceStatus_, inPlaceSupportRetryStatus_);
             HCCL_INFO("[HcclCommunicator][ExecOp] aicpu Unfold mode algType[%s], inplaceSupportRetry_[%d], opType[%d], "
-                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d]",
+                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d].",
                       AlgTypeToStr(algType).c_str(), inplaceSupportRetry_, opType, isInplaceStatus_, inPlaceSupportRetryStatus_);
             CHK_RET(OrchestrateAicpu(opType, algName, opParam, resMap_[newTag], newTag, algType, isCustom,
                 needIncreLink));
@@ -4437,7 +4420,7 @@ namespace hccl
                 hostResMap_.insert(newTag);
             }
             CHK_RET(algOperator->GetNumBlocks(numBlocks_));
-            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !opParam.isCapture) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
@@ -4572,7 +4555,12 @@ namespace hccl
         }
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
-        newTag += !opParam.isCapture ? "" : "_Capture";
+        if (opParam.isCapture) {
+            newTag += "_Capture" + std::to_string(captureCnt_);
+            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            captureCnt_++;
+        }
+
         auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
             return ((algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllVTwoLevelPipeline") && aicpuUnfoldMode) ||
                 (algName == "RunAlltoAllDirectFullmesh" || algName == "RunAlltoAllFullMeshSymmetricMemory");
@@ -4583,26 +4571,6 @@ namespace hccl
         }
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
-        if (opParam.isCapture && (resMap_.find(newTag) != resMap_.end()))
-        {
-            auto resTmp = resMap_[newTag];
-            ++captureCnt_;
-            newTag += std::to_string(captureCnt_);
-            resMap_[newTag] = resTmp;
-            AlgResourceRequest resRequest;
-            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
-            if (IsEnableBackupLink()) {
-                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
-            }
-            CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
-            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
-        }
-        if (opParam.isCapture) {
-            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-        }
         InsertNewTagToTagMap(newTag, opParam.tag);
         if (resMap_.find(newTag) == resMap_.end()) {
             AlgResourceRequest resRequest;
@@ -4737,7 +4705,7 @@ namespace hccl
             inplaceSupportRetry_ = algOperator->SupportRetryWithInplaceCheck(
                 opType, opParam, algName, isInplaceStatus_, inPlaceSupportRetryStatus_);
             HCCL_INFO("[HcclCommunicator][ExecOp] aicpu Unfold mode algType[%s], inplaceSupportRetry_[%d], opType[%d], "
-                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d]",
+                      "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d].",
                       AlgTypeToStr(algType).c_str(), inplaceSupportRetry_, opType, isInplaceStatus_, inPlaceSupportRetryStatus_);
             CHK_RET(OrchestrateAicpu(opType, algName, opParam, algRes, newTag, algType, isCustom));
         } else {
@@ -4751,7 +4719,7 @@ namespace hccl
             CHK_RET(algOperator->Orchestrate(algName, opParam, algRes));
             // for profiling, numBlocks upload
             CHK_RET(algOperator->GetNumBlocks(numBlocks_));
-            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+            if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !opParam.isCapture) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
         }
@@ -8814,6 +8782,15 @@ namespace hccl
 
     HcclResult HcclCommunicator::RegisterToSnapshot()
     {
+        if (deviceType_ != DevType::DEV_TYPE_910B && deviceType_ != DevType::DEV_TYPE_910_93) {
+            return HCCL_SUCCESS;
+        }
+        if (userRankSize_ <= 1) {
+            HCCL_RUN_INFO("[HcclCommunicator][RegisterToSnapshot]comm identifier[%s], deviceLogicId[%d], "
+                "rank size[%u] is no greater than 1, and then will not register to snapshot",
+                identifier_.c_str(), deviceLogicId_, userRankSize_);
+            return HCCL_SUCCESS;
+        }
         auto setInvalidCommCallback = [this](bool isInvalid) {
             return this->SetInvalidComm(isInvalid);
         };
@@ -8823,13 +8800,30 @@ namespace hccl
         auto postProcessCallback = [this]() {
             return this->SnapshotCheckPostProcess();
         };
-        return SnapshotControl::GetInstance(deviceLogicId_).RegisterComm(identifier_, setInvalidCommCallback,
-            preProcessCallback, postProcessCallback);
+        CHK_RET(SnapshotControl::GetInstance(deviceLogicId_).RegisterComm(identifier_, setInvalidCommCallback,
+            preProcessCallback, postProcessCallback));
+        if (IsEnableBackupLink()) {
+            CHK_RET(SnapshotControl::GetInstance(deviceLogicId_).RegisterBackup(identifier_, deviceBackUpPhyId_));
+        }
+        return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::UnRegisterFromSnapshot()
     {
-        return SnapshotControl::GetInstance(deviceLogicId_).UnRegisterComm(identifier_);
+        if (deviceType_ != DevType::DEV_TYPE_910B && deviceType_ != DevType::DEV_TYPE_910_93) {
+            return HCCL_SUCCESS;
+        }
+        if (userRankSize_ <= 1) {
+            HCCL_RUN_INFO("[HcclCommunicator][UnRegisterFromSnapshot]comm identifier[%s], deviceLogicId[%d], "
+                "rank size[%u] is no greater than 1, and then will not unregister from snapshot",
+                identifier_.c_str(), deviceLogicId_, userRankSize_);
+            return HCCL_SUCCESS;
+        }
+        CHK_RET(SnapshotControl::GetInstance(deviceLogicId_).UnRegisterComm(identifier_));
+        if (IsEnableBackupLink()) {
+            CHK_RET(SnapshotControl::GetInstance(deviceLogicId_).UnRegisterBackup(identifier_, deviceBackUpPhyId_));
+        }
+        return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::SetInvalidComm(bool isInvalid) {
@@ -8888,30 +8882,30 @@ namespace hccl
         auto startTime = std::chrono::steady_clock::now();
         while (true) {
             CHK_PRT_BREAK(Heartbeat::GetInstance(deviceLogicId_).IsResumed(),
-                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "heartbeat thread has been resumed.", identifier_.c_str(), userRank_, deviceLogicId_),);
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
-                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "resume heartbeat thread timeout[%u s].",
                 identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         startTime = std::chrono::steady_clock::now();
         while (retryEnable_ && opRetryManager_) {
             CHK_PRT_BREAK(opRetryManager_->IsResumed(identifier_),
-                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "opretry threads have been resumed.", identifier_.c_str(), userRank_, deviceLogicId_),);
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
-                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "resume opretry threads timeout[%u s].",
                 identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         startTime = std::chrono::steady_clock::now();
         while (zeroCopyMemoryAgent_) {
             CHK_PRT_BREAK(zeroCopyMemoryAgent_->IsResumed(),
-                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "zero-copy memory agent thread has been resumed.", identifier_.c_str(), userRank_, deviceLogicId_),);
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
-                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "resume zero-copy memory agent thread timeout[%u s].",
                 identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }

@@ -56,12 +56,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     }
     
     // 注册到LocalUbRmaBuffer计数器
-    auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
-    if (resultPair.first == localUbRmaBufferMgr_->End()) {
-        // 若已注册内存有交叉，返回HCCL_E_INTERNAL
-        HCCL_ERROR("[UbRegedMemMgr][RegisterMemory] [%s]The memory overlaps with the memory that has been registered.", __FUNCTION__);
-        return HCCL_E_INTERNAL;
-    }
+    auto resultPair = localUbRmaBufferMgr_->AddWithoutCheck(tempKey, localUbRmaBuffer);
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
     CHK_SMART_PTR_NULL(localBuffer);

@@ -747,8 +747,8 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
 {
     if(hcclGroupDepth > 0){
         HcclResult ret = HCCL_SUCCESS;
-        std::shared_ptr<struct hcclCommInitRankTableConfigAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
+        std::shared_ptr<struct hcclCommInitRankTableAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableAsyncJob>()), return HCCL_E_PARA);
         job->clusterInfo = clusterInfo;
         job->rank = rank;
         job->initComm = comm;
@@ -1002,7 +1002,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
-    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].", 
         __func__, clusterInfo, rank, deviceLogicId);
     // 入参合法性校验
     CHK_PTR_NULL(clusterInfo);
@@ -1064,7 +1064,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HCCL_PROFILER_ADD_GROUP_UDI(commConfig.GetConfigCommName(), commConfig.GetConfigUdi());
 
     /* 关键状态记录 */
-    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].", 
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
     return HCCL_SUCCESS;
 }
@@ -2121,7 +2121,7 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
     // 入参合法性校验
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return broadcast success"), HCCL_SUCCESS);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclBroadcastInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclBroadcastInner", "nullptr", "comm", "non-null pointer"}));
@@ -2250,7 +2250,7 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
     // 入参合法性校验
     CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return ReduceScatter success"), HCCL_SUCCESS);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "comm", "non-null pointer"}));
@@ -2309,7 +2309,7 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], op[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], op[%s], "
             "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
             localRank, streamId, deviceLogicId);
@@ -2371,7 +2371,7 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
 
     // 入参合法性校验
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "sendCounts", "non-null pointer"}));
@@ -2458,7 +2458,7 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], sendDispls[%p], recvCount[%llu], dataType[%s], op[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], sendDispls[%p], recvCount[%llu], dataType[%s], op[%s], "
             "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, sendDispls, recvCount,
             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, deviceLogicId);
@@ -2684,7 +2684,7 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
         std::vector<std::string>({"HcclAllGatherInner", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     HcclUs startut = TIME_NOW();
@@ -2728,7 +2728,7 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], localRank[%u], streamId[%d],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], localRank[%u], streamId[%d], "
             "deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
@@ -3666,7 +3666,7 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], localRank[%u], streamId[%d],"
+            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], localRank[%u], streamId[%d], "
             "deviceLogicId[%d]",
             tag.c_str(), sendCount, recvCount, GetDataTypeEnumStr(sendType).c_str(), GetDataTypeEnumStr(recvType).c_str(),
             localRank, streamId, deviceLogicId);
@@ -3785,7 +3785,7 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], recvCounts[%p], sendType[%s],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], recvCounts[%p], sendType[%s], "
             "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, recvCounts, GetDataTypeEnumStr(sendType).c_str(),
             GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
@@ -3860,7 +3860,7 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
         std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "comm", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceInner", "nullptr", "stream", "non-null pointer"}));    
+        std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "stream", "non-null pointer"}));    
     CHK_PTR_NULL(stream);
     
     HcclUs startut = TIME_NOW();
@@ -3915,7 +3915,7 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p],"
+            "tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p], "
             "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, sendCountMatrixHash, GetDataTypeEnumStr(sendType).c_str(), recvBuf,
             GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
@@ -4042,7 +4042,7 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], count[%llu], dataType[%s], op[%s], root[%u],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], count[%llu], dataType[%s], op[%s], root[%u], "
             "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
             root, localRank, streamId, deviceLogicId);
@@ -4744,7 +4744,10 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
     }
 
     for (u32 i = 0; i < itemNum; i++) {
-        CHK_PTR_NULL((sendRecvInfo + i)->buf);
+        // 支持数据量为0的场景，buf为空的item跳过
+        if ((sendRecvInfo + i)->buf == nullptr) {
+            continue;
+        }
         CHK_RET(HcomCheckDataType((sendRecvInfo + i)->dataType));
         CHK_RET(HcomCheckCount((sendRecvInfo + i)->count));
         CHK_RET(HcomCheckUserRank(rankSize, (sendRecvInfo + i)->remoteRank));

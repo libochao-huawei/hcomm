@@ -126,7 +126,7 @@ private:
     std::unordered_map<ChannelIdKey, RankId, ResIdHash> channelRemoteRankIdMap_;
     std::unordered_map<ChannelIdKey, std::pair<IpAddress, IpAddress>, ResIdHash> channelIpAddressMap_;
 
-    HcclResult GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr);
+    HcclResult GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr, uint32_t sqSize);
     bool FindAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr) const;
     HcclResult CreateAndSaveNewBatch(const BatchKey &batchKey,
         const std::vector<CcuChannelInfo> channelInfos, ResourceBatch *&batchPtr);
