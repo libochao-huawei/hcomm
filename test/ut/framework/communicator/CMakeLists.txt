@@ -10,6 +10,7 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
+    ut_hccl_comm_host.cc
     ut_HcclCommActivateCommMemory_API_test.cc
     ut_HcclCommChannel_API_test.cc
     ut_HcclCommConfigInit_API_test.cc
