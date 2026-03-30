@@ -22,6 +22,7 @@
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
 #include "orion_adapter_hccp.h"
+#include "network/hccp_nda.h"
  
 int RaCtxQpCreate(void *ctx_handle, struct QpCreateAttr *attr, struct QpCreateInfo *info,
     void **qp_handle)
@@ -117,6 +118,14 @@ int RaCtxGetAuxInfo(void *ctx_handle, struct HccpAuxInfoIn *in, struct HccpAuxIn
 }
 
 int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *num) {
+    return 0;
+}
+
+int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
+{
+    if (directFlag != nullptr) {
+        *directFlag = 0;
+    }
     return 0;
 }
 
