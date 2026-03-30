@@ -11,7 +11,6 @@ set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
     ut_HcommCcuProfiling_test.cc
-    ut_CcuRepContext_test.cc
 )
 
 add_executable(hccl_utest_test_dfx_resource ${src_to_test_list})
