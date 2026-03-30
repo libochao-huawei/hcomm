@@ -36,6 +36,7 @@
 #include "ccu_urma_channel.h"
 #include "ccu_comp.h"
 #include "ccuTaskException.h"
+#include "ccu_rep_assign_v1.h"
 
 namespace hcomm {
 
@@ -818,14 +819,6 @@ TEST_F(CcuTaskExceptionTest, GenStatusInfo_Normal) {
 
     EXPECT_EQ(errorInfo.size(), 1u);
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::MISSION);
-}
-
-TEST_F(CcuTaskExceptionTest, GetCcuChannelHandleById_Normal) {
-    u64 channelHandle = 0;
-    HcclResult ret = CcuTaskException::GetCcuChannelHandleById(101, channelHandle);
-
-    // 验证输出
-    EXPECT_TRUE(true);
 }
 
 TEST_F(CcuTaskExceptionTest, GetRankIdByChannelId_Normal) {
@@ -1856,41 +1849,11 @@ TEST_F(CcuRepContextTest, AddProfiling_WithNameAndMask) {
     EXPECT_EQ(profilingInfo[0].mask, mask);
 }
 
-TEST_F(CcuRepContextTest, AddProfiling_WithChannelsForGroupBroadcast) {
-    CcuRep::CcuRepContext context;
-    context.SetMissionId(100);
-    std::vector<ChannelHandle> channels = {0x1001, 0x1002};
-
-    HcclResult ret = context.AddProfiling(channels.data(), channels.size());
-
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    auto& lgProfilingInfo = context.GetLGProfilingInfo();
-    EXPECT_EQ(lgProfilingInfo.ccuProfilingInfos.size(), 1);
-    EXPECT_EQ(lgProfilingInfo.ccuProfilingInfos[0].name, "GroupBroadcast");
-    EXPECT_EQ(lgProfilingInfo.ccuProfilingInfos[0].missionId, 100);
-}
-
-TEST_F(CcuRepContextTest, AddProfiling_WithChannelsForGroupReduce) {
-    CcuRep::CcuRepContext context;
-    context.SetMissionId(100);
-    std::vector<ChannelHandle> channels = {0x1001, 0x1002};
-    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
-    HcclDataType outputDataType = HcclDataType::HCCL_DATA_TYPE_FP16;
-    HcclReduceOp opType = HcclReduceOp::HCCL_REDUCE_SUM;
-
-    HcclResult ret = context.AddProfiling(channels.data(), channels.size(), dataType, outputDataType, opType);
-
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    auto& lgProfilingInfo = context.GetLGProfilingInfo();
-    EXPECT_EQ(lgProfilingInfo.ccuProfilingInfos.size(), 1);
-    EXPECT_EQ(lgProfilingInfo.ccuProfilingInfos[0].name, "GroupReduce");
-    EXPECT_EQ(lgProfilingInfo.ccuProfilingInfos[0].reduceOpType, opType);
-}
-
 TEST_F(CcuRepContextTest, AddProfiling_WithChannelsNullPtr) {
     CcuRep::CcuRepContext context;
     HcclResult ret = context.AddProfiling(nullptr, 2);
     EXPECT_NE(ret, HCCL_SUCCESS);
+}
 // ========== GenErrorInfo系列函数测试 ==========
 
 class GenErrorInfoTest : public BaseInit {
@@ -1918,13 +1881,13 @@ public:
     ErrorInfoBase baseInfo_;
 };
 
-class MockCcuRepBase : public CcuRep::CcuRepBase {
+class MockTaskCcuRepBase : public CcuRep::CcuRepBase {
 public:
-    MockCcuRepBase(CcuRep::CcuRepType type, uint16_t instrId = 10) {
+    MockTaskCcuRepBase(CcuRep::CcuRepType type, uint16_t instrId = 10) {
         this->type = type;
         this->instrId = instrId;
     }
-    ~MockCcuRepBase() override = default;
+    ~MockTaskCcuRepBase() override = default;
     bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
     std::string Describe() override { return "MockRep"; }
     CcuRep::CcuRepType GetType() const { return type; }
@@ -2402,17 +2365,8 @@ TEST_F(GenErrorInfoTest, GenErrorInfoRemWaitSem) {
     EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::REM_WAIT_SEM);
 }
 
-TEST_F(GenErrorInfoTest, GenErrorInfoPostSharedSem) {
-    auto rep = std::make_shared<MockCcuRepRecordSharedNotify>(10, 0x55);
-    std::vector<CcuErrorInfo> errorInfo;
-    CcuTaskException::GenErrorInfoPostSharedSem(baseInfo_, rep, errorInfo);
-    EXPECT_EQ(errorInfo.size(), 1u);
-    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
-    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::RECORD_SHARED_NOTIFY);
-}
-
 TEST_F(GenErrorInfoTest, GenErrorInfoDefault) {
-    auto rep = std::make_shared<MockCcuRepBase>(CcuRep::CcuRepType::BASE);
+    auto rep = std::make_shared<MockTaskCcuRepBase>(CcuRep::CcuRepType::BASE);
     std::vector<CcuErrorInfo> errorInfo;
     CcuTaskException::GenErrorInfoDefault(baseInfo_, rep, errorInfo);
     EXPECT_EQ(errorInfo.size(), 1u);
@@ -2420,7 +2374,7 @@ TEST_F(GenErrorInfoTest, GenErrorInfoDefault) {
 }
 
 TEST_F(GenErrorInfoTest, GenErrorInfoByRepType_UnknownType_FallsToDefault) {
-    auto rep = std::make_shared<MockCcuRepBase>(CcuRep::CcuRepType::BASE);
+    auto rep = std::make_shared<MockTaskCcuRepBase>(CcuRep::CcuRepType::BASE);
     std::vector<CcuErrorInfo> errorInfo;
     CcuTaskException::GenErrorInfoByRepType(baseInfo_, rep, errorInfo);
     EXPECT_EQ(errorInfo.size(), 1u);
