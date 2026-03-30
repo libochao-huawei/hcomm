@@ -35,7 +35,7 @@
 namespace hcomm {
 
 namespace {
-constexpr uint32_t kDefaultRocePort = 60001u;
+constexpr uint32_t kDefaultRocePort = 16666;
 
 /** Owns res / local+remote RoceMemDetails arrays as separate device allocations for AICPU kernel blob. */
 struct RoceAicpuKernelDeviceBlobBundle {
