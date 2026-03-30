@@ -185,7 +185,7 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
         std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
         const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(curTime - startTime);
         if (elapsed > timeout) {
-            HCCL_ERROR("[OpRetry][Server]aicpu can not retry, opname is inconsistent");
+            HCCL_ERROR("[OpRetry][Server] OpRetryServerHandleError timeout");
             for (auto &it : retryCtx->serverSockets_) {
                 auto tag = std::string(reinterpret_cast<const char*>(it.second.retryInfo.opInfo.opId.tag));
                 HCCL_ERROR("[OpRetry][Server]OpRetryHandle retryinfo rank[%u] tag[%s] index[%u] IpInfo[%s]", it.first,
@@ -844,37 +844,6 @@ HcclResult OpRetryServerWaitResume::ProcessEvent(RetryContext *retryCtx)
         return HCCL_SUCCESS;
     }
 
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_KEEP_INTERVAL);
-    // 轮询接收agent信息
-    for (auto &it : retryCtx->serverSockets_) {
-        const u32 &agentId = it.first;
-        // 若对端已经关闭, 则不再轮询
-        if (disableAgent_.find(agentId) != disableAgent_.end()) {
-            continue;
-        }
-        // 记录时间, 检测和对端上一次通信时间是否超过保活时间
-        std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
-        if (lastRecvTimes_.find(agentId) == lastRecvTimes_.end()) {
-            lastRecvTimes_.insert(std::make_pair(agentId, curTime));
-        }
-
-        // 轮询接收agent状态机信息
-        HcclResult ret = WaitResponse(it.second.socket, it.second.retryInfo);
-        if (ret == HCCL_SUCCESS) {  // 成功接收到数据
-            lastRecvTimes_[agentId] = curTime;
-        } else if (ret == HCCL_E_AGAIN) {  // 未接收到数据
-            // 校验是否超时
-            const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(curTime - lastRecvTimes_[agentId]);
-            if (elapsed > timeout) {
-                RetryCommandInfo commandInfo;
-                commandInfo.command = RETRY_CMD_RUNNING;
-                CHK_RET(IssueCommandWithOpId(it.second.socket, commandInfo));
-                lastRecvTimes_[agentId] = curTime;
-            }
-        } else {  // 接收数据失败
-            disableAgent_.insert(agentId);
-        }
-    }
     return HCCL_SUCCESS;
 }
 

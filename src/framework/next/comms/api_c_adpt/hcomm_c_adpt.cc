@@ -252,6 +252,11 @@ HcclResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngin
     return ChannelProcess::CreateChannelsLoop(endpointHandle, engine, channelDescs, channelNum, channels);
 }
 
+HcclResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
+{
+    return ChannelProcess::ChannelUpdateMemInfo(memHandles, memHandleNum, channelHandle);
+}
+
 HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels)
 {

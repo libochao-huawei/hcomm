@@ -13,6 +13,7 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
+#include "comm_mems.h"
 
 // Orion
 #include "coll_alg_param.h"
@@ -25,6 +26,21 @@ namespace hcomm {
 
 AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
+
+HcclResult AicpuTsUrmaChannel::Makebufs(void **memHandles, uint32_t memHandleNum,
+    std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
+{
+    bufs.clear();
+    for (uint32_t i = 0; i < memHandleNum; ++i) {
+        auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
+        HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag.c_str());
+        bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
+            reinterpret_cast<uintptr_t>(locMemInfo->addr), locMemInfo->size,
+            hccl::ConvertCommToHcclMemType(locMemInfo->memType), locMemInfo->memTag.c_str())
+        ));
+    }
+    return HCCL_SUCCESS;
+}
 
 HcclResult AicpuTsUrmaChannel::ParseInputParam() 
 {
@@ -60,15 +76,7 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
     } else {
         // 3. 从 channelDesc 的 memHandle，获得 bufs_
         HCCL_INFO("[AicpuTsUrmaChannel][%s] exchangeAllMems == false. Get memHandles from channelDesc.", __func__);
-        // TODO: memHandle 强转成 Hccl::LocalUbRmaBuffer*, push_back 进去 commLocRes_.bufferVec
-        for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
-            // HcclBuf* buf = static_cast<HcclBuf*>(channelDesc_.memHandles[i]);
-            auto *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(channelDesc_.memHandles[i]);
-            HCCL_INFO("HcclResult AicpuTsUrmaChannel::ParseInputParam() %s\n", localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
-            bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-                reinterpret_cast<uintptr_t>(localUbRmaBuffer->GetAddr()), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
-            ));
-        }
+        CHK_RET(Makebufs(channelDesc_.memHandles, channelDesc_.memHandleNum, bufs_));
     }
 
     EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
@@ -145,16 +153,16 @@ HcclResult AicpuTsUrmaChannel::BuildNotify()
 }
 
 // TODO: to be deleted
-HcclResult AicpuTsUrmaChannel::BuildBuffer()
+HcclResult AicpuTsUrmaChannel::BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
-    localRmaBuffers_.clear();
-    commonRes_.bufferVec.clear();
-    for (size_t i = 0; i < bufs_.size(); i++) {
+    bufferVecTemp_.clear();
+    for (size_t i = 0; i < bufs.size(); i++) {
         std::unique_ptr<Hccl::LocalUbRmaBuffer> bufferPtr = nullptr;
         EXECEPTION_CATCH(
-            bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs_[i], rdmaHandle_),
+            bufferPtr = std::make_unique<Hccl::LocalUbRmaBuffer>(bufs[i], rdmaHandle_),
             return HCCL_E_PTR
         );
+        bufferVecTemp_.push_back(bufferPtr.get());
         commonRes_.bufferVec.push_back(bufferPtr.get());
         localRmaBuffers_.push_back(std::move(bufferPtr));
     }
@@ -223,7 +231,9 @@ HcclResult AicpuTsUrmaChannel::Init()
     CHK_RET(BuildAttr());
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
-    CHK_RET(BuildBuffer());
+    localRmaBuffers_.clear();
+    commonRes_.bufferVec.clear();
+    CHK_RET(BuildBuffer(bufs_));
     CHK_RET(BuildUbMemTransport());
     return HCCL_SUCCESS;
 }
@@ -308,5 +318,13 @@ HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
 HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
     return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
+}
+
+HcclResult AicpuTsUrmaChannel::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+{
+    CHK_RET(Makebufs(memHandles, memHandleNum, bufsTemp));
+    CHK_RET(BuildBuffer(bufsTemp));
+    bufs_.insert(bufs_.end(), bufsTemp.begin(), bufsTemp.end());
+    return memTransport_->UpdateMemInfo(bufferVecTemp_);
 }
 } // namespace hcomm
