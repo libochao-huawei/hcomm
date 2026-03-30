@@ -81,7 +81,5 @@ target_link_libraries(hccp_utest PRIVATE
     -ldl
 )
 
-# run_llt_test(
-#     TARGET hccp_utest
-#     TASK_NUM 1
-# )
+enable_testing()
+add_test(NAME hccp_utest COMMAND hccp_utest)

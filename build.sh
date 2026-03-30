@@ -251,10 +251,11 @@ function build_ut() {
   mk_dir ${OUTPUT_PATH}
   mk_dir "${BUILD_DIR}"
   local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
+  local log_dir="${OUTPUT_PATH}/ut_logs" && mk_dir "${log_dir}"
   cd "${BUILD_DIR}"
   unset LD_LIBRARY_PATH
 
-  local LLT_KILL_TIME=1200
+  local LLT_KILL_TIME=200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
               -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
@@ -273,7 +274,7 @@ function build_ut() {
     return 1
   fi
 
-  # make all
+  echo "Building all test targets..."
   cmake --build . -j${CPU_NUM}
   run_ret=${PIPESTATUS[0]}
   echo "exit code: ${run_ret}"
@@ -282,11 +283,39 @@ function build_ut() {
       echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
       exit 1
   fi
-  if [ $? -ne 0 ]; then
-    echo "execute command: make -j${THREAD_NUM} failed."
+  if [ "${run_ret}" -ne 0 ]; then
+    echo "execute command: cmake --build . -j${CPU_NUM} failed."
     return 1
   fi
   echo "build success!"
+  
+  echo "Running tests with CTest (parallel jobs: 2)..."
+  
+  local ctest_log="${log_dir}/ctest_output.log"
+  local ctest_summary="${log_dir}/ctest_summary.log"
+  
+  ctest -j ${CPU_NUM} \
+        --timeout ${LLT_KILL_TIME} \
+        --output-on-failure \
+        --stop-on-failure \
+        --test-output-size-failed 10000000 \
+        -O "${ctest_log}" \
+        2>&1 | tee "${ctest_summary}"
+  
+  local ctest_ret=${PIPESTATUS[0]}
+  
+  if [ "${ctest_ret}" -eq 137 ]; then
+      echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
+      exit 1
+  fi
+  
+  if [ "${ctest_ret}" -ne 0 ]; then
+    echo "CTest execution failed. See logs in ${log_dir}"
+    return 1
+  fi
+  
+  echo "Build and tests completed successfully!"
+  echo "Test logs saved in: ${log_dir}"
 }
 
 function make_ut_gov() {
@@ -631,7 +660,6 @@ cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
-    run_ut
     make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test

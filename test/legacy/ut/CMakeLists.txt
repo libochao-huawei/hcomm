@@ -125,7 +125,6 @@ add_subdirectory(framework)
 add_subdirectory(aicpu)
 add_subdirectory(unified_platform)
 
-run_llt_test(
-    TARGET hccl_v2_utest
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_v2_utest COMMAND hccl_v2_utest)
+

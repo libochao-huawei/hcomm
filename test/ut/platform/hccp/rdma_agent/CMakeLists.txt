@@ -123,7 +123,5 @@ target_link_libraries(rdma_agent_utest PRIVATE
     -ldl
 )
 
-# run_llt_test(
-#     TARGET rdma_agent_utest
-#     TASK_NUM 1
-# )
+enable_testing()
+add_test(NAME rdma_agent_utest COMMAND rdma_agent_utest)

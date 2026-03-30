@@ -114,7 +114,5 @@ target_link_libraries(rs_ut_normal PRIVATE
     -ldl
 )
 
-# run_llt_test(
-#     TARGET rs_ut_normal
-#     TASK_NUM 1
-# )
+enable_testing()
+add_test(NAME rs_ut_normal COMMAND rs_ut_normal)
