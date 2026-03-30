@@ -18,7 +18,7 @@
         if (!isInited) { \
             const char *socNamePtr = aclrtGetSocName(); \
             CHK_PTR_NULL(socNamePtr); \
-            isSupportV2 = std::strstr(socNamePtr, "Ascend950") != nullptr; \
+            isSupportV2 = strstr(socNamePtr, "Ascend950") != nullptr; \
             isInited = true; \
         } \
         if (isSupportV2) { \
