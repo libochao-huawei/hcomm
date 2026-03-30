@@ -28,6 +28,7 @@
 #include "ccu_rep_loc_record_event.h"
 #include "ccu_rep_v1.h"
 #include "ccu_comp.h"
+#include "ccu_rep_context_v1.h"
 #include "string_util.h"
 
 namespace hcomm {
@@ -1258,7 +1259,8 @@ HcclResult CcuTaskException::GetCcuChannelHandleById(u32 deviceId, u16 channelId
     }
 
     uint64_t handle = 0;
-    if (kernel->GetChannelHandleById(channelId, handle) != HCCL_SUCCESS) {
+    std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo  = taskInfo.taskParam_.ccuDetailInfo;
+    if (kernel->GetChannelHandleById(ccuDetailInfo, channelId, handle) != HCCL_SUCCESS) {
         HCCL_ERROR("[%s]GetChannelHandleById fail, channelId[%u], handle[0x%llx]", __func__, channelId, handle);
         return HCCL_E_PARA;
     }

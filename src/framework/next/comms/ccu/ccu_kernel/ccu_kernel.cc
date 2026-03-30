@@ -774,7 +774,8 @@ HcclResult CcuKernel::UpdateChannelIdMap()
     for (auto it : channelHandleToId_) {
         uint64_t channelHandle = it.first;
         uint16_t channelId = INVALID_U16;
-        CHK_RET(GetChannelIdByHandle(channelHandle, channelId));
+        std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo  = allCcuProfilingInfos_;
+        CHK_RET(GetChannelIdByHandle(ccuDetailInfo, channelHandle, channelId));
         channelHandleToId_[channelHandle] = channelId;
         channelIdToHandle_[channelId] = channelHandle;
         HCCL_INFO("[%s]channelHandle[0x%llx], channelId[%u]", __func__, channelHandle, channelId);
@@ -782,27 +783,41 @@ HcclResult CcuKernel::UpdateChannelIdMap()
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::GetChannelHandleById(uint16_t channelId, uint64_t& channelHandle)
+HcclResult CcuKernel::GetChannelHandleById(std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo ,uint64_t channelId, uint16_t& channelHandle)
 {
-    auto it = channelIdToHandle_.find(channelId);
-    CHK_PRT_RET(it == channelIdToHandle_.end(),
-        HCCL_ERROR("[%s]fail, channelId[%u] not found", __func__, channelId), HCCL_E_NOT_FOUND);
-    channelHandle = it->second;
-    return HCCL_SUCCESS;
+    if (!ccuDetailInfo || ccuDetailInfo->empty()) {
+       channelHandle = 0;
+       HCCL_ERROR("channelId[%u] ChannelInfo is empty or null", channelId);
+       return HCCL_ERROR;
+    }
+    for (size_t i = 0;i < ccuDetailInfo->size(); ++i){
+       if(ccuDetailInfo->at(i).channelId == channelId) {
+            channelHandle = ccuDetailInfo->at(i).channelHandle[i];
+            return HCCL_SUCCESS;
+       }
+    }
+    channelHandle = 0;
+    HCCL_ERROR("ChannelId Index not found");
+    return HCCL_ERROR;
 }
 
-HcclResult CcuKernel::GetChannelIdByHandle(uint64_t channelHandle, uint16_t& channelId)
+
+HcclResult CcuKernel::GetChannelIdByHandle(std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo, uint64_t channelHandle, uint16_t& channelId)
 {
-    void *channelPtr{nullptr};
-    CHK_RET(HcommChannelGet(channelHandle, &channelPtr));
-    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
-    if (channelImpl == nullptr) {
-        HCCL_ERROR("[%s]failed to cast channelHandle[0x%llx] to CcuUrmaChannel", __func__, channelHandle);
-        return HCCL_E_PTR;
+    if (!ccuDetailInfo || ccuDetailInfo->empty()) {
+       channelId = 0;
+       HCCL_ERROR("channelHandle[%u] ChannelInfo is empty or null", channelHandle);
+       return HCCL_ERROR;
     }
-    channelId = channelImpl->GetChannelId();
-    HCCL_DEBUG("[%s]success, channelHandle[0x%llx], channelId[%u]", __func__, channelHandle, channelId);
-    return HCCL_SUCCESS;
+    for (size_t i = 0;i < ccuDetailInfo->size(); ++i){
+       if(ccuDetailInfo->at(i).channelHandle == channelHandle) {
+            channelId = ccuDetailInfo->at(i).channelHandle[i];
+            return HCCL_SUCCESS;
+       }
+    }
+    channelId = 0;
+    HCCL_ERROR("ChannelHandle Index not found");
+    return HCCL_ERROR;
 }
 
 
@@ -898,6 +913,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
     }
     DumpCcuProfilingInfo(allCcuProfilingInfos);
     allCcuProfilingInfo = allCcuProfilingInfos;
+    allCcuProfilingInfos_ = allCcuProfilingInfos;
     return HCCL_SUCCESS;
 }
 
