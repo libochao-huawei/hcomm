@@ -256,7 +256,6 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         CHK_RET(commMems_->GetTagMemoryHandles(channelDescs[i].memHandles, channelDescs[i].memHandleNum, memVec, memTag));
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] got %zu user memory handles",
             __func__, i + 1, channelNum, remoteRank, memVec.size());
-
         ret = endpointMgr_->RegisterMemory(epHandle, memTag, memVec, memHandleVec);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to register memory, channelIndex[%u], remoteRank[%u], memTagNum[%zu]",
@@ -266,6 +265,12 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].exchangeAllMems = false;
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
+
+        std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
+        if (engine != COMM_ENGINE_CPU) {
+            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
+            hcommDescs[i].memHandles = reinterpret_cast<void**>(commMemHandles.data());
+        }
 
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
