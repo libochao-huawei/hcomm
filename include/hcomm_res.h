@@ -42,6 +42,8 @@ extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const
 
 extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
+extern HcommResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, void **channelEntityList);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
