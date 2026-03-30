@@ -38,17 +38,53 @@ using namespace hccl;
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
 HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
-    hccl::CollComm* collComm = hcclComm->GetCollComm();
-    CHK_PTR_NULL(collComm);
-    hccl::CommConfig commConfig = collComm->GetCommConfig();
-    channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
-    channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
-    channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
-    channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
-    channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaServerLevel() : commConfig.GetConfigServiceLevel();
-    HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
-        channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
-        channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
+    if (hcclComm->IsCommunicatorV2()) { // A5
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        hccl::CommConfig commConfig = collComm->GetCommConfig();
+        u32 tc = commConfig.GetConfigTrafficClass();
+        CHK_PRT_RET((tc != 0xFFFFFFFFu) && (tc > 255 || (tc % 4 != 0)),
+            HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
+                HCCL_ERROR_CODE(HCCL_E_PARA), tc),
+            HCCL_E_PARA);
+        CHK_RET(config_.SetConfigTrafficClass(tc));
+
+        u32 sl = commConfig.GetConfigServiceLevel();
+        CHK_PRT_RET((sl != 0xFFFFFFFFu) && (sl > 7u),
+            HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
+                HCCL_ERROR_CODE(HCCL_E_PARA), sl),
+            HCCL_E_PARA);
+
+        u32 retryInterval = channelDesc.roceAttr.retryInterval;
+        CHK_PRT_RET((retryInterval != 0xFFFFFFFFu) && (retryInterval < 5u || retryInterval > 24u),
+            HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaRetryInterval[%u], must be 0xFFFFFFFF or in [5,24]",
+            HCCL_ERROR_CODE(HCCL_E_PARA), retryInterval),
+            HCCL_E_PARA);
+
+        u32 retryCnt = channelDesc.roceAttr.retryCnt;
+        CHK_PRT_RET((retryCnt != 0xFFFFFFFFu) && (retryCnt < 1u || retryCnt > 7u),
+            HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaRetryCnt[%u], must be 0xFFFFFFFF or in [1,7]",
+            HCCL_ERROR_CODE(HCCL_E_PARA), retryCnt),
+            HCCL_E_PARA);
+        
+        channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
+        channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
+        channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
+        channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
+        channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaServerLevel() : commConfig.GetConfigServiceLevel();
+        HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
+            channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
+            channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
+    } else {
+        channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum; 
+        channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt; 
+        channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval; 
+        channelDescFinal.roceAttr.tc = (channelDesc.roceAttr.tc == 0xFF) ? EnvConfig::GetExternalInputRdmaTrafficClass() : channelDesc.roceAttr.tc; 
+        channelDescFinal.roceAttr.sl = (channelDesc.roceAttr.sl == 0xFF) ? EnvConfig::GetExternalInputRdmaServerLevel() : channelDesc.roceAttr.sl; 
+        HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__, 
+            channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval, 
+            channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -112,7 +148,7 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
         reinterpret_cast<const uint8_t *>(&channelDesc) + sizeof(CommAbiHeader), copySize));
  
     if (channelDesc.header.version >= HCCL_CHANNEL_VERSION_ONE) {
-        ProcessHcclChannelDesc(channelDesc, channelDescFinal, hcclComm);
+        CHK_RET(ProcessHcclChannelDesc(channelDesc, channelDescFinal, hcclComm));
     }
  
     if (channelDesc.header.version > HCCL_CHANNEL_VERSION) {
