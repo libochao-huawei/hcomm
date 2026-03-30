@@ -11,8 +11,6 @@
 #ifndef PARAM_CHECK_PUB_BASIC_V2_H
 #define PARAM_CHECK_PUB_BASIC_V2_H
 
-#include <cstring>
-
 #define HCCLV2_FUNC_RUN(func, ...) \
     do { \
         static thread_local bool isSupportV2 = false; \
