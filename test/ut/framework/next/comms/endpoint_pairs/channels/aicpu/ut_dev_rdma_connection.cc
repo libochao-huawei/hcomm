@@ -1,0 +1,334 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include <iostream>
+#include "gtest/gtest.h"
+#include <mockcpp/mokc.h>
+#include <mockcpp/mockcpp.hpp>
+#include "dev_rdma_connection.h"
+#include "socket.h"
+#include "orion_adapter_hccp.h"
+#include "hccp.h"
+#include "hccp_common.h"
+#define private public
+
+using namespace hcomm;
+
+class DevRdmaConnectionTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "DevRdmaConnectionTest tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "DevRdmaConnectionTest tests tear down." << std::endl;
+    }
+
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in DevRdmaConnectionTest SetUP" << std::endl;
+        
+        Hccl::IpAddress localIp("1.0.0.0");
+        Hccl::IpAddress remoteIp("2.0.0.0");
+        fakeSocket = new Hccl::Socket(nullptr, localIp, 60001, remoteIp, "_0_1_", 
+                                      Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        
+        MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
+        MOCKER(Hccl::HrtRaNdaQpCreate).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaNdaCqCreate).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaNdaCqDestroy).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaQpDestroy).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(RaNdaGetDirectFlag).stubs().with(any(), any()).will(returnValue(0));
+        MOCKER(RaGetQpAttr).stubs().with(any(), any()).will(returnValue(0));
+    }
+
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        delete fakeSocket;
+        std::cout << "A Test case in DevRdmaConnectionTest TearDown" << std::endl;
+    }
+    
+    Hccl::Socket* fakeSocket;
+};
+
+TEST_F(DevRdmaConnectionTest, Ut_When_Normal_Call_Expect_Status_Consistent)
+{
+    std::cout << "Start Ut_When_Normal_Call_Expect_Status_Consistent" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::CLOSED);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::INIT);
+    
+    ret = connection.CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::QP_CREATED);
+    
+    std::unique_ptr<Hccl::Serializable> locDto;
+    ret = connection.GetExchangeDto(locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(locDto, nullptr);
+    
+    ret = connection.ParseRmtExchangeDto(*locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.ModifyQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::QP_MODIFIED);
+    
+    std::cout << "End Ut_When_Normal_Call_Expect_Status_Consistent" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_Init_Failed_Expect_ERROR)
+{
+    std::cout << "Start Ut_When_Init_Failed_Expect_ERROR" << std::endl;
+    
+    MOCKER(RaNdaGetDirectFlag).stubs().with(any(), any()).will(returnValue(-1));
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::CLOSED);
+    
+    std::cout << "End Ut_When_Init_Failed_Expect_ERROR" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_CreateQp_Failed_Expect_ERROR)
+{
+    std::cout << "Start Ut_When_CreateQp_Failed_Expect_ERROR" << std::endl;
+    
+    MOCKER(Hccl::HrtRaNdaQpCreate).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_E_INTERNAL));
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.CreateQp();
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::INIT);
+    
+    std::cout << "End Ut_When_CreateQp_Failed_Expect_ERROR" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_CqCreate_Failed_Expect_ERROR)
+{
+    std::cout << "Start Ut_When_CqCreate_Failed_Expect_ERROR" << std::endl;
+    
+    MOCKER(Hccl::HrtRaNdaCqCreate).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_E_INTERNAL));
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.CreateQp();
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::INIT);
+    
+    std::cout << "End Ut_When_CqCreate_Failed_Expect_ERROR" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_QpAttrDto_IsValid_Expect_Correct)
+{
+    std::cout << "Start Ut_When_QpAttrDto_IsValid_Expect_Correct" << std::endl;
+    
+    DevRdmaConnection::QpAttrDto validDto;
+    validDto.qpn = 123;
+    validDto.psn = 456;
+    EXPECT_TRUE(validDto.IsValid());
+    
+    DevRdmaConnection::QpAttrDto invalidDto1;
+    invalidDto1.qpn = UINT32_MAX;
+    invalidDto1.psn = 456;
+    EXPECT_FALSE(invalidDto1.IsValid());
+    
+    DevRdmaConnection::QpAttrDto invalidDto2;
+    invalidDto2.qpn = 123;
+    invalidDto2.psn = UINT32_MAX;
+    EXPECT_FALSE(invalidDto2.IsValid());
+    
+    DevRdmaConnection::QpAttrDto invalidDto3;
+    invalidDto3.qpn = UINT32_MAX;
+    invalidDto3.psn = UINT32_MAX;
+    EXPECT_FALSE(invalidDto3.IsValid());
+    
+    std::cout << "End Ut_When_QpAttrDto_IsValid_Expect_Correct" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_Describe_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_Describe_Expect_NotEmpty" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::string desc = connection.Describe();
+    EXPECT_FALSE(desc.empty());
+    
+    std::cout << "End Ut_When_Describe_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_BuildSqContext_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildSqContext_Expect_Success" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::unique_ptr<Hccl::Serializable> locDto;
+    ret = connection.GetExchangeDto(locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.ParseRmtExchangeDto(*locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    SqContext sqContext;
+    ret = connection.BuildSqContext(&sqContext);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildSqContext_Expect_Success" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_BuildCqContext_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildCqContext_Expect_Success" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::unique_ptr<Hccl::Serializable> locDto;
+    ret = connection.GetExchangeDto(locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.ParseRmtExchangeDto(*locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    CqContext cqContext;
+    ret = connection.BuildCqContext(&cqContext);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildCqContext_Expect_Success" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_GetUniqueId_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetUniqueId_Expect_NotEmpty" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::unique_ptr<Hccl::Serializable> locDto;
+    ret = connection.GetExchangeDto(locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.ParseRmtExchangeDto(*locDto);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::vector<char> uniqueId = connection.GetUniqueId();
+    EXPECT_FALSE(uniqueId.empty());
+    
+    std::cout << "End Ut_When_GetUniqueId_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_GetQpInfo_Expect_Valid)
+{
+    std::cout << "Start Ut_When_GetQpInfo_Expect_Valid" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    Hccl::QpInfo& qpInfo = connection.GetQpInfo();
+    EXPECT_EQ(qpInfo.qpn, 1);
+    
+    std::cout << "End Ut_When_GetQpInfo_Expect_Valid" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_RepeatInit_Expect_Success)
+{
+    std::cout << "Start Ut_When_RepeatInit_Expect_Success" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::INIT);
+    
+    ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(connection.rdmaConnStatus_, DevRdmaConnection::RdmaConnStatus::INIT);
+    
+    std::cout << "End Ut_When_RepeatInit_Expect_Success" << std::endl;
+}
+
+TEST_F(DevRdmaConnectionTest, Ut_When_GetExchangeDto_Twice_Expect_Success)
+{
+    std::cout << "Start Ut_When_GetExchangeDto_Twice_Expect_Success" << std::endl;
+    
+    RdmaHandle rdmaHandle = (void *)0x1000000;
+    DevRdmaConnection connection(fakeSocket, rdmaHandle);
+    
+    HcclResult ret = connection.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    ret = connection.CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::unique_ptr<Hccl::Serializable> locDto1;
+    ret = connection.GetExchangeDto(locDto1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(locDto1, nullptr);
+    
+    std::unique_ptr<Hccl::Serializable> locDto2;
+    ret = connection.GetExchangeDto(locDto2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(locDto2, nullptr);
+    
+    std::cout << "End Ut_When_GetExchangeDto_Twice_Expect_Success" << std::endl;
+}
