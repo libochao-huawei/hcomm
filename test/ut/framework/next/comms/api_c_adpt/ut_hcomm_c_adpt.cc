@@ -194,19 +194,19 @@ TEST_F(HcommCAdptTest, ut_HcommChannelCreate_When_ChannelNumZero_Expect_E_PARA)
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(HcommCAdptTest, ut_HcommEndpointGet_When_NotFound_Expect_E_PARA)
+TEST_F(HcommCAdptTest, ut_HcommEndpointGet_When_NotFound_Expect_E_NOT_FOUND)
 {
     EndpointHandle handle = reinterpret_cast<EndpointHandle>(0x12345678);
     void* endpoint = nullptr;
     HcommResult ret = HcommEndpointGet(handle, &endpoint);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
-TEST_F(HcommCAdptTest, ut_HcommEndpointGet_When_EndpointPtrNull_Expect_E_PARA)
+TEST_F(HcommCAdptTest, ut_HcommEndpointGet_When_EndpointPtrNull_Expect_E_PTR)
 {
     EndpointHandle handle = reinterpret_cast<EndpointHandle>(0x12345678);
     HcommResult ret = HcommEndpointGet(handle, nullptr);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommChannelCreate_When_NotAiCpu_Expect_Success)

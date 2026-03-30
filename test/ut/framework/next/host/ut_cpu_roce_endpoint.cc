@@ -192,11 +192,11 @@ TEST_F(CpuRoceEndpointTest, ut_HcommResMgrInit_When_Normal_Expect_ReturnSuccess)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGet_When_EndpointNotFound_Expect_ReturnHCCL_E_PARA)
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGet_When_EndpointNotFound_Expect_ReturnHCCL_E_NOT_FOUND)
 {
     void *endpoint = nullptr;
     HcommResult ret = HcommEndpointGet(reinterpret_cast<EndpointHandle>(0x12345678), &endpoint);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
 TEST_F(CpuRoceEndpointTest, Ut_When_Unregister_Memory_Fail_Expect_Return_HCCL_E_PTR)
@@ -228,11 +228,11 @@ TEST_F(CpuRoceEndpointTest, Ut_When_Unregister_Memory_Fail_Expect_Return_HCCL_E_
     free(mem.addr);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGet_When_EndpointPtrIsNull_Expect_ReturnHCCL_E_PARA)
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointGet_When_EndpointPtrIsNull_Expect_ReturnHCCL_E_PTR)
 {
     EndpointHandle handle = reinterpret_cast<EndpointHandle>(0x12345678);
     HcommResult ret = HcommEndpointGet(handle, nullptr);
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(CpuRoceEndpointTest, ut_HcommEndpointDestroy_When_EndpointNotFound_Expect_ReturnHCCL_E_INTERNAL)
@@ -242,22 +242,22 @@ TEST_F(CpuRoceEndpointTest, ut_HcommEndpointDestroy_When_EndpointNotFound_Expect
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcommEndpointStartListen_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointStartListen_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
 {
     HcommResult ret = HcommEndpointStartListen(nullptr, 100, nullptr);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcommEndpointStopListen_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+TEST_F(CpuRoceEndpointTest, ut_HcommEndpointStopListen_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
 {
     HcommResult ret = HcommEndpointStopListen(nullptr, 100);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
 TEST_F(CpuRoceEndpointTest, ut_HcommMemReg_When_MemIsNull_Expect_ReturnHCCL_E_PTR)
 {
     HcommMemHandle memHandle;
-    HcommResult ret = HcommMemReg(nullptr, "tag", nullptr, &memHandle);
+    HcommResult ret = HcommMemReg(reinterpret_cast<EndpointHandle>(0x12345678), "tag", nullptr, &memHandle);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -272,17 +272,17 @@ TEST_F(CpuRoceEndpointTest, ut_HcommMemReg_When_MemHandleIsNull_Expect_ReturnHCC
     free(mem.addr);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcommMemUnreg_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+TEST_F(CpuRoceEndpointTest, ut_HcommMemUnreg_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
 {
     HcommMemHandle memHandle = reinterpret_cast<HcommMemHandle>(0x12345678);
     HcommResult ret = HcommMemUnreg(nullptr, memHandle);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
-TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnHCCL_E_PTR)
+TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnHCCL_E_NOT_FOUND)
 {
     void *memDesc = nullptr;
     uint32_t memDescLen = 0;
     HcommResult ret = HcommMemExport(nullptr, reinterpret_cast<HcommMemHandle>(0x12345678), &memDesc, &memDescLen);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }

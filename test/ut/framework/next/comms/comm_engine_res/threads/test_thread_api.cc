@@ -277,18 +277,18 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNum_Is_0_expect_Return_HCCL
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNullptr_expect_Return_HCCL_E_PTR)
+TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNullptr_expect_Return_HCCL_E_PARA)
 {
     std::shared_ptr<Thread> Handle;
     bool isDeviceSide{false};
     MOCKER(GetRunSideIsDevice)
     .stubs()
     .with(outBound(isDeviceSide))
-    .will(returnValue(HCCL_SUCCESS));   
+    .will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtGetDeviceType)
     .stubs()
     .with(outBound(DevType::DEV_TYPE_950))
-    .will(returnValue(HCCL_SUCCESS)); 
+    .will(returnValue(HCCL_SUCCESS));
     ThreadHandle* thread = nullptr;
     HcommResult ret =  HcommThreadFree(thread, 0);
     EXPECT_EQ(ret, HCCL_E_PARA);
