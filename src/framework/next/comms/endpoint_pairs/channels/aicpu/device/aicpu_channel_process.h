@@ -15,15 +15,18 @@
 #include "common.h"
 #include "channel_param.h"
 #include "ub_transport_lite_impl.h"
+#include "aicpu_ts_roce_channel_lite.h"
+
 class AicpuChannelProcess {
 public:
     ~AicpuChannelProcess() = default;
-    static HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    static HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle, u32 channelType);
     static HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuChannelInit(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuChannelDestroy(HcclChannelUrmaRes *commParam);
 private:
     static std::mutex mutex_;
     static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::AicpuTsRoceChannelLite>> aicpuTsRoceChannelMap_;
 };
 #endif // __AICPU_CHANNEL_PROCESS_H__
