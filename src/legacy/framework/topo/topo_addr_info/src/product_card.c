@@ -66,7 +66,6 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *e
     }
     NetLayerInit(layer, 0, net_instance_id);
     NetLayerSetNetType(layer, NET_TYPE_MESH);
-    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
     for (size_t i = 0; i < eid_cnt; i++) {
         int portId = UrmaEidGetPortId(&eid_list[i].eid);
         if (portId > MAX_MESH_PORT_ID) {
@@ -105,7 +104,6 @@ static int ProcessLayerMesh2P(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t 
     }
     NetLayerInit(layer, 0, net_instance_id);
     NetLayerSetNetType(layer, NET_TYPE_MESH);
-    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
     for (size_t i = 0; i < eid_cnt; i++) {
         int portId = UrmaEidGetPortId(&eid_list[i].eid);
         // 2P互联使用PortGroup EID

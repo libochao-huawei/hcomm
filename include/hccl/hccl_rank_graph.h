@@ -82,7 +82,7 @@ typedef struct {
  * @param[in] linkNum link数量
  * @return HcclResult 执行结果状态码
  */
-inline HcclResult CommLinkInit(CommLink *commLink, uint32_t linkNum)
+static inline HcclResult CommLinkInit(CommLink *commLink, uint32_t linkNum)
 {
     for (uint32_t idx = 0; idx < linkNum; idx++) {
         if (commLink != nullptr) {

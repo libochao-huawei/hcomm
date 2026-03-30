@@ -7,10 +7,13 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "hcomm_primitives.h"
+#include "hcomm_primitives_inner.h"
 
 #include "log.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId)
 {
     (void)handle;
@@ -38,3 +41,6 @@ int32_t HcommThreadSynchronize(ThreadHandle thread)
     HCCL_WARNING("[%s] No implementation, return SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus

@@ -7,11 +7,11 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef HCOMM_C_ADPT_H
 #define HCOMM_C_ADPT_H
- 
-#include "hcomm_res_defs.h"
+
+#include "hcomm_res.h"
 #include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
 
@@ -19,55 +19,96 @@
 extern "C" {
 #endif // __cplusplus
 
-HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
+typedef struct {
+    int32_t devPhyId;
+    uint32_t superPodId;
+} HcommDevId;
 
-HcclResult HcommEndpointGet_(const EndpointHandle endpointHandle, void **endpoint);
+/**
+ * @struct HcommBuf
+ * @brief 内存缓冲区描述结构体
+ * @var addr   - 虚拟地址指针
+ * @var len    - 内存长度（单位字节）
+ */
+typedef struct {
+    void *addr;
+    uint64_t len;
+} HcommBuf;
 
-HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
+typedef CommMem HcommMem;
+typedef HcommMemHandle MemHandle;
 
-HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
+typedef struct {
+    uint32_t sdid;
+    int32_t pid;
+} HcommMemGrantInfo;
 
-HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
+/**
+ * @brief 通信设备Endpoint监听配置结构体
+ */
+typedef struct {
+    union {
+        uint8_t raws[24]; ///< 通用数据区，用于未来扩展，如backlog, timeout等
+        struct {
+        };
+    };
+} HcommEndpointListenConfig;
 
-HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
+HcommResult HcommResMgrInit(uint32_t devPhyId);
 
-HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
+HcommResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint);
 
-HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
+/**
+ * @brief 启动通信设备Endpoint监听
+ * @param[in] endpointHandle Endpoint句柄
+ * @param[in] port 监听端口号
+ * @param[in] config 监听配置参数（可为NULL，使用默认配置）
+ * @return HcommResult 执行结果状态码
+ * @note 启动指定Endpoint在指定端口上的监听服务
+ */
+extern HcommResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port,
+    HcommEndpointListenConfig *config);
 
-HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
-    uint32_t channelNum, ChannelHandle *channels);
+/**
+ * @brief 停止通信设备Endpoint监听
+ * @param[in] endpointHandle Endpoint句柄
+ * @param[in] port 监听端口号
+ * @return HcommResult 执行结果状态码
+ * @note 停止指定Endpoint在指定端口上的监听服务
+ */
+extern HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
 
-HcclResult HcommChannelGet(const ChannelHandle channelHandle, void **channel);
 
-HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum,  int32_t* statusList);
+extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
 
-HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
+extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
 
-HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **remoteMem, uint32_t *memNum, char **memTags);
+HcommResult HcommChannelGet(ChannelHandle channelHandle, void **channel);
 
-HcclResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+HcommResult HcommChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
 
-HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
+HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
+HcommResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum,
+    char **memTags);
 
-HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
+HcommResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
     const std::string &commTag, aclrtBinHandle binHandle);
 
-HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
+HcommResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
 
-HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
+HcommResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
 
-HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
+HcommResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
 
-HcclResult HcommEngineCtxCreate(CommEngine engine, uint64_t size, void **ctx);
+HcommResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
 
-HcclResult HcommEngineCtxDestroy(CommEngine engine, void *ctx);
-
-HcclResult HcommEngineCtxCopy(CommEngine engine, void *dstCtx, const void *srcCtx, uint64_t size);
+HcommResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHandles, uint32_t *memHandleNum);
 
 #ifdef __cplusplus
 }
+
+HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread,
+    ThreadHandle *threads);
 #endif // __cplusplus
 
-
-#endif
+#endif // HCOMM_C_ADPT_H

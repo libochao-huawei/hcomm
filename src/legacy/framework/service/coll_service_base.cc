@@ -368,7 +368,7 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
 
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
     dfxOpInfo->tag_ = dfxOpInfo->op_.opTag;
-    dfxOpInfo->algType_ = AlgType::MESH;
+    dfxOpInfo->algType_ = comm->GetCurAlgName().c_str();
     dfxOpInfo->commIndex_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;
     dfxOpInfo->beginTime_ = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
