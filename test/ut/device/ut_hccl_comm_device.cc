@@ -40,7 +40,7 @@ TEST_F(HcclCommDeviceTest, Ut_ResumeWhenIsCommunicatorV1AndCommResumeSucceedsExp
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-/* // Resume when communicator is V1 and communicator_->Resume fails
+// Resume when communicator is V1 and communicator_->Resume fails
 TEST_F(HcclCommDeviceTest, Ut_ResumeWhenIsCommunicatorV1AndCommResumeFailsExpectError)
 {
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
@@ -55,7 +55,7 @@ TEST_F(HcclCommDeviceTest, Ut_ResumeWhenIsCommunicatorV1AndCommResumeFailsExpect
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
-// GetCommStatus when communicator is V1 -> should return READY
+/* // GetCommStatus when communicator is V1 -> should return READY
 TEST_F(HcclCommDeviceTest, Ut_GetCommStatusWhenIsCommunicatorV1ExpectReady)
 {
     std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
