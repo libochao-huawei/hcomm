@@ -564,7 +564,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterInfo(RankTable_t &clusterInfo)
             LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
             errormessage.c_str());
         return HCCL_E_PARA;
-        
     }
 
     if (clusterInfo.serverList.size() != clusterInfo.serverNum) {
@@ -934,7 +933,6 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
                     errormessage.c_str());
                 return HCCL_E_PARA;
             }
-
         }
     }
 
