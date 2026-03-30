@@ -25,6 +25,7 @@ namespace hcomm {
 namespace {
 constexpr uint32_t kTpInfoLegacyQosKey = UINT32_MAX;
 
+/** 映射路径：commHcclQos → 同 EID 对、同 QoS 档复用同一 TPID/SL；legacy：全挤在单一键 */
 uint32_t TpInfoCacheKey(const GetTpInfoParam &param)
 {
     if (!param.useUbTpSlMapping) {
@@ -115,6 +116,10 @@ uint32_t SlLevelCountFromTpAttrRxBitmap(uint32_t rxAttrBitmap)
     return std::min(pc, 16U);
 }
 
+/**
+ * 假定 urma_get_tp_list 在同 (EID 对, CTP|RTP) 下多次调用结果稳定，且列表顺序为 SL 从小到大
+ * （下标 i 对应第 i 低 SL 槽位的 TP）；slotIdx 与列表下标、策略 sl 槽位一致。
+ */
 void ApplyUbcQosTpSlPolicy(const UbcQosTpSlPolicyInput &in, UbcQosTpSlPolicyOutput &out)
 {
     out.valid = false;
@@ -440,24 +445,33 @@ HcclResult TpMgr::HandleCompletedRequest(const TpMgr::RequestCtx reqCtx,
 
     TpInfo tmpTpInfo = ParseTpInfo(baseInfoPtr);
     if (param.useUbTpSlMapping) {
-        uint32_t mSlLevels = reqCtx.resolvedSlLevelCount;
-        if (mSlLevels == 0U) {
-            mSlLevels = param.slLevelCount != 0U ? param.slLevelCount : 8U;
-        } else if (param.slLevelCount != 0U && mSlLevels > param.slLevelCount) {
-            mSlLevels = param.slLevelCount;
-        }
-        UbcQosTpSlPolicyInput pin{};
-        pin.commHcclQos = param.commHcclQos;
-        pin.nTp = tpInfoNum;
-        pin.mSlLevels = mSlLevels;
-        UbcQosTpSlPolicyOutput pout{};
-        ApplyUbcQosTpSlPolicy(pin, pout);
-        if (pout.valid && pout.tpListIndex < tpInfoNum) {
+        if (param.loopFirstTpLowestSl) {
+            tmpTpInfo.tpHandle = baseInfoPtr[0].tpHandle;
+            tmpTpInfo.mappedJettyPriority = 0U;
+            tmpTpInfo.hasMappedJettyPriority = true;
+        } else {
+            uint32_t mSlLevels = reqCtx.resolvedSlLevelCount;
+            if (mSlLevels == 0U) {
+                mSlLevels = param.slLevelCount != 0U ? param.slLevelCount : 8U;
+            } else if (param.slLevelCount != 0U && mSlLevels > param.slLevelCount) {
+                mSlLevels = param.slLevelCount;
+            }
+            UbcQosTpSlPolicyInput pin{};
+            pin.commHcclQos = param.commHcclQos;
+            pin.nTp = tpInfoNum;
+            pin.mSlLevels = mSlLevels;
+            UbcQosTpSlPolicyOutput pout{};
+            ApplyUbcQosTpSlPolicy(pin, pout);
+            if (!pout.valid || pout.tpListIndex >= tpInfoNum) {
+                HCCL_ERROR("[TpMgr][%s] UBC QoS→SL/TP mapping required but policy invalid, "
+                    "param[%s] tpInfoNum[%u] valid[%d] tpListIndex[%u].", __func__,
+                    param.Describe().c_str(), tpInfoNum, static_cast<int>(pout.valid),
+                    pout.tpListIndex);
+                return HcclResult::HCCL_E_INTERNAL;
+            }
             tmpTpInfo.tpHandle = baseInfoPtr[pout.tpListIndex].tpHandle;
             tmpTpInfo.mappedJettyPriority = pout.sl;
             tmpTpInfo.hasMappedJettyPriority = true;
-        } else {
-            tmpTpInfo = ParseTpInfo(baseInfoPtr);
         }
     }
 

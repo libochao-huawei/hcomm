@@ -170,7 +170,8 @@ HcclResult CcuConnection::CreateJetty()
         if (tpInfo_.hasMappedJettyPriority) {
             ccuJettys_[i]->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
         } else {
-            ccuJettys_[i]->SetHcclQosForCreate(hcclQos_);
+            /** 非映射路径：固定默认 Jetty priority（UbJettyPriorityFromHcclQos(0)→CCU_UB_DEFAULT） */
+            ccuJettys_[i]->SetHcclQosForCreate(0U);
         }
         auto ret = ccuJettys_[i]->CreateJetty();
         if (ret == HcclResult::HCCL_E_AGAIN) {
@@ -205,6 +206,7 @@ GetTpInfoParam CcuConnection::MakeGetTpInfoParam() const
 {
     GetTpInfoParam param{locAddr_, rmtAddr_, tpProtocol_};
     const bool eidPair = (locAddr_.type == COMM_ADDR_TYPE_EID && rmtAddr_.type == COMM_ADDR_TYPE_EID);
+    /** true：TpMgr 做 QoS→SL/选 TP，CreateJetty 用 SetMappedJettyPriority；false：legacy，SetHcclQosForCreate(hcclQos_) */
     param.useUbTpSlMapping = eidPair && hcclQos_ <= 7U;
     param.commHcclQos = hcclQos_ & 7U;
     /** 0：M 由 TpMgr 对首个 tp_handle 的 RaGetTpAttrAsync 返回 attrBitmap 推导；非 0 可与推导值取 min 作上限 */
