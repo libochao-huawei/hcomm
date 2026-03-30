@@ -1,3 +1,4 @@
+#include "hccl_api_base_test.h"
 #include "hccl_comm_pub.h"
 #include "hccl_communicator.h"
 #include "aicpu_indop_process.h"
