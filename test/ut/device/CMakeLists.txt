@@ -20,7 +20,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc
     ${HCCL_CODE_ROOT}/src/framework/common/src/config/env_config_aicpu.cc
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc
-    ${HCCL_CODE_ROOT}/src/framework/communicator/hccl_comm_device.cc
+    # ${HCCL_CODE_ROOT}/src/framework/communicator/hccl_comm_device.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/hccl_communicator_device.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/hccl_communicator_attrs_device.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy/zero_copy_address_mgr_device.cc
