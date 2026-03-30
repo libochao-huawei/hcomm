@@ -14,7 +14,7 @@
 #include "reduce_in.h"
 
 namespace Hccl {
-MAKE_ENUM(TransportType, P2P, UB)
+MAKE_ENUM(TransportType, P2P, UB, ROCE)
 MAKE_ENUM(TransportNotifyType, NORMAL, COUNT)
 
 

@@ -14,8 +14,10 @@
 #include <vector>
 #include "exception_handler.h"
 #include "channel_param.h"
+#include "channel.h"
 #include "aicpu_ts_urma_channel.h"
 #include "aicpu_ts_uboe_channel.h"
+#include "aicpu_ts_roce_channel_v2.h"
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
@@ -352,6 +354,9 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
         } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_UBOE) {
             auto aicpuTsUboeChannel = reinterpret_cast<AicpuTsUboeChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUboeChannel->H2DResPack(hostPackBuffers[index]));
+        } else if (hcommDesc[index].remoteEndpoint.protocol == CommProtocol::COMM_PROTOCOL_ROCE) {
+            auto aicpuTsRoceChannelV2 = reinterpret_cast<AicpuTsRoceChannelV2 *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsRoceChannelV2->H2DResPack(hostPackBuffers[index]));
         } else {
             auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
             CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));

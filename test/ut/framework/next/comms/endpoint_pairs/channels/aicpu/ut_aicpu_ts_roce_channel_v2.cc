@@ -1,0 +1,1156 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "gtest/gtest.h"
+#include "mockcpp/mokc.h"
+#include <mockcpp/mockcpp.hpp>
+#include <vector>
+#include <iostream>
+#include <cstring>
+#include "aicpu_ts_roce_channel_v2.h"
+#include "next/comms/endpoint_pairs/channels/aicpu/dev_rdma_connection.h"
+#include "socket.h"
+#include "orion_adapter_hccp.h"
+#include "hccp.h"
+#include "hccp_common.h"
+#include "hcomm_c_adpt.h"
+#include "buffer/local_rdma_rma_buffer.h"
+#include "rdma_handle_manager.h"
+#include "cpu_roce_endpoint.h"
+#include "binary_stream.h"
+#include "mem_device_pub.h"
+#include "aicpu_res_package_helper.h"
+#include "exchange_rdma_buffer_dto.h"
+#include "next/comms/endpoint_pairs/channels/host/exchange_rdma_conn_dto.h"
+
+#define private public
+
+using namespace hcomm;
+
+class AicpuTsRoceChannelV2Test : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "AicpuTsRoceChannelV2Test tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "AicpuTsRoceChannelV2Test tests tear down." << std::endl;
+    }
+
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in AicpuTsRoceChannelV2Test SetUP" << std::endl;
+        Hccl::DevType dev = Hccl::DevType::DEV_TYPE_950;
+        MOCKER(Hccl::HrtGetDevice).stubs().will(returnValue(0));
+        MOCKER(Hccl::HrtGetDeviceType).stubs().will(returnValue(dev));
+        MOCKER(Hccl::HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(static_cast<Hccl::DevId>(0)));
+        RdmaHandle rdmaHandle = (void *)0x1000000;
+        MOCKER(HcommEndpointStartListen).stubs().will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
+
+        Hccl::IpAddress localIp("1.0.0.0");
+        Hccl::IpAddress remoteIp("2.0.0.0");
+        fakeSocket = new Hccl::Socket(nullptr, localIp, 60001, remoteIp, "_0_1_", 
+                                      Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        
+        MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
+        MOCKER(Hccl::HrtRaNdaQpCreate).stubs().with(any(), any(), any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaNdaCqCreate).stubs().with(any(), any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaNdaCqDestroy).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(Hccl::HrtRaQpDestroy).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER(RaNdaGetDirectFlag).stubs().with(any(), any()).will(returnValue(0));
+        MOCKER(RaGetQpAttr).stubs().with(any(), any()).will(returnValue(0));
+        
+        EndpointDesc endpointDesc{};
+        endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+        endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+        endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
+        endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+        endpoint = std::make_unique<CpuRoceEndpoint>(endpointDesc);
+        endpoint->Init();
+        endpointHandle = static_cast<EndpointHandle>(endpoint.get());
+        
+        EndpointDesc endpointDesc2;
+        endpointDesc2.protocol = COMM_PROTOCOL_ROCE;
+        endpointDesc2.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+        endpointDesc2.commAddr.addr = remoteIp.GetBinaryAddress().addr;
+        endpointDesc2.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+        channelDesc.remoteEndpoint = endpointDesc2;
+        channelDesc.notifyNum = 3;
+        channelDesc.port = 60001;
+        void* fsocket = static_cast<void*>(fakeSocket);
+        channelDesc.socket = fsocket;
+        
+        localBufferPtr = std::make_shared<Hccl::Buffer>(666);
+        localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, rdmaHandle);
+        void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+        channelDesc.memHandles = &memHandle;
+        channelDesc.memHandleNum = 1;
+        channelDesc.exchangeAllMems = false;
+    }
+
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        std::cout << "A Test case in AicpuTsRoceChannelV2Test TearDown" << std::endl;
+        delete fakeSocket;
+    }
+    
+    std::shared_ptr<Hccl::Buffer> localBufferPtr;
+    std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
+    std::unique_ptr<CpuRoceEndpoint> endpoint;
+    EndpointHandle endpointHandle{};
+    HcommChannelDesc channelDesc{};
+    Hccl::Socket* fakeSocket;
+};
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Normal_Init_Expect_HCCL_SUCCESS)
+{
+    std::cout << "Start Ut_When_Normal_Init_Expect_HCCL_SUCCESS" << std::endl;
+
+    DevType devType = DevType::DEV_TYPE_950;
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
+    MOCKER_CPP(&DevRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsRoceChannelV2::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsRoceChannelV2::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsRoceChannelV2::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsRoceChannelV2::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsRoceChannelV2::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuTsRoceChannelV2::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    // construct
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    // Init
+    EXPECT_EQ(channel->Init(), HCCL_SUCCESS);
+    // connect
+    hcomm::ChannelStatus status = channel->GetStatus();
+    EXPECT_EQ(channel->rdmaStatus_, AicpuTsRoceChannelV2::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = channel->GetStatus();
+    EXPECT_EQ(channel->rdmaStatus_, AicpuTsRoceChannelV2::RdmaStatus::QP_CREATED);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = channel->GetStatus();
+    EXPECT_EQ(channel->rdmaStatus_, AicpuTsRoceChannelV2::RdmaStatus::DATA_EXCHANGE);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = channel->GetStatus();
+    EXPECT_EQ(channel->rdmaStatus_, AicpuTsRoceChannelV2::RdmaStatus::CONN_OK);
+    EXPECT_EQ(status, ChannelStatus::READY);
+    
+    std::cout << "End Ut_When_Normal_Init_Expect_HCCL_SUCCESS" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetNotifyNum_Expect_Correct)
+{
+    std::cout << "Start Ut_When_GetNotifyNum_Expect_Correct" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    
+    uint32_t notifyNum = 0;
+    HcclResult ret = channel->GetNotifyNum(&notifyNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(notifyNum, channelDesc.notifyNum);
+    
+    std::cout << "End Ut_When_GetNotifyNum_Expect_Correct" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetBufferNum_Expect_Correct)
+{
+    std::cout << "Start Ut_When_GetBufferNum_Expect_Correct" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    
+    uint32_t bufferNum = 0;
+    HcclResult ret = channel->GetBufferNum(&bufferNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_GetBufferNum_Expect_Correct" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Describe_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_Describe_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    
+    std::string desc = channel->Describe();
+    std::cout << desc << std::endl;
+    
+    std::cout << "End Ut_When_Describe_Expect_NotEmpty" << std::endl;
+}
+
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMem_Expect_Success)
+{
+    std::cout << "Start Ut_When_GetRemoteMem_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    
+    HcclMem *remoteMem = nullptr;
+    uint32_t memNum = 0;
+    char* memTagsArray[10] = {nullptr};
+    HcclResult ret = channel->GetRemoteMem(&remoteMem, &memNum, memTagsArray);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_GetRemoteMem_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetQpNum_Expect_Success)
+{
+    std::cout << "Start Ut_When_GetQpNum_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    
+    uint32_t qpNum = 0;
+    HcclResult ret = channel->GetQpNum(&qpNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_GetQpNum_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetLocNotifyInfo_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetLocNotifyInfo_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    
+    Notify* notify = nullptr;
+    HcclResult ret = channel->BuildAndGetLocNotifyInfo(&notify);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildAndGetLocNotifyInfo_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetRmtNotifyInfo_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetRmtNotifyInfo_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    
+    Notify* notify = nullptr;
+    HcclResult ret = channel->BuildAndGetRmtNotifyInfo(&notify);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildAndGetRmtNotifyInfo_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetLocBufInfo_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetLocBufInfo_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    
+    ProtectionInfo* protectionInfo = nullptr;
+    HcclResult ret = channel->BuildAndGetLocBufInfo(&protectionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildAndGetLocBufInfo_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetRmtBufInfo_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetRmtBufInfo_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    
+    ProtectionInfo* protectionInfo = nullptr;
+    HcclResult ret = channel->BuildAndGetRmtBufInfo(&protectionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildAndGetRmtBufInfo_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetSqContext_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetSqContext_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    
+    SqContext* sqContext = nullptr;
+    HcclResult ret = channel->BuildAndGetSqContext(&sqContext);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildAndGetSqContext_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetCqContext_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetCqContext_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    
+    CqContext* cqContext = nullptr;
+    HcclResult ret = channel->BuildAndGetCqContext(&cqContext);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::cout << "End Ut_When_BuildAndGetCqContext_Expect_Success" << std::endl;
+}
+
+static hccl::DeviceMem StubDeviceMemAlloc(u64 size, bool)
+{
+    void *p = std::malloc(static_cast<size_t>(size));
+    return hccl::DeviceMem(p, size, false);
+}
+
+static void StubHrtMemSyncCopy(void *dst, uint64_t dstMax, const void *src, uint64_t count, rtMemcpyKind_t)
+{
+    if (dst != nullptr && src != nullptr && dstMax >= count) {
+        (void)memcpy(dst, src, static_cast<size_t>(count));
+    }
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_StartListen_Expect_Success)
+{
+    std::cout << "Start Ut_When_StartListen_Expect_Success" << std::endl;
+    channelDesc.exchangeAllMems = true;
+    channelDesc.port = 0;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    MOCKER(HcommMemGetAllMemHandles).stubs().with(any(), any(), any())
+        .will(returnValue(static_cast<HcommResult>(HCCL_SUCCESS)));
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    EXPECT_EQ(channel->Init(), HCCL_SUCCESS);
+    std::cout << "End Ut_When_StartListen_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildSocket_NullSocket_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildSocket_NullSocket_Expect_Success" << std::endl;
+    channelDesc.socket = nullptr;
+    channelDesc.port = 0;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    MOCKER_CPP(&hcomm::SocketMgr::GetSocket).stubs().with(any(), outBound(fakeSocket)).will(returnValue(HCCL_SUCCESS));
+    EXPECT_EQ(channel->Init(), HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildSocket_NullSocket_Expect_Success" << std::endl;
+}
+
+// TEST_F(AicpuTsRoceChannelV2Test, Ut_When_NotifyVecPack_Expect_Correct)
+// {
+//     std::cout << "Start Ut_When_NotifyVecPack_Expect_Correct" << std::endl;
+//     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+//     channelDesc.memHandles = &memHandle;
+//     channelDesc.memHandleNum = 1;
+//     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+//     channel->Init();
+//     Hccl::BinaryStream binaryStream;
+//     channel->NotifyVecPack(binaryStream);
+//     std::vector<char> result;
+//     binaryStream.Dump(result);
+//     EXPECT_GT(result.size(), 0u);
+//     std::cout << "End Ut_When_NotifyVecPack_Expect_Correct" << std::endl;
+// }
+
+// TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BufferVecPack_Expect_Success)
+// {
+//     std::cout << "Start Ut_When_BufferVecPack_Expect_Success" << std::endl;
+//     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+//     channelDesc.memHandles = &memHandle;
+//     channelDesc.memHandleNum = 1;
+//     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+//     channel->Init();
+//     Hccl::BinaryStream binaryStream;
+//     HcclResult ret = channel->BufferVecPack(binaryStream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     std::cout << "End Ut_When_BufferVecPack_Expect_Success" << std::endl;
+// }
+
+// TEST_F(AicpuTsRoceChannelV2Test, Ut_When_ConnVecPack_Expect_Success)
+// {
+//     std::cout << "Start Ut_When_ConnVecPack_Expect_Success" << std::endl;
+//     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+//     channelDesc.memHandles = &memHandle;
+//     channelDesc.memHandleNum = 1;
+//     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+//     channel->Init();
+//     Hccl::BinaryStream binaryStream;
+//     HcclResult ret = channel->ConnVecPack(binaryStream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     std::cout << "End Ut_When_ConnVecPack_Expect_Success" << std::endl;
+// }
+
+// TEST_F(AicpuTsRoceChannelV2Test, Ut_When_RmtBufferVecUnpackProc_Expect_Success)
+// {
+//     std::cout << "Start Ut_When_RmtBufferVecUnpackProc_Expect_Success" << std::endl;
+//     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+//     channelDesc.memHandles = &memHandle;
+//     channelDesc.memHandleNum = 1;
+//     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+//     channel->Init();
+//     u32 rmtNum = 1;
+//     u32 pos = 0;
+//     Hccl::BinaryStream binaryStream;
+//     binaryStream << rmtNum;
+//     binaryStream << pos;
+//     Hccl::ExchangeRdmaBufferDto dto;
+//     dto.Serialize(binaryStream);
+//     HcclResult ret = channel->RmtBufferVecUnpackProc(binaryStream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     std::cout << "End Ut_When_RmtBufferVecUnpackProc_Expect_Success" << std::endl;
+// }
+
+// TEST_F(AicpuTsRoceChannelV2Test, Ut_When_NotifyVecUnpack_Expect_Success)
+// {
+//     std::cout << "Start Ut_When_NotifyVecUnpack_Expect_Success" << std::endl;
+//     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+//     channelDesc.memHandles = &memHandle;
+//     channelDesc.memHandleNum = 1;
+//     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+//     channel->Init();
+//     u32 notifySize = channel->notifyNum_;
+//     u32 pos = 0;
+//     Hccl::BinaryStream binaryStream;
+//     binaryStream << notifySize;
+//     binaryStream << pos;
+//     Hccl::ExchangeRdmaBufferDto dto;
+//     dto.Serialize(binaryStream);
+//     HcclResult ret = channel->NotifyVecUnpack(binaryStream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     std::cout << "End Ut_When_NotifyVecUnpack_Expect_Success" << std::endl;
+// }
+
+// TEST_F(AicpuTsRoceChannelV2Test, Ut_When_ConnVecUnpackProc_Expect_Success)
+// {
+//     std::cout << "Start Ut_When_ConnVecUnpackProc_Expect_Success" << std::endl;
+//     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+//     channelDesc.memHandles = &memHandle;
+//     channelDesc.memHandleNum = 1;
+//     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+//     channel->Init();
+//     u32 rmtConnNum = channel->connNum_;
+//     u32 pos = 0;
+//     Hccl::BinaryStream binaryStream;
+//     binaryStream << rmtConnNum;
+//     binaryStream << pos;
+//     ExchangeRdmaConnDto connDto;
+//     connDto.Serialize(binaryStream);
+//     HcclResult ret = channel->ConnVecUnpackProc(binaryStream);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     std::cout << "End Ut_When_ConnVecUnpackProc_Expect_Success" << std::endl;
+// }
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_ModifyQp_Expect_Success)
+{
+    std::cout << "Start Ut_When_ModifyQp_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    MOCKER_CPP(&DevRdmaConnection::ParseRmtExchangeDto).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&DevRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = channel->ModifyQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_ModifyQp_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetDevChannelEntity_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetDevChannelEntity_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    void* devChannelEntityPtr = nullptr;
+    HcclResult ret = channel->BuildAndGetDevChannelEntity(&devChannelEntityPtr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(devChannelEntityPtr, nullptr);
+    channel->FreeDeviceMemories();
+    std::cout << "End Ut_When_BuildAndGetDevChannelEntity_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_FreeDeviceMemories_Expect_NoCrash)
+{
+    std::cout << "Start Ut_When_FreeDeviceMemories_Expect_NoCrash" << std::endl;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->deviceMemories_.push_back((void*)0x12345678);
+    channel->deviceMemories_.push_back(nullptr);
+    channel->FreeDeviceMemories();
+    EXPECT_EQ(channel->deviceMemories_.size(), 0u);
+    std::cout << "End Ut_When_FreeDeviceMemories_Expect_NoCrash" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMem_Empty_Expect_Success)
+{
+    std::cout << "Start Ut_When_GetRemoteMem_Empty_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.clear();
+    HcclMem *remoteMem = nullptr;
+    uint32_t memNum = 0;
+    char* memTagsArray[10] = {nullptr};
+    HcclResult ret = channel->GetRemoteMem(&remoteMem, &memNum, memTagsArray);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 0u);
+    std::cout << "End Ut_When_GetRemoteMem_Empty_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteMem_NonEmpty_Expect_Success)
+{
+    std::cout << "Start Ut_When_GetRemoteMem_NonEmpty_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    HcclMem *remoteMem = nullptr;
+    uint32_t memNum = 0;
+    char* memTagsArray[10] = {nullptr};
+    HcclResult ret = channel->GetRemoteMem(&remoteMem, &memNum, memTagsArray);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 1u);
+    std::cout << "End Ut_When_GetRemoteMem_NonEmpty_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_Expect_Success)
+{
+    std::cout << "Start Ut_When_GetUserRemoteMem_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x2000000));
+    CommMem *remoteMem = nullptr;
+    char **memTags = nullptr;
+    uint32_t memNum = 0;
+    HcclResult ret = channel->GetUserRemoteMem(&remoteMem, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(memNum, 1u);
+    std::cout << "End Ut_When_GetUserRemoteMem_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_CacheValid_Expect_Success)
+{
+    std::cout << "Start Ut_When_GetUserRemoteMem_CacheValid_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x2000000));
+    CommMem *remoteMem = nullptr;
+    char **memTags = nullptr;
+    uint32_t memNum = 0;
+    HcclResult ret = channel->GetUserRemoteMem(&remoteMem, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = channel->GetUserRemoteMem(&remoteMem, &memTags, &memNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_GetUserRemoteMem_CacheValid_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_NullPtr_Expect_Error)
+{
+    std::cout << "Start Ut_When_GetUserRemoteMem_NullPtr_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    char **memTags = nullptr;
+    uint32_t memNum = 0;
+    HcclResult ret = channel->GetUserRemoteMem(nullptr, &memTags, &memNum);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    CommMem *remoteMem = nullptr;
+    ret = channel->GetUserRemoteMem(&remoteMem, nullptr, &memNum);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    ret = channel->GetUserRemoteMem(&remoteMem, &memTags, nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_GetUserRemoteMem_NullPtr_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUserRemoteMem_Empty_Expect_Error)
+{
+    std::cout << "Start Ut_When_GetUserRemoteMem_Empty_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.clear();
+    CommMem *remoteMem = nullptr;
+    char **memTags = nullptr;
+    uint32_t memNum = 0;
+    HcclResult ret = channel->GetUserRemoteMem(&remoteMem, &memTags, &memNum);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_GetUserRemoteMem_Empty_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Describe_Expect_NotEmptyAndContainsInfo)
+{
+    std::cout << "Start Ut_When_Describe_Expect_NotEmptyAndContainsInfo" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    std::string desc = channel->Describe();
+    EXPECT_FALSE(desc.empty());
+    EXPECT_NE(desc.find("AicpuTsRoceChannelV2"), std::string::npos);
+    std::cout << "End Ut_When_Describe_Expect_NotEmptyAndContainsInfo" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetLocalNotifyUniqueIds_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetLocalNotifyUniqueIds_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    auto result = channel->GetLocalNotifyUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetLocalNotifyUniqueIds_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRemoteNotifyUniqueIds_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetRemoteNotifyUniqueIds_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->remoteNotifies_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    auto result = channel->GetRemoteNotifyUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetRemoteNotifyUniqueIds_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetNotifyValueBufferUniqueIds_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetNotifyValueBufferUniqueIds_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    auto result = channel->GetNotifyValueBufferUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetNotifyValueBufferUniqueIds_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetLocBufferUniqueIds_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetLocBufferUniqueIds_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    auto result = channel->GetLocBufferUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetLocBufferUniqueIds_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetLocBufferUniqueIds_NullBuffer_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetLocBufferUniqueIds_NullBuffer_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->localRmaBuffers_.push_back(nullptr);
+    channel->bufferNum_ = channel->localRmaBuffers_.size();
+    auto result = channel->GetLocBufferUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetLocBufferUniqueIds_NullBuffer_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRmtBufferUniqueIds_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetRmtBufferUniqueIds_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    auto result = channel->GetRmtBufferUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetRmtBufferUniqueIds_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetRmtBufferUniqueIds_NullBuffer_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetRmtBufferUniqueIds_NullBuffer_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rmtRmaBuffers_.push_back(nullptr);
+    auto result = channel->GetRmtBufferUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetRmtBufferUniqueIds_NullBuffer_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetConnUniqueIds_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetConnUniqueIds_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    auto result = channel->GetConnUniqueIds();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetConnUniqueIds_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetUniqueId_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetUniqueId_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    auto result = channel->GetUniqueId();
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetUniqueId_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetChannelKind_Expect_RoceV2)
+{
+    std::cout << "Start Ut_When_GetChannelKind_Expect_RoceV2" << std::endl;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    EXPECT_EQ(channel->GetChannelKind(), HcommChannelKind::AICPU_TS_ROCE_V2);
+    std::cout << "End Ut_When_GetChannelKind_Expect_RoceV2" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Clean_Expect_Success)
+{
+    std::cout << "Start Ut_When_Clean_Expect_Success" << std::endl;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    EXPECT_EQ(channel->Clean(), HCCL_SUCCESS);
+    std::cout << "End Ut_When_Clean_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Resume_Expect_Success)
+{
+    std::cout << "Start Ut_When_Resume_Expect_Success" << std::endl;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    EXPECT_EQ(channel->Resume(), HCCL_SUCCESS);
+    std::cout << "End Ut_When_Resume_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetNotifyNum_NullPtr_Expect_Error)
+{
+    std::cout << "Start Ut_When_GetNotifyNum_NullPtr_Expect_Error" << std::endl;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    HcclResult ret = channel->GetNotifyNum(nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_GetNotifyNum_NullPtr_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetNotifyNum_AivEngine_Expect_Zero)
+{
+    std::cout << "Start Ut_When_GetNotifyNum_AivEngine_Expect_Zero" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AIV);
+    channel->Init();
+    uint32_t notifyNum = 99;
+    HcclResult ret = channel->GetNotifyNum(&notifyNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(notifyNum, 0u);
+    std::cout << "End Ut_When_GetNotifyNum_AivEngine_Expect_Zero" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetBufferNum_NullPtr_Expect_Error)
+{
+    std::cout << "Start Ut_When_GetBufferNum_NullPtr_Expect_Error" << std::endl;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    HcclResult ret = channel->GetBufferNum(nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_GetBufferNum_NullPtr_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetQpNum_NullPtr_Expect_Error)
+{
+    std::cout << "Start Ut_When_GetQpNum_NullPtr_Expect_Error" << std::endl;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    HcclResult ret = channel->GetQpNum(nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_GetQpNum_NullPtr_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetRmtBufInfo_NotReady_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetRmtBufInfo_NotReady_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::INIT;
+    ProtectionInfo* protectionInfo = nullptr;
+    HcclResult ret = channel->BuildAndGetRmtBufInfo(&protectionInfo);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetRmtBufInfo_NotReady_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetRmtBufInfo_NullParam_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetRmtBufInfo_NullParam_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    HcclResult ret = channel->BuildAndGetRmtBufInfo(nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetRmtBufInfo_NullParam_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetRmtBufInfo_ZeroBuffer_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetRmtBufInfo_ZeroBuffer_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    channel->bufferNum_ = 0;
+    ProtectionInfo* protectionInfo = nullptr;
+    HcclResult ret = channel->BuildAndGetRmtBufInfo(&protectionInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetRmtBufInfo_ZeroBuffer_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetLocBufInfo_NotReady_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetLocBufInfo_NotReady_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::INIT;
+    ProtectionInfo* protectionInfo = nullptr;
+    HcclResult ret = channel->BuildAndGetLocBufInfo(&protectionInfo);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetLocBufInfo_NotReady_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetLocBufInfo_NullParam_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetLocBufInfo_NullParam_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    HcclResult ret = channel->BuildAndGetLocBufInfo(nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetLocBufInfo_NullParam_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetSqContext_NotReady_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetSqContext_NotReady_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::INIT;
+    SqContext* sqContext = nullptr;
+    HcclResult ret = channel->BuildAndGetSqContext(&sqContext);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetSqContext_NotReady_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetSqContext_NullParam_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetSqContext_NullParam_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    HcclResult ret = channel->BuildAndGetSqContext(nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetSqContext_NullParam_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetSqContext_ZeroConn_Expect_Success)
+{
+    std::cout << "Start Ut_When_BuildAndGetSqContext_ZeroConn_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    channel->connNum_ = 0;
+    channel->connections_.clear();
+    SqContext* sqContext = nullptr;
+    HcclResult ret = channel->BuildAndGetSqContext(&sqContext);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetSqContext_ZeroConn_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetCqContext_NotReady_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetCqContext_NotReady_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::INIT;
+    CqContext* cqContext = nullptr;
+    HcclResult ret = channel->BuildAndGetCqContext(&cqContext);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetCqContext_NotReady_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_BuildAndGetCqContext_NullParam_Expect_Error)
+{
+    std::cout << "Start Ut_When_BuildAndGetCqContext_NullParam_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    HcclResult ret = channel->BuildAndGetCqContext(nullptr);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_BuildAndGetCqContext_NullParam_Expect_Error" << std::endl;
+}
+
+// TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Serialize_Expect_Success)
+// {
+//     std::cout << "Start Ut_When_Serialize_Expect_Success" << std::endl;
+//     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+//     channelDesc.memHandles = &memHandle;
+//     channelDesc.memHandleNum = 1;
+//     auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+//     channel->Init();
+//     channel->channelStatus_ = ChannelStatus::READY;
+//     channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+//     using DeviceMemAllocRetByValue = hccl::DeviceMem (*)(u64, bool);
+//     mockcpp::mockAPI<DeviceMemAllocRetByValue>::get(
+//         "hccl::DeviceMem::alloc",
+//         "DeviceMem_alloc_by_value",
+//         static_cast<DeviceMemAllocRetByValue>(&hccl::DeviceMem::alloc))
+//         .stubs()
+//         .will(invoke(StubDeviceMemAlloc));
+//     std::shared_ptr<hccl::DeviceMem> out;
+//     HcclResult ret = channel->Serialize(out);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     std::cout << "End Ut_When_Serialize_Expect_Success" << std::endl;
+// }
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_Serialize_NotReady_Expect_Error)
+{
+    std::cout << "Start Ut_When_Serialize_NotReady_Expect_Error" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::INIT;
+    std::shared_ptr<hccl::DeviceMem> out;
+    HcclResult ret = channel->Serialize(out);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_Serialize_NotReady_Expect_Error" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_H2DResPack_Expect_Success)
+{
+    std::cout << "Start Ut_When_H2DResPack_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    std::vector<char> buffer;
+    HcclResult ret = channel->H2DResPack(buffer);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_H2DResPack_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetStatus_Failed_Expect_FailedStatus)
+{
+    std::cout << "Start Ut_When_GetStatus_Failed_Expect_FailedStatus" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->rdmaStatus_ = AicpuTsRoceChannelV2::RdmaStatus::INIT;
+    channel->channelStatus_ = ChannelStatus::INIT;
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::TIMEOUT));
+    ChannelStatus status = channel->GetStatus();
+    EXPECT_EQ(status, ChannelStatus::SOCKET_TIMEOUT);
+    std::cout << "End Ut_When_GetStatus_Failed_Expect_FailedStatus" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_CreateQp_Expect_Success)
+{
+    std::cout << "Start Ut_When_CreateQp_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    MOCKER_CPP(&DevRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = channel->CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_CreateQp_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_CreateQp_Again_Expect_Success)
+{
+    std::cout << "Start Ut_When_CreateQp_Again_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    MOCKER_CPP(&DevRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_E_AGAIN));
+    HcclResult ret = channel->CreateQp();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_CreateQp_Again_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_GetSingleRmaBufferUniqueId_Expect_NotEmpty)
+{
+    std::cout << "Start Ut_When_GetSingleRmaBufferUniqueId_Expect_NotEmpty" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    auto result = channel->GetSingleRmaBufferUniqueId(0x1000, 1024, 42);
+    EXPECT_GT(result.size(), 0u);
+    std::cout << "End Ut_When_GetSingleRmaBufferUniqueId_Expect_NotEmpty" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_PackOpData_Expect_Success)
+{
+    std::cout << "Start Ut_When_PackOpData_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    channel->channelStatus_ = ChannelStatus::READY;
+    channel->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((void *)0x1000000));
+    std::vector<char> data;
+    HcclResult ret = channel->PackOpData(data);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::cout << "End Ut_When_PackOpData_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_CopyArrayToDevice_Expect_Success)
+{
+    std::cout << "Start Ut_When_CopyArrayToDevice_Expect_Success" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    ProtectionInfo hostArray[2] = {};
+    hostArray[0].addr = 0x1000;
+    hostArray[1].addr = 0x2000;
+    ProtectionInfo* devPtr = nullptr;
+    HcclResult ret = channel->CopyArrayToDevice(hostArray, 2, &devPtr, "testArray");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(devPtr, nullptr);
+    std::cout << "End Ut_When_CopyArrayToDevice_Expect_Success" << std::endl;
+}
+
+TEST_F(AicpuTsRoceChannelV2Test, Ut_When_CopyArrayToDevice_EmptyArray_Expect_Nullptr)
+{
+    std::cout << "Start Ut_When_CopyArrayToDevice_EmptyArray_Expect_Nullptr" << std::endl;
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    auto channel = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, CommEngine::COMM_ENGINE_AICPU);
+    channel->Init();
+    ProtectionInfo* devPtr = reinterpret_cast<ProtectionInfo*>(0xDEAD);
+    HcclResult ret = channel->CopyArrayToDevice(static_cast<const ProtectionInfo*>(nullptr), 0, &devPtr, "emptyArray");
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(devPtr, nullptr);
+    std::cout << "End Ut_When_CopyArrayToDevice_EmptyArray_Expect_Nullptr" << std::endl;
+}

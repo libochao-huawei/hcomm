@@ -23,7 +23,8 @@
 #include <vector>
 
 std::mutex AicpuChannelProcess::mutex_;
-std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> AicpuChannelProcess::ubTransportMap_;
+std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> 
+    AicpuChannelProcess::ubTransportMap_;
 
 HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
 {
@@ -33,13 +34,22 @@ HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHa
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+    Hccl::BinaryStream binaryStreamForType(transpUniqueId);
+    u32 transType;
+    binaryStreamForType >> transType;
+    HCCL_INFO("[CollCommAicpu][ParsePackData] transType[%u]", transType);
+    if (transType == Hccl::TransportType::UB) {
+        std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+        EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+        handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+        ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+    } else {
+        HCCL_ERROR("[AicpuChannelProcess][%s] transType[%u] is invalid", __func__, transType);
+        return HCCL_E_PARA;
+    }
 
     return HCCL_SUCCESS;
 }
