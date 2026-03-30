@@ -400,7 +400,7 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
     exchangeDataPtr += sizeof(u8);
     exchangeDataBlankSize -= sizeof(u8);
 
-    if (machinePara_.isIndOp && (machinePara_.userMemEnable)) {
+    if (machinePara_.isIndOp) {
         CHK_RET(RegCustomUserMem(exchangeDataPtr, exchangeDataBlankSize));
     }
 
