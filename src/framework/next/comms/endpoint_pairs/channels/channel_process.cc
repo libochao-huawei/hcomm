@@ -91,6 +91,30 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
     return HCCL_SUCCESS;
 }
 
+HcclResult ChannelProcess::ChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
+{
+    std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
+    // 1) D2H 映射
+    auto itH = g_ChannelD2HMap.find(channelHandle);
+    if (itH == g_ChannelD2HMap.end()) {
+        HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, channelHandle[0x%llx].", __func__, channelHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    const ChannelHandle mappedHandle = itH->second;
+
+    // 2) ChannelMap 查找
+    auto itC = g_ChannelMap.find(mappedHandle);
+    if (itC == g_ChannelMap.end() || !itC->second) {
+        HCCL_ERROR("[%s] channel not found in g_ChannelMap, channelHandle[0x%llx], mappedHandle[0x%llx].",
+            __func__,
+            channelHandle,
+            mappedHandle);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    CHK_RET(itC->second->UpdateMemInfo(memHandles, memHandleNum));
+    return HCCL_SUCCESS;
+}
+
 HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList)
 {
     EXCEPTION_HANDLE_BEGIN

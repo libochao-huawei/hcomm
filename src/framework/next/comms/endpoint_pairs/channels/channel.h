@@ -57,6 +57,7 @@ public:
 
     virtual HcclResult Clean()        = 0;
     virtual HcclResult Resume()       = 0;
+    virtual HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum);
     // ------------------ 数据面接口 ------------------
 
 
