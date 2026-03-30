@@ -101,6 +101,7 @@ static thread_local DevType g_deviceType = DevType::DEV_TYPE_COUNT;
 }
 
 // 根据soc name判断是否支持 hccl v2流程，使用全局变量减少重复调用aclrt接口
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 enum class HcclV2SupportStatus {
     UNKNOWN,      // 获取soc name失败
     SUPPORTED,    // 支持v2
@@ -108,10 +109,11 @@ enum class HcclV2SupportStatus {
 };
 
 static thread_local HcclV2SupportStatus g_socV2SupportStatus = HcclV2SupportStatus::UNKNOWN;
+#endif
 
 HcclResult hrtGetHcclV2Support(bool *isSupport)
 {
-#ifndef HCCD
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_PTR_NULL(isSupport);
     if (LIKELY(g_socV2SupportStatus != HcclV2SupportStatus::UNKNOWN)) {
         *isSupport = g_socV2SupportStatus == HcclV2SupportStatus::SUPPORTED;
