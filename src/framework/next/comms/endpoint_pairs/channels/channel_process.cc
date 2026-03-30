@@ -11,7 +11,9 @@
 #include "channel_process.h"
 #include "exception_handler.h"
 #include "channel_param.h"
+#include "channel.h"
 #include "aicpu_ts_urma_channel.h"
+#include "aicpu_ts_roce_channel.h"
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
@@ -247,7 +249,8 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     hccl::DeviceMem &devicePackBuf,
     uint32_t listNum, 
     uint32_t totalListNum,
-    hccl::DeviceMem &channelSizeAddr)
+    hccl::DeviceMem &channelSizeAddr,
+    uint32_t channelType)
 {
     // channelParam资源参数填充
     s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
@@ -258,6 +261,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
     channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
+    channelParam.channelType = static_cast<u32>(channelType);
 
     CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
     DevType devType;
@@ -315,13 +319,24 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     // 获取host侧序列化的地址
     std::vector<u32> channelSizeVec{};
     uint32_t totalListNum = 0;
+    ChannelType channelType;
     for (uint32_t index = 0; index < listNum; index++) {
-        auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
-        CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
+        auto tmpChannel = reinterpret_cast<Channel *>(hostChannelHandles[index]);
+        channelType = tmpChannel->GetChannelType();
+        if (channelType == ChannelType::AICPU_TS_URMA_CHANNEL) {
+            auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
+        } else if (channelType == ChannelType::AICPU_TS_ROCE_CHANNEL) {
+            auto aicpuTsRoceChannel = reinterpret_cast<AicpuTsRoceChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsRoceChannel->H2DResPack(hostPackBuffers[index]));
+        } else {
+            HCCL_ERROR("[%s] channelType[%u] is invalid", __func__, channelType);
+            return HCCL_E_PARA;
+        }
         totalListNum += hostPackBuffers[index].size();
         channelSizeVec.push_back(hostPackBuffers[index].size());
     }
-    HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
+    HCCL_INFO("[%s] channelType[%u] totalListNum[%llu]", __func__, channelType, totalListNum);
 
     // 分配连续的host内存，将序列化的地址放入其中
     hccl::HostMem hostPackBuf = hccl::HostMem::alloc(totalListNum);
@@ -351,7 +366,7 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
 
     // 填充channelParam参数
     CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf, 
-        listNum, totalListNum, channelSizeAddr));
+        listNum, totalListNum, channelSizeAddr, channelType));
     
     // profiling信息
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
