@@ -1718,6 +1718,542 @@ TEST_F(CcuTaskExceptionTest, GetGroupRankInfo_WithValidComm) {
     EXPECT_TRUE(result.find("rankId[7]") != std::string::npos);
 }
 
+// ========== GenErrorInfo系列函数测试 ==========
+
+class GenErrorInfoTest : public BaseInit {
+public:
+    void SetUp() override {
+        BaseInit::SetUp();
+        MOCKER(hrtGetDevicePhyIdByIndex)
+            .stubs()
+            .with(any(), any())
+            .will(returnValue(HCCL_SUCCESS));
+        MOCKER(HccpRaCustomChannel)
+            .stubs()
+            .with(any(), any(), any(), any())
+            .will(returnValue(HCCL_SUCCESS));
+        baseInfo_.dieId = 0;
+        baseInfo_.deviceId = 0;
+        baseInfo_.missionId = 1;
+        baseInfo_.currentInsId = 10;
+        baseInfo_.status = 0x0101;
+    }
+    void TearDown() override {
+        BaseInit::TearDown();
+        GlobalMockObject::verify();
+    }
+    ErrorInfoBase baseInfo_;
+};
+
+class MockCcuRepBase : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepBase(CcuRep::CcuRepType type, uint16_t instrId = 10) {
+        this->type = type;
+        this->instrId = instrId;
+    }
+    ~MockCcuRepBase() override = default;
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "MockRep"; }
+    CcuRep::CcuRepType GetType() const { return type; }
+};
+
+class MockCcuRepLocRecordEvent : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepLocRecordEvent(uint16_t eventId, uint32_t mask) {
+        this->type = CcuRep::CcuRepType::LOC_RECORD_EVENT;
+        this->instrId = 10;
+        eventId_ = eventId;
+        mask_ = mask;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "LocRecordEvent"; }
+    uint16_t GetEventId() { return eventId_; }
+    uint32_t GetMask() { return mask_; }
+private:
+    uint16_t eventId_;
+    uint32_t mask_;
+};
+
+class MockCcuRepLocWaitEvent : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepLocWaitEvent(uint16_t eventId, uint32_t mask) {
+        this->type = CcuRep::CcuRepType::LOC_WAIT_EVENT;
+        this->instrId = 11;
+        eventId_ = eventId;
+        mask_ = mask;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "LocWaitEvent"; }
+    uint16_t GetEventId() { return eventId_; }
+    uint32_t GetMask() { return mask_; }
+private:
+    uint16_t eventId_;
+    uint32_t mask_;
+};
+
+class MockCcuRepRemPostSem : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepRemPostSem(uint32_t id, uint32_t mask, uint32_t channelId) {
+        this->type = CcuRep::CcuRepType::REM_POST_SEM;
+        this->instrId = 13;
+        id_ = id;
+        mask_ = mask;
+        channelId_ = channelId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "RemPostSem"; }
+    uint32_t GetId() { return id_; }
+    uint32_t GetMask() { return mask_; }
+    uint32_t GetChannelId() { return channelId_; }
+private:
+    uint32_t id_;
+    uint32_t mask_;
+    uint32_t channelId_;
+};
+
+class MockCcuRepRemWaitSem : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepRemWaitSem(uint32_t id, uint32_t mask, uint32_t channelId) {
+        this->type = CcuRep::CcuRepType::REM_WAIT_SEM;
+        this->instrId = 14;
+        id_ = id;
+        mask_ = mask;
+        channelId_ = channelId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "RemWaitSem"; }
+    uint32_t GetId() { return id_; }
+    uint32_t GetMask() { return mask_; }
+    uint32_t GetChannelId() { return channelId_; }
+private:
+    uint32_t id_;
+    uint32_t mask_;
+    uint32_t channelId_;
+};
+
+class MockCcuRepRemPostVar : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepRemPostVar(uint32_t rmtCkeId, uint32_t rmtXnId, uint32_t paramIndex,
+                          uint32_t semIndex, uint32_t mask, uint32_t channelId) {
+        this->type = CcuRep::CcuRepType::REM_POST_VAR;
+        this->instrId = 15;
+        rmtCkeId_ = rmtCkeId;
+        rmtXnId_ = rmtXnId;
+        paramIndex_ = paramIndex;
+        semIndex_ = semIndex;
+        mask_ = mask;
+        channelId_ = channelId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "RemPostVar"; }
+    uint32_t GetMask() { return mask_; }
+    uint32_t GetRmtCkeId() { return rmtCkeId_; }
+    uint32_t GetRmtXnId() { return rmtXnId_; }
+    uint32_t GetParamIndex() { return paramIndex_; }
+    CcuRep::Variable GetParam() {
+        CcuRep::Variable v;
+        v.Reset(100);
+        return v;
+    }
+    uint32_t GetChannelId() { return channelId_; }
+private:
+    uint32_t rmtCkeId_;
+    uint32_t rmtXnId_;
+    uint32_t paramIndex_;
+    uint32_t semIndex_;
+    uint32_t mask_;
+    uint32_t channelId_;
+};
+
+class MockCcuRepRecordSharedNotify : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepRecordSharedNotify(uint16_t notifyId, uint32_t mask) {
+        this->type = CcuRep::CcuRepType::RECORD_SHARED_NOTIFY;
+        this->instrId = 16;
+        notifyId_ = notifyId;
+        mask_ = mask;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "RecordSharedNotify"; }
+    uint32_t GetMask() { return mask_; }
+    uint16_t GetNotifyId() { return notifyId_; }
+private:
+    uint16_t notifyId_;
+    uint32_t mask_;
+};
+
+class MockCcuRepRead : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepRead(uint16_t locAddrId, uint16_t locTokenId, uint16_t remAddrId,
+                    uint16_t remTokenId, uint16_t lenId, uint16_t semId,
+                    uint32_t mask, uint32_t channelId) {
+        this->type = CcuRep::CcuRepType::READ;
+        this->instrId = 17;
+        locAddrId_ = locAddrId;
+        locTokenId_ = locTokenId;
+        remAddrId_ = remAddrId;
+        remTokenId_ = remTokenId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+        channelId_ = channelId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "Read"; }
+    uint16_t GetLocAddrId() { return locAddrId_; }
+    uint16_t GetLocTokenId() { return locTokenId_; }
+    uint16_t GetRemAddrId() { return remAddrId_; }
+    uint16_t GetRemTokenId() { return remTokenId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+    uint32_t GetChannelId() { return channelId_; }
+private:
+    uint16_t locAddrId_;
+    uint16_t locTokenId_;
+    uint16_t remAddrId_;
+    uint16_t remTokenId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+    uint32_t channelId_;
+};
+
+class MockCcuRepWrite : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepWrite(uint16_t locAddrId, uint16_t locTokenId, uint16_t remAddrId,
+                     uint16_t remTokenId, uint16_t lenId, uint16_t semId,
+                     uint32_t mask, uint32_t channelId) {
+        this->type = CcuRep::CcuRepType::WRITE;
+        this->instrId = 18;
+        locAddrId_ = locAddrId;
+        locTokenId_ = locTokenId;
+        remAddrId_ = remAddrId;
+        remTokenId_ = remTokenId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+        channelId_ = channelId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "Write"; }
+    uint16_t GetLocAddrId() { return locAddrId_; }
+    uint16_t GetLocTokenId() { return locTokenId_; }
+    uint16_t GetRemAddrId() { return remAddrId_; }
+    uint16_t GetRemTokenId() { return remTokenId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+    uint32_t GetChannelId() { return channelId_; }
+private:
+    uint16_t locAddrId_;
+    uint16_t locTokenId_;
+    uint16_t remAddrId_;
+    uint16_t remTokenId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+    uint32_t channelId_;
+};
+
+class MockCcuRepLocalCpy : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepLocalCpy(uint16_t srcAddrId, uint16_t srcTokenId, uint16_t dstAddrId,
+                        uint16_t dstTokenId, uint16_t lenId, uint16_t semId,
+                        uint32_t mask) {
+        this->type = CcuRep::CcuRepType::LOCAL_CPY;
+        this->instrId = 19;
+        srcAddrId_ = srcAddrId;
+        srcTokenId_ = srcTokenId;
+        dstAddrId_ = dstAddrId;
+        dstTokenId_ = dstTokenId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "LocalCpy"; }
+    uint16_t GetSrcAddrId() { return srcAddrId_; }
+    uint16_t GetSrcTokenId() { return srcTokenId_; }
+    uint16_t GetDstAddrId() { return dstAddrId_; }
+    uint16_t GetDstTokenId() { return dstTokenId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+private:
+    uint16_t srcAddrId_;
+    uint16_t srcTokenId_;
+    uint16_t dstAddrId_;
+    uint16_t dstTokenId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+};
+
+class MockCcuRepLocalReduce : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepLocalReduce(uint16_t srcAddrId, uint16_t srcTokenId, uint16_t dstAddrId,
+                           uint16_t dstTokenId, uint16_t lenId, uint16_t semId,
+                           uint32_t mask, uint16_t dataType, uint16_t opType) {
+        this->type = CcuRep::CcuRepType::LOCAL_REDUCE;
+        this->instrId = 20;
+        srcAddrId_ = srcAddrId;
+        srcTokenId_ = srcTokenId;
+        dstAddrId_ = dstAddrId;
+        dstTokenId_ = dstTokenId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+        dataType_ = dataType;
+        opType_ = opType;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "LocalReduce"; }
+    uint16_t GetSrcAddrId() { return srcAddrId_; }
+    uint16_t GetSrcTokenId() { return srcTokenId_; }
+    uint16_t GetDstAddrId() { return dstAddrId_; }
+    uint16_t GetDstTokenId() { return dstTokenId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+    uint16_t GetDataType() { return dataType_; }
+    uint16_t GetOpType() { return opType_; }
+private:
+    uint16_t srcAddrId_;
+    uint16_t srcTokenId_;
+    uint16_t dstAddrId_;
+    uint16_t dstTokenId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+    uint16_t dataType_;
+    uint16_t opType_;
+};
+
+class MockCcuRepBufRead : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepBufRead(uint16_t dstAddrId, uint16_t srcAddrId, uint16_t srcTokenId,
+                       uint16_t lenId, uint16_t semId, uint32_t mask, uint32_t channelId) {
+        this->type = CcuRep::CcuRepType::BUF_READ;
+        this->instrId = 21;
+        dstAddrId_ = dstAddrId;
+        srcAddrId_ = srcAddrId;
+        srcTokenId_ = srcTokenId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+        channelId_ = channelId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "BufRead"; }
+    uint16_t GetDstAddrId() { return dstAddrId_; }
+    uint16_t GetSrcAddrId() { return srcAddrId_; }
+    uint16_t GetSrcTokenId() { return srcTokenId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+    uint32_t GetChannelId() { return channelId_; }
+private:
+    uint16_t dstAddrId_;
+    uint16_t srcAddrId_;
+    uint16_t srcTokenId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+    uint32_t channelId_;
+};
+
+class MockCcuRepBufWrite : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepBufWrite(uint16_t srcId, uint16_t dstAddrId, uint16_t dstTokenId,
+                       uint16_t lenId, uint16_t semId, uint32_t mask, uint32_t channelId) {
+        this->type = CcuRep::CcuRepType::BUF_WRITE;
+        this->instrId = 22;
+        srcId_ = srcId;
+        dstAddrId_ = dstAddrId;
+        dstTokenId_ = dstTokenId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+        channelId_ = channelId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "BufWrite"; }
+    uint16_t GetSrcId() { return srcId_; }
+    uint16_t GetDstAddrId() { return dstAddrId_; }
+    uint16_t GetDstTokenId() { return dstTokenId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+    uint32_t GetChannelId() { return channelId_; }
+private:
+    uint16_t srcId_;
+    uint16_t dstAddrId_;
+    uint16_t dstTokenId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+    uint32_t channelId_;
+};
+
+class MockCcuRepBufLocRead : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepBufLocRead(uint16_t srcAddrId, uint16_t srcTokenId, uint16_t dstId,
+                          uint16_t lenId, uint16_t semId, uint32_t mask) {
+        this->type = CcuRep::CcuRepType::BUF_LOC_READ;
+        this->instrId = 23;
+        srcAddrId_ = srcAddrId;
+        srcTokenId_ = srcTokenId;
+        dstId_ = dstId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "BufLocRead"; }
+    uint16_t GetSrcAddrId() { return srcAddrId_; }
+    uint16_t GetSrcTokenId() { return srcTokenId_; }
+    uint16_t GetDstId() { return dstId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+private:
+    uint16_t srcAddrId_;
+    uint16_t srcTokenId_;
+    uint16_t dstId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+};
+
+class MockCcuRepBufLocWrite : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepBufLocWrite(uint16_t srcId, uint16_t dstAddrId, uint16_t dstTokenId,
+                           uint16_t lenId, uint16_t semId, uint32_t mask) {
+        this->type = CcuRep::CcuRepType::BUF_LOC_WRITE;
+        this->instrId = 24;
+        srcId_ = srcId;
+        dstAddrId_ = dstAddrId;
+        dstTokenId_ = dstTokenId;
+        lenId_ = lenId;
+        semId_ = semId;
+        mask_ = mask;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "BufLocWrite"; }
+    uint16_t GetSrcAddrId() { return srcId_; }
+    uint16_t GetDstTokenId() { return dstTokenId_; }
+    uint16_t GetDstAddrId() { return dstAddrId_; }
+    uint16_t GetLenId() { return lenId_; }
+    uint16_t GetSemId() { return semId_; }
+    uint32_t GetMask() { return mask_; }
+private:
+    uint16_t srcId_;
+    uint16_t dstAddrId_;
+    uint16_t dstTokenId_;
+    uint16_t lenId_;
+    uint16_t semId_;
+    uint32_t mask_;
+};
+
+class MockCcuRepBufReduce : public CcuRep::CcuRepBase {
+public:
+    MockCcuRepBufReduce(uint16_t count, uint16_t dataType, uint16_t outputDataType,
+                         uint16_t opType, uint16_t semId, uint32_t mask,
+                         const std::vector<CcuRep::CcuBuf> &mem, uint16_t xnLengthId) {
+        this->type = CcuRep::CcuRepType::BUF_REDUCE;
+        this->instrId = 25;
+        count_ = count;
+        dataType_ = dataType;
+        outputDataType_ = outputDataType;
+        opType_ = opType;
+        semId_ = semId;
+        mask_ = mask;
+        mem_ = mem;
+        xnLengthId_ = xnLengthId;
+    }
+    bool Translate(CcuInstr *&instr, uint16_t &instrId, const CcuRep::TransDep &dep) override { return true; }
+    std::string Describe() override { return "BufReduce"; }
+    const std::vector<CcuRep::CcuBuf>& GetMem() { return mem_; }
+    uint16_t GetCount() { return count_; }
+    uint16_t GetDataType() { return dataType_; }
+    uint16_t GetOutputDataType() { return outputDataType_; }
+    uint16_t GetOpType() { return opType_; }
+    uint16_t GetXnLengthId() { return xnLengthId_; }
+    uint32_t GetMask() { return mask_; }
+    uint16_t GetSemId() { return semId_; }
+private:
+    uint16_t count_;
+    uint16_t dataType_;
+    uint16_t outputDataType_;
+    uint16_t opType_;
+    uint16_t semId_;
+    uint32_t mask_;
+    std::vector<CcuRep::CcuBuf> mem_;
+    uint16_t xnLengthId_;
+};
+
+TEST_F(GenErrorInfoTest, GenErrorInfoLocRecordEvent) {
+    auto rep = std::make_shared<MockCcuRepLocRecordEvent>(5, 0xFF);
+    std::vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenErrorInfoLocRecordEvent(baseInfo_, rep, errorInfo);
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
+    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::LOC_RECORD_EVENT);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoLocWaitEvent) {
+    auto rep = std::make_shared<MockCcuRepLocWaitEvent>(6, 0x0F);
+    std::vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenErrorInfoLocWaitEvent(baseInfo_, rep, errorInfo);
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
+    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::LOC_WAIT_EVENT);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoRemPostSem) {
+    auto rep = std::make_shared<MockCcuRepRemPostSem>(8, 0xFF, 101);
+    std::vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenErrorInfoRemPostSem(baseInfo_, rep, errorInfo);
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
+    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::REM_POST_SEM);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoRemWaitSem) {
+    auto rep = std::make_shared<MockCcuRepRemWaitSem>(9, 0xF0, 102);
+    std::vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenErrorInfoRemWaitSem(baseInfo_, rep, errorInfo);
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
+    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::REM_WAIT_SEM);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoPostSharedSem) {
+    auto rep = std::make_shared<MockCcuRepRecordSharedNotify>(10, 0x55);
+    std::vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenErrorInfoPostSharedSem(baseInfo_, rep, errorInfo);
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
+    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::RECORD_SHARED_NOTIFY);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoDefault) {
+    auto rep = std::make_shared<MockCcuRepBase>(CcuRep::CcuRepType::BASE);
+    std::vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenErrorInfoDefault(baseInfo_, rep, errorInfo);
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
+}
+
+TEST_F(GenErrorInfoTest, GenErrorInfoByRepType_UnknownType_FallsToDefault) {
+    auto rep = std::make_shared<MockCcuRepBase>(CcuRep::CcuRepType::BASE);
+    std::vector<CcuErrorInfo> errorInfo;
+    CcuTaskException::GenErrorInfoByRepType(baseInfo_, rep, errorInfo);
+    EXPECT_EQ(errorInfo.size(), 1u);
+    EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
+}
+
 } // namespace hcomm
 
 #undef private
