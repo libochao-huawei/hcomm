@@ -165,6 +165,4 @@ HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, 
     return HCCL_SUCCESS;
 }
 
-// 显式实例化GlobalMirrorTasks类，确保链接器能找到正确的符号
-template class GlobalMirrorTasks;
 } // namespace Hccl
