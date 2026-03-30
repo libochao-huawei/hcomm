@@ -9,6 +9,7 @@
  */
 #include "global_mirror_tasks.h"
 #include <stdexcept>
+#include <map>
 
 namespace Hccl {
 
@@ -163,4 +164,7 @@ HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, 
     HCCL_INFO("[%s]success, devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u].", __func__, devId, streamId, taskId);
     return HCCL_SUCCESS;
 }
+
+// 显式实例化GlobalMirrorTasks类，确保链接器能找到正确的符号
+template class GlobalMirrorTasks;
 } // namespace Hccl

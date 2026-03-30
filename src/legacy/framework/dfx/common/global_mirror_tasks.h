@@ -48,6 +48,9 @@ public:
     TaskInfoQueueMap::iterator End(u32 devId);
 
     HcclResult FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const;
+    
+    // 确保链接器能找到正确的符号
+    extern template class GlobalMirrorTasks;
 private:
     static GlobalMirrorTasks                       ins_;
     std::array<TaskInfoQueueMap, DEVICE_MAX_NUM> taskMaps_;
