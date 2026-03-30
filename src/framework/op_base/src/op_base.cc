@@ -747,8 +747,8 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
 {
     if(hcclGroupDepth > 0){
         HcclResult ret = HCCL_SUCCESS;
-        std::shared_ptr<struct hcclCommInitRankTableConfigAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
+        std::shared_ptr<struct hcclCommInitRankTableAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableAsyncJob>()), return HCCL_E_PARA);
         job->clusterInfo = clusterInfo;
         job->rank = rank;
         job->initComm = comm;
@@ -1002,7 +1002,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
-    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].", 
         __func__, clusterInfo, rank, deviceLogicId);
     // 入参合法性校验
     CHK_PTR_NULL(clusterInfo);
@@ -1064,7 +1064,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HCCL_PROFILER_ADD_GROUP_UDI(commConfig.GetConfigCommName(), commConfig.GetConfigUdi());
 
     /* 关键状态记录 */
-    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].", 
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
     return HCCL_SUCCESS;
 }
@@ -4744,7 +4744,10 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
     }
 
     for (u32 i = 0; i < itemNum; i++) {
-        CHK_PTR_NULL((sendRecvInfo + i)->buf);
+        // 支持数据量为0的场景，buf为空的item跳过
+        if ((sendRecvInfo + i)->buf == nullptr) {
+            continue;
+        }
         CHK_RET(HcomCheckDataType((sendRecvInfo + i)->dataType));
         CHK_RET(HcomCheckCount((sendRecvInfo + i)->count));
         CHK_RET(HcomCheckUserRank(rankSize, (sendRecvInfo + i)->remoteRank));
