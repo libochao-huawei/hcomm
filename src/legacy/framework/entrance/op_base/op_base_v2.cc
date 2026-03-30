@@ -176,6 +176,7 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
     
         HcclGroupParamsV2 params{};
         params.pComm = opbasedCommInfoV2.pComm;
+        params.groupRank = static_cast<Hccl::RankId>(rank);
         std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
         opbasedCommInfoV2.hcclGroupMap[commId] = params;
     
