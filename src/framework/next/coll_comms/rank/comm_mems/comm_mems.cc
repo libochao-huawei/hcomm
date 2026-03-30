@@ -104,18 +104,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     auto& reg = tagRegs_[memTag];
  
     // 同tag内做区间冲突/幂等复用
-    auto res = reg.table.Add(key, h);
-    if (!res.second) {
-        // 只能用 Find 的返回值来判定：
-        // - 等于(全集命中)：Find(key).first == true（允许，Add 内已 ref）
-        // - 子集/超集/交集：Find(key).first 可能为 true(子) 或 false(交/超/空)，但都属于冲突！
-        auto f = reg.table.Find(key);
-        if (!f.first || !(f.second && f.second->addr == mem.addr && f.second->size == mem.size)) {
-            HCCL_ERROR("[CommRegMem] overlap in tag[%s], key=%s", memTag.c_str(), key.ToString().c_str());
-            return HCCL_E_PARA;
-        }
-        h = f.second;
-    }
+    auto res = reg.table.AddWithoutCheck(key, h);
  
     // 加入绑定map
     opBindings_.emplace(memTag, h);
