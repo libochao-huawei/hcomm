@@ -15,7 +15,7 @@
 #include "virtual_topo.h"
 #include "mem_transport_lite.h"
 #include "mirror_task_manager_lite.h"
-
+#include "mem_transport_callback_lite.h"
 
 namespace Hccl {
 

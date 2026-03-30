@@ -9,7 +9,6 @@
  */
 #include "mem_transport_lite_mgr.h"
 #include "binary_stream.h"
-#include "mem_transport_callback_lite.h"
 
 namespace Hccl {
 
