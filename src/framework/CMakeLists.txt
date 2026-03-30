@@ -110,6 +110,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/device/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/host/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/server_socket/
 
     # ccu 头文件

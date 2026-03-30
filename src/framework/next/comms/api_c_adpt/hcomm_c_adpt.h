@@ -75,6 +75,8 @@ HcclResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngin
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
 HcclResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
 
+HcclResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, ChannelEntity **channelEntityList);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

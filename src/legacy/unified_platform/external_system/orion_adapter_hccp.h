@@ -19,6 +19,7 @@
 #include "hccp_tlv.h"
 #include <mutex>
 #include "hccp_async_ctx.h"
+#include "hccp_nda.h"
 
 namespace Hccl {
 using namespace std;
@@ -54,6 +55,7 @@ constexpr u32 HCCL_INVALID_PORT = 65536;
 
 using RdmaHandle = void *;
 using QpHandle   = void *;
+using CqHandle   = void *;
 
 using SocketHandle = void *;
 using FdHandle     = void *;
@@ -627,6 +629,9 @@ HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq);
 HcclResult ConstructQpDefaultAttrs(s32 qpMode, struct qp_ext_attrs &attrs, bool isWorkFlowLib);
 HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp);
 HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle);
+HcclResult HrtRaNdaQpCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaQpInfo *qpInfo, QpHandle *qpHandle);
+HcclResult HrtRaNdaCqCreate(RdmaHandle rdmaHandle, NdaOps *ndaOps, uint32_t dmaMode, NdaCqInfo *cqInfo, CqHandle *cqHandle);
+HcclResult HrtRaNdaCqDestroy(RdmaHandle rdmaHandle, CqHandle cqHandle);
   
 MAKE_ENUM(AuxInfoInType, AUX_INFO_IN_TYPE_CQE, AUX_INFO_IN_TYPE_AE, AUX_INFO_IN_TYPE_MAX);
 struct AuxInfoIn {

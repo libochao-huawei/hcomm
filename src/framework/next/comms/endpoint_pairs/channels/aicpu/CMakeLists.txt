@@ -10,6 +10,8 @@
 
 set(src_list
     aicpu_ts_urma_channel.cc
+    aicpu_ts_roce_channel.cc
+    dev_rdma_connection.cc
 )
 
 target_sources(hcomm PRIVATE

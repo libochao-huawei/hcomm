@@ -10,37 +10,79 @@
 
 #include "rdma_local_notify.h"
 #include "not_support_exception.h"
+#include "dev_capability.h"
+#include "hccp.h"
+#include "exchange_rdma_buffer_dto.h"
 
 namespace Hccl {
 
 RdmaLocalNotify::RdmaLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
     : BaseLocalNotify(RmaType::RDMA, devUsed), rdmaHandle(rdmaHandle)
 {
-    notify   = std::make_unique<RtsNotify>(true);
-    u64 va   = 0;
-    u64 size = 0;
-    HrtRaGetNotifyBaseAddr(rdmaHandle, &va, &size);
-    if (va > (UINT64_MAX - notify->GetOffset())) {
-        THROW<InternalException>("addr occur integer overflow ");
+    HrtDevResInfo devResInfo;
+    devResInfo.dieId            = 0;
+    devResInfo.procType         = HrtDevResProcType::PROCESS_HCCP;
+    devResInfo.resType          = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
+    devResInfo.resId            = GetNotify()->GetId();
+    devResInfo.flag             = 0;
+    auto resAddrInfo            = HrtGetDevResAddress(devResInfo);
+    addr                        = resAddrInfo.address;
+    DevCapability::GetInstance().Init(DevType::DEV_TYPE_950); // 单例初始化
+    size                        = DevCapability::GetInstance().GetNotifySize();
+    // 注册内存
+    struct MrInfoT mrInfo;
+    mrInfo.addr   = reinterpret_cast<void *>(addr);
+    mrInfo.size   = size;
+    mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
+    s32 ret = RaRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
+    if (ret != 0 || mrHandle == nullptr) {
+        HCCL_ERROR("[RdmaLocalNotify] RaRegisterMr failed, call interface error[%d]", ret);
+        THROW<InternalException>("[%s] failed, call interface error[%d].", __func__, ret);
     }
-    addr = va + notify->GetOffset();
-    // 待修改: 利用 rdmaHandle 从 HCCP 新接口获取 key
+    lkey = mrInfo.lkey;
+    rkey = mrInfo.rkey;
+}
+
+RdmaLocalNotify::~RdmaLocalNotify()
+{
+    if (mrHandle) {
+        s32 ret = RaDeregisterMr(rdmaHandle, mrHandle);
+        if (ret != 0) {
+            HCCL_ERROR("[~RdmaLocalNotify]errNo[0x%016llx] RaDeregisterMr failed, return[%d]",
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret);
+        }
+        mrHandle = nullptr;
+    }
+
+    HrtDevResInfo devResInfo;
+    devResInfo.dieId    = 0;
+    devResInfo.procType = HrtDevResProcType::PROCESS_HCCP;
+    devResInfo.resType  = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
+    devResInfo.resId    = GetNotify()->GetId();
+    devResInfo.flag     = 0;
+    HrtReleaseDevResAddress(devResInfo);
 }
 
 void RdmaLocalNotify::Wait(const Stream &stream, u32 timeout) const
 {
-    notify->Wait(stream, timeout);
+    return;
 }
 
 void RdmaLocalNotify::Post(const Stream &stream) const
 {
-    HCCL_ERROR("RdmaLocalNotify does not support submit record task");
-    throw NotSupportException("RdmaLocalNotify does not support submit record task");
+    return;
 }
 
 string RdmaLocalNotify::Describe() const
 {
-    return StringFormat("RdmaLocalNotify[notify=%s, addr=0x%llx]", notify->Describe().c_str(), addr);
+    return StringFormat("RdmaLocalNotify[notify=%s, addr=0x%llx, size=%u]", GetNotify()->Describe().c_str(), addr, size);
+}
+
+std::unique_ptr<Serializable> RdmaLocalNotify::GetExchangeDto()
+{
+    std::unique_ptr<ExchangeRdmaBufferDto> dto
+        = make_unique<ExchangeRdmaBufferDto>(addr, size, rkey, "RdmaNotify");
+    return std::unique_ptr<Serializable>(dto.release());
 }
 
 } // namesapce Hccl
