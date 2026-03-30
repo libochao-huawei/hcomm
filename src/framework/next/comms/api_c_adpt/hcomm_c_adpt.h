@@ -12,7 +12,6 @@
 #define HCOMM_C_ADPT_H
 
 #include "hcomm_res.h"
-#include "hccl/hccl_res.h"
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
 
