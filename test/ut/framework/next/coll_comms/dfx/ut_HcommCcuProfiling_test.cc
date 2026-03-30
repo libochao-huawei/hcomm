@@ -500,7 +500,7 @@ public:
     }
 
 
-}
+};
 
 TEST_F(CcuTaskExceptionTest, ProccessCcuException_Normal) {
     // 构造异常信息和任务信息
@@ -514,7 +514,7 @@ TEST_F(CcuTaskExceptionTest, ProccessCcuException_Normal) {
         panicLog, sizeof(panicLog));
 
     hccl::TaskPara a;
-    hccl::ParaCcu paraCcu = {};
+    Hccl::ParaCcu paraCcu = {};
     Hccl::TaskParam taskParam = {
         .taskType = Hccl::TaskParamType::TASK_CCU,
         .beginTime = 0,
