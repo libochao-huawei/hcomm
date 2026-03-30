@@ -89,3 +89,28 @@ TEST_F(HcclEngineCtxCopyV2Test, Ut_HcclEngineCtxCopyV2_When_Overflow_Expect_Retu
     HcclResult destroyResult = HcclEngineCtxDestroy(comm, ctxTag, COMM_ENGINE_CPU);
     EXPECT_EQ(destroyResult, HCCL_SUCCESS);
 }
+
+TEST_F(HcclEngineCtxCopyV2Test, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_Is_False)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    std::vector<HcclChannelDesc> channelDesc(1);
+    HcclChannelDescInit(channelDesc.data(), 1);
+    std::vector<ChannelHandle> channels(1);
+    channelDesc[0].remoteRank = 2;
+    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    channelDesc[0].notifyNum = 65;
+    channelDesc[0].roceAttr.queueNum = 3;
+    channelDesc[0].roceAttr.retryCnt = 3;
+    channelDesc[0].roceAttr.retryInterval = 20;
+    channelDesc[0].roceAttr.tc = 120;
+    channelDesc[0].roceAttr.sl = 3;
+
+    HcclResult ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
