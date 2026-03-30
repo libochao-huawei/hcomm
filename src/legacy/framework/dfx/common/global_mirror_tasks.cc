@@ -9,7 +9,6 @@
  */
 #include "global_mirror_tasks.h"
 #include <stdexcept>
-#include <map>
 
 namespace Hccl {
 
