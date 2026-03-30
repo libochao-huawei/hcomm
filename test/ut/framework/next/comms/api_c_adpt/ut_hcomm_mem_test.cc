@@ -22,14 +22,14 @@ public:
 
 TEST_F(TestHcommMem, Ut_TestHcommMemReg_When_InvalidHandle_Return_HCCL_E_NOT_FOUND)
 {
-    HcommMem mem;
+    CommMem mem;
     mem.addr = malloc(1024);
     mem.size = 1024;
-    mem.type = HCCL_MEM_TYPE_HOST;
+    mem.type = COMM_MEM_TYPE_HOST;
     void* memHandle = nullptr;
 
     EndpointHandle invalidHandle = reinterpret_cast<EndpointHandle>(0xFFFFFFFFFFFFFFFF);
-    HcommResult ret = HcommMemReg(invalidHandle, "test_mem", mem, &memHandle);
+    HcommResult ret = HcommMemReg(invalidHandle, "test_mem", &mem, &memHandle);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 
     free(mem.addr);
@@ -37,12 +37,12 @@ TEST_F(TestHcommMem, Ut_TestHcommMemReg_When_InvalidHandle_Return_HCCL_E_NOT_FOU
 
 TEST_F(TestHcommMem, Ut_TestHcommMemReg_When_MemHandleNullptr_Return_HCCL_E_PTR)
 {
-    HcommMem mem;
+    CommMem mem;
     mem.addr = malloc(1024);
     mem.size = 1024;
-    mem.type = HCCL_MEM_TYPE_HOST;
+    mem.type = COMM_MEM_TYPE_HOST;
 
-    HcommResult ret = HcommMemReg(nullptr, "test_mem", mem, nullptr);
+    HcommResult ret = HcommMemReg(nullptr, "test_mem", &mem, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     free(mem.addr);
