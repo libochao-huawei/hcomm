@@ -23,6 +23,7 @@
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
 #include "aicpu_ts_roce_channel.h"
+#include "aicpu_ts_roce_channel.h"
 #include "mem_device_pub.h"
 #include "channel_param.h"
 #include "launch_aicpu.h"
@@ -574,7 +575,6 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
 
     return HCCL_SUCCESS;
 }
-
 
 HcclResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, ChannelEntity **channelEntityList)
 {

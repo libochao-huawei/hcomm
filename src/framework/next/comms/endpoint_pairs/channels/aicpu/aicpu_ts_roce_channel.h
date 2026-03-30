@@ -65,15 +65,13 @@ public:
     HcclResult H2DResPack(std::vector<char>& buffer);
 
 private:
-    // 比较两个EndpointDeviceInfo，返回-1（小于）、0（等于）或1（大于）
-    static int CompareEndpointDeviceInfo(const EndpointDeviceLoc& localDevice, const EndpointDeviceLoc& remoteDevice);
-    
     HcclResult ParseInputParam();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
     HcclResult BuildBuffer();
     HcclResult BuildNotifyValueBuffer();
-    HcclResult CreateSocket();
+    HcclResult BuildSocket();
+    HcclResult StartListen();
 
     HcclResult CheckSocketStatus();
     HcclResult CreateQp();
@@ -107,8 +105,9 @@ private:
     EndpointDesc localEp_;
     EndpointDesc remoteEp_;
     uint32_t notifyNum_{0};
-    std::shared_ptr<Hccl::Socket> socket_{nullptr};
-    RdmaHandle rdmaHandle_{nullptr};
+    std::unique_ptr<SocketMgr>                              socketMgr_{nullptr};
+    std::shared_ptr<Hccl::Socket>                           socket_{nullptr};
+    RdmaHandle                                              rdmaHandle_{nullptr};
 
     std::vector<std::unique_ptr<DevRdmaConnection>>         connections_{};
     std::vector<Hccl::LocalRdmaRmaBuffer *>                 localRmaBuffers_{};

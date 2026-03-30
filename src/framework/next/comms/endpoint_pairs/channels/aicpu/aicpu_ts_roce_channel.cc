@@ -21,38 +21,12 @@
 #include "host_socket_handle_manager.h"
 #include "dev_capability.h"
 #include "aicpu_ts_roce_channel.h"
+#include "../../../common/orion_adpt_utils.h"
+#include "../../../sockets/socket_mgr.h"
 
 namespace hcomm {
 
-// 比较两个EndpointDeviceInfo，返回-1（小于）、0（等于）或1（大于）
-int AicpuTsRoceChannel::CompareEndpointDeviceInfo(const EndpointDeviceLoc& localDevice, const EndpointDeviceLoc& remoteDevice) {
-    // 按照superPodIdx -> serverIdx -> superDevId -> devPhyId的顺序比较
-    if (localDevice.superPodIdx < remoteDevice.superPodIdx) {
-        return -1;
-    } else if (localDevice.superPodIdx > remoteDevice.superPodIdx) {
-        return 1;
-    }
-    
-    if (localDevice.serverIdx < remoteDevice.serverIdx) {
-        return -1;
-    } else if (localDevice.serverIdx > remoteDevice.serverIdx) {
-        return 1;
-    }
-    
-    if (localDevice.superDevId < remoteDevice.superDevId) {
-        return -1;
-    } else if (localDevice.superDevId > remoteDevice.superDevId) {
-        return 1;
-    }
-    
-    if (localDevice.devPhyId < remoteDevice.devPhyId) {
-        return -1;
-    } else if (localDevice.devPhyId > remoteDevice.devPhyId) {
-        return 1;
-    }
-    
-    return 0; // 所有字段都相等
-}
+constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 
 AicpuTsRoceChannel::AicpuTsRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc, CommEngine engine)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc), engine_(engine)
@@ -73,6 +47,9 @@ HcclResult AicpuTsRoceChannel::ParseInputParam()
 
     // 2. 从 channelDesc_，获得 remoteEp_
     remoteEp_ = channelDesc_.remoteEndpoint;
+
+    // 3. 初始化 socketMgr_
+    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
 
     return HCCL_SUCCESS;
 }
@@ -167,7 +144,10 @@ HcclResult AicpuTsRoceChannel::BuildNotifyValueBuffer()
 HcclResult AicpuTsRoceChannel::Init()
 {
     CHK_RET(ParseInputParam());
-    CHK_RET(CreateSocket()); // ljy:有通信域的场景不在这里创建socket
+    if (channelDesc_.exchangeAllMems) {
+        CHK_RET(StartListen());
+    }
+    CHK_RET(BuildSocket());
     CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
     CHK_RET(BuildBuffer());
@@ -444,77 +424,41 @@ HcclResult AicpuTsRoceChannel::ModifyQp() {
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannel::CreateSocket() {
+HcclResult AicpuTsRoceChannel::StartListen()
+{
+    uint16_t port = channelDesc_.port;
+    HCCL_INFO("[AicpuTsRoceChannel::%s] Start. EndpointHandle[0x%llx], port[%u]", __func__, reinterpret_cast<uint64_t>(endpointHandle_), port);
+    if (port == 0) {
+        port = DEFAULT_LISTENING_PORT;
+        HCCL_INFO("[AicpuTsRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
+    }
+    CHK_RET(HcommEndpointStartListen(endpointHandle_, port, nullptr));
+    HCCL_INFO("[AicpuTsRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsRoceChannel::BuildSocket()
+{
     if (socket_ != nullptr) {
         return HCCL_SUCCESS;
     }
-    HCCL_INFO("[AicpuTsRoceChannel][%s] socket ptr is NULL, rebuildSocket", __func__);
+    HCCL_INFO("[AicpuTsRoceChannel::%s] socket ptr is NULL, rebuild Socket", __func__);
 
-    // 获取localEndpoint
-    CHK_PTR_NULL(endpointHandle_);
-    Endpoint* localEpPtr = reinterpret_cast<Endpoint*>(endpointHandle_);
-    EndpointDesc localEndpoint = localEpPtr->GetEndpointDesc();
-    
-    // 获取remoteEndpoint
-    EndpointDesc remoteEndpoint = channelDesc_.remoteEndpoint;
-    
-    // 确保EndpointLoc类型为DEVICE
-    CHK_PRT_RET((localEndpoint.loc.locType != ENDPOINT_LOC_TYPE_DEVICE) || (remoteEndpoint.loc.locType != ENDPOINT_LOC_TYPE_DEVICE),
-        HCCL_ERROR("[AicpuTsRoceChannel::CreateSocket] EndpointLoc type is not DEVICE"), HCCL_E_INTERNAL);
-    
-    // 从CommAddr获取IP地址（仅处理IPv4）
-    Hccl::IpAddress localIp, remoteIp;
-    Hccl::BinaryAddr localAddr, remoteAddr;
-    if (localEndpoint.commAddr.type == COMM_ADDR_TYPE_IP_V4 && remoteEndpoint.commAddr.type == COMM_ADDR_TYPE_IP_V4) {
-        localAddr.addr = localEndpoint.commAddr.addr;
-        remoteAddr.addr = remoteEndpoint.commAddr.addr;
-        localIp = Hccl::IpAddress(localAddr, AF_INET);
-        remoteIp = Hccl::IpAddress(remoteAddr, AF_INET);
-    } else if (localEndpoint.commAddr.type == COMM_ADDR_TYPE_IP_V6 && remoteEndpoint.commAddr.type == COMM_ADDR_TYPE_IP_V6) {
-        localAddr.addr6 = localEndpoint.commAddr.addr6;
-        remoteAddr.addr6 = remoteEndpoint.commAddr.addr6;
-        localIp = Hccl::IpAddress(localAddr, AF_INET6);
-        remoteIp = Hccl::IpAddress(remoteAddr, AF_INET6);
-    } else {
-        HCCL_ERROR("[AicpuTsRoceChannel::CreateSocket] Unsupported IP address type: local[%d], remote[%d]", localEndpoint.commAddr.type,
-            remoteEndpoint.commAddr.type);
-        return HCCL_E_INTERNAL;
-    }
-    
-    // 创建socketHandle
-    Hccl::SocketHandle socketHandle{};
-    EXECEPTION_CATCH(
-        socketHandle = Hccl::HostSocketHandleManager::GetInstance().Create(
-            localEndpoint.loc.device.devPhyId, localIp),
-        return HCCL_E_PARA);
-    CHK_PTR_NULL(socketHandle);
-    
-    // 比较本地和远端的索引来确定role
-    Hccl::SocketRole role;
-    int compareResult = CompareEndpointDeviceInfo(localEndpoint.loc.device, remoteEndpoint.loc.device);
-    if (compareResult < 0) {
-        role = Hccl::SocketRole::SERVER;
-    } else if (compareResult > 0) {
-        role = Hccl::SocketRole::CLIENT;
-    } else {
-        // 两者完全相同，报错
-        HCCL_ERROR("[AicpuTsRoceChannel::CreateSocket] local and remote endpoints are the same");
-        return HCCL_E_PARA;
-    }
-    
-    // 创建socket
-    constexpr u32 port = 60001;
-    EXECEPTION_CATCH(socket_ = std::make_shared<Hccl::Socket>(socketHandle, localIp,
-        port, remoteIp, "nda_socket", role, Hccl::NicType::HOST_NIC_TYPE), 
-        return HCCL_E_PARA);
-    
-    if (role == Hccl::SocketRole::SERVER) {
-        // 调用Listen()函数
-        EXECEPTION_CATCH(socket_->Listen(), return HCCL_E_NETWORK);
-    }
+    CHK_PRT_RET((localEp_.loc.locType != ENDPOINT_LOC_TYPE_HOST) || (remoteEp_.loc.locType != ENDPOINT_LOC_TYPE_HOST),
+        HCCL_ERROR("[AicpuTsRoceChannel::BuildSocket] EndpointLoc type is not HOST"), HCCL_E_INTERNAL);
 
-    HCCL_INFO("[AicpuTsRoceChannel::CreateSocket] Done. socketHandle[%p], local[%s], port[%u], remote[%s], role[%d]", 
-        socketHandle, localIp.Describe().c_str(), port, remoteIp.Describe().c_str(), role);
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkData(localEp_, remoteEp_, linkData));
+    HCCL_INFO("[AicpuTsRoceChannel::%s] built linkData: %s", __func__, linkData.Describe().c_str());
+    uint16_t port = channelDesc_.port;
+    if (port == 0) {
+        port = DEFAULT_LISTENING_PORT;
+        HCCL_INFO("[AicpuTsRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
+    }
+    std::string socketTag = "AUTOMATIC_SOCKET_TAG";
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, port, socketTag);
+    CHK_RET(socketMgr_->GetSocket(socketConfig, socket_));
+    HCCL_INFO("[AicpuTsRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
 
