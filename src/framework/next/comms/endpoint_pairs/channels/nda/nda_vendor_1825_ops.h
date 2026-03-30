@@ -3,7 +3,7 @@
 
 #include "nda_vendor_base_ops.h"
 
-namespace hcomm {
+namespace Hccl {
 
 typedef struct {
     // Control Segment
@@ -132,6 +132,10 @@ constexpr uint32_t ROCE_INIT_SQ_DB_SGIT_IDX = 1;
 
 class Nda1825Ops : public NdaBaseVendorOps {
 public:
+    Nda1825Ops(RdmaSqContextLite *sqContext, RdmaCqContextLite *cqContext)
+        : NdaBaseVendorOps(sqContext, cqContext) {}
+
+    ~Nda1825Ops() override {}
 
 protected:
     // 创建Hi1823对应RoceWqeEntry, 并下发
@@ -144,7 +148,7 @@ protected:
         while (1) {
             HCCL_INFO("[Nda1825Ops::%s] Operate : sqTail = %u", __func__, ci);
             // sq队列能放下
-            if (pi - ci + wqeNum < sqContext_->depth) {
+            if (static_cast<uint32_t>(pi - ci + wqeNum) < sqContext_->depth) {
                 break;
             }
         }
@@ -157,7 +161,7 @@ protected:
             if (ret != HCCL_SUCCESS) {
                 return ret;
             }
-            ret = ProcessOneWqe(&wqe, sizeof(RoceWqeEntry), desc.opCode);
+            ret = ProcessOneWqe(&wqe, sizeof(RoceWqeEntry), descList[i].opCode);
             if (ret != HCCL_SUCCESS) {
                 return ret;
             }
@@ -211,15 +215,17 @@ private:
         }
     }
 
-    int BuildWriteWqe(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, RoceWqeEntry *wqe, uint32_t opCode)
+    int BuildWriteWqe(const RmaBufSliceLite *loc, const RmtRmaBufSliceLite *rmt, RoceWqeEntry *wqe, uint32_t opCode)
     {
-        HCCL_INFO("[Nda1825Ops::%s] BuildWrite start, loc size[%u]", __func__, loc->GetSize());
-        auto wqeSize = sqContext_->wqeSize;
-        auto sqDepth = sqContext_->depth;
-        auto sqBaseAddr = sqContext_->sqVa;
+        if (loc == nullptr || rmt == nullptr) {
+            HCCL_INFO("[Nda1825Ops::%s] BuildWrite InVaild Params !");
+            return HCCL_E_PARA;
+        }
 
-        u32 sqHead = pi % sqDepth;
-        uint8_t owner = (sqHead & sqDepth) == 0 ? 0 : 1;
+        HCCL_INFO("[Nda1825Ops::%s] BuildWrite start, loc size[%u]", __func__, loc->GetSize());
+
+        u32 sqHead = pi % (sqContext_->depth);
+        uint8_t owner = (sqHead & (sqContext_->depth)) == 0 ? 0 : 1;
 
         // ----- Ctrl Seg 1 -----
         wqe->ctrl.dw0.value =

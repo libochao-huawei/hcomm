@@ -1,20 +1,18 @@
 #ifndef NDA_RDMA_BASE_VENDOR_OPS_H
 #define NDA_RDMA_BASE_VENDOR_OPS_H
 
-#include "hccl/base.h"
-#include "enum_factory.h"
-#include "hccp_common.h"
-#include "hccl_common.h"
-#include "hccp_nda.h"
+#include "rma_conn_lite.h"
+
+namespace Hccl {
 
 // 上层只分发操作类型，具体opCode在子类指定
-MAKE_ENUM(NdaOpType,
-        WRITE = 0,
-        NOTIFY,
-        WRITE_WITH_NOTIFY,
-        WRITE_REDUCE,
-        WRITE_REDUCE_WITH_NOTIFY,
-        )
+enum NdaOpType {
+    WRITE = 0,
+    NOTIFY,
+    WRITE_WITH_NOTIFY,
+    WRITE_REDUCE,
+    WRITE_REDUCE_WITH_NOTIFY,
+};
 
 // 厂商共用的wqe创建入参
 struct WqeDesc {
@@ -25,48 +23,25 @@ struct WqeDesc {
     const RmaBufSliceLite           *locNotify  = nullptr;
     const RmtRmaBufSliceLite        *notify     = nullptr;
 
-    // Reduce Releated
-    HcommDataType dataType;
-    HcommReduceOp reduceOp;
+    // TODO Hccl与Hcomm的ReduceType不一样？
+    // HcommDataType dataType;
+    // HcommReduceOp reduceOp;
+
+    // HcclType
+    HcclDataType dataType;
+    HcclReduceOp reduceOp;
 };
 
-namespace hcomm {
-
-// PI、CI的入队出队在基类中解决，不知可否这样实现
 class NdaBaseVendorOps {
 public:
-    NdaBaseVendorOps(SqContext *sqContext, CqContext *cqContext): sqContext_(sqContext), cqContext_(cqContext) {}
-    ~NdaBaseVendorOps() {}
-
-    int AddWqeList(NdaOpType descType, 
-        const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, 
-        const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify, std::vector<WqeDesc> &descList)
-    {
-        WqeDesc descTmp{};
-
-        switch (descType) {
-            case NdaOpType::WRITE:
-                descTmp.opCode         = NdaOpType::WRITE;
-                descTmp.loc            = &loc;
-                descTmp.rmt            = &rmt;
-            case NdaOpType::NOTIFY:
-                descTmp.opCode         = NdaOpType::NOTIFY;
-                descTmp.locNotify      = &locNotify;
-                descTmp.notify         = &notify;
-            default:
-                HCCL_ERROR("error wqeType[%d]", descType);
-                return HCCL_E_INTERNAL;
-        }
-
-        descList.push_back(descTmp);
-        return HCCL_SUCCESS;
-    }
+    NdaBaseVendorOps(RdmaSqContextLite *sqContext, RdmaCqContextLite *cqContext): sqContext_(sqContext), cqContext_(cqContext) {}
+    virtual ~NdaBaseVendorOps() {}
 
     int Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt)
     {
         std::vector<WqeDesc> descList = {};
         // Add Write
-        AddWqeList(NdaOpType::WRITE, loc, rmt, nullptr, nullptr, descList);
+        AddWqeList(NdaOpType::WRITE, loc, rmt, descList);
 
         return PostWqeList(descList);
     }
@@ -75,7 +50,7 @@ public:
     {
         std::vector<WqeDesc> descList = {};
         // Add Notify
-        AddWqeList(NdaOpType::NOTIFY, nullptr, nullptr, locNotify, notify, descList);
+        AddWqeList(NdaOpType::NOTIFY, locNotify, notify, descList);
 
         return PostWqeList(descList);
     }
@@ -86,10 +61,10 @@ public:
     {
         std::vector<WqeDesc> descList = {};
         // Add Write
-        AddWqeList(NdaOpType::WRITE, loc, rmt, nullptr, nullptr, descList);
+        AddWqeList(NdaOpType::WRITE, loc, rmt, descList);
 
         // Add Notify
-        AddWqeList(NdaOpType::NOTIFY, nullptr, nullptr, locNotify, notify, descList);
+        AddWqeList(NdaOpType::NOTIFY, locNotify, notify, descList);
 
         return PostWqeList(descList);
     }
@@ -105,20 +80,45 @@ public:
         return HCCL_SUCCESS;
     }
 
+    // 准备Doorbell(厂商实现)
+    virtual int BuildDoorbell(u64 &dbAddr, u64 &dbValue) = 0;
+
 protected:
     u16  pi{0};
     u16  ci{0}; 
     u32  piDetourCount{0};
     u32  ciDetourCount{0};
 
-    SqContext *sqContext_;
-    CqContext *cqContext_;
+    RdmaSqContextLite *sqContext_;
+    RdmaCqContextLite *cqContext_;
+
+    int AddWqeList(NdaOpType descType, 
+        const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, std::vector<WqeDesc> &descList)
+    {
+        WqeDesc descTmp{};
+
+        switch (descType) {
+            case NdaOpType::WRITE:
+                descTmp.opCode         = NdaOpType::WRITE;
+                descTmp.loc            = &loc;
+                descTmp.rmt            = &rmt;
+                break;
+            case NdaOpType::NOTIFY:
+                descTmp.opCode         = NdaOpType::NOTIFY;
+                descTmp.locNotify      = &loc;
+                descTmp.notify         = &rmt;
+                break;
+            default:
+                HCCL_ERROR("error wqeType[%d]", descType);
+                return HCCL_E_INTERNAL;
+        }
+
+        descList.push_back(descTmp);
+        return HCCL_SUCCESS;
+    }
 
     // 根据descList准备wqe(厂商实现) + 下发wqe(厂商实现)
     virtual int PostWqeList(std::vector<WqeDesc> &descList) = 0;
-
-    // 准备Doorbell(厂商实现)
-    virtual int BuildDoorbell(u64 &dbAddr, u64 &dbValue) = 0;
 
     // 搬运wqe(通用实现)
     int ProcessOneWqe(const void *wqe, uint32_t wqeSize, uint32_t opCode)

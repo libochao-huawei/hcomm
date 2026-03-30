@@ -2,12 +2,17 @@
 #define NDA_RDMA_XSCDV_OPS_H
 
 #include "nda_vendor_base_ops.h"
-#include "infiniband/xscdv.h"
+// TODO 云脉头文件参与编译
+// #include "infiniband/xscdv.h"
 
-namespace hcomm {
+namespace Hccl {
 
 class NdaXscdvOps : public NdaBaseVendorOps {
 public:
+    NdaXscdvOps(RdmaSqContextLite *sqContext, RdmaCqContextLite *cqContext)
+        : NdaBaseVendorOps(sqContext, cqContext) {}
+
+    ~NdaXscdvOps() override {}
 
 protected:
     // 创建xscdv对应Wqe, 并下发
@@ -16,7 +21,7 @@ protected:
         return HCCL_SUCCESS;
     }
 
-    int int BuildDoorbell(u64 &dbAddr, u64 &dbValue)
+    int BuildDoorbell(u64 &dbAddr, u64 &dbValue)
     {
         return HCCL_SUCCESS;
     }
@@ -25,7 +30,7 @@ private:
 
 };
 
-}   // namespace hcomm
+}   // namespace Hccl
 
 
 #endif   // NDA_RDMA_XSCDV_OPS_H

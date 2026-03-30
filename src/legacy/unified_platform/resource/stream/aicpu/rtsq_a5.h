@@ -42,7 +42,7 @@ public:
 
     void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue) override;
 
-    void RdmaDbSend(const uint64_t &dbVa, const uint64_t &dbValue) override;
+    void RdmaDbSend(const uint64_t &dbAddr, const uint64_t &dbValue) override;
 
     void UbDirectSend(const UbJettyLiteId &jettyLiteId, u32 dwqeSize, const u8 *wqe) override
     {

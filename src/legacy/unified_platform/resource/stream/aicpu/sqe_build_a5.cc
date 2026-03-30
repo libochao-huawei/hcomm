@@ -176,7 +176,7 @@ void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLite
 }
 
 // 写64bit值的形式来完成敲DB
-void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 remoteAddr, u64 dbValue, uint8_t * const sqeIn)
+void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 dbAddr, u64 dbValue, uint8_t * const sqeIn)
 {
     (void)streamId;
     Rt91095StarsWriteValueSqe *sqe = (Rt91095StarsWriteValueSqe *)sqeIn;
@@ -187,8 +187,8 @@ void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 remoteAddr, u64 dbValue,
     sqe->header.rtStreamId          = streamId;
     sqe->header.taskId              = taskId;
 
-    sqe->writeAddrLow               = remoteAddr & MASK_32_BIT;
-    sqe->writeAddrHigh              = (remoteAddr >> UINT32_BIT_NUM) & MASK_17_BIT;
+    sqe->writeAddrLow               = dbAddr & MASK_32_BIT;
+    sqe->writeAddrHigh              = (dbAddr >> UINT32_BIT_NUM) & MASK_17_BIT;
 
     sqe->awsize                     = RtStarsWriteValueSizeType::RT_STARS_WRITE_VALUE_SIZE_TYPE_64BIT;      // writeValue 为 8 byte
     sqe->writeValuePart[0]          = static_cast<uint32_t>(dbValue & MASK_32_BIT);                         // low  32 bit
@@ -196,8 +196,8 @@ void BuildA5SqeRdmaDbSend(u32 streamId, u32 taskId, u64 remoteAddr, u64 dbValue,
 
     sqe->va                         = 0U;
 
-    HCCL_INFO("[SQE]RdmaDbSend streamId %u, taskId %u, remoteAddr %p, dbValue %llu",
-        streamId, taskId, remoteAddr, dbValue);
+    HCCL_INFO("[SQE]RdmaDbSend streamId %u, taskId %u, dbAddr %p, dbValue %llu",
+        streamId, taskId, dbAddr, dbValue);
 }
 
 namespace 

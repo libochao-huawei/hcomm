@@ -330,12 +330,12 @@ void RtsqA5::UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue)
     RefreshInfo();
 }
 
-void RtsqA5::RdmaDbSend(const uint64_t &dbVa, const uint64_t &dbValue)
+void RtsqA5::RdmaDbSend(const uint64_t &dbAddr, const uint64_t &dbValue)
 {
     // piValue需要使用u16数据类型，保证自然增长，用于判断是否翻转
-    BuildA5SqeRdmaDbSend(streamId_, taskId_, dbVa, dbValue, GetCurrSqeBuffer());
+    BuildA5SqeRdmaDbSend(streamId_, taskId_, dbAddr, dbValue, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::RdmaDbSend: RdmaDbSend Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
-    HCCL_INFO("[RtsqA5][RdmaDbSend] dbValue(dbValue):%llx, SqTail(Rtsq Pi):%u", dbVa, sqTail_);
+    HCCL_INFO("[RtsqA5][RdmaDbSend] dbValue(dbValue):%llx, SqTail(Rtsq Pi):%u", dbAddr, sqTail_);
     RefreshInfo();
 }
 

@@ -14,21 +14,21 @@
 
 namespace hcomm {
 
-class NdaChannel final: public Channel {
+class NdaChannelLite final: public Channel {
 public:
-    NdaChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc, CommEngine engine);
-    ~NdaChannel();
-
     // 数据面
     void NotifyWait(const uint32_t index, const StreamLite &stream);
 
-    void Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream);
+    void Write(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const StreamLite &stream);
 
-    void WriteWithNotify(const RmaBufferLite &loc, const Buffer &rmt, const uint32_t remoteNotifyIdx,
+    void WriteWithNotify(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const uint32_t remoteNotifyIdx,
                          const StreamLite &stream);
 
     // rtsq ring Doorbell
     void BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue);
+
+    // rtsq Notify Wait
+    void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId);
 };
 }   // namespace hcomm
 
