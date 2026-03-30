@@ -18,7 +18,8 @@ class TestHcclGetHcclBuffer : public BaseInit {
 public:
     void SetUp() override {
         BaseInit::SetUp();
-        
+        const char *fakeA5SocName = "Ascend950PR_958b";
+        MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
     }
     void TearDown() override {
         BaseInit::TearDown();
