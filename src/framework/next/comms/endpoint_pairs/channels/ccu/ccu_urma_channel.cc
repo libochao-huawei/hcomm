@@ -30,6 +30,7 @@ CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
     : locEndpointHandle_(locEndpointHandle),
       channelDesc_(channelDesc)
 {
+    channelType_ = ChannelType::CCU_URMA_CHANNEL;
 }
 
 HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
