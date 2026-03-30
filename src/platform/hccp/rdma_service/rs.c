@@ -29,6 +29,7 @@
 #include "rs_inner.h"
 #include "rs_rdma_inner.h"
 #include "rs_drv_rdma.h"
+#include "rs_nda.h"
 #include "rs_epoll.h"
 #include "rs_tls.h"
 #include "ssl_adp.h"
@@ -1054,16 +1055,22 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
     }
 #endif
 
-    ret = RsSetupPdAndNotify(rdevCb);
-    if (ret) {
-        hccp_err("rs_get_sq_depth_and_qp_max_num failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
+    ret = RsInitNdaCb(rdevCb);
+    if (ret != 0) {
+        hccp_err("RsInitNdaCb failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
         goto unmmap_ai_db;
     }
 
-    rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
+    ret = RsSetupPdAndNotify(rdevCb);
+    if (ret != 0) {
+        hccp_err("RsSetupPdAndNotify failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
+        goto free_nda_cb;
+    }
 
     return 0;
 
+free_nda_cb:
+    RsFreeNdaCb(rdevCb);
 unmmap_ai_db:
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
@@ -1338,7 +1345,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 
     RsIbvDeallocPd(rdevCb->ibPd);
 
-    (void)RsNdaIbvCloseExtend(rdevCb->ibCtxEx);
+    RsFreeNdaCb(rdevCb);
 
     RsIbvCloseDevice(rdevCb->ibCtx);
 
