@@ -19,7 +19,10 @@
 namespace hcomm {
 
 AivUbMemChannel::AivUbMemChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
-    endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
+    endpointHandle_(endpointHandle), channelDesc_(channelDesc)
+{
+    channelType_ = ChannelType::AIV_UB_MEM_CHANNEL;
+}
 
 HcclResult AivUbMemChannel::ParseInputParam() 
 {
