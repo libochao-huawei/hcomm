@@ -31,9 +31,11 @@
 #include "error_message_v2.h"
 #include "kfc.h"
 #include "aicpu_hdc.h"
+#include "dev_aicpu_ts_roce_channel_v2.h"
 #include "hccl/hccl_types.h"
 
 using namespace hccl;
+
 class CollCommAicpu {
 public:
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
@@ -87,6 +89,7 @@ private:
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::P2PTransportLiteImpl>> p2pTransportMap_;
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::DevAicpuTsRoceChannelV2>> devAicpuTsRoceChannelV2Map_;
 
     // N秒快恢相关
     hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};
