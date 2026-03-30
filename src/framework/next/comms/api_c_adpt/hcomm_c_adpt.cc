@@ -575,7 +575,6 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
     return HCCL_SUCCESS;
 }
 
-
 HcclResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, ChannelEntity **channelEntityList)
 {
     CHK_PTR_NULL(channelList);
