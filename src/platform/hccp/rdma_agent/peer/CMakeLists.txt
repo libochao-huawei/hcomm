@@ -41,6 +41,7 @@ target_include_directories(ra_peer PRIVATE
     ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/nda
 
     # HCCP Legacy
     ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_agent/comm/ctx
