@@ -27,7 +27,8 @@
 #include "task_info.h"
 #include "hccl_diag.h"
 #include "exception_handler.h"
-
+#include "task_info.h"
+#include "task_param.h"
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
@@ -790,3 +791,34 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
 }
+
+extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
+
+    Hccl::TaskParam taskParam{};
+    taskParam.beginTime = beginTime;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AIV;
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    u32 taskId;
+    u32 streamId;
+    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
+
+    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, INVALID_RANKID, taskParam
+                                                hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), false);
+
+    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
+    HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
+    return HCCL_SUCCESS;
+}   
