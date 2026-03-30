@@ -39,9 +39,6 @@ public:
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
 
-    virtual HcclResult Clean() override;
-    virtual HcclResult Resume() override;
-
 public:
     uint32_t GetDieId() const;
     uint32_t GetChannelId() const;
