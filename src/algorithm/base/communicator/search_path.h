@@ -14,6 +14,9 @@ class SearchPath {
 public:
     std::vector<u32> Search(const std::vector<u32> &nicList, bool isDoubleRingMap = false)
     {
+        if (isDoubleRingMap && nicList.size() <= 1) {    // 单卡不满足doubleRing
+            return {};
+        }
         if (nicList.size() == 0 || nicList.size() == 1) {
             return nicList;
         }
