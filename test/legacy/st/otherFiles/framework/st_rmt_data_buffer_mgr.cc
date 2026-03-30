@@ -168,7 +168,7 @@ TEST_F(RmtDataBufferMgrTest, get_GetBuffer_opbase_success)
 {
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-    MirrorTaskManagerLite mirrorTaskMgrLite();
+    MirrorTaskManagerLite mirrorTaskMgrLite;
     auto transportCallbackLite = MemTransportCallbackLite(linkData, mirrorTaskMgrLite);
     std::unique_ptr<MemTransportLite> transportLite = std::make_unique<MemTransportLite>(liteData, transportCallbackLite);
     memTransportLiteMgr->opBaseTranspMap[linkData] = std::move(transportLite);
