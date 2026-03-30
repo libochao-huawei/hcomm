@@ -19,6 +19,7 @@
 #include "./host/host_cpu_roce_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
+#include "./aicpu/aicpu_ts_roce_channel_v2.h"
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
@@ -26,6 +27,8 @@ HcclResult Channel::CreateChannel(
     EndpointHandle endpointHandle, CommEngine engine, 
     HcommChannelDesc channelDesc, std::unique_ptr<Channel>& channelPtr)
 {
+    DevType deviceType = DevType::DEV_TYPE_COUNT;
+    CHK_RET(hrtGetDeviceType(deviceType));
 std::unique_ptr<Channel> uniqueChannelPtr;
     switch (engine) {
         case COMM_ENGINE_CPU:
@@ -47,7 +50,11 @@ std::unique_ptr<Channel> uniqueChannelPtr;
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_PCIE) {
                 uniqueChannelPtr.reset(new (std::nothrow) AicpuTsP2pChannel(endpointHandle, channelDesc));
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
-                uniqueChannelPtr = std::make_unique<AicpuTsRoceChannel>(endpointHandle, channelDesc);
+                if (deviceType == DevType::DEV_TYPE_950) {
+                    uniqueChannelPtr = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, engine);
+                } else {
+                    uniqueChannelPtr = std::make_unique<AicpuTsRoceChannel>(endpointHandle, channelDesc);
+                }
             } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP ||
                        channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
                 uniqueChannelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(endpointHandle, channelDesc));
@@ -58,9 +65,13 @@ std::unique_ptr<Channel> uniqueChannelPtr;
             }
             break;
         case COMM_ENGINE_AIV:
-            uniqueChannelPtr.reset(
-                new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
-            break; 
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE && deviceType == DevType::DEV_TYPE_950) {
+                uniqueChannelPtr = std::make_unique<AicpuTsRoceChannelV2>(endpointHandle, channelDesc, engine);
+            } else {
+                uniqueChannelPtr.reset(
+                    new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
+            }
+            break;
         case COMM_ENGINE_CCU:
             uniqueChannelPtr.reset(
                 new (std::nothrow) CcuUrmaChannel(endpointHandle, channelDesc));
