@@ -9,6 +9,7 @@
  */
 
 #include <unordered_set>
+#include <cstring>
 #include "log.h"
 #include "hccl/base.h"
 #include "rank_consistentcy_checker.h"
