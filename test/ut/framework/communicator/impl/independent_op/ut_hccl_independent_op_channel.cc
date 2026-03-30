@@ -71,7 +71,7 @@ TEST_F(HcclIndependentOpChannelTest, Ut_ProcessRoceChannelDesc_When_IsCommunicat
     channelDesc[0].roceAttr.sl = 4;
 
     hccl::hcclComm *hcclCommTest = new hccl::hcclComm(1, 1, "123");
-    MOCKER_CPP(&hcclComm::IsCommunicatorV2())
+    MOCKER_CPP(&hcclComm::IsCommunicatorV2)
     .stubs()
     .will(returnValue(false));
 
