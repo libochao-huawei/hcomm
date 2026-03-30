@@ -122,7 +122,8 @@ public:
     CcuResSpecifications &operator=(const CcuResSpecifications &that) = delete;
     ~CcuResSpecifications() = default;
 
-    void Reset();
+    void Deinit();
+    void Init();
 
     static CcuResSpecifications& GetInstance(const int32_t deviceLogicId);
 
@@ -166,7 +167,6 @@ private:
 
     explicit CcuResSpecifications() = default;
 
-    void Init(int32_t deviceLogicId);
     HcclResult Init_();
 };
 

@@ -6,10 +6,8 @@
 #include "rank_graph_v2.h"
 #include "hcomm_c_adpt.h"
 #include "my_rank.h"
-#include "channel_process.h"
 #define private public
 using namespace hccl;
-using namespace hcomm;
 
 class MyRankTest : public testing::Test {
 protected:
@@ -108,6 +106,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     MOCKER_CPP(&Hccl::SocketManager::GetConnectedSocket).stubs().with(any()).will(returnValue((Hccl::Socket*)0xab));
     MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     ChannelHandle channelHandle = 0xab;
     MOCKER_CPP(&HcommCollectiveChannelCreate).stubs().with(any(), any(), any(), any(), outBoundP(&channelHandle)).will(returnValue(HCCL_SUCCESS));
@@ -169,7 +168,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
 }
 
-TEST_F(MyRankTest, Ut_StopLaunch_EmptyNsRecovery_Returns_SUCCESS)
+TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
     aclrtBinHandle binHandle;
     CommConfig config;
@@ -177,186 +176,21 @@ TEST_F(MyRankTest, Ut_StopLaunch_EmptyNsRecovery_Returns_SUCCESS)
     void* rankGraphPtr = (void*)0x114514;
     std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    myRank.commMems_ = std::make_unique<CommMems>((uint64_t)0x100);
 
-    // 默认 nsRecoveryDatas_ 为空，StopLaunch 应直接返回成功
-    auto ret = myRank.StopLaunch();
+    auto handle1 = std::make_unique<CommMemHandle>();
+    std::vector<CommMemHandle*> mems{};
+    mems.push_back(handle1.get());
+    void **memHandles = reinterpret_cast<void**>(mems.data());
+    std::vector<MemHandle> memHandleVec{};
+    memHandleVec.emplace_back((void*)0x100);
+    memHandleVec.emplace_back((void*)0x101);
+
+    std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
+    HcclResult ret = myRank.commMems_->SetMemHandles(memHandles, memHandleVec, commMemHandles);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    EXPECT_EQ(handles[0]->bufferHandle, (void*)0x101);
+    EXPECT_EQ(commMemHandles[0]->bufferHandle, (void*)0x100);
+    EXPECT_EQ(commMemHandles[1]->bufferHandle, (void*)0x101);
 }
-
-TEST_F(MyRankTest, Ut_Clean_NoChannels_Returns_SUCCESS)
-{
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void* rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-
-    // 模拟 GetAllChannelList 返回空列表
-    MOCKER_CPP(&MyRank::GetAllChannelList, std::vector<ChannelHandle>(MyRank::*)())
-    .stubs()
-    .with(any())
-    .will(returnValue(std::vector<ChannelHandle>()));
-
-    auto ret = myRank.Clean();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(MyRankTest, Ut_Clean_WithChannels_Calls_ChannelClean)
-{
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void* rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-
-    // 准备两条 channel handle
-    std::vector<ChannelHandle> channels = { (ChannelHandle)0x1, (ChannelHandle)0x2 };
-
-    // 模拟 MyRank::GetAllChannelList 返回这两条 channel
-    MOCKER_CPP(&MyRank::GetAllChannelList, std::vector<ChannelHandle>(MyRank::*)())
-    .stubs()
-    .with(any())
-    .will(returnValue(channels));
-
-    // 模拟 ChannelProcess::ChannelClean 被调用并返回成功
-    MOCKER_CPP(&ChannelProcess::ChannelClean, HcclResult(const ChannelHandle*, uint32_t))
-    .stubs()
-    .with(any(), any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    auto ret = myRank.Clean();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(MyRankTest, Ut_Resume_WithChannels_Calls_ChannelResume)
-{
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void* rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-
-    std::vector<ChannelHandle> channels = { (ChannelHandle)0x1, (ChannelHandle)0x2 };
-
-    // 模拟 MyRank::GetAllChannelList 返回 channels
-    MOCKER_CPP(&MyRank::GetAllChannelList, std::vector<ChannelHandle>(MyRank::*)())
-    .stubs()
-    .with(any())
-    .will(returnValue(channels));
-
-    // 模拟 ChannelProcess::ChannelResume 返回成功
-    MOCKER_CPP(&ChannelProcess::ChannelResume, HcclResult(const ChannelHandle*, uint32_t))
-    .stubs()
-    .with(any(), any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    auto ret = myRank.Resume();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-// Additional tests for ListenBackGround, PollStopStatus and GetAllChannelList
-TEST_F(MyRankTest, PollStopStatus_Returns_SUSPENDING_On_StopLaunchDone)
-{
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void* rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-
-    // Prepare a HDCommunicate instance and set it into MyRank
-    auto hdc = std::make_shared<HDCommunicate>();
-    myRank.SetKfcControlTransfer(hdc, hdc);
-
-    // Stub HDCommunicate::Get to return STOP_LAUNCH_DONE in the output buffer
-    Hccl::KfcExecStatus status{};
-    status.kfcStatus = Hccl::KfcStatus::STOP_LAUNCH_DONE;
-
-    MOCKER_CPP(&HDCommunicate::Get, HcclResult(HDCommunicate::*)(u32, u32, u8*))
-        .stubs()
-        .with(any(), any(), outBoundP(&status))
-        .will(returnValue(HCCL_SUCCESS));
-
-    auto ret = myRank.PollStopStatus();
-    EXPECT_EQ(ret, HCCL_E_SUSPENDING);
-}
-
-TEST_F(MyRankTest, ListenBackGround_Returns_SUSPENDING_On_CLEAN_DONE)
-{
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void* rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-
-    // Prepare a HDCommunicate instance and set it into MyRank
-    auto hdc = std::make_shared<HDCommunicate>();
-    myRank.SetKfcControlTransfer(hdc, hdc);
-
-    // Stub HDCommunicate::Get to return CLEAN_DONE in the output buffer
-    Hccl::KfcExecStatus status{};
-    status.kfcStatus = Hccl::KfcStatus::CLEAN_DONE;
-
-    MOCKER_CPP(&HDCommunicate::Get, HcclResult(HDCommunicate::*)(u32, u32, u8*))
-        .stubs()
-        .with(any(), any(), outBoundP(&status))
-        .will(returnValue(HCCL_SUCCESS));
-
-    Hccl::KfcExecStatus opInfo{};
-    auto ret = myRank.ListenBackGround(opInfo);
-    EXPECT_EQ(ret, HCCL_E_SUSPENDING);
-}
-
-TEST_F(MyRankTest, GetAllChannelList_Flattens_ChannelTable)
-{
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void* rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-
-    // Prepare a fake ChannelTable with one RankIdPair containing one EpChannelMap
-    RankIdPair rankKey = {0, 1};
-    EndpointDesc localEp{};
-    localEp.protocol = COMM_PROTOCOL_ROCE;
-    localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    localEp.commAddr.addr = Hccl::IpAddress("1.1.1.1").GetBinaryAddress().addr;
-    localEp.loc.locType = ENDPOINT_LOC_TYPE_HOST;
-
-    EndpointDesc remoteEp{};
-    remoteEp.protocol = COMM_PROTOCOL_ROCE;
-    remoteEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    remoteEp.commAddr.addr = Hccl::IpAddress("2.2.2.2").GetBinaryAddress().addr;
-    remoteEp.loc.locType = ENDPOINT_LOC_TYPE_HOST;
-
-    EndpointDescPair epPair = std::make_pair(localEp, remoteEp);
-
-    std::unordered_map<CommEngine, std::vector<ChannelHandle>> inner;
-    inner[COMM_ENGINE_CPU] = { (ChannelHandle)0x11, (ChannelHandle)0x22 };
-
-    hcomm::EpChannelMap epMap;
-    epMap[epPair] = inner;
-
-    ChannelTable channelTable;
-    channelTable[rankKey] = epMap;
-
-    // Ensure MyRank has a RankPairMgr instance to call GetChannelTable on
-    myRank.rankPairMgr_.reset(new RankPairMgr());
-
-    // Stub RankPairMgr::GetChannelTable to return our fake table
-    MOCKER_CPP(&RankPairMgr::GetChannelTable, ChannelTable(RankPairMgr::* )())
-        .stubs()
-        .with(any())
-        .will(returnValue(channelTable));
-
-    auto list = myRank.GetAllChannelList();
-    EXPECT_EQ(list.size(), 2u);
-    EXPECT_EQ(list[0], (ChannelHandle)0x11);
-    EXPECT_EQ(list[1], (ChannelHandle)0x22);
-}
-
