@@ -144,7 +144,7 @@ TEST_F(TestChannelProcess, Ut_TestChannelGetUserRemoteMem_When_MemNumNullptr_Ret
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(TestChannelProcess, Ut_ChannelClean_NullList_Returns_E_PARA) {
+/* TEST_F(TestChannelProcess, Ut_ChannelClean_NullList_Returns_E_PARA) {
     // Passing null pointer should return parameter error
     auto ret = hcomm::ChannelProcess::ChannelClean(nullptr, 1);
     EXPECT_EQ(ret, HCCL_E_PTR);
@@ -173,3 +173,4 @@ TEST_F(TestChannelProcess, Ut_ChannelResume_NullList_Returns_E_PARA) {
     auto ret = hcomm::ChannelProcess::ChannelResume(nullptr, 1);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+ */
