@@ -52,7 +52,7 @@ protected:
     }
 
     MemTransportLiteMgr *memTransportLiteMgr;
-    MirrorTaskManagerLte *mirrorTaskMgrLite;
+    MirrorTaskManagerLite *mirrorTaskMgrLite;
     CollAlgInfo *algInfo;
     std::string tag = "tag";
     OpMode mode{OpMode::OPBASE};
