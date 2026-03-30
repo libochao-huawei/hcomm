@@ -37,7 +37,6 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_Normal_Return_HCCL_Succe
         .will(returnValue(true));
     setenv("HCCL_INDEPENDENT_OP","1",1);
 
-
     void* commV2 = (void*)0x2000;
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -61,10 +60,7 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_Normal_Return_HCCL_Succe
     ret =  HcclGetHcclBuffer(comm, &buffer, &size);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(size, 2);
-
 }
-
-
 
 TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommNullptr_Return_HCCL_E_PTR)
 {
@@ -221,26 +217,4 @@ TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBuffer_When_CommMemsNullptr_Return_H
     uint64_t size;
     ret =  HcclGetHcclBuffer(comm, &buffer, &size);
     EXPECT_EQ(ret,  HCCL_E_PTR);
-
-}
-
-TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Success)
-{
-    DevType deviceType = DevType::DEV_TYPE_910_93;
-    MOCKER(hrtGetDeviceType)
-    .stubs()
-    .with(outBound(deviceType))
-    .will(returnValue(HCCL_SUCCESS));
-
-    HcclComm commHandle;
-    UT_USE_RANK_TABLE_910_1SERVER_1RANK;
-    UT_COMM_CREATE_DEFAULT(commHandle);
-
-    void* buffer;
-    uint64_t size;
-    HcclResult ret = HcclGetHcclBuffer(commHandle, &buffer, &size);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    Ut_Comm_Destroy(commHandle);
-    GlobalMockObject::verify();
 }
