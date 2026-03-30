@@ -23,6 +23,7 @@
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
 #include "aicpu_ts_roce_channel.h"
+#include "aicpu_ts_roce_channel.h"
 #include "mem_device_pub.h"
 #include "channel_param.h"
 #include "launch_aicpu.h"
