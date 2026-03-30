@@ -13,11 +13,16 @@
 
 using namespace hccl;
 
+constexpr u32 AICPU_TS_URMA_CHANNEL_TYPE = 1;
+constexpr u32 AICPU_TS_ROCE_CHANNEL_TYPE = 4; // 跟ChannelType对应
+
 std::mutex AicpuChannelProcess::mutex_;
 std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> 
     AicpuChannelProcess::ubTransportMap_;
+std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::AicpuTsRoceChannelLite>> 
+    AicpuChannelProcess::aicpuTsRoceChannelMap_;
 
-HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
+HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHandle &handle, u32 channelType)
 {
     HCCL_DEBUG("[HcclCommAicpu][%s] data: ptr[%p], size[%u]", __func__, data.data(), data.size());
     Hccl::BinaryStream binaryStream(data);
@@ -25,13 +30,26 @@ HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHa
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+    if (channelType == AICPU_TS_URMA_CHANNEL_TYPE) {
+        std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+        EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(ubTransportLiteImpl);
 
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+        handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+        ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+    } else if (channelType == AICPU_TS_ROCE_CHANNEL_TYPE) {
+        std::unique_ptr<Hccl::AicpuTsRoceChannelLite> aicpuTsRoceChannelLite;
+        EXECEPTION_CATCH((aicpuTsRoceChannelLite = std::make_unique<Hccl::AicpuTsRoceChannelLite>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(aicpuTsRoceChannelLite);
+
+        handle = reinterpret_cast<uint64_t>(aicpuTsRoceChannelLite.get());
+        aicpuTsRoceChannelMap_.insert({handle, std::move(aicpuTsRoceChannelLite)});
+    } else {
+        HCCL_ERROR("[AicpuChannelProcess][%s] channelType[%u] is invalid", __func__, channelType);
+        return HCCL_E_PARA;
+    }
 
     return HCCL_SUCCESS;
 }
@@ -60,7 +78,7 @@ HcclResult AicpuChannelProcess::InitUrmaChannel(HcclChannelUrmaRes *commParam)
             return HCCL_E_PARA;
         }
         ChannelHandle channelHandle;
-        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
+        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle, commParam->channelType));
 
         // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
@@ -98,23 +116,36 @@ HcclResult AicpuChannelProcess::AicpuChannelDestroy(HcclChannelUrmaRes *commPara
     HCCL_INFO("[AicpuChannelProcess][%s] commParam->channelList[%p], commParam->listNum[%u]",
               __func__, commParam->channelList, commParam->listNum);
 
-    // 加锁保护 ubTransportMap_
+    // 加锁保护 ubTransportMap_ aicpuTsRoceChannelMap_
     std::lock_guard<std::mutex> addLock(mutex_);
 
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     for (u32 index = 0; index < commParam->listNum; ++index) {
         ChannelHandle handle = channelList[index];
 
-        auto it = ubTransportMap_.find(handle);
-        if (it == ubTransportMap_.end()) {
-            // 理论上每个 handle 都应该存在，若不存在可能是重复销毁或逻辑错误
-            HCCL_WARNING("[AicpuChannelProcess][%s] handle[0x%llx] not found in ubTransportMap_, maybe already destroyed?",
-                      __func__, handle);
-            continue; // 容错处理：继续销毁其他 channel，不中断流程
+        if (commParam->channelType == AICPU_TS_URMA_CHANNEL_TYPE) {
+            auto it = ubTransportMap_.find(handle);
+            if (it == ubTransportMap_.end()) {
+                // 理论上每个 handle 都应该存在，若不存在可能是重复销毁或逻辑错误
+                HCCL_WARNING("[AicpuChannelProcess][%s] handle[0x%llx] not found in ubTransportMap_, maybe already destroyed?",
+                        __func__, handle);
+                continue; // 容错处理：继续销毁其他 channel，不中断流程
+            }
+            // 3. 从 map 中移除条目，unique_ptr 会自动释放对象，从而销毁底层 UbTransportLiteImpl 资源
+            ubTransportMap_.erase(it);
+        } else if (commParam->channelType == AICPU_TS_ROCE_CHANNEL_TYPE) {
+            auto it = aicpuTsRoceChannelMap_.find(handle);
+            if (it == aicpuTsRoceChannelMap_.end()) {
+                HCCL_WARNING("[AicpuChannelProcess][%s] handle[0x%llx] not found in aicpuTsRoceChannelMap_, maybe already destroyed?",
+                        __func__, handle);
+                continue;
+            }
+            aicpuTsRoceChannelMap_.erase(it);
+        } else {
+            HCCL_ERROR("[AicpuChannelProcess][%s] channelType[%u] is invalid", __func__, commParam->channelType);
+            return HCCL_E_PARA;
         }
 
-        // 3. 从 map 中移除条目，unique_ptr 会自动释放对象，从而销毁底层 UbTransportLiteImpl 资源
-        ubTransportMap_.erase(it);
         HCCL_DEBUG("[AicpuChannelProcess][%s] destroyed handle[0x%llx]", __func__, handle);
     }
 
