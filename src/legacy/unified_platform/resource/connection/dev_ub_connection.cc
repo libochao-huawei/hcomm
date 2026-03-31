@@ -315,7 +315,6 @@ void DevUbConnection::CreateJetty(const bool devUsed)
 RaUbGetTpInfoParam DevUbConnection::MakeRaUbGetTpParam() const
 {
     RaUbGetTpInfoParam p{locAddr, rmtAddr, tpProtocol};
-    p.useUbTpSlMapping = (tpProtocol != TpProtocol::INVALID);
     p.qos = 0U;
     p.slLevelCount = 0U;
     p.loopFirstTpLowestSl = false;

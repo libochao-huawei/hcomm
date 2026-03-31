@@ -594,10 +594,9 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
 
-    bool useUbTpSlMapping{true};
     /** 通信域 QoS（0–7）：与 sl_available 联合决定选用哪一档允许 SL（见 TpMgr 策略） */
     u32  qos{0};
-    /** 0：M=popcount(sl_available)；非 0：M 上限；映射路径须 get_tp_attr 带有效 sl_available（属性 12） */
+    /** 0：M=popcount(sl_available)；非 0：M 上限；须 get_tp_attr 带有效 sl_available（属性 12） */
     u32  slLevelCount{0};
     bool loopFirstTpLowestSl{false};
 
@@ -607,9 +606,9 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
 
     std::string Describe() const {
         return StringFormat(
-            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, ubMap=%u qos=%u mSl=%u loop1st=%u]",
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u mSl=%u loop1st=%u]",
             locAddr.Describe().c_str(), rmtAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str(), static_cast<unsigned>(useUbTpSlMapping),
+            tpProtocol.Describe().c_str(),
             qos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
     }
 };

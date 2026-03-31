@@ -27,13 +27,8 @@ namespace Hccl {
 constexpr uint32_t kTpAttrSlAvailableBit = 12U;
 
 namespace {
-constexpr uint32_t kTpInfoLegacyQosKey = UINT32_MAX;
-
 uint32_t TpInfoCacheKey(const RaUbGetTpInfoParam &param)
 {
-    if (!param.useUbTpSlMapping) {
-        return kTpInfoLegacyQosKey;
-    }
     return param.qos & 0xFFU;
 }
 
@@ -260,7 +255,7 @@ HcclResult TpManager::GetTpInfo(const RaUbGetTpInfoParam &param, TpInfo &tpInfo)
     HcclResult pipelineRet = HcclResult::HCCL_SUCCESS;
 
     if (reqCtx.reqPhase == TpInfoReqPhase::kWaitList) {
-        if (param.useUbTpSlMapping && reqCtx.tpInfoNum > 0U) {
+        if (reqCtx.tpInfoNum > 0U) {
             const HcclResult attrRet = StartGetTpAttrForFirstTp(param, reqCtx);
             if (attrRet == HcclResult::HCCL_SUCCESS) {
                 return HcclResult::HCCL_E_AGAIN;
@@ -443,66 +438,64 @@ HcclResult TpManager::HandleCompletedRequest(TpManager::RequestCtx reqCtx,
         reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
 
     TpInfo tmpTpInfo = ParseTpInfo(baseInfoPtr);
-    if (param.useUbTpSlMapping) {
-        if (param.loopFirstTpLowestSl) {
-            tmpTpInfo.tpHandle = baseInfoPtr[0].tpHandle;
-            if (reqCtx.tpAttrBuf.size() < sizeof(struct TpAttr)) {
-                HCCL_ERROR("[TpManager][%s] loop path requires TpAttr with sl_available, param[%s].", __func__,
-                    param.Describe().c_str());
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            const struct TpAttr *tpAttr =
-                reinterpret_cast<const struct TpAttr *>(reqCtx.tpAttrBuf.data());
-            const uint16_t slMask = ReadSlAvailableMask16(*tpAttr, reqCtx.tpAttrBitmap);
-            if (slMask == 0U) {
-                HCCL_ERROR("[TpManager][%s] loop path requires non-zero sl_available, param[%s].", __func__,
-                    param.Describe().c_str());
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            tmpTpInfo.mappedJettyPriority = SlValueAtRankInMask16(slMask, 0U);
-            tmpTpInfo.hasMappedJettyPriority = true;
-        } else {
-            const uint32_t mSlLevels = reqCtx.resolvedSlLevelCount;
-            if (mSlLevels == 0U) {
-                HCCL_ERROR("[TpManager][%s] resolvedSlLevelCount is 0 (sl_available), param[%s].", __func__,
-                    param.Describe().c_str());
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            uint32_t mCap = mSlLevels;
-            if (param.slLevelCount != 0U && mCap > param.slLevelCount) {
-                mCap = param.slLevelCount;
-            }
-            if (reqCtx.tpAttrBuf.size() < sizeof(struct TpAttr)) {
-                HCCL_ERROR("[TpManager][%s] missing TpAttr buffer for sl_available, param[%s].", __func__,
-                    param.Describe().c_str());
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            const struct TpAttr *tpAttr =
-                reinterpret_cast<const struct TpAttr *>(reqCtx.tpAttrBuf.data());
-            const uint16_t slMask = ReadSlAvailableMask16(*tpAttr, reqCtx.tpAttrBitmap);
-            if (slMask == 0U) {
-                HCCL_ERROR("[TpManager][%s] sl_available mask is zero, param[%s].", __func__,
-                    param.Describe().c_str());
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            UbcQosTpSlPolicyInput pin{};
-            pin.qos = param.qos;
-            pin.nTp = tpInfoNum;
-            pin.mSlLevels = mCap;
-            pin.slAvailableMask = slMask;
-            UbcQosTpSlPolicyOutput pout{};
-            ApplyUbcQosTpSlPolicy(pin, pout);
-            if (!pout.valid || pout.tpListIndex >= tpInfoNum) {
-                HCCL_ERROR("[TpManager][%s] UBC QoS→SL/TP mapping required but policy invalid, "
-                    "param[%s] tpInfoNum[%u] valid[%d] tpListIndex[%u].", __func__,
-                    param.Describe().c_str(), tpInfoNum, static_cast<int>(pout.valid),
-                    pout.tpListIndex);
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            tmpTpInfo.tpHandle = baseInfoPtr[pout.tpListIndex].tpHandle;
-            tmpTpInfo.mappedJettyPriority = pout.sl;
-            tmpTpInfo.hasMappedJettyPriority = true;
+    if (param.loopFirstTpLowestSl) {
+        tmpTpInfo.tpHandle = baseInfoPtr[0].tpHandle;
+        if (reqCtx.tpAttrBuf.size() < sizeof(struct TpAttr)) {
+            HCCL_ERROR("[TpManager][%s] loop path requires TpAttr with sl_available, param[%s].", __func__,
+                param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
         }
+        const struct TpAttr *tpAttr =
+            reinterpret_cast<const struct TpAttr *>(reqCtx.tpAttrBuf.data());
+        const uint16_t slMask = ReadSlAvailableMask16(*tpAttr, reqCtx.tpAttrBitmap);
+        if (slMask == 0U) {
+            HCCL_ERROR("[TpManager][%s] loop path requires non-zero sl_available, param[%s].", __func__,
+                param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        tmpTpInfo.mappedJettyPriority = SlValueAtRankInMask16(slMask, 0U);
+        tmpTpInfo.hasMappedJettyPriority = true;
+    } else {
+        const uint32_t mSlLevels = reqCtx.resolvedSlLevelCount;
+        if (mSlLevels == 0U) {
+            HCCL_ERROR("[TpManager][%s] resolvedSlLevelCount is 0 (sl_available), param[%s].", __func__,
+                param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        uint32_t mCap = mSlLevels;
+        if (param.slLevelCount != 0U && mCap > param.slLevelCount) {
+            mCap = param.slLevelCount;
+        }
+        if (reqCtx.tpAttrBuf.size() < sizeof(struct TpAttr)) {
+            HCCL_ERROR("[TpManager][%s] missing TpAttr buffer for sl_available, param[%s].", __func__,
+                param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        const struct TpAttr *tpAttr =
+            reinterpret_cast<const struct TpAttr *>(reqCtx.tpAttrBuf.data());
+        const uint16_t slMask = ReadSlAvailableMask16(*tpAttr, reqCtx.tpAttrBitmap);
+        if (slMask == 0U) {
+            HCCL_ERROR("[TpManager][%s] sl_available mask is zero, param[%s].", __func__,
+                param.Describe().c_str());
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        UbcQosTpSlPolicyInput pin{};
+        pin.qos = param.qos;
+        pin.nTp = tpInfoNum;
+        pin.mSlLevels = mCap;
+        pin.slAvailableMask = slMask;
+        UbcQosTpSlPolicyOutput pout{};
+        ApplyUbcQosTpSlPolicy(pin, pout);
+        if (!pout.valid || pout.tpListIndex >= tpInfoNum) {
+            HCCL_ERROR("[TpManager][%s] UBC QoS→SL/TP mapping required but policy invalid, "
+                "param[%s] tpInfoNum[%u] valid[%d] tpListIndex[%u].", __func__,
+                param.Describe().c_str(), tpInfoNum, static_cast<int>(pout.valid),
+                pout.tpListIndex);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        tmpTpInfo.tpHandle = baseInfoPtr[pout.tpListIndex].tpHandle;
+        tmpTpInfo.mappedJettyPriority = pout.sl;
+        tmpTpInfo.hasMappedJettyPriority = true;
     }
 
     const uint32_t qosKey = TpInfoCacheKey(param);

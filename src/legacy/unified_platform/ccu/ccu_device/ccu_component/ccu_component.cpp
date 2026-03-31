@@ -47,7 +47,6 @@ constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避�
 static RaUbGetTpInfoParam MakeLoopRaUbGetTpParam(const IpAddress &srcIp, const IpAddress &dstIp)
 {
     RaUbGetTpInfoParam p{srcIp, dstIp, LOOP_JETTY_PROTOCOL};
-    p.useUbTpSlMapping = true;
     p.qos = 0U;
     p.slLevelCount = 0U;
     p.loopFirstTpLowestSl = (srcIp == dstIp);

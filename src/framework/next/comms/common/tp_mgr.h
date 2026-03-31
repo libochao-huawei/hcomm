@@ -31,15 +31,13 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
 
-    /** EID + UBC CTP/RTP：按 qos 与 TP/SL 能力做映射；否则保持 false 走旧路径 */
-    bool useUbTpSlMapping{false};
     /**
-     * 通信域 QoS（0–7）：参与 TpInfoCacheKey 分桶；在映射路径下还与 sl_available 一起决定选用哪一档 SL——
+     * 通信域 QoS（0–7）：参与 TpInfoCacheKey 分桶；与 sl_available 一起决定选用哪一档 SL——
      * 先由本值经 QoS 分组得到 slotIdx，再在 sl_available 允许的 SL 集合（按 SL 号升序）中取第 slotIdx 个（例如仅 bit3、bit14
      * 为 1 时，slotIdx 为 0→SL3，为 1→SL14）。
      */
     uint32_t qos{0};
-    /** 0：M 取 sl_available 位图 popcount；非 0：将 M 上限收束为该值（仍须先有有效 sl_available） */
+    /** 0：M 取 sl_available 位图 popcount；非 0：将 M 上限收束为该值（须先有有效 sl_available） */
     uint32_t slLevelCount{0};
     /**
      * 环回（loc==rmt）：list+get_tp_attr 后固定列表第 0 个 TPID；mapped SL 为 sl_available 中第 0 个可用 SL，
@@ -56,9 +54,9 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
         return Hccl::StringFormat(
-            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, ubMap=%u qos=%u mSl=%u loop1st=%u]",
+            "GetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u mSl=%u loop1st=%u]",
             locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str(), static_cast<unsigned>(useUbTpSlMapping),
+            tpProtocol.Describe().c_str(),
             qos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
     }
 };
@@ -70,7 +68,7 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 using TpHandle = uint64_t;
 struct TpInfo {
     TpHandle tpHandle{0};
-    /** 映射路径：经 Jetty priority 下发的 SL（sl_available 位图中策略选定档对应的真实 SL）；非映射路径不设置 */
+    /** 经 Jetty priority 下发的 SL（sl_available 位图中策略选定档对应的真实 SL） */
     uint8_t mappedJettyPriority{0};
     bool hasMappedJettyPriority{false};
 
