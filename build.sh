@@ -255,6 +255,13 @@ function build_ut() {
   cd "${BUILD_DIR}"
   unset LD_LIBRARY_PATH
 
+  local BUILD_JOBS
+  if [ "${CPU_NUM}" -ge 8 ]; then
+    BUILD_JOBS=${CPU_NUM}
+  else
+    BUILD_JOBS=8
+  fi
+
   local LLT_KILL_TIME=200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
@@ -275,7 +282,7 @@ function build_ut() {
   fi
 
   echo "Building all test targets..."
-  cmake --build . -j${CPU_NUM}
+  cmake --build . -j${BUILD_JOBS}
   run_ret=${PIPESTATUS[0]}
   echo "exit code: ${run_ret}"
   if [ "${run_ret}" -eq 137 ]
@@ -284,17 +291,18 @@ function build_ut() {
       exit 1
   fi
   if [ "${run_ret}" -ne 0 ]; then
-    echo "execute command: cmake --build . -j${CPU_NUM} failed."
+    echo "execute command: cmake --build . -j${BUILD_JOBS} failed."
     return 1
   fi
   echo "build success!"
-  
-  echo "Running tests with CTest (parallel jobs: ${CPU_NUM})..."
-  
+
+  echo "Running tests with CTest (parallel jobs: ${BUILD_JOBS})..."
+
   local ctest_log="${log_dir}/ctest_output.log"
   local ctest_summary="${log_dir}/ctest_summary.log"
-  
-  ctest -j ${CPU_NUM} \
+
+  ctest -j ${BUILD_JOBS} \
+        --build-nocmake \
         --timeout ${LLT_KILL_TIME} \
         --output-on-failure \
         --stop-on-failure \
