@@ -112,5 +112,5 @@ TEST_F(HcclEngineCtxCopyV2Test, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_
     channelDesc[0].roceAttr.sl = 3;
 
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
-    EXPECT_EQ(ret, HCCL_E_PARA);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }
