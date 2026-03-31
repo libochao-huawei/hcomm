@@ -22,6 +22,7 @@ public:
     std::shared_ptr<CcuRepBase> SetParallelParam(Variable var);
     std::shared_ptr<CcuRepBase> SetOffsetParam(Variable var);
     uint16_t GetStartLoopInstrId() const;
+    const Variable GetOffestParam() const { return offsetParam; }
 
 private:
     Variable parallelParam;
