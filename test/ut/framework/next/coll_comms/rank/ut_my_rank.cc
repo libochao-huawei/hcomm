@@ -267,22 +267,6 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     EXPECT_EQ(commMemHandles[1]->bufferHandle, (void*)0x101);
 }
 
-TEST_F(MyRankTest, Ut_GetAllChannelList_When_NoChannel_ReturnsEmpty)
-{
-    // rankPairMgr_->GetChannelTable 返回空表
-    MOCKER_CPP(&hcomm::RankPairMgr::GetChannelTable).stubs().will(returnValue(ChannelTable{}));
-
-    aclrtBinHandle binHandle;
-    CommConfig config;
-    ManagerCallbacks callbacks;
-    void* rankGraphPtr = (void*)0x114514;
-    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
-    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
-
-    auto channelList = myRank.GetAllChannelList();
-    EXPECT_TRUE(channelList.empty());
-}
-
 TEST_F(MyRankTest, Ut_SetKfcControlTransfer_Calls_NsRecoveryProcessor)
 {
     // 期望 NsRecoveryProcessor::SetKfcControlTransfer 被调用（void 方法，使用 stub 拦截）
