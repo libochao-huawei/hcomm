@@ -24,6 +24,7 @@
 #include "log.h"
 #include "mem_device_pub.h"
 #include "sal_pub.h"
+#include "env_config.h"
 
 #include <algorithm>
 #include <chrono>
@@ -284,12 +285,12 @@ HcclResult AicpuTsRoceChannel::BuildDispatcherAndTransport()
     if (channelDesc_.roceAttr.tc != HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET) {
         machinePara_.tc = channelDesc_.roceAttr.tc;
     } else {
-        machinePara_.tc = HCCL_RDMA_TC_DEFAULT;
+        machinePara_.tc = EnvConfig::HCCL_RDMA_TC_DEFAULT;
     }
     if (channelDesc_.roceAttr.sl != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
         machinePara_.sl = channelDesc_.roceAttr.sl;
     } else {
-        machinePara_.sl = HCCL_RDMA_SL_DEFAULT;
+        machinePara_.sl = EnvConfig::HCCL_RDMA_SL_DEFAULT;
     }
 
     transportPara_.timeout = std::chrono::milliseconds(120000);
