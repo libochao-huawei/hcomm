@@ -83,8 +83,8 @@ public:
     HcclResult CommUnregMem(const std::string& tag, const void* rawHandle);
     HcclResult GetTagMemoryHandles(void** memHandles, uint32_t memHandleNum, std::vector<HcclMem> &mem, 
         std::vector<std::string> &memTag);
-    HcclResult SetMemHandles(void **memHandles, const std::vector<void *> &memHandleVec,
-        std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles);
+    HcclResult SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
+        CommMemHandle &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec);
 
 private:
     uint64_t bufferSize_{};
