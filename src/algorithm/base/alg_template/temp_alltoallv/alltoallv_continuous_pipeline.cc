@@ -32,6 +32,7 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
         localRecvDispls_ = std::move(localSendRecvInfo.recvDispls);
         needCollectInfo_ = true; // 需要收集信息
         std::copy(localRecvCounts_.begin(), localRecvCounts_.end(), intraRecvCounts_[intraRankId_].begin());
+        localRecvCounts_[userRank_] = 0; // 将本rank接收的数据量设为0，避免计算loop数时被考虑进去
     } else {
         // 适配算法分析器，实际业务不会走这个分支
         SendRecvInfo &localSendRecvInfo = sendRecvInfoList[userRank_];
@@ -57,6 +58,15 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
         }
         needCollectInfo_ = false;
     }
+    
+    // 获取module内最大的send count，除本rank外
+    for (u32 userRank = 0; userRank < userRankSize_; ++userRank) {
+        if (userRank != userRank_) {
+            localMaxSendCount_ = std::max(localMaxSendCount_, localSendCounts_[userRank]);
+        }
+    }
+    intraMaxSendCount_ = localMaxSendCount_;
+
     return HCCL_SUCCESS;
 }
 
@@ -283,8 +293,10 @@ u32 AlltoallvContinuousPipeline::GetTotalLoopNum() const
 {
     u64 maxRecvCount = 0;
     for (u32 rank = 0; rank < userRankSize_; ++rank) {
-        const u64 recvCount = GetLocalRecvCountOfRank(rank);
-        maxRecvCount = maxRecvCount < recvCount ? recvCount : maxRecvCount;
+        if (rank != userRank_) {
+            const u64 recvCount = GetLocalRecvCountOfRank(rank);
+            maxRecvCount = maxRecvCount < recvCount ? recvCount : maxRecvCount;
+        }
     }
 
     for (u32 intraRank = 0; intraRank < intraRankSize_; ++intraRank) {
@@ -297,7 +309,8 @@ u32 AlltoallvContinuousPipeline::GetTotalLoopNum() const
         }
     }
 
-    const u32 totalLoopNum = static_cast<u32>((maxRecvCount + countsPerBlock_ - 1) / countsPerBlock_);
+    const u64 maxCount = std::max(maxRecvCount, intraMaxSendCount_);
+    const u32 totalLoopNum = static_cast<u32>((maxCount + countsPerBlock_ - 1) / countsPerBlock_);
     HCCL_DEBUG("[AlltoallvContinuousPipeline][GetTotalLoopNum] maxRecvCount[%llu], totalLoopNum[%u]",
         maxRecvCount, totalLoopNum);
     return totalLoopNum;
