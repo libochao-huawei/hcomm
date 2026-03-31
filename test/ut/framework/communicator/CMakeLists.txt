@@ -38,6 +38,7 @@ set(src_to_test_list
     ut_HcclGetRankSize_API_test.cc
     ut_HcclGetRootInfo_API_test.cc
     ut_HcclGetStreamNumforAivMode_API_test.cc
+    ut_HcclChannelGetHcclBuffer_API_test.cc
     # ut_HcclSetConfig_API_test.cc
     # ut_HcclTopoInfoDetect_API_test.cc
     ut_hccl_comm_host.cc
