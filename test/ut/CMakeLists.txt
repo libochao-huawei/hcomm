@@ -246,6 +246,15 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/runtime/include/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/mmpa/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/common/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/graph_ctx_mgr/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/inc/
+
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/
+    ${HCCL_CODE_ROOT}/test/ut/depends/runtime/include/
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/mmpa/
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
@@ -309,6 +318,7 @@ set(UT_COMMON_INCLUDE_LIST
 )
 
 add_subdirectory(stub)
+add_subdirectory(hccl_comm_task_exception)
 add_subdirectory(framework/next)
 add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
