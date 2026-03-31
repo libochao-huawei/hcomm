@@ -1368,10 +1368,12 @@ std::string CommunicatorImpl::GetTopoFilePath() const
                   InvalidParamsException, "Get rankinfo size failed.");
         std::vector<char> buffer(bufSize, '\0');
         result = TopoAddrInfoGet(devPhyId, buffer.data(), &bufSize);
+        HCCL_ERROR("[%s] Get rankinfo result[%d], [%s] bufSize[%d]", __func__, result, buffer.data(), bufSize);
         CHK_PRT_THROW(result != 0,
                   HCCL_ERROR("[%s] Get rankinfo failed.", __func__),
                   InvalidParamsException, "Get rankinfo failed.");
         std::string jsonString(buffer.data(), bufSize);
+        HCCL_ERROR("[%s] Get rankinfo string [%s]", __func__, jsonString.c_str());
         // 将生成的info信息转换成json文件
         parseJson = nlohmann::json::parse(jsonString);
     }
