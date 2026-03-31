@@ -977,4 +977,3 @@ HcclResult HostCpuRoceChannel::Resume()
 }
 
 } // namespace hcomm
-

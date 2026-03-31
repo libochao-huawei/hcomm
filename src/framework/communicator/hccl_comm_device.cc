@@ -166,7 +166,11 @@ HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
                 continue;
             }
             CollCommAicpu* aicpuCommPtr = deviceComm.second->GetCollCommAicpu();
-            CHK_PTR_NULL(aicpuCommPtr);
+            if (aicpuCommPtr == nullptr) {
+                HCCL_ERROR("[HcclComm][GetCommStatus]aicpuCommPtr nullptr");
+                rwlock.readUnlock();
+                return HCCL_E_PTR;
+            }
             status = aicpuCommPtr->GetCommmStatus();
             break;
         }

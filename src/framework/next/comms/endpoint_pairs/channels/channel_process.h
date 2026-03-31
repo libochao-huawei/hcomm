@@ -39,11 +39,10 @@ public:
     static HcclResult ChannelGet(const ChannelHandle channelHandle, void **channel);
 
     static HcclResult ChannelClean(const ChannelHandle *channelList, uint32_t channelNum);
-    static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
     static HcclResult ChannelResume(const ChannelHandle *channelList, uint32_t channelNum);
     static HcclResult ChannelUpdateKernelLaunch(ChannelHandle* deviceChannelHandles, ChannelHandle* hostChannelHandles, 
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
-
+    
 private:
     template <typename Func>
     static HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func);
@@ -57,6 +56,8 @@ private:
     static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, 
         uint32_t listNum, aclrtBinHandle binHandle);
 
+    static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
+    
     static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
     static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
     static std::mutex g_ChannelMapMtx;

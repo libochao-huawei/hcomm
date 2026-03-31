@@ -699,4 +699,3 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
 }
 
 }
-

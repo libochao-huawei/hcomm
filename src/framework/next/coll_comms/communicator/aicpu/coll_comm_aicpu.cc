@@ -191,7 +191,7 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
             channelHandle = channelList[index];
             if (!ubTransportMap_.count(channelHandle)) {
                 HCCL_ERROR("[CollCommAicpu][%s] fail, resType[%d], current ChannelHandle nullptr", __func__, resType);
-                continue;
+                return HCCL_E_PARA;
             }
             CHK_RET(ResumePackData(dataVec[resType].data, channelHandle));
         }

@@ -38,8 +38,6 @@
 #include "param_check_pub.h"
 #include "channel_process.h"
 #include "launch_device.h"
-#include "env_config/env_config.h"
-
 
 
 namespace hcomm {

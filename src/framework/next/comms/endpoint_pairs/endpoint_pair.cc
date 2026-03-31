@@ -105,4 +105,3 @@ const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& EndpointPair::
 }
 
 } // namespace hcomm
-
