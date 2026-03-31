@@ -38,11 +38,20 @@ public:
     uint64_t GetExpandedMode() const;
 
 private:
+<<<<<<< HEAD
     HcclResult RunMesh(TemplateDataParams& tempAlgParams, ResLinks& tempResLinks, std::vector<InsQuePtr>& tempInsQues);
     HcclResult PreCopy(TemplateDataParams& tempAlgParams, std::vector<InsQuePtr>& tempInsQues);
     HcclResult PostCopy(const TemplateDataParams& tempAlgParams, std::vector<InsQuePtr>& tempInsQues);
 
     u32 majorQueNum_ = 0;
+=======
+    HcclResult RunMesh(TemplateDataParams &tempAlgParams,
+                    ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues);
+    HcclResult PreCopy(TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues);
+    HcclResult PostCopy(const TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues);
+    void UpdateRxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize);
+    u32 majorQueNum_       = 0;
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     u32 queNumPerNeighbor_ = 1;
     bool enableInterRankCounterNotify_ = false;
     bool isZeroCopy_ = false;

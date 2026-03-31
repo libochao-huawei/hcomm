@@ -69,19 +69,25 @@ private:
         u64 intraAllGatherStage3;
     };
     struct DataParameters {
+<<<<<<< HEAD
         u64 dataOffset[2] = {0, 0};                   // 每个part数据偏移
         std::vector<std::vector<u64>> sliceSize{2};   // 正常分块part每个阶段数据大小
         std::vector<std::vector<u64>> inputStride{2}; // 正常分块partInputStride大小
         std::vector<std::vector<u64>> tailSize{2};    // 尾片的整数倍数据大小
+=======
+        u64 dataOffset[2] = {0, 0};                     // 每个part数据偏移
+        std::vector<std::vector<u64>> sliceSize{2};     // 正常分块part每个阶段数据大小
+        std::vector<std::vector<u64>> inputStride{2};   // 正常分块partInputStride大小
+        std::vector<std::vector<u64>> scratchOffset{2}; // 每个分块scratchoffset
+        std::vector<std::vector<u64>> tailSize{2};      // 尾片的整数倍数据大小
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     };
 
     struct StageProcAlgPara {
         std::function<HcclResult(TempFuncs&, TemplateDataParams&, ResLinks&, std::vector<InsQuePtr>&)> part0FuncPtr;
-        u64 part0ScratchOffset;
         ResLinks part0links;
         std::vector<InsQuePtr> part0Que;
         std::function<HcclResult(TempFuncs&, TemplateDataParams&, ResLinks&, std::vector<InsQuePtr>&)> part1FuncPtr;
-        u64 part1ScratchOffset;
         ResLinks part1links;
         std::vector<InsQuePtr> part1Que;
     };
@@ -130,7 +136,11 @@ private:
         splitDataSize.push_back(splitData);
         return;
     }
+<<<<<<< HEAD
     void InitDataParameters(SliceConfig& slice, DataParameters& dataParameters)
+=======
+    void InitDataParameters(SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters)
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     {
         dataParameters.sliceSize.at(0) = {
             slice.sliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
@@ -148,10 +158,26 @@ private:
         dataParameters.inputStride.at(1) = {
             slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
             slice.sliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
+<<<<<<< HEAD
         dataParameters.tailSize = dataParameters.sliceSize;
         return;
     }
     void InitFinalSliceDataParameters(SliceConfig& slice, DataParameters& dataParameters)
+=======
+        // 计算Scratch偏移，数据尾块必然小于常规块，不用额外计算尾块时的Scratch偏移
+        dataParameters.scratchOffset.at(0) = {0, 0, 0, 0};
+        dataParameters.scratchOffset.at(1) = {
+            slice.sliceCountPart0 * scratchMultiple.interScatter * dataTypeSize_,
+            (slice.sliceCountPart0 / interLocalRankSize_) * scratchMultiple.intraScatter * dataTypeSize_,
+            (slice.sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather *
+                dataTypeSize_,
+            (slice.sliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather * dataTypeSize_};
+        dataParameters.tailSize = dataParameters.sliceSize;
+        return;
+    }
+    void InitFinalSliceDataParameters(
+        SliceConfig& slice, ScratchMultiple& scratchMultiple, DataParameters& dataParameters)
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     {
         dataParameters.sliceSize.at(0) = {
             slice.finalSliceCountPart0 * dataTypeSize_ / interLocalRankSize_,
@@ -169,6 +195,15 @@ private:
         dataParameters.inputStride.at(1) = {
             slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_,
             slice.finalSliceCountPart1 * dataTypeSize_ / intraLocalRankSize_ / interLocalRankSize_, 0, 0};
+<<<<<<< HEAD
+=======
+        dataParameters.scratchOffset.at(0) = {0, 0, 0, 0};
+        dataParameters.scratchOffset.at(1) = {
+            slice.finalSliceCountPart0 * scratchMultiple.interScatter,
+            slice.finalSliceCountPart0 / interLocalRankSize_ * scratchMultiple.intraScatter,
+            (slice.finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather,
+            (slice.finalSliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather};
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
         // 只有最后一片数据的part1部分存在尾片数据，scatter算子和allgather算子都需要支持该数据收集
         for (auto i = 0; i < dataParameters.sliceSize.at(0).size(); i++) {
             dataParameters.tailSize.at(0).at(i) =
@@ -217,7 +252,6 @@ private:
         return;
     }
     void CalcSlice(std::vector<float>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice);
-    void CalcScratchOffset(SliceConfig& slice, ScratchMultiple& scratchMultiple, ScratchOffset& scratchOffset);
     void LogAlgInfo(
         InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
         InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)
@@ -264,15 +298,23 @@ private:
         InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg);
 
     void GenDataParamsStage(
+<<<<<<< HEAD
         const u32 part, const u32 stage, const u64 scratchOffsetCount, DataParameters& dataParameters,
         TemplateDataParams& dataParams) const
+=======
+        const u32 part, const u32 stage, DataParameters& dataParameters, TemplateDataParams& dataParams) const
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     {
         dataParams.buffInfo.inBuffType = BufferType::INPUT;
         dataParams.buffInfo.outBuffType = BufferType::INPUT;
         dataParams.buffInfo.scratBuffType = BufferType::SCRATCH;
         dataParams.buffInfo.inBuffBaseOff = dataParameters.dataOffset[part];
         dataParams.buffInfo.outBuffBaseOff = dataParameters.dataOffset[part];
+<<<<<<< HEAD
         dataParams.buffInfo.scratchBuffBaseOff = scratchOffsetCount * dataTypeSize_;
+=======
+        dataParams.buffInfo.scratchBuffBaseOff = dataParameters.scratchOffset.at(part).at(stage);
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
         dataParams.sliceSize = dataParameters.sliceSize.at(part).at(stage);
         dataParams.inputSliceStride = dataParameters.inputStride.at(part).at(stage);
         dataParams.outputSliceStride = dataParameters.sliceSize.at(part).at(stage);
@@ -283,28 +325,28 @@ private:
         return;
     }
     void InitStageProcAlgParaVec(
-        std::vector<StageProcAlgPara>& stageProcAlgParaVec, ScratchOffset& scratchOffset,
-        InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)
+        std::vector<StageProcAlgPara>& stageProcAlgParaVec, InsAlgTemplate0& intraScatterTempAlg,
+        InsAlgTemplate1& interScatterTempAlg, InsAlgTemplate2& intraAllGatherTempAlg,
+        InsAlgTemplate3& interAllGatherTempAlg)
     {
         // 以此输入第1个阶段的part0 GenExtIns, scratchOffset, links,que以及 part1部分对应信息
         stageProcAlgParaVec = {
-            {[&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, scratchOffset.interScatterStage0,
-             interLinks_, interQue_, // stage0 part0
-             [&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, scratchOffset.intraScatterStage0,
-             intraLinks_, intraQue_}, // stage0 part1
-            {[&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, scratchOffset.intraScatterStage1,
-             intraLinks_, intraQue_, // stage1 part0
-             [&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, scratchOffset.interScatterStage1,
-             interLinks_, interQue_}, // stage1 part1
-            {[&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); },
-             scratchOffset.intraAllGatherStage2, intraLinks_, intraQue_, // stage2 part0
-             [&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); },
-             scratchOffset.interAllGatherStage2, interLinks_, interQue_}, // stage2 part1
-            {[&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); },
-             scratchOffset.interAllGatherStage3, interLinks_, interQue_, // stage3 part0
-             [&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); },
-             scratchOffset.intraAllGatherStage3, intraLinks_, intraQue_}, // stage3 part1
+            {[&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, interLinks_,
+             interQue_, // stage0 part0
+             [&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, intraLinks_,
+             intraQue_}, // stage0 part1
+            {[&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, intraLinks_,
+             intraQue_, // stage1 part0
+             [&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, interLinks_,
+             interQue_}, // stage1 part1
+            {[&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, intraLinks_,
+             intraQue_, // stage2 part0
+             [&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, interLinks_,
+             interQue_}, // stage2 part1
+            {[&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, interLinks_,
+             interQue_, // stage3 part0
+             [&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, intraLinks_,
+             intraQue_}, // stage3 part1
         };
     }
     HcclResult GenInsQues(

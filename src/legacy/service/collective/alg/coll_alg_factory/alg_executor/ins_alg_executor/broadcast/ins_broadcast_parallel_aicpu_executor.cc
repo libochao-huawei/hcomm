@@ -344,7 +344,11 @@ void InsBroadcastParallelAiCpuExecutor<
         (sliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
     sliceCount = sliceCountPart0 + sliceCountPart1;
     // 计算循环次数, 如果sliceCountPart0和liceCountPart1为0说明只有一块数据都是尾块
+<<<<<<< HEAD
     u32 loopTimes = sliceCount == 0 ? 1: (dataCount_ + sliceCount - 1) / sliceCount;
+=======
+    u32 loopTimes = sliceCount == 0 ? 1 : (dataCount_ + sliceCount - 1) / sliceCount;
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     // 计算尾块
     u64 finalSliceCount = dataCount_ - (loopTimes - 1) * sliceCount;
     u64 finalSliceCountPart0 = static_cast<u64>(float(finalSliceCount) * splitDataSize.at(0));
@@ -364,6 +368,7 @@ void InsBroadcastParallelAiCpuExecutor<
     slice.finalSliceCountPart1 = finalSliceCountPart1;
     // 结构体定义中必须确保finalTailCountPart0和finalTailCountPart1初始化为0
     (finalTailCount < finalSliceCountPart0 ? slice.finalTailCountPart0 : slice.finalTailCountPart1) = finalTailCount;
+<<<<<<< HEAD
     return;
 }
 
@@ -387,6 +392,8 @@ void InsBroadcastParallelAiCpuExecutor<
 
     scratchOffset.interAllGatherStage3 = 0;
     scratchOffset.intraAllGatherStage3 = (slice.sliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather;
+=======
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     return;
 }
 
@@ -408,7 +415,11 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
         // 第一步的时候server间topo包含root_的rank进行展开，其它rank不展开
         u64 sliceSizePart0 = max(dataParameters.sliceSize.at(0).at(step), dataParameters.tailSize.at(0).at(step));
         if ((!isFirst || interLocalRoot_ == root_) && (sliceSizePart0 > 0)) {
+<<<<<<< HEAD
             GenDataParamsStage(0, step, algParaVec.at(step).part0ScratchOffset, dataParameters, tempAlgParams);
+=======
+            GenDataParamsStage(0, step, dataParameters, tempAlgParams);
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
             CHK_RET(algParaVec.at(step).part0FuncPtr(
                 tempFuncs, tempAlgParams, algParaVec.at(step).part0links, algParaVec.at(step).part0Que));
         }
@@ -419,7 +430,11 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
         u64 sliceSizePart1 = max(dataParameters.sliceSize.at(1).at(step), dataParameters.tailSize.at(1).at(step));
         if ((!isFirst || intraLocalRoot_ == root_) && sliceSizePart1 > 0) {
             // 数据1的server内的scatter算法
+<<<<<<< HEAD
             GenDataParamsStage(1, step, algParaVec.at(step).part0ScratchOffset, dataParameters, tempAlgParams);
+=======
+            GenDataParamsStage(1, step, dataParameters, tempAlgParams);
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
             CHK_RET(algParaVec.at(step).part1FuncPtr(
                 tempFuncs, tempAlgParams, algParaVec.at(step).part1links, algParaVec.at(step).part1Que));
         }
@@ -447,6 +462,7 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
         interAllGatherTempAlg);
     SliceConfig slice;
     CalcSlice(dataSplitSize, scratchMultiple.maxMultiple, slice);
+<<<<<<< HEAD
     ScratchOffset scratchOffset;
     CalcScratchOffset(slice, scratchMultiple, scratchOffset);
 
@@ -456,12 +472,24 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
         interAllGatherTempAlg);
     DataParameters dataParameters;
     InitDataParameters(slice, dataParameters);
+=======
+
+    std::vector<StageProcAlgPara> stageProcAlgParaVec;
+    InitStageProcAlgParaVec(
+        stageProcAlgParaVec, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg);
+    DataParameters dataParameters;
+    InitDataParameters(slice, scratchMultiple, dataParameters);
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     for (u32 loopIndex = 0; loopIndex < slice.loopTimes - 1; loopIndex++) {
         dataParameters.dataOffset[0] = loopIndex * slice.sliceCount * dataTypeSize_;
         dataParameters.dataOffset[1] = dataParameters.dataOffset[0] + slice.sliceCountPart0 * dataTypeSize_;
         CHK_RET(StageProcess(dataParameters, stageProcAlgParaVec));
     }
+<<<<<<< HEAD
     InitFinalSliceDataParameters(slice, dataParameters);
+=======
+    InitFinalSliceDataParameters(slice, scratchMultiple, dataParameters);
+>>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     dataParameters.dataOffset[0] = (slice.loopTimes - 1) * slice.sliceCount * dataTypeSize_;
     dataParameters.dataOffset[1] = dataParameters.dataOffset[0] + slice.finalSliceCountPart0 * dataTypeSize_;
     CHK_RET(StageProcess(dataParameters, stageProcAlgParaVec));
