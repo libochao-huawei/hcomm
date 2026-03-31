@@ -33,6 +33,7 @@ set(src_to_test_list
     coll_comms/communicator/ut_coll_comm_test.cc
     comms/endpoint_pairs/channels/ut_channel_process_test.cc
     coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
+    hccl_comm_task_exception_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
