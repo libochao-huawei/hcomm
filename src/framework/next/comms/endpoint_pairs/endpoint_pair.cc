@@ -86,14 +86,15 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
     if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_.size() <= reuseIdx) {
-        CHK_RET(HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+        CHK_RET(static_cast<HcclResult>(
+            HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
     }
 
     channels[0] = channelHandles_[engine][reuseIdx];
     if (channelDescs->memHandleNum > 1) {
-        CHK_RET(HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0]));
+        CHK_RET(static_cast<HcclResult>(HcommChannelUpdateMemInfo(channelDescs->memHandles + 1, channelDescs->memHandleNum - 1, channels[0])));
     }
     return HCCL_SUCCESS;
 }

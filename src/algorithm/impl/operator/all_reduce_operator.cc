@@ -432,7 +432,8 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
                 algName = "AllReduceRingExecutor";
             }
         // 多机单卡/两卡 pipeline需单独做判断(pipeline无确定性算法，并只支持单算子模式）
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
+        } else if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
+            algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
             IsMultiMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
                 if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                     algName = "AllReduceMeshOpbasePipelineExecutor";
