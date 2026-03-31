@@ -1,5 +1,4 @@
 src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc
 src/framework/communicator/impl/hccl_communicator_device.cc
-src/framework/communicator/impl/hccl_communicator_host.cc
 src/framework/device/framework/aicpu_communicator.cc
 src/framework/device/framework/aicpu_cache_manager.cc
