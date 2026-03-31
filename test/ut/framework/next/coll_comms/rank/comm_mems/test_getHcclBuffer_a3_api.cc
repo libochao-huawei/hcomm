@@ -14,10 +14,13 @@
 #include "aicpu_launch_manager.h"
 #include "llt_hccl_stub_rank_graph.h"
 
-class TestHcclGetHcclBuffer : public BaseInit {
+class TestHcclGetHcclBufferA3 : public BaseInit {
 public:
     void SetUp() override {
+        GlobalMockObject::verify();
         BaseInit::SetUp();
+        const char *fakeA3SocName = "Ascend910_9362";
+        MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA3SocName));
     }
     void TearDown() override {
         BaseInit::TearDown();
@@ -25,7 +28,7 @@ public:
     }
 };
 
-TEST_F(TestHcclGetHcclBuffer, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Success)
+TEST_F(TestHcclGetHcclBufferA3, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Success)
 {
     DevType deviceType = DevType::DEV_TYPE_910_93;
     MOCKER(hrtGetDeviceType)
