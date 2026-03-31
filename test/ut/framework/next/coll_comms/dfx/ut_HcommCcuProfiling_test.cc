@@ -37,6 +37,7 @@
 #include "ccu_comp.h"
 #include "ccuTaskException.h"
 #include "ccu_rep_assign_v1.h"
+#include "ccu_res_specs.h"
 
 namespace hcomm {
 
@@ -2477,6 +2478,92 @@ TEST_F(CcuRepContextTest, AddProfilingchannelNumMuch_Normal) {
     context.allLgProfilingReps.push_back(baserep);
     int ret = context.AddProfiling(&channelHandle,num,hcommDataType,hcommOutputDataType,hcommOpType);
     EXPECT_EQ(HCCL_SUCCESS,ret);
+}
+
+namespace {
+
+class MockHccpRaCustomChannel {
+public:
+    static uint32_t dieId_;
+    static uint32_t callCount_;
+    static uint32_t lastOpCode_;
+
+    static void Setup() {
+        callCount_ = 0;
+        lastOpCode_ = 0;
+    }
+};
+
+uint32_t MockHccpRaCustomChannel::dieId_ = 0;
+uint32_t MockHccpRaCustomChannel::callCount_ = 0;
+uint32_t MockHccpRaCustomChannel::lastOpCode_ = 0;
+
+}
+
+
+
+class CcuComponentTest : public ::testing::Test {
+protected:
+    void SetUp() override {}
+    void TearDown() override {}
+};
+
+
+TEST_F(CcuComponentTest, CcuCleanTaskKillState_InvalidParam) {
+    auto ret = CcuComponent::GetInstance(0).CcuCleanTaskKillState(-1);
+    EXPECT_EQ(ret, HcclResult::HCCL_E_PARA);
+
+    ret = CcuComponent::GetInstance(0).CcuCleanTaskKillState(256);
+    EXPECT_EQ(ret, HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(CcuComponentTest, CleanDieCkes_InvalidDieId) {
+    constexpr uint8_t MAX_IODIE_NUM = 2;
+    auto ret = CcuComponent::GetInstance(0).CleanDieCkes(MAX_IODIE_NUM);
+    EXPECT_EQ(ret, HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(CcuComponentTest, CcuComponentTestSetProcess) {
+    CcuOpcodeType opCode = CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE;
+    // 模拟HccpRaCustomChannel
+    MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    auto ret = CcuComponent::GetInstance(0).SetProcess(opCode);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuComponentTest, CcuComponentSetTaskKillDone) {
+
+    MOCKER_CPP(&CcuComponent::SetProcess)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    CcuComponent::GetInstance(0).status = CcuComponent::GetInstance(0).CcuTaskKillStatus::TASK_KILL;
+    auto ret = CcuComponent::GetInstance(0).SetTaskKillDone();
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuComponentTest, CcuSetTaskKillDonefailed) {
+    auto ret = CcuComponent::GetInstance(0).CcuSetTaskKillDone(-1);
+    EXPECT_EQ(ret, HcclResult::HCCL_E_PARA);
+
+}
+
+TEST_F(CcuComponentTest, CleanDiId) {
+    constexpr uint8_t IODIE = 0;
+    uint32_t ckeNum =1;
+    MOCKER_CPP(&CcuResSpecifications::GetCkeNum)
+        .stubs()
+        .with(any(),outBound(ckeNum))
+        .will(returnValue(HCCL_SUCCESS));
+     MOCKER(HccpRaCustomChannel)
+        .stubs()
+        .with(any(), any(), any(), any())
+        .will(returnValue(HCCL_SUCCESS));
+    CcuComponent::GetInstance(0).dieEnableFlags_[0] = true;
+    auto ret = CcuComponent::GetInstance(0).CleanDieCkes(IODIE);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
 } // namespace hcomm
