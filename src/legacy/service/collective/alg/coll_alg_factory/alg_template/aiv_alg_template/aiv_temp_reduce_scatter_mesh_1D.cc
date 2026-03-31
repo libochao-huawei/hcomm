@@ -29,7 +29,8 @@ u32 AivTempReduceScatterMesh1D::CalcScratchMultiple(BufferType inBuffType, Buffe
 {
     (void) inBuffType;
     (void) outBuffType;
-    return tempRankSize_;
+    // 小数据量下，这里是2*rankSize基本不影响，大数据量下，需要2倍的cclBuffer去并发读
+    return 2 * tempRankSize_;
 }
 
 HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)

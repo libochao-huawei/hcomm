@@ -39,6 +39,7 @@
 
 #include "adapter_rts.h"
 #include "adapter_hal.h"
+#include "hcomm_res_defs.h"
 
 #include "runtime/rt_error_codes.h"
 #include "mmpa_api.h"

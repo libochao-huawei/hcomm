@@ -1953,6 +1953,14 @@ HcclResult HcclAllGatherVV2(void *sendBuf, uint64_t sendCount, void *recvBuf, vo
     // 参数合法性校验
     if (rankSize == 1) {
         // rankSize为1时，退化为AllGather
+        // 检查异常回退AGV的情况
+        if (sendCount == 0) {
+            HCCL_WARNING("[AllGatherV] sendCount is 0 when single rank");
+            return HCCL_SUCCESS;
+        } else {
+            CHK_PRT_RET(sendBuf == nullptr, HCCL_ERROR("[AllGatherV] sendBuf is null when single rank"), HCCL_E_PTR);
+            CHK_PRT_RET(recvBuf == nullptr, HCCL_ERROR("[AllGatherV] recvBuf is null when single rank"), HCCL_E_PTR);
+        }
         return HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, comm, stream);
     }
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), sendCount, dataType, stream), tag.c_str());
@@ -2237,6 +2245,14 @@ HcclResult HcclReduceScatterVV2(void *sendBuf, void *sendCounts, void *sendDispl
     // 参数合法性校验
     if (rankSize == 1) {
         // rankSize为1时，退化为ReduceScatter
+        // 检查异常回退RSV的情况
+        if (recvCount == 0) {
+            HCCL_WARNING("[ReduceScatterV] recvCount is 0 when single rank");
+            return HCCL_SUCCESS;
+        } else {
+            CHK_PRT_RET(sendBuf == nullptr, HCCL_ERROR("[ReduceScatterV] sendBuf is null when single rank"), HCCL_E_PTR);
+            CHK_PRT_RET(recvBuf == nullptr, HCCL_ERROR("[ReduceScatterV] recvBuf is null when single rank"), HCCL_E_PTR);
+        }
         return HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
     }
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), recvCount, dataType, stream), tag.c_str());
