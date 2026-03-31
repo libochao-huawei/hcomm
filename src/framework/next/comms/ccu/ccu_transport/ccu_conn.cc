@@ -206,8 +206,7 @@ void CcuConnection::GenerateLocalPsn()
 GetTpInfoParam CcuConnection::MakeGetTpInfoParam() const
 {
     GetTpInfoParam param{locAddr_, rmtAddr_, tpProtocol_};
-    /** 恒 true：TpMgr 按 tp_list/M 推出 SL，经 SetMappedJettyPriority→qos 低 4bit 下发 */
-    param.useUbTpSlMapping = true;
+    /** TpMgr：get_tp_list + sl_available + qos 策略选 SL，经 SetMappedJettyPriority→qos 低 4bit 下发 */
     param.qos = (qos_ > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos_ & 7U);
     /** 0：M 由 TpMgr 对首个 tp_handle 的 RaGetTpAttrAsync 返回 attrBitmap 推导；非 0 可与推导值取 min 作上限 */
     param.slLevelCount = 0U;

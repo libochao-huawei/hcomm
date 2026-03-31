@@ -189,7 +189,6 @@ void CcuConnection::GenerateLocalPsn()
 RaUbGetTpInfoParam CcuConnection::BuildTpParam() const
 {
     RaUbGetTpInfoParam p{locAddr_, rmtAddr_, tpProtocol};
-    p.useUbTpSlMapping = true;
     const uint32_t q = (qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos & 7U);
     p.qos = q;
     p.slLevelCount = 0U;

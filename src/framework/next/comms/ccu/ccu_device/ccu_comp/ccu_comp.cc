@@ -46,7 +46,6 @@ static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
     p.locAddr = commAddr;
     p.rmtAddr = commAddr;
     p.tpProtocol = LOOP_JETTY_PROTOCOL;
-    p.useUbTpSlMapping = true;
     p.qos = 0U;
     p.slLevelCount = 0U;
     p.loopFirstTpLowestSl = true;
