@@ -59,7 +59,8 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
         HCCL_INFO("[HostCpuRoceChannel][%s] exchangeAllMems == True. Get memHandles from endpoint.", __func__);
         std::shared_ptr<Hccl::LocalRdmaRmaBuffer> *memHandles = nullptr;
         uint32_t memHandleNum = 0;
-        CHK_RET(HcommMemGetAllMemHandles(endpointHandle_, reinterpret_cast<void**>(&memHandles), &memHandleNum));
+        CHK_RET(static_cast<HcclResult>(HcommMemGetAllMemHandles(
+            endpointHandle_, reinterpret_cast<void**>(&memHandles), &memHandleNum)));
         HCCL_INFO("[HostCpuRoceChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRdmaBuffer = memHandles[i];
@@ -91,7 +92,7 @@ HcclResult HostCpuRoceChannel::StartListen()
         port = DEFAULT_LISTENING_PORT;
         HCCL_INFO("[HostCpuRoceChannel::%s] channelDesc port is 0, use default port [%u]", __func__, port);
     }
-    CHK_RET(HcommEndpointStartListen(endpointHandle_, port, nullptr));
+    CHK_RET(static_cast<HcclResult>(HcommEndpointStartListen(endpointHandle_, port, nullptr)));
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. port[%u].", __func__, port);
     return HCCL_SUCCESS;
 }
@@ -964,6 +965,7 @@ HcclResult HostCpuRoceChannel::GetHcclBuffer(void*& addr, uint64_t& size)
     size = static_cast<uint64_t>(rmtRmaBuffers_[0]->GetSize());
     return HCCL_SUCCESS;
 }
+<<<<<<< HEAD
 
 HcclResult HostCpuRoceChannel::Clean()
 {
@@ -976,3 +978,6 @@ HcclResult HostCpuRoceChannel::Resume()
 }
 
 } // namespace hcomm
+=======
+} // namespace hcomm
+>>>>>>> origin/master

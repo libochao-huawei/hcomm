@@ -415,7 +415,7 @@ HcclResult ChannelProcess::ChannelGetNotifyNum(ChannelHandle channelHandle, uint
     });
 }
 
-HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remoteMem, uint32_t *memNum, char **memTags)
+HcclResult ChannelProcess::ChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     HcclMem **remoteMemConverted = reinterpret_cast<HcclMem **>(remoteMem);
 
@@ -551,6 +551,7 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
     return HCCL_SUCCESS;
 }
 
+<<<<<<< HEAD
 HcclResult ChannelProcess::ChannelClean(const ChannelHandle *channelList, uint32_t listNum)
 {
     CHK_PTR_NULL(channelList);
@@ -699,3 +700,6 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
 }
 
 }
+=======
+}
+>>>>>>> origin/master
