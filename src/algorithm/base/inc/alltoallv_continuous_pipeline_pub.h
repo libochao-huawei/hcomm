@@ -116,8 +116,8 @@ private:
     HcclResult WaitRdmaSubStreamFinish();
 
     // 跨module通信，通过SDMA从link left读
-    HcclResult InterSdmaRx(const LINK& linkLeft, const LINK& linkRight, const std::vector<RxMemoryInfo>& recvMems,
-        Stream& stream);
+    HcclResult InterSdmaRx(const LINK& linkLeft, const LINK& linkRight, std::vector<TxMemoryInfo>& sendMems,
+        std::vector<RxMemoryInfo>& recvMems, Stream& stream);
 
     // 跨module通信，通过RDMA从link left读或向link right写
     HcclResult InterRdmaTxRx(const LINK& linkLeft, const LINK& linkRight, std::vector<TxMemoryInfo>& sendMems,
