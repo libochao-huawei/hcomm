@@ -2138,6 +2138,11 @@ HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
     return HCCL_SUCCESS;
 }
 
+HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
+{
+    return HCCL_SUCCESS;
+}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
