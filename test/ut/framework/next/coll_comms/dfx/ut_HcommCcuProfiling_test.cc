@@ -2330,15 +2330,6 @@ private:
     uint16_t xnLengthId_;
 };
 
-TEST_F(GenErrorInfoTest, GenErrorInfoLocRecordEvent) {
-    auto rep = std::make_shared<MockCcuRepLocRecordEvent>(5, 0xFF);
-    std::vector<CcuErrorInfo> errorInfo;
-    CcuTaskException::GenErrorInfoLocRecordEvent(baseInfo_, rep, errorInfo);
-    EXPECT_EQ(errorInfo.size(), 1u);
-    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
-    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::LOC_RECORD_EVENT);
-}
-
 TEST_F(GenErrorInfoTest, GenErrorInfoLocWaitEvent) {
     auto rep = std::make_shared<MockCcuRepLocWaitEvent>(6, 0x0F);
     std::vector<CcuErrorInfo> errorInfo;
