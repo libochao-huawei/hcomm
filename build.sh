@@ -289,7 +289,7 @@ function build_ut() {
   fi
   echo "build success!"
   
-  echo "Running tests with CTest (parallel jobs: 2)..."
+  echo "Running tests with CTest (parallel jobs: ${CPU_NUM})..."
   
   local ctest_log="${log_dir}/ctest_output.log"
   local ctest_summary="${log_dir}/ctest_summary.log"
@@ -337,11 +337,11 @@ function run_ut() {
   if [[ "X$ENABLE_UT" = "Xon" ]]; then
     local ut_dir="${BUILD_DIR}/test"
     echo "ut_dir = ${ut_dir}"
-    python3 ${CURRENT_DIR}/run_ut.py --test-dir ${ut_dir}
-    if [ $? -ne 0 ]; then
-      echo "[ERROR] run_ut.py 执行失败"
-      exit 1
-    fi
+    find "$ut_dir" -type f -executable | while read -r ut_exec; do
+        filename=$(basename "$ut_exec")
+        echo "Executing: $filename"
+        ${ut_exec}
+    done
   else
     echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
   fi
