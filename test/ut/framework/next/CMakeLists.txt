@@ -20,18 +20,11 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
-    comms/endpoint_pairs/ut_endpoint_pair.cc
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
-    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
-    comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
-    comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
     comms/api_c_adpt/ut_hcomm_c_adpt.cc
     coll_comms/rank/ut_my_rank.cc
     #coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
-    coll_comms/rank_pairs/ut_rank_pair.cc
-    coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
-    coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc
     comms/api_c_adpt/ut_hcomm_mem_test.cc
@@ -44,7 +37,13 @@ set(src_to_test_list
     comms/ccu/ccu_device/ccu_comp/ut_ccu_comp_pub.cc
     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
     coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
-
+    comms/endpoint_pairs/ut_endpoint_pair.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
+    comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
+    comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
+    coll_comms/rank_pairs/ut_rank_pair.cc
+    coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
+    coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
