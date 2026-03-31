@@ -1968,8 +1968,8 @@ void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
 
 std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
 
-ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
-    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite)
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMgrLite, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+    : mirrorTaskMgrLite_(mirrorTaskMgrLite), profilingHandlerLite_(profilingHandlerLite)
 {}
 
 ProfilingReporterLite::~ProfilingReporterLite()
