@@ -644,6 +644,7 @@ HcclResult AlltoallvContinuousPipeline::InterSendAndReceive(const u32 sendRank, 
         const u64 sendSrcOffset = GetDataBlockOffset(targetRank, loopIdx);
         const u64 sendDstOffset = GetDataBlockOffset(interRankId_ * intraRankSize_ + rankOffset, loopIdx);
         const u64 sendSize = inBufferDataSize_[targetRank];
+        inBufferDataSize_[targetRank] = 0;
         if (sendSize > 0) {
             sendMems.emplace_back(TxMemoryInfo{UserMemType::OUTPUT_MEM, sendDstOffset,
                 static_cast<s8*>(inBuffer_.ptr()) + sendSrcOffset, sendSize});
