@@ -19,6 +19,7 @@ const Prof_Status PROF_FAILED = 0xFFFFFFFF;
 #define ADPROF_TASK_TIME_L0 0x00000008ULL
 #define ADPROF_TASK_TIME_L1 0x00000010ULL
 #define ADPROF_TASK_TIME_L2 0x00000020ULL
+void RegisterProfCallBack();
 int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len);
 #endif
 }
