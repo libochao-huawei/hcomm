@@ -410,25 +410,17 @@ HcclResult ChannelProcess::LaunchChannelKernel(ChannelHandle *channelHandles,
     HCCL_RUN_INFO("[%s] listNum[%u] HcommChannelRes path", __func__, listNum);
 
     std::vector<std::shared_ptr<hccl::DeviceMem>> perChannelMem(listNum);
+    std::vector<void *> hostPtrTab(listNum);
+    std::vector<u64> hostSizeTab(listNum);
+    std::vector<u32> hostKindTab(listNum);
     for (uint32_t i = 0; i < listNum; ++i) {
         auto *channel = reinterpret_cast<Channel *>(hostChannelHandles[i]);
         CHK_PTR_NULL(channel);
         CHK_RET(channel->PrepareAicpuKernelDeviceBlob(perChannelMem[i]));
         CHK_PTR_NULL(perChannelMem[i]);
         CHK_PTR_NULL(perChannelMem[i]->ptr());
-    }
-
-    std::vector<void *> hostPtrTab(listNum);
-    std::vector<u64> hostSizeTab(listNum);
-    std::vector<u32> hostKindTab(listNum);
-    for (uint32_t i = 0; i < listNum; ++i) {
-        auto *ch = reinterpret_cast<Channel *>(hostChannelHandles[i]);
-        CHK_PTR_NULL(ch);
         hostPtrTab[i] = perChannelMem[i]->ptr();
-        const u64 sz = (ch->GetChannelKind() == HcommChannelKind::AICPU_TS_ROCE)
-            ? static_cast<u64>(sizeof(HcommRoceChannelRes))
-            : perChannelMem[i]->size();
-        hostSizeTab[i] = sz;
+        hostSizeTab[i] = perChannelMem[i]->size();
         hostKindTab[i] = static_cast<u32>(ch->GetChannelKind());
     }
 

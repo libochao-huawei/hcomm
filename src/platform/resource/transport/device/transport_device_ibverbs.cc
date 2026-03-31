@@ -298,9 +298,6 @@ HcclResult TransportDeviceIbverbs::BuildMemDetailsRmaMgrs()
     localMemDetailsRmaMgr_.reset();
     remoteMemDetailsRmaMgr_.reset();
     useMemDetailsLookup_ = false;
-    if (!transDevIbverbsData_.useMemDetailsMgr) {
-        return HCCL_SUCCESS;
-    }
     localMemDetailsRmaMgr_ = std::make_unique<DeviceMemDetailsRmaMgr>();
     remoteMemDetailsRmaMgr_ = std::make_unique<DeviceMemDetailsRmaMgr>();
     for (const auto &md : transDevIbverbsData_.localRoceMemDetailsList) {

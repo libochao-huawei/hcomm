@@ -89,8 +89,7 @@ HcclResult AicpuTsRoceResHandler::Parse(const void *blob, u64 blobBytes, const H
     ibd.multiQpThreshold = HCCL_MULTI_QP_THRESHOLD_DEFAULT;
     ibd.localRoceMemDetailsList = std::move(localMd);
     ibd.remoteRoceMemDetailsList = std::move(remoteMd);
-    ibd.useMemDetailsMgr =
-        !ibd.localRoceMemDetailsList.empty() && !ibd.remoteRoceMemDetailsList.empty();
+    ibd.useMemDetailsMgr = true;
 
     u32 devId = INVALID_UINT;
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(deviceInfo.devicePhyId, &devId));
@@ -155,6 +154,12 @@ HcclResult AicpuTsRoceResHandler::Parse(const void *blob, u64 blobBytes, const H
     CHK_SAFETY_FUNC_RET(memcpy_s(slot.commId, sizeof(slot.commId), commId, sizeof(commId)));
     g_aicpuTsRoceResSlots.emplace(outHandle, std::move(slot));
     AicpuChannelResRegisterHandleKind(outHandle, hcomm_channel_kind::kAicpuTsRoce);
+    HCCL_INFO("[AicpuTsRoceResHandler][Parse] success logicId[%d] phyId[%u] devId[%u] blobBytes[%llu] "
+        "localMem[%u] remoteMem[%u] qpsPerConn[%u] qpNum[%u] chipId[%lld] commId[%s] handle[0x%llx]",
+        deviceInfo.deviceLogicId, deviceInfo.devicePhyId, devId,
+        static_cast<unsigned long long>(blobBytes), res->localMemCount, res->remoteMemCount, res->qpsPerConnection,
+        qpInfoSize, static_cast<long long>(res->chipId), commId,
+        static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(outHandle)));
     return HCCL_SUCCESS;
 }
 
