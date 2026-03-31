@@ -56,6 +56,7 @@ RdmaHandle RdmaHandleManager::Create(u32 devPhyId, const PortData &localPort)
 
     RdmaHandle rdmaHandle = HrtRaRdmaInit(netMode, intf);
     rdmaHandleMap[devPhyId][localPort.GetProto()][localPort.GetAddr()] = rdmaHandle;
+    netWorkModeMap[rdmaHandle] = netMode;
     return rdmaHandle;
 }
 
