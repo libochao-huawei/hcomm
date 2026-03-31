@@ -1257,7 +1257,7 @@ HcclResult HcomGetCommCCLBufferSizeV2()
 
 HcclResult HcomSetAivClearEnableV2(const char *group, bool aivClearEnable)
 {
-    HCCL_INFO("[%s] start.", __func__);
+    HCCL_INFO("[%s] start, aivClearEnable[%d].", __func__, aivClearEnable);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_PRT_RET(GetHcclCommV2(group, hcclComm) == HCCL_E_NOT_FOUND, 
             HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
@@ -1265,7 +1265,7 @@ HcclResult HcomSetAivClearEnableV2(const char *group, bool aivClearEnable)
     CHK_RET(HcomCheckGroupNameV2(group));
  
     CHK_RET(hcclComm->SetAivClearEnable(aivClearEnable));
-    HCCL_INFO("[%s] end.", __func__);
+    HCCL_INFO("[%s] end, aivClearEnable set to [%d].", __func__, aivClearEnable);
     return HCCL_SUCCESS;
 }
 
