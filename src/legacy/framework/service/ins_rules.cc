@@ -23,11 +23,61 @@
 #include "hccl_aiv_utils.h"
 #include "sal.h"
 #include "ccu_ins_group.h"
+#include <vector>
+#include <sstream>
+#include <iomanip>
 
 namespace Hccl {
 
 constexpr u32      BASE_BIT             = 1; // 用于左移设置二进制数的特定位
 constexpr u32 TOKEN_VALUE_INDEX = 2;
+
+namespace {
+    // 打印device内存数据的辅助函数
+    void PrintDeviceData(const char* label, void* devicePtr, size_t size, u32 rank, u32 tag, size_t maxPrintBytes = 64) {
+        if (devicePtr == nullptr || size == 0) {
+            HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s is nullptr or size is 0", __func__, rank, tag, label);
+            return;
+        }
+        
+        // 限制打印的字节数，避免日志过多
+        size_t printSize = std::min(size, maxPrintBytes);
+        
+        try {
+            // 分配host内存
+            std::vector<uint8_t> hostData(printSize);
+            
+            // 从device拷贝到host
+            HrtMemcpy(hostData.data(), printSize, devicePtr, printSize, RT_MEMCPY_DEVICE_TO_HOST);
+            
+            // 打印数据（以十六进制格式）
+            std::stringstream ss;
+            ss << "[DEBUG][" << __func__ << "] rank[" << rank << "] tag[" << tag << "] " << label 
+               << " (size=" << size << ", showing first " << printSize << " bytes): ";
+            
+            for (size_t i = 0; i < printSize; ++i) {
+                ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(hostData[i]);
+                if (i < printSize - 1) ss << " ";
+            }
+            
+            HCCL_INFO("%s", ss.str().c_str());
+            
+            // 如果是数值类型，也尝试按不同数据类型打印
+            if (printSize >= sizeof(int32_t)) {
+                int32_t* intPtr = reinterpret_cast<int32_t*>(hostData.data());
+                HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s as int32: %d", __func__, rank, tag, label, *intPtr);
+            }
+            
+            if (printSize >= sizeof(float)) {
+                float* floatPtr = reinterpret_cast<float*>(hostData.data());
+                HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s as float: %f", __func__, rank, tag, label, *floatPtr);
+            }
+        } catch (...) {
+            HCCL_WARNING("[DEBUG][%s] rank[%u] tag[%u] Exception occurred while copying %s from device to host", 
+                        __func__, rank, tag, label);
+        }
+    }
+}
 
 template <typename INS_TYPE> inline void VerifyDataSliceIsEqual(const INS_TYPE &ins)
 {
@@ -850,8 +900,14 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
             = aivOpArgs.isOpBase ? reinterpret_cast<void *>(comm.GetAivTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET):
                 reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET);
         bool isAivClearEnable = comm.GetAivClearEnable();
+        HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] isAivClearEnable[%d] buffersInAddr[%p] buffersInAddrSrc[%p] AIV_FLAG_AREA_SIZE[%u]",
+                  aivOpArgs.rank, aivOpArgs.aivTag, isAivClearEnable, buffersInAddr, buffersInAddrSrc, AIV_FLAG_AREA_SIZE);
         if (isAivClearEnable) {
+            HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] Before HrtMemcpy for flag clear", aivOpArgs.rank, aivOpArgs.aivTag);
             HrtMemcpy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, RT_MEMCPY_DEVICE_TO_DEVICE);
+            HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] After HrtMemcpy, AIV flag clear executed", aivOpArgs.rank, aivOpArgs.aivTag);
+        } else {
+            HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] AIV flag clear SKIPPED", aivOpArgs.rank, aivOpArgs.aivTag);
         }
     }
 
@@ -869,7 +925,36 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
         aivOpArgs.output += localOutputAddr;
     }
     aivOpArgs.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    
+    // ===== 新增：在算子执行前打印input数据 =====
+    HCCL_INFO("[DEBUG] rank[%u] tag[%u] About to execute kernel, printing input/output data", 
+              aivOpArgs.rank, aivOpArgs.aivTag);
+    
+    // 打印input数据
+    if (aivOpArgs.input != 0) {
+        void* inputPtr = reinterpret_cast<void*>(aivOpArgs.input);
+        size_t inputSize = aivOpArgs.count * DataTypeSizeGet(aivOpArgs.dataType);
+        PrintDeviceData("INPUT_DATA", inputPtr, inputSize, aivOpArgs.rank, aivOpArgs.aivTag);
+    }
+    
+    // 打印output数据（执行前的状态）
+    if (aivOpArgs.output != 0) {
+        void* outputPtr = reinterpret_cast<void*>(aivOpArgs.output);
+        size_t outputSize = aivOpArgs.count * DataTypeSizeGet(aivOpArgs.dataType);
+        PrintDeviceData("OUTPUT_DATA_BEFORE", outputPtr, outputSize, aivOpArgs.rank, aivOpArgs.aivTag);
+    }
+    
     ExecuteKernelLaunch(aivOpArgs);
+    
+    // ===== 新增：在算子执行后打印output数据 =====
+    if (aivOpArgs.output != 0) {
+        void* outputPtr = reinterpret_cast<void*>(aivOpArgs.output);
+        size_t outputSize = aivOpArgs.count * DataTypeSizeGet(aivOpArgs.dataType);
+        PrintDeviceData("OUTPUT_DATA_AFTER", outputPtr, outputSize, aivOpArgs.rank, aivOpArgs.aivTag);
+    }
+    
+    HCCL_INFO("[DEBUG] rank[%u] tag[%u] Kernel execution completed", aivOpArgs.rank, aivOpArgs.aivTag);
+    
     ReportAivTaskInfo(comm, aivOpArgs, stream.IsMaster());
 }
 
