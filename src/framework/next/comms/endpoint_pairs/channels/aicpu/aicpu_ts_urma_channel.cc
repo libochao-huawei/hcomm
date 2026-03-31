@@ -63,7 +63,8 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
         HCCL_INFO("[AicpuTsUrmaChannel][%s] exchangeAllMems == True. Get memHandles from endpoint.", __func__);
         std::shared_ptr<Hccl::LocalUbRmaBuffer> *memHandles = nullptr;
         uint32_t memHandleNum = 0;
-        CHK_RET(HcommMemGetAllMemHandles(endpointHandle_, reinterpret_cast<void**>(&memHandles), &memHandleNum));
+        CHK_RET(static_cast<HcclResult>(HcommMemGetAllMemHandles(
+            endpointHandle_, reinterpret_cast<void**>(&memHandles), &memHandleNum)));
         HCCL_INFO("[AicpuTsUrmaChannel][%s] Got memHandleNum[%u].", __func__, memHandleNum);
         for (uint32_t i = 0; i < memHandleNum; ++i) {
             std::shared_ptr<Hccl::LocalUbRmaBuffer> &localUbRmaBuffer = memHandles[i];

@@ -8,20 +8,26 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "../../ut_hcomm_base.h"
+#ifndef HCOMM_PRIMITIVES_INNER_H
+#define HCOMM_PRIMITIVES_INNER_H
 
-class TestHcommResMgrInit : public TestHcommCAdptBase {
-public:
-    void SetUp() override {
-        TestHcommCAdptBase::SetUp();
-    }
-    void TearDown() override {
-        TestHcommCAdptBase::TearDown();
-    }
-};
+#include "hcomm_primitives.h"
 
-TEST_F(TestHcommResMgrInit, Ut_TestHcommResMgrInit_When_WithDevPhyId_Return_HCCL_Success)
-{
-    HcommResult ret = HcommResMgrInit(1);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef MSG_HANDLE_DEFINED
+#define MSG_HANDLE_DEFINED
+typedef void *MsgHandle;
+#endif
+
+extern int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, size_t sizeByte, uint32_t *msgId);
+extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
+extern int32_t HcommThreadSynchronize(ThreadHandle thread);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif // HCOMM_PRIMITIVES_INNER_H
