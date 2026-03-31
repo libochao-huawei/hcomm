@@ -2381,6 +2381,103 @@ TEST_F(GenErrorInfoTest, GenErrorInfoByRepType_UnknownType_FallsToDefault) {
     EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
 }
 
+TEST_F(CcuRepContextTest, AddProfilingnameandmask_Normal) {
+    CcuRep::CcuRepContext context;
+    context.SetDieId(1);
+    std::string name = "CCU_KERNEL";
+    uint32_t mask = 0;
+    int ret = context.AddProfiling(name, mask);
+    EXPECT_EQ(HCCL_SUCCESS,ret);
+}
+
+TEST_F(CcuRepContextTest, AddProfilingchannel_Normal) {
+    CcuRep::CcuRepContext context;
+    context.SetDieId(1);
+    std::string name = "CCU_KERNEL";
+    uint32_t mask = 0;
+    uint32_t signalIndex = 0;
+    EndpointHandle locEndpointHandle;
+    HcommChannelDesc channelDesc;
+    Channel* channel = new (std::nothrow) CcuUrmaChannel(locEndpointHandle, channelDesc);
+    ChannelHandle channelHandle = reinterpret_cast<ChannelHandle>(channel);
+    void ** handle{nullptr};
+    void * voidHandle = reinterpret_cast<void*>(channelHandle);
+    handle = &voidHandle;
+    uint32_t locCkeId =1;
+    uint32_t  channelid =2;
+    MOCKER_CPP(&ChannelProcess::ChannelGet)
+        .stubs()
+        .with(any(),outBoundP(handle, sizeof(handle)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CcuUrmaChannel::GetLocCkeByIndex)
+        .stubs()
+        .with(any(),outBound(locCkeId))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
+        .stubs()
+        .will(returnValue(channelid));
+        
+    int ret = context.AddProfiling(channelHandle, name, signalIndex, mask);
+    EXPECT_EQ(HCCL_SUCCESS,ret);
+}
+
+TEST_F(CcuRepContextTest, AddProfilingchannelNum_Normal) {
+    CcuRep::CcuRepContext context;
+    context.SetDieId(1);
+    std::string name = "CCU_KERNEL";
+    uint32_t num = 1;
+    EndpointHandle locEndpointHandle;
+    HcommChannelDesc channelDesc;
+    Channel* channel = new (std::nothrow) CcuUrmaChannel(locEndpointHandle, channelDesc);
+    ChannelHandle channelHandle = reinterpret_cast<ChannelHandle>(channel);
+    void ** handle{nullptr};
+    void * voidHandle = reinterpret_cast<void*>(channelHandle);
+    handle = &voidHandle;
+    uint32_t  channelid =2;
+    MOCKER_CPP(&ChannelProcess::ChannelGet)
+        .stubs()
+        .with(any(),outBoundP(handle, sizeof(handle)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
+        .stubs()
+        .will(returnValue(channelid));
+        
+    int ret = context.AddProfiling(&channelHandle,num);
+    EXPECT_EQ(HCCL_SUCCESS,ret);
+}
+
+// TEST_F(CcuRepContextTest, AddProfilingchannelNumMuch_Normal) {
+//     CcuRep::CcuRepContext context;
+//     context.SetDieId(1);
+//     std::string name = "CCU_KERNEL";
+//     uint32_t num = 1;
+//     EndpointHandle locEndpointHandle;
+//     HcommChannelDesc channelDesc;
+//     Channel* channel = new (std::nothrow) CcuUrmaChannel(locEndpointHandle, channelDesc);
+//     ChannelHandle channelHandle = reinterpret_cast<ChannelHandle>(channel);
+//     void ** handle{nullptr};
+//     void * voidHandle = reinterpret_cast<void*>(channelHandle);
+//     handle = &voidHandle;
+//     uint32_t  channelid =2;
+//     uint32_t  missonid =2;
+//     HcommDataType hcommDataType = HcommDataType::HCOMM_DATA_TYPE_INT8;
+//     HcommDataType hcommOutputDataType = HcommDataType::HCOMM_DATA_TYPE_INT8;
+//     HcommReduceOp hcommOpType = HcommReduceOp::HCOMM_REDUCE_SUM;
+//     MOCKER_CPP(&ChannelProcess::ChannelGet)
+//         .stubs()
+//         .with(any(),outBoundP(handle, sizeof(handle)))
+//         .will(returnValue(HCCL_SUCCESS));
+//     MOCKER_CPP(&CcuUrmaChannel::GetChannelId)
+//         .stubs()
+//         .will(returnValue(channelid));
+//     MOCKER_CPP(&CcuRepContext::GetMissionId)
+//         .stubs()
+//         .will(returnValue(missonid));
+    
+//     int ret = context.AddProfiling(&channelHandle,num,hcommDataType,hcommOutputDataType,hcommOpType);
+//     EXPECT_EQ(HCCL_SUCCESS,ret);
+// }
+
 } // namespace hcomm
 
 #undef private
