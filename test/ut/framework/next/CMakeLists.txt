@@ -38,6 +38,7 @@ set(src_to_test_list
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
+    hccl_comm_task_exception_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
@@ -46,6 +47,14 @@ add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/
+    ${CMAKE_SOURCE_DIR}/src/framework/communicator/impl/independent_op/data_api
+    ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/dfx/taskException/host
+    ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/dfx/taskException/aicpu
+    ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/communicator/aicpu
+    ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/communicator
+    ${CMAKE_SOURCE_DIR}/src/legacy/framework/dfx/common
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/pkg_inc
 )
  
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE
