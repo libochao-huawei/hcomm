@@ -1016,7 +1016,8 @@ HcclResult AlltoallvContinuousPipeline::RunAsync()
             }
 
             // 刷新重复轮数：总轮数-1
-            repeatLoopNum = GetTotalLoopNum() - 1;
+            const u32 loopNum = GetTotalLoopNum();
+            repeatLoopNum = loopNum > 0 ? loopNum - 1 : 0;
             if (localCopyState.stepNum == stepsPerLoop && localCopyState.loopNum < repeatLoopNum) {
                 // 如果需要做多轮，在此处立即刷新local copy stepNum，让第二轮的任务尽早开始
                 ++localCopyState.loopNum;
