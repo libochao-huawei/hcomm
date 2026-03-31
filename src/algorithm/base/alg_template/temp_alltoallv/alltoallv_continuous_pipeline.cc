@@ -32,6 +32,8 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
         localRecvDispls_ = std::move(localSendRecvInfo.recvDispls);
         needCollectInfo_ = true; // 需要收集信息
         std::copy(localRecvCounts_.begin(), localRecvCounts_.end(), intraRecvCounts_[intraRankId_].begin());
+        localMaxSendCount_ = *std::max_element(localSendCounts_.begin(), localSendCounts_.end());
+        intraMaxSendCount_ = localMaxSendCount_;
     } else {
         // 适配算法分析器，实际业务不会走这个分支
         SendRecvInfo &localSendRecvInfo = sendRecvInfoList[userRank_];
@@ -798,8 +800,8 @@ HcclResult AlltoallvContinuousPipeline::DoIntraInfoBroadcast()
         DeviceMem infoDst = DeviceMem::create(static_cast<u8 *>(remOutPtr) + infoOffset, infoSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, infoDst, infoSrc, subStream, remoteRank, link->GetLinkType()));
 
-        // 发送flag，从input发送到remote in buffer，目的位置是第[本userRank_]个u32
-        const u64 flagSize = sizeof(u32);
+        // 发送flag，flag值为[localMaxSendCount_ + 1]，从input发送到remote in buffer，目的位置是第[本userRank_]个u64
+        const u64 flagSize = sizeof(u64);
         const u64 flagOffset = infoOffsets_[0] + userRank_ * flagSize;
         DeviceMem flagSrc = inBuffer_.range(flagOffset, flagSize);
         DeviceMem flagDst = DeviceMem::create(static_cast<u8 *>(remInPtr) + flagOffset, flagSize);
@@ -830,16 +832,16 @@ HcclResult AlltoallvContinuousPipeline::DoLocalWriteInfoAndFlagAndInterSync()
     DeviceMem infoDst = outBuffer_.range(infoOffset, infoSize);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, infoDst, infoSrc, mainStream_));
 
-    // 将in buffer的flag区域刷0，第[userRank]个u32设为[userRank + 1]
-    const u64 flagAreaSize = userRankSize_ * sizeof(u32);
-    flagAreaRefreshData_[userRank_] = userRank_ + 1;
+    // 将in buffer的flag区域刷0，第[userRank]个u64设为[localMaxSendCount_ + 1]
+    const u64 flagAreaSize = userRankSize_ * sizeof(u64);
+    flagAreaRefreshData_[userRank_] = localMaxSendCount_ + 1; // +1是应对localMaxSendCount_为0的情况
     DeviceMem flagSrc = DeviceMem::create(flagAreaRefreshData_.data(), flagAreaSize);
     DeviceMem flagDst = inBuffer_.range(infoOffsets_[0], flagAreaSize);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, flagDst, flagSrc, mainStream_));
 
     // 在主流上下一个搬1的任务，kernel可以通过轮询dst是否为1，确保flag区域已被刷值，避免flag区域还是随机值时就开始轮询。
-    DeviceMem refreshFlagSrc = DeviceMem::create(&flagAreaRefreshValue, sizeof(flagAreaRefreshValue));
-    DeviceMem refreshFlagDst = DeviceMem::create(&flagAreaRefreshFlag, sizeof(flagAreaRefreshValue));
+    DeviceMem refreshFlagSrc = DeviceMem::create(&flagAreaRefreshValue_, sizeof(flagAreaRefreshValue_));
+    DeviceMem refreshFlagDst = DeviceMem::create(&flagAreaRefreshFlag_, sizeof(flagAreaRefreshFlag_));
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, refreshFlagDst, refreshFlagSrc, mainStream_));
 
     CHK_RET(LaunchTask(dispatcher_, mainStream_));
@@ -850,39 +852,34 @@ HcclResult AlltoallvContinuousPipeline::DoLocalWriteInfoAndFlagAndInterSync()
     return HCCL_SUCCESS;
 }
 
-HcclResult AlltoallvContinuousPipeline::WaitFlagOfRank(const u32 rank)
+HcclResult AlltoallvContinuousPipeline::WaitValueOfRank(const u32 rank, u64 &value)
 {
-    const auto* flagPtr = reinterpret_cast<u32 *>(static_cast<u8 *>(inBuffer_.ptr()) + infoOffsets_[0]) + rank;
+    const auto* valuePtr = reinterpret_cast<u64 *>(static_cast<u8 *>(inBuffer_.ptr()) + infoOffsets_[0]) + rank;
     const HcclUs startUt = TIME_NOW();
     HcclUs lastUt = startUt;
-    constexpr s64 timeout = 27 * 68 * 1000 * 1000; // 超时时间暂定为1836s
+    constexpr s64 timeout = 1800 * 1000 * 1000; // 超时时间暂定为1800s
     constexpr s64 printStateInterval = 30 * 1000 * 1000; // 每隔30s打印一次状态
-    HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitFlagOfRank] start wait flag of rank[%u], flagPtr[%p].",
-        rank, flagPtr);
+    HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitValueOfRank] start waiting value of rank[%u], valuePtr[%p].",
+        rank, valuePtr);
 
-    while (flagAreaRefreshFlag == 0 || *flagPtr == 0) {
+    while (flagAreaRefreshFlag_ == 0 || *valuePtr == 0) {
         const HcclUs currentUt = TIME_NOW();
-        // 等待Flag过程，每隔30秒打印一次状态
+        // 等待value过程，每隔30秒打印一次状态
         if (DURATION_US(currentUt - lastUt).count() > printStateInterval) {
             lastUt = currentUt;
-            HCCL_RUN_INFO("[AlltoallvContinuousPipeline][WaitFlagOfRank] waiting flag of rank[%u]", rank);
+            HCCL_RUN_INFO("[AlltoallvContinuousPipeline][WaitValueOfRank] waiting value of rank[%u]", rank);
         }
 
         CHK_PRT_RET(DURATION_US(currentUt - startUt).count() > timeout,
-            HCCL_ERROR("[AlltoallvContinuousPipeline][WaitFlagOfRank] Waiting for the flag of rank[%u] timed out.",
+            HCCL_ERROR("[AlltoallvContinuousPipeline][WaitValueOfRank] Waiting for the value of rank[%u] timed out.",
                 rank),
             HCCL_E_TIMEOUT);
     }
-    
-    // 校验一下flag值
-    CHK_PRT_RET(*flagPtr != rank + 1,
-        HCCL_ERROR("[AlltoallvContinuousPipeline][WaitFlagOfRank] Got an unexpected flag value[%u], which should "
-            "be [%u]", *flagPtr, rank),
-        HCCL_E_INTERNAL);
+    value = *valuePtr;
 
     // 每次执行算子开头都有重置flag区域的task，所以此处不需要重置为0
 
-    HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitFlagOfRank] Got flag of rank[%u].", rank);
+    HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitValueOfRank] Got value of rank[%u], remoteSendCount[%llu].", rank, value);
     return HCCL_SUCCESS;
 }
 
@@ -896,7 +893,8 @@ HcclResult AlltoallvContinuousPipeline::WaitAndCalReceiveInfo()
             continue;
         }
         const u32 remoteRank = interRankId_ * intraRankSize_ + intraRankIdx;
-        CHK_RET(WaitFlagOfRank(remoteRank));
+        u64 remoteValue = 0;
+        CHK_RET(WaitValueOfRank(remoteRank, remoteValue));
 
         const auto *countsPtr =
             reinterpret_cast<u64 *>(static_cast<u8 *>(outBuffer_.ptr()) + infoOffsets_[remoteRank]);
@@ -907,6 +905,11 @@ HcclResult AlltoallvContinuousPipeline::WaitAndCalReceiveInfo()
             HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitAndCalReceiveInfo] countsPtr[%u]=[%llu]", i, countsPtr[i]);
             intraRecvCounts_[intraRankIdx][i] = countsPtr[i];
         }
+
+        const u64 remoteSendCount = remoteValue - 1;  // remoteValue一定大于0
+        intraMaxSendCount_ = std::max(intraMaxSendCount_, remoteSendCount);
+        HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitAndCalReceiveInfo] remoteRank[%u], remoteSendCount[%llu], "
+            "intraMaxSendCount_[%llu]", remoteRank, remoteSendCount, intraMaxSendCount_);
     }
     
     HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitAndCalReceiveInfo] done.");
