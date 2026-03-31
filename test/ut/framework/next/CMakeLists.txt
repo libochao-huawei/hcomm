@@ -12,10 +12,6 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    host/ut_cpu_roce_endpoint.cc
-    host/ut_host_cpu_roce_channel.cc
-    host/ut_host_rdma_connection.cc
-    host/ut_server_socket_manager.cc
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
@@ -36,6 +32,10 @@ set(src_to_test_list
     coll_comms/communicator/ut_coll_comm_test.cc
     comms/endpoint_pairs/channels/ut_channel_process_test.cc
     coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
+    host/ut_cpu_roce_endpoint.cc
+    host/ut_host_cpu_roce_channel.cc
+    host/ut_host_rdma_connection.cc
+    host/ut_server_socket_manager.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
 )
 
