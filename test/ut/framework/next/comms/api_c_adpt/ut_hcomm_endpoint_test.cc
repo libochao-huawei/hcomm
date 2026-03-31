@@ -23,7 +23,7 @@ public:
 TEST_F(TestHcommEndpoint, Ut_TestHcommEndpointCreate_When_EndpointNullptr_Return_HCCL_E_PTR)
 {
     EndpointHandle handle;
-    HcclResult ret = HcommEndpointCreate(nullptr, &handle);
+    HcommResult ret = HcommEndpointCreate(nullptr, &handle);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -32,18 +32,18 @@ TEST_F(TestHcommEndpoint, Ut_TestHcommEndpointCreate_When_HandleNullptr_Return_H
     EndpointDesc endpointDesc;
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
 
-    HcclResult ret = HcommEndpointCreate(&endpointDesc, nullptr);
+    HcommResult ret = HcommEndpointCreate(&endpointDesc, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestHcommEndpoint, Ut_TestHcommEndpointDestroy_When_HandleNullptr_Return_HCCL_E_NOT_FOUND)
 {
-    HcclResult ret = HcommEndpointDestroy(nullptr);
+    HcommResult ret = HcommEndpointDestroy(nullptr);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
 TEST_F(TestHcommEndpoint, Ut_TestHcommEndpointGet_When_EndpointNullptr_Return_HCCL_E_PTR)
 {
-    HcclResult ret = HcommEndpointGet(nullptr, nullptr);
+    HcommResult ret = HcommEndpointGet(nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
