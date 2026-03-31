@@ -42,7 +42,7 @@ set(src_to_test_list
     comms/endpoint_pairs/channels/ut_channel_process_test.cc
     coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
     comms/ccu/ccu_device/ccu_comp/ut_ccu_comp_pub.cc
-    #coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
+    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
     #coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
 
 )
