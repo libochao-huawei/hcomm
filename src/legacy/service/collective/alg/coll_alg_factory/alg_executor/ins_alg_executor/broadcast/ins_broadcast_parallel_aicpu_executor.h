@@ -184,11 +184,11 @@ private:
             (slice.finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * scratchMultiple.intraAllGather,
             (slice.finalSliceCountPart0 / interLocalRankSize_) * scratchMultiple.interAllGather};
         // 只有最后一片数据的part1部分存在尾片数据，scatter算子和allgather算子都需要支持该数据收集
-        for (auto i = 0; i < dataParameters.sliceSize.at(0).size(); i++) {
+        for (size_t i = 0; i < dataParameters.sliceSize.at(0).size(); i++) {
             dataParameters.tailSize.at(0).at(i) =
                 dataParameters.sliceSize.at(0).at(i) + slice.finalTailCountPart0 * dataTypeSize_;
         }
-        for (auto i = 0; i < dataParameters.sliceSize.at(1).size(); i++) {
+        for (size_t i = 0; i < dataParameters.sliceSize.at(1).size(); i++) {
             dataParameters.tailSize.at(1).at(i) =
                 dataParameters.sliceSize.at(1).at(i) + slice.finalTailCountPart1 * dataTypeSize_;
         }
