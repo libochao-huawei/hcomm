@@ -22,8 +22,10 @@
 #include "hccl_network.h"
 #include "log.h"
 #include "mem_device_pub.h"
+#include "sal_pub.h"
 
 #include <algorithm>
+#include <chrono>
 #include <arpa/inet.h>
 #include <climits>
 #include <cstdio>
@@ -56,6 +58,43 @@ HcclResult CommAddrToHcclIp(const CommAddr &ca, hccl::HcclIpAddress &out)
     }
     HCCL_ERROR("[AicpuTsRoceChannel] unsupported CommAddr type[%d]", ca.type);
     return HCCL_E_NOT_SUPPORT;
+}
+
+/** Same semantics as HcclSocketManager::WaitLinkEstablish for a single client socket after Connect(). */
+HcclResult WaitClientSocketLinkEstablished(const std::shared_ptr<hccl::HcclSocket> &socket, s32 timeoutSec)
+{
+    CHK_SMART_PTR_NULL(socket);
+    u32 pollCount = 0;
+    const auto startTime = std::chrono::steady_clock::now();
+    const auto timeout = std::chrono::seconds(timeoutSec > 0 ? timeoutSec : GetExternalInputHcclLinkTimeOut());
+    HCCL_DEBUG("[AicpuTsRoceChannel][WaitLink] waiting for client socket link up...");
+    while (true) {
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[AicpuTsRoceChannel][WaitLink] wait socket establish timeout, timeout[%lld s]",
+                static_cast<long long>(timeout.count()));
+            socket->SetStatus(hccl::HcclSocketStatus::SOCKET_TIMEOUT);
+            return HCCL_E_TIMEOUT;
+        }
+        const hccl::HcclSocketStatus status = socket->GetStatus();
+        if (status == hccl::HcclSocketStatus::SOCKET_OK) {
+            HCCL_DEBUG("[AicpuTsRoceChannel][WaitLink] socket established. localIp[%s], remoteIp[%s]",
+                socket->GetLocalIp().GetReadableIP(), socket->GetRemoteIp().GetReadableIP());
+            return HCCL_SUCCESS;
+        }
+        if (status == hccl::HcclSocketStatus::SOCKET_CONNECTING) {
+            SaluSleep(ONE_MILLISECOND_OF_USLEEP);
+            if (pollCount % 50U == 0U) {
+                HCCL_DEBUG("[AicpuTsRoceChannel][WaitLink] socket is connecting");
+            }
+            ++pollCount;
+            continue;
+        }
+        if (status == hccl::HcclSocketStatus::SOCKET_TIMEOUT) {
+            return HCCL_E_TIMEOUT;
+        }
+        socket->SetStatus(hccl::HcclSocketStatus::SOCKET_ERROR);
+        return HCCL_E_TCP_CONNECT;
+    }
 }
 } // namespace
 
@@ -139,6 +178,11 @@ HcclResult AicpuTsRoceChannel::BuildDataSocket()
         CHK_SMART_PTR_NULL(dataSocket_);
         CHK_RET(dataSocket_->Init());
         CHK_RET(dataSocket_->Connect());
+        HcclResult waitRet = WaitClientSocketLinkEstablished(dataSocket_, 0);
+        if (waitRet != HCCL_SUCCESS) {
+            dataSocket_->Close();
+            return waitRet;
+        }
     } else {
         CHK_RET(AicpuTsRoceEndpoint::AcceptDataSocket(port, socketTag, dataSocket_, 0));
         CHK_SMART_PTR_NULL(dataSocket_);
