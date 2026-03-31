@@ -42,11 +42,18 @@ private:
     HcclResult BuildDataSocket();
     HcclResult BuildDispatcherAndTransport();
 
+    /** Smaller HcclIpAddress::GetReadableIP() lexicographic order is client; IP tie: devPhyId. */
+    const char *SocketRoleTag() const noexcept
+    {
+        return isLocalIpClient_ ? "client" : "server";
+    }
+
     EndpointHandle endpointHandle_{};
     HcommChannelDesc channelDesc_{};
 
     EndpointDesc localEp_{};
     EndpointDesc remoteEp_{};
+    bool isLocalIpClient_{false};
     uint32_t notifyNum_{0};
     RdmaHandle rdmaHandle_{nullptr};
 
