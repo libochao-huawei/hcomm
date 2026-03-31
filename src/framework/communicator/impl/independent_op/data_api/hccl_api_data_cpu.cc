@@ -795,6 +795,15 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     std::string kernelNameStr(kernelName);
     uint32_t threadId = SalGetTid();
     CHK_RET(hcclCommDfx->ReportKernel(beginTime, collComm->GetCommId(), kernelNameStr, threadId));
+
+    Hccl::TaskParam taskParam{};
+    taskParam.beginTime = beginTime;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    uint32_t taskId = INVALID_UINT;
+    uint32_t streamId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
 }
@@ -819,14 +828,10 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     taskParam.taskType = Hccl::TaskParamType::TASK_AIV;
     taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
     taskParam.isMaster = true;
-    u32 taskId;
-    u32 streamId;
-    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
-
-    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, Hccl::INVALID_RANKID, taskParam,
-                                                hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), false);
-
-    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
+    uint32_t taskId = INVALID_UINT;
+    uint32_t streamId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
 } 
