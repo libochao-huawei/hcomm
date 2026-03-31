@@ -939,7 +939,31 @@ HcclResult HcclCommAicpu::InitAndVerifySignal(const HcclSignalInfo &signalInfo, 
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head)
+void HcclCommAicpu::HandleExistTagReAlloc(HccltagLocalResV2* tagRes, const std::string& tag, bool reAllocFlag, 
+    ListCommon*& curList, bool& needSkip)
+{
+    needSkip = false;
+    // 如果 tag 已经存在且需要重新申请内存, 删除旧的资源与记录
+    if (localTagResToObj_.find(tag) != localTagResToObj_.end() && reAllocFlag) {
+        u64 currSize = tagRes->ScratchmemSize;
+        u64 existSize = tagScratchMem_[tag]->size();
+        // 新内存更大，删除旧记录，保留新的
+        if (currSize > existSize) {
+            localTagResToObj_.erase(tag);
+            tagScratchMem_.erase(tag);
+            HCCL_DEBUG("[HcclCommAicpu][%s] tag exists, replace old small mem, tag[%s], old[%lu] new[%lu]",
+                __func__, tag.c_str(), existSize, currSize);
+        } else {
+            // 旧内存更大，需要跳过
+            HCCL_DEBUG("[HcclCommAicpu][%s] tag exists, keep larger old mem, skip new, tag[%s], old[%lu] new[%lu]",
+                __func__, tag.c_str(), existSize, currSize);
+            curList = reinterpret_cast<ListCommon *>(curList->nextDevice);
+            needSkip = true;
+        }
+    }
+}
+
+HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head, bool reAllocFlag)
 {
     ListCommon *curList = reinterpret_cast<ListCommon *>(head.nextDevice);
     if (curList == nullptr) {
@@ -949,6 +973,11 @@ HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head)
     while (curList != &head) {
         HccltagLocalResV2 *tagRes = list_entry(curList, HccltagLocalResV2, nextTagRes);
         std::string tag = tagRes->tag;
+        bool needSkip = false;
+        HandleExistTagReAlloc(tagRes, tag, reAllocFlag, curList, needSkip);
+        if (needSkip) {
+            continue;
+        }
         if (localTagResToObj_.find(tag) == localTagResToObj_.end() ||
             localTagResToObj_[tag].find(tagRes->Scratchmem) == localTagResToObj_[tag].end()) {
             auto scratchMemPtr = reinterpret_cast<void *>(tagRes->Scratchmem);
@@ -968,10 +997,7 @@ HcclResult HcclCommAicpu::InitLocalTagRes(const ListCommon &head)
             tmpTagRes.insert(tagRes->Scratchmem);
             localTagResToObj_[tag] = tmpTagRes;
             HCCL_DEBUG("[HcclCommAicpu][InitLocalTagRes] parse remote resource, tag[%s],  Scratchmem[%p], "
-                       "ScratchmemSize[%lu]",
-                tag.c_str(),
-                tagRes->Scratchmem,
-                tagRes->ScratchmemSize);
+                "ScratchmemSize[%lu]", tag.c_str(), tagRes->Scratchmem, tagRes->ScratchmemSize);
         }
         curList = reinterpret_cast<ListCommon *>(curList->nextDevice);
         if (curList == nullptr) {
@@ -1760,8 +1786,8 @@ HcclResult HcclCommAicpu::AllocStreamsResource(
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::AllocScratchMemResource(
-    const std::string &newTag, const HcclOpResParam *commParam, const u64 &scratchMemSize, DeviceMem &scratchMem)
+HcclResult HcclCommAicpu::AllocScratchMemResource(const std::string &newTag, const HcclOpResParam *commParam,
+    const u64 &scratchMemSize, DeviceMem &scratchMem, bool reAllocFlag)
 {
     HCCL_INFO("[HcclCommAicpu][AllocScratchMemResource]requesting for [%u] bytes scratch mem, tag[%s].",
         scratchMemSize,
@@ -1781,6 +1807,16 @@ HcclResult HcclCommAicpu::AllocScratchMemResource(
                 scratchMemSize,
                 newTag.c_str());
             return HCCL_E_NOT_FOUND;
+        }
+
+        if (reAllocFlag) {
+            HCCL_INFO("[HcclCommAicpu][AllocScratchMemResource]need to reAlloc mem [%u] bytes scratch mem, tag[%s].",
+                scratchMemSize, newTag.c_str());
+            HcclResult ret = InitLocalTagRes(commParam->localRes.nextTagRes, reAllocFlag);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR(
+                    "[HcclCommAicpu][AllocScratchMemResource]InitLocalTagRes error group[%s]", identifier_.c_str()),
+                ret);
         }
 
         // 因为aicpu_communicator中会对scratchMem做对齐，所以tagScratchMem_中的大小会偏小（被对齐截断一部分）
@@ -1843,6 +1879,7 @@ HcclResult HcclCommAicpu::CalcResRequest(const std::string &algName, const OpPar
             executor->SetIsSupportSDMAReduce(isSupportSDMAReduce);
         }
     }
+    CHK_RET(CalSendRecvInfoFor910B(algName, param, executor));
     return executor->CalcResRequest(param, resourceRequest);
 }
 
@@ -1995,6 +2032,42 @@ HcclResult HcclCommAicpu::RefreshAlgResponseTransportRes(const std::string &newT
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommAicpu::CalSendRecvInfoForAlltoall(const OpParam &param)
+{
+    if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
+        std::vector<u64> sendCountMatrix(topoInfo_.userRankSize * topoInfo_.userRankSize,
+            param.All2AllDataDes.sendCount);
+        CHK_RET(GetAlltoAllvcSendRecvInfo(static_cast<void *>(sendCountMatrix.data()),
+            param.All2AllDataDes.sendType, param.All2AllDataDes.recvType));
+    } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
+        CHK_PTR_NULL(sendRecvInfoPtr_);
+        CHK_RET(GetAlltoAllvSendRecvInfo(sendRecvInfoPtr_, param.All2AllDataDes.sendType,
+            param.All2AllDataDes.recvType));
+    } else {
+        CHK_RET(GetAlltoAllvcSendRecvInfo(param.All2AllDataDes.sendCountMatrix, param.All2AllDataDes.sendType,
+            param.All2AllDataDes.recvType));
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::CalSendRecvInfoFor910B(const std::string &algName, const OpParam &param,
+    std::unique_ptr<CollExecutorBase> &executor)
+{
+    // A2 AICPU才有机会走入RunAlltoAllVStaged
+    if (algName == "RunAlltoAllVStaged") {
+        CHK_PRT_RET(executor.get() == nullptr,
+            HCCL_ERROR("[HcclCommAicpu][%s]Fail to find executor for algName[%s]", __func__, algName.c_str()),
+            HCCL_E_PARA);
+        CHK_RET(CalSendRecvInfoForAlltoall(param));
+        CollAlltoAllExecutor* alltoAllExecutor = dynamic_cast<CollAlltoAllExecutor *>(executor.get());
+        CHK_PTR_NULL(alltoAllExecutor);
+        CHK_RET(alltoAllExecutor->SetExcutorExtraInfo(allMeshAggregationSendRecvInfo_, cclbufferSize_));
+        HCCL_DEBUG("[HcclCommAicpu][%s] running algName[%s], prepare SendRecvInfo.", __func__, algName.c_str());
+        return HCCL_SUCCESS;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std::string &algName,
     const OpParam &opParam, const HcclOpResParam *commParam,
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse*& algResResponse)
@@ -2023,6 +2096,21 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
             HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
             CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
             CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
+        }
+    } else if (algName == "RunAlltoAllVStaged") {
+        AlgResourceRequest resRequest;
+        CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
+        HCCL_INFO("[%s] check if need refresh resource for alg[%s], tag[%s], old[%lu], new[%lu]",
+            __func__, algName.c_str(), newTag.c_str(), resMap_[newTag].scratchMem.size(), resRequest.scratchMemSize);
+        bool reAllocFlag = !(resMap_[newTag].scratchMem.size() == resRequest.scratchMemSize);
+        if (reAllocFlag) {
+            PetersonLockGuard guard(hostDeviceLock_.get());
+            CHK_PRT_RET(guard.IsLockFailed(),
+                HCCL_ERROR("[HcclCommAicpu][AllocAlgResource] hostDeviceLock lock failed"), HCCL_E_INTERNAL);
+            CHK_RET(AllocScratchMemResource(newTag, commParam, resRequest.scratchMemSize,
+                resMap_[newTag].scratchMem, true));
+            HCCL_INFO("[%s] refresh resource success for alg[%s], tag[%s], scratchMemSize[%lu], ptr[%p]",
+                __func__, algName.c_str(), newTag.c_str(), resRequest.scratchMemSize, resMap_[newTag].scratchMem.ptr());
         }
     }
     CHK_PRT_RET(iter == resMap_.end(),
@@ -2150,21 +2238,10 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
     }
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL || param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
         param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
+        CHK_RET(CalSendRecvInfoFor910B(algName, param, executor));
         CHK_RET(SetAlltoAllInputAndOutPutMem(param, algResource));
         if (algName == "RunAlltoAllVTwoLevelPipeline") {
-            if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-                std::vector<u64> sendCountMatrix(topoInfo_.userRankSize * topoInfo_.userRankSize,
-                    param.All2AllDataDes.sendCount);
-                CHK_RET(GetAlltoAllvcSendRecvInfo(static_cast<void *>(sendCountMatrix.data()),
-                    param.All2AllDataDes.sendType, param.All2AllDataDes.recvType));
-            } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
-                CHK_PTR_NULL(sendRecvInfoPtr_);
-                CHK_RET(GetAlltoAllvSendRecvInfo(sendRecvInfoPtr_, param.All2AllDataDes.sendType,
-                    param.All2AllDataDes.recvType));
-            } else {
-                CHK_RET(GetAlltoAllvcSendRecvInfo(param.All2AllDataDes.sendCountMatrix, param.All2AllDataDes.sendType,
-                    param.All2AllDataDes.recvType));
-            }
+            CHK_RET(CalSendRecvInfoForAlltoall(param));
             HCCL_DEBUG("[HcclCommAicpu][Orchestrate] running RunAlltoAllVTwoLevelPipeline, prepare SendRecvInfo.");
             CollAlltoAllExecutor* alltoAllExecutor = dynamic_cast<CollAlltoAllExecutor *>(executor.get());
             CHK_PTR_NULL(alltoAllExecutor);
