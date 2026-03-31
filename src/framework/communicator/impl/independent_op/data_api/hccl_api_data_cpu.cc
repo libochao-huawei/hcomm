@@ -818,6 +818,7 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     taskParam.beginTime = beginTime;
     taskParam.taskType = Hccl::TaskParamType::TASK_AIV;
     taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.isMaster = true;
     u32 taskId;
     u32 streamId;
     Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
