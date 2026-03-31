@@ -699,23 +699,23 @@ HcclResult HcclCommInitClusterInfoWrapper(struct hcclAsyncJob* job_){
     // 入参合法性校验
     CHK_PTR_NULL(clusterInfo);
     CHK_PTR_NULL(comm);
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(
-    [&]() -> HcclResult {
-        void *commV2 = nullptr;
-        CHK_RET(HcclCommInitClusterInfoV2(clusterInfo, rank, &commV2));
-        constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-        HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
-            CHK_RET(HcclCommDestroyV2(commV2));
-            commV2 = nullptr;
-            *comm = nullptr;
-            return ret;
-        }
+// #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    // HCCLV2_FUNC_RUN(
+    // [&]() -> HcclResult {
+    //     void *commV2 = nullptr;
+    //     CHK_RET(HcclCommInitClusterInfoV2(clusterInfo, rank, &commV2));
+    //     constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+    //     HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+    //     if (ret != HCCL_SUCCESS) {
+    //         HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+    //         CHK_RET(HcclCommDestroyV2(commV2));
+    //         commV2 = nullptr;
+    //         *comm = nullptr;
+    //         return ret;
+    //     }
         return HCCL_SUCCESS;
-    }());
-#endif
+//     }());
+// #endif
     HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
         __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
@@ -768,23 +768,23 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
     // 入参合法性校验
     CHK_PTR_NULL(clusterInfo);
     CHK_PTR_NULL(comm);
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(
-        [&]() -> HcclResult {
-            void *commV2 = nullptr;
-            CHK_RET(HcclCommInitClusterInfoV2(clusterInfo, rank, &commV2));
-            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
-            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
-            if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
-                CHK_RET(HcclCommDestroyV2(commV2));
-                commV2 = nullptr;
-                *comm = nullptr;
-                return ret;
-            }
-            return HCCL_SUCCESS;
-        }());
-#endif
+// #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+//     HCCLV2_FUNC_RUN(
+//         [&]() -> HcclResult {
+//             void *commV2 = nullptr;
+//             CHK_RET(HcclCommInitClusterInfoV2(clusterInfo, rank, &commV2));
+//             constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+//             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+//             if (ret != HCCL_SUCCESS) {
+//                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+//                 CHK_RET(HcclCommDestroyV2(commV2));
+//                 commV2 = nullptr;
+//                 *comm = nullptr;
+//                 return ret;
+//             }
+            return HCCL_E_PTR;
+//         }());
+// #endif
     HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
         __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
@@ -924,29 +924,29 @@ HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
     RPT_INPUT_ERR(config == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclCommInitClusterInfoConfigWrapper", "nullptr", "config", "non-null pointer"}));
     CHK_SMART_PTR_NULL(config);
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    const char *socNamePtr = aclrtGetSocName();
-    CHK_PTR_NULL(socNamePtr);
-    HCCLV2_FUNC_RUN(
-        [&]() -> HcclResult {
-            void *commV2 = nullptr;
-            CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
-            u32 rankNum = 0;
-            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(commV2, commName));
-            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
-            if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
-                CHK_RET(HcclCommDestroyV2(commV2));
-                commV2 = nullptr;
-                *comm = nullptr;
-                return ret;
-            }
-            return HCCL_SUCCESS;
-        }(),
-        socNamePtr);
-#endif
+// #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+//     const char *socNamePtr = aclrtGetSocName();
+//     CHK_PTR_NULL(socNamePtr);
+//     HCCLV2_FUNC_RUN(
+//         [&]() -> HcclResult {
+//             void *commV2 = nullptr;
+//             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
+//             u32 rankNum = 0;
+//             CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
+//             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+//             CHK_RET(HcclGetCommNameV2(commV2, commName));
+//             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+//             if (ret != HCCL_SUCCESS) {
+//                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
+//                 CHK_RET(HcclCommDestroyV2(commV2));
+//                 commV2 = nullptr;
+//                 *comm = nullptr;
+//                 return ret;
+//             }
+             return HCCL_E_PTR;
+//         }(),
+//         socNamePtr);
+// #endif
     HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
         __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
@@ -1014,26 +1014,26 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     RPT_INPUT_ERR(config == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
         std::vector<std::string>({"HcclCommInitClusterInfoConfig", "nullptr", "config", "non-null pointer"}));
     CHK_SMART_PTR_NULL(config);
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(
-        [&]() -> HcclResult {
-            void *commV2 = nullptr;
-            CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
-            u32 rankNum = 0;
-            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(commV2, commName));
-            HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
-            if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
-                CHK_RET(HcclCommDestroyV2(commV2));
-                commV2 = nullptr;
-                *comm = nullptr;
-                return ret;    
-            }
-            return HCCL_SUCCESS;
-        }());
-#endif
+// #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+//     HCCLV2_FUNC_RUN(
+//         [&]() -> HcclResult {
+//             void *commV2 = nullptr;
+//             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
+//             u32 rankNum = 0;
+//             CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
+//             char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+//             CHK_RET(HcclGetCommNameV2(commV2, commName));
+//             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
+//             if (ret != HCCL_SUCCESS) {
+//                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
+//                 CHK_RET(HcclCommDestroyV2(commV2));
+//                 commV2 = nullptr;
+//                 *comm = nullptr;
+//                 return ret;    
+//             }
+return HCCL_E_PTR;
+//         }());
+// #endif
     HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
         __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
