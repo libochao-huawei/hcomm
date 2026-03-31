@@ -90,24 +90,24 @@ const std::unordered_map<HcclDataType, DataType, std::EnumClassHash> DATA_TYPE_M
     {HCCL_DATA_TYPE_FP8E8M0, DataType::FP8E8M0},
 };
 
-const std::unordered_map<uint32_t, std::string> DATA_TYPE_TO_STRING_MAP = {	 
-    {0, "INT8"},	 
-    {1, "INT16"}, 
-    {2, "INT32"}, 
-    {3, "FP16"}, 
-    {4, "FP32"}, 
-    {5, "INT64"}, 
-    {6, "UINT64"}, 
-    {7, "UINT8"}, 
-    {8, "UINT16"}, 
-    {9, "UINT32"}, 
-    {10, "FP64"}, 
-    {11, "BFP16"}, 
-    {12, "INT128"}, 
-    {14, "HIF8"}, 
-    {15, "FP8E4M3"}, 
-    {16, "FP8E5M2"}, 
-    {17, "FP8E8M0"}, 
+const std::unordered_map<uint32_t, std::string> DATA_TYPE_TO_STRING_MAP = {
+    {0, "INT8"},
+    {1, "INT16"},
+    {2, "INT32"},
+    {3, "FP16"},
+    {4, "FP32"},
+    {5, "INT64"},
+    {6, "UINT64"},
+    {7, "UINT8"},
+    {8, "UINT16"},
+    {9, "UINT32"},
+    {10, "FP64"},
+    {11, "BFP16"},
+    {12, "INT128"},
+    {14, "HIF8"},
+    {15, "FP8E4M3"},
+    {16, "FP8E5M2"},
+    {17, "FP8E8M0"},
 };
 
 const std::unordered_map<uint32_t, std::string> OP_TYPE_TO_STRING_MAP = {{0, "sum"}, {1, "mul"}, {2, "max"}, {3, "PROD"}};
