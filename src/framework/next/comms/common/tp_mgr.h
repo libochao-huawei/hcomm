@@ -23,7 +23,7 @@ namespace hcomm {
 
 /**
  * 同一对 EID 上可有 1～N 个通信域（N 无固定上限）。映射路径下：相同 (locAddr,rmtAddr,tpProtocol)
- * 且相同 commHcclQos → TpMgr 缓存命中，复用同一 tpHandle（TPID）与 mappedJettyPriority（SL）；
+ * 且相同 qos → TpMgr 缓存命中，复用同一 tpHandle（TPID）与 mappedJettyPriority（SL）；
  * TpInfoCtx::useCnt 引用计数，ReleaseTpInfo 须与 GetTpInfo 使用一致的 GetTpInfoParam。
  */
 using GetTpInfoParam = struct GetTpInfoParamDef {
@@ -31,15 +31,19 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
 
-    /** EID + UBC CTP/RTP：按 commHcclQoS 与 TP/SL 能力做映射；否则保持 false 走旧路径 */
+    /** EID + UBC CTP/RTP：按 qos 与 TP/SL 能力做映射；否则保持 false 走旧路径 */
     bool useUbTpSlMapping{false};
-    /** 通信域 QoS（0–7），映射路径下参与 TpInfoCacheKey 分桶；同键多连接共享 TPID/SL */
-    uint32_t commHcclQos{0};
-    /** SL 档位数 M：0 表示映射路径下由首个 TP 的 get_tp_attr 推导；非 0 为显式覆盖/兜底上限 */
+    /**
+     * 通信域 QoS（0–7）：参与 TpInfoCacheKey 分桶；在映射路径下还与 sl_available 一起决定选用哪一档 SL——
+     * 先由本值经 QoS 分组得到 slotIdx，再在 sl_available 允许的 SL 集合（按 SL 号升序）中取第 slotIdx 个（例如仅 bit3、bit14
+     * 为 1 时，slotIdx 为 0→SL3，为 1→SL14）。
+     */
+    uint32_t qos{0};
+    /** 0：M 取 sl_available 位图 popcount；非 0：将 M 上限收束为该值（仍须先有有效 sl_available） */
     uint32_t slLevelCount{0};
     /**
-     * 环回（loc==rmt）：在 useUbTpSlMapping 且完成 list+get_tp_attr 后，固定使用列表第 0 个 TPID
-     * 与最低 SL 槽位（策略顺序下标 0，mappedJettyPriority=0），不走 ApplyUbcQosTpSlPolicy。
+     * 环回（loc==rmt）：list+get_tp_attr 后固定列表第 0 个 TPID；mapped SL 为 sl_available 中第 0 个可用 SL，
+     * 不走 ApplyUbcQosTpSlPolicy。
      */
     bool loopFirstTpLowestSl{false};
 
@@ -55,7 +59,7 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
             "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, ubMap=%u qos=%u mSl=%u loop1st=%u]",
             locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
             tpProtocol.Describe().c_str(), static_cast<unsigned>(useUbTpSlMapping),
-            commHcclQos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
+            qos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
     }
 };
 
@@ -66,7 +70,7 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 using TpHandle = uint64_t;
 struct TpInfo {
     TpHandle tpHandle{0};
-    /** 与 set_tp_attr 应对齐的 SL，经 Jetty priority 下发；非映射路径不设置 */
+    /** 映射路径：经 Jetty priority 下发的 SL（sl_available 位图中策略选定档对应的真实 SL）；非映射路径不设置 */
     uint8_t mappedJettyPriority{0};
     bool hasMappedJettyPriority{false};
 
@@ -111,7 +115,7 @@ private:
         TpInfoReqPhase reqPhase{TpInfoReqPhase::kWaitList};
         uint32_t tpAttrBitmap{0};
         std::vector<char> tpAttrBuf;
-        /** 非 0：来自首个 TP 的 get_tp_attr 或失败兜底，供 K=min(N,M) */
+        /** 首个 TP 的 sl_available 推出的 M（popcount，可被 slLevelCount 收束），供 K=min(N,M) */
         uint32_t resolvedSlLevelCount{0};
     };
 

@@ -38,6 +38,9 @@ public:
 
     void Parse();
 
+    /** UB Jetty 创建参数默认 QoS（低 4bit→策略 SL），与 next/comms `EnvConfig::UB_QOS_DEFAULT` 一致 */
+    static const u32 UB_QOS_DEFAULT = 4;
+
 private:
     EnvHostNicConfig       hostNicCfg;
     EnvSocketConfig        socketCfg;

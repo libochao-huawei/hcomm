@@ -39,6 +39,11 @@ CcuJetty::CcuJetty(const IpAddress &ipAddr, const CcuJettyInfo &jettyInfo)
         jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
 }
 
+void CcuJetty::SetMappedJettyPriority(uint8_t priority)
+{
+    inParam_.qos = static_cast<u32>(priority & 0xFU);
+}
+
 CcuJetty::~CcuJetty()
 {
 }

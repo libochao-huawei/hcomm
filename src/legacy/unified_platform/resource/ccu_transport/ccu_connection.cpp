@@ -19,6 +19,7 @@
 #include "local_ub_rma_buffer.h"
 #include "rdma_handle_manager.h"
 #include "local_ub_rma_buffer.h"
+#include "env_config.h"
 
 namespace Hccl {
 CcuConnection::CcuConnection(const IpAddress &locAddr, const IpAddress &rmtAddr,
@@ -116,24 +117,24 @@ void CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus) {
         case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            if (!CreateJetty()) {
-                innerStatus = InnerStatus::JETTY_CREATING;
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-
-            if (GetTpInfo()) { // 如果有缓存的tp信息，可以直接完成
-                innerStatus = InnerStatus::EXCHANGEABLE;
-                status      = CcuConnStatus::EXCHANGEABLE;
+        case InnerStatus::TP_INFO_GETTING: {
+            if (!GetTpInfo()) {
+                innerStatus = InnerStatus::TP_INFO_GETTING;
                 break;
             }
 
-            innerStatus = InnerStatus::TP_INFO_GETTING; // 不退出继续调用下个异步接口
+            if (!CreateJetty()) {
+                innerStatus = InnerStatus::JETTY_CREATING;
+                break;
+            }
+
+            innerStatus = InnerStatus::EXCHANGEABLE;
+            status      = CcuConnStatus::EXCHANGEABLE;
             break;
         }
-        case InnerStatus::TP_INFO_GETTING: {
-            if (!GetTpInfo()) {
-                break; // 状态不改变退出，下轮状态机进入继续执行
+        case InnerStatus::JETTY_CREATING: {
+            if (!CreateJetty()) {
+                break;
             }
             innerStatus = InnerStatus::EXCHANGEABLE;
             status      = CcuConnStatus::EXCHANGEABLE;
@@ -150,8 +151,14 @@ bool CcuConnection::CreateJetty()
         return true;
     }
 
+    if (!tpInfo.hasMappedJettyPriority) {
+        HCCL_ERROR("[CcuConnection][%s] UB Jetty requires TpManager mapped SL before create.", __func__);
+        ThrowAbnormalStatus(std::string(__func__));
+    }
+
     isJettyCreated = true;
     for (size_t i = 0; i < jettyNum; i++) {
+        ccuJettys_[i]->SetMappedJettyPriority(tpInfo.mappedJettyPriority);
         auto ret = ccuJettys_[i]->CreateJetty();
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏
@@ -179,6 +186,17 @@ void CcuConnection::GenerateLocalPsn()
     jettyImportCfg.localPsn = GetRandomNum();
 }
 
+RaUbGetTpInfoParam CcuConnection::BuildTpParam() const
+{
+    RaUbGetTpInfoParam p{locAddr_, rmtAddr_, tpProtocol};
+    p.useUbTpSlMapping = true;
+    const uint32_t q = (qos > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos & 7U);
+    p.qos = q;
+    p.slLevelCount = 0U;
+    p.loopFirstTpLowestSl = false;
+    return p;
+}
+
 bool CcuConnection::GetTpInfo()
 {
     if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
@@ -188,7 +206,7 @@ bool CcuConnection::GetTpInfo()
     }
 
     HcclResult ret = TpManager::GetInstance(devLogicId)
-        .GetTpInfo({locAddr_, rmtAddr_, tpProtocol}, tpInfo);
+        .GetTpInfo(BuildTpParam(), tpInfo);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         // 此处可能刷屏，非必要勿加日志
         return false;
@@ -439,7 +457,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 
     if (tpInfo.tpHandle != 0) { // tp handle 复用，只释放一次
         (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol}, tpInfo);
+            .ReleaseTpInfo(BuildTpParam(), tpInfo);
         tpInfo.tpHandle = 0;
     }
 

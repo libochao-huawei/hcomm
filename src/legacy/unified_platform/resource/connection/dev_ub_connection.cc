@@ -28,7 +28,7 @@ constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传�
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                  const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
+      opMode(opMode), devUsed_(devUsed), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
     devLogicId = HrtGetDevice();
@@ -53,8 +53,6 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     if (sqDepth > (UINT32_MAX / UB_SQ_WQEBB_SIZE / WQE_NUM_PER_SQE)) {
         THROW<InternalException>("integer overflow occurs");
     }
-
-    CreateJetty(devUsed);
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
@@ -140,22 +138,39 @@ RmaConnStatus DevUbConnection::GetStatus()
             HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
                       ubConnStatus.Describe().c_str());
 
-            SetJettyInfo();
-
-            if (!GetTpInfo()) {
-                ubConnStatus = UbConnStatus::TP_INFO_GETTING;
-                break;
+            if (tpProtocol != TpProtocol::INVALID) {
+                if (!GetTpInfo()) {
+                    ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+                    break;
+                }
+                if (!tpInfo.hasMappedJettyPriority) {
+                    HCCL_ERROR("[DevUbConnection][%s] missing mapped SL from TpManager.", __func__);
+                    ThrowAbnormalStatus(std::string(__func__));
+                }
             }
-
-            status       = RmaConnStatus::EXCHANGEABLE;
-            ubConnStatus = UbConnStatus::JETTY_CREATED;
+            CreateJetty(devUsed_);
+            ubConnStatus = UbConnStatus::JETTY_CREATING;
             break;
         }
         case UbConnStatus::TP_INFO_GETTING: {
-            if (GetTpInfo()) {
-                status       = RmaConnStatus::EXCHANGEABLE;
-                ubConnStatus = UbConnStatus::JETTY_CREATED;
+            if (!GetTpInfo()) {
+                break;
             }
+            if (!tpInfo.hasMappedJettyPriority) {
+                HCCL_ERROR("[DevUbConnection][%s] missing mapped SL from TpManager.", __func__);
+                ThrowAbnormalStatus(std::string(__func__));
+            }
+            CreateJetty(devUsed_);
+            ubConnStatus = UbConnStatus::JETTY_CREATING;
+            break;
+        }
+        case UbConnStatus::JETTY_CREATING: {
+            SetJettyInfo();
+            if (tpProtocol != TpProtocol::INVALID) {
+                GenerateLocalPsn();
+            }
+            status       = RmaConnStatus::EXCHANGEABLE;
+            ubConnStatus = UbConnStatus::JETTY_CREATED;
             break;
         }
         case UbConnStatus::JETTY_CREATED: {
@@ -287,7 +302,24 @@ void DevUbConnection::CreateJetty(const bool devUsed)
         HCCL_INFO("[DevUbConnection][%s] HrtJettyMode is DEV_USED.", __func__);
     }
 
+    if (tpProtocol != TpProtocol::INVALID) {
+        if (!tpInfo.hasMappedJettyPriority) {
+            THROW<InternalException>("[DevUbConnection][%s] CreateJetty requires TpManager mapped SL.", __func__);
+        }
+        req.qos = static_cast<u32>(tpInfo.mappedJettyPriority & 0xFU);
+    }
+
     reqHandle = RaUbCreateJettyAsync(rdmaHandle, req, reqDataBuffer, jettyHandlePtr);
+}
+
+RaUbGetTpInfoParam DevUbConnection::MakeRaUbGetTpParam() const
+{
+    RaUbGetTpInfoParam p{locAddr, rmtAddr, tpProtocol};
+    p.useUbTpSlMapping = (tpProtocol != TpProtocol::INVALID);
+    p.qos = 0U;
+    p.slLevelCount = 0U;
+    p.loopFirstTpLowestSl = false;
+    return p;
 }
 
 void DevUbConnection::SetJettyInfo()
@@ -315,8 +347,7 @@ bool DevUbConnection::GetTpInfo()
         ThrowAbnormalStatus(std::string(__func__));
     }
     
-    auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
-        {locAddr, rmtAddr, tpProtocol}, tpInfo);
+    auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(MakeRaUbGetTpParam(), tpInfo);
 
     switch (ret) {
         case HcclResult::HCCL_SUCCESS:
@@ -367,7 +398,7 @@ void DevUbConnection::ReleaseTp()
 {
     if (tpInfo.tpHandle != 0) {
         (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({locAddr, rmtAddr, tpProtocol}, tpInfo);
+            .ReleaseTpInfo(MakeRaUbGetTpParam(), tpInfo);
         tpInfo.tpHandle = 0;
     }
 }

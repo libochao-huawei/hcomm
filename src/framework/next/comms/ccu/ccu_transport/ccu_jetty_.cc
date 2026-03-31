@@ -63,16 +63,9 @@ HcclResult CcuJetty::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuJetty::SetHcclQosForCreate(uint32_t qos)
-{
-    inParam_.hcclQos = static_cast<u32>(qos);
-    inParam_.jettyPriorityIsRaw = false;
-}
-
 void CcuJetty::SetMappedJettyPriority(uint8_t priority)
 {
-    inParam_.hcclQos = static_cast<u32>(priority & 0xFU);
-    inParam_.jettyPriorityIsRaw = true;
+    inParam_.qos = static_cast<u32>(priority & 0xFU);
 }
 
 CcuJetty::~CcuJetty()

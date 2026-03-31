@@ -19,6 +19,7 @@
 
 #include "enum_factory.h"
 #include "hccl_rank_graph.h"
+#include "env_config.h"
 
 // orion 暂时复用
 #include "ip_address.h"
@@ -97,10 +98,8 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
 
-    /** HCCL 通信域 QoS；低 4bit 映射到 RA attr.ub.priority，0 表示使用默认 priority(2) */
-    u32 hcclQos{0};
-    /** 为 true 时 hcclQos 低 4bit 直接作为 attr.ub.priority（UBC EID QoS→SL 映射路径） */
-    bool jettyPriorityIsRaw{false};
+    /** 策略 SL：低 4bit 写入 attr.ub.priority；未显式设置时默认 EnvConfig::UB_QOS_DEFAULT */
+    u32 qos{EnvConfig::UB_QOS_DEFAULT};
 
     HrtRaUbJettyCreateParamDef() {}
 

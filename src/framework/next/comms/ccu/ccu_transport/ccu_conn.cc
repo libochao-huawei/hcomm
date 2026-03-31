@@ -13,6 +13,7 @@
 #include <random>
 
 #include "hcom_common.h"
+#include "env_config.h"
 #include "exception_handler.h"
 #include "eid_info_mgr.h"
 #include "adapter_rts.h"
@@ -26,21 +27,21 @@
 namespace hcomm {
 
 CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos)
-    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), hcclQos_(hcclQos)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), qos_(qos)
 {
 }
 
 CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, hcclQos)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::RTP;
 }
 
 CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t hcclQos)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, hcclQos)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::CTP;
 }
@@ -165,14 +166,14 @@ HcclResult CcuConnection::CreateJetty()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    CHK_PRT_RET(!tpInfo_.hasMappedJettyPriority,
+        HCCL_ERROR("[CcuConnection][%s] UB Jetty requires TpMgr QoS→SL mapping (get_tp_list + policy); "
+            "missing mappedJettyPriority.", __func__),
+        HcclResult::HCCL_E_INTERNAL);
+
     isJettyCreated_ = true;
     for (size_t i = 0; i < jettyNum_; i++) {
-        if (tpInfo_.hasMappedJettyPriority) {
-            ccuJettys_[i]->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
-        } else {
-            /** 非映射路径：固定默认 Jetty priority（UbJettyPriorityFromHcclQos(0)→CCU_UB_DEFAULT） */
-            ccuJettys_[i]->SetHcclQosForCreate(0U);
-        }
+        ccuJettys_[i]->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
         auto ret = ccuJettys_[i]->CreateJetty();
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏
@@ -205,10 +206,9 @@ void CcuConnection::GenerateLocalPsn()
 GetTpInfoParam CcuConnection::MakeGetTpInfoParam() const
 {
     GetTpInfoParam param{locAddr_, rmtAddr_, tpProtocol_};
-    const bool eidPair = (locAddr_.type == COMM_ADDR_TYPE_EID && rmtAddr_.type == COMM_ADDR_TYPE_EID);
-    /** true：TpMgr 做 QoS→SL/选 TP，CreateJetty 用 SetMappedJettyPriority；false：legacy，SetHcclQosForCreate(hcclQos_) */
-    param.useUbTpSlMapping = eidPair && hcclQos_ <= 7U;
-    param.commHcclQos = hcclQos_ & 7U;
+    /** 恒 true：TpMgr 按 tp_list/M 推出 SL，经 SetMappedJettyPriority→qos 低 4bit 下发 */
+    param.useUbTpSlMapping = true;
+    param.qos = (qos_ > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos_ & 7U);
     /** 0：M 由 TpMgr 对首个 tp_handle 的 RaGetTpAttrAsync 返回 attrBitmap 推导；非 0 可与推导值取 min 作上限 */
     param.slLevelCount = 0U;
     return param;

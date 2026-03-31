@@ -37,7 +37,7 @@ using namespace hccl;
 
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
 
-/** 仅当本端与远端均为 EID 寻址时，才把通信域 hcclQos 写入 ubcAttr.qos（与 CCU/UB Jetty 建链场景一致） */
+/** 仅当本端与远端均为 EID 寻址时，才把通信域 QoS（SetHcclQos）写入 ubcAttr.qos（与 CCU/UB Jetty 建链一致） */
 static bool UbcChannelEndpointsAreEid(const HcclChannelDesc &d)
 {
     return d.localEndpoint.commAddr.type == COMM_ADDR_TYPE_EID &&
@@ -60,28 +60,30 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     return HCCL_SUCCESS;
 }
 
-HcclResult ProcessUbcChannelDesc(HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
+HcclResult ProcessUbcChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hccl::hcclComm *hcclComm)
 {
-    CHK_PTR_NULL(hcclComm);
     hccl::CollComm *collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
-    if (channelDescFinal.channelProtocol != COMM_PROTOCOL_UBC_CTP &&
-        channelDescFinal.channelProtocol != COMM_PROTOCOL_UBC_TP) {
+    hccl::CommConfig commConfig = collComm->GetCommConfig();
+
+    if (channelDesc.channelProtocol != COMM_PROTOCOL_UBC_CTP &&
+        channelDesc.channelProtocol != COMM_PROTOCOL_UBC_TP) {
         HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBC_CTP/UBC_TP", __func__,
-            static_cast<int>(channelDescFinal.channelProtocol));
+            static_cast<int>(channelDesc.channelProtocol));
         return HCCL_E_PARA;
     }
-    if (!UbcChannelEndpointsAreEid(channelDescFinal)) {
+    if (!UbcChannelEndpointsAreEid(channelDesc)) {
         HCCL_INFO("[%s] skip comm-level qos: require EID on both endpoints (localCommAddrType[%d] "
             "remoteCommAddrType[%d]), keep ubcAttr.qos[%u]",
             __func__, static_cast<int>(channelDescFinal.localEndpoint.commAddr.type),
             static_cast<int>(channelDescFinal.remoteEndpoint.commAddr.type), channelDescFinal.ubcAttr.qos);
         return HCCL_SUCCESS;
     }
-    hccl::CommConfig commConfig = collComm->GetCommConfig();
-    channelDescFinal.ubcAttr.qos = (commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET)
-        ? EnvConfig::HCCL_QOS_DEFAULT
-        : commConfig.GetConfigHcclQos();
+    channelDescFinal.ubcAttr.qos = (channelDesc.ubcAttr.qos == INVALID_UINT)
+        ? ((commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) ? EnvConfig::UB_QOS_DEFAULT
+                                                                            : commConfig.GetConfigHcclQos())
+        : channelDesc.ubcAttr.qos;
     HCCL_INFO("[%s] channelProtocol[%d] qos[%u] (EID + UBC)", __func__,
         static_cast<int>(channelDescFinal.channelProtocol), channelDescFinal.ubcAttr.qos);
     return HCCL_SUCCESS;
@@ -106,7 +108,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
             break;
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UBC_TP:
-            return ProcessUbcChannelDesc(channelDescFinal, hcclComm);
+            return ProcessUbcChannelDesc(channelDesc, channelDescFinal, hcclComm);
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
         default: {
