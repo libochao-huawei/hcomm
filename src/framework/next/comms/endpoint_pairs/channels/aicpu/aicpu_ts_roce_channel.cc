@@ -41,6 +41,8 @@ namespace hcomm {
 
 namespace {
 constexpr uint32_t kDefaultRocePort = 16666;
+constexpr uint8_t kHcommTrafficClassConfigNotSet = 0xff;
+constexpr uint8_t kHcommServiceLevelConfigNotSet = 0xff;
 
 HcclResult CommAddrToHcclIp(const CommAddr &ca, hccl::HcclIpAddress &out)
 {
@@ -282,12 +284,12 @@ HcclResult AicpuTsRoceChannel::BuildDispatcherAndTransport()
     machinePara_.notifyNum = 0;
     machinePara_.sockets.clear();
     machinePara_.sockets.push_back(dataSocket_);
-    if (channelDesc_.roceAttr.tc != HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET) {
+    if (channelDesc_.roceAttr.tc != kHcommTrafficClassConfigNotSet) {
         machinePara_.tc = channelDesc_.roceAttr.tc;
     } else {
         machinePara_.tc = EnvConfig::HCCL_RDMA_TC_DEFAULT;
     }
-    if (channelDesc_.roceAttr.sl != HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
+    if (channelDesc_.roceAttr.sl != kHcommServiceLevelConfigNotSet) {
         machinePara_.sl = channelDesc_.roceAttr.sl;
     } else {
         machinePara_.sl = EnvConfig::HCCL_RDMA_SL_DEFAULT;
