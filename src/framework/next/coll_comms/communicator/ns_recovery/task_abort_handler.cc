@@ -12,8 +12,8 @@
 #include "pthread.h"
 #include "log.h"
 #include "coll_comm.h"
-#include "../../../comms/ccu/ccu_device/ccu_comp/ccu_comp.h"
-#include "../../../comms/ccu/pub_inc/ccu_comp_pub.h"
+#include "ccu_comp.h"
+#include "ccu_dev_mgr_pub.h"
 
 namespace hccl {
 using HcclUs = std::chrono::steady_clock::time_point;

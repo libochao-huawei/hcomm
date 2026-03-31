@@ -13,7 +13,6 @@ add_subdirectory(ccu_channel)
 set(src_list
     ccu_res_allocator.cc
     ccu_comp.cc
-    ccu_comp_pub.cc
 )
 
 target_sources(hcomm PRIVATE

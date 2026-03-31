@@ -4691,6 +4691,7 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
 {
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        CHK_PTR_NULL(comm);
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);

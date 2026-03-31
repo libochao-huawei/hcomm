@@ -30,6 +30,8 @@ public:
 private:
     static CollCommMgr* instance_;
     std::unordered_map<std::string, CollComm*> allCollComms_;
+
+    std::mutex mutex_;
 };
 }
 #endif // COLL_COMM_MGR_H

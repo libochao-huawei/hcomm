@@ -28,7 +28,7 @@ set(src_to_test_list
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
     comms/api_c_adpt/ut_hcomm_c_adpt.cc
     coll_comms/rank/ut_my_rank.cc
-    #coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
+    coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc
@@ -57,6 +57,7 @@ add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/
 )
  
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE

@@ -25,16 +25,16 @@ CollCommMgr* CollCommMgr::GetInstance()
 
 void CollCommMgr::RegisteCollComm(CollComm* collComm)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     allCollComms_[collComm->GetCommId()] = collComm;
-
     // 注册到需要的地方
     HcclTaskAbortHandler::GetInstance().Register(collComm);
 }
 
 void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     allCollComms_.erase(collComm->GetCommId());
-
     // 从通信域里面注销
     HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
 }
