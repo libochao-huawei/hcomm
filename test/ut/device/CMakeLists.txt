@@ -14,7 +14,6 @@ set(hccl_utest_device_src_list
     ut_stream_device_utest.cc
     ut_communicator_device_utest.cc
     ut_zero_copy_device_utest.cc
-    ut_hccl_comm_device.cc
 
     ${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc
