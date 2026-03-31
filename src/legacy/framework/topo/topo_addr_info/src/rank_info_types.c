@@ -243,6 +243,11 @@ char* RankToString(const Rank* rank)
     const size_t max_buf_size = 102400;
     char *buf = (char*)malloc(max_buf_size);
     char* level_list = (char*)malloc(max_buf_size);
+    if(buf == NULL || level_list == NULL) {
+        return NULL;
+    }
+    (void)memset_s(buf, max_buf_size, 0, max_buf_size);
+    (void)memset_s(level_list, max_buf_size, 0, max_buf_size);
     for (int i = 0; i < rank->level_count; ++i) {
         char *layer = NetLayerToString(&rank->level_list[i]);
         if (strcat_s(level_list, max_buf_size, layer) != 0) {
