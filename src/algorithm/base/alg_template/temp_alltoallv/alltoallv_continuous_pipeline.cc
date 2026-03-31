@@ -653,7 +653,7 @@ HcclResult AlltoallvContinuousPipeline::InterSendAndReceive(const u32 sendRank, 
             "targetRank[%u], srcOffset[%llu], dstOffset[%llu], sendSize[%llu], loopIdx[%u]",
             userRank_, sendRank, targetRank, sendSrcOffset, sendDstOffset, sendSize, loopIdx);
 
-        const u32 sourceRank = recvModuleFirstRank + rankOffset;
+        const u32 sourceRank = recvModuleFirstRank + intraRankId_;
         const u32 actualTargetRank = interRankId_ * intraRankSize_ + rankOffset;
         const u64 recvSrcOffset = GetDataBlockOffset(actualTargetRank, loopIdx);
         const u64 recvDstOffset = GetDataBlockOffset(sourceRank, loopIdx);
