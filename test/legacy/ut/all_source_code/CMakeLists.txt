@@ -248,6 +248,8 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/device_mode/aicpu_kernel_launcher.cpp
         ${HCCL_V2_CODE_ROOT}/framework/device_mode/aicpu_ins_preprocessor.cpp
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/stream/aicpu_stream_manager.cpp
+        ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/common/mirror_task_manager_lite.cc
+        ${HCCL_V2_CODE_ROOT}/ramework/resource_manager/transport/aicpu/mem_transport_callback_lite.cc
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/task_exception/task_exception_func.cpp
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/task_exception/task_exception_handler_lite.cpp
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/profiling/profiling_handler_lite.cc
