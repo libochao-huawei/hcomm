@@ -17,66 +17,32 @@
 extern "C" {
 #endif  // __cplusplus
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
+extern HcommResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
+extern HcommResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
-/**
- * @brief 启动通信设备Endpoint监听
- * @param[in] endpointHandle Endpoint句柄
- * @param[in] port 监听端口号
- * @param[in] config 监听配置参数（可为NULL，使用默认配置）
- * @return HcclResult 执行结果状态码
- * @note 启动指定Endpoint在指定端口上的监听服务
- */
-HcclResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port, HcommEndpointListenConfig* config);
+extern HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const CommMem *mem, HcommMemHandle *memHandle);
 
-/**
- * @brief 停止通信设备Endpoint监听
- * @param[in] endpointHandle Endpoint句柄
- * @param[in] port 监听端口号
- * @return HcclResult 执行结果状态码
- * @note 停止指定Endpoint在指定端口上的监听服务
- */
-HcclResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
+extern HcommResult HcommMemUnreg(EndpointHandle endpointHandle, HcommMemHandle memHandle);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
+extern HcommResult HcommMemExport(EndpointHandle endpointHandle, HcommMemHandle memHandle, void **memDesc, uint32_t *memDescLen);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
+extern HcommResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, CommMem *outMem);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
+extern HcommResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
-
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
-
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
+extern HcommResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
+extern HcommResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
+extern HcommResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
+extern HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, const uint32_t *notifyNumPerThread, ThreadHandle *threads);
 
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
-
-// WARNING: experimental API, No compatibility is currently guaranteed for this API
-extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
+extern HcommResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif // HCOMM_RES_H_
+#endif // HCOMM_RES_H

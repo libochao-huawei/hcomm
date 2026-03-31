@@ -28,6 +28,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_aiv_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_alg_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_executor_aicpu.cc
+    M:/Code/hccl/hcomm/test/ut/framework/communicator/hccl_api_base_test.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
