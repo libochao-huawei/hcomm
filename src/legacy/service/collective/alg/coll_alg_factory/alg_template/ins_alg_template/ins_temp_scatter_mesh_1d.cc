@@ -160,34 +160,19 @@ HcclResult InsTempScatterMesh1D::PreCopy(TemplateDataParams &tempAlgParams, std:
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
     // 零拷贝而且不是最后一张卡的情况需要拷贝sliceSize
     if (isZeroCopy_ && myAlgRank != tempVTopo_[0].size() - 1) {
-<<<<<<< HEAD
-        u64 sliceSize = tempAlgParams.sliceSize;
-    }
-
-=======
         sliceSize = tempAlgParams.sliceSize;
     }
->>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     for (u32 r = 0; r < tempAlgParams.repeatNum; r++) {
         u64 srcOffset =
             buffInfo_.inBuffType == BufferType::SCRATCH ? buffInfo_.scratchBuffBaseOff : buffInfo_.inBuffBaseOff;
         srcOffset += r * tempAlgParams.inputRepeatStride + tempAlgParams.inputSliceStride * myAlgRank;
-<<<<<<< HEAD
-        DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
-=======
->>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
         BufferType dstBufferType =
             buffInfo_.outBuffType == BufferType::INPUT ? buffInfo_.scratBuffType : buffInfo_.outBuffType;
         u64 dstOffset = buffInfo_.outBuffType == BufferType::SCRATCH || buffInfo_.outBuffType == BufferType::INPUT ?
                             r * tempAlgParams.outputRepeatStride + buffInfo_.scratchBuffBaseOff :
                             r * tempAlgParams.outputRepeatStride + buffInfo_.outBuffBaseOff;
-<<<<<<< HEAD
-        DataSlice dstSlice(dstBufferType, dstOffset, sliceSize);
-
-=======
         DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
         DataSlice dstSlice(dstBufferType, dstOffset, sliceSize);
->>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
         LocalCopy(tempInsQues[0], srcSlice, dstSlice);
     }
 
@@ -200,24 +185,12 @@ HcclResult InsTempScatterMesh1D::PostCopy(const TemplateDataParams &tempAlgParam
     if (isZeroCopy_ || buffInfo_.outBuffType == BufferType::SCRATCH) {
         return HCCL_SUCCESS;
     }
-<<<<<<< HEAD
-
-    if (buffInfo_.outBuffType == BufferType::OUTPUT && myRank_ == root_) {
-        return HCCL_SUCCESS;
-    }
-
-    // 如果本卡是最后一张卡需要将数据大小刷新为tailSize
-    u64 sliceSize = tempAlgParams.sliceSize;
-    UpdateRxSliceSize(tempAlgParams, sliceSize);
-
-=======
     if (buffInfo_.outBuffType == BufferType::OUTPUT && ((u32)myRank_ == root_)) {
         return HCCL_SUCCESS;
     }
     // 如果本卡是最后一张卡需要将数据大小刷新为tailSize
     u64 sliceSize = tempAlgParams.sliceSize;
     UpdateRxSliceSize(tempAlgParams, sliceSize);
->>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     DataSlice dstSlice(buffInfo_.outBuffType, buffInfo_.outBuffBaseOff, sliceSize * tempAlgParams.repeatNum);
     DataSlice srcSlice(buffInfo_.scratBuffType, buffInfo_.scratchBuffBaseOff, sliceSize * tempAlgParams.repeatNum);
     if (buffInfo_.outBuffType == buffInfo_.scratBuffType && buffInfo_.outBuffBaseOff == buffInfo_.scratchBuffBaseOff) {
@@ -227,10 +200,6 @@ HcclResult InsTempScatterMesh1D::PostCopy(const TemplateDataParams &tempAlgParam
 
     return HcclResult::HCCL_SUCCESS;
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
 void InsTempScatterMesh1D::UpdateRxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize)
 {
     // 根据传入参数的tailSize和当前是否是最后一张卡刷新
@@ -242,8 +211,4 @@ void InsTempScatterMesh1D::UpdateRxSliceSize(const TemplateDataParams& tempAlgPa
     }
     return;
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
 } // namespace Hccl
