@@ -62,7 +62,7 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
 
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     const Hccl::LinkData &linkData, Hccl::Socket *socket, void **memHandles,
-    uint32_t memHandleNum, uint32_t hcclQos, std::unique_ptr<CcuTransport> &impl)
+    uint32_t memHandleNum, uint32_t qos, std::unique_ptr<CcuTransport> &impl)
 {
     HCCL_INFO("[CcuUrmaChannel][%s] begin", __func__);
     // 当前ccu channel不支持按需申请cke
@@ -99,7 +99,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
         CcuTransport::CcuConnectionType::UBC_TP;
 
     CcuTransport::CcuConnectionInfo connectionInfo{type_,
-        locAddr, rmtAddr, channelInfo, ccuJettys, hcclQos};
+        locAddr, rmtAddr, channelInfo, ccuJettys, qos};
 
     std::vector<CcuTransport::CclBufferInfo> bufferInfos{};
     CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferInfos));

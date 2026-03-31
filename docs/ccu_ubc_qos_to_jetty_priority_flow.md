@@ -1,6 +1,6 @@
 # CCU 通道：通信域 QoS → Host 框架 → UB Jetty `attr.ub.priority` 全流程
 
-本文说明 **hcomm Next 框架** 下，从 **通信域（HcclComm / 集合通信）** 侧给出的 **UBC QoS**（`HcclChannelDesc::ubcAttr.qos`），如何在 **Host 进程内** 经 `HcommChannelDesc` 与 CCU 软件栈传递；在 **满足 EID 双端且 `hcclQos_≤7`** 时，经 **`TpMgr::GetTpInfo`** 按 **§2.5.0** 的 **N / M / K**（**`get_tp_list` → `get_tp_attr`(首 TPID) → `K=min(N,M)`**）由 **`tp_mgr.cc` 内策略** 将 **通信域 QoS** 映射为 **SL** 并选 **列表中的 TPID**；最终在 **HCCP/RA** 创建 UB Jetty 时写入 **`attr.ub.priority`**。实现分布在 `coll_comm_res_c_adpt`、`my_rank`、`channel`、`ccu_urma_channel`、`ccu_transport`、`tp_mgr`、`ccu_conn`、`ccu_jetty` 与 `hcomm_adapter_hccp` 中。**M 的位图推导** 见 §2.5.3b 与 §9。
+本文说明 **hcomm Next 框架** 下，从 **通信域（HcclComm / 集合通信）** 侧给出的 **UBC QoS**（`HcclChannelDesc::ubcAttr.qos`），如何在 **Host 进程内** 经 `HcommChannelDesc` 与 CCU 软件栈传递；在 **满足 EID 双端且 `qos_≤7`** 时，经 **`TpMgr::GetTpInfo`** 按 **§2.5.0** 的 **N / M / K**（**`get_tp_list` → `get_tp_attr`(首 TPID) → `K=min(N,M)`**）由 **`tp_mgr.cc` 内策略** 将 **通信域 QoS** 映射为 **SL** 并选 **列表中的 TPID**；最终在 **HCCP/RA** 创建 UB Jetty 时写入 **`attr.ub.priority`**。实现分布在 `coll_comm_res_c_adpt`、`my_rank`、`channel`、`ccu_urma_channel`、`ccu_transport`、`tp_mgr`、`ccu_conn`、`ccu_jetty` 与 `hcomm_adapter_hccp` 中。**M 的位图推导** 见 §2.5.3b 与 §9。
 
 ---
 
@@ -11,9 +11,9 @@
 | **适用路径** | 集合通信 V2（`hcclComm->IsCommunicatorV2()`）下 `HcclChannelAcquire` → `MyRank::CreateChannels` → `COMM_ENGINE_CCU` → `CcuUrmaChannel` → … → `HccpUbCreateJetty(Async)` |
 | **协议** | `COMM_PROTOCOL_UBC_CTP` / `COMM_PROTOCOL_UBC_TP`（与 `LinkData` 中 `UB_CTP` / 非 CTP 对应 `CcuConnectionType`） |
 | **QoS 来源** | 调用方在通信域上构造的 **`HcclChannelDesc`**，在 **`channelProtocol` 为 UBC** 时使用 union 成员 **`ubcAttr.qos`**（与 HCCS 场景 `hccsAttr.qos` 语义对齐，见 `include/hccl/hccl_res.h`） |
-| **未改路径** | 非 V2 communicator、或未走 `CcuUrmaChannel::Init` / 未填充 `CcuConnectionInfo.hcclQos` 的代码，行为仍为 **`hcclQos == 0` → priority 2**（见映射节） |
+| **未改路径** | 非 V2 communicator、或未走 `CcuUrmaChannel::Init` / 未填充 `CcuConnectionInfo.qos` 的代码，行为仍为 **`qos == 0` → priority 2**（见映射节） |
 | **通信域写入 `ubcAttr.qos`** | `ProcessUbcChannelDesc`（`coll_comm_res_c_adpt.cc`）仅当 **本端与远端 `commAddr.type` 均为 `COMM_ADDR_TYPE_EID`** 且协议为 UBC CTP/TP 时，才把 **`GetConfigHcclQos()`** 写入 **`ubcAttr.qos`**；否则保留调用方原值（打日志）。与 **连接侧是否走 SL 映射** 的 EID 判定相互独立，见 §9。 |
-| **SL 映射路径** | 需 **`CcuConnection::MakeGetTpInfoParam`** 中 **`useUbTpSlMapping=true`**（双端 **`CommAddr` 为 EID** 且 **`hcclQos_≤7`**）。当前 **`CcuUrmaChannel`** 若仍用 **`IpAddressToCommAddr`**，则连接上 **`locAddr_`/`rmtAddr_` 多为 IPv4/v6**，映射常 **不启用**，仅走 §6 legacy 映射。 |
+| **SL 映射路径** | 需 **`CcuConnection::MakeGetTpInfoParam`** 中 **`useUbTpSlMapping=true`**（双端 **`CommAddr` 为 EID** 且 **`qos_≤7`**）。当前 **`CcuUrmaChannel`** 若仍用 **`IpAddressToCommAddr`**，则连接上 **`locAddr_`/`rmtAddr_` 多为 IPv4/v6**，映射常 **不启用**，仅走 §6 legacy 映射。 |
 
 ---
 
@@ -53,12 +53,12 @@
 
 1. **`CcuUrmaChannel::Init()`**（`ccu_urma_channel.cc`）在校验 endpoint、构造 **`LinkData`** 后调用：  
    **`CreateCcuTransport(..., channelDesc_.memHandles, channelDesc_.memHandleNum, channelDesc_.ubcAttr.qos, impl_)`**。  
-   即将 **通信域侧配置的 QoS** 作为 **`hcclQos` 实参** 传入静态函数 **`CreateCcuTransport`**。
-2. **`CreateCcuTransport`** 组装 **`CcuTransport::CcuConnectionInfo`**，其中除 **`type / locAddr / rmtAddr / channelInfo / ccuJettys`** 外，写入 **`hcclQos`**。
-3. **`CcuCreateTransport` → `BuildCcuConnection`**（`ccu_transport_.cc`）按链路类型 **`new CcuCtpConnection(..., hcclQos)`** 或 **`CcuRtpConnection(..., hcclQos)`**。
-4. 基类 **`CcuConnection`** 成员 **`hcclQos_`** 在构造函数中赋值，供建链阶段使用。
+   即将 **通信域侧配置的 QoS** 作为 **`qos` 实参** 传入静态函数 **`CreateCcuTransport`**。
+2. **`CreateCcuTransport`** 组装 **`CcuTransport::CcuConnectionInfo`**，其中除 **`type / locAddr / rmtAddr / channelInfo / ccuJettys`** 外，写入 **`qos`**。
+3. **`CcuCreateTransport` → `BuildCcuConnection`**（`ccu_transport_.cc`）按链路类型 **`new CcuCtpConnection(..., qos)`** 或 **`CcuRtpConnection(..., qos)`**。
+4. 基类 **`CcuConnection`** 成员 **`qos_`** 在构造函数中赋值，供建链阶段使用。
 
-**要点**：这里把 **「UBC 通道 QoS」** 绑定到 **逻辑连接对象**；**CTP/RTP** 两条连接类型 **均** 传入同一 **`hcclQos`**，与历史提交「RTP CTP QOS 下发」一致。
+**要点**：这里把 **「UBC 通道 QoS」** 绑定到 **逻辑连接对象**；**CTP/RTP** 两条连接类型 **均** 传入同一 **`qos`**，与历史提交「RTP CTP QOS 下发」一致。
 
 ### 2.5 阶段 D′：GetTpInfo、URMA TP 列表与 QoS→SL 策略（`tp_mgr`）
 
@@ -80,7 +80,7 @@
 
 1. **`CcuConnection::UpdateInitStatus`** 在 **`INIT` / `TP_INFO_GETTING`** 状态下 **先** 调 **`GetTpInfo()`**；若 **`HCCL_E_AGAIN`** 则保持 **`TP_INFO_GETTING`** 等待异步完成。
 2. **`GetTpInfo` 成功** 后 **再** 调 **`CreateJetty()`**；若异步则进入 **`JETTY_CREATING`** 直至 Jetty 创建完成。
-3. **`GetTpInfo` 成功** 后 **`jettyImportCfg_.localTpHandle`** 取自 **`tpInfo_.tpHandle`**（映射路径下为 **`baseInfoPtr[tpListIndex]`**，**`tpListIndex` 由 §2.5.4 在 **K=min(N,M)** 约束下按 **`commHcclQos` 分组** 得到，**可为 0 或非 0**；环回见 §2.6 第 5 点）。
+3. **`GetTpInfo` 成功** 后 **`jettyImportCfg_.localTpHandle`** 取自 **`tpInfo_.tpHandle`**（映射路径下为 **`baseInfoPtr[tpListIndex]`**，**`tpListIndex` 由 §2.5.4 在 **K=min(N,M)** 约束下按 **`qos` 分组** 得到，**可为 0 或非 0**；环回见 §2.6 第 5 点）。
 
 **要点**：保证 **TP 选择与 SL 决策** 在 **Jetty 创建** 之前完成，便于与后续 **`set_tp_attr`（若接入）** 的顺序对齐。
 
@@ -91,20 +91,20 @@
 | 字段 | 含义 |
 |------|------|
 | **`locAddr` / `rmtAddr` / `tpProtocol`** | 与连接一致（CTP/RTP）。 |
-| **`useUbTpSlMapping`** | **`true`** 当且仅当 **`locAddr_.type` 与 `rmtAddr_.type` 均为 `COMM_ADDR_TYPE_EID`** 且 **`hcclQos_ ≤ 7`**。 |
-| **`commHcclQos`** | **`hcclQos_ & 7`**，供策略分组使用。 |
+| **`useUbTpSlMapping`** | **`true`** 当且仅当 **`locAddr_.type` 与 `rmtAddr_.type` 均为 `COMM_ADDR_TYPE_EID`** 且 **`qos_ ≤ 7`**。 |
+| **`qos`** | **`qos_ & 7`**，供策略分组使用。 |
 | **`slLevelCount`** | 映射路径下 **`CcuConnection` 置 0**：**§2.5.0 之 M** 由 **列表首 TPID** 的 **`RaGetTpAttrAsync` / `urma_get_tp_attr`** 返回 **`attrBitmap` 推导**（§2.5.3b）。**非 0** 时与推导 **M** 取 **min** 作上限；**`get_tp_attr` 发起失败** 时用 **本字段或 8** 兜底。 |
 
-**`TpMgr::GetTpInfo`** 用 **`GetTpInfoParam`** 做缓存键：**非映射** 路径使用统一 legacy 键；**映射** 路径按 **`commHcclQos`** 分桶，避免不同 QoS 错误复用同一 **`tpHandle`**。
+**`TpMgr::GetTpInfo`** 用 **`GetTpInfoParam`** 做缓存键：**非映射** 路径使用统一 legacy 键；**映射** 路径按 **`qos`** 分桶，避免不同 QoS 错误复用同一 **`tpHandle`**。
 
 #### 2.5.2a 约束：同一对 EID、多通信域（多个）与 TP/SL 复用
 
 **产品约束**：
 
 1. **数量**：固定 **一对 EID**（逻辑链路）上，集合通信可创建 **1 至多个** 通信域/UBC 通道，**个数无事先固定上限**（仍受全局资源与其它模块约束）。**（此处的「多个」≠ §2.5.0 的 N；§2.5.0 的 N 专指 `get_tp_list` 返回的 TPID 条数。）**
-2. **复用**：上述多个通信域若 **QoS 档位相同**（映射路径下 **`commHcclQos` 相同**），且 **`tpProtocol`（CTP/RTP）相同**、**`CommAddr` 经转换后的 `(loc,rmt)` 一致**，则 **必须复用** 同一 **`tpHandle`（TPID）** 与同一 **策略给出的 SL**（**`mappedJettyPriority`** → Jetty raw priority）。
+2. **复用**：上述多个通信域若 **QoS 档位相同**（映射路径下 **`qos` 相同**），且 **`tpProtocol`（CTP/RTP）相同**、**`CommAddr` 经转换后的 `(loc,rmt)` 一致**，则 **必须复用** 同一 **`tpHandle`（TPID）** 与同一 **策略给出的 SL**（**`mappedJettyPriority`** → Jetty raw priority）。
 
-**实现要点**（`tp_mgr`）：缓存索引为 **`(locIp, rmtIp, TpInfoCacheKey)`**，映射开启时 **`TpInfoCacheKey = commHcclQos`**；**`FindAndGetTpInfo`** 命中则 **`useCnt++`** 并返回已缓存的 **`TpInfo`**；**`ReleaseTpInfo`** 对称 **`useCnt--`**，**`useCnt==0`** 时删除条目。**前提**：各 **`CcuConnection`** 对「同一 EID 对 + 同 QoS」须 **`MakeGetTpInfoParam()` 一致**（含 EID 表达、**`hcclQos_`**），否则键不一致会导致 **重复拉列表/错误不复用**。
+**实现要点**（`tp_mgr`）：缓存索引为 **`(locIp, rmtIp, TpInfoCacheKey)`**，映射开启时 **`TpInfoCacheKey = qos`**；**`FindAndGetTpInfo`** 命中则 **`useCnt++`** 并返回已缓存的 **`TpInfo`**；**`ReleaseTpInfo`** 对称 **`useCnt--`**，**`useCnt==0`** 时删除条目。**前提**：各 **`CcuConnection`** 对「同一 EID 对 + 同 QoS」须 **`MakeGetTpInfoParam()` 一致**（含 EID 表达、**`qos_`**），否则键不一致会导致 **重复拉列表/错误不复用**。
 
 #### 2.5.2c 平台约定：`get_tp_list` / `get_tp_attr` 稳定性与 TP 顺序
 
@@ -146,19 +146,19 @@
 
 在 **`TpMgr::HandleCompletedRequest`** 中，若 **`param.useUbTpSlMapping`**：
 
-1. 构造 **`UbcQosTpSlPolicyInput`**：**`commHcclQos`**、**`nTp = tpInfoNum`（即 §2.5.0 之 N）**、**`mSlLevels = M`**（来自 **`reqCtx.resolvedSlLevelCount`**，§2.5.3b；缺失时 **`param.slLevelCount` 或 8**）。
+1. 构造 **`UbcQosTpSlPolicyInput`**：**`qos`**、**`nTp = tpInfoNum`（即 §2.5.0 之 N）**、**`mSlLevels = M`**（来自 **`reqCtx.resolvedSlLevelCount`**，§2.5.3b；缺失时 **`param.slLevelCount` 或 8**）。
 2. **`ApplyUbcQosTpSlPolicy`**（`tp_mgr.cc`）步骤：  
    - **`usableSlotCount = min(N, M)`**，即 **§2.5.0 之 K**；**TP 条数 N** 与 **首 TPID 推得的 SL 档位数 M** 取小，得到 **实际可用槽位数**。  
    - **`numGroups = NumGroupsForUsableSlotCount(usableSlotCount)`**：**K**≤1→1 组；**K**=2→2；**K**=3→3；**K**∈[4,7]→4；**K**≥8→8。  
-   - **`hcclQosGroupIndex = QoSGroupIndex(commHcclQos, numGroups)`**：将 **0–7** 的通信域 QoS 划入某一组（例如 2 组时 **0–3 / 4–7**；4 组时 **每两个 QoS 一档**；8 组时 **一对一**）。  
-   - **`priority = numGroups - 1 - hcclQosGroupIndex`**（**QoS 越高 → 组索引越大 → 该值越小**，表示 **更优**）。  
+   - **`qosGroupIndex = QoSGroupIndex(qos, numGroups)`**：将 **0–7** 的通信域 QoS 划入某一组（例如 2 组时 **0–3 / 4–7**；4 组时 **每两个 QoS 一档**；8 组时 **一对一**）。  
+   - **`priority = numGroups - 1 - qosGroupIndex`**（**QoS 越高 → 组索引越大 → 该值越小**，表示 **更优**）。  
    - **`slotIdx = min(priority, usableSlotCount - 1)`**，**`tpListIndex = min(slotIdx, N - 1)`**。  
    - **`sl = min(slotIdx, 15)`**（4bit，与 **`TpAttr.sl`** 宽度一致；**当前实现中 SL 数值等于槽位序号**，非 URMA 返回的真实 SL 枚举表）。  
 3. 若 **`pout.valid` 且 `tpListIndex < tpInfoNum`**：  
    **`tmpTpInfo.tpHandle = baseInfoPtr[tpListIndex].tpHandle`**，**`mappedJettyPriority = sl`**，**`hasMappedJettyPriority = true`**。  
    否则 **`HandleCompletedRequest`** 返回 **`HCCL_E_INTERNAL`**（**不** 再静默回退为第 0 条 TP）；**`GetTpInfo`** 失败，**不会** 进入 **`CreateJetty`**。
 
-**要点**：在 **K=min(N,M)** 的槽位范围内，由 **`commHcclQos`** 分组得到 **`slotIdx` / `tpListIndex` / `sl`**；**N** 来自 **`get_tp_list`**，**M** 来自 **首 TPID 的 `get_tp_attr`**。**`RaSetTpAttrAsync` / `set_tp_attr`** 尚未接入本流程，管控面 TP 属性与 Jetty **仅** 在「priority 与策略 sl 一致」的设计意图上对齐，需在后续迭代补全。
+**要点**：在 **K=min(N,M)** 的槽位范围内，由 **`qos`** 分组得到 **`slotIdx` / `tpListIndex` / `sl`**；**N** 来自 **`get_tp_list`**，**M** 来自 **首 TPID 的 `get_tp_attr`**。**`RaSetTpAttrAsync` / `set_tp_attr`** 尚未接入本流程，管控面 TP 属性与 Jetty **仅** 在「priority 与策略 sl 一致」的设计意图上对齐，需在后续迭代补全。
 
 ### 2.6 阶段 E：写入 Jetty 创建入参并调用 HCCP（Host → RA/设备语义边界）
 
@@ -166,20 +166,20 @@
    - 若 **`tpInfo_.hasMappedJettyPriority`**：**`SetMappedJettyPriority(tpInfo_.mappedJettyPriority)`**（**`useUbTpSlMapping` 成功路径下恒为真**）；  
    - 否则：**`SetHcclQosForCreate(0U)`** → **`UbJettyPriorityFromHcclQos(0)`** → **`CCU_UB_DEFAULT_JETTY_PRIORITY`**（非映射路径）。  
    再 **`CreateJetty()`**。
-2. **`SetHcclQosForCreate`**： **`inParam_.hcclQos = qos`**，**`jettyPriorityIsRaw = false`**（走 §2.7 legacy 映射）。  
-   **`SetMappedJettyPriority`**：**`inParam_.hcclQos = priority & 0xF`**，**`jettyPriorityIsRaw = true`**（**低 4 位直接作为 `attr.ub.priority`**，使 **SL=0** 等不再被「qos=0→2」吃掉）。
-3. **`CcuJetty::Init()`** 聚合初始化 **`inParam_`** 时若未设 QoS 相关字段，默认 **`hcclQos=0`、`jettyPriorityIsRaw=false`**。
+2. **`SetHcclQosForCreate`**： **`inParam_.qos = qos`**，**`jettyPriorityIsRaw = false`**（走 §2.7 legacy 映射）。  
+   **`SetMappedJettyPriority`**：**`inParam_.qos = priority & 0xF`**，**`jettyPriorityIsRaw = true`**（**低 4 位直接作为 `attr.ub.priority`**，使 **SL=0** 等不再被「qos=0→2」吃掉）。
+3. **`CcuJetty::Init()`** 聚合初始化 **`inParam_`** 时若未设 QoS 相关字段，默认 **`qos=0`、`jettyPriorityIsRaw=false`**。
 4. **`CcuJetty::CreateJetty` → `HandleAsyncRequest`**：本链路 **只调用** **`HccpUbCreateJettyAsync`**。首次调用提交异步创建并返回 **`HCCL_E_AGAIN`**，后续在状态机轮询中再次进入，直到 **`HccpGetAsyncReqResult`** 完成后再 **`ParseCreateInfo`**。  
    **说明**：适配层另有同步封装 **`HccpUbCreateJetty`**（供 **`ccu_comp.cc`** 环回等路径使用），**`CcuJetty` 内不走同步接口**；二者 **`priority`** 计算规则见 §2.7。
-5. **环回公共 Jetty（`ccu_comp.cc`，集合通信 Init / 每 IO die）**：在 **`CreateAndImportLoopJettys`** 前通过 **`TpMgr::GetTpInfo(MakeLoopGetTpInfoParam)`** 拉 **`get_tp_list`**，EID 环回地址时 **`useUbTpSlMapping` + `loopFirstTpLowestSl`**：仍走 **`get_tp_attr`（首 TP）** 推 **M**，结果固定为 **列表第 0 个 TPID** 与 **最低 SL 槽位（`mappedJettyPriority=0`）**，供全通信域复用；**`HccpUbCreateJetty`** 前写入 **`hcclQos` 低 4 位 = SL**、**`jettyPriorityIsRaw=true`**。非 EID 环回仍走 legacy priority。 **`ReleaseAllTpInfos`** 与 **`GetTpInfo`** 使用同一 **`MakeLoopGetTpInfoParam`**。
+5. **环回公共 Jetty（`ccu_comp.cc`，集合通信 Init / 每 IO die）**：在 **`CreateAndImportLoopJettys`** 前通过 **`TpMgr::GetTpInfo(MakeLoopGetTpInfoParam)`** 拉 **`get_tp_list`**，EID 环回地址时 **`useUbTpSlMapping` + `loopFirstTpLowestSl`**：仍走 **`get_tp_attr`（首 TP）** 推 **M**，结果固定为 **列表第 0 个 TPID** 与 **最低 SL 槽位（`mappedJettyPriority=0`）**，供全通信域复用；**`HccpUbCreateJetty`** 前写入 **`req.qos` 低 4 位 = SL**、**`jettyPriorityIsRaw=true`**。非 EID 环回仍走 legacy priority。 **`ReleaseAllTpInfos`** 与 **`GetTpInfo`** 使用同一 **`MakeLoopGetTpInfoParam`**。
 
-**要点**：**`inParam_.hcclQos` + `jettyPriorityIsRaw`** 是 **传入 HCCP/RA 创建接口的最后一层 Host 侧字段**；之后由适配层转为 **`QpCreateAttr::ub.priority`**。
+**要点**：**`inParam_.qos` + `jettyPriorityIsRaw`** 是 **传入 HCCP/RA 创建接口的最后一层 Host 侧字段**；之后由适配层转为 **`QpCreateAttr::ub.priority`**。
 
 ### 2.7 阶段 F：适配层映射并在 UB 属性上「应用」（HCCP → RA）
 
 1. **`HccpUbCreateJetty`** 与 **`HccpUbCreateJettyAsync`**（`hcomm_adapter_hccp.cc`）中：  
-   **`attr.ub.priority = in.jettyPriorityIsRaw ? (in.hcclQos & 0xFU) : UbJettyPriorityFromHcclQos(in.hcclQos)`**。
-2. **`UbJettyPriorityFromHcclQos`**：**`hcclQos == 0` → 2**；否则 **`hcclQos & 0xFU`**（legacy 路径，与 §6 一致）。
+   **`attr.ub.priority = in.jettyPriorityIsRaw ? (in.qos & 0xFU) : UbJettyPriorityFromHcclQos(in.qos)`**。
+2. **`UbJettyPriorityFromHcclQos`**：**入参 `qos == 0` → 2**；否则 **`qos & 0xFU`**（legacy 路径，与 §6 一致）。
 3. **同步**：**`HccpUbCreateJetty`** 内 **`RaCtxQpCreate`**。  
    **异步**（**`CcuJetty` 所用**）：**`RaCtxQpCreateAsync`**，轮询完成后解析 **`QpCreateInfo`**。  
    **`priority`** 由硬件/驱动栈在 **建链资源** 上消费。
@@ -193,8 +193,8 @@
 
 1. **通信域**：`HcclChannelAcquire` 收到 **`HcclChannelDesc`**；UBC 通道在 **`ProcessUbcChannelDesc`** 满足 **双端 EID** 时写入 **`ubcAttr.qos`**（来自 **`GetConfigHcclQos()`** 或默认）。
 2. **Host 转换**：`ChannelDescHccl2Hcomm` → **`HcommChannelDesc::ubcAttr.qos`**。
-3. **通道对象**：`CcuUrmaChannel` 保存 **`channelDesc_`**，`Init` 时 **`channelDesc_.ubcAttr.qos` → CreateCcuTransport 的 `hcclQos`**。
-4. **连接对象**：`CcuConnectionInfo.hcclQos` → **`CcuConnection::hcclQos_`**。
+3. **通道对象**：`CcuUrmaChannel` 保存 **`channelDesc_`**，`Init` 时 **`channelDesc_.ubcAttr.qos` → CreateCcuTransport 的 `qos` 实参**。
+4. **连接对象**：`CcuConnectionInfo.qos` → **`CcuConnection::qos_`**。
 5. **TP 列表（异步）**：**`TpMgr::GetTpInfo(MakeGetTpInfoParam(), tpInfo_)`** → **`RaGetTpInfoListAsync`** → … → **`urma_get_tp_list`**；得到 **§2.5.0 之 N**（TPID 条数）与 **`HccpTpInfo[]`**。
 6. **QoS→SL + TP 下标（可选）**：若 **`useUbTpSlMapping`** 且 **N>0**，对 **首 TPID** **`RaGetTpAttrAsync` → `urma_get_tp_attr`** 推 **§2.5.0 之 M**；**`HandleCompletedRequest`** 中 **`ApplyUbcQosTpSlPolicy`（K=min(N,M)）** → **`tpInfo_.tpHandle`**、**`mappedJettyPriority`**、**`hasMappedJettyPriority`**。
 7. **Jetty 入参**：**`hasMappedJettyPriority`** 则 **`SetMappedJettyPriority`**（**`jettyPriorityIsRaw=true`**）；否则 **`SetHcclQosForCreate(0U)`**（默认 **`CCU_UB_DEFAULT_JETTY_PRIORITY`**）。映射开启时策略失败见 §2.5.4，**`GetTpInfo`** 直接失败。
@@ -225,9 +225,9 @@ flowchart TB
     end
 
     subgraph UBStack["UB CCU 软件栈"]
-        CCT["CreateCcuTransport(hcclQos)"]
-        CCI["CcuConnectionInfo.hcclQos"]
-        CC["CcuConnection\nhcclQos_"]
+        CCT["CreateCcuTransport(qos)"]
+        CCI["CcuConnectionInfo.qos"]
+        CC["CcuConnection\nqos_"]
         GTI["GetTpInfo\nTpMgr 两阶段异步"]
         URMA["RS: urma_get_tp_list\n(so)"]
         GATTR["RS: urma_get_tp_attr\n(首条 tp_handle,\nuseUbTpSlMapping 且 N>0)"]
@@ -238,7 +238,7 @@ flowchart TB
     subgraph Jetty["Jetty 层"]
         JMAP["SetMappedJettyPriority\nraw SL"]
         JLEG["SetHcclQosForCreate\nlegacy"]
-        INP["inParam_.hcclQos\n+ jettyPriorityIsRaw"]
+        INP["inParam_.qos\n+ jettyPriorityIsRaw"]
         JCR["CcuJetty::CreateJetty"]
     end
 
@@ -290,7 +290,7 @@ sequenceDiagram
     MR->>EP: CreateChannel(..., hcommDesc)
     EP->>Ch: new CcuUrmaChannel(desc)
     Ch->>Ch: Init → CreateCcuTransport(..., desc.ubcAttr.qos)
-    Ch->>T: CcuConnectionInfo.hcclQos → hcclQos_
+    Ch->>T: CcuConnectionInfo.qos → qos_
     Note over T: 状态机：先 GetTpInfo 再 CreateJetty
     T->>TM: GetTpInfo(MakeGetTpInfoParam)
     TM->>RS: RaGetTpInfoListAsync → RA_RS_GET_TP_INFO_LIST
@@ -310,7 +310,7 @@ sequenceDiagram
             T->>J: SetHcclQosForCreate(0)→默认 priority
         end
         T->>J: CreateJetty()
-        J->>H: inParam_（hcclQos + jettyPriorityIsRaw）
+        J->>H: inParam_（qos + jettyPriorityIsRaw）
         H->>H: attr.ub.priority = raw 低4位 或 UbJettyPriorityFromHcclQos
     end
 ```
@@ -321,22 +321,22 @@ sequenceDiagram
 
 统一入口在 **`HccpUbCreateJetty` / `HccpUbCreateJettyAsync`**（`hcomm_adapter_hccp.cc`）：
 
-**`attr.ub.priority = in.jettyPriorityIsRaw ? (in.hcclQos & 0xFU) : UbJettyPriorityFromHcclQos(in.hcclQos)`**
+**`attr.ub.priority = in.jettyPriorityIsRaw ? (in.qos & 0xFU) : UbJettyPriorityFromHcclQos(in.qos)`**
 
 ### 6.1 Legacy 路径（`jettyPriorityIsRaw == false`）
 
 由 **`UbJettyPriorityFromHcclQos`** 定义：
 
-| `hcclQos`（`in.hcclQos`） | `attr.ub.priority` |
+| `in.qos` | `attr.ub.priority` |
 |---------------------------|---------------------|
 | **0** | **2**（`CCU_UB_DEFAULT_JETTY_PRIORITY`） |
-| **非 0** | **`hcclQos & 0xFU`** |
+| **非 0** | **`in.qos & 0xFU`** |
 
 ### 6.2 Raw / SL 路径（`jettyPriorityIsRaw == true`）
 
 | 字段 | 含义 |
 |------|------|
-| **`in.hcclQos` 低 4 位** | 策略输出的 **SL**，与 **`tpInfo_.mappedJettyPriority`** 一致，**直接** 作为 **`attr.ub.priority`**（**含 0**，不再映射为 2）。 |
+| **`in.qos` 低 4 位** | 策略输出的 **SL**，与 **`tpInfo_.mappedJettyPriority`** 一致，**直接** 作为 **`attr.ub.priority`**（**含 0**，不再映射为 2）。 |
 
 **来源**：**`CcuJetty::SetMappedJettyPriority`**；前置条件：**`tpInfo_.hasMappedJettyPriority`**（见 §2.5.4）。
 
@@ -355,7 +355,7 @@ sequenceDiagram
 | Hcomm 描述 | `include/hcomm_res_defs.h`（`HcommChannelDesc` → `ubcAttr.qos`） |
 | CCU 通道构造 | `src/framework/next/comms/endpoint_pairs/channels/channel.cc` |
 | 传入 transport 创建 | `src/framework/next/comms/endpoint_pairs/channels/ccu/ccu_urma_channel.cc` |
-| 连接信息结构 | `src/framework/next/comms/ccu/ccu_transport/ccu_transport_.h`（`CcuConnectionInfo::hcclQos`） |
+| 连接信息结构 | `src/framework/next/comms/ccu/ccu_transport/ccu_transport_.h`（`CcuConnectionInfo::qos`） |
 | 构造 Connection | `src/framework/next/comms/ccu/ccu_transport/ccu_transport_.cc`（`BuildCcuConnection`） |
 | `GetTpInfoParam` / `TpMgr` / QoS→SL 策略 | `src/framework/next/comms/common/tp_mgr.h` / `tp_mgr.cc` |
 | 保存 QoS、GetTpInfo 顺序、建 Jetty | `src/framework/next/comms/ccu/ccu_transport/ccu_conn.h` / `ccu_conn.cc`（`MakeGetTpInfoParam`、`UpdateInitStatus`） |
@@ -371,21 +371,21 @@ sequenceDiagram
 ## 8. 与 AICPU TS URMA 通道的对比（概念）
 
 - **AICPU** 侧通常从 `channelDesc_` 等路径取 QoS，经 `GetHccsQos` 等写入设备/资源结构（具体见 `aicpu_ts_urma_channel` 等）。
-- **CCU** 侧：**legacy** 下由 **`ubcAttr.qos`** 经 **`UbJettyPriorityFromHcclQos`** 驱动 **`attr.ub.priority`**（**0 → 2**）；在 **EID 双端且 `hcclQos_≤7`** 且 **`useUbTpSlMapping`** 为真时，增加 **TP 列表 + 策略 SL** 与 **`jettyPriorityIsRaw`** 路径（§2.5–§2.7）。
+- **CCU** 侧：**legacy** 下由 **`ubcAttr.qos`** 经 **`UbJettyPriorityFromHcclQos`** 驱动 **`attr.ub.priority`**（**0 → 2**）；在 **EID 双端且 `qos_≤7`** 且 **`useUbTpSlMapping`** 为真时，增加 **TP 列表 + 策略 SL** 与 **`jettyPriorityIsRaw`** 路径（§2.5–§2.7）。
 
 ---
 
 ## 9. 注意事项
 
 1. **`HcclChannelDesc` / `HcommChannelDesc` 的 union**：`ubcAttr`、`hccsAttr`、`roceAttr` 等同处一 union，调用方需保证对 **UBC 通道** 写入并读取的是 **`ubcAttr`**，避免与其他属性混用。
-2. **两套「EID」判定**：**`ProcessUbcChannelDesc`** 用 **通道描述里** 的 **`localEndpoint`/`remoteEndpoint.commAddr.type`** 决定是否把通信域 QoS 写入 **`ubcAttr.qos`**；**`MakeGetTpInfoParam`** 用 **`CcuConnection` 内** 的 **`locAddr_`/`rmtAddr_.type`** 决定是否 **`useUbTpSlMapping`**。二者可能不一致（例如通道描述为 EID，但 `CcuUrmaChannel` 仍 **`IpAddressToCommAddr`** 得到 IPv4/v6），则 **QoS 数字仍会传到 `hcclQos_`**，但 **SL 映射策略常不启用**。
+2. **两套「EID」判定**：**`ProcessUbcChannelDesc`** 用 **通道描述里** 的 **`localEndpoint`/`remoteEndpoint.commAddr.type`** 决定是否把通信域 QoS 写入 **`ubcAttr.qos`**；**`MakeGetTpInfoParam`** 用 **`CcuConnection` 内** 的 **`locAddr_`/`rmtAddr_.type`** 决定是否 **`useUbTpSlMapping`**。二者可能不一致（例如通道描述为 EID，但 `CcuUrmaChannel` 仍 **`IpAddressToCommAddr`** 得到 IPv4/v6），则 **QoS 数字仍会传到 `qos_`**，但 **SL 映射策略常不启用**。
 3. **M 与 `attrBitmap` 语义**（§2.5.0）：**M** 仅来自 **第一个 TPID** 的 **`get_tp_attr`**，由 **`SlLevelCountFromTpAttrRxBitmap`** 对 **低 12 bit** 解析（**仅 SL 单 bit 时取 16** 等启发式）。若固件以 **不同编码** 表达「SL 档位数」，需与本函数对齐。**策略输出的 `sl`** 仍为 **槽位序号（≤15）**。
 4. **`set_tp_attr`**：当前流程 **未** 在创建 Jetty 前调用 **`RaSetTpAttrAsync`**；若管控面要求 **TP 上 SL** 与 **Jetty priority** 同步，需在 **`GetTpInfo` 与 `CreateJetty` 之间** 或约定时点补链。
-5. **`ReleaseTpInfo`**：须与 **`GetTpInfo`** 使用 **相同的 `GetTpInfoParam`**（含 **`useUbTpSlMapping`/`commHcclQos`**），与 **`MakeGetTpInfoParam()`** 一致，否则引用计数键不匹配。
-6. **多通信域**：同一对 EID 上 **多路** 通道、**相同 QoS** 依赖 **`TpMgr`** 缓存复用 TPID/SL，见 §2.5.2a（**勿与 §2.5.0 的 N=TPID 条数混淆**）；须保证 **`locAddr_`/`rmtAddr_`/`hcclQos_`** 与对端约定一致。
+5. **`ReleaseTpInfo`**：须与 **`GetTpInfo`** 使用 **相同的 `GetTpInfoParam`**（含 **`useUbTpSlMapping`/`qos`**），与 **`MakeGetTpInfoParam()`** 一致，否则引用计数键不匹配。
+6. **多通信域**：同一对 EID 上 **多路** 通道、**相同 QoS** 依赖 **`TpMgr`** 缓存复用 TPID/SL，见 §2.5.2a（**勿与 §2.5.0 的 N=TPID 条数混淆**）；须保证 **`locAddr_`/`rmtAddr_`/`qos_`** 与对端约定一致。
 7. **`get_tp_list` 稳定性与顺序**：见 §2.5.2c（**§2.5.0 之 N 与各 TPID 集合/各 TPID 的 SL bitmap** 在链路身份不变时稳定；**列表按 SL 升序**）。
 8. **Import Jetty**：若对端 import 路径也需要与 create 侧 priority 严格一致，需单独核对 **`HccpUbTpImportJetty`** 等是否需同步扩展（当前文档侧重 **create** 链路）。
-9. **其他入口**：未经过 `CcuUrmaChannel::Init` / 未填充 `CcuConnectionInfo.hcclQos` 的代码路径，行为仍为 **`hcclQos == 0` → priority 2**（legacy）。
+9. **其他入口**：未经过 `CcuUrmaChannel::Init` / 未填充 `CcuConnectionInfo.qos` 的代码路径，行为仍为 **`qos == 0` → priority 2**（legacy）。
 
 ---
 

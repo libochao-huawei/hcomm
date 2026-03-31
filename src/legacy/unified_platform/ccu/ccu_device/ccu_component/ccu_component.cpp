@@ -44,6 +44,16 @@ constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 7;
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避免被环境link down阻塞
 
+static RaUbGetTpInfoParam MakeLoopRaUbGetTpParam(const IpAddress &srcIp, const IpAddress &dstIp)
+{
+    RaUbGetTpInfoParam p{srcIp, dstIp, LOOP_JETTY_PROTOCOL};
+    p.useUbTpSlMapping = true;
+    p.qos = 0U;
+    p.slLevelCount = 0U;
+    p.loopFirstTpLowestSl = (srcIp == dstIp);
+    return p;
+}
+
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
     static CcuComponent ccuComponent[MAX_MODULE_DEVICE_NUM];
@@ -91,7 +101,7 @@ void CcuComponent::Deinit()
         const auto &ipAddr = item.first;
         const auto &tpInfo = item.second;
         (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({ipAddr, ipAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+            .ReleaseTpInfo(MakeLoopRaUbGetTpParam(ipAddr, ipAddr), tpInfo);
     }
 
     createdOutParamMap.clear();
@@ -393,18 +403,24 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
     const auto &ccuRmaBuffer = rmaBufferIter->second;
     const auto ccuBufTokenValue = ccuRmaBuffer->GetTokenValue();
     const auto tokenIdHandle = ccuRmaBuffer->GetTokenIdHandle();
-    
+
+    const auto &tpInfo = GetTpInfo(ipAddr);
+    if (!tpInfo.hasMappedJettyPriority) {
+        HCCL_ERROR("[CcuComponent][%s] loop UB Jetty requires TpMgr mapped SL.", __func__);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
     auto &createdVec = createdOutParamMap[dieId];
     auto &importedVec = importedOutParamMap[dieId];
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
+        HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
             jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
+        req.qos = static_cast<u32>(tpInfo.mappedJettyPriority & 0xFU);
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
-        const auto &tpInfo = GetTpInfo(ipAddr);
         const auto psn = GetPsn(ipAddr);
         const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
         const auto importedOutParam = RaUbTpImportJetty(rdmaHandle, createdOutParam.key,
@@ -422,9 +438,10 @@ TpInfo CcuComponent::RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddres
     auto &tpManager = TpManager::GetInstance(devLogicId);
     const auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
     const auto startTime = std::chrono::steady_clock::now();
-    auto ret = tpManager.GetTpInfo({srcIpAddr, dstIpAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+    const RaUbGetTpInfoParam loopParam = MakeLoopRaUbGetTpParam(srcIpAddr, dstIpAddr);
+    auto ret = tpManager.GetTpInfo(loopParam, tpInfo);
     while (ret == HcclResult::HCCL_E_AGAIN) {
-        ret = tpManager.GetTpInfo({srcIpAddr, dstIpAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+        ret = tpManager.GetTpInfo(loopParam, tpInfo);
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             THROW<InternalException>("[CcuComponent][%s] failed, get tp info "
                 "timeout[%d ms], devLogicId[%d].", __func__, timeout, devLogicId);

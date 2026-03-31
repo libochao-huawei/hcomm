@@ -39,17 +39,17 @@ constexpr uint32_t LOOP_CHANNEL_WAIT_TIMEOUT_MS = 10000;
 // 环回获取TP信息间隔100us
 constexpr u32 ONE_HUNDRED_MICROSEC_OF_USLEEP = 100;
 
-/** 集合通信 Init 阶段每 die 公共环回：get_tp_list+get_tp_attr 后固定首 TPID/最低 SL，缓存键 commHcclQos=0 */
+/** 集合通信 Init 阶段每 die 公共环回：get_tp_list+get_tp_attr 后固定首 TPID/最低 SL，缓存键 qos=0 */
 static GetTpInfoParam MakeLoopGetTpInfoParam(const CommAddr &commAddr)
 {
     GetTpInfoParam p{};
     p.locAddr = commAddr;
     p.rmtAddr = commAddr;
     p.tpProtocol = LOOP_JETTY_PROTOCOL;
-    p.useUbTpSlMapping = (commAddr.type == COMM_ADDR_TYPE_EID);
-    p.commHcclQos = 0U;
+    p.useUbTpSlMapping = true;
+    p.qos = 0U;
     p.slLevelCount = 0U;
-    p.loopFirstTpLowestSl = p.useUbTpSlMapping;
+    p.loopFirstTpLowestSl = true;
     return p;
 }
 
@@ -440,6 +440,9 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
 
     TpInfo loopTpInfo{};
     CHK_RET(GetLoopTpInfo(dieId, commAddr, loopTpInfo));
+    CHK_PRT_RET(!loopTpInfo.hasMappedJettyPriority,
+        HCCL_ERROR("[CcuComponent][%s] loop UB Jetty requires TpMgr mapped SL.", __func__),
+        HcclResult::HCCL_E_INTERNAL);
 
     auto &createdVec = createdOutParamMap_[dieId];
     auto &importedVec = importedOutParamMap_[dieId];
@@ -448,10 +451,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId,
         HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
             jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth};
-        if (loopTpInfo.hasMappedJettyPriority) {
-            req.hcclQos = static_cast<u32>(loopTpInfo.mappedJettyPriority & 0xFU);
-            req.jettyPriorityIsRaw = true;
-        }
+        req.qos = static_cast<u32>(loopTpInfo.mappedJettyPriority & 0xFU);
 
         HrtRaUbJettyCreatedOutParam createdOutParam{};
         CHK_RET(HccpUbCreateJetty(ctxHandle, req, createdOutParam));
