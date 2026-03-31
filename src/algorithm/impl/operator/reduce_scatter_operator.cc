@@ -288,8 +288,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
                 } else {
                     algName = "ReduceScatterMeshDmaEliminationExecutor";
                 }
-            } else if ((topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE ||
-                deviceNumPerAggregation_ == DEVICE_TWO) &&
+            } else if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
                 algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
                 IsMultiMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {

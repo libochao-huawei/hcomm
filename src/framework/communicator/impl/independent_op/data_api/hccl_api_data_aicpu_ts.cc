@@ -811,6 +811,9 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_E_NOT_SUPPORT;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommFlush()
 {
     return HCCL_E_NOT_SUPPORT;
@@ -826,7 +829,7 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
         CHK_PTR_NULL(ubTransportLitePtr);
         CHK_RET(ubTransportLitePtr->Fence());
     }
-    
+
     return HCCL_SUCCESS;
 }
 
@@ -883,6 +886,9 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
     HCCL_ERROR("[%s]Does not support this interface.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 HcclResult HcommProfilingReportDeviceOp(const char* groupname) {
     HCCL_INFO("[%s] START.", __func__);

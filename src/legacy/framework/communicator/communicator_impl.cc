@@ -477,7 +477,7 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
         dfxOpInfo->op_           = *GetCurrentCollOperator();
         dfxOpInfo->tag_          = dfxOpInfo->op_.opTag;
-        dfxOpInfo->algType_      = AlgType::MESH;
+        dfxOpInfo->algType_      = AlgType{AlgType::MESH}.Describe();
         dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -1318,7 +1318,8 @@ void CommunicatorImpl::CheckRankGraphAddrs() const
     const std::shared_ptr<NetInstance::Peer> &peer = rankGraph->GetPeer(myRank);
     const std::vector<std::shared_ptr<NetInstance::ConnInterface>> &interfaces = peer->GetIfaces();
     for(auto &interface : interfaces) {
-        if (interface->GetPos() == AddrPosition::DEVICE && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
+        const std::set<LinkProtocol> &protocols = interface->GetLinkProtocols();  // PCIE没有EID
+        if (interface->GetPos() == AddrPosition::DEVICE && protocols.count(LinkProtocol::PCIE) == 0 && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
             RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
                           std::vector<std::string>({interface->GetAddr().GetIpStr(), "addr", "A right ip address"}));
             THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"
@@ -2185,7 +2186,7 @@ HcclResult CommunicatorImpl::GetSnapShotDynamicBuf(BinaryStream &buf) const
         buf << static_cast<u32>(currentCollOperator->opMode);
 
         HCCL_INFO("[CommunicatorImpl][%s] rank[%d], currentCollOperator", __func__, myRank);
-        collService->GetSnapShotDynamicBuf(*currentCollOperator, buf);
+        TRY_CATCH_RETURN(collService->GetSnapShotDynamicBuf(*currentCollOperator, buf));
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -2821,6 +2822,10 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
         default:
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] internal error", hcclAccelerator.Describe().c_str());
             return HCCL_E_INTERNAL;
+    }
+    if (commAccelerator == AcceleratorState::AICPU_TS && IsCommWithPCIEProtocol() && HrtGetDeviceCount() > 8) {
+        // 当通信域存在PCIE链路且当前环境节点数大于8卡时，暂不支持aicpu展开，仅支持aiv展开
+        commAccelerator = AcceleratorState::AIV_ONLY;
     }
     OpExecuteConfig inCommExecuteConfig;
     inCommExecuteConfig.accState = commAccelerator;
@@ -3841,8 +3846,6 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
         hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
     }
     HCCL_INFO("[CommunicatorImpl::%s] hcclAccelerator[%s].", __func__, hcclAccelerator.Describe().c_str());
-    HcclMainboardId hcclMainboardId;
-    CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
     switch (hcclAccelerator) {
         case HcclAccelerator::DEFAULT:
             acceleratorState = AcceleratorState::CCU_SCHED; // 默认按照CCU_SCHED
@@ -3854,17 +3857,9 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::CCU_SCHED;
             break;
         case HcclAccelerator::AIV:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             acceleratorState = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:

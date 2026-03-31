@@ -23,7 +23,7 @@ public:
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_CPUEngine_Return_HCCL_Success)
 {
     void* ctx = nullptr;
-    HcclResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 1024, &ctx);
+    HcommResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 1024, &ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_NE(ctx, nullptr);
 
@@ -33,7 +33,7 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_CPUEngine_Return_HCC
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_SizeZero_Return_HCCL_Success)
 {
     void* ctx = nullptr;
-    HcclResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 0, &ctx);
+    HcommResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 0, &ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     if (ctx != nullptr) {
@@ -43,14 +43,14 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_SizeZero_Return_HCCL
 
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_CtxNullptr_Return_HCCL_E_PTR)
 {
-    HcclResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 1024, nullptr);
+    HcommResult ret = HcommEngineCtxCreate(COMM_ENGINE_CPU, 1024, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCreate_When_UnsupportedEngine_Return_HCCL_E_PARA)
 {
     void* ctx = nullptr;
-    HcclResult ret = HcommEngineCtxCreate(COMM_ENGINE_RESERVED, 1024, &ctx);
+    HcommResult ret = HcommEngineCtxCreate(COMM_ENGINE_RESERVED, 1024, &ctx);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -59,20 +59,20 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxDestroy_When_CPUEngine_Return_HC
     void* ctx = malloc(1024);
     EXPECT_NE(ctx, nullptr);
 
-    HcclResult ret = HcommEngineCtxDestroy(COMM_ENGINE_CPU, ctx);
+    HcommResult ret = HcommEngineCtxDestroy(COMM_ENGINE_CPU, ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxDestroy_When_CtxNullptr_Return_HCCL_E_PTR)
 {
-    HcclResult ret = HcommEngineCtxDestroy(COMM_ENGINE_CPU, nullptr);
+    HcommResult ret = HcommEngineCtxDestroy(COMM_ENGINE_CPU, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
 TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxDestroy_When_UnsupportedEngine_Return_HCCL_E_PARA)
 {
     void* ctx = malloc(1024);
-    HcclResult ret = HcommEngineCtxDestroy(COMM_ENGINE_RESERVED, ctx);
+    HcommResult ret = HcommEngineCtxDestroy(COMM_ENGINE_RESERVED, ctx);
     EXPECT_EQ(ret, HCCL_E_PARA);
     free(ctx);
 }
@@ -84,7 +84,7 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCopy_When_CPUEngine_Return_HCCL_
     EXPECT_NE(srcCtx, nullptr);
     EXPECT_NE(dstCtx, nullptr);
 
-    HcclResult ret = HcommEngineCtxCopy(COMM_ENGINE_CPU, dstCtx, srcCtx, 1024);
+    HcommResult ret = HcommEngineCtxCopy(COMM_ENGINE_CPU, dstCtx, srcCtx, 1024);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     free(srcCtx);
@@ -96,7 +96,7 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCopy_When_DstNullptr_Return_HCCL
     void* srcCtx = malloc(1024);
     EXPECT_NE(srcCtx, nullptr);
 
-    HcclResult ret = HcommEngineCtxCopy(COMM_ENGINE_CPU, nullptr, srcCtx, 1024);
+    HcommResult ret = HcommEngineCtxCopy(COMM_ENGINE_CPU, nullptr, srcCtx, 1024);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     free(srcCtx);
@@ -107,7 +107,7 @@ TEST_F(TestHcommEngineCtx, Ut_TestHcommEngineCtxCopy_When_SrcNullptr_Return_HCCL
     void* dstCtx = malloc(1024);
     EXPECT_NE(dstCtx, nullptr);
 
-    HcclResult ret = HcommEngineCtxCopy(COMM_ENGINE_CPU, dstCtx, nullptr, 1024);
+    HcommResult ret = HcommEngineCtxCopy(COMM_ENGINE_CPU, dstCtx, nullptr, 1024);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     free(dstCtx);

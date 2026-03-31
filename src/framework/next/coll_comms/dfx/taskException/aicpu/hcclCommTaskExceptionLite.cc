@@ -25,6 +25,7 @@ constexpr u32 RT_UB_REMOTE_OPERATIOINERR = 0x3; // A5 ub error类型为0x3时，
 
 constexpr uint32_t TASK_CONTEXT_SIZE = 50; // task 执行失败时打印谦虚task信息的数量
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
+constexpr u32 MAX_NAME_LEN = 64;
 
 HcclCommTaskExceptionLite &HcclCommTaskExceptionLite::GetInstance()
 {
@@ -193,8 +194,8 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     errMsgInfo.taskId = taskInfo.taskId_;
     errMsgInfo.rankId = aicpuComm->GetTopoInfo().userRank;
     errMsgInfo.rankSize = aicpuComm->GetTopoInfo().userRankSize;
-    errMsgInfo.algType = taskInfo.dfxOpInfo_ == nullptr ?
-        static_cast<Hccl::AlgType>(Hccl::AlgType::MESH) : taskInfo.dfxOpInfo_->algType_;
+    strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo.dfxOpInfo_ == nullptr ? "MESH" :
+                                                                                taskInfo.dfxOpInfo_->algType_.c_str());
     errMsgInfo.opIndex = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->opIndex_;
     errMsgInfo.opType = taskInfo.dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo.dfxOpInfo_->op_.dataCount;

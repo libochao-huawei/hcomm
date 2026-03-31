@@ -1027,7 +1027,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::OrchestrateAicpu(const HcclCMDType &opType, const std::string &algName,
                                                   const OpParam &param, const AlgResourceResponse &algResource, const std::string &newTag, AlgType algType,
-                                                  bool isCustom, bool needIncreLink)
+                                                  bool isCustom, bool needIncreLink, bool needRecreateAlltoallComm)
     {
         return HCCL_SUCCESS;
     }
@@ -1605,17 +1605,17 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
+    HcclResult HcclCommunicator::DeregisterWindow(HcclCommSymWindow winHandle)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
     {
         return HCCL_SUCCESS;
     }
@@ -1623,5 +1623,18 @@ namespace hccl
     bool HcclCommunicator::EnableAicpuUnfold()
     {
         return false;
+    }
+
+    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, const OpParam &opParam,
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::HandleExistAlgResource(const std::string& newTag, const std::string& algName,
+        HcclCMDType opType, const OpParam& opParam, std::unique_ptr<CollAlgOperator>& algOperator,
+        bool selectAivAlg, bool aicpuUnfoldModeFor910B, bool needRecreateAlltoallComm)
+    {
+        return HCCL_SUCCESS;
     }
 }
