@@ -45,11 +45,6 @@ private:
     HcclResult LocalCopyToScratch(InsQuePtr tempInsQue);
     HcclResult LocalCopyToUsrOut(InsQuePtr tempInsQue);
     HcclResult RunMesh(const u32 myAlgRank, const std::vector<RankId> &vTopo, std::vector<InsQuePtr> &tempInsQues);
-<<<<<<< HEAD
-    void UpdateRxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize);
-    void UpdateTxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize);
-=======
->>>>>>> d14b74a49d2db5dd5d1a9bc16e882da9d3cd6b35
     u32 majorQueNum_       = 0;
     u32 queNumPerNeighbor_ = 1;
     bool enableInterRankCounterNotify_ = false;
