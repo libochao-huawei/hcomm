@@ -12,6 +12,7 @@
 #define RMA_BUFFER_MGR_H
 
 #include <map>
+#include <utility>
 #include "buffer_key.h"
 #include "log.h"
 
@@ -145,6 +146,14 @@ public:
     {
         for (const auto& pair : intervalTree_) {
             HCCL_INFO("Key: %s, Value: %p", pair.first.ToString().c_str(), pair.second.buffer.get());
+        }
+    }
+
+    template<typename Fn>
+    void ForEach(Fn &&fn) const
+    {
+        for (const auto &pair : intervalTree_) {
+            std::forward<Fn>(fn)(pair.first, pair.second.buffer);
         }
     }
 

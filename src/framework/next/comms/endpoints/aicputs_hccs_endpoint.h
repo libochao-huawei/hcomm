@@ -19,18 +19,21 @@ namespace hcomm {
 /**
  * @note 职责：AICPU_TS通信引擎+HCCS协议的通信设备EndPoint，管理通信设备上下文，以及设备上的注册内存。
  */
-class AicpuTsHccsEndPoint : public Endpoint {
+class AicpuTsHccsEndpoint : public Endpoint {
 public:
-    virtual ~AicpuTsHccsEndPoint() = default;
+    explicit AicpuTsHccsEndpoint(const EndpointDesc &endpointDesc);
+    virtual ~AicpuTsHccsEndpoint() = default;
 
-    // 注册内存
-    HcclResult RegisterMemory(const std::vector<MemHandle>& memHandles) override;
+    HcclResult Init() override;
 
-    // 注销内存
-    virtual HcclResult UnregisterMemory(MemHandle memHandle) override;
+    HcclResult ServerSocketListen(const uint32_t port) override;
 
-    // 获取注册的内存信息
-    virtual HcclResult GetRegisteredMemory(std::vector<MemRegion>& memRegions) override;
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
+    HcclResult UnregisterMemory(void* memHandle) override;
+    HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 };
 }
 #endif // AICPUTS_HCCS_ENDPOINT_H
