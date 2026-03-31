@@ -36,6 +36,8 @@ EndpointDesc MockEndpointDesc(const CommAddr &commAddr, uint32_t devPhyId)
 {
     EndpointDesc epDesc{};
     (void)memset_s(&epDesc, sizeof(epDesc), 0, sizeof(epDesc));
+
+    (void)EndpointDescInit(&epDesc, 1);
     
     epDesc.protocol = CommProtocol::COMM_PROTOCOL_UBC_CTP;
     epDesc.commAddr = commAddr;
@@ -53,6 +55,8 @@ HcommChannelDesc MockHcommChannelDesc(const EndpointDesc &destEpDesc,
 {
     HcommChannelDesc channelDesc{};
     (void)memset_s(&channelDesc, sizeof(channelDesc), 0, sizeof(channelDesc));
+
+    (void)HcommChannelDescInit(&channelDesc, 1);
     
     channelDesc.remoteEndpoint = destEpDesc;
     channelDesc.notifyNum = 1;
@@ -88,6 +92,18 @@ std::unique_ptr<Hccl::LocalUbRmaBuffer> MockUbRmaBuffer()
     auto localBuffer = std::make_shared<Hccl::Buffer>(
         reinterpret_cast<uintptr_t>(addr), size, memType);
     return make_unique<Hccl::LocalUbRmaBuffer>(localBuffer);
+}
+
+CommMemHandle MockCommMemHandle(Hccl::LocalUbRmaBuffer *bufferPtr)
+{
+    CommMemHandle memHandle{};
+    memHandle.addr = reinterpret_cast<void*>(bufferPtr->GetAddr());
+    memHandle.size = bufferPtr->GetSize();
+    memHandle.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
+    memHandle.bufferHandle = static_cast<void *>(bufferPtr);
+    memHandle.memTag = "FakeCommBuffer";
+
+    return memHandle;
 }
 
 HcclResult MockCcuConnectionImportJettys(hcomm::CcuConnection *This)
