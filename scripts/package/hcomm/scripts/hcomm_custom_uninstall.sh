@@ -181,6 +181,10 @@ custom_uninstall() {
 
         log "INFO" "uninstall hcomm tool begin..."
         whl_uninstall_package "${HCOMM_NAME}" "${WHL_INSTALL_DIR_PATH}"
+
+        # maybe __pycache__ left in dir
+        rm -rf "${WHL_INSTALL_DIR_PATH}/hccl" 2> /dev/null
+
         log "INFO" "hcomm tool uninstalled successfully!"
     fi
 
