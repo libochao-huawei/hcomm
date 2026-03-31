@@ -419,9 +419,9 @@ HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, const s8* stubFunc)
 HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, void* args, u32 argsSize)
 {
     constexpr u32 AIV_ATTRNUM_THREE = 3;
-    HCCL_INFO("[AIV][ExecuteKernelLaunch] sendbuff [%llu] recvbuff [%llu] rank [%u] sendRecvRemoteRank [%u] rankSize [%u] count [%llu] "
+    HCCL_INFO("[AIV][ExecuteKernelLaunch] cmdType [%d] sendbuff [%llu] recvbuff [%llu] rank [%u] sendRecvRemoteRank [%u] rankSize [%u] count [%llu] "
         "dataType [%d] reduceOp [%d] root [%u] tag [%u] isOpBase [%d] "
-        "extraArgsPtr [%p] argsSize [%u] numBlocks [%u]", opArgs.input,
+        "extraArgsPtr [%p] argsSize [%u] numBlocks [%u]", opArgs.cmdType, opArgs.input,
         opArgs.output, opArgs.rank, opArgs.sendRecvRemoteRank, opArgs.rankSize, opArgs.count,
         opArgs.dataType, opArgs.op, opArgs.root,
         opArgs.aivTag, opArgs.isOpBase, args, argsSize, opArgs.numBlocks);

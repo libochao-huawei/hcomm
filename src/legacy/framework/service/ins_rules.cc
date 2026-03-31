@@ -850,8 +850,14 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
             = aivOpArgs.isOpBase ? reinterpret_cast<void *>(comm.GetAivTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET):
                 reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_CLEAR_OFFSET);
         bool isAivClearEnable = comm.GetAivClearEnable();
+        HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] isAivClearEnable[%d] buffersInAddr[%p] buffersInAddrSrc[%p] AIV_FLAG_AREA_SIZE[%u]",
+                  aivOpArgs.rank, aivOpArgs.aivTag, isAivClearEnable, buffersInAddr, buffersInAddrSrc, AIV_FLAG_AREA_SIZE);
         if (isAivClearEnable) {
+            HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] Before HrtMemcpy for flag clear", aivOpArgs.rank, aivOpArgs.aivTag);
             HrtMemcpy(buffersInAddr, AIV_FLAG_AREA_SIZE, buffersInAddrSrc, AIV_FLAG_AREA_SIZE, RT_MEMCPY_DEVICE_TO_DEVICE);
+            HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] After HrtMemcpy, AIV flag clear executed", aivOpArgs.rank, aivOpArgs.aivTag);
+        } else {
+            HCCL_INFO("[AIV][Interpret] rank[%u] tag[%u] AIV flag clear SKIPPED", aivOpArgs.rank, aivOpArgs.aivTag);
         }
     }
 
