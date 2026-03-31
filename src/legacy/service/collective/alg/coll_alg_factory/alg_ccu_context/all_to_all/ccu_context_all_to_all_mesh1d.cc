@@ -116,27 +116,14 @@ void CcuContextAllToAllMesh1D::Algorithm()
     CcuRep::MaskSignal locMask = CreateMaskSignal();
     //  all2all 数据搬运
     transportId = 0;
-    if (loadFromMem_) {
-        for(uint64_t r = 0; r < rankSize_; r++) {
-            if (r == rankId_) {
-                LocalCopy(dst[r], src[r], sliceSize_, locMask, 1 << r);
-            }
-            else {
-                Write(*transports[transportId], dst[r], src[r], sliceSize_, locMask, 1 << r);
-                transportId++;
-            }
+    for (uint64_t r = 0; r < rankSize_; r++) {
+        if (r != rankId_) {
+            Write(*transports[transportId], dst[r], src[r], sliceSize_, locMask, 1 << r);
+            transportId++;
         }
-        LocalWait(locMask, ((1 << rankSize_) - 1));
-    } else {
-        for(uint64_t r = 0; r < rankSize_; r++) {
-            if (r != rankId_) {
-                Write(*transports[transportId], dst[r], src[r], sliceSize_, locMask, 1 << r);
-                transportId++;
-            }
-        }
-        GroupCopy(dst[rankId_], src[rankId_], groupOpSize_);
-        LocalWait(locMask, allBit);
     }
+    GroupCopy(dst[rankId_], src[rankId_], groupOpSize_);
+    LocalWait(locMask, allBit);
 
     //  后同步
     for (auto t : transports) {

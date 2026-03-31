@@ -9,6 +9,7 @@
  */
 
 #include <hccl/hccl_types.h>
+#include <hccl/hccl_res_expt.h>
 #include "hccl_api_base_test.h"
 #include "log.h"
 
@@ -37,6 +38,27 @@ HcclResult GetRemoteCCLBufStub(HcclCommunicator *This, uint32_t remoteRank, void
     *addr = reinterpret_cast<void *>(0x12345678);
     *size = 0;
     return HCCL_SUCCESS;
+}
+
+HcclResult GetRemoteCCLBufStubWithNullAddr(HcclCommunicator *This, uint32_t remoteRank, void **addr, uint64_t *size)
+{
+    *addr = nullptr;
+    *size = 0;
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetRemoteCCLBufStubWithValidSize(HcclCommunicator *This, uint32_t remoteRank, void **addr, uint64_t *size)
+{
+    *addr = reinterpret_cast<void *>(0x12345678);
+    *size = 4096;
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetRemoteCCLBufStubWithFailure(HcclCommunicator *This, uint32_t remoteRank, void **addr, uint64_t *size)
+{
+    *addr = nullptr;
+    *size = 0;
+    return HCCL_E_INTERNAL;
 }
 
 TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
@@ -70,7 +92,68 @@ TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_RemoteRankIs
 {
     void *addr = nullptr;
     uint64_t size = 0;
-    
+
     HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 16, &addr, &size);
     EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_RemoteRankEqualsMax_Expect_ReturnIsHCCL_E_PARA)
+{
+    void *addr = nullptr;
+    uint64_t size = 0;
+
+    HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 128 * 1024, &addr, &size);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_RemoteRank0_Expect_ReturnIsHCCL_SUCCESS)
+{
+    void *addr = nullptr;
+    uint64_t size = 0;
+
+    MOCKER_CPP(&HcclCommunicator::GetRemoteCCLBuf).stubs().will(invoke(GetRemoteCCLBufStub));
+
+    HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 0, &addr, &size);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_ValidAddrAndSize_Expect_ReturnIsHCCL_SUCCESS)
+{
+    void *addr = nullptr;
+    uint64_t size = 0;
+
+    MOCKER_CPP(&HcclCommunicator::GetRemoteCCLBuf).stubs().will(invoke(GetRemoteCCLBufStubWithValidSize));
+
+    HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, &size);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(addr, reinterpret_cast<void *>(0x12345678));
+    EXPECT_EQ(size, 4096);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_GetRemoteCCLBufReturnsNullAddr_Expect_ReturnIsHCCL_E_PTR)
+{
+    void *addr = reinterpret_cast<void *>(0x1111);
+    uint64_t size = 0;
+
+    MOCKER_CPP(&HcclCommunicator::GetRemoteCCLBuf).stubs().will(invoke(GetRemoteCCLBufStubWithNullAddr));
+
+    HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, &size);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(addr, nullptr);
+    EXPECT_EQ(size, 0);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclGetRemoteIpcHcclBufTest, ut_HcclGetRemoteIpcHcclBuf_When_GetRemoteCCLBufFails_Expect_ReturnIsError)
+{
+    void *addr = nullptr;
+    uint64_t size = 0;
+
+    MOCKER_CPP(&HcclCommunicator::GetRemoteCCLBuf).stubs().will(invoke(GetRemoteCCLBufStubWithFailure));
+
+    HcclResult ret = HcclGetRemoteIpcHcclBuf(comm, 1, &addr, &size);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    GlobalMockObject::verify();
 }

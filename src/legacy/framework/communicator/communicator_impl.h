@@ -381,7 +381,7 @@ public:
     std::vector<LinkData> GetFullMeshLinks() const;
     ErrorMessageReport GetAicpuTaskException();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
-    bool IsCommWithPCIEProtocol();   // 判断通信域内是否有rank之间存在PCIE链路
+    bool IsCommWithPCIEProtocol() const;   // 判断通信域内是否有rank之间存在PCIE链路
 
 private:
     std::string                                id;
@@ -505,6 +505,7 @@ private:
     void InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph);
     void InitRankGraph(const RankTableInfo &ranktable);
     void CheckRankGraph() const;
+    void CheckRankGraphAddrs() const;
     HcclResult CheckCommStatus();
     void InitDataBufferManager();
     void InitNotifyManager();
@@ -591,7 +592,6 @@ private:
     HcclResult GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const;
 
     // AICPU场景aclgraph专用
-    bool IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const;
     HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
 };
 } // namespace Hccl

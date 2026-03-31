@@ -475,8 +475,8 @@ bool CommunicatorImpl::TryFastCcuLaunch(const CollOpParams &opParams, aclrtStrea
         auto dfxOpInfo = std::make_shared<DfxOpInfo>();
         CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
         dfxOpInfo->op_           = *GetCurrentCollOperator();
-        dfxOpInfo->tag_          = OpTypeToString(dfxOpInfo->op_.opType);
-        dfxOpInfo->algType_      = AlgType::MESH;
+        dfxOpInfo->tag_          = dfxOpInfo->op_.opTag;
+        dfxOpInfo->algType_      = AlgType{AlgType::MESH}.Describe();
         dfxOpInfo->commIndex_    = GetIdIndex();
         dfxOpInfo->comm_         = this;
         dfxOpInfo->beginTime_    = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -649,15 +649,11 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
     return HCCL_SUCCESS;
 }
 
-bool CommunicatorImpl::IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const
+static HcclResult MatchAclgraph(const rtStream_t stream, bool &isCapture)
 {
-    bool isCapture = false;
     rtModel_t rtModel = nullptr;
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
-    if (isCapture && opWhiteSet.find(opParams.opType) != opWhiteSet.end()) {
-        return true;
-    }
-    return false;
+    return HCCL_SUCCESS;
 }
 
 HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOpParams &opParams)
@@ -697,7 +693,10 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
-        if (TryFastCcuLaunch(opParams, stream)) {
+        // 判断是否为aclgraph
+        bool isCapture = false; // isCapture为true表示aclgraph
+        CHK_RET(MatchAclgraph(stream, isCapture));
+        if (!isCapture && TryFastCcuLaunch(opParams, stream)) { // 若是aclgraph则不走快速下发
             return HcclResult::HCCL_SUCCESS;
         }
         curOpParams = opParams;
@@ -713,7 +712,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
 
         // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的,会切换到图模式
-        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && IsOpSupportZeroCopyAlg(opParams, stream)) {
+        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && isCapture && (opWhiteSet.find(opParams.opType) != opWhiteSet.end())) {
             std::string tag = opParams.opTag + "_" + std::to_string(tagResourceIndex_++);
             OffloadResourcePre(tag, opParams);
             HCCL_INFO("[CommunicatorImpl][%s]current op support zero copy in aicpu aclgraph, change to offload", __func__);
@@ -741,7 +740,8 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             aivTag = 1;
         }
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, true);
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, true);
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
@@ -960,6 +960,9 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
 
         // 更新开关状态
         UpdateProfStat();
+        // 判断是否为aclgraph(aicpu场景零拷贝会切图模式)
+        bool isCapture = false; // isCapture为true表示aclgraph，profiling需要
+        CHK_RET(MatchAclgraph(stream, isCapture));
         HCCL_INFO("CommunicatorImpl::LoadOffloadCollOp opParams dataType[%s]", opParams.dataType.Describe().c_str());
         CovertToCurrentCollOperator(opTag, opParams, OpMode::OFFLOAD);
         HCCL_INFO("CommunicatorImpl::LoadOffloadCollOp currentCollOperator dataType[%s]", currentCollOperator->dataType.Describe().c_str());
@@ -998,7 +1001,8 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;
         // ReportProfInfok:opinfo, allTaskInfo
-        ReportProfInfo(beginTime, opParams.staticShape, false);
+        bool cachedReq = opParams.staticShape || isCapture;
+        ReportProfInfo(beginTime, cachedReq, isCapture); // profiling对于aclgraph场景的处理与单算子一致
         HcclUs endut = std::chrono::steady_clock::now();
         TraceEndInfo(startut, endut, opParams);
         opIndex++;
@@ -1275,7 +1279,54 @@ void CommunicatorImpl::CheckRankGraph() const
                            num);
         THROW<InvalidParamsException>(msg);
     }
+    CheckRankGraphAddrs();
 }
+
+void CommunicatorImpl::CheckRankGraphAddrs() const
+{
+    if (rankGraph == nullptr || ranktableInfo == nullptr) {
+        HCCL_WARNING("[CommunicatorImpl][%s] rankGraph or ranktableInfo is nullptr, skip.", __func__);
+        return;
+    }
+
+    if (rankGraph->GetRankSize() == 1) {
+        HCCL_WARNING("[CommunicatorImpl][%s] single rank no need do this check!", __func__);
+        return;
+    }
+    
+    // 仅能获取到当前进程所在卡的ip，每个卡独立check自己的部分
+    std::unordered_set<Eid> localEidSet;
+    NewRankInfo localRankInfo;
+    for (auto &rank : ranktableInfo->ranks) {
+        if (rank.deviceId == devPhyId) {  // 获取本卡的ip地址
+            HRaInfo info(HrtNetworkMode::HDC, rank.deviceId);
+            std::vector<HrtDevEidInfo> localEidInfos =  HrtRaGetDevEidInfoList(info);
+            for (auto &eidInfo : localEidInfos) {
+                localEidSet.insert(eidInfo.ipAddress.GetEid());
+            }
+            localRankInfo = rank;
+            break;
+        }
+    }
+
+    if (localEidSet.empty()) {
+        return;
+    }
+
+    const std::shared_ptr<NetInstance::Peer> &peer = rankGraph->GetPeer(myRank);
+    const std::vector<std::shared_ptr<NetInstance::ConnInterface>> &interfaces = peer->GetIfaces();
+    for(auto &interface : interfaces) {
+        const std::set<LinkProtocol> &protocols = interface->GetLinkProtocols();  // PCIE没有EID
+        if (interface->GetPos() == AddrPosition::DEVICE && protocols.count(LinkProtocol::PCIE) == 0 && localEidSet.count(interface->GetAddr().GetEid()) == 0) {
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({"value", "variable", "expect"}),
+                          std::vector<std::string>({interface->GetAddr().GetIpStr(), "addr", "A right ip address"}));
+            THROW<InvalidParamsException>(StringFormat("[CommunicatorImpl][%s]"
+                                                       "the ip address %s of ranktable in rank %u is error!",
+                                                       __func__, interface->GetAddr().Describe().c_str(), devPhyId));
+        }
+    }
+}
+
 
 u32 GetLocalDieId(PortData&& port)
 {
@@ -1305,9 +1356,10 @@ std::string CommunicatorImpl::GetTopoFilePath() const
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
-    try {
+    std::ifstream file(filePath);
+    if (file.good()) {
         jsonParser.ParseFileToJson(filePath, parseJson);
-    } catch (...) {
+    } else {
         const u32 maxBuffLen = 10 * 1024 * 1024;
         size_t bufSize;
         s32 result = TopoAddrInfoGetSize(devPhyId, &bufSize); // 获取rankInfo大小，用于提前分配内存
@@ -2135,7 +2187,7 @@ HcclResult CommunicatorImpl::GetSnapShotDynamicBuf(BinaryStream &buf) const
         buf << static_cast<u32>(currentCollOperator->opMode);
 
         HCCL_INFO("[CommunicatorImpl][%s] rank[%d], currentCollOperator", __func__, myRank);
-        collService->GetSnapShotDynamicBuf(*currentCollOperator, buf);
+        TRY_CATCH_RETURN(collService->GetSnapShotDynamicBuf(*currentCollOperator, buf));
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -2772,6 +2824,10 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] internal error", hcclAccelerator.Describe().c_str());
             return HCCL_E_INTERNAL;
     }
+    if (commAccelerator == AcceleratorState::AICPU_TS && IsCommWithPCIEProtocol() && HrtGetDeviceCount() > 8) {
+        // 当通信域存在PCIE链路且当前环境节点数大于8卡时，暂不支持aicpu展开，仅支持aiv展开
+        commAccelerator = AcceleratorState::AIV_ONLY;
+    }
     OpExecuteConfig inCommExecuteConfig;
     inCommExecuteConfig.accState = commAccelerator;
     HCCL_DEBUG("[CommunicatorImpl][%s] inCommExecuteConfig[%s]", __func__, inCommExecuteConfig.accState.Describe().c_str());
@@ -2781,7 +2837,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     return HCCL_SUCCESS;
 }
 
-bool CommunicatorImpl::IsCommWithPCIEProtocol()
+bool CommunicatorImpl::IsCommWithPCIEProtocol() const
 {
     auto links = GetFullMeshLinks();
     for (auto link : links) {
@@ -3792,8 +3848,6 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
         hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
     }
     HCCL_INFO("[CommunicatorImpl::%s] hcclAccelerator[%s].", __func__, hcclAccelerator.Describe().c_str());
-    HcclMainboardId hcclMainboardId;
-    CHK_RET(HrtGetMainboardId(devLogicId, hcclMainboardId));
     switch (hcclAccelerator) {
         case HcclAccelerator::DEFAULT:
             acceleratorState = AcceleratorState::CCU_SCHED; // 默认按照CCU_SCHED
@@ -3805,17 +3859,9 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::CCU_SCHED;
             break;
         case HcclAccelerator::AIV:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             acceleratorState = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
-            if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置AIV加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
-                return HCCL_E_NOT_SUPPORT;
-            }
             acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:

@@ -71,7 +71,7 @@ HcclResult InsTempReduceAicpuReduce::RunGatherMesh(const TempFuncs &tempFuncs, c
             dstSlices.emplace_back(BufferType::SCRATCH, srcSize * neighborRank, srcSize);
             SlicesList rxSlicesList(srcSlices, dstSlices);
             DataInfo recvData(neighborLinkData, rxSlicesList);
-            CHK_PRT_RET(Recv(recvData, tempInsQues[queIdx], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
+            CHK_PRT_RET(Recv(recvData, tempInsQues[queIdx], 0, true, dmaMode_), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
                     HcclResult::HCCL_E_INTERNAL);
         }
         CHK_RET(PostSyncInterQueues(tempInsQues));
@@ -86,7 +86,7 @@ HcclResult InsTempReduceAicpuReduce::RunGatherMesh(const TempFuncs &tempFuncs, c
         dstSlices.emplace_back(BufferType::SCRATCH, srcSize * u32(myRank_), srcSize);
         SlicesList txSlicesList(srcSlices, dstSlices);
         DataInfo sendData(linkSend, txSlicesList);
-        CHK_PRT_RET(Send(sendData, tempInsQues[0], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
+        CHK_PRT_RET(Send(sendData, tempInsQues[0], 0, true, dmaMode_), HCCL_ERROR("[InsTempReduceAicpuReduce] BatchSend failed"),
                 HcclResult::HCCL_E_INTERNAL);
     }
     return HCCL_SUCCESS;
@@ -108,6 +108,11 @@ HcclResult InsTempReduceAicpuReduce::GenExtIns(const TempFuncs &tempFuncs, const
                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[InsTempReduceAicpuReduce] Run start");
+
+    dmaMode_ = DmaMode::PUT;
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    }
     if (tempVTopo_[0].size() == 1) {
         return HcclResult::HCCL_SUCCESS;
     }

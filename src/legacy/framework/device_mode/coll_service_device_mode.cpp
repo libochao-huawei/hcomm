@@ -104,7 +104,8 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
         auto it = comm->hcclCacheMap_.find(opCacheParam);
         bool isCache = false;
         bool isSendRecv = ((op.opType == OpType::SEND) || (op.opType == OpType::RECV) || (op.opType == OpType::BATCHSENDRECV));
-        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv)) {
+        bool isAlltoAllV = (op.opType == OpType::ALLTOALLV);
+        if ((it != comm->hcclCacheMap_.end()) && (!isSendRecv) && (!isAlltoAllV)) {
             isCache = true;
             insQueue = it->second;
         }  else{
@@ -382,9 +383,6 @@ void CollServiceDeviceMode::GetCcuTaskInfo(void *tilingData, void *ccuTaskGroup)
                   std::begin(group->ccuTaskInfo[index].args));
         HCCL_INFO("ccu task info, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u]", taskParams[index].dieId,
                   taskParams[index].missionId, taskParams[index].instStartId, taskParams[index].instCnt);
-        for (uint64_t i = 0; i < taskParams[index].argSize; i++) {
-            HCCL_INFO("arg[%u] = %lu", i, taskParams[index].args[i]);
-        }
     }
 
     HCCL_INFO("[CollServiceDeviceMode::%s] end.", __func__);

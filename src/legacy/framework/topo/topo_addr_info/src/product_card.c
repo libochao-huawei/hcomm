@@ -66,7 +66,6 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *e
     }
     NetLayerInit(layer, 0, net_instance_id);
     NetLayerSetNetType(layer, NET_TYPE_MESH);
-    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
     for (size_t i = 0; i < eid_cnt; i++) {
         int portId = UrmaEidGetPortId(&eid_list[i].eid);
         if (portId > MAX_MESH_PORT_ID) {
@@ -105,7 +104,6 @@ static int ProcessLayerMesh2P(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t 
     }
     NetLayerInit(layer, 0, net_instance_id);
     NetLayerSetNetType(layer, NET_TYPE_MESH);
-    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
     for (size_t i = 0; i < eid_cnt; i++) {
         int portId = UrmaEidGetPortId(&eid_list[i].eid);
         // 2P互联使用PortGroup EID
@@ -137,7 +135,7 @@ int GetCardRankInfo(int phyId, unsigned int mainboardId, void *buf, size_t* len)
     NetLayer layer_mesh;
     NetLayer layer_roce;
     RootInfoInit(&rootinfo);
-    RankInit(&rank, phyId, phyId % 4);
+    RankInit(&rank, phyId, phyId);
     TopoGetFilePath(mainboardId, rootinfo.topo_file_path, MAX_TOPO_PATH_LEN);
 
     dcmi_urma_eid_info_t eid_list[MAX_EID_NUM] = {0};

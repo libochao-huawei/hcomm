@@ -329,7 +329,7 @@ void BuildA5SqeP2pWriteValue(u32 streamId, u32 taskId, u64 remoteAddr, u32 write
 
     sqe->va                         = 1; // 写对端notify的va地址而非phy地址
 
-    HCCL_INFO("P2P WriteValueSqe streamId %u, taskId %u, remoteAddr %p, writeValue %llu",
+    HCCL_INFO("P2P WriteValueSqe streamId %u, taskId %u, remoteAddr %llu, writeValue %u",
         streamId, taskId, remoteAddr, writeValue);
 }
 } // namespace Hccl

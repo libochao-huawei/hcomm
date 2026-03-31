@@ -194,7 +194,7 @@ extern uint32_t HcclGetCommConfigCapability() HCOMM_WEAK_SYMBOL;
  * @brief Initialize the comm configuration.
  * @param config Pointer to the comm configuration that needs to be initialized.
 */
-inline void HcclCommConfigInit(HcclCommConfig *config)
+static inline void HcclCommConfigInit(HcclCommConfig *config)
 {
     if (config == nullptr) {
         return;
@@ -311,7 +311,7 @@ extern HcclResult HcclGroupEnd();
  * @param flag The flag of this memory window, now only support 0
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag);
+extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, HcclCommSymWindow *winHandle, uint32_t flag);
 
 /**
  * @brief Deregister a memory window for HCCL communication.
@@ -319,7 +319,7 @@ extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t siz
  * @param winHandle A pointer identifying the registered memory window handle.
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
+extern HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle);
 
 /**
  * @brief Get symmetric memory offset and window for HCCL communication.
@@ -331,7 +331,7 @@ extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
  * @param offset A size_t identifying the offset of symmetric memory heap.
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
 
 #ifdef __cplusplus
 }

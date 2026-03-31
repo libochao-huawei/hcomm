@@ -29,7 +29,8 @@ u32 AivTempReduceScatterMesh1D::CalcScratchMultiple(BufferType inBuffType, Buffe
 {
     (void) inBuffType;
     (void) outBuffType;
-    return tempRankSize_;
+    // 小数据量下，这里是2*rankSize基本不影响，大数据量下，需要2倍的cclBuffer去并发读
+    return 2 * tempRankSize_;
 }
 
 HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
@@ -43,11 +44,12 @@ HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
 
 HcclResult AivTempReduceScatterMesh1D::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
-    (void) dataSize;
     numBlocks = numBlocksLimit;
-    constexpr uint32_t stepNum = 2;
-    if (numBlocks > stepNum * tempRankSize_) {
-        numBlocks = stepNum * tempRankSize_;
+    if (dataSize < REDUCE_SCATTER_SMALL_COUNT_512KB) { // 小数据量，走原来极致低时延的流程
+        constexpr uint32_t stepNum = 2;
+        if (numBlocks > stepNum * tempRankSize_) {
+            numBlocks = stepNum * tempRankSize_;
+        }
     }
     HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", numBlocks);
     return HcclResult::HCCL_SUCCESS;

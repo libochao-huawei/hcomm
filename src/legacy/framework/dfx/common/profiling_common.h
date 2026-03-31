@@ -40,8 +40,8 @@ const std::map<TaskParamType, std::string> PROF_TASK_OP_NAME_V2 = {
     {TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY, "Reuce_With_Notify"},
     {TaskParamType::TASK_CCU, "Ccu"},
     {TaskParamType::TASK_AICPU_KERNEL, "AicpuKernel"},
-    {TaskParamType::TASK_AICPU_REDUCE, "Aicpu_Reduce"}
-
+    {TaskParamType::TASK_AICPU_REDUCE, "Aicpu_Reduce"},
+    {TaskParamType::TASK_AIV, "AivKernel"}
 };
 
 inline std::string GetProfTaskOpNameV2(TaskParamType type)

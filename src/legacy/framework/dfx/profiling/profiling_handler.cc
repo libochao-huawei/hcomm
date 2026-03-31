@@ -123,7 +123,8 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     reporterData.threadId = SalGetTid();
     reporterData.beginTime = beginTime;
     reporterData.endTime = endTime;
-    reporterData.itemId = GetProfHashId(taskType.Describe().c_str(), taskType.Describe().length());
+    const std::string proName(GetProfTaskOpNameV2(taskType));
+ 	reporterData.itemId = GetProfHashId(proName.c_str(), proName.length());
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskApi, reporterData data is: level[%u], type[%u], threadId[%u], "
               "beginTime[%llu], endTime[%llu], itemId[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.beginTime,
@@ -132,8 +133,8 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     if (taskType == TaskParamType::TASK_AICPU_KERNEL) {
         return;
     }
-    if ((ignoreLevel && !enableHcclL1_) || (!ignoreLevel && !enableHcclNode_)) {
-        if (cachedReq) {
+     if ((!enableHcclNode_) || (!ignoreLevel && !enableHcclL1_)) {
+ 	    if (cachedReq) { // 开关未开判断是否为图模式进行缓存
             HCCL_INFO("[ProfilingHandler] Cache ReportData");
             std::lock_guard<std::mutex> lock(cachedTaskApiInfoMutex_);
             cachedTaskApiInfo_.push(reporterData);
@@ -544,7 +545,7 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     reporterData.data.hcclopInfo.relay    = 0;
     reporterData.data.hcclopInfo.retry    = 0;
     reporterData.data.hcclopInfo.dataType = opInfo.op_.dataType;
-    reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.Describe().c_str(), opInfo.algType_.Describe().length());
+    reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.c_str(), opInfo.algType_.length());
     uint64_t groupName                     = GetProfHashId(opInfo.op_.opTag.c_str(), opInfo.op_.opTag.length());
     reporterData.data.hcclopInfo.groupName = groupName;
     CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo.comm_);
@@ -786,6 +787,7 @@ void ProfilingHandler::ReportStoragedTaskApi(){
 }
 
 void ProfilingHandler::StartHostHcclOpSubscribe() {
+    enableHcclNode_ = true; // Node_ = L0 | L1
     enableHcclL0_ = true;
     CallProfRegHcclOpApi();
     ReportStoragedCompactInfo();
@@ -833,6 +835,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo(){
 
 void ProfilingHandler::StartL2Subscribe()
 {
+    enableHcclNode_ = true;
     enableHcclL1_ = true;
     enableHcclL2_ = true;
     HCCL_INFO("ProfilingHandler StartL2Subscribe");
