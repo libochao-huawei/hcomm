@@ -471,7 +471,7 @@ else()
     )
 endif()
 
-add_dependencies(ccl_kernel_plf json)
+add_dependencies(ccl_kernel_plf json hccl_legacy)
 add_dependencies(hccd json)
 if(BUILD_OPEN_PROJECT)
     add_dependencies(ccl_kernel_plf hccl_legacy)
