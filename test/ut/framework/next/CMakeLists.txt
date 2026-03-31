@@ -41,6 +41,8 @@ add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/dfx/taskException/host
+    ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/dfx/taskException/aicpu
 )
  
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE
