@@ -965,7 +965,6 @@ HcclResult HostCpuRoceChannel::GetHcclBuffer(void*& addr, uint64_t& size)
     size = static_cast<uint64_t>(rmtRmaBuffers_[0]->GetSize());
     return HCCL_SUCCESS;
 }
-<<<<<<< HEAD
 
 HcclResult HostCpuRoceChannel::Clean()
 {
@@ -978,6 +977,4 @@ HcclResult HostCpuRoceChannel::Resume()
 }
 
 } // namespace hcomm
-=======
-} // namespace hcomm
->>>>>>> origin/master
+

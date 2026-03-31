@@ -551,7 +551,6 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
     return HCCL_SUCCESS;
 }
 
-<<<<<<< HEAD
 HcclResult ChannelProcess::ChannelClean(const ChannelHandle *channelList, uint32_t listNum)
 {
     CHK_PTR_NULL(channelList);
@@ -700,6 +699,4 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
 }
 
 }
-=======
-}
->>>>>>> origin/master
+
