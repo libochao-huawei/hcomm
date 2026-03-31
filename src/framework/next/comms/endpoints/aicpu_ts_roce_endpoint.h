@@ -46,6 +46,9 @@ public:
     static HcclResult AcceptDataSocket(uint32_t port, const std::string &tag,
         std::shared_ptr<hccl::HcclSocket> &outConnected, uint32_t acceptTimeoutMs = 0);
 
+    /** 向该端口上的监听 Socket 添加白名单（仅 SERVER 建链前调用，语义对齐 HcclSocketManager::AddWhiteList） */
+    static HcclResult AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo> &wlistInfos);
+
 private:
     static std::unordered_map<uint32_t, std::shared_ptr<hccl::HcclSocket>> &GetServerSocketMap();
 

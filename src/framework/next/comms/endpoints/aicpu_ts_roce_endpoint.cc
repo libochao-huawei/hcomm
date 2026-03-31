@@ -113,6 +113,23 @@ std::unordered_map<uint32_t, std::shared_ptr<hccl::HcclSocket>> &AicpuTsRoceEndp
     return serverSocketMap;
 }
 
+HcclResult AicpuTsRoceEndpoint::AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo> &wlistInfos)
+{
+    if (wlistInfos.empty()) {
+        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] empty whitelist", __func__);
+        return HCCL_E_PARA;
+    }
+    auto &sockMap = GetServerSocketMap();
+    const uint32_t listenPort = (port != 0U) ? port : 60001U;
+    auto it = sockMap.find(listenPort);
+    if (it == sockMap.end() || it->second == nullptr) {
+        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] no listen socket for port[%u]", __func__, listenPort);
+        return HCCL_E_NOT_FOUND;
+    }
+    std::vector<SocketWlistInfo> mutableCopy = wlistInfos;
+    return it->second->AddWhiteList(mutableCopy);
+}
+
 HcclResult AicpuTsRoceEndpoint::AcceptDataSocket(uint32_t port, const std::string &tag,
     std::shared_ptr<hccl::HcclSocket> &outConnected, uint32_t acceptTimeoutMs)
 {

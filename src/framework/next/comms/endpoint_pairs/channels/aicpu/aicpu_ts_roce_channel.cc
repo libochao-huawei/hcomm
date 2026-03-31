@@ -17,6 +17,7 @@
 #include "channel_param.h"
 #include "dispatcher_ctx.h"
 #include "exception_handler.h"
+#include "adapter_hccp_common.h"
 #include "hcomm_c_adpt.h"
 #include "hccl_dispatcher_ctx.h"
 #include "hccl_network.h"
@@ -32,6 +33,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <securec.h>
 
 namespace hcomm {
@@ -166,10 +168,13 @@ HcclResult AicpuTsRoceChannel::BuildDataSocket()
     CHK_RET(CommAddrToHcclIp(remoteEp_.commAddr, remoteIp));
 
     uint32_t port = channelDesc_.port != 0 ? channelDesc_.port : kDefaultRocePort;
-    char tagBuf[128];
-    int n = snprintf_s(tagBuf, sizeof(tagBuf), sizeof(tagBuf) - 1U, "hcomm_roce_%p", static_cast<void *>(this));
-    CHK_PRT_RET(n < 0, HCCL_ERROR("[AicpuTsRoceChannel] snprintf_s tag failed"), HCCL_E_INTERNAL);
-    const std::string socketTag(tagBuf);
+    const CommAddr &serverCommAddr = (channelDesc_.role == HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT)
+        ? remoteEp_.commAddr
+        : localEp_.commAddr;
+    hccl::HcclIpAddress serverIp{};
+    CHK_RET(CommAddrToHcclIp(serverCommAddr, serverIp));
+    const char *ipReadable = serverIp.GetReadableIP();
+    std::string socketTag = ipReadable + std::string(":") + std::to_string(port);
 
     if (channelDesc_.role == HcommSocketRole::HCOMM_SOCKET_ROLE_CLIENT) {
         EXECEPTION_CATCH(dataSocket_ = std::make_shared<hccl::HcclSocket>(socketTag, netDevCtx, remoteIp, port,
@@ -184,6 +189,15 @@ HcclResult AicpuTsRoceChannel::BuildDataSocket()
             return waitRet;
         }
     } else {
+        SocketWlistInfo wlistEntry{};
+        wlistEntry.connLimit = 1U;
+        const auto bin = remoteIp.GetBinaryAddress();
+        wlistEntry.remoteIp.addr = bin.addr;
+        wlistEntry.remoteIp.addr6 = bin.addr6;
+        s32 mw = memcpy_s(wlistEntry.tag, sizeof(wlistEntry.tag), socketTag.c_str(), socketTag.size() + 1U);
+        CHK_PRT_RET(mw != EOK, HCCL_ERROR("[AicpuTsRoceChannel] memcpy_s whitelist tag failed"), HCCL_E_MEMORY);
+        const std::vector<SocketWlistInfo> wlistVec = { wlistEntry };
+        CHK_RET(AicpuTsRoceEndpoint::AddListenSocketWhiteList(port, wlistVec));
         CHK_RET(AicpuTsRoceEndpoint::AcceptDataSocket(port, socketTag, dataSocket_, 0));
         CHK_SMART_PTR_NULL(dataSocket_);
     }
