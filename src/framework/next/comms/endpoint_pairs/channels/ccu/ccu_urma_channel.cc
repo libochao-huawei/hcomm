@@ -36,25 +36,25 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
-        CHK_PTR_NULL(locMemInfo);
-        auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
+        auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
         CHK_PTR_NULL(locRmaBuffer);
         HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
+        auto *buffer = locRmaBuffer->GetBuf();
+        CHK_PTR_NULL(buffer);
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = locMemInfo->memTag;
+        std::string tag = buffer->GetMemTag();
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            reinterpret_cast<uintptr_t>(locMemInfo->addr),
-            static_cast<uint32_t>(locMemInfo->size),
+            buffer->GetAddr(),
+            static_cast<uint32_t>(buffer->GetSize()),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            locMemInfo->memType,
+            hccl::ConvertHcclToCommMemType(buffer->GetMemType()),
             memTag);
     }
     return HCCL_SUCCESS;
@@ -153,6 +153,11 @@ HcclResult CcuUrmaChannel::Init()
     auto linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(locEndpointDesc, channelDesc_.remoteEndpoint, linkData));
 
+    if (channelDesc_.memHandleNum == 0) {
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, unsupport memHandleNum[%u].",
+            __func__, channelDesc_.memHandleNum);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
     CHK_PTR_NULL(channelDesc_.memHandles);
 
     // 当前建链不支持资源扩容，CCU资源默认固定为16

@@ -83,11 +83,11 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 }
 
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
-        HcommChannelDesc *channelDescs, ChannelHandle *channels)
+        HcommChannelDesc *channelDescs, std::vector<std::string> &memTag, ChannelHandle *channels)
 {
     if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_.size() <= reuseIdx) {
         CHK_RET(static_cast<HcclResult>(
-            HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
+            HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, memTag, channels)));
         channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
     }

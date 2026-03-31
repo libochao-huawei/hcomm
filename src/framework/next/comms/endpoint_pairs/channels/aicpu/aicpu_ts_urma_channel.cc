@@ -32,11 +32,10 @@ HcclResult AicpuTsUrmaChannel::Makebufs(void **memHandles, uint32_t memHandleNum
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag.c_str());
-        bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->addr), locMemInfo->size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->memType), locMemInfo->memTag.c_str())
+        auto *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(channelDesc_.memHandles[i]);
+        HCCL_INFO("[AicpuTsUrmaChannel][Makebufs] tag[%s]", localUbRmaBuffer->GetBuf()->GetMemTag().c_str());
+        bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
+            reinterpret_cast<uintptr_t>(localUbRmaBuffer->GetAddr()), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag().c_str())
         ));
     }
     return HCCL_SUCCESS;

@@ -81,7 +81,7 @@ public:
         const std::string &socketTag, const uint32_t listenPort, Hccl::Socket *&socket);
 
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
-        HcommChannelDesc *channelDescs, ChannelHandle *channels);
+        HcommChannelDesc *channelDescs, std::vector<std::string> &memTag, ChannelHandle *channels);
 
 private:
     EndpointDesc localEndpointDesc_{};

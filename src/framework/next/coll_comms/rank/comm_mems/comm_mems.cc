@@ -189,28 +189,4 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
     }
     return HCCL_SUCCESS;
 }
-
-HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
-    CommMemHandle &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec)
-{
-    if (memHandleVec.size() == 0) {
-        HCCL_ERROR("[CommMems][SetMemHandles] memHandleVecSize is 0.");
-        return HCCL_E_PARA;
-    }
-    CHK_PTR_NULL(memHandleVec[0]);
-    cclBufferHandle.addr = addr_;
-    cclBufferHandle.size = size_;
-    cclBufferHandle.memType = ConvertHcclToCommMemType(memType_);
-    cclBufferHandle.bufferHandle = memHandleVec[0];
-    cclBufferHandle.memTag = "HcclBuffer";
-    commMemHandleVec.push_back(static_cast<void*>(&cclBufferHandle));
-
-    CommMemHandle **handles = reinterpret_cast<CommMemHandle**>(memHandles);
-    for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
-        CHK_PTR_NULL(memHandleVec[i]);
-        (*handles[i - 1]).bufferHandle = memHandleVec[i];
-        commMemHandleVec.push_back(static_cast<void*>(handles[i - 1]));
-    }
-    return HCCL_SUCCESS;
-}
 }

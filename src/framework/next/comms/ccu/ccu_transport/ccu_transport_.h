@@ -92,6 +92,7 @@ public:
     TransStatus GetStatus();
     void        Clean();
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
+    HcclResult UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp);
 
     // 下面接口为平台层接口，不能在框架层使用
     uint32_t    GetDieId() const;

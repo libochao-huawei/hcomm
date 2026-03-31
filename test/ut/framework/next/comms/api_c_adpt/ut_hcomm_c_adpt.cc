@@ -150,19 +150,23 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_When_Normal_Expect_Succes
     EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
+    std::vector<std::string> memTag{};
     ChannelHandle channels[1] = {0};
     MOCKER(ChannelProcess::CreateChannelsLoop)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
-    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_AICPU_TS, &channelDesc, 1, channels);
+    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_AICPU_TS, &channelDesc, 1, memTag,
+        channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_When_ChannelDescsNull_Expect_E_PTR)
 {
     EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    std::vector<std::string> memTag{};
     ChannelHandle channels[1] = {0};
-    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_AICPU_TS, nullptr, 1, channels);
+    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_AICPU_TS, nullptr, 1, memTag,
+        channels);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -171,8 +175,10 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_When_ChannelNumZero_Expec
     EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
+    std::vector<std::string> memTag{};
     ChannelHandle channels[1] = {0};
-    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_AICPU_TS, &channelDesc, 0, channels);
+    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_AICPU_TS, &channelDesc, 0, memTag,
+        channels);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -301,11 +307,13 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_CPU_Expect_Success)
     EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
+    std::vector<std::string> memTag{};
     ChannelHandle channels[1] = {0};
     MOCKER(ChannelProcess::CreateChannelsLoop)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
-    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, channels);
+    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CPU, &channelDesc, 1, memTag,
+        channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -314,11 +322,13 @@ TEST_F(HcommCAdptTest, ut_HcommCollectiveChannelCreate_CCU_Expect_Success)
     EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
     HcommChannelDesc channelDesc{};
     (void)HcommChannelDescInit(&channelDesc, 1);
+    std::vector<std::string> memTag{};
     ChannelHandle channels[1] = {0};
     MOCKER(ChannelProcess::CreateChannelsLoop)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
-    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CCU, &channelDesc, 1, channels);
+    HcommResult ret = HcommCollectiveChannelCreate(endpointHandle, COMM_ENGINE_CCU, &channelDesc, 1, memTag,
+        channels);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

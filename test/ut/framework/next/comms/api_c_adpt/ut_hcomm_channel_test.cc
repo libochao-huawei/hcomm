@@ -48,8 +48,10 @@ TEST_F(TestHcommChannel, Ut_TestHcommChannelCreate_When_NumZero_Return_HCCL_E_PA
 
 TEST_F(TestHcommChannel, Ut_TestHcommCollectiveChannelCreate_When_ParamsNull_Return_HCCL_E_PTR)
 {
+    std::vector<std::string> memTag{};
     ChannelHandle channels[1];
-    HcommResult ret = HcommCollectiveChannelCreate(nullptr, COMM_ENGINE_AICPU, nullptr, 1, channels);
+    HcommResult ret = HcommCollectiveChannelCreate(nullptr, COMM_ENGINE_AICPU, nullptr, 1, memTag,
+        channels);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -58,8 +60,10 @@ TEST_F(TestHcommChannel, Ut_TestHcommCollectiveChannelCreate_When_NumZero_Return
     HcommChannelDesc desc;
     desc.role = HCOMM_SOCKET_ROLE_SERVER;
     desc.port = 12345;
+    std::vector<std::string> memTag{};
     ChannelHandle channels[1];
-    HcommResult ret = HcommCollectiveChannelCreate(nullptr, COMM_ENGINE_AICPU, &desc, 0, channels);
+    HcommResult ret = HcommCollectiveChannelCreate(nullptr, COMM_ENGINE_AICPU, &desc, 0, memTag,
+        channels);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 

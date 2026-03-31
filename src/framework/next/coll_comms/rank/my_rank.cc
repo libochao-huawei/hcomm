@@ -270,13 +270,6 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
-        CommMemHandle cclBufferHandle{};
-        std::vector<MemHandle> commMemHandleVec{};
-        if (engine != COMM_ENGINE_CPU) {
-            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, cclBufferHandle, commMemHandleVec));
-            hcommDescs[i].memHandles = commMemHandleVec.data();
-        }
-
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
         EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
@@ -300,7 +293,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             reuseChannelIdxMap[rankPair][engine].emplace(endpointPair, 0);
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
-        ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
+        ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], memTag, channelHandles + i);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),
