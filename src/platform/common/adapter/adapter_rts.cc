@@ -192,7 +192,7 @@ HcclResult hrtSetDevice(s32 deviceLogicId)
 /* 释放当前线程操作的目标设备编号,释放前必须先释放设备资源 */
 HcclResult hrtResetDevice(s32 deviceLogicId)
 {
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+#ifndef HCCD
     aclError ret = aclrtResetDevice(deviceLogicId);
 
     HCCL_DEBUG("Call aclrtResetDevice, return value[%d], para: device_id[%d].", ret, deviceLogicId);
