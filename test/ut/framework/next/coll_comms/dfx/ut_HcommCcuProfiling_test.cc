@@ -1840,9 +1840,9 @@ TEST_F(CcuRepContextTest, AddProfiling_WithNameAndMask) {
     CcuRep::CcuRepContext context;
     std::string name = "TestProfiling";
     uint32_t mask = 0xFF;
-    HcclResult ret = context.AddProfiling(name, mask);
+    int32_t ret = context.AddProfiling(name, mask);
 
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(ret, 0);
     auto& profilingInfo = context.GetProfilingInfo();
     EXPECT_EQ(profilingInfo.size(), 1);
     EXPECT_EQ(profilingInfo[0].name, name);
@@ -1851,8 +1851,8 @@ TEST_F(CcuRepContextTest, AddProfiling_WithNameAndMask) {
 
 TEST_F(CcuRepContextTest, AddProfiling_WithChannelsNullPtr) {
     CcuRep::CcuRepContext context;
-    HcclResult ret = context.AddProfiling(nullptr, 2);
-    EXPECT_NE(ret, HCCL_SUCCESS);
+    int32_t ret = context.AddProfiling(nullptr, 2);
+    EXPECT_NE(ret, 0);
 }
 // ========== GenErrorInfo系列函数测试 ==========
 
