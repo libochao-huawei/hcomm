@@ -2041,7 +2041,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
         std::unique_ptr<AlgTemplateBase> tempAlg;
         if (opInfo == nullptr) {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(tempAlg);
         }
         else if (opInfo->inputAddr != nullptr) {
@@ -2049,7 +2049,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
                                               subSignalsInOneRing));
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(tempAlg);
             CHK_RET(tempAlg->Prepare(const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank, subStreamsInOneRing,
                 mainSignalsInOneRing, subSignalsInOneRing, rankOrder, userMemInputSlices));
@@ -2057,7 +2057,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
         else {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING_DIRECT, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(tempAlg);
             CHK_RET(tempAlg->Prepare(
                 const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank, rankOrder, userMemInputSlices));
@@ -2116,13 +2116,13 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
                 if (opInfo == nullptr) {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
-                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
+                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
                     CHK_SMART_PTR_NULL(tempAlg);
                 }
                 else if (opInfo->inputAddr != nullptr) {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT, dispatcher_);
-                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
+                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank,
                         subStreamsInOneRing, mainSignalsInOneRing, subSignalsInOneRing, rankOrder, userMemInputSlices));
@@ -2130,7 +2130,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
                 else {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING_DIRECT, dispatcher_);
-                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
+                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(
                         const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank, rankOrder, userMemInputSlices));

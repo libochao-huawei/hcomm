@@ -17,9 +17,9 @@ HcclResult RankPair::Init()
     return HCCL_SUCCESS;
 }
  
-HcclResult RankPair::GetEndpointPair(CommEngine engine, const EndpointDescPair &epDescPair, hcomm::EndpointPair*& out)
+HcclResult RankPair::GetEndpointPair(const EndpointDescPair &epDescPair, hcomm::EndpointPair*& out)
 {
-    return endpointPairMgr_->Get(engine, epDescPair, out);
+    return endpointPairMgr_->Get(epDescPair, out);
 }
 
 } // namespace hccl

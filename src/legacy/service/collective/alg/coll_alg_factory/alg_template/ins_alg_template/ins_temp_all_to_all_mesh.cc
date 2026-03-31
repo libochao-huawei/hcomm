@@ -261,16 +261,10 @@ HcclResult InsTempAlltoAllMesh::SendRecvData(u32 step, const std::vector<u32> &c
         UsrData &currReadSliceInfo = readSliceInfo[remoteRank];
         LinkData link = tempLinks.at(remoteRank)[0];
 
-        std::vector<DataSlice> &currSendSrcSlices = currSendSliceInfo.usrInSlices;
-        std::vector<DataSlice> &currSendDstSlices = currSendSliceInfo.scratchOutSlices;
-        std::vector<DataSlice> &currReadSrcSlices = currReadSliceInfo.usrInSlices;
-        std::vector<DataSlice> &currReadDstSlices = currReadSliceInfo.scratchOutSlices;
-        if (dmaMode_ == DmaMode::GET) {
-            currSendSrcSlices = currSendSliceInfo.scratchInSlices;
-            currSendDstSlices = currSendSliceInfo.usrOutSlices;
-            currReadSrcSlices = currReadSliceInfo.scratchInSlices;
-            currReadDstSlices = currReadSliceInfo.usrOutSlices;
-        }
+        std::vector<DataSlice> &currSendSrcSlices = (dmaMode_ == DmaMode::GET) ? currSendSliceInfo.scratchInSlices : currSendSliceInfo.usrInSlices;
+        std::vector<DataSlice> &currSendDstSlices = (dmaMode_ == DmaMode::GET) ? currSendSliceInfo.usrOutSlices : currSendSliceInfo.scratchOutSlices;
+        std::vector<DataSlice> &currReadSrcSlices = (dmaMode_ == DmaMode::GET) ? currReadSliceInfo.scratchInSlices: currReadSliceInfo.usrInSlices;
+        std::vector<DataSlice> &currReadDstSlices = (dmaMode_ == DmaMode::GET) ? currReadSliceInfo.usrOutSlices : currReadSliceInfo.scratchOutSlices;
 
         if (step < currSendSrcSlices.size() && step < currReadSrcSlices.size()) {
             DataSlice &sendSrcSlice = currSendSrcSlices[step];
@@ -388,6 +382,10 @@ HcclResult InsTempAlltoAllMesh::Run(const TempFuncs &tempFuncs, const RankSliceI
 {
     (void) tempFuncs;
     (void) sliceInfoVec;
+    if (tempInsQues.size() == 0) {
+        HCCL_ERROR("[CcuTempAlltoAllMesh1D] tempInsQues.size() is zero.");
+        return HcclResult::HCCL_E_PARA;
+    }
     dmaMode_ = DmaMode::PUT;
     if (IsPcieLink(tempLinks)) {
         dmaMode_ = DmaMode::GET;
@@ -398,11 +396,6 @@ HcclResult InsTempAlltoAllMesh::Run(const TempFuncs &tempFuncs, const RankSliceI
     std::unordered_map<u32, UsrData> sendSliceInfoMap;
     std::unordered_map<u32, UsrData> recvSliceInfoMap;
     CHK_RET(CalcSendRecvAllSliceInfo(sendSliceInfoMap, recvSliceInfoMap));
-    if (tempInsQues.size() == 0) {
-        HCCL_ERROR("[CcuTempAlltoAllMesh1D] tempInsQues.size() is zero.");
-        return HcclResult::HCCL_E_PARA;
-    }
-
     std::vector<InsQuePtr> localCopyQues;
     if (tempInsQues.size() > 1) {
         localCopyQues.push_back(tempInsQues[0]);

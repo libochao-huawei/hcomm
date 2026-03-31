@@ -55,7 +55,7 @@ void CollServiceBase::RegisterCclLocRmaBuffer() const // 注册CCL buffer
             HCCL_INFO("rmaBufManager reg");
             PortData portData(comm->GetMyRank(), *connIface);
             HCCL_INFO("rmaBufManager reg portData[%s]", portData.Describe().c_str());
-            rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
+            rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData, *(protocols.begin()));
         }
     }
 }
@@ -73,9 +73,9 @@ void CollServiceBase::RegisterCclBuffer(const std::vector<LinkData> &links) cons
         if (rmaBufManager.Get(comm->GetId(), portData, BufferType::SCRATCH) != nullptr) {
             HCCL_WARNING("RegisterCclBuffer has reged, optag(%s) portData[%s]",
                 comm->GetId().c_str(), portData.Describe().c_str());
-            return;
+            continue;
         }
-        rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData);
+        rmaBufManager.Reg(comm->GetId(), BufferType::SCRATCH, comm->GetCclBuffer(), portData, link.GetLinkProtocol());
     }
 }
 
@@ -114,13 +114,18 @@ void CollServiceBase::RegisterOpbasedLocalRmaBuf(const std::string &opTag) const
         const auto &ifaceVec = pair.second;
         for (const auto &connIface : ifaceVec) {
             PortData portData(comm->GetMyRank(), *connIface);
+            std::set<LinkProtocol> protocols = connIface->GetLinkProtocols();
             for (auto &devBuf : devBuffers) {
                 if (localRmaBufManager.Get(comm->GetId(), portData, devBuf.first) != nullptr) {
                     HCCL_WARNING("RegisterOpbasedLocalRmaBuf has reged, bufferType[%s], optag[%s] portData[%s]",
                                  devBuf.first.Describe().c_str(), comm->GetId().c_str(), portData.Describe().c_str());
                     continue;
                 }
-                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData);
+                if (devBuf.first != BufferType::SCRATCH && portData.GetType() == PortDeploymentType::P2P) {
+                    HCCL_WARNING("Input and Output Mem will not be reged at P2P");
+                    continue;
+                }
+                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData, *(protocols.begin()));
             }
         }
     }
@@ -153,9 +158,10 @@ void CollServiceBase::RegisterOffloadLocalRmaBuf(const std::string &opTag) const
         const auto &ifaceVec = pair.second;
         for (const auto &connIface : ifaceVec) {
             PortData portData(comm->GetMyRank(), *connIface);
+            std::set<LinkProtocol> protocols = connIface->GetLinkProtocols();
             for (auto &devBuf : devBuffers) {
                 HCCL_INFO("CollServiceBase::RegisterOffloadLocalRmaBuf, devBuf[%s]", devBuf.second->Describe().c_str());
-                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData);
+                localRmaBufManager.Reg(opTag, devBuf.first, devBuf.second, portData, *(protocols.begin()));
             }
         }
     }
@@ -365,8 +371,8 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     CHECK_NULLPTR(comm, "[CollServiceBase::SaveMirrorDfxOpInfo] comm is nullptr!");
 
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
-    dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
-    dfxOpInfo->algType_ = AlgType::MESH;
+    dfxOpInfo->tag_ = dfxOpInfo->op_.opTag;
+    dfxOpInfo->algType_ = comm->GetCurAlgName().c_str();
     dfxOpInfo->commIndex_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;
     dfxOpInfo->beginTime_ = DlProfFunction::GetInstance().dlMsprofSysCycleTime();

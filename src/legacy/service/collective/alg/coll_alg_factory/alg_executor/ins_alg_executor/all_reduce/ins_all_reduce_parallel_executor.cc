@@ -9,17 +9,13 @@
  */
 
 #include "ins_all_reduce_parallel_executor.h"
-
 #include <cmath>
-
 #include "log.h"
-
 #include "ins_coll_alg_registry.h"
-
 #include "topo_match_mesh_nhr.h"
 #include "topo_match_concurr_mesh_nhr.h"
+#include "topo_match_mesh_nhr_pcie.h"
 #include "alg_data_trans_wrapper.h"
-
 #include "ins_temp_all_reduce_nhr.h"
 #include "ins_temp_all_reduce_mesh_1D_two_shot.h"
 #include "ins_temp_all_reduce_mesh_2D_two_shot.h"
@@ -340,7 +336,6 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr insQue)
 {
     HCCL_INFO("[InsAllReduceParallelExecutor] Host Orchestrate begins.");
-    ;
     // init and check params
     CHK_RET(Init(op, params, insQue));
 
@@ -441,6 +436,8 @@ INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, InsAllReduceParallelMesh2DNHR,
     TopoMatchConcurrMeshNHR, InsTempAllReduceMesh2DTwoShot, InsTempAllReduceNHR);
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, InsAllReduceParallelNHRNHR, InsAllReduceParallelExecutor,
     TopoMatchMeshNHR, InsTempAllReduceNHR, InsTempAllReduceNHR);
+INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, InsAllReduceParallelMesh1DNHRPcie, InsAllReduceParallelExecutor,
+    TopoMatchMeshNHRPcie, InsTempAllReduceMesh1DTwoShot, InsTempAllReduceNHR);
 
 #ifndef CCL_KERNEL_AICPU
 INS_REGISTER_IMPL_BY_TWO_TEMPS(OpType::ALLREDUCE, CcuAllReduceParallelMesh1DNHR, InsAllReduceParallelExecutor, TopoMatchMeshNHR,

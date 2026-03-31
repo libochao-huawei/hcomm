@@ -90,6 +90,12 @@ void TcRaRsGetTpAttr();
 void TcRaSetTpAttrAsync();
 void TcRaHdcSetTpAttrAsync();
 void TcRaRsSetTpAttr();
+void TcRaCtxGetTpInfoList();
+void TcRaPeerCtxGetTpInfoList();
+void TcRaCtxGetTpAttr();
+void TcRaPeerCtxGetTpAttr();
+void TcRaCtxSetTpAttr();
+void TcRaPeerCtxSetTpAttr();
 #ifdef __cplusplus
 }
 #endif

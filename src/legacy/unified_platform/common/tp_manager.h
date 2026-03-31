@@ -76,11 +76,17 @@ private:
     InfoCtxMap tpInfoMap;
     ReqCtxMap  tpReqMap;
 
+    InfoCtxMap uboeInfoMap;
+    ReqCtxMap  uboeReqMap;
+
     std::mutex ctpInfoMutex;
     std::mutex ctpReqMutex;
 
     std::mutex tpInfoMutex;
     std::mutex tpReqMutex;
+
+    std::mutex uboeInfoMutex;
+    std::mutex uboeReqMutex;
 
     TpManager() = default;
     ~TpManager() = default;

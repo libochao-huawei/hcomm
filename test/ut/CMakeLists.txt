@@ -304,10 +304,13 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
 )
 
 add_subdirectory(stub)
 add_subdirectory(framework/next)
+add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(misc)
@@ -318,6 +321,7 @@ add_subdirectory(platform/resource/dispatcher)
 add_subdirectory(platform/resource/notify)
 add_subdirectory(platform/resource/transport)
 add_subdirectory(platform/ping_mesh)
+add_subdirectory(platform/common/unfold_cache)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/cluster_maintenance)
 add_subdirectory(framework/op_base_api)

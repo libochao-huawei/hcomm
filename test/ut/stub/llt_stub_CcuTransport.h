@@ -8,36 +8,16 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "hccl_api_base_test.h"
+#ifndef CCUTRANSPORT_FOR_LLT_H
+#define CCUTRANSPORT_FOR_LLT_H
 
-#include <iostream>
+#include <vector>
+#include "ccu_transport_.h"
 
-#define private public
-#define protected public
+namespace hcomm {
 
-#include "ccu_dev_mgr.h"
+extern HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
+    std::vector<CcuTransport::CclBufferInfo> &bufferInfos);
 
-#undef protected
-#undef private
-
-class CcuDevMgrTest : public BaseInit {
-public:
-    void SetUp() override {
-        BaseInit::SetUp();
-        // 将enableEntryLog默认返回为true
-        MOCKER(GetExternalInputHcclEnableEntryLog)
-            .stubs()
-            .with(any())
-            .will(returnValue(true));
-    }
-    void TearDown() override {
-        BaseInit::TearDown();
-        GlobalMockObject::verify();
-    }
-protected:
-};
-
-TEST_F(CcuDevMgrTest, Ut_CcuDevMgr)
-{
-    std::cout << "Hello World" << std::endl;
-}
+}  // namespace hcomm
+#endif

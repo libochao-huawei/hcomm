@@ -61,7 +61,7 @@ HcclResult CollReduceScatterVAIVBigCountExecutor::CalNumBlocks(u32& numBlocks, u
         HCCL_WARNING("[CollReduceScatterVAIVBigCountExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
     
-    HCCL_INFO("[CollReduceScatterVAIVBigCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollReduceScatterVAIVBigCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

@@ -39,7 +39,7 @@ HcclResult CollCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     identifier_ = std::string(commAicpuParam->hcomId);
     topoInfo_.userRankSize = commAicpuParam->userRankSize;
     topoInfo_.userRank = commAicpuParam->userRank; 
-    notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
+    notifys_.reserve(hccl::HCCL_THREAD_NOTIFY_MAX_NUM);
 
     CHK_RET(hrtSetWorkModeAicpu(true));
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
@@ -121,7 +121,7 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     ThreadHandle *threadArray = static_cast<ThreadHandle*>(param->deviceHandle);
     // 空指针校验
     CHK_PTR_NULL(threadArray);
-    for (size_t i = 0; i < threadNum; ++i) {
+    for (size_t i = 0; i < outThreads.size(); ++i) {
         threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
         HCCL_INFO("[CollCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
         CHK_RET(RegisterThreadAddDfxTaskInfo(threadArray[i]));
