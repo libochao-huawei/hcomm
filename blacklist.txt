@@ -1,2 +1,3 @@
 src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc
 src/framework/communicator/impl/hccl_communicator_device.cc
+src/framework/communicator/hccl_comm_device.cc
