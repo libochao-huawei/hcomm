@@ -59,7 +59,7 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
     uint32_t srcDevPhyId, uint32_t dstDevPhyId,
     uint32_t srcIp, uint32_t dstIp, CommEngine commEngine)
 {
-    HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
+    HcommResult hcommRet = 0;
     CcuResult ccuRest = CcuResult::CCU_E_RESERVED;
 
     CommAddr srcAddr{}, dstAddr{};
@@ -70,50 +70,51 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
 
     const auto &srcEpDesc = MockEndpointDesc(srcAddr, srcDevPhyId);
     EndpointHandle srcEpHandle{};
-    hcclRet = HcommEndpointCreate(&srcEpDesc, &srcEpHandle);
-    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+    hcommRet = HcommEndpointCreate(&srcEpDesc, &srcEpHandle);
+    EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
 
     const auto &dstEpDesc = MockEndpointDesc(dstAddr, dstDevPhyId);
 
     const auto &socket = MockHcclSocket(srcAddr, dstAddr);
     HcommSocket socketPtr = static_cast<HcommSocket>(socket.get());
     const auto &rmaBuffer = MockUbRmaBuffer();
-    void *memHandle = static_cast<void *>(rmaBuffer.get());
+    auto commMemHandle = MockCommMemHandle(rmaBuffer.get());
+    void *memHandle = static_cast<void *>(&commMemHandle);
     auto channelDesc = MockHcommChannelDesc(dstEpDesc, socketPtr, memHandle);
     constexpr uint32_t channelNum = 1;
     ChannelHandle channelHandle{0};
-    hcclRet = HcommChannelCreate(srcEpHandle, commEngine, &channelDesc, channelNum, &channelHandle);
-    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+    hcommRet = HcommChannelCreate(srcEpHandle, commEngine, &channelDesc, channelNum, &channelHandle);
+    EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
 
     int32_t statusList[] = {0};
 
     constexpr uint32_t MAX_LOOP_TIME = 100;
     uint32_t leftTime = MAX_LOOP_TIME;
     while (leftTime--) {
-        hcclRet = HcommChannelGetStatus(&channelHandle, channelNum, statusList);
-        if (hcclRet == HcclResult::HCCL_SUCCESS) {
+        hcommRet = HcommChannelGetStatus(&channelHandle, channelNum, statusList);
+        if (hcommRet == static_cast<HcommResult>(HcclResult::HCCL_SUCCESS)) {
             break;
         }
 
-        if (hcclRet != HcclResult::HCCL_E_AGAIN) {
-            HCCL_ERROR("[%s] invalid ret[%d].", __func__, hcclRet);
+        if (hcommRet != static_cast<HcommResult>(HcclResult::HCCL_E_AGAIN)) {
+            HCCL_ERROR("[%s] invalid ret[%d].", __func__, hcommRet);
             break;
         }
     }
 
-    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
     return {srcEpHandle, channelHandle};
 }
 
 static void MockChannelDestory(const std::pair<EndpointHandle, ChannelHandle> &handles)
 {
-    HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
+    HcommResult hcommRet = 0;
     constexpr uint32_t channelNum = 1;
-    hcclRet = HcommChannelDestroy(&(handles.second), channelNum);
-    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+    hcommRet = HcommChannelDestroy(&(handles.second), channelNum);
+    EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
 
-    hcclRet = HcommEndpointDestroy(handles.first);
-    EXPECT_EQ(hcclRet, HcclResult::HCCL_SUCCESS);
+    hcommRet = HcommEndpointDestroy(handles.first);
+    EXPECT_EQ(hcommRet, static_cast<HcommResult>(HcclResult::HCCL_SUCCESS));
 }
 
 static ThreadHandle MockThreadAllocWithStream(CommEngine commEngine)
@@ -136,7 +137,7 @@ static ThreadHandle MockThreadAllocWithStream(CommEngine commEngine)
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
     // 整体打桩，处理ccu资源
-    HcclResult hcclRet = HcclResult::HCCL_E_RESERVED;
+    HcommResult hcclRet = 0;
     CcuResult ccuRet = CcuResult::CCU_E_RESERVED;
     constexpr uint32_t fakeDevId = MAX_MODULE_DEVICE_NUM - 2;
     MOCKER(HcclGetThreadDeviceId).stubs().will(returnValue(fakeDevId));
