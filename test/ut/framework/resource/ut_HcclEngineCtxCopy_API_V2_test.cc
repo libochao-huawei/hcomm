@@ -98,7 +98,7 @@ TEST_F(HcclEngineCtxCopyV2Test, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_
     HcclResult ret;
     SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    
+
     std::vector<HcclChannelDesc> channelDesc(1);
     HcclChannelDescInit(channelDesc.data(), 1);
     std::vector<ChannelHandle> channels(1);
@@ -111,6 +111,6 @@ TEST_F(HcclEngineCtxCopyV2Test, Ut_ProcessRoceChannelDesc_When_IsCommunicatorV2_
     channelDesc[0].roceAttr.tc = 120;
     channelDesc[0].roceAttr.sl = 3;
 
-    HcclResult ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
