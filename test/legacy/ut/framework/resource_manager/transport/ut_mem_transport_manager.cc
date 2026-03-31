@@ -23,6 +23,12 @@
 #include "notify_count.h"
 #include "base_mem_transport.h"
 #include "recover_info.h"
+#include "rank_graph_builder.h"
+#include "rank_gph.h"
+#include "phy_topo_builder.h"
+#include "phy_topo.h"
+#include "detour_service.h"
+#include "ranktable_stub_64_plus_1.h"
 #undef protected
 #undef private
 
@@ -497,4 +503,21 @@ TEST_F(MemTransportManagerTest, MemTransportManager_batch_build_oneSide_transpor
     comm.GetCurrentCollOperator()->opType = OpType::ALLREDUCE;
     EXPECT_NO_THROW(transportManager.BatchBuildOneSidedTransports(links));
     transportManager.Clear();
+}
+
+TEST_F(MemTransportManagerTest, MemTransportManager_UT_GetUrmaWqsAndCqs)
+{
+    StubCommunicatorImplTransMgr comm;
+    comm.rankSize = 4;
+    comm.myRank = 0;
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_4p.json"};
+    unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RANK_TABLE_4P, topoFilePath, 0);
+    comm.rankGraph = std::move(rankGraph);
+    MemTransportManager          transportManager(comm);
+    
+    
+    MOCKER_CPP(&MemTransportManager::IsAllTransportReady).stubs().will(returnValue(true));
+    EXPECT_NO_THROW(transportManager.GetUrmaWqs());
+    EXPECT_NO_THROW(transportManager.GetUrmaCqs());
 }
