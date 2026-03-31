@@ -87,7 +87,7 @@ set(src_to_a3_test_list
     coll_comms/rank/comm_mems/test_getHcclBuffer_a3_api.cc
 )
 
-add_executable(hccl_utest_test_next_resource_a3 ${src_to_test_list})
+add_executable(hccl_utest_test_next_resource_a3 ${src_to_a3_test_list})
 
 #头文件搜索路径
 target_include_directories(hccl_utest_test_next_resource_a3 PRIVATE
