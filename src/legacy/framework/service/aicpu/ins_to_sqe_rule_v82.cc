@@ -280,10 +280,10 @@ void Interpret(const InsLocalReduce &ins, const StreamLite &stream, ResMgrFetche
     u64 dst = dstPtr->GetAddr() + dstOffset;
     ReduceIn reduceIn(ins.GetDataType(), ins.GetReduceOp());
     
+    auto taskId = stream.GetRtsq()->GetTaskId();
     stream.GetRtsq()->SdmaReduce(src, dst, ins.GetSrcSlice().GetSize(), 0, reduceIn); // 待确认， PART_ID是否固定设置为 0
 
     HCCL_INFO("InsLocalReduce srcA:0x%llx dstA:0x%llx,size=0x%llx", src, dst, ins.GetSrcSlice().GetSize());
-    auto taskId = stream.GetRtsq()->GetTaskId();
     TaskParam taskParam{};
     taskParam.taskType              = TaskParamType::TASK_REDUCE_INLINE;
     taskParam.beginTime             = ProfGetCurCpuTimestamp();
