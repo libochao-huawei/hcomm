@@ -751,6 +751,50 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
+{
+    EXCEPTION_HANDLE_BEGIN
+    bool l0State = Hccl::ProfilingHandler::GetInstance().GetHcclL0State();
+    bool l1State = Hccl::ProfilingHandler::GetInstance().GetHcclL1State();
+    if (l0State == false || l1State == false) {
+        HCCL_INFO("[HcclDfxRegOpInfo] profiling State is down l0State %d l1State %d", l0State, l1State);
+    }
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    HcclGetCommHandle(commId, hcclComm);
+    CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+    CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
+    HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
+    CHK_PTR_NULL(dfxOpInfo);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    //HcclDfxOpInfo转为DfxOpInfo
+    
+    auto dfxOpInfoOnce = ConvertToDfxOpInfo(*dfxOpInfo);
+    CHK_SMART_PTR_NULL(dfxOpInfoOnce);
+    dfxOpInfoOnce->comm_ = static_cast<void*>(collComm);
+    dfxOpInfoOnce->isIndop_ = true;
+    dfxOpInfoOnce->groupName_ = collComm->GetCommId(); 
+    dfxOpInfoOnce->opIndex_ = collComm->UpdateIndex();
+    dfxOpInfoOnce->rankSize_ = collComm->GetRankSize();
+    //单算子模式，暂时覆盖opTag
+    dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
+    dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
+    dfxOpInfoOnce->engine = dfxOpInfo->engine;
+    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
+    CHK_RET(hcclCommDfx->UpdateProfStat());
+    Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
+    CHK_PTR_NULL(mirrorTaskManage);
+    mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
+   
+    EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
 {
     HCCL_INFO("[%s] START, comm[%p].", __func__, comm);

@@ -48,6 +48,8 @@ extern HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char 
 
 extern uint64_t HcommGetProfilingSysCycleTime();
 
+extern HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo);
+
 
 struct HcclDfxOpInfo {
     CommAbiHeader       header;
