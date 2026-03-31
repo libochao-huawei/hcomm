@@ -400,11 +400,18 @@ HcclResult AlltoallvContinuousPipeline::WaitRdmaSubStreamFinish()
 }
 
 HcclResult AlltoallvContinuousPipeline::InterSdmaRx(const LINK& linkLeft, const LINK& linkRight,
-    const std::vector<RxMemoryInfo>& recvMems, Stream& stream)
+    std::vector<TxMemoryInfo>& sendMems, std::vector<RxMemoryInfo>& recvMems, Stream& stream)
 {
+    const bool needRecvFromLinkLeft = !recvMems.empty();
+    const bool needSendToLinkRight = !sendMems.empty();
+        
     // 前同步，通知right我已准备好，可以从我这里读；等待left通知它已准备好，可以从它那里读
-    CHK_RET(linkRight->TxAck(stream));
-    CHK_RET(linkLeft->RxAck(stream));
+    if (needRecvFromLinkLeft) {
+        CHK_RET(linkLeft->RxAck(stream));
+    }
+    if (needSendToLinkRight) {
+        CHK_RET(linkRight->TxAck(stream));
+    }
 
     // 从left读
     for (const auto& memInfo : recvMems) {
@@ -417,8 +424,12 @@ HcclResult AlltoallvContinuousPipeline::InterSdmaRx(const LINK& linkLeft, const 
     }
 
     // 尾同步，通知left我已读完，等待right通知它已读完
-    CHK_RET(linkLeft->TxDataSignal(stream));
-    CHK_RET(linkRight->RxDataSignal(stream));
+    if (needRecvFromLinkLeft) {
+        CHK_RET(linkLeft->TxDataSignal(stream));
+    }
+    if (needSendToLinkRight) {
+        CHK_RET(linkRight->RxDataSignal(stream));
+    }
 
     HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSdmaRx] Done. linkLeft.rank[%u], linkRight.rank[%u], "
         "recvMems.size[%zu]", linkLeft->GetRemoteRank(), linkRight->GetRemoteRank(), recvMems.size());
@@ -429,19 +440,23 @@ HcclResult AlltoallvContinuousPipeline::InterSdmaRx(const LINK& linkLeft, const 
 HcclResult AlltoallvContinuousPipeline::InterRdmaTxRx(const LINK& linkLeft, const LINK& linkRight,
     std::vector<TxMemoryInfo>& sendMems, std::vector<RxMemoryInfo>& recvMems, Stream& stream)
 {
-    CHK_RET(linkLeft->TxAck(stream));
-    CHK_RET(linkRight->RxAck(stream));
+    const bool needRecvFromLinkLeft = !recvMems.empty();
+    const bool needSendToLinkRight = !sendMems.empty();
 
-    if (recvMems.empty()) {
-        // 当recvMems无内容时，接口调用需插入一个空任务
-        recvMems.emplace_back(RxMemoryInfo{UserMemType::OUTPUT_MEM, 0, static_cast<s8*>(outBuffer_.ptr()), 0});
+    if (needRecvFromLinkLeft) {
+        CHK_RET(linkLeft->TxAck(stream));
     }
-
-    CHK_RET(linkRight->TxAsync(sendMems, stream));
-    CHK_RET(linkLeft->RxAsync(recvMems, stream));
-
-    CHK_RET(linkLeft->PostFinAck(stream));
-    CHK_RET(linkRight->WaitFinAck(stream));
+    if (needSendToLinkRight) {
+        CHK_RET(linkRight->RxAck(stream));
+        CHK_RET(linkRight->TxAsync(sendMems, stream));
+    }
+    if (needRecvFromLinkLeft) {
+        CHK_RET(linkLeft->RxAsync(recvMems, stream));
+        CHK_RET(linkLeft->PostFinAck(stream));
+    }
+    if (needSendToLinkRight) {
+        CHK_RET(linkRight->WaitFinAck(stream));
+    }
 
     HCCL_DEBUG("[AlltoallvContinuousPipeline][InterRdmaTxRx] Done. linkLeft.rank[%u], linkRight.rank[%u], "
         "sendMems.size[%zu], recvMems.size[%zu]", linkLeft->GetRemoteRank(), linkRight->GetRemoteRank(),
@@ -614,19 +629,17 @@ HcclResult AlltoallvContinuousPipeline::InterSendAndReceive(const u32 sendRank, 
     const bool isSDMALink = sendLink->IsSpInlineReduce() || recvLink->IsSpInlineReduce();
 
     for (u32 rankOffset = 0; rankOffset < intraRankSize_; ++rankOffset) {
-        if (!isSDMALink) {
-            const u32 targetRank = sendModuleFirstRank + rankOffset;
-            const u64 sendSrcOffset = GetDataBlockOffset(targetRank, loopIdx);
-            const u64 sendDstOffset = GetDataBlockOffset(interRankId_ * intraRankSize_ + rankOffset, loopIdx);
-            const u64 sendSize = inBufferDataSize_[targetRank];
-            if (sendSize > 0) {
-                sendMems.emplace_back(TxMemoryInfo{UserMemType::OUTPUT_MEM, sendDstOffset,
-                    static_cast<s8*>(inBuffer_.ptr()) + sendSrcOffset, sendSize});
-            }
-            HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSendAndReceive]inter send userRank[%u], sendRank[%u], "
-                "targetRank[%u], srcOffset[%llu], dstOffset[%llu], sendSize[%llu], loopIdx[%u]",
-                userRank_, sendRank, targetRank, sendSrcOffset, sendDstOffset, sendSize, loopIdx);
+        const u32 targetRank = sendModuleFirstRank + rankOffset;
+        const u64 sendSrcOffset = GetDataBlockOffset(targetRank, loopIdx);
+        const u64 sendDstOffset = GetDataBlockOffset(interRankId_ * intraRankSize_ + rankOffset, loopIdx);
+        const u64 sendSize = inBufferDataSize_[targetRank];
+        if (sendSize > 0) {
+            sendMems.emplace_back(TxMemoryInfo{UserMemType::OUTPUT_MEM, sendDstOffset,
+                static_cast<s8*>(inBuffer_.ptr()) + sendSrcOffset, sendSize});
         }
+        HCCL_DEBUG("[AlltoallvContinuousPipeline][InterSendAndReceive]inter send userRank[%u], sendRank[%u], "
+            "targetRank[%u], srcOffset[%llu], dstOffset[%llu], sendSize[%llu], loopIdx[%u]",
+            userRank_, sendRank, targetRank, sendSrcOffset, sendDstOffset, sendSize, loopIdx);
 
         const u32 sourceRank = recvModuleFirstRank + rankOffset;
         const u32 actualTargetRank = interRankId_ * intraRankSize_ + rankOffset;
@@ -645,7 +658,7 @@ HcclResult AlltoallvContinuousPipeline::InterSendAndReceive(const u32 sendRank, 
     }
     if (isSDMALink) {
         // SDMA读
-        CHK_RET(InterSdmaRx(recvLink, sendLink, recvMems, stream));
+        CHK_RET(InterSdmaRx(recvLink, sendLink, sendMems, recvMems, stream));
     } else {
         // RDMA
         CHK_RET(InterRdmaTxRx(recvLink, sendLink, sendMems, recvMems, stream));
