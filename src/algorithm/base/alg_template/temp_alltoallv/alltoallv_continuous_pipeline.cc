@@ -32,7 +32,13 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
         localRecvDispls_ = std::move(localSendRecvInfo.recvDispls);
         needCollectInfo_ = true; // 需要收集信息
         std::copy(localRecvCounts_.begin(), localRecvCounts_.end(), intraRecvCounts_[intraRankId_].begin());
-        localMaxSendCount_ = *std::max_element(localSendCounts_.begin(), localSendCounts_.end());
+
+        // 获取module内最大的send count，除本rank外
+        for (u32 intraRank = 0; intraRank < intraRankSize_; ++intraRank) {
+            if (intraRank != intraRankId_) {
+                localMaxSendCount_ = std::max(localMaxSendCount_, localSendCounts_[intraRank]);
+            }
+        }
         intraMaxSendCount_ = localMaxSendCount_;
     } else {
         // 适配算法分析器，实际业务不会走这个分支
@@ -285,8 +291,10 @@ u32 AlltoallvContinuousPipeline::GetTotalLoopNum() const
 {
     u64 maxRecvCount = 0;
     for (u32 rank = 0; rank < userRankSize_; ++rank) {
-        const u64 recvCount = GetLocalRecvCountOfRank(rank);
-        maxRecvCount = maxRecvCount < recvCount ? recvCount : maxRecvCount;
+        if (rank != userRank_) {
+            const u64 recvCount = GetLocalRecvCountOfRank(rank);
+            maxRecvCount = maxRecvCount < recvCount ? recvCount : maxRecvCount;
+        }
     }
 
     for (u32 intraRank = 0; intraRank < intraRankSize_; ++intraRank) {
@@ -299,7 +307,8 @@ u32 AlltoallvContinuousPipeline::GetTotalLoopNum() const
         }
     }
 
-    const u32 totalLoopNum = static_cast<u32>((maxRecvCount + countsPerBlock_ - 1) / countsPerBlock_);
+    const u64 maxCount = std::max(maxRecvCount, intraMaxSendCount_);
+    const u32 totalLoopNum = static_cast<u32>((maxCount + countsPerBlock_ - 1) / countsPerBlock_);
     HCCL_DEBUG("[AlltoallvContinuousPipeline][GetTotalLoopNum] maxRecvCount[%llu], totalLoopNum[%u]",
         maxRecvCount, totalLoopNum);
     return totalLoopNum;
