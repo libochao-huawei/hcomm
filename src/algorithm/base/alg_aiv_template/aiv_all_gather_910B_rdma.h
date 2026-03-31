@@ -35,8 +35,10 @@ public:
         if (GetBlockIdx() == rank_) {
             // 本卡该片数据已经可以被跨片读取
             Record1vN(tag, CommPattern::interRank);
+            AIV_INFO("Record1vN, rank %llu tag %llu, BlockIdx %llu", rank_, tag, GetBlockIdx());
         } else {
             WaitNv1(tag, GetBlockIdx());
+            AIV_INFO("WaitNv1, rank %llu tag %llu, BlockIdx %llu", rank_, tag, GetBlockIdx());
 	    }
         pipe_barrier(PIPE_ALL);
 
@@ -51,8 +53,10 @@ public:
         //尾同步，每个卡搬完完后要进行标记。要确保所有卡都搬完再退出。
 	    if (GetBlockIdx() == rank_) {
             Wait1vN(tag * (rankSize_ - 1), CommPattern::interRank);
+            AIV_INFO("Wait1vN, rank %llu tag %llu, BlockIdx %llu", rank_, tag, GetBlockIdx());
         } else {
 	        RecordNv1(tag, GetBlockIdx());
+            AIV_INFO("RecordNv1, rank %llu tag %llu, BlockIdx %llu", rank_, tag, GetBlockIdx());
 	    }
     }
 };
