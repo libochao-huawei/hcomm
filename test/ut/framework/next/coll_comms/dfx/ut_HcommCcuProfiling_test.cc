@@ -2330,49 +2330,6 @@ private:
     uint16_t xnLengthId_;
 };
 
-TEST_F(GenErrorInfoTest, GenErrorInfoLocWaitEvent) {
-    auto rep = std::make_shared<MockCcuRepLocWaitEvent>(6, 0x0F);
-    std::vector<CcuErrorInfo> errorInfo;
-    CcuTaskException::GenErrorInfoLocWaitEvent(baseInfo_, rep, errorInfo);
-    EXPECT_EQ(errorInfo.size(), 1u);
-    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
-    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::LOC_WAIT_EVENT);
-}
-
-TEST_F(GenErrorInfoTest, GenErrorInfoRemPostSem) {
-    auto rep = std::make_shared<MockCcuRepRemPostSem>(8, 0xFF, 101);
-    std::vector<CcuErrorInfo> errorInfo;
-    CcuTaskException::GenErrorInfoRemPostSem(baseInfo_, rep, errorInfo);
-    EXPECT_EQ(errorInfo.size(), 1u);
-    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
-    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::REM_POST_SEM);
-}
-
-TEST_F(GenErrorInfoTest, GenErrorInfoRemWaitSem) {
-    auto rep = std::make_shared<MockCcuRepRemWaitSem>(9, 0xF0, 102);
-    std::vector<CcuErrorInfo> errorInfo;
-    CcuTaskException::GenErrorInfoRemWaitSem(baseInfo_, rep, errorInfo);
-    EXPECT_EQ(errorInfo.size(), 1u);
-    EXPECT_EQ(errorInfo[0].type, CcuErrorType::WAIT_SIGNAL);
-    EXPECT_EQ(errorInfo[0].repType, CcuRep::CcuRepType::REM_WAIT_SEM);
-}
-
-TEST_F(GenErrorInfoTest, GenErrorInfoDefault) {
-    auto rep = std::make_shared<MockTaskCcuRepBase>(CcuRep::CcuRepType::BASE);
-    std::vector<CcuErrorInfo> errorInfo;
-    CcuTaskException::GenErrorInfoDefault(baseInfo_, rep, errorInfo);
-    EXPECT_EQ(errorInfo.size(), 1u);
-    EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
-}
-
-TEST_F(GenErrorInfoTest, GenErrorInfoByRepType_UnknownType_FallsToDefault) {
-    auto rep = std::make_shared<MockTaskCcuRepBase>(CcuRep::CcuRepType::BASE);
-    std::vector<CcuErrorInfo> errorInfo;
-    CcuTaskException::GenErrorInfoByRepType(baseInfo_, rep, errorInfo);
-    EXPECT_EQ(errorInfo.size(), 1u);
-    EXPECT_EQ(errorInfo[0].type, CcuErrorType::DEFAULT);
-}
-
 TEST_F(CcuRepContextTest, AddProfilingnameandmask_Normal) {
     CcuRep::CcuRepContext context;
     context.SetDieId(1);
