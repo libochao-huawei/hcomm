@@ -25,6 +25,10 @@ typedef struct {
             uint8_t tc;               /* 流量类别(QoS) */
             uint8_t sl;               /* 服务等级(QoS) */
         } roceAttr;
+        struct {
+            uint8_t raws[124];        ///< 跳过前124字节
+            uint32_t channelIdx;      ///< channenl复用idx
+        } common;
     };
 } HcclChannelDesc;
 ```
