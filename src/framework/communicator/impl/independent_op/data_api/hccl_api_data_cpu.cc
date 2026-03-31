@@ -806,7 +806,7 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        HCCL_ERROR("[%s] comm is not supported", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
