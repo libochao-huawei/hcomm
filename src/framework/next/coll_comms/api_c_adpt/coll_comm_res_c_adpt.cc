@@ -392,13 +392,13 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam, const hccl::RankId remoteRankId, bool isMaster = false)
+HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam)
 {
-    uint32_t taskId {0};
-    uint32_t streamId {0};
-    Hccl::HrtGetTaskIdAndStreamID(taskId, streamId);
+    uint32_t taskId = INVALID_UINT;
+    uint32_t streamId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    // 填入remoteRankId
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
@@ -410,11 +410,7 @@ HcclResult SaveDfxTaskInfo(const HcclComm comm, const Hccl::TaskParam &taskParam
     hccl::HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
 
-    std::shared_ptr<Hccl::TaskInfo> taskInfo = std::make_shared<Hccl::TaskInfo>(streamId, taskId, remoteRankId, taskParam, 
-        hcclCommDfx->GetMirrorTaskManager()->GetCurrDfxOpInfo(), isMaster);
- 
-    HCCL_INFO("Begin to AddTaskInfo: streamId[%lu], taskId[%lu], remoteRankId[%u].", streamId, taskId, remoteRankId);
-    hcclCommDfx->GetMirrorTaskManager()->AddTaskInfo(taskInfo);
+    CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     return HCCL_SUCCESS;
 }
 
@@ -440,6 +436,7 @@ HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t 
     taskParam.taskPara.Ccu.instrId   = profilingArray[0].instrId;
     taskParam.taskPara.Ccu.executeId = execId; // TODO: 传入是kernelHandle，不建议赋值给executeId
     taskParam.taskPara.Ccu.ccuKernelHandle = execId;
+    taskParam.isMaster = isMaster;
     HCCL_INFO("[%s]dieId[%u], missionId[%u], execMissionId[%u], instrId[%u], executeId[%u], ccuKernelHandle[%u]",
         __func__, taskParam.taskPara.Ccu.dieId, taskParam.taskPara.Ccu.missionId, taskParam.taskPara.Ccu.execMissionId,
         taskParam.taskPara.Ccu.instrId, taskParam.taskPara.Ccu.executeId, taskParam.taskPara.Ccu.ccuKernelHandle);
@@ -497,6 +494,6 @@ HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t 
     // 构建shared_ptr并保存到任务参数
     taskParam.ccuDetailInfo = std::make_shared<std::vector<Hccl::CcuProfilingInfo>>(std::move(converted));
     HCCL_DEBUG("[%s]dieId[%u]", __func__, taskParam.taskPara.Ccu.dieId);
-    CHK_RET(SaveDfxTaskInfo(comm, taskParam, hcomm::INVALID_RANKID, isMaster));
+    CHK_RET(SaveDfxTaskInfo(comm, taskParam));
     return HCCL_SUCCESS;
 }
