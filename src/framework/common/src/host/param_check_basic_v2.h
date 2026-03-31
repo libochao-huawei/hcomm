@@ -11,11 +11,13 @@
 #ifndef PARAM_CHECK_PUB_BASIC_V2_H
 #define PARAM_CHECK_PUB_BASIC_V2_H
 
+#include "adapter_rts.h"
+
 #define HCCLV2_FUNC_RUN(func, ...) \
     do { \
-        const char *socNamePtr = aclrtGetSocName(); \
-        CHK_PTR_NULL(socNamePtr); \
-        if (IsSupportHCCLV2(socNamePtr)) { \
+        bool isSupportV2 = false; \
+        CHK_RET(hrtGetHcclV2Support(&isSupportV2)); \
+        if (isSupportV2) { \
             return func; \
         } \
     } while (0)

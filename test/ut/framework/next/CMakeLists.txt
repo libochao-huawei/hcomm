@@ -7,6 +7,8 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
+# 注意a3与a5测试用例拆分不同可执行文件
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
@@ -77,5 +79,57 @@ add_dependencies(hccl_utest_test_next_resource hccl_llt)
 
 run_llt_test(
    TARGET  hccl_utest_test_next_resource
+   TASK_NUM 1
+)
+
+set(src_to_a3_test_list
+    main.cc
+    hccl_api_base_test.cc
+    coll_comms/rank/comm_mems/test_getHcclBuffer_a3_api.cc
+)
+
+add_executable(hccl_utest_test_next_resource_a3 ${src_to_a3_test_list})
+
+#头文件搜索路径
+target_include_directories(hccl_utest_test_next_resource_a3 PRIVATE
+    ${UT_COMMON_INCLUDE_LIST}
+)
+ 
+target_compile_definitions(hccl_utest_test_next_resource_a3 PRIVATE
+    _GLIBCXX_USE_CXX11_ABI=0
+    google=ascend_private
+    -DOPEN_HCCL_TEST
+    ORION_MODE
+    OPEN_BUILD_PROJECT
+)
+ 
+target_compile_options(hccl_utest_test_next_resource_a3 PRIVATE
+    -U_FORTIFY_SOURCE
+    -fno-var-tracking-assignments
+    -Os
+    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
+)
+ 
+target_link_directories(hccl_utest_test_next_resource_a3 PRIVATE
+    ${ASCEND_CANN_PACKAGE_PATH}/lib64
+)
+
+target_link_libraries(hccl_utest_test_next_resource_a3 PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
+    -pthread
+    hccl_llt
+    -Wl,--whole-archive
+    -Wl,--no-whole-archi
+    -lgcov
+    -lrt
+    -ldl
+)
+
+add_dependencies(hccl_utest_test_next_resource_a3 hccl_llt)
+
+run_llt_test(
+   TARGET  hccl_utest_test_next_resource_a3
    TASK_NUM 1
 )

@@ -69,6 +69,7 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
 
 HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine, void **ctx, uint64_t *size)
 {
+    // 性能关键路径，禁止打印算子粒度频次的日志
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(ctx);
     CHK_PTR_NULL(size);
@@ -81,8 +82,7 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
-            std::string commId = hcclComm->GetIdentifier();
-            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            const std::string &commId = hcclComm->GetIdentifier();
             hccl::CollComm* collComm = hcclComm->GetCollComm();
             CHK_PTR_NULL(collComm);
             auto myRank = collComm->GetMyRank();
@@ -94,8 +94,6 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_WARNING("[%s] Failed to get CommEngineCtx with ctxTag[%s], engine[%d], ret[%d]", __func__, ctxTagTmp, 
                 engine, ret), ret);
-            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], ctx[%p], size[%llu], group[%s]", __func__, ctxTagTmp, engine,
-                *ctx, *size, hcclComm->GetIdentifier().c_str());
             return HCCL_SUCCESS;
         }());
 #endif
