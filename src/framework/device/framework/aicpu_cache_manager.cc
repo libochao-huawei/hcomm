@@ -323,6 +323,10 @@ namespace hccl {
             opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
             opType == HcclCMDType::HCCL_CMD_SCATTER ||
             opType == HcclCMDType::HCCL_CMD_ALLREDUCE) { // 非V类算子
+            if (algName == "RunAlltoAllVStaged") {
+                HCCL_INFO("[AicpuCacheManager][%s] algName[%s] is not supported for unfolding cache", __func__, algName.c_str());
+                return HCCL_SUCCESS;
+            }
             HCCL_INFO("[AicpuCacheManager][NeedOpUnfoldCache] opType[%d] is supported for operator unfolding cache", opType);
             needCache = true;
         } else if (IsAlltoallvType(opType)) { // alltoallv类算子

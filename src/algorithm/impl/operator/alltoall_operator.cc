@@ -336,9 +336,14 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
     bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
             isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize());
 
+    bool aicpuUnfoldModeFor910B = deviceType_ == DevType::DEV_TYPE_910B && param.aicpuUnfoldMode;
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         if (useDirectFullmesh || param.aicpuUnfoldMode) {
             newTag = tag + algName;
+            // A2 alltoall AICPU展开需要区分Zcopy与bCopy
+            if (aicpuUnfoldModeFor910B) {
+                newTag += copyMode;
+            }
         } else {
             newTag = tag + algName + copyMode;
         }
@@ -346,8 +351,7 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
     } else {
         newTag = tag;
     }
-
-    if (!useA2AAiv && !useDirectFullmesh && !param.aicpuUnfoldMode) {
+    if ((!useA2AAiv && !useDirectFullmesh && !param.aicpuUnfoldMode) || aicpuUnfoldModeFor910B) {
         CHK_RET(SetExcutorExtraInfo(algName, param));
     }
     return ret;
