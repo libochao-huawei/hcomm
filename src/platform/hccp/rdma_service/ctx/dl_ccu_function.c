@@ -82,7 +82,7 @@ int RsCcuApiInit(void)
 
     ret = RsOpenCcuSo();
     CHK_PRT_RETURN(ret, hccp_err("HccpDlopen[libccu-user-drv.so] failed! ret=[%d],"\
-    "Please check network adapter driver has been installed", ret), ret);
+    "Please check ccu driver has been installed", ret), ret);
 
     ret = RsCcuDeviceApiInit();
     if (ret != 0) {

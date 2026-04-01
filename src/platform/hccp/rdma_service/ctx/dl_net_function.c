@@ -89,7 +89,7 @@ int RsNetApiInit(void)
 
     ret = RsOpenNetSo();
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_open_net_so[libnet_adapt.so] failed! ret=[%d],"
-        "please check network adapter driver has been installed", ret), ret);
+        "please check the network adapter driver has been installed", ret), ret);
 
     ret = RsNetAdaptApiInit();
     if (ret != 0) {

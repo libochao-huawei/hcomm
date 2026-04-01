@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef _HCCP_TLV_H
-#define _HCCP_TLV_H
+#ifndef HCCP_TLV_H
+#define HCCP_TLV_H
 
 #include "hccp_common.h"
 
@@ -87,4 +87,4 @@ HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, unsigned int moduleType, s
 #ifdef __cplusplus
 }
 #endif
-#endif // _HCCP_TLV_H
+#endif // HCCP_TLV_H

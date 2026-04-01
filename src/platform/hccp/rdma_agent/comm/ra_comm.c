@@ -20,10 +20,12 @@ int RaGetSocketConnectInfo(const struct SocketConnectInfoT conn[], unsigned int 
     unsigned int i;
     int ret;
 
-    CHK_PRT_RETURN(num > rsNum || num > MAX_SOCKET_NUM || conn == NULL || rsConn == NULL, hccp_err("[get]"
-        "[ra_socket_connect_info]num(%u) > rs_num(%u) or conn or rs_conn is NULL, invalid", num, rsNum), -EINVAL);
+    CHK_PRT_RETURN(num > rsNum || num > MAX_SOCKET_NUM || num == 0 || conn == NULL || rsConn == NULL, hccp_err("[get]"
+        "[ra_socket_connect_info]num(%u) > rs_num(%u) or num == 0 or conn or rs_conn is NULL, invalid", num, rsNum), -EINVAL);
     for (i = 0; i < num; i++) {
         socketHandle = (struct RaSocketHandle *)conn[i].socketHandle;
+        CHK_PRT_RETURN(socketHandle == NULL,
+            hccp_err("[get][ra_socket_connect_info] conn[%u].socketHandle is null", i), -EINVAL);
         rsConn[i].phyId = socketHandle->rdevInfo.phyId;
         rsConn[i].family = socketHandle->rdevInfo.family;
         rsConn[i].port = conn[i].port;
@@ -49,8 +51,8 @@ int RaGetSocketListenInfo(const struct SocketListenInfoT conn[], unsigned int nu
     int ret;
     struct RaSocketHandle *socketHandle = NULL;
 
-    CHK_PRT_RETURN(num > rsNum || num > MAX_SOCKET_NUM || conn == NULL || rsConn == NULL, hccp_err("[get]"
-        "[ra_socket_listen_info]num(%u) > rs_num(%u), or conn or rsConn is NULL, invalid", num, rsNum), -EINVAL);
+    CHK_PRT_RETURN(num > rsNum || num > MAX_SOCKET_NUM || num == 0 || conn == NULL || rsConn == NULL, hccp_err("[get]"
+        "[ra_socket_listen_info]num(%u) > rs_num(%u) or num == 0 or conn or rsConn is NULL, invalid", num, rsNum), -EINVAL);
 
     for (i = 0; i < num; i++) {
         rsConn[i].phase = conn[i].phase;
@@ -74,8 +76,8 @@ int RaGetSocketListenResult(const struct SocketListenInfo rsConn[], unsigned int
     unsigned int i;
     int ret;
 
-    CHK_PRT_RETURN(rsNum > num || rsNum > MAX_SOCKET_NUM || conn == NULL || rsConn == NULL, hccp_err("[get]"
-        "[ra_socket_listen_result]rs_num(%u) > num(%u) or conn or rs_conn is NULL, invalid", rsNum, num), -EINVAL);
+    CHK_PRT_RETURN(rsNum > num || rsNum > MAX_SOCKET_NUM || num == 0 || conn == NULL || rsConn == NULL, hccp_err("[get]"
+        "[ra_socket_listen_result]rs_num(%u) > num(%u) or num == 0 or conn or rs_conn is NULL, invalid", rsNum, num), -EINVAL);
 
     for (i = 0; i < rsNum; i++) {
         conn[i].phase = rsConn[i].phase;
