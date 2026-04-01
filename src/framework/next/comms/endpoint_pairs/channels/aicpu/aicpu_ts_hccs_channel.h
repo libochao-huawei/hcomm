@@ -19,7 +19,6 @@
 #include "channel.h"
 #include "channel_param.h"
 #include "buffer.h"
-#include "hccl_net_dev.h"
 
 namespace hcomm {
 /**
@@ -51,7 +50,6 @@ private:
     HcclResult TransportInit();
     HcclResult CheckNotifyOrQPMaxNum(u64 &existNum, const u64 &MaxNum, const bool &isNotifyRes);
     HcclResult BuildHcclChannelHccsRes(HcclChannelHccsRes &channelHccsRes);
-    HcclResult HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, hccl::HcclIpAddress *hcclIP);
 
 private:
     // --------------------- 入参 ---------------------
