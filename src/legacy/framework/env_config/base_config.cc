@@ -217,15 +217,4 @@ const DfsConfig &EnvLogConfig::GetDfsConfig() const
     return dfsConfig.Get();
 }
 
-// EnvDetourConfig
-
-void EnvDetourConfig::Parse()
-{
-}
-
-HcclDetourType EnvDetourConfig::GetDetourType() const
-{
-    return HcclDetourType::HCCL_DETOUR_DISABLE;
-}
-
 } // namespace Hccl
