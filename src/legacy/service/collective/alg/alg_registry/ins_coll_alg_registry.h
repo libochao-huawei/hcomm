@@ -69,6 +69,17 @@ private:
     INS_REGISTER_IMPL_BY_TWO_TEMPS_HELPER_1(__COUNTER__, type, name, insCollAlgBase, AlgTopoMatch, InsAlgTemplate0,             \
         InsAlgTemplate1)
 
+#define INS_REGISTER_IMPL_BY_FOUR_TEMPS_HELPER(ctr, type, name, insCollAlgBase, AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3)    \
+ 	     static HcclResult g_func_##name##_##ctr = InsCollAlgRegistry::Global()->Register(                                     \
+ 	         type, std::string(#name), DefaultCreator<insCollAlgBase<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>>)
+
+#define INS_REGISTER_IMPL_BY_FOUR_TEMPS_HELPER_1(ctr, type, name, insCollAlgBase, AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3)  \
+    INS_REGISTER_IMPL_BY_FOUR_TEMPS_HELPER(ctr, type, name, insCollAlgBase, AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3)
+
+#define INS_REGISTER_IMPL_BY_FOUR_TEMPS(type, name, insCollAlgBase, AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3)              \
+    INS_REGISTER_IMPL_BY_FOUR_TEMPS_HELPER_1(__COUNTER__, type, name, insCollAlgBase, AlgTopoMatch, InsAlgTemplate0,             \
+        InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3)
+
 #define INS_REGISTER_IMPL_BY_TOPO_HELPER(ctr, type, name, insCollAlgBase, AlgTopoMatch)                \
     static HcclResult g_func_##name##_##ctr = InsCollAlgRegistry::Global()->Register(                                  \
         type, std::string(#name), DefaultCreator<insCollAlgBase<AlgTopoMatch>>)
