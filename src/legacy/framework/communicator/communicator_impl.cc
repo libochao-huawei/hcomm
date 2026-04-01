@@ -240,6 +240,9 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitCommonData(commParams);
             InitRankGraph(inputRankGraph);
             HrtSetDevice(devLogicId);
+            if (IsNeedDpu()) {
+                InitHccpPeer();
+            }
             InitHccpHdc();
             AppendLocalDieIdForLinks();
             InitCcuSuperFastLoad();
@@ -261,6 +264,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
+            InitDpuKernel();
             status = CommStatus::COMM_READY;
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
@@ -301,6 +305,9 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitHDCommunicate();
             notifyTimeoutCfg.Init();
             InitRankGraph(inputRankGraph);
+            if (IsNeedDpu()) {
+                InitHccpPeer();
+            }
             AppendLocalDieIdForLinks();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
@@ -311,6 +318,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
+            InitDpuKernel();
             status = CommStatus::COMM_READY;
             SnapShotParser::GetInstance().SerializeSubCommInfo(commParams, subConfig, rankIdsVec, staticBinaryInfo);
         );
@@ -2437,11 +2445,11 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
         return HCCL_E_RUNTIME;
     }
     // reset DPU kernel 线程
-    HCCL_INFO("Start to reset DPU device");
-    if (HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
-        HCCL_ERROR("ResetXpuDevice Failed");
-        return HCCL_E_RUNTIME;
-    }
+    // HCCL_INFO("Start to reset DPU device");
+    // if (HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
+    //     HCCL_ERROR("ResetXpuDevice Failed");
+    //     return HCCL_E_RUNTIME;
+    // }
     // 切回 npu ctx
     if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
         HCCL_ERROR("set npu Ctx Failed");
