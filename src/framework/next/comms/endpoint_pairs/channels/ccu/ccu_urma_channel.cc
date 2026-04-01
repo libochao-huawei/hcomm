@@ -153,6 +153,11 @@ HcclResult CcuUrmaChannel::Init()
     auto linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(locEndpointDesc, channelDesc_.remoteEndpoint, linkData));
 
+    if (channelDesc_.memHandleNum == 0) {
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, unsupport memHandleNum[%u].",
+            __func__, channelDesc_.memHandleNum);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
     CHK_PTR_NULL(channelDesc_.memHandles);
 
     // 当前建链不支持资源扩容，CCU资源默认固定为16
@@ -290,5 +295,12 @@ HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
+}
+
+HcclResult CcuUrmaChannel::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+{
+    std::vector<CcuTransport::CclBufferInfo> bufferVecTemp{};
+    CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferVecTemp));
+    return impl_->UpdateMemInfo(bufferVecTemp);
 }
 }  // namespace hcomm
