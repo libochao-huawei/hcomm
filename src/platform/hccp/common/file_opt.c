@@ -91,7 +91,7 @@ int ReadFileToBuf(const char *path, char *content, unsigned int *contentLen)
 out:
     retVal = fclose(readFile);
     if (retVal) {
-        roce_warn("fclose failed, retVal:%d, errno:%d", retVal, errno);
+        roce_warn("fclose unsuccessful, retVal:%d, errno:%d", retVal, errno);
     }
 
     return ret;
@@ -377,7 +377,7 @@ STATIC int CfgInnerReadConf(const char *confPath, const char *confName, char *co
     ret = CfgInnerReadConfByfd(fp, confName, confValue, len);
 out:
     retVal = fclose(fp);
-    FILE_CHECK_RET_WITHOUT_RETURN(retVal, "fclose failed, retVal:%d, errno:%d", retVal, errno);
+    FILE_CHECK_RET_WITHOUT_RETURN(retVal, "fclose unsuccessful, retVal:%d, errno:%d", retVal, errno);
     fp = NULL;
     return ret;
 }
