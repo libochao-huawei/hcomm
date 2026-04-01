@@ -108,8 +108,11 @@ HcclResult TransportP2p::Init()
     HcclUs startut = TIME_NOW();
 
     /* make input memory shared interprocess and assigned a name */
-    CHK_SMART_PTR_NULL(machinePara_.inputMem);
-    CHK_SMART_PTR_NULL(machinePara_.outputMem);
+    if (!machinePara_.isSkipExchangeIndMem) {
+        CHK_SMART_PTR_NULL(machinePara_.inputMem);
+        CHK_SMART_PTR_NULL(machinePara_.outputMem);
+    }
+
     CHK_PTR_NULL(dispatcher_);
     CHK_SMART_PTR_NULL(notifyPool_);
     CHK_RET(CheckDeviceId());
@@ -334,29 +337,33 @@ HcclResult TransportP2p::ConstructExchangeForSend()
     s32 sendPid = 0;
     CHK_RET(SalGetBareTgid(&sendPid));
     HCCL_DEBUG("%s sendPid %d, recvPid %d, recvSdid %d", __func__, sendPid, recvPid_, recvSdid_);
-    if (sendPid != recvPid_ || recvSdid_ != INVALID_INT) { // 跨进程方式交换
-        // 构造IPC内存地址交换数据结构
-        for(auto ipcMem : machinePara_.mem){
-            CHK_RET(ConstructIpcMemInfoForSend(ipcMem.ptr(), ipcMem.size(), exchangeDataPtr, exchangeDataBlankSize));
-        }
-        if (!isMemInclude_) {
-            CHK_RET(ConstructIpcMemInfoForSend(machinePara_.outputMem.ptr(), machinePara_.outputMem.size(), exchangeDataPtr,
-                exchangeDataBlankSize));
-            CHK_RET(ConstructIpcMemInfoForSend(machinePara_.inputMem.ptr(), machinePara_.inputMem.size(), exchangeDataPtr,
-                exchangeDataBlankSize));
+
+    if (!machinePara_.isSkipExchangeIndMem) {
+        if (sendPid != recvPid_ || recvSdid_ != INVALID_INT) { // 跨进程方式交换
+            // 构造IPC内存地址交换数据结构
+            for(auto ipcMem : machinePara_.mem){
+                CHK_RET(ConstructIpcMemInfoForSend(ipcMem.ptr(), ipcMem.size(), exchangeDataPtr, exchangeDataBlankSize));
+            }
+            if (!isMemInclude_) {
+                CHK_RET(ConstructIpcMemInfoForSend(machinePara_.outputMem.ptr(), machinePara_.outputMem.size(), exchangeDataPtr,
+                    exchangeDataBlankSize));
+                CHK_RET(ConstructIpcMemInfoForSend(machinePara_.inputMem.ptr(), machinePara_.inputMem.size(), exchangeDataPtr,
+                    exchangeDataBlankSize));
+            } else {
+                CHK_RET(ConstructMemIncludeInfoForSend(exchangeDataPtr, exchangeDataBlankSize));
+            }
         } else {
-            CHK_RET(ConstructMemIncludeInfoForSend(exchangeDataPtr, exchangeDataBlankSize));
-        }
-    } else {
-        // 构造进程内内存地址交换数据结构
-        CHK_RET(ConstructIntraProcMemInfoForSend(machinePara_.outputMem.ptr(), machinePara_.outputMem.size(),
-            exchangeDataPtr, exchangeDataBlankSize));
-        CHK_RET(ConstructIntraProcMemInfoForSend(machinePara_.inputMem.ptr(), machinePara_.inputMem.size(),
-            exchangeDataPtr, exchangeDataBlankSize));
-        for(auto ipcMem : machinePara_.mem){
-            CHK_RET(ConstructIntraProcMemInfoForSend(ipcMem.ptr(), ipcMem.size(), exchangeDataPtr, exchangeDataBlankSize));
+            // 构造进程内内存地址交换数据结构
+            CHK_RET(ConstructIntraProcMemInfoForSend(machinePara_.outputMem.ptr(), machinePara_.outputMem.size(),
+                exchangeDataPtr, exchangeDataBlankSize));
+            CHK_RET(ConstructIntraProcMemInfoForSend(machinePara_.inputMem.ptr(), machinePara_.inputMem.size(),
+                exchangeDataPtr, exchangeDataBlankSize));
+            for(auto ipcMem : machinePara_.mem){
+                CHK_RET(ConstructIntraProcMemInfoForSend(ipcMem.ptr(), ipcMem.size(), exchangeDataPtr, exchangeDataBlankSize));
+            }
         }
     }
+
     CHK_RET(SumCheckSizeAndConsisten(ExInfoType::EX_IPCMEN_SIZE, exchangeInfoSize_.ipcMenSize,
         blankSizeRecord, exchangeDataBlankSize));
 
@@ -403,6 +410,10 @@ HcclResult TransportP2p::ConstructExchangeForSend()
 HcclResult TransportP2p::ConstructIpcMemInfoForSend(void *ptr, u64 size, u8 *&exchangeDataPtr,
     u64 &exchangeDataBlankSize)
 {
+    if (ptr == nullptr) {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult ret;
     u64 memOffset;
     SecIpcName_t memName;
@@ -435,6 +446,9 @@ HcclResult TransportP2p::ConstructIpcMemInfoForSend(void *ptr, u64 size, u8 *&ex
 HcclResult TransportP2p::ConstructIntraProcMemInfoForSend(void *ptr, u64 size, u8 *&exchangeDataPtr,
     u64 &exchangeDataBlankSize)
 {
+    if (ptr == nullptr) {
+        return HCCL_SUCCESS;
+    }
     CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize, &ptr, sizeof(u64)));
     exchangeDataPtr += sizeof(u64);
     exchangeDataBlankSize -= sizeof(u64);
@@ -681,46 +695,49 @@ HcclResult TransportP2p::ParseReceivedExchangeData()
         return HCCL_E_INTERNAL;
     }
 
-    if (sendPid != recvPid_ || recvSdid_ != INVALID_INT) {
-        for(u32 i = 0; i < remoteIpcMemPtrVector_.size(); ++i) {
-            CHK_RET(ParseIpcMemInfo(&remoteIpcMemPtrVector_[i],
-                remoteIpcMemSizeVector_[i],
-                remoteIpcMemNameVector_[i].ipcName,
-                remoteIpcMemOffsetValueVector_[i],
-                exchangeDataPtr,
-                exchangeDataBlankSize));
-            HCCL_INFO("[TransportP2p][ParseReceivedExchangeData]index[%d]: remoteIpcMemPtr:[%p], "\
-                      "remoteIpcMemSize:[%llu]", i, remoteIpcMemPtrVector_[i], remoteIpcMemSizeVector_[i]);
-        }
-        if (!isMemInclude_) {
-            CHK_RET(ParseIpcMemInfo(&remoteOutputPtr_, remoteOutputSize_, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_,
-                exchangeDataPtr, exchangeDataBlankSize));
-            CHK_RET(ParseIpcMemInfo(&remoteInputPtr_, remoteInputSize_, remoteInputMemName_.ipcName, remoteInputOffsetValue_,
-                exchangeDataPtr, exchangeDataBlankSize));
+    if (!machinePara_.isSkipExchangeIndMem) {
+        if (sendPid != recvPid_ || recvSdid_ != INVALID_INT) {
+            for(u32 i = 0; i < remoteIpcMemPtrVector_.size(); ++i) {
+                CHK_RET(ParseIpcMemInfo(&remoteIpcMemPtrVector_[i],
+                    remoteIpcMemSizeVector_[i],
+                    remoteIpcMemNameVector_[i].ipcName,
+                    remoteIpcMemOffsetValueVector_[i],
+                    exchangeDataPtr,
+                    exchangeDataBlankSize));
+                HCCL_INFO("[TransportP2p][ParseReceivedExchangeData]index[%d]: remoteIpcMemPtr:[%p], "\
+                        "remoteIpcMemSize:[%llu]", i, remoteIpcMemPtrVector_[i], remoteIpcMemSizeVector_[i]);
+            }
+            if (!isMemInclude_) {
+                CHK_RET(ParseIpcMemInfo(&remoteOutputPtr_, remoteOutputSize_, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_,
+                    exchangeDataPtr, exchangeDataBlankSize));
+                CHK_RET(ParseIpcMemInfo(&remoteInputPtr_, remoteInputSize_, remoteInputMemName_.ipcName, remoteInputOffsetValue_,
+                    exchangeDataPtr, exchangeDataBlankSize));
+            } else {
+                CHK_RET(ParseMemIncludeInfo(&remoteOutputPtr_, remoteOutputSize_, exchangeDataPtr, exchangeDataBlankSize));
+                CHK_RET(ParseMemIncludeInfo(&remoteInputPtr_, remoteInputSize_, exchangeDataPtr, exchangeDataBlankSize));
+            }
         } else {
-            CHK_RET(ParseMemIncludeInfo(&remoteOutputPtr_, remoteOutputSize_, exchangeDataPtr, exchangeDataBlankSize));
-            CHK_RET(ParseMemIncludeInfo(&remoteInputPtr_, remoteInputSize_, exchangeDataPtr, exchangeDataBlankSize));
+            u64 memAddr;
+            CHK_RET(ParseIntraProcMemInfo(&memAddr, &remoteOutputSize_, exchangeDataPtr, exchangeDataBlankSize));
+            remoteOutputPtr_ = reinterpret_cast<void*>(memAddr);
+            CHK_RET(ParseIntraProcMemInfo(&memAddr, &remoteInputSize_, exchangeDataPtr, exchangeDataBlankSize));
+            remoteInputPtr_ = reinterpret_cast<void*>(memAddr);
+            for(u32 i = 0; i < remoteIpcMemPtrVector_.size(); ++i){
+                CHK_RET(ParseIntraProcMemInfo(&memAddr,
+                                            &remoteIpcMemSizeVector_[i],
+                                            exchangeDataPtr,
+                                            exchangeDataBlankSize));
+                remoteIpcMemPtrVector_[i] = reinterpret_cast<void*>(memAddr);
+                HCCL_INFO("[TransportP2p][ParseReceivedExchangeData]index[%d]: remoteIpcMemPtr:[%p], "\
+                        "remoteIpcMemSize:[%llu]", i, remoteIpcMemPtrVector_[i], remoteIpcMemSizeVector_[i]);
+            }
         }
-    } else {
-        u64 memAddr;
-        CHK_RET(ParseIntraProcMemInfo(&memAddr, &remoteOutputSize_, exchangeDataPtr, exchangeDataBlankSize));
-        remoteOutputPtr_ = reinterpret_cast<void*>(memAddr);
-        CHK_RET(ParseIntraProcMemInfo(&memAddr, &remoteInputSize_, exchangeDataPtr, exchangeDataBlankSize));
-        remoteInputPtr_ = reinterpret_cast<void*>(memAddr);
-        for(u32 i = 0; i < remoteIpcMemPtrVector_.size(); ++i){
-            CHK_RET(ParseIntraProcMemInfo(&memAddr,
-                                        &remoteIpcMemSizeVector_[i],
-                                        exchangeDataPtr,
-                                        exchangeDataBlankSize));
-            remoteIpcMemPtrVector_[i] = reinterpret_cast<void*>(memAddr);
-            HCCL_INFO("[TransportP2p][ParseReceivedExchangeData]index[%d]: remoteIpcMemPtr:[%p], "\
-                      "remoteIpcMemSize:[%llu]", i, remoteIpcMemPtrVector_[i], remoteIpcMemSizeVector_[i]);
-        }
+
+        //将本端和远端的Mem都打印。
+        HCCL_INFO("[TransportP2p][ParseReceivedExchangeData]remoteOutputPtr_[%p], remoteOutputSize_[%llu], "\
+                "remoteInputPtr_[%p], remoteInputSize_[%llu]",
+                remoteOutputPtr_, remoteOutputSize_, remoteInputPtr_, remoteInputSize_);
     }
-    //将本端和远端的Mem都打印。
-    HCCL_INFO("[TransportP2p][ParseReceivedExchangeData]remoteOutputPtr_[%p], remoteOutputSize_[%llu], "\
-              "remoteInputPtr_[%p], remoteInputSize_[%llu]",
-              remoteOutputPtr_, remoteOutputSize_, remoteInputPtr_, remoteInputSize_);
 
     CHK_RET(ParseNotifyInfo(exchangeDataPtr, exchangeDataBlankSize));
     CHK_RET(ParseNotifyVectorInfo(exchangeDataPtr, exchangeDataBlankSize));
