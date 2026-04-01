@@ -133,6 +133,7 @@ public:
     Trace& GetTrace() const;
 
     u32 GetDeviceLogicId() const;
+    HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
  
 private:
     CommParams                        commParams;
