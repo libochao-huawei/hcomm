@@ -57,12 +57,6 @@ HcclResult AicpuChannelHccsProcess::SetTransportMachinePara(hccl::MachinePara &m
 {
     machinePara.linkAttribute = 0x03; /* 0x03同时支持目的端和源端发起 */
 
-    machinePara.localUserrank = channelHccsRes.localRank;
-    machinePara.remoteUserrank = channelHccsRes.remoteRank;
-
-    machinePara.localWorldRank = 0;
-    machinePara.remoteWorldRank = 0;
-
     machinePara.remoteDeviceId = channelHccsRes.remoteDevicePhyId;
     machinePara.localDeviceId = channelHccsRes.localDevicePhyId;
     machinePara.deviceLogicId = channelHccsRes.localDeviceLogicId;
@@ -72,6 +66,7 @@ HcclResult AicpuChannelHccsProcess::SetTransportMachinePara(hccl::MachinePara &m
 
     // 非910_93 2die sio与hccs并发场景，specifyLink设置为RESERVED_LINK_TYPE，平台层将按实际链路类型建链
     machinePara.specifyLink = LinkTypeInServer::RESERVED_LINK_TYPE;
+    machinePara.isSkipExchangeIndMem = true;
 
     HCCL_INFO("%s success, linkAttribute[%x], localUserRank[%u], remoteWorldRank[%u], "
         "remoteUserrank[%u], deviceLogicId[%d], localDeviceId[%d], deviceType[%d], newTag[%s], specifyLink[%d]",
@@ -152,8 +147,6 @@ HcclResult AicpuChannelHccsProcess::InitP2pChannel(HcclChannelTransportResSet *t
     std::unique_ptr<hccl::Transport> &transport)
 {
     HcclChannelHccsRes &channelHccsRes = transportResSet->channelHccsRes[channelIndex];
-    
-
     HcclChannelP2p &channelP2p = channelHccsRes.channelP2p;
     if (channelP2p.localIpcSignal[0].resId == INVALID_U64) {
         HCCL_ERROR("[%s]the Channel is invalid",__func__);
