@@ -1090,7 +1090,7 @@ HcclResult TransportManager::GetTransNewTag(const std::string &tag, std::string 
     if (mode) {
         if (devIpAddr_[0] < remoteLink.ip) {
             newTag = identifier_ + "_" + std::to_string(userRank_) + "_" + std::to_string(remoteRank) + "_" +
-                devIpAddr_[0].GetReadableIP() + "_" + remoteRank.ip.GetReadableIP();
+                devIpAddr_[0].GetReadableIP() + "_" + remoteLink.ip.GetReadableIP();
         } else {
             newTag = identifier_ + "_" + std::to_string(remoteRank) + "_" + std::to_string(userRank_) + "_" +
                 remoteLink.ip.GetReadableIP() + "_" + devIpAddr_[0].ip.GetReadableIP();

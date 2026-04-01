@@ -1220,7 +1220,7 @@ HcclResult HostCpuRoceChannel::BuildExchangeDataLengthHybird()
 
 HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
 {
-    BuildExchangeDataLengthHybird();
+    CHK_RET(BuildExchangeDataLengthHybird());
 
     exchangeDataForSend_.resize(exchangeDataTotalSize_);
 
@@ -1239,10 +1239,10 @@ HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
     data += sizeof(hccl::MemMsg);
     size += sizeof (hccl::MemMsg);
 
-    CreateNotifyValueBufferHybird();
-    CreateNotifyBufferHybird(hccl::DATA_NOTIFY_MEM, 1, data, size);
-    CreateNotifyBufferHybird(hccl::ACK_NOTIFY_MEM, 0, data, size);
-    CreateNotifyBufferHybird(hccl::DATA_ACK_NOTIFY_MEM, 2, data, size);
+    CHK_RET(CreateNotifyValueBufferHybird());
+    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_NOTIFY_MEM, 1, data, size));
+    CHK_RET(CreateNotifyBufferHybird(hccl::ACK_NOTIFY_MEM, 0, data, size));
+    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_ACK_NOTIFY_MEM, 2, data, size));
 
     u8 atomicWrite = 1;
     memcpy_s(data, size, reinterpret_cast<void *>(&atomicWrite), sizeof(u8));
@@ -1350,17 +1350,19 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybird(std::function<bool()> needS
 HcclResult HostCpuRoceChannel::ExchangeDataHybird()
 {
     HCCL_INFO("[Hybrid] Starting hybrid data exchange");
-    
-    RegisterUserMemHybird();
 
-    BuildExchangeDataHybird();
+    CHK_RET(RegisterUserMemHybird());
 
-    socket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_);
+    CHK_RET(BuildExchangeDataHybird());
+
+    CHK_PRT_RET(!socket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_),
+        HCCL_ERROR("[Hybrid] Send exchange data failed"), HCCL_E_NETWORK);
 
     exchangeDataForRecv_.resize(exchangeDataTotalSize_);
-    socket_->Recv(exchangeDataForRecv_.data(), exchangeDataTotalSize_);
+    CHK_PRT_RET(!socket_->Recv(exchangeDataForRecv_.data(), exchangeDataTotalSize_),
+        HCCL_ERROR("[Hybrid] Recv exchange data failed"), HCCL_E_NETWORK);
 
-    ParseRecvExchangeDataHybird();
+    CHK_RET(ParseRecvExchangeDataHybird());
 
     return HCCL_SUCCESS;
 }
