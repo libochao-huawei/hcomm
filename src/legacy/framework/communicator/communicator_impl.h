@@ -131,7 +131,9 @@ public:
 
     virtual RemoteRmaBufManager &GetRemoteRmaBufManager() const;
 
-    virtual QueueNotifyManager &GetQueueNotifyManager() const;
+    virtual QueueNotifyManager &GetAicpuQueueNotifyManager() const;
+
+    virtual QueueNotifyManager &GetCcuQueueNotifyManager() const;
 
     virtual ConnLocalNotifyManager &GetConnLocalNotifyManager() const;
 
@@ -402,7 +404,8 @@ private:
     unique_ptr<DataBufManager>                 dataBufferManager;
     unique_ptr<LocalRmaBufManager>             localRmaBufManager;
     unique_ptr<RemoteRmaBufManager>            remoteRmaBufManager;
-    unique_ptr<QueueNotifyManager>             queueNotifyManager;
+    unique_ptr<QueueNotifyManager>             aicpuQueueNotifyManager;
+    unique_ptr<QueueNotifyManager>             ccuQueueNotifyManager;
     unique_ptr<QueueWaitGroupCntNotifyManager> queueWaitGroupCntNotifyManager;
     unique_ptr<QueueBcastPostCntNotifyManager> queueBcastPostCntNotifyManager;
     unique_ptr<ConnLocalNotifyManager>         connLocalNotifyManager;
