@@ -18,6 +18,7 @@ constexpr u32 LOW_BITS = 16;
 
 u32 GetKernelExecTimeoutFromEnvConfig()
 {
+    return 10;
     const u32 envTimeout  = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout;
     return envTimeout;
 }
