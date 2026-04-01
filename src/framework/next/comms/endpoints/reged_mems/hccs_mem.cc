@@ -145,19 +145,19 @@ HcclResult HccsRegedMemMgr::SerializeToMemDesc(const EndpointDesc &endpointDesc,
     std::vector<char> tempMemDesc;
     tempMemDesc.resize(sizeof(EndpointDesc) + ipcRmaBufferDesc.length());
 
-    if(memcpy_s(tempMemDesc.data(), 0, &endpointDesc, sizeof(EndpointDesc)) != EOK) {
-        HCCL_ERROR("[RoceRegedMemMgr][GetMemDesc] [%s] endpointDesc memcpy_s failed.", __func__);
+    if(memcpy_s(tempMemDesc.data(), sizeof(EndpointDesc), &endpointDesc, sizeof(EndpointDesc)) != EOK) {
+        HCCL_ERROR("[RoceRegedMemMgr][SerializeToMemDesc] [%s] endpointDesc memcpy_s failed.", __func__);
         return HCCL_E_INTERNAL;
     }
 
-    if(memcpy_s(tempMemDesc.data(), sizeof(EndpointDesc), ipcRmaBufferDesc.c_str(), ipcRmaBufferDesc.length()) != EOK) {
-        HCCL_ERROR("[RoceRegedMemMgr][GetMemDesc] [%s] endpointDesc memcpy_s failed.", __func__);
+    if(memcpy_s(tempMemDesc.data() + sizeof(EndpointDesc), ipcRmaBufferDesc.length(), ipcRmaBufferDesc.c_str(),
+        ipcRmaBufferDesc.length()) != EOK) {
+        HCCL_ERROR("[RoceRegedMemMgr][SerializeToMemDesc] [%s] endpointDesc memcpy_s failed.", __func__);
         return HCCL_E_INTERNAL;
     }
 
     *descLen = tempMemDesc.size();
     *memDesc = std::move(tempMemDesc.data());
-
     return HCCL_SUCCESS;
 }
 
@@ -168,6 +168,8 @@ HcclResult HccsRegedMemMgr::DeSerializeFromMemDesc(const void *memDesc, uint32_t
     CHK_PTR_NULL(memDesc);
 
     const char *description = static_cast<const char *>(memDesc);
+    HCCL_INFO("[%s] descLen[%u] memDesc[%s]", __FUNCTION__, descLen, description);
+
     if (descLen <= sizeof(EndpointDesc)) {
         HCCL_ERROR("[HccsRegedMemMgr][DeSerializeFromMemDesc] [%s] descLen :%u too small error. need more than size:[%llu]",
             __func__, sizeof(EndpointDesc));
@@ -180,7 +182,14 @@ HcclResult HccsRegedMemMgr::DeSerializeFromMemDesc(const void *memDesc, uint32_t
         return HCCL_E_INTERNAL;
     }
 
-    ipcRmaBufferDesc = std::string(description + sizeof(EndpointDesc), descLen - sizeof(EndpointDesc));
+    uint32_t ipcRmaBufferDescLen = descLen - sizeof(EndpointDesc);
+    ipcRmaBufferDesc.resize(ipcRmaBufferDescLen);
+    if (memcpy_s(const_cast<char *>(ipcRmaBufferDesc.c_str()), ipcRmaBufferDescLen,
+            description + sizeof(EndpointDesc), ipcRmaBufferDescLen) != EOK) {
+        HCCL_ERROR("[HccsRegedMemMgr][DeSerializeFromMemDesc] [%s] ipcRmaBufferDesc copy error. aim size:[%llu]",
+            __func__, ipcRmaBufferDescLen);
+        return HCCL_E_INTERNAL;
+    }
 
     return HCCL_SUCCESS;    
 }
@@ -194,8 +203,12 @@ HcclResult HccsRegedMemMgr::MemoryExport(
     CHK_PTR_NULL(memDescLen);
 
     hccl::LocalIpcRmaBuffer *localIpcRmaBuffer = reinterpret_cast<hccl::LocalIpcRmaBuffer *>(memHandle);
-    std::string ipcRmaBufferDesc = localIpcRmaBuffer->Serialize();
+    std::string &ipcRmaBufferDesc = localIpcRmaBuffer->Serialize();
+    HCCL_INFO("[%s] ipcRmaBufferDesc.len[%u] ipcRmaBufferDesc.data[%s]", __FUNCTION__,
+        ipcRmaBufferDesc.length(), ipcRmaBufferDesc.c_str());
+
     CHK_RET(SerializeToMemDesc(endpointDesc, ipcRmaBufferDesc, memDesc, memDescLen));
+    HCCL_INFO("[%s] descLen[%u] memDesc[%s]", __FUNCTION__, *memDescLen, static_cast<const char *>(*memDesc));
     return HCCL_SUCCESS;
 }
 
@@ -268,9 +281,13 @@ HcclResult HccsRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
     CHK_PTR_NULL(memDesc);
     CHK_PTR_NULL(outMem);
 
+    HCCL_INFO("[%s] descLen[%u] memDesc[%s]", __FUNCTION__, descLen, static_cast<const char *>(memDesc));
+
     EndpointDesc endpointDesc;
     std::string ipcRmaBufferDesc;
     CHK_RET(DeSerializeFromMemDesc(memDesc, descLen, endpointDesc, ipcRmaBufferDesc));
+    HCCL_INFO("[%s] ipcRmaBufferDesc.len[%u] ipcRmaBufferDesc.data[%s]", __FUNCTION__,
+        ipcRmaBufferDesc.length(), ipcRmaBufferDesc.c_str());
 
     std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer;
     EXECEPTION_CATCH(
