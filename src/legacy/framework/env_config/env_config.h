@@ -30,8 +30,6 @@ public:
 
     const EnvLogConfig &GetLogConfig();
 
-    const EnvDetourConfig &GetDetourConfig();
-
     EnvConfig(const EnvConfig &envConfig) = delete;
 
     EnvConfig &operator=(const EnvConfig &envConfig) = delete;
@@ -45,7 +43,6 @@ private:
     EnvRdmaConfig          rdmaCfg;
     EnvAlgoConfig          algoCfg;
     EnvLogConfig           logCfg;
-    EnvDetourConfig        detourCfg;
     EnvConfig();
 };
 

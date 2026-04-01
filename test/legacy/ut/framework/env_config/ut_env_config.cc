@@ -396,22 +396,6 @@ TEST_F(EnvConfigTest, parse_env_config_hccl_algo_invalid_test_1)
 
 }
 
-TEST_F(EnvConfigTest, parse_env_config_HCCL_DETOUR_test)
-{
-    EnvDetourConfig        detourCfg;
- 	EXPECT_EQ(detourCfg.GetDetourType(), HcclDetourType::HCCL_DETOUR_DISABLE);
-    std::string input = "detour:0";
-    EXPECT_EQ(CastDetourType(input), HcclDetourType::HCCL_DETOUR_DISABLE);
-    input = "detour:1";
-    EXPECT_EQ(CastDetourType(input), HcclDetourType::HCCL_DETOUR_ENABLE_2P);
-    input = "detour:2";
-    EXPECT_THROW(CastDetourType(input), NotSupportException);
-    input = "detour:3";
-    EXPECT_THROW(CastDetourType(input), NotSupportException);
-    input = "!";
-    EXPECT_THROW(CastDetourType(input), NotSupportException);
-}
-
 TEST_F(EnvConfigTest, str2T_test)
 {
     std::string input = "12a";

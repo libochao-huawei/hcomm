@@ -66,8 +66,6 @@ public:
 
     const EnvLogConfig &GetLogConfig();
 
-    const EnvDetourConfig &GetDetourConfig();
-
 private:
     EnvHostNicConfig   hostNicCfg;
     EnvSocketConfig    socketCfg;
@@ -75,7 +73,6 @@ private:
     EnvRdmaConfig      rdmaCfg;
     EnvAlgoConfig      algoCfg;
     EnvLogConfig       logCfg;
-    EnvDetourConfig    detourCfg;
     void Parse();
 };
 
