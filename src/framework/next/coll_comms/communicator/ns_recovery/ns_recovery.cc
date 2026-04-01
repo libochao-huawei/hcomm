@@ -134,7 +134,7 @@ HcclResult NsRecoveryProcessor::Clean()
                 }
                 return HcclResult::HCCL_SUCCESS;
             } else {
-                HCCL_ERROR("[NsRecovery][Clean] Aicpu kernel is not stopped yet. Cannot clean.");
+                HCCL_ERROR("[NsRecovery][Clean] Aicpu kernel is not stopped yet. Cannot clean, kfcStatus is [%s]", opInfo.kfcStatus.c_str());
                 return HcclResult::HCCL_E_INTERNAL;
             }
             return HcclResult::HCCL_SUCCESS;

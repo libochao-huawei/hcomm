@@ -30,6 +30,7 @@ void NsRecoveryFuncLite::Call()
     auto ret = AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[NsRecovery][BackGround] AicpuGetCommAll failed, errNo[0x%016llx]", ret);
+        rwlock.readUnlock();
         return;
     }
     for (auto &commInfo : aicpuCommInfo) {

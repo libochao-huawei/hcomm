@@ -563,7 +563,7 @@ HcclResult ChannelProcess::ChannelClean(const ChannelHandle *channelList, uint32
         });
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            HCCL_ERROR("[%s] ChannelHandle Clean failed.", __func__);
+            HCCL_ERROR("[%s] ChannelHandle Clean failed, ret = 0x%016llx, i = %u", __func__, HCCL_ERROR_CODE(ret), i);
             return ret;
         }
     }
@@ -580,7 +580,7 @@ HcclResult ChannelProcess::ChannelResumeConcurrency(const ChannelHandle *channel
         });
 
         if (ret != HcclResult::HCCL_SUCCESS) {
-            HCCL_ERROR("[%s] Get ChannelHandle failed.", __func__);
+            HCCL_ERROR("[%s] Get ChannelHandle failed, ret = 0x%016llx, i = %u", __func__, HCCL_ERROR_CODE(ret), i);
             return ret;
         }
     }
@@ -593,7 +593,7 @@ HcclResult ChannelProcess::ChannelResume(const ChannelHandle *channelList, uint3
     // 1.resume resource
     HcclResult ret = ChannelResumeConcurrency(channelList, channelNum);
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("HcommChannelResumeConcurrency error");
+        HCCL_ERROR("HcommChannelResumeConcurrency error, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 

@@ -160,7 +160,12 @@ HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
         rwlock.readLock();
 
         std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
-        CHK_RET(AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo));
+        auto ret = AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclComm][GetCommStatus]AicpuGetCommAll failed");
+            rwlock.readUnlock();
+            return ret;
+        }
         for (const auto& deviceComm : aicpuCommInfo) {
             if (deviceComm.first != identifier_) {
                 continue;

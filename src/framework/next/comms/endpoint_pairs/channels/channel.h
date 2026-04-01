@@ -60,8 +60,6 @@ public:
     virtual HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum);
     // ------------------ 数据面接口 ------------------
 
-
-
     // ------------------ 工厂 ------------------
     static HcclResult CreateChannel(EndpointHandle endpointHandle, 
                                     CommEngine engine, 

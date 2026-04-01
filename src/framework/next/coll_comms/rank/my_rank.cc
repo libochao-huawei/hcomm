@@ -518,7 +518,7 @@ HcclResult MyRank::StopLaunch()
     HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch start!");
     auto ret = nsRecoveryProcessor_->StopLaunch();
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][StopLaunch] MyRank::StopLaunch failed!");
+        HCCL_ERROR("[NsRecovery][StopLaunch] MyRank::StopLaunch failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
     }
     HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch success!");
     return ret;
@@ -534,13 +534,13 @@ HcclResult MyRank::Clean()
     }
     auto ret = ChannelProcess::ChannelClean(channelList.data(), channelList.size());
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed!");
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 
     ret = nsRecoveryProcessor_->Clean();
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed!");
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 

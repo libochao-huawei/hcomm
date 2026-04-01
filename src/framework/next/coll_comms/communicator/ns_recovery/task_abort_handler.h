@@ -18,7 +18,7 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbo
 MAKE_ENUM(TaskAbortResult,
     TASK_ABORT_SUCCESS = 0,  // taskabortSuccess
     TASK_ABORT_FAIL    = 1,  // taskabortFail
-    TASK_ABORT_TIMEOUT = 2)  // taskabortTimeout
+    TASK_ABORT_TIMEOUT = 2);  // taskabortTimeout
 
 class CollComm;
 
