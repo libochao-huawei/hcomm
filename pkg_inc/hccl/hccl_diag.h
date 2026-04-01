@@ -45,6 +45,7 @@ extern HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime);
  * @note host侧
  */
 extern HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char *kernelName);
+extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime);
 
 extern uint64_t HcommGetProfilingSysCycleTime();
 
