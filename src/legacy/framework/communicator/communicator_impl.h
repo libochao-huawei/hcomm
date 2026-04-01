@@ -131,7 +131,9 @@ public:
 
     virtual RemoteRmaBufManager &GetRemoteRmaBufManager() const;
 
-    virtual QueueNotifyManager &GetQueueNotifyManager() const;
+    virtual QueueNotifyManager &GetAicpuQueueNotifyManager() const;
+
+    virtual QueueNotifyManager &GetCcuQueueNotifyManager() const;
 
     virtual ConnLocalNotifyManager &GetConnLocalNotifyManager() const;
 
