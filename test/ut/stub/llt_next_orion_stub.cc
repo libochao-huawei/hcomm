@@ -2119,3 +2119,13 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
+
+// DaemonFunc stub for test
+namespace Hccl {
+DaemonFunc::~DaemonFunc()
+{
+}
+void DaemonFunc::Call()
+{
+}
+} // namespace Hccl
