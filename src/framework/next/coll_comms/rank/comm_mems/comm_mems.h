@@ -19,6 +19,7 @@
 #include "hccl_mem_defs.h"
 #include "rma_buffer_mgr.h"
 #include "hcomm_c_adpt.h"
+#include "reged_mem_mgr.h"
 
 namespace hccl { 
 CommMemType ConvertHcclToCommMemType(HcclMemType hcclType);

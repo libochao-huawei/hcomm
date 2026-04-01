@@ -14,8 +14,6 @@
 
 #include "../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
 
-#include "env_config/env_config.h"
-
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;
@@ -659,19 +657,17 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
 
 HcclResult CcuTransport::CheckSocketStatus()
 {
-    uint32_t retryCount = 0;
     while (true) {
         EXCEPTION_HANDLE_BEGIN
-        SocketStatus socketStatus = socket_->GetAsyncStatus();
-        EXCEPTION_HANDLE_END
+        Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
         if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
-            ERROR("[CcuTransport][CheckSocketStatus] socket timeout.");
+            HCCL_ERROR("[CcuTransport][CheckSocketStatus] socket timeout.");
             return HcclResult::HCCL_E_TIMEOUT;
         }
-        
         if (socketStatus == Hccl::SocketStatus::OK) {
             return HcclResult::HCCL_SUCCESS;
         }
+        EXCEPTION_HANDLE_END
     }
 }
 

@@ -93,15 +93,15 @@ Hccl::TransportStatus AivUbMemTransport::GetStatus()
             aivUbStatus_ = AivUbMemTransportStatus::SOCKET_OK;
             baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
             break;
-        case AivUbMemTransportStatus::SOCKET_OK;
+        case AivUbMemTransportStatus::SOCKET_OK:
             SendDataSize();
             aivUbStatus_ = AivUbMemTransportStatus::SEND_DATA_SIZE;
             break;
-        case AivUbMemTransportStatus::SEND_DATA_SIZE;
+        case AivUbMemTransportStatus::SEND_DATA_SIZE:
             RecvDataSize();
             aivUbStatus_ = AivUbMemTransportStatus::RECV_DATA_SIZE;
             break;
-        case AivUbMemTransportStatus::RECV_DATA_SIZE;
+        case AivUbMemTransportStatus::RECV_DATA_SIZE:
             SendMemInfo();
             aivUbStatus_ = AivUbMemTransportStatus::SEND_MEM_INFO;
             break;
@@ -134,7 +134,7 @@ HcclResult AivUbMemTransport::SendDataSize()
     binaryStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
     EXCEPTION_HANDLE_BEGIN
-    socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
@@ -145,7 +145,7 @@ HcclResult AivUbMemTransport::RecvDataSize()
     HCCL_INFO("[%s] start", __func__);
 
     EXCEPTION_HANDLE_BEGIN
-    socket->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
+    socket_->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[%s] finished", __func__);
     return HCCL_SUCCESS;
@@ -214,21 +214,21 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
         EXCEPTION_THROW_IF_ERR(HCCL_E_PARA, "[AivUbMemTransport][RmtBufferUnpackProc] vecSize exceeds limit.");
     }
 
-    remoteMemTemp_.resize(vecSize);
-    for (auto& tag : remoteMemTemp_) {
+    rmtTagTemp_.resize(vecSize);
+    for (auto& tag : rmtTagTemp_) {
         for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; i++) {
             u8 byte;
             binaryStream >> byte;
             tag[i] = static_cast<char>(byte);
         }
     }
-    remoteUserMemTag_.insert(remoteUserMemTag_.end(), remoteMemTemp_.begin(), remoteMemTemp_.end());
+    remoteUserMemTag_.insert(remoteUserMemTag_.end(), rmtTagTemp_.begin(), rmtTagTemp_.end());
 
     for (u32 pos = 0; pos < vecSize; ++pos) {
         Hccl::ExchangeIpcBufferDto dto;
         dto.Deserialize(binaryStream);
         HCCL_INFO("[%s] dto[%s]", __func__, dto.Describe().c_str());
-        const char* src = remoteMemTemp_[pos].data();
+        const char* src = rmtTagTemp_[pos].data();
         std::string bufTag(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
         if (dto.size == 0) { // size为0，则为 remote 空buffer
             HCCL_INFO("unpack nullptr, pos=%u", pos);
