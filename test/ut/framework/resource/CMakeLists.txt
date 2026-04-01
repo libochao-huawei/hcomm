@@ -109,4 +109,4 @@ target_link_libraries(hccl_utest_framework_resource_a5 PRIVATE
 add_dependencies(hccl_utest_framework_resource_a5 hccl_llt)
 
 enable_testing()
-add_test(NAME hccl_utest_framework_resource_at COMMAND hccl_utest_framework_resource_at)
+add_test(NAME hccl_utest_framework_resource_a5 COMMAND hccl_utest_framework_resource_a5)
