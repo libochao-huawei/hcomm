@@ -85,7 +85,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
 
     // 组装句柄（仅域内管理，无进程级注册）
     Handle h;
-    EXECEPTION_CATCH(h = std::make_shared<CommMemHandle>(), return HCCL_E_PTR);
+    EXECEPTION_CATCH(h = std::make_shared<hcomm::RegedMemMgr::CommMemInfo>(), return HCCL_E_PTR);
     h->addr    = mem.addr;
     h->size    = static_cast<uint64_t>(mem.size);
     h->memType = static_cast<CommMemType>(mem.type);
@@ -173,7 +173,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
  
     // 增加入参检查
     std::lock_guard<std::mutex> lock(memMutex_);
-    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    hcomm::RegedMemMgr::CommMemInfo** handles = reinterpret_cast<hcomm::RegedMemMgr::CommMemInfo**>(memHandles);
     for (uint32_t i = 0; i < memHandleNum; i++) {
         auto it = opReverseBindings_.find(handles[i]);
         if (it == opReverseBindings_.end()) {
@@ -191,7 +191,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
 }
 
 HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
-    CommMemHandle &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec)
+    hcomm::RegedMemMgr::CommMemInfo &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec)
 {
     if (memHandleVec.size() == 0) {
         HCCL_ERROR("[CommMems][SetMemHandles] memHandleVecSize is 0.");
@@ -205,7 +205,7 @@ HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<MemHandl
     cclBufferHandle.memTag = "HcclBuffer";
     commMemHandleVec.push_back(static_cast<void*>(&cclBufferHandle));
 
-    CommMemHandle **handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    hcomm::RegedMemMgr::CommMemInfo **handles = reinterpret_cast<hcomm::RegedMemMgr::CommMemInfo**>(memHandles);
     for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
         CHK_PTR_NULL(memHandleVec[i]);
         (*handles[i - 1]).bufferHandle = memHandleVec[i];
