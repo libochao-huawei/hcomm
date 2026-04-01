@@ -110,23 +110,6 @@ HcclResult AicpuTsHccsChannel::ParseInputParam()
     return HCCL_SUCCESS;
 }
 
-// 新旧ip类型转换
-HcclResult AicpuTsHccsChannel::HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, HcclIpAddress *hcclIP) {
-    CHK_PTR_NULL(hcclIP);
-    CHK_PTR_NULL(hccladdr);
-    if (hcclIP->GetFamily() == AF_INET) {
-        hccladdr->type = HCCL_ADDR_TYPE_IP_V4;
-        hccladdr->addr = hcclIP->GetBinaryAddress().addr;
-    } else if (hcclIP->GetFamily() == AF_INET6) {
-        hccladdr->type = HCCL_ADDR_TYPE_IP_V6;
-        hccladdr->addr6 = hcclIP->GetBinaryAddress().addr6;
-    } else {
-        HCCL_ERROR("[HcclIpAddressConvertingHcclAddr]ERROR IP type!");
-        return HCCL_E_PARA;
-    }
-    return HCCL_SUCCESS;
-}
-
 #define AICPU_CHANNEL_DEFUALT_PORT 16666
 HcclResult AicpuTsHccsChannel::MakeLinkInfo(bool beLocal, EndpointDesc &endpointDesc, hccl::HcclRankLinkInfo &linkInfo)
 {
@@ -146,17 +129,10 @@ HcclResult AicpuTsHccsChannel::MakeLinkInfo(bool beLocal, EndpointDesc &endpoint
             linkInfo.ip));
     }
 */
-    if (beLocal) {
-        std::vector<HcclIpAddress> deviceIp;
-        CHK_RET(hrtRaGetDeviceIP(linkInfo.devicePhyId, deviceIp));
-        linkInfo.ip = deviceIp[0];
-    } else {
-        HcclAddress *deviceIp = nullptr;
-        uint32_t addrNum = 0;
-        CHK_RET(HcclNetDevGetNicAddr(linkInfo.devicePhyId, &deviceIp, &addrNum));
-        CHK_PTR_NULL(deviceIp);
-        CHK_RET(HcclIpAddressConvertHcclAddr(&deviceIp[0], &linkInfo.ip));
-    }
+
+    std::vector<HcclIpAddress> deviceIp;
+    CHK_RET(GlobalNetDevMgr::GetInstance().GetDeviceIP(linkInfo.devicePhyId, deviceIp));
+    linkInfo.ip = deviceIp[0];
     HCCL_INFO("[AicpuTsHccsChannel][MakeLinkInfo]devicePhysicID[%u] linkInfo.ip[%s]",
         linkInfo.devicePhyId, linkInfo.ip.GetReadableAddress());
 

@@ -18,6 +18,7 @@
 #include "inner/local_rdma_rma_buffer.h"
 #include "inner/remote_rdma_rma_buffer.h"
 #include "hccl_network.h"
+#include "network_manager_pub.h"
 
 using namespace hccl;
 
@@ -168,6 +169,65 @@ HcclResult GlobalNetDevMgr::DeInitNic()
     CHK_RET(HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId_, static_cast<u32>(deviceLogicId_)));
     nicInited_ = false;
     HCCL_INFO("[DeInitNic] Nic deinit success. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
+    return HCCL_SUCCESS;
+}
+
+HcclResult GlobalNetDevMgr::HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, HcclIpAddress *hcclIP) {
+    CHK_PTR_NULL(hcclIP);
+    CHK_PTR_NULL(hccladdr);
+    if (hcclIP->GetFamily() == AF_INET) {
+        hccladdr->type = HCCL_ADDR_TYPE_IP_V4;
+        hccladdr->addr = hcclIP->GetBinaryAddress().addr;
+    } else if (hcclIP->GetFamily() == AF_INET6) {
+        hccladdr->type = HCCL_ADDR_TYPE_IP_V6;
+        hccladdr->addr6 = hcclIP->GetBinaryAddress().addr6;
+    } else {
+        HCCL_ERROR("[HcclIpAddressConvertingHcclAddr]ERROR IP type!");
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult GlobalNetDevMgr::GetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_t *addrNum)
+{
+    CHK_PTR_NULL(addrNum);
+    CHK_PTR_NULL(addr);
+ 
+    u32 deviceLogicId;
+    CHK_RET(hrtGetDeviceIndexByPhyId(devicePhyId, deviceLogicId));
+ 
+    // 先创建进程
+    bool isHostUseDevNic;
+    CHK_RET(IsHostUseDevNic(isHostUseDevNic));
+    HCCL_DEBUG("[%s]HcclNetDevGetBusAddr, deviceLogicId[%u], devicePhyId[%u], nicDeploy[%d], hasBackup[%d],",
+        __func__,
+        deviceLogicId,
+        devicePhyId,
+        NICDeployment::NIC_DEPLOYMENT_DEVICE,
+        false);
+    CHK_RET(hccl::NetworkManager::GetInstance(deviceLogicId)
+                .InitV2(NICDeployment::NIC_DEPLOYMENT_DEVICE, false, devicePhyId, isHostUseDevNic));
+    CHK_RET(hccl::NetworkManager::GetInstance(deviceLogicId).GetNicIp(devicePhyId, addr, addrNum));
+
+    // 销毁进程
+    CHK_RET(hccl::NetworkManager::GetInstance(deviceLogicId)
+                .DeInitV2(NICDeployment::NIC_DEPLOYMENT_DEVICE, false, false));
+    return HCCL_SUCCESS;
+}
+
+HcclResult GlobalNetDevMgr::GetDeviceIP(u32 devicePhyId, std::vector<hccl::HcclIpAddress> &ipAddr)
+{
+    HcclAddress *hcclAddress = nullptr;
+    uint32_t addrNum = 0;
+    CHK_RET(GetNicAddr(devicePhyId, &hcclAddress, &addrNum));
+    CHK_PTR_NULL(hcclAddress);
+
+    HcclIpAddress hcclIpAddress;
+    for (uint32_t i = 0; i < addrNum; i++) {
+        CHK_RET(HcclIpAddressConvertHcclAddr(&hcclAddress[0], &hcclIpAddress));
+        ipAddr[i] = hcclIpAddress;
+    }
+
     return HCCL_SUCCESS;
 }
 
