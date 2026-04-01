@@ -348,33 +348,28 @@ void CcuContextReduceMeshTwoShotMem2Mem1D::ReduceRmtToLoc(const std::vector<CcuR
     ReduceLoopGroup(dstMem_, reduceScatterSrc_[rankId_], reduceScatterDst_,  localGoSize_, dataType_, outputDataType_, reduceOp_);
 }
 
-void CcuContextReduceMeshTwoShotMem2Mem1D::GatherFromRmt(const std::vector<CcuRep::Variable> &srcAddr,
-                                                        const CcuRep::Variable              &dstAddr)
+void CcuContextReduceMeshTwoShotMem2Mem1D::BcastLocToRmt(const CcuRep::Variable              &srcAddr,
+                                                        const std::vector<CcuRep::Variable> &dstAddr)
 {
     CHK_PRT_THROW(
-        srcAddr.size() != transports.size() + 1,
-        HCCL_ERROR("[GatherFromRmt] srcAddr.size[%zu] != transports size[%zu] +1", srcAddr.size(), transports.size()),
+        dstAddr.size() != transports.size() + 1,
+        HCCL_ERROR("[ReduceRmtToLoc] srcAddr.size[%zu] != transports size[%zu] + 1", dstAddr.size(), transports.size()),
         InvalidParamsException, "Invalid srcAddr size");
-    for (uint32_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
-        gatherSrc_[rankIdx].addr = srcAddr[rankIdx];
-        gatherSrc_[rankIdx].addr += sliceOffset_[rankIdx];
-        gatherSrc_[rankIdx].token = token_[rankIdx];
-
-        gatherDst_[rankIdx].addr = dstAddr;
-        gatherDst_[rankIdx].addr += sliceOffset_[rankIdx];
-        gatherDst_[rankIdx].token = token_[rankId_];
-    }
-    uint32_t transportId = 0;
-    for (uint32_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
-        if (rankIdx == rankId_) {
-            LocalPost(locMask_, 1 << rankIdx);
-        } else {
-            Read(*transports[transportId], gatherDst_[rankIdx], gatherSrc_[rankIdx], len_[rankIdx], locMask_,
-                 1 << rankIdx);
-            transportId++;
+    gatherSrc_[rankId_].addr = srcAddr;
+    gatherSrc_[rankId_].addr += sliceOffset_[rankId_];
+    gatherSrc_[rankId_].token = token_[rankId_];
+    uint32_t transportIdx = 0;
+    for (uint32_t rmtId = 0; rmtId < dstAddr.size(); rmtId++) {
+        if (rmtId == rankId_) {
+            continue;
         }
+        gatherDst_[rankId_].addr = dstAddr[rmtId];
+        gatherDst_[rankId_].addr += sliceOffset_[rankId_];
+        gatherDst_[rankId_].token = token_[rmtId];
+        Write(*transports[transportIdx], gatherDst_[rankId_], gatherSrc_[rankId_], len_[rankId_], locMask_, 1 << rmtId);
+        transportIdx++;
     }
-    LocalWait(locMask_, (1 << rankSize_) - 1);
+    LocalWait(locMask_, allBit_);
 }
 
 void CcuContextReduceMeshTwoShotMem2Mem1D::DoRepeatReduceTwoShot()
@@ -393,9 +388,7 @@ void CcuContextReduceMeshTwoShotMem2Mem1D::DoRepeatReduceTwoShot()
     }
     len_[rankSize_-1] = lastSliceSize_;
     ReduceRmtToLoc(input_, output_[rankId_]);//从对端input搬到自己的scratch，做完规约后再放到自己的output
-    if(rankId_ == rootId_){
-        GatherFromRmt(output_, output_[rankId_]);//root 节点从其他rank的output搬到自己的output中
-    }
+    BcastLocToRmt(output_[rankId_], output_);
 }
 
 void CcuContextReduceMeshTwoShotMem2Mem1D::Algorithm()

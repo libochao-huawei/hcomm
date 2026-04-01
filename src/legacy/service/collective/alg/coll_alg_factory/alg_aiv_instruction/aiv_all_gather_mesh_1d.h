@@ -17,9 +17,120 @@ class AivAllGatherMesh1D : public AivCommBase {
 public:
     __aicore__ inline AivAllGatherMesh1D() {}
 
+    // 如果让rankSize个核去写本地，写的时候切成多份去写
+    // 然后剩下的核，切成rankSize份，去读
+    // 需要知道写本地和读远端的时间比例，才可以调节怎么切分
+    __aicore__ inline void InitCoreInfo(uint64_t len, int32_t tag) //len is input length
+    {
+        // 每个核处理 len/curStageCoreNum 个数据
+        uint64_t targetRank = GetBlockIdx();
+        uint64_t dataPerRank = len / rankSize_;
+        uint64_t remainderPerRank = len % rankSize_;
+        // 数据对不齐的情况
+        uint64_t innerDisplsPerRank = 0;
+        uint64_t sendCurCountPerRank = 0;
+        if (targetRank < remainderPerRank) { // 这部分核需要多处理一个数据
+            innerDisplsPerRank = targetRank * dataPerRank + targetRank;
+            sendCurCountPerRank = dataPerRank + 1;
+        } else {
+            innerDisplsPerRank = targetRank * dataPerRank + remainderPerRank;
+            sendCurCountPerRank = dataPerRank;
+        }
+
+        uint64_t dataPerCore = sendCurCountPerRank / cutNum;
+        uint64_t remainder = sendCurCountPerRank % cutNum;
+        // 这里是要切三分，还是直接一份，然后多个flag？
+        for (int64_t coreIndex = 0; coreIndex < cutNum; coreIndex++) {
+            // 数据对不齐的情况
+            uint64_t innerDispls = 0;
+            uint64_t sendCurCount = 0;
+            if (coreIndex < remainder) { // 这部分核需要多处理一个数据
+                innerDispls = coreIndex * dataPerCore + coreIndex;
+                sendCurCount = dataPerCore + 1;
+            } else {
+                innerDispls = coreIndex * dataPerCore + remainder;
+                sendCurCount = dataPerCore;
+            }
+
+            if (sendCurCount > 0) {
+                uint64_t usrInOffset = input_ + (innerDisplsPerRank + innerDispls) * sizeof(T);
+                uint64_t cclInOffset = reinterpret_cast<uint64_t>(GM_IN[rank_]) + (innerDisplsPerRank + innerDispls) * sizeof(T);
+                CpGM2GM((__gm__ T *)cclInOffset, (__gm__ T *)usrInOffset, sendCurCount);
+                PipeBarrier<PIPE_ALL>();
+                // 每个核写flag
+                Record(rank_, GetBlockIdx() * cutNum + coreIndex, curTag);
+            }
+        }
+    }
+
+    __aicore__ inline void Run(uint64_t len, uint64_t stride)
+    {
+        uint64_t blockInedx = GetBlockIdx() - coreNumStage1;
+        // 然后stage2的核分成rankSize份，每一份有cutNum个核，每个核去读对端的rankSize份数据
+        uint32_t coreNumPerRank = coreNumStage2 / rankSize_;
+        uint32_t targetRank = blockInedx / coreNumPerRank;
+        uint32_t coreIndex = (blockInedx - (targetRank * coreNumPerRank))  % coreNumPerRank;
+        for (uint32_t idx = 0; idx < rankSize_; idx++) {
+            // 这里根据写数据时候的编排，去计算每次读数据时候的编排
+            uint64_t innerIndex = (idx + rank_) % rankSize_; //做一点偏移，不要出现好多张卡读同一块数据的情况，却似有一点点效果
+            uint64_t dataPerRank = len / rankSize_;
+            uint64_t remainderPerRank = len % rankSize_;
+            // 数据对不齐的情况
+            uint64_t innerDisplsPerRank = 0;
+            uint64_t sendCurCountPerRank = 0;
+            if (innerIndex < remainderPerRank) { // 这部分核需要多处理一个数据
+                innerDisplsPerRank = innerIndex * dataPerRank + innerIndex;
+                sendCurCountPerRank = dataPerRank + 1;
+            } else {
+                innerDisplsPerRank = innerIndex * dataPerRank + remainderPerRank;
+                sendCurCountPerRank = dataPerRank;
+            }
+
+            // 然后每个核分数据
+            uint64_t dataPerCore = sendCurCountPerRank / coreNumPerRank;
+            uint64_t remainder = sendCurCountPerRank % coreNumPerRank;
+            // 数据对不齐的情况
+            uint64_t innerDispls = 0;
+            uint64_t sendCurCount = 0;
+            if (coreIndex < remainder) { // 这部分核需要多处理一个数据
+                innerDispls = coreIndex * dataPerCore + coreIndex;
+                sendCurCount = dataPerCore + 1;
+            } else {
+                innerDispls = coreIndex * dataPerCore + remainder;
+                sendCurCount = dataPerCore;
+            }
+
+            if (sendCurCount > 0) {
+                // 先去wait flag，然后把数据拷贝过来
+                WaitFlag(targetRank, innerIndex * coreNumPerRank + coreIndex, curTag);
+
+                uint64_t srcCclInOffset = reinterpret_cast<uint64_t>(GM_IN[targetRank]) + (innerDisplsPerRank + innerDispls )* sizeof(T);
+                uint64_t usrOutOffset = output_ + targetRank * stride + (innerDisplsPerRank + innerDispls) * sizeof(T);
+                CpGM2GM((__gm__ T *)usrOutOffset, (__gm__ T *)srcCclInOffset, sendCurCount);
+                PipeBarrier<PIPE_ALL>();
+            }
+        }
+    }
+
     __aicore__ inline void Process(uint64_t count, uint64_t tag, uint64_t stride)
     {
-        RunCtrlCore(count, tag, stride);
+        if (count * sizeof(T) >= DATA_LIMIT && numBlocks_ >= 2 * rankSize_) {
+            // 核数大于等于2倍ranksize
+            curStageCoreNum = numBlocks_ / rankSize_ * rankSize_; // 总的核数
+            coreNumStage1 = rankSize_;
+            coreNumStage2 = curStageCoreNum - coreNumStage1;
+            cutNum = coreNumStage2 / rankSize_;
+            curTag = tag;
+
+            if (GetBlockIdx() < coreNumStage1) {
+                InitCoreInfo(count, tag);
+            } else if (GetBlockIdx() < curStageCoreNum) {
+                Run(count, stride);
+            }
+        } else {
+            // 核数小于ranksize
+            RunCtrlCore(count, tag, stride);
+        }
     }
 
     __aicore__ inline void RunCtrlCore(uint64_t count, uint64_t tag, uint64_t stride)
@@ -62,6 +173,10 @@ public:
     uint64_t coreOffset;
     int32_t curTag;
     uint64_t curCount;
+    uint64_t coreNumStage1;
+    uint64_t coreNumStage2;
+    uint64_t cutNum;
+    uint64_t curStageCoreNum;
 };
 
 template<typename T>

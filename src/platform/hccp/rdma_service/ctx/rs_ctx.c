@@ -237,7 +237,7 @@ RS_ATTRI_VISI_DEF int RsGetTpInfoList(struct RaRsDevInfo *devInfo, struct GetTpC
 {
     struct RsUbDevCb *devCb = NULL;
     struct rs_cb *rscb = NULL;
-    int ret;
+    int ret = 0;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
     RS_CHECK_POINTER_NULL_RETURN_INT(cfg);
@@ -247,17 +247,11 @@ RS_ATTRI_VISI_DEF int RsGetTpInfoList(struct RaRsDevInfo *devInfo, struct GetTpC
     ret = RsGetRsCb(devInfo->phyId, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("get rscb failed, ret:%d", ret), ret);
 
-    switch (rscb->protocol) {
-        case PROTOCOL_UDMA:
-            ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
-            CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex),
-                ret);
-            ret = RsUbGetTpInfoList(devCb, cfg, infoList, num);
-            break;
-        default:
-            hccp_err("protocol[%d] not support", rscb->protocol);
-            return -EINVAL;
-    }
+    ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex),
+        ret);
+    ret = RsUbGetTpInfoList(devCb, cfg, infoList, num);
+
     return ret;
 }
 
@@ -266,7 +260,7 @@ RS_ATTRI_VISI_DEF int RsGetTpAttr(struct RaRsDevInfo *devInfo, unsigned int *att
 {
     struct RsUbDevCb *devCb = NULL;
     struct rs_cb *rscb = NULL;
-    int ret;
+    int ret = 0;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
     RS_CHECK_POINTER_NULL_RETURN_INT(attrBitmap);
@@ -287,7 +281,7 @@ RS_ATTRI_VISI_DEF int RsSetTpAttr(struct RaRsDevInfo *devInfo, const unsigned in
 {
     struct RsUbDevCb *devCb = NULL;
     struct rs_cb *rscb = NULL;
-    int ret;
+    int ret = 0;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(devInfo);
     RS_CHECK_POINTER_NULL_RETURN_INT(attr);
