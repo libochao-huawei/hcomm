@@ -18,6 +18,7 @@
 #include "inner/local_rdma_rma_buffer.h"
 #include "inner/remote_rdma_rma_buffer.h"
 #include "hccl_network.h"
+#include "network_manager_pub.h"
 
 using namespace hccl;
 
@@ -25,75 +26,83 @@ namespace hccl {
 std::map<PortInfo, std::pair<NicType, HcclNetDevCtx>> GlobalNetDevMgr::netDevCtxMap_;
 std::map<PortInfo, Referenced> GlobalNetDevMgr::netDevCtxRefMap_;
 std::mutex GlobalNetDevMgr::netDevCtxMtx_;
+static GlobalNetDevMgr netDevMgrInstance[MAX_MODULE_DEVICE_NUM];
 
 GlobalNetDevMgr::~GlobalNetDevMgr()
 {
-    Destroy();
-}
-
-GlobalNetDevMgr& GlobalNetDevMgr::GetInstance()
-{
-    // reserve 1 instance for invalid deviceid and host
-    static GlobalNetDevMgr instance[MAX_MODULE_DEVICE_NUM + 1];
-    s32 deviceLogicID = 0;
-
-    HcclResult hcclRet = hrtGetDeviceRefresh(&deviceLogicID);
-    if (hcclRet != HCCL_SUCCESS) {
-        HCCL_RUN_WARNING("GlobalNetDevMgr::GetInstance hrtGetDeviceRefresh failed, ret[%d], "
-            "return reserve instance", hcclRet);
-        return instance[MAX_MODULE_DEVICE_NUM];
-    }
-
-    if (static_cast<u32>(deviceLogicID) >= MAX_MODULE_DEVICE_NUM || deviceLogicID <= HOST_DEVICE_ID) {
-        HCCL_RUN_WARNING("[Get][Instance]deviceLogicID[%d] is invalid, return reserve instance", deviceLogicID);
-        return instance[MAX_MODULE_DEVICE_NUM];
-    }
-
-    HCCL_INFO("GlobalNetDevMgr::GetInstance deviceLogicID[%d].", deviceLogicID);
-    return instance[deviceLogicID];
-}
-
-HcclResult GlobalNetDevMgr::Init()
-{
     HCCL_INFO("[GlobalNetDevMgr][%s] start.", __func__);
+    if (isInited_) {
+        UnInit();
+    }
+    HCCL_INFO("[GlobalNetDevMgr][%s] end.", __func__);
+}
+
+GlobalNetDevMgr& GlobalNetDevMgr::GetInstance(u32 devicePhyId)
+{
+    u32 deviceLogicID = 0;
+    CHK_RET(hrtGetDeviceIndexByPhyId(devicePhyId, deviceLogicID));
+
+    std::unique_lock<std::mutex> lock(netDevCtxMtx_);
+    if (!netDevMgrInstance[deviceLogicID].isInited_) {
+        CHK_RET(Init(devicePhyId, deviceLogicID));
+    }
+
+    HCCL_INFO("GlobalNetDevMgr::GetInstance deviceLogicID[%u].", deviceLogicID);
+    return netDevMgrInstance[deviceLogicID];
+}
+
+HcclResult GlobalNetDevMgr::Init(u32 devicePhyId, u32 deviceLogicID)
+{
+    if (netDevMgrInstance[deviceLogicID].isInited_) {
+        return HCCL_SUCCESS;
+    }
+
+    // init after get the lock
     std::unique_lock<std::mutex> lock(netDevCtxMtx_);
 
-    CHK_RET(InitNic());
+    // need to check again
+    if (netDevMgrInstance[deviceLogicID].isInited_) {
+        HCCL_INFO("[GlobalNetDevMgr][Init]Has been inited. devicePhyId[%u], deviceLogicId[%d]", 
+            devicePhyId, deviceLogicID);
+        return HCCL_SUCCESS;
+    }
 
-    lock.unlock();
+    netDevMgrInstance[deviceLogicID].devicePhyId_ = devicePhyId;
+    netDevMgrInstance[deviceLogicID].deviceLogicID = deviceLogicID;
 
-    HCCL_INFO("[GlobalNetDevMgr][%s] end.", __func__);
+    CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId, static_cast<u32>(deviceLogicID), false));
+    netDevMgrInstance[deviceLogicID].isInited_ = true;
+
+    HCCL_INFO("[GlobalNetDevMgr][Init]Init success, devicePhyId[%u], deviceLogicId[%d]",
+        devicePhyId, deviceLogicID);
     return HCCL_SUCCESS;
 }
 
-HcclResult GlobalNetDevMgr::Destroy()
+void GlobalNetDevMgr::UnInit()
 {
-    HCCL_INFO("[GlobalNetDevMgr][%s] start.", __func__);
-
-    if (devicePhyId_ == INVALID_UINT || deviceLogicId_ == INVALID_INT) {
-        CHK_RET(hrtGetDevice(&deviceLogicId_));
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
+    if (!isInited_) {
+        HCCL_INFO(
+            "[GlobalNetDevMgr][UnInit]has been deinited. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
+        return;
     }
 
     std::unique_lock<std::mutex> lock(netDevCtxMtx_);
 
     for (auto& pair : netDevCtxMap_) {
-        if (pair.second.first == NicType::DEVICE_NIC_TYPE) {
+        if (pair.second.first == NicType::DEVICE_NIC_TYPE && pair.first.listenPort != 0 && socketManager_ != nullptr) {
             socketManager_->ServerDeInit(pair.first.ip, pair.first.listenPort);
         }
         HcclNetCloseDev(pair.second.second);
-        HCCL_INFO("[GlobalNetDevMgr][%s] Close netdev[%p].", __func__, pair.second.second);
+        HCCL_INFO("[GlobalNetDevMgr][UnInit][%s] Close netdev[%p].", __func__, pair.second.second);
     }
 
     netDevCtxRefMap_.clear();
     netDevCtxMap_.clear();
  
-    CHK_RET(DeInitNic());
+    (void)HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId_, static_cast<u32>(deviceLogicId_));
 
-    lock.unlock();
-
-    HCCL_INFO("[GlobalNetDevMgr][%s] end.", __func__);
-    return HCCL_SUCCESS;
+    isInited_ = false;
+    HCCL_INFO("[GlobalNetDevMgr][UnInit]UnInit success. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
 }
 
 HcclResult GlobalNetDevMgr::ServerInit(const HcclNetDevCtx netDevCtx, u32 port)
@@ -102,6 +111,11 @@ HcclResult GlobalNetDevMgr::ServerInit(const HcclNetDevCtx netDevCtx, u32 port)
 
     NetDevContext *netDevCtxTmp = static_cast<NetDevContext *>(netDevCtx);
     if (netDevCtxTmp->GetNicType() == NicType::DEVICE_NIC_TYPE) {
+        if (socketManager_ == nullptr) {
+            socketManager_.reset(new (std::nothrow) HcclSocketManager(
+                NICDeployment::NIC_DEPLOYMENT_DEVICE, deviceLogicId_, devicePhyId_, 0));
+            CHK_PTR_NULL(socketManager_);
+        }
         HcclResult ret = socketManager_->ServerInit(netDevCtx, port);
         if (ret != HCCL_SUCCESS) {
             HcclNetCloseDev(netDevCtx);
@@ -118,56 +132,36 @@ HcclResult GlobalNetDevMgr::ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port
     HCCL_INFO("[GlobalNetDevMgr][%s] start.", __func__);
     NetDevContext *netDevCtxTmp = static_cast<NetDevContext *>(netDevCtx);
     if (netDevCtxTmp->GetNicType() == NicType::DEVICE_NIC_TYPE) {
-        socketManager_->ServerDeInit(netDevCtxTmp->GetLocalIp(), port);
+        if (socketManager_ != nullptr) {
+            socketManager_->ServerDeInit(netDevCtxTmp->GetLocalIp(), port);
+        }
     }
     HCCL_INFO("[GlobalNetDevMgr][%s] end.", __func__);
     return HCCL_SUCCESS;
 }
 
-HcclResult GlobalNetDevMgr::InitNic()
+HcclResult GlobalNetDevMgr::GetDeviceIP(u32 devicePhyId, std::vector<hccl::HcclIpAddress> &ipAddr)
 {
-    if (nicInited_) {
-        return HCCL_SUCCESS;
-    }
-    // init after get the lock
-    std::unique_lock<std::mutex> lock(netDevCtxMtx_);
+    u32 deviceLogicId;
+    CHK_RET(hrtGetDeviceIndexByPhyId(devicePhyId, deviceLogicId));
+ 
+    // 先创建进程
+    bool isHostUseDevNic;
+    CHK_RET(IsHostUseDevNic(isHostUseDevNic));
+    HCCL_DEBUG("[%s]HcclNetDevGetBusAddr, deviceLogicId[%u], devicePhyId[%u], nicDeploy[%d], hasBackup[%d],",
+        __func__,
+        deviceLogicId,
+        devicePhyId,
+        NICDeployment::NIC_DEPLOYMENT_DEVICE,
+        false);
+    CHK_RET(hccl::NetworkManager::GetInstance(deviceLogicId)
+                .InitV2(NICDeployment::NIC_DEPLOYMENT_DEVICE, false, devicePhyId, isHostUseDevNic));
 
-    // need to check again
-    if (nicInited_) {
-        HCCL_INFO("[InitNic] Nic has been inited. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
-        return HCCL_SUCCESS;
-    }
+    CHK_RET(hrtRaGetDeviceIP(devicePhyId, ipAddr));
 
-    if (devicePhyId_ == INVALID_UINT || deviceLogicId_ == INVALID_INT) {
-        CHK_RET(hrtGetDevice(&deviceLogicId_));
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
-
-    CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId_, static_cast<u32>(deviceLogicId_), false));
-    nicInited_ = true;
-    socketManager_.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, deviceLogicId_, devicePhyId_, 0));
-    CHK_PTR_NULL(socketManager_);
-
-    HCCL_INFO("[InitNic] Nic init success, devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
-    return HCCL_SUCCESS;
-}
-
-HcclResult GlobalNetDevMgr::DeInitNic()
-{
-    if (!nicInited_) {
-        HCCL_INFO(
-            "[DeInitNic] Nic has been deinited. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
-        return HCCL_SUCCESS;
-    }
-
-    if (devicePhyId_ == INVALID_UINT || deviceLogicId_ == INVALID_INT) {
-        CHK_RET(hrtGetDevice(&deviceLogicId_));
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
-
-    CHK_RET(HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, devicePhyId_, static_cast<u32>(deviceLogicId_)));
-    nicInited_ = false;
-    HCCL_INFO("[DeInitNic] Nic deinit success. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
+    // 销毁进程
+    CHK_RET(hccl::NetworkManager::GetInstance(deviceLogicId)
+                .DeInitV2(NICDeployment::NIC_DEPLOYMENT_DEVICE, false, false));
     return HCCL_SUCCESS;
 }
 
@@ -175,11 +169,6 @@ HcclResult GlobalNetDevMgr::RefNetDevCtx(NicType nicType, const HcclIpAddress &i
     HcclNetDevCtx &netDevCtx)
 {
     HCCL_INFO("[GlobalNetDevMgr][RefNetDevCtx] nicType[%d], ip[%s]", nicType, ipAddr.GetReadableAddress());
-
-    // auto init nic when ref
-    if (!nicInited_) {
-        InitNic();
-    }
 
     if (devicePhyId_ == INVALID_UINT || deviceLogicId_ == INVALID_INT) {
         CHK_RET(hrtGetDevice(&deviceLogicId_));
@@ -208,6 +197,10 @@ HcclResult GlobalNetDevMgr::RefNetDevCtx(NicType nicType, const HcclIpAddress &i
     CHK_PTR_NULL(tempNetDevCtx);
 
     if (nicType == NicType::DEVICE_NIC_TYPE && port != 0) {
+        socketManager_.reset(new (std::nothrow) HcclSocketManager(
+            NICDeployment::NIC_DEPLOYMENT_DEVICE, deviceLogicId_, devicePhyId_, 0));
+        CHK_PTR_NULL(socketManager_);
+
         HcclResult ret = socketManager_->ServerInit(tempNetDevCtx, port);
         if (ret != HCCL_SUCCESS) {
             HcclNetCloseDev(tempNetDevCtx);
