@@ -137,8 +137,6 @@ target_include_directories(ccl_dpu PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
     ${HCCL_BASE_DIR}/include/
     ${HCCL_BASE_DIR}/include/hccl
-    ${HCCL_BASE_DIR}/pkg_inc
-    ${HCCL_BASE_DIR}/src/pub_inc
     ${HCCL_BASE_DIR}/src/pub_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
@@ -149,14 +147,15 @@ target_include_directories(ccl_dpu PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+    ${HCCL_V2_CODE_ROOT}/common/
 )
 # 指定 ccl_dpu 的构建依赖关系
-# add_dependencies(ccl_dpu hccl_v2)
 add_dependencies(hccl_v2 ccl_dpu)
 # 指定源文件
 set(CCL_DPU_SRC_LIST
     ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/dpu_kernel_entrance.cc
     ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/task_service.cc
+    ${HCCL_V2_CODE_ROOT}/common/log.cc
 )
 target_sources(ccl_dpu PRIVATE
     ${CCL_DPU_SRC_LIST}
