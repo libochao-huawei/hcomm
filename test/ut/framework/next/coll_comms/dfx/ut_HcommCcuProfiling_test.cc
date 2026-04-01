@@ -423,6 +423,80 @@ using namespace CcuRep;
     EXPECT_EQ(ret, 0);
 }
 
+TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAivKernel_Normal)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+        
+    
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 6; 
+    config.hcclRdmaServiceLevel = 0; 
+    config.hcclRdmaTrafficClass = 0;
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    ret = HcclReportAivKernel(comm, 12345);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(Ccukernel_ReportProfilingTest, Ut_HcclReportAicpuKernel_Normal)
+{
+    MOCKER(hrtGetDeviceType)
+        .stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));  
+    MOCKER_CPP(&HcclCommDfx::ReportKernel)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));  
+    
+    void* commV2 = (void*)0x2000;
+    RankGraphStub rankGraphStub;
+    std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
+    u32 rank = 1;
+    HcclMem cclBuffer;
+    cclBuffer.size = 1;
+    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
+    cclBuffer.addr = (void*)0x1000;;
+    char commName[128] = {};
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 6; 
+    config.hcclRdmaServiceLevel = 0; 
+    config.hcclRdmaTrafficClass = 0;
+    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    EXPECT_EQ(ret, 0);
+    ThreadHandle thread;
+    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
+    char kernelName[128] = "Hello";
+    ret = HcclReportAicpuKernel(comm, 12345, kernelName);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 TEST_F(CcuKernelTest, GetCcuProfilingInfo_EmptyCache) {
     // Ensure profiling cache is empty
     kernel_->GetProfilingInfo().clear();
