@@ -301,14 +301,18 @@ void CcuTaskException::GenErrorInfoLocRecordEvent(const ErrorInfoBase &baseInfo,
                                              vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo errorMsg{};
+    printf("304")
     errorMsg.type    = CcuErrorType::WAIT_SIGNAL;
     errorMsg.SetBaseInfo(repBase->Type(), baseInfo.dieId, baseInfo.missionId, repBase->StartInstrId());
-
+    printf("307")
     const auto rep                      = static_pointer_cast<CcuRep::CcuRepLocRecordEvent>(repBase);
+    printf("309")
     errorMsg.msg.waitSignal.signalId    = rep->GetEventId();
+    printf("311")
     errorMsg.msg.waitSignal.signalValue = GetCcuCKEValue(baseInfo.deviceId, baseInfo.dieId, rep->GetEventId());
+    printf("312")
     errorMsg.msg.waitSignal.signalMask  = rep->GetMask();
-
+    printf("315")
     errorInfo.push_back(errorMsg);
 }
 
