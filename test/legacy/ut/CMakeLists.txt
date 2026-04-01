@@ -72,6 +72,7 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${CANN_3RD_LIB_PATH}/gtest/include/
         ${CANN_3RD_LIB_PATH}/mockcpp/include/
         ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+        ${CANN_3RD_LIB_PATH}/boost/
         ${HCCL_LLT_ROOT}/common/virtual_topo_stub/
         ${HCCL_LLT_ROOT}/ut/framework/topo/ranktable/
         ${HCCL_CODE_ROOT}/externel_depends/tsch
@@ -124,7 +125,6 @@ add_subdirectory(framework)
 add_subdirectory(aicpu)
 add_subdirectory(unified_platform)
 
-run_llt_test(
-    TARGET hccl_v2_utest
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_v2_utest COMMAND hccl_v2_utest)
+
