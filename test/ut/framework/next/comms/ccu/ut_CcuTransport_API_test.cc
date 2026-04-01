@@ -158,13 +158,13 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
     memInfo1.memTag = "buffer1";
     memInfo1.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
     memInfo1.bufferHandle = static_cast<void*>(locBuffer1.get());
-    std::vector<CcuTransport::CclBufferInfo> bufferVecTemp{};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
     bufferVecTemp.push_back(memInfo1);
 
     BinaryStream binaryStream;
     ret = ccuTransport->BufferInfoPack(binaryStream, bufferVecTemp);
-    sendStream.Dump(ccuTransport->sendData_);
-    ccuTransport->recvData_ = ccuTransport.sendData_;
+    binaryStream.Dump(ccuTransport->sendData_);
+    ccuTransport->recvData_ = ccuTransport->sendData_;
 
     ret = ccuTransport->UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
