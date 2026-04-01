@@ -2505,7 +2505,9 @@ uint32_t MockHccpRaCustomChannel::lastOpCode_ = 0;
 class CcuComponentTest : public ::testing::Test {
 protected:
     void SetUp() override {}
-    void TearDown() override {}
+    void TearDown() override {
+        GlobalMockObject::verify();
+    }
 };
 
 
