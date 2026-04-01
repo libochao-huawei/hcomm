@@ -110,6 +110,7 @@ private:
     ExchangeRdmaConnDto rmtConnDto_;
     std::vector<std::unique_ptr<HcclMem>> remoteMems{};
     uint32_t wqeNum_{0};
+    uint64_t totalLen_{0};
     std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     bool fenceFlag_{false};
 
