@@ -29,6 +29,7 @@ public:
     void SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo);
 
     std::shared_ptr<DfxOpInfo> GetCurrDfxOpInfo() const;
+    std::shared_ptr<TaskInfo>  GetTaskInfo(u32 streamId, u32 taskId) const;
     TaskInfoQueue             *GetQueue(u32 streamId) const;
 
 public:

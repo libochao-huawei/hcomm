@@ -89,6 +89,30 @@ TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
     return queueMap_.find(streamId)->second.get();
 }
 
+std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+{
+    TaskInfoQueue *queue = nullptr;
+    try {
+        queue = GetQueue(streamId);
+    } catch (HcclException &e) {
+        HCCL_ERROR("Hccl exception %s was caught.", e.what());
+        return nullptr;
+    }
+
+    auto FindTask = [taskId](const std::shared_ptr<TaskInfo> &taskInfo) {
+        return taskInfo->taskId_ == taskId;
+    };
+
+    auto task = *queue->Find(FindTask);
+    if (task == *queue->End()) {
+        return nullptr;
+    };
+
+    HCCL_INFO("[MirrorTaskManagerLite][GetTaskInfo]find streamdId(sqId)[%u] taskId(sqeId)[%u]", streamId, taskId);
+
+    return *task;
+}
+
 TaskInfoQueueMap::iterator MirrorTaskManagerLite::Begin()
 {
     return queueMap_.begin();
