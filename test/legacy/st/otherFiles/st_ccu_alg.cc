@@ -79,7 +79,7 @@ protected:
     void InitComm(u32 xDimSize, u32 yDimSize, u32 myRank, CommunicatorImpl &comm) {
         LocalRmaBuffer *rmaBuf = nullptr;
         MOCKER_CPP(&LocalRmaBufManager::Reg,
-            LocalRmaBuffer * (LocalRmaBufManager::*)(std::shared_ptr<CcuBuffer> ccuBuffer, const PortData &portData))
+            LocalRmaBuffer * (LocalRmaBufManager::*)(std::shared_ptr<CcuBuffer> ccuBuffer, const PortData &portData, LinkProtocol))
             .stubs()
             .with(any(), any())
             .will(returnValue(rmaBuf));

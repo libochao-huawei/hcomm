@@ -72,7 +72,7 @@ HcclResult CollAllReduceAivDeterSmallExecutor::CalNumBlocks(u32& numBlocks, u32 
         numBlocks = numBlocks_ / rankSize * rankSize;
     }
 
-    HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

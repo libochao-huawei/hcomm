@@ -34,10 +34,10 @@ public:
         return signature;
     }
     std::vector<uint64_t> dimSize;
-    uint32_t rankId;
-    CollAlgOperator op;
-    uint32_t missionId;
-    uint64_t cclBufferAddr;
+    uint32_t              rankId;
+    CollAlgOperator       op;
+    uint32_t              missionId;
+    uint64_t              cclBufferAddr;
     std::vector<std::vector<RankId>> tempVTopo;
 };
 
@@ -61,11 +61,11 @@ public:
                 "[CcuInstructionHalfAllToAllVMesh1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
         }
         dimSize_.push_back(tempVTopo[0].size());
-        missionId_ = mId;
-        rankId_ = rankId;
+        missionId_     = mId;
+        rankId_        = rankId;
         cclBufferAddr_ = scratchAddr;
-        op_ = op;
-        tempVTopo_ = tempVTopo;
+        op_            = op;
+        tempVTopo_     = tempVTopo;
         return;
     }
 

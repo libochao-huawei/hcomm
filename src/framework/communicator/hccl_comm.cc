@@ -1513,21 +1513,21 @@ u32 hcclComm::GetHcclQos()
     return hcclQos_;
 }
 
-HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::DeregisterWindow(CommSymWindow winHandle)
+HcclResult hcclComm::DeregisterWindow(HcclCommSymWindow winHandle)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->DeregisterWindow(winHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->GetCommSymWin(ptr, size, winHandle, offset));
