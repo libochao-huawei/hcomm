@@ -213,7 +213,7 @@ STATIC int HdcSendRetryPkt(
         return ret;
     }
     ret = HdcSendRecvPktSend(pMsgSnd, (char *)sendRcvBuf, inBufLen, session, pMsgRcv);
-    if (ret) {
+    if (ret != 0) {
         hccp_err("[send_recv][pkt]HDC pkt send err ret(%d) phyId(%u)", ret, phyId);
         goto msg_err;
     }
