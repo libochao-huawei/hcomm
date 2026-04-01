@@ -19,4 +19,4 @@ void *AscendHalDlopen(const char *libName, int mode);
 void *AscendHalDlsym(void *handle, const char *funcName);
 int AscendHalDlclose(void *handle);
 
-#endif
+#endif // __ASCEND_HAL_DL_H__

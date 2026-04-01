@@ -227,7 +227,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketInit(int mode, struct rdev rdevInfo, void **sock
 
     socketHandleTmp = calloc(1, sizeof(struct RaSocketHandle));
     CHK_PRT_RETURN(socketHandleTmp == NULL,
-        hccp_err("[init][ra_socket]ra_inet_pton for local_ip failed, ret(%d)", ret),
+        hccp_err("[init][ra_socket]calloc socketHandleTmp failed, ret(%d)", ret),
         ConverReturnCode(HCCP_INIT, -ENOMEM));
 
     if (mode == NETWORK_OFFLINE) {
