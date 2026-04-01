@@ -264,7 +264,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     }
     // exceptionInfo->taskId和exceptionInfo->streamId拼成sqeId
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo->taskId << 16) | static_cast<uint32_t>(exceptionInfo->streamId);
-    const auto curTask = aicpuComm->GetMirrorTaskMgrLite()->GetTaskInfo(0, exceptionInfo->sqId, sqeId);
+    const auto curTask = aicpuComm->GetMirrorTaskMgrLite()->GetTaskInfo(exceptionInfo->sqId, sqeId);
     if (curTask == nullptr) {
         // 未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. streamId(sqId)[%u], taskId(sqeId)[%u].", exceptionInfo->sqId, sqeId);
@@ -328,7 +328,7 @@ string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)
 
 void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuComm, uint32_t sqId, uint32_t taskId)
 {
-    auto queue = aicpuComm->GetMirrorTaskMgrLite()->GetQueue(0, sqId);
+    auto queue = aicpuComm->GetMirrorTaskMgrLite()->GetQueue(sqId);
     if (queue == nullptr) {
         // 未找到异常对应的TaskQueue
         HCCL_ERROR("Exception task queue not found. streamId(sqId)[%u].", sqId);
@@ -339,7 +339,7 @@ void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuC
     auto taskItorPtr = queue->Find(func);
     if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
-        HCCL_ERROR("Exception task not found. deviceId[%u], streamId(sqId)[%u], taskId(sqeId)[%u].", 0, sqId, taskId);
+        HCCL_ERROR("Exception task not found. streamId(sqId)[%u], taskId(sqeId)[%u].", sqId, taskId);
         return;
     }
 
