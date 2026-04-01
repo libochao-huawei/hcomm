@@ -1582,6 +1582,49 @@ MirrorTaskManager::~MirrorTaskManager()
 {
 }
 
+MirrorTaskManagerLite::MirrorTaskManagerLite()
+{
+    
+}
+
+void MirrorTaskManagerLite::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
+{
+   
+}
+
+void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
+{
+    
+}
+
+void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+{
+    
+}
+
+bool MirrorTaskManagerLite::IsStaticGraphMode(const CollOperator &collOperator) const
+{
+    return false;
+}
+
+void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+{
+   
+}
+
+std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
+{
+   return nullptr;
+}
+
+TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
+{
+   
+}
+
+MirrorTaskManagerLite::~MirrorTaskManagerLite()
+{
+}
 ProfilingHandler::ProfilingHandler()
 {
     
