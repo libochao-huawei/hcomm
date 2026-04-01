@@ -238,9 +238,8 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
 {
     CHK_PTR_NULL(aicpuDfxInfo);
     // 获取device侧的通信域
-    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commTag);
-    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
-    CollCommAicpu* collComm = collCommAicpuMgr->GetCollCommAicpu();
+    CHK_PRT_RET(g_hcclComm == nullptr, HCCL_ERROR("%s g_hcclComm is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
+    CollCommAicpu* collComm = g_hcclComm->GetCollCommAicpu();
     CHK_PTR_NULL(collComm);
 
     // HcclDfxOpInfo 转为DfxOpInfo
@@ -263,7 +262,6 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskMgr);
     mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
-    AicpuReleaseCommMgrbyGroup(commTag);
     return HCCL_SUCCESS;
 }
 
