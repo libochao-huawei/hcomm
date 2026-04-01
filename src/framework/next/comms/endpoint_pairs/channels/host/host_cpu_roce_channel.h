@@ -69,7 +69,7 @@ public:
     HcclResult CreateNotifyValueBufferHybird();
     HcclResult CreateNotifyBufferHybird(hccl::MemType notifyType, uint32_t notifyId, u8 *&data, u64 &size);
     hccl::MemType NotifyIdToMemtypeHybird(uint32_t remoteNotifyIdx);
-    HcclResult ConnectSingleQpHybird(std::funtion<bool()> needStop);
+    HcclResult ConnectSingleQpHybird(std::function<bool()> needStop);
 
 private:
     HcclResult ParseInputParam();

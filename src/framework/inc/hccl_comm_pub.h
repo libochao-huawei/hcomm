@@ -405,10 +405,10 @@ public:
         CommLink **linkList, uint32_t *listSize);
     void *GetMyRank();
     uint32_t GetConnectMode();
-    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
-    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
-    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
-    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
     HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetHeterogMode(HcclHeterogMode *mode);
     // for group

@@ -213,7 +213,7 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
         case RdmaStatus::SOCKET_OK:
             CHK_RET(ExchangeCapability());
             rdmaStatus_ = RdmaStatus::CAP_EXCHANGED;
-            breal;
+            break;
         case RdmaStatus::CAP_EXCHANGED:
             // 准备资源
             CHK_RET(CreateQp());
@@ -1283,11 +1283,11 @@ HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
     data += sizeof(u32);
     size += sizeof(u32);
 
-    CHK_RET(GetRemoteAddrHybird(hccl:USER_OUTPUT_MEM, data, size));
-    CHK_RET(GetRemoteAddrHybird(hccl:USER_INPUT_MEM, data, size));
-    CHK_RET(GetRemoteAddrHybird(hccl:DATA_NOTIFY_MEM, data, size));
-    CHK_RET(GetRemoteAddrHybird(hccl:ACK_NOTIFY_MEM, data, size));
-    CHK_RET(GetRemoteAddrHybird(hccl:DATA_ACK_NOTIFY_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::USER_OUTPUT_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::USER_INPUT_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::DATA_NOTIFY_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::ACK_NOTIFY_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::DATA_ACK_NOTIFY_MEM, data, size));
 
     data += sizeof(u8);
     size += sizeof(u8);
@@ -1316,11 +1316,11 @@ HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::ConnectSingleQpHybird(std::funtion<bool()> needStop)
+HcclResult HostCpuRoceChannel::ConnectSingleQpHybird(std::function<bool()> needStop)
 {
     auto qpInfo = connections_[0]->GetQpInfo();
 
-    CHK_RET(HrtRaQpConnectAsync(combineQpHandles_[i].qpHandle, machinePara_.sockets[i]->GetFdHandle(), needStop));
+    CHK_RET(HrtRaQpConnectAsync(combineQpHandles_[0].qpHandle, machinePara_.sockets[0]->GetFdHandle(), needStop));
 
     // 查询QP建链是否成功
     s32 qpStatus = 0;
@@ -1336,7 +1336,7 @@ HcclResult HostCpuRoceChannel::ConnectSingleQpHybird(std::funtion<bool()> needSt
             HCCL_ERROR("[Connect][Qp]get qp status timeout_=%lld, qp_status=%d", timeout, qpStatus);
             return HCCL_E_TIMEOUT;
         }
-        raRet = hrtGetRaQpStatus(combineQpHandles_[i].qpHandle, &qpStatus);
+        raRet = hrtGetRaQpStatus(combineQpHandles_[0].qpHandle, &qpStatus);
         if ((!raRet) && (qpStatus == 1)) { // 为1时，qp 建链成功
             HCCL_INFO("In link ibv, %u of %u QP get status success.", (i + 1), combineQpHandles_.size());
             break;
@@ -1422,7 +1422,7 @@ HcclResult HostCpuRoceChannel::WriteWithNotifyHybrid(
     notifyWr.num_sge = 1;
     // Notify 写入对端 hostNotifyAddr 的偏移位置
     notifyWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(remoteMemMsg_[type].addr);
-    notifyWr.wr.rdma.rkey = remoteMemMsg_[type].addr;
+    notifyWr.wr.rdma.rkey = remoteMemMsg_[type].rkey;
     
     // 链接 WR 链：dataWr -> notifyWr
     dataWr.next = &notifyWr;
