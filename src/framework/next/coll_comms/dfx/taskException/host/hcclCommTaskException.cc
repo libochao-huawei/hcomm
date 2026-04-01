@@ -16,6 +16,7 @@
 #include <adapter_error_manager_pub.h>
 #include "op_type.h"
 #include "task_exception_handler.h"
+#include "ccuTaskException.h"
 
 namespace hcomm {
 
@@ -137,11 +138,15 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
     }
 
     bool isIndop_ = curTask->dfxOpInfo_->isIndop_;
+    HCCL_INFO("[%s]isIndop_[%d], taskType[%s]", __func__, isIndop_, curTask->taskParam_.taskType.Describe().c_str());
     if (!isIndop_) {
-        HCCL_INFO("Start to the old process");
         Hccl::TaskExceptionHandler::Process(exceptionInfo);
+        return;
+    }
+
+    if (curTask->taskParam_.taskType == Hccl::TaskParamType::TASK_CCU) {
+        CcuTaskException::ProcessCcuException(exceptionInfo, *curTask); 
     } else {
-        HCCL_INFO("Start to the new process");
         ProcessException(exceptionInfo, *curTask);
     }
 }
