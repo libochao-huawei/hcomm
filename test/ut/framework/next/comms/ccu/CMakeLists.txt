@@ -54,7 +54,5 @@ target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
 
 add_dependencies(hccl_utest_comms_ccu_features hccl_llt)
 
-run_llt_test(
-   TARGET hccl_utest_comms_ccu_features
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_comms_ccu_features COMMAND hccl_utest_comms_ccu_features)
