@@ -18,7 +18,6 @@
 #include "hccp.h"
 #include "hccp_tlv.h"
 #include "hccp_ctx.h"
-#include "hccp_async_ctx.h"
 #include "hccp_async.h"
 #include "env_config.h"
 #include "hccp_common.h"
@@ -1495,7 +1494,7 @@ static HrtRaUbJettyImportedOutParam ImportJetty(RdmaHandle handle, u8 *key, u32 
 
     info.in.ub.expImportCfg = cfg;
 
-    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP) {
+    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP && protocol != TpProtocol::UBOE) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, tp protocol[%s] is not expected.",
             __func__, protocol.Describe().c_str()));
     }
@@ -1807,6 +1806,10 @@ std::vector<HrtDevEidInfo> HrtRaGetDevEidInfoList(const HRaInfo &raInfo)
         hrtDevEidInfo[i].dieId = infoList[i].dieId;
         hrtDevEidInfo[i].chipId = infoList[i].chipId;
         hrtDevEidInfo[i].funcId = infoList[i].funcId;
+        HCCL_INFO("[%s] HrtDevEidInfo[%d]: name[%s], ipAddress[%s], type[%u], eidIndex[%u], dieId[%u], chipId[%u], funcId[%u]",
+        __func__, i,
+        hrtDevEidInfo[i].name.c_str(), hrtDevEidInfo[i].ipAddress.Describe().c_str(), hrtDevEidInfo[i].type,
+        hrtDevEidInfo[i].eidIndex, hrtDevEidInfo[i].dieId, hrtDevEidInfo[i].chipId, hrtDevEidInfo[i].funcId);
     }
 
     return hrtDevEidInfo;
@@ -2112,6 +2115,7 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     struct GetTpCfg cfg{};
     cfg.flag.bs.rtp = tpProtocol == TpProtocol::TP ? 1 : 0;
     cfg.flag.bs.ctp = tpProtocol == TpProtocol::CTP ? 1 : 0;
+    cfg.flag.bs.uboe = tpProtocol == TpProtocol::UBOE ? 1 : 0;
     cfg.transMode = TransportModeT::CONN_RM; // 当前只使用RM Jetty
     cfg.localEid = IpAddressToHccpEid(locAddr);
     HCCL_INFO("RaUbGetTpInfoAsync cfg.localEid=%s", HccpEidDesc(cfg.localEid).c_str());
@@ -2164,7 +2168,7 @@ static RequestHandle ImportJettyAsync(RdmaHandle rdmaHandle, const HrtRaUbJettyI
 
     info->in.ub.expImportCfg = cfg;
 
-    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP) {
+    if (protocol != TpProtocol::TP && protocol != TpProtocol::CTP && protocol != TpProtocol::UBOE) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, tp protocol[%s] is not expected, %s.",
         __func__, protocol.Describe().c_str()));
     }
@@ -2559,4 +2563,100 @@ HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memType
     HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, send_msg.type);
     return HCCL_SUCCESS;
 }
+
+HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList)
+{
+    HCCL_INFO("[HrtRaGetEidByIp] begain, ipV4AddrList size=%u", ipV4AddrList.size());
+    size_t ipV4AddrListSize = ipV4AddrList.size();
+    unsigned int num = ipV4AddrListSize;
+    IpInfo ipInfoList[num] = {};
+    for (size_t i = 0; i < num; i++) {
+        auto ipAddress = ipV4AddrList.at(i);
+        HCCL_INFO("[HrtRaGetEidByIp] ipV4AddrList[%d][%s]", i, ipAddress.Describe().c_str());
+        ipInfoList[i].family = ipAddress.GetFamily();
+        ipInfoList[i].ip                 = IpAddressToHccpIpAddr(ipAddress);
+    }
+
+    union HccpEid eidList[num] = {};
+    s32 ret = RaGetEidByIp(handle, ipInfoList, eidList, &num);
+    if (ret != 0) {
+        string msg = StringFormat("call RaGetEidByIp failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    if (num != ipV4AddrList.size()) {
+        HCCL_ERROR("call RaGetEidByIp failed, The number of ipInfoList and eidList is inconsistent, "
+                   "ipV4AddrList size =%d, eidList size =%d",
+            ipV4AddrList.size(),
+            num);
+        return HCCL_E_INTERNAL;
+    }
+
+    for (unsigned int i = 0; i < num; i++) {
+        IpAddress eidAddr = HccpEidToIpAddress(eidList[i]);
+        eidAddrList.push_back(eidAddr);
+    }
+    HCCL_INFO("[HrtRaGetEidByIp] success, eidAddrList size=%u", eidAddrList.size());
+    return HCCL_SUCCESS;
+}
+
+HcclResult WaitRequestResult(void* raReqHandle, RequestHandle& reqHandle)
+{
+    reqHandle = reinterpret_cast<RequestHandle>(raReqHandle);
+    auto startTime = std::chrono::steady_clock::now();
+    constexpr uint32_t pollTimeoutMs     = 10000; // 轮询超时时间
+    auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
+    while (true) {
+        if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
+            HCCL_ERROR("[WaitRequestResult] poll timeout.");
+            return HCCL_E_TIMEOUT;  // 超时报错
+        }
+
+        ReqHandleResult result;
+        TRY_CATCH_RETURN(result = HrtRaGetAsyncReqResult(reqHandle));
+    
+        // 结果判断
+        if (result == ReqHandleResult::NOT_COMPLETED) {
+            continue;
+        } else if (result == ReqHandleResult::COMPLETED) {
+            break;
+        } else {
+            HCCL_ERROR("[WaitRequestResult] failed, result[%s] is unexpected.", result.Describe().c_str());
+            return HCCL_E_INTERNAL;
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+{
+    HCCL_INFO("[HrtRaSetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    void *raReqHandle = nullptr;
+    s32 ret = RaSetTpAttrAsync(handle, tpHandle, attrBitmap, &attr, &raReqHandle);
+    if (ret != 0) {
+        string msg = StringFormat("call RaSetTpAttrAsync failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    CHK_RET(WaitRequestResult(raReqHandle, reqHandle));
+    HCCL_INFO("[HrtRaSetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle)
+{
+    HCCL_INFO("[HrtRaGetTpAttrAsync] begain, reqHandle[%llu]", reqHandle);
+    void *raReqHandle = nullptr;
+    s32 ret = RaGetTpAttrAsync(handle, tpHandle, &attrBitmap, &attr, &raReqHandle);
+    if (ret != 0) {
+        string msg = StringFormat("call RaGetTpAttrAsync failed, error code =%d.", ret);
+        THROW<NetworkApiException>(msg);
+    }
+
+    CHK_RET(WaitRequestResult(raReqHandle, reqHandle));
+    HCCL_INFO("[HrtRaGetTpAttrAsync] success, reqHandle[%llu]", reqHandle);
+    return HCCL_SUCCESS;
+}
+
 } // namespace Hccl

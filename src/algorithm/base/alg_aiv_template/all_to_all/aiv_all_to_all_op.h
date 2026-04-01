@@ -22,8 +22,8 @@
 
 #include "aiv_all_to_all_910b_direct_fullmesh.h"
 
-#define AIV_ALL_TO_ALL_KERNEL_BATCH_DEF(type) \
-extern "C" __global__ __aicore__ void aiv_all_to_all_##type(KERNEL_ARGS_DEF) { \
+#define AIV_ALL_TO_ALL_KERNEL_DEF(type) \
+__aicore__ inline void aiv_all_to_all_##type##_inner(KERNEL_ARGS_DEF) { \
     if (devType == DEV_TYPE_910_93 && serverNum > 1) { \
         if (isOpBase) { \
             return aiv_all_to_all_91093<type>(KERNEL_ARGS_CALL); \
@@ -45,8 +45,16 @@ extern "C" __global__ __aicore__ void aiv_all_to_all_##type(KERNEL_ARGS_DEF) { \
             return aiv_all_to_all_91093_single<type>(KERNEL_ARGS_CALL); \
         } \
     } \
-} \
-EXPORT_AIV_META_INFO(aiv_all_to_all_##type)
+}
+
+#define AIV_ALL_TO_ALL_KERNEL_BATCH_DEF(type) \
+    AIV_ALL_TO_ALL_KERNEL_DEF(type); \
+    GLOBAL_FUNC_DEF_A2(aiv_all_to_all_##type); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_to_all_##type, 1); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_to_all_##type, 2); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_to_all_##type, 3); \
+    SK_BIND_FUNC_DEF_A2(aiv_all_to_all_##type, 4); \
+    SuperKernelBind(aiv_all_to_all_##type)
 
 // 定义算子各数据类型Kernel入口
 AIV_COPY_DATA_TYPE_DEF(AIV_ALL_TO_ALL_KERNEL_BATCH_DEF);

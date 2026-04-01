@@ -154,6 +154,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_Normal_Return_HCCL_SUCCESS)
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -199,6 +200,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_GroupModeAndAllocSliceMemFa
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -229,6 +231,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_hrtSetDevice_Failed_Return_
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -257,6 +260,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_CreateSingleLinkSocket_Fail
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -302,6 +306,7 @@ TEST_F(HcclImplTest, ut_CheckBatchSendRecvLinkStatus_When_LinkIsNullPtr_Return_H
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -341,6 +346,7 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     params.deviceType = DevType::DEV_TYPE_910_93;
     std::unique_ptr<HcclCommunicator> implBase(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource)
     .stubs()
     .with(any())
@@ -380,5 +386,25 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     ret = operation->SelectAlg("", opParam, algName, newTag);
     EXPECT_TRUE(algName == "BroadcastMeshAivExecutor");
     operation = nullptr;
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplTest, Ut_SplitBsrData_When_countEqualZero_Expect_ReturnIsHCCL_SUCCESS) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->userRankSize_ = 2;
+    hcclCommunicator->userRank_ = 0;
+    OpParam opParam;
+    opParam.BatchSendRecvDataDes.itemNum = 2;
+    HcclSendRecvItem sendRecvItems[2] = {
+        {HcclSendRecvType::HCCL_SEND, nullptr, 0, HcclDataType::HCCL_DATA_TYPE_INT16, 0},
+        {HcclSendRecvType::HCCL_RECV, nullptr, 0, HcclDataType::HCCL_DATA_TYPE_INT16, 1}
+    };
+
+    opParam.BatchSendRecvDataDes.sendRecvItemsPtr = sendRecvItems;
+    std::vector<u8> isDirectRemoteRank;
+    std::vector<HcclSendRecvItem> hostSendRecvInfo;
+    std::vector<HcclSendRecvItem> deviceSendRecvInfo;
+    hcclCommunicator->SplitBsrData(opParam, isDirectRemoteRank, hostSendRecvInfo, deviceSendRecvInfo);
+    EXPECT_EQ(hostSendRecvInfo.size(), 0);
     GlobalMockObject::verify();
 }

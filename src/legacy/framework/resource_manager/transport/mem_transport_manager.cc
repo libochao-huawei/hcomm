@@ -68,7 +68,8 @@ void MemTransportManager::CreateOpbasedUbMemTransport(BaseMemTransport::CommonLo
     CntNotifyResHelper                tool;
     BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
     HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
@@ -85,7 +86,8 @@ void MemTransportManager::CreateOffloadUbMemTransport(const string &opTag, BaseM
     CntNotifyResHelper                tool;
     BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
     HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
@@ -117,7 +119,7 @@ BaseMemTransport *MemTransportManager::CreateOpbasedMemTransport(const LinkData 
     attr.devicePhyId = linkData.GetLocalPort().GetId();
     // 握手消息定义，未来包括 cann版本号，rankTable CRC等字段
     auto accelerator = comm->GetOpExecuteConfig().accState;
-    HCCL_INFO("[MemTransportManager::CreateOpbasedMemTransport] accelerator[%s]", accelerator.Describe().c_str());
+    HCCL_INFO("[MemTransportManager::%s] accelerator[%s]", __func__, accelerator.Describe().c_str());
     attr.opAcceState = accelerator;
     attr.handshakeMsg = op->GetUniqueId();
 
@@ -130,7 +132,8 @@ BaseMemTransport *MemTransportManager::CreateOpbasedMemTransport(const LinkData 
         opTagOpbasedMap[linkData] = make_unique<P2PTransport>(locRes, attr, linkData, *socket);
     } else if (linkData.GetType() == PortDeploymentType::DEV_NET) {
         auto linkProtocol = linkData.GetLinkProtocol();
-        if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP) {
+        if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP ||
+            linkProtocol == LinkProtocol::UBOE) {
             CreateOpbasedUbMemTransport(locRes, attr, linkData, *socket);
         } else {
             THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
@@ -172,7 +175,7 @@ BaseMemTransport *MemTransportManager::CreateOffloadMemTransport(const std::stri
     attr.devicePhyId = linkData.GetLocalPort().GetId();
     // 握手消息定义，未来包括 cann版本号，rankTable CRC等字段
     auto accelerator = comm->GetOpExecuteConfig().accState;
-    HCCL_INFO("[MemTransportManager::CreateOpbasedMemTransport] accelerator[%s]", accelerator.Describe().c_str());
+    HCCL_INFO("[MemTransportManager::%s] accelerator[%s]", __func__, accelerator.Describe().c_str());
     attr.opAcceState = accelerator;
     attr.handshakeMsg = op->GetUniqueId();
 
@@ -186,7 +189,8 @@ BaseMemTransport *MemTransportManager::CreateOffloadMemTransport(const std::stri
         opTagOffloadMap[opTag][linkData] = make_unique<P2PTransport>(locRes, attr, linkData, *socket);
     } else if (linkData.GetType() == PortDeploymentType::DEV_NET) {
         auto linkProtocol = linkData.GetLinkProtocol();
-        if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP) {
+        if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP ||
+            linkProtocol == LinkProtocol::UBOE) {
             CreateOffloadUbMemTransport(opTag, locRes, attr, linkData, *socket);
         } else {
             THROW<NullPtrException>(StringFormat("linkData=%s is error", linkData.Describe().c_str()));
@@ -441,12 +445,16 @@ std::vector<HcclAiRMAWQ> MemTransportManager::GetUrmaWqs()
     }
 
     std::vector<HcclAiRMAWQ> wqs;
-
-    for (auto &it : urmaDirectMap_) {
-        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(it.second.get());
+    auto links = comm->GetFullMeshLinks();
+    for (auto &link : links) {
+        if (urmaDirectMap_.find(link) == urmaDirectMap_.end()) {
+            HCCL_WARNING("[MemTransportManager][GetUrmaWqs]GetUrmaDirectTransport, linkData=%s find transport is null", link.Describe().c_str());
+            continue;
+        }
+        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(urmaDirectMap_[link].get());
 
         wqs.push_back(urmaTransport->GetAiRMAWQ());
-        HCCL_INFO("MemTransportManager::GetUrmaWq: %s.", it.first.Describe().c_str());
+        HCCL_INFO("MemTransportManager::GetUrmaWq: %s.", link.Describe().c_str());
     }
     return wqs;
 }
@@ -460,12 +468,16 @@ std::vector<HcclAiRMACQ> MemTransportManager::GetUrmaCqs()
     }
 
     std::vector<HcclAiRMACQ> cqs;
-
-    for (auto &it : urmaDirectMap_) {
-        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(it.second.get());
+    auto links = comm->GetFullMeshLinks();
+    for (auto &link : links) {
+        if (urmaDirectMap_.find(link) == urmaDirectMap_.end()) {
+            HCCL_WARNING("[MemTransportManager][GetUrmaWqs]GetUrmaDirectTransport, linkData=%s find transport is null", link.Describe().c_str());
+            continue;
+        }
+        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(urmaDirectMap_[link].get());
 
         cqs.push_back(urmaTransport->GetAiRMACQ());
-        HCCL_INFO("MemTransportManager::GetUrmaCq: %s.", it.first.Describe().c_str());
+        HCCL_INFO("MemTransportManager::GetUrmaCq: %s.", link.Describe().c_str());
     }
 
     return cqs;
@@ -844,7 +856,8 @@ void MemTransportManager::CreateOneSidedUbMemTransport(BaseMemTransport::CommonL
     CntNotifyResHelper                tool;
     BaseMemTransport::LocCntNotifyRes locCntNotifyRes = tool.GetCntNotifyRes(topicIdCntNotifyVecMap);
     HCCL_INFO("locCntNotifyRes=%s, linkData=%s", locCntNotifyRes.Describe().c_str(), linkData.Describe().c_str());
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
@@ -924,7 +937,8 @@ void MemTransportManager::BatchBuildOneSidedTransports(const vector<LinkData> &l
 void MemTransportManager::CreateUrmaDirectTransport(BaseMemTransport::CommonLocRes &locRes, BaseMemTransport::Attribution &attr,
                                                     const LinkData &linkData, const Socket &socket)
 {
-    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+    RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+        comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
 
     // DFX：注册transportCallBack, 用于信息保存
     auto transportCallBack = MemTransportCallback(linkData, comm->GetMirrorTaskManager());
