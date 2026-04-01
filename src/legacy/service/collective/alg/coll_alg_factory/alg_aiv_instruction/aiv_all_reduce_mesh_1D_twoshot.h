@@ -14,7 +14,6 @@ using namespace AscendC;
 
 template<typename T>
 class AivAllReduceMesh1DTwoShot : public AivCommBase {
-
 public:
     __aicore__ inline AivAllReduceMesh1DTwoShot()
     {
