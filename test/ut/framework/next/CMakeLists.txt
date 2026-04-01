@@ -21,6 +21,7 @@ set(src_to_test_list
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
     comms/endpoint_pairs/ut_endpoint_pair.cc
+    comms/api_c_adpt/ut_hcomm_c_adpt.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
@@ -40,6 +41,7 @@ add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/
 )
  
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE
@@ -74,7 +76,5 @@ target_link_libraries(hccl_utest_test_next_resource PRIVATE
 )
 add_dependencies(hccl_utest_test_next_resource hccl_llt)
 
-run_llt_test(
-   TARGET  hccl_utest_test_next_resource
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_test_next_resource COMMAND hccl_utest_test_next_resource)

@@ -19,6 +19,7 @@ set(hccl_utest_impl_list
     ut_template_base.cc
     # ut_netdevice.cc
     ut_global_mem_mgr.cc
+    ut_global_mem_mgr_multhread.cc
     ut_local_dispatcher_ctx.cc
 )
 add_executable(hccl_utest_impl ${hccl_utest_impl_list})
@@ -61,7 +62,5 @@ target_link_libraries(hccl_utest_impl PRIVATE
 )
 add_dependencies(hccl_utest_impl hccl_llt)
 
-run_llt_test(
-   TARGET hccl_utest_impl
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_impl COMMAND hccl_utest_impl)

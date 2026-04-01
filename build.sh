@@ -251,10 +251,18 @@ function build_ut() {
   mk_dir ${OUTPUT_PATH}
   mk_dir "${BUILD_DIR}"
   local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
+  local log_dir="${OUTPUT_PATH}/ut_logs" && mk_dir "${log_dir}"
   cd "${BUILD_DIR}"
   unset LD_LIBRARY_PATH
 
-  local LLT_KILL_TIME=1200
+  local BUILD_JOBS
+  if [ "${CPU_NUM}" -ge 8 ]; then
+    BUILD_JOBS=${CPU_NUM}
+  else
+    BUILD_JOBS=8
+  fi
+
+  local LLT_KILL_TIME=200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
               -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
@@ -273,8 +281,8 @@ function build_ut() {
     return 1
   fi
 
-  # make all
-  cmake --build . -j${CPU_NUM}
+  echo "Building all test targets..."
+  cmake --build . -j${BUILD_JOBS}
   run_ret=${PIPESTATUS[0]}
   echo "exit code: ${run_ret}"
   if [ "${run_ret}" -eq 137 ]
@@ -282,11 +290,40 @@ function build_ut() {
       echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
       exit 1
   fi
-  if [ $? -ne 0 ]; then
-    echo "execute command: make -j${THREAD_NUM} failed."
+  if [ "${run_ret}" -ne 0 ]; then
+    echo "execute command: cmake --build . -j${BUILD_JOBS} failed."
     return 1
   fi
   echo "build success!"
+
+  echo "Running tests with CTest (parallel jobs: ${BUILD_JOBS})..."
+
+  local ctest_log="${log_dir}/ctest_output.log"
+  local ctest_summary="${log_dir}/ctest_summary.log"
+
+  ctest -j ${BUILD_JOBS} \
+        --build-nocmake \
+        --timeout ${LLT_KILL_TIME} \
+        --output-on-failure \
+        --stop-on-failure \
+        --test-output-size-failed 10000000 \
+        -O "${ctest_log}" \
+        2>&1 | tee "${ctest_summary}"
+  
+  local ctest_ret=${PIPESTATUS[0]}
+  
+  if [ "${ctest_ret}" -eq 137 ]; then
+      echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
+      exit 1
+  fi
+  
+  if [ "${ctest_ret}" -ne 0 ]; then
+    echo "CTest execution failed. See logs in ${log_dir}"
+    return 1
+  fi
+  
+  echo "Build and tests completed successfully!"
+  echo "Test logs saved in: ${log_dir}"
 }
 
 function make_ut_gov() {

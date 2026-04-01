@@ -445,12 +445,16 @@ std::vector<HcclAiRMAWQ> MemTransportManager::GetUrmaWqs()
     }
 
     std::vector<HcclAiRMAWQ> wqs;
-
-    for (auto &it : urmaDirectMap_) {
-        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(it.second.get());
+    auto links = comm->GetFullMeshLinks();
+    for (auto &link : links) {
+        if (urmaDirectMap_.find(link) == urmaDirectMap_.end()) {
+            HCCL_WARNING("[MemTransportManager][GetUrmaWqs]GetUrmaDirectTransport, linkData=%s find transport is null", link.Describe().c_str());
+            continue;
+        }
+        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(urmaDirectMap_[link].get());
 
         wqs.push_back(urmaTransport->GetAiRMAWQ());
-        HCCL_INFO("MemTransportManager::GetUrmaWq: %s.", it.first.Describe().c_str());
+        HCCL_INFO("MemTransportManager::GetUrmaWq: %s.", link.Describe().c_str());
     }
     return wqs;
 }
@@ -464,12 +468,16 @@ std::vector<HcclAiRMACQ> MemTransportManager::GetUrmaCqs()
     }
 
     std::vector<HcclAiRMACQ> cqs;
-
-    for (auto &it : urmaDirectMap_) {
-        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(it.second.get());
+    auto links = comm->GetFullMeshLinks();
+    for (auto &link : links) {
+        if (urmaDirectMap_.find(link) == urmaDirectMap_.end()) {
+            HCCL_WARNING("[MemTransportManager][GetUrmaWqs]GetUrmaDirectTransport, linkData=%s find transport is null", link.Describe().c_str());
+            continue;
+        }
+        UrmaDirectTransport *urmaTransport = reinterpret_cast<UrmaDirectTransport *>(urmaDirectMap_[link].get());
 
         cqs.push_back(urmaTransport->GetAiRMACQ());
-        HCCL_INFO("MemTransportManager::GetUrmaCq: %s.", it.first.Describe().c_str());
+        HCCL_INFO("MemTransportManager::GetUrmaCq: %s.", link.Describe().c_str());
     }
 
     return cqs;
