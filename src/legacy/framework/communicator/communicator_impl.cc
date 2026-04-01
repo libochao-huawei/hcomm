@@ -240,6 +240,9 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitCommonData(commParams);
             InitRankGraph(inputRankGraph);
             HrtSetDevice(devLogicId);
+            if (IsNeedDpu()) {
+                InitHccpPeer();
+            }
             InitHccpHdc();
             AppendLocalDieIdForLinks();
             InitCcuSuperFastLoad();
@@ -261,6 +264,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
+            InitDpuKernel();
             status = CommStatus::COMM_READY;
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
@@ -287,6 +291,9 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
         TRY_CATCH_RETURN(
             HrtSetDevice(inputDevLogicId);
             InitCommonData(commParams, subConfig);
+            if (IsNeedDpu()) {
+                InitHccpPeer();
+            }
             InitHccpHdc();
             InitCcuSuperFastLoad();
             InitNotifyManager();
@@ -311,6 +318,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
+            InitDpuKernel();
             status = CommStatus::COMM_READY;
             SnapShotParser::GetInstance().SerializeSubCommInfo(commParams, subConfig, rankIdsVec, staticBinaryInfo);
         );

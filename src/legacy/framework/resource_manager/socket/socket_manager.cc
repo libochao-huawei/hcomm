@@ -157,6 +157,9 @@ void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPor
     bool useOld = false;  // 旧端口抢占过，就沿用旧端口
     for(uint32_t i = 0; i < links.size(); i++) {
         LinkData link = links[i];
+        if (link.GetType() == PortDeploymentType::HOST_NET) {
+            continue;
+        }
         auto localPort = link.GetLocalPort();
         auto iter = serverSocketMap.find(localPort);
         if (iter != serverSocketMap.end()) {
