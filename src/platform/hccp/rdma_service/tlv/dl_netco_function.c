@@ -138,7 +138,7 @@ unsigned int RsNetcoEventDispatch(void *co, int fd, unsigned int curEvents)
     if (gNetcoOps.rsNetcoEventDispatch == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_event_dispatch is null");
-        return -EINVAL;
+        return EINVAL;
 #endif
     }
     return gNetcoOps.rsNetcoEventDispatch(co, fd, curEvents);
