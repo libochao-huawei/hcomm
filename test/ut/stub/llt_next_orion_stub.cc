@@ -2143,6 +2143,13 @@ HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, 
     return HCCL_SUCCESS;
 }
 
+DaemonFunc::~DaemonFunc()
+{
+}
+void DaemonFunc::Call()
+{
+}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
