@@ -91,7 +91,7 @@ private:
     HcclResult ReleaseAllTpInfos();
     HcclResult DestroyAllJettys();
 
-    void SetProcess(CcuOpcodeType opCode) const;
+    void SetCustomChannelProcess(CcuOpcodeType opCode) const;
 
 private:
     // CCU Task Kill相关状态

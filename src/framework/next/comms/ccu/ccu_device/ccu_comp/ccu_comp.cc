@@ -909,7 +909,7 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
     if (!dieEnableFlags_[dieId]) { // 不可用的die不清理
         return HcclResult::HCCL_SUCCESS;
     }    
-    Hccl::HRaInfo               info(Hccl::HrtNetworkMode::HDC, devPhyId_);
+    RaInfo               info(NetworkMode::NETWORK_OFFLINE, devPhyId_);
     CustomChannelInfoIn   inBuff{};
     CustomChannelInfoOut  outBuff{};
 
@@ -927,28 +927,40 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
         inBuff.data.dataInfo.dataArraySize = std::min(ckeNum - startIdx, MAX_CKE_DATA_ARRAY_SIZE);
         inBuff.data.dataInfo.dataLen       = sizeof(CcuDataByte8) * inBuff.data.dataInfo.dataArraySize;
         inBuff.offsetStartIdx              = startIdx;
-        Hccl::HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff)); //next下没有该函数
+        int ret = RaCustomChannel(info, reinterpret_cast<CustomChanInfoIn *>(&inBuff), 
+            reinterpret_cast<CustomChanInfoOut *>(&outBuff));
+        if (ret != 0) {
+            HCCL_ERROR("[CcuComponent][%s] failed, devLogicId[%d], dieId[%u], ret[%d].",
+                __func__, devLogicId_, dieId, ret);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
     }
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuComponent::SetProcess(CcuOpcodeType opCode) const
+void CcuComponent::SetCustomChannelProcess(CcuOpcodeType opCode) const
 {
-    const Hccl::HRaInfo info(Hccl::HrtNetworkMode::HDC, devPhyId_);
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId_};
+    struct CustomChannelInfoIn  inBuff{};
+    struct CustomChannelInfoOut outBuff{};
 
     inBuff.op = opCode;
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         if (!dieEnableFlags_[dieId]) {
-            HCCL_WARNING("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] is not enable,"
-                "skip SetProcess.", devLogicId_, dieId);
+            HCCL_WARNING("[CcuComponent::SetCustomChannelProcess] devLogicId[%d], dieId[%u] is not enable,"
+                "skip SetCustomChannelProcess.", devLogicId_, dieId);
             continue;
         }
-        HCCL_INFO("[CcuComponent::SetProcess] devLogicId[%d], dieId[%u] start.", devLogicId_, dieId);   
+        HCCL_INFO("[CcuComponent::SetCustomChannelProcess] devLogicId[%d], dieId[%u] start.", devLogicId_, dieId);   
         inBuff.data.dataInfo.udieIdx = dieId;
-        Hccl::HrtRaCustomChannel(info, static_cast<void *>(&inBuff), static_cast<void *>(&outBuff));
+        int ret = RaCustomChannel(info, reinterpret_cast<CustomChanInfoIn *>(&inBuff), 
+            reinterpret_cast<CustomChanInfoOut *>(&outBuff));
+        if (ret != 0) {
+            HCCL_ERROR("[CcuComponent::SetCustomChannelProcess] failed to call ccu driver, devLogicId[%d], dieId[%u], opCode[%u].",
+                devLogicId_, dieId, static_cast<uint32_t>(opCode));
+                return;
+        }
     }
 }
 
@@ -971,7 +983,7 @@ HcclResult CcuComponent::SetTaskKill()
         return HcclResult::HCCL_E_INTERNAL;
     }
 
-    SetProcess(CcuOpcodeType::CCU_U_OP_SET_TASKKILL);
+    SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_SET_TASKKILL);
     status_ = CcuTaskKillStatus::TASK_KILL;
     HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d.", __func__, status_, devLogicId_);
     return HcclResult::HCCL_SUCCESS;
@@ -998,7 +1010,7 @@ HcclResult CcuComponent::SetTaskKillDone()
         return HcclResult::HCCL_E_INTERNAL;
     }
 
-    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
     status_ = CcuTaskKillStatus::INIT;
     HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d", __func__, status_, devLogicId_);   
     return HcclResult::HCCL_SUCCESS;
@@ -1006,7 +1018,7 @@ HcclResult CcuComponent::SetTaskKillDone()
 
 HcclResult CcuComponent::CleanTaskKillState() const
 {
-    SetProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
     return HcclResult::HCCL_SUCCESS;
 }
 
