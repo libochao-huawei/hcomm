@@ -152,3 +152,40 @@ TEST_F(TopoAddrInfoTest, Ut_Card_4P)
     EXPECT_TRUE(strstr(buf, "dfdf0051") ==  NULL);
     free(buf);
 }
+
+TEST_F(TopoAddrInfoTest, ut_rootinfo_for_pod)
+{
+    // mock data
+    unsigned int mainboard_id = 0x07;
+    char drv_path[256] = "/usr/local/Ascend2";
+    UEList ueList;
+    memset_s(&ueList, sizeof(UEList), 0x00, sizeof(UEList));
+    hex32_to_bin16("000000000000008000100000dfdf1088", ueList.ueList[0].eidList[0].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf1051", ueList.ueList[0].eidList[1].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10b8", ueList.ueList[0].eidList[2].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10b0", ueList.ueList[0].eidList[3].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10a8", ueList.ueList[0].eidList[4].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10a0", ueList.ueList[0].eidList[5].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf1098", ueList.ueList[0].eidList[6].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf1090", ueList.ueList[0].eidList[7].eid.raw);
+    ueList.ueList[0].eidNum = 8;
+    hex32_to_bin16("000000000000004000100000dfdf14d8", ueList.ueList[1].eidList[0].eid.raw);
+    ueList.ueList[1].eidNum = 1;
+    hex32_to_bin16("000000000000004000100000dfdf10d8", ueList.ueList[2].eidList[0].eid.raw);
+    ueList.ueList[2].eidNum = 1;
+    ueList.ueNum = 3;
+
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainboard_id)).will(returnValue(0));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+    MOCKER(HalGetUBEntityList).stubs().with(any(), outBoundP(&ueList)).will(returnValue(0));
+
+    size_t bufSize = 4096;
+    char* buf = (char*)malloc(bufSize);
+    memset_s(buf, bufSize, 0x00, bufSize);
+    int ret = TopoAddrInfoGet(0, buf, &bufSize);
+    EXPECT_EQ(ret, 0);
+    printf("[%s]\n", buf);
+    // 4P使用直连口
+    EXPECT_TRUE(strstr(buf, "dfdf14d8") !=  NULL);
+    free(buf);
+}
