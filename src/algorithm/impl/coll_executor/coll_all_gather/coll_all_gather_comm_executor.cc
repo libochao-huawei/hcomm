@@ -81,13 +81,13 @@ HcclResult CollAllGatherCommExecutor::KernelRun(const OpParam &param, ExecMem &e
     std::unique_ptr<AlgTemplateBase> tempAlg;
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-        HCCL_INFO("algather comm: using nhr algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_COMBINE_ORDER", __func__);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NHRV1, dispatcher_);
-        HCCL_INFO("algather comm: using nhr_v1 algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHRV1 in COMM_COMBINE_ORDER", __func__);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
-        HCCL_INFO("algather comm: using nonuniform-bruck algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NB in COMM_COMBINE_ORDER", __func__);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
         u8* dstPtr = static_cast<u8 *>(execMem.outputMem.ptr()) + execMem.inputMem.size() * combinedCommInfo.localRank;
         DeviceMem dstMem = DeviceMem::create(dstPtr, execMem.inputMem.size());
@@ -97,7 +97,7 @@ HcclResult CollAllGatherCommExecutor::KernelRun(const OpParam &param, ExecMem &e
         HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RECURSIVE_HALVING_DOUBLING in COMM_COMBINE_ORDER", __func__);
     } else {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
-        HCCL_INFO("algather comm: ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RING in COMM_COMBINE_ORDER", __func__);
     }
     CHK_SMART_PTR_NULL(tempAlg);
 

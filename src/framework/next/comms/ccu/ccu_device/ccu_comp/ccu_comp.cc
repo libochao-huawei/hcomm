@@ -939,7 +939,7 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
     return HcclResult::HCCL_SUCCESS;
 }
 
-void CcuComponent::SetCustomChannelProcess(CcuOpcodeType opCode) const
+HcclResult CcuComponent::SetCustomChannelProcess(CcuOpcodeType opCode) const
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId_};
     struct CustomChannelInfoIn  inBuff{};
@@ -959,9 +959,10 @@ void CcuComponent::SetCustomChannelProcess(CcuOpcodeType opCode) const
         if (ret != 0) {
             HCCL_ERROR("[CcuComponent::SetCustomChannelProcess] failed to call ccu driver, devLogicId[%d], dieId[%u], opCode[%u].",
                 devLogicId_, dieId, static_cast<uint32_t>(opCode));
-                return;
+                return HcclResult::HCCL_E_INTERNAL;
         }
     }
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuComponent::SetTaskKill()
@@ -983,7 +984,12 @@ HcclResult CcuComponent::SetTaskKill()
         return HcclResult::HCCL_E_INTERNAL;
     }
 
-    SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_SET_TASKKILL);
+    auto ret = SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_SET_TASKKILL);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuComponent][%s] failed, devLogicId[%d], dieId[%u], ret[%d].",
+            __func__, devLogicId_, dieId, ret);
+        return ret;
+    }
     status_ = CcuTaskKillStatus::TASK_KILL;
     HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d.", __func__, status_, devLogicId_);
     return HcclResult::HCCL_SUCCESS;
@@ -1010,7 +1016,12 @@ HcclResult CcuComponent::SetTaskKillDone()
         return HcclResult::HCCL_E_INTERNAL;
     }
 
-    SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    auto ret = SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuComponent][%s] failed, devLogicId[%d], dieId[%u], ret[%d].",
+            __func__, devLogicId_, dieId, ret);
+        return ret;
+    }
     status_ = CcuTaskKillStatus::INIT;
     HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d", __func__, status_, devLogicId_);   
     return HcclResult::HCCL_SUCCESS;
@@ -1018,7 +1029,12 @@ HcclResult CcuComponent::SetTaskKillDone()
 
 HcclResult CcuComponent::CleanTaskKillState() const
 {
-    SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    auto ret = SetCustomChannelProcess(CcuOpcodeType::CCU_U_OP_CLEAN_TASKKILL_STATE);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[CcuComponent][%s] failed, devLogicId[%d], dieId[%u], ret[%d].",
+            __func__, devLogicId_, dieId, ret);
+        return ret;
+    }
     return HcclResult::HCCL_SUCCESS;
 }
 
