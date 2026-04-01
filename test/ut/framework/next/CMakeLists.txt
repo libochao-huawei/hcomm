@@ -17,13 +17,23 @@ set(src_to_test_list
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
-    comms/ccu/ut_CcuTransport_API_test.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_thread_api.cc
+    comms/endpoint_pairs/ut_endpoint_pair.cc
+    comms/api_c_adpt/ut_hcomm_c_adpt.cc
     coll_comms/rank/ut_my_rank.cc
     coll_comms/rank/comm_mems/test_getHcclBuffer_api.cc
     coll_comms/rank/ut_my_rank_tls.cc
+    comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
+    comms/api_c_adpt/ut_hcomm_endpoint_test.cc
+    comms/api_c_adpt/ut_hcomm_mem_test.cc
+    comms/api_c_adpt/ut_hcomm_channel_test.cc
+    comms/api_c_adpt/ut_hcomm_engine_ctx_test.cc
+    comms/api_c_adpt/ut_hcomm_dfx_test.cc
+    coll_comms/communicator/ut_coll_comm_test.cc
+    comms/endpoint_pairs/channels/ut_channel_process_test.cc
+    coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})
@@ -31,6 +41,7 @@ add_executable(hccl_utest_test_next_resource ${src_to_test_list})
 #头文件搜索路径
 target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/
 )
  
 target_compile_definitions(hccl_utest_test_next_resource PRIVATE

@@ -53,6 +53,8 @@
 using namespace std;
 using namespace hccl;
 
+typedef int32_t Callback(uint64_t, int32_t);
+
 const std::string HCCL_ALLTOALL = "ALLTOALL";
 const std::string HCCL_ALLTOALLV = "ALLTOALLV";
 const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
@@ -747,8 +749,8 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
 {
     if(hcclGroupDepth > 0){
         HcclResult ret = HCCL_SUCCESS;
-        std::shared_ptr<struct hcclCommInitRankTableConfigAsyncJob> job;
-        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
+        std::shared_ptr<struct hcclCommInitRankTableAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableAsyncJob>()), return HCCL_E_PARA);
         job->clusterInfo = clusterInfo;
         job->rank = rank;
         job->initComm = comm;
@@ -1002,7 +1004,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
-    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].", 
         __func__, clusterInfo, rank, deviceLogicId);
     // 入参合法性校验
     CHK_PTR_NULL(clusterInfo);
@@ -1064,7 +1066,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HCCL_PROFILER_ADD_GROUP_UDI(commConfig.GetConfigCommName(), commConfig.GetConfigUdi());
 
     /* 关键状态记录 */
-    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].", 
         __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
     return HCCL_SUCCESS;
 }
@@ -2121,7 +2123,7 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
     // 入参合法性校验
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return broadcast success"), HCCL_SUCCESS);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclBroadcastInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclBroadcastInner", "nullptr", "comm", "non-null pointer"}));
@@ -2250,7 +2252,7 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
     // 入参合法性校验
     CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return ReduceScatter success"), HCCL_SUCCESS);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclReduceScatterInner", "nullptr", "comm", "non-null pointer"}));
@@ -2371,7 +2373,7 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
 
     // 入参合法性校验
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcclReduceScatterVInner", "nullptr", "sendCounts", "non-null pointer"}));
@@ -2684,7 +2686,7 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
         std::vector<std::string>({"HcclAllGatherInner", "nullptr", "recvBuf", "non-null pointer"}));
     CHK_PTR_NULL(recvBuf);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclAllGatherVInner", "nullptr", "stream", "non-null pointer"}));
+        std::vector<std::string>({"HcclAllGatherInner", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
 
     HcclUs startut = TIME_NOW();
@@ -3383,22 +3385,24 @@ static HcclConfigTypeOpExpansionMode OpExpansionModeValueToModeEnum(const uint32
     constexpr uint32_t ccuMsMode = 5;
     constexpr uint32_t ccuSchedMode = 6;
     constexpr uint32_t aicpuMode = 7;
+    constexpr uint32_t opExpansionModeCcuSched = 5;
+    constexpr uint32_t opExpansionModeCcuMs = 4;
 
     switch(value) {
         case defaultMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+            return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuSched);
         case hostTsMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_HOST_TS;
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_HOST_TS;
         case aicpuTsMode:
         case aicpuMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AI_CPU;
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AI_CPU;
         case ccuMsMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_MS;
+            return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuMs);
         case ccuSchedMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_CCU_SCHED;
+            return static_cast<HcclConfigTypeOpExpansionMode>(opExpansionModeCcuSched);
         case aivMode:
         case aivOnlyMode:
-            return HcclOpExpansionMode::HCCL_OP_EXPANSION_AIV;
+            return HcclOpExpansionMode::HCCL_OP_EXPANSION_MODE_AIV;
         default:
             break;
     }
@@ -3860,7 +3864,7 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
         std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "comm", "non-null pointer"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
-        std::vector<std::string>({"HcclReduceInner", "nullptr", "stream", "non-null pointer"}));    
+        std::vector<std::string>({"HcclAlltoAllVCInner", "nullptr", "stream", "non-null pointer"}));    
     CHK_PTR_NULL(stream);
     
     HcclUs startut = TIME_NOW();
@@ -4687,6 +4691,7 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
 {
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
+        CHK_PTR_NULL(comm);
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
@@ -4744,7 +4749,10 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
     }
 
     for (u32 i = 0; i < itemNum; i++) {
-        CHK_PTR_NULL((sendRecvInfo + i)->buf);
+        // 支持数据量为0的场景，buf为空的item跳过
+        if ((sendRecvInfo + i)->buf == nullptr) {
+            continue;
+        }
         CHK_RET(HcomCheckDataType((sendRecvInfo + i)->dataType));
         CHK_RET(HcomCheckCount((sendRecvInfo + i)->count));
         CHK_RET(HcomCheckUserRank(rankSize, (sendRecvInfo + i)->remoteRank));
@@ -4790,6 +4798,9 @@ HcclResult HcclDeviceRefresh(s32 &deviceLogicId)
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
 {
     HCCL_INFO("[HcclTaskRegister] start to register task");
@@ -4816,9 +4827,6 @@ int32_t HcclTaskUnRegister(HcclComm comm,  const char *msgTag)
     return HCCL_E_NOT_SUPPORT;
 }
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
 HcclResult HcclGetTopoDesc(HcclComm comm, HcclTopoDescs *topoDescs, uint32_t topoSize)
 {
     // 入参合法性校验
@@ -5167,17 +5175,22 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     return HCCL_SUCCESS;
 }
 
-std::unordered_map<CommSymWindow, HcclComm> winHandle2comm;
+enum HcclCommSymWindowInnerFlag {
+    HCCL_COMM_SYM_WINDOW_FLAG_DEFAULT = 0,
+    HCCL_COMM_SYM_WINDOW_FLAG_COLL_SYMMETRIC = 1
+};
+
+std::unordered_map<HcclCommSymWindow, HcclComm> winHandle2comm;
 std::mutex g_winHandleMtx; // 保护 winHandle2comm
 
-HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag)
+HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, HcclCommSymWindow *winHandle, uint32_t flag)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(addr);
     CHK_PTR_NULL(winHandle);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
-    if (flag == HCCL_WIN_COLL_SYMMETRIC) {
+    if (flag == HCCL_COMM_SYM_WINDOW_FLAG_COLL_SYMMETRIC) {
         hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
         CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
         HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
@@ -5186,7 +5199,7 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, Comm
             std::lock_guard<std::mutex> lock(g_winHandleMtx);
             winHandle2comm[*winHandle] = comm;
         }
-    } else if (flag == HCCL_WIN_DEFAULT) {
+    } else if (flag == HCCL_COMM_SYM_WINDOW_FLAG_DEFAULT) {
         HCCL_ERROR("[HcclCommSymWinRegister]flag: 0 is not supported yet.");
         return HCCL_E_PARA;
     }else {
@@ -5196,7 +5209,7 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, Comm
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
+HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle)
 {
     // 入参校验
     CHK_PTR_NULL(winHandle);
@@ -5216,7 +5229,7 @@ HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
 {
     // 入参校验
     CHK_PTR_NULL(comm);

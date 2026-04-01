@@ -102,10 +102,9 @@ HcclResult CcuTempAllToAllMesh1D::Run(const TempFuncs &tempFuncs, const RankSlic
     (void)tempFuncs;
     (void)buffInfo;
     CcuInstructionAllToAllMesh1D ccuInsAllToAllMesh1D;
-    if (tempInsQues.size() == 0) {
-        HCCL_ERROR("[CcuTempAllToAllMesh1D] tempInsQues.size() is 0.");
-        return HcclResult::HCCL_E_INTERNAL;
-    }
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllToAllMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
     // 拿到input和output的首地址,和每片小数据的大小

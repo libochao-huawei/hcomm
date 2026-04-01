@@ -20,9 +20,9 @@ namespace Hccl {
 
 class InsTempScatterMesh1D : public InsAlgTemplateBase {
 public:
-    explicit InsTempScatterMesh1D(
-        const RankId virtualRank, const u32 tempRankSize, const std::vector<std::vector<RankId>>& tempVTopo,
-        const std::map<RankId, u32>& tempVirtRankMap);
+    explicit InsTempScatterMesh1D(const RankId virtualRank, const u32 tempRankSize,
+                                  const std::vector<std::vector<RankId>> &tempVTopo,
+                                  const std::map<RankId, u32>            &tempVirtRankMap);
     ~InsTempScatterMesh1D() override;
 
     std::string Describe() const override
@@ -30,11 +30,10 @@ public:
         return StringFormat("Instruction based Template of scatter mesh with tempRankSize [%u].", tempRankSize_);
     }
 
-    HcclResult GenExtIns(
-        TempFuncs& tempFuncs, TemplateDataParams& tempAlgParams, ResLinks& tempResLinks,
-        std::vector<InsQuePtr>& tempInsQues);
+    HcclResult GenExtIns(TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
+                        ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues);
     u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType);
-    HcclResult CalcRes(AlgTempResReq& tempResReq) override;
+    HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     uint64_t GetExpandedMode() const;
 
 private:
@@ -47,7 +46,6 @@ private:
     u32 queNumPerNeighbor_ = 1;
     bool enableInterRankCounterNotify_ = false;
     bool isZeroCopy_ = false;
-
 };
 
 } // namespace Hccl
