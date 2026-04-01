@@ -257,6 +257,9 @@ HcclResult AicpuTsRoceRegedMemMgr::GetAllRoceMemDetails(std::vector<RoceMemDetai
         r.size = buf->GetSize();
         r.key = buf->GetKey();
         localOut.push_back(r);
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllRoceMemDetails][local][%zu] addr[0x%llx] devAddr[0x%llx] size[%llu] key[%u]",
+            localOut.size() - 1U, static_cast<unsigned long long>(r.addr), static_cast<unsigned long long>(r.devAddr),
+            static_cast<unsigned long long>(r.size), r.key);
     }
     for (const auto &epMgr : remoteRdmaRmaBufferMgrs_) {
         const auto &mgr = epMgr.second;
@@ -277,8 +280,13 @@ HcclResult AicpuTsRoceRegedMemMgr::GetAllRoceMemDetails(std::vector<RoceMemDetai
             r.size = rb->GetSize();
             r.key = rb->GetKey();
             remoteOut.push_back(r);
+            HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllRoceMemDetails][remote][%zu] addr[0x%llx] devAddr[0x%llx] size[%llu] key[%u]",
+                remoteOut.size() - 1U, static_cast<unsigned long long>(r.addr), static_cast<unsigned long long>(r.devAddr),
+                static_cast<unsigned long long>(r.size), r.key);
         });
     }
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllRoceMemDetails] summary localCnt[%zu] remoteCnt[%zu] remoteMgrCnt[%zu]",
+        localOut.size(), remoteOut.size(), remoteRdmaRmaBufferMgrs_.size());
     return HCCL_SUCCESS;
 }
 

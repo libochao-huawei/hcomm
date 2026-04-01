@@ -307,9 +307,16 @@ HcclResult TransportDeviceIbverbs::BuildMemDetailsRmaMgrs()
         auto ent = std::make_shared<RoceMemDetails>(md);
         auto pr = localMemDetailsRmaMgr_->Add(MakeMemLookupKey(md.addr, md.size), ent);
         if (pr.first == localMemDetailsRmaMgr_->End()) {
-            HCCL_ERROR("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add local mem range failed");
+            HCCL_ERROR("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add local mem range failed, "
+                "logical[0x%llx, +%llu) devBase[0x%llx] key[%u]",
+                static_cast<unsigned long long>(md.addr), static_cast<unsigned long long>(md.size),
+                static_cast<unsigned long long>(md.devAddr), md.key);
             return HCCL_E_INTERNAL;
         }
+        HCCL_DEBUG("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add local MR logical[0x%llx, +%llu) "
+            "devBase[0x%llx] key[%u]",
+            static_cast<unsigned long long>(md.addr), static_cast<unsigned long long>(md.size),
+            static_cast<unsigned long long>(md.devAddr), md.key);
     }
     for (const auto &md : transDevIbverbsData_.remoteRoceMemDetailsList) {
         if (md.size == 0U) {
@@ -318,10 +325,19 @@ HcclResult TransportDeviceIbverbs::BuildMemDetailsRmaMgrs()
         auto ent = std::make_shared<RoceMemDetails>(md);
         auto pr = remoteMemDetailsRmaMgr_->Add(MakeMemLookupKey(md.addr, md.size), ent);
         if (pr.first == remoteMemDetailsRmaMgr_->End()) {
-            HCCL_ERROR("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add remote mem range failed");
+            HCCL_ERROR("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add remote mem range failed, "
+                "logical[0x%llx, +%llu) devBase[0x%llx] key[%u]",
+                static_cast<unsigned long long>(md.addr), static_cast<unsigned long long>(md.size),
+                static_cast<unsigned long long>(md.devAddr), md.key);
             return HCCL_E_INTERNAL;
         }
+        HCCL_DEBUG("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] add remote MR logical[0x%llx, +%llu) "
+            "devBase[0x%llx] key[%u]",
+            static_cast<unsigned long long>(md.addr), static_cast<unsigned long long>(md.size),
+            static_cast<unsigned long long>(md.devAddr), md.key);
     }
+    HCCL_INFO("[TransportDeviceIbverbs][BuildMemDetailsRmaMgrs] indexed localMR[%zu] remoteMR[%zu]",
+        localMemDetailsRmaMgr_->size(), remoteMemDetailsRmaMgr_->size());
     useMemDetailsLookup_ = true;
     return HCCL_SUCCESS;
 }
@@ -1183,17 +1199,19 @@ HcclResult TransportDeviceIbverbs::WriteCommon(const void *remoteAddr, const voi
         if (useMemDetailsLookup_) {
             auto rf = remoteMemDetailsRmaMgr_->Find(MakeMemLookupKey(remoteAddr, length));
             if (!rf.first || rf.second == nullptr) {
-                HCCL_ERROR("[TransportDeviceIbverbs]Can't find remoteBuffer key by addr and size {%p, %llu}",
-                    remoteAddr, length);
-                return HCCL_E_INTERNAL; 
+                HCCL_ERROR("[TransportDeviceIbverbs]Can't find remoteBuffer key by addr and size {%p, %llu}, "
+                           "registered remote MR count[%zu]",
+                    remoteAddr, length, remoteMemDetailsRmaMgr_->size());
+                return HCCL_E_INTERNAL;
             }
             dstKey = rf.second->key;
             transremoteAddr = LogicalPtrToDevPtr(*rf.second, remoteAddr);
 
             auto lf = localMemDetailsRmaMgr_->Find(MakeMemLookupKey(localAddr, length));
             if (!lf.first || lf.second == nullptr) {
-                HCCL_ERROR("[TransportDeviceIbverbs]Can't find localBuffer key by addr and size {%p, %llu}",
-                    localAddr, length);
+                HCCL_ERROR("[TransportDeviceIbverbs]Can't find localBuffer key by addr and size {%p, %llu}, "
+                           "registered local MR count[%zu]",
+                    localAddr, length, localMemDetailsRmaMgr_->size());
                 return HCCL_E_INTERNAL;
             }
             srcKey = lf.second->key;

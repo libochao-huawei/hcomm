@@ -72,6 +72,9 @@ HcclResult AicpuTsRoceResHandler::Parse(const void *blob, u64 blobBytes, const H
             remoteMd.push_back(remoteBase[i]);
         }
     }
+    HCCL_INFO("[AicpuTsRoceResHandler][Parse] Roce mem from channel res: localMemCount[%u] remoteMemCount[%u] "
+        "parsed local[%zu] remote[%zu]",
+        res->localMemCount, res->remoteMemCount, localMd.size(), remoteMd.size());
 
     const u32 qpInfoSize = res->qpsPerConnection + static_cast<u32>(res->qpsPerConnection != 1U);
     if (qpInfoSize < 1U || qpInfoSize > RDMA_QP_MAX_NUM) {
