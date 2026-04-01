@@ -93,6 +93,7 @@ private:
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
+    HcclResult GetEnvOpExpansionConfig(uint32_t &envOpExpansionConfig);
 
     void* comm_{nullptr};
     uint32_t rankId_{};

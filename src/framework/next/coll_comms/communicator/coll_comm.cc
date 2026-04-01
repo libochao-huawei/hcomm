@@ -50,7 +50,11 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
 
     EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get()), return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
+    uint32_t envOpExpansionConfig = 0;
+    CHK_PRT(GetEnvOpExpansionConfig(envOpExpansionConfig));
     if (config) {
+        HCCL_INFO("ZZY HAS CONFIG");
+        opExpansionMode = envOpExpansionConfig != 0 ? envOpExpansionConfig : config->hcclOpExpansionMode;
         opExpansionMode = config->hcclOpExpansionMode;
         u32 tc = config->hcclRdmaTrafficClass;
         CHK_PRT_RET((tc != 0xFFFFFFFFu) && (tc >= 255 || (tc % 4 != 0)),
@@ -65,6 +69,9 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
                 HCCL_ERROR_CODE(HCCL_E_PARA), sl),
             HCCL_E_PARA);
         CHK_RET(config_.SetConfigServiceLevel(sl));
+    } else {
+        HCCL_INFO("ZZY NO CONFIG");
+        opExpansionMode = envOpExpansionConfig;
     }
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
     s32 deviceId = 0;
@@ -112,6 +119,41 @@ HcclResult CollComm::DestroyAicpuComm()
         }
     }
     return HCCL_SUCCESS;
+}
+
+HcclResult CollComm::GetEnvOpExpansionConfig(uint32_t &envOpExpansionConfig)
+{
+    // 读取环境变量，若config里没有配置hcclOpExpansionMode，则以环境变量为准, A5上
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    bool is950 = false;
+    #ifdef MACRO_DEV_TYPE_NEW
+    if (devType == DevType::DEV_TYPE_950) {
+    #else
+    if (devType == DevType::DEV_TYPE_910_95) {
+    #endif
+        is950 = true;
+    }
+    if (is950) {
+        std::string opExpansionModeEnv = "EmptyString";
+        if (getenv("HCCL_OP_EXPANSION_MODE") != nullptr) {
+            opExpansionModeEnv = getenv("HCCL_OP_EXPANSION_MODE");
+        }
+        if (opExpansionModeEnv == "EmptyString") {
+            envOpExpansionConfig = 0;
+        } else if (opExpansionModeEnv == "AI_CPU") {
+            envOpExpansionConfig = 2;
+        } else if (opExpansionModeEnv == "AIV") {
+            envOpExpansionConfig = 3;
+        } else if (opExpansionModeEnv == "CCU_MS") {
+            envOpExpansionConfig = 5;
+        } else if (opExpansionModeEnv == "CCU_SCHED") {
+            envOpExpansionConfig = 6;
+        } else {
+            envOpExpansionConfig = 0;
+        }
+    }
+    return HCCL_SUCCESS;   
 }
 
 uint32_t CollComm::GetMyRankId() const
