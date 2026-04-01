@@ -417,11 +417,11 @@ HcclResult AlltoallvContinuousPipeline::InterSdmaRx(const LINK& linkLeft, const 
     const bool needSendToLinkRight = !sendMems.empty();
         
     // 前同步，通知right我已准备好，可以从我这里读；等待left通知它已准备好，可以从它那里读
-    if (needRecvFromLinkLeft) {
-        CHK_RET(linkLeft->RxAck(stream));
-    }
     if (needSendToLinkRight) {
         CHK_RET(linkRight->TxAck(stream));
+    }
+    if (needRecvFromLinkLeft) {
+        CHK_RET(linkLeft->RxAck(stream));
     }
 
     // 从left读
