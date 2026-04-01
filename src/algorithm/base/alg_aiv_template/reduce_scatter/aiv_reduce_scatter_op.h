@@ -75,8 +75,12 @@ extern "C" __global__ __aicore__ void aiv_reduce_scatter_cn_##type(KERNEL_ARGS_D
 } \
 EXPORT_AIV_META_INFO(aiv_reduce_scatter_cn_##type)
 
+/* 仅在 ccec 编译本头文件为 AICore 目标时实例化内核；避免 host/混合模式下
+ * AIV_ATOMIC_DATA_TYPE_DEF（如 SK_BIND 展开）产生 host 调用 __aicore__ 的错误 */
+#if defined(HCCL_AIV_KERNEL_COMPILE) || defined(__CCE_AICORE__)
 // 定义算子各数据类型Kernel入口
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF);
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF_A3);
+#endif
 
 #endif  /* AIV_REDUCE_SCATTER_OP_H */
