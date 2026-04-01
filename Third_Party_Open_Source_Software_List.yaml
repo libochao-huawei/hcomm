@@ -31,5 +31,5 @@ abseil-cpp:
   version: 20250127.0
   type: test
 rdma-core:
-  version: v42.7-h1
+  version: v42.7-h2
   type: build
