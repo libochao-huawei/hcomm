@@ -21,6 +21,7 @@
 #include <hccl/hccl_inner.h>
 #include "hccl_network_pub.h"
 #include "hccl_socket_manager.h"
+#include "hccl_net_dev.h"
 
 namespace hccl {
 
@@ -37,7 +38,8 @@ public:
     HcclResult UnRefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port);
     HcclResult ServerInit(const HcclNetDevCtx netDevCtx, u32 port);
     HcclResult ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port);
-
+    HcclResult HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, hccl::HcclIpAddress *hcclIP);
+    HcclResult GetDeviceIP(u32 devicePhyId, vector<hccl::HcclIpAddress> &ipAddr);
     std::shared_ptr<HcclSocketManager> GetSocketManager() {return socketManager_;};
 
 private:

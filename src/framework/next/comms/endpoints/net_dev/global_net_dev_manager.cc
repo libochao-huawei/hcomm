@@ -171,6 +171,38 @@ HcclResult GlobalNetDevMgr::DeInitNic()
     return HCCL_SUCCESS;
 }
 
+HcclResult GlobalNetDevMgr::HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, HcclIpAddress *hcclIP) {
+    CHK_PTR_NULL(hcclIP);
+    CHK_PTR_NULL(hccladdr);
+    if (hcclIP->GetFamily() == AF_INET) {
+        hccladdr->type = HCCL_ADDR_TYPE_IP_V4;
+        hccladdr->addr = hcclIP->GetBinaryAddress().addr;
+    } else if (hcclIP->GetFamily() == AF_INET6) {
+        hccladdr->type = HCCL_ADDR_TYPE_IP_V6;
+        hccladdr->addr6 = hcclIP->GetBinaryAddress().addr6;
+    } else {
+        HCCL_ERROR("[HcclIpAddressConvertingHcclAddr]ERROR IP type!");
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult GlobalNetDevMgr::GetDeviceIP(u32 devicePhyId, vector<hccl::HcclIpAddress> &ipAddr)
+{
+    HcclAddress *hcclAddress = nullptr;
+    uint32_t addrNum = 0;
+    CHK_RET(HcclNetDevGetNicAddr(devicePhyId, &hcclAddress, &addrNum));
+    CHK_PTR_NULL(hcclAddress);
+
+    HcclIpAddress hcclIpAddress;
+    for (uint32_t i = 0; i < addrNum; i++) {
+        CHK_RET(HcclIpAddressConvertHcclAddr(&hcclAddress[0], &hcclIpAddress));
+        ipAddr[i] = hcclIpAddress;
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult GlobalNetDevMgr::RefNetDevCtx(NicType nicType, const HcclIpAddress &ipAddr, u32 port,
     HcclNetDevCtx &netDevCtx)
 {

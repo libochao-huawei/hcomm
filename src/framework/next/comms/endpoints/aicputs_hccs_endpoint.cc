@@ -45,8 +45,10 @@ HcclResult AicpuTsHccsEndPoint::Init()
     CHK_RET(GlobalNetDevMgr::GetInstance().InitNic());
 
     u32 devPhyId = endpointDesc_.loc.device.devPhyId;
+
     std::vector<HcclIpAddress> deviceIp;
-    CHK_RET(hrtRaGetDeviceIP(devPhyId, deviceIp));
+    // CHK_RET(hrtRaGetDeviceIP(devPhyId, deviceIp));
+    CHK_RET(GlobalNetDevMgr::GetInstance().GetDeviceIP(devPhyId, deviceIp));
     devIpAddr_ = deviceIp[0];
     HCCL_INFO("[AicpuTsHccsEndPoint]devicePhysicID[%u] devIpAddr_[%s] ",
         devPhyId, devIpAddr_.GetReadableAddress());
