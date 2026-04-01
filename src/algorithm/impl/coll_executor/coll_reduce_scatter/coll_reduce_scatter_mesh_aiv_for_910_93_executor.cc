@@ -117,7 +117,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::CalNumBlocksDeter(u32& numB
         numBlocks_, minNumBlocks),
         HCCL_E_PARA);
 
-    HCCL_INFO("[CollReduceScatterMeshAivFor91093Executor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollReduceScatterMeshAivFor91093Executor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
@@ -151,7 +151,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::CalNumBlocks(u32& numBlocks
         numBlocks_, minNumBlocks),
         HCCL_E_PARA);
 
-    HCCL_INFO("[CollReduceScatterMeshAivFor91093Executor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollReduceScatterMeshAivFor91093Executor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

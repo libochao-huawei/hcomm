@@ -79,8 +79,25 @@ int RsUbGetTpAttr(struct RsUbDevCb *devCb, unsigned int *attrBitmap, const uint6
 int RsUbSetTpAttr(struct RsUbDevCb *devCb, const unsigned int attrBitmap, const uint64_t tpHandle,
     struct TpAttr *attr)
 {
+    urma_net_addr_t dip = {0};
+    urma_eid_t dEid = {0};
     uint8_t tpAttrCnt = 0;
     int ret;
+
+    if ((attrBitmap & TP_ATTR_SIP_MASK) && (attrBitmap & TP_ATTR_SMAC_MASK)) {
+        ret = RsUrmaGetSmac(devCb->urmaCtx, attr->sma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaGetSmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), -EOPENSRC);
+    }
+
+    if ((attrBitmap & TP_ATTR_DIP_MASK) && (attrBitmap & TP_ATTR_DMAC_MASK)) {
+        (void)memcpy_s(&dEid.raw, sizeof(urma_eid_t), attr->dip, sizeof(urma_eid_t));
+        dip.sin_family = AF_INET;
+        dip.in4.s_addr = dEid.in4.addr;
+        ret = RsUrmaGetDmac(devCb->urmaCtx, &dip, attr->dma);
+        CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaGetDmac failed, attrBitmap:%u ret:%d errno:%d",
+            attrBitmap, ret, errno), -EOPENSRC);
+    }
 
     tpAttrCnt = RsGetBitmapCount(attrBitmap);
     ret = RsUrmaSetTpAttr(devCb->urmaCtx, tpHandle, tpAttrCnt, attrBitmap,

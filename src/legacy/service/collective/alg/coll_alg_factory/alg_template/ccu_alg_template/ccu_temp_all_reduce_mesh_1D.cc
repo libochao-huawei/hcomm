@@ -90,9 +90,11 @@ HcclResult CcuTempAllReduceMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                           std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllReduceMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_   = tempFuncs.opMode;
     buffInfo_ = buffInfo;
-
     CcuInstructionAllReduceMesh1D ccuInsAllReduceMesh1D;
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
@@ -121,12 +123,12 @@ HcclResult CcuTempAllReduceMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
     HCCL_INFO("inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
 
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
-    uint64_t offSet = sliceInfoVec[myRank_][0].offset;   // 自己需要 reduce 的数据基于 inputAddr 的偏移
+    uint64_t offset = sliceInfoVec[myRank_][0].offset;   // 自己需要 reduce 的数据基于 inputAddr 的偏移
     uint64_t token;
     CHK_RET(GetToken(op_, token));
-    ccuInsAllReduceMesh1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, offSet, token, op_, tempVTopo_);
+    ccuInsAllReduceMesh1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, offset, token, op_, tempVTopo_);
     HCCL_INFO("[CcuTempAllReduceMesh1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu], outputAddr[%llu],"\
-        "sliceSize[%llu], offset[%llu]", myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offSet);
+        "sliceSize[%llu], offset[%llu]", myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offset);
 
     std::vector<LinkData> links;
     for (auto &pair : tempLinks) {
