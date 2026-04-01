@@ -58,7 +58,5 @@ target_link_libraries(hccl_utest_inter_hcom PRIVATE
 
 add_dependencies(hccl_utest_inter_hcom hccl_llt)
 
-run_llt_test(
-   TARGET hccl_utest_inter_hcom
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_inter_hcom COMMAND hccl_utest_inter_hcom)

@@ -52,7 +52,5 @@ target_link_libraries(hccl_utest_pingmesh PRIVATE
 )
 add_dependencies(hccl_utest_pingmesh hccl_llt)
 
-run_llt_test(
-   TARGET hccl_utest_pingmesh
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_pingmesh COMMAND hccl_utest_pingmesh)
