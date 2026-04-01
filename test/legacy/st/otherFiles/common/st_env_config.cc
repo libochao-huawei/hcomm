@@ -146,7 +146,6 @@ TEST_F(EnvConfigTest, parse_env_config)
     EnvConfig::GetInstance().GetRdmaConfig();
     EnvConfig::GetInstance().GetAlgoConfig();
     EnvConfig::GetInstance().GetLogConfig();
-    EnvConfig::GetInstance().GetDetourConfig();
 }
 
 TEST_F(EnvConfigTest, parse_env_config_should_success)

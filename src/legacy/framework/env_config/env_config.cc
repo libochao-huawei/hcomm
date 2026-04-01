@@ -30,7 +30,6 @@ void EnvConfig::Parse()
     rdmaCfg.Parse();
     algoCfg.Parse();
     logCfg.Parse();
-    detourCfg.Parse();
 }
 
 const EnvHostNicConfig &EnvConfig::GetHostNicConfig()
