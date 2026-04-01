@@ -126,7 +126,7 @@ HcclResult P2PMgmt::DisableAllP2P()
         if (isMarsterIdDiff) {
             HCCL_INFO("there is active p2p connections. in P2PMgmt disable all p2p, it is forced to disable p2p. "
                 "device info: local logic id:%d, remote physic id:%u.", localDeviceLogicID, iterRemoteDevice.first);
-            CHK_RET(hrtDisableP2P(localDeviceLogicID, iterRemoteDevice.first));
+            hrtDisableP2P(localDeviceLogicID, iterRemoteDevice.first);
         }
     }
 
@@ -188,7 +188,7 @@ HcclResult P2PMgmt::DisableP2P(uint32_t localDeviceLogicID, uint32_t remoteDevic
         if (isMarsterIdDiff) {
             HCCL_INFO("disable p2p: local logic id:%d, remote physic id:%u.", localDeviceLogicID,
                 remoteDevicePhysicID);
-            CHK_RET(hrtDisableP2P(localDeviceLogicID, remoteDevicePhysicID));
+            hrtDisableP2P(localDeviceLogicID, remoteDevicePhysicID);
         }
         iterLocalDevice[remoteDevicePhysicID].status = P2PStatus::P2P_STATUS_DISABLED;
     }
