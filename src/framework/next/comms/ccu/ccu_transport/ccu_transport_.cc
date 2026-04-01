@@ -182,6 +182,7 @@ HcclResult CcuTransport::CheckSocketStatus()
         return HcclResult::HCCL_SUCCESS; // 操作成功，保持当前状态
     }
     EXCEPTION_HANDLE_END
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuTransport::StatusMachine()
@@ -278,7 +279,7 @@ HcclResult CcuTransport::SendDataSize()
 
     // 发送数据包尺寸
     EXCEPTION_HANDLE_BEGIN
-    socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[CcuTransport::%s] Send size[%u] of data success. [%zu] bytes sent.",
         __func__, sendSize, sizeof(sendSize));
@@ -289,7 +290,7 @@ HcclResult CcuTransport::RecvDataSize()
 {
     // 接收数据包尺寸
     EXCEPTION_HANDLE_BEGIN
-    socket->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
+    socket_->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[CcuTransport::%s] Receive size[%u] of data success. [%zu] bytes received.",
         __func__, exchangeDataSize_, sizeof(exchangeDataSize_));
@@ -663,23 +664,23 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
 {
     HCCL_INFO("[CcuTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
     sendData_.clear();
-    BinaryStream sendStream;
+    Hccl::BinaryStream sendStream;
     CHK_RET(BufferInfoPack(sendStream, bufferVecTemp));
     sendStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
     EXCEPTION_HANDLE_BEGIN
-    socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[CcuTransport][UpdateMemInfo] Send size[%u] of data success. [%zu] bytes sent.",
         __func__, sendSize, sizeof(sendSize));
     CHK_RET(CheckSocketStatus());
-    CHK_RET(RecvDataSize())
+    CHK_RET(RecvDataSize());
     CHK_RET(CheckSocketStatus());
     CHK_RET(SendConnAndTransInfo());
     CHK_RET(CheckSocketStatus());
     CHK_RET(RecvConnAndTransInfo());
     CHK_RET(CheckSocketStatus());
-    BinaryStream recvStream(recvData_);
+    Hccl::BinaryStream recvStream(recvData_);
     CHK_RET(BufferInfoUnpack(recvStream));
     locBufferInfos_.insert(locBufferInfos_.end(), bufferVecTemp.begin(), bufferVecTemp.end());
     return HcclResult::HCCL_SUCCESS;
