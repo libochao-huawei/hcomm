@@ -28,7 +28,8 @@ AicpuTsHccsEndPoint::AicpuTsHccsEndPoint(const EndpointDesc &endpointDesc)
 AicpuTsHccsEndPoint::~AicpuTsHccsEndPoint()
 {
     if (!devIpAddr_.IsInvalid()) {
-        hccl::GlobalNetDevMgr::GetInstance().UnRefNetDevCtx(NicType::DEVICE_NIC_TYPE, devIpAddr_, server_port_);
+        hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).UnRefNetDevCtx(
+            NicType::DEVICE_NIC_TYPE, devIpAddr_, server_port_);
     }
 }
 
@@ -41,18 +42,16 @@ HcclResult AicpuTsHccsEndPoint::Init()
         return HCCL_E_NOT_SUPPORT;
     }
 
-    // for calling ra interface
-    CHK_RET(GlobalNetDevMgr::GetInstance().InitNic());
-
     u32 devPhyId = endpointDesc_.loc.device.devPhyId;
+
     std::vector<HcclIpAddress> deviceIp;
-    CHK_RET(hrtRaGetDeviceIP(devPhyId, deviceIp));
+    CHK_RET(GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).GetDeviceIP(devPhyId, deviceIp));
     devIpAddr_ = deviceIp[0];
     HCCL_INFO("[AicpuTsHccsEndPoint]devicePhysicID[%u] devIpAddr_[%s] ",
         devPhyId, devIpAddr_.GetReadableAddress());
 
     // will not do ServerInit if server_port_ is 0
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance().RefNetDevCtx(
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).RefNetDevCtx(
         NicType::DEVICE_NIC_TYPE, devIpAddr_, server_port_, netDevCtx_));
 
     EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<HccsRegedMemMgr>(netDevCtx_), return HCCL_E_PARA);
@@ -61,13 +60,13 @@ HcclResult AicpuTsHccsEndPoint::Init()
 
 HcclResult AicpuTsHccsEndPoint::ServerSocketListen(const uint32_t port)
 {
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance().ServerInit(netDevCtx_, port));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerSocketListen(netDevCtx_, port));
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsHccsEndPoint::ServerSocketStopListen(const uint32_t port)
 {
-    CHK_RET(hccl::GlobalNetDevMgr::GetInstance().ServerDeInit(netDevCtx_, port));
+    CHK_RET(hccl::GlobalNetDevMgr::GetInstance(endpointDesc_.loc.device.devPhyId).ServerSocketStopListen(netDevCtx_, port));
     return HCCL_SUCCESS;
 }
 

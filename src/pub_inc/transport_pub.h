@@ -242,6 +242,7 @@ public:
     LinkTypeInServer specifyLink{LinkTypeInServer::RESERVED_LINK_TYPE}; // 指定链路类型
     bool enableAtomicWrite{false}; // 使能atomicWrite
     QueueDepthAttr queueDepthAttr{}; // QP深度配置
+    bool isSkipExchangeIndMem{false};
     TagMachinePara() {}
 
     TagMachinePara(const struct TagMachinePara &that)
@@ -283,6 +284,7 @@ public:
         specifyLink = that.specifyLink;
         enableAtomicWrite = that.enableAtomicWrite;
         queueDepthAttr = that.queueDepthAttr;
+        isSkipExchangeIndMem = (that.isSkipExchangeIndMem);
     }
 
     struct TagMachinePara &operator=(struct TagMachinePara &that)
@@ -324,6 +326,7 @@ public:
             specifyLink = that.specifyLink;
             enableAtomicWrite = that.enableAtomicWrite;
             queueDepthAttr = that.queueDepthAttr;
+            isSkipExchangeIndMem = (that.isSkipExchangeIndMem);
         }
 
         return *this;
