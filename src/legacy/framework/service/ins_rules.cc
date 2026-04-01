@@ -341,7 +341,7 @@ void Interpret(const InsLocalPostTo &insLocalPostTo, CommunicatorImpl &comm, con
 
     if (insLocalPostTo.GetNotifyType() == NotifyType::NORMAL) {
         auto notify
-            = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
+            = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalPostTo.GetPostQid(), insLocalPostTo.GetWaitQid(),
                                  insLocalPostTo.GetTopicId(), insLocalPostTo.Describe());
         notify->Post(stream);
         notifyID = notify->GetId();
@@ -375,7 +375,7 @@ void Interpret(const InsLocalWaitFrom &insLocalWaitFrom, CommunicatorImpl &comm,
     u64 notifyID;
 
     if (insLocalWaitFrom.GetNotifyType() == NotifyType::NORMAL) {
-        auto notify = RtsNotifyGet(comm.GetQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
+        auto notify = RtsNotifyGet(comm.GetCcuQueueNotifyManager(), insLocalWaitFrom.GetPostQid(),
                                                      insLocalWaitFrom.GetWaitQid(), insLocalWaitFrom.GetTopicId(),
                                                      insLocalWaitFrom.Describe());
         notify->Wait(stream, taskConfig.GetNotifyWaitTime());

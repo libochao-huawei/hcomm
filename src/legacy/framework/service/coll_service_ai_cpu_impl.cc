@@ -443,7 +443,7 @@ constexpr u8 QUEUE_NOTIFY_TOPIC_ID_POS = 2;
 
 void CollServiceAiCpuImpl::AllocQueueNotify(std::vector<std::tuple<QId, QId, u32>> &queueNotifyReq) const
 {
-    QueueNotifyManager &queueNotifyMgr = comm->GetQueueNotifyManager();
+    QueueNotifyManager &queueNotifyMgr = comm->GetAicpuQueueNotifyManager();
 
     std::for_each(queueNotifyReq.begin(), queueNotifyReq.end(), [&queueNotifyMgr](auto item) {
         queueNotifyMgr.ApplyFor(std::get<QUEUE_NOTIFY_POST_QID_POS>(item), std::get<QUEUE_NOTIFY_WAIT_QID_POS>(item),
@@ -653,7 +653,7 @@ std::vector<char> CollServiceAiCpuImpl::PackOpData(const std::string &opTag, con
 
     resType = AicpuResMgrType::QUEUE_NOTIFY;
     SetModuleDataName(dataVec[resType], "QueueNotifyManager");
-    dataVec[resType].data = comm->GetQueueNotifyManager().GetPackedData();
+    dataVec[resType].data = comm->GetAicpuQueueNotifyManager().GetPackedData();
     HCCL_INFO("CollServiceAiCpuImpl::PackOpData: GetResMgr %s Data", resType.Describe().c_str());
 
     resType = AicpuResMgrType::QUEUE_WAIT_GROUP_CNT_NOTIFY;
