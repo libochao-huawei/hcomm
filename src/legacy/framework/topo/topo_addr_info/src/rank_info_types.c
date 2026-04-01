@@ -80,6 +80,15 @@ void NetLayerAddAddr(NetLayer *layer, const Addr *addr)
     layer->addr_count++;
 }
 
+void NetLayerSetAddrAt(NetLayer *layer, const Addr *addr, int index)
+{
+    if(index < 0 || index >= layer->addr_count) {
+        return;
+    }
+    (void)memcpy_s(&layer->rank_addr_list[index], sizeof(Addr), addr, sizeof(Addr));
+    layer->addr_count++;
+}
+
 char* NetLayerToString(const NetLayer *layer)
 {
     const size_t max_buffer_size = 102400;
