@@ -23,7 +23,7 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     u32 rankSize_2P = 2;
  	u32 rankSize_4P = 4;  
-    HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
+    HcclDetourType detourType = HcclDetourType::HCCL_DETOUR_DISABLE;
     CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != rankSize_2P)||
         (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != rankSize_4P),
         HCCL_WARNING("[Algo][AllGatherAutoSelector] detourType not match for rankSize."),
