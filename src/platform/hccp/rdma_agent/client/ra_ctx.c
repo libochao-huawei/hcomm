@@ -625,7 +625,7 @@ STATIC int QpQueryBatchParamCheck(void *qpHandle[], unsigned int *num, unsigned 
             i, qpHandleTmp->phyId, phyId), -EINVAL);
         CHK_PRT_RETURN(qpHandleTmp->ctxHandle == NULL || qpHandleTmp->ctxHandle->ctxOps == NULL ||
             qpHandleTmp->ctxHandle->ctxOps->raCtxQueryQpBatch == NULL,
-            hccp_err("[send][ra_qp]ctx_handle or ctx_ops or ra_ctx_query_qp_batch is NULL"), -EINVAL);
+            hccp_err("[query][ra_qp]ctx_handle or ctx_ops or ra_ctx_query_qp_batch is NULL"), -EINVAL);
 
         ids[i] = qpHandleTmp->id;
     }
