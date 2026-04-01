@@ -84,6 +84,17 @@ HcclResult ReduceScatterVOperator::SelectAlgfor91093(const OpParam& param, std::
             cclBufferManager_.GetInCCLbufferSize(), dataSize);
     }
 
+    // 检查严格模式
+    if (IsNeedStrictMode(param)) {
+        CHK_PRT_RET(!CheckStrictCondition(param), 
+            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
+            HCCL_E_NOT_SUPPORT);
+
+        algName = "ReduceScatterVOrderPreservedFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] ReduceScatterV SelectAlgfor91093 algName [%s].", algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
     if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_) {
         HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support mode, multiModuleDiffDeviceNumMode_[%u], "
             "multiSuperPodDiffServerNumMode_[%u]", multiModuleDiffDeviceNumMode_, multiSuperPodDiffServerNumMode_);
