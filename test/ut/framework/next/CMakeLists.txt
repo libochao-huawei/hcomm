@@ -7,13 +7,11 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
+# 注意a3与a5测试用例拆分不同可执行文件
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    host/ut_cpu_roce_endpoint.cc
-    host/ut_host_cpu_roce_channel.cc
-    host/ut_host_rdma_connection.cc
-    host/ut_server_socket_manager.cc
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
@@ -34,6 +32,10 @@ set(src_to_test_list
     coll_comms/communicator/ut_coll_comm_test.cc
     comms/endpoint_pairs/channels/ut_channel_process_test.cc
     coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
+    host/ut_cpu_roce_endpoint.cc
+    host/ut_host_cpu_roce_channel.cc
+    host/ut_host_rdma_connection.cc
+    host/ut_server_socket_manager.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
 )
 
@@ -79,3 +81,53 @@ add_dependencies(hccl_utest_test_next_resource hccl_llt)
 
 enable_testing()
 add_test(NAME hccl_utest_test_next_resource COMMAND hccl_utest_test_next_resource)
+
+set(src_to_a3_test_list
+    main.cc
+    hccl_api_base_test.cc
+    coll_comms/rank/comm_mems/test_getHcclBuffer_a3_api.cc
+)
+
+add_executable(hccl_utest_test_next_resource_a3 ${src_to_a3_test_list})
+
+#头文件搜索路径
+target_include_directories(hccl_utest_test_next_resource_a3 PRIVATE
+    ${UT_COMMON_INCLUDE_LIST}
+)
+ 
+target_compile_definitions(hccl_utest_test_next_resource_a3 PRIVATE
+    _GLIBCXX_USE_CXX11_ABI=0
+    google=ascend_private
+    -DOPEN_HCCL_TEST
+    ORION_MODE
+    OPEN_BUILD_PROJECT
+)
+ 
+target_compile_options(hccl_utest_test_next_resource_a3 PRIVATE
+    -U_FORTIFY_SOURCE
+    -fno-var-tracking-assignments
+    -Os
+    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
+)
+ 
+target_link_directories(hccl_utest_test_next_resource_a3 PRIVATE
+    ${ASCEND_CANN_PACKAGE_PATH}/lib64
+)
+
+target_link_libraries(hccl_utest_test_next_resource_a3 PRIVATE
+    $<BUILD_INTERFACE:intf_pub>
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
+    -pthread
+    hccl_llt
+    -Wl,--whole-archive
+    -Wl,--no-whole-archi
+    -lgcov
+    -lrt
+    -ldl
+)
+
+add_dependencies(hccl_utest_test_next_resource_a3 hccl_llt)
+
+enable_testing()
+add_test(NAME hccl_utest_test_next_resource_a3 COMMAND hccl_utest_test_next_resource_a3)
