@@ -36,6 +36,7 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     dfxOpInfoOnce->tag_ = Hccl::OpTypeToString(collOp.opType);
     dfxOpInfoOnce->beginTime_ = dfxOpInfo.beginTime;
     dfxOpInfoOnce->cpuWaitAicpuNotifyId_ = dfxOpInfo.cpuWaitAicpuNotifyId;
+
     return dfxOpInfoOnce;
 }
 
