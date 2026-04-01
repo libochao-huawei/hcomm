@@ -39,7 +39,7 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& 
 HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
-    CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+    CHK_RET(static_cast<HcclResult>(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
     channelHandles_.push_back(channels[0]);
     return HCCL_SUCCESS;
 }

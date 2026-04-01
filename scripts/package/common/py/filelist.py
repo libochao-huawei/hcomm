@@ -23,6 +23,7 @@ from typing import Callable, Iterator, List, NamedTuple, Set, Tuple
 
 from .utils.pkg_utils import (TOP_DIR, FilelistError, GenerateFilelistError,
                               conditional_apply, pairwise, swap_args, config_feature_to_string)
+from .utils import pkg_utils
 from .utils.funcbase import (any_, constant, dispatch, identity, invoke, pipe, side_effect, star_apply)
 from .utils.comm_log import CommLog
 
@@ -494,7 +495,7 @@ def generate_filelist(filelist: FileList, filename: str):
         )
     )
     content = '\n'.join(content_list)
-    filepath = os.path.join(TOP_DIR, "build", filename)
+    filepath = os.path.join(pkg_utils.get_build_dir(), filename)
     try:
         with open(filepath, 'w', encoding='utf-8') as file:
             file.write(content)

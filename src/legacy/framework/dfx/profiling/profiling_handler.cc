@@ -123,7 +123,8 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     reporterData.threadId = SalGetTid();
     reporterData.beginTime = beginTime;
     reporterData.endTime = endTime;
-    reporterData.itemId = GetProfHashId(taskType.Describe().c_str(), taskType.Describe().length());
+    const std::string proName(GetProfTaskOpNameV2(taskType));
+ 	reporterData.itemId = GetProfHashId(proName.c_str(), proName.length());
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskApi, reporterData data is: level[%u], type[%u], threadId[%u], "
               "beginTime[%llu], endTime[%llu], itemId[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.beginTime,

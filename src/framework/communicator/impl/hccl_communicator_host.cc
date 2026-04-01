@@ -3711,6 +3711,7 @@ namespace hccl
         for (u32 i = 0; i < userRankSize_; i++) {
             inputSize += counts[i] * perDataSize;
         }
+        CHK_PRT_RET(inputSize == 0, HCCL_WARNING("inputSize is 0, return ReduceScatterV success"), HCCL_SUCCESS);
 
         OpParam opParam;
         opParam.tag = tag;
@@ -4182,6 +4183,10 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][SplitBsrData] rankSize %u", userRankSize_);
         HcclSendRecvItem* sendRecvInfo = opParam.BatchSendRecvDataDes.sendRecvItemsPtr;
         for (u32 i = 0; i < itemNum; i++) {
+            if (sendRecvInfo->buf == nullptr) {
+                sendRecvInfo++;
+                continue;
+            }
             if (remoteTransportMap_[sendRecvInfo->remoteRank] == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
                 //host 侧需要下发的数据
                 HCCL_INFO("[HcclCommunicator][SplitBsrData]host localRank %u remoteRank %u type %d sendRecvType %d count %llu",
@@ -4460,6 +4465,65 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::ReAllocScratchMemForAlltoall(HcclCMDType opType, const OpParam &opParam,
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse)
+    {
+        if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
+            !IsForceAicpuOpBaseMode(opParam, opType)) {
+            if (resRequest.scratchMemSize > 0) {
+                algResResponse.scratchMem = GetWorkspaceScracthMem(opParam.tag, resRequest.scratchMemSize);
+            }
+            HCCL_DEBUG("[%s] WorkflowMode set for workspace opType[%u] tag[%s]", __func__, opType, opParam.tag.c_str());
+        } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE ||
+            IsForceAicpuOpBaseMode(opParam, opType)) {
+            CHK_RET(AllocOpBaseModeScratchMem(opType, opParam, resRequest, algResResponse));
+            HCCL_DEBUG("[%s] WorkflowMode set for opType[%u] tag[%s]", __func__, opType, opParam.tag.c_str());
+        } else {
+            HCCL_ERROR("[%s] WorkflowMode is not set for opType[%u] tag[%s]", __func__, opType, opParam.tag.c_str());
+            return HCCL_E_PARA;
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::HandleExistAlgResource(const std::string& newTag, const std::string& algName,
+        HcclCMDType opType, const OpParam& opParam, std::unique_ptr<CollAlgOperator>& algOperator,
+        bool selectAivAlg, bool aicpuUnfoldModeFor910B, bool needRecreateAlltoallComm)
+    {
+        if (needRecreateAlltoallComm) {
+            CHK_RET(hcclStreamSynchronize(opParam.stream.ptr(), commConfig_.GetConfigExecTimeOut()));
+
+            AlgResourceRequest resRequest;
+            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+
+            // 释放旧内存防止泄漏
+            CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
+
+            if (aicpuUnfoldModeFor910B) {
+                CHK_RET(ReAllocScratchMemForAlltoall(opType, opParam, resRequest, resMap_[newTag]));
+                isContextLaunched_ = true;
+            } else {
+                CHK_RET(RecordOpPara(opType, opParam));
+                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
+                CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+
+                if (!isHaveCpuRank_) {
+                    if (isUseRankPort_) {
+                        std::vector<u32>& nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+                        std::vector<u32>& vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
+                        Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(
+                            isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
+                    }
+                    CHK_RET(RegisterToHeartBeat());
+                }
+            }
+        } else {
+            DeviceMem tinySendRecvMem;
+            CHK_RET(implAlg_->GetTinyMem(tinySendRecvMem));
+            CHK_RET(CalcTinySendRecvMem(opParam, resMap_[newTag], tinySendRecvMem));
+        }
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::ExecOpAlltoAll(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
         CHK_PRT_RET(isInvalidComm_,
@@ -4566,6 +4630,9 @@ namespace hccl
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
         InsertNewTagToTagMap(newTag, opParam.tag);
+        bool aicpuUnfoldModeFor910B =
+            deviceType_ == DevType::DEV_TYPE_910B && opParam.aicpuUnfoldMode && algName == "RunAlltoAllVStaged";
+        bool needRecreateAlltoallComm = false;
         if (resMap_.find(newTag) == resMap_.end()) {
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
@@ -4590,36 +4657,13 @@ namespace hccl
                 CHK_RET(RegisterToHeartBeat());
             }
             CHK_RET(UpdateZeroCopy(opParam, resMap_[newTag]));
-        }
-        else
-        {
-            bool needRecreateAlltoallComm = false;
+        } else {
             CHK_RET(alltoAllOperator->CheckNeedRecreateComm(algName, opParam, resMap_[newTag].scratchMem.size(),
                                                             needRecreateAlltoallComm));
             HCCL_INFO("resMap_ find this newTag[%s], and need to judge whether recreate comm [%d]", newTag.c_str(),
                       needRecreateAlltoallComm);
-            if (needRecreateAlltoallComm) {
-                CHK_RET(hcclStreamSynchronize(opParam.stream.ptr(), commConfig_.GetConfigExecTimeOut()));
-                AlgResourceRequest resRequest;
-                CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-                // alltoall算子重分配内存前需清除scratchMMem，防止内存泄漏
-                CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
-                CHK_RET(RecordOpPara(opType, opParam));
-                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
-                CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
-                if (!isHaveCpuRank_) {
-                    if (isUseRankPort_) {
-                        std::vector<u32> &nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-                        std::vector<u32> &vnicPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
-                        Heartbeat::GetInstance(deviceLogicId_).SetRankPortInfo(isUseRankPort_, nicPorts, vnicPorts, commPortConfig_.devPortSwitchOn);
-                    }
-                    CHK_RET(RegisterToHeartBeat());
-                }
-            } else {
-                DeviceMem tinySendRecvMem;
-                CHK_RET(implAlg_->GetTinyMem(tinySendRecvMem));
-                CHK_RET(CalcTinySendRecvMem(opParam, resMap_[newTag], tinySendRecvMem));
-            }
+            CHK_RET(HandleExistAlgResource(newTag, algName, opType, opParam, algOperator,
+                selectAivAlg, aicpuUnfoldModeFor910B, needRecreateAlltoallComm));
         }
         auto &algRes = resMap_[newTag];
 
@@ -4691,7 +4735,7 @@ namespace hccl
             };
             return aicpuAlgs.count(algName) > 0;
         };
-        if (opParam.aicpuUnfoldMode && isSupportAicpuAlg(algName)) {
+        if (opParam.aicpuUnfoldMode && (isSupportAicpuAlg(algName) || aicpuUnfoldModeFor910B)) {
             isInplaceStatus_ = 0;
             inPlaceSupportRetryStatus_ = InplaceSupportRetryStatus::INPLACE_STATUS_END;
             // algOperator->SupportRetryWithInplaceCheck 依赖 algOperator->SetRetryEnable 才能正确返回是否支持inplace
@@ -4701,7 +4745,7 @@ namespace hccl
             HCCL_INFO("[HcclCommunicator][ExecOp] aicpu Unfold mode algType[%s], inplaceSupportRetry_[%d], opType[%d], "
                       "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d]",
                       AlgTypeToStr(algType).c_str(), inplaceSupportRetry_, opType, isInplaceStatus_, inPlaceSupportRetryStatus_);
-            CHK_RET(OrchestrateAicpu(opType, algName, opParam, algRes, newTag, algType, isCustom));
+            CHK_RET(OrchestrateAicpu(opType, algName, opParam, algRes, newTag, algType, isCustom, false, needRecreateAlltoallComm));
         } else {
             // HOST展开aclgraph场景，capture从流
             if (!selectAivAlg) {
@@ -4731,7 +4775,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RecordOpPara(HcclCMDType opType, OpParam &opParam)
+    HcclResult HcclCommunicator::RecordOpPara(HcclCMDType opType, const OpParam &opParam)
     {
         u32 aivCoreLimit = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ? numBlocks_ : 0;
         u8 deterministic = implAlg_->GetDeterministicConfig();
@@ -6052,7 +6096,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::OrchestrateAicpu(const HcclCMDType &opType, const std::string &algName,
                                                   const OpParam &param, const AlgResourceResponse &algResource, const std::string &newTag, AlgType algType,
-                                                  bool isCustom, bool needIncreLink)
+                                                  bool isCustom, bool needIncreLink, bool needRecreateAlltoallComm)
     {
         uint64_t streamMode = 0;
         CHK_RET(hrtStreamGetMode(param.stream.ptr(), &streamMode));
@@ -6068,13 +6112,14 @@ namespace hccl
             CHK_RET(GetReportHcclMC2Info(tmpStream, algResource.slaveDevStreams));
             CHK_RET(SetAicpuUnfoldFlag());
         } else if (newTagResAlloced_.find(newTag) == newTagResAlloced_.end() ||
-                (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && needIncreLink)) {
+                (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && needIncreLink) || needRecreateAlltoallComm) {
             // 2、通信域内非首次，但是有新的newTag，查看是否需要补充资源。
             PetersonLockGuard guard(hostDeviceLock_.get());
             CHK_PRT_RET(guard.IsLockFailed(),
                         HCCL_ERROR("[HcclCommunicator][OrchestrateAicp] hostDeviceLock lock failed"), HCCL_E_INTERNAL);
             CHK_RET(AicpuResourceRefresh(algResource, newTag, opType));
         }
+        HCCL_DEBUG("%s isContextLaunched[%u], needRecreateAlltoallComm[%u]", __func__, isContextLaunched_, needRecreateAlltoallComm);
         bool isUsedMainStream = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
         // inplace支持重执行的stream资源处理逻辑
         bool isHcclOpInplace = IsHcclOpInplace(opType, param, userRank_, userRankSize_, isInplaceStatus_);
@@ -8963,7 +9008,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle)
     {
         CHK_PRT_RET(superPodNum_ > 1, 
             HCCL_ERROR("[RegisterWindow] Cross-SuperNode not support symmetric memory"), HCCL_E_NOT_SUPPORT);
@@ -8975,13 +9020,13 @@ namespace hccl
         return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);
     }
 
-    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
+    HcclResult HcclCommunicator::DeregisterWindow(HcclCommSymWindow winHandle)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->DeregisterSymmetricMem(winHandle);
     }
 
-    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));

@@ -60,13 +60,12 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t *e
     char net_instance_id[MAX_INSTANCE_ID_LEN] = {0};
     get_server_id(server_id, sizeof(server_id));
     // 标卡没4个NPU一组， 可分多组， 标卡机头无单独的server id，因此使用mac地址作为server id 和组ID组合起来作为mesh域的ID
-    int ret = sprintf_s(net_instance_id, sizeof(net_instance_id), "%s_%d", server_id, (npu_id / CARD_4P_MESH_NUM));
+    int ret = sprintf_s(net_instance_id, sizeof(net_instance_id), "%s", server_id);
     if (ret < 0) {
         return -1;
     }
     NetLayerInit(layer, 0, net_instance_id);
     NetLayerSetNetType(layer, NET_TYPE_MESH);
-    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
     for (size_t i = 0; i < eid_cnt; i++) {
         int portId = UrmaEidGetPortId(&eid_list[i].eid);
         if (portId > MAX_MESH_PORT_ID) {
@@ -105,7 +104,6 @@ static int ProcessLayerMesh2P(int npu_id, NetLayer *layer, dcmi_urma_eid_info_t 
     }
     NetLayerInit(layer, 0, net_instance_id);
     NetLayerSetNetType(layer, NET_TYPE_MESH);
-    hal_get_eid_list_by_phy_id(npu_id, eid_list, &eid_cnt);
     for (size_t i = 0; i < eid_cnt; i++) {
         int portId = UrmaEidGetPortId(&eid_list[i].eid);
         // 2P互联使用PortGroup EID
@@ -137,7 +135,7 @@ int GetCardRankInfo(int phyId, unsigned int mainboardId, void *buf, size_t* len)
     NetLayer layer_mesh;
     NetLayer layer_roce;
     RootInfoInit(&rootinfo);
-    RankInit(&rank, phyId, phyId % 4);
+    RankInit(&rank, phyId, phyId);
     TopoGetFilePath(mainboardId, rootinfo.topo_file_path, MAX_TOPO_PATH_LEN);
 
     dcmi_urma_eid_info_t eid_list[MAX_EID_NUM] = {0};

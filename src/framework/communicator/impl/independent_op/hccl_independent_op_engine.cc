@@ -219,6 +219,9 @@ HcclResult HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *noti
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
 {
     CHK_PTR_NULL(comm);
@@ -252,3 +255,6 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
     return HCCL_SUCCESS;
 }
+#ifdef __cplusplus
+}
+#endif
