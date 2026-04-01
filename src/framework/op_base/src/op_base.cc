@@ -1018,6 +1018,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             void *commV2 = nullptr;
+            // config->hcclOpExpansionMode = 2;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
             u32 rankNum = 0;
             CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
