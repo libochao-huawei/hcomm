@@ -38,12 +38,14 @@ public:
     // 初始化通信域
     HcclResult Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config);
 
+    inline CommConfig& GetCommConfig() { return config_;}
     inline RankGraph* GetRankGraph() { return rankgraph_.get(); }
     inline CommEngineResMgr* GetCommEngineResMgr() { return commEngineResMgr_.get(); }
     inline ContextManager* GetContextManager() { return contextMgr_.get(); }
     inline CommMemMgr* GetCommMemMgr() { return commMemMgr_.get(); }
     inline ChannelManager* GetChannelManager() { return channelMgr_.get(); }
     void *GetCommunicatorV2() { return comm_; }
+
     // 获取MyRank
     MyRank* GetMyRank() const { return myRank_.get(); }
     

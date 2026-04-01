@@ -55,8 +55,10 @@ uint64_t CcuTempAllGatherMesh1D2Die::GetMaxSliceSize() const
 HcclResult CcuTempAllGatherMesh1D2Die::GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
                                                 const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllGatherMesh1D2Die] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
-
     CcuInstructionAllGatherMesh1D2Die ccuInsAllGatherMesh1D2Die;
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);

@@ -33,15 +33,17 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
+    HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
 private:
+    HcclResult Makebufs(void **memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
     HcclResult BuildAttr();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
-    HcclResult BuildBuffer();
+    HcclResult BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult BuildUbMemTransport();
     HcclResult BuildSocket();
 
@@ -58,6 +60,7 @@ private:
     EndpointDesc                                                remoteEp_{};
     uint32_t                                                    notifyNum_{0};
     std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
+    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufsTemp{}; // channel 复用时暂存新增 buffer
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
@@ -65,6 +68,7 @@ private:
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
+    std::vector<Hccl::LocalRmaBuffer *>                         bufferVecTemp_; // channel 复用时暂存 rmaBuffer
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};

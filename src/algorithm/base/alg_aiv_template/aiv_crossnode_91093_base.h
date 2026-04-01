@@ -29,6 +29,59 @@ input, output, rank, rankSize, len, \
 dataType, reduceOp, root, tag, numBlocks, isOpBase, \
 step, deterministic
 
+// __sk__函数参数 A3
+struct SkArgsStructA3 {
+    GM_ADDR buffIn0; GM_ADDR buffIn1; GM_ADDR buffOut0; GM_ADDR buffOut1;
+    GM_ADDR bufferSize; GM_ADDR headCountMem; GM_ADDR tailCountMem; GM_ADDR addOneMem;
+    GM_ADDR isEnableCounter; GM_ADDR input; GM_ADDR output;
+    uint32_t rank;
+    uint32_t rankSize;
+    uint64_t len;
+    uint32_t dataType;
+    uint32_t reduceOp;
+    uint32_t root;
+    int32_t tag;
+    uint32_t numBlocks;
+    alignas(4) bool isOpBase;
+    int32_t step;
+    uint32_t deterministic;
+};
+
+// __sk__定义的函数参数
+#define SK_BIND_FUNC_ARGS_A3 \
+    __gm__ struct SkArgsStructA3* args
+
+// 将__sk__参数转成__aicore__参数 A3
+#define CONVERT_SK_PARAM_TO_KERNEL_ARGS_A3 \
+GM_ADDR buffIn0 = args->buffIn0; GM_ADDR buffIn1 = args->buffIn1; \
+GM_ADDR buffOut0 = args->buffOut0; GM_ADDR buffOut1 = args->buffOut1; \
+GM_ADDR bufferSize = args->bufferSize; GM_ADDR headCountMem = args->headCountMem; \
+GM_ADDR tailCountMem = args->tailCountMem; GM_ADDR addOneMem = args->addOneMem; \
+GM_ADDR isEnableCounter = args->isEnableCounter; \
+GM_ADDR input = args->input; GM_ADDR output = args->output; \
+uint32_t rank = args->rank; uint32_t rankSize = args->rankSize; \
+uint64_t len = args->len; uint32_t dataType = args->dataType; \
+uint32_t reduceOp = args->reduceOp; uint32_t root = args->root; \
+int32_t tag = args->tag; uint32_t numBlocks = args->numBlocks; \
+bool isOpBase = args->isOpBase; int32_t step = args->step; \
+uint32_t deterministic = args->deterministic
+
+// A3 sk 导出函数
+#define SK_BIND_FUNC_DEF_A3(kernel_name, postfix) \
+extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS_A3) \
+{ \
+    CONVERT_SK_PARAM_TO_KERNEL_ARGS_A3; \
+    kernel_name##_inner(KERNEL_ARGS_CALL_A3); \
+}
+
+// A3 Global 导出函数
+#define GLOBAL_FUNC_DEF_A3(kernel_name) \
+extern "C" __global__ __aicore__ void kernel_name(KERNEL_ARGS_DEF_A3) \
+{ \
+    kernel_name##_inner(KERNEL_ARGS_CALL_A3); \
+} \
+EXPORT_AIV_META_INFO(kernel_name)
+
 constexpr uint32_t SIZE_OF_INT32 = 4;
 
 class AivCrossNode91093Base {

@@ -33,7 +33,7 @@ private:
     std::vector<CcuRep::Variable> input_;
     std::vector<CcuRep::Variable> output_;
     std::vector<CcuRep::Variable> token_;
-    CcuRep::Variable offSet_;
+    CcuRep::Variable offset_;
     CcuRep::Variable sliceSize_;
     GroupOpSize localGoSize_;
 };

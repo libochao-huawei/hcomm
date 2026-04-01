@@ -34,7 +34,7 @@ string TaskInfo::GetAlgTypeName() const
         HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "NULL";
     }
-    return this->dfxOpInfo_->algType_.Describe();
+    return this->dfxOpInfo_->algType_;
 }
 
 string TaskInfo::GetBaseInfo() const

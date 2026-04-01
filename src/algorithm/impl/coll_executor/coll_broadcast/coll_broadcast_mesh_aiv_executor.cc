@@ -50,7 +50,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSi
         HCCL_ERROR("[CollBroadcastMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
 
-    HCCL_INFO("[CollBroadcastMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollBroadcastMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, numBlocks);
     return HCCL_SUCCESS;
 }

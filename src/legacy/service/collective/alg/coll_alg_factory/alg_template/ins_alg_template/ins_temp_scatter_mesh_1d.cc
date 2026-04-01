@@ -92,6 +92,64 @@ uint64_t InsTempScatterMesh1D::GetExpandedMode() const
     return 1;
 }
 
+HcclResult InsTempScatterMesh1D::RunMeshTx(u32 myAlgRank, u32 repeatTimes, TemplateDataParams &tempAlgParams,
+    ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues)
+{
+    // root卡需要将发送的数据刷新为尾部数据长度
+    u64 sliceSize = tempAlgParams.tailSize;
+    u32 count = 0;
+    for (u32 algRank = 0; algRank < tempVTopo_[0].size(); algRank++) {
+        if (myAlgRank == algRank) {
+            continue;
+        }
+        if (tempInsQues.size() < tempVTopo_[0].size() - 1) {
+            HCCL_ERROR("tempInsQues size [%zu] is smaller than tempVTopo_[0].size() -1 [%zu]", tempInsQues.size(),
+                tempVTopo_[0].size() - 1);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        u32 peerRank = tempVTopo_[0][algRank];
+        const LinkData &linkSend = tempResLinks.at(peerRank)[0];
+        u64 srcOffset = buffInfo_.inBuffType == BufferType::SCRATCH
+                            ? buffInfo_.scratchBuffBaseOff + repeatTimes * tempAlgParams.inputRepeatStride
+                                  + algRank * tempAlgParams.inputSliceStride
+                            : repeatTimes * tempAlgParams.inputRepeatStride + algRank * tempAlgParams.inputSliceStride
+                                  + buffInfo_.inBuffBaseOff;
+        u64 dstOffset = isZeroCopy_ ? buffInfo_.outBuffBaseOff + repeatTimes * tempAlgParams.outputRepeatStride
+                                    : buffInfo_.scratchBuffBaseOff + repeatTimes * tempAlgParams.outputRepeatStride;
+        BufferType dstBuffType = isZeroCopy_ ? BufferType::OUTPUT : BufferType::SCRATCH;
+        DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
+        DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
+        SlicesList txSlicesList({srcSlice}, {dstSlice});
+        DataInfo sendData(linkSend, txSlicesList);
+        CHK_PRT_RET(Send(sendData, tempInsQues[count], 0, true, DmaMode::PUT),
+            HCCL_ERROR("[InsTempScatterMesh1D] BatchSend failed"), HcclResult::HCCL_E_INTERNAL);
+        count++;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempScatterMesh1D::RunMeshRx(u32 myAlgRank, u32 repeatTimes, TemplateDataParams &tempAlgParams,
+    ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues)
+{
+    const LinkData &linkRecv = tempResLinks.at(root_)[0];
+    u64 srcOffset = buffInfo_.inBuffType == BufferType::SCRATCH
+                        ? buffInfo_.scratchBuffBaseOff + repeatTimes * tempAlgParams.inputRepeatStride
+                              + myAlgRank * tempAlgParams.inputSliceStride
+                        : repeatTimes * tempAlgParams.inputRepeatStride + myAlgRank * tempAlgParams.inputSliceStride
+                              + buffInfo_.inBuffBaseOff;
+    u64 dstOffset = isZeroCopy_ ? buffInfo_.outBuffBaseOff + repeatTimes * tempAlgParams.outputRepeatStride
+                                : buffInfo_.scratchBuffBaseOff + repeatTimes * tempAlgParams.outputRepeatStride;
+    BufferType dstBuffType = isZeroCopy_ ? BufferType::OUTPUT : BufferType::SCRATCH;
+    // 如果本卡是最后一张卡需要将数据大小刷新为tailSize
+    u64 sliceSize = tempAlgParams.sliceSize;
+    UpdateRxSliceSize(tempAlgParams, sliceSize);
+    DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
+    DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
+    SlicesList rxSlicesList({srcSlice}, {dstSlice});
+    DataInfo recvData(linkRecv, rxSlicesList);
+    return Recv(recvData, tempInsQues[0], 0, true, DmaMode::PUT);
+}
+
 HcclResult InsTempScatterMesh1D::RunMesh(TemplateDataParams &tempAlgParams,
                     ResLinks &tempResLinks, std::vector<InsQuePtr> &tempInsQues)
 {
@@ -99,52 +157,11 @@ HcclResult InsTempScatterMesh1D::RunMesh(TemplateDataParams &tempAlgParams,
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
     for (u32 r = 0; r < tempAlgParams.repeatNum; r++) {
         if (root_ == u32(myRank_)) {
-            // root卡需要将发送的数据刷新为尾部数据长度
-            u64 sliceSize = tempAlgParams.tailSize;
-            u32 count = 0;
-            for (u32 algRank = 0; algRank < tempVTopo_[0].size(); algRank++) {
-                if (myAlgRank == algRank) {
-                    continue;
-                }
-                if (tempInsQues.size() < tempVTopo_[0].size() - 1) {
-                    HCCL_ERROR("tempInsQues size [%zu] is smaller than tempVTopo_[0].size() -1 [%zu]", tempInsQues.size(), tempVTopo_[0].size() - 1);
-                    return HcclResult::HCCL_E_INTERNAL;
-                }
-                u32 peerRank = tempVTopo_[0][algRank];
-                const LinkData &linkSend = tempResLinks.at(peerRank)[0];
-                u64 srcOffset = buffInfo_.inBuffType == BufferType::SCRATCH ?
-                                buffInfo_.scratchBuffBaseOff + r * tempAlgParams.inputRepeatStride + algRank * tempAlgParams.inputSliceStride :
-                                r * tempAlgParams.inputRepeatStride + algRank * tempAlgParams.inputSliceStride + buffInfo_.inBuffBaseOff;
-                u64 dstOffset = isZeroCopy_ ?
-                                buffInfo_.outBuffBaseOff + r * tempAlgParams.outputRepeatStride :
-                                buffInfo_.scratchBuffBaseOff + r * tempAlgParams.outputRepeatStride;
-                BufferType dstBuffType = isZeroCopy_ ? BufferType::OUTPUT : BufferType::SCRATCH;
-                DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
-                DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
-                SlicesList txSlicesList({srcSlice}, {dstSlice});
-                DataInfo sendData(linkSend, txSlicesList);
-                CHK_PRT_RET(Send(sendData, tempInsQues[count], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempScatterMesh1D] BatchSend failed"),
-                        HcclResult::HCCL_E_INTERNAL);
-                count++;
-            }
+            CHK_PRT_RET(RunMeshTx(myAlgRank, r, tempAlgParams, tempResLinks, tempInsQues),
+            HCCL_ERROR("[InsTempScatterMesh1D] RunMeshTx failed"), HcclResult::HCCL_E_INTERNAL);
         } else {
-            const LinkData &linkRecv = tempResLinks.at(root_)[0];
-            u64 srcOffset = buffInfo_.inBuffType == BufferType::SCRATCH ?
-                            buffInfo_.scratchBuffBaseOff + r * tempAlgParams.inputRepeatStride + myAlgRank * tempAlgParams.inputSliceStride :
-                            r * tempAlgParams.inputRepeatStride + myAlgRank * tempAlgParams.inputSliceStride + buffInfo_.inBuffBaseOff;
-            u64 dstOffset = isZeroCopy_ ?
-                            buffInfo_.outBuffBaseOff + r * tempAlgParams.outputRepeatStride :
-                            buffInfo_.scratchBuffBaseOff + r * tempAlgParams.outputRepeatStride;
-            BufferType dstBuffType = isZeroCopy_ ? BufferType::OUTPUT : BufferType::SCRATCH;
-            // 如果本卡是最后一张卡需要将数据大小刷新为tailSize
-            u64 sliceSize = tempAlgParams.sliceSize;
-            UpdateRxSliceSize(tempAlgParams, sliceSize);
-            DataSlice srcSlice(buffInfo_.inBuffType, srcOffset, sliceSize);
-            DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
-            SlicesList rxSlicesList({srcSlice}, {dstSlice});
-            DataInfo recvData(linkRecv, rxSlicesList);
-            CHK_PRT_RET(Recv(recvData, tempInsQues[0], 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempScatterMesh1D] BatchRecv failed"),
-                    HcclResult::HCCL_E_INTERNAL);
+            CHK_PRT_RET(RunMeshRx(myAlgRank, r, tempAlgParams, tempResLinks, tempInsQues),
+            HCCL_ERROR("[InsTempScatterMesh1D] BatchRecv failed"), HcclResult::HCCL_E_INTERNAL);
         }
     }
     return HcclResult::HCCL_SUCCESS;

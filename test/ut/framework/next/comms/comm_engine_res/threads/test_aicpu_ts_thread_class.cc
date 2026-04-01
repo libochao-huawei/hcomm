@@ -234,3 +234,28 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_When_IsNormal_Expec
     EXPECT_NE(nullptr, streamLite);
     
 }
+
+TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_Get_StreamId_Notify_Expect_Return_HCCL_SUCCESS)
+{
+    bool isDeviceSide{false};
+    MOCKER(GetRunSideIsDevice)
+        .stubs()
+        .with(outBound(isDeviceSide))
+        .will(returnValue(HCCL_SUCCESS));
+
+    AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
+    HcclResult ret = aicpuThread.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    std::string mainStr = aicpuThread.GetUniqueId();
+    GlobalMockObject::verify();
+    s32 streamId = 0;
+    u32 notifyNum = 0;
+    std::string notifyDesc;
+    ret = aicpuThread.GetStreamIdAndNotifyByUniqueId(streamId, notifyNum, notifyDesc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    AicpuTsThread mainDevThread(mainStr);
+    ret = mainDevThread.SupplementNotify(notifyNum, notifyDesc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

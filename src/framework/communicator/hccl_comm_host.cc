@@ -271,7 +271,7 @@ namespace hccl
         return communicator_->GetHeterogMode(mode);
     }
 
-     HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
+    HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
         HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
         // 不校验config，为空时配置默认加速模式
 

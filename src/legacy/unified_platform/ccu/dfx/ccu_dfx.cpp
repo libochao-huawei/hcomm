@@ -27,7 +27,8 @@ HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskP
 
         // 入参校验
         CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
-                    HCCL_ERROR("[CcuDfx][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
+                    HCCL_ERROR("[CcuDfx][GetCcuErrorMsg]deviceId[%d] error, MAX_MODULE_DEVICE_NUM[%u].", 
+                                deviceId, MAX_MODULE_DEVICE_NUM), HcclResult::HCCL_E_PARA);
 
         CcuErrorHandler::GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfo);
     );

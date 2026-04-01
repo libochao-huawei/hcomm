@@ -50,6 +50,7 @@ void AddressInfo::Deserialize(const nlohmann::json &addressInfoJson)
         THROW<InvalidParamsException>(StringFormat("addr [%.*s] length is out of range [%u] to [%u]", MAX_DISPLAY_LEN, address.c_str(), MIN_VALUE_ADDR_LENGRH, MAX_VALUE_ADDR_LENGRH));
     }
 
+    HCCL_INFO("[AddressInfo::%s] addrTypeStr is[%s]", __func__, addrTypeStr.c_str());
     if (addrTypeStr == "IPV4") {
         IPV4ToAddr(address);
     } else if (addrTypeStr == "IPV6") {
@@ -101,6 +102,7 @@ void AddressInfo::IPV4ToAddr(std::string address)
         }
        IpAddress ipAddress0(address, ipFamily);
        addr=ipAddress0;
+    HCCL_INFO("[AddressInfo::%s] IpAddress is[%s]", __func__, ipAddress0.Describe().c_str());
 }
 
 void AddressInfo::IPV6ToAddr(std::string address)

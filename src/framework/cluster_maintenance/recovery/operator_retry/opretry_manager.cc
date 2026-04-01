@@ -189,7 +189,6 @@ HcclResult OpRetryManager::SetRetryStateToWaitResume(const std::string &group, b
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     if (agentOpRetry_.find(group) != agentOpRetry_.end()) {
         agentOpRetry_[group].retryCtx->isAgentStateWaitResume_ = true;
-        agentOpRetry_[group].retryCtx->SetEnableSendRecv(false);
         while (agentOpRetry_[group].retryCtx->GetRetryState() != RETRY_STATE_AGENT_WAIT_RESUME) {
             std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
             const auto setTime = std::chrono::duration_cast<std::chrono::seconds>(curTime - startTime);
@@ -202,12 +201,10 @@ HcclResult OpRetryManager::SetRetryStateToWaitResume(const std::string &group, b
                 break;
             }
         }
-        agentOpRetry_[group].retryCtx->SetEnableSendRecv(true);
     }
 
     if (isRoot && serverOpRetry.find(group) != serverOpRetry.end()) {
         serverOpRetry[group].retryCtx->isServerStateWaitResume_ = true;
-        serverOpRetry[group].retryCtx->SetEnableSendRecv(false);
         while (serverOpRetry[group].retryCtx->GetRetryState() != RETRY_STATE_SERVER_WAIT_RESUME) {
             std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
             const auto setTime = std::chrono::duration_cast<std::chrono::seconds>(curTime - startTime);
@@ -220,7 +217,6 @@ HcclResult OpRetryManager::SetRetryStateToWaitResume(const std::string &group, b
                 break;
             }
         }
-        serverOpRetry[group].retryCtx->SetEnableSendRecv(true);
     }
     HCCL_INFO("[OpRetryManager][SetRetryStateToWaitResume]group[%s], set state to wait resume success", group.c_str());
     return HCCL_SUCCESS;
@@ -234,10 +230,12 @@ HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool is
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     if (isRoot && serverOpRetry.find(group) != serverOpRetry.end()) {
         serverOpRetry[group].retryCtx->haveCommEnableBackupLink_ = haveCommEnableBackupLink;
+        std::atomic_thread_fence(std::memory_order_seq_cst);
         serverOpRetry[group].retryCtx->isServerStateWaitResume_ = false;
     }
     if (agentOpRetry_.find(group) != agentOpRetry_.end()) {
         agentOpRetry_[group].retryCtx->haveCommEnableBackupLink_ = haveCommEnableBackupLink;
+        std::atomic_thread_fence(std::memory_order_seq_cst);
         agentOpRetry_[group].retryCtx->isAgentStateWaitResume_ = false;
     }
     while (isRoot && serverOpRetry.find(group) != serverOpRetry.end() && serverOpRetry[group].retryCtx->GetRetryState() != RETRY_STATE_SERVER_RUNNING) {

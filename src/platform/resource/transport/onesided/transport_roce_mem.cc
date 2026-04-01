@@ -321,7 +321,7 @@ HcclResult TransportRoceMem::CheckRdmaVal(void)
 HcclResult TransportRoceMem::ConnectImpl(s32 timeoutSec)
 {
     // 增加1s的超时时间防止剩余超时时间不足
-    s32 redundantTimeout = timeoutSec + 1;
+    s32 redundantTimeout = timeoutSec == INT_MAX ? timeoutSec : timeoutSec + 1;
     CHK_RET(GetRdmaHandle());
     CHK_RET(CreateCqAndQp());
     CHK_RET(CreatSignalMesg());

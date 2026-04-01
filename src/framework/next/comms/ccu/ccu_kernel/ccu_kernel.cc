@@ -67,7 +67,7 @@ CcuKernel::~CcuKernel()
 static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId)
 {
     void *channelPtr{nullptr};
-    CHK_RET(HcommChannelGet(channel, &channelPtr));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGet(channel, &channelPtr)));
     auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
     if (channelImpl == nullptr) {
         HCCL_ERROR("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel", __func__, channel);
@@ -177,7 +177,7 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
 HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const
 {
     void *channelPtr{nullptr};
-    CHK_RET(HcommChannelGet(channel, &channelPtr));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGet(channel, &channelPtr)));
     auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
     if (channelImpl == nullptr) {
         HCCL_ERROR("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel", __func__, channel);

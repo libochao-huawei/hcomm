@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 project(topoaddrinfo VERSION 1.0.0 DESCRIPTION "topo addr info generator")
 
-add_compile_options(-Wall -Wextra)
-
 add_library(topoaddrinfo SHARED
     src/hal.c
     src/topo.c
@@ -15,6 +13,24 @@ add_library(topoaddrinfo SHARED
     src/product_server.c
 )
 
+target_compile_options(topoaddrinfo PRIVATE
+     -Werror
+     -Wfloat-equal
+     -Wall
+     -fno-common
+     -fno-strict-aliasing
+     -pipe
+     -O3
+     -fstack-protector-all
+     $<$<CONFIG:Debug>:-g>
+)
+ 
+target_link_options(topoaddrinfo PRIVATE
+     -Wl,-z,relro
+     -Wl,-z,now
+     -Wl,-z,noexecstack
+     -s
+)
 
 target_include_directories(topoaddrinfo PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include

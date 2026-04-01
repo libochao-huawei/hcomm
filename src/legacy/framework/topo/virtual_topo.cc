@@ -87,6 +87,7 @@ std::vector<char> LinkData::GetUniqueId() const
 
     auto loc = localAddr_.GetUniqueId();
     auto rmt = remoteAddr_.GetUniqueId();
+    HCCL_INFO("[LinkData::%s] localAddr[%s], remoteAddr[%s].", __func__, localAddr_.Describe().c_str(), remoteAddr_.Describe().c_str());
 
     u32 offset   = result.size();
     u32 addrSize = loc.size();

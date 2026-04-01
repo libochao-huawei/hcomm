@@ -61,7 +61,7 @@ HcclResult RankGraphV1::BuildRankGraphInfo(const RankInfo_t &rankItem,
     std::vector<HcclIpAddress> addrs = rankItem.deviceInfo.deviceIp;
     for (const auto &addr : addrs) {
         EndpointDesc point;
-        CHK_RET(EndpointDescInit(&point, 1));
+        CHK_RET(static_cast<HcclResult>(EndpointDescInit(&point, 1)));
 
         // 初始化ROCE协议的基础点位信息
         if (addr.IsIPv6()) {

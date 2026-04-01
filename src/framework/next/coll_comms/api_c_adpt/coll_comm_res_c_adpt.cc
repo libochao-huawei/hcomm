@@ -36,7 +36,63 @@ using namespace hccl;
  */
 
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
-HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
+HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
+{
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::CommConfig commConfig = collComm->GetCommConfig();
+    channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
+    channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
+    channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
+    channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
+    channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaServerLevel() : commConfig.GetConfigServiceLevel();
+    HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
+        channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
+        channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
+{
+    channelDescFinal.remoteRank = channelDesc.remoteRank;
+    channelDescFinal.channelProtocol   = channelDesc.channelProtocol;
+    channelDescFinal.localEndpoint  = channelDesc.localEndpoint;
+    channelDescFinal.remoteEndpoint  = channelDesc.remoteEndpoint;
+    channelDescFinal.notifyNum  = channelDesc.notifyNum;
+    channelDescFinal.memHandles  = channelDesc.memHandles;
+    channelDescFinal.memHandleNum  = channelDesc.memHandleNum;
+
+     // 根据协议类型拷贝union中的相应成员
+    switch (channelDesc.channelProtocol) {
+        case COMM_PROTOCOL_HCCS:
+        case COMM_PROTOCOL_PCIE:
+        case COMM_PROTOCOL_SIO:
+        case COMM_PROTOCOL_UBC_CTP:
+        case COMM_PROTOCOL_UB_MEM:
+            break;
+        case COMM_PROTOCOL_ROCE:
+            return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
+        default: {
+            auto ProtocolToString = [](const CommProtocol proto) -> const char* {
+                switch (proto) {
+                    case COMM_PROTOCOL_HCCS:    return "COMM_PROTOCOL_HCCS";
+                    case COMM_PROTOCOL_PCIE:    return "COMM_PROTOCOL_PCIE";
+                    case COMM_PROTOCOL_SIO:     return "COMM_PROTOCOL_SIO";
+                    case COMM_PROTOCOL_UBC_CTP: return "COMM_PROTOCOL_UBC_CTP";
+                    case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
+                    case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
+                    default:                    return "UNKNOWN_PROTOCOL";
+                }
+            };
+            HCCL_ERROR("[%s] Unsupported protocol[%s] found in HcclChannelDesc.",
+                       __func__, ProtocolToString(channelDesc.channelProtocol));
+            return HCCL_E_PARA;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
     if (channelDesc.header.size < channelDescFinal.header.size) {
         // 需要前向兼容HcclChannelDesc，末尾部分字段不支持处理
@@ -56,36 +112,7 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
         reinterpret_cast<const uint8_t *>(&channelDesc) + sizeof(CommAbiHeader), copySize));
  
     if (channelDesc.header.version >= HCCL_CHANNEL_VERSION_ONE) {
-        channelDescFinal.remoteRank = channelDesc.remoteRank;
-        channelDescFinal.channelProtocol   = channelDesc.channelProtocol;
-        channelDescFinal.localEndpoint  = channelDesc.localEndpoint;
-        channelDescFinal.remoteEndpoint  = channelDesc.remoteEndpoint;
-        channelDescFinal.notifyNum  = channelDesc.notifyNum;
-        channelDescFinal.memHandles  = channelDesc.memHandles;
-        channelDescFinal.memHandleNum  = channelDesc.memHandleNum;
- 
-        // 根据协议类型拷贝union中的相应成员
-        switch (channelDesc.channelProtocol) {
-            case COMM_PROTOCOL_HCCS:
-            case COMM_PROTOCOL_PCIE:
-            case COMM_PROTOCOL_SIO:
-            case COMM_PROTOCOL_UBC_CTP:
-            case COMM_PROTOCOL_UB_MEM:
-                break;
-            case COMM_PROTOCOL_ROCE:
-                channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
-                channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
-                channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
-                channelDescFinal.roceAttr.tc = (channelDesc.roceAttr.tc == 0xFF) ? EnvConfig::GetExternalInputRdmaTrafficClass() : channelDesc.roceAttr.tc;
-                channelDescFinal.roceAttr.sl = (channelDesc.roceAttr.sl == 0xFF) ? EnvConfig::GetExternalInputRdmaServerLevel() : channelDesc.roceAttr.sl;
-                HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
-                    channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
-                    channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
-                break;
-            default:
-                HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.channelProtocol);
-                return HCCL_E_PARA;
-        }
+        ProcessHcclChannelDesc(channelDesc, channelDescFinal, hcclComm);
     }
  
     if (channelDesc.header.version > HCCL_CHANNEL_VERSION) {
@@ -150,7 +177,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
     for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
-        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal);
+        ret = ProcessHcclResPackReq(channelDescs[idx], channelDescFinal, hcclComm);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
                 "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),

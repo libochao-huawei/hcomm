@@ -70,13 +70,13 @@ void CcuContextAllGatherMesh1D2Die::Algorithm()
     output_.push_back(CreateVariable());
     token_.push_back(CreateVariable());
 
-    offSet_ = CreateVariable();
+    offset_ = CreateVariable();
     groupOpSize_ = CreateGroupOpSize();
 
     Load(input_[0]);
     Load(output_[virRankSize-1]);
     Load(token_[virRankSize-1]);
-    Load(offSet_);
+    Load(offset_);
     Load(groupOpSize_);
 
     for (auto t : transports) {
@@ -97,7 +97,7 @@ void CcuContextAllGatherMesh1D2Die::Algorithm()
     // 最后一个固定为本rank地址
     for (uint64_t rankIdx = 0; rankIdx < virRankSize; rankIdx++) {
         dst[rankIdx].addr = output_[rankIdx];
-        dst[rankIdx].addr += offSet_;
+        dst[rankIdx].addr += offset_;
         dst[rankIdx].token = token_[rankIdx];
     }
 

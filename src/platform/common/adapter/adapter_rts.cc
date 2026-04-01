@@ -1089,7 +1089,7 @@ HcclResult hrtIpcOpenMemory(void **ptr, const u8 *name)
         "rtOpen ipc memory fail. return[%d], para: ptr[%p], name[%s]",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *ptr, name), HCCL_E_RUNTIME);
 
-    HCCL_INFO("Call aclrtIpcMemImportByKey, return value[%d], para: ptr[%p], name[%s].", ret, ptr, name);
+    HCCL_INFO("Call aclrtIpcMemImportByKey, return value[%d], para: ptr[%p], name[%s].", ret, *ptr, name);
 
     return HCCL_SUCCESS;
 }

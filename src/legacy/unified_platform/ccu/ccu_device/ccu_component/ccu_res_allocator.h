@@ -26,7 +26,7 @@ public:
     explicit CcuResIdAllocator(const uint32_t capacity) : capacity_(capacity) {};
     CcuResIdAllocator() = default;
 
-    HcclResult Alloc(const uint32_t num, const bool consecutive, std::vector<ResInfo> &allocatedResInfos);
+    HcclResult Alloc(const uint32_t num, const bool consecutive, std::vector<ResInfo> &allocatedResInfos, const std::string &dfxInfo = "");
     HcclResult Release(const uint32_t startId, const uint32_t num);
 
     std::string Describe() const;

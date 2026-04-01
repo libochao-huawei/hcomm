@@ -488,7 +488,19 @@ HcclResult AicpuTsThread::GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &not
     iss.read(reinterpret_cast<char_t *>(&streamParam), sizeof(streamParam));
     streamId = streamParam.streamInfo.streamIds;
 
-    notifyDesc = iss.str();
+    // 序列化信息
+    std::ostringstream oss;
+    for (uint32_t idx = 0; idx < notifyNum; idx++) {
+        HcclSignalInfo notifyInfo;
+        iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
+        HCCL_INFO("[AicpuTsThread][%s]get local notify data success, resId[%u], tsId:%d, devId[%u]", __func__,
+            notifyInfo.resId,
+            notifyInfo.tsId,
+            notifyInfo.devId);
+        oss.write(reinterpret_cast<const char_t *>(&notifyInfo), sizeof(notifyInfo));
+    }
+
+    notifyDesc = oss.str();
     return HCCL_SUCCESS;
 }
 
@@ -501,20 +513,38 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
     HCCL_INFO("[%s]supplement notifyNum[%u], notifyNum_[%u]", __func__, notifyNum, notifyNum_);
 
     std::istringstream iss(notifyDesc);
-    notifys_.reserve(notifyNum);
-    for (uint32_t idx = notifyNum_; idx < notifyNum; idx++) {
-        notifys_.emplace_back(nullptr);
+    // A5 aicpu场景thread多申请一个host类型notify，用于host&device同步
+    u32 beginIdx = notifyNum_;
+    u32 endIdx = notifyNum - 1;
+    notifys_.resize(notifyNum);
+    if (devType_ == DevType::DEV_TYPE_950 && notifyNum_ > 0) {
+        beginIdx--;
+        CHK_SMART_PTR_NULL(notifys_[beginIdx]);
+        notifys_[endIdx] = std::move(notifys_[beginIdx]);
+        HCCL_INFO("[AicpuTsThread][SupplementNotify]notifyId[%u] beginIdx[%u], endIdx[%u]",
+            notifys_[endIdx]->notifyId_, beginIdx, endIdx);
+    }
+    for (uint32_t idx = 0; idx < beginIdx; idx++) {
+        HcclSignalInfo notifyInfo;
+        iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
+        HCCL_INFO("[AicpuTsThread][SupplementNotify]skip init, resId[%u], tsId:%d, devId[%u]",
+            notifyInfo.resId,
+            notifyInfo.tsId,
+            notifyInfo.devId);
+    }
+
+    for (uint32_t idx = beginIdx; idx < endIdx; idx++) {
         HcclSignalInfo notifyInfo;
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
         if (devType_ == DevType::DEV_TYPE_950) {
             CHK_RET(notifys_[idx]->InitNotifyLite(notifyInfo));
-            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], devId[%u]",
+            HCCL_INFO("[AicpuTsThread][SupplementNotify]local notifyLite init success, resId[%u], devId[%u]",
                 notifyInfo.resId, notifyInfo.devId);
         } else {
             CHK_RET(notifys_[idx]->Init(notifyInfo, notifyLoadType_));
-            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], tsId:%d, devId[%u]",
+            HCCL_INFO("[AicpuTsThread][SupplementNotify]local notifyLite init success, resId[%u], tsId:%d, devId[%u]",
                 notifyInfo.resId,
                 notifyInfo.tsId,
                 notifyInfo.devId);

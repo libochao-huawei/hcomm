@@ -25,7 +25,7 @@ HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
-        ret = HcommChannelGetNotifyNum(channel, notifyNum);
+        ret = static_cast<HcclResult>(HcommChannelGetNotifyNum(channel, notifyNum));
     }
     else {
         auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
@@ -76,6 +76,9 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
 
 HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(buffer);
+    CHK_PTR_NULL(size);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -88,9 +91,6 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
             return HCCL_SUCCESS;
         }());
 #endif
-    CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(buffer);
-    CHK_PTR_NULL(size);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CommBuffer commBuffer;
     HcclResult ret = HCCL_SUCCESS;

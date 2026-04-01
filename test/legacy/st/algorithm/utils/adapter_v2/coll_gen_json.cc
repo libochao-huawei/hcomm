@@ -506,6 +506,9 @@ HcclResult GenRankNetLayer0Node(
         for (u32 k = 0; k < g_devId2EidInfo[uRankId].size(); k++) {
             if (g_devId2EidInfo[uRankId][k].portId == strPorts) {
                 g_devId2EidInfo[uRankId][k].ipAddress = IpAddress(tmpAddr);
+                HrtDevEidInfo eidInfo;
+                eidInfo.ipAddress = IpAddress(tmpAddr);
+                g_devId2EidInfo[uRankId].push_back(eidInfo);  // 上面的eid有可能被覆盖，冗余加入个新的
             }
         }
     }

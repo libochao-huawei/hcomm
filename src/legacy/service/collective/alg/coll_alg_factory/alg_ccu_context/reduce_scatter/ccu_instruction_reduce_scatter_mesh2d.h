@@ -43,15 +43,15 @@ public:
 class CcuTaskArgReduceScatterMesh2D : public CcuTaskArg {
 public:
     explicit CcuTaskArgReduceScatterMesh2D(uint64_t inputAddr, uint64_t outputAddr, uint64_t outputSize,
-        uint64_t xAxisSize, uint64_t yAxisSize, uint64_t offSet, uint64_t token) :
+        uint64_t xAxisSize, uint64_t yAxisSize, uint64_t offset, uint64_t token) :
         inputAddr_(inputAddr), outputAddr_(outputAddr), outputSize_(outputSize), xAxisSize_(xAxisSize), yAxisSize_(yAxisSize),
-        offSet_(offSet), token_(token) {}
+        offset_(offset), token_(token) {}
     uint64_t inputAddr_;
     uint64_t outputAddr_;
     uint64_t outputSize_;
     uint64_t xAxisSize_;
     uint64_t yAxisSize_;
-    uint64_t offSet_;
+    uint64_t offset_;
     uint64_t token_;
 };
 
@@ -62,7 +62,7 @@ public:
     }
 
     void Init(std::vector<uint64_t> dimSize, uint32_t rankId, uint64_t inputAddr, uint64_t outputAddr, uint64_t axisId,
-        uint64_t outputSize, uint64_t xAxisSize, uint64_t yAxisSize, uint64_t offSet, uint64_t token, CollAlgOperator &op,
+        uint64_t outputSize, uint64_t xAxisSize, uint64_t yAxisSize, uint64_t offset, uint64_t token, CollAlgOperator &op,
         std::vector<std::vector<RankId>> &tempVTopo)
     {
         dimSize_ = dimSize;
@@ -73,7 +73,7 @@ public:
         outputSize_ = outputSize;
         xAxisSize_ = xAxisSize;
         yAxisSize_ = yAxisSize;
-        offSet_ = offSet;
+        offset_ = offset;
         token_ = token;
         op_ = op;
         tempVTopo_ = tempVTopo;
@@ -104,7 +104,7 @@ public:
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override
     {
         return std::make_unique<CcuTaskArgReduceScatterMesh2D>(inputAddr_, outputAddr_, outputSize_, xAxisSize_,
-            yAxisSize_, offSet_, token_);
+            yAxisSize_, offset_, token_);
     }
 
 private:
@@ -117,7 +117,7 @@ private:
     uint64_t outputSize_{0};
     uint64_t xAxisSize_{0};
     uint64_t yAxisSize_{0};
-    uint64_t offSet_{0};
+    uint64_t offset_{0};
     uint64_t token_{0};
     CollAlgOperator op_;
     std::vector<std::vector<RankId>> tempVTopo_;

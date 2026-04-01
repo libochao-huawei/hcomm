@@ -481,7 +481,7 @@ void CommunicatorImplLite::SetDfxOpInfo(uint64_t beginTime)
     auto dfxopInfo           = std::make_shared<DfxOpInfo>();
     dfxopInfo->op_           = currentOp;
     dfxopInfo->tag_          = currentOp.opTag;
-    dfxopInfo->algType_      = AlgType::MESH; // 暂时
+    dfxopInfo->algType_      = AlgType{AlgType::MESH}.Describe();
     dfxopInfo->commIndex_    = idIndex_;
     dfxopInfo->beginTime_    = beginTime;
     dfxopInfo->comm_         = this;

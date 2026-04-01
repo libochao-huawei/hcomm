@@ -692,6 +692,59 @@ out:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    int ret = 0;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || cfg == NULL,
+        hccp_err("[get][RaTpInfo]ctxHandle or cfg is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+    CHK_PRT_RETURN(infoList == NULL || num == NULL,
+        hccp_err("[get][RaTpInfo]infoList or num is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+    CHK_PRT_RETURN(*num == 0 || *num > HCCP_MAX_TPID_INFO_NUM,
+        hccp_err("[get][RaTpInfo]*num(%u) is out of range[0, %d]", *num, HCCP_MAX_TPID_INFO_NUM),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    ret = RaPeerCtxGetTpInfoList(ctxHandleTmp, cfg, infoList, num);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaCtxGetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr)
+{
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    int ret = 0;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || attrBitmap == NULL || attr == NULL,
+        hccp_err("[get][RaTpAttr]ctxHandle or attrBitmap or attr is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    ret = RaPeerCtxGetTpAttr(ctxHandleTmp, tpHandle, attrBitmap, attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][RaTpAttr]RaPeerCtxGetTpAttr failed, ret[%d] phyId[%u] devIndex[0x%x]",
+        ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, ret));
+
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaCtxSetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr)
+{
+    struct RaCtxHandle *ctxHandleTmp = NULL;
+    int ret = 0;
+
+    CHK_PRT_RETURN(ctxHandle == NULL || attr == NULL,
+        hccp_err("[set][RaTpAttr]ctxHandle or attr or attr is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
+    ret = RaPeerCtxSetTpAttr(ctxHandleTmp, tpHandle, attrBitmap, attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[set][RaTpAttr]RaPeerCtxSetTpAttr failed, ret[%d] phyId[%u] devIndex[0x%x]",
+        ret, ctxHandleTmp->attr.phyId, ctxHandleTmp->devIndex), ConverReturnCode(RDMA_OP, ret));
+
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
 HCCP_ATTRI_VISI_DEF int RaCtxQpImport(void *ctxHandle, struct QpImportInfoT *qpInfo, void **remQpHandle)
 {
     struct RaCtxRemQpHandle *remQpHandleTmp = NULL;

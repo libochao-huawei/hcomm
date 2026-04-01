@@ -206,7 +206,7 @@ private:
         std::vector<std::vector<std::vector<u32>>> &vectorInfo);
     HcclResult ParseTlvToSubGroupVector(u64 srcTlv, u64 srcTlvTotalLength,
         std::vector<std::vector<std::vector<std::vector<u32>>>> &vectorInfo);
-    HcclResult InitLocalTagRes(const ListCommon &head);
+    HcclResult InitLocalTagRes(const ListCommon &head, bool reAllocFlag = false);
     HcclResult InitRemoteTagRes(u32 &rankId, const ListCommon &head, const std::string &newTag, u32 notifyNum,
        TransportLinkType linkType = TransportLinkType::RDMA);
     template <typename T>
@@ -248,8 +248,8 @@ private:
         std::vector<std::shared_ptr<LocalNotify>> &notifiesAux);
     HcclResult AllocStreamsResource(
         const std::string &newTag, const HcclOpResParam *commParam, const u32 streamNum, std::vector<Stream> &streams);
-    HcclResult AllocScratchMemResource(
-        const std::string &newTag, const HcclOpResParam *commParam, const u64 &scratchMemSize, DeviceMem &scratchMem);
+    HcclResult AllocScratchMemResource(const std::string &newTag, const HcclOpResParam *commParam,
+        const u64 &scratchMemSize, DeviceMem &scratchMem, bool reAllocFlag = false);
     HcclResult AllocAlgResource(const std::string &newTag, const OpParam &opParam, const HcclOpResParam *commParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult CalcResRequest(const std::string &algName, const OpParam &param,
@@ -417,6 +417,12 @@ private:
     HcclResult PrepareSymmetricMemory(const OpParam &param, OpCommTransport &opTransportResponse);
     HcclResult PrepareSymmetricMemRanges(const AlgResourceResponse &algResource, uint64_t inputSize, uint64_t outputSize,
                                         std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
+
+    HcclResult CalSendRecvInfoForAlltoall(const OpParam &param);
+    HcclResult CalSendRecvInfoFor910B(const std::string &algName, const OpParam &param,
+        std::unique_ptr<CollExecutorBase> &executor);
+    void HandleExistTagReAlloc(HccltagLocalResV2* tagRes, const std::string& tag, bool reAllocFlag, 
+        ListCommon*& curList, bool& needSkip);
 
     std::unordered_map<s32, u32> opExecIndexMap_;
 

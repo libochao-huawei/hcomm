@@ -551,7 +551,7 @@ TEST(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperator
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -765,7 +765,7 @@ TEST(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperator
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -3184,7 +3184,7 @@ TEST(CommunicatorImplTest, st_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SUCC
     LocalRmaBuffer *rmaBuf = nullptr;
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(&LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));

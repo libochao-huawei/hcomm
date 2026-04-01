@@ -22,7 +22,6 @@
 #include "referenced.h"
 
 namespace Hccl {
-
 // socketHandle的计数器
 using hostSocketHandleRef = std::pair<SocketHandle, Referenced>;
 
@@ -35,6 +34,8 @@ public:
     void         Destroy(DevId devicePhyId, const IpAddress &hostIp);
 
 private:
+    bool isDestroy{false};
+
     std::vector<unordered_map<string, hostSocketHandleRef>> hostSocketHandleMap;
     
     std::mutex socketHandleLock;

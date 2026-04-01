@@ -123,7 +123,8 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     reporterData.threadId = SalGetTid();
     reporterData.beginTime = beginTime;
     reporterData.endTime = endTime;
-    reporterData.itemId = GetProfHashId(taskType.Describe().c_str(), taskType.Describe().length());
+    const std::string proName(GetProfTaskOpNameV2(taskType));
+    reporterData.itemId = GetProfHashId(proName.c_str(), proName.length());
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskApi, reporterData data is: level[%u], type[%u], threadId[%u], "
               "beginTime[%llu], endTime[%llu], itemId[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.beginTime,
@@ -556,7 +557,7 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     reporterData.data.hcclopInfo.relay    = 0;
     reporterData.data.hcclopInfo.retry    = 0;
     reporterData.data.hcclopInfo.dataType = opInfo.op_.dataType;
-    reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.Describe().c_str(), opInfo.algType_.Describe().length());
+    reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.c_str(), opInfo.algType_.length());
     uint64_t groupName                     = GetProfHashId(opInfo.op_.opTag.c_str(), opInfo.op_.opTag.length());
     reporterData.data.hcclopInfo.groupName = groupName;
     u32 ranksize{0};

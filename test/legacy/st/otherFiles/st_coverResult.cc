@@ -1508,7 +1508,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_ccu)
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -1636,7 +1636,7 @@ TEST(CommunicatorImplTest, should_success_when_comm_LoadOpbasedCollOp_aicpu)
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));

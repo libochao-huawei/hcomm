@@ -80,6 +80,28 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CalcLevel
     return HCCL_SUCCESS;
 }
 
+HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CalcLevel1CommInfo(TransportMemType inputType,
+    TransportMemType outputType, std::vector<LevelNSubCommTransport>& opTransport)
+{
+    HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] start", __func__, tag_.c_str());
+    CommParaInfo commParaLevel1(COMM_LEVEL1, CommType::COMM_TAG_MAX);
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
+        commParaLevel1.commType = CommType::COMM_TAG_RING_INNER;
+        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc RingCommInfo", __func__, tag_.c_str());
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
+        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;
+        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc NHRCommInfo", __func__, tag_.c_str());
+    } else {
+        commParaLevel1.commType = CommType::COMM_TAG_HALVING_DOUBLING;
+        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc HDCommInfo", __func__, tag_.c_str());
+    }
+    commParaLevel1.forceRdma = false;
+    CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel1, opTransport[commParaLevel1.commPlane], inputType, outputType));
+    HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc CommInfo Finish", __func__, tag_.c_str());
+
+    return HCCL_SUCCESS;
+}
+
 u64 CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CalcLoopMaxCount(const u32 unitSize)
 {
     // 中转内存单次最多能够接受的output count

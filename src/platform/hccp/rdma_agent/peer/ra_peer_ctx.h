@@ -56,6 +56,13 @@ int RaPeerCtxQpCreate(struct RaCtxHandle *ctxHandle, struct QpCreateAttr *qpAttr
 
 int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle);
 
+int RaPeerCtxGetTpInfoList(struct RaCtxHandle *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num);
+
+int RaPeerCtxGetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr);
+
+int RaPeerCtxSetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr);
+
 int RaPeerCtxQpImport(struct RaCtxHandle *ctxHandle, struct QpImportInfoT *qpInfo,
     struct RaCtxRemQpHandle *remQpHandle);
 

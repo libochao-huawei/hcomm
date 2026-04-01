@@ -14,6 +14,7 @@
 #include "hccl/hccl_res.h"
 #include "hccl_common.h"
 #include "hcomm_res_defs.h"
+#include "hccl_mem_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus

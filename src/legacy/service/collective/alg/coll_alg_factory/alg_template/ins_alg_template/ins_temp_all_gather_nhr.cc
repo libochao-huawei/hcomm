@@ -14,9 +14,9 @@
 #include "ins_alg_template/ins_temp_all_gather_nhr.h"
 
 namespace Hccl {
-InsTempAllGatherNHR::InsTempAllGatherNHR(
-    const RankId virtualRank, const u32 tempRankSize, const std::vector<std::vector<RankId>>& tempVTopo,
-    const std::map<RankId, u32>& tempVirtRankMap)
+InsTempAllGatherNHR::InsTempAllGatherNHR(const RankId virtualRank, const u32 tempRankSize,
+                                   const std::vector<std::vector<RankId>> &tempVTopo,
+                                   const std::map<RankId, u32>            &tempVirtRankMap)
     : InsAlgTemplateBase(virtualRank, tempRankSize, tempVTopo, tempVirtRankMap)
 {
 }
@@ -25,16 +25,15 @@ InsTempAllGatherNHR::~InsTempAllGatherNHR()
 {
 }
 
-HcclResult InsTempAllGatherNHR::CalcRes(AlgTempResReq& tempResReq)
+HcclResult InsTempAllGatherNHR::CalcRes(AlgTempResReq &tempResReq)
 {
-    // NHR 需要的 que Num 为 1
+    // NHR 需要的 que Num 为 1 
     tempResReq.queNum = 1;
     tempResReq.streamNum = tempResReq.queNum;
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
-    CHK_PRT_RET(
-        CalcResLinksNHR(myRank_, tempRankSize_, tempVTopo_, tempResReq) != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlgFactory] [InsTempAllGatherNHR] Rank [%d], resLinks calculation error!", myRank_),
-        HcclResult::HCCL_E_INTERNAL);
+    CHK_PRT_RET(CalcResLinksNHR(myRank_, tempRankSize_, tempVTopo_, tempResReq) != HcclResult::HCCL_SUCCESS,
+                HCCL_ERROR("[CollAlgFactory] [InsTempAllGatherNHR] Rank [%d], resLinks calculation error!", myRank_),
+                HcclResult::HCCL_E_INTERNAL);
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -45,8 +44,8 @@ dataSize / (rankSize * queNum) --> sliceSize
 
 SliceInfoVecforNHR: [1st chunk: [1st Slice, 2nd Slice, ...], 2nd chunk: [1st Slice, 2nd Slice, ...], ...]
 */
-HcclResult InsTempAllGatherNHR::CalcSliceInfo(
-    const AllignInfo& allignInfo, const u64 dataSize, RankSliceInfo& sliceInfoVec)
+HcclResult InsTempAllGatherNHR::CalcSliceInfo(const AllignInfo &allignInfo, const u64 dataSize,
+                                            RankSliceInfo &sliceInfoVec)
 {
     std::vector<SliceInfo> tmp(tempVTopo_.size());
     sliceInfoVec.resize(tempRankSize_, tmp);
@@ -56,9 +55,10 @@ HcclResult InsTempAllGatherNHR::CalcSliceInfo(
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempAllGatherNHR::GenExtIns(
-    const TempFuncs& tempFuncs, const TemplateDataParams& tempAlgParams, const ResLinks& tempLinks,
-    std::vector<InsQuePtr>& tempInsQues)
+HcclResult InsTempAllGatherNHR::GenExtIns(const TempFuncs &tempFuncs,
+    const TemplateDataParams &tempAlgParams,
+    const ResLinks &tempLinks,
+    std::vector<InsQuePtr> &tempInsQues)
 {
     if (IsPcieLink(tempLinks)) {
         dmaMode_ = DmaMode::GET;
@@ -68,11 +68,9 @@ HcclResult InsTempAllGatherNHR::GenExtIns(
     tempLinks_ = tempLinks;
 
     queNum_ = tempVTopo_.size();
-    CHK_PRT_RET(
-        queNum_ != tempInsQues.size(),
-        HCCL_ERROR(
-            "[InsTempAllGatherNHR] Rank [%d], requiredQueNum [%u] not equals templateQueNum [%zu].", myRank_, queNum_,
-            tempInsQues.size()),
+    CHK_PRT_RET(queNum_ != tempInsQues.size(),
+        HCCL_ERROR("[InsTempAllGatherNHR] Rank [%d], requiredQueNum [%u] not equals templateQueNum [%zu].",
+                   myRank_, queNum_, tempInsQues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
     CHK_RET(LocalDataCopy(tempInsQues));
@@ -82,7 +80,7 @@ HcclResult InsTempAllGatherNHR::GenExtIns(
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempAllGatherNHR::GetStepInfo(u32 step, u32 nSteps, AicpuNHRStepInfo& stepInfo)
+HcclResult InsTempAllGatherNHR::GetStepInfo(u32 step, u32 nSteps, AicpuNHRStepInfo &stepInfo)
 {
     u32 rankIdx = 0;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], rankIdx));
@@ -123,43 +121,45 @@ RankId InsTempAllGatherNHR::GetRankFromMap(const u32 rankIdx)
     return tempVTopo_[0].at(rankIdx);
 }
 
-HcclResult InsTempAllGatherNHR::LocalDataCopy(std::vector<InsQuePtr>& tempInsQues)
+HcclResult InsTempAllGatherNHR::LocalDataCopy(std::vector<InsQuePtr> &tempInsQues)
 {
     u32 algRankIdx = 0;
-    GetAlgRank(myRank_, tempVTopo_[0], algRankIdx);
+    CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], algRankIdx));
     u64 sliceSize = algRankIdx == (tempRankSize_ - 1) ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
     for (u64 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
-        const u64 inBaseOff = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
+        const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff  + rpt * tempAlgParams_.inputRepeatStride;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff +
                                 rpt * (tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize);
 
-        const u64 inOff = tempAlgParams_.inputSliceStride * algRankIdx + inBaseOff;
+        const u64 inOff = tempAlgParams_.inputSliceStride  * algRankIdx + inBaseOff;
         const u64 scOff = scratchBase + tempAlgParams_.sliceSize * algRankIdx;
 
-        DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, sliceSize);
+        DataSlice src(tempAlgParams_.buffInfo.inBuffType,   inOff, sliceSize);
         DataSlice dst(tempAlgParams_.buffInfo.scratBuffType, scOff, sliceSize);
 
         auto ins = std::make_unique<InsLocalCopy>(src, dst);
-        tempInsQues[0]->Append(std::move(ins));
+         tempInsQues[0]->Append(std::move(ins));
     }
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempAllGatherNHR::PostLocalCopy(std::vector<InsQuePtr>& tempInsQues)
+HcclResult InsTempAllGatherNHR::PostLocalCopy(std::vector<InsQuePtr> &tempInsQues)
 {
-    CHK_PRT_RET(tempInsQues.empty(), HCCL_ERROR("[AG-NHR][PostLocalCopy] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[AG-NHR][PostLocalCopy] empty queue"), HcclResult::HCCL_E_INTERNAL);
     CHK_PTR_NULL(tempInsQues[0]);
     for (u64 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff +
                                 rpt * (tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize);
+
         for (u32 algIdx = 0; algIdx < tempRankSize_; ++algIdx) {
-            // 如果是最后一张卡需要用尾部数据计算
-            u64 sliceSize = algIdx == (tempRankSize_ - 1) ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
             const u64 scratchOffset = scratchBase + tempAlgParams_.sliceSize * algIdx;
             const u64 outOffset = tempAlgParams_.outputSliceStride * algIdx + outBaseOff;
+            // 如果是最后一张卡需要用尾部数据计算
+            u64 sliceSize = algIdx == (tempRankSize_ - 1) ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
             DataSlice src(tempAlgParams_.buffInfo.scratBuffType, scratchOffset, sliceSize);
-            DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOffset, sliceSize);
+            DataSlice dst(tempAlgParams_.buffInfo.outBuffType,   outOffset,     sliceSize);
 
             auto ins = std::make_unique<InsLocalCopy>(src, dst);
             tempInsQues[0]->Append(std::move(ins));
@@ -168,9 +168,10 @@ HcclResult InsTempAllGatherNHR::PostLocalCopy(std::vector<InsQuePtr>& tempInsQue
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr>& tempInsQues)
+HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
 {
     const u32 nSteps = GetNHRStepNum(tempRankSize_);
+
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 scratchRepeatStride = tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
@@ -179,43 +180,40 @@ HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr>& tempInsQues)
             AicpuNHRStepInfo stepInfo;
             CHK_RET(GetStepInfo(step, nSteps, stepInfo));
 
-            const std::vector<LinkData>& linkRecv = tempLinks_.at(GetRankFromMap(stepInfo.fromRank));
-            const std::vector<LinkData>& linkSend = tempLinks_.at(GetRankFromMap(stepInfo.toRank));
+            const std::vector<LinkData> &linkRecv = tempLinks_.at(GetRankFromMap(stepInfo.fromRank));
+            const std::vector<LinkData> &linkSend = tempLinks_.at(GetRankFromMap(stepInfo.toRank));
 
             std::vector<DataSlice> txSrcSlices;
             std::vector<DataSlice> txDstSlices;
             std::vector<DataSlice> rxSrcSlices;
             std::vector<DataSlice> rxDstSlices;
 
-            HCCL_DEBUG(
-                "[InsTempAllGatherNHR] rank[%d] rankSize[%u] recvFrom[%u] sendTo[%u] step[%u] nSteps[%u] nSlices[%u]",
+            HCCL_DEBUG("[InsTempAllGatherNHR] rank[%d] rankSize[%u] recvFrom[%u] sendTo[%u] step[%u] nSteps[%u] nSlices[%u]",
                 myRank_, tempRankSize_, stepInfo.fromRank, stepInfo.toRank, step, nSteps, stepInfo.nSlices);
 
             for (u32 i = 0; i < stepInfo.nSlices; ++i) {
                 const u32 txIdx = stepInfo.txSliceIdxs[i];
                 const u32 rxIdx = stepInfo.rxSliceIdxs[i];
-
+                
                 const u64 txScratchOff = scratchBase + tempAlgParams_.sliceSize * txIdx;
 
                 const u64 rxScratchOff = scratchBase + tempAlgParams_.sliceSize * rxIdx;
-                u32 SliceSize = txIdx == tempRankSize_ - 1 ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
-                txSrcSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, SliceSize);
-                txDstSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, SliceSize);
-                rxSrcSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, SliceSize);
-                rxDstSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, SliceSize);
+                u32 sliceSize = txIdx == tempRankSize_ - 1 ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
+                txSrcSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, sliceSize);
+                txDstSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, sliceSize);
+                rxSrcSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, sliceSize);
+                rxDstSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, sliceSize);
             }
 
             TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
             TxRxLinks sendRecvLinks(linkSend[0], linkRecv[0]);
             SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
 
-            CHK_PRT_RET(
-                SendRecv(sendRecvInfo, tempInsQues[0], 0, true, dmaMode_),
+            CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[0], 0, true, dmaMode_),
                 HCCL_ERROR("[InsTempAllGatherNHR] sendrecv failed (step=%u, rpt=%u)", step, rpt),
                 HcclResult::HCCL_E_INTERNAL);
         }
     }
     return HcclResult::HCCL_SUCCESS;
 }
-
 } // namespace Hccl

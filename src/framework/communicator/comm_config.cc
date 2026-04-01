@@ -642,6 +642,18 @@ HcclResult CommConfig::SetSpecificAlgTypeConfig(std::vector<std::string> &algos)
     return HCCL_SUCCESS;
 }
 
+HcclResult CommConfig::SetConfigTrafficClass(u32 trafficClass)
+{
+    trafficClass_ = trafficClass;
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommConfig::SetConfigServiceLevel(u32 serviceLevel)
+{
+    serviceLevel_ = serviceLevel;
+    return HCCL_SUCCESS;
+}
+
 HcclResult CommConfig::SetConfigExecTimeOut(s32 execTimeOut)
 {
     execTimeOut_ = execTimeOut;
