@@ -475,12 +475,12 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
     int ret = 0;
 
     CHK_PRT_RETURN(value == NULL || valueLen == NULL, hccp_err("param err, value or valueLen is NULL"), -EINVAL);
-    CHK_PRT_RETURN(key >= HCCN_CFG_KEY_INVALID,
-        hccp_err("param err, key should < [%d]", HCCN_CFG_KEY_INVALID), -EINVAL);
+    CHK_PRT_RETURN(key >= HCCN_CFG_KEY_INVALID || key < HCCN_CFG_UDP_PORT_MODE,
+        hccp_err("param err, key[%d] should < [%d] and key should > 0", HCCN_CFG_KEY_INVALID), -EINVAL);
 
     bufLen = *valueLen;
     CHK_PRT_RETURN(bufLen < HCCN_CFG_MSG_DATA_LEN,
-        hccp_err("param err, bufLen should >= [%d]", HCCN_CFG_MSG_DATA_LEN), -EINVAL);
+        hccp_err("param err, bufLen[%u] should >= [%u]", bufLen, HCCN_CFG_MSG_DATA_LEN), -EINVAL);
 
     *valueLen = 0;
     ret = FileReadCfg(HCCN_CFGFILE_PATH, (int)phyId, keyName[key], value, bufLen);

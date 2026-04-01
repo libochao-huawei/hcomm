@@ -285,6 +285,7 @@ void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jetty
 
     ret = RsCcuJettyDbReg(jettyCb);
     if (ret != 0) {
+        RsMunmapJettyVa(jettyCb);
         goto deactive_jetty;
     }
     return;
