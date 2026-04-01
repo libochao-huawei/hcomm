@@ -75,12 +75,14 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
     ${URMA_INCLUDE_DIR}
 )
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(rs PRIVATE
+        ${TOP_DIR}/ubengine/ssapi/kernelspace/urma/code/lib/urma/include
+        ${TOP_DIR}/ubengine/ssapi/kernelspace/urma/code/include
+        ${TOP_DIR}/ubengine/ssapi/userspace/include/external/udma
         ${TOP_DIR}/drivers/network/tls_adp
         ${TOP_DIR}/runtime/pkg_inc/base
         ${TOP_DIR}/driver/driver/pkg_inc/
