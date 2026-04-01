@@ -145,12 +145,13 @@ HcclResult HccsRegedMemMgr::SerializeToMemDesc(const EndpointDesc &endpointDesc,
     std::vector<char> tempMemDesc;
     tempMemDesc.resize(sizeof(EndpointDesc) + ipcRmaBufferDesc.length());
 
-    if(memcpy_s(tempMemDesc.data(), 0, &endpointDesc, sizeof(EndpointDesc)) != EOK) {
+    if(memcpy_s(tempMemDesc.data(), sizeof(EndpointDesc), &endpointDesc, sizeof(EndpointDesc)) != EOK) {
         HCCL_ERROR("[RoceRegedMemMgr][GetMemDesc] [%s] endpointDesc memcpy_s failed.", __func__);
         return HCCL_E_INTERNAL;
     }
 
-    if(memcpy_s(tempMemDesc.data(), sizeof(EndpointDesc), ipcRmaBufferDesc.c_str(), ipcRmaBufferDesc.length()) != EOK) {
+    if(memcpy_s(tempMemDesc.data() + sizeof(EndpointDesc), ipcRmaBufferDesc.length(), ipcRmaBufferDesc.c_str(),
+        ipcRmaBufferDesc.length()) != EOK) {
         HCCL_ERROR("[RoceRegedMemMgr][GetMemDesc] [%s] endpointDesc memcpy_s failed.", __func__);
         return HCCL_E_INTERNAL;
     }
