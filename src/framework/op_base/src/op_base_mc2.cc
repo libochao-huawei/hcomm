@@ -345,7 +345,7 @@ HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, 
     if (hcclComm->GetCommunicatorV2() != nullptr) {
         HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(hcclComm->GetCommunicatorV2(), memTag, size, addr, newCreated));
     } else {
-        CHK_RET(hcclComm->GetDevMemWorkSpace(memTag, size, add, newCreated));
+        CHK_RET(hcclComm->GetDevMemWorkSpace(memTag, size, addr, newCreated));
     }
     return HCCL_SUCCESS;
 }

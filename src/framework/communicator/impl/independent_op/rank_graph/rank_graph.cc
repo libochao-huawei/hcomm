@@ -598,7 +598,7 @@ std::vector<const RankInfo_t *> RankGraphV1::GetRanksInTopoInst(uint32_t netLaye
 }
 
 std::set<CommProtocol> RankGraphV1::GetProtocolsByConnections(uint32_t netLayer,
-    const std::vecyor<const RankInfo_t *> &topoInstRanks)
+    const std::vector<const RankInfo_t *> &topoInstRanks)
 {
     std::set<CommProtocol> protocols;
 
@@ -639,7 +639,7 @@ HcclResult RankGraphV1::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, u
     }
     std::vector<const RankInfo_t *> topoInstRanks = GetRanksInTopoInst(netLayer, topoInstId);
     if (topoInstRanks.empty()) {
-        *num = 0
+        *num = 0;
         return HCCL_SUCCESS;
     }
 
@@ -686,7 +686,7 @@ HcclResult RankGraphV1::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, 
     }
     std::vector<const RankInfo_t *> topoInstRanks = GetRanksInTopoInst(netLayer, topoInstId);
     if (topoInstRanks.empty()) {
-        *descNum = 0
+        *descNum = 0;
         return HCCL_SUCCESS;
     }
 

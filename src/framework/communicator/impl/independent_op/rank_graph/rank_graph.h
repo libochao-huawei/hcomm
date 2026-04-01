@@ -53,7 +53,7 @@ public:
     HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t rankNum);
     std::vector<const RankInfo_t *> GetRanksInTopoInst(uint32_t netLayer, uint32_t topoInstId);
     std::set<CommProtocol> GetProtocolsByConnections(uint32_t netLayer,
-        const std::vecyor<const RankInfo_t *> &topoInstRanks);
+        const std::vector<const RankInfo_t *> &topoInstRanks);
     HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
     HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetDevicePoint(const uint32_t rank, uint32_t *devPort);
