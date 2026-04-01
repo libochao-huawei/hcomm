@@ -15,6 +15,7 @@
 #include "exception_util.h"
 #include "not_support_exception.h"
 #include "log.h"
+#include "hccp_nda.h"
 
 struct RdmaSqContextLite {
     uint32_t qpn;
@@ -39,6 +40,9 @@ struct RdmaCqContextLite{
     int8_t dbMode; // 0-hw/1-sw
 };
 
+#include "rdma_vendor_1825_ops.h"
+#include "rdma_vendor_xscdv_ops.h"
+
 namespace Hccl {
 class RdmaConnLite {
 public:
@@ -47,10 +51,22 @@ public:
 
     std::string Describe();
 
+    void GetVendorOps();
+
+    // 数据面
+    // TODO 其他数据面接口
+    void Write(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, u64 &dbAddr, u64 &dbValue);
+    void WriteWithNotify(
+        const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
+        const RmaBufSliceLite &locNotify, const RmtRmaBufSliceLite &notify, u64 &dbAddr, u64 &dbValue);
+
 private:
     uint32_t            dmaMode_{0};
     RdmaSqContextLite   sqContext{};
     RdmaCqContextLite   cqContext{};
+
+    // 工厂模式，负责具体的厂商ops创建
+    std::unique_ptr<RdmaBaseOps> vendorOps_ = nullptr;
 };
 
 } // namespace Hccl
