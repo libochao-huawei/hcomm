@@ -45,6 +45,10 @@
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
 
+#ifndef CCU_PROFILING // 和hccl仓兼容性使用
+#define CCU_PROFILING
+#endif
+
 using CcuKernelHandle = uint64_t;
 
 namespace hcomm {
