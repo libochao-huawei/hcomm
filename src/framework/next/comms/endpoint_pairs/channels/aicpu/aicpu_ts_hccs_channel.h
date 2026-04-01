@@ -19,7 +19,6 @@
 #include "channel.h"
 #include "channel_param.h"
 #include "buffer.h"
-#include "hccl_net_dev.h"
 
 namespace hcomm {
 /**
@@ -27,6 +26,10 @@ namespace hcomm {
  */
 class AicpuTsHccsChannel : public Channel {
 public:
+    struct HccsExchangeInfo {
+        s32 pid;
+        u32 sdid;
+    };
     AicpuTsHccsChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc);
     virtual ~AicpuTsHccsChannel();
 
@@ -41,17 +44,13 @@ public:
 
 private:
     HcclResult ParseInputParam();
-    void ConstructTransTag(std::string& transTag);
-    void GetUserRank(bool beLocal, uint32_t &userRank);
-    HcclResult MakeLinkInfo(bool beLocal, EndpointDesc &endpointDesc, hccl::HcclRankLinkInfo &linkInfo);
     HcclResult BuildConnection();
-    HcclResult SetMachinePara(hccl::HcclRankLinkInfo &localRankLinkInfo,
-        hccl::HcclRankLinkInfo &remoteRankLinkInfo, hccl::MachinePara &machinePara);
+    HcclResult GetFirstIpByPhyId(u32 devicePhyId, hccl::HcclIpAddress &ip);
+    HcclResult SetMachinePara(hccl::MachinePara &machinePara);
     void SetTransportParam(hccl::TransportPara &para);
     HcclResult TransportInit();
     HcclResult CheckNotifyOrQPMaxNum(u64 &existNum, const u64 &MaxNum, const bool &isNotifyRes);
     HcclResult BuildHcclChannelHccsRes(HcclChannelHccsRes &channelHccsRes);
-    HcclResult HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, hccl::HcclIpAddress *hcclIP);
 
 private:
     // --------------------- 入参 ---------------------
@@ -59,21 +58,22 @@ private:
     HcommChannelDesc                                            channelDesc_;
 
     // --------------------- 转换参数 ---------------------
-    // init HcclNetDevCtx from AicpuTsHccsEndPoint.GetNetDevCtx()
     HcclNetDevCtx                                               netDevCtx_{nullptr};
     EndpointDesc                                                localEp_{};
     EndpointDesc                                                remoteEp_{};
+    hccl::HcclIpAddress                                         localIp_;
+    hccl::HcclIpAddress                                         remoteIp_;
     uint32_t                                                    notifyNum_{0};
     std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
 
     // --------------------- 具体成员 ---------------------
-    std::vector<std::shared_ptr<hccl::HcclSocket>>              socket_{nullptr};
-    std::shared_ptr<hccl::Transport>                            transport_{nullptr};
+    std::shared_ptr<hccl::HcclSocket>                           socket_{};
+    std::string                                                 socketTag_{};
 
     // for create TransportMem
-    HcclDispatcher dispatcher_; // dispatcher放到最后析构
-    std::unique_ptr<hccl::NotifyPool> notifyPool_;
-    std::string connTag_{};
+    HcclDispatcher                                              dispatcher_; // dispatcher放到最后析构
+    std::unique_ptr<hccl::NotifyPool>                           notifyPool_;
+    std::shared_ptr<hccl::Transport>                            transport_{nullptr};
 };
 }
 
