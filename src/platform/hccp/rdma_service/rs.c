@@ -593,26 +593,27 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
 {
 #define HCCN_CFGFILE_PATH "/etc/hccl.cfg"
     const char *keyName[HCCN_CFG_KEY_INVALID] = {"udp_port_mode", "multi_qp_count", "multi_qp_udp_ports"};
+    unsigned int cfg_key = (unsigned int)key;
     unsigned int valLen = 0;
     unsigned int bufLen;
     int ret = 0;
 
     CHK_PRT_RETURN(value == NULL || valueLen == NULL, hccp_err("param err, value or valueLen is NULL"), -EINVAL);
-    CHK_PRT_RETURN(key >= HCCN_CFG_KEY_INVALID,
-        hccp_err("param err, key should < [%d]", HCCN_CFG_KEY_INVALID), -EINVAL);
+    CHK_PRT_RETURN(cfg_key >= HCCN_CFG_KEY_INVALID,
+        hccp_err("param err, key[%u] should < [%u]", cfg_key, HCCN_CFG_KEY_INVALID), -EINVAL);
 
     bufLen = *valueLen;
     CHK_PRT_RETURN(bufLen < HCCN_CFG_MSG_DATA_LEN,
-        hccp_err("param err, bufLen should >= [%d]", HCCN_CFG_MSG_DATA_LEN), -EINVAL);
+        hccp_err("param err, bufLen[%u] should >= [%u]", bufLen, HCCN_CFG_MSG_DATA_LEN), -EINVAL);
 
     *valueLen = 0;
-    ret = FileReadCfg(HCCN_CFGFILE_PATH, (int)phyId, keyName[key], value, bufLen);
+    ret = FileReadCfg(HCCN_CFGFILE_PATH, (int)phyId, keyName[cfg_key], value, bufLen);
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_READ_FILE_ERR,
         hccp_run_warn("get hccn cfg file unsuccessful, ret(%d)", ret), 0);
     CHK_PRT_RETURN(ret == FILE_OPT_NO_MEM_ERR,
         hccp_err("value_len > buf_len[%d], ret(%d)", bufLen, ret), -ENOMEM);
     CHK_PRT_RETURN(ret != 0, hccp_run_warn("get hccn cfg [%s] unsuccessful, ret(%d)",
-        keyName[key], ret), 0);
+        keyName[cfg_key], ret), 0);
 
     valLen = (unsigned int)strlen(value);
     *valueLen = (valLen == 0) ? valLen : (valLen + 1);
