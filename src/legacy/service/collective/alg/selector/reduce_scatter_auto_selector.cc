@@ -62,6 +62,10 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         return SelectorStatus::NOT_MATCH;
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
+                // 不支持 inplace 场景
+                return SelectorStatus::NOT_MATCH;
+            }
             if (Is2DieFullMesh()) {
                 primQueueGenName = "CcuReduceScatterMesh1D2Die";
             } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
