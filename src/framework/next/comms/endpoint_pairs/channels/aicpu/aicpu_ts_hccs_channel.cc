@@ -30,38 +30,7 @@ AicpuTsHccsChannel::~AicpuTsHccsChannel()
         (void)HcclDispatcherDestroy(dispatcher_);
         dispatcher_ = NULL;
     }
-}
-
-void AicpuTsHccsChannel::ConstructTransTag(std::string& transTag)
-{
-    transTag = "_HccsChannel_" +
-        std::to_string(localEp_.loc.device.superDevId) + "_" + std::to_string(localEp_.loc.device.devPhyId) + "_" +
-        std::to_string(remoteEp_.loc.device.superDevId) + "_" + std::to_string(remoteEp_.loc.device.devPhyId);
-}
-
-void AicpuTsHccsChannel::GetUserRank(bool beLocal, uint32_t &userRank)
-{
-    uint32_t localUserRank = 0;
-    uint32_t remoteUserRank = 0;
-
-    // because socketmanager.userRank_ default is 0, and socketmanager.userRank_ < remoteRank, socket role will be server
-    if (localEp_.loc.device.superDevId == 0 && remoteEp_.loc.device.superDevId == 0) {
-        if (localEp_.loc.device.devPhyId < remoteEp_.loc.device.devPhyId) {
-            localUserRank = 0;
-            remoteUserRank = 1;
-        } else {
-            localUserRank = 1;
-            remoteUserRank = 0;
-        }
-    }
-    if (localEp_.loc.device.superDevId == 0) {
-        localUserRank = 0;
-        remoteUserRank = 1;
-    } else {
-        localUserRank = 1;
-        remoteUserRank = 0;
-    }
-    userRank = beLocal ? localUserRank : remoteUserRank;
+    GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).CloseSocket(socket_);
 }
 
 HcclResult AicpuTsHccsChannel::ParseInputParam()
@@ -75,10 +44,10 @@ HcclResult AicpuTsHccsChannel::ParseInputParam()
 
     // 2. 从 channelDesc_，获得 remoteEp_, socket_ 和 notifyNum
     remoteEp_ = channelDesc_.remoteEndpoint;
-
     notifyNum_ = channelDesc_.notifyNum;
 
-    ConstructTransTag(connTag_);
+    CHK_RET(GetFirstIpByPhyId(localEp_.loc.device.devPhyId, localIp_));
+    CHK_RET(GetFirstIpByPhyId(remoteEp_.loc.device.devPhyId, remoteIp_));
 
     if (channelDesc_.exchangeAllMems) {
         // 3. Get memHandles from endpoint
@@ -110,125 +79,67 @@ HcclResult AicpuTsHccsChannel::ParseInputParam()
     return HCCL_SUCCESS;
 }
 
-// 新旧ip类型转换
-HcclResult AicpuTsHccsChannel::HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, HcclIpAddress *hcclIP) {
-    CHK_PTR_NULL(hcclIP);
-    CHK_PTR_NULL(hccladdr);
-    if (hcclIP->GetFamily() == AF_INET) {
-        hccladdr->type = HCCL_ADDR_TYPE_IP_V4;
-        hccladdr->addr = hcclIP->GetBinaryAddress().addr;
-    } else if (hcclIP->GetFamily() == AF_INET6) {
-        hccladdr->type = HCCL_ADDR_TYPE_IP_V6;
-        hccladdr->addr6 = hcclIP->GetBinaryAddress().addr6;
-    } else {
-        HCCL_ERROR("[HcclIpAddressConvertingHcclAddr]ERROR IP type!");
-        return HCCL_E_PARA;
-    }
-    return HCCL_SUCCESS;
-}
-
 #define AICPU_CHANNEL_DEFUALT_PORT 16666
-HcclResult AicpuTsHccsChannel::MakeLinkInfo(bool beLocal, EndpointDesc &endpointDesc, hccl::HcclRankLinkInfo &linkInfo)
+HcclResult AicpuTsHccsChannel::GetFirstIpByPhyId(u32 devicePhyId, HcclIpAddress &ip)
 {
-    GetUserRank(beLocal, linkInfo.userRank);
-
-    linkInfo.devicePhyId = endpointDesc.loc.device.devPhyId;
-/*
-    if (endpointDesc.loc.device.superDevId != 0) {
-        CHK_RET(hrtRaGetSingleSocketVnicIpInfo(endpointDesc.loc.device.devPhyId,
-            DeviceIdType::DEVICE_ID_TYPE_SDID,
-            endpointDesc.loc.device.superDevId,
-            linkInfo.ip));
-    } else {
-        CHK_RET(hrtRaGetSingleSocketVnicIpInfo(endpointDesc.loc.device.devPhyId,
-            DeviceIdType::DEVICE_ID_TYPE_PHY_ID,
-            endpointDesc.loc.device.devPhyId,
-            linkInfo.ip));
-    }
-*/
-    if (beLocal) {
-        std::vector<HcclIpAddress> deviceIp;
-        CHK_RET(hrtRaGetDeviceIP(linkInfo.devicePhyId, deviceIp));
-        linkInfo.ip = deviceIp[0];
-    } else {
-        HcclAddress *deviceIp = nullptr;
-        uint32_t addrNum = 0;
-        CHK_RET(HcclNetDevGetNicAddr(linkInfo.devicePhyId, &deviceIp, &addrNum));
-        CHK_PTR_NULL(deviceIp);
-        CHK_RET(HcclIpAddressConvertHcclAddr(&deviceIp[0], &linkInfo.ip));
-    }
+    std::vector<HcclIpAddress> deviceIp;
+    CHK_RET(GlobalNetDevMgr::GetInstance(devicePhyId).GetDeviceIP(devicePhyId, deviceIp));
+    ip = deviceIp[0];
     HCCL_INFO("[AicpuTsHccsChannel][MakeLinkInfo]devicePhysicID[%u] linkInfo.ip[%s]",
-        linkInfo.devicePhyId, linkInfo.ip.GetReadableAddress());
-
-    if (!beLocal) {
-        linkInfo.port = channelDesc_.port != 0 ? channelDesc_.port : AICPU_CHANNEL_DEFUALT_PORT;
-    } else {
-        linkInfo.port = 0;
-    }
-    linkInfo.socketsPerLink = 1;
-
-    HCCL_INFO("[AicpuTsHccsChannel][MakeLinkInfo]link info:userRank[%u], devPhyId[%u], ip[%s], port[%u], socketsPerLink[%u]",
-        linkInfo.userRank, linkInfo.devicePhyId, linkInfo.ip.GetReadableAddress(), linkInfo.port, linkInfo.socketsPerLink);
+        devicePhyId, ip.GetReadableAddress());
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsHccsChannel::BuildConnection()
 {
-    // 创建socket用于交换数据
-    // just for reuse socketManager->CreateSingleLinkSocket
-    hccl::HcclRankLinkInfo remoteRankLinkInfo;
-    CHK_RET(MakeLinkInfo(false, remoteEp_, remoteRankLinkInfo));
+    std::string localReadableAddress = localIp_.GetReadableAddress();
+    std::string remoteReadableAddress = remoteIp_.GetReadableAddress();
 
-    std::shared_ptr<hccl::HcclSocketManager> socketManager = GlobalNetDevMgr::GetInstance().GetSocketManager();
-    CHK_PTR_NULL(socketManager);
-    CHK_RET(socketManager->CreateSingleLinkSocket(connTag_, netDevCtx_, remoteRankLinkInfo, socket_, false, true));
+    HCCL_INFO("[AicpuTsHccsChannel][BuildConnection] local devPhyId [%u] ip[%u] remote devPhyId[%u] ip[%s]",
+        localEp_.loc.device.devPhyId, localReadableAddress.c_str(),
+        remoteEp_.loc.device.devPhyId, remoteReadableAddress.c_str());
+
+    u32 server_port = channelDesc_.port != 0 ?  channelDesc_.port : 16666;
+    if (localReadableAddress < remoteReadableAddress) {
+        GlobalNetDevMgr::MakeSocketTag(localIp_, server_port, remoteIp_, socketTag_);
+        CHK_RET(GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).AcceptClient(
+            netDevCtx_, remoteIp_, socket_));
+    } else {
+        GlobalNetDevMgr::MakeSocketTag(remoteIp_, server_port, localIp_, socketTag_);
+        CHK_RET(GlobalNetDevMgr::GetInstance(localEp_.loc.device.devPhyId).ConnectToServer(
+            netDevCtx_, remoteIp_, server_port, socket_));
+    }
+    HCCL_INFO("[AicpuTsHccsChannel][BuildConnection] local devPhyId [%u] ip[%u] remote devPhyId[%u] ip[%s] socketTag_[%s]",
+        localEp_.loc.device.devPhyId, localReadableAddress.c_str(),
+        remoteEp_.loc.device.devPhyId, remoteReadableAddress.c_str(), socketTag_.c_str());
     return HCCL_SUCCESS;
 }
 
 #define HCCS_CHANNEL_MAX_EXCHANGE_DATA_LEN (1024U * 4)
-HcclResult AicpuTsHccsChannel::SetMachinePara(hccl::HcclRankLinkInfo &localRankLinkInfo,
-    hccl::HcclRankLinkInfo &remoteRankLinkInfo, hccl::MachinePara &machinePara)
+HcclResult AicpuTsHccsChannel::SetMachinePara(hccl::MachinePara &machinePara)
 {
     CHK_RET(hrtGetDeviceType(machinePara.deviceType));
 
     u32 deviceLogicId;
     CHK_RET(hrtGetDeviceIndexByPhyId(localEp_.loc.device.devPhyId, deviceLogicId));
     machinePara.deviceLogicId = static_cast<s32>(deviceLogicId);
-    machinePara.tag = connTag_;
+    machinePara.tag = socketTag_;
     machinePara.notifyNum = channelDesc_.notifyNum;
     machinePara.linkMode = hccl::LinkMode::LINK_DUPLEX_MODE;;
     machinePara.machineType = hccl::MachineType::MACHINE_CLIENT_TYPE;
     machinePara.serverId = localEp_.loc.device.serverIdx;
-
-    machinePara.localSocketPort = 0;
-    machinePara.remoteSocketPort = 0;
-
+    machinePara.localDeviceId = localEp_.loc.device.devPhyId;
+    machinePara.remoteDeviceId = remoteEp_.loc.device.devPhyId;
+    machinePara.localIpAddr = socket_->GetLocalIp();
+    machinePara.remoteIpAddr = socket_->GetRemoteIp();
+    machinePara.localSocketPort = socket_->GetLocalPort();
+    machinePara.remoteSocketPort = socket_->GetRemotePort();
     machinePara.srcPorts = std::vector<std::uint16_t>(1, 0); /* 默认填充一个元素，0代表默认不配置 */
-
     machinePara.mem.clear();
     machinePara.linkAttribute = 0x03; /* 0x03同时支持目的端和源端发起 */
-
-    machinePara.localIpAddr = localRankLinkInfo.ip;
-    machinePara.remoteIpAddr = remoteRankLinkInfo.ip;
-    machinePara.localDeviceId = localRankLinkInfo.devicePhyId;
-    machinePara.remoteDeviceId = remoteRankLinkInfo.devicePhyId;
-
-    // 把原来的两层vector变成一层, 方便后继调用
-    if (socket_.size() > 0) {
-        std::map<u32, std::vector<std::shared_ptr<HcclSocket>>> socketsMap;
-        socketsMap[remoteRankLinkInfo.userRank] = socket_;
-
-        std::map<u32, u32> dstRankToUserRank;
-        hccl::RankInfo localRank;
-        hccl::RankInfo remoteRank;
-        std::shared_ptr<hccl::HcclSocketManager> socketManager = GlobalNetDevMgr::GetInstance().GetSocketManager();
-        CHK_PTR_NULL(socketManager);
-        CHK_RET(socketManager->WaitLinksEstablishCompleted(socket_[0]->GetLocalRole(),
-            socketsMap, dstRankToUserRank, localRank, remoteRank, netDevCtx_));
-        machinePara.sockets = socket_;
-    }
-
+    machinePara.sockets.push_back(socket_);
     machinePara.exchangeInfo.resize(HCCS_CHANNEL_MAX_EXCHANGE_DATA_LEN);
+    machinePara.isSkipExchangeIndMem = true;
     return HCCL_SUCCESS;
 }
 
@@ -243,13 +154,8 @@ void AicpuTsHccsChannel::SetTransportParam(hccl::TransportPara &para)
 
 HcclResult AicpuTsHccsChannel::TransportInit()
 {
-    hccl::HcclRankLinkInfo localRankLinkInfo{};
-    hccl::HcclRankLinkInfo remoteRankLinkInfo{};
-    CHK_RET(MakeLinkInfo(true, localEp_, localRankLinkInfo));
-    CHK_RET(MakeLinkInfo(false, remoteEp_, remoteRankLinkInfo));
-
     hccl::MachinePara machinePara;
-    CHK_RET(SetMachinePara(localRankLinkInfo, remoteRankLinkInfo, machinePara));
+    CHK_RET(SetMachinePara(machinePara));
 
     hccl::TransportPara para{};
     SetTransportParam(para);
@@ -346,10 +252,6 @@ HcclResult AicpuTsHccsChannel::BuildHcclChannelHccsRes(HcclChannelHccsRes &chann
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     channelHccsRes.deviceType = static_cast<u32>(devType);
-
-    GetUserRank(true, channelHccsRes.localRank);
-    GetUserRank(false, channelHccsRes.remoteRank);
-
     channelHccsRes.remoteDevicePhyId = remoteEp_.loc.device.devPhyId;
     channelHccsRes.localDevicePhyId = localEp_.loc.device.devPhyId;
 
