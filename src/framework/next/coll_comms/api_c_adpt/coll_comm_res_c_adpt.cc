@@ -301,7 +301,7 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {
     taskParam.beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    constexpr uint32_t defaultTimeOutSec = 10; // 当前未支持从环境变量配置 // TODO: 临时调测使用
+    constexpr uint32_t defaultTimeOutSec = 120; // 当前未支持从环境变量配置
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
         taskInfo.dieId       = it->dieId;
