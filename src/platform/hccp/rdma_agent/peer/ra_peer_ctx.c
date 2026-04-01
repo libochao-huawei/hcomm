@@ -60,7 +60,7 @@ int RaPeerCtxInit(struct RaCtxHandle *ctxHandle, struct CtxInitAttr *attr, unsig
     RsSetCtx(phyId);
     ret = RsCtxInit(attr, devIndex, devBaseAttr);
     if (ret != 0) {
-        hccp_err("[init][ra_peer_ctx]ctx init failed[%d] phy_id[%u]", ret, phyId);
+        hccp_err("[init][ra_peer_ctx]ctx init failed, ret[%d] phy_id[%u]", ret, phyId);
     }
 
     RaPeerMutexUnlock(phyId);

@@ -83,7 +83,6 @@ target_link_libraries(hccp_service.bin PRIVATE
     -ldl
 )
 
-
 install(TARGETS  hccp_service.bin
     RUNTIME DESTINATION ${INSTALL_RUNTIME_DIR}  OPTIONAL
 )
