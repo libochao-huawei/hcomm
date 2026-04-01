@@ -23,6 +23,12 @@
 #include "notify_count.h"
 #include "base_mem_transport.h"
 #include "recover_info.h"
+#include "rank_graph_builder.h"
+#include "rank_gph.h"
+#include "phy_topo_builder.h"
+#include "phy_topo.h"
+#include "detour_service.h"
+#include "ranktable_stub_64_plus_1.h"
 #undef protected
 #undef private
 
@@ -157,13 +163,14 @@ TEST_F(MemTransportManagerTest, MemTransportManager_get_transport_success)
     void                             *rdmaHandle = (void *)0x100;
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    unique_ptr<UbMemTransport>        transportOpbase = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;
+    unique_ptr<UbMemTransport>        transportOpbase = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     BaseMemTransport                 *transportOpbasePtr = transportOpbase.get();
     transportManager.opTagOpbasedMap[linkData] = std::move(transportOpbase);
-    unique_ptr<UbMemTransport>        transportOffload = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    unique_ptr<UbMemTransport>        transportOffload = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     BaseMemTransport                 *transportOffloadPtr = transportOffload.get();
     transportManager.opTagOffloadMap[opTag][linkData] = std::move(transportOffload);
-    unique_ptr<UbMemTransport>        transportOneSided = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    unique_ptr<UbMemTransport>        transportOneSided = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     BaseMemTransport                 *transportOneSidedPtr = transportOneSided.get();
     transportManager.oneSidedMap[linkData] = std::move(transportOneSided);
 
@@ -190,8 +197,9 @@ TEST_F(MemTransportManagerTest, MemTransportManager_get_transport_nullptr)
     void                             *rdmaHandle = (void *)0x100;
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    transportManager.opTagOpbasedMap[linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
-    transportManager.opTagOffloadMap[opTag][linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;
+    transportManager.opTagOpbasedMap[linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
+    transportManager.opTagOffloadMap[opTag][linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     // opbase
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 2, 0, 2);
@@ -437,7 +445,8 @@ TEST_F(MemTransportManagerTest, MemTransportManager_update_offload_transports)
     void                             *rdmaHandle = (void *)0x100;
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    transportManager.opTagOffloadMap[opTag][linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;
+    transportManager.opTagOffloadMap[opTag][linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     // 打桩 RmaConnManager::Get
     DevUbConnection devUbConnection(rdmaHandle, linkData.GetLocalAddr(), linkData.GetRemoteAddr(), OpMode::OFFLOAD);
@@ -459,8 +468,9 @@ TEST_F(MemTransportManagerTest, MemTransportManager_is_all_one_sided_transport_r
     void *rdmaHandle = (void *)0x100;
     IpAddress ipAddress("1.0.0.0");
     Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    bool isRecvFirst = false;
     unique_ptr<UbMemTransport> transportOneSided =
-        make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+        make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     UbMemTransport *transportOneSidedPtr = transportOneSided.get();
     transportManager.oneSidedMap[linkData] = std::move(transportOneSided);
     transportManager.newOneSidedTransports[linkData] = 0;
@@ -493,4 +503,21 @@ TEST_F(MemTransportManagerTest, MemTransportManager_batch_build_oneSide_transpor
     comm.GetCurrentCollOperator()->opType = OpType::ALLREDUCE;
     EXPECT_NO_THROW(transportManager.BatchBuildOneSidedTransports(links));
     transportManager.Clear();
+}
+
+TEST_F(MemTransportManagerTest, MemTransportManager_UT_GetUrmaWqsAndCqs)
+{
+    StubCommunicatorImplTransMgr comm;
+    comm.rankSize = 4;
+    comm.myRank = 0;
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/topo/new_topo_builder/rank_graph_64_plus_1/topo_4p.json"};
+    unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RANK_TABLE_4P, topoFilePath, 0);
+    comm.rankGraph = std::move(rankGraph);
+    MemTransportManager          transportManager(comm);
+    
+    
+    MOCKER_CPP(&MemTransportManager::IsAllTransportReady).stubs().will(returnValue(true));
+    EXPECT_NO_THROW(transportManager.GetUrmaWqs());
+    EXPECT_NO_THROW(transportManager.GetUrmaCqs());
 }

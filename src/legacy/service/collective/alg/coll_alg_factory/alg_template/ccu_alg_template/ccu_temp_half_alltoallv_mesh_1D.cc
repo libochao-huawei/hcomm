@@ -104,6 +104,7 @@ HcclResult CcuTempHalfAllToAllVMesh1D::Run(const TempFuncs &tempFuncs, const Ran
         HCCL_ERROR("[CcuTempHalfAllToAllVMesh1D][Run] tempInsQues is empty!");
         return HcclResult::HCCL_E_INTERNAL;
     }
+    CHK_PTR_NULL(tempInsQues[0]);
     tempInsQues[0]->Append(std::move(insGroupPtr));  // 只有一条流
     return HcclResult::HCCL_SUCCESS;
 }

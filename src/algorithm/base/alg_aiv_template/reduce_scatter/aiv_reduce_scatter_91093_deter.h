@@ -20,8 +20,8 @@ public:
     template<typename T>
     __aicore__ inline void InitDataCopyOffset(uint64_t perRankBufferCount, uint64_t len);
 
-    __aicore__ inline int64_t GetDeterministicRankOffset(int64_t x);
-    __aicore__ inline int64_t GetDeterministicRank(int64_t x);
+    __aicore__ inline uint32_t CeilLog2(uint32_t n);
+    __aicore__ inline uint32_t GetLargestPowerOf2(uint32_t n);
 
     template<typename T>
     __aicore__ inline void Process(GM_ADDR buffIn0, GM_ADDR buffOut0, GM_ADDR commInfoAddr, GM_ADDR input,
@@ -53,23 +53,26 @@ __aicore__ inline void AivReduceScatter91093Deter::InitDataCopyOffset(uint64_t p
     // 当rankSize小于等于总aiv核数时，根据ranksize和数据量大小选择使用多个aiv服务一个对端（多核并行），只需一次通信
 }
 
-__aicore__ inline int64_t AivReduceScatter91093Deter::GetDeterministicRankOffset(int64_t x)
+__aicore__ inline uint32_t AivReduceScatter91093Deter::CeilLog2(uint32_t n)
 {
-    int64_t tmp = 1;
-    while(!(x & 1)) {
-        x >>= 1;
-        tmp <<= 1;
+    if (n <= 1) return 0;
+    uint32_t result = 0;
+    uint32_t value = 1;
+    while (value < n) {
+        value <<= 1;
+        result++;
     }
-    return tmp;
+    return result;
 }
 
-__aicore__ inline int64_t AivReduceScatter91093Deter::GetDeterministicRank(int64_t x)
+__aicore__ inline uint32_t AivReduceScatter91093Deter::GetLargestPowerOf2(uint32_t n)
 {
-    int64_t tmp = 1;
-    while(DOUBLE*tmp <x){
-        tmp <<=1;
+    if (n <= 1) return 0;
+    uint32_t result = 1;
+    while (result * 2 < n) {  // 严格小于
+        result <<= 1;
     }
-    return tmp;
+    return result;
 }
 
 template<typename T>
@@ -137,63 +140,66 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         PipeBarrier<PIPE_ALL>();
         BatchRecordWait(curTag, buffersOut, AivNotifyType::DataSignal);
 
-        // step3 本端ccl local reduce
-        // step3.1 每个核先处理自己targets, 串行加
-	
-        for (int32_t i = numTargets-1; i >= 1; --i) {
-            uint64_t preDataOffset = avgBufferCount * targetRanks[0];
-            uint64_t curDataOffset = avgBufferCount * targetRanks[i];
-            CpGM2GM(cclGMSelf + halfBufferCount + preDataOffset, 
-                    cclGMSelf + halfBufferCount + curDataOffset, curCount, true, reduceOp_);
-            PipeBarrier<PIPE_ALL>();
-        }
-	
-        // 卡内每个核同步一次
         PipeBarrier<PIPE_ALL>();
         SyncAll(syncGlobal, workLocal, numBlocks_);
         PipeBarrier<PIPE_ALL>();
-        
-        // step3.2 归约为numReduce份数据的reduce
+
+        // step3 新的二分归约算法
+        // 每轮: 后半部分(offset powerOf2 到 curBlocks-1) 加到 前半部分(offset 0 到 powerOf2-1)
+        // 每个核负责连续的offset，每轮重新划分
         uint32_t numReduce = rankSize_ < usedBlockNum_ ? rankSize_ : usedBlockNum_;
-        if (GetBlockIdx() < numReduce && GetBlockIdx() != 0){
-            int x = GetBlockIdx();
-            int64_t multiple = GetDeterministicRankOffset(x);
-            int64_t target = x - multiple;
-    
-            if (x & 1) {
-                CpGM2GM<T>(cclGMSelf + halfBufferCount + avgBufferCount * target, cclGMSelf + halfBufferCount + avgBufferCount * x, 
-                            curGroupCount, true, reduceOp_);
-                PipeBarrier<PIPE_ALL>();
-
-                SetSyncRecord(curTag, flagAddrSelf_, 1, x, pingpong);
-            } else {
-                int64_t multipleTemp = multiple / DOUBLE;
-                WaitSyncFlag(curTag, flagAddrSelf_, 1, x - multipleTemp, pingpong); 
-
-                while (x + multipleTemp >= numReduce) {
-                    multipleTemp /= DOUBLE;
+        uint32_t totalRounds = CeilLog2(rankSize_);
+        
+        if (GetBlockIdx() < numReduce) {
+            uint64_t dataNum = curGroupCount;
+            uint32_t curBlocks = rankSize_;
+            for (uint32_t round = 0; round < totalRounds; round++) {
+                uint32_t powerOf2 = GetLargestPowerOf2(curBlocks);
+                if (powerOf2 == 0) break;
+                
+                // 计算当前核负责的offset范围
+                uint32_t offsetsPerCore = (curBlocks + numReduce - 1) / numReduce;
+                uint32_t startOffset = GetBlockIdx() * offsetsPerCore;
+                uint32_t endOffset = startOffset + offsetsPerCore;
+                if (endOffset > curBlocks) endOffset = curBlocks;
+                
+                // 再处理前半部分的offset: 等待并执行reduce
+                for (uint32_t offset = startOffset; offset < endOffset; offset++) {
+                    if (offset < powerOf2) {
+                        // 处理所有对应的后半部分offset
+                        uint32_t backIdx = powerOf2 + offset;
+                        // 等待后半部分对应offset
+                        if (round > 0) {
+                            WaitSyncFlag(curTag + round, flagAddrSelf_, 1, backIdx, pingpong);
+                            WaitSyncFlag(curTag + round, flagAddrSelf_, 1, offset, pingpong);
+                        }
+                        
+                        // 后半部分reduce到前半部分
+                        uint64_t frontOffset = avgBufferCount * offset;
+                        uint64_t backOffset = avgBufferCount * backIdx;
+                        
+                        if (backIdx < curBlocks) {
+                            PipeBarrier<PIPE_ALL>();
+                            CpGM2GM<T>(cclGMSelf + halfBufferCount + frontOffset,
+                                        cclGMSelf + halfBufferCount + backOffset,
+                                        dataNum, true, reduceOp_);
+                            PipeBarrier<PIPE_ALL>();
+                        }
+                        SetSyncRecord(curTag + round + 1, flagAddrSelf_, 1, offset, pingpong);
+                    }
                 }
-                if (multipleTemp >= 1) {
-                    WaitSyncFlag(curTag, flagAddrSelf_, 1, x + multipleTemp, pingpong);
-                }
-
+                
+                curBlocks = powerOf2;
                 PipeBarrier<PIPE_ALL>();
-                CpGM2GM<T>(cclGMSelf + halfBufferCount + avgBufferCount * target, cclGMSelf + halfBufferCount + avgBufferCount * x, 
-                            curGroupCount, true, reduceOp_);
-                PipeBarrier<PIPE_ALL>();
-
-                SetSyncRecord(curTag, flagAddrSelf_, 1, x, pingpong);
             }
         }
 
         // step4 本端ccl -> 本端 output
-        bool case1 = rankSize_ > numBlocks_ && GetBlockIdx() == numBlocks_ - 1; // 单核
-        bool case2 = rankSize_ <= numBlocks_ && targetRanks[0] == rank_; // 单核
-        if (case1 || case2){
-            int64_t waitBlock = GetDeterministicRank(numReduce);
-            WaitSyncFlag(curTag, flagAddrSelf_, 1, waitBlock, pingpong);
-            PipeBarrier<PIPE_ALL>();
-            CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMSelf + halfBufferCount + curBlockOffset, curCount);
+        // 该算法不会使用多倍rankSize的核
+        if (GetBlockIdx() == 0) {
+            CpGM2GM(outputGM + curOffset + curBlockOffset,
+                cclGMSelf + halfBufferCount + curBlockOffset,
+                curGroupCount);
         }
 
         // 尾同步 
@@ -204,7 +210,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         }
 
         syncQue.FreeTensor(workLocal);
-        curTag += 1;
+        curTag += totalRounds + 1;
         curOffset += avgBufferCount;   
     }
 }

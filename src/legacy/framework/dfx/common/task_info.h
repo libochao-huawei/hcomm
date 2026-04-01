@@ -22,7 +22,7 @@ class DfxOpInfo {
 public:
     CollOperator op_;
     std::string  tag_; // 实际是opType
-    AlgType      algType_;
+    std::string  algType_;
     u32          commIndex_;
     u64          beginTime_;
     u64          endTime_;
@@ -41,8 +41,8 @@ public:
     std::string Describe() const
     {
         return StringFormat(
-                "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%u], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[%llx], tailOpCounterAddr[%llx]",
- 	            CollOpToString(op_).c_str(), tag_.c_str(), algType_, commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_);
+                "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%s], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[%llx], tailOpCounterAddr[%llx]",
+ 	            CollOpToString(op_).c_str(), tag_.c_str(), algType_.c_str(), commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_);
     }
 };
 
