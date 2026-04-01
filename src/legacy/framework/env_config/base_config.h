@@ -186,16 +186,6 @@ private:
     CfgField<DfsConfig> dfsConfig{"HCCL_DFS_CONFIG", DfsConfig(true), CastDfsConfig};
 };
 
-// 绕路使能环境变量
-class EnvDetourConfig : public BaseConfig {
-public:
-    void           Parse() override;
-    virtual HcclDetourType GetDetourType() const;
-
-private:
-    CfgField<HcclDetourType> detourType{"HCCL_DETOUR", HcclDetourType::HCCL_DETOUR_DISABLE, CastDetourType};
-};
-
 } // namespace Hccl
 
 #endif // HCCLV2_BASE_CONFIG_H
