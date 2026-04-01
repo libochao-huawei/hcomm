@@ -92,6 +92,7 @@ public:
     TransStatus GetStatus();
     void        Clean();
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
+    HcclResult CheckSocketStatus();
     HcclResult UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp);
 
     // 下面接口为平台层接口，不能在框架层使用
@@ -135,7 +136,6 @@ public:
     }
 
 private:
-    HcclResult CheckSocketStatus();
     HcclResult StatusMachine();
     HcclResult AppendCkes(uint32_t ckesNum);
     HcclResult AppendXns(uint32_t xnsNum);

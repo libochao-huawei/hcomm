@@ -14,6 +14,8 @@
 
 #include "../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
 
+#include "env_config/env_config.h"
+
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;
@@ -164,7 +166,7 @@ HcclResult CcuTransport::AppendXns(uint32_t xnsNum)
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuTransport::CheckSocketStatus()
+HcclResult CcuTransport::StatusMachine()
 {
     EXCEPTION_HANDLE_BEGIN
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
@@ -175,19 +177,14 @@ HcclResult CcuTransport::CheckSocketStatus()
     
     if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
         transStatus_ = TransStatus::SOCKET_TIMEOUT;
-        return HcclResult::HCCL_E_INTERNAL; // 操作失败，置成错误状态
+        return HcclResult::HCCL_E_TIMEOUT; // 操作失败，置成错误状态
     }
     
     if (socketStatus != Hccl::SocketStatus::OK) {
         return HcclResult::HCCL_SUCCESS; // 操作成功，保持当前状态
     }
     EXCEPTION_HANDLE_END
-    return HcclResult::HCCL_SUCCESS;
-}
 
-HcclResult CcuTransport::StatusMachine()
-{
-    CHK_RET(CheckSocketStatus());
     switch (transStatus_) {
         case CcuTransport::TransStatus::INIT: {
             auto connStatus = ccuConnection_->GetStatus();
@@ -658,6 +655,24 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
         cacheBuilder, remoteMem, memTags, memNum};
     CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::CheckSocketStatus()
+{
+    uint32_t retryCount = 0;
+    while (true) {
+        EXCEPTION_HANDLE_BEGIN
+        SocketStatus socketStatus = socket_->GetAsyncStatus();
+        EXCEPTION_HANDLE_END
+        if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
+            ERROR("[CcuTransport][CheckSocketStatus] socket timeout.");
+            return HcclResult::HCCL_E_TIMEOUT;
+        }
+        
+        if (socketStatus == Hccl::SocketStatus::OK) {
+            return HcclResult::HCCL_SUCCESS;
+        }
+    }
 }
 
 HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp)
