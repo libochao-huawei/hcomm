@@ -909,7 +909,7 @@ HcclResult CcuComponent::CleanDieCkes(const uint8_t dieId) const
     if (!dieEnableFlags_[dieId]) { // 不可用的die不清理
         return HcclResult::HCCL_SUCCESS;
     }    
-    RaInfo               info(NetworkMode::NETWORK_OFFLINE, devPhyId_);
+    RaInfo               info{NetworkMode::NETWORK_OFFLINE, devPhyId_};
     CustomChannelInfoIn   inBuff{};
     CustomChannelInfoOut  outBuff{};
 
