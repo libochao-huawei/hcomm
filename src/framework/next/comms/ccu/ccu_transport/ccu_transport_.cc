@@ -182,6 +182,7 @@ HcclResult CcuTransport::CheckSocketStatus()
         return HcclResult::HCCL_SUCCESS; // 操作成功，保持当前状态
     }
     EXCEPTION_HANDLE_END
+    return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuTransport::StatusMachine()
