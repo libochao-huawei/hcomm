@@ -27,6 +27,7 @@ constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 constexpr u32 SEND_RQE_COUNT = 16;
+constexpr u32 POLL_CQ_DURATION_THRESHOLD_MS = 1000; // 定义notify wait耗时的阈值为1000ms，即1秒
 
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
@@ -663,6 +664,11 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
                 HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status[%d].",
                     __func__, wc.status), HCCL_E_NETWORK);
             HCCL_INFO("[HostCpuRoceChannel::NotifyWait] poll cq success");
+            // 耗时是否大于1s
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime);
+            if (duration.count() > POLL_CQ_DURATION_THRESHOLD_MS) {
+                HCCL_RUN_INFO("[HostCpuRoceChannel::NotifyWait] notify wait success, duration = %lld ms.", duration.count());
+            }
             break;
         } else if (actualNum > 0) {
             HCCL_ERROR("[HostCpuRoceChannel::%s] polled cq unexpected. imm_data[%u] != dpuNotifyId[%u]",
@@ -758,6 +764,11 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
         return HCCL_E_INTERNAL;
     }
     wqeNum_++;
+    if (totalLen_ + len < totalLen_) { // 判断是否发生溢出
+        HCCL_WARNING("[HostCpuRoceChannel::%s] totalLen_ overflow. current totalLen_=%llu, adding len=%llu.",
+            __func__, totalLen_, len);
+    }
+    totalLen_ += len;
     HCCL_INFO("[HostCpuRoceChannel::WriteWithNotify] WriteWithNotify end, wqeNum_=%u", wqeNum_);
     return HCCL_SUCCESS;
 }
@@ -931,6 +942,12 @@ HcclResult HostCpuRoceChannel::ChannelFence()
             }
             wqeNum_ -= actualNum32; // 减去已经完成的数量，继续等待剩余的完成
             if (wqeNum_ == 0) {
+                // 耗时是否大于1s
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime);
+                if (duration.count() > POLL_CQ_DURATION_THRESHOLD_MS) {
+                    HCCL_RUN_INFO("[HostCpuRoceChannel::NotifyWait] notify wait success, duration = %lld ms, write totalLen = %llu",
+                        duration.count(), totalLen_);
+                }
                 break; // 所有的wqe都已经完成，退出循环
             }
         }
@@ -942,6 +959,7 @@ HcclResult HostCpuRoceChannel::ChannelFence()
     }
 
     wqeNum_ = 0; // 所有的wqe都已经完成，重置计数器
+    totalLen_ = 0;
     fenceFlag_ = true;
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u].", __func__, wqeNum_);
     return HCCL_SUCCESS;

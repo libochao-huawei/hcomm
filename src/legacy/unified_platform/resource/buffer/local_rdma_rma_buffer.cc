@@ -37,7 +37,16 @@ LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle r
 
     s32 ret = RaRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
     if (ret != 0 || mrHandle == nullptr) {
-        HCCL_ERROR("[HrtRaRegisterMr] RaRegisterMr failed, call interface error[%d]", ret);
+        HCCL_ERROR("[LocalRdmaRmaBuffer] RaRegisterMr failed, call interface error[%d], mrHandle=%p", ret, mrHandle);
+        aclrtPtrAttributes attributes;
+        aclError aclRet = aclrtPointerGetAttributes(reinterpret_cast<void *>(bufAddr), &attributes);
+        if (aclRet != 0) {
+            HCCL_ERROR("[LocalRdmaRmaBuffer]errNo[0x%016llx] aclrtPointerGetAttributes failed, return[%d]",
+                HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet);
+        } else {
+            HCCL_ERROR("[LocalRdmaRmaBuffer] ptr[%llu] location.id[%u], location.type[%d], pageSize[%u]", bufAddr, 
+                attributes.location.id, attributes.location.type, attributes.pageSize);
+        }
         THROW<InternalException>("[%s] failed, call interface error[%d].", __func__, ret);
     }
     lkey = mrInfo.lkey;
