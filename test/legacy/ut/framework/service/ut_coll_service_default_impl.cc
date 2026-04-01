@@ -203,7 +203,7 @@ TEST_F(CollServiceDefaultImplTest, alloc_queue_notify_for_single_queue)
     auto queueWaitGroupCntNotifyManager = std::make_unique<QueueWaitGroupCntNotifyManager>();
     CollServiceDefaultImpl service(&comm);
     comm.queueNotifyManager = std::move(queueNotifyManager);
-    comm.queueWaitGroupCntNotifyManager = std::move(queueWaitGroupCntNotifyManager);
+    comm.ccuQueueNotifyManager = std::move(queueWaitGroupCntNotifyManager);
 
     InsQueue insQueue;
     auto insLocalWaitGroup = std::make_unique<InsLocalWaitGroup>(0);
@@ -219,7 +219,7 @@ TEST_F(CollServiceDefaultImplTest, alloc_cnt_notify_for_single_queue)
     auto queueNotifyManager = std::make_unique<QueueNotifyManager>(comm);
     auto queueBcastPostCntNotifyManager = std::make_unique<QueueBcastPostCntNotifyManager>();
     CollServiceDefaultImpl service(&comm);
-    comm.queueNotifyManager = std::move(queueNotifyManager);
+    comm.ccuQueueNotifyManager = std::move(queueNotifyManager);
     comm.queueBcastPostCntNotifyManager = std::move(queueBcastPostCntNotifyManager);
 
     InsQueue insQueue;
