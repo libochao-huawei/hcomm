@@ -424,6 +424,27 @@ private:
     void HandleExistTagReAlloc(HccltagLocalResV2* tagRes, const std::string& tag, bool reAllocFlag, 
         ListCommon*& curList, bool& needSkip);
 
+    // 获取指定索引的算子信息
+    const AicpuOpInfo* GetOpInfoFromSqIdx(u32 sqIdx, SqeRingBuffer *sqeContextBuffer);
+    
+    // 打印算子数据信息
+    void PrintOpDataInfo(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor);
+    
+    // 打印task序列行
+    void PrintTaskLine(bool isMonitor, u32 lineNum, u32 totalPrinted, const std::string& taskLine) const;
+    
+    // 更新算子上下文
+    void UpdateOpContext(u32& opIndex, std::string& opTag, u32& lineCount, std::vector<std::string>& currentOpTasks, u32 newOpIndex, const std::string& newOpTag) const;
+    
+    // 准备下一行数据
+    void PrepareNextLine(u32 opIndex, u32& lineCount, std::vector<std::string>& currentOpTasks) const;
+    
+    // 拼接task列表为字符串
+    std::string ConcatTaskLine(const std::vector<std::string>& tasks) const;
+    
+    // 打印剩余未满行的tasks
+    void PrintRemainingTasks(bool isMonitor, u32 lineCount, u32 printedCount, const std::vector<std::string>& currentOpTasks) const;
+
     std::unordered_map<s32, u32> opExecIndexMap_;
 
     // 管理aicpu和custom进程共享的数据
