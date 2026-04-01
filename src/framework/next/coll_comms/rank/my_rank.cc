@@ -69,7 +69,7 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
     return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
 }
 
-HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
+HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum, uint32_t mode)
 {
     // EXCEPTION_HANDLE_BEGIN
     // 创建通信内存管理器
@@ -84,7 +84,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
+    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1 && mode) {
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
         CHK_PTR_NULL(ccuResContainer_);
         CHK_RET(ccuResContainer_->Init());
@@ -97,6 +97,11 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     EXECEPTION_CATCH(rankPairMgr_ = std::make_unique<RankPairMgr>(), return HCCL_E_PTR);
     // EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
+}
+
+HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
+{
+    return Init(cclBuffer, opExpansionMode, rankNum, 1);
 }
 
 HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 

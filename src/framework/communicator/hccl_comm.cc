@@ -146,6 +146,8 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
 
     InitIndependentOp();
 
+    communicator_->InitMyRank();
+
     return HCCL_SUCCESS;
 }
 

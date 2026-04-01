@@ -89,6 +89,8 @@ private:
     std::unique_ptr<SocketMgr> socketMgr_;
     std::unique_ptr<Hccl::SocketManager> socketMgrCompat_;
     std::unordered_map<CommEngine, std::vector<ChannelHandle>> channelHandles_{};
+    uint32_t rankId_;
+    uint32_t remoteRankId_;
 };
 
 } // namespace hcomm

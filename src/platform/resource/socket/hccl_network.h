@@ -87,6 +87,10 @@ public:
     {
         return protoType_;
     }
+    HcclProtoType SetProtoType(u32 proto)
+    {
+        protoType_ = (HcclProtoType)proto;
+    }
 
     std::shared_ptr<LocalIpcRmaBufferMgr> GetlocalIpcRmaBufferMgr()
     {

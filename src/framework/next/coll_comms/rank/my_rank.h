@@ -35,6 +35,8 @@ public:
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
+    // mode是否初始化ccu
+    HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum, uint32_t mode);
 
     CommMems* GetCommMems() const { return commMems_.get(); }
 

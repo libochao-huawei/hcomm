@@ -467,7 +467,9 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
     } else {
-        ret = HCCL_E_NOT_SUPPORT;
+        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+        CHK_PTR_NULL(hostCpuRoceChannelPtr);
+        ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
