@@ -425,7 +425,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     if (isAivMode) {
         if (isAivCrossNode) {
             algName = "ReduceScatterMeshAivFor91093Executor";
-        } else if ((isOpbase && dataSize <= AIV_REDUCE_SCATTER_MID_SIZE) 
+        } else if ((isOpbase && dataSize <= (userRankSize_ > AIV_REDUCE_SCATTER_RANK_SIZE_8 ?
+            AIV_REDUCE_SCATTER_SMALL_SIZE : AIV_REDUCE_SCATTER_MID_SIZE))
             || (!isOpbase && dataSize <= std::min(limit.aivCoreLimit / userRankSize_, NUM_BLOCKS_FACTOR_FOUR)
             * AIV_REDUCE_SCATTER_BIG_SIZE)) {
             algName = "ReduceScatterMeshAivSmallCountExecutor";
