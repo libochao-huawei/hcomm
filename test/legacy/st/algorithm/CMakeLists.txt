@@ -99,6 +99,8 @@ set(legacy_framework_include_list
     ${HCOMM_LEGACY_FRAMEWORK}/communicator
     ${HCOMM_LEGACY_FRAMEWORK}/communicator/aicpu
     ${HCOMM_LEGACY_FRAMEWORK}/dfx/common
+    ${HCOMM_LEGACY_FRAMEWORK}/dfx/aicpu
+    ${HCOMM_LEGACY_FRAMEWORK}/dfx/aicpu/common
     ${HCOMM_LEGACY_FRAMEWORK}/dfx/task_exception
     ${HCOMM_LEGACY_FRAMEWORK}/ccu
     ${HCOMM_LEGACY_FRAMEWORK}/ccu/ccu_ins
