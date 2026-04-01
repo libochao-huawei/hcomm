@@ -656,7 +656,7 @@ HcclResult AlltoallvContinuousPipeline::InterSendAndReceive(const u32 sendRank, 
         const u32 sourceRank = recvModuleFirstRank + intraRankId_;
         const u32 actualTargetRank = interRankId_ * intraRankSize_ + rankOffset;
         const u64 recvSrcOffset = GetDataBlockOffset(actualTargetRank, loopIdx);
-        const u64 recvDstOffset = GetDataBlockOffset(sourceRank, loopIdx);
+        const u64 recvDstOffset = GetDataBlockOffset(recvModuleFirstRank + rankOffset, loopIdx);
         const u64 recvCount = std::min(countsPerBlock_, intraRecvCounts_[rankOffset][sourceRank]);
         const u64 recvSize = recvCount * unitSize_;
         if (recvCount > 0) {
