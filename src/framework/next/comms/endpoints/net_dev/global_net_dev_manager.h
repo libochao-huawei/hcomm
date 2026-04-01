@@ -21,30 +21,30 @@
 #include <hccl/hccl_inner.h>
 #include "hccl_network_pub.h"
 #include "hccl_socket_manager.h"
+#include "hccl_net_dev.h"
 
 namespace hccl {
 
 // 进程粒度的endpoint的netdev管理单例
 class GlobalNetDevMgr {
 public:
-    static GlobalNetDevMgr& GetInstance(); // 获取单例
+    static GlobalNetDevMgr& GetInstance(u32 devicePhyId); // 获取单例
     ~GlobalNetDevMgr();
-    HcclResult InitNic();
-    HcclResult DeInitNic();
-    HcclResult Destroy();
-    HcclResult Init();
     HcclResult RefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port, HcclNetDevCtx& netDevCtx);
     HcclResult UnRefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port);
     HcclResult ServerInit(const HcclNetDevCtx netDevCtx, u32 port);
     HcclResult ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port);
-
+    HcclResult GetDeviceIP(u32 devicePhyId, std::vector<hccl::HcclIpAddress> &ipAddr);
     std::shared_ptr<HcclSocketManager> GetSocketManager() {return socketManager_;};
+
+private:
+    HcclResult Init(u32 devicePhyId, u32 deviceLogicID);
+    HcclResult DeInit();
 
 private:
     u32 devicePhyId_{INVALID_UINT};
     s32 deviceLogicId_{INVALID_INT};
 
-    bool nicInited_{false};
     bool isInited_{false};
     std::shared_ptr<HcclSocketManager> socketManager_;
 
