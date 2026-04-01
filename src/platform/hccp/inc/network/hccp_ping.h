@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef _HCCP_PING_H
-#define _HCCP_PING_H
+#ifndef HCCP_PING_H
+#define HCCP_PING_H
 
 #include "hccp_common.h"
 #include "hccp_ctx.h"
@@ -276,4 +276,4 @@ HCCP_ATTRI_VISI_DEF int RaPingDeinit(void *pingHandle);
 #ifdef __cplusplus
 }
 #endif
-#endif // _HCCP_PING_H
+#endif // HCCP_PING_H
