@@ -21,13 +21,14 @@
 #include <hccl/hccl_inner.h>
 #include "hccl_network_pub.h"
 #include "hccl_socket_manager.h"
+#include "hccl_net_dev.h"
 
 namespace hccl {
 
 // 进程粒度的endpoint的netdev管理单例
 class GlobalNetDevMgr {
 public:
-    static GlobalNetDevMgr& GetInstance(); // 获取单例
+    static GlobalNetDevMgr& GetInstance(u32 devicePhyId); // 获取单例
     ~GlobalNetDevMgr();
     HcclResult InitNic();
     HcclResult DeInitNic();
@@ -37,7 +38,9 @@ public:
     HcclResult UnRefNetDevCtx(NicType nicType, const HcclIpAddress& ipAddr, u32 port);
     HcclResult ServerInit(const HcclNetDevCtx netDevCtx, u32 port);
     HcclResult ServerDeInit(const HcclNetDevCtx netDevCtx, u32 port);
-
+    HcclResult GetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_t *addrNum);
+    HcclResult HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, hccl::HcclIpAddress *hcclIP);
+    HcclResult GetDeviceIP(u32 devicePhyId, std::vector<hccl::HcclIpAddress> &ipAddr);
     std::shared_ptr<HcclSocketManager> GetSocketManager() {return socketManager_;};
 
 private:
