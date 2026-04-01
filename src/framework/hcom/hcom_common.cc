@@ -209,7 +209,9 @@ HcclResult HcomInitCollComm(uint32_t rank, void **commV2, HcclCommPtr &comm)
     EXECEPTION_CATCH(comm = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName), return HCCL_E_PTR);
     void *rankGraph = nullptr;
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
-    constexpr HcclCommConfig *config = nullptr;
+    // constexpr HcclCommConfig *config = nullptr;
+    HcclCommConfig config;
+    config.hcclOpExpansionMode = 5;
     CHK_RET(comm->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
     HCCL_RUN_INFO("[%s] success, take time [%lld]us.", __func__, DURATION_US(TIME_NOW() - startut));
 #endif
