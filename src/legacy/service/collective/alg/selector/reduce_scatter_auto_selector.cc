@@ -46,7 +46,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] ccu_ms mode not support INT64, UINT64, FP64."),
         SelectorStatus::NOT_MATCH);
 
-    HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
+    HcclDetourType detourType = HcclDetourType::HCCL_DETOUR_DISABLE;
     CHK_PRT_RET((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != rankSize_2P)||
         (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != rankSize_4P),
         HCCL_WARNING("[Algo][ReduceScatterAutoSelector] detourType not match for rankSize."),

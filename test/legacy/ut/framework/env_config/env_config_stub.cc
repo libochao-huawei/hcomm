@@ -58,9 +58,5 @@ const EnvLogConfig &EnvConfigStub::GetLogConfig()
     return logCfg;
 }
 using namespace std;
-const EnvDetourConfig &EnvConfigStub::GetDetourConfig()
-{
-    return detourCfg;
-}
 
 } // namespace Hccl

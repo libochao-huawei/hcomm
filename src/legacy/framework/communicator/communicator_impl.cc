@@ -2766,8 +2766,8 @@ void CommunicatorImpl::CollAlgComponentInit()
                            .SetRankSize(GetRankSize())
                            .SetDmaMode(DmaMode::PUT)
                            .SetMainboardId(static_cast<uint8_t>(hcclMainboardId))
-                           .EnableDetour(EnvConfig::GetInstance().GetDetourConfig().GetDetourType()
-                                         == HcclDetourType::HCCL_DETOUR_ENABLE_2P) // 当前仅支持2P绕路
+                           .EnableDetour(HcclDetourType::HCCL_DETOUR_DISABLE
+                                         == HcclDetourType::HCCL_DETOUR_ENABLE_2P) 
                            .Build();
     if (collAlgComponent == nullptr) {
         HCCL_ERROR("collAlgComponent is a null pointer!");
