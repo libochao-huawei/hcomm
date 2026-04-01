@@ -282,7 +282,7 @@ std::vector<char> HcclOneSidedService::PackOpData(const CollAlgOpReq &req) const
 
     resType = AicpuResMgrType::QUEUE_NOTIFY;
     OneSidedSetModuleDataName(dataVec[resType], "QueueNotifyManager");
-    dataVec[resType].data = comm_->GetQueueNotifyManager().GetPackedData();
+    dataVec[resType].data = comm_->GetAicpuQueueNotifyManager().GetPackedData();
     HCCL_INFO("HcclOneSidedService::PackOpData: GetResMgr %s Data", resType.Describe().c_str());
 
     resType = AicpuResMgrType::QUEUE_WAIT_GROUP_CNT_NOTIFY;
