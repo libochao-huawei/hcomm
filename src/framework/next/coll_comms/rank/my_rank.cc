@@ -21,11 +21,19 @@ namespace MyRankUtils {
 
 HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
 {
-    HcommChannelDesc hcommDesc;
+    HcommChannelDesc hcommDesc{};
+    (void)HcommChannelDescInit(&hcommDesc, 1);
     hcommDesc.remoteEndpoint = hcclDesc.remoteEndpoint;
     hcommDesc.notifyNum = hcclDesc.notifyNum;
-    hcommDesc.memHandles = hcclDesc.memHandles;
+    hcommDesc.memHandles = reinterpret_cast<HcommMemHandle *>(hcclDesc.memHandles);
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
+    (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcommDesc.raws));
+
+    hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
+    hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
+    hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
+    hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
+    
     return hcommDesc;
 }
 
@@ -238,7 +246,7 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     int32_t* statusList = statusVec.data();
     uint32_t retryCount = 0;
     while (true) {
-        HcclResult ret = HcommChannelGetStatus(channelHandles, channelNum, statusList);
+        HcclResult ret = static_cast<HcclResult>(HcommChannelGetStatus(channelHandles, channelNum, statusList));
 
         // 卫语句：先处理异常情况
 
@@ -308,7 +316,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
             callbacks_.setAicpuCommState(true);
         }
 
-        CHK_RET(HcommChannelKernelLaunch(channelHandles, hostChannelHandleList, channelNum, commTag, binHandle_));
+        CHK_RET(static_cast<HcclResult>(HcommChannelKernelLaunch(channelHandles, hostChannelHandleList, channelNum, commTag, binHandle_)));
         return HCCL_SUCCESS;
     }
 
@@ -333,9 +341,9 @@ HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, ui
 
     u32 memNum = 0;  // 接收内存块数量
     /* 实现获取buffer Num的接口，此处Size为10的vector暂存 */
-    std::vector<HcommMem *> remoteMemList(10);
+    std::vector<CommMem *> remoteMemList(10);
     std::vector<char *> memTags(10);
-    CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data()));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data())));
 
     for (u32 i = 0; i < memNum; i++) {
         HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
@@ -360,7 +368,7 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     CHK_PTR_NULL(memTag);
     CHK_PTR_NULL(memNum);
 
-    CHK_RET(HcommChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGetUserRemoteMem(channel, remoteMem, memTag, memNum)));
     // 添加空指针检查，防止返回的指针为空
     if (*memNum > 0) {
         CHK_PTR_NULL(*remoteMem);

@@ -40,7 +40,7 @@
 #include "orion_adapter_rts.h"
 #include "env_config.h"
 #include "base_config.h"
-#include "json_parser.h"
+#include "topo_addr_info.h"
 
 using namespace Hccl;
 
@@ -144,11 +144,69 @@ TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_Normal_Expect_Succes
         .will(returnValue(
             const_cast<char*>(testJsonPath.c_str()) 
         ));
+    std::string testJsonContent = R"({
+        "version": "2.0",
+        "topo_file_path": "rootInfo.json",
+        "rank_count" : 2,
+        "rank_list": [
+            {
+                "rank_id": 0,
+                "device_id": 0,
+                "local_id": 0,
+                "level_list":  [
+                    {
+                        "net_layer": 0,
+                        "net_instance_id" : "az0-rack0",
+                        "net_type": "TOPO_FILE_DESC",
+                        "net_attr": "",
+                        "rank_addr_list": [
+                        {
+                        "addr_type": "IPV4",
+                        "addr": "223.0.0.28",
+                        "ports": [ "0/0" ]
+                        }
+                        ]
+                    }
+                ]
+            },
+            {
+                "rank_id": 1,
+                "local_id": 1,
+                "device_id": 1,
+                "level_list":  [
+                    {
+                        "net_layer": 0,
+                        "net_instance_id" : "az0-rack0",
+                        "net_type": "TOPO_FILE_DESC",
+                        "net_attr": "",
+                        "rank_addr_list": [
+                        {
+                        "addr_type": "IPV4",
+                        "addr": "223.0.0.10",
+                        "ports": [ "0/1" ]
+                        }
+                        ]
+                    }
+                ]
+            }
+        ]
+    })";
+    size_t expectedSize = testJsonContent.size();
+    MOCKER(TopoAddrInfoGetSize)
+        .stubs()
+        .with(0, outBoundP(&expectedSize, sizeof(size_t)))
+        .will(returnValue(0));
+    const char* rootInfoCtx = testJsonContent.c_str();
+    MOCKER(TopoAddrInfoGet)
+        .stubs()
+        .with(0, outBoundP(const_cast<char*>(rootInfoCtx), testJsonContent.size()), outBoundP(&expectedSize, sizeof(size_t)))
+        .will(returnValue(0));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->ConstructRankTable(localRankTable));
 
     EXPECT_EQ(localRankTable.version, "2.0");
     EXPECT_EQ(localRankTable.rankCount, 2);
+
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)

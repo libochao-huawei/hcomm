@@ -25,7 +25,7 @@ HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
-        ret = HcommChannelGetNotifyNum(channel, notifyNum);
+        ret = static_cast<HcclResult>(HcommChannelGetNotifyNum(channel, notifyNum));
     }
     else {
         auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();

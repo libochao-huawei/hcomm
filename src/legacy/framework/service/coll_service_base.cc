@@ -367,8 +367,8 @@ void CollServiceBase::SaveMirrorDfxOpInfo()
     CHECK_NULLPTR(comm, "[CollServiceBase::SaveMirrorDfxOpInfo] comm is nullptr!");
 
     dfxOpInfo->op_ = *comm->GetCurrentCollOperator();
-    dfxOpInfo->tag_ = OpTypeToString(dfxOpInfo->op_.opType);
-    dfxOpInfo->algType_ = AlgType::MESH;
+    dfxOpInfo->tag_ = dfxOpInfo->op_.opTag;
+    dfxOpInfo->algType_ = comm->GetCurAlgName().c_str();
     dfxOpInfo->commIndex_ = comm->GetIdIndex();
     dfxOpInfo->comm_ = comm;
     dfxOpInfo->beginTime_ = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
