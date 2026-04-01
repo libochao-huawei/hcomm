@@ -360,44 +360,6 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
     return HcclResult::HCCL_E_INTERNAL;
 }
 
-void CommunicatorImpl::TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const
-{
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], rankInGroup[%d],"
-                             " rankSizeInGroup[%u], devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
-                             opParams.opType.Describe().c_str(), GetOpBaseOpIndex(), GetId().c_str(),
-                             GetMyRank(), GetRankSize(), devLogicId, streamId,
-                             opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
-    GetTrace().Save(info);
-}
-
-void CommunicatorImpl::TraceOpInfo(const CollOpParams &opParams) const
-{
-    if (opParams.opType == OpType::BATCHSENDRECV) {
-        auto              itemNum = opParams.batchSendRecvDataDes.itemNum;
-        HcclSendRecvItem *sendRecvItems
-            = static_cast<HcclSendRecvItem *>(opParams.batchSendRecvDataDes.sendRecvItemsPtr);
-        for (u32 i = 0; i < itemNum; ++i) {
-            if ((sendRecvItems + i)->buf == nullptr) {
-                continue;
-            }
-            auto info
-                = StringFormat("Entry-Hccl(SendRecvType[%s], remoteRank[%d], count[%llu], dataType[%d], buf[%p].",
-                               (sendRecvItems + i)->sendRecvType == 1 ? "RECV" : "SEND",
-                               (sendRecvItems + i)->remoteRank, (sendRecvItems + i)->count,
-                               (sendRecvItems + i)->dataType, (sendRecvItems + i)->buf);
-            GetTrace().Save(info);
-        }
-    }
-}
-
-void CommunicatorImpl::TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const
-{
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]) success: group[%s], take time[%lld]us",
-                             opParams.opType.Describe().c_str(), GetOpBaseOpIndex(), GetId().c_str(),
-                             std::chrono::duration_cast<std::chrono::microseconds>(endut - startut).count());
-    GetTrace().Save(info);
-}
-
 void CommunicatorImpl::RefreshSubmittedOpcnt()
 {
     if (currentCollOperator->opType == OpType::SEND || currentCollOperator->opType == OpType::RECV) {
@@ -685,12 +647,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OPBASE);
-            TraceOpInfo(opParams);
-            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
-            HcclUs endut = std::chrono::steady_clock::now();
-            TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
         // 判断是否为aclgraph
@@ -722,15 +679,12 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
 
         // 避免transport建链前，通讯域被摧毁
         status = CommStatus::COMM_INUSE;
-        TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OPBASE);
         if (opParams.sendBuf != nullptr) {
             PrintMemoryAttr(opParams.sendBuf);
         }
         if (opParams.recvBuf != nullptr) {
             PrintMemoryAttr(opParams.recvBuf);
         }
-        TraceOpInfo(opParams);
-        HcclUs startut = std::chrono::steady_clock::now();
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
         // 更新开关状态
@@ -742,8 +696,6 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         // ReportProfInfok:opinfo, allTaskInfo
         bool cachedReq = opParams.staticShape || isCapture;
         ReportProfInfo(beginTime, cachedReq, true);
-        HcclUs endut = std::chrono::steady_clock::now();
-        TraceEndInfo(startut, endut, opParams);
         RefreshSubmittedOpcnt();
         opBaseOpIndex++;
         opIndex++;
@@ -808,12 +760,8 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), false));
         status = CommStatus::COMM_INUSE;
-        TraceOpInfo(opParams);
-        HcclUs startut = std::chrono::steady_clock::now();
         std::string opAlgTag = opParams.opTag + "_" + curAlgName;
         CHK_RET(collService->AllocCollOpResource(*currentCollOperator, opAlgTag, addr));
-        HcclUs endut = std::chrono::steady_clock::now();
-        TraceEndInfo(startut, endut, opParams);
         status = CommStatus::COMM_READY;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -948,12 +896,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         SnapShotParser::GetInstance().SetIsNeedLoadOp(false);
         if (rankSize == 1) {
             HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1, enter SingleRankProc", __func__);
-            TraceStartInfo(HrtGetStreamId(stream), opParams, OpMode::OFFLOAD);
-            TraceOpInfo(opParams);
-            HcclUs startut = std::chrono::steady_clock::now();
             SingleRankProc(opParams, stream);
-            HcclUs endut = std::chrono::steady_clock::now();
-            TraceEndInfo(startut, endut, opParams);
             return HcclResult::HCCL_SUCCESS;
         }
         uint64_t beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -982,13 +925,6 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
             currentCollOperator->numBlocksLimit = aivCoreLimit;
             HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%u].", aivCoreLimit);
         }
-
-        auto info = StringFormat("Entry-Hccl(opType[%s]): group[%s], rankInGroup[%d], rankSizeInGroup[%u], "
-                                 "devLogicId[%d], streamId[%u], opMode[%s], opIndex[%u], %s",
-                                 currentCollOperator->opType.Describe().c_str(), GetId().c_str(), GetMyRank(),
-                                 GetRankSize(), devLogicId, HrtGetStreamId(stream),
-                                 currentCollOperator->opMode.Describe().c_str(), opIndex, opParams.Describe().c_str());
-        GetTrace().Save(info);
         if (isAiv && aivClearEnable) {
             aivOffloadTag = 1;
         } else if (isAiv) {
@@ -997,14 +933,10 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         
         // 避免transport建链前，通讯域被摧毁
         status = CommStatus::COMM_INUSE;
-        HcclUs startut = std::chrono::steady_clock::now();
         collService->LoadWithOffloadMode(*currentCollOperator, std::make_unique<Stream>(stream));
         status = CommStatus::COMM_READY;
-        // ReportProfInfok:opinfo, allTaskInfo
         bool cachedReq = opParams.staticShape || isCapture;
         ReportProfInfo(beginTime, cachedReq, isCapture); // profiling对于aclgraph场景的处理与单算子一致
-        HcclUs endut = std::chrono::steady_clock::now();
-        TraceEndInfo(startut, endut, opParams);
         opIndex++;
     } catch (HcclException &e) {
         status = CommStatus::COMM_READY;
@@ -1032,6 +964,14 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
     u32 recvTypeSize = 0;
     if (opParams.opType == OpType::ALLTOALLV) {
         for (u32 i = 0; i < rankSize; i++) {
+            CHECK_NULLPTR((static_cast<const u64 *>(opParams.all2AllVDataDes.sendCounts) + i),
+                StringFormat("%s failed, opParams.all2AllVDataDes.sendCounts[%u] is nullptr", __func__, i));
+            CHECK_NULLPTR((static_cast<const u64 *>(opParams.all2AllVDataDes.sdispls) + i),
+                StringFormat("%s failed, opParams.all2AllVDataDes.sdispls[%u] is nullptr", __func__, i));
+            CHECK_NULLPTR((static_cast<const u64 *>(opParams.all2AllVDataDes.recvCounts) + i),
+                StringFormat("%s failed, opParams.all2AllVDataDes.recvCounts[%u] is nullptr", __func__, i));
+            CHECK_NULLPTR((static_cast<const u64 *>(opParams.all2AllVDataDes.rdispls) + i),
+                StringFormat("%s failed, opParams.all2AllVDataDes.rdispls[%u] is nullptr", __func__, i));
             u64 curSendCount = *(static_cast<const u64 *>(opParams.all2AllVDataDes.sendCounts) + i) +
                 *(static_cast<const u64 *>(opParams.all2AllVDataDes.sdispls) + i);
             sendCount = std::max(sendCount, curSendCount);
@@ -1043,6 +983,8 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
         recvTypeSize = DataTypeSizeGet(opParams.all2AllVDataDes.recvType);
     } else if (opParams.opType == OpType::ALLTOALLVC){
         for (u32 i = 0; i < rankSize; i++) {
+            CHECK_NULLPTR((static_cast<const u64 *>(opParams.all2AllVCDataDes.sendCountMatrix) + myRank * rankSize + i),
+                            StringFormat("%s failed, opParams.all2AllVCDataDes.sendCountMatrix[%u] is nullptr", __func__, (myRank * rankSize + i)));
             sendCount += *(static_cast<const u64 *>(opParams.all2AllVCDataDes.sendCountMatrix) +
                             myRank * rankSize + i);
             recvCount += *(static_cast<const u64 *>(opParams.all2AllVCDataDes.sendCountMatrix) +
@@ -1060,14 +1002,14 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
     recvSize = recvCount * recvTypeSize;
 }
 
-void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch)
+void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch, bool isHcomSelectAlg)
 {
     if (currentCollOperator == nullptr) {
         std::string msg = StringFormat("currentCollOperator is nullptr");
         THROW<NullPtrException>(msg);
     }
 
-    if (isLaunch) {
+    if (isLaunch && !isHcomSelectAlg) {
         LaunchConvertCollOperatorA2A(opParams);
     } else {
         DefaultConvertCollOperatorA2A(opParams);
@@ -1076,7 +1018,7 @@ void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool
 
 void CommunicatorImpl::DefaultConvertCollOperatorA2A(const CollOpParams &opParams)
 {
-    // MC2场景准备资源场景下只需默认值
+    // MC2场景、图模式算法选择场景准备资源场景下只需默认值
     HCCL_INFO("DefaultConvertCollOperatorA2A start.");
     if (opParams.opType == OpType::ALLTOALL) {
         currentCollOperator->all2AllDataDes.sendCount = 0;
@@ -1175,19 +1117,16 @@ void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams)
     HCCL_INFO("[CommunicatorImpl::%s] end.", __func__);
 }
 
-void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch)
+void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch, bool isHcomSelectAlg)
 {
-    currentCollOperator = make_unique<CollOperator>();
-    if (!currentCollOperator) {
-        HCCL_ERROR("[CommunicatorImpl][%s] currentCollOperator is nullptr", __func__);
-    }
+    std::string errorMsg = "CovertToCurrentCollOperator make_unique<CollOperator> failed";
+    TRY_CATCH_THROW(InternalException, errorMsg, currentCollOperator = make_unique<CollOperator>(););
+    CHECK_NULLPTR(currentCollOperator, StringFormat("[CommunicatorImpl][%s] currentCollOperator is nullptr", __func__));
     currentCollOperator->opMode      = opMode;
     currentCollOperator->opTag       = opTag; // 单算子 标签 为通信域id, 图模式 标签 为传入的opTag
     currentCollOperator->staticAddr  = opParams.staticAddr;
     currentCollOperator->staticShape = opParams.staticShape;
     currentCollOperator->myRank      = GetMyRank();
-
-    HCCL_INFO("[CommunicatorImpl][%s] scratchMem start :opMode[%s]", __func__, currentCollOperator->opMode.Describe().c_str());
     if (opMode == OpMode::OPBASE) { // 单算子Scratch buffer为CCL Buffer
         currentCollOperator->scratchMem = DevBuffer::Create(GetCclBuffer()->GetAddr(), GetCclBuffer()->GetSize());
     } else if (opMode == OpMode::OFFLOAD) {
@@ -1206,12 +1145,11 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
     currentCollOperator->debugCase = opParams.debugCase;
     currentCollOperator->sendRecvRemoteRank = opParams.dstRank;
     if (opParams.opType == OpType::ALLTOALL || opParams.opType == OpType::ALLTOALLV || opParams.opType == OpType::ALLTOALLVC) {
-        ConvertCollOperatorA2A(opParams, isLaunch);
+        ConvertCollOperatorA2A(opParams, isLaunch, isHcomSelectAlg);
     } else if (opParams.opType == OpType::BATCHSENDRECV) {
         currentCollOperator->batchSendRecvDataDes.sendRecvItemsPtr = opParams.batchSendRecvDataDes.sendRecvItemsPtr;
         currentCollOperator->batchSendRecvDataDes.itemNum = opParams.batchSendRecvDataDes.itemNum;
         currentCollOperator->dataType = HcclDataTypeToDataType(static_cast<HcclSendRecvItem*>(opParams.batchSendRecvDataDes.sendRecvItemsPtr)->dataType);
-        HCCL_INFO("[CommunicatorImpl][%s] OpType::BATCHSENDRECV item = %llu", __func__, currentCollOperator->batchSendRecvDataDes.itemNum);
     } else {
         currentCollOperator->dataType  = opParams.dataType;
         currentCollOperator->dataCount = opParams.count;
@@ -2982,7 +2920,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     WaitReady();
 
     std::string tag = ""; // 算法选择不需要传入tag，获取kernel arg的时候会用到
-    CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD);
+    CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD, true, true);
     // 图模式算子加载选择CollService
     opExecuteConfig = commExecuteConfig;
     ExecAlgSelect(opParams, OpMode::OFFLOAD);
@@ -3986,6 +3924,20 @@ void CommunicatorImpl::RegisterAicpuKernel()
 aclrtFuncHandle CommunicatorImpl::GetAicpuKernelFuncHandle(const char *kernelName) const
 {
     return aicpuKernelHolder_.GetAicpuKernelFuncHandle(kernelName);
+}
+
+HcclResult CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream)
+{
+    if (aicpuStreamManager == nullptr)
+    {
+        HCCL_ERROR("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] aicpuStreamManager is nullPtr!");
+        return HCCL_E_PTR;
+    }
+    aicpuStreamManager->AllocFreeStream();
+    Stream *stream = aicpuStreamManager->GetFreeStream();
+    *aiCpuStream = stream->GetPtr();
+    HCCL_RUN_INFO("[CommunicatorImpl::Mc2AiCpuStreamAllocAndGetV2] success, stream %s", stream->Describe().c_str());
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl

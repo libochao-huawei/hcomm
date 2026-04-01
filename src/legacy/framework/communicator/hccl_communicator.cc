@@ -525,4 +525,10 @@ Trace& HcclCommunicator::GetTrace() const
 {
     return pimpl->GetTrace();
 }
+
+HcclResult HcclCommunicator::Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream)
+{
+    return pimpl->Mc2AiCpuStreamAllocAndGetV2(aiCpuStream);
+}
+
 } // namespace Hccl
