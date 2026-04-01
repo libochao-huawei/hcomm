@@ -25,6 +25,10 @@ AicpuTsRoceRegedMemMgr::AicpuTsRoceRegedMemMgr(HcclNetDev netDev) : netDev_(netD
     if (netDev_ != nullptr) {
         auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
         localRdmaRmaBufferMgr_ = netDevCtx->GetlocalRdmaRmaBufferMgr();
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr] ctor netDev[%p] localRdmaRmaBufferMgr[%p]", static_cast<void *>(netDev_),
+            static_cast<void *>(localRdmaRmaBufferMgr_.get()));
+    } else {
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr] ctor netDev is null, local mgr unset");
     }
 }
 
@@ -45,7 +49,10 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
     if (findPair.first) {
         localRdmaRmaBuffer = findPair.second;
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find hit, reuse buffer mgr entry key {%p, %llu}", mem.addr, mem.size);
     } else {
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] Find miss, construct LocalRdmaRmaBuffer key {%p, %llu} type[%u]",
+            mem.addr, mem.size, static_cast<unsigned int>(mem.type));
         EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<hccl::LocalRdmaRmaBuffer>(netDevCtx, mem.addr, size, memType)),
             return HCCL_E_PTR);
     }
@@ -109,6 +116,8 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     if (hit != hcclBufRecords_.end()) {
         hcclBufRecords_.erase(hit);
     }
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] success, memHandle[%p] key {%p, %llu}", memHandle,
+        buffer->GetAddr(), static_cast<unsigned long long>(buffer->GetSize()));
     return HCCL_SUCCESS;
 }
 
@@ -141,6 +150,8 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc,
 
     *memDesc = static_cast<void *>(blob.data());
     *memDescLen = static_cast<uint32_t>(blob.size());
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryExport] success memHandle[%p] memDescLen[%u] rdmaSerLen[%zu]", memHandle,
+        *memDescLen, ser.size());
     return HCCL_SUCCESS;
 }
 
@@ -179,6 +190,8 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t de
         EXECEPTION_CATCH(mgr = std::make_unique<RemoteRdmaRmaBufferMgr>(), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(mgr);
         remoteRdmaRmaBufferMgrs_[endpointDesc] = std::move(mgr);
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryImport] created RemoteRdmaRmaBufferMgr for new endpoint, mgrCnt[%zu]",
+            remoteRdmaRmaBufferMgrs_.size());
     }
 
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(remoteBuf->GetAddr()), remoteBuf->GetSize());
@@ -191,6 +204,8 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t de
     outMem->addr = remoteBuf->GetAddr();
     outMem->size = remoteBuf->GetSize();
     outMem->type = COMM_MEM_TYPE_DEVICE;
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryImport] success descLen[%u] outMem addr[%p] size[%llu], mgrCnt[%zu]",
+        descLen, outMem->addr, static_cast<unsigned long long>(outMem->size), remoteRdmaRmaBufferMgrs_.size());
     return HCCL_SUCCESS;
 }
 
@@ -221,7 +236,11 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t 
     }
     if (mgrIt->second->size() == 0) {
         remoteRdmaRmaBufferMgrs_.erase(mgrIt);
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryUnimport] erased empty remote mgr, descLen[%u] remainingMgrCnt[%zu]",
+            descLen, remoteRdmaRmaBufferMgrs_.size());
     }
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][MemoryUnimport] success descLen[%u] key {%p, %llu}", descLen, probe->GetAddr(),
+        static_cast<unsigned long long>(probe->GetSize()));
     return HCCL_SUCCESS;
 }
 
@@ -233,9 +252,12 @@ HcclResult AicpuTsRoceRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t 
     *memHandleNum = static_cast<uint32_t>(hcclBufRecords_.size());
     if (*memHandleNum == 0U) {
         *memHandles = nullptr;
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemHandles] no records, memHandleNum[0]");
         return HCCL_SUCCESS;
     }
     *memHandles = static_cast<void *>(hcclBufRecords_.data());
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemHandles] memHandleNum[%u] hcclBufRecords[%p]", *memHandleNum,
+        static_cast<void *>(hcclBufRecords_.data()));
     return HCCL_SUCCESS;
 }
 
