@@ -90,8 +90,6 @@ int hal_get_spod_info(int phyId, struct dcmi_spod_info* spodInfo);
 
 int hal_get_npu_count();
 
-int hal_get_phyid_from_logicid(unsigned int logicId, unsigned int* phyId);
-
 int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId);
 
 int get_server_id(char* server_id, size_t buf_size);

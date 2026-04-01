@@ -161,24 +161,27 @@ HcclResult CcuTempReduceScatterMeshDetour1D::Run(const TempFuncs &tempFuncs, con
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                           std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceScatterMeshDetour1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
-
     CcuInstructionReduceScatterMeshDetour1D ccuInsReduceScatterMeshDetour1D;
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
+    uint64_t offset;
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             // 从UserIn获取数据
-            offSet = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
+            // 需要加上UserIn的偏移，包含了loop偏移和rank偏移
+            offset = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
         } else {
             // 从inBuff获取数据，只需要加上rank偏移
-            offSet = sliceInfoVec[myRank_][0].offset;
+            offset = sliceInfoVec[myRank_][0].offset;
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
@@ -188,7 +191,7 @@ HcclResult CcuTempReduceScatterMeshDetour1D::Run(const TempFuncs &tempFuncs, con
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
         }
     } else {
-        offSet     = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
+        offset = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
         inputAddr  = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
     }
@@ -206,11 +209,11 @@ HcclResult CcuTempReduceScatterMeshDetour1D::Run(const TempFuncs &tempFuncs, con
     std::vector<LinkData> links;
     ProcessLinks(links, tempLinks);
 
-    ccuInsReduceScatterMeshDetour1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, offSet, token, op_, tempVTopo_, iterNum,
+    ccuInsReduceScatterMeshDetour1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, offset, token, op_, tempVTopo_, iterNum,
         tailOffSet, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_, lengths_);
     HCCL_INFO("[CcuTempReduceScatterMeshDetour1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu], outputAddr[%llu],"\
         "sliceSize[%llu], offset[%llu], iterNum[%llu], tailOffSet[%llu], tailSize[%llu], singleTransportSize_[%u], detourPathNum_[%u], pathNumPerPeer_[%u]",
-        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offSet, iterNum, tailOffSet, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_);
+        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offset, iterNum, tailOffSet, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_);
     HCCL_INFO("[CcuTempReduceScatterMeshDetour1D] links.size[%zu]", links.size());
     ccuInsReduceScatterMeshDetour1D.SetLinks(links);
     RankGroup rankGroup;

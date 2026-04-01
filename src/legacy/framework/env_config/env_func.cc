@@ -618,7 +618,7 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
     HcclAccelerator mode;
     if (s == "AI_CPU") {
         mode = HcclAccelerator::AICPU_TS;
-    } else if (s == "AIV") {
+    } else if (s == "AIV" || s == "AIV_ONLY") {
         mode = HcclAccelerator::AIV;
     } else if (s == "HOST" || s == "HOST_TS") {
         mode = HcclAccelerator::CCU_SCHED;
@@ -630,7 +630,7 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
     } else {
         THROW<InvalidParamsException>(
             StringFormat("Env HCCL_OP_EXPANSION_MODE config \"%s\" is invalid."
-                "it should be one of [AI_CPU, AIV, CCU_MS, CCU_SCHED].", s.c_str()));
+                "it should be one of [AI_CPU, AIV, AIV_ONLY, CCU_MS, CCU_SCHED].", s.c_str()));
     }
     return mode;
 }
