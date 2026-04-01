@@ -172,7 +172,7 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
         LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), rankId, rankTable.rankList[rankId].rankId), HCCL_E_UNAVAIL);
 
     DetectNicDepoly(rankTable, rankId);
-    CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy);
+    CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy));
 
     u32 devId = rankTable.rankList[rankId].deviceInfo.devicePhyId;
     CHK_RET(hrtGetDevice(&params.logicDevId));

@@ -4804,7 +4804,7 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
         if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
             return HCCL_E_NOT_FOUND;
         }
-        return g_taskServiceMap[commId]->TaskRegister(memTag, cb);
+        return g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
     }
 #endif
     return HCCL_E_NOT_SUPPORT;
@@ -4824,7 +4824,7 @@ int32_t HcclTaskUnRegister(HcclComm comm,  const char *msgTag)
         if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
             return HCCL_E_NOT_FOUND;
         }
-        return g_taskServiceMap[commId]->TaskUnRegister(memTag, cb);
+        return g_taskServiceMap[commId]->TaskUnRegister(msgTag);
     }
 #endif
     return HCCL_E_NOT_SUPPORT;

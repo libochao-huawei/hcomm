@@ -104,7 +104,7 @@ HcclResult HcclSocket::Listen()
         RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0020", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     } else {
-        u32 proto = 0
+        u32 proto = 0;
         SocketHandle hostSocketHandle;
         bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
         HcclNetDevGetProtoType(netDevCtx_, proto);
@@ -163,7 +163,7 @@ HcclResult HcclSocket::Listen(u32 port)
         RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0020", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     } else {
-        u32 proto = 0
+        u32 proto = 0;
         SocketHandle hostSocketHandle;
         bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
         HcclNetDevGetProtoType(netDevCtx_, proto);
