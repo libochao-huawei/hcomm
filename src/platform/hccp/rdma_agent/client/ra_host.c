@@ -227,7 +227,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketInit(int mode, struct rdev rdevInfo, void **sock
 
     socketHandleTmp = calloc(1, sizeof(struct RaSocketHandle));
     CHK_PRT_RETURN(socketHandleTmp == NULL,
-        hccp_err("[init][ra_socket]ra_inet_pton for local_ip failed, ret(%d)", ret),
+        hccp_err("[init][ra_socket]calloc socketHandleTmp failed, ret(%d)", ret),
         ConverReturnCode(HCCP_INIT, -ENOMEM));
 
     if (mode == NETWORK_OFFLINE) {
@@ -1867,6 +1867,9 @@ HCCP_ATTRI_VISI_DEF int RaGetQpContext(void *qpHandle, void** qp, void** sendCq,
         hccp_err("[get][ra_get_qp_context]rdma_ops is NULL or ra_get_qp_context is NULL, invalid");
         return ConverReturnCode(RDMA_OP, -EINVAL);
     }
+    CHK_PRT_RETURN(raQpHandle->phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[get][rs_get_qp_context]qpPeer->phyId[%u] >= max_dev_num[%u], input is invalid", qpHandle->phyId,
+            RA_MAX_PHY_ID_NUM), -EINVAL);
 
     ret = raQpHandle->rdmaOps->raGetQpContext(raQpHandle, qp, sendCq, recvCq);
     return ConverReturnCode(RDMA_OP, ret);
