@@ -184,6 +184,7 @@ HcclResult GlobalMemRegMgr::DeReg(void *memRecordHandle)
 
 HcclResult GlobalMemRegMgr::InitNic()
 {
+    std::lock_guard<std::mutex> lock(netDevCtxMtx_);
     if (nicInited_) {
         HCCL_INFO("[InitNic] Nic has been inited. devicePhyId[%u], deviceLogicId[%d]", devicePhyId_, deviceLogicId_);
         return HCCL_SUCCESS;
