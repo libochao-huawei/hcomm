@@ -27,7 +27,7 @@ public:
                    std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
     HcclResult FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
 
     std::string Describe() const override;
 
@@ -131,7 +131,7 @@ private:
     void RecvFinish();
 
     void BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag);
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     void CntNotifyVecPack(BinaryStream &binaryStream);
 
     void CntNotifyDescPack(BinaryStream &binaryStream);
