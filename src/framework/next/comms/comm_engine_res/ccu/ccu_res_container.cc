@@ -26,15 +26,14 @@ constexpr uint32_t CCU_MS_MODE = 5;
 constexpr uint32_t CCU_SCHE_MODE = 6;
 inline CcuEngine OpExpansionModeToCcuEngine(const uint32_t opExpansionMode)
 {
-    if (opExpansionMode == DEFAULT_MODE ||
-        opExpansionMode == CCU_SCHE_MODE) {
+    if (opExpansionMode == DEFAULT_MODE || opExpansionMode == CCU_SCHE_MODE) {
         return CcuEngine::CCU_SCHE;
     }
 
     if (opExpansionMode == CCU_MS_MODE) {
         return CcuEngine::CCU_MS;
     }
-    
+
     return CcuEngine::INVALID;
 }
 
@@ -109,4 +108,4 @@ const std::vector<CcuKernelHandle> &CcuResContainer::GetUntranslatedKernels()
     return untranslatedKernelHandles_;
 }
 
-}
+} // namespace hcomm

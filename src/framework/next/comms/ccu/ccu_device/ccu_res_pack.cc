@@ -22,8 +22,7 @@ CcuResPack::~CcuResPack()
 
     auto ret = CcuReleaseResHandle(devLogicId_, resHandle_);
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CcuResPack][%s] failed, resHandle[0x%llx] devLogicId[%d].",
-            __func__, resHandle_, devLogicId_);
+        HCCL_ERROR("[CcuResPack][%s] failed, resHandle[0x%llx] devLogicId[%d].", __func__, resHandle_, devLogicId_);
     }
     resHandle_ = 0;
 }
@@ -32,8 +31,7 @@ HcclResult CcuResPack::Init()
 {
     devLogicId_ = HcclGetThreadDeviceId();
     if (ccuEngine_ == CcuEngine::INVALID) {
-        HCCL_ERROR("[CcuResPack][%s] failed, error ccu engine type[%d].",
-            __func__, static_cast<int32_t>(ccuEngine_));
+        HCCL_ERROR("[CcuResPack][%s] failed, error ccu engine type[%d].", __func__, static_cast<int32_t>(ccuEngine_));
         return HcclResult::HCCL_E_PARA;
     }
 

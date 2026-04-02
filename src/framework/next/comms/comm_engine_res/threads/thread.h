@@ -31,32 +31,30 @@
 namespace hccl {
 
 struct ThreadCreateParams {
-    CommEngine engine;                    // 通信引擎类型
-    uint32_t threadNum;                    // 线程数量
-    uint32_t notifyNumPerThread;           // 每个线程的通知量数量
-    NotifyLoadType notifyLoadType;   // 通知量加载类型
-    StreamType streamType;           // 流类型
-    
+    CommEngine engine;             // 通信引擎类型
+    uint32_t threadNum;            // 线程数量
+    uint32_t notifyNumPerThread;   // 每个线程的通知量数量
+    NotifyLoadType notifyLoadType; // 通知量加载类型
+    StreamType streamType;         // 流类型
+
     // 默认构造函数
-    ThreadCreateParams() 
-        : engine(COMM_ENGINE_RESERVED)
-        , threadNum(0)
-        , notifyNumPerThread(0)
-        , notifyLoadType(NotifyLoadType::HOST_NOTIFY)
-        , streamType(StreamType::STREAM_TYPE_RESERVED) {
+    ThreadCreateParams()
+        : engine(COMM_ENGINE_RESERVED),
+          threadNum(0),
+          notifyNumPerThread(0),
+          notifyLoadType(NotifyLoadType::HOST_NOTIFY),
+          streamType(StreamType::STREAM_TYPE_RESERVED)
+    {
     }
 
     // 带参数的构造函数
-    ThreadCreateParams(CommEngine engine, 
-                       uint32_t tNum,
-                       uint32_t nNum,
-                       NotifyLoadType nType,
-                       StreamType sType)
-        : engine(engine)
-        , threadNum(tNum)
-        , notifyNumPerThread(nNum)
-        , notifyLoadType(nType)
-        , streamType(sType) {
+    ThreadCreateParams(CommEngine engine, uint32_t tNum, uint32_t nNum, NotifyLoadType nType, StreamType sType)
+        : engine(engine),
+          threadNum(tNum),
+          notifyNumPerThread(nNum),
+          notifyLoadType(nType),
+          streamType(sType)
+    {
     }
 };
 
@@ -91,35 +89,42 @@ public:
 
     virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const = 0;
     virtual HcclResult LocalReduce(
-        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const = 0;
+        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const
+        = 0;
     virtual bool GetMaster() const = 0;
     virtual void SetIsMaster(bool isMaster) = 0;
 
     HcclResult AddThreadHandleToMap(CommEngine commEngine, ThreadHandle threadHandle);
     Thread *FindThreadByCommEngine(CommEngine commEngine);
-    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
- 	    CHK_PTR_NULL(callback);
- 	    callback_ = callback;
- 	    return HCCL_SUCCESS;
- 	}
- 	std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
- 	         return callback_;
- 	}
+    HcclResult SetAddTaskInfoCallback(std::function<HcclResult(u32, u32, const Hccl::TaskParam &, u64)> callback)
+    {
+        CHK_PTR_NULL(callback);
+        callback_ = callback;
+        return HCCL_SUCCESS;
+    }
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam &, u64)> GetCallback()
+    {
+        return callback_;
+    }
+
 protected:
     HcclResult ReportAicpuNotifyWaitTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostNotifyWaitTask(u64 notifyId, u64 beginTime, bool isMaster) const;
     HcclResult ReportAicpuNotifyRecordTask(u64 notifyId, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostNotifyRecordTask(u64 notifyId, u64 beginTime, bool isMaster) const;
-    HcclResult ReportAicpuLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId,u32 sqId) const;
-    HcclResult ReportHostLocalCopyTask(void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const;
+    HcclResult ReportAicpuLocalCopyTask(
+        void *dst, const void *src, uint64_t sizeByte, u64 beginTime, u32 taskId, u32 sqId) const;
+    HcclResult ReportHostLocalCopyTask(
+        void *dst, const void *src, uint64_t sizeByte, u64 beginTime, bool isMaster) const;
     HcclResult ReportAicpuLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
         HcommReduceOp reduceOp, u64 beginTime, u32 taskId, u32 sqId) const;
     HcclResult ReportHostLocalReduceTask(void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType,
         HcommReduceOp reduceOp, u64 beginTime, bool isMaster) const;
 
 private:
-    std::unordered_map<CommEngine, ThreadHandle> threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback_; // 上报task信息的回调函数
+    std::unordered_map<CommEngine, ThreadHandle>
+        threadHandleMap_; // CPU_TS上的ThreadHandle与其他引擎上的ThreadHandle的映射
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam &, u64)> callback_; // 上报task信息的回调函数
 };
 
 inline Stream *GetStream(uint64_t thread)
@@ -142,17 +147,17 @@ inline LocalNotify *GetNotify(uint64_t thread, uint32_t index)
     return threadPtr->GetNotify(index);
 }
 
-HcclResult CreateThread(CommEngine engine, StreamType streamType, uint32_t notifyNum,
-                        NotifyLoadType loadType, std::shared_ptr<Thread>& out_thread);
+HcclResult CreateThread(CommEngine engine, StreamType streamType, uint32_t notifyNum, NotifyLoadType loadType,
+    std::shared_ptr<Thread> &out_thread);
 HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommHostEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
 HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
 HcclResult ValidateThreadParams(uint32_t threadNum, uint32_t notifyNumPerThread);
 HcclResult SaveThreads(const std::vector<std::shared_ptr<hccl::Thread>> &newThreads);
-HcclResult CreateAndInitThreads(const ThreadCreateParams& params,
-    std::vector<std::shared_ptr<hccl::Thread>>& outThreads);
-HcclResult StoreThreadHandles(std::vector<std::shared_ptr<hccl::Thread>>& newThreads,
-    ThreadHandle* threads, CommEngine engine, aclrtBinHandle binHandle);
+HcclResult CreateAndInitThreads(
+    const ThreadCreateParams &params, std::vector<std::shared_ptr<hccl::Thread>> &outThreads);
+HcclResult StoreThreadHandles(std::vector<std::shared_ptr<hccl::Thread>> &newThreads, ThreadHandle *threads,
+    CommEngine engine, aclrtBinHandle binHandle);
 HcclResult FreeThreads(const ThreadHandle *threads, uint32_t threadNum, aclrtBinHandle binHandle);
-}  // namespace hccl
-#endif  // THREAD_H
+} // namespace hccl
+#endif // THREAD_H

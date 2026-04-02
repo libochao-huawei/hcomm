@@ -15,24 +15,24 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepBufReduce : public CcuRepBase {
-public:
-    CcuRepBufReduce(const std::vector<CcuBuf> &mem, uint16_t count, uint16_t dataType, uint16_t outputDataType,
-                    uint16_t opType, CompletedEvent sem, const CcuRep::Variable &len, uint16_t mask = 1);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepBufReduce : public CcuRepBase {
+    public:
+        CcuRepBufReduce(const std::vector<CcuBuf> &mem, uint16_t count, uint16_t dataType, uint16_t outputDataType,
+            uint16_t opType, CompletedEvent sem, const CcuRep::Variable &len, uint16_t mask = 1);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    std::vector<CcuBuf> mem;
-    uint16_t               count;
-    uint16_t               dataType;
-    uint16_t               outputDataType;
-    uint16_t               opType;
-    CompletedEvent         sem;
-    CcuRep::Variable       xnIdLength_;
-    uint16_t               mask{0};
-};
+    private:
+        std::vector<CcuBuf> mem;
+        uint16_t count;
+        uint16_t dataType;
+        uint16_t outputDataType;
+        uint16_t opType;
+        CompletedEvent sem;
+        CcuRep::Variable xnIdLength_;
+        uint16_t mask{0};
+    };
 
-};     // namespace CcuRep
-};     // namespace hcomm
+}; // namespace CcuRep
+}; // namespace hcomm
 #endif // HCOMM_CCU_REPRESENTATION_BUFREDUCE_H

@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #ifndef __AICPU_CHANNEL_PROCESS_H__
 #define __AICPU_CHANNEL_PROCESS_H__
 
@@ -22,6 +21,7 @@ public:
     static HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuChannelInit(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuChannelDestroy(HcclChannelUrmaRes *commParam);
+
 private:
     static std::mutex mutex_;
     static std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;

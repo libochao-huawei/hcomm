@@ -24,14 +24,14 @@ public:
     ~EngineCtxMgr();
 
     // 获取引擎上下文
-    HcclResult AcquireEngineCtx(CommEngineType engineType, OpTag opTag, uint32_t ctxSize,
-                               EngineCtx** engineCtx, bool* newCreated);
+    HcclResult AcquireEngineCtx(
+        CommEngineType engineType, OpTag opTag, uint32_t ctxSize, EngineCtx **engineCtx, bool *newCreated);
 
     // 释放引擎上下文
-    HcclResult ReleaseEngineCtx(EngineCtx* engineCtx);
+    HcclResult ReleaseEngineCtx(EngineCtx *engineCtx);
 
     // 查找引擎上下文
-    EngineCtx* FindEngineCtx(CommEngineType engineType, OpTag opTag);
+    EngineCtx *FindEngineCtx(CommEngineType engineType, OpTag opTag);
 
 private:
     std::string GenerateCtxKey(CommEngineType engineType, OpTag opTag);
@@ -39,5 +39,5 @@ private:
     std::unordered_map<std::string, void *> engineCtxs_{};
     std::mutex mutex_{};
 };
-}
+} // namespace hcomm
 #endif // ENGINE_CTX_MGR_H

@@ -27,14 +27,14 @@ namespace hcomm {
 
 class HostCpuRoceChannel final : public Channel {
 public:
-    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED,  DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
+    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED, DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
 
     HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc);
     ~HostCpuRoceChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
 
@@ -47,7 +47,7 @@ public:
     HcclResult Write(void *dst, const void *src, uint64_t len);
     HcclResult Read(void *dst, const void *src, uint64_t len);
     HcclResult ChannelFence();
-    HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
+    HcclResult GetHcclBuffer(void *&addr, uint64_t &size);
 
 private:
     HcclResult ParseInputParam();
@@ -75,13 +75,15 @@ private:
     std::vector<Hccl::QpInfo> GetQpInfos() const; // in Connection
 
     HcclResult IbvPostRecv() const;
-    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
-    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
-                                      struct ibv_send_wr &writeWithNotifyWr) const;
+    HcclResult PrepareNotifyWrResource(
+        const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
+    HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len,
+        const uint32_t remoteNotifyIdx, struct ibv_send_wr &writeWithNotifyWr) const;
 
-    HcclResult PostRdmaOp(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
+    HcclResult PostRdmaOp(
+        const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len);
     void BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr, const void *remoteAddr, uint64_t len,
-                     size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const;
+        size_t localIdx, size_t rmtIdx, struct ibv_send_wr &wr, struct ibv_sge &sg) const;
     HcclResult PostAndCheckSend(const char *caller, struct ibv_send_wr &wr);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;

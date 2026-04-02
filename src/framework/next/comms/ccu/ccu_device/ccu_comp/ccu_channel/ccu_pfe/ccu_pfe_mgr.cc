@@ -25,17 +25,17 @@ inline PfeCtx BuildPfeCtx(const uint8_t dieId, const PfeJettyCtxCfg &cfg)
     ctx.startLocalJettyCtxId = cfg.startJettyCtxId;
 
     HCCL_RUN_INFO("[CcuPfeMgr][%s]: dieId[%u] feId[%u], startJettyId[%u], jettyNum(-1)[%u], "
-        "startLocalJettyCtxId[%u], pfe ctx size[%u]", __func__, dieId, cfg.feId,
-        ctx.startJettyId, ctx.jettyNum, ctx.startLocalJettyCtxId, sizeof(PfeCtx));
+                  "startLocalJettyCtxId[%u], pfe ctx size[%u]",
+        __func__, dieId, cfg.feId, ctx.startJettyId, ctx.jettyNum, ctx.startLocalJettyCtxId, sizeof(PfeCtx));
     return ctx;
 }
 
 inline PfeJettyStrategy BuildStrategy(const PfeJettyCtxCfg &cfg)
 {
     struct PfeJettyStrategy pfeJettyStrategy = {0};
-    pfeJettyStrategy.feId  = cfg.feId;
+    pfeJettyStrategy.feId = cfg.feId;
     pfeJettyStrategy.pfeId = cfg.feId;
-    pfeJettyStrategy.size  = cfg.size;
+    pfeJettyStrategy.size = cfg.size;
     pfeJettyStrategy.startTaJettyId = cfg.startTaJettyId;
     pfeJettyStrategy.startLocalJettyCtxId = cfg.startJettyCtxId;
     return pfeJettyStrategy;
@@ -46,45 +46,44 @@ static HcclResult ConfigPfeTable(const uint32_t devPhyId, const uint8_t dieId, c
 {
     if (UNLIKELY(feId > UINT32_MAX - static_cast<uint32_t>(dieId) * pfeReservedNum)) {
         HCCL_ERROR("[CcuPfeMgr][%s] failed, feId[%u] is greater than expected, "
-            "pfeReservedNum[%u], will exceeds the range of uint32_t, devPhyId[%u], "
-            "dieId[%u].", __func__, feId, pfeReservedNum, devPhyId, dieId);
+                   "pfeReservedNum[%u], will exceeds the range of uint32_t, devPhyId[%u], "
+                   "dieId[%u].",
+            __func__, feId, pfeReservedNum, devPhyId, dieId);
         return HcclResult::HCCL_E_INTERNAL;
     }
     // die1 使用后半部分pfe表项，故根据pfe预留数量偏移
     const uint32_t pfeTableOffset = static_cast<uint32_t>(dieId) * pfeReservedNum + feId;
 
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
-    inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_PFE;
-    inBuff.data.dataInfo.udieIdx       = static_cast<uint32_t>(dieId);
+    struct CustomChannelInfoIn inBuff {};
+    struct CustomChannelInfoOut outBuff {};
+    inBuff.op = CcuOpcodeType::CCU_U_OP_SET_PFE;
+    inBuff.data.dataInfo.udieIdx = static_cast<uint32_t>(dieId);
     inBuff.data.dataInfo.dataArraySize = 1;
-    inBuff.data.dataInfo.dataLen       = sizeof(struct PfeCtx); // 单个8B
-    inBuff.offsetStartIdx              = pfeTableOffset;
+    inBuff.data.dataInfo.dataLen = sizeof(struct PfeCtx); // 单个8B
+    inBuff.offsetStartIdx = pfeTableOffset;
 
-    (void)memcpy_s(inBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen, &pfeCtx,
-        inBuff.data.dataInfo.dataLen);
+    (void)memcpy_s(inBuff.data.dataInfo.dataArray, inBuff.data.dataInfo.dataLen, &pfeCtx, inBuff.data.dataInfo.dataLen);
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
+    auto ret = RaCustomChannel(
+        info, reinterpret_cast<CustomChanInfoIn *>(&inBuff), reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
-            "SET_PFE");
+                   "devPhyId[%u] dieId[%d] op[%s].",
+            __func__, devPhyId, dieId, "SET_PFE");
         return HcclResult::HCCL_E_NETWORK;
     }
-    
+
     return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult CcuPfeMgr::Init()
 {
-    std::vector<PfeJettyCtxCfg> cfgs =
-        CcuPfeCfgMgr::GetInstance(devLogicId_).GetPfeJettyCtxCfg(dieId_);
+    std::vector<PfeJettyCtxCfg> cfgs = CcuPfeCfgMgr::GetInstance(devLogicId_).GetPfeJettyCtxCfg(dieId_);
     if (UNLIKELY(cfgs.empty())) { // 此处不中断流程，后续jettyCtx分配时会因无pfe配置报错停止
         HCCL_WARNING("[CcuJettyCtxMgr] config pfe table passed, pfe cfgs size is 0, "
-            "devLogicId[%d], dieId[%u].", devLogicId_, dieId_);
+                     "devLogicId[%d], dieId[%u].",
+            devLogicId_, dieId_);
         return HcclResult::HCCL_SUCCESS;
     }
 
@@ -92,7 +91,8 @@ HcclResult CcuPfeMgr::Init()
     (void)CcuResSpecifications::GetInstance(devLogicId_).GetPfeReservedNum(dieId_, pfeReservedNum);
     if (UNLIKELY(pfeReservedNum == 0)) { // 此处不中断流程，后续jettyCtx分配时会因无pfe配置报错停止
         HCCL_WARNING("[CcuPfeMgr] config pfe table passed, pfe reserved num is 0, "
-            "devLogicId[%d], dieId[%u].", devLogicId_, dieId_);
+                     "devLogicId[%d], dieId[%u].",
+            devLogicId_, dieId_);
         return HcclResult::HCCL_SUCCESS;
     }
 
@@ -117,17 +117,18 @@ HcclResult CcuPfeMgr::GetPfeStrategy(uint32_t feId, PfeJettyStrategy &pfeJettySt
     const auto &iter = pfeJettyMap_.find(feId);
     if (iter == pfeJettyMap_.end()) {
         HCCL_ERROR("[CcuPfeMgr][%s] failed, feId[%u] is not found, "
-            "devLogicId[%d], dieId[%u].", __func__, feId, devLogicId_, dieId_);
+                   "devLogicId[%d], dieId[%u].",
+            __func__, feId, devLogicId_, dieId_);
         return HCCL_E_NOT_FOUND;
     }
 
     pfeJettyStrategy = iter->second;
     HCCL_RUN_INFO("[CcuPfeMgr][%s] dieId[%u] feId[%u] pfeId[%u] size[%u] "
- 	    "startTaJettyId[%u] startLocalJettyCtxId[%u]", __func__, dieId_,
- 	    pfeJettyStrategy.feId, pfeJettyStrategy.pfeId, pfeJettyStrategy.size,
- 	    pfeJettyStrategy.startTaJettyId, pfeJettyStrategy.startLocalJettyCtxId);  
+                  "startTaJettyId[%u] startLocalJettyCtxId[%u]",
+        __func__, dieId_, pfeJettyStrategy.feId, pfeJettyStrategy.pfeId, pfeJettyStrategy.size,
+        pfeJettyStrategy.startTaJettyId, pfeJettyStrategy.startLocalJettyCtxId);
 
     return HCCL_SUCCESS;
 }
 
-}; // Hccl
+}; // namespace hcomm

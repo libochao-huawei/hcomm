@@ -27,7 +27,7 @@ namespace hcomm {
  */
 class CcuResContainer {
 public:
-    CcuResContainer(const uint32_t opExpansionMode) : opExpansionMode_(opExpansionMode) {};
+    CcuResContainer(const uint32_t opExpansionMode) : opExpansionMode_(opExpansionMode){};
     ~CcuResContainer();
     HcclResult Init();
     HcclResult ResetResPack();

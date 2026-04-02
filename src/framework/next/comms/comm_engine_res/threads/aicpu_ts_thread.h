@@ -49,22 +49,23 @@ public:
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
 
     // Non-override functions
-    HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
+    HcclResult GetSqHeadAndTail(uint32_t &sqHead, uint32_t &sqTail);
     bool GetMaster() const override;
     void SetIsMaster(bool isMaster) override;
+
 private:
     bool isMaster_{false};
     struct HcclStreamInfo {
         s32 streamIds;
         uint32_t sqIds;
-        uint32_t cqIds;       // 记录物理cqId
-        uint32_t logicCqids;  // 记录逻辑cqId
+        uint32_t cqIds;      // 记录物理cqId
+        uint32_t logicCqids; // 记录逻辑cqId
     };
 
     struct HcclStreamParam {
         HcclStreamInfo streamInfo;
-        uint64_t sqCqContextAddr = 0;  // 记录sqeContext地址
-        uint64_t sqCqContextSize = 0;  // 记录sqeContext大小
+        uint64_t sqCqContextAddr = 0; // 记录sqeContext地址
+        uint64_t sqCqContextSize = 0; // 记录sqeContext大小
     };
     HcclResult InitStreamLite(HcclStreamInfo &streamParam, uint32_t hostPhyId);
     HcclResult InitStream(HcclStreamParam &streamParam);
@@ -90,5 +91,5 @@ private:
     std::unique_ptr<Hccl::IAicpuTsThread> pImpl_{nullptr};
 };
 
-}  // namespace hccl
-#endif  // AICPU_TS_THREAD_H
+} // namespace hccl
+#endif // AICPU_TS_THREAD_H

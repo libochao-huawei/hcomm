@@ -28,7 +28,7 @@ namespace hcomm {
 class Endpoint {
 public:
     explicit Endpoint(const EndpointDesc &endpointDesc);
-    
+
     virtual ~Endpoint() = default;
 
     static HcclResult CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);
@@ -37,14 +37,17 @@ public:
 
     virtual HcclResult ServerSocketListen(const uint32_t port) = 0;
 
-    virtual HcclResult ServerSocketStopListen(const uint32_t port) {return HCCL_E_NOT_SUPPORT;};
+    virtual HcclResult ServerSocketStopListen(const uint32_t port)
+    {
+        return HCCL_E_NOT_SUPPORT;
+    };
 
-    virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr() 
+    virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr()
     {
         return regedMemMgr_;
     }
 
-    void* GetRdmaHandle()
+    void *GetRdmaHandle()
     {
         return ctxHandle_;
     }
@@ -53,29 +56,29 @@ public:
     {
         return endpointDesc_;
     }
-     
+
     // 注册内存
     virtual HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) = 0;
- 
+
     // 注销内存
-    virtual HcclResult UnregisterMemory(void* memHandle) = 0;
- 
+    virtual HcclResult UnregisterMemory(void *memHandle) = 0;
+
     // 导出指定内存描述，用于交换
     virtual HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
- 
+
     // 基于内存描述，导入获得内存
     virtual HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) = 0;
- 
+
     // 关闭内存
     virtual HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) = 0;
 
     virtual HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) = 0;
 
 protected:
-    void* ctxHandle_{nullptr};
+    void *ctxHandle_{nullptr};
     std::shared_ptr<RegedMemMgr> regedMemMgr_{};
     EndpointDesc endpointDesc_;
 };
 
-}
+} // namespace hcomm
 #endif // ENDPOINT_H

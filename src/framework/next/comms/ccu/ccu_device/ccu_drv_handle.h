@@ -17,7 +17,7 @@ namespace hcomm {
 
 class CcuDrvHandle {
 public:
-    CcuDrvHandle(const int32_t deviceLogicId) : devLogicId_(deviceLogicId) {};
+    CcuDrvHandle(const int32_t deviceLogicId) : devLogicId_(deviceLogicId){};
     ~CcuDrvHandle();
 
     HcclResult Init();

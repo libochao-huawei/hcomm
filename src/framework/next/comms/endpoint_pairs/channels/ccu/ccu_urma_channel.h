@@ -24,8 +24,7 @@ namespace hcomm {
 class CcuUrmaChannel : public Channel {
 public:
     // 当前仅支持交换hccl buffer
-    CcuUrmaChannel(const EndpointHandle locEndpointHandle,
-        const HcommChannelDesc &channelDesc);
+    CcuUrmaChannel(const EndpointHandle locEndpointHandle, const HcommChannelDesc &channelDesc);
     ~CcuUrmaChannel() = default;
 
     HcclResult Init() override;
@@ -45,8 +44,7 @@ public:
     HcclResult GetRmtCkeByIndex(const uint32_t index, uint32_t &rmtCkeId) const;
     HcclResult GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXnId) const;
 
-    HcclResult GetRmtBuffer(uint64_t &addr, uint32_t &size,
-        uint32_t &tokenId, uint32_t &tokenValue) const;
+    HcclResult GetRmtBuffer(uint64_t &addr, uint32_t &size, uint32_t &tokenId, uint32_t &tokenValue) const;
 
 private:
     std::unique_ptr<CcuTransport> impl_{nullptr};
@@ -57,5 +55,5 @@ private:
     std::string memTag_{"HcclBuffer"};
 };
 
-}  // namespace hcomm
-#endif  // CCU_URMA_CHANNEL_H
+} // namespace hcomm
+#endif // CCU_URMA_CHANNEL_H

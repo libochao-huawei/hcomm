@@ -12,21 +12,19 @@
 
 namespace hcomm {
 
-HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out)
+HcclResult EndpointPairMgr::Get(const EndpointDescPair &endpointDescPair, EndpointPair *&out)
 {
     if (endpointPairMap_.find(endpointDescPair) != endpointPairMap_.end()) {
         out = endpointPairMap_[endpointDescPair].get();
         return HCCL_SUCCESS;
     }
- 
+
     std::unique_ptr<EndpointPair> endpointPair = nullptr;
-    EXECEPTION_CATCH(
-        (endpointPair = std::make_unique<EndpointPair>(endpointDescPair.first, endpointDescPair.second)), 
-        return HCCL_E_PTR
-    );
+    EXECEPTION_CATCH((endpointPair = std::make_unique<EndpointPair>(endpointDescPair.first, endpointDescPair.second)),
+        return HCCL_E_PTR);
     CHK_SMART_PTR_NULL(endpointPair);
     CHK_RET(endpointPair->Init());
- 
+
     out = endpointPair.get();
     endpointPairMap_.emplace(endpointDescPair, std::move(endpointPair));
 

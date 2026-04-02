@@ -17,17 +17,17 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepRecordSharedNotify : public CcuRepBase {
-public:
-    CcuRepRecordSharedNotify(const LocalNotify &notify, uint16_t mask);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepRecordSharedNotify : public CcuRepBase {
+    public:
+        CcuRepRecordSharedNotify(const LocalNotify &notify, uint16_t mask);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    LocalNotify notify_{};
-    uint16_t   mask_{0};
-};
+    private:
+        LocalNotify notify_{};
+        uint16_t mask_{0};
+    };
 
-};     // namespace CcuRep
-};     // namespace hcomm
+}; // namespace CcuRep
+}; // namespace hcomm
 #endif // HCOMM_CCU_REPRESENTATION_RECORD_SHARED_NOTIFY_H

@@ -28,15 +28,17 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
-        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
+        : locAddr(locAddr),
+          rmtAddr(rmtAddr),
+          tpProtocol(tpProtocol){};
 
-    std::string Describe() const {
+    std::string Describe() const
+    {
         Hccl::IpAddress locIpAddr{}, rmtIpAddr{};
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
         return Hccl::StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
-            locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+            locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(), tpProtocol.Describe().c_str());
     }
 };
 
@@ -49,8 +51,9 @@ struct TpInfo {
     TpHandle tpHandle{0};
 
     TpInfo() = default;
-    TpInfo(const TpHandle handle)
-        : tpHandle(handle) {}
+    TpInfo(const TpHandle handle) : tpHandle(handle)
+    {
+    }
 };
 
 class TpMgr {
@@ -61,31 +64,30 @@ public:
     HcclResult ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInfo);
 
 private:
-     struct TpInfoCtx {
+    struct TpInfoCtx {
         TpInfo tpInfo{};
         uint32_t useCnt{0};
-        
+
         TpInfoCtx() = default;
-        TpInfoCtx(const TpInfo &info, const uint32_t cnt)
-            : tpInfo(info), useCnt(cnt) {}
+        TpInfoCtx(const TpInfo &info, const uint32_t cnt) : tpInfo(info), useCnt(cnt)
+        {
+        }
     };
 
     /*
-    * Request上下文，保存查询TP信息相关调用异步接口出参
-    * handle: 异步接口调用handle，用于查询处理结果
-    * tpInfoNum: 查询到的TP信息个数，当前为复用TP，只会申请1个
-    * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
-    */
+     * Request上下文，保存查询TP信息相关调用异步接口出参
+     * handle: 异步接口调用handle，用于查询处理结果
+     * tpInfoNum: 查询到的TP信息个数，当前为复用TP，只会申请1个
+     * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
+     */
     struct RequestCtx {
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
         std::vector<char> dataBuffer;
     };
 
-    using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
-    using ReqCtxMap  = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, RequestCtx>>;
+    using InfoCtxMap = std::unordered_map<Hccl::IpAddress, std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
+    using ReqCtxMap = std::unordered_map<Hccl::IpAddress, std::unordered_map<Hccl::IpAddress, RequestCtx>>;
 
 private:
     TpMgr() = default;
@@ -95,11 +97,10 @@ private:
 
     HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
-    HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const GetTpInfoParam &param,
-        TpInfo &tpInfo);
+    HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
 
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);
-    ReqCtxMap  &GetReqCtxMap(const TpProtocol tpProtocol);
+    ReqCtxMap &GetReqCtxMap(const TpProtocol tpProtocol);
     std::mutex &GetInfoCtxMutex(const TpProtocol tpProtocol);
     std::mutex &GetReqCtxMutex(const TpProtocol tpProtocol);
 
@@ -108,10 +109,10 @@ private:
     uint32_t devPhyId_{0};
 
     InfoCtxMap ctpInfoMap_;
-    ReqCtxMap  ctpReqMap_;
+    ReqCtxMap ctpReqMap_;
 
     InfoCtxMap rtpInfoMap_;
-    ReqCtxMap  rtpReqMap_;
+    ReqCtxMap rtpReqMap_;
 
     std::mutex ctpInfoMutex_;
     std::mutex ctpReqMutex_;

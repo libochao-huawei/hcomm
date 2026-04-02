@@ -13,20 +13,20 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepRemPostVar : public CcuRepBase {
-public:
-    CcuRepRemPostVar(Variable param, const ChannelHandle channel, uint16_t paramIndex, uint16_t semIndex,
-                       uint16_t mask);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepRemPostVar : public CcuRepBase {
+    public:
+        CcuRepRemPostVar(
+            Variable param, const ChannelHandle channel, uint16_t paramIndex, uint16_t semIndex, uint16_t mask);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    Variable                      param;
-    ChannelHandle                 channel;
-    uint16_t                      paramIndex{0};
-    uint16_t                      semIndex{0};
-    uint16_t                      mask{0};
-};
+    private:
+        Variable param;
+        ChannelHandle channel;
+        uint16_t paramIndex{0};
+        uint16_t semIndex{0};
+        uint16_t mask{0};
+    };
 
 }; // namespace CcuRep
 }; // namespace hcomm

@@ -47,19 +47,16 @@ HcclResult IpAddressToReverseHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid);
 HcclResult RaGetDevEidInfos(const RaInfo &raInfo, std::vector<DevEidInfo> &devEidInfos);
 
 using RequestHandle = u64;
-MAKE_ENUM(RequestResult,
-    COMPLETED,
-    NOT_COMPLETED, SOCK_E_AGAIN,
-    INVALID_PARA,
-    GET_REQ_RESULT_FAILED, ASYNC_REQUEST_FAILED);
+MAKE_ENUM(
+    RequestResult, COMPLETED, NOT_COMPLETED, SOCK_E_AGAIN, INVALID_PARA, GET_REQ_RESULT_FAILED, ASYNC_REQUEST_FAILED);
 
 RequestResult HccpGetAsyncReqResult(RequestHandle &reqHandle);
 
-using CtxHandle         = void *;
-using JettyHandle       = void *;
+using CtxHandle = void *;
+using JettyHandle = void *;
 using TargetJettyHandle = void *;
-using JfcHandle         = void *;
-using TokenIdHandle     = void *;
+using JfcHandle = void *;
+using TokenIdHandle = void *;
 
 MAKE_ENUM(HrtTransportMode, RM, RC);
 // STANDARD: URMA标准CreateJetty
@@ -93,18 +90,26 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
 
     // HOST_OFFLOAD / HOST_OPBASE / CACHE_LOCK_DWQE 类型的Jetty ，需要指定WQEBB的数目
     // STADARD 类型Jetty，该参数代表SQ深度
-    u32              sqDepth{0};
-    u32              rqDepth{64};
+    u32 sqDepth{0};
+    u32 rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
 
-    HrtRaUbJettyCreateParamDef() {}
+    HrtRaUbJettyCreateParamDef()
+    {
+    }
 
-    HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
-        u32 tokenValue, TokenIdHandle tokenIdHandle, HrtJettyMode jettyMode,
-        u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
-        : sjfcHandle(sjfcHandle), rjfcHandle(rjfcHandle), tokenValue(tokenValue),
-          tokenIdHandle(tokenIdHandle), jettyMode(jettyMode), jettyId(jettyId),
-          sqBufVa(sqBufVa), sqBufSize(sqBufSize), sqeBufIndex(sqeBufIndex), sqDepth(sqDepth)
+    HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle, u32 tokenValue, TokenIdHandle tokenIdHandle,
+        HrtJettyMode jettyMode, u32 jettyId, u64 sqBufVa, u32 sqBufSize, u32 sqeBufIndex, u32 sqDepth)
+        : sjfcHandle(sjfcHandle),
+          rjfcHandle(rjfcHandle),
+          tokenValue(tokenValue),
+          tokenIdHandle(tokenIdHandle),
+          jettyMode(jettyMode),
+          jettyId(jettyId),
+          sqBufVa(sqBufVa),
+          sqBufSize(sqBufSize),
+          sqeBufIndex(sqeBufIndex),
+          sqDepth(sqDepth)
     {
     }
 };
@@ -113,25 +118,25 @@ constexpr u32 HRT_UB_QP_KEY_MAX_LEN = 64; // UB 最大的QpKey长度
 
 using HrtRaUbJettyCreatedOutParam = struct HrtRaUbJettyCreatedOutParamDef {
     JettyHandle handle{0};
-    u8          key[HRT_UB_QP_KEY_MAX_LEN]{0};
-    u64         jettyVa{0};
-    u32         uasid{0};
-    u32         id{0};
-    u32         keySize{0};
-    u64         dbVa{0};
-    u32         dbTokenId{0};
+    u8 key[HRT_UB_QP_KEY_MAX_LEN]{0};
+    u64 jettyVa{0};
+    u32 uasid{0};
+    u32 id{0};
+    u32 keySize{0};
+    u64 dbVa{0};
+    u32 dbTokenId{0};
 };
 
-HcclResult HccpUbCreateJetty(const CtxHandle ctxhandle, const HrtRaUbCreateJettyParam &in,
-    HrtRaUbJettyCreatedOutParam &out);
+HcclResult HccpUbCreateJetty(
+    const CtxHandle ctxhandle, const HrtRaUbCreateJettyParam &in, HrtRaUbJettyCreatedOutParam &out);
 
-HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreateJettyParam &in,
-    std::vector<char> &out, void *&jettyHandle, RequestHandle &reqHandle);
+HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreateJettyParam &in, std::vector<char> &out,
+    void *&jettyHandle, RequestHandle &reqHandle);
 
 using HrtRaUbJettyImportedOutParam = struct HrtRaUbJettyImportedOutParamDef {
     TargetJettyHandle handle{0};
-    u64               targetJettyVa{0};
-    u32               tpn{0};
+    u64 targetJettyVa{0};
+    u32 tpn{0};
 };
 
 MAKE_ENUM(TpProtocol, CTP, RTP);
@@ -139,15 +144,14 @@ MAKE_ENUM(TpProtocol, CTP, RTP);
 struct JettyImportCfg {
     u64 localTpHandle{0};
     u64 remoteTpHandle{0};
-    u64 localTag{0};  // tag是hccp预留字段，暂不需要赋值
+    u64 localTag{0}; // tag是hccp预留字段，暂不需要赋值
     u32 localPsn{0};
     u32 remotePsn{0};
     TpProtocol protocol{TpProtocol::INVALID};
 };
 
-HcclResult HccpUbTpImportJetty(const CtxHandle ctxHandle, u8 *key, const u32 keyLen,
-    const u32 tokenValue, const JettyImportCfg &jettyImportCfg,
-    HrtRaUbJettyImportedOutParam &out);
+HcclResult HccpUbTpImportJetty(const CtxHandle ctxHandle, u8 *key, const u32 keyLen, const u32 tokenValue,
+    const JettyImportCfg &jettyImportCfg, HrtRaUbJettyImportedOutParam &out);
 
 using HccpUbJettyImportedInParam = struct HccpUbJettyImportedInParamDef {
     u8 *key{nullptr};
@@ -156,9 +160,8 @@ using HccpUbJettyImportedInParam = struct HccpUbJettyImportedInParamDef {
     JettyImportCfg jettyImportCfg{};
 };
 
-HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
-    const HccpUbJettyImportedInParam &in, std::vector<char> &out,
-    void *&remQpHandle, RequestHandle &reqHandle);
+HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle, const HccpUbJettyImportedInParam &in,
+    std::vector<char> &out, void *&remQpHandle, RequestHandle &reqHandle);
 
 } // namespace hcomm
 #endif // HCOMM_ADAPTER_HCCP_H

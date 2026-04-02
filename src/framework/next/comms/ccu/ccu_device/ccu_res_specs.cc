@@ -26,7 +26,8 @@ CcuResSpecifications &CcuResSpecifications::GetInstance(const int32_t deviceLogi
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
         HCCL_WARNING("[CcuResSpecifications][%s] use the backup device, devLogicId[%d] "
-            "should be less than %u.", __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
+                     "should be less than %u.",
+            __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
         devLogicId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
     }
     ccuResSpecifications[devLogicId].devLogicId_ = devLogicId;
@@ -41,19 +42,18 @@ static CcuVersion CheckCcuVersion()
 static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
-    inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_DIE_WORKING;
-    inBuff.offsetStartIdx        = 0;
+    struct CustomChannelInfoIn inBuff {};
+    struct CustomChannelInfoOut outBuff {};
+    inBuff.op = CcuOpcodeType::CCU_U_OP_GET_DIE_WORKING;
+    inBuff.offsetStartIdx = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
+    auto ret = RaCustomChannel(
+        info, reinterpret_cast<CustomChanInfoIn *>(&inBuff), reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_WARNING("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
-            "GET_DIE_WORKING");
+                     "devPhyId[%u] dieId[%d] op[%s].",
+            __func__, devPhyId, dieId, "GET_DIE_WORKING");
         return false;
     }
 
@@ -65,13 +65,13 @@ static CcuBaseInfoData ParseOutBuffToBaseInfoData(const CustomChannelInfoOut &ou
 {
     CcuBaseInfoData baseInfoData{};
     baseInfoData.resourceAddr = outBuff.data.dataInfo.dataArray[0].baseinfo.resourceAddr;
-    baseInfoData.missionKey   = outBuff.data.dataInfo.dataArray[0].baseinfo.missionKey;
-    baseInfoData.msId         = outBuff.data.dataInfo.dataArray[0].baseinfo.msId;
-    baseInfoData.caps.cap0    = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap0;
-    baseInfoData.caps.cap1    = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap1;
-    baseInfoData.caps.cap2    = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap2;
-    baseInfoData.caps.cap3    = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap3;
-    baseInfoData.caps.cap4    = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap4;
+    baseInfoData.missionKey = outBuff.data.dataInfo.dataArray[0].baseinfo.missionKey;
+    baseInfoData.msId = outBuff.data.dataInfo.dataArray[0].baseinfo.msId;
+    baseInfoData.caps.cap0 = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap0;
+    baseInfoData.caps.cap1 = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap1;
+    baseInfoData.caps.cap2 = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap2;
+    baseInfoData.caps.cap3 = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap3;
+    baseInfoData.caps.cap4 = outBuff.data.dataInfo.dataArray[0].baseinfo.caps.cap4;
     return baseInfoData;
 }
 
@@ -79,48 +79,48 @@ static CcuResSpecInfo ParseOutBuffToResSpecInfo(const CcuVersion ccuVersion, con
 {
     if (ccuVersion != CcuVersion::CCU_V1) {
         HCCL_WARNING("[CcuResSpecifications][%s] failed to parse out buff, ccu driver "
-            "version[%s] is not expected.", __func__, ccuVersion.Describe().c_str());
+                     "version[%s] is not expected.",
+            __func__, ccuVersion.Describe().c_str());
         return {};
     }
 
     const auto &baseInfoData = ParseOutBuffToBaseInfoData(outBuff);
 
     CcuResSpecInfo ccuResSpecInfo{};
-    ccuResSpecInfo.msId         = baseInfoData.msId;
+    ccuResSpecInfo.msId = baseInfoData.msId;
     ccuResSpecInfo.resourceAddr = baseInfoData.resourceAddr;
-    ccuResSpecInfo.missionKey   = baseInfoData.missionKey;
+    ccuResSpecInfo.missionKey = baseInfoData.missionKey;
 
     ccuResSpecInfo.instructionNum = (baseInfoData.caps.cap0 & 0x0000FFFF) + 1;
-    ccuResSpecInfo.xnNum          = ((baseInfoData.caps.cap1 >> MOVE_16_BITS) & 0x0000FFFF) + 1;
-    ccuResSpecInfo.msNum          = ((baseInfoData.caps.cap2 >> MOVE_16_BITS) & 0x0000FFFF) + 1;
-    ccuResSpecInfo.ckeNum         = (baseInfoData.caps.cap2 & 0x0000FFFF) + 1;
-    ccuResSpecInfo.jettyNum       = ((baseInfoData.caps.cap3 >> MOVE_16_BITS) & 0x0000FFFF) + 1;
-    ccuResSpecInfo.channelNum     = (baseInfoData.caps.cap3 & 0x0000FFFF) + 1;
-    ccuResSpecInfo.pfeNum         = (baseInfoData.caps.cap4 & 0x000000FF) + 1;
+    ccuResSpecInfo.xnNum = ((baseInfoData.caps.cap1 >> MOVE_16_BITS) & 0x0000FFFF) + 1;
+    ccuResSpecInfo.msNum = ((baseInfoData.caps.cap2 >> MOVE_16_BITS) & 0x0000FFFF) + 1;
+    ccuResSpecInfo.ckeNum = (baseInfoData.caps.cap2 & 0x0000FFFF) + 1;
+    ccuResSpecInfo.jettyNum = ((baseInfoData.caps.cap3 >> MOVE_16_BITS) & 0x0000FFFF) + 1;
+    ccuResSpecInfo.channelNum = (baseInfoData.caps.cap3 & 0x0000FFFF) + 1;
+    ccuResSpecInfo.pfeNum = (baseInfoData.caps.cap4 & 0x000000FF) + 1;
 
-    ccuResSpecInfo.missionNum     = ((baseInfoData.caps.cap0 >> MOVE_16_BITS) & 0x000000FF) + 1;
-    ccuResSpecInfo.loopEngineNum  = ((baseInfoData.caps.cap0 >> MOVE_24_BITS) & 0x000000FF) + 1;
-    ccuResSpecInfo.gsaNum         = (baseInfoData.caps.cap1 & 0x0000FFFF) + 1;
+    ccuResSpecInfo.missionNum = ((baseInfoData.caps.cap0 >> MOVE_16_BITS) & 0x000000FF) + 1;
+    ccuResSpecInfo.loopEngineNum = ((baseInfoData.caps.cap0 >> MOVE_24_BITS) & 0x000000FF) + 1;
+    ccuResSpecInfo.gsaNum = (baseInfoData.caps.cap1 & 0x0000FFFF) + 1;
     return ccuResSpecInfo;
 }
 
-static HcclResult CheckResSpecifications(const uint32_t devPhyId, const uint8_t dieId,
-    const CcuVersion ccuVersion, CcuResSpecInfo &resSpecs)
+static HcclResult CheckResSpecifications(
+    const uint32_t devPhyId, const uint8_t dieId, const CcuVersion ccuVersion, CcuResSpecInfo &resSpecs)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
-    inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_BASIC_INFO;
-    inBuff.offsetStartIdx        = 0;
+    struct CustomChannelInfoIn inBuff {};
+    struct CustomChannelInfoOut outBuff {};
+    inBuff.op = CcuOpcodeType::CCU_U_OP_GET_BASIC_INFO;
+    inBuff.offsetStartIdx = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
 
-    auto ret = RaCustomChannel(info,
-        reinterpret_cast<CustomChanInfoIn *>(&inBuff),
-        reinterpret_cast<CustomChanInfoOut *>(&outBuff));
+    auto ret = RaCustomChannel(
+        info, reinterpret_cast<CustomChanInfoIn *>(&inBuff), reinterpret_cast<CustomChanInfoOut *>(&outBuff));
     if (ret != 0) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed to call ccu driver, "
-            "devPhyId[%u] dieId[%d] op[%s].", __func__, devPhyId, dieId,
-            "GET_BASIC_INFO");
+                   "devPhyId[%u] dieId[%d] op[%s].",
+            __func__, devPhyId, dieId, "GET_BASIC_INFO");
         return HcclResult::HCCL_E_NETWORK;
     }
 
@@ -137,19 +137,15 @@ constexpr uint64_t RSV2_MAINBOARD = 0x5;
 constexpr uint64_t EQUIP_MAINBOARD = 0x6;
 constexpr uint64_t EVB_MAINBOARD = 0x7;
 
-MAKE_ENUM(HcclMainboardId, MAINBOARD_POD, MAINBOARD_A_K_SERVER, MAINBOARD_A_X_SERVER, MAINBOARD_PCIE_STD,
-          MAINBOARD_RSV, MAINBOARD_EQUIPMENT, MAINBOARD_EVB, MAINBOARD_OTHERS);
+MAKE_ENUM(HcclMainboardId, MAINBOARD_POD, MAINBOARD_A_K_SERVER, MAINBOARD_A_X_SERVER, MAINBOARD_PCIE_STD, MAINBOARD_RSV,
+    MAINBOARD_EQUIPMENT, MAINBOARD_EVB, MAINBOARD_OTHERS);
 
-const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboardId = {
-    {POD_MAINBOARD, HcclMainboardId::MAINBOARD_POD},
-    {A_K_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_K_SERVER},
-    {A_X_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_X_SERVER},
-    {PCIE_STD_MAINBOARD, HcclMainboardId::MAINBOARD_PCIE_STD},
-    {RSV1_MAINBOARD, HcclMainboardId::MAINBOARD_RSV},
-    {RSV2_MAINBOARD, HcclMainboardId::MAINBOARD_RSV},
-    {EQUIP_MAINBOARD, HcclMainboardId::MAINBOARD_EQUIPMENT},
-    {EVB_MAINBOARD, HcclMainboardId::MAINBOARD_EVB}
-};
+const std::unordered_map<uint64_t, HcclMainboardId> rtMainboardIdToHcclMainboardId
+    = {{POD_MAINBOARD, HcclMainboardId::MAINBOARD_POD}, {A_K_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_K_SERVER},
+        {A_X_SERVER_MAINBOARD, HcclMainboardId::MAINBOARD_A_X_SERVER},
+        {PCIE_STD_MAINBOARD, HcclMainboardId::MAINBOARD_PCIE_STD}, {RSV1_MAINBOARD, HcclMainboardId::MAINBOARD_RSV},
+        {RSV2_MAINBOARD, HcclMainboardId::MAINBOARD_RSV}, {EQUIP_MAINBOARD, HcclMainboardId::MAINBOARD_EQUIPMENT},
+        {EVB_MAINBOARD, HcclMainboardId::MAINBOARD_EVB}};
 
 /*
  * 获取Mainboard ID 5-7位，输出整机形态枚举值
@@ -185,7 +181,7 @@ static HcclResult GetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMa
     if (ret != RT_ERROR_NONE) {
         HCCL_ERROR("[GetDeviceInfo]errNo[0x%016llx] rt get device info failed, "
                    "deviceLogicId=%u, devAttr=%d",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), deviceLogicId, devAttr);
+            HCCL_ERROR_CODE(HcclResult::HCCL_E_RUNTIME), deviceLogicId, devAttr);
         return HcclResult::HCCL_E_RUNTIME;
     }
 
@@ -196,8 +192,8 @@ static HcclResult GetMainboardId(uint32_t deviceLogicId, HcclMainboardId &hcclMa
     if (it != rtMainboardIdToHcclMainboardId.end()) {
         hcclMainboardId = it->second;
     }
-    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] mainboardId[%llu] hcclMainboardId[%s].",
-              deviceLogicId, mainboardId, hcclMainboardId.Describe().c_str());
+    HCCL_INFO("[HrtGetMainboardId] deviceLogicId[%d] mainboardId[%llu] hcclMainboardId[%s].", deviceLogicId,
+        mainboardId, hcclMainboardId.Describe().c_str());
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -207,10 +203,10 @@ static HcclResult CheckArmX86Flag(int32_t devLogicId, bool &armX86Flag)
     CHK_RET(GetMainboardId(devLogicId, hcclMainboardId));
 
     armX86Flag = hcclMainboardId == HcclMainboardId::MAINBOARD_A_X_SERVER
-        || hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD;
+                 || hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD;
     HCCL_INFO("[CcuResSpecifications][%s] devLogicId[%d] "
-        "hcclMainboardId[%s] armX86Flag_[%d].", __func__, devLogicId,
-        hcclMainboardId.Describe().c_str(), static_cast<int>(armX86Flag));
+              "hcclMainboardId[%s] armX86Flag_[%d].",
+        __func__, devLogicId, hcclMainboardId.Describe().c_str(), static_cast<int>(armX86Flag));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -281,7 +277,8 @@ HcclResult CcuResSpecifications::GetXnBaseAddr(const uint8_t dieId, uint64_t &xn
     const uint64_t ccuResAddr = resSpecs_[dieId].resourceAddr;
     if (ccuResAddr == 0) {
         HCCL_WARNING("[CcuResSpecifications][%s] failed, CCU resource base address is 0, "
-            "devLogicId[%d] dieId[%u].", __func__, devLogicId_, dieId);
+                     "devLogicId[%d] dieId[%u].",
+            __func__, devLogicId_, dieId);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -292,8 +289,9 @@ HcclResult CcuResSpecifications::GetXnBaseAddr(const uint8_t dieId, uint64_t &xn
     constexpr uint32_t ccuXnOffset = ccum_offset + instrRevserveSize + gsaReserveSize;
     if (ccuResAddr > UINT64_MAX - ccuXnOffset) {
         HCCL_ERROR("[CcuResSpecifications][%s] failed, CCU resource base address[%llu] is "
-            "greater then expected, ccu xn offset[%llu], their sum will exceeds the range "
-            "of uint64_t.", __func__, ccuResAddr, ccuXnOffset);
+                   "greater then expected, ccu xn offset[%llu], their sum will exceeds the range "
+                   "of uint64_t.",
+            __func__, ccuResAddr, ccuXnOffset);
     }
 
     xnBaseAddr = ccuResAddr + ccuXnOffset;

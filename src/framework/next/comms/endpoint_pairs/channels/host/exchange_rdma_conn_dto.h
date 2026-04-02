@@ -34,17 +34,16 @@ public:
 
     std::string Describe() const override
     {
-        return Hccl::StringFormat("ExchangeRdmaConnDto=[qpn=%u, psn=%u, gid_idx=%u]",
-                            qpn_, psn_, gid_idx_);
+        return Hccl::StringFormat("ExchangeRdmaConnDto=[qpn=%u, psn=%u, gid_idx=%u]", qpn_, psn_, gid_idx_);
     }
 
-// RaTypicalQpModify
+    // RaTypicalQpModify
     uint32_t qpn_;
     uint32_t psn_;
     uint32_t gid_idx_;
     uint8_t gid_[HCCP_GID_RAW_LEN];
 };
 
-} // namespace Hccl
+} // namespace hcomm
 
 #endif // HCCLV2_EXCHANGE_RDMA_CONN_DTO_H

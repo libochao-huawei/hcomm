@@ -24,13 +24,13 @@ public:
     virtual ~AicpuTsRoceEndPoint() = default;
 
     // 注册内存
-    HcclResult RegisterMemory(const std::vector<MemHandle>& memHandles) override;
+    HcclResult RegisterMemory(const std::vector<MemHandle> &memHandles) override;
 
     // 注销内存
     virtual HcclResult UnregisterMemory(MemHandle memHandle) override;
 
     // 获取注册的内存信息
-    virtual HcclResult GetRegisteredMemory(std::vector<MemRegion>& memRegions) override;
+    virtual HcclResult GetRegisteredMemory(std::vector<MemRegion> &memRegions) override;
 };
-}
+} // namespace hcomm
 #endif // AICPUTS_ROCE_ENDPOINT_H

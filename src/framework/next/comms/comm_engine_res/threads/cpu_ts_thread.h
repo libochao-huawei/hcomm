@@ -53,14 +53,14 @@ private:
     struct HcclStreamInfo {
         s32 streamIds;
         uint32_t sqIds;
-        uint32_t cqIds;       // 记录物理cqId
-        uint32_t logicCqids;  // 记录逻辑cqId
+        uint32_t cqIds;      // 记录物理cqId
+        uint32_t logicCqids; // 记录逻辑cqId
     };
 
     struct HcclStreamParam {
         HcclStreamInfo streamInfo;
-        uint64_t sqCqContextAddr = 0;  // 记录sqeContext地址
-        uint64_t sqCqContextSize = 0;  // 记录sqeContext大小
+        uint64_t sqCqContextAddr = 0; // 记录sqeContext地址
+        uint64_t sqCqContextSize = 0; // 记录sqeContext大小
     };
     std::string &UpdateUniqueId();
     rtStream_t rtStream_ = nullptr;
@@ -73,11 +73,11 @@ private:
     DevType devType_ = DevType::DEV_TYPE_COUNT;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
 
-    std::unique_ptr<Stream> streamDevice_; //在把用户的stream生成的thread导出到device时使用
-    DeviceMem sqCqeContext_; 
+    std::unique_ptr<Stream> streamDevice_; // 在把用户的stream生成的thread导出到device时使用
+    DeviceMem sqCqeContext_;
     std::string uniqueIdStr_;
 };
 
-}  // namespace hccl
+} // namespace hccl
 
-#endif  // HCCL_CPU_TS_THREAD_H
+#endif // HCCL_CPU_TS_THREAD_H

@@ -17,15 +17,15 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepLocRecordEvent : public CcuRepBase {
-public:
-    CcuRepLocRecordEvent(const CompletedEvent &event);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepLocRecordEvent : public CcuRepBase {
+    public:
+        CcuRepLocRecordEvent(const CompletedEvent &event);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    CompletedEvent event_{};
-};
+    private:
+        CompletedEvent event_{};
+    };
 
 }; // namespace CcuRep
 }; // namespace hcomm

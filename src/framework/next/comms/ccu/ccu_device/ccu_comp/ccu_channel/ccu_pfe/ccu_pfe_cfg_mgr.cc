@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #include "ccu_pfe_cfg_mgr.h"
 
 #include <unordered_set>
@@ -27,7 +26,8 @@ CcuPfeCfgMgr &CcuPfeCfgMgr::GetInstance(const int32_t deviceLogicId)
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
         HCCL_WARNING("[CcuPfeCfgMgr][%s] use the backup device, devLogicId[%d] should be "
-            "less than %u.", __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
+                     "less than %u.",
+            __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
         devLogicId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
     }
 
@@ -55,7 +55,7 @@ HcclResult CcuPfeCfgMgr::Init()
 
     // 不同die的feId独立分配，可能一致，需要die粒度去重
     std::array<std::unordered_set<uint32_t>, CCU_MAX_IODIE_NUM> dieFuncIdSet;
-    for (auto& param : eidInfos) {
+    for (auto &param : eidInfos) {
         const uint32_t dieId = param.dieId;
         if (dieId >= CCU_MAX_IODIE_NUM) {
             continue; // 跳过HCCL不使用的dieId
@@ -79,8 +79,8 @@ HcclResult CcuPfeCfgMgr::Init()
         dieFuncIdSet[dieId].insert(feId);
 
         HCCL_RUN_INFO("[CcuPfeCfgMgr] new pfe cfg set: dieId[%u] feId[%u] startJettyCtxId[%u] "
-            "startTaJettyId[%u] pfeJettyNum[%u].", dieId, feId, startJettyCtxId, startTaJettyId,
-            pfeJettyNum);
+                      "startTaJettyId[%u] pfeJettyNum[%u].",
+            dieId, feId, startJettyCtxId, startTaJettyId, pfeJettyNum);
     }
 
     initFlag_ = true;

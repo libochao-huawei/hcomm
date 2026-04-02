@@ -13,24 +13,24 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepBufWrite : public CcuRepBase {
-public:
-    CcuRepBufWrite(const ChannelHandle channel, CcuBuf src, RemoteAddr dst, Variable len, CompletedEvent sem,
-                   uint16_t mask);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepBufWrite : public CcuRepBase {
+    public:
+        CcuRepBufWrite(
+            const ChannelHandle channel, CcuBuf src, RemoteAddr dst, Variable len, CompletedEvent sem, uint16_t mask);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    ChannelHandle channel;
+    private:
+        ChannelHandle channel;
 
-    CcuBuf src;
-    RemoteAddr    dst;
-    Variable  len;
+        CcuBuf src;
+        RemoteAddr dst;
+        Variable len;
 
-    CompletedEvent sem;
-    uint16_t   mask{0};
-};
+        CompletedEvent sem;
+        uint16_t mask{0};
+    };
 
-};     // namespace CcuRep
-};     // namespace hcomm
+}; // namespace CcuRep
+}; // namespace hcomm
 #endif // HCOMM_CCU_REPRESENTATION_BUFWRITE_H

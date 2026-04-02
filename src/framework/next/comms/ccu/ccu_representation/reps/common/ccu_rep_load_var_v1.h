@@ -13,17 +13,17 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepLoadVar : public CcuRepBase {
-public:
-    CcuRepLoadVar(const Variable &src, const Variable &var);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepLoadVar : public CcuRepBase {
+    public:
+        CcuRepLoadVar(const Variable &src, const Variable &var);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    Variable src;
-    Variable var;
-    uint16_t mask{1};
-};
+    private:
+        Variable src;
+        Variable var;
+        uint16_t mask{1};
+    };
 
 }; // namespace CcuRep
 }; // namespace hcomm

@@ -15,9 +15,9 @@
 
 namespace hcomm {
 
-class CcuResPack{
+class CcuResPack {
 public:
-    explicit CcuResPack(CcuEngine ccuEngine) : ccuEngine_(ccuEngine) {};
+    explicit CcuResPack(CcuEngine ccuEngine) : ccuEngine_(ccuEngine){};
     ~CcuResPack();
 
     HcclResult Init();
@@ -39,4 +39,4 @@ private:
 
 } // namespace hcomm
 
-# endif // CCU_RES_PACK_H
+#endif // CCU_RES_PACK_H

@@ -29,7 +29,8 @@ public:
         uint32_t gid_idx{0};
         unsigned char gid[HCCP_GID_RAW_LEN];
 
-        bool IsValid() {
+        bool IsValid()
+        {
             if (qpn == UINT32_MAX || psn == UINT32_MAX) {
                 return false;
             }
@@ -57,30 +58,28 @@ public:
 
     ~HostRdmaConnection();
 
-    std::string Describe() const ;
-    Hccl::QpInfo& GetQpInfo()
+    std::string Describe() const;
+    Hccl::QpInfo &GetQpInfo()
     {
         return qpInfo_;
     }
-
-    
 
 private:
     HcclResult DestroyQp();
     bool isValidQpAttr();
 
-    Hccl::Socket        *socket_{nullptr};
-    Hccl::RdmaHandle    rdmaHandle_{nullptr};
+    Hccl::Socket *socket_{nullptr};
+    Hccl::RdmaHandle rdmaHandle_{nullptr};
     // OpMode              opMode_{OpMode::OPBASE};
 
-    Hccl::QpInfo        qpInfo_;
-    RoceAttr            roceAttr_{};
-    void                *sendCompChannel_{nullptr};
-    void                *recvCompChannel_{nullptr};
-    bool                isHdcMode_{false};
-    RdmaConnStatus      rdmaConnStatus_{RdmaConnStatus::CLOSED};
-    QpAttrDto           rmtQpAttr_{};
-    QpAttrDto           locQpAttr_{};
+    Hccl::QpInfo qpInfo_;
+    RoceAttr roceAttr_{};
+    void *sendCompChannel_{nullptr};
+    void *recvCompChannel_{nullptr};
+    bool isHdcMode_{false};
+    RdmaConnStatus rdmaConnStatus_{RdmaConnStatus::CLOSED};
+    QpAttrDto rmtQpAttr_{};
+    QpAttrDto locQpAttr_{};
 };
 
 } // namespace hcomm

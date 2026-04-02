@@ -13,9 +13,11 @@
 #include "adapter_rts_common.h"
 #include "server_socket_mgr.h"
 #include "ub_mem.h"
- 
+
 namespace hcomm {
-UbMemEndpoint::UbMemEndpoint(const EndpointDesc &endpointDesc) : Endpoint(endpointDesc){}
+UbMemEndpoint::UbMemEndpoint(const EndpointDesc &endpointDesc) : Endpoint(endpointDesc)
+{
+}
 
 HcclResult UbMemEndpoint::Init()
 {
@@ -44,7 +46,7 @@ HcclResult UbMemEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void 
     return HCCL_SUCCESS;
 }
 
-HcclResult UbMemEndpoint::UnregisterMemory(void* memHandle)
+HcclResult UbMemEndpoint::UnregisterMemory(void *memHandle)
 {
     CHK_RET(this->regedMemMgr_->UnregisterMemory(memHandle));
     return HCCL_SUCCESS;
@@ -73,4 +75,4 @@ HcclResult UbMemEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandl
     HCCL_INFO("UbMemEndpoint GetAllMemHandles is not supported");
     return HCCL_SUCCESS;
 }
-}
+} // namespace hcomm

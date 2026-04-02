@@ -18,12 +18,15 @@
 
 namespace hcomm {
 
-AivUbMemChannel::AivUbMemChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
-    endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
-
-HcclResult AivUbMemChannel::ParseInputParam() 
+AivUbMemChannel::AivUbMemChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc)
+    : endpointHandle_(endpointHandle),
+      channelDesc_(channelDesc)
 {
-    socket_ = reinterpret_cast<Hccl::Socket*>(channelDesc_.socket);
+}
+
+HcclResult AivUbMemChannel::ParseInputParam()
+{
+    socket_ = reinterpret_cast<Hccl::Socket *>(channelDesc_.socket);
     return HCCL_SUCCESS;
 }
 
@@ -83,4 +86,4 @@ HcclResult AivUbMemChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag
 {
     return transport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
-}
+} // namespace hcomm

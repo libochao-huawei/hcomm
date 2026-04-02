@@ -22,11 +22,16 @@ struct PfeJettyCtxCfg {
     uint32_t feId{0};
     uint32_t startJettyCtxId{0};
     uint32_t startTaJettyId{0};
-    uint8_t  size{0};
+    uint8_t size{0};
 
     PfeJettyCtxCfg() = default;
-    PfeJettyCtxCfg(uint32_t feId, uint32_t startJettyCtxId, uint32_t startTaJettyId, uint8_t size) :
-        feId(feId), startJettyCtxId(startJettyCtxId), startTaJettyId(startTaJettyId), size(size) {}
+    PfeJettyCtxCfg(uint32_t feId, uint32_t startJettyCtxId, uint32_t startTaJettyId, uint8_t size)
+        : feId(feId),
+          startJettyCtxId(startJettyCtxId),
+          startTaJettyId(startTaJettyId),
+          size(size)
+    {
+    }
 };
 
 class CcuPfeCfgMgr {
@@ -42,7 +47,7 @@ private:
     ~CcuPfeCfgMgr() = default;
     CcuPfeCfgMgr(const CcuPfeCfgMgr &that) = delete;
     CcuPfeCfgMgr &operator=(const CcuPfeCfgMgr &that) = delete;
-    
+
     HcclResult SetPfeJettyCtxCfgMap(const int32_t logicDeviceId);
 
 private:
@@ -51,9 +56,8 @@ private:
     uint32_t devPhyId_{0};
     // 每个iodie上PfeJettyCtxCfg的映射关系
     std::array<std::vector<PfeJettyCtxCfg>, CCU_MAX_IODIE_NUM> pfeJettyCtxCfgs_{};
-
 };
 
-}; // Hccl
+}; // namespace hcomm
 
 #endif // CCU_PFE_CFG_MGR_H

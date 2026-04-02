@@ -51,8 +51,7 @@ typedef struct {
 typedef struct {
     union {
         uint8_t raws[24]; ///< 通用数据区，用于未来扩展，如backlog, timeout等
-        struct {
-        };
+        struct {};
     };
 } HcommEndpointListenConfig;
 
@@ -68,8 +67,8 @@ HcommResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint);
  * @return HcommResult 执行结果状态码
  * @note 启动指定Endpoint在指定端口上的监听服务
  */
-extern HcommResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint32_t port,
-    HcommEndpointListenConfig *config);
+extern HcommResult HcommEndpointStartListen(
+    EndpointHandle endpointHandle, uint32_t port, HcommEndpointListenConfig *config);
 
 /**
  * @brief 停止通信设备Endpoint监听
@@ -80,15 +79,15 @@ extern HcommResult HcommEndpointStartListen(EndpointHandle endpointHandle, uint3
  */
 extern HcommResult HcommEndpointStopListen(EndpointHandle endpointHandle, uint32_t port);
 
-
 extern HcommResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
 
-extern HcommResult HcommChannelGetRemoteMems(ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
+extern HcommResult HcommChannelGetRemoteMems(
+    ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems, char ***memTags);
 
 HcommResult HcommChannelGet(ChannelHandle channelHandle, void **channel);
 
-HcommResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum,
-    char **memTags);
+HcommResult HcommChannelGetRemoteMem(
+    ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags);
 
 HcommResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
     const std::string &commTag, aclrtBinHandle binHandle);
@@ -112,8 +111,7 @@ HcommResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, 
 #ifdef __cplusplus
 }
 
-HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread,
-    ThreadHandle *threads);
+HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
 #endif // __cplusplus
 
 #endif // HCOMM_C_ADPT_H

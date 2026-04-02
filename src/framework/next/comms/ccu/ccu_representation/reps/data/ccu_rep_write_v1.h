@@ -13,29 +13,30 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepWrite : public CcuRepBase {
-public:
-    CcuRepWrite(const ChannelHandle channel, RemoteAddr rem, LocalAddr loc, Variable len, CompletedEvent sem, uint16_t mask);
-    CcuRepWrite(const ChannelHandle channel, RemoteAddr rem, LocalAddr loc, Variable len, uint16_t dataType, uint16_t opType,
-                CompletedEvent sem, uint16_t mask);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepWrite : public CcuRepBase {
+    public:
+        CcuRepWrite(const ChannelHandle channel, RemoteAddr rem, LocalAddr loc, Variable len, CompletedEvent sem,
+            uint16_t mask);
+        CcuRepWrite(const ChannelHandle channel, RemoteAddr rem, LocalAddr loc, Variable len, uint16_t dataType,
+            uint16_t opType, CompletedEvent sem, uint16_t mask);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    ChannelHandle channel;
+    private:
+        ChannelHandle channel;
 
-    RemoteAddr   rem;
-    LocalAddr   loc;
-    Variable len;
+        RemoteAddr rem;
+        LocalAddr loc;
+        Variable len;
 
-    CompletedEvent sem;
-    uint16_t   mask{0};
+        CompletedEvent sem;
+        uint16_t mask{0};
 
-    uint16_t dataType{0};
-    uint16_t opType{0};
-    uint16_t reduceFlag{0};
-};
+        uint16_t dataType{0};
+        uint16_t opType{0};
+        uint16_t reduceFlag{0};
+    };
 
-};     // namespace CcuRep
-};     // namespace hcomm
+}; // namespace CcuRep
+}; // namespace hcomm
 #endif // HCOMM_CCU_REPRESENTATION_WRITE_H

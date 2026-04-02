@@ -22,5 +22,5 @@ public:
     AicpuTsRoceChannel();
     virtual ~AicpuTsRoceChannel() = default;
 };
-}
+} // namespace hcomm
 #endif // AICPU_TS_ROCE_CHANNEL_H

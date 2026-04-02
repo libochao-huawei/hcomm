@@ -19,115 +19,112 @@
 namespace hcomm {
 
 MAKE_ENUM(CcuConnStatus,
-    INIT,           // 初始化
-    EXCHANGEABLE,   // 可与对端交换
-    CONNECTED,      // 建链完成
-    CONN_INVALID);  // 链接错误
+    INIT,          // 初始化
+    EXCHANGEABLE,  // 可与对端交换
+    CONNECTED,     // 建链完成
+    CONN_INVALID); // 链接错误
 
 class CcuConnection {
 public:
-    CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
-    CcuConnection(const CcuConnection &that)             = delete;
+    CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr, const CcuChannelInfo &channelInfo,
+        const std::vector<CcuJetty *> &ccuJettys);
+    CcuConnection(const CcuConnection &that) = delete;
     CcuConnection &operator=(const CcuConnection &other) = delete;
     ~CcuConnection();
 
     // 用于建链过程CcuTransport调用
-    HcclResult    Init();
+    HcclResult Init();
     CcuConnStatus GetStatus();
-    HcclResult    Serialize(std::vector<char> &dtoData);
-    HcclResult    Deserialize(const std::vector<char> &dtoData);
-    HcclResult    ImportJetty();
-    HcclResult    Clean();
+    HcclResult Serialize(std::vector<char> &dtoData);
+    HcclResult Deserialize(const std::vector<char> &dtoData);
+    HcclResult ImportJetty();
+    HcclResult Clean();
 
     uint32_t GetChannelId() const;
     uint32_t GetDieId() const;
-    int32_t  GetDevLogicId() const;
+    int32_t GetDevLogicId() const;
 
 protected:
     TpProtocol tpProtocol_{TpProtocol::INVALID};
 
 private:
-    MAKE_ENUM(InnerStatus,
-        INIT, JETTY_CREATING, TP_INFO_GETTING,
-        EXCHANGEABLE, JETTY_IMPORTING,
-        CONNECTED,
-        CONN_INVALID);
+    MAKE_ENUM(
+        InnerStatus, INIT, JETTY_CREATING, TP_INFO_GETTING, EXCHANGEABLE, JETTY_IMPORTING, CONNECTED, CONN_INVALID);
 
     struct ImportJettyCtx {
         // 保存对端的key，传递数据结构时不需要整个copy
         u8 remoteQpKey[HRT_UB_QP_KEY_MAX_LEN]{0};
-        HccpUbJettyImportedInParam  inParam{};
+        HccpUbJettyImportedInParam inParam{};
         HrtRaUbJettyImportedOutParam outParam{};
     };
 
 private:
-    HcclResult    StatusMachine();
-    HcclResult    UpdateInitStatus();
-    HcclResult    UpdateExchangeStatus();
+    HcclResult StatusMachine();
+    HcclResult UpdateInitStatus();
+    HcclResult UpdateExchangeStatus();
 
-    HcclResult    GetLocalCcuRmaBufferInfo();
-    HcclResult    CreateJetty();
-    HcclResult    GetTpInfo();
-    void          GenerateLocalPsn();
-    void          ResetRequestCtxs();
-    HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
-    HcclResult    CheckRequestResults();
-    HcclResult    ConfigChannel();
-    HcclResult    ReleaseConnRes();
-    HcclResult    ReturnErrorStatus(const std::string &funcName);
-    std::string   Describe();
+    HcclResult GetLocalCcuRmaBufferInfo();
+    HcclResult CreateJetty();
+    HcclResult GetTpInfo();
+    void GenerateLocalPsn();
+    void ResetRequestCtxs();
+    HcclResult StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);
+    HcclResult CheckRequestResults();
+    HcclResult ConfigChannel();
+    HcclResult ReleaseConnRes();
+    HcclResult ReturnErrorStatus(const std::string &funcName);
+    std::string Describe();
 
 private:
     CcuConnStatus status_{CcuConnStatus::CONN_INVALID};
-    InnerStatus   innerStatus_{InnerStatus::CONN_INVALID};
-    bool          isJettyCreated_{false};
-    bool          isJettyImported_{false};
+    InnerStatus innerStatus_{InnerStatus::CONN_INVALID};
+    bool isJettyCreated_{false};
+    bool isJettyImported_{false};
 
-    CommAddr         locAddr_{};
-    CommAddr         rmtAddr_{};
-    CcuChannelInfo          channelInfo_{};
+    CommAddr locAddr_{};
+    CommAddr rmtAddr_{};
+    CcuChannelInfo channelInfo_{};
     std::vector<CcuJetty *> ccuJettys_;
 
-    int32_t       devLogicId_{0};
-    uint32_t      devPhyId_{0};
-    uint32_t      dieId_{0};
-    uint32_t      funcId_{0};
-    CtxHandle     ctxHandle_{nullptr};
-    uint32_t      jettyNum_{0};
+    int32_t devLogicId_{0};
+    uint32_t devPhyId_{0};
+    uint32_t dieId_{0};
+    uint32_t funcId_{0};
+    CtxHandle ctxHandle_{nullptr};
+    uint32_t jettyNum_{0};
 
     // 通过ccu comp 获取 ccu buffer信息
-    uint64_t      ccuBufAddr_{0};
-    uint32_t      ccuBufTokenId_{0};
-    uint32_t      ccuBufTokenValue_{0};
+    uint64_t ccuBufAddr_{0};
+    uint32_t ccuBufTokenId_{0};
+    uint32_t ccuBufTokenValue_{0};
 
-    std::vector<ImportJettyCtx> importJettyCtxs_;  // 记录import jetty相关信息
-    JettyImportCfg         jettyImportCfg_{}; // import配置信息，因复用TpHandle只需一份
+    std::vector<ImportJettyCtx> importJettyCtxs_; // 记录import jetty相关信息
+    JettyImportCfg jettyImportCfg_{};             // import配置信息，因复用TpHandle只需一份
 
     // 交换后获取对端ccu buffer信息
-    uint64_t      rmtCcuBufAddr_{0};
-    uint32_t      rmtCcuBufTokenId_{0};
-    uint32_t      rmtCcuBufTokenValue_{0};
+    uint64_t rmtCcuBufAddr_{0};
+    uint32_t rmtCcuBufTokenId_{0};
+    uint32_t rmtCcuBufTokenValue_{0};
 
     // 感知tp获取tp handle，import jetty后urma提供tpn
-    TpInfo   tpInfo_{};
+    TpInfo tpInfo_{};
 
     // 异步import上下文信息
-    std::vector<RequestHandle>  reqHandles_;
+    std::vector<RequestHandle> reqHandles_;
     std::vector<std::vector<char>> reqDataBuffers_;
-    std::vector<void*>          remoteJettyHandlePtrs_;
+    std::vector<void *> remoteJettyHandlePtrs_;
 };
 
 class CcuRtpConnection : public CcuConnection {
 public:
-    CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+    CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr, const CcuChannelInfo &channelInfo,
+        const std::vector<CcuJetty *> &ccuJettys);
 };
 
 class CcuCtpConnection : public CcuConnection {
 public:
-    CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-        const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys);
+    CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr, const CcuChannelInfo &channelInfo,
+        const std::vector<CcuJetty *> &ccuJettys);
 };
 
 } // namespace hcomm
