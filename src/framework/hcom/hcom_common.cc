@@ -34,6 +34,7 @@
 #include "comm_base_pub.h"
 #include "coll_alg_utils.h"
 #include "json_utils.h"
+#include "hcom_pub.h"
 
 using namespace std;
 using namespace hccl;
