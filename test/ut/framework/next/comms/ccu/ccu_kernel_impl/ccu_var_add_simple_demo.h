@@ -11,12 +11,13 @@
 #ifndef CCU_VAR_ADD_SIMPLE_DEMO_H
 #define CCU_VAR_ADD_SIMPLE_DEMO_H
 
-#include "ccu_data_api.h"
+#include "ccu_api.hpp"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
 
 struct CcuVarAddKernelArg {
-    uint32_t numA{0};
+    uint64_t numA{0xffffffff};
     uint32_t numB{0};
+    ChannelHandle channelHandle{0};
 };
 
 struct CcuVarAddTaskArg {
@@ -25,27 +26,441 @@ struct CcuVarAddTaskArg {
 CcuResult CcuVarAddDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
-
-    // 定义空的资源对象
     CcuVariable result{}, numA{}, numB{};
-
-    // 为资源对象赋资源实例（可以是创建或借用）
     CCU_CHK_RET(CcuVariableCreate(&result));
     CCU_CHK_RET(CcuVariableCreate(&numA));
     CCU_CHK_RET(CcuVariableCreate(&numB));
 
-    // 算法具体实现
-    numA = args->numA;
+    CcuLoad(args->numA, numA, 1);
+
+    CcuEvent evt;
+    CcuCompletedEventCreate(&evt);
+    evt.setMask(0x03);
+    CcuRecordEvent(evt);
+    CcuWaitEvent(evt);
+
     numB = args->numB;
     result = numA + numB;
-
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuVarAddDemoGenTaskArgs(CcuVarAddTaskArg arg, uint64_t *vars, uint32_t num)
+CcuResult CcuAddrDemoKernel(CcuKernelArg arg)
 {
-    // vars
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuAddress baseAddr, dstAddr;
+    ccu::Create(&baseAddr);
+    ccu::Create(&dstAddr);
+    baseAddr = 0x80000000;
+    dstAddr = baseAddr;
+    return CcuResult::CCU_SUCCESS;
+}
+// CcuResult CcuAddrDemoKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+
+//     CcuVariable offset, len;
+//     CcuVariableCreate(&offset);
+//     CcuVariableCreate(&len);
+//     offset = 64;
+//     len = 1024;
+
+//     CcuAddress baseAddr, dstAddr;
+//     CcuAddressCreate(&baseAddr);
+//     CcuAddressCreate(&dstAddr);
+
+//     // 立即数赋值
+//     baseAddr = 0x80000000;
+
+//     // 变量赋值
+//     baseAddr = offset;
+
+//      // 立即数赋值
+//      baseAddr = 0x80000000;
+
+//     // 地址 + 变量偏移
+//     dstAddr = baseAddr + offset;   // C++ 重载 
+
+//     // 就地偏移（addr += variable）
+//     baseAddr += offset;            // C++ 重载 
+
+//     // // 就地偏移（addr += addr）
+//     // baseAddr += dstAddr;           // C++ 重载 → addr = addr + otherAddr → CcuRepAdd
+
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+CcuResult CcuLocalAddrDemoKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuVariable token;
+    ccu::Create(&token);
+    token = 1024;
+    CcuLocalAddr localAddr;
+    ccu::Create(&localAddr);
+    localAddr.addr = 0x80000000;
+    localAddr.token = token;
     return CcuResult::CCU_SUCCESS;
 }
 
-#endif // CCU_VAR_ADD_SIMPLE_DEMO_H
+// CcuResult CcuLocalAddrDemoKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+//     CcuVariable token;
+//     CcuVariableCreate(&token);
+//     token = 1024;
+
+//     CcuLocalAddr localAddr{};
+//     CcuLocalAddrCreate(&localAddr);
+//     localAddr.addr = 0x80000000;      // 通过 CcuAddress 重载设置地址
+//     localAddr.token = token;    // 通过 CcuVariable 重载设置 token
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuVariable len;
+    ccu::Create(&len);
+    len = 1024;
+    CcuEvent evt;
+    ccu::Create(&evt);
+    CcuLocalAddr src;
+    ccu::Create(&src);
+    src.addr = 0x10000000;
+    src.token = 0x20000000;
+    CcuLocalAddr dst;
+    ccu::Create(&dst);
+    dst.addr = 0x30000000;
+    dst.token = 0x40000000;
+    ccu::Copy(dst, src, len, evt);
+    ccu::Wait(evt);
+    CcuBuffer buf;
+    ccu::BlockCreate(&buf, 1);
+    ccu::Copy(buf, src, len, evt);
+    ccu::Wait(evt);
+    ccu::Copy(dst, buf, len, evt);
+    ccu::Wait(evt);
+    return CcuResult::CCU_SUCCESS;
+}
+
+// CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+//     CcuVariable len;
+//     CcuVariableCreate(&len);
+//     len = 1024;
+//     CcuEvent evt;
+//     CcuCompletedEventCreate(&evt);
+
+//     CcuLocalAddr src, dst;
+//     CcuLocalAddrCreate(&src);
+//     CcuLocalAddrCreate(&dst);
+//     src.addr = 0x10000000;
+//     src.token = 0x20000000; 
+//     dst.addr = 0x30000000;
+//     dst.token = 0x40000000;
+//     CcuLocalCopyHBMToHBM(dst, src, len, evt);           // LocalAddr → LocalAddr
+//     CcuWaitEvent(evt);
+    
+//     CcuBuffer buf;
+//     CcuBlockBufferCreate(&buf,1);
+//     CcuLocalCopyHBMToBuffer(buf, src, len, evt);   // LocalAddr → Buffer
+//     CcuWaitEvent(evt);
+//     CcuLocalCopyBufferToHBM(dst, buf, len, evt); // Buffer → LocalAddr
+//     CcuWaitEvent(evt);
+
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+CcuResult CcuLocalAddrReduceKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuVariable len;
+    ccu::Create(&len);
+    len = 1024;
+    CcuEvent evt;
+    ccu::Create(&evt);
+    CcuLocalAddr src;
+    ccu::Create(&src);
+    src.addr = 0x10000000;
+    src.token = 0x20000000;
+    CcuLocalAddr dst;
+    ccu::Create(&dst);
+    dst.addr = 0x30000000;
+    dst.token = 0x40000000;
+    ccu::Reduce(dst, src, len,
+        HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+    ccu::Wait(evt);
+    return CcuResult::CCU_SUCCESS;
+}
+
+// CcuResult CcuLocalAddrReduceKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+//     CcuVariable len;
+//     CcuVariableCreate(&len);
+//     len = 1024;
+//     CcuEvent evt;
+//     CcuCompletedEventCreate(&evt);
+//     CcuLocalAddr src, dst;
+//     CcuLocalAddrCreate(&src);
+//     CcuLocalAddrCreate(&dst);
+//     src.addr = 0x10000000;
+//     src.token = 0x20000000;
+//     dst.addr = 0x30000000;
+//     dst.token = 0x40000000;
+//     CcuLocalHBMReduce(dst, src, len,
+//         HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+//     CcuWaitEvent(evt);
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+CcuResult CcuLocalBufferReduceKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuVariable len;
+    ccu::Create(&len);
+    len = 4096;
+    CcuEvent evt;
+    ccu::Create(&evt);
+    CcuLocalAddr src0, src1;
+    ccu::Create(&src0);
+    ccu::Create(&src1);
+    src0.addr = 0x10000000;
+    src0.token = 0x20000000;
+    src1.addr = 0x30000000;
+    src1.token = 0x40000000;
+    CcuBuffer bufs[2];
+    ccu::BlockCreate(bufs, 2);
+    ccu::Copy(bufs[0], src0, len, evt);
+    ccu::Wait(evt);
+    ccu::Copy(bufs[1], src1, len, evt);
+    ccu::Wait(evt);
+    ccu::Reduce(bufs, 2,
+        HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP16,
+        HCCL_REDUCE_SUM, len, evt);
+    ccu::Wait(evt);
+    return CcuResult::CCU_SUCCESS;
+}
+
+// CcuResult CcuLocalBufferReduceKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+//     CcuVariable len;
+//     CcuVariableCreate(&len);
+//     len = 512;
+//     CcuEvent evt;
+//     CcuCompletedEventCreate(&evt);
+//     CcuLocalAddr src0, src1;
+//     CcuLocalAddrCreate(&src0);
+//     CcuLocalAddrCreate(&src1);
+//     src0.addr = 0x10000000;
+//     src0.token = 0x20000000;
+//     src1.addr = 0x30000000;
+//     src1.token = 0x40000000;
+//     constexpr uint32_t bufCount = 2;
+//     CcuBuffer bufs[bufCount];
+//     CcuBlockBufferCreate(bufs, bufCount);
+//     CcuLocalCopyHBMToBuffer(bufs[0], src0, len, evt);
+//     CcuWaitEvent(evt);
+//     CcuLocalCopyHBMToBuffer(bufs[1], src1, len, evt);
+//     CcuWaitEvent(evt);
+//     CcuLocalBufferReduce(bufs, bufCount,
+//         HCCL_DATA_TYPE_FP16, HCCL_DATA_TYPE_FP16,
+//         HCCL_REDUCE_SUM, len, evt);
+//     CcuWaitEvent(evt);
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuVariable len;
+    ccu::Create(&len);
+    len = 1024;
+    CcuEvent evt;
+    ccu::Create(&evt);
+    CcuLocalAddr src;
+    ccu::Create(&src);
+    src.addr = 0x10000000;
+    src.token = 0x20000000;
+    CcuRemoteAddr dst;
+    ccu::Create(&dst);
+    dst.addr = 0x30000000;
+    dst.token = 0x40000000;
+    ccu::Read(args->channelHandle, src, dst, len, evt);
+    ccu::Wait(evt);
+    CcuBuffer buf[2];
+    ccu::BlockCreate(buf, 2);
+    ccu::Read(args->channelHandle, buf[1], dst, len, evt);
+    ccu::Wait(evt);
+    return CcuResult::CCU_SUCCESS;
+
+}
+
+// CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+//     CcuVariable len;
+//     CcuVariableCreate(&len);
+//     len = 1024;
+//     CcuEvent evt;
+//     CcuCompletedEventCreate(&evt);
+
+//     CcuLocalAddr src;
+//     CcuRemoteAddr dst;
+//     CcuLocalAddrCreate(&src);
+//     CcuRemoteAddrCreate(&dst);
+//     src.addr = 0x10000000;
+//     src.token = 0x20000000; 
+//     dst.addr = 0x30000000;
+//     dst.token = 0x40000000;
+//     CcuReadHBMToHBM(args->channelHandle, src, dst, len, evt);
+//     CcuWaitEvent(evt);
+//     CcuBuffer buf;
+//     CcuBlockBufferCreate(&buf,1);
+//     CcuReadHBMToBuffer(args->channelHandle, buf, dst, len, evt);
+//     CcuWaitEvent(evt);
+
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+// CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+//     CcuVariable len;
+//     CcuVariableCreate(&len);
+//     len = 1024;
+//     CcuEvent evt;
+//     CcuCompletedEventCreate(&evt);
+
+//     CcuLocalAddr src;
+//     CcuRemoteAddr dst;
+//     CcuLocalAddrCreate(&src);
+//     CcuRemoteAddrCreate(&dst);
+//     src.addr = 0x10000000;
+//     src.token = 0x20000000; 
+//     dst.addr = 0x30000000;
+//     dst.token = 0x40000000;
+//     CcuWriteHBMToHBM(args->channelHandle, dst, src, len, evt);
+//     CcuWaitEvent(evt);
+//     CcuBuffer buf;
+//     CcuBlockBufferCreate(&buf,1);
+//     CcuWriteBufferToHBM(args->channelHandle, dst, buf, len, evt);
+//     CcuWaitEvent(evt);
+
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuVariable len;
+    ccu::Create(&len);
+    len = 1024;
+    CcuEvent evt;
+    ccu::Create(&evt);
+    CcuLocalAddr src;
+    ccu::Create(&src);
+    src.addr = 0x10000000;
+    src.token = 0x20000000;
+    CcuRemoteAddr dst;
+    ccu::Create(&dst);
+    dst.addr = 0x30000000;
+    dst.token = 0x40000000;
+    ccu::Write(args->channelHandle, dst, src, len, evt);
+    ccu::Wait(evt);
+    CcuBuffer buf;
+    ccu::BlockCreate(&buf, 1);
+    ccu::Write(args->channelHandle, dst, buf, len, evt);
+    ccu::Wait(evt);
+    return CcuResult::CCU_SUCCESS;
+}
+
+// CcuResult CcuReadWriteReduceKernel(CcuKernelArg arg)
+// {
+//     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+//     CcuVariable len;
+//     CcuVariableCreate(&len);
+//     len = 1024;
+//     CcuEvent evt;
+//     CcuCompletedEventCreate(&evt);
+//     CcuLocalAddr src;
+//     CcuRemoteAddr dst;
+//     CcuLocalAddrCreate(&src);
+//     CcuRemoteAddrCreate(&dst);
+//     src.addr = 0x10000000;
+//     src.token = 0x20000000; 
+//     dst.addr = 0x30000000;
+//     dst.token = 0x40000000;
+//     CcuReadHBMToHBMReduce(args->channelHandle, src, dst, len,
+//         HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+//     CcuWaitEvent(evt);
+    
+//     CcuWriteHBMToHBMReduce(args->channelHandle, dst, src, len,
+//         HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+//     CcuWaitEvent(evt);
+//     return CcuResult::CCU_SUCCESS;
+// }
+
+CcuResult CcuReadWriteReduceKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+
+    CcuVariable len;
+    ccu::Create(&len);
+    len = 4096;
+    CcuEvent evt;
+    ccu::Create(&evt);
+    evt.setMask(0x12);
+    CcuLocalAddr src;
+    ccu::Create(&src);
+    src.addr = 0x10000000;
+    src.token = 0x20000000;
+    CcuRemoteAddr dst;
+    ccu::Create(&dst);
+    dst.addr = 0x30000000;
+    dst.token = 0x40000000;
+    ccu::ReadReduce(args->channelHandle, src, dst, len,
+        HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+    ccu::Wait(evt);
+    ccu::WriteReduce(args->channelHandle, dst, src, len,
+        HCCL_DATA_TYPE_FP16, HCCL_REDUCE_SUM, evt);
+    ccu::Wait(evt);
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuSyncKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+
+    
+    CcuEvent evt;
+    ccu::Create(&evt);
+    uint32_t mask = 0x12;
+    evt.setMask(mask);
+    
+    CcuVariable var;
+    ccu::Create(&var);
+    var = 1024;
+    ccu::WriteVariableWithNotify(args->channelHandle, var, 0, 0, mask);
+    ccu::NotifyWait(args->channelHandle, 0, mask);
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuEventKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    CcuEvent evt[2];
+    ccu::BlockCreate(evt, 2);
+    ccu::Record(evt[0]);
+    ccu::Wait(evt[0]);
+    ccu::Record(evt[1]);
+    ccu::Wait(evt[1]);
+    CcuEvent single_evt;
+    ccu::Create(&single_evt);
+    ccu::Record(single_evt);
+    ccu::Wait(single_evt);
+
+    return CcuResult::CCU_SUCCESS;
+}
