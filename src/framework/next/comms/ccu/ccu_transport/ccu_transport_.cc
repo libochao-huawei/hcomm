@@ -168,14 +168,9 @@ HcclResult CcuTransport::StatusMachine()
 {
     EXCEPTION_HANDLE_BEGIN
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-    if (socketStatus == Hccl::SocketStatus::INIT) {
+    if (socketStatus == Hccl::SocketStatus::INIT || socketStatus == Hccl::SocketStatus::TIMEOUT) {
         HCCL_ERROR("[CcuTransport][GetStatus]socket timeout or no link, please check");
         return HcclResult::HCCL_E_INTERNAL;
-    }
-    
-    if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
-        transStatus_ = TransStatus::SOCKET_TIMEOUT;
-        return HcclResult::HCCL_E_TIMEOUT; // 操作失败，置成错误状态
     }
     
     if (socketStatus != Hccl::SocketStatus::OK) {
