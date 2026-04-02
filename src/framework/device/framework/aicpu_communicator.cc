@@ -1038,6 +1038,7 @@ HcclResult HcclCommAicpu::SetTransportMachinePara(MachinePara &machinePara, u32 
     machinePara.localDeviceId = topoInfo_.devicePhyId;
     machinePara.deviceType = topoInfo_.deviceType;
     machinePara.tag = newTag;
+    machinePara.isAicpuModeEn = true;
     if (linkType == TransportLinkType::RESERVED) {
         // 非910_93 2die sio与hccs并发场景，specifyLink设置为RESERVED_LINK_TYPE，平台层将按实际链路类型建链
         machinePara.specifyLink = LinkTypeInServer::RESERVED_LINK_TYPE;
@@ -1050,10 +1051,11 @@ HcclResult HcclCommAicpu::SetTransportMachinePara(MachinePara &machinePara, u32 
     }
 
     HCCL_INFO("%s success, group[%s], rankId[%u], linkAttribute[%x], localUserRank[%u], remoteWorldRank[%u], "
-        "remoteUserrank[%u], deviceLogicId[%d], localDeviceId[%d], deviceType[%d], newTag[%s], specifyLink[%d]",
+        "remoteUserrank[%u], deviceLogicId[%d], localDeviceId[%d], deviceType[%d], newTag[%s], specifyLink[%d], "
+        "isAicpuModeEn[%d]",
         __func__, identifier_.c_str(), rankId, machinePara.linkAttribute, machinePara.localUserrank,
         machinePara.remoteWorldRank, machinePara.remoteUserrank, machinePara.deviceLogicId, machinePara.localDeviceId,
-        machinePara.deviceType, machinePara.tag.c_str(), machinePara.specifyLink);
+        machinePara.deviceType, machinePara.tag.c_str(), machinePara.specifyLink, machinePara.isAicpuModeEn);
     return HCCL_SUCCESS;
 }
 
