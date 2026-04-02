@@ -25,7 +25,6 @@ void EnvConfigStub::Parse()
     rdmaCfg.Parse();
     algoCfg.Parse();
     logCfg.Parse();
-    detourCfg.Parse();
 }
 
 const EnvHostNicConfig &EnvConfigStub::GetHostNicConfig()
