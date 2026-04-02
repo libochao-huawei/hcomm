@@ -15,6 +15,7 @@
 
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
+#include "enum_factory.h"
 
 namespace hcomm {
 
@@ -432,4 +433,58 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle, const HccpUbJetty
         cfg, mode, in.jettyImportCfg.protocol, reqHandle);
 }
 
+HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut)
+{
+    HCCL_INFO("[%s]mode[%s], phyId[%u], customIn[%p], customOut[%p]",
+        __func__, mode.Describe().c_str(), phyId, customIn, customOut);
+    CHK_PTR_NULL(customIn);
+    CHK_PTR_NULL(customOut);
+    struct RaInfo info {};
+
+    static std::unordered_map<HrtNetworkMode, NetworkMode, std::EnumClassHash> HRT_NETWORK_MODE_MAP = {
+        {HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE},
+        {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
+
+    auto it = HRT_NETWORK_MODE_MAP.find(mode);
+    CHK_PRT_RET(it == HRT_NETWORK_MODE_MAP.end(),
+        HCCL_ERROR("[%s]fail, mode[%s] is invalid", __func__, mode.Describe().c_str()), HCCL_E_PARA);
+    info.mode = it->second;
+    info.phyId = phyId;
+    
+    struct CustomChanInfoIn  *in  = reinterpret_cast<struct CustomChanInfoIn *>(customIn);
+    struct CustomChanInfoOut *out = reinterpret_cast<struct CustomChanInfoOut *>(customOut);
+
+    int ret = RaCustomChannel(info, in, out);
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s]RaCustomChannel fail, mode[%s], phyId[%u], customIn[%p], customOut[%p]",
+        __func__, mode.Describe().c_str(), phyId, customIn, customOut), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
+{
+    if (jettyHandles.size() != num) {
+        HCCL_ERROR("jettyHandles size[%zu] not equal to num[%u]", jettyHandles.size(), num);
+        return HCCL_E_PARA;
+    }
+    std::vector<struct JettyAttr> raJettyAttrs(MAX_JETTY_QUERY_NUM);
+    std::vector<void*> qp_handle(jettyHandles.size());
+    for (size_t i = 0; i < jettyHandles.size(); ++i) {
+        qp_handle[i] = reinterpret_cast<void*>(jettyHandles[i]);
+    }
+    auto ret = RaCtxQpQueryBatch(qp_handle.data(), raJettyAttrs.data(), &num);
+    if (ret != 0) {
+        HCCL_ERROR("RaBatchQueryJettyAttr failed.ret[%d]", ret);
+        return HCCL_E_NETWORK;
+    }
+    if (num != jettyHandles.size()) {
+        HCCL_ERROR("jettyAttrs num[%zu] not equal to input jettyHandles size[%zu]", num, jettyHandles.size());
+        return HCCL_E_PARA;
+    }
+
+    for (u32 i = 0; i < num; i++) {
+        JettyStatus jettyStatus = static_cast<JettyStatus::Value>(static_cast<int>(raJettyAttrs[i].state));
+        jettyAttrs.push_back(jettyStatus);
+    }
+    return HCCL_SUCCESS;
+}
 } // namespace hcomm

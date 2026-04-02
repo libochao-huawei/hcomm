@@ -14,6 +14,7 @@
 #include "ip_address.h"
 #include "ccu_dev_mgr_pub.h"
 #include "hcomm_adapter_hccp.h"
+#include "hccl_common.h"
 
 namespace hcomm {
 
@@ -29,13 +30,16 @@ public:
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;
     HrtRaUbJettyCreatedOutParam GetJettyedOutParam() const;
     HcclResult Clean();
+    uint16_t GetJettyId() const { return jettyInfo_.taJettyId; }
+    JettyHandle GetJettyHandle() const { return reinterpret_cast<JettyHandle>(jettyHandlePtr_); }
+    RdmaHandle GetRdmaHandle() const { return rdmaHandle_; }
 
 private:
     CcuJetty(const CcuJetty &that) = delete;
     CcuJetty &operator=(const CcuJetty &that) = delete;
     CcuJetty(CcuJetty &&that) = delete;
     CcuJetty &operator=(CcuJetty &&that) = delete;
-
+    
 private:
     int32_t devLogicId_{0};
     Hccl::IpAddress ipAddr_{};
@@ -53,6 +57,7 @@ private:
     HrtRaUbJettyCreatedOutParam outParam_{};
 
     HcclResult HandleAsyncRequest();
+    RdmaHandle rdmaHandle_{nullptr};
 };
 
 HcclResult CcuCreateJetty(const Hccl::IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
