@@ -108,6 +108,7 @@
 #include "../../../legacy/framework/dfx/task_exception/task_exception_handler.h"
 #include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
 #include "../../../legacy/include/hccl_communicator.h"
+#include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
 #include "acl/acl_rt.h"
 
 
@@ -2104,6 +2105,39 @@ u32 Hccl::HcclCommunicator::GetRankInParentComm()
     return 0;
 }
 
+HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
+{
+    return HCCL_SUCCESS;
+}
+
+uint16_t CcuRep::ParseRepeatNumFromParallelParam(uint64_t parallelParam)
+{
+    return 3;
+}
+
+HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
+{
+    return HCCL_SUCCESS;
+}
+void HrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
+{
+}
+
+HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
+{
+    return HCCL_SUCCESS;
+}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
@@ -2130,3 +2164,4 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
+
