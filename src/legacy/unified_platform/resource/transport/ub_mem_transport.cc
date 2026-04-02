@@ -969,8 +969,8 @@ HcclResult UbMemTransport::CheckSocketStatus()
     auto startTime = std::chrono::steady_clock::now();
     uint32_t retryCount = 0;
     while(true) {
-        Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-        if (socketStatus == Hccl::SocketStatus::OK) {
+        SocketStatus socketStatus = socket->GetAsyncStatus();
+        if (socketStatus == SocketStatus::OK) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
             HCCL_INFO("[UbMemTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
