@@ -13,7 +13,7 @@
 #include <vector>
 #include <unordered_set>
 #include "hccp_common.h"
-#include "env_config.h"
+#include "../../framework/env_config/env_config.h"
 #include "ip_address.h"
 #include "data_type.h"
 #include "reduce_op.h"
