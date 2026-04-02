@@ -252,7 +252,7 @@ HcclResult InitGenTopoJsonV1(std::string &topoFileName, bool is1DTopo)
 
     json topoJson;
     topoJson["version"] = "2.0";
-    topoJson["hardware_type"] = "910D-2D-Fullmsh_64_plus_1";
+    topoJson["hardware_type"] = "950-2D-Fullmsh_64_plus_1";
     topoJson["peer_count"] = rankSizeNum;
 
     // 创建 peer_list 数组
@@ -667,7 +667,7 @@ HcclResult InitGenTopoJson(std::string &topoFileName, const CheckerOpParam& para
 
     json topoJson;
     topoJson["version"] = "2.0";
-    topoJson["hardware_type"] = "910D-2D-Fullmsh_64_plus_1";
+    topoJson["hardware_type"] = "950-2D-Fullmsh_64_plus_1";
     topoJson["peer_count"] = rankSizeNum;
 
     // 创建 peer_list 数组

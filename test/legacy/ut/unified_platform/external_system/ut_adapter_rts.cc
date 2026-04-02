@@ -1117,7 +1117,7 @@ TEST_F(AdapterRtsTest, HrtUbDevQueryToken_run_NOK)
     EXPECT_EQ(res.second, 0);
 }
 
-TEST_F(AdapterRtsTest, HrtGetDeviceType_910_95_return_ok)
+TEST_F(AdapterRtsTest, HrtGetDeviceType_950_return_ok)
 {
     // Given
     const char targetChipVer[CHIP_VERSION_MAX_LEN] = "Ascend950DT_9591";
