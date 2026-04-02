@@ -3174,7 +3174,8 @@ TEST_F(CommunicatorImplTest, ut_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SU
     void* commContext = nullptr;
     u64 len = 0;
     int32_t aivCoreLimit = 2;
-
+    std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
+    fakeComm.currentCollOperator->scratchMem = buffer;
     void *addr = reinterpret_cast<void *>(0x12345678);
     MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
