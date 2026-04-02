@@ -3480,3 +3480,18 @@ TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enoug
 
     EXPECT_THROW(comm.CheckRankGraphAddrs(), InvalidParamsException);
 }
+
+TEST_F(CommunicatorImplTest, Ut_GetTopoFilePath)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    mainBoardId = 0x3;
+    const char* topoFileName = "atlas_950_1.json";
+    char drv_path[256] = "/usr/local/Ascend2";
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainBoardId)).will(returnValue(0));
+    MOCKER(realpath).stubs().with(any(), any()).will(returnValue(topoFileName));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+
+    string topoFilePath = comm.GetTopoFilePath();
+    EXPECT_NE(strstr(topoFilePath, topoFileName), nullptr);
+}
