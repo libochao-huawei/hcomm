@@ -341,7 +341,7 @@ HcclResult AivUbMemTransport::UpdateMemInfo(void **memHandles, uint32_t memHandl
     BufferPack(sendStream, locMemTemp_, locTagTemp_);
     sendStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
-    socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     CHK_RET(CheckSocketStatus());
     CHK_RET(RecvDataSize());
     CHK_RET(CheckSocketStatus());
@@ -349,8 +349,8 @@ HcclResult AivUbMemTransport::UpdateMemInfo(void **memHandles, uint32_t memHandl
     CHK_RET(CheckSocketStatus());
     CHK_RET(RecvMemInfo());
     CHK_RET(CheckSocketStatus());
-    Hccl::BinaryStream recvStream(recvData);
-    RmtBufferUnpackProc(binaryStream);
+    Hccl::BinaryStream recvStream(recvData_);
+    RmtBufferUnpackProc(recvStream);
     localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
     localUserMemTag_.insert(localUserMemTag_.end(), locTagTemp_.begin(), locTagTemp_.end());
     return HCCL_SUCCESS;
