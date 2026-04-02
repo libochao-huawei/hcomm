@@ -19,6 +19,7 @@
 #include "ccu_rep_setloop_v1.h"
 #include "ccu_rep_loop_v1.h"
 #include "ccu_rep_loopgroup_v1.h"
+#include "ccu_rep_loopgroup_bundle_v1.h"
 
 #include "ccu_rep_loc_record_event.h"
 #include "ccu_rep_loc_wait_event.h"

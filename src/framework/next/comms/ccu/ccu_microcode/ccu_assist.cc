@@ -38,6 +38,31 @@ uint64_t GetLoopParam(uint64_t loopCtxId, uint64_t gsaOffset, uint64_t loopIterN
            | ((loopIterNum & SetBits(loopNumBitNum)) << loopNumShiftBit);
 }
 
+uint64_t GetParallelParam(uint64_t repeatNum, uint64_t repeatLoopIndex, uint64_t totalLoopNum)
+{
+    constexpr uint16_t repeatBitNum       = 7;
+    constexpr uint16_t repeatNumShiftBit  = 55;
+    constexpr uint16_t repeatLoopBitNum   = 7;
+    constexpr uint16_t repeatLoopShiftBit = 48;
+    constexpr uint16_t totalLoopBitNum    = 7;
+    constexpr uint16_t totalLoopShiftBit  = 41;
+    return ((repeatNum & SetBits(repeatBitNum)) << repeatNumShiftBit)
+           | ((repeatLoopIndex & SetBits(repeatLoopBitNum)) << repeatLoopShiftBit)
+           | ((totalLoopNum & SetBits(totalLoopBitNum)) << totalLoopShiftBit);
+}
+
+uint64_t GetOffsetParam(uint64_t gsaOffset, uint64_t msOffset, uint64_t ckeOffset)
+{
+    constexpr uint16_t gsaBitNum   = 32;
+    constexpr uint16_t gsaShiftBit = 21;
+    constexpr uint16_t msBitNum    = 11;
+    constexpr uint16_t msShiftBit  = 10;
+    constexpr uint16_t ckeBitNum   = 10;
+    constexpr uint16_t ckeShiftBit = 0;
+    return ((gsaOffset & SetBits(gsaBitNum)) << gsaShiftBit) | ((msOffset & SetBits(msBitNum)) << msShiftBit)
+           | ((ckeOffset & SetBits(ckeBitNum)) << ckeShiftBit);
+}
+
 uint64_t GetToken(uint64_t tokenId, uint64_t tokenValue, uint64_t tokenValid)
 {
     constexpr uint16_t tokenValidBitNum   = 1;
