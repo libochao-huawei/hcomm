@@ -58,14 +58,6 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
         }
         needCollectInfo_ = false;
     }
-    
-    // 获取module内最大的send count，除本rank外
-    for (u32 userRank = 0; userRank < userRankSize_; ++userRank) {
-        if (userRank != userRank_) {
-            localMaxSendCount_ = std::max(localMaxSendCount_, localSendCounts_[userRank]);
-        }
-    }
-    intraMaxSendCount_ = localMaxSendCount_;
 
     return HCCL_SUCCESS;
 }
