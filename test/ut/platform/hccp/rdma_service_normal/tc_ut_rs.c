@@ -435,6 +435,7 @@ void TcRsSocketDeinit2()
 	accept->ssl = malloc(sizeof(SSL_CTX));
 	accept->list = list;
 
+	free(accept->ssl);
 	RsFreeAcceptOneNode(rsCb, accept);
 	ret = RsDeinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
@@ -2301,26 +2302,26 @@ void TcRsGetQpStatus()
 	int fd, fd2;
 	struct RsQpStatusInfo status;
 
-    struct RsQpCb qpCb;
-    struct rs_cb rsCb;
+	struct RsQpCb qpCb;
+	struct rs_cb rsCb;
 	struct RsRdevCb rdevCb;
-    qpCb.rdevCb = &rdevCb;
+	qpCb.rdevCb = &rdevCb;
 
 	mocker((stub_fn_t)ibv_query_port, 1, 1);
-    ret = RsDrvSetMtu(&qpCb);
+	ret = RsDrvSetMtu(&qpCb);
 	EXPECT_INT_EQ(ret, -EOPENSRC);
-    mocker_clean();
+	mocker_clean();
 
 	/* +++++Resource Prepare+++++ */
 	mocker((stub_fn_t)RsDrvSetMtu, 10, 5);
 	ret = TcRsSockQpCreate(&fd, &qpn, &fd2, &qpn2);
-    mocker_clean();
+	mocker_clean();
 
-    mocker_invoke(RsQpn2qpcb, ReplaceRsQpn2qpcb, 1);
-    mocker(RsRoceQueryQpc, 10, 1);
-    ret = RsGetQpStatus(phyId, rdevIndex, qpn, &status);
-    EXPECT_INT_EQ(ret, 0);
-    mocker_clean();
+	mocker_invoke(RsQpn2qpcb, ReplaceRsQpn2qpcb, 1);
+	mocker(RsRoceQueryQpc, 10, 1);
+	ret = RsGetQpStatus(phyId, rdevIndex, qpn, &status);
+	EXPECT_INT_EQ(ret, 0);
+	mocker_clean();
 
 	/* +++++Resource Free+++++ */
 	ret = TcRsSockQpDestroy(fd, qpn, fd2, qpn2);
@@ -3651,7 +3652,9 @@ void TcRsSslFree()
 	rscb.serverSslCtx = serverSslCtx;
 	mocker(memset_s, 1, 1);
 	RsSslFree(&rscb);
-    mocker_clean();
+	mocker_clean();
+	free(clientSslCtx);
+	free(serverSslCtx);
 	return;
 }
 
@@ -3699,6 +3702,7 @@ void TcRsSslDeinit()
 	mocker(SSL_CTX_free, 20, 1);
 	rs_ssl_deinit(&rscb);
 	mocker_clean();
+	free(rscb.skidSubjectCb);
 	return;
 }
 
@@ -4190,7 +4194,7 @@ void TcRsGetVnicIp()
 
 int RsDev2rscb_stub(uint32_t devId, struct rs_cb **rsCb, bool initFlag)
 {
-	struct rs_cb rsCbTmp = {0};
+	static struct rs_cb rsCbTmp = {0};
 	*rsCb = &rsCbTmp;
 	return 0;
 }
