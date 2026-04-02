@@ -956,7 +956,6 @@ HcclResult HcclGetRankIdV2(HcclComm comm, uint32_t *rank)
 
 HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
 {
-    HCCL_RUN_INFO("Entry-HcclGetCommName V910_95");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(commHandle);
     if (communicator == nullptr) {
         HCCL_ERROR("HcclGetCommNameV2 communicator is nullptr");
@@ -967,7 +966,6 @@ HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
     s32 ret = strncpy_s(
         commName, ROOTINFO_INDENTIFIER_MAX_LENGTH, communicator->GetId().c_str(), communicator->GetId().size() + 1);
     CHK_PRT_RET(ret != EOK, HCCL_ERROR("HcclGetCommName str copy fail. return[%d]", ret), HCCL_E_INTERNAL);
-    HCCL_RUN_INFO("HcclGetCommNameV2 input handle=%p commName=%s", commHandle, commName);
     return HCCL_SUCCESS;
 }
 

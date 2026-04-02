@@ -44,20 +44,23 @@ HcclResult EngineCtxs::GetCommEngineCtx(const std::string &tag, CommEngine engin
 {
     std::lock_guard<std::mutex> lock(mutex_); 
     // Ctx未创建返回
-    if (contextMap_.find(tag) == contextMap_.end()) {
+    const auto &tagIter = contextMap_.find(tag);
+    if (tagIter == contextMap_.end()) {
         HCCL_INFO("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
-        return HCCL_E_PARA;
-    } else {
-        auto engineCtxMap = contextMap_[tag];
-        if (engineCtxMap.find(engine) == engineCtxMap.end()) {
-            HCCL_INFO("[%s] not exist a context with tag[%s], engine[%d]", __func__, tag.c_str(), engine);
-            return HCCL_E_PARA;
-        }
+        return HCCL_E_NOT_FOUND;
     }
 
-    *ctx = contextMap_[tag][engine].addr;
-    *size = contextMap_[tag][engine].size;
-    HCCL_INFO("[%s]get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);    
+    const auto &engineCtxMap = tagIter->second;
+    const auto &engineIter = engineCtxMap.find(engine);
+    if (engineIter == engineCtxMap.end()) {
+        HCCL_INFO("[%s] not exist a context with tag[%s], engine[%d]", __func__, tag.c_str(), engine);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    const auto &ctxRes = engineIter->second;
+    *ctx = ctxRes.addr;
+    *size = ctxRes.size;
+    HCCL_INFO("[%s] get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;
 }
 

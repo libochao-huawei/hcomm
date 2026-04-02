@@ -36,6 +36,7 @@ public:
  	u32          opIndex_{0};             // 下发算子总计数(单算子/图模式/CCU快速下发)
  	u64          headOpCounterAddr_{0};   // 执行算子头计数器地址（执行前加一）
     u64          tailOpCounterAddr_{0};   // 执行算子尾计数器地址（执行后加一）
+    CommEngine   engine{CommEngine::COMM_ENGINE_RESERVED};
 
 public:
     std::string Describe() const

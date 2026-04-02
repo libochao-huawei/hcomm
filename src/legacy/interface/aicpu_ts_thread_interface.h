@@ -27,6 +27,8 @@ public:
 
     HcclResult NotifyWait(uint32_t notifyId) const;
 
+    HcclResult NotifyWait(uint32_t notifyId, uint32_t timeout) const;
+
     HcclResult NotifyRecordLoc(uint32_t notifyId) const;
 
     HcclResult SdmaCopy(uint64_t dstAddr, uint64_t srcAddr, uint64_t sizeByte) const;

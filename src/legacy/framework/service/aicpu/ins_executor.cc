@@ -86,7 +86,7 @@ void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
     AddOpCounter(*masterStream, true);
 
     // 将主流和从流上的Task分别下发执行
-    ExecuteAllQueues91095(insQueue, streamLiteMgr);
+    ExecuteAllQueues950(insQueue, streamLiteMgr);
 
     // 下主流上的notify record任务，包括和host同步和op计数任务
     AddOpCounter(*masterStream, false);
@@ -109,7 +109,7 @@ void InsExecutor::ReportMainStreamTask(const StreamLite &stream, MainStreamTaskT
     ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
 }
 
-void InsExecutor::ExecuteAllQueues91095(const InsQueue &insQueue, StreamLiteMgr *streamLiteMgr)
+void InsExecutor::ExecuteAllQueues950(const InsQueue &insQueue, StreamLiteMgr *streamLiteMgr)
 {
     HCCL_INFO("InsExecutor::%s start", __func__);
     list<InsQueue::Iterator> slaveQueueIters;
@@ -139,10 +139,10 @@ void InsExecutor::ExecuteAllQueues91095(const InsQueue &insQueue, StreamLiteMgr 
     // 遍历迭代器数组，一个流上的InsQueue去下一个任务
     while(!slaveQueueIters.empty() || !isMasterInsIterEnd) {
         // 遍历从流InsQueue，每一次下发一个Task
-        ExecuteSlaveQueue91095(slaveQueueIters, streamLiteMgr, isLaunchTask, slaveStreamIndexSet);
+        ExecuteSlaveQueue950(slaveQueueIters, streamLiteMgr, isLaunchTask, slaveStreamIndexSet);
         // 每一次循环，下发一次主流Task
         if (!isMasterInsIterEnd) {
-            ExecuteMasterQueue91095(masterQueueIter, masterStream, isMasterInsIterEnd, isLaunchTask);
+            ExecuteMasterQueue950(masterQueueIter, masterStream, isMasterInsIterEnd, isLaunchTask);
         }
 
         CheckPreStreamSync(streamLiteMgr, maxSlaveQueuesSize);
@@ -150,11 +150,11 @@ void InsExecutor::ExecuteAllQueues91095(const InsQueue &insQueue, StreamLiteMgr 
         if (isLaunchTask) {
             startTime = std::chrono::steady_clock::now();
         } else if (std::chrono::steady_clock::now() - lastPrintTime >= printInterval) {
-            HCCL_INFO("[ExecuteAllQueues91095]All Rtsq Queues full, wait for executor");
+            HCCL_INFO("[ExecuteAllQueues950]All Rtsq Queues full, wait for executor");
             lastPrintTime = std::chrono::steady_clock::now();
         }
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            auto msg = StringFormat("[ExecuteAllQueues91095]All Rtsq Queues full, timeout %u", timeoutValue);
+            auto msg = StringFormat("[ExecuteAllQueues950]All Rtsq Queues full, timeout %u", timeoutValue);
             HCCL_ERROR("%s", msg.c_str());
             THROW<InternalException>(msg);
         }
@@ -162,7 +162,7 @@ void InsExecutor::ExecuteAllQueues91095(const InsQueue &insQueue, StreamLiteMgr 
     HCCL_INFO("InsExecutor::%s success", __func__);
 }
 
-void InsExecutor::ExecuteSlaveQueue91095(list<InsQueue::Iterator> &slaveQueueIters, StreamLiteMgr *streamLiteMgr, 
+void InsExecutor::ExecuteSlaveQueue950(list<InsQueue::Iterator> &slaveQueueIters, StreamLiteMgr *streamLiteMgr, 
                                             bool &isLaunchTask, std::set<u32> &slaveStreamIndexSet)
 {
     auto slaveStreamIndexIter = slaveStreamIndexSet.begin();
@@ -181,7 +181,7 @@ void InsExecutor::ExecuteSlaveQueue91095(list<InsQueue::Iterator> &slaveQueueIte
         bool isPreStreamSync = slaveStream->GetRtsq()->GetPreStreamSyncStatus();
         if (isRtsqQueueSpaceSufficient && !isPreStreamSync) {
             if (slaveQueueIter->HasNext()) {
-                HCCL_INFO("[ExecuteAllQueues91095]InsExecutor::%s slave stream InsQueue start %s SqId(%u) stream Id(%u)",
+                HCCL_INFO("[ExecuteAllQueues950]InsExecutor::%s slave stream InsQueue start %s SqId(%u) stream Id(%u)",
                     __func__, (*slaveQueueIter)->Describe().c_str(), slaveStream->GetSqId(), slaveStream->GetId());
                 Interpret(**slaveQueueIter, *slaveStream, resMgrFetcher_);
                 // 给迭代器内部Iter指向这条流上的InsQueue里下一个task
@@ -192,12 +192,12 @@ void InsExecutor::ExecuteSlaveQueue91095(list<InsQueue::Iterator> &slaveQueueIte
                 ++slaveStreamIndexIter;
             } else {
                 // 如果这个InsQueue上没有下一个task了，就擦掉容器内的对应迭代器
-                HCCL_INFO("[ExecuteAllQueues91095]InsExecutor::%s slave stream Id(%u) Interpret insQueue finish", __func__, slaveStream->GetId());
+                HCCL_INFO("[ExecuteAllQueues950]InsExecutor::%s slave stream Id(%u) Interpret insQueue finish", __func__, slaveStream->GetId());
                 slaveQueueIter = slaveQueueIters.erase(slaveQueueIter);
                 // 擦掉对应的从流索引，避免下任务下错从流
                 slaveStreamIndexIter = slaveStreamIndexSet.erase(slaveStreamIndexIter);
                 slaveStream->GetRtsq()->LaunchTask();
-                HCCL_INFO("[ExecuteAllQueues91095]InsExecutor::%s slave stream Id(%u) launch task finish", __func__, slaveStream->GetId());
+                HCCL_INFO("[ExecuteAllQueues950]InsExecutor::%s slave stream Id(%u) launch task finish", __func__, slaveStream->GetId());
             }
             isLaunchTask = true;
         } else {
@@ -210,7 +210,7 @@ void InsExecutor::ExecuteSlaveQueue91095(list<InsQueue::Iterator> &slaveQueueIte
     }
 }
 
-void InsExecutor::ExecuteMasterQueue91095(InsQueue::Iterator &masterQueueIter, StreamLite *masterStream, 
+void InsExecutor::ExecuteMasterQueue950(InsQueue::Iterator &masterQueueIter, StreamLite *masterStream, 
                                             bool &isMasterInsIterEnd, bool &isLaunchTask)
 {
     // 判断rtsq队列中的空间是否充足
@@ -219,12 +219,12 @@ void InsExecutor::ExecuteMasterQueue91095(InsQueue::Iterator &masterQueueIter, S
     bool isPreStreamSync = masterStream->GetRtsq()->GetPreStreamSyncStatus();
     if (isRtsqQueueSpaceSufficient && !isPreStreamSync) {
         if (masterQueueIter.HasNext()) {
-            HCCL_INFO("[ExecuteAllQueues91095]InsExecutor::%s master stream InsQueue start %s SqId(%u) stream Id(%u)",
+            HCCL_INFO("[ExecuteAllQueues950]InsExecutor::%s master stream InsQueue start %s SqId(%u) stream Id(%u)",
                 __func__, masterQueueIter->Describe().c_str(), masterStream->GetSqId(), masterStream->GetId());
             Interpret(*masterQueueIter, *masterStream, resMgrFetcher_);
             ++masterQueueIter;
         } else if (!masterQueueIter.HasNext() && !isMasterInsIterEnd) {
-            HCCL_INFO("[ExecuteAllQueues91095]InsExecutor::%s master stream Id(%u) Interpret insQueue finish", __func__, masterStream->GetId());
+            HCCL_INFO("[ExecuteAllQueues950]InsExecutor::%s master stream Id(%u) Interpret insQueue finish", __func__, masterStream->GetId());
             isMasterInsIterEnd = true;
             masterStream->GetRtsq()->LaunchTask();
         }
