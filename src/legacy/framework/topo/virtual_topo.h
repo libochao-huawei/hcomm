@@ -76,7 +76,6 @@ public:
             localDieId_ = srcConnIface->GetLocalDieId();
             hop = path.links[0].GetHop();
             portGroupSize = static_cast<u8>(srcConnIface->GetPorts().size());
-            fullmesh = false;  // 多链路场景，非fullmesh
         } else {
             HCCL_ERROR("[LinkData][Constructor]path.links.size()[%u] is invalid", path.links.size());
         }
