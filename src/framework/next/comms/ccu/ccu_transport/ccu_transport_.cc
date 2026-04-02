@@ -14,6 +14,8 @@
 
 #include "../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
 
+#include "env_config/env_config.h"
+
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;
@@ -652,18 +654,34 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
 
 HcclResult CcuTransport::CheckSocketStatus()
 {
-    while (true) {
+{
+    CHK_PTR_NULL(socket_);
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto startTime = std::chrono::steady_clock::now();
+    uint32_t retryCount = 0;
+    while(true) {
         EXCEPTION_HANDLE_BEGIN
         Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-        if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
-            HCCL_ERROR("[CcuTransport][CheckSocketStatus] socket timeout.");
-            return HcclResult::HCCL_E_TIMEOUT;
-        }
-        if (socketStatus == Hccl::SocketStatus::OK) {
-            return HcclResult::HCCL_SUCCESS;
-        }
         EXCEPTION_HANDLE_END
+        if (socketStatus == Hccl::SocketStatus::OK) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_INFO("[CcuTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
+                __func__, elapsed, retryCount);
+            break;
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
+            socketStatus == Hccl::SocketStatus::TIMEOUT) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[CcuTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms,
+                retryCount[%u]", __func__, timeout, elapsed, retryCount);
+            return HCCL_E_TIMEOUT;
+        }
+        retryCount++;
     }
+    return HCCL_SUCCESS;
+}
 }
 
 HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp)

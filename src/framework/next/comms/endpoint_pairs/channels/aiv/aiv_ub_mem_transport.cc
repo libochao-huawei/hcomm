@@ -15,6 +15,7 @@
 #include "../../../../../../legacy/common/utils/string_util.h"
 #include "../../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
 #include "comm_mems.h"
+#include "env_config/env_config.h"
 
 namespace hcomm {
 
@@ -67,8 +68,9 @@ HcclResult AivUbMemTransport::Init()
 HcclResult AivUbMemTransport::IsSocketReady(bool &isReady)
 {
     CHK_PTR_NULL(socket_);
-
+    EXCEPTION_HANDLE_BEGIN
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
+    EXCEPTION_HANDLE_END
     if (socketStatus == Hccl::SocketStatus::OK) {
         baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
         isReady = true;
@@ -327,13 +329,29 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
 HcclResult AivUbMemTransport::CheckSocketStatus()
 {
     CHK_PTR_NULL(socket_);
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto startTime = std::chrono::steady_clock::now();
+    uint32_t retryCount = 0;
     while(true) {
+        EXCEPTION_HANDLE_BEGIN
         Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
+        EXCEPTION_HANDLE_END
         if (socketStatus == Hccl::SocketStatus::OK) {
-            return HCCL_SUCCESS;
-        } else if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_INFO("[AivUbMemTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
+                __func__, elapsed, retryCount);
+            break;
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
+            socketStatus == Hccl::SocketStatus::TIMEOUT) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[AivUbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms,
+                retryCount[%u]", __func__, timeout, elapsed, retryCount);
             return HCCL_E_TIMEOUT;
         }
+        retryCount++;
     }
     return HCCL_SUCCESS;
 }

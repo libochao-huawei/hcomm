@@ -964,31 +964,27 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
 
 HcclResult UbMemTransport::CheckSocketStatus()
 {
+    CHK_PTR_NULL(socket_);
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
     uint32_t retryCount = 0;
-    while (true) {
-        SocketStatus socketStatus = socket->GetAsyncStatus();
-
-        // 1. 检查超时
-        if (socketStatus == SocketStatus::TIMEOUT) {
+    while(true) {
+        Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
+        if (socketStatus == Hccl::SocketStatus::OK) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
-                __func__, timeout, elapsed, retryCount);
-            return HCCL_E_TIMEOUT;
-        }
-
-        retryCount++;
-
-        // 2. 正常情况：所有通道连接成功
-        if (socketStatus == SocketStatus::OK){
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[%s] success, elapsed[%lld]ms, retryCount[%u]",
+            HCCL_INFO("[UbMemTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
                 __func__, elapsed, retryCount);
             break;
+        } else if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
+            socketStatus == Hccl::SocketStatus::TIMEOUT) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[UbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms,
+                retryCount[%u]", __func__, timeout, elapsed, retryCount);
+            return HCCL_E_TIMEOUT;
         }
+        retryCount++;
     }
     return HCCL_SUCCESS;
 }
