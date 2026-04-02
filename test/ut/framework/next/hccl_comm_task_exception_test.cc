@@ -242,7 +242,8 @@ TEST_F(TestHcclCommTaskException, Ut_FindTaskInfo_When_InvalidDevId_Return_HCCL_
     Hccl::GlobalMirrorTasks& instance = Hccl::GlobalMirrorTasks::Instance();
     std::shared_ptr<Hccl::TaskInfo> curTask;
     
-    HcclResult ret = instance.FindTaskInfo(999, 1, 100, curTask);
+    // Use a large devId that should exceed DEVICE_MAX_NUM
+    HcclResult ret = instance.FindTaskInfo(UINT32_MAX, 1, 100, curTask);
     EXPECT_EQ(ret, HCCL_E_PARA);
     EXPECT_EQ(curTask, nullptr);
 }
