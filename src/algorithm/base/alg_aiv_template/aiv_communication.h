@@ -238,7 +238,7 @@ extern "C" __global__ __aicore__ void aiv_reduce_scatter_##type(KERNEL_ARGS_DEF)
     if (isOpBase) { \
         if (aivRdmaStep >= 0) { \
             return aiv_reduce_scatter_910b_rdma<type>(KERNEL_ARGS_CALL); \
-        } else if (len * sizeof(type) > AIV_REDUCE_SCATTER_MID_SIZE) { \
+        } else if (len * sizeof(type) > (devType == DEV_TYPE_910B ? AIV_REDUCE_SCATTER_MID_SIZE : AIV_REDUCE_SCATTER_SMALL_SIZE)) { \
             return aiv_reduce_scatter_910b_bigdata<type>(KERNEL_ARGS_CALL); \
         } else if (len * sizeof(type) > UB_MAX_DATA_SIZE) { \
             return aiv_reduce_scatter_910b_middata<type>(KERNEL_ARGS_CALL); \
@@ -260,7 +260,7 @@ EXPORT_AIV_META_INFO(aiv_reduce_scatter_##type)
 //AIV ReduceScatterV
 #define AIV_REDUCE_SCATTER_V_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_reduce_scatter_v_##type(EXTERN_KERNEL_ARGS_DEF) { \
-    if (extraArgs.maxCount * sizeof(type) > AIV_REDUCE_SCATTER_V_MID_SIZE) { \
+    if (extraArgs.maxCount * sizeof(type) > AIV_REDUCE_SCATTER_MID_SIZE) { \
         return aiv_reduce_scatter_v_910b_bigdata<type>(EXTERN_KERNEL_ARGS_CALL); \
     } else if (extraArgs.maxCount * sizeof(type) > UB_MAX_DATA_SIZE) { \
         return aiv_reduce_scatter_v_910b_middata<type>(EXTERN_KERNEL_ARGS_CALL); \
