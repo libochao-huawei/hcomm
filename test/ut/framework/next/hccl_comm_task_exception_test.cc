@@ -19,7 +19,7 @@ class TestHcclCommTaskException : public TestHcommCAdptBase {
 public:
     void SetUp() override {
         TestHcommCAdptBase::SetUp();
-        instanceLite = &hcom::HcclCommTaskExceptionLite::GetInstance();
+        instanceLite = &hcomm::HcclCommTaskExceptionLite::GetInstance();
         instanceHost = hcomm::TaskExceptionHostManager::GetHandler(0);
         instanceLite->Init(0);
     }
