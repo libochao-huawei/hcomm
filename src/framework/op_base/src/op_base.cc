@@ -3396,7 +3396,9 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
                           tag.c_str());
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_ALLTOALL, beginTime, sendCount, sendType,
         tag));
-
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -3522,7 +3524,9 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
         sendCount += *(static_cast<const u64 *>(sendCounts) + i);
     }
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_ALLTOALLV, beginTime, sendCount, sendType, tag));
-
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -3646,6 +3650,9 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     }
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_ALLTOALLVC, beginTime, sendCount, sendType,
         tag));
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -3757,6 +3764,9 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
                               tag.c_str());
 
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_REDUCE, beginTime, count, dataType, tag));
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
