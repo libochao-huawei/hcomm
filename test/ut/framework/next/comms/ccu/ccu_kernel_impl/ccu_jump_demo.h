@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ccu_api.hpp"
+#include "ccu_data_api.h"
 #include "ccu_log.h"
 
 // ======================== CCU IF Demo ========================
@@ -22,20 +22,21 @@ CcuResult CcuIfDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuIfDemoKernelArg *>(arg);
 
-    ccu::Variable var;
-    ccu::Alloc(&var);
+    CcuVariable var{};
+    CCU_CHK_RET(CcuVariableCreate(&var));
     var = args->value;
 
+    // if (var == expected) { result = var + 100 } else { result = var + 200 }
     CCU_IF(var == args->expected) {
-        ccu::Variable thenResult, thenAddend;
-        ccu::Alloc(&thenResult);
-        ccu::Alloc(&thenAddend);
+        CcuVariable thenResult{}, thenAddend{};
+        CCU_CHK_RET(CcuVariableCreate(&thenResult));
+        CCU_CHK_RET(CcuVariableCreate(&thenAddend));
         thenAddend = 100;
         thenResult = var + thenAddend;
     } CCU_ELSE {
-        ccu::Variable elseResult, elseAddend;
-        ccu::Alloc(&elseResult);
-        ccu::Alloc(&elseAddend);
+        CcuVariable elseResult{}, elseAddend{};
+        CCU_CHK_RET(CcuVariableCreate(&elseResult));
+        CCU_CHK_RET(CcuVariableCreate(&elseAddend));
         elseAddend = 200;
         elseResult = var + elseAddend;
     }
@@ -54,16 +55,17 @@ CcuResult CcuIfOnlyDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuIfOnlyDemoKernelArg *>(arg);
 
-    ccu::Variable var;
-    ccu::Alloc(&var);
+    CcuVariable var{};
+    CCU_CHK_RET(CcuVariableCreate(&var));
     var = args->value;
 
-    ccu::Variable result;
-    ccu::Alloc(&result);
+    CcuVariable result{};
+    CCU_CHK_RET(CcuVariableCreate(&result));
     result = 0;
 
-    ccu::Variable addend;
-    ccu::Alloc(&addend);
+    // if (var == threshold) { result = var + 100 }
+    CcuVariable addend{};
+    CCU_CHK_RET(CcuVariableCreate(&addend));
     addend = 100;
 
     CCU_IF_ONLY(var == args->threshold) {
@@ -83,26 +85,27 @@ CcuResult CcuWhileDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuWhileDemoKernelArg *>(arg);
 
-    ccu::Variable counter;
-    ccu::Alloc(&counter);
+    CcuVariable counter{};
+    CCU_CHK_RET(CcuVariableCreate(&counter));
     counter = 0;
 
-    ccu::Variable limit;
-    ccu::Alloc(&limit);
+    CcuVariable limit{};
+    CCU_CHK_RET(CcuVariableCreate(&limit));
     limit = args->loopCount;
 
-    ccu::Variable one;
-    ccu::Alloc(&one);
+    CcuVariable one{};
+    CCU_CHK_RET(CcuVariableCreate(&one));
     one = 1;
 
-    ccu::Variable accumulator;
-    ccu::Alloc(&accumulator);
+    CcuVariable accumulator{};
+    CCU_CHK_RET(CcuVariableCreate(&accumulator));
     accumulator = 0;
 
-    ccu::Variable step;
-    ccu::Alloc(&step);
+    CcuVariable step{};
+    CCU_CHK_RET(CcuVariableCreate(&step));
     step = 10;
 
+    // while (counter != limit) { accumulator += step; counter += 1; }
     CCU_WHILE(counter != args->loopCount) {
         accumulator = accumulator + step;
         counter = counter + one;
@@ -121,22 +124,23 @@ CcuResult CcuDoWhileDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuDoWhileDemoKernelArg *>(arg);
 
-    ccu::Variable counter;
-    ccu::Alloc(&counter);
+    CcuVariable counter{};
+    CCU_CHK_RET(CcuVariableCreate(&counter));
     counter = 0;
 
-    ccu::Variable one;
-    ccu::Alloc(&one);
+    CcuVariable one{};
+    CCU_CHK_RET(CcuVariableCreate(&one));
     one = 1;
 
-    ccu::Variable accumulator;
-    ccu::Alloc(&accumulator);
+    CcuVariable accumulator{};
+    CCU_CHK_RET(CcuVariableCreate(&accumulator));
     accumulator = 0;
 
-    ccu::Variable step;
-    ccu::Alloc(&step);
+    CcuVariable step{};
+    CCU_CHK_RET(CcuVariableCreate(&step));
     step = 10;
 
+    // do { accumulator += step; counter += 1; } while (counter != loopCount)
     CCU_DO_WHILE(counter != args->loopCount) {
         accumulator = accumulator + step;
         counter = counter + one;

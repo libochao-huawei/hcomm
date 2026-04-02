@@ -52,8 +52,7 @@ uint16_t CcuRepLoopGroupBundle::InstrCount()
     }
 
     instrCount = paramBindingCount
-               + (loopCount - varBasedLoopCount)  // config-based: 1 LoadImd per loop
-               + (varBasedLoopCount * 2)           // var-based: LoadImd + LoadXX per loop
+               + (loopCount - varBasedLoopCount)
                + (isGroupVarBased_ ? 0 : 2)
                + 1                   // LoopGroupInstr
                + 2                   // Jump (LoadImd + JumpInstr)
@@ -81,17 +80,11 @@ bool CcuRepLoopGroupBundle::Translate(CcuInstr *&instr, uint16_t &instrId, const
         }
     }
 
-    // 2. Assign loopParam for each loop
+    // 2. Assign loopParam for each loop (skip var-based loops — their register is already set)
     for (const auto &loop : loops_) {
         if (!loop.isVarBased) {
             uint64_t lpImm = GetLoopParam(loop.executorId, loop.config.addrOffset, loop.config.loopIterNum);
             LoadImdToXnInstr(instr++, loop.loopParamVar.Id(), lpImm);
-            instrId++;
-        } else {
-            uint64_t ctxImm = static_cast<uint64_t>(loop.executorId) << 45;
-            LoadImdToXnInstr(instr++, dep.reserveXnId, ctxImm);
-            instrId++;
-            LoadXXInstr(instr++, loop.loopParamVar.Id(), loop.loopParamVar.Id(), dep.reserveXnId);
             instrId++;
         }
     }
