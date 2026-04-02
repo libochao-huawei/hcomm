@@ -19,7 +19,7 @@
 #include "stream_manager.h"
 
 namespace Hccl {
-MAKE_ENUM(kernelType, AICPU_KERNEL = 0, CCU_KERNEL)
+MAKE_ENUM(kernelType, AICPU_KERNEL = 0, CCU_KERNEL);
 
  // ccu 上报数据结构
 constexpr unsigned int MSPROF_REPORT_CCU_TASK_INFO = 14U;
@@ -27,7 +27,7 @@ constexpr unsigned int MSPROF_REPORT_CCU_WAIT_SIGNAL_INFO = 15U;
 constexpr unsigned int MSPROF_REPORT_CCU_GROUP_INFO = 16U;
 constexpr uint8_t   INVALID_TYPE_VALUE = 0xFF; // reduceOpType、inputDataType、outputDataType非法值
 
-MAKE_ENUM(ProfTaskType, TASK_HCCL_INFO)
+MAKE_ENUM(ProfTaskType, TASK_HCCL_INFO);
 
 struct MsprofCcuTaskInfo {
     uint8_t version;

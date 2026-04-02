@@ -154,6 +154,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_Normal_Return_HCCL_SUCCESS)
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -199,6 +200,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_GroupModeAndAllocSliceMemFa
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -229,6 +231,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_hrtSetDevice_Failed_Return_
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -257,6 +260,7 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_CreateSingleLinkSocket_Fail
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -302,6 +306,7 @@ TEST_F(HcclImplTest, ut_CheckBatchSendRecvLinkStatus_When_LinkIsNullPtr_Return_H
     TestConstructParam(params, rankTable, 3);
     std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     communicator->Init(params, rankTable);
 
@@ -341,6 +346,7 @@ TEST_F(HcclImplTest, ut_SelectAlg_when_broadcast_910C_Expect_ReturnIs_BroadcastM
     params.deviceType = DevType::DEV_TYPE_910_93;
     std::unique_ptr<HcclCommunicator> implBase(new (std::nothrow) HcclCommunicator());
 
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HcclCommunicator::InitRaResource)
     .stubs()
     .with(any())

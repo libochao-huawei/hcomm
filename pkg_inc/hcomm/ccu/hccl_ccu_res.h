@@ -26,7 +26,8 @@ extern HcclResult HcclCcuKernelRegisterFinish(HcclComm comm);
 extern HcclResult HcclCcuKernelLaunch(HcclComm comm,
     const ThreadHandle threadHandle, const CcuKernelHandle kernelHandle,
     void *taskArgs);
-
+extern HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId, void *streamProfilingInfos, size_t infoNum,
+                                        const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

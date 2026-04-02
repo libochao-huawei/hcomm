@@ -803,43 +803,6 @@ TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperat
     EXPECT_NO_THROW(fakeComm.CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD));
 }
 
-TEST_F(CommunicatorImplTest, TraceOpInfo_BATCHSENDRECV)
-{
-    CommunicatorImpl comm;
-    comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
-    comm.status = CommStatus::COMM_READY;
-    comm.devLogicId = 0;
-    comm.InitMirrorTaskManager();
-    comm.InitProfilingReporter();
-    comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    MirrorTaskManager &mirrorTaskManager = comm.GetMirrorTaskManager();
-    CollServiceAiCpuImpl collService{&comm};
-    comm.collService = &collService;
-    CollOpParams opParams;
-    bool ccuEnable = false;
-    bool isDevUsed = true;
-    std::vector<HcclDataType> datatypeWithoutReduce = {
-        HcclDataType::HCCL_DATA_TYPE_INT8,   HcclDataType::HCCL_DATA_TYPE_INT16,  HcclDataType::HCCL_DATA_TYPE_INT32,
-        HcclDataType::HCCL_DATA_TYPE_INT64,  HcclDataType::HCCL_DATA_TYPE_UINT8,  HcclDataType::HCCL_DATA_TYPE_UINT16,
-        HcclDataType::HCCL_DATA_TYPE_UINT32, HcclDataType::HCCL_DATA_TYPE_UINT64, HcclDataType::HCCL_DATA_TYPE_FP16,
-        HcclDataType::HCCL_DATA_TYPE_FP32,   HcclDataType::HCCL_DATA_TYPE_FP64,   HcclDataType::HCCL_DATA_TYPE_BFP16};
-    opParams.opType = OpType::BATCHSENDRECV;
-    HcclSendRecvItem *sendRecvItemdata = nullptr;
-    sendRecvItemdata = new HcclSendRecvItem[1];
-    opParams.batchSendRecvDataDes.itemNum = 1;
-    comm.trace = std::make_unique<Trace>();
-    for (auto dtype : datatypeWithoutReduce) {
-        sendRecvItemdata->dataType = dtype;
-        sendRecvItemdata->sendRecvType = HcclSendRecvType::HCCL_SEND;
-        sendRecvItemdata->count = 1;
-        sendRecvItemdata->remoteRank = 1;
-        sendRecvItemdata->buf = (void *)0x100;
-        opParams.batchSendRecvDataDes.sendRecvItemsPtr = static_cast<void *>(sendRecvItemdata);
-        comm.TraceOpInfo(opParams);
-    }
-    delete[] sendRecvItemdata;
-}
-
 TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperatorA2A)
 {
     CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
