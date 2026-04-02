@@ -207,13 +207,19 @@ shared_ptr<InsQueue> CollServiceDeviceMode::Orchestrate(const CollAlgOperator &o
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
 
-    u64           tmpMemSize = comm->GetBufferSize();
+    u64 tmpMemSize = 0;
+    if (op.opMode == OpMode::OPBASE) {
+        tmpMemSize = comm->GetBufferSize();
+    } else {
+        CHECK_NULLPTR(op.scratchMem, "[CollServiceDeviceMode::Orchestrate]scratchMem is nullptr!");
+        tmpMemSize = op.scratchMem->GetSize();
+    }
     CollAlgParams params;
     auto          insQueue = make_shared<InsQueue>();
 
     params.opMode        = op.opMode;
     params.maxTmpMemSize = tmpMemSize;
-    HCCL_INFO("[CollServiceDeviceMode::%s] orchestrate with Ins start", __func__);
+    HCCL_INFO("[CollServiceDeviceMode::Orchestrate] op.opMode[%d], tmpMemSize[%llu]", op.opMode, tmpMemSize);
     HcclResult errCode = comm->GetCollAlgComponent()->Orchestrate(op, params,comm->GetCurAlgName(), insQueue);
     HCCL_INFO("[CollServiceDeviceMode::%s] orchestrate with Ins end", __func__);
 
