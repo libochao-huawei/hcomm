@@ -57,13 +57,12 @@ public:
     HcclResult ReleaseCke(const uint8_t dieId, const std::vector<ResInfo> &ckeInfos);
     HcclResult AllocXn(const uint8_t dieId, const uint32_t num, std::vector<ResInfo> &xnInfos);
     HcclResult ReleaseXn(const uint8_t dieId, const std::vector<ResInfo> &xnInfos);
+    std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
 
-    HcclResult CleanDieCkes(const uint8_t dieId) const;
-    HcclResult SetTaskKill();
     HcclResult SetTaskKillDone();
     HcclResult CleanTaskKillState() const;
-
-    std::array<bool, CCU_MAX_IODIE_NUM> GetDieEnableFlags() const;
+    HcclResult CleanDieCkes(const uint8_t dieId) const;
+    HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
 
 private:
     explicit CcuComponent() = default;
@@ -91,7 +90,8 @@ private:
     HcclResult ReleaseAllTpInfos();
     HcclResult DestroyAllJettys();
 
-    HcclResult SetCustomChannelProcess(CcuOpcodeType opCode) const;
+    HcclResult SetProcess(CcuOpcodeType opCode) const;
+    HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
 
 private:
     // CCU Task Kill相关状态
@@ -124,6 +124,8 @@ private:
     using ImportOutParamPair = std::pair<CtxHandle, HrtRaUbJettyImportedOutParam>;
     std::unordered_map<uint8_t, std::vector<ImportOutParamPair>> importedOutParamMap_{};
     std::unordered_map<uint8_t, TpInfo> tpInfoMap_{};
+    enum class CcuTaskKillStatus : uint8_t { INIT = 0, TASK_KILL = 1, KILL_DONE = 2, CLEAN_TIF = 3, INVALID = 4};
+    CcuTaskKillStatus status{CcuTaskKillStatus::INVALID};
 };
 
 } // namespace hcomm
