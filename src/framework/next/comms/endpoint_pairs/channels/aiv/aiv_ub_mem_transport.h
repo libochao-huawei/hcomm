@@ -33,6 +33,8 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
     HcclResult GetMemTag(char **memTag, uint32_t memNum);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
+    HcclResult CheckSocketStatus();
+    HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum);
 
 private:
     Hccl::Socket *socket_{}; // 交换所用的socket
@@ -47,6 +49,7 @@ private:
     std::vector<Hccl::LocalIpcRmaBuffer *>  localRmaBufferVec_{};
     std::vector<Hccl::LocalIpcRmaBuffer *>  locMemTemp_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{}; 
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> locTagTemp_{}; 
     std::vector<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> rmtBufferVec_{};
     std::vector<Hccl::RemoteRmaBuffer *> rmtRmaBufferVec_{};
     std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};

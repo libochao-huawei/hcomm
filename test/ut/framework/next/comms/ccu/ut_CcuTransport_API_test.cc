@@ -152,14 +152,14 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
 
     auto buffer1 = std::make_shared<Buffer>(0x101, 0x101);
     auto locBuffer1 = make_shared<Hccl::LocalUbRmaBuffer>(buffer1, rdmaHandle);
-    hcomm::RegedMemMgr::CommMemInfo memInfo1{};
-    memInfo1.addr = (void*)0x101;
-    memInfo1.size = (uint64_t)0x101;
-    memInfo1.memTag = "buffer1";
-    memInfo1.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
-    memInfo1.bufferHandle = static_cast<void*>(locBuffer1.get());
+    hcomm::CcuTransport::CclBufferInfo bufInfo1{};
+    bufInfo1.addr = (uint64_t)0x101;
+    bufInfo1.size = (uint32_t)0x101;
+    std::string tag = "buffer1";
+    memcpy_s(bufInfo1.memTag.data(), bufInfo1.memTag.size(), tag.c_str(), tag.size());
+    bufInfo1.type = CommMemType::COMM_MEM_TYPE_DEVICE;
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
-    bufferVecTemp.push_back(memInfo1);
+    bufferVecTemp.push_back(bufInfo1);
 
     BinaryStream binaryStream;
     ret = ccuTransport->BufferInfoPack(binaryStream, bufferVecTemp);
@@ -168,9 +168,11 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
 
     ret = ccuTransport->UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    hcomm::CcuTransport::CclBufferInfo &buffer1 = ccuTransport->locBufferInfos_[1];
-    EXPECT_EQ(buffer1.memTag, "buffer1");
-    EXPECT_EQ(buffer1.type, CommMemType::COMM_MEM_TYPE_DEVICE);
-    EXPECT_EQ(buffer1.addr, (void *)0x101);
-    EXPECT_EQ(buffer1.size, (uint64_t)0x101);
+    hcomm::CcuTransport::CclBufferInfo &bufInfo = ccuTransport->locBufferInfos_[1];
+    const char* src = bufInfo.memTag.data();
+    std::string tagCopy(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
+    EXPECT_EQ(tagCopy, "buffer1");
+    EXPECT_EQ(bufInfo.type, CommMemType::COMM_MEM_TYPE_DEVICE);
+    EXPECT_EQ(bufInfo.addr, (uint64_t)0x101);
+    EXPECT_EQ(bufInfo.size, (uint32_t)0x101);
 }

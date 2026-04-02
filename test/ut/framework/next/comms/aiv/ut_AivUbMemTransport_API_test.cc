@@ -17,6 +17,7 @@
 #define protected public
 
 #include "aiv_ub_mem_transport.h"
+#include "reged_mem_mgr.h"
 
 #undef protected
 #undef private
@@ -93,3 +94,45 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_bufferN
     HcclResult ret = aivTransport->Init();
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+// TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+// {
+//     hcomm::RegedMemMgr::CommMemInfo memInfo0{};
+//     memInfo0.addr = (void*)0x100;
+//     memInfo0.size = (uint64_t)0x100;
+//     auto buffer0 = std::make_shared<Hccl::Buffer>(0x100, 0x100);
+//     auto locBuffer0 = std::make_shared<Hccl::LocalIpcRmaBuffer>(buffer0);
+//     memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
+//     memInfo0.memTag = "cclBuffer";
+//     hcomm::RegedMemMgr::CommMemInfo memInfo1{};
+//     memInfo1.addr = (void*)0x101;
+//     memInfo1.size = (uint64_t)0x101;
+//     memInfo1.memType = CommMemType::COMM_MEM_TYPE_HOST;
+//     auto buffer1 = std::make_shared<Hccl::Buffer>(0x101, 0x101);
+//     auto locBuffer1 = std::make_shared<Hccl::LocalIpcRmaBuffer>(buffer1);
+//     memInfo1.bufferHandle = static_cast<void*>(locBuffer1.get());
+//     memInfo1.memTag = "buffer1";
+//     std::vector<hcomm::RegedMemMgr::CommMemInfo*> mems{};
+//     mems.push_back(&memInfo0);
+//     mems.push_back(&memInfo1);
+//     HcommChannelDesc desc{};
+//     desc.memHandles = reinterpret_cast<void**>(mems.data());
+//     desc.memHandleNum = 2;
+//     auto aivTransport = std::make_shared<hcomm::AivUbMemTransport>(fakeSocket, desc);
+//     HcclResult ret = aivTransport->Init();
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     Hccl::BinaryStream binaryStream;
+//     aivTransport->BufferPack(binaryStream, aivTransport->localRmaBufferVec_, aivTransport->localUserMemTag_);
+//     aivTransport->RmtBufferUnpackProc(binaryStream);
+
+//     CommMem *remoteMems;
+//     char **memTags;
+//     u32 memNum;
+//     ret = aivTransport->GetUserRemoteMem(&remoteMems, &memTags, &memNum);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     std::string memTag = memTags[0];
+//     EXPECT_EQ(memTag, "buffer1");
+//     EXPECT_EQ(remoteMems[0].type, HcclMemType::HCCL_MEM_TYPE_HOST);
+//     EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
+//     EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
+// }
