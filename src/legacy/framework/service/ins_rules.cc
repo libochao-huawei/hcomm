@@ -34,47 +34,40 @@ constexpr u32 TOKEN_VALUE_INDEX = 2;
 
 namespace {
     // 打印device内存数据的辅助函数
-    void PrintDeviceData(const char* label, void* devicePtr, size_t size, u32 rank, u32 tag, size_t maxPrintBytes = 64) {
+    void PrintDeviceData(const char* label, void* devicePtr, size_t size, u32 rank, u32 tag, aclrtStream stream, size_t maxPrintBytes = 64) {
         if (devicePtr == nullptr || size == 0) {
             HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s is nullptr or size is 0", __func__, rank, tag, label);
             return;
         }
         
-        // 限制打印的字节数，避免日志过多
         size_t printSize = std::min(size, maxPrintBytes);
+        std::vector<uint8_t> hostData(printSize);
         
-        try {
-            // 分配host内存
-            std::vector<uint8_t> hostData(printSize);
-            
-            // 从device拷贝到host
-            HrtMemcpy(hostData.data(), printSize, devicePtr, printSize, RT_MEMCPY_DEVICE_TO_HOST);
-            
-            // 打印数据（以十六进制格式）
-            std::stringstream ss;
-            ss << "[DEBUG][" << __func__ << "] rank[" << rank << "] tag[" << tag << "] " << label 
-               << " (size=" << size << ", showing first " << printSize << " bytes): ";
-            
-            for (size_t i = 0; i < printSize; ++i) {
-                ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(hostData[i]);
-                if (i < printSize - 1) ss << " ";
-            }
-            
-            HCCL_INFO("%s", ss.str().c_str());
-            
-            // 如果是数值类型，也尝试按不同数据类型打印
-            if (printSize >= sizeof(int32_t)) {
-                int32_t* intPtr = reinterpret_cast<int32_t*>(hostData.data());
-                HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s as int32: %d", __func__, rank, tag, label, *intPtr);
-            }
-            
-            if (printSize >= sizeof(float)) {
-                float* floatPtr = reinterpret_cast<float*>(hostData.data());
-                HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s as float: %f", __func__, rank, tag, label, *floatPtr);
-            }
-        } catch (...) {
-            HCCL_WARNING("[DEBUG][%s] rank[%u] tag[%u] Exception occurred while copying %s from device to host", 
-                        __func__, rank, tag, label);
+        // 异步拷贝device到host
+        HrtMemAsyncCopy(hostData.data(), printSize, devicePtr, printSize, ACL_MEMCPY_DEVICE_TO_HOST, stream);
+        
+        // 同步stream，确保拷贝完成
+        HcclStreamSynchronize(stream);
+        
+        // 打印十六进制数据
+        std::stringstream ss;
+        ss << "[DEBUG][" << __func__ << "] rank[" << rank << "] tag[" << tag << "] " << label 
+           << " (size=" << size << ", showing first " << printSize << " bytes): ";
+        
+        for (size_t i = 0; i < printSize; ++i) {
+            ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(hostData[i]);
+            if (i < printSize - 1) ss << " ";
+        }
+        HCCL_INFO("%s", ss.str().c_str());
+        
+        // 按数值类型解释
+        if (printSize >= sizeof(int32_t)) {
+            int32_t* intPtr = reinterpret_cast<int32_t*>(hostData.data());
+            HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s as int32: %d", __func__, rank, tag, label, *intPtr);
+        }
+        if (printSize >= sizeof(float)) {
+            float* floatPtr = reinterpret_cast<float*>(hostData.data());
+            HCCL_INFO("[DEBUG][%s] rank[%u] tag[%u] %s as float: %f", __func__, rank, tag, label, *floatPtr);
         }
     }
 }
@@ -934,14 +927,14 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
     if (aivOpArgs.input != 0) {
         void* inputPtr = reinterpret_cast<void*>(aivOpArgs.input);
         size_t inputSize = aivOpArgs.count * DataTypeSizeGet(aivOpArgs.dataType);
-        PrintDeviceData("INPUT_DATA", inputPtr, inputSize, aivOpArgs.rank, aivOpArgs.aivTag);
+        PrintDeviceData("INPUT_DATA", inputPtr, inputSize, aivOpArgs.rank, aivOpArgs.aivTag, aivOpArgs.stream);
     }
     
     // 打印output数据（执行前的状态）
     if (aivOpArgs.output != 0) {
         void* outputPtr = reinterpret_cast<void*>(aivOpArgs.output);
         size_t outputSize = aivOpArgs.count * DataTypeSizeGet(aivOpArgs.dataType);
-        PrintDeviceData("OUTPUT_DATA_BEFORE", outputPtr, outputSize, aivOpArgs.rank, aivOpArgs.aivTag);
+        PrintDeviceData("OUTPUT_DATA_BEFORE", outputPtr, outputSize, aivOpArgs.rank, aivOpArgs.aivTag, aivOpArgs.stream);
     }
     
     ExecuteKernelLaunch(aivOpArgs);
@@ -950,7 +943,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
     if (aivOpArgs.output != 0) {
         void* outputPtr = reinterpret_cast<void*>(aivOpArgs.output);
         size_t outputSize = aivOpArgs.count * DataTypeSizeGet(aivOpArgs.dataType);
-        PrintDeviceData("OUTPUT_DATA_AFTER", outputPtr, outputSize, aivOpArgs.rank, aivOpArgs.aivTag);
+        PrintDeviceData("OUTPUT_DATA_AFTER", outputPtr, outputSize, aivOpArgs.rank, aivOpArgs.aivTag, aivOpArgs.stream);
     }
     
     HCCL_INFO("[DEBUG] rank[%u] tag[%u] Kernel execution completed", aivOpArgs.rank, aivOpArgs.aivTag);
