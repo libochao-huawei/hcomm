@@ -1011,22 +1011,22 @@ HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVe
                 __func__, sendSize, sizeof(sendSize));
             HcclResult result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
-                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to send dataSize."),
                 result);
             RecvDataSize();
             result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
-                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to receive dataSize."),
                 result);
             SendExchangeData();
             result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
-                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to send data."),
                 result);
             RecvExchangeData();
             result = CheckSocketStatus();
             CHK_RET_THROW(InternalException,
-                StringFormat("[UbMemTransport][UpdateMemInfo] failed to construct UbMemTransport."),
+                StringFormat("[UbMemTransport][UpdateMemInfo] failed to receive data."),
                 result);
             BinaryStream recvStream(recvData);
             RmtBufferVecUnpackProc(bufferNum, recvStream, rmtBufferTemp, UbRmtBufType::BUFFER);

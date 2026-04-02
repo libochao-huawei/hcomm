@@ -26,7 +26,9 @@ HcclResult AivUbMemTransport::FillTagVec(void **memHandles, uint32_t bufferNum,
 {
     for (uint32_t i = 0; i < bufferNum; ++i) {
         auto locMemInfo = reinterpret_cast<RegedMemMgr::CommMemInfo *>(memHandles[i]);
+        CHK_PTR_NULL(locMemInfo);
         auto localIpcRmaBuffer = reinterpret_cast<Hccl::LocalIpcRmaBuffer *>(locMemInfo->bufferHandle);
+        CHK_PTR_NULL(localIpcRmaBuffer);
         localRmaBufferVec_.push_back(localIpcRmaBuffer);
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         std::string tag = locMemInfo->memTag;
@@ -163,13 +165,13 @@ HcclResult AivUbMemTransport::SendMemInfo()
 }
 
 void AivUbMemTransport::BufferPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
-        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
 {
     u32 vecSize = bufferVec.size();
     binaryStream << vecSize;
     HCCL_RUN_INFO("BufferPack vecSize=%u", vecSize);
 
-    for (const auto& tag : localUserMemTag) {
+    for (const auto& tag : tagVec) {
         // 逐个字节传输
         for (uint32_t i = 0; i < HCCL_RES_TAG_MAX_LEN; i++) {
             binaryStream << static_cast<u8>(tag[i]);
@@ -316,12 +318,42 @@ HcclResult AivUbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memT
     return HCCL_SUCCESS;
 }
 
-HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+HcclResult AivUbMemTransport::CheckSocketStatus()
 {
-    CHK_RET(FillTagVec(bufferVecTemp, locMemTagTemp_));
+    CHK_PTR_NULL(socket_);
+    while(true) {
+        Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
+        if (socketStatus == Hccl::SocketStatus::OK) {
+            return HCCL_SUCCESS;
+        } else if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
+            return HCCL_E_TIMEOUT;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult AivUbMemTransport::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+{
+    CHK_RET(FillTagVec(memHandles, memHandleNum, locMemTemp_, locTagTemp_));
     HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
-    sendData.clear();
+    sendData_.clear();
     BinaryStream sendStream;
     std::vector<std::unique_ptr<RemoteUbRmaBuffer>> rmtBufferTemp{};
+    BufferPack(sendStream, locMemTemp_, locTagTemp_);
+    sendStream.Dump(sendData_);
+    u32 sendSize = sendData_.size();
+    socket->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    CHK_RET(CheckSocketStatus());
+    CHK_RET(RecvDataSize());
+    CHK_RET(CheckSocketStatus());
+    CHK_RET(SendMemInfo());
+    CHK_RET(CheckSocketStatus());
+    CHK_RET(RecvMemInfo());
+    CHK_RET(CheckSocketStatus());
+    BinaryStream recvStream(recvData);
+    RmtBufferUnpackProc(binaryStream);
+    localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
+    localUserMemTag_.insert(localUserMemTag_.end(), locTagTemp_.begin(), locTagTemp_.end());
+    return HCCL_SUCCESS;
 }
 }
