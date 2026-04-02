@@ -964,7 +964,7 @@ HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags
 
 HcclResult UbMemTransport::CheckSocketStatus()
 {
-    CHK_PTR_NULL(socket_);
+    CHK_PTR_NULL(socket);
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
     uint32_t retryCount = 0;
