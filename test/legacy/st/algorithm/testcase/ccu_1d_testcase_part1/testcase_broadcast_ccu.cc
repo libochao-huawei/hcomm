@@ -55,7 +55,7 @@ protected:
     virtual void TearDown()
     {
         for (uint32_t idx = 0; idx < rankSize_; idx++) {
-            Hccl::CcuResSpecifications::GetInstance(idx).Reset();
+            Hccl::CcuResSpecifications::GetInstance(idx).Deinit();
             Hccl::CcuComponent::GetInstance(idx).Deinit();
             Hccl::CcuResBatchAllocator::GetInstance(idx).Deinit();
             Hccl::CtxMgrImp::GetInstance(idx).Deinit();

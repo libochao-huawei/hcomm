@@ -29,6 +29,8 @@ public:
 
     HcclResult CreateJetty();
 
+    void SetMappedJettyPriority(uint8_t priority);
+
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;
     HrtRaUbJettyCreatedOutParam GetJettyedOutParam() const;
       

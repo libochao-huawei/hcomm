@@ -21,10 +21,29 @@
 
 namespace hcomm {
 
+/**
+ * 同一对 EID 上可有 1～N 个通信域（N 无固定上限）。映射路径下：相同 (locAddr,rmtAddr,tpProtocol)
+ * 且相同 qos → TpMgr 缓存命中，复用同一 tpHandle（TPID）与 mappedJettyPriority（SL）；
+ * TpInfoCtx::useCnt 引用计数，ReleaseTpInfo 须与 GetTpInfo 使用一致的 GetTpInfoParam。
+ */
 using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr locAddr{};
     CommAddr rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
+
+    /**
+     * 通信域 QoS（0–7）：参与 TpInfoCacheKey 分桶；与 sl_available 一起决定选用哪一档 SL——
+     * 先由本值经 QoS 分组得到 slotIdx，再在 sl_available 允许的 SL 集合（按 SL 号升序）中取第 slotIdx 个（例如仅 bit3、bit14
+     * 为 1 时，slotIdx 为 0→SL3，为 1→SL14）。
+     */
+    uint32_t qos{0};
+    /** 0：M 取 sl_available 位图 popcount；非 0：将 M 上限收束为该值（须先有有效 sl_available） */
+    uint32_t slLevelCount{0};
+    /**
+     * 环回（loc==rmt）：list+get_tp_attr 后固定列表第 0 个 TPID；mapped SL 为 sl_available 中第 0 个可用 SL，
+     * 不走 ApplyUbcQosTpSlPolicy。
+     */
+    bool loopFirstTpLowestSl{false};
 
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
@@ -34,9 +53,11 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
         Hccl::IpAddress locIpAddr{}, rmtIpAddr{};
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
-        return Hccl::StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
+        return Hccl::StringFormat(
+            "GetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u mSl=%u loop1st=%u]",
             locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+            tpProtocol.Describe().c_str(),
+            qos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
     }
 };
 
@@ -47,6 +68,9 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 using TpHandle = uint64_t;
 struct TpInfo {
     TpHandle tpHandle{0};
+    /** 经 Jetty priority 下发的 SL（sl_available 位图中策略选定档对应的真实 SL） */
+    uint8_t mappedJettyPriority{0};
+    bool hasMappedJettyPriority{false};
 
     TpInfo() = default;
     TpInfo(const TpHandle handle)
@@ -61,6 +85,12 @@ public:
     HcclResult ReleaseTpInfo(const GetTpInfoParam &param, const TpInfo &tpInfo);
 
 private:
+    enum class TpInfoReqPhase : uint8_t {
+        kWaitList = 0,
+        kWaitTpAttr = 1,
+    };
+
+     /** 同一 (loc,rmt,qosKey) 多路 GetTpInfo 共用条目，useCnt 递减至 0 才 erase */
      struct TpInfoCtx {
         TpInfo tpInfo{};
         uint32_t useCnt{0};
@@ -73,19 +103,26 @@ private:
     /*
     * Request上下文，保存查询TP信息相关调用异步接口出参
     * handle: 异步接口调用handle，用于查询处理结果
-    * tpInfoNum: 查询到的TP信息个数，当前为复用TP，只会申请1个
+    * tpInfoNum: 查询到的TP信息个数（RaGetTpInfoListAsync 回填）
     * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
     */
     struct RequestCtx {
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
         std::vector<char> dataBuffer;
+        TpInfoReqPhase reqPhase{TpInfoReqPhase::kWaitList};
+        uint32_t tpAttrBitmap{0};
+        std::vector<char> tpAttrBuf;
+        /** 首个 TP 的 sl_available 推出的 M（popcount，可被 slLevelCount 收束），供 K=min(N,M) */
+        uint32_t resolvedSlLevelCount{0};
     };
 
-    using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
-    using ReqCtxMap  = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, RequestCtx>>;
+    using TpInfoByQosKey    = std::unordered_map<uint32_t, TpInfoCtx>;
+    using TpInfoByRmt       = std::unordered_map<Hccl::IpAddress, TpInfoByQosKey>;
+    using InfoCtxMap        = std::unordered_map<Hccl::IpAddress, TpInfoByRmt>;
+    using RequestByQosKey   = std::unordered_map<uint32_t, RequestCtx>;
+    using RequestByRmt      = std::unordered_map<Hccl::IpAddress, RequestByQosKey>;
+    using ReqCtxMap         = std::unordered_map<Hccl::IpAddress, RequestByRmt>;
 
 private:
     TpMgr() = default;
@@ -95,6 +132,8 @@ private:
 
     HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
+    static HcclResult StartGetTpAttrForFirstTp(uint32_t devPhyId, const GetTpInfoParam &param,
+        RequestCtx &reqCtx);
     HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const GetTpInfoParam &param,
         TpInfo &tpInfo);
 

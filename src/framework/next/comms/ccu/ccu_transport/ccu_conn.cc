@@ -13,6 +13,7 @@
 #include <random>
 
 #include "hcom_common.h"
+#include "env_config.h"
 #include "exception_handler.h"
 #include "eid_info_mgr.h"
 #include "adapter_rts.h"
@@ -26,21 +27,21 @@
 namespace hcomm {
 
 CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), qos_(qos)
 {
 }
 
 CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::RTP;
 }
 
 CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::CTP;
 }
@@ -124,32 +125,30 @@ HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
         case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
-
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::TP_INFO_GETTING: {
+            auto ret = GetTpInfo();
             if (ret == HcclResult::HCCL_E_AGAIN) {
                 innerStatus_ = InnerStatus::TP_INFO_GETTING;
                 break;
             }
             CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
+
+            ret = CreateJetty();
+            if (ret == HcclResult::HCCL_E_AGAIN) {
+                innerStatus_ = InnerStatus::JETTY_CREATING;
+                break;
+            }
+            CHK_RET(ret);
             innerStatus_ = InnerStatus::EXCHANGEABLE;
             status_      = CcuConnStatus::EXCHANGEABLE;
             break;
         }
-        case InnerStatus::TP_INFO_GETTING: {
-            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
+        case InnerStatus::JETTY_CREATING: {
+            auto ret = CreateJetty();
             if (ret == HcclResult::HCCL_E_AGAIN) {
-                break; // 状态不改变退出，下轮状态机进入继续执行
+                break;
             }
             CHK_RET(ret);
-
             innerStatus_ = InnerStatus::EXCHANGEABLE;
             status_      = CcuConnStatus::EXCHANGEABLE;
             break;
@@ -167,8 +166,14 @@ HcclResult CcuConnection::CreateJetty()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    CHK_PRT_RET(!tpInfo_.hasMappedJettyPriority,
+        HCCL_ERROR("[CcuConnection][%s] UB Jetty requires TpMgr QoS→SL mapping (get_tp_list + policy); "
+            "missing mappedJettyPriority.", __func__),
+        HcclResult::HCCL_E_INTERNAL);
+
     isJettyCreated_ = true;
     for (size_t i = 0; i < jettyNum_; i++) {
+        ccuJettys_[i]->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
         auto ret = ccuJettys_[i]->CreateJetty();
         if (ret == HcclResult::HCCL_E_AGAIN) {
             // 不提供日志避免刷屏
@@ -198,6 +203,16 @@ void CcuConnection::GenerateLocalPsn()
     jettyImportCfg_.localPsn = GetRandomNum();
 }
 
+GetTpInfoParam CcuConnection::MakeGetTpInfoParam() const
+{
+    GetTpInfoParam param{locAddr_, rmtAddr_, tpProtocol_};
+    /** TpMgr：get_tp_list + sl_available + qos 策略选 SL，经 SetMappedJettyPriority→qos 低 4bit 下发 */
+    param.qos = (qos_ > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos_ & 7U);
+    /** 0：M 由 TpMgr 对首个 tp_handle 的 RaGetTpAttrAsync 返回 attrBitmap 推导；非 0 可与推导值取 min 作上限 */
+    param.slLevelCount = 0U;
+    return param;
+}
+
 HcclResult CcuConnection::GetTpInfo()
 {
     if (tpProtocol_ == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
@@ -207,7 +222,7 @@ HcclResult CcuConnection::GetTpInfo()
     }
 
     HcclResult ret = TpMgr::GetInstance(devPhyId_)
-        .GetTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+        .GetTpInfo(MakeGetTpInfoParam(), tpInfo_);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         // 此处可能刷屏，非必要勿加日志
         return ret;
@@ -474,7 +489,7 @@ HcclResult CcuConnection::ReleaseConnRes()
 
     if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
         (void)TpMgr::GetInstance(devPhyId_)
-            .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+            .ReleaseTpInfo(MakeGetTpInfoParam(), tpInfo_);
         tpInfo_.tpHandle = 0;
     }
 

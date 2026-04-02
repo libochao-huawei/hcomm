@@ -46,7 +46,7 @@ public:
         return opExpansionMode_;
     }
 
-    HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
+    HcclResult CreateChannels(CommEngine engine, const std::string &commTag,
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);

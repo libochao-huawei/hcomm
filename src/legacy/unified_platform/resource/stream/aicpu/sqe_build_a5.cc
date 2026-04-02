@@ -132,7 +132,7 @@ void SetSqeHeaderTaskFields(void* sqe, u32 taskId)
 }
 
 void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 size, u32 partId, u32 opcode,
-                        uint8_t * const sqeIn)
+    uint8_t * const sqeIn)
 {
     Rt91095StarsMemcpySqe *sqe = (Rt91095StarsMemcpySqe *)sqeIn;
     SetSqeHeaderTaskFields(sqe, taskId);

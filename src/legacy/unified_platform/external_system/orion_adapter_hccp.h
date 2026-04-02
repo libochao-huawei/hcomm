@@ -18,6 +18,7 @@
 #include "reduce_op.h"
 #include "hccp_tlv.h"
 #include <mutex>
+#include "hccp_async_ctx.h"
 
 namespace Hccl {
 using namespace std;
@@ -351,6 +352,9 @@ using HrtRaUbLocMemRegParam = struct HrtRaUbLocalMemRegParamDef {
     }
 };
 
+/** 与 EnvConfig::UB_QOS_DEFAULT 一致；头文件不 include env_config.h，供无该 include 路径的目标（如 hccl_plf）编译 */
+constexpr u32 HRT_UB_QOS_DEFAULT = 4;
+
 constexpr u32 HRT_UB_MEM_KEY_MAX_LEN = 64; // UB 最大的memKey长度
 
 using HrtRaUbLocalMemRegOutParam = struct HrtRaUbLocMemHandleParamDef {
@@ -394,7 +398,7 @@ JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo);
 void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle);
 
 MAKE_ENUM(HrtTransportMode, RM, RC)
-MAKE_ENUM(TpProtocol, CTP, TP);
+MAKE_ENUM(TpProtocol, CTP, TP, UBOE);
 
 // STANDARD: URMA标准CreateJetty
 // HOST_OFFLOAD: HOST侧展开下沉算子，需要指定sqeBbNum
@@ -429,6 +433,9 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              sqDepth{0};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
+
+    /** 策略 SL：低 4bit→attr.ub.priority；默认与 EnvConfig::UB_QOS_DEFAULT 一致 */
+    u32 qos{HRT_UB_QOS_DEFAULT};
 
     HrtRaUbJettyCreateParamDef() {}
 
@@ -590,14 +597,22 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
 
+    /** 通信域 QoS（0–7）：与 sl_available 联合决定选用哪一档允许 SL（见 TpMgr 策略） */
+    u32  qos{0};
+    /** 0：M=popcount(sl_available)；非 0：M 上限；须 get_tp_attr 带有效 sl_available（属性 12） */
+    u32  slLevelCount{0};
+    bool loopFirstTpLowestSl{false};
+
     explicit RaUbGetTpInfoParamDef() = default;
     RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol)
         : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
 
     std::string Describe() const {
-        return StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
+        return StringFormat(
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u mSl=%u loop1st=%u]",
             locAddr.Describe().c_str(), rmtAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+            tpProtocol.Describe().c_str(),
+            qos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
     }
 };
 
@@ -699,5 +714,10 @@ struct CcuMemInfo {
 
 void HrtSetMemInfoList(struct CcuMemInfo *memInfoList, uint32_t count, struct ccu_mem_info *recvMemList);
 HcclResult HrtGetCcuMemInfo(void* tlv_handle, uint32_t udieIdx, uint64_t memTypeBitmap, struct CcuMemInfo *memInfoList, uint32_t count);
+
+HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrList, vector<IpAddress>& eidAddrList);
+
+HcclResult HrtRaSetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
+HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr, RequestHandle& reqHandle);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H

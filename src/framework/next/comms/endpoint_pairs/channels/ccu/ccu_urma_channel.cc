@@ -36,25 +36,25 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
+        CHK_PTR_NULL(locMemInfo);
+        auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
         CHK_PTR_NULL(locRmaBuffer);
         HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
-        auto *buffer = locRmaBuffer->GetBuf();
-        CHK_PTR_NULL(buffer);
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = buffer->GetMemTag();
+        std::string tag = locMemInfo->memTag;
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            buffer->GetAddr(),
-            static_cast<uint32_t>(buffer->GetSize()),
+            reinterpret_cast<uintptr_t>(locMemInfo->addr),
+            static_cast<uint32_t>(locMemInfo->size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            hccl::ConvertHcclToCommMemType(buffer->GetMemType()),
+            locMemInfo->memType,
             memTag);
     }
     return HCCL_SUCCESS;
@@ -62,7 +62,7 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
 
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     const Hccl::LinkData &linkData, Hccl::Socket *socket, void **memHandles,
-    uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
+    uint32_t memHandleNum, uint32_t qos, std::unique_ptr<CcuTransport> &impl)
 {
     HCCL_INFO("[CcuUrmaChannel][%s] begin", __func__);
     // 当前ccu channel不支持按需申请cke
@@ -99,7 +99,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
         CcuTransport::CcuConnectionType::UBC_TP;
 
     CcuTransport::CcuConnectionInfo connectionInfo{type_,
-        locAddr, rmtAddr, channelInfo, ccuJettys};
+        locAddr, rmtAddr, channelInfo, ccuJettys, qos};
 
     std::vector<CcuTransport::CclBufferInfo> bufferInfos{};
     CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferInfos));
@@ -143,7 +143,7 @@ HcclResult CcuUrmaChannel::Init()
 
     CHK_PTR_NULL(locEndpointHandle_);
     void *endpoint{nullptr};
-    CHK_RET(HcommEndpointGet(locEndpointHandle_, &endpoint));
+    CHK_RET(static_cast<HcclResult>(HcommEndpointGet(locEndpointHandle_, &endpoint)));
     UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
     CHK_PTR_NULL(ccuEndpoint);
     const auto &locEndpointDesc = ccuEndpoint->GetEndpointDesc();
@@ -161,7 +161,7 @@ HcclResult CcuUrmaChannel::Init()
     HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.",
         __func__);
     CHK_RET(CreateCcuTransport(ccuEndpoint, linkData, socket,
-        channelDesc_.memHandles, channelDesc_.memHandleNum, impl_));
+        channelDesc_.memHandles, channelDesc_.memHandleNum, channelDesc_.ubcAttr.qos, impl_));
 
     hcclBufferInfoPtr_.reset(new (std::nothrow) HcclMem());
     CHK_PTR_NULL(hcclBufferInfoPtr_);

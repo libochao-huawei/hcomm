@@ -1363,9 +1363,17 @@ typedef struct urma_tp_attr_value {
     uint8_t vlan_en : 1;
     uint8_t dscp : 6;
     uint8_t at_times : 5;
+    /** 本条 TP 在管控面登记的 SL 取值（4bit），与下方 sl_available 位图不同 */
     uint8_t sl : 4;
     uint8_t ttl;
-    uint8_t reserved[78];
+    /**
+     * 可用 SL 位图（共 16 bit）：逻辑掩码为 sl_available[0] | (sl_available[1] << 8)。
+     * 合成后第 i 位为 1（i∈[0,15]）表示该 TP 可选用 SL=i 作为 priority（如 bit3、bit14 同时为 1 则可用 3 或 14）。
+     * 由 urma_get_tp_attr 在 tp_attr_bitmap 属性 12 有效时填充。
+     */
+    uint8_t sl_available[2];
+    uint8_t dscp_config_model;
+    uint8_t reserved[75];
 } urma_tp_attr_value_t;
 #pragma pack()
 

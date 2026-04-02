@@ -24,6 +24,9 @@ public:
 
     HcclResult Init();
 
+    /** TpMgr 策略得到的 SL，经 qos 低 4bit 写入 attr.ub.priority */
+    void SetMappedJettyPriority(uint8_t priority);
+
     HcclResult CreateJetty();
 
     HrtRaUbCreateJettyParam GetCreateJettyParam() const;

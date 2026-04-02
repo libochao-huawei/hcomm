@@ -34,7 +34,7 @@ void BuildA5SqeCntNto1NotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 cnt
 
 // sdma memcpy
 void BuildA5SqeSdmaCopy(u32 streamId, u32 taskId, u64 dstAddr, u64 srcAddr, u32 size, u32 partId, u32 opcode,
-                        uint8_t * const sqeIn);
+    uint8_t * const sqeIn);
 
 
 void BuildA5SqeUbDbSend(u32 streamId, u32 taskId, const UbJettyLiteId &jettyLiteId, u16 piValue,

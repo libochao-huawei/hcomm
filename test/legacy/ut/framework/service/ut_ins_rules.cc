@@ -238,8 +238,9 @@ private:
 class StubUbMemTransport : public UbMemTransport {
 public:
     StubUbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-                       const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1) :
-        UbMemTransport(commonLocRes, attr, linkData, socket, rdmaHandle1, locCntNotifyRes1)
+                       const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1,
+                       bool isRecvFirst) :
+        UbMemTransport(commonLocRes, attr, linkData, socket, rdmaHandle1, locCntNotifyRes1, isRecvFirst)
     {
         stubRemoteRmaBuffer = std::make_unique<StubRemoteRmaBuffer>(remote_addr, remote_addr_len, RmaType::UB);
     }
@@ -361,6 +362,7 @@ protected:
 
 static IpAddress ipAddress("1.0.0.0");
 static Socket    fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+static bool isRecvFirst = false;
 
 TEST_F(InsRulesTest, Interpret_local_post_to)
 {
@@ -752,7 +754,7 @@ TEST_F(InsRulesTest, Interpret_post_fin_ack_rdma_1_task)
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes); // RdmaTransport上库后，需要替换为RdmaTransport
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst); // RdmaTransport上库后，需要替换为RdmaTransport
 
     BaseMemTransport *stubTransportPtr0 = nullptr;
     BaseMemTransport *stubTransportPtr1 = &ubTransport;
@@ -787,7 +789,7 @@ TEST_F(InsRulesTest, Interpret_wait_fin_ack_rdma_1_task)
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);  // RdmaTransport上库后，需要替换为RdmaTransport
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);  // RdmaTransport上库后，需要替换为RdmaTransport
 
     BaseMemTransport *stubTransportPtr0 = nullptr;
     BaseMemTransport *stubTransportPtr1 = &ubTransport;
@@ -1018,7 +1020,7 @@ TEST_F(InsRulesTest, Interpret_write_dev_net_rdma_slice_is_not_zero_one_task)
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);  // RdmaTransport上库后，需要替换为RdmaTransport
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);  // RdmaTransport上库后，需要替换为RdmaTransport
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1057,7 +1059,7 @@ TEST_F(InsRulesTest, Interpret_write_dev_net_rdma_remote_rma_buffer_is_nullptr)
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);  // RdmaTransport上库后，需要替换为RdmaTransport
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);  // RdmaTransport上库后，需要替换为RdmaTransport
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1099,7 +1101,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_not_zero_one_t
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1138,7 +1140,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_cnt_notify)
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1178,7 +1180,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_dev_net_ub_slice_is_not_zero_one_tas
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1217,7 +1219,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_not_zer
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1257,7 +1259,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_not_zer
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1297,7 +1299,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_zero_one_task)
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1336,7 +1338,7 @@ TEST_F(InsRulesTest, Interpret_write_with_fin_dev_net_ub_slice_is_zero_one_task_
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1375,7 +1377,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_zero_on
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1415,7 +1417,7 @@ TEST_F(InsRulesTest, Interpret_write_reduce_with_fin_dev_net_ub_slice_is_zero_on
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport).stubs().with(any(), any()).will(returnValue(stubTransportPtr));
@@ -1455,7 +1457,7 @@ TEST_F(InsRulesTest, Interpret_read_reduce_dev_net_ub_slice_is_not_zero_one_task
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport)
@@ -1497,7 +1499,7 @@ TEST_F(InsRulesTest, Interpret_read_dev_net_ub_slice_is_not_zero_one_task)
     BaseMemTransport::Attribution     attr;
     void                             *rdmaHandle = (void *)0x100;
     BaseMemTransport::LocCntNotifyRes locCntRes;
-    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+    StubUbMemTransport                ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     BaseMemTransport *stubTransportPtr = &ubTransport;
     MOCKER_CPP(&MemTransportManager::GetOpbasedTransport)

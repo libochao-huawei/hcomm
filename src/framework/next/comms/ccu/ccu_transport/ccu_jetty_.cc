@@ -63,6 +63,11 @@ HcclResult CcuJetty::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
+void CcuJetty::SetMappedJettyPriority(uint8_t priority)
+{
+    inParam_.qos = static_cast<u32>(priority & 0xFU);
+}
+
 CcuJetty::~CcuJetty()
 {
     (void)Clean();
