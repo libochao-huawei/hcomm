@@ -13,7 +13,6 @@
 #include <vector>
 #include <unordered_set>
 #include "hccp_common.h"
-#include "env_config.h"
 #include "ip_address.h"
 #include "data_type.h"
 #include "reduce_op.h"
@@ -353,6 +352,9 @@ using HrtRaUbLocMemRegParam = struct HrtRaUbLocalMemRegParamDef {
     }
 };
 
+/** 与 EnvConfig::UB_QOS_DEFAULT 一致；头文件不 include env_config.h，供无该 include 路径的目标（如 hccl_plf）编译 */
+constexpr u32 HRT_UB_QOS_DEFAULT = 4;
+
 constexpr u32 HRT_UB_MEM_KEY_MAX_LEN = 64; // UB 最大的memKey长度
 
 using HrtRaUbLocalMemRegOutParam = struct HrtRaUbLocMemHandleParamDef {
@@ -432,8 +434,8 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
 
-    /** 策略 SL：低 4bit→attr.ub.priority；默认 EnvConfig::UB_QOS_DEFAULT */
-    u32 qos{EnvConfig::UB_QOS_DEFAULT};
+    /** 策略 SL：低 4bit→attr.ub.priority；默认与 EnvConfig::UB_QOS_DEFAULT 一致 */
+    u32 qos{HRT_UB_QOS_DEFAULT};
 
     HrtRaUbJettyCreateParamDef() {}
 
