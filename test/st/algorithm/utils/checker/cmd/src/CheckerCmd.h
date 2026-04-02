@@ -76,7 +76,7 @@ const std::map<std::string, CheckerDevType> testDevTypeMap = {
     {"910b", CheckerDevType::DEV_TYPE_910B},
     {"310p1", CheckerDevType::DEV_TYPE_310P1},
     {"910_93", CheckerDevType::DEV_TYPE_910_93},
-    {"910_95", CheckerDevType::DEV_TYPE_950}
+    {"950", CheckerDevType::DEV_TYPE_950}
 };
 
 const std::map<std::string, CheckerOpType> testCmdTypeMap = {

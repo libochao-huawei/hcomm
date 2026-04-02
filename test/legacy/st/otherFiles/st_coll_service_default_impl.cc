@@ -183,7 +183,7 @@ const std::string RankTable4p = R"(
 const std::string Topo1Ser8Dev = R"(
     {
         "version": "2.0",
-        "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+        "hardware_type" : "950-2D-Fullmsh_64_plus_1",
         "peer_count" : 4,
         "peer_list" :[
             { "id" : 0},
