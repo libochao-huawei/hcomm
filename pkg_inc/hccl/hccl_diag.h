@@ -21,14 +21,6 @@ extern "C" {
 #endif  // __cplusplus
 const u32 HCOMM_ALG_TAG_LENGTH = 288;
 /**
- * @brief 注册算子信息的DFX接口
- * @param[in] comm 通信域句柄，标识当前通信上下文
- * @param[in] HcclDfxOpInfo 算子信息结构体，包含算子对象，通信操作标签名等
- * @return HcclResult 执行结果状态码
- * @note host侧
- */
-extern HcclResult HcclDfxRegOpInfo(HcclComm comm, void* dfxOpInfo);
-/**
  * @brief 算子上报性能数据（开始时间戳）
  * @param[in] beginTime 算子开始执行的时间戳
  * @return HcclResult 执行结果状态码
@@ -49,6 +41,14 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime);
 
 extern uint64_t HcommGetProfilingSysCycleTime();
 
+/**
+ * @brief 注册算子信息的DFX接口
+ * @param[in] commId 通信域id
+ * @param[in] HcclDfxOpInfo 算子信息结构体，包含算子对象，通信操作标签名等
+ * @return HcclResult 执行结果状态码
+ * @note host侧和device侧都支持
+ */
+extern HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo);
 
 struct HcclDfxOpInfo {
     CommAbiHeader       header;
