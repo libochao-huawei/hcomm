@@ -559,13 +559,13 @@ HcclResult MyRank::Resume()
 
     auto ret = ChannelProcess::ChannelResume(channelList.data(), channelList.size());
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed!");
+        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 
     ret = nsRecoveryProcessor_->Resume(binHandle_);
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed!");
+        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 
