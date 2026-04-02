@@ -14,7 +14,7 @@
 #include "adapter_error_manager_pub.h"
 #include "adapter_rts_common.h"
 #include "alg_env_config.h"
-
+ 
 namespace hccl {
 CommConfig::CommConfig(const std::string &commName)
     : bufferSize_(GetExternalInputCCLBuffSize()),
