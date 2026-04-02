@@ -328,4 +328,9 @@ HcclResult AicpuTsUrmaChannel::UpdateMemInfo(void **memHandles, uint32_t memHand
     bufs_.insert(bufs_.end(), bufsTemp.begin(), bufsTemp.end());
     return memTransport_->UpdateMemInfo(bufferVecTemp_);
 }
+
+HcommChannelKind AicpuTsUrmaChannel::GetChannelKind() const
+{
+    return HcommChannelKind::AICPU_TS_URMA;
+}
 } // namespace hcomm
