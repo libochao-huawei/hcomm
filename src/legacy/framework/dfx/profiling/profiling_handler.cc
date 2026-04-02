@@ -106,7 +106,6 @@ void ProfilingHandler::ReportHcclOp(const DfxOpInfo &opInfo, bool cachedReq)
     if (cachedReq && enableHcclL0_) {
         std::lock_guard<std::mutex> lock(cacheOpInfosMutex_);
         cacheOpInfos_.push_back(opInfo);
-        return;
     }
     HCCL_INFO("[ProfilingHandler]ReportHcclOp start.");
     uint32_t threadId = SalGetTid();
