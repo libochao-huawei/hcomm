@@ -334,8 +334,12 @@ HcclResult AivUbMemTransport::CheckSocketStatus()
 
 HcclResult AivUbMemTransport::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
 {
+    if (memHandleNum == 0) {
+        HCCL_WARNING("[AivUbMemTransport][UpdateMemInfo] bufferNum is 0.");
+        return HCCL_SUCCESS;
+    }
     CHK_RET(FillTagVec(memHandles, memHandleNum, locMemTemp_, locTagTemp_));
-    HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", locMemTemp_.size());
+    HCCL_INFO("[AivUbMemTransport][UpdateMemInfo] bufferNum[%zu]", locMemTemp_.size());
     sendData_.clear();
     Hccl::BinaryStream sendStream;
     BufferPack(sendStream, locMemTemp_, locTagTemp_);

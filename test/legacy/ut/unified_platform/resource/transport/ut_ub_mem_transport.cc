@@ -836,7 +836,7 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_UpdateMemInfo_When_Normal_Expect_Re
     EXPECT_EQ(rmtBuffer1->GetMemTag(), "buffer1");
 }
 
-TEST_F(UbMemTransportTest, ut_UbMemTransport_UpdateMemInfo_When_Timeout_Expect_ReturnIsHCCL_E_INTERNAL)
+TEST_F(UbMemTransportTest, ut_UbMemTransport_UpdateMemInfo_When_SocketTimeout_Expect_ReturnIsHCCL_E_INTERNAL)
 {
     BaseMemTransport::CommonLocRes    locRes;
     BaseMemTransport::Attribution     attr;
