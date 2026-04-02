@@ -976,12 +976,13 @@ HcclResult UbMemTransport::CheckSocketStatus()
             HCCL_INFO("[UbMemTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
                 __func__, elapsed, retryCount);
             break;
-        } else if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
             socketStatus == Hccl::SocketStatus::TIMEOUT) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[UbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms,
-                retryCount[%u]", __func__, timeout, elapsed, retryCount);
+            HCCL_ERROR("[UbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, elapsed, retryCount);
             return HCCL_E_TIMEOUT;
         }
         retryCount++;

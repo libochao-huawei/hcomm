@@ -347,8 +347,8 @@ HcclResult AivUbMemTransport::CheckSocketStatus()
             socketStatus == Hccl::SocketStatus::TIMEOUT) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_ERROR("[AivUbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms,
-                retryCount[%u]", __func__, timeout, elapsed, retryCount);
+            HCCL_ERROR("[AivUbMemTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, elapsed, retryCount);
             return HCCL_E_TIMEOUT;
         }
         retryCount++;
