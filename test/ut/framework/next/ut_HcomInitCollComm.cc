@@ -18,7 +18,10 @@
 class HcomInitCollCommTest : public testing::Test
 {
 protected:
-    virtual void SetUp() override {}
+    virtual void SetUp() override {
+        const char *fakeA5SocName = "Ascend950PR_958b";
+        MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
+    }
 
     virtual void TearDown() override
     {

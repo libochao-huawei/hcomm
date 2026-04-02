@@ -142,5 +142,7 @@ HcclResult hrtStreamGetCqid(const rtStream_t stm, uint32_t *cqId, uint32_t *logi
 HcclResult hrtTaskAbortHandleCallback(aclrtDeviceTaskAbortCallback callback, void *args);
 HcclResult hrtResourceClean();
 HcclResult hrtGetHccsPortNum(u32 deviceLogicId, s32 &num);
+
+HcclResult hrtGetHcclV2Support(bool *isSupport);
 #endif
 #endif
