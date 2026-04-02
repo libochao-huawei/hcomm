@@ -7,25 +7,21 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "mem_transport_callback_lite.h"
 
-#ifndef HCCL_DFX_COMMON_H
-#define HCCL_DFX_COMMON_H
+namespace Hccl{
+    
+MemTransportCallbackLite::MemTransportCallbackLite(const LinkData link, MirrorTaskManagerLite &mirrorTaskManagerLite)
+: link_(link), mirrorTaskManagerLite_(mirrorTaskManagerLite)
+{}
 
-#include "hccl/base.h"
-#include "circular_queue.h"
-#include "vector_queue.h"
-#include "queue.h"
-#include "task_info.h"
+void MemTransportCallbackLite::operator()(u32 streamId, u32 taskId, const TaskParam &taskParam)
+{
+    shared_ptr<TaskInfo> taskInfo = std::make_shared<TaskInfo>(streamId, taskId,
+        link_.GetRemoteRankId(), taskParam, mirrorTaskManagerLite_.GetCurrDfxOpInfo());
+        
+    mirrorTaskManagerLite_.AddTaskInfo(taskInfo);
+    return;
+}
 
-namespace Hccl {
-constexpr u32 DEVICE_MAX_NUM = 32;
-constexpr u32 MAX_CIRCULAR_QUEUE_LENGTH = 2048;
-
-MAKE_ENUM(QueueType, Circular_Queue, Vector_Queue)
-
-using TaskInfoQueue    = Queue<std::shared_ptr<TaskInfo>>;
-using TaskInfoQueueMap = std::map<u32, std::unique_ptr<TaskInfoQueue>>;
-
-}  // namespace Hccl
-
-#endif //HCCL_DFX_COMMON_H
+} // namespace hccl

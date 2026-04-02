@@ -475,7 +475,7 @@ HcclResult AicpuUtils::ExecuteOp(CommunicatorImplLite *communicatorImplLite)
     CHK_PTR_NULL(reporter);
     reporter->ReportAllTasks();
 
-    auto *taskMgr = communicatorImplLite->GetMirrorTaskMgr();
+    auto *taskMgr = communicatorImplLite->GetMirrorTaskMgrLite();
     CHK_PTR_NULL(taskMgr);
     ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*(taskMgr->GetCurrDfxOpInfo()));
     return HCCL_SUCCESS;

@@ -241,6 +241,9 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/dfx/common/mirror_task_manager.cc
         ${HCCL_V2_CODE_ROOT}/framework/dfx/common/mc2_global_mirror_tasks.cc
 
+        ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/common/mirror_task_manager_lite.cc
+        ${HCCL_V2_CODE_ROOT}/framework/resource_manager/transport/aicpu/mem_transport_callback_lite.cc
+
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/transport/mem_transport_callback.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/daemon/aicpu_daemon_service.cpp
 
