@@ -45,6 +45,11 @@ protected:
         MOCKER(GetRunSideIsDevice).stubs().with(outBound(isDeviceSide)).will(returnValue(HCCL_SUCCESS));
         MOCKER(IsSupportHCCLV2).stubs().will(returnValue(true));
         setenv("HCCL_INDEPENDENT_OP", "1", 1);
+        setenv("HCCL_RDMA_RETRY_CNT", "7", 1);
+        setenv("HCCL_RDMA_TIMEOUT", "20", 1);
+        setenv("HCCL_RDMA_TC", "120", 1);
+        setenv("HCCL_RDMA_SL", "2", 1);
+        setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
         RankGraphStub rankGraphStub;
         rankGraphV2 = rankGraphStub.Create2PGraph();
         void* commV2 = (void*)0x2000;
