@@ -474,9 +474,9 @@ HcclResult AicpuTsThread::SupplementNotify(uint32_t notifyNum)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsThread::GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &notifyNum, std::string &notifyDesc)
+HcclResult AicpuTsThread::GetNotifyByUniqueId(u32 &notifyNum, std::string &notifyDesc)
 {
-    CHK_PRT_RET(uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][GetStreamIdAndNotifyByUniqueId]uniqueIdStr is empty"), HCCL_E_INTERNAL);
+    CHK_PRT_RET(uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][GetNotifyByUniqueId]uniqueIdStr is empty"), HCCL_E_INTERNAL);
     std::istringstream iss(uniqueIdStr_);
     StreamType streamType = StreamType::STREAM_TYPE_RESERVED;
     NotifyLoadType notifyLoadType = NotifyLoadType::HOST_NOTIFY;
@@ -487,7 +487,6 @@ HcclResult AicpuTsThread::GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &not
     iss.read(reinterpret_cast<char_t *>(&hostPhyId), sizeof(hostPhyId));
     iss.read(reinterpret_cast<char_t *>(&notifyNum), sizeof(notifyNum));
     iss.read(reinterpret_cast<char_t *>(&streamParam), sizeof(streamParam));
-    streamId = streamParam.streamInfo.streamIds;
 
     // 序列化信息
     std::ostringstream oss;
