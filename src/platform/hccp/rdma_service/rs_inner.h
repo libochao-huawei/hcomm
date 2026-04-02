@@ -29,7 +29,6 @@
 #include "stub_ssl.h"
 #endif
 #include "ascend_hal_external.h"
-#include "ibv_extend.h"
 #ifndef HNS_ROCE_LLT
 #include "dlog_pub.h"
 #endif
@@ -497,47 +496,6 @@ struct SensorNode {
     uint64_t sensorHandle;
 };
 
-struct RsRdevCb {
-    struct rs_cb *rsCb;
-    unsigned int rdevIndex;
-    struct RsIpAddrInfo localIp;
-    int devNum;
-    const char *devName;
-    int pollCqeNum;
-    unsigned char ibPort;
-    unsigned int qpCnt;
-    unsigned int qpMaxNum;
-    unsigned int txDepth;
-    unsigned int rxDepth;
-    unsigned int notifyType;
-    unsigned long long notifyPaBase;
-    unsigned long long notifyVaBase;
-    unsigned long long notifySize;
-    int notifyAccess;
-    unsigned int cqeErrCnt;
-    pthread_mutex_t cqeErrCntMutex;
-
-    pthread_mutex_t rdevMutex;
-
-    struct ibv_device_attr deviceAttr;
-    struct ibv_mr *notifyMr;
-    struct ibv_pd *ibPd;
-    struct ibv_context *ibCtx;
-    struct ibv_device **devList;
-    struct ibv_context_extend *ibCtxEx;
-
-    struct RsListHead qpList;
-    struct RsListHead typicalMrList;
-    struct RsListHead list;
-
-    int supportLite;
-    struct {
-        bool backupFlag;
-        struct rdev rdevInfo;
-        struct ibv_context *ibCtx;
-    } backupInfo;
-};
-
 struct TlvBufInfo {
     unsigned int bufferSize;
     char *buf;
@@ -604,12 +562,7 @@ struct rs_cb {
     pid_t hostPid;
     bool grpSetupFlag;
 
-    struct ibv_extend_ops ibvExOps;
- 	struct NdaOps ndaOps;
-    pthread_mutex_t ndaMutex;
-    struct RsListHead ndaDbHostList;
-    struct RsListHead ndaDbGuidList;
-    uint16_t ndaDbGuidCnt;
+    struct RsNdaCb *ndaCb;
 };
 
 extern __thread struct rs_cb *gRsCb;
