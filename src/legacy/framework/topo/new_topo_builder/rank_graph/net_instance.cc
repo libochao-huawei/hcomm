@@ -214,7 +214,7 @@ void CheckPortGroupSize(u32 netLayer, NetInstance::Link& srcLink, NetInstance::L
     auto targetConnIface = dstLink.GetTargetIface();
     auto srcPortGroupSize = static_cast<u8>(srcConnIface->GetPorts().size());
     auto tgtPortGroupSize = static_cast<u8>(targetConnIface->GetPorts().size());
-    if (portGroupSize != tgtPortGroupSize) {
+    if (srcPortGroupSize != tgtPortGroupSize) {
         auto srcPeer = srcLink.GetSourceNode();
         auto targetPeer = dstLink.GetTargetNode();
         auto localAddr = srcConnIface->GetAddr();
