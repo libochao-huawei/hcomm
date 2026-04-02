@@ -27,7 +27,8 @@
 #include "task_info.h"
 #include "hccl_diag.h"
 #include "exception_handler.h"
-
+#include "task_info.h"
+#include "task_param.h"
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
@@ -550,9 +551,9 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
     return HcommChannelNotifyRecordOnThread(0, channel, remoteNotifyIdx);
 }
 
-int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut);
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -560,7 +561,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     if (devType == DevType::DEV_TYPE_950) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeout);
+        ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeOut);
     } else {  // Non-950 devices use thread-based notify.
         AddThread(thread);
 
@@ -570,21 +571,21 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
 
-        ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeout);
+        ret = HcclRemoteNotifyWait(stream, reinterpret_cast<void *>(channel), localNotifyIdx, timeOut);
     }
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeout[%u].", __func__, thread, channel, localNotifyIdx, timeout), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
-int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType != DevType::DEV_TYPE_950) {
         return HCCL_E_NOT_SUPPORT;
     }
-    return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeout);
+    return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeOut);
 }
 
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序
@@ -649,10 +650,16 @@ int32_t HcommFenceOnThread(ThreadHandle thread)
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 int32_t HcommFlush()
 {
     return HcommFenceOnThread(0);
 }
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 
 int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
 {
@@ -725,7 +732,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     //单算子模式，暂时覆盖opTag
     dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
     dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
-
+    dfxOpInfoOnce->engine = dfxOpInfo->engine;
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
     CHK_RET(hcclCommDfx->UpdateProfStat());
@@ -736,7 +743,8 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     // 下发device侧
     if (dfxOpInfo->engine == COMM_ENGINE_AICPU_TS || dfxOpInfo->engine == COMM_ENGINE_AICPU) {
         u64 beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-        CHK_RET(HcommDfxKernelLaunch(hcclComm->GetIdentifier(),hcclComm->GetBinHandle(), *dfxOpInfo));
+        CHK_RET(static_cast<HcclResult>(HcommDfxKernelLaunch(
+            hcclComm->GetIdentifier(), hcclComm->GetBinHandle(), *dfxOpInfo)));
         const std::string KernelName = "RunAicpuDfxOpInfoInitV2";
         CHK_RET(hcclCommDfx->ReportKernel(beginTime, hcclComm->GetIdentifier(), KernelName, SalGetTid()));
     }
@@ -787,6 +795,43 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     std::string kernelNameStr(kernelName);
     uint32_t threadId = SalGetTid();
     CHK_RET(hcclCommDfx->ReportKernel(beginTime, collComm->GetCommId(), kernelNameStr, threadId));
+
+    Hccl::TaskParam taskParam{};
+    taskParam.beginTime = beginTime;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    uint32_t taskId = INVALID_UINT;
+    uint32_t streamId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
 }
+
+extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is not supported", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
+
+    Hccl::TaskParam taskParam{};
+    taskParam.beginTime = beginTime;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AIV;
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.isMaster = true;
+    uint32_t taskId = INVALID_UINT;
+    uint32_t streamId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
+    HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
+    return HCCL_SUCCESS;
+} 

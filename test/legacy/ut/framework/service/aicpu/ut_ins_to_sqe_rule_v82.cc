@@ -226,8 +226,8 @@ protected:
         locCntRes.vec.push_back(&localCntNotify);
         locCntRes.desc.push_back('0');
         locCntRes.desc.push_back(0);
-
-        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+        bool isRecvFirst = false;
+        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
         ubTransport.baseStatus = TransportStatus::READY;
         MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
         auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
@@ -448,7 +448,8 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
     StreamLite stream(streamLite1);
     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
-    MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::NotifyWait).stubs().with(any());
+    MOCKER_CPP_VIRTUAL(rtsq, static_cast<void (RtsqA5::*)(u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
+    MOCKER_CPP_VIRTUAL(rtsq, static_cast<void (RtsqA5::*)(u32, u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
 
     StubResMgrFetcher mockResMgrFetcher;
 

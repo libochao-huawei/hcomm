@@ -254,6 +254,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/boost/
 
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
@@ -292,6 +293,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
 
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
@@ -306,10 +309,14 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic/
 )
 
 add_subdirectory(stub)
 add_subdirectory(framework/next)
+add_subdirectory(framework/next/coll_comms/dfx)
+add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(misc)
@@ -320,6 +327,7 @@ add_subdirectory(platform/resource/dispatcher)
 add_subdirectory(platform/resource/notify)
 add_subdirectory(platform/resource/transport)
 add_subdirectory(platform/ping_mesh)
+add_subdirectory(platform/common/unfold_cache)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/cluster_maintenance)
 add_subdirectory(framework/op_base_api)

@@ -80,7 +80,7 @@ HcclResult CollReduceScatterMeshAivSmallCountExecutor::CalNumBlocks(u32& numBloc
         numBlocks = numBlocks_ / rankSize * rankSize;
     }
 
-    HCCL_INFO("[CollReduceScatterMeshAivSmallCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollReduceScatterMeshAivSmallCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

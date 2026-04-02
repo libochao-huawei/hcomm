@@ -37,6 +37,7 @@ set(src_to_test_list
     ut_HcclGetRankSize_API_test.cc
     ut_HcclGetRootInfo_API_test.cc
     ut_HcclGetStreamNumforAivMode_API_test.cc
+    ut_HcclChannelGetHcclBuffer_API_test.cc
     # ut_HcclSetConfig_API_test.cc
     # ut_HcclTopoInfoDetect_API_test.cc
 )
@@ -79,7 +80,5 @@ target_link_libraries(hccl_utest_framework_communicator PRIVATE
 )
 add_dependencies(hccl_utest_framework_communicator hccl_llt)
 
-run_llt_test(
-   TARGET  hccl_utest_framework_communicator
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_framework_communicator COMMAND hccl_utest_framework_communicator)

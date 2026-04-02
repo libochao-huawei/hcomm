@@ -41,7 +41,6 @@ target_link_libraries(aicpu_kfc_utest_misc PRIVATE
 )
 
 add_dependencies(aicpu_kfc_utest_misc hccl_llt)
-run_llt_test(
-   TARGET  aicpu_kfc_utest_misc
-   TASK_NUM 1
-)
+
+enable_testing()
+add_test(NAME aicpu_kfc_utest_misc COMMAND aicpu_kfc_utest_misc)

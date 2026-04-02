@@ -89,6 +89,7 @@ target_include_directories(rs_ut_abnormal PRIVATE
     ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(rs_ut_abnormal PRIVATE
@@ -107,7 +108,5 @@ target_link_libraries(rs_ut_abnormal PRIVATE
     -ldl
 )
 
-run_llt_test(
-    TARGET rs_ut_abnormal
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME rs_ut_abnormal COMMAND rs_ut_abnormal)
