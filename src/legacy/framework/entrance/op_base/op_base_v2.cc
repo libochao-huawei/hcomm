@@ -2341,6 +2341,8 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     CHK_PTR_NULL(sendRecvInfo);
     CHK_PRT_RET(itemNum == 0, HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
+    // 校验DataType，与其他算子保持校验统一性
+    CHK_RET(HcomCheckDataTypeV2(sendRecvInfo->dataType));
 
     /* 记录接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
