@@ -44,7 +44,5 @@ target_link_libraries(hccl_utest_platform_notify  PRIVATE
 
 add_dependencies(hccl_utest_platform_notify hccl_llt)
 
-run_llt_test(
-    TARGET  hccl_utest_platform_notify
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_platform_notify COMMAND hccl_utest_platform_notify)

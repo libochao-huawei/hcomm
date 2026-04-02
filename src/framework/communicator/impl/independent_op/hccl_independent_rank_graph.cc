@@ -342,8 +342,6 @@ HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetRankSize(rankSize));
-            /* 关键状态记录 */
-            HCCL_RUN_INFO("[%s] success, rankSize[%u]", __func__, *rankSize);
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -365,8 +363,6 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
             RankGraph* rankGraph = nullptr;
             CHK_RET(GetRankGraphFromComm(comm, &rankGraph));
             CHK_RET(rankGraph->GetRankId(rank));
-            /* 关键状态记录 */
-             HCCL_RUN_INFO("[%s] success, rank[%u]", __func__, *rank);
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);

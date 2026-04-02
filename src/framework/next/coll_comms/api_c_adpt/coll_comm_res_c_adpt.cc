@@ -338,8 +338,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
 HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     const CcuKernelHandle kernelHandle, void *taskArgs)
 {
-    HCCL_RUN_INFO("Entry-%s", __func__);
-    HcclUs startut = TIME_NOW();
+    // 性能关键路径，禁止打印算子粒度频次的日志
     (void)comm;
     CHK_PTR_NULL(taskArgs);
     CHK_PRT_RET(threadHandle == 0, HCCL_ERROR("[%s] failed, thread handle is empty.", __func__), HCCL_E_PARA);
@@ -358,8 +357,9 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     const hcomm::CcuTaskArg *ccuTaskArgs = reinterpret_cast<hcomm::CcuTaskArg *>(taskArgs);
     std::vector<hcomm::CcuTaskParam> ccuParams{};
     auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
-        HcclResult::HCCL_E_PARA);
+    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
+        ret);
 
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
@@ -388,7 +388,6 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     CHK_RET(HcclReportCcuProfilingInfo(threadHandle, kernelHandle, allCcuProfilingInfo.data(), allCcuProfilingInfo.size(),
                                         comm, taskParam, rtsThread->GetMaster()));
     EXCEPTION_HANDLE_END
-    HCCL_INFO("[%s] success, take time [%lld]us.",  __func__, DURATION_US(TIME_NOW() - startut));
     return HcclResult::HCCL_SUCCESS;
 }
 

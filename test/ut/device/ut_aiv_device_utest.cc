@@ -137,7 +137,7 @@ TEST_F(Aiv_Device_UT, AlgDeviceTest) {
     alg->InitTopoInfo(topoInfo, topoAttr);
     HcclAlgoInfo algoInfo;
     alg->InitAlgoInfo(algoInfo, algoAttr);
-
+#ifndef OPEN_HCCL_TEST  // 以下测试方法需对pimpl_做初始化才能调用 hccl_alg.cc中的Init方法受此宏控制
     alg->ReleaseCommInfos();
     std::string tag = "alg";
     Stream stream;
@@ -154,6 +154,6 @@ TEST_F(Aiv_Device_UT, AlgDeviceTest) {
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> rankDevicePhyIdNicInfoMap;
     std::vector<u32> ranksPort;
     alg->SetHDCModeInfo(rankDevicePhyIdNicInfoMap, ranksPort, true, true);
-
+#endif
     delete alg;
 }
