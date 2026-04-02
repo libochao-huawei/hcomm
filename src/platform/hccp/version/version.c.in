@@ -1,0 +1,49 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include <syslog.h>
+#include <string.h>
+#include <unistd.h>
+
+#ifndef VERSION_LOG_FACILITY
+#  define VERSION_LOG_FACILITY @VERSION_LOG_FACILITY@  // 设施: LOG_USER, LOG_DAEMON, LOG_LOCAL0~7
+#endif
+
+#ifndef VERSION_LOG_LEVEL
+#  define VERSION_LOG_LEVEL    @VERSION_LOG_LEVEL@  // 级别: LOG_INFO, LOG_NOTICE, LOG_DEBUG
+#endif
+
+__attribute__((visibility("default"), used))
+const char *@SAFE_TARGET_NAME@_version_str[] = 
+{
+    "=========================================",
+    "  @TARGET_SO_NAME@ Version Info",
+    "-----------------------------------------",
+    "  Version:    @BUILD_VERSION@",
+    "  Build Time: @BUILD_TIMESTAMP@ (UTC)",
+    "  Compiler:   @COMPILER_INFO@",
+    "  Arch:       @TARGET_ARCH@",
+    "  Project:    @PROJECT_TYPE@",
+    "  Mode:       @RUN_TYPE@",
+    @EXTENSION_LINES@
+    "=========================================",
+    NULL,
+};
+
+__attribute__((constructor(200))) //low priority to log after so constructed
+static void log_version(void)
+{
+    pid_t pid = getpid();
+    for(const char **str = @SAFE_TARGET_NAME@_version_str; *str != NULL; str++)
+    {
+        syslog(VERSION_LOG_FACILITY | VERSION_LOG_LEVEL,
+            "[HCCP Version] [PID:%d] %s", pid, *str);
+    }
+}
