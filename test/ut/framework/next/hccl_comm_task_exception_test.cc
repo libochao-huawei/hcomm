@@ -20,7 +20,7 @@ public:
     void SetUp() override {
         TestHcommCAdptBase::SetUp();
         instanceLite = &HcclCommTaskExceptionLite::GetInstance();
-        instanceHost = &TaskExceptionHost::GetInstance();
+        instanceHost = hcomm::TaskExceptionHostManager::GetHandler(0);
         instanceLite->Init(0);
     }
     void TearDown() override {
@@ -29,8 +29,8 @@ public:
     }
 
 protected:
-    HcclCommTaskExceptionLite* instanceLite;
-    TaskExceptionHost* instanceHost;
+    hcomm::HcclCommTaskExceptionLite* instanceLite;
+    hcomm::TaskExceptionHost* instanceHost;
 };
 
 // =============================================================================
@@ -80,7 +80,7 @@ TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpThreadInit_When_ParamNullptr_Retu
 TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpThreadInit_When_ValidParam_Return_SuccessOrPtr)
 {
     ThreadMgrAicpuParam param;
-    param.hcomId = "test_comm_group";
+    strcpy_s(param.hcomId, sizeof(param.hcomId), "test_comm_group");
     param.threadNum = 2;
     
     HcclResult ret = AicpuIndopProcess::AicpuIndOpThreadInit(&param);
@@ -116,7 +116,7 @@ TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpNotifyInit_When_ParamNullptr_Retu
 TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpNotifyInit_When_AllocNotify_Return_SuccessOrPtr)
 {
     NotifyMgrAicpuParam param;
-    param.hcomId = "test_comm_group";
+    strcpy_s(param.hcomId, sizeof(param.hcomId), "test_comm_group");
     param.freeFlag = false;
     param.notifyNum = 5;
     
@@ -127,7 +127,7 @@ TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpNotifyInit_When_AllocNotify_Retur
 TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpNotifyInit_When_FreeNotify_Return_SuccessOrPtr)
 {
     NotifyMgrAicpuParam param;
-    param.hcomId = "test_comm_group";
+    strcpy_s(param.hcomId, sizeof(param.hcomId), "test_comm_group");
     param.freeFlag = true;
     param.notifyNum = 5;
     
@@ -201,7 +201,7 @@ TEST_F(TestHcclCommTaskException, Ut_GetOpDataInfo_When_ValidDfxOpInfo_Return_No
 
 TEST_F(TestHcclCommTaskException, Ut_Process_When_ExceptionInfoNullptr_Return_Void)
 {
-    instanceHost->Process(nullptr);
+    hcomm::TaskExceptionHost::Process(nullptr);
     // Should not crash
 }
 
@@ -213,7 +213,7 @@ TEST_F(TestHcclCommTaskException, Ut_Process_When_ValidExceptionInfo_Return_Void
     exceptionInfo.streamid = 1;
     exceptionInfo.taskid = 100;
     
-    instanceHost->Process(&exceptionInfo);
+    hcomm::TaskExceptionHost::Process(&exceptionInfo);
     // Should not crash
 }
 
@@ -223,13 +223,13 @@ TEST_F(TestHcclCommTaskException, Ut_Process_When_ValidExceptionInfo_Return_Void
 
 TEST_F(TestHcclCommTaskException, Ut_HostPrintTaskContextInfo_When_InvalidDeviceId_Return_Void)
 {
-    instanceHost->PrintTaskContextInfo(999, 1, 100);
+    hcomm::TaskExceptionHost::PrintTaskContextInfo(999, 1, 100);
     // Should not crash
 }
 
 TEST_F(TestHcclCommTaskException, Ut_HostPrintTaskContextInfo_When_InvalidStreamId_Return_Void)
 {
-    instanceHost->PrintTaskContextInfo(0, 999, 100);
+    hcomm::TaskExceptionHost::PrintTaskContextInfo(0, 999, 100);
     // Should not crash
 }
 
@@ -272,8 +272,8 @@ TEST_F(TestHcclCommTaskException, Ut_FindTaskInfo_When_NonExistentTask_Return_HC
 
 TEST_F(TestHcclCommTaskException, Ut_HcclCommTaskExceptionLite_GetInstance_Return_SameInstance)
 {
-    HcclCommTaskExceptionLite& instance1 = HcclCommTaskExceptionLite::GetInstance();
-    HcclCommTaskExceptionLite& instance2 = HcclCommTaskExceptionLite::GetInstance();
+    hcomm::HcclCommTaskExceptionLite& instance1 = hcomm::HcclCommTaskExceptionLite::GetInstance();
+    hcomm::HcclCommTaskExceptionLite& instance2 = hcomm::HcclCommTaskExceptionLite::GetInstance();
     EXPECT_EQ(&instance1, &instance2);
 }
 
@@ -297,11 +297,11 @@ TEST_F(TestHcclCommTaskException, Ut_GlobalMirrorTasks_Instance_Return_SameInsta
     EXPECT_EQ(&instance1, &instance2);
 }
 
-TEST_F(TestHcclCommTaskException, Ut_TaskExceptionHost_GetInstance_Return_SameInstance)
+TEST_F(TestHcclCommTaskException, Ut_TaskExceptionHostManager_GetHandler_Return_SameHandler)
 {
-    TaskExceptionHost& instance1 = TaskExceptionHost::GetInstance();
-    TaskExceptionHost& instance2 = TaskExceptionHost::GetInstance();
-    EXPECT_EQ(&instance1, &instance2);
+    hcomm::TaskExceptionHost* handler1 = hcomm::TaskExceptionHostManager::GetHandler(0);
+    hcomm::TaskExceptionHost* handler2 = hcomm::TaskExceptionHostManager::GetHandler(0);
+    EXPECT_EQ(handler1, handler2);
 }
 
 TEST_F(TestHcclCommTaskException, Ut_AicpuIndopProcess_GetCommAll_Return_HCCL_SUCCESS)
