@@ -49,6 +49,7 @@ target_include_directories(hccl_utest_test_next_resource PRIVATE
     ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/dfx/taskException/aicpu
     ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/communicator/aicpu
     ${CMAKE_SOURCE_DIR}/src/framework/next/coll_comms/communicator
+    ${CMAKE_SOURCE_DIR}/src/legacy/framework/communicator/aicpu/daemon
     ${CMAKE_SOURCE_DIR}/src/legacy/framework/dfx/common
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/pkg_inc
