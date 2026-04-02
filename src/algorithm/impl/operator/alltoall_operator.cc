@@ -643,27 +643,8 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
 
 bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param)
 {
-    std::vector<HcclAlgoType> algoTypeArr = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALLV);
- 	bool useOneLevelAlgorithm =
- 	    algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
- 	    algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE;
-
-    bool cclBigEnough = cclBufferManager_.GetInCCLbufferSize() >= ALLTOALL_PIPELINE_MIN_CCL_SIZE;
-    bool multiRankPerServer = meshAggregationRankSize_ > 1;
-    bool isMultiServer = (meshAggregationRankSize_ != 0) && ((userRankSize_ > meshAggregationRankSize_) &&
-        (userRankSize_ % meshAggregationRankSize_) == 0);
-    bool isDefaultAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)
-        || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD);
-    bool isPipelineAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE);
-    bool satisfyAlgType = isPipelineAlgo || isDefaultAlgo;
-    bool isAlltoAllv = param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV;
-    bool res = (deviceType_ == DevType::DEV_TYPE_910B && isAlltoAllv && satisfyAlgType && multiRankPerServer &&
-        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && isMultiServer &&
-        !multiModuleDiffDeviceNumMode_ && cclBigEnough && !useOneLevelAlgorithm);
-    HCCL_DEBUG("[AlltoAllOperator][IsSatisfyAlltoallContinuousPipelineCondition] isSatisfy[%d], isAlltoAllv %u,"
-        "multiRankPerServer %u, isMultiServer %u, satisfyAlgType %u, multiModuleDiffDeviceNumMode_ %u, useOneLevelAlgorithm %u.",
-        res, isAlltoAllv, multiRankPerServer, isMultiServer, satisfyAlgType, multiModuleDiffDeviceNumMode_, useOneLevelAlgorithm);
-    return res;
+    HCCL_INFO("[IsSatisfyAlltoallContinuousPipelineCondition] Currently Continuous Pipeline is disabled.");
+    return false;
 }
 
 HcclResult AlltoAllOperator::GetAlltoAllStagedWorkSpaceMemSize(const OpParam& param, u64 &memSize)
