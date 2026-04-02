@@ -271,6 +271,7 @@ function build_ut() {
               -DENABLE_GCOV=${ENABLE_GCOV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
+              -DENABLE_ASAN=$([ "${ASAN}" == "true" ] && echo "ON" || echo "OFF") \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
               -DLLT_KILL_TIME=${LLT_KILL_TIME}"
 
@@ -284,6 +285,15 @@ function build_ut() {
   echo "Building all test targets..."
   cmake --build . -j${BUILD_JOBS}
   run_ret=${PIPESTATUS[0]}
+  # make all
+  if [ "${DO_NOT_CLEAN}" = "true" ]; then
+    find . -name 'build.make' -exec sed -i 's/^\.DELETE_ON_ERROR:$//' {} +
+    cmake --build . -j${CPU_NUM}
+    run_ret=${PIPESTATUS[0]}
+  else
+    cmake --build . -j${CPU_NUM}
+    run_ret=${PIPESTATUS[0]}
+  fi
   echo "exit code: ${run_ret}"
   if [ "${run_ret}" -eq 137 ]
   then
