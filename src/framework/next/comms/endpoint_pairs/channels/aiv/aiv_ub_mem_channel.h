@@ -34,12 +34,12 @@ private:
     HcclResult BuildTransport();
 
     // --------------------- 入参 ---------------------
-    EndpointHandle                                              endpointHandle_;
-    HcommChannelDesc                                            channelDesc_;
+    EndpointHandle endpointHandle_;
+    HcommChannelDesc channelDesc_;
 
     // --------------------- 具体成员 ---------------------
-    Hccl::Socket*                                               socket_{nullptr};
-    std::unique_ptr<AivUbMemTransport>                          transport_{nullptr};
+    Hccl::Socket *socket_{nullptr};
+    std::unique_ptr<AivUbMemTransport> transport_{nullptr};
 };
 
 } // namespace hcomm

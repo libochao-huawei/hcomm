@@ -25,15 +25,14 @@
 
 namespace hcomm {
 
-CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
-    const HcommChannelDesc &channelDesc)
+CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle, const HcommChannelDesc &channelDesc)
     : locEndpointHandle_(locEndpointHandle),
       channelDesc_(channelDesc)
 {
 }
 
-HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
-    std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
+HcclResult BuildBufferInfos(
+    void **memHandles, uint32_t memHandleNum, std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
         auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
@@ -49,20 +48,14 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
-        bufferInfos.emplace_back(
-            reinterpret_cast<uintptr_t>(locMemInfo->addr),
-            static_cast<uint32_t>(locMemInfo->size),
-            locRmaBuffer->GetTokenId(),
-            locRmaBuffer->GetTokenValue(),
-            locMemInfo->memType,
-            memTag);
+        bufferInfos.emplace_back(reinterpret_cast<uintptr_t>(locMemInfo->addr), static_cast<uint32_t>(locMemInfo->size),
+            locRmaBuffer->GetTokenId(), locRmaBuffer->GetTokenValue(), locMemInfo->memType, memTag);
     }
     return HCCL_SUCCESS;
 }
 
-static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
-    const Hccl::LinkData &linkData, Hccl::Socket *socket, void **memHandles,
-    uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
+static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint, const Hccl::LinkData &linkData, Hccl::Socket *socket,
+    void **memHandles, uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
 {
     HCCL_INFO("[CcuUrmaChannel][%s] begin", __func__);
     // 当前ccu channel不支持按需申请cke
@@ -76,7 +69,8 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     ret = channelCtxPool->PrepareCreate({linkData});
     if (ret == HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuUrmaChannel][%s] prepare ccu channel ctx failed, "
-            "ccu resources unavailable.", __func__);
+                     "ccu resources unavailable.",
+            __func__);
         return ret;
     }
     CHK_RET(ret);
@@ -93,13 +87,11 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
     CHK_RET(IpAddressToCommAddr(locAddr_, locAddr));
     CHK_RET(IpAddressToCommAddr(rmtAddr_, rmtAddr));
 
-    CcuTransport::CcuConnectionType type_ =
-        linkData.GetLinkProtocol() == Hccl::LinkProtocol::UB_CTP ?
-        CcuTransport::CcuConnectionType::UBC_CTP :
-        CcuTransport::CcuConnectionType::UBC_TP;
+    CcuTransport::CcuConnectionType type_ = linkData.GetLinkProtocol() == Hccl::LinkProtocol::UB_CTP
+                                                ? CcuTransport::CcuConnectionType::UBC_CTP
+                                                : CcuTransport::CcuConnectionType::UBC_TP;
 
-    CcuTransport::CcuConnectionInfo connectionInfo{type_,
-        locAddr, rmtAddr, channelInfo, ccuJettys};
+    CcuTransport::CcuConnectionInfo connectionInfo{type_, locAddr, rmtAddr, channelInfo, ccuJettys};
 
     std::vector<CcuTransport::CclBufferInfo> bufferInfos{};
     CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferInfos));
@@ -120,17 +112,16 @@ static HcclResult CheckEndpointDesc(const EndpointDesc &locDesc, const EndpointD
 {
     if (locDesc.protocol != rmtDesc.protocol) {
         HCCL_ERROR("[CcuUrmaChannel][%s] failed, endpoints protocols are not same, "
-            "loc[%d] rmt[%d].", __func__, locDesc.protocol, rmtDesc.protocol);
+                   "loc[%d] rmt[%d].",
+            __func__, locDesc.protocol, rmtDesc.protocol);
         return HcclResult::HCCL_E_PARA;
     }
 
-    if (locDesc.protocol != COMM_PROTOCOL_UBC_CTP &&
-        locDesc.protocol != COMM_PROTOCOL_UBC_TP) {
-        HCCL_ERROR("[CcuUrmaChannel][%s] failed, protocol[%d] are not supported in ccu.",
-            __func__, locDesc.protocol);
+    if (locDesc.protocol != COMM_PROTOCOL_UBC_CTP && locDesc.protocol != COMM_PROTOCOL_UBC_TP) {
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, protocol[%d] are not supported in ccu.", __func__, locDesc.protocol);
         return HcclResult::HCCL_E_PARA;
     }
-    
+
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -156,12 +147,10 @@ HcclResult CcuUrmaChannel::Init()
     CHK_PTR_NULL(channelDesc_.memHandles);
 
     // 当前建链不支持资源扩容，CCU资源默认固定为16
-    HCCL_WARNING("[CcuUrmaChannel][%s] now only support notify num is 16.",
-        __func__);
-    HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.",
-        __func__);
-    CHK_RET(CreateCcuTransport(ccuEndpoint, linkData, socket,
-        channelDesc_.memHandles, channelDesc_.memHandleNum, impl_));
+    HCCL_WARNING("[CcuUrmaChannel][%s] now only support notify num is 16.", __func__);
+    HCCL_WARNING("[CcuUrmaChannel][%s] now only support to exchange hccl buffer.", __func__);
+    CHK_RET(
+        CreateCcuTransport(ccuEndpoint, linkData, socket, channelDesc_.memHandles, channelDesc_.memHandleNum, impl_));
 
     hcclBufferInfoPtr_.reset(new (std::nothrow) HcclMem());
     CHK_PTR_NULL(hcclBufferInfoPtr_);
@@ -172,8 +161,7 @@ HcclResult CcuUrmaChannel::Init()
 ChannelStatus CcuUrmaChannel::GetStatus()
 {
     if (!impl_) {
-        HCCL_ERROR("[CcuUrmaChannel][%s] failed, impl is nullptr.",
-            __func__);
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, impl is nullptr.", __func__);
         return ChannelStatus::FAILED;
     }
 
@@ -181,18 +169,16 @@ ChannelStatus CcuUrmaChannel::GetStatus()
     switch (status) {
         case CcuTransport::TransStatus::READY:
             return ChannelStatus::READY;
-         case CcuTransport::TransStatus::SOCKET_TIMEOUT:
-            HCCL_ERROR("[CcuUrmaChannel][%s] error status[%s].",
-                __func__, status.Describe().c_str());
+        case CcuTransport::TransStatus::SOCKET_TIMEOUT:
+            HCCL_ERROR("[CcuUrmaChannel][%s] error status[%s].", __func__, status.Describe().c_str());
             return ChannelStatus::SOCKET_TIMEOUT;
         case CcuTransport::TransStatus::CONNECT_FAILED:
-            HCCL_ERROR("[CcuUrmaChannel][%s] error status[%s].",
-                __func__, status.Describe().c_str());
+            HCCL_ERROR("[CcuUrmaChannel][%s] error status[%s].", __func__, status.Describe().c_str());
             return ChannelStatus::FAILED;
         default:
             break;
     }
-    
+
     return ChannelStatus::INIT; // todo: AICPU 重新定义基类的状态后，需要修改为CONNECTING
 }
 
@@ -208,7 +194,7 @@ uint32_t CcuUrmaChannel::GetDieId() const
 uint32_t CcuUrmaChannel::GetChannelId() const
 {
     if (!impl_) {
-        return UINT32_MAX; 
+        return UINT32_MAX;
     }
     return impl_->GetChannelId();
 }
@@ -241,8 +227,7 @@ HcclResult CcuUrmaChannel::GetRmtXnByIndex(const uint32_t index, uint32_t &rmtXn
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuUrmaChannel::GetRmtBuffer(uint64_t &addr, uint32_t &size,
-    uint32_t &tokenId, uint32_t &tokenValue) const
+HcclResult CcuUrmaChannel::GetRmtBuffer(uint64_t &addr, uint32_t &size, uint32_t &tokenId, uint32_t &tokenValue) const
 {
     CHK_PTR_NULL(impl_);
     CcuTransport::CclBufferInfo bufInfo{};
@@ -291,4 +276,4 @@ HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag,
 {
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
-}  // namespace hcomm
+} // namespace hcomm

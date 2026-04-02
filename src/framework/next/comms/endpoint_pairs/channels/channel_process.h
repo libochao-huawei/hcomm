@@ -25,34 +25,38 @@ public:
     static HcclResult CreateChannelsLoop(EndpointHandle endpointHandle, CommEngine engine,
         HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *outHandles);
     static HcclResult ChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
-    static HcclResult ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum, CommEngine engine);
-    static HcclResult SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
-        uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle);
+    static HcclResult ConnectChannels(ChannelHandle *targetChannels, uint32_t channelNum, CommEngine engine);
+    static HcclResult SaveChannels(ChannelHandle *targetChannels, ChannelHandle *userChannels, uint32_t channelNum,
+        CommEngine engine, aclrtBinHandle binHandle);
     static HcclResult ChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
     static HcclResult ChannelKernelLaunchForComm(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
     static HcclResult ChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
-    static HcclResult ChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags);
-    static HcclResult ChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+    static HcclResult ChannelGetRemoteMem(
+        ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags);
+    static HcclResult ChannelGetUserRemoteMem(
+        ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
     static HcclResult ChannelKernelDestroy(ChannelHandle *channelHandles, uint32_t listNum, aclrtBinHandle binHandle);
-    static HcclResult ChannelDestroy(const ChannelHandle *channels, uint32_t channelNum, aclrtBinHandle binHandle = nullptr);
+    static HcclResult ChannelDestroy(
+        const ChannelHandle *channels, uint32_t channelNum, aclrtBinHandle binHandle = nullptr);
     static HcclResult ChannelGet(const ChannelHandle channelHandle, void **channel);
-private:
-    template <typename Func>
-    static HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func);
 
-    static HcclResult CombineHostMemory(const std::vector<std::vector<char>> &hostPackBuffers, 
-        hccl::HostMem &hostPackBuf);
-    static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, 
-        uint32_t listNum);
+private:
+    template <typename Func> static HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func);
+
+    static HcclResult CombineHostMemory(
+        const std::vector<std::vector<char>> &hostPackBuffers, hccl::HostMem &hostPackBuf);
+    static HcclResult FillChannelD2HMap(
+        ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum);
     static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-        uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling);
-    static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, 
-        uint32_t listNum, aclrtBinHandle binHandle);
+        uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName,
+        bool needProfiling);
+    static HcclResult ChannelKernelLaunchForBase(
+        ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle);
 
     static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
     static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
     static std::mutex g_ChannelMapMtx;
 };
-}
+} // namespace hcomm
 #endif // CHANNEL_PROCESS_H

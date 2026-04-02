@@ -22,7 +22,8 @@ EidInfoMgr &EidInfoMgr::GetInstance(const uint32_t devicePhyId)
     uint32_t devPhyId = devicePhyId;
     if (devPhyId >= MAX_MODULE_DEVICE_NUM) {
         HCCL_WARNING("[EidInfoMgr][%s] use the backup device, devPhyId[%u] should be "
-            "less than %u.", __func__, devPhyId, MAX_MODULE_DEVICE_NUM);
+                     "less than %u.",
+            __func__, devPhyId, MAX_MODULE_DEVICE_NUM);
         devPhyId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
     }
 
@@ -38,11 +39,12 @@ HcclResult EidInfoMgr::Init()
     initflag_ = true;
     if (eidInfos_.empty()) {
         HCCL_ERROR("[EidInfoMgr][%s] failed to find any eid info, "
-            "devPhyId[%u].", __func__, devPhyId_);
+                   "devPhyId[%u].",
+            __func__, devPhyId_);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 
-    for (const auto& eidInfo : eidInfos_) {
+    for (const auto &eidInfo : eidInfos_) {
         Hccl::IpAddress ipAddr{}; // 暂时使用orion ip addr 用作索引
         CHK_RET(CommAddrToIpAddress(eidInfo.commAddr, ipAddr));
         eidInfoMap_[ipAddr] = eidInfo;
@@ -61,8 +63,7 @@ HcclResult EidInfoMgr::GetEidInfos(std::vector<DevEidInfo> &eidInfos)
     // 不允许外部修改eidInfo，传递拷贝结果
     eidInfos.assign(eidInfos_.begin(), eidInfos_.end());
 
-    HCCL_INFO("[EidInfoMgr][%s] found %zu eid info, devPhyId[%d].",
-        __func__, eidInfos.size(), devPhyId_);
+    HCCL_INFO("[EidInfoMgr][%s] found %zu eid info, devPhyId[%d].", __func__, eidInfos.size(), devPhyId_);
 
     return HCCL_SUCCESS;
 }
@@ -82,7 +83,8 @@ HcclResult EidInfoMgr::GetEidInfoByAddr(const CommAddr &commAddr, DevEidInfo &ei
     const auto addrIter = eidInfoMap_.find(eidAddr);
     if (addrIter == eidInfoMap_.end()) {
         HCCL_ERROR("[EidInfoMgr][%s] failed to find eid info by ip addr[%s], "
-            "devPhyId[%u].", __func__, ipAddr.Describe().c_str(), devPhyId_);
+                   "devPhyId[%u].",
+            __func__, ipAddr.Describe().c_str(), devPhyId_);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
 

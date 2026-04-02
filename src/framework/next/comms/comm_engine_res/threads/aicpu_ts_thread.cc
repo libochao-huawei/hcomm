@@ -14,11 +14,15 @@
 
 namespace hccl {
 AicpuTsThread::AicpuTsThread(StreamType streamType, uint32_t notifyNum, const NotifyLoadType notifyLoadType)
-    : streamType_(streamType), notifyNum_(notifyNum), notifyLoadType_(notifyLoadType)
-{}
+    : streamType_(streamType),
+      notifyNum_(notifyNum),
+      notifyLoadType_(notifyLoadType)
+{
+}
 
 AicpuTsThread::AicpuTsThread(const std::string &uniqueIdStr) : uniqueIdStr_(uniqueIdStr)
-{}
+{
+}
 
 AicpuTsThread::~AicpuTsThread()
 {
@@ -87,9 +91,7 @@ std::string &AicpuTsThread::UpdateUniqueId()
             return uniqueIdStr_;
         }
         HCCL_INFO("[AicpuTsThread][UpdateUniqueId]get local notify data success, resId[%u], tsId:%d, devId[%u]",
-            notifyInfo.resId,
-            notifyInfo.tsId,
-            notifyInfo.devId);
+            notifyInfo.resId, notifyInfo.tsId, notifyInfo.devId);
         oss.write(reinterpret_cast<const char_t *>(&notifyInfo), sizeof(notifyInfo));
     }
     HCCL_DEBUG("[AicpuTsThread][UpdateUniqueId] stream[%p], notifyNum[%u]", stream_->ptr(), notifyNum_);
@@ -114,10 +116,7 @@ HcclResult AicpuTsThread::BuildComStreamInfo(const HcclStreamInfo &streamInfo, H
     CHK_RET(QuerySqStatusByType(devId_, streamInfo.sqIds, DRV_SQCQ_PROP_SQ_DEPTH, comStreamInfo.sqDepth));
     HCCL_DEBUG("[AicpuTsThread::InitStream] get stream data success, "
                "streamId[%d], sqId[%d], logicCqId[%u], sqDepth[%u]",
-        comStreamInfo.actualStreamId,
-        comStreamInfo.sqId,
-        comStreamInfo.logicCqId,
-        comStreamInfo.sqDepth);
+        comStreamInfo.actualStreamId, comStreamInfo.sqId, comStreamInfo.logicCqId, comStreamInfo.sqDepth);
     return HCCL_SUCCESS;
 }
 #endif
@@ -159,11 +158,8 @@ HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
     SqCqeContext *sqCqeContext = reinterpret_cast<SqCqeContext *>(streamParam.sqCqContextAddr);
     uint64_t sqCqContextSize = streamParam.sqCqContextSize;
     if (sqCqeContext == nullptr || sqCqContextSize != sizeof(SqCqeContext)) {
-        HCCL_ERROR("%s fail, sqCqeContext[%p] is null or size[%llu] is not equal to SqCqeContext size[%llu]",
-            __func__,
-            sqCqeContext,
-            sqCqContextSize,
-            sizeof(SqCqeContext));
+        HCCL_ERROR("%s fail, sqCqeContext[%p] is null or size[%llu] is not equal to SqCqeContext size[%llu]", __func__,
+            sqCqeContext, sqCqContextSize, sizeof(SqCqeContext));
         return HCCL_E_PARA;
     }
     sqCqeContext_ = DeviceMem::create(reinterpret_cast<void *>(sqCqeContext), sqCqContextSize);
@@ -184,7 +180,8 @@ HcclResult AicpuTsThread::InitStream(HcclStreamParam &streamParam)
 HcclResult AicpuTsThread::InitStreamLite(HcclStreamInfo &streamParam, uint32_t hostPhyId)
 {
     EXECEPTION_CATCH(pImpl_ = std::make_unique<Hccl::IAicpuTsThread>(), return HCCL_E_PTR);
-    pImpl_->StreamLiteInit(streamParam.streamIds, streamParam.sqIds, hostPhyId, streamParam.logicCqids); // 在aicpu侧查询cqe时，需要使用logicCqids，而不是cqIds
+    pImpl_->StreamLiteInit(streamParam.streamIds, streamParam.sqIds, hostPhyId,
+        streamParam.logicCqids); // 在aicpu侧查询cqe时，需要使用logicCqids，而不是cqIds
     return HCCL_SUCCESS;
 }
 
@@ -196,9 +193,7 @@ uint32_t AicpuTsThread::GetNotifyNum() const
 LocalNotify *AicpuTsThread::GetNotify(uint32_t index) const
 {
     if (index >= notifyNum_) {
-        HCCL_ERROR("[AicpuTsThread][GetNotify] notifyNum[%u], index[%u] out of range[0, %u]",
-            notifyNum_,
-            index,
+        HCCL_ERROR("[AicpuTsThread][GetNotify] notifyNum[%u], index[%u] out of range[0, %u]", notifyNum_, index,
             notifyNum_ - 1);
         return nullptr;
     }
@@ -242,11 +237,11 @@ HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
-    void* streamLitePtr = GetStreamLitePtr();
+    void *streamLitePtr = GetStreamLitePtr();
     CHK_PTR_NULL(streamLitePtr);
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLite);
-    Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
+    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
     u32 taskId = rtsq->GetTaskId();
     HCCL_INFO("LocalNotifyWait taskId %u", taskId);
@@ -261,11 +256,11 @@ HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
-    void* streamLitePtr = GetStreamLitePtr();
+    void *streamLitePtr = GetStreamLitePtr();
     CHK_PTR_NULL(streamLitePtr);
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLite);
-    Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
+    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
     u32 taskId = rtsq->GetTaskId();
     HCCL_INFO("LocalNotifyRecord taskId %u", taskId);
@@ -291,11 +286,11 @@ HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByt
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
-    void* streamLitePtr = GetStreamLitePtr();
+    void *streamLitePtr = GetStreamLitePtr();
     CHK_PTR_NULL(streamLitePtr);
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLite);
-    Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
+    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
     u32 taskId = rtsq->GetTaskId();
     HCCL_INFO("LocalCopy taskId %u", taskId);
@@ -311,11 +306,11 @@ HcclResult AicpuTsThread::LocalReduce(
 {
     u64 beginTime = ProfGetCurCpuTimestamp();
     CHK_PTR_NULL(pImpl_);
-    void* streamLitePtr = GetStreamLitePtr();
+    void *streamLitePtr = GetStreamLitePtr();
     CHK_PTR_NULL(streamLitePtr);
     Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
     CHK_PTR_NULL(streamLite);
-    Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
+    Hccl::RtsqBase *rtsq = streamLite->GetRtsq();
     CHK_PTR_NULL(rtsq);
     u32 taskId = rtsq->GetTaskId();
     HCCL_INFO("LocalReduce taskId %u", taskId);
@@ -324,15 +319,15 @@ HcclResult AicpuTsThread::LocalReduce(
     uint32_t dataTypeRaw = static_cast<uint32_t>(dataType);
     uint32_t reduceOpRaw = static_cast<uint32_t>(reduceOp);
     CHK_RET(pImpl_->SdmaReduce(dstAddr, srcAddr, sizeByte, dataTypeRaw, reduceOpRaw));
-    CHK_RET(ReportAicpuLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, taskId, streamLite->GetSqId()));
+    CHK_RET(
+        ReportAicpuLocalReduceTask(dst, src, sizeByte, dataType, reduceOp, beginTime, taskId, streamLite->GetSqId()));
     return HCCL_SUCCESS;
 }
 
 // Private functions
 HcclResult AicpuTsThread::HostInit()
 {
-    CHK_PRT_RET(!uniqueIdStr_.empty(),
-        HCCL_ERROR("[AicpuTsThread][Init]not support init with uniqueId on host"),
+    CHK_PRT_RET(!uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][Init]not support init with uniqueId on host"),
         HCCL_E_NOT_SUPPORT);
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -408,21 +403,19 @@ HcclResult AicpuTsThread::DeviceInit()
         CHK_SMART_PTR_NULL(notifys_[idx]);
         if (devType_ == DevType::DEV_TYPE_950) {
             CHK_RET(notifys_[idx]->InitNotifyLite(notifyInfo));
-            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], devId[%u]",
-                notifyInfo.resId, notifyInfo.devId);
+            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], devId[%u]", notifyInfo.resId,
+                notifyInfo.devId);
         } else {
             CHK_RET(notifys_[idx]->Init(notifyInfo, notifyLoadType_));
             HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], tsId:%d, devId[%u]",
-                notifyInfo.resId,
-                notifyInfo.tsId,
-                notifyInfo.devId);
+                notifyInfo.resId, notifyInfo.tsId, notifyInfo.devId);
         }
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsThread::GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail)
+HcclResult AicpuTsThread::GetSqHeadAndTail(uint32_t &sqHead, uint32_t &sqTail)
 {
 #ifdef CCL_KERNEL_AICPU
     CHK_PTR_NULL(pImpl_);
@@ -436,11 +429,13 @@ HcclResult AicpuTsThread::GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail)
     return HCCL_SUCCESS;
 }
 
-bool AicpuTsThread::GetMaster() const {
+bool AicpuTsThread::GetMaster() const
+{
     return isMaster_;
 }
 
-void AicpuTsThread::SetIsMaster(bool isMaster) {
+void AicpuTsThread::SetIsMaster(bool isMaster)
+{
     isMaster_ = isMaster;
 }
 
@@ -475,7 +470,8 @@ HcclResult AicpuTsThread::SupplementNotify(uint32_t notifyNum)
 
 HcclResult AicpuTsThread::GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &notifyNum, std::string &notifyDesc)
 {
-    CHK_PRT_RET(uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][GetStreamIdAndNotifyByUniqueId]uniqueIdStr is empty"), HCCL_E_INTERNAL);
+    CHK_PRT_RET(uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][GetStreamIdAndNotifyByUniqueId]uniqueIdStr is empty"),
+        HCCL_E_INTERNAL);
     std::istringstream iss(uniqueIdStr_);
     StreamType streamType = StreamType::STREAM_TYPE_RESERVED;
     NotifyLoadType notifyLoadType = NotifyLoadType::HOST_NOTIFY;
@@ -494,9 +490,7 @@ HcclResult AicpuTsThread::GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &not
         HcclSignalInfo notifyInfo;
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         HCCL_INFO("[AicpuTsThread][%s]get local notify data success, resId[%u], tsId:%d, devId[%u]", __func__,
-            notifyInfo.resId,
-            notifyInfo.tsId,
-            notifyInfo.devId);
+            notifyInfo.resId, notifyInfo.tsId, notifyInfo.devId);
         oss.write(reinterpret_cast<const char_t *>(&notifyInfo), sizeof(notifyInfo));
     }
 
@@ -521,16 +515,14 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
         beginIdx--;
         CHK_SMART_PTR_NULL(notifys_[beginIdx]);
         notifys_[endIdx] = std::move(notifys_[beginIdx]);
-        HCCL_INFO("[AicpuTsThread][SupplementNotify]notifyId[%u] beginIdx[%u], endIdx[%u]",
-            notifys_[endIdx]->notifyId_, beginIdx, endIdx);
+        HCCL_INFO("[AicpuTsThread][SupplementNotify]notifyId[%u] beginIdx[%u], endIdx[%u]", notifys_[endIdx]->notifyId_,
+            beginIdx, endIdx);
     }
     for (uint32_t idx = 0; idx < beginIdx; idx++) {
         HcclSignalInfo notifyInfo;
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
-        HCCL_INFO("[AicpuTsThread][SupplementNotify]skip init, resId[%u], tsId:%d, devId[%u]",
-            notifyInfo.resId,
-            notifyInfo.tsId,
-            notifyInfo.devId);
+        HCCL_INFO("[AicpuTsThread][SupplementNotify]skip init, resId[%u], tsId:%d, devId[%u]", notifyInfo.resId,
+            notifyInfo.tsId, notifyInfo.devId);
     }
 
     for (uint32_t idx = beginIdx; idx < endIdx; idx++) {
@@ -545,12 +537,10 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
         } else {
             CHK_RET(notifys_[idx]->Init(notifyInfo, notifyLoadType_));
             HCCL_INFO("[AicpuTsThread][SupplementNotify]local notifyLite init success, resId[%u], tsId:%d, devId[%u]",
-                notifyInfo.resId,
-                notifyInfo.tsId,
-                notifyInfo.devId);
+                notifyInfo.resId, notifyInfo.tsId, notifyInfo.devId);
         }
         notifyNum_++;
     }
     return HCCL_SUCCESS;
 }
-}  // namespace hccl
+} // namespace hccl

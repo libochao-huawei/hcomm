@@ -27,11 +27,11 @@ public:
     ~CommEngineResMgr() = default;
 
     // 获取指定引擎类型的资源
-    HcclResult GetEngineRes(CommEngineType engineType, std::shared_ptr<CommEngineRes>* engineRes);
+    HcclResult GetEngineRes(CommEngineType engineType, std::shared_ptr<CommEngineRes> *engineRes);
 
 private:
     std::unordered_map<CommEngineType, std::shared_ptr<CommEngineRes>> engineResources_{};
     std::mutex mutex_{};
 };
-}
+} // namespace hcomm
 #endif // COMM_ENGINE_RES_MGR_H

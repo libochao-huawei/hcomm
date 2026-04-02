@@ -31,8 +31,7 @@ public:
     HcclResult Init();
     HcclResult Deinit();
 
-    HcclResult Register(std::unique_ptr<CcuKernel> kernel,
-        CcuResPack &resPack, CcuKernelHandle &kernelHandle);
+    HcclResult Register(std::unique_ptr<CcuKernel> kernel, CcuResPack &resPack, CcuKernelHandle &kernelHandle);
     HcclResult Translate(const std::vector<CcuKernelHandle> &kernelHandles);
     HcclResult UnRegister(const CcuKernelHandle kernelHandle);
     CcuKernel *GetKernel(const CcuKernelHandle kernelHandle);
@@ -53,12 +52,10 @@ private:
     HcclResult AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack);
 
     HcclResult InstantiationTranslator(const uint16_t dieId);
-    HcclResult TransRepSequenceToMicrocode(const std::vector<CcuKernel *> &kernels,
-        bool isFuncBlock);
+    HcclResult TransRepSequenceToMicrocode(const std::vector<CcuKernel *> &kernels, bool isFuncBlock);
     HcclResult LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, const uint32_t dieId);
 
-    HcclResult GetResPackTotalResRepository(const CcuTranslatResPack &resPack,
-        CcuResRepository &totalRes) const;
+    HcclResult GetResPackTotalResRepository(const CcuTranslatResPack &resPack, CcuResRepository &totalRes) const;
 
 private:
     bool initializedFlag_{false};

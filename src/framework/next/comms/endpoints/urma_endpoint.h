@@ -31,14 +31,15 @@ public:
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult ServerSocketStopListen(const uint32_t port) override;
 
-    std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override {
+    std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override
+    {
         return regedMemMgr_;
     }
 
     CcuChannelCtxPool *GetCcuChannelCtxPool();
 
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
-    HcclResult UnregisterMemory(void* memHandle) override;
+    HcclResult UnregisterMemory(void *memHandle) override;
     HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
@@ -47,6 +48,6 @@ public:
 private:
     std::unique_ptr<CcuChannelCtxPool> ccuChannelCtxPool_{nullptr};
 };
-}
+} // namespace hcomm
 
 #endif // URMA_ENDPOINT_H

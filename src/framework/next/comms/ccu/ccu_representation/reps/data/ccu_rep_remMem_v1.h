@@ -13,19 +13,18 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepRemMem : public CcuRepBase {
+    class CcuRepRemMem : public CcuRepBase {
+    public:
+        CcuRepRemMem(const ChannelHandle channel, RemoteAddr rem);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-public:
-    CcuRepRemMem(const ChannelHandle channel, RemoteAddr rem);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    private:
+        ChannelHandle channel;
 
-private:
-    ChannelHandle channel;
+        RemoteAddr rem{};
+    };
 
-    RemoteAddr rem{};
-};
-
-};     // namespace CcuRep
-};     // namespace hcomm
+}; // namespace CcuRep
+}; // namespace hcomm
 #endif // HCOMM_CCU_REPRESENTATION_REM_MEM_H

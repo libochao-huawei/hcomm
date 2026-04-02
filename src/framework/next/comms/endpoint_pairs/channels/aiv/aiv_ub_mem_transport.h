@@ -20,9 +20,10 @@
 #include "transport_status.h"
 
 namespace hcomm {
-class AivUbMemTransport{
+class AivUbMemTransport {
 public:
-    MAKE_ENUM(AivUbMemTransportStatus, INIT, SOCKET_OK, SEND_MEM_INFO, RECV_MEM_INFO, RECV_MEM_FIN, CONNECT_FAILED, SOCKET_TIMEOUT, READY);
+    MAKE_ENUM(AivUbMemTransportStatus, INIT, SOCKET_OK, SEND_MEM_INFO, RECV_MEM_INFO, RECV_MEM_FIN, CONNECT_FAILED,
+        SOCKET_TIMEOUT, READY);
     AivUbMemTransport(Hccl::Socket *socket, HcommChannelDesc &channelDesc);
     ~AivUbMemTransport() = default;
     HcclResult Init();
@@ -37,22 +38,22 @@ private:
     uint32_t exchangeDataSize_{0};
     std::vector<HcclMem> remoteMems_;
     std::vector<CommMem> remoteUserMems_;
-    std::vector<std::string> tagCopies_; //储存memTag字符串副本
-    std::vector<char*> tagPointers_; // 储存指针
-    bool cacheValid_ = false; // GetUserRemoteMem 的缓存标识
-    
-    std::vector<Hccl::LocalIpcRmaBuffer *>  localRmaBufferVec_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{}; 
+    std::vector<std::string> tagCopies_; // 储存memTag字符串副本
+    std::vector<char *> tagPointers_;    // 储存指针
+    bool cacheValid_ = false;            // GetUserRemoteMem 的缓存标识
+
+    std::vector<Hccl::LocalIpcRmaBuffer *> localRmaBufferVec_{};
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> localUserMemTag_{};
     std::vector<std::unique_ptr<Hccl::RemoteIpcRmaBuffer>> rmtBufferVec_{};
     std::vector<Hccl::RemoteRmaBuffer *> rmtRmaBufferVec_{};
-    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{}; 
+    std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> remoteUserMemTag_{};
     AivUbMemTransportStatus aivUbStatus_{AivUbMemTransportStatus::INVALID};
     Hccl::TransportStatus baseStatus_{Hccl::TransportStatus::INVALID};
-    std::mutex remoteMemsMutex_;     // 远端内存列表互斥锁
+    std::mutex remoteMemsMutex_; // 远端内存列表互斥锁
 
     std::vector<char> sendData_{};
     std::vector<char> recvData_{};
-    
+
     HcclResult IsSocketReady(bool &isReady);
     HcclResult SendMemInfo();
     HcclResult RecvMemInfo();
@@ -62,6 +63,6 @@ private:
     HcclResult StateMachine();
 };
 
-}  // namespace hcomm
+} // namespace hcomm
 
-#endif  // AIV_UB_MEM_TRANSPORT_H
+#endif // AIV_UB_MEM_TRANSPORT_H

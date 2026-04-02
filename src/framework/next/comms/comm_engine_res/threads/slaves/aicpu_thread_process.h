@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #ifndef __AICPU_THREAD_PROCESS_H__
 #define __AICPU_THREAD_PROCESS_H__
 
@@ -22,6 +21,7 @@ public:
     static HcclResult InitThreads(ThreadMgrAicpuParam *param);
     static HcclResult AicpuThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuThreadDestroy(ThreadMgrAicpuParam *param);
+
 private:
     static std::mutex mutex_;
     static std::vector<std::shared_ptr<hccl::Thread>> threads_;

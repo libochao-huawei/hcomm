@@ -24,16 +24,17 @@ public:
     HcclResult Init() override;
     HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
-    HcclResult UnregisterMemory(void* memHandle) override;
+    HcclResult UnregisterMemory(void *memHandle) override;
     HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
-    std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override {
+    std::shared_ptr<RegedMemMgr> GetRegedMemMgr() override
+    {
         return regedMemMgr_;
     }
 };
 
-}
+} // namespace hcomm
 
 #endif // UB_MEM_ENDPOINT_H

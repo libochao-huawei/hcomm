@@ -35,22 +35,19 @@ public:
     HcclResult Deinit();
 
     HcclResult GetCcuResourceSpaceBufInfo(const uint8_t dieId, uint64_t &addr, uint64_t &size) const;
-    HcclResult GetCcuResourceSpaceTokenInfo(const uint8_t dieId, uint64_t &tokenId,
-        uint64_t &tokenValue) const;
+    HcclResult GetCcuResourceSpaceTokenInfo(const uint8_t dieId, uint64_t &tokenId, uint64_t &tokenValue) const;
 
-    HcclResult AllocChannels(const uint8_t dieId, const ChannelPara &channelPara,
-        std::vector<ChannelInfo> &channelInfos);
+    HcclResult AllocChannels(
+        const uint8_t dieId, const ChannelPara &channelPara, std::vector<ChannelInfo> &channelInfos);
     HcclResult ConfigChannel(const uint8_t dieId, const ChannelCfg &cfg);
     HcclResult ReleaseChannel(const uint8_t dieId, const uint32_t channelId);
-    
-    HcclResult GetLoopChannelId(const uint8_t srcDieId, const uint8_t dstDieId,
-        uint32_t &channelId) const;
 
-    HcclResult AllocRes(const uint8_t dieId, const ResType resType, const uint32_t num,
-        const bool consecutive, std::vector<ResInfo> &resInfos);
-    HcclResult ReleaseRes(const uint8_t dieId, const ResType resType, const uint32_t startId,
-        const uint32_t num);
-    
+    HcclResult GetLoopChannelId(const uint8_t srcDieId, const uint8_t dstDieId, uint32_t &channelId) const;
+
+    HcclResult AllocRes(const uint8_t dieId, const ResType resType, const uint32_t num, const bool consecutive,
+        std::vector<ResInfo> &resInfos);
+    HcclResult ReleaseRes(const uint8_t dieId, const ResType resType, const uint32_t startId, const uint32_t num);
+
     HcclResult AllocIns(const uint8_t dieId, const uint32_t num, ResInfo &insInfo);
     HcclResult ReleaseIns(const uint8_t dieId, const ResInfo &insInfo);
     HcclResult AllocCke(const uint8_t dieId, const uint32_t num, std::vector<ResInfo> &ckeInfos);
@@ -73,12 +70,11 @@ private:
     HcclResult CreateResourceManagers();
     HcclResult CreateLoopChannels();
     HcclResult CreateLoopChannel(const uint8_t dieId, uint32_t &channelId);
-    HcclResult CreateAndImportLoopJettys(const uint8_t dieId, const CommAddr &commAddr,
-        const std::vector<JettyInfo> &jettyInfos);
+    HcclResult CreateAndImportLoopJettys(
+        const uint8_t dieId, const CommAddr &commAddr, const std::vector<JettyInfo> &jettyInfos);
     HcclResult GetLoopTpInfo(const uint8_t dieId, const CommAddr &commAddr, TpInfo &tpInfo);
     uint32_t GetNewPsn();
-    HcclResult ConfigLoopChannel(const uint8_t dieId, const CommAddr &commAddr,
-        const ChannelInfo &channelInfo);
+    HcclResult ConfigLoopChannel(const uint8_t dieId, const CommAddr &commAddr, const ChannelInfo &channelInfo);
     HcclResult ConfigMsIdToken();
 
     HcclResult ReleaseJettyRes();
@@ -93,7 +89,7 @@ private:
     int32_t devLogicId_{static_cast<int32_t>(INVALID_DEV_ID)};
     uint32_t devPhyId_{INVALID_DEV_ID};
     CcuVersion ccuVersion_{CcuVersion::CCU_INVALID};
-    
+
     // 根据资源规格的记录可用的die，要求drv可用，且环回eid存在
     std::array<bool, CCU_MAX_IODIE_NUM> dieEnableFlags_{};
 

@@ -21,11 +21,11 @@ namespace hcomm {
 
 class EndpointPairMgr {
 public:
-    EndpointPairMgr() {};
+    EndpointPairMgr(){};
 
     ~EndpointPairMgr() = default;
 
-    HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out);
+    HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair *&out);
 
 private:
     std::unordered_map<EndpointDescPair, std::unique_ptr<EndpointPair>> endpointPairMap_{};

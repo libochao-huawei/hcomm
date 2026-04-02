@@ -31,13 +31,13 @@ struct BlockInfo {
 
 class CcuResBatchAllocator {
 public:
-    static CcuResBatchAllocator& GetInstance(const int32_t deviceLogicId);
+    static CcuResBatchAllocator &GetInstance(const int32_t deviceLogicId);
     HcclResult Init();
     HcclResult Deinit();
 
-    HcclResult AllocResHandle(const CcuResReq& resReq, CcuResHandle &resHandle);
-    HcclResult ReleaseResHandle(const CcuResHandle& handle);
-    HcclResult GetResource(const CcuResHandle& handle, CcuResRepository &ccuResRepo);
+    HcclResult AllocResHandle(const CcuResReq &resReq, CcuResHandle &resHandle);
+    HcclResult ReleaseResHandle(const CcuResHandle &handle);
+    HcclResult GetResource(const CcuResHandle &handle, CcuResRepository &ccuResRepo);
 
 private:
     class CcuMissionMgr {
@@ -46,12 +46,11 @@ private:
         ~CcuMissionMgr() = default;
 
         void Reset();
-        HcclResult PreAlloc(const int32_t devLogicId, const uint32_t blockSize,
-            const std::array<bool, CCU_MAX_IODIE_NUM> &dieFlags);
-        HcclResult Alloc(const uintptr_t handleKey, const MissionReq &missionReq,
-            MissionResInfo &missionInfos);
+        HcclResult PreAlloc(
+            const int32_t devLogicId, const uint32_t blockSize, const std::array<bool, CCU_MAX_IODIE_NUM> &dieFlags);
+        HcclResult Alloc(const uintptr_t handleKey, const MissionReq &missionReq, MissionResInfo &missionInfos);
         void Release(MissionResInfo &missionInfos);
-    
+
     private:
         uint32_t stragtegy_{0};
         std::array<bool, CCU_MAX_IODIE_NUM> dieEnableFlags_;
@@ -61,21 +60,19 @@ private:
 private:
     explicit CcuResBatchAllocator() = default;
     CcuResBatchAllocator(const CcuResBatchAllocator &that) = delete;
-    CcuResBatchAllocator& operator=(const CcuResBatchAllocator &that) = delete;
+    CcuResBatchAllocator &operator=(const CcuResBatchAllocator &that) = delete;
     ~CcuResBatchAllocator() = default; // 不允许在析构中调用CcuComponent，会引起未定义行为
 
     HcclResult PreAllocBlockRes();
-    HcclResult TryAllocResHandle(const uintptr_t handleKey, const CcuResReq& resReq,
-        std::unique_ptr<CcuResRepository>& resRepoPtr);
-    HcclResult AllocBlockRes(const uintptr_t handleKey, const CcuResReq& resReq,
-        std::unique_ptr<CcuResRepository> &resRepoPtr);
-    HcclResult AllocConsecutiveRes(const CcuResReq& resReq,
-        std::unique_ptr<CcuResRepository>& resRepoPtr) const;
-    HcclResult AllocDiscreteRes(const CcuResReq& resReq,
-        std::unique_ptr<CcuResRepository>& resRepoPtr) const;
-    HcclResult ReleaseResource(std::unique_ptr<CcuResRepository>& resRepoPtr);
+    HcclResult TryAllocResHandle(
+        const uintptr_t handleKey, const CcuResReq &resReq, std::unique_ptr<CcuResRepository> &resRepoPtr);
+    HcclResult AllocBlockRes(
+        const uintptr_t handleKey, const CcuResReq &resReq, std::unique_ptr<CcuResRepository> &resRepoPtr);
+    HcclResult AllocConsecutiveRes(const CcuResReq &resReq, std::unique_ptr<CcuResRepository> &resRepoPtr) const;
+    HcclResult AllocDiscreteRes(const CcuResReq &resReq, std::unique_ptr<CcuResRepository> &resRepoPtr) const;
+    HcclResult ReleaseResource(std::unique_ptr<CcuResRepository> &resRepoPtr);
     void ReleaseBlockResource(std::unique_ptr<CcuResRepository> &resRepoPtr);
-    HcclResult ReleaseNonBlockTypeRes(std::unique_ptr<CcuResRepository>& resRepoPtr) const;
+    HcclResult ReleaseNonBlockTypeRes(std::unique_ptr<CcuResRepository> &resRepoPtr) const;
 
 private:
     std::mutex innerMutex_;

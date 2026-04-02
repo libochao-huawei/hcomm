@@ -20,8 +20,7 @@ namespace hcomm {
 
 class CcuWqeBBMgr {
 public:
-    CcuWqeBBMgr(const int32_t devLogicId, const uint8_t dieId)
-        : devLogicId_(devLogicId), dieId_(dieId) {};
+    CcuWqeBBMgr(const int32_t devLogicId, const uint8_t dieId) : devLogicId_(devLogicId), dieId_(dieId){};
     CcuWqeBBMgr() = default;
     ~CcuWqeBBMgr() = default;
 
@@ -36,6 +35,6 @@ private:
     std::unique_ptr<CcuResIdAllocator> idAllocator_{nullptr};
 };
 
-} // namespace hccl
+} // namespace hcomm
 
 #endif // CCU_WQEBB_MGR_H

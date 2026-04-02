@@ -14,92 +14,91 @@
 namespace hcomm {
 namespace CcuRep {
 
-CcuRepContext::CcuRepContext()
-{
-    mainBlock   = std::make_shared<CcuRep::CcuRepBlock>();
-    activeBlock = mainBlock;
-}
-
-CcuRepContext::~CcuRepContext()
-{
-    
-}
-
-std::shared_ptr<CcuRep::CcuRepBlock> CcuRepContext::CurrentBlock()
-{
-    if (activeBlock == nullptr) {
-        Hccl::THROW<Hccl::CcuApiException>("Invalid ActiveBlock");
+    CcuRepContext::CcuRepContext()
+    {
+        mainBlock = std::make_shared<CcuRep::CcuRepBlock>();
+        activeBlock = mainBlock;
     }
-    return activeBlock;
-}
 
-void CcuRepContext::SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBlock)
-{
-    activeBlock = repBlock;
-}
+    CcuRepContext::~CcuRepContext()
+    {
+    }
 
-void CcuRepContext::Append(std::shared_ptr<CcuRep::CcuRepBase> rep)
-{
-    CurrentBlock()->Append(rep);
-}
+    std::shared_ptr<CcuRep::CcuRepBlock> CcuRepContext::CurrentBlock()
+    {
+        if (activeBlock == nullptr) {
+            Hccl::THROW<Hccl::CcuApiException>("Invalid ActiveBlock");
+        }
+        return activeBlock;
+    }
 
-const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &CcuRepContext::GetRepSequence()
-{
-    return mainBlock->GetReps();
-}
+    void CcuRepContext::SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBlock)
+    {
+        activeBlock = repBlock;
+    }
 
-std::shared_ptr<CcuRep::CcuRepBase> CcuRepContext::GetRepByInstrId(uint16_t instrId)
-{
-    for (const auto& rep : GetRepSequence()) {
-        const uint16_t startId = rep->StartInstrId();
-        const uint16_t endId = startId + rep->InstrCount() - 1;
-        if (instrId >= startId && instrId <= endId) {
-            return rep;
+    void CcuRepContext::Append(std::shared_ptr<CcuRep::CcuRepBase> rep)
+    {
+        CurrentBlock()->Append(rep);
+    }
+
+    const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &CcuRepContext::GetRepSequence()
+    {
+        return mainBlock->GetReps();
+    }
+
+    std::shared_ptr<CcuRep::CcuRepBase> CcuRepContext::GetRepByInstrId(uint16_t instrId)
+    {
+        for (const auto &rep : GetRepSequence()) {
+            const uint16_t startId = rep->StartInstrId();
+            const uint16_t endId = startId + rep->InstrCount() - 1;
+            if (instrId >= startId && instrId <= endId) {
+                return rep;
+            }
+        }
+        return nullptr;
+    }
+
+    void CcuRepContext::DumpReprestation()
+    {
+        HCCL_INFO("Rep Count: %lu", GetRepSequence().size());
+        for (uint32_t index = 0; index < GetRepSequence().size(); index++) {
+            HCCL_INFO("index[%u]: %s", index, GetRepSequence()[index]->Describe().c_str());
         }
     }
-    return nullptr;
-}
 
-void CcuRepContext::DumpReprestation()
-{
-    HCCL_INFO("Rep Count: %lu", GetRepSequence().size());
-    for (uint32_t index = 0; index < GetRepSequence().size(); index++) {
-        HCCL_INFO("index[%u]: %s", index, GetRepSequence()[index]->Describe().c_str());
+    void CcuRepContext::SetDieId(uint32_t dieId)
+    {
+        HCCL_INFO("set dieId[%u]", dieId);
+        this->dieId = dieId;
     }
-}
 
-void CcuRepContext::SetDieId(uint32_t dieId)
-{
-    HCCL_INFO("set dieId[%u]", dieId);
-    this->dieId = dieId;
-}
-
-uint32_t CcuRepContext::GetDieId() const
-{
-    return dieId;
-}
-
-void CcuRepContext::SetMissionId(uint32_t missionId)
-{
-    if (this->missionId == Hccl::INVALID_U32) {
-        this->missionId = missionId;
+    uint32_t CcuRepContext::GetDieId() const
+    {
+        return dieId;
     }
-}
 
-uint32_t CcuRepContext::GetMissionId() const
-{
-    return missionId;
-}
+    void CcuRepContext::SetMissionId(uint32_t missionId)
+    {
+        if (this->missionId == Hccl::INVALID_U32) {
+            this->missionId = missionId;
+        }
+    }
 
-void CcuRepContext::SetMissionKey(uint32_t missionKey)
-{
-    this->missionKey = missionKey;
-}
+    uint32_t CcuRepContext::GetMissionId() const
+    {
+        return missionId;
+    }
 
-uint32_t CcuRepContext::GetMissionKey() const
-{
-    return missionKey;
-}
+    void CcuRepContext::SetMissionKey(uint32_t missionKey)
+    {
+        this->missionKey = missionKey;
+    }
+
+    uint32_t CcuRepContext::GetMissionKey() const
+    {
+        return missionKey;
+    }
 
 }; // namespace CcuRep
 }; // namespace hcomm

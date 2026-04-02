@@ -10,7 +10,8 @@
 #include "aiv_thread.h"
 
 namespace hccl {
-uint32_t AivThread::GetNotifyNum() const {
+uint32_t AivThread::GetNotifyNum() const
+{
     return notifyNum_;
 }
-}
+} // namespace hccl

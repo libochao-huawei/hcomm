@@ -34,9 +34,12 @@ struct CcuChannelPara {
     uint32_t sqSize{0};
 
     CcuChannelPara() = default;
-    CcuChannelPara(const CommAddr &address, const uint32_t channelNum,
-        const uint32_t jettyNum, const uint32_t sqSize)
-        : commAddr(address), channelNum(channelNum), jettyNum(jettyNum), sqSize(sqSize) {
+    CcuChannelPara(const CommAddr &address, const uint32_t channelNum, const uint32_t jettyNum, const uint32_t sqSize)
+        : commAddr(address),
+          channelNum(channelNum),
+          jettyNum(jettyNum),
+          sqSize(sqSize)
+    {
     }
 };
 
@@ -88,8 +91,7 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId);
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
-HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
-    const CcuEngine ccuEngine, CcuResHandle &resHandle);
+HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId, const CcuEngine ccuEngine, CcuResHandle &resHandle);
 
 /**
  * @brief 根据资源句柄查看对应资源信息
@@ -100,8 +102,7 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源句柄无法查找到时返回HCCL_E_NOT_FOUND，其余非HCCL_SUCCESS结果属于错误
  */
-HcclResult CcuCheckResource(const int32_t deviceLogicId,
-    const CcuResHandle resHandle, CcuResRepository &resRepo);
+HcclResult CcuCheckResource(const int32_t deviceLogicId, const CcuResHandle resHandle, CcuResRepository &resRepo);
 
 /**
  * @brief 根据资源句柄释放对应资源信息
@@ -122,8 +123,8 @@ HcclResult CcuReleaseResHandle(const int32_t deviceLogicId, const CcuResHandle h
  * @return HcclResult 返回HcclResult类型的结果
  * @note 返回批量的channel资源总数可能超过申请数量，jettyNum为0时由平台层决定分配数量
  */
-HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &ccuChannelPara,
-    std::vector<CcuChannelInfo> &ccuChannelInfos);
+HcclResult CcuAllocChannels(
+    const int32_t deviceLogicId, const CcuChannelPara &ccuChannelPara, std::vector<CcuChannelInfo> &ccuChannelInfos);
 
 /**
  * @brief 释放ccu channel资源

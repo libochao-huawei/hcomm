@@ -44,9 +44,7 @@ bool HcommEndpointMap::RemoveEndpoint(EndpointHandle handle)
     return false;
 }
 
-bool HcommEndpointMap::UpdateEndpoint(
-    EndpointHandle handle,
-    std::unique_ptr<Endpoint> newEndpoint)
+bool HcommEndpointMap::UpdateEndpoint(EndpointHandle handle, std::unique_ptr<Endpoint> newEndpoint)
 {
     std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
 
@@ -58,7 +56,7 @@ bool HcommEndpointMap::UpdateEndpoint(
     return false;
 }
 
-Endpoint* HcommEndpointMap::GetEndpoint(EndpointHandle handle)
+Endpoint *HcommEndpointMap::GetEndpoint(EndpointHandle handle)
 {
     std::lock_guard<std::mutex> lock(g_EndpointMapMutex);
 

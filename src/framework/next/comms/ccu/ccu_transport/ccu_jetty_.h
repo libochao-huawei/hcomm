@@ -19,7 +19,7 @@ namespace hcomm {
 
 class CcuJetty final {
 public:
-    CcuJetty(const Hccl::IpAddress &ipAddr, const CcuJettyInfo &jettyInfo);   //暂时改为使用Hccl
+    CcuJetty(const Hccl::IpAddress &ipAddr, const CcuJettyInfo &jettyInfo); // 暂时改为使用Hccl
     ~CcuJetty();
 
     HcclResult Init();
@@ -55,8 +55,8 @@ private:
     HcclResult HandleAsyncRequest();
 };
 
-HcclResult CcuCreateJetty(const Hccl::IpAddress &ipAddr, const CcuJettyInfo &jettyInfo,
-    std::unique_ptr<CcuJetty> &ccuJetty);
+HcclResult CcuCreateJetty(
+    const Hccl::IpAddress &ipAddr, const CcuJettyInfo &jettyInfo, std::unique_ptr<CcuJetty> &ccuJetty);
 
 } // namespace hcomm
 #endif // HCOMM_CCU_JETTY_H

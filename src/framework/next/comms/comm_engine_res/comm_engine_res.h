@@ -25,26 +25,29 @@ public:
     ~CommEngineRes();
 
     // 申请线程资源
-    HcclResult AllocateThreads(uint32_t threadNum, uint32_t notifyNumPerThread,
-                              std::vector<ThreadHandle>& threadHandles);
+    HcclResult AllocateThreads(
+        uint32_t threadNum, uint32_t notifyNumPerThread, std::vector<ThreadHandle> &threadHandles);
 
     // 释放线程资源
-    HcclResult ReleaseThreads(const std::vector<ThreadHandle>& threadHandles);
+    HcclResult ReleaseThreads(const std::vector<ThreadHandle> &threadHandles);
 
     // 获取引擎上下文
-    HcclResult AcquireEngineCtx(OpTag opTag, uint32_t ctxSize, EngineCtx** engineCtx, bool* newCreated);
+    HcclResult AcquireEngineCtx(OpTag opTag, uint32_t ctxSize, EngineCtx **engineCtx, bool *newCreated);
 
     // 释放引擎上下文
-    HcclResult ReleaseEngineCtx(EngineCtx* engineCtx);
+    HcclResult ReleaseEngineCtx(EngineCtx *engineCtx);
 
     // 获取引擎类型
-    CommEngineType GetEngineType() const { return engineType_; }
+    CommEngineType GetEngineType() const
+    {
+        return engineType_;
+    }
 
 private:
     CommEngineType engineType_{};
     std::vector<std::shared_ptr<Thread>> threads_{};
     std::vector<std::unique_ptr<EngineCtx>> engineCtxs_{};
 };
-}
+} // namespace hcomm
 
 #endif // COMM_ENGINE_RES_H

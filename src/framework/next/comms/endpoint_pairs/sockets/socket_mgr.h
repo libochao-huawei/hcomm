@@ -23,10 +23,10 @@ namespace hcomm {
 
 class SocketMgr {
 public:
-    SocketMgr() {};
-    ~SocketMgr() {};
+    SocketMgr(){};
+    ~SocketMgr(){};
 
-    HcclResult GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket);
+    HcclResult GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket *&socket);
 
 private:
     HcclResult Init();

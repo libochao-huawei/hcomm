@@ -19,9 +19,8 @@
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
-HcclResult Channel::CreateChannel(
-    EndpointHandle endpointHandle, CommEngine engine, 
-    HcommChannelDesc channelDesc, std::unique_ptr<Channel>& channelPtr)
+HcclResult Channel::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc channelDesc,
+    std::unique_ptr<Channel> &channelPtr)
 {
     channelPtr.reset();
     // TODO: 通过引擎 + 协议
@@ -30,29 +29,25 @@ HcclResult Channel::CreateChannel(
         case COMM_ENGINE_CPU:
             // TODO: if 判断 EndpointDesc 里面的协议
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
-                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
-                    return HCCL_E_PARA);
+                EXECEPTION_CATCH(
+                    channelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc), return HCCL_E_PARA);
                 break;
             }
-            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] not support Protocol[%d] except COMM_PROTOCOL_ROCE", 
-                        __func__, channelDesc.remoteEndpoint.protocol);
+            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] not support Protocol[%d] except COMM_PROTOCOL_ROCE",
+                __func__, channelDesc.remoteEndpoint.protocol);
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_CPU_TS:
             HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CPU_TS] not support", __func__);
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
-            channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(
-                endpointHandle, channelDesc
-            ));
-            break; 
+            channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(endpointHandle, channelDesc));
+            break;
         case COMM_ENGINE_AIV:
-            channelPtr.reset(
-                new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
-            break; 
+            channelPtr.reset(new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
+            break;
         case COMM_ENGINE_CCU:
-            channelPtr.reset(
-                new (std::nothrow) CcuUrmaChannel(endpointHandle, channelDesc));
+            channelPtr.reset(new (std::nothrow) CcuUrmaChannel(endpointHandle, channelDesc));
             break;
         default:
             HCCL_ERROR("[Channel][%s] invalid type of CommEngine", __func__);

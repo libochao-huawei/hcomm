@@ -21,6 +21,6 @@ public:
     AicpuTsHccsChannel();
     virtual ~AicpuTsHccsChannel() = default;
 };
-}
+} // namespace hcomm
 
 #endif // AICPU_TS_HCCS_CHANNEL_H

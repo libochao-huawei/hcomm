@@ -19,12 +19,11 @@
 #include "server_socket_manager.h"
 
 using Hccl::HcclException;
-using std::string;
 using std::exception;
- 
+using std::string;
+
 namespace hcomm {
-CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
-    : Endpoint(endpointDesc)
+CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc) : Endpoint(endpointDesc)
 {
 }
 
@@ -44,14 +43,11 @@ HcclResult CpuRoceEndpoint::Init()
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(
-        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET)));
+    TRY_CATCH_RETURN(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByAddr(
+                         devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET)));
     CHK_PTR_NULL(ctxHandle_);
-    HCCL_INFO("CpuRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
-        __func__,
-        devPhyId,
-        ipAddr.Describe().c_str(),
-        ctxHandle_);
+    HCCL_INFO("CpuRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]", __func__, devPhyId,
+        ipAddr.Describe().c_str(), ctxHandle_);
 
     EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<RoceRegedMemMgr>(), return HCCL_E_PARA);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
@@ -71,10 +67,10 @@ HcclResult CpuRoceEndpoint::ServerSocketListen(const uint32_t port)
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::RDMA);
     Hccl::PortData localPort = Hccl::PortData(devPhyId, type, 0, ipAddr);
 
-    HCCL_INFO("[CpuRoceEndpoint::%s] devicePhyId[%u] ipAddress[%s]",
-        __func__, devPhyId, ipAddr.Describe().c_str());
+    HCCL_INFO("[CpuRoceEndpoint::%s] devicePhyId[%u] ipAddress[%s]", __func__, devPhyId, ipAddr.Describe().c_str());
 
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, port));
+    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(
+        localPort, Hccl::NicType::HOST_NIC_TYPE, devPhyId, port));
 
     return HCCL_SUCCESS;
 }
@@ -102,7 +98,7 @@ HcclResult CpuRoceEndpoint::RegisterMemory(HcommMem mem, const char *memTag, voi
     return HCCL_SUCCESS;
 }
 
-HcclResult CpuRoceEndpoint::UnregisterMemory(void* memHandle)
+HcclResult CpuRoceEndpoint::UnregisterMemory(void *memHandle)
 {
     CHK_RET(this->regedMemMgr_->UnregisterMemory(memHandle));
     return HCCL_SUCCESS;
@@ -131,4 +127,4 @@ HcclResult CpuRoceEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHan
     CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
-}
+} // namespace hcomm

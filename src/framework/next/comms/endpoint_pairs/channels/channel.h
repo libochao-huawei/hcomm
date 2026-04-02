@@ -37,16 +37,16 @@ MAKE_ENUM(ChannelStatus, INIT, SOCKET_OK, SOCKET_TIMEOUT, READY, FAILED)
  */
 class Channel {
 public:
-    Channel() {};
+    Channel(){};
     virtual ~Channel() = default;
 
     // 禁拷贝（避免切片/资源重复释放等）
-    Channel(const Channel&) = delete;
-    Channel& operator=(const Channel&) = delete;
+    Channel(const Channel &) = delete;
+    Channel &operator=(const Channel &) = delete;
 
     // 视需要决定是否允许移动；很多资源类也会禁移动
-    Channel(Channel&&) = default;
-    Channel& operator=(Channel&&) = default;
+    Channel(Channel &&) = default;
+    Channel &operator=(Channel &&) = default;
 
     // ------------------ 控制面接口 ------------------
     virtual HcclResult Init() = 0;
@@ -57,12 +57,9 @@ public:
     virtual HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum);
     // ------------------ 数据面接口 ------------------
 
-
     // ------------------ 工厂 ------------------
-    static HcclResult CreateChannel(EndpointHandle endpointHandle, 
-                                    CommEngine engine, 
-                                    HcommChannelDesc channelDesc,
-                                    std::unique_ptr<Channel>& out);
+    static HcclResult CreateChannel(
+        EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc channelDesc, std::unique_ptr<Channel> &out);
 };
 
 } // namespace hcomm

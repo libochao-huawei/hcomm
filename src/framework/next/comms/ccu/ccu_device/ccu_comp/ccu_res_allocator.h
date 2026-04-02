@@ -23,11 +23,10 @@ namespace hcomm {
 
 class CcuResIdAllocator {
 public:
-    explicit CcuResIdAllocator(const uint32_t capacity) : capacity_(capacity) {};
+    explicit CcuResIdAllocator(const uint32_t capacity) : capacity_(capacity){};
     CcuResIdAllocator() = default;
 
-    HcclResult Alloc(const uint32_t num, const bool consecutive,
-        std::vector<ResInfo> &allocatedResInfos);
+    HcclResult Alloc(const uint32_t num, const bool consecutive, std::vector<ResInfo> &allocatedResInfos);
     HcclResult Release(const uint32_t startId, const uint32_t num);
 
     std::string Describe() const;
@@ -45,13 +44,11 @@ private:
 
 class CcuResAllocator {
 public:
-    CcuResAllocator(const int32_t devLogicId, const uint8_t dieId)
-        : devLogicId_(devLogicId), dieId_(dieId) {};
+    CcuResAllocator(const int32_t devLogicId, const uint8_t dieId) : devLogicId_(devLogicId), dieId_(dieId){};
     CcuResAllocator() = default;
 
     HcclResult Init();
-    HcclResult Alloc(const ResType resType, const uint32_t num, const bool consecutive,
-        std::vector<ResInfo>& resInfos);
+    HcclResult Alloc(const ResType resType, const uint32_t num, const bool consecutive, std::vector<ResInfo> &resInfos);
     HcclResult Release(const ResType resType, const uint32_t startId, const uint32_t num);
 
     std::string Describe() const;

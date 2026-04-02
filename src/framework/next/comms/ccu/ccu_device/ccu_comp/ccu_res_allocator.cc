@@ -16,19 +16,18 @@
 
 namespace hcomm {
 
-HcclResult CcuResIdAllocator::Alloc(const uint32_t num, const bool consecutive,
-    std::vector<ResInfo> &allocatedResInfos)
+HcclResult CcuResIdAllocator::Alloc(const uint32_t num, const bool consecutive, std::vector<ResInfo> &allocatedResInfos)
 {
-    CHK_PRT_RET(num == 0,
-        HCCL_ERROR("[CcuResIdAllocator][%s] failed, request num is 0.", __func__),
-        HcclResult::HCCL_E_PARA);
+    CHK_PRT_RET(
+        num == 0, HCCL_ERROR("[CcuResIdAllocator][%s] failed, request num is 0.", __func__), HcclResult::HCCL_E_PARA);
 
     std::unique_lock<std::mutex> lock(innerMutex_);
     // 快速判断是否可以分配
     const uint32_t freeSize = capacity_ - allocatedSize_;
     CHK_PRT_RET(num > freeSize,
         HCCL_WARNING("[CcuResIdAllocator][%s] failed, requeste num[%u] exceeds "
-            "currently free size[%u].", __func__, num, freeSize),
+                     "currently free size[%u].",
+            __func__, num, freeSize),
         HcclResult::HCCL_E_UNAVAIL);
 
     std::vector<ResInfo> newResInfos;
@@ -55,7 +54,8 @@ HcclResult CcuResIdAllocator::Alloc(const uint32_t num, const bool consecutive,
     // 只有连续要求的资源才可能剩余，此时分配失败，新块为空
     CHK_PRT_RET(leftNum != 0,
         HCCL_WARNING("[CcuResIdAllocator][%s] failed, no enough consecutive free "
-            "resource ids for requested num[%u].", __func__, num),
+                     "resource ids for requested num[%u].",
+            __func__, num),
         HcclResult::HCCL_E_UNAVAIL);
 
     allocatedSize_ += num;
@@ -102,21 +102,21 @@ void CcuResIdAllocator::AllocResInfo(std::vector<ResInfo> newResInfos)
     }
 }
 
-static HcclResult CheckReleasePara(const uint32_t startId, const uint32_t num,
-    const uint32_t capacity)
+static HcclResult CheckReleasePara(const uint32_t startId, const uint32_t num, const uint32_t capacity)
 {
-    CHK_PRT_RET(num == 0,
-        HCCL_ERROR("[CcuResIdAllocator][%s] failed, resource num is 0.", __func__),
-        HcclResult::HCCL_E_PARA);
+    CHK_PRT_RET(
+        num == 0, HCCL_ERROR("[CcuResIdAllocator][%s] failed, resource num is 0.", __func__), HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(num > capacity,
         HCCL_ERROR("[CcuResIdAllocator][%s] failed, resource num[%u] "
-            "is greater than capacity[%u]", __func__, num, capacity),
+                   "is greater than capacity[%u]",
+            __func__, num, capacity),
         HcclResult::HCCL_E_PARA);
 
     CHK_PRT_RET(startId > capacity - num,
         HCCL_ERROR("[CcuResIdAllocator][%s] failed, resource startId[%u] "
-            "num[%u] capacity[%u]", __func__, startId, num, capacity),
+                   "num[%u] capacity[%u]",
+            __func__, startId, num, capacity),
         HcclResult::HCCL_E_PARA);
 
     return HcclResult::HCCL_SUCCESS;
@@ -132,7 +132,8 @@ HcclResult CcuResIdAllocator::Release(const uint32_t startId, const uint32_t num
     const size_t resIndex = FindReleaseResIndex(startId);
     CHK_PRT_RET(resIndex >= resInfos_.size(),
         HCCL_ERROR("[CcuResIdAllocator][%s] failed, resource startId[%u] num[%u] "
-            "has not been allocated yet. ", __func__, startId, num),
+                   "has not been allocated yet. ",
+            __func__, startId, num),
         HcclResult::HCCL_E_PARA);
 
     // 判断申请释放的资源是否越界
@@ -140,7 +141,8 @@ HcclResult CcuResIdAllocator::Release(const uint32_t startId, const uint32_t num
     uint32_t allocatedNum = resInfo.startId + resInfo.num - startId;
     CHK_PRT_RET(num > allocatedNum,
         HCCL_ERROR("[CcuResIdAllocator][%s] failed, resource num[%u] is greater "
-            "than the allocated num[%u].", __func__, num, allocatedNum),
+                   "than the allocated num[%u].",
+            __func__, num, allocatedNum),
         HcclResult::HCCL_E_PARA);
 
     // 将资源块释放并更新
@@ -166,8 +168,7 @@ size_t CcuResIdAllocator::FindReleaseResIndex(const uint32_t startId) const
     return resIndex;
 }
 
-void CcuResIdAllocator::ReleaseResInfo(const size_t resIndex,
-    const uint32_t startId, const uint32_t num)
+void CcuResIdAllocator::ReleaseResInfo(const size_t resIndex, const uint32_t startId, const uint32_t num)
 {
     allocatedSize_ -= num;
 
@@ -200,7 +201,7 @@ void CcuResIdAllocator::ReleaseResInfo(const size_t resIndex,
 
 HcclResult CcuResAllocator::Init()
 {
-    auto& ccuResSpecs = CcuResSpecifications::GetInstance(devLogicId_);
+    auto &ccuResSpecs = CcuResSpecifications::GetInstance(devLogicId_);
     // 获取静态定义的资源规格查询函数列表，遍历构造
     uint32_t capacity = 0;
     for (const auto &pair : GET_RES_SPEC_FUNC_ARRAY) {
@@ -215,25 +216,22 @@ HcclResult CcuResAllocator::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResAllocator::Alloc(const ResType resType, const uint32_t num,
-    const bool consecutive, std::vector<ResInfo> &resInfos)
+HcclResult CcuResAllocator::Alloc(
+    const ResType resType, const uint32_t num, const bool consecutive, std::vector<ResInfo> &resInfos)
 {
     auto resTypeIter = idAllocatorMap_.find(static_cast<uint8_t>(resType));
     if (resTypeIter == idAllocatorMap_.end()) {
-        HCCL_ERROR("[CcuResAllocator][%s] failed, invalid resource type[%s].",
-            __func__, resType.Describe().c_str());
+        HCCL_ERROR("[CcuResAllocator][%s] failed, invalid resource type[%s].", __func__, resType.Describe().c_str());
         return HcclResult::HCCL_E_PARA;
     }
     return resTypeIter->second->Alloc(num, consecutive, resInfos);
 }
 
-HcclResult CcuResAllocator::Release(const ResType resType, const uint32_t startId,
-    const uint32_t num)
+HcclResult CcuResAllocator::Release(const ResType resType, const uint32_t startId, const uint32_t num)
 {
     auto resTypeIter = idAllocatorMap_.find(static_cast<uint8_t>(resType));
     if (resTypeIter == idAllocatorMap_.end()) {
-        HCCL_ERROR("[CcuResAllocator][%s] failed, invalid resource type[%s].",
-            __func__, resType.Describe().c_str());
+        HCCL_ERROR("[CcuResAllocator][%s] failed, invalid resource type[%s].", __func__, resType.Describe().c_str());
         return HcclResult::HCCL_E_PARA;
     }
     return resTypeIter->second->Release(startId, num);
@@ -242,13 +240,15 @@ HcclResult CcuResAllocator::Release(const ResType resType, const uint32_t startI
 std::string CcuResIdAllocator::Describe() const
 {
     return Hccl::StringFormat("CcuResIdAllocator[capacity=%u, allocatedSize=%u, "
-        "resInfos_size=%u]", capacity_, allocatedSize_, resInfos_.size());
+                              "resInfos_size=%u]",
+        capacity_, allocatedSize_, resInfos_.size());
 }
 
 std::string CcuResAllocator::Describe() const
 {
     return Hccl::StringFormat("CcuResAllocator[devLogicId=%u, dieId=%u, "
-        "idAllocatorSize=[%u]]", devLogicId_, dieId_, idAllocatorMap_.size());
+                              "idAllocatorSize=[%u]]",
+        devLogicId_, dieId_, idAllocatorMap_.size());
 }
 
 } // namespace hcomm

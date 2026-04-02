@@ -12,18 +12,18 @@
 namespace hcomm {
 namespace CcuRep {
 
-class CcuRepRemWaitSem : public CcuRepBase {
-public:
-    CcuRepRemWaitSem(const ChannelHandle channel, uint16_t semIndex, uint16_t mask, bool isProfiling=true);
-    bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
-    std::string Describe() override;
+    class CcuRepRemWaitSem : public CcuRepBase {
+    public:
+        CcuRepRemWaitSem(const ChannelHandle channel, uint16_t semIndex, uint16_t mask, bool isProfiling = true);
+        bool Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
+        std::string Describe() override;
 
-private:
-    ChannelHandle channel;
-    uint16_t            semIndex{0};
-    uint16_t            mask{0};
-    bool                isProfiling{true};
-};
+    private:
+        ChannelHandle channel;
+        uint16_t semIndex{0};
+        uint16_t mask{0};
+        bool isProfiling{true};
+    };
 
 }; // namespace CcuRep
 }; // namespace hcomm

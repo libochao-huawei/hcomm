@@ -34,12 +34,13 @@ template <typename T> T CcuKernel::CreateResAssist(std::array<std::vector<T>, CC
     uint32_t dieId = GetDieId(); // 外部检查避免越界
     resRecord[dieId].emplace_back(this);
 
-    auto& item = resRecord[dieId].back();
+    auto &item = resRecord[dieId].back();
     item.Reset(resRecord[dieId].size(), dieId);
     return item;
 }
 
-template <typename T> std::vector<T> CcuKernel::CreateBlockResAssist(
+template <typename T>
+std::vector<T> CcuKernel::CreateBlockResAssist(
     const uint32_t count, std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
 {
     std::vector<T> block;
@@ -106,8 +107,7 @@ HcclResult CcuKernel::Init()
     uint32_t dieId{0};
     CHK_RET(GetDieIdByChannels(channels_, dieId));
     CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
-        HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].",
-            __func__, dieId, CCU_MAX_IODIE_NUM),
+        HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].", __func__, dieId, CCU_MAX_IODIE_NUM),
         HcclResult::HCCL_E_PARA);
 
     SetDieId(dieId);
@@ -117,17 +117,19 @@ HcclResult CcuKernel::Init()
 
 HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
 {
-    auto args    = GeneArgs(arg);
+    auto args = GeneArgs(arg);
     auto agrsNum = args.size();
     if (agrsNum != loadArgIndex_) {
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
-            "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
+                   "agrsNum = %d, loadArgInstr= %u",
+            __func__, agrsNum, loadArgIndex_);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
     if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
         HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
-            "the kernel is not been translated yet.", __func__);
+                   "the kernel is not been translated yet.",
+            __func__);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -139,18 +141,18 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
     const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
     if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
         HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
-            "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
-            preMissonSqeInsCnt);
+                   "than preMissonSqeInsCnt[%u].",
+            __func__, instrInfo_.missionInstrCount, preMissonSqeInsCnt);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
     taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
-        taskParams[index].dieId       = GetDieId();
-        taskParams[index].missionId   = GetMissionId();
+        taskParams[index].dieId = GetDieId();
+        taskParams[index].missionId = GetMissionId();
         taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-        taskParams[index].key         = GetMissionKey();
-        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+        taskParams[index].key = GetMissionKey();
+        taskParams[index].argSize = CCU_SQE_ARGS_LEN;
         if (index == seqNum - 1) {
             // index 由计算得出，相乘结果不会溢出
             const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
@@ -159,14 +161,16 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         } else {
             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
             std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParams[index].args));
+                std::begin(taskParams[index].args));
         }
 
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
-                  taskParams[index].instCnt, taskParams[index].argSize);
+            taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
+            taskParams[index].instCnt, taskParams[index].argSize);
         for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
-            if (i == TOKEN_VALUE_INDEX) { continue; }
+            if (i == TOKEN_VALUE_INDEX) {
+                continue;
+            }
             HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
         }
     }
@@ -198,26 +202,25 @@ CcuResReq CcuKernel::GetResourceRequest()
 {
     CcuResReq req;
     uint32_t dieId = GetDieId();
-    req.msReq[dieId]              = res_.ccubufs[dieId].size();
-    req.blockMsReq[dieId]         = res_.blockCcubufs[dieId].size();
-    req.ckeReq[dieId]             = res_.completedEvent[dieId].size()
-                                    + res_.localNotify[dieId].size();
-    req.blockCkeReq[dieId]        = res_.blockCompletedEvent[dieId].size();
-    req.loopEngineReq[dieId]      = res_.executor[dieId].size();
+    req.msReq[dieId] = res_.ccubufs[dieId].size();
+    req.blockMsReq[dieId] = res_.blockCcubufs[dieId].size();
+    req.ckeReq[dieId] = res_.completedEvent[dieId].size() + res_.localNotify[dieId].size();
+    req.blockCkeReq[dieId] = res_.blockCompletedEvent[dieId].size();
+    req.loopEngineReq[dieId] = res_.executor[dieId].size();
     req.blockLoopEngineReq[dieId] = res_.blockExecutor[dieId].size();
-    req.gsaReq[dieId]             = res_.address[dieId].size();
-    req.xnReq[dieId]              = res_.variable[dieId].size();
-    req.continuousXnReq[dieId]    = res_.continuousVariable[dieId].size();
+    req.gsaReq[dieId] = res_.address[dieId].size();
+    req.xnReq[dieId] = res_.variable[dieId].size();
+    req.continuousXnReq[dieId] = res_.continuousVariable[dieId].size();
 
-    req.missionReq.reqType           = MissionReqType::FUSION_MULTIPLE_DIE;
+    req.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
     req.missionReq.req[dieId] = 1;
 
     auto info
         = Hccl::StringFormat("resource request: dieId[%u], ms[%u], blockMs[%u], cke[%u], blockCke[%u], "
-                       "loopEngine[%u], blockLoopEngine[%u], gsa[%u], xn[%u], continuous xn[%u], missionId[%u]",
-                       dieId, req.msReq[dieId], req.blockMsReq[dieId], req.ckeReq[dieId], req.blockCkeReq[dieId],
-                       req.loopEngineReq[dieId], req.blockLoopEngineReq[dieId], req.gsaReq[dieId], req.xnReq[dieId],
-                       req.continuousXnReq[dieId], req.missionReq.req[dieId]);
+                             "loopEngine[%u], blockLoopEngine[%u], gsa[%u], xn[%u], continuous xn[%u], missionId[%u]",
+            dieId, req.msReq[dieId], req.blockMsReq[dieId], req.ckeReq[dieId], req.blockCkeReq[dieId],
+            req.loopEngineReq[dieId], req.blockLoopEngineReq[dieId], req.gsaReq[dieId], req.xnReq[dieId],
+            req.continuousXnReq[dieId], req.missionReq.req[dieId]);
 
     HCCL_INFO("%s", info.c_str());
 
@@ -251,16 +254,14 @@ void CcuKernel::LoadVariable(const CcuRep::Variable &src, const CcuRep::Variable
     Append(std::make_shared<CcuRep::CcuRepLoadVar>(src, var));
 }
 
-HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
-    const uint32_t dstNotifyIdx, const uint32_t mask)
+HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask)
 {
     if (CurrentBlock()->Type() == CcuRep::CcuRepType::LOOP_BLOCK) {
         HCCL_ERROR("[CcuKernel][%s] is not supported in loop block, please check.", __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
-    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" +
-        std::to_string(dstNotifyIdx);
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" + std::to_string(dstNotifyIdx);
 
     auto &sharedNotifies = importedRes_.sharedNotifies;
     if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
@@ -273,11 +274,9 @@ HcclResult CcuKernel::LocalNotifyRecord(const uint32_t coreId,
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
-    const uint32_t notifyIdx, const uint32_t mask)
+HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask)
 {
-    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_"
-        + std::to_string(notifyIdx);
+    const std::string notifyTag = "Notify_" + std::to_string(coreId) + "_" + std::to_string(notifyIdx);
 
     auto &sharedNotifies = exportedRes_.sharedNotifies;
     if (sharedNotifies.find(notifyTag) == sharedNotifies.end()) {
@@ -286,8 +285,7 @@ HcclResult CcuKernel::LocalNotifyWait(const uint32_t coreId,
     }
 
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(
-        exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
+    Append(std::make_shared<CcuRep::CcuRepLocWaitNotify>(exportedRes_.sharedNotifies.at(notifyTag), mask, isProfiling));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -316,8 +314,8 @@ HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteN
     return HCCL_SUCCESS;
 }
 /*WriteVariableWithSignal新接口*/
-HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, 
-                                        uint32_t remoteVarIdx, const CcuRep::Variable &var, uint32_t mask)
+HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t remoteVarIdx,
+    const CcuRep::Variable &var, uint32_t mask)
 {
     Append(std::make_shared<CcuRep::CcuRepRemPostVar>(var, channel, remoteVarIdx, remoteNotifyIdx, mask));
     return HCCL_SUCCESS;
@@ -333,7 +331,7 @@ HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNoti
 
 /*Read新接口*/
 HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &loc, const CcuRep::RemoteAddr &rem,
-                      const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+    const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, event.mask));
     return HCCL_SUCCESS;
@@ -341,7 +339,7 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &
 
 /*Write新接口*/
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::CcuBuf &loc,
-                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+    const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, event.mask));
     return HCCL_SUCCESS;
@@ -360,25 +358,11 @@ static bool isLowPrecisionOut(Hccl::DataType dataType)
 
 constexpr uint32_t MAX_DATA_TYPE = 17;
 
-const Hccl::DataType orionDataTypes[] = {
-    Hccl::DataType::INT8,
-    Hccl::DataType::INT16,
-    Hccl::DataType::INT32,
-    Hccl::DataType::FP16,
-    Hccl::DataType::FP32,
-    Hccl::DataType::INT64,
-    Hccl::DataType::UINT64,
-    Hccl::DataType::UINT8,
-    Hccl::DataType::UINT16,
-    Hccl::DataType::UINT32,
-    Hccl::DataType::FP64,
-    Hccl::DataType::BFP16,
-    Hccl::DataType::INT128,
-#if !defined (OPEN_BUILD_PROJECT) || defined (ORION_MODE)
-    Hccl::DataType::HIF8,
-    Hccl::DataType::FP8E4M3,
-    Hccl::DataType::FP8E5M2,
-    Hccl::DataType::FP8E8M0
+const Hccl::DataType orionDataTypes[] = {Hccl::DataType::INT8, Hccl::DataType::INT16, Hccl::DataType::INT32,
+    Hccl::DataType::FP16, Hccl::DataType::FP32, Hccl::DataType::INT64, Hccl::DataType::UINT64, Hccl::DataType::UINT8,
+    Hccl::DataType::UINT16, Hccl::DataType::UINT32, Hccl::DataType::FP64, Hccl::DataType::BFP16, Hccl::DataType::INT128,
+#if !defined(OPEN_BUILD_PROJECT) || defined(ORION_MODE)
+    Hccl::DataType::HIF8, Hccl::DataType::FP8E4M3, Hccl::DataType::FP8E5M2, Hccl::DataType::FP8E8M0
 #endif
 };
 
@@ -411,8 +395,7 @@ static Hccl::ReduceOp HcommReduceOpToHcclReduceOp(const HcclReduceOp reduceOp)
 }
 
 HcclResult CcuKernel::LocalReduceNb(const CcuRep::CcuBuf *bufs, uint32_t count, HcclDataType dataType,
-                     HcclDataType outputDataType, HcclReduceOp opType,
-                     const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+    HcclDataType outputDataType, HcclReduceOp opType, const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
@@ -430,85 +413,83 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::CcuBuf *bufs, uint32_t count, 
     }
 
     Append(std::make_shared<CcuRep::CcuRepBufReduce>(ccuBufs, count, CcuRep::GetCcuDataType(dataType_, opType_),
-                                                     CcuRep::GetCcuDataType(outputDataType_, opType_),
-                                                     CcuRep::GetCcuReduceType(opType_), event, len, event.mask));
+        CcuRep::GetCcuDataType(outputDataType_, opType_), CcuRep::GetCcuReduceType(opType_), event, len, event.mask));
     return HCCL_SUCCESS;
 }
 
-
 /*Read新接口*/
 HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
-                      const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+    const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, event.mask));
     return HCCL_SUCCESS;
 }
 
 /*ReadReduce新接口*/
-HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
-                            const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
-                            CcuRep::CompletedEvent event)
+HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc,
+    const CcuRep::RemoteAddr &rem, const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
+    CcuRep::CompletedEvent event)
 {
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
-    Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, CcuRep::GetUBDataType(dataType_),
-                                                CcuRep::GetUBReduceType(opType_), event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepRead>(
+        channel, loc, rem, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_), event, event.mask));
     return HCCL_SUCCESS;
 }
 
 /*Write新接口*/
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
-                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
+    const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, event.mask));
     return HCCL_SUCCESS;
 }
 
 /*WriteReduce新接口*/
-HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
-                             const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
-                             CcuRep::CompletedEvent event)
+HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem,
+    const CcuRep::LocalAddr &loc, const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
+    CcuRep::CompletedEvent event)
 {
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
-    Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, CcuRep::GetUBDataType(dataType_),
-                                                 CcuRep::GetUBReduceType(opType_), event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepWrite>(
+        channel, rem, loc, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_), event, event.mask));
     return HCCL_SUCCESS;
 }
 
 /*LocalCopy新接口*/
-HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
-                           CcuRep::CompletedEvent event)
+HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src,
+    const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, event, event.mask));
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::LocalCopyNb(const CcuRep::CcuBuf &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
-                           CcuRep::CompletedEvent event)
+HcclResult CcuKernel::LocalCopyNb(
+    const CcuRep::CcuBuf &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufLocRead>(src, dst, len, event, event.mask));
     return HCCL_SUCCESS;
 }
 
-HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::CcuBuf &src, const CcuRep::Variable &len,
-                           CcuRep::CompletedEvent event)
+HcclResult CcuKernel::LocalCopyNb(
+    const CcuRep::LocalAddr &dst, const CcuRep::CcuBuf &src, const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
     Append(std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, event, event.mask));
     return HCCL_SUCCESS;
 }
 
 /*LocalReduce新接口*/
-HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
-                             HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event)
+HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src,
+    const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event)
 {
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
-    Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_),
-                                                  event, event.mask));
+    Append(std::make_shared<CcuRep::CcuRepLocCpy>(
+        dst, src, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_), event, event.mask));
     return HCCL_SUCCESS;
 }
 
@@ -652,7 +633,7 @@ void CcuKernel::SetResRepository(const CcuResRepository &resRepo)
     resRepo_ = resRepo;
 }
 
-CcuResRepository  &CcuKernel::GetResRepository()
+CcuResRepository &CcuKernel::GetResRepository()
 {
     return resRepo_;
 }

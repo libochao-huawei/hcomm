@@ -28,7 +28,7 @@ public:
 private:
     HccpTlvHdcMgr() = default;
     ~HccpTlvHdcMgr();
-    HccpTlvHdcMgr(const HccpTlvHdcMgr &hccpTlvHdcMgr)            = delete;
+    HccpTlvHdcMgr(const HccpTlvHdcMgr &hccpTlvHdcMgr) = delete;
     HccpTlvHdcMgr &operator=(const HccpTlvHdcMgr &hccpTlvHdcMgr) = delete;
     HcclResult Deinit();
 

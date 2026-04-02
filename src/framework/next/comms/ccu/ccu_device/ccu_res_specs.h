@@ -16,23 +16,23 @@
 namespace hcomm {
 
 constexpr uint32_t CCU_RESOURCE_SIZE = 72 * 1024 * 1024; // CCU资源空间大小
-constexpr uint64_t CCU_V1_CCUM_OFFSET   = 0x800000;    // V1 CCUM 偏移，位于CCUA之后
+constexpr uint64_t CCU_V1_CCUM_OFFSET = 0x800000;        // V1 CCUM 偏移，位于CCUA之后
 
 constexpr uint64_t CCU_V1_WQE_BASIC_BLOCK_OFFSET = (CCU_V1_CCUM_OFFSET + 0x800000);
 
-constexpr uint32_t CCU_ONE_WQE_SIZE    = 64; // Bytes
-constexpr uint32_t CCU_WQE_NUM_PER_SQE = 4;  // URMA 约束每个SQE包含4个WQEBB
+constexpr uint32_t CCU_ONE_WQE_SIZE = 64;   // Bytes
+constexpr uint32_t CCU_WQE_NUM_PER_SQE = 4; // URMA 约束每个SQE包含4个WQEBB
 constexpr uint32_t CCU_MIN_SQ_DEPTH = 16;
 constexpr uint32_t CCU_MAX_SQ_DEPTH = 256;
-constexpr uint16_t CCU_START_TA_JETTY_ID = 1024; // IMP给系统预留给CCU的jetty Id起始编号
+constexpr uint16_t CCU_START_TA_JETTY_ID = 1024;    // IMP给系统预留给CCU的jetty Id起始编号
 constexpr uint32_t CCU_SQ_BUFFER_SIZE = 256 * 1024; // ccu 每个jetty sq buffer size 固定为256k
 constexpr uint32_t CCU_WQEBB_RESOURCE_NUM = 4096;
 constexpr uint32_t CCU_V1_PER_DIE_PFE_RESERVED_NUM = 16; // ccu 每个IO die预留16个PFE表
-constexpr uint8_t  CCU_PER_DIE_JETTY_RESERVED_NUM = 128; // ccu 每个IO die默认jetty数量
+constexpr uint8_t CCU_PER_DIE_JETTY_RESERVED_NUM = 128;  // ccu 每个IO die默认jetty数量
 
 constexpr uint64_t CCU_RESOURCE_INS_RESERVE_SIZE = 0x100000;  // INS预留空间1M
 constexpr uint64_t CCU_V1_RESOURCE_GSA_RESERVE_SIZE = 0x8000; // v1 GSA预留空间32K
-constexpr uint16_t CCU_RESOURCE_XN_PER_SIZE    = 8;
+constexpr uint16_t CCU_RESOURCE_XN_PER_SIZE = 8;
 constexpr uint16_t CCU_RESOURCE_INSTR_PER_SIZE = 32;
 
 constexpr uint32_t MOVE_16_BITS = 16;
@@ -40,7 +40,7 @@ constexpr uint32_t MOVE_20_BITS = 20;
 constexpr uint32_t MOVE_24_BITS = 24;
 
 constexpr uint32_t INVALID_VALUE = 0;
-constexpr uint64_t INVALID_ADDR  = 0;
+constexpr uint64_t INVALID_ADDR = 0;
 
 // CcuBlockResStrategy 定义了资源管理块资源类型的块大小
 struct CcuBlockResStrategy {
@@ -73,7 +73,7 @@ struct CcuResSpecInfo {
 
 class CcuResSpecifications {
 public:
-    static CcuResSpecifications& GetInstance(const int32_t deviceLogicId);
+    static CcuResSpecifications &GetInstance(const int32_t deviceLogicId);
     HcclResult Init();
     HcclResult Deinit();
 
@@ -119,20 +119,15 @@ private:
     std::array<CcuResSpecInfo, CCU_MAX_IODIE_NUM> resSpecs_{};
 };
 
-HcclResult CheckDieValid(const std::string &funcName, const int32_t devLogicId, const uint8_t dieId,
-    bool dieEnableFlag);
+HcclResult CheckDieValid(
+    const std::string &funcName, const int32_t devLogicId, const uint8_t dieId, bool dieEnableFlag);
 
-using GetResSpecFunc = HcclResult (CcuResSpecifications::*)(const uint8_t, uint32_t&) const;
+using GetResSpecFunc = HcclResult (CcuResSpecifications::*)(const uint8_t, uint32_t &) const;
 using ResSpecFuncPair = std::pair<ResType, GetResSpecFunc>;
-constexpr ResSpecFuncPair GET_RES_SPEC_FUNC_ARRAY[] = {
-    {ResType::LOOP, &CcuResSpecifications::GetLoopEngineNum},
-    {ResType::MS, &CcuResSpecifications::GetMsNum},
-    {ResType::CKE, &CcuResSpecifications::GetCkeNum},
-    {ResType::XN, &CcuResSpecifications::GetXnNum},
-    {ResType::GSA, &CcuResSpecifications::GetGsaNum},
-    {ResType::INS, &CcuResSpecifications::GetInstructionNum},
-    {ResType::MISSION, &CcuResSpecifications::GetMissionNum}
-};
+constexpr ResSpecFuncPair GET_RES_SPEC_FUNC_ARRAY[] = {{ResType::LOOP, &CcuResSpecifications::GetLoopEngineNum},
+    {ResType::MS, &CcuResSpecifications::GetMsNum}, {ResType::CKE, &CcuResSpecifications::GetCkeNum},
+    {ResType::XN, &CcuResSpecifications::GetXnNum}, {ResType::GSA, &CcuResSpecifications::GetGsaNum},
+    {ResType::INS, &CcuResSpecifications::GetInstructionNum}, {ResType::MISSION, &CcuResSpecifications::GetMissionNum}};
 
 } // namespace hcomm
 #endif // CCU_RES_SPECS_H
