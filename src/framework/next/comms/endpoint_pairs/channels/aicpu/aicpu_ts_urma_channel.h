@@ -71,7 +71,7 @@ private:
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
-    std::vector<Hccl::LocalRmaBuffer *>                         bufferVecTemp_; // channel 复用时暂存 rmaBuffer
+    std::vector<Hccl::LocalRmaBuffer *>                         bufferVecTemp_; // channel 复用时暂存新增 rmaBuffer
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
