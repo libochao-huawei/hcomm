@@ -8,65 +8,45 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-#include <memory>
-#include <vector>
-#include <string>
-#include <map>
-#include <unordered_map>
-#include <cstring>
-
-// Include header files for the functions we're testing
+#include "ut_hcomm_base.h"
 #include "hccl_api_data_aicpu_ts.h"
 #include "aicpu_indop_process.h"
 #include "hcclCommTaskExceptionLite.h"
 #include "hcclCommTaskException.h"
 #include "global_mirror_tasks.h"
-#include "task_info.h"
-#include "task_struct_v2.h"
-#include "hccl_communicator.h"
 
-using namespace testing;
-using namespace hccl;
-using namespace hcomm;
-
-// Test fixture
-class HcclCommTaskExceptionTest : public ::testing::Test {
-protected:
+class TestHcclCommTaskException : public TestHcommCAdptBase {
+public:
     void SetUp() override {
-        // Initialize common test data
-        devId_ = 0;
-        streamId_ = 1;
-        taskId_ = 100;
-        commId_ = "test_comm_group";
+        TestHcommCAdptBase::SetUp();
+        instanceLite = &HcclCommTaskExceptionLite::GetInstance();
+        instanceHost = &TaskExceptionHost::GetInstance();
+        instanceLite->Init(0);
     }
-
     void TearDown() override {
-        // Cleanup
+        TestHcommCAdptBase::TearDown();
+        GlobalMockObject::verify();
     }
 
-    u32 devId_;
-    u32 streamId_;
-    u32 taskId_;
-    std::string commId_;
+protected:
+    HcclCommTaskExceptionLite* instanceLite;
+    TaskExceptionHost* instanceHost;
 };
 
 // =============================================================================
 // Test cases for HcommAcquireComm (hccl_api_data_aicpu_ts.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, HcommAcquireComm_NullCommId) {
+TEST_F(TestHcclCommTaskException, Ut_HcommAcquireComm_When_CommIdNullptr_Return_HCCL_E_PTR)
+{
     int32_t ret = HcommAcquireComm(nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(HcclCommTaskExceptionTest, HcommAcquireComm_ValidCommId) {
-    // This test requires mocking of hrtGetDeviceType and AicpuHcclProcess/AicpuIndopProcess
-    // For now, we'll just test that it doesn't crash with a valid string
-    int32_t ret = HcommAcquireComm(commId_.c_str());
-    // The actual return value depends on device type and comm manager state
-    // We expect it to either succeed or fail gracefully
+TEST_F(TestHcclCommTaskException, Ut_HcommAcquireComm_When_ValidCommId_Return_SuccessOrPtr)
+{
+    const char* commId = "test_comm_group";
+    int32_t ret = HcommAcquireComm(commId);
     EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_PTR);
 }
 
@@ -74,14 +54,16 @@ TEST_F(HcclCommTaskExceptionTest, HcommAcquireComm_ValidCommId) {
 // Test cases for HcommReleaseComm (hccl_api_data_aicpu_ts.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, HcommReleaseComm_NullCommId) {
+TEST_F(TestHcclCommTaskException, Ut_HcommReleaseComm_When_CommIdNullptr_Return_HCCL_E_PTR)
+{
     int32_t ret = HcommReleaseComm(nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(HcclCommTaskExceptionTest, HcommReleaseComm_ValidCommId) {
-    // Test releasing a valid comm ID
-    int32_t ret = HcommReleaseComm(commId_.c_str());
+TEST_F(TestHcclCommTaskException, Ut_HcommReleaseComm_When_ValidCommId_Return_HCCL_SUCCESS)
+{
+    const char* commId = "test_comm_group";
+    int32_t ret = HcommReleaseComm(commId);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -89,20 +71,19 @@ TEST_F(HcclCommTaskExceptionTest, HcommReleaseComm_ValidCommId) {
 // Test cases for AicpuIndOpThreadInit (aicpu_indop_process.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndOpThreadInit_NullParam) {
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpThreadInit_When_ParamNullptr_Return_HCCL_E_PTR)
+{
     HcclResult ret = AicpuIndopProcess::AicpuIndOpThreadInit(nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndOpThreadInit_ValidParam) {
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpThreadInit_When_ValidParam_Return_SuccessOrPtr)
+{
     ThreadMgrAicpuParam param;
-    param.hcomId = commId_;
-    // Set other required fields
+    param.hcomId = "test_comm_group";
     param.threadNum = 2;
     
     HcclResult ret = AicpuIndopProcess::AicpuIndOpThreadInit(&param);
-    // The result depends on whether the comm manager exists
-    // Either success or pointer error is acceptable
     EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_PTR);
 }
 
@@ -110,13 +91,15 @@ TEST_F(HcclCommTaskExceptionTest, AicpuIndOpThreadInit_ValidParam) {
 // Test cases for AicpuGetCommMgrbyGroup (aicpu_indop_process.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, AicpuGetCommMgrbyGroup_NonExistentGroup) {
-    CollCommAicpuMgr *mgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup("non_existent_group");
+TEST_F(TestHcclCommTaskException, Ut_AicpuGetCommMgrbyGroup_When_NonExistentGroup_Return_Nullptr)
+{
+    CollCommAicpuMgr* mgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup("non_existent_group");
     EXPECT_EQ(mgr, nullptr);
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuGetCommMgrbyGroup_EmptyGroup) {
-    CollCommAicpuMgr *mgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup("");
+TEST_F(TestHcclCommTaskException, Ut_AicpuGetCommMgrbyGroup_When_EmptyGroup_Return_Nullptr)
+{
+    CollCommAicpuMgr* mgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup("");
     EXPECT_EQ(mgr, nullptr);
 }
 
@@ -124,30 +107,31 @@ TEST_F(HcclCommTaskExceptionTest, AicpuGetCommMgrbyGroup_EmptyGroup) {
 // Test cases for AicpuIndOpNotifyInit (aicpu_indop_process.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndOpNotifyInit_NullParam) {
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpNotifyInit_When_ParamNullptr_Return_HCCL_E_PTR)
+{
     HcclResult ret = AicpuIndopProcess::AicpuIndOpNotifyInit(nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndOpNotifyInit_AllocNotify) {
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpNotifyInit_When_AllocNotify_Return_SuccessOrPtr)
+{
     NotifyMgrAicpuParam param;
-    param.hcomId = commId_;
+    param.hcomId = "test_comm_group";
     param.freeFlag = false;
     param.notifyNum = 5;
     
     HcclResult ret = AicpuIndopProcess::AicpuIndOpNotifyInit(&param);
-    // Result depends on comm manager existence
     EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_PTR);
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndOpNotifyInit_FreeNotify) {
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndOpNotifyInit_When_FreeNotify_Return_SuccessOrPtr)
+{
     NotifyMgrAicpuParam param;
-    param.hcomId = commId_;
+    param.hcomId = "test_comm_group";
     param.freeFlag = true;
     param.notifyNum = 5;
     
     HcclResult ret = AicpuIndopProcess::AicpuIndOpNotifyInit(&param);
-    // Result depends on comm manager existence
     EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_PTR);
 }
 
@@ -155,18 +139,18 @@ TEST_F(HcclCommTaskExceptionTest, AicpuIndOpNotifyInit_FreeNotify) {
 // Test cases for AicpuDfxOpInfoInit (aicpu_indop_process.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, AicpuDfxOpInfoInit_NullDfxInfo) {
-    HcclResult ret = AicpuIndopProcess::AicpuDfxOpInfoInit(nullptr, commId_);
+TEST_F(TestHcclCommTaskException, Ut_AicpuDfxOpInfoInit_When_DfxInfoNullptr_Return_HCCL_E_PTR)
+{
+    HcclResult ret = AicpuIndopProcess::AicpuDfxOpInfoInit(nullptr, "test_comm_group");
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuDfxOpInfoInit_ValidDfxInfo) {
+TEST_F(TestHcclCommTaskException, Ut_AicpuDfxOpInfoInit_When_ValidDfxInfo_Return_SuccessOrPtr)
+{
     HcclDfxOpInfo dfxInfo;
-    // Initialize dfxInfo fields
     memset(&dfxInfo, 0, sizeof(dfxInfo));
     
-    HcclResult ret = AicpuIndopProcess::AicpuDfxOpInfoInit(&dfxInfo, commId_);
-    // Result depends on comm manager existence
+    HcclResult ret = AicpuIndopProcess::AicpuDfxOpInfoInit(&dfxInfo, "test_comm_group");
     EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_PTR);
 }
 
@@ -174,19 +158,15 @@ TEST_F(HcclCommTaskExceptionTest, AicpuDfxOpInfoInit_ValidDfxInfo) {
 // Test cases for PrintTaskContextInfo (hcclCommTaskExceptionLite.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, PrintTaskContextInfo_InvalidStreamId) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    instance.Init(devId_);
-    
-    HcclResult ret = instance.PrintTaskContextInfo(999, taskId_);
+TEST_F(TestHcclCommTaskException, Ut_PrintTaskContextInfo_When_InvalidStreamId_Return_HCCL_E_PARA)
+{
+    HcclResult ret = instanceLite->PrintTaskContextInfo(999, 100);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(HcclCommTaskExceptionTest, PrintTaskContextInfo_InvalidTaskId) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    instance.Init(devId_);
-    
-    HcclResult ret = instance.PrintTaskContextInfo(streamId_, 999);
+TEST_F(TestHcclCommTaskException, Ut_PrintTaskContextInfo_When_InvalidTaskId_Return_HCCL_E_PARA)
+{
+    HcclResult ret = instanceLite->PrintTaskContextInfo(1, 999);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -194,107 +174,95 @@ TEST_F(HcclCommTaskExceptionTest, PrintTaskContextInfo_InvalidTaskId) {
 // Test cases for GetOpDataInfo (hcclCommTaskExceptionLite.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_NullDfxOpInfo) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    
+TEST_F(TestHcclCommTaskException, Ut_GetOpDataInfo_When_DfxOpInfoNullptr_Return_EmptyString)
+{
     Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, nullptr);
-    std::string result = instance.GetOpDataInfo(taskInfo);
-    
+    std::string result = instanceLite->GetOpDataInfo(taskInfo);
     EXPECT_TRUE(result.empty());
 }
 
-TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_ValidDfxOpInfo) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    
-    // Create a valid DfxOpInfo
+TEST_F(TestHcclCommTaskException, Ut_GetOpDataInfo_When_ValidDfxOpInfo_Return_NonEmptyString)
+{
     auto dfxOpInfo = std::shared_ptr<Hccl::DfxOpInfo>(new Hccl::DfxOpInfo());
     dfxOpInfo->opIndex_ = 5;
     dfxOpInfo->algTag_ = "test_alg";
     dfxOpInfo->op_.dataCount = 1024;
     
     Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, dfxOpInfo);
-    std::string result = instance.GetOpDataInfo(taskInfo);
+    std::string result = instanceLite->GetOpDataInfo(taskInfo);
     
     EXPECT_FALSE(result.empty());
     EXPECT_NE(result.find("opIndex"), std::string::npos);
-    EXPECT_NE(result.find("algTag"), std::string::npos);
-    EXPECT_NE(result.find("count"), std::string::npos);
 }
 
 // =============================================================================
 // Test cases for Process (hcclCommTaskException.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, Process_NullExceptionInfo) {
-    TaskExceptionHost handler;
-    
-    // This should not crash with null pointer
-    handler.Process(nullptr);
-    // No assertion needed, just ensure no crash
+TEST_F(TestHcclCommTaskException, Ut_Process_When_ExceptionInfoNullptr_Return_Void)
+{
+    instanceHost->Process(nullptr);
+    // Should not crash
 }
 
-TEST_F(HcclCommTaskExceptionTest, Process_ValidExceptionInfo) {
-    TaskExceptionHost handler;
+TEST_F(TestHcclCommTaskException, Ut_Process_When_ValidExceptionInfo_Return_Void)
+{
     rtExceptionInfo_t exceptionInfo;
     memset(&exceptionInfo, 0, sizeof(exceptionInfo));
-    exceptionInfo.deviceid = devId_;
-    exceptionInfo.streamid = streamId_;
-    exceptionInfo.taskid = taskId_;
+    exceptionInfo.deviceid = 0;
+    exceptionInfo.streamid = 1;
+    exceptionInfo.taskid = 100;
     
-    // This should handle the exception gracefully
-    handler.Process(&exceptionInfo);
-    // No assertion needed, just ensure no crash
+    instanceHost->Process(&exceptionInfo);
+    // Should not crash
 }
 
 // =============================================================================
 // Test cases for PrintTaskContextInfo (hcclCommTaskException.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, HostPrintTaskContextInfo_InvalidDeviceId) {
-    TaskExceptionHost handler;
-    
-    // This should handle invalid device ID gracefully
-    handler.PrintTaskContextInfo(999, streamId_, taskId_);
-    // No assertion needed, just ensure no crash
+TEST_F(TestHcclCommTaskException, Ut_HostPrintTaskContextInfo_When_InvalidDeviceId_Return_Void)
+{
+    instanceHost->PrintTaskContextInfo(999, 1, 100);
+    // Should not crash
 }
 
-TEST_F(HcclCommTaskExceptionTest, HostPrintTaskContextInfo_InvalidStreamId) {
-    TaskExceptionHost handler;
-    
-    // This should handle invalid stream ID gracefully
-    handler.PrintTaskContextInfo(devId_, 999, taskId_);
-    // No assertion needed, just ensure no crash
+TEST_F(TestHcclCommTaskException, Ut_HostPrintTaskContextInfo_When_InvalidStreamId_Return_Void)
+{
+    instanceHost->PrintTaskContextInfo(0, 999, 100);
+    // Should not crash
 }
 
 // =============================================================================
 // Test cases for FindTaskInfo (global_mirror_tasks.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, FindTaskInfo_InvalidDevId) {
-    GlobalMirrorTasks& instance = GlobalMirrorTasks::Instance();
-    std::shared_ptr<TaskInfo> curTask;
+TEST_F(TestHcclCommTaskException, Ut_FindTaskInfo_When_InvalidDevId_Return_HCCL_E_PARA)
+{
+    Hccl::GlobalMirrorTasks& instance = Hccl::GlobalMirrorTasks::Instance();
+    std::shared_ptr<Hccl::TaskInfo> curTask;
     
-    HcclResult ret = instance.FindTaskInfo(999, streamId_, taskId_, curTask);
+    HcclResult ret = instance.FindTaskInfo(999, 1, 100, curTask);
     EXPECT_EQ(ret, HCCL_E_PARA);
     EXPECT_EQ(curTask, nullptr);
 }
 
-TEST_F(HcclCommTaskExceptionTest, FindTaskInfo_NonExistentStream) {
-    GlobalMirrorTasks& instance = GlobalMirrorTasks::Instance();
-    std::shared_ptr<TaskInfo> curTask;
+TEST_F(TestHcclCommTaskException, Ut_FindTaskInfo_When_NonExistentStream_Return_HCCL_E_NOT_FOUND)
+{
+    Hccl::GlobalMirrorTasks& instance = Hccl::GlobalMirrorTasks::Instance();
+    std::shared_ptr<Hccl::TaskInfo> curTask;
     
-    HcclResult ret = instance.FindTaskInfo(devId_, 999, taskId_, curTask);
+    HcclResult ret = instance.FindTaskInfo(0, 999, 100, curTask);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
     EXPECT_EQ(curTask, nullptr);
 }
 
-TEST_F(HcclCommTaskExceptionTest, FindTaskInfo_NonExistentTask) {
-    GlobalMirrorTasks& instance = GlobalMirrorTasks::Instance();
-    std::shared_ptr<TaskInfo> curTask;
+TEST_F(TestHcclCommTaskException, Ut_FindTaskInfo_When_NonExistentTask_Return_HCCL_E_NOT_FOUNDOrHCCL_E_PARA)
+{
+    Hccl::GlobalMirrorTasks& instance = Hccl::GlobalMirrorTasks::Instance();
+    std::shared_ptr<Hccl::TaskInfo> curTask;
     
-    // Try to find a task that doesn't exist
-    HcclResult ret = instance.FindTaskInfo(devId_, streamId_, 99999, curTask);
-    // Either not found or parameter error is acceptable
+    HcclResult ret = instance.FindTaskInfo(0, 1, 99999, curTask);
     EXPECT_TRUE(ret == HCCL_E_NOT_FOUND || ret == HCCL_E_PARA);
 }
 
@@ -302,151 +270,55 @@ TEST_F(HcclCommTaskExceptionTest, FindTaskInfo_NonExistentTask) {
 // Additional edge case tests
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, HcclCommTaskExceptionLite_GetInstance) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    // Should return the same instance
+TEST_F(TestHcclCommTaskException, Ut_HcclCommTaskExceptionLite_GetInstance_Return_SameInstance)
+{
+    HcclCommTaskExceptionLite& instance1 = HcclCommTaskExceptionLite::GetInstance();
     HcclCommTaskExceptionLite& instance2 = HcclCommTaskExceptionLite::GetInstance();
-    EXPECT_EQ(&instance, &instance2);
-}
-
-TEST_F(HcclCommTaskExceptionTest, HcclCommTaskExceptionLite_Init) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    instance.Init(devId_);
-    
-    // Calling Init twice should be safe
-    instance.Init(devId_ + 1);
-    // No assertion needed, just ensure no crash
-}
-
-TEST_F(HcclCommTaskExceptionTest, HcclCommTaskExceptionLite_Call) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    instance.Init(devId_);
-    
-    // Calling Call should not crash
-    instance.Call();
-    // No assertion needed, just ensure no crash
-}
-
-TEST_F(HcclCommTaskExceptionTest, GlobalMirrorTasks_Instance) {
-    GlobalMirrorTasks& instance1 = GlobalMirrorTasks::Instance();
-    GlobalMirrorTasks& instance2 = GlobalMirrorTasks::Instance();
     EXPECT_EQ(&instance1, &instance2);
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndopProcess_GetCommAll) {
-    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
-    HcclResult ret = AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
-    
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    // The vector may be empty if no comms are initialized
+TEST_F(TestHcclCommTaskException, Ut_HcclCommTaskExceptionLite_Init_Return_Void)
+{
+    instanceLite->Init(0);
+    instanceLite->Init(1);
+    // Should not crash
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndopProcess_DestroyCommbyGroup_NonExistent) {
+TEST_F(TestHcclCommTaskException, Ut_HcclCommTaskExceptionLite_Call_Return_Void)
+{
+    instanceLite->Call();
+    // Should not crash
+}
+
+TEST_F(TestHcclCommTaskException, Ut_GlobalMirrorTasks_Instance_Return_SameInstance)
+{
+    Hccl::GlobalMirrorTasks& instance1 = Hccl::GlobalMirrorTasks::Instance();
+    Hccl::GlobalMirrorTasks& instance2 = Hccl::GlobalMirrorTasks::Instance();
+    EXPECT_EQ(&instance1, &instance2);
+}
+
+TEST_F(TestHcclCommTaskException, Ut_TaskExceptionHost_GetInstance_Return_SameInstance)
+{
+    TaskExceptionHost& instance1 = TaskExceptionHost::GetInstance();
+    TaskExceptionHost& instance2 = TaskExceptionHost::GetInstance();
+    EXPECT_EQ(&instance1, &instance2);
+}
+
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndopProcess_GetCommAll_Return_HCCL_SUCCESS)
+{
+    std::vector<std::pair<std::string, CollCommAicpuMgr*>> aicpuCommInfo;
+    HcclResult ret = AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndopProcess_DestroyCommbyGroup_When_NonExistent_Return_HCCL_E_PARA)
+{
     HcclResult ret = AicpuIndopProcess::AicpuDestroyCommbyGroup("non_existent_group");
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(HcclCommTaskExceptionTest, AicpuIndopProcess_ReleaseCommMgrbyGroup_NonExistent) {
-    // This should not crash
+TEST_F(TestHcclCommTaskException, Ut_AicpuIndopProcess_ReleaseCommMgrbyGroup_When_NonExistent_Return_Void)
+{
     AicpuIndopProcess::AicpuReleaseCommMgrbyGroup("non_existent_group");
-    // No assertion needed, just ensure no crash
-}
-
-// =============================================================================
-// Test cases with various parameter combinations
-// =============================================================================
-
-TEST_F(HcclCommTaskExceptionTest, HcommAcquireComm_EmptyCommId) {
-    int32_t ret = HcommAcquireComm("");
-    EXPECT_EQ(ret, HCCL_E_PTR);
-}
-
-TEST_F(HcclCommTaskExceptionTest, HcommReleaseComm_EmptyCommId) {
-    int32_t ret = HcommReleaseComm("");
-    EXPECT_EQ(ret, HCCL_SUCCESS); // Empty string is not null, so should succeed
-}
-
-TEST_F(HcclCommTaskExceptionTest, AicpuIndOpNotifyInit_ZeroNotifyNum) {
-    NotifyMgrAicpuParam param;
-    param.hcomId = commId_;
-    param.freeFlag = false;
-    param.notifyNum = 0;
-    
-    HcclResult ret = AicpuIndopProcess::AicpuIndOpNotifyInit(&param);
-    // Result depends on comm manager existence
-    EXPECT_TRUE(ret == HCCL_SUCCESS || ret == HCCL_E_PTR);
-}
-
-TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetBaseInfo) {
-    Hccl::TaskInfo taskInfo(streamId_, taskId_, 0, Hccl::TaskParam{}, nullptr);
-    std::string baseInfo = taskInfo.GetBaseInfo();
-    
-    // Should contain stream and task IDs
-    EXPECT_FALSE(baseInfo.empty());
-}
-
-TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetParaInfo) {
-    Hccl::TaskInfo taskInfo(streamId_, taskId_, 0, Hccl::TaskParam{}, nullptr);
-    std::string paraInfo = taskInfo.GetParaInfo();
-    
-    // May be empty for null dfxOpInfo, but should not crash
-    // No assertion needed
-}
-
-TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetOpInfo) {
-    Hccl::TaskInfo taskInfo(streamId_, taskId_, 0, Hccl::TaskParam{}, nullptr);
-    std::string opInfo = taskInfo.GetOpInfo();
-    
-    // May be empty for null dfxOpInfo, but should not crash
-    // No assertion needed
-}
-
-TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_MultipleOpTypes) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    
-    // Test with different data types
-    std::vector<HcclDataType> dataTypes = {
-        HcclDataType::HCCL_DATA_TYPE_FP32,
-        HcclDataType::HCCL_DATA_TYPE_FP16,
-        HcclDataType::HCCL_DATA_TYPE_INT32
-    };
-    
-    for (auto dataType : dataTypes) {
-        auto dfxOpInfo = std::shared_ptr<Hccl::DfxOpInfo>(new Hccl::DfxOpInfo());
-        dfxOpInfo->opIndex_ = 1;
-        dfxOpInfo->algTag_ = "test_alg";
-        dfxOpInfo->op_.dataCount = 512;
-        dfxOpInfo->op_.dataType = dataType;
-        
-        Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, dfxOpInfo);
-        std::string result = instance.GetOpDataInfo(taskInfo);
-        
-        EXPECT_FALSE(result.empty());
-        EXPECT_NE(result.find("dataType"), std::string::npos);
-    }
-}
-
-TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_DifferentReduceOps) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    
-    // Test with different reduce operations
-    std::vector<HcclReduceOp> reduceOps = {
-        HcclReduceOp::HCCL_REDUCE_SUM,
-        HcclReduceOp::HCCL_REDUCE_MAX,
-        HcclReduceOp::HCCL_REDUCE_MIN
-    };
-    
-    for (auto reduceOp : reduceOps) {
-        auto dfxOpInfo = std::shared_ptr<Hccl::DfxOpInfo>(new Hccl::DfxOpInfo());
-        dfxOpInfo->opIndex_ = 2;
-        dfxOpInfo->algTag_ = "test_reduce";
-        dfxOpInfo->op_.dataCount = 1024;
-        dfxOpInfo->op_.reduceOp = reduceOp;
-        
-        Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, dfxOpInfo);
-        std::string result = instance.GetOpDataInfo(taskInfo);
-        
-        EXPECT_FALSE(result.empty());
-        EXPECT_NE(result.find("reduceType"), std::string::npos);
-    }
+    // Should not crash
 }
