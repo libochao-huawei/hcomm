@@ -837,3 +837,32 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndMutiThread)
     }
     GlobalMockObject::verify();
 }
+
+TEST_F(MultiThreadNpuGpu, CreateQPWithAttrWithResvMem)
+{
+    QpConfigInfo qpConfig;
+    struct TypicalQp qpInfoTmp;
+    QpHandle qpHandle;
+    RdmaHandle rdmaHandle;
+
+    qpConfig.rq_depth = 128;
+    qpConfig.sq_depth = 128;
+    qpConfig.scq_depth = 128;
+    qpConfig.rcq_depth = 128;
+    EXPECT_EQ(CreateQpWithDepthConfig(rdmaHandle, OPBASE_QP_MODE, qpConfig, qpHandle, qpInfoTmp), HCCL_E_NOT_SUPPORT);
+
+    MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
+    EXPECT_EQ(hrtSetDevice(0), HCCL_SUCCESS);
+    EXPECT_EQ(hcclAscendRdmaInit(), HCCL_SUCCESS);
+    AscendQPInfo localQPInfo;
+    localQPInfo.qpn = 1;
+    localQPInfo.rq_depth = 128;
+    localQPInfo.sq_depth = 128;
+    localQPInfo.scq_depth = 128;
+    localQPInfo.rcq_depth = 128;
+    EXPECT_EQ(hcclCreateAscendQPWithAttr(&localQPInfo), HCCL_E_INTERNAL);
+
+    EXPECT_EQ(hcclAscendRdmaDeInit(), HCCL_SUCCESS);
+    EXPECT_EQ(hrtResetDevice(0), HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
