@@ -136,22 +136,27 @@ HcclResult HcclCommunicator::GetRankSize(uint32_t *rankSize)
 HcclResult HcclCommunicator::HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
 {
     auto commImpl = GetCommImpl();
-    if (commImpl == nullptr) {
-        HCCL_ERROR("[GetFoldParamsFromOrionToHcomm] commImpl is null");
-        return HCCL_E_PTR;
+    if (UNLIKELY(commImpl == nullptr)) {
+        HCCL_ERROR("[HcclCommunicator][%s] commImpl is null.", __func__);
+        return HcclResult::HCCL_E_PTR;
     }
-    shared_ptr<DevBuffer> hcclBuffer = commImpl->GetCclBuffer();
-     if (hcclBuffer == nullptr) {
+
+    // GetCclBuffer接口不合理，应返回裸指针
+    // 本次性能整改暂时最小化修改，避免重复分配内存和拷贝
+    const auto &hcclBuffer = commImpl->GetCclBuffer();
+    if (UNLIKELY(hcclBuffer == nullptr)) {
         cclBufferSize = 0;
         cclBufferAddr = 0;
         cclBufferMemType = HcclMemType::HCCL_MEM_TYPE_DEVICE;
-    } else {
-        cclBufferSize = commImpl->GetBufferSize();
-        cclBufferAddr = hcclBuffer->GetAddr();
-        cclBufferMemType = hcclBuffer->GetMemType();
+        return HcclResult::HCCL_SUCCESS;
     }
+
+    cclBufferSize = commImpl->GetBufferSize();
+    cclBufferAddr = hcclBuffer->GetAddr();
+    cclBufferMemType = hcclBuffer->GetMemType();
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommunicator::GetRankId(uint32_t &rankId)
 {
     rankId = pimpl->GetMyRank();

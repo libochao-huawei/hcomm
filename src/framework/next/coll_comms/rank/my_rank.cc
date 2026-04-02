@@ -510,6 +510,10 @@ std::vector<ChannelHandle> MyRank::GetAllChannelList()
 void MyRank::SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 
         std::shared_ptr<HDCommunicate> kfcStatusTransferD2H)
 {
+    if (nsRecoveryProcessor_ == nullptr) {
+        HCCL_ERROR("[MyRank][SetKfcControlTransfer] nsRecoveryProcessor_ is null, cannot set KFC control transfer.");
+        return;
+    }
     nsRecoveryProcessor_->SetKfcControlTransfer(kfcControlTransferH2D, kfcStatusTransferD2H);
 }
 
