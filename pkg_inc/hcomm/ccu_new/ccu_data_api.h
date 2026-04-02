@@ -19,6 +19,11 @@
 #include "ccu_data_resource.h"
 
 #ifdef __cplusplus
+#include "ccu_loop_macro.h"
+class CcuVariable;
+#endif
+
+#ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
@@ -36,6 +41,257 @@ extern "C" {
  */
 
 extern CcuResult CcuVariableCreate(CcuVariable* variable);
+extern CcuResult CcuAddressCreate(CcuAddress* address);
+//支持从SQE加载参数
+extern CcuResult CcuLoadArg(CcuVariable variable);
+
+
+extern CcuResult CcuIfBegin(CcuVariable *var, uint64_t immediate,
+    CcuConditionType condType, const char *label);
+
+extern CcuResult CcuIfElse(const char *label);
+
+extern CcuResult CcuIfEnd(const char *label);
+
+extern CcuResult CcuWhileBegin(CcuVariable *var, uint64_t immediate,
+    CcuConditionType condType, const char *label);
+
+extern CcuResult CcuWhileEnd(const char *label);
+
+extern CcuResult CcuDoWhileBegin(const char *label);
+
+extern CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
+    CcuConditionType condType, const char *label);
+
+/* ---------------------------------------------------------------------------
+ * Macro wrappers for structured control flow
+ * ---------------------------------------------------------------------------
+ *
+ * Condition expressions use C++ operator overloads on CcuVariable:
+ *
+ *   counter != limit   →  CcuCondExpr{&counter, limit, CCU_CONDITION_NE}
+ *   var == expected     →  CcuCondExpr{&var, expected, CCU_CONDITION_EQ}
+ *
+ * CCU_WHILE — single brace block, label auto-generated:
+ *
+ *   CCU_WHILE(counter != limit) {
+ *       accumulator = accumulator + step;
+ *       counter = counter + one;
+ *   }
+ *
+ * CCU_DO_WHILE — body executes at least once, then condition is checked:
+ *
+ *   CCU_DO_WHILE(counter != limit) {
+ *       accumulator = accumulator + step;
+ *       counter = counter + one;
+ *   }
+ *
+ * CCU_IF / CCU_ELSE — label auto-generated, passed via TLS stack:
+ *
+ *   CCU_IF(var == expected) {
+ *       // then-block
+ *   } CCU_ELSE {
+ *       // else-block
+ *   }
+ *
+ * CCU_IF_ONLY — if-without-else, self-closing (no CCU_ELSE needed):
+ *
+ *   CCU_IF_ONLY(var == expected) {
+ *       // then-block
+ *   }
+ * --------------------------------------------------------------------------- */
+
+#define CCU_CONCAT_INNER(a, b) a##b
+#define CCU_CONCAT(a, b)       CCU_CONCAT_INNER(a, b)
+#define CCU_STRINGIFY_INNER(x) #x
+#define CCU_STRINGIFY(x)       CCU_STRINGIFY_INNER(x)
+
+/**
+ * CCU_WHILE — wraps CcuWhileBegin / CcuWhileEnd around a brace block.
+ * Accepts a CcuCondExpr produced by operator== / operator!= on CcuVariable.
+ * Label is auto-generated via __COUNTER__ so the user never sees it.
+ */
+#define CCU_WHILE(expr)                                                     \
+    CCU_WHILE_EXPAND(expr, CCU_CONCAT(__ccu_wh_, __COUNTER__))
+
+#define CCU_WHILE_EXPAND(expr, uid)                                         \
+    CCU_WHILE_IMPL(expr, uid)
+
+#define CCU_WHILE_IMPL(expr, uid)                                           \
+    for (CcuCondExpr uid##_ce = (expr),                                     \
+             *uid##_p = &uid##_ce;                                          \
+         uid##_p != nullptr;                                                \
+         uid##_p = nullptr)                                                 \
+    for (int uid##_rc = (int)CcuWhileBegin(uid##_ce.var, uid##_ce.imm,      \
+                 uid##_ce.cond, CCU_STRINGIFY(uid)),                         \
+             uid##_done = 0;                                                \
+         uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
+         uid##_done = 1,                                                    \
+             uid##_rc = (int)CcuWhileEnd(CCU_STRINGIFY(uid)))
+
+/**
+ * CCU_IF / CCU_ELSE — label is auto-generated and passed between the two
+ * macros via CcuIfLabelStack (thread-local). CCU_IF pushes the label;
+ * CCU_ELSE pops it.
+ *
+ *   CCU_IF(var == expected) { ... } CCU_ELSE { ... }
+ */
+#define CCU_IF(expr)                                                        \
+    CCU_IF_EXPAND(expr, CCU_CONCAT(__ccu_if_, __COUNTER__))
+
+#define CCU_IF_EXPAND(expr, uid)                                            \
+    CCU_IF_IMPL(expr, uid)
+
+#define CCU_IF_IMPL(expr, uid)                                              \
+    for (CcuCondExpr uid##_ce = (expr),                                     \
+             *uid##_p = &uid##_ce;                                          \
+         uid##_p != nullptr;                                                \
+         uid##_p = nullptr)                                                 \
+    for (int uid##_push = (CcuIfLabelStack::Push(CCU_STRINGIFY(uid)), 0),   \
+             uid##_rc = (int)CcuIfBegin(uid##_ce.var, uid##_ce.imm,         \
+                 uid##_ce.cond, CCU_STRINGIFY(uid));                        \
+         uid##_rc == (int)CCU_SUCCESS && uid##_push == 0;                   \
+         uid##_push = 1)
+
+#define CCU_ELSE                                                            \
+    CCU_ELSE_EXPAND(CCU_CONCAT(__ccu_el_, __COUNTER__))
+
+#define CCU_ELSE_EXPAND(uid)                                                \
+    CCU_ELSE_IMPL(uid)
+
+#define CCU_ELSE_IMPL(uid)                                                  \
+    for (const char *uid##_lbl = CcuIfLabelStack::Pop(),                    \
+             *uid##_end = uid##_lbl;                                        \
+         uid##_end != nullptr;                                              \
+         uid##_end = nullptr)                                               \
+    for (int uid##_rc = (int)CcuIfElse(uid##_lbl),                          \
+             uid##_done = 0;                                                \
+         uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
+         uid##_done = 1,                                                    \
+             uid##_rc = (int)CcuIfEnd(uid##_lbl))
+
+/**
+ * CCU_IF_ONLY — if-without-else, self-closing. Wraps CcuIfBegin, the user
+ * body, CcuIfElse, and CcuIfEnd in a single macro expansion. No CCU_ELSE
+ * is needed.
+ *
+ *   CCU_IF_ONLY(var == expected) { ... }
+ */
+#define CCU_IF_ONLY(expr)                                                   \
+    CCU_IF_ONLY_EXPAND(expr, CCU_CONCAT(__ccu_io_, __COUNTER__))
+
+#define CCU_IF_ONLY_EXPAND(expr, uid)                                       \
+    CCU_IF_ONLY_IMPL(expr, uid)
+
+#define CCU_IF_ONLY_IMPL(expr, uid)                                         \
+    for (CcuCondExpr uid##_ce = (expr),                                     \
+             *uid##_p = &uid##_ce;                                          \
+         uid##_p != nullptr;                                                \
+         uid##_p = nullptr)                                                 \
+    for (int uid##_rc = (int)CcuIfBegin(uid##_ce.var, uid##_ce.imm,         \
+                 uid##_ce.cond, CCU_STRINGIFY(uid)),                         \
+             uid##_done = 0;                                                \
+         uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
+         uid##_done = 1,                                                    \
+             uid##_rc = ((int)CcuIfElse(CCU_STRINGIFY(uid)),                \
+                 (int)CcuIfEnd(CCU_STRINGIFY(uid))))
+
+/**
+ * CCU_DO_WHILE — wraps CcuDoWhileBegin / CcuDoWhileEnd around a brace block.
+ * Accepts a CcuCondExpr. The body is always executed once, then the condition
+ * is checked to decide whether to loop back.
+ * Label is auto-generated via __COUNTER__.
+ */
+#define CCU_DO_WHILE(expr)                                                  \
+    CCU_DO_WHILE_EXPAND(expr, CCU_CONCAT(__ccu_dw_, __COUNTER__))
+
+#define CCU_DO_WHILE_EXPAND(expr, uid)                                      \
+    CCU_DO_WHILE_IMPL(expr, uid)
+
+#define CCU_DO_WHILE_IMPL(expr, uid)                                        \
+    for (CcuCondExpr uid##_ce = (expr),                                     \
+             *uid##_p = &uid##_ce;                                          \
+         uid##_p != nullptr;                                                \
+         uid##_p = nullptr)                                                 \
+    for (int uid##_rc = (int)CcuDoWhileBegin(CCU_STRINGIFY(uid)),           \
+             uid##_done = 0;                                                \
+         uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
+         uid##_done = 1,                                                    \
+             uid##_rc = (int)CcuDoWhileEnd(uid##_ce.var, uid##_ce.imm,      \
+                 uid##_ce.cond, CCU_STRINGIFY(uid)))
+
+//支持从外部存储器中加载num个数据至寄存器中
+extern CcuResult CcuContinuousVariableCreate(CcuVariable* variables, uint32_t num);
+extern CcuResult CcuLoad(uint64_t addr, CcuVariable variable, uint32_t num);
+
+//支持Event的创建，记录和等待
+extern CcuResult CcuCompletedEventCreate(CcuEvent* event);
+extern CcuResult CcuBlockCompletedEventCreate(CcuEvent* events, uint32_t num);
+extern CcuResult CcuRecordEvent(CcuEvent event);
+extern CcuResult CcuWaitEvent(CcuEvent event);
+
+// CcuBuf 创建
+extern CcuResult CcuBufferCreate(CcuBuffer* buffer);
+
+// 批量创建（block 模式）
+extern CcuResult CcuBlockBufferCreate(CcuBuffer* buffers, uint32_t count);
+
+// LocalAddr / RemoteAddr 创建
+extern CcuResult CcuLocalAddrCreate(CcuLocalAddr* localAddr);
+extern CcuResult CcuRemoteAddrCreate(CcuRemoteAddr* remoteAddr);
+
+// LocalAddr → Buffer（读入 Buffer）
+extern CcuResult CcuLocalCopyHBMToBuffer(
+    CcuBuffer dstBuffer, CcuLocalAddr src,
+    CcuVariable len, CcuEvent event);
+// Buffer → LocalAddr
+extern CcuResult CcuLocalCopyBufferToHBM(
+    CcuLocalAddr dst, CcuBuffer srcBuffer,
+    CcuVariable len, CcuEvent event);
+// LocalAddr → LocalAddr
+extern CcuResult CcuLocalCopyHBMToHBM(
+    CcuLocalAddr dst, CcuLocalAddr src,
+    CcuVariable len, CcuEvent event);
+/*========== 本地 Reduce ==========*/
+
+// LocalAddr → LocalAddr Reduce
+extern CcuResult CcuLocalHBMReduce(
+    CcuLocalAddr dst, CcuLocalAddr src,
+    CcuVariable len, HcclDataType dataType,
+    HcclReduceOp opType, CcuEvent event);
+
+// 多 Buffer Reduce
+extern CcuResult CcuLocalBufferReduce(
+    CcuBuffer* buffers, uint32_t count,
+    HcclDataType dataType, HcclDataType outputDataType,
+    HcclReduceOp opType,
+    CcuVariable len, CcuEvent event);
+
+/*========== 远端数据传输操作 ==========*/
+extern CcuResult CcuReadHBMToHBM(
+    ChannelHandle channel, CcuLocalAddr local, CcuRemoteAddr remote,
+    CcuVariable len, CcuEvent event);
+extern CcuResult CcuReadHBMToBuffer(
+    ChannelHandle channel, CcuBuffer local, CcuRemoteAddr remote,
+    CcuVariable len, CcuEvent event);
+extern CcuResult CcuReadHBMToHBMReduce(
+    ChannelHandle channel, CcuLocalAddr local, CcuRemoteAddr remote,
+    CcuVariable len, HcclDataType dataType,
+    HcclReduceOp opType, CcuEvent event);
+extern CcuResult CcuWriteHBMToHBM(
+    ChannelHandle channel, CcuRemoteAddr remote,CcuLocalAddr local, 
+    CcuVariable len, CcuEvent event);
+extern CcuResult CcuWriteBufferToHBM(
+    ChannelHandle channel, CcuRemoteAddr remote, CcuBuffer local,
+    CcuVariable len, CcuEvent event);
+extern CcuResult CcuWriteHBMToHBMReduce(
+    ChannelHandle channel, CcuRemoteAddr remote, CcuLocalAddr local,
+    CcuVariable len, HcclDataType dataType,
+    HcclReduceOp opType, CcuEvent event);
+
+/*========== 远端同步操作 ==========*/
+extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
 /**
  * @brief 远端同步操作
@@ -56,6 +312,37 @@ extern CcuResult CcuVariableCreate(CcuVariable* variable);
  * @warning
  */
 // extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
+
+// Variable 赋值与运算
+extern CcuResult CcuVariableAssign(CcuVariable var, uint64_t immediate);
+extern CcuResult CcuVariableAssignVar(CcuVariable dst, CcuVariable src);
+extern CcuResult CcuVariableAddVarToVar(CcuVariable result, CcuVariable a, CcuVariable b);
+
+// Event mask
+extern CcuResult CcuSetEventMask(CcuEvent event, uint32_t mask);
+
+// Address 赋值与运算
+extern CcuResult CcuAddressAssignImm(CcuAddress addr, uint64_t immediate);
+extern CcuResult CcuAddressAssignVar(CcuAddress addr, CcuVariable var);
+extern CcuResult CcuAddressAssignAddr(CcuAddress dst, CcuAddress src);
+extern CcuResult CcuAddressAddAddrToAddr(CcuAddress result, CcuAddress a, CcuAddress b);
+extern CcuResult CcuAddressAddVarToAddr(CcuAddress result, CcuAddress addr, CcuVariable var);
+extern CcuResult CcuAddressAddAssignVar(CcuAddress addr, CcuVariable var);
+
+// Loop
+extern CcuResult CcuLoopCreate(CcuLoopHandle *loop);
+extern CcuResult _CcuLoopBodyEnter(CcuLoopHandle loop);
+extern CcuResult _CcuLoopBodyExit(CcuLoopHandle loop);
+extern CcuResult CcuLoopSetParam(CcuLoopHandle loop,
+    CcuVariable *formalParam, CcuVariable *actualParam);
+extern CcuResult CcuLoopGroupCreate(CcuLoopGroupHandle *group,
+    const CcuLoopGroupConfig *config);
+extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroupHandle *group,
+    CcuVariable *parallelVar, CcuVariable *offsetVar);
+extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroupHandle group,
+    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll);
+extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
+    CcuLoopHandle loop, CcuVariable *loopParamVar, bool isUnroll);
 
 #ifdef __cplusplus
 }

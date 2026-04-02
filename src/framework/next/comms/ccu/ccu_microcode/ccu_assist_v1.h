@@ -26,6 +26,8 @@ uint16_t    GetUBReduceType(Hccl::ReduceOp reduceOp);
 uint16_t    GetUBDataType(Hccl::DataType dataType);
 
 uint64_t GetLoopParam(uint64_t loopCtxId, uint64_t gsaOffset, uint64_t loopIterNum);
+uint64_t GetParallelParam(uint64_t repeatNum, uint64_t repeatLoopIndex, uint64_t totalLoopNum);
+uint64_t GetOffsetParam(uint64_t gsaOffset, uint64_t msOffset, uint64_t ckeOffset);
 
 }; // namespace CcuRep
 }; // namespace hcomm
