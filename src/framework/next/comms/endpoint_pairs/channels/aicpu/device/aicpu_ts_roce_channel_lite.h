@@ -44,6 +44,7 @@ private:
     std::unique_ptr<RmaBufferLite> notifyValueBuffer_{};
 
     RmaBufSliceLite GetRmaBufSlicelite(const RmaBufferLite &lite) const;
+    RmaBufSliceLite GetLocNotifySliceLite(u32 index) const;
     RmtRmaBufSliceLite GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const;
     RmtRmaBufSliceLite GetRmtNotifySliceLite(u32 index) const;
 
@@ -72,6 +73,8 @@ private:
 
     // rtsq Notify Wait
     void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId);
+
+    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const;
 };
 
 } // namespace Hccl

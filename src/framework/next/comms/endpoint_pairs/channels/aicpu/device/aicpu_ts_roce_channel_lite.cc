@@ -186,6 +186,13 @@ RmaBufSliceLite AicpuTsRoceChannelLite::GetRmaBufSlicelite(const RmaBufferLite &
     return RmaBufSliceLite(lite.GetAddr(), lite.GetSize(), lite.GetLkey(), 0);
 }
 
+RmaBufSliceLite AicpuTsRoceChannelLite::GetLocNotifySliceLite(u32 index) const
+{
+    // rdma conn lite 不关心tokenId , tokenId 设定为0
+    return RmaBufSliceLite(
+            notifyValueBuffer_->GetAddr(), notifyValueBuffer_->GetSize(), notifyValueBuffer_->GetLkey(), 0);
+}
+
 RmtRmaBufSliceLite AicpuTsRoceChannelLite::GetRmtRmaBufSliceLite(const RmtRmaBufferLite &lite) const
 {
     // rdma conn lite 不关心tokenId , tokenId 设定为0
@@ -242,6 +249,36 @@ std::string AicpuTsRoceChannelLite::Describe() const
     return desc;
 }
 
+HcclResult AicpuTsRoceChannelLite::BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) const
+{
+    HCCL_INFO("[AicpuTsRoceChannelLite::%s] start to find addr[0x%llx], size[0x%llx] in locBufferVec, whose size is %zu. ",
+        __func__, addr, size, locBufferVec_.size());
+    
+    if (locBufferVec_.empty()) {
+        HCCL_ERROR("[AicpuTsRoceChannelLite::%s] locBufferVec is empty.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    bool isAddrInRange = false;
+    for (auto &it : locBufferVec_) {
+        Buffer iterBuf(it.GetAddr(), it.GetSize());
+        if (iterBuf.Contains(addr, size)) {
+            rmaBufferLite = RmaBufferLite(addr, size, it.GetLkey());
+            isAddrInRange = true;
+            break;
+        }
+    }
+
+    if (!isAddrInRange) {
+        HCCL_WARNING("[AicpuTsRoceChannelLite::%s] addr[0x%llx], size[0x%llx] not in any range of locBufferVec. The token of the first locBuffer is used.",
+            __func__, addr, size);
+        rmaBufferLite = RmaBufferLite(addr, size, locBufferVec_[0].GetLkey());
+        return HCCL_SUCCESS;
+    }
+
+    return HCCL_SUCCESS;
+}
+
 // 下发Rtsq sqe, 敲DB
 void AicpuTsRoceChannelLite::BuildRdmaDbSendTask(const StreamLite &stream, u64 remoteAddr, u64 dbValue)
 {
@@ -254,7 +291,8 @@ void AicpuTsRoceChannelLite::BuildNotifyWaitTask(const StreamLite &stream, u32 n
     stream.GetRtsq()->NotifyWait(notifyId);
 }
 
-void AicpuTsRoceChannelLite::Write(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const StreamLite &stream) {
+void AicpuTsRoceChannelLite::Write(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const StreamLite &stream)
+{
     // Post Wqe && return dbValue
     u64 dbAddr = 0;
     u64 dbValue = 0;
@@ -265,7 +303,8 @@ void AicpuTsRoceChannelLite::Write(const RmaBufferLite &loc, const RmtRmaBufferL
     BuildRdmaDbSendTask(stream, dbAddr, dbValue);
 }
 
-void AicpuTsRoceChannelLite::WriteWithNotify(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const uint32_t remoteNotifyIdx, const StreamLite &stream) {
+void AicpuTsRoceChannelLite::WriteWithNotify(const RmaBufferLite &loc, const RmtRmaBufferLite &rmt, const uint32_t remoteNotifyIdx, const StreamLite &stream)
+{
     // Post Wqe && return dbValue
     u64 dbAddr = 0;
     u64 dbValue = 0;
@@ -273,13 +312,14 @@ void AicpuTsRoceChannelLite::WriteWithNotify(const RmaBufferLite &loc, const Rmt
     // TODO 此处localNotify获取接口未添加？
     connVec_[0]->WriteWithNotify(
         GetRmaBufSlicelite(loc), GetRmtRmaBufSliceLite(rmt),
-        GetRmaBufSlicelite(loc), GetRmtNotifySliceLite(remoteNotifyIdx), dbAddr, dbValue);
+        GetLocNotifySliceLite(remoteNotifyIdx), GetRmtNotifySliceLite(remoteNotifyIdx), dbAddr, dbValue);
 
     // Ring Doorbell
     BuildRdmaDbSendTask(stream, dbAddr, dbValue);
 }
 
-void AicpuTsRoceChannelLite::NotifyWait(const uint32_t index, const StreamLite &stream) {
+void AicpuTsRoceChannelLite::NotifyWait(const uint32_t index, const StreamLite &stream)
+{
     auto notifyId = localNotifies_[index]->GetId();
     BuildNotifyWaitTask(stream, notifyId);
 }
