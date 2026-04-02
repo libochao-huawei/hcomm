@@ -12,5 +12,10 @@
 #define CCU_DATA_RESOUCE_H
 
 #include "ccu_variable.hpp"
+#include "ccu_address.hpp"
+#include "ccu_event.hpp"
+#include "ccu_buffer.hpp"
+#include "ccu_local_addr.hpp"
+#include "ccu_remote_addr.hpp"
 
 #endif // CCU_DATA_RESOUCE_H

@@ -10,49 +10,41 @@
 
 #ifndef CCU_EVENT_HPP
 #define CCU_EVENT_HPP
- 
+
 #include <cstdint>
 #include <type_traits>
- 
+
 #include "ccu_types.h"
-#include "ccu_data_api_impl.h"
 
- class CcuEvent;
- 
- class CcuEventMask {
- public:
-     explicit CcuEventMask(CcuEventHandle* owner) : ownerHandle_(owner) {}
-     void operator=(uint32_t newMask) const{
-        auto ret = CcuSetMask(*ownerHandle_, newMask);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
-    }
- private:
-     CcuEventHandle* ownerHandle_;
- };
- 
- class CcuEvent final {
- public:
-     explicit CcuEvent() : mask(&handle) {}
- 
-     CcuEvent(const CcuEvent& other) : handle(other.handle), mask(&handle) {}
- 
-     void operator=(CcuEvent&& other) {
-         this->handle = other.handle;
-     }
- 
-     void setMask(uint32_t mask) const {
-        auto ret = CcuSetMask(this->handle, mask);
-        if (ret != CcuResult::CCU_SUCCESS) {
-            throw "todo: failed";
-        }
-    }
- 
-     CcuEventHandle handle{0};
-     CcuEventMask mask;
- };
+class CcuEvent final {
+public:
+    explicit CcuEvent() {}
 
- 
- #endif // CCU_EVENT_HPP
- 
+    CcuEvent(const CcuEvent& other) {
+        this->handle = other.handle;
+    }
+
+    void operator=(CcuEvent&& other) {
+        this->handle = other.handle;
+    }
+
+    void setMask(uint32_t mask) const;
+
+    CcuEventHandle handle{0};
+};
+
+static_assert(std::is_standard_layout<CcuEvent>::value,
+    "CcuEvent must be standard layout for .so ABI stability");
+static_assert(sizeof(CcuEvent) == sizeof(CcuEventHandle),
+    "CcuEvent layout changed - will break .so ABI!");
+
+extern "C" CcuResult CcuSetEventMask(CcuEvent event, uint32_t mask);
+
+inline void CcuEvent::setMask(uint32_t mask) const {
+    auto ret = CcuSetEventMask(*this, mask);
+    if (ret != CcuResult::CCU_SUCCESS) {
+        throw "todo: failed";
+    }
+}
+
+#endif // CCU_EVENT_HPP
