@@ -293,6 +293,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
 
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
@@ -307,10 +309,13 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/ccu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aiv/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_kernel/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_representation/reps/arithmetic/
 )
 
 add_subdirectory(stub)
 add_subdirectory(framework/next)
+add_subdirectory(framework/next/coll_comms/dfx)
 add_subdirectory(framework/next/comms/ccu)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)

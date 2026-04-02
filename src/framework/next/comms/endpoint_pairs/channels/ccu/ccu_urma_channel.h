@@ -47,6 +47,9 @@ public:
 
     HcclResult GetRmtBuffer(uint64_t &addr, uint32_t &size,
         uint32_t &tokenId, uint32_t &tokenValue) const;
+    
+    EndpointHandle GetlocEndPointHandle() { return locEndpointHandle_; }
+    HcommChannelDesc GetChannelDesc() { return channelDesc_; }
 
 private:
     std::unique_ptr<CcuTransport> impl_{nullptr};
