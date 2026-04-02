@@ -996,6 +996,10 @@ HcclResult UbMemTransport::CheckSocketStatus()
 
 HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp)
 {
+    if (bufferVecTemp.size() == 0) {
+        HCCL_WARNING("[UbMemTransport][UpdateMemInfo] bufferNum is 0.");
+        return HCCL_SUCCESS;
+    }
     CHK_RET(FillTagVec(bufferVecTemp, locMemTagTemp_));
     HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
     sendData.clear();

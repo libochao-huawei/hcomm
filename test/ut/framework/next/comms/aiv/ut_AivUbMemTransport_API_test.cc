@@ -67,14 +67,14 @@ public:
     }
 
     std::unique_ptr<Hccl::Serializable> GetExchangeDto() override {
-        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset, mockPid);
+        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_);
     }
 
     u64 mockAddr_{0};
     u64 mockSize_{0};
     u64 mockOffset_{0};
     u32 mockPid_{0};
-}
+};
 
 TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
@@ -123,7 +123,7 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     HcommChannelDesc desc{};
     auto aivTransport = std::make_shared<hcomm::AivUbMemTransport>(fakeSocket, desc);
     auto initBuffer = std::make_shared<Hccl::Buffer>(0x100, 0x100);
-    auto initMockBuffer = std::make_share<LocalRmaBufferStub>(InitBuffer, 0x100, 0x100, 0, 100);
+    auto initMockBuffer = std::make_shared<LocalRmaBufferStub>(initBuffer, 0x100, 0x100, 0, 100);
     aivTransport->localRmaBufferVec_.push_back(reinterpret_cast<Hccl::LocalIpcRmaBuffer*>(initMockBuffer.get()));
 
     std::array<char, HCCL_RES_TAG_MAX_LEN> initTag{};
@@ -135,9 +135,9 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     size_t initialTagSize = aivTransport->localUserMemTag_.size();
 
     auto buffer1 = std::make_shared<Hccl::Buffer>(0x1000, 0x1000);
-    auto mockBuffer1 = std::make_share<LocalRmaBufferStub>(buffer1, 0x1000, 0x1000, 0, 1000);
+    auto mockBuffer1 = std::make_shared<LocalRmaBufferStub>(buffer1, 0x1000, 0x1000, 0, 1000);
     auto buffer2 = std::make_shared<Hccl::Buffer>(0x2000, 0x2000);
-    auto mockBuffer2 = std::make_share<LocalRmaBufferStub>(buffer2, 0x2000, 0x2000, 0, 2000);
+    auto mockBuffer2 = std::make_shared<LocalRmaBufferStub>(buffer2, 0x2000, 0x2000, 0, 2000);
 
     hcomm::RegedMemMgr::CommMemInfo memInfo1{};
     memInfo1.bufferHandle = reinterpret_cast<void*>(mockBuffer1.get());
@@ -167,14 +167,14 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTime
     HcommChannelDesc desc{};
     auto aivTransport = std::make_shared<hcomm::AivUbMemTransport>(fakeSocket, desc);
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000, 0x1000);
-    auto mockBuffer = std::make_share<LocalRmaBufferStub>(buffer, 0x1000, 0x1000, 0, 1000);
+    auto mockBuffer = std::make_shared<LocalRmaBufferStub>(buffer, 0x1000, 0x1000, 0, 1000);
     hcomm::RegedMemMgr::CommMemInfo memInfo{};
     memInfo.bufferHandle = reinterpret_cast<void*>(mockBuffer.get());
     memInfo.memTag = "testBuffer";
     void* memHandles[1] = { &memInfo };
 
-    Hccl::SocketStatus fakeStatus = Hccl::SocketStatus::TIMEOUT;
-    MOCER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(fakeStatus));
+    Hccl::SocketStatus fakeSocketStatus = Hccl::SocketStatus::TIMEOUT;
+    MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 1);
     EXPECT_EQ(ret, HCCL_E_TIMEOUT);
 }

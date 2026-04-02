@@ -863,3 +863,20 @@ TEST_F(UbMemTransportTest, ut_UbMemTransport_UpdateMemInfo_When_SocketTimeout_Ex
     HcclResult ret = transport.UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
+
+TEST_F(UbMemTransportTest, ut_UbMemTransport_UpdateMemInfo_When_bufferNumIs0_Expect_ReturnIsHCCL_SUCCESS)
+{
+    BaseMemTransport::CommonLocRes    locRes;
+    BaseMemTransport::Attribution     attr;
+    BaseMemTransport::LocCntNotifyRes locCntRes;
+    LinkData                          link(BasePortType(PortDeploymentType::DEV_NET), 0, 1, 0, 1);
+    void                             *rdmaHandle = (void *)0x100;
+    IpAddress                         ipAddress("1.0.0.0");
+    Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+
+    UbMemTransport transport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
+    std::vector<LocalRmaBuffer *> bufferVecTemp{};
+
+    HcclResult ret = transport.UpdateMemInfo(bufferVecTemp);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

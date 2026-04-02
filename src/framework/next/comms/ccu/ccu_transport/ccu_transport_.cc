@@ -668,6 +668,10 @@ HcclResult CcuTransport::CheckSocketStatus()
 
 HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp)
 {
+    if (bufferVecTemp.size() == 0) {
+        HCCL_WARNING("[CcuTransport][UpdateMemInfo] bufferNum is 0.");
+        return HCCL_SUCCESS;
+    }
     HCCL_INFO("[CcuTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
     sendData_.clear();
     Hccl::BinaryStream sendStream;
