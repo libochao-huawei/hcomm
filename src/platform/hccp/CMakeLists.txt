@@ -7,6 +7,23 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+include(version/add_version.cmake)
+set(PROJECT_TYPE HCOMM_PROJECT)
+set(HCCP_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT DEVICE_MODE)
+    set(RUN_TYPE HCOMM_HOST)
+elseif(USE_ALOG STREQUAL "1")
+    set(RUN_TYPE HCOMM_HCCD)
+else()
+    set(RUN_TYPE HCOMM_DEVICE)
+endif()
+
+if(DEFINED CANN_VERSION_hcomm_VERSION)
+    set(BUILD_VERSION ${CANN_VERSION_hcomm_VERSION})
+else()
+    set(BUILD_VERSION UNKBOWN)
+endif()
+message(STATUS "BUILDING ${RUN_TYPE}, VERSIONG:${CANN_VERSION_hcomm_VERSION}")
 
 if (DEVICE_MODE)
     add_subdirectory(stub_tsd)
@@ -19,17 +36,18 @@ if (NOT DEVICE_MODE)
     return()
 endif()
 
-add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
+add_executable(hccp_service.bin
+    hccp_service/main.c
+    hccp_service/param.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/ascend_hal_dl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/dl_hal_function.c
 )
 
+binary_add_version(hccp_service.bin)
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
-    ${RDMA_CORE_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/inc/network
@@ -40,8 +58,10 @@ target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/hdc
     ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
+    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 if(NOT BUILD_OPEN_PROJECT)
@@ -71,7 +91,6 @@ target_link_options(hccp_service.bin PRIVATE
 target_compile_definitions(hccp_service.bin PRIVATE
     google=ascend_private
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_CGROUP>
-    LOG_CPP
 )
 
 target_link_libraries(hccp_service.bin PRIVATE

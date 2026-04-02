@@ -49,39 +49,33 @@ set(rs_list
 
 add_library(rs  SHARED ${rs_list})
 
+binary_add_version(rs)
+
 target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc/network
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc/private/network
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctx
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
     ${TLV_DIR}
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-    # runtime头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
-
-    # 第三方库依赖路径
-    ${OPENSSL_INCLUDE_DIR}
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
     ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/include/kms
-
-    # rdma头文件
+    ${OPENSSL_INCLUDE_DIR}
     ${RDMA_CORE_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/nda
-
-    # HCCP Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/ctx
-    ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
     ${URMA_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
 
 if(NOT BUILD_OPEN_PROJECT)
@@ -111,7 +105,6 @@ target_link_options(rs PRIVATE
 )
 
 target_compile_definitions(rs PRIVATE
-    LOG_CPP
     $<$<STREQUAL:${PRODUCT_SIDE},host>:LOG_HOST>
     $<$<AND:$<STREQUAL:${USE_ALOG},0>,$<STREQUAL:${PRODUCT_SIDE},device>>:CUSTOM_INTERFACE>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:google=ascend_private>
