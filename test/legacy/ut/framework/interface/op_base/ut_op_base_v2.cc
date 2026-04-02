@@ -199,6 +199,7 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2)
 
     u32 itemNum = 10;
     unique_ptr<HcclSendRecvItem> sendRecvInfo = make_unique<HcclSendRecvItem>();
+    sendRecvInfo->count = 0;
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclBatchSendRecvV2(sendRecvInfo.get(), itemNum, comm, stream);
@@ -219,6 +220,7 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2_With_Log)
 
     u32 itemNum = 10;
     unique_ptr<HcclSendRecvItem> sendRecvInfo = make_unique<HcclSendRecvItem>();
+    sendRecvInfo->count = 0;
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclBatchSendRecvV2(sendRecvInfo.get(), itemNum, comm, stream);
