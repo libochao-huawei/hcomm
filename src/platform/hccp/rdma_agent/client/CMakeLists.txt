@@ -26,7 +26,7 @@ set(ra_list
 )
 
 add_library(ra  SHARED ${ra_list})
-
+binary_add_version(ra)
 target_include_directories(ra PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
@@ -37,22 +37,15 @@ target_include_directories(ra PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../peer
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
-
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+    ${CMAKE_CURRENT_SOURCE_DIR}/async
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-
-    # runtime头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
-
-    # rdma头文件
-    ${RDMA_CORE_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-
-    # HCCP Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/async
+    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 if(NOT BUILD_OPEN_PROJECT)
@@ -85,7 +78,6 @@ target_link_libraries(ra PRIVATE
 
 target_compile_definitions(ra PRIVATE
     LOG_HOST
-    LOG_CPP
 )
 
 # 安装

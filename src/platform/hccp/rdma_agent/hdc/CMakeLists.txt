@@ -31,38 +31,30 @@ set(ra_hdc_list
 
 add_library(ra_hdc SHARED ${ra_hdc_list})
 
-target_compile_definitions(ra_hdc PRIVATE
-    LOG_CPP)
+binary_add_version(ra_hdc)
 
 target_include_directories(ra_hdc PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/network
     ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/private
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_service
     ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/private/network
-    ${BASE_DIR}/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_service
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+    ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
+    ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../hdc/async
     ${CMAKE_CURRENT_SOURCE_DIR}/
-    ${ASYNC_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
-
+    ${BASE_DIR}/
+    ${ASYNC_DIR}/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-
-    # runtime头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
-
-    # rdma头文件
-    ${RDMA_CORE_INCLUDE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-
-    # HCCP Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
-    ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../hdc/async
+    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 if(NOT BUILD_OPEN_PROJECT)

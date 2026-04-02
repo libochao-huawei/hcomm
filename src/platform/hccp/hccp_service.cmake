@@ -16,6 +16,8 @@ add_executable(hccp_service.bin
     ${CMAKE_CURRENT_SOURCE_DIR}/common/dl_hal_function.c
 )
 
+binary_add_version(hccp_service.bin)
+
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service

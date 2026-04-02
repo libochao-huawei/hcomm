@@ -7,6 +7,23 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+include(version/add_version.cmake)
+set(PROJECT_TYPE HCOMM_PROJECT)
+set(HCCP_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+if(NOT DEVICE_MODE)
+    set(RUN_TYPE HCOMM_HOST)
+elseif(USE_ALOG STREQUAL "1")
+    set(RUN_TYPE HCOMM_HCCD)
+else()
+    set(RUN_TYPE HCOMM_DEVICE)
+endif()
+
+if(DEFINED CANN_VERSION_hcomm_VERSION)
+    set(BUILD_VERSION ${CANN_VERSION_hcomm_VERSION})
+else()
+    set(BUILD_VERSION UNKBOWN)
+endif()
+message(STATUS "BUILDING ${RUN_TYPE}, VERSIONG:${CANN_VERSION_hcomm_VERSION}")
 
 if(BUILD_OPEN_PROJECT AND (PRODUCT_SIDE STREQUAL "device"))
     # 添加子目录

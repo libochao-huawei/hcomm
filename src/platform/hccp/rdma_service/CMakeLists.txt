@@ -50,6 +50,8 @@ set(RS_SOURCE_LIST
 # 创建 rs 动态链接库，host 和 device 侧使用，同时打包到 cann-hccd-compat.tar.gz
 add_library(rs SHARED ${RS_SOURCE_LIST})
 
+binary_add_version(rs)
+
 # 编译选项
 target_compile_options(rs PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
@@ -67,7 +69,6 @@ target_link_options(rs PRIVATE
 
 # 宏定义
 target_compile_definitions(rs PRIVATE
-    LOG_CPP
     $<$<STREQUAL:${PRODUCT_SIDE},host>:LOG_HOST>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:google=ascend_private>
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
