@@ -335,7 +335,6 @@ HcclResult AivUbMemTransport::CheckSocketStatus()
     while(true) {
         EXCEPTION_HANDLE_BEGIN
         Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-        EXCEPTION_HANDLE_END
         if (socketStatus == Hccl::SocketStatus::OK) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
@@ -351,6 +350,7 @@ HcclResult AivUbMemTransport::CheckSocketStatus()
                 __func__, timeout, elapsed, retryCount);
             return HCCL_E_TIMEOUT;
         }
+        EXCEPTION_HANDLE_END
         retryCount++;
     }
     return HCCL_SUCCESS;
