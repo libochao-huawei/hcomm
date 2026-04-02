@@ -90,6 +90,7 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     // semaphore sync
     CHK_RET(PostSyncInterQueues(tempInsQues));
 
+
     return HcclResult::HCCL_SUCCESS;
 }
 
