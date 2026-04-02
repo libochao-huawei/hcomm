@@ -35,11 +35,12 @@ set(OPENSSL_INCLUDE_DIR
 # 查找目录下是否已经安装，避免重复编译安装
 message(STATUS "[ThirdParty] OPENSSL_INSTALL_PATH=${OPENSSL_INSTALL_PATH}")
 find_path(CRYPTO_INCLUDE
+    # NAMES openssl/x509.h
     NAMES crypto/x509.h
     PATH_SUFFIXES include
     NO_CMAKE_SYSTEM_PATH
     NO_CMAKE_FIND_ROOT_PATH
-    PATHS ${OPENSSL_INSTALL_PATH}
+    PATHS ${OPENSSL_INCLUDE_DIR}
 )
 find_path(SSL_INCLUDE
     NAMES openssl/ssl.h
