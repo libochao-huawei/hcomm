@@ -255,7 +255,7 @@ public:
 
     virtual u32 GetStep() const;
     bool        IsCommReady();
-    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true, bool isHcomSelectAlg = false);
+    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true);
 
     virtual MirrorTaskManager &GetMirrorTaskManager() const;
     virtual ProfilingReporter &GetProfilingReporter() const;
@@ -530,7 +530,7 @@ private:
     void InitUbMemoryTransportMgr();
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
-    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true, bool isHcomSelectAlg = false);
+    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);
     void DefaultConvertCollOperatorA2A(const CollOpParams &opParams);
     void LaunchConvertCollOperatorA2A(const CollOpParams &opParams);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
