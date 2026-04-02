@@ -1,0 +1,66 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#ifndef AICPU_TS_ROCE_MEM_H
+#define AICPU_TS_ROCE_MEM_H
+
+#include <cstring>
+#include <map>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include "reged_mem_mgr.h"
+#include "hccl_mem_defs.h"
+#include "hccl_network.h"
+#include "transport_pub.h"
+#include "local_rdma_rma_buffer.h"
+#include "remote_rdma_rma_buffer.h"
+
+namespace hcomm {
+/**
+ * @note 职责：AICPU_TS+RoCE协议的注册内存管理，复用hccl_mem中的LocalRdmaRmaBufferMgr和LocalRdmaRmaBuffer
+ */
+class AicpuTsRoceRegedMemMgr : public RegedMemMgr {
+public:
+    explicit AicpuTsRoceRegedMemMgr(HcclNetDev netDev);
+    ~AicpuTsRoceRegedMemMgr() override = default;
+
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
+    HcclResult UnregisterMemory(void *memHandle) override;
+    HcclResult MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
+
+    HcclResult GetAllRoceMemDetails(std::vector<RoceMemDetails> &localOut, std::vector<RoceMemDetails> &remoteOut) const;
+
+private:
+    using RemoteRdmaRmaBufferMgr =
+        hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<hccl::RemoteRdmaRmaBuffer>>;
+
+    struct EndpointDescLess {
+        bool operator()(const EndpointDesc &a, const EndpointDesc &b) const noexcept
+        {
+            return std::memcmp(&a, &b, sizeof(EndpointDesc)) < 0;
+        }
+    };
+
+    HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, EndpointDesc &endpointDesc, std::string &rdmaBlob);
+
+    HcclNetDev netDev_{nullptr};
+    std::shared_ptr<hccl::NetDevContext::LocalRdmaRmaBufferMgr> localRdmaRmaBufferMgr_{nullptr};
+    std::vector<std::shared_ptr<hccl::LocalRdmaRmaBuffer>> allRegisteredBuffers_;
+    std::vector<HcclBuf> hcclBufRecords_;
+    std::unordered_map<hccl::LocalRdmaRmaBuffer *, std::vector<char>> exportDescByBuffer_;
+    std::map<EndpointDesc, std::unique_ptr<RemoteRdmaRmaBufferMgr>, EndpointDescLess> remoteRdmaRmaBufferMgrs_;
+};
+
+}  // namespace hcomm
+#endif  // AICPU_TS_ROCE_MEM_H

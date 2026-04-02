@@ -36,6 +36,7 @@ public:
     HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
+    HcommChannelKind GetChannelKind() const override;
 
 private:
     HcclResult Makebufs(void **memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
