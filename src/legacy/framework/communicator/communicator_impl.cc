@@ -1296,31 +1296,22 @@ std::string CommunicatorImpl::GetTopoFilePath() const
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
+    std::string topoFilePath{};
     std::ifstream file(filePath);
     if (file.good()) {
         jsonParser.ParseFileToJson(filePath, parseJson);
+        std::string msgRankTopoFile = "error occurs when parser object of propName \"topo_file_path\"";
+        TRY_CATCH_THROW(InvalidParamsException, msgRankTopoFile, topoFilePath = GetJsonProperty(parseJson, "topo_file_path"););
     } else {
-        const u32 maxBuffLen = 10 * 1024 * 1024;
-        size_t bufSize;
-        s32 result = TopoAddrInfoGetSize(devPhyId, &bufSize); // 获取rankInfo大小，用于提前分配内存
-        CHK_PRT_THROW(result != 0 || bufSize > maxBuffLen,
-                  HCCL_ERROR("[%s] Get rankinfo size failed.", __func__),
-                  InvalidParamsException, "Get rankinfo size failed.");
+        const size_t bufSize = 1024;
         std::vector<char> buffer(bufSize, '\0');
-        result = TopoAddrInfoGet(devPhyId, buffer.data(), &bufSize);
+        int result = TopoAddrInfoGetTopoFilePath(devPhyId, buffer.data(), buffer.size());
         CHK_PRT_THROW(result != 0,
-                  HCCL_ERROR("[%s] Get rankinfo failed.", __func__),
-                  InvalidParamsException, "Get rankinfo failed.");
-        std::string jsonString(buffer.data(), bufSize);
-        // 将生成的info信息转换成json文件
-        parseJson = nlohmann::json::parse(jsonString);
+                  HCCL_ERROR("[%s] Get topo file path failed.", __func__),
+                  InvalidParamsException, "Get topo file path failed.");
+        topoFilePath = std::string(buffer.data());
     }
 
-    // parser topo_file_path
-    std::string topoFilePath{};
-    std::string msgRankTopoFile = "error occurs when parser object of propName \"topo_file_path\"";
-    TRY_CATCH_THROW(InvalidParamsException, msgRankTopoFile, topoFilePath = GetJsonProperty(parseJson, "topo_file_path"););
-    
     // check topo_file_path
     char resolvedPath[PATH_MAX] = {0};
     CHK_PRT_THROW(realpath(topoFilePath.c_str(), resolvedPath) == nullptr,
