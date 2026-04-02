@@ -45,7 +45,7 @@ TEST_F(TopoParserTest, Ut_Deserialize_When_Normal_Expect_Success) {
 
     std::string topoString = R"({
 	    "version": "2.0",
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1",
 	    "peer_count" : 3,
         "peer_list" :[
 		    { "local_id" : 0 },
@@ -233,7 +233,7 @@ TEST_F(TopoParserTest, Ut_Deserialize_When_NeededFieldMissing_Expect_Exception) 
     MOCKER(HrtGetDeviceType).stubs().will(returnValue(devType));
 
     std::string topoString = R"({
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1"
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1"
         })"; 
 
     JsonParser topoParser;
@@ -248,7 +248,7 @@ TEST_F(TopoParserTest, Ut_Deserialize_When_InvalidVersion_Expect_Exception) {
 
     std::string topoString = R"({
 	    "version": "1.0",
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1",
 	    "peer_count" : 3,
         "peer_list" :[
 		    { "id" : 0 },
@@ -393,7 +393,7 @@ DevType devType = DevType::DEV_TYPE_910A;
 
      std::string topoString = R"({
 	    "version": "2.0",
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1",
 	    "peer_count" : 3,
         "peer_list" :[
 		    { "local_id" : 0 },
@@ -441,7 +441,7 @@ DevType devType = DevType::DEV_TYPE_910A;
 
      std::string topoString = R"({
 	    "version": "2.0",
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1",
 	    "peer_count" : 3,
         "peer_list" :[
 		    { "local_id" : 0 },
@@ -489,7 +489,7 @@ DevType devType = DevType::DEV_TYPE_910A;
 
      std::string topoString = R"({
 	    "version": "2.0",
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1",
 	    "peer_count" : 3,
         "peer_list" :[
 		    { "local_id" : 0 },
@@ -537,7 +537,7 @@ DevType devType = DevType::DEV_TYPE_910A;
 
      std::string topoString = R"({
 	    "version": "2.0",
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1",
 	    "peer_count" : 3,
         "peer_list" :[
 		    { "local_id" : 0 },
@@ -605,7 +605,7 @@ TEST_F(TopoParserTest, Ut_Deserialize_When_InvalidTopoInstId_Expect_Exception) {
 
     std::string topoString = R"({
 	    "version": "2.0",
-	    "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
+	    "hardware_type" : "950-2D-Fullmsh_64_plus_1",
 	    "peer_count" : 3,
         "peer_list" :[
 		    { "local_id" : 0 },

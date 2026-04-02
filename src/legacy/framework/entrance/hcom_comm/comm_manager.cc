@@ -547,7 +547,7 @@ static HcclResult GetRankTableInfo(const char *rankTablePath, std::string &rankt
 HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
 {
     // 待解决：目前主要为了芯片验证，非最终版本
-    HCCL_RUN_INFO("Entry-HcomInitByFile V910_95, ranktable[%s], identify[%s]", rankTablePath, identify);
+    HCCL_RUN_INFO("Entry-HcomInitByFile V950, ranktable[%s], identify[%s]", rankTablePath, identify);
     
     // 解析myRank
     s32 myRank;
@@ -610,7 +610,7 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
 HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
 {
     // 待解决：目前主要为了芯片验证，非最终版本
-    HCCL_RUN_INFO("Entry-HcomInitByString V910_95, rankTableM[%s], identify[%s]", rankTableM, identify);
+    HCCL_RUN_INFO("Entry-HcomInitByString V950, rankTableM[%s], identify[%s]", rankTableM, identify);
     
     // 解析myRank
     s32 myRank;

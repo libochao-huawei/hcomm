@@ -33,7 +33,7 @@
 using namespace std;
 using namespace Hccl;
  
- static nlohmann::json rank_table_910D_1server_8rank = nlohmann::json::object({
+ static nlohmann::json rank_table_950_1server_8rank = nlohmann::json::object({
     {"version", "2.0"},
     {"rank_count", "4"},
     {"rank_list", nlohmann::json::array({
@@ -197,8 +197,8 @@ TEST_F(HcomutCommManagerTest, ut_hcomv2_backlog_group)
     u32 devLogicId = 0;
     HrtSetDevice(devLogicId);
 
-    nlohmann::json rank_table = rank_table_910D_1server_8rank;
-    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_910D.json";
+    nlohmann::json rank_table = rank_table_950_1server_8rank;
+    char file_name_t[] = "./st_hcom_test_rank_table_1server_8rank_950.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
 
     if (outfile.is_open()) {

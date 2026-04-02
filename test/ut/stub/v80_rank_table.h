@@ -504,7 +504,7 @@ static nlohmann::json rank_table_910_2server_4rank_new =
     };
 
 // ranktable 910 8p
-static nlohmann::json rank_table_910_95_1server_8rank = nlohmann::json::object({
+static nlohmann::json rank_table_950_1server_8rank = nlohmann::json::object({
     {"version", "2.0"},
     {"rank_count", "4"},
     {"rank_list", nlohmann::json::array({
