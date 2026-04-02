@@ -335,10 +335,9 @@ HcclResult AivUbMemTransport::CheckSocketStatus()
 HcclResult AivUbMemTransport::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
 {
     CHK_RET(FillTagVec(memHandles, memHandleNum, locMemTemp_, locTagTemp_));
-    HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
+    HCCL_INFO("[UbMemTransport][UpdateMemInfo] bufferNum[%zu]", locMemTemp_.size());
     sendData_.clear();
-    BinaryStream sendStream;
-    std::vector<std::unique_ptr<RemoteUbRmaBuffer>> rmtBufferTemp{};
+    Hccl::BinaryStream sendStream;
     BufferPack(sendStream, locMemTemp_, locTagTemp_);
     sendStream.Dump(sendData_);
     u32 sendSize = sendData_.size();
@@ -350,7 +349,7 @@ HcclResult AivUbMemTransport::UpdateMemInfo(void **memHandles, uint32_t memHandl
     CHK_RET(CheckSocketStatus());
     CHK_RET(RecvMemInfo());
     CHK_RET(CheckSocketStatus());
-    BinaryStream recvStream(recvData);
+    Hccl::BinaryStream recvStream(recvData);
     RmtBufferUnpackProc(binaryStream);
     localRmaBufferVec_.insert(localRmaBufferVec_.end(), locMemTemp_.begin(), locMemTemp_.end());
     localUserMemTag_.insert(localUserMemTag_.end(), locTagTemp_.begin(), locTagTemp_.end());
