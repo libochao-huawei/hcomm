@@ -56,7 +56,7 @@ void InsExecutor::AddOpCounter(const StreamLite &stream, bool isHead) const
     taskParam.taskPara.Reduce.reduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
     taskParam.taskPara.Reduce.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher_->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)

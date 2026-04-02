@@ -10,15 +10,15 @@
  #include "profiling_reporter_lite.h"
  
 namespace Hccl {
-ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager    *mirrorTaskMgr,
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMgrLite,
                                              ProfilingHandlerLite *profilingHandlerLite)
 {
-    if (UNLIKELY(mirrorTaskMgr == nullptr || profilingHandlerLite == nullptr)) {
+    if (UNLIKELY(mirrorTaskMgrLite == nullptr || profilingHandlerLite == nullptr)) {
         THROW<InternalException>("[ProfilingHandler] ProfilingReporterLite is nullptr.");
     }
-    mirrorTaskMgr_        = mirrorTaskMgr;
+    mirrorTaskMgrLite_        = mirrorTaskMgrLite;
     profilingHandlerLite_ = profilingHandlerLite;
-    mirrorTaskMgr_->RegFullyCallBack([this]() {
+    mirrorTaskMgrLite_->RegFullyCallBack([this]() {
         ReportAllTasks();
     });
 }
