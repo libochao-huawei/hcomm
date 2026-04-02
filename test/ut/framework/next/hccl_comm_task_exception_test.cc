@@ -174,19 +174,19 @@ TEST_F(HcclCommTaskExceptionTest, AicpuDfxOpInfoInit_ValidDfxInfo) {
 // Test cases for PrintTaskContextInfo (hcclCommTaskExceptionLite.cc)
 // =============================================================================
 
-TEST_F(HcclCommTaskExceptionTest, PrintTaskContextInfo_InvalidDevId) {
-    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
-    instance.Init(devId_);
-    
-    HcclResult ret = instance.PrintTaskContextInfo(999, streamId_, taskId_);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
 TEST_F(HcclCommTaskExceptionTest, PrintTaskContextInfo_InvalidStreamId) {
     HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
     instance.Init(devId_);
     
-    HcclResult ret = instance.PrintTaskContextInfo(devId_, 999, taskId_);
+    HcclResult ret = instance.PrintTaskContextInfo(999, taskId_);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclCommTaskExceptionTest, PrintTaskContextInfo_InvalidTaskId) {
+    HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
+    instance.Init(devId_);
+    
+    HcclResult ret = instance.PrintTaskContextInfo(streamId_, 999);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -197,7 +197,7 @@ TEST_F(HcclCommTaskExceptionTest, PrintTaskContextInfo_InvalidStreamId) {
 TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_NullDfxOpInfo) {
     HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
     
-    TaskInfo taskInfo(0, 0, 0, TaskParam{}, nullptr);
+    Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, nullptr);
     std::string result = instance.GetOpDataInfo(taskInfo);
     
     EXPECT_TRUE(result.empty());
@@ -207,12 +207,12 @@ TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_ValidDfxOpInfo) {
     HcclCommTaskExceptionLite& instance = HcclCommTaskExceptionLite::GetInstance();
     
     // Create a valid DfxOpInfo
-    auto dfxOpInfo = std::make_shared<DfxOpInfo>();
+    auto dfxOpInfo = std::shared_ptr<Hccl::DfxOpInfo>(new Hccl::DfxOpInfo());
     dfxOpInfo->opIndex_ = 5;
     dfxOpInfo->algTag_ = "test_alg";
     dfxOpInfo->op_.dataCount = 1024;
     
-    TaskInfo taskInfo(0, 0, 0, TaskParam{}, dfxOpInfo);
+    Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, dfxOpInfo);
     std::string result = instance.GetOpDataInfo(taskInfo);
     
     EXPECT_FALSE(result.empty());
@@ -378,7 +378,7 @@ TEST_F(HcclCommTaskExceptionTest, AicpuIndOpNotifyInit_ZeroNotifyNum) {
 }
 
 TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetBaseInfo) {
-    TaskInfo taskInfo(streamId_, taskId_, 0, TaskParam{}, nullptr);
+    Hccl::TaskInfo taskInfo(streamId_, taskId_, 0, Hccl::TaskParam{}, nullptr);
     std::string baseInfo = taskInfo.GetBaseInfo();
     
     // Should contain stream and task IDs
@@ -386,7 +386,7 @@ TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetBaseInfo) {
 }
 
 TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetParaInfo) {
-    TaskInfo taskInfo(streamId_, taskId_, 0, TaskParam{}, nullptr);
+    Hccl::TaskInfo taskInfo(streamId_, taskId_, 0, Hccl::TaskParam{}, nullptr);
     std::string paraInfo = taskInfo.GetParaInfo();
     
     // May be empty for null dfxOpInfo, but should not crash
@@ -394,7 +394,7 @@ TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetParaInfo) {
 }
 
 TEST_F(HcclCommTaskExceptionTest, TaskExceptionHost_GetOpInfo) {
-    TaskInfo taskInfo(streamId_, taskId_, 0, TaskParam{}, nullptr);
+    Hccl::TaskInfo taskInfo(streamId_, taskId_, 0, Hccl::TaskParam{}, nullptr);
     std::string opInfo = taskInfo.GetOpInfo();
     
     // May be empty for null dfxOpInfo, but should not crash
@@ -412,13 +412,13 @@ TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_MultipleOpTypes) {
     };
     
     for (auto dataType : dataTypes) {
-        auto dfxOpInfo = std::make_shared<DfxOpInfo>();
+        auto dfxOpInfo = std::shared_ptr<Hccl::DfxOpInfo>(new Hccl::DfxOpInfo());
         dfxOpInfo->opIndex_ = 1;
         dfxOpInfo->algTag_ = "test_alg";
         dfxOpInfo->op_.dataCount = 512;
         dfxOpInfo->op_.dataType = dataType;
         
-        TaskInfo taskInfo(0, 0, 0, TaskParam{}, dfxOpInfo);
+        Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, dfxOpInfo);
         std::string result = instance.GetOpDataInfo(taskInfo);
         
         EXPECT_FALSE(result.empty());
@@ -437,13 +437,13 @@ TEST_F(HcclCommTaskExceptionTest, GetOpDataInfo_DifferentReduceOps) {
     };
     
     for (auto reduceOp : reduceOps) {
-        auto dfxOpInfo = std::make_shared<DfxOpInfo>();
+        auto dfxOpInfo = std::shared_ptr<Hccl::DfxOpInfo>(new Hccl::DfxOpInfo());
         dfxOpInfo->opIndex_ = 2;
         dfxOpInfo->algTag_ = "test_reduce";
         dfxOpInfo->op_.dataCount = 1024;
         dfxOpInfo->op_.reduceOp = reduceOp;
         
-        TaskInfo taskInfo(0, 0, 0, TaskParam{}, dfxOpInfo);
+        Hccl::TaskInfo taskInfo(0, 0, 0, Hccl::TaskParam{}, dfxOpInfo);
         std::string result = instance.GetOpDataInfo(taskInfo);
         
         EXPECT_FALSE(result.empty());
