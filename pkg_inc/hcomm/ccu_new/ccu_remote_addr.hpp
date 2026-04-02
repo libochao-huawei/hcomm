@@ -27,4 +27,7 @@ public:
     CcuRemoteAddrHandle handle{0};
 };
 
+static_assert(std::is_standard_layout<CcuRemoteAddr>::value,
+    "CcuRemoteAddr must be standard layout for .so ABI stability");
+
 #endif // CCU_REMOTE_ADDR_HPP

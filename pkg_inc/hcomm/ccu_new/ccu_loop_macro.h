@@ -13,13 +13,13 @@
 
 #include "ccu_types.h"
 
-extern "C" CcuResult CcuLoopCreate(CcuLoop *loop);
-extern "C" CcuResult _CcuLoopBodyEnter(CcuLoop loop);
-extern "C" CcuResult _CcuLoopBodyExit(CcuLoop loop);
+extern "C" CcuResult CcuLoopCreate(CcuLoopHandle *loop);
+extern "C" CcuResult _CcuLoopBodyEnter(CcuLoopHandle loop);
+extern "C" CcuResult _CcuLoopBodyExit(CcuLoopHandle loop);
 
 class CcuLoopBodyScope {
 public:
-    explicit CcuLoopBodyScope(CcuLoop loop) : loop_(loop) {
+    explicit CcuLoopBodyScope(CcuLoopHandle loop) : loop_(loop) {
         _CcuLoopBodyEnter(loop_);
     }
     ~CcuLoopBodyScope() {
@@ -27,11 +27,11 @@ public:
     }
     bool Once() { return first_ ? (first_ = false, true) : false; }
 private:
-    CcuLoop loop_;
+    CcuLoopHandle loop_;
     bool first_{true};
 };
 
-#define CCU_LOOP(loopVar) \
+#define CCU_LOOPBODY(loopVar) \
     CCU_CHK_RET(CcuLoopCreate(&loopVar)); \
     _CCU_LB_SCOPE_H1(__COUNTER__, loopVar)
 
