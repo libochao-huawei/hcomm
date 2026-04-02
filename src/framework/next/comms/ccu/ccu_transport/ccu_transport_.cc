@@ -672,6 +672,11 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
         HCCL_WARNING("[CcuTransport][UpdateMemInfo] bufferNum is 0.");
         return HCCL_SUCCESS;
     }
+    uint32_t totalBufferNum = locBufferInfos_.size() + bufferVecTemp.size();
+    if (UNLIKELY(totalBufferNum > MAX_BUFFER_NUM)) {
+        HCCL_ERROR("[CcuTransport][UpdateMemInfo] totalBufferNum[%u] exceeds limit[%u]", totalBufferNum, MAX_BUFFER_NUM);
+        return HCCL_E_PARA;
+    }
     HCCL_INFO("[CcuTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
     sendData_.clear();
     Hccl::BinaryStream sendStream;
@@ -682,7 +687,7 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
     socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
     EXCEPTION_HANDLE_END
     HCCL_INFO("[CcuTransport][UpdateMemInfo] Send size[%u] of data success. [%zu] bytes sent.",
-        __func__, sendSize, sizeof(sendSize));
+        sendSize, sizeof(sendSize));
     CHK_RET(CheckSocketStatus());
     CHK_RET(RecvDataSize());
     CHK_RET(CheckSocketStatus());
