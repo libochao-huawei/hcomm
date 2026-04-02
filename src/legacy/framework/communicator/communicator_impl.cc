@@ -956,13 +956,13 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
 
 constexpr u32 CCL_COMM_DEFAULT_BUFFER_SIZE    = 200;
 constexpr u64 CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024);
-void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const
+void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize, bool isHcomSelectAlg) const
 {
     u64 sendCount = 0;
     u64 recvCount = 0;
     u32 sendTypeSize = 0;
     u32 recvTypeSize = 0;
-    if (opParams.opType == OpType::ALLTOALLV) {
+    if (opParams.opType == OpType::ALLTOALLV && !isHcomSelectAlg) { // alltoallv场景hcomSeletAlg不填写alltoallv的参数
         for (u32 i = 0; i < rankSize; i++) {
             CHECK_NULLPTR((static_cast<const u64 *>(opParams.all2AllVDataDes.sendCounts) + i),
                 StringFormat("%s failed, opParams.all2AllVDataDes.sendCounts[%u] is nullptr", __func__, i));
@@ -981,7 +981,7 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
         }
         sendTypeSize = DataTypeSizeGet(opParams.all2AllVDataDes.sendType);
         recvTypeSize = DataTypeSizeGet(opParams.all2AllVDataDes.recvType);
-    } else if (opParams.opType == OpType::ALLTOALLVC){
+    } else if (opParams.opType == OpType::ALLTOALLVC && !isHcomSelectAlg) { // alltoallvc场景hcomSeletAlg不填写alltoallvc的参数
         for (u32 i = 0; i < rankSize; i++) {
             CHECK_NULLPTR((static_cast<const u64 *>(opParams.all2AllVCDataDes.sendCountMatrix) + myRank * rankSize + i),
                             StringFormat("%s failed, opParams.all2AllVCDataDes.sendCountMatrix[%u] is nullptr", __func__, (myRank * rankSize + i)));
@@ -1009,8 +1009,8 @@ void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool
         THROW<NullPtrException>(msg);
     }
 
-    if (isLaunch && !isHcomSelectAlg) {
-        LaunchConvertCollOperatorA2A(opParams);
+    if (isLaunch) {
+        LaunchConvertCollOperatorA2A(opParams, isHcomSelectAlg);
     } else {
         DefaultConvertCollOperatorA2A(opParams);
     }
@@ -1037,7 +1037,7 @@ void CommunicatorImpl::DefaultConvertCollOperatorA2A(const CollOpParams &opParam
     }
 }
 
-void CommunicatorImpl::LaunchConvertCollOperatorA2A(const CollOpParams &opParams)
+void CommunicatorImpl::LaunchConvertCollOperatorA2A(const CollOpParams &opParams, bool isHcomSelectAlg)
 {
     // 下发算子场景下需要继承值并准备Mem
     HCCL_INFO("LaunchConvertCollOperatorA2A start.");
@@ -1065,7 +1065,7 @@ void CommunicatorImpl::LaunchConvertCollOperatorA2A(const CollOpParams &opParams
 
     u64 sendSize = 0;
     u64 recvSize = 0;
-    CalcA2ASendRecvMem(opParams, sendSize, recvSize);
+    CalcA2ASendRecvMem(opParams, sendSize, recvSize, isHcomSelectAlg);
     HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
     currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
     currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
