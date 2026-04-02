@@ -45,8 +45,10 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     bool isAiCpu = false;
     // 新老流程判断
     if (opInfo->isIndop_ == true) {
-        // 暂时默认true
-        isAiCpu = true;
+        if (opInfo->engine == COMM_ENGINE_AICPU_TS || opInfo->engine == COMM_ENGINE_AICPU) {
+            HCCL_INFO("[ProfilingReporter][ReportOp] ReportOp Aicpu,opInfo->engine:[%d]", opInfo->engine);
+            isAiCpu = true;
+        }
     } else {
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);
         CHECK_NULLPTR(commImp, "[]commImp is nullptr!");

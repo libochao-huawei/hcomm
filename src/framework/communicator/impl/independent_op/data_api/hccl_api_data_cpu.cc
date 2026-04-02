@@ -27,7 +27,8 @@
 #include "task_info.h"
 #include "hccl_diag.h"
 #include "exception_handler.h"
-
+#include "task_info.h"
+#include "task_param.h"
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
@@ -731,7 +732,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     //单算子模式，暂时覆盖opTag
     dfxOpInfoOnce->op_.opTag = collComm->GetCommId();
     dfxOpInfoOnce->op_.myRank = static_cast<Hccl::RankId>(collComm->GetMyRankId());
-
+    dfxOpInfoOnce->engine = dfxOpInfo->engine;
     HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
     CHK_PTR_NULL(hcclCommDfx);
     CHK_RET(hcclCommDfx->UpdateProfStat());
@@ -794,6 +795,43 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     std::string kernelNameStr(kernelName);
     uint32_t threadId = SalGetTid();
     CHK_RET(hcclCommDfx->ReportKernel(beginTime, collComm->GetCommId(), kernelNameStr, threadId));
+
+    Hccl::TaskParam taskParam{};
+    taskParam.beginTime = beginTime;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AICPU_KERNEL;
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    uint32_t taskId = INVALID_UINT;
+    uint32_t streamId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
     HCCL_INFO("[HcclReportAicpuKernel] HcclReportAicpuKernel sucess");
     return HCCL_SUCCESS;
 }
+
+extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is not supported", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+    CHK_PTR_NULL(hcclCommDfx);
+
+    Hccl::TaskParam taskParam{};
+    taskParam.beginTime = beginTime;
+    taskParam.taskType = Hccl::TaskParamType::TASK_AIV;
+    taskParam.endTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.isMaster = true;
+    uint32_t taskId = INVALID_UINT;
+    uint32_t streamId = INVALID_UINT;
+    CHK_RET(hrtGetTaskIdAndStreamID(taskId, streamId));
+    CHK_RET(hcclCommDfx->AddTaskInfoCallback(streamId, taskId, taskParam, INVALID_U64));
+    HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
+    return HCCL_SUCCESS;
+} 
