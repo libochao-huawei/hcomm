@@ -34,6 +34,9 @@ set(rs_ut_abnormal_list
     ${CTX_DIR}/rs_ping_urma.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_ping_inner.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_nda.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_comm.c
+    ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_sensor.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_rdma.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_epoll.c
     ${SRC_DIR}/src/platform/hccp/rdma_service/rs_drv_socket.c
@@ -94,10 +97,15 @@ target_include_directories(rs_ut_abnormal PRIVATE
 
 target_compile_options(rs_ut_abnormal PRIVATE
     -U_FORTIFY_SOURCE -O0 -g
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_compile_definitions(rs_ut_abnormal PRIVATE
     HNS_ROCE_LLT USE_DISPATCH_EXPECT CA_CONFIG_LLT DEVICE_TLS_CONFIG CONFIG_SSL CONFIG_RDMA CONFIG_LLT CUSTOM_INTERFACE RDMA_LITE_STUB_TEST CCU_CONFIG_LLT
+)
+
+target_link_options(rs_ut_abnormal PRIVATE
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_link_libraries(rs_ut_abnormal PRIVATE
