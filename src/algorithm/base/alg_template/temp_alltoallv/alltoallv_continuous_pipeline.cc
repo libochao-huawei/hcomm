@@ -861,11 +861,10 @@ HcclResult AlltoallvContinuousPipeline::DoLocalWriteInfoAndFlagAndInterSync()
     return HCCL_SUCCESS;
 }
 
-HcclResult AlltoallvContinuousPipeline::WaitValueOfRank(const u32 rank, u32 &value)
+HcclResult AlltoallvContinuousPipeline::WaitValueOfRank(const u32 rank, const HcclUs &startTimeUs, u32 &value)
 {
     const auto* valuePtr = reinterpret_cast<u32 *>(static_cast<u8 *>(inBuffer_.ptr()) + infoOffsets_[0]) + rank;
-    const HcclUs startUt = TIME_NOW();
-    HcclUs lastUt = startUt;
+    HcclUs lastUt = startTimeUs;
     constexpr s64 timeout = 1800 * 1000 * 1000; // 超时时间暂定为1800s
     constexpr s64 printStateInterval = 30 * 1000 * 1000; // 每隔30s打印一次状态
     HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitValueOfRank] start waiting value of rank[%u], valuePtr[%p].",
@@ -876,10 +875,15 @@ HcclResult AlltoallvContinuousPipeline::WaitValueOfRank(const u32 rank, u32 &val
         // 等待value过程，每隔30秒打印一次状态
         if (DURATION_US(currentUt - lastUt).count() > printStateInterval) {
             lastUt = currentUt;
-            HCCL_RUN_INFO("[AlltoallvContinuousPipeline][WaitValueOfRank] waiting value of rank[%u]", rank);
+            if (flagAreaRefreshFlag_ == 0) {
+                HCCL_RUN_INFO("[AlltoallvContinuousPipeline][WaitValueOfRank] The Previous task has not been completed."
+                    " userRank[%u]", userRank_);
+            } else {
+                HCCL_RUN_INFO("[AlltoallvContinuousPipeline][WaitValueOfRank] waiting value of rank[%u]", rank);
+            }
         }
 
-        CHK_PRT_RET(DURATION_US(currentUt - startUt).count() > timeout,
+        CHK_PRT_RET(DURATION_US(currentUt - startTimeUs).count() > timeout,
             HCCL_ERROR("[AlltoallvContinuousPipeline][WaitValueOfRank] Waiting for the value of rank[%u] timed out.",
                 rank),
             HCCL_E_TIMEOUT);
@@ -896,6 +900,7 @@ HcclResult AlltoallvContinuousPipeline::WaitAndCalReceiveInfo()
 {
     // 计算自己以及module内其他卡的receive count
     HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitAndCalReceiveInfo] start.");
+    const HcclUs startUt = TIME_NOW();
 
     for (u32 intraRankIdx = 0; intraRankIdx < intraRankSize_; ++intraRankIdx) {
         if (intraRankIdx == intraRankId_) {
@@ -903,7 +908,7 @@ HcclResult AlltoallvContinuousPipeline::WaitAndCalReceiveInfo()
         }
         const u32 remoteRank = interRankId_ * intraRankSize_ + intraRankIdx;
         u32 remoteValue = 0;
-        CHK_RET(WaitValueOfRank(remoteRank, remoteValue));
+        CHK_RET(WaitValueOfRank(remoteRank, startUt, remoteValue));
 
         const auto *countsPtr =
             reinterpret_cast<u64 *>(static_cast<u8 *>(outBuffer_.ptr()) + infoOffsets_[remoteRank]);
@@ -921,7 +926,7 @@ HcclResult AlltoallvContinuousPipeline::WaitAndCalReceiveInfo()
             "intraLoopNum_[%u]", remoteRank, remoteLoopNum, intraLoopNum_);
     }
     
-    HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitAndCalReceiveInfo] done.");
+    HCCL_DEBUG("[AlltoallvContinuousPipeline][WaitAndCalReceiveInfo] done. loopNum[%u]", intraLoopNum_);
     return HCCL_SUCCESS;
 }
 
