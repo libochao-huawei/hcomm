@@ -2342,6 +2342,17 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     CHK_PRT_RET(itemNum == 0, HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
 
+    for (uint32_t i = 0; i < itemNum; i++) {
+        // 支持数据量为0的场景，buf为空的跳过
+        if ((sendRecvInfo + i)->buf == nullptr) {
+            continue;
+        }
+        // 校验DataType和count，与其他算子保持校验统一性
+        CHK_RET(HcomCheckDataTypeV2((sendRecvInfo + i)->dataType));
+        CHK_RET(HcomCheckCountV2((sendRecvInfo + i)->count));
+    }
+    CHK_RET(HcomCheckDataTypeV2(sendRecvInfo->dataType));
+
     /* 记录接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
