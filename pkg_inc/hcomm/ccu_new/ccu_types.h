@@ -59,15 +59,52 @@ typedef enum {
     CCU_E_GSA_UNAVAIL,
 
     CCU_E_TRANSLATE_FAILED,
+    CCU_E_ALREADY_BOUND,
+    CCU_E_LOOP_BODY_UNDEFINED,
 
     CCU_E_RESERVED                 /**< reserved */
 } CcuResult;
+
+
+/**
+ * @brief CCU condition type for conditional jump
+ */
+typedef enum {
+    CCU_CONDITION_EQ = 0,
+    CCU_CONDITION_NE = 1,
+} CcuConditionType;
+
+typedef uint64_t CcuLoopHandle;
+typedef uint64_t CcuLoopGroupHandle;
+
+typedef struct {
+    uint64_t addrOffset;
+    uint64_t loopIterNum;
+} CcuLoopConfig;
+
+typedef struct {
+    uint64_t addrOffset;
+    uint64_t bufferOffset;
+    uint64_t eventOffset;
+    uint64_t repeatNum;
+} CcuLoopGroupConfig;
+
 
 typedef uint64_t CcuInsHandle;
 
 typedef uint64_t CcuKernelHandle;
 
 typedef uint64_t CcuVariableHandle;
+
+typedef uint64_t CcuAddressHandle;
+
+typedef uint64_t CcuEventHandle;
+
+typedef uint64_t CcuBufferHandle;
+
+typedef uint64_t CcuLocalAddrHandle;
+
+typedef uint64_t CcuRemoteAddrHandle;
 
 typedef void *CcuKernelArg;
 
