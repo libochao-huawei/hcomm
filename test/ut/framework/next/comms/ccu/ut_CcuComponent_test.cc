@@ -96,17 +96,17 @@ TEST_F(CcuComponentTest, Ut_CcuComponent_SetTaskKill_Transitions)
     ccuComponent.dieEnableFlags_.fill(false);
 
     // 初始态置为 INVALID，首次调用应将状态置为 TASK_KILL
-    ccuComponent.status_ = hcomm::CcuComponent::CcuTaskKillStatus::INVALID;
+    ccuComponent.status = hcomm::CcuComponent::CcuTaskKillStatus::INVALID;
     EXPECT_EQ(ccuComponent.SetTaskKill(), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(ccuComponent.status_, hcomm::CcuComponent::CcuTaskKillStatus::TASK_KILL);
+    EXPECT_EQ(ccuComponent.status, hcomm::CcuComponent::CcuTaskKillStatus::TASK_KILL);
 
     // 再次调用，因已处于 TASK_KILL，应直接返回成功且不改变状态
     EXPECT_EQ(ccuComponent.SetTaskKill(), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(ccuComponent.status_, hcomm::CcuComponent::CcuTaskKillStatus::TASK_KILL);
+    EXPECT_EQ(ccuComponent.status, hcomm::CcuComponent::CcuTaskKillStatus::TASK_KILL);
 
     // 调用 SetTaskKillDone，应将状态恢复为 INIT
     EXPECT_EQ(ccuComponent.SetTaskKillDone(), HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(ccuComponent.status_, hcomm::CcuComponent::CcuTaskKillStatus::INIT);
+    EXPECT_EQ(ccuComponent.status, hcomm::CcuComponent::CcuTaskKillStatus::INIT);
 
     // 调用 CleanTaskKillState（const 方法），仅验证返回值
     EXPECT_EQ(ccuComponent.CleanTaskKillState(), HcclResult::HCCL_SUCCESS);
