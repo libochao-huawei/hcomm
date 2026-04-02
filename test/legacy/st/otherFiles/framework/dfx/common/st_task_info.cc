@@ -177,7 +177,7 @@ TEST_F(TaskInfoTest, test_get_para_ccu)
 {
     TaskInfo taskInfo = InitTaskInfo();
     taskInfo.taskParam_.taskType = TaskParamType::TASK_CCU;
-    EXPECT_EQ(taskInfo.GetParaInfo(), "unknown task");
+    EXPECT_EQ(taskInfo.GetParaInfo(), "TaskParamType::TASK_CCU");
 }
 
 TEST_F(TaskInfoTest, test_get_para_dma)

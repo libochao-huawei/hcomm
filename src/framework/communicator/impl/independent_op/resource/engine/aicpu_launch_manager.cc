@@ -140,20 +140,28 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchImpl(
     DeviceMem deviceHandle;
     CHK_RET(PrepareThreadMgrParam(newThreads, config, opParam, deviceHandle));
 
-    // Step 3. 调用 KernelLaunch
+    size_t handleLen = sizeof(ThreadHandle) * newThreads.size();
+    // Step 3. 补充notify，将threadHanle拷到device侧
+    if (config.isSupplementNotify) {
+        CHK_RET(hrtMemSyncCopy(opParam.deviceHandle, handleLen, aicpuHandle.get(), handleLen,
+            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    }
+
+    // Step 4. 调用 KernelLaunch
     HCCL_INFO("AicpuLaunchMgr::%s, call KernelLaunch", __func__);
     HcclResult ret = KernelLaunchAicpuCustom(opParam, config.kernelName.c_str(),
                                              localStream.ptr(), config.binHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuLaunchMgr][%s] KernelLaunch failed, return [%d].", __func__, ret), ret);
 
-    // Step 4. 等待流完成
+    // Step 5. 等待流完成
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), config.timeoutSec));
 
-    // Step 5. 返回 device 侧句柄
-    size_t handleLen = sizeof(ThreadHandle) * newThreads.size();
-    CHK_RET(hrtMemSyncCopy(aicpuHandle.get(), handleLen, opParam.deviceHandle, handleLen,
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
+    // Step 6. 非补充notify,返回 device 侧句柄
+    if (!config.isSupplementNotify) {
+        CHK_RET(hrtMemSyncCopy(aicpuHandle.get(), handleLen, opParam.deviceHandle, handleLen,
+            HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
+    }
 
     // 性能分析上报
     if (config.needProfiling) {
@@ -172,7 +180,8 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchForComm(std::vector<std::shared_ptr
         "RunAicpuIndOpThreadInit",
         false,
         CommConfiger::GetInstance().GetCommConfigExecTimeOut(commId),
-        true
+        true,
+        false
     );
     return ThreadKernelLaunchImpl(newThreads, aicpuHandle, config);
 }
@@ -188,7 +197,25 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchForBase(std::vector<std::shared_ptr
         "RunAicpuThreadInit",
         true,    
         defaultTimeOutSec,     
-        false    
+        false,
+        false
+    );
+    return ThreadKernelLaunchImpl(newThreads, aicpuHandle, config);
+}
+
+// 补充notify使用
+HcclResult AicpuLaunchMgr::SupplementNotifyKernelLaunch(std::vector<std::shared_ptr<Thread>> &newThreads,
+    const std::string &commId, std::unique_ptr<ThreadHandle[]> &aicpuHandle, aclrtBinHandle binHandle)
+{
+    constexpr uint32_t defaultTimeOutSec = 120;
+    ThreadKernelLaunchConfig config(
+        commId,      
+        binHandle,
+        "RunAicpuThreadSupplementNotify",
+        true,    
+        defaultTimeOutSec,     
+        false,
+        true
     );
     return ThreadKernelLaunchImpl(newThreads, aicpuHandle, config);
 }

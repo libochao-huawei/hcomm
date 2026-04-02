@@ -51,6 +51,5 @@ std::string CcuRepRead::Describe()
         "Read Memory[%u] To Memory[%u], length[%u], set sem[%u] with mask[%04x], dataType[%u], opType[%u]",
         rem.addr.Id(), loc.addr.Id(), len.Id(), sem.Id(), mask, dataType, opType);
 }
-
 }; // namespace CcuRep
 }; // namespace Hccl

@@ -652,7 +652,7 @@ void Interpret(const InsStreamSync &insStreamSync, const StreamLite &stream, Res
     const uint64_t kPrintSqInterval = 30U;
     uint32_t head = 0;
     uint32_t tail = 0;
-    u32 timeOut = resMgrFetcher->GetExecTimeOut();
+    u32 timeout = resMgrFetcher->GetExecTimeOut() + 10;
     u64 startUsec = GetCurAicpuTimestamp();
     u64 lastUsec = startUsec;
     u32 sqId = stream.GetSqId();
@@ -661,9 +661,9 @@ void Interpret(const InsStreamSync &insStreamSync, const StreamLite &stream, Res
     do {
         head = stream.GetRtsq()->QuerySqHead();
         u64 curUsec = GetCurAicpuTimestamp();
-        if (UNLIKELY(curUsec - startUsec > NANOSECOND_TO_SECOND * timeOut)) {
+        if (UNLIKELY(curUsec - startUsec > NANOSECOND_TO_SECOND * timeout)) {
             string msg = StringFormat("stream sync timeout %lus. curhead:%u, curtail:%u, sqId:%u",
-                timeOut, head, tail, sqId);
+                timeout, head, tail, sqId);
             THROW<TimeoutException>(msg);
         }
 

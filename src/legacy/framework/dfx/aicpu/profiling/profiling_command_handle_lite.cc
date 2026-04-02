@@ -16,13 +16,13 @@
 namespace Hccl {
 #ifdef CCL_KERNEL_AICPU
 
-RegisterProfCallBack()
+void RegisterProfCallBack()
 {
     if (MsprofRegisterCallback != nullptr) {
         HCCL_INFO("RegisterProfCallBack not null");
         int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
         if (ret != 0) {
-            THROW<InternalException>(StringFormat("CommunicatorImplLite::MsprofRegisterCallback failed, ret = %d", ret));
+            THROW<InternalException>(StringFormat("MsprofRegisterCallback failed, ret = %d", ret));
         }
     } else {
         HCCL_INFO("RegisterProfCallBack is null");

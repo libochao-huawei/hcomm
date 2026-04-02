@@ -23,7 +23,6 @@ RankGraphV2::RankGraphV2(void *rankGraphPtr)
 
 HcclResult RankGraphV2::GetRankSize(uint32_t *rankSize)
 {
-    HCCL_RUN_INFO("3->RankGraphImpl = %p", pImpl.get());
     return pImpl->GetRankSize(rankSize);
 }
 

@@ -160,6 +160,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
     uint64_t curBlockOffsetLast = 0;
     uint64_t curGroupCountLast = 0;
 
+    uint64_t halfBufferCountCcl = halfBufferCount + rankSize_; // 某些场景，groupTailLast会比avgBufferCount大，前一半buffer的末尾和后一半buffer的开头可能踩踏
     uint32_t bufferLoopNum = (len + halfBufferCount - 1) / halfBufferCount;
     for (uint32_t loop = 0; loop < bufferLoopNum; loop++) {
         if (loop == bufferLoopNum - 1) { // 最后一轮ccl填充
@@ -210,9 +211,9 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
             
             PipeBarrier<PIPE_ALL>();
             if (rank_ == rankSize_-1){
-                CpGM2GM(cclGMSelf + halfBufferCount + localRecvOffset + curBlockOffsetLast, cclGMOther + remoteSendOffset + curBlockOffsetLast, curCountLast);
+                CpGM2GM(cclGMSelf + halfBufferCountCcl + localRecvOffset + curBlockOffsetLast, cclGMOther + remoteSendOffset + curBlockOffsetLast, curCountLast);
             }else{
-                CpGM2GM(cclGMSelf + halfBufferCount + localRecvOffset + curBlockOffset, cclGMOther + remoteSendOffset + curBlockOffset, curCount);
+                CpGM2GM(cclGMSelf + halfBufferCountCcl + localRecvOffset + curBlockOffset, cclGMOther + remoteSendOffset + curBlockOffset, curCount);
             }
         }
 
@@ -263,8 +264,8 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
                         
                         if (backIdx < curBlocks) {
                             PipeBarrier<PIPE_ALL>();
-                            CpGM2GM<T>(cclGMSelf + halfBufferCount + frontOffset,
-                                        cclGMSelf + halfBufferCount + backOffset,
+                            CpGM2GM<T>(cclGMSelf + halfBufferCountCcl + frontOffset,
+                                        cclGMSelf + halfBufferCountCcl + backOffset,
                                         dataNum, true, reduceOp_);
                             PipeBarrier<PIPE_ALL>();
                         }
@@ -292,10 +293,10 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
             PipeBarrier<PIPE_ALL>();
             if (targetRank == rankSize_ - 1) {
                 CpGM2GM(outputGM + curOffset + dstOffset + curBlockOffsetLast, 
-                        cclGMOther + halfBufferCount + srcOffset + curBlockOffsetLast, curCountLast);
+                        cclGMOther + halfBufferCountCcl + srcOffset + curBlockOffsetLast, curCountLast);
             } else {
                 CpGM2GM(outputGM + curOffset + dstOffset + curBlockOffset, 
-                        cclGMOther + halfBufferCount + srcOffset + curBlockOffset, curCount);
+                        cclGMOther + halfBufferCountCcl + srcOffset + curBlockOffset, curCount);
             }
         }
 
