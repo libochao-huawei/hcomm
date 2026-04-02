@@ -14,6 +14,7 @@
 #include "hcomm_res.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
+#include "cpu_roce_endpoint.h"
 
 // Orion
 #include "orion_adapter_hccp.h"
@@ -27,7 +28,6 @@ constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
 constexpr u32 MEM_BLOCK_SIZE = 128;
 constexpr uint16_t DEFAULT_LISTENING_PORT = 60001;
 constexpr u32 SEND_RQE_COUNT = 16;
-constexpr uint64_t RDMA_MAX_WR_LENGTH = 1ULL * 1024 * 1024 * 1024; // 单次RDMA操作最大长度1GB
 
 HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
@@ -81,6 +81,16 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
     }
 
     EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+
+    auto* localCpuRoceEpPtr = dynamic_cast<CpuRoceEndpoint *>(localEpPtr);
+    if (localCpuRoceEpPtr == nullptr) {
+        HCCL_ERROR("[HostCpuRoceChannel][%s] endpointHandle_ is NOT CpuRoceEndpoint.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+    CpuRoceEndpoint::Capabilities caps{};
+    CHK_RET(localCpuRoceEpPtr->GetCapabilities(caps));
+    maxMsgSize_ = caps.maxMsgSz;
+    HCCL_INFO("[HostCpuRoceChannel][%s] maxMsgSize_[0x%llx].", __func__, maxMsgSize_);
 
     return HCCL_SUCCESS;
 }
@@ -725,18 +735,21 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
 {
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    CHK_PRT_RET(maxMsgSize_ == 0,
+        HCCL_ERROR("[HostCpuRoceChannel::%s] maxMsgSize_ is 0, channel not initialized", __func__),
+        HCCL_E_INTERNAL);
     HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[0x%llx], remoteNotifyIdx[%u].",
         __func__, dst, src, len, remoteNotifyIdx);
     uint32_t wqeNumBefore = wqeNum_;
 
     // 前 N-1 块: 普通 RDMA_WRITE
     uint64_t offset = 0;
-    while (offset + RDMA_MAX_WR_LENGTH < len) {
+    while (offset + maxMsgSize_ < len) {
         CHK_RET(PostRdmaOp(__func__, IBV_WR_RDMA_WRITE,
             static_cast<char *>(const_cast<void *>(src)) + offset,
             static_cast<const char *>(dst) + offset,
-            RDMA_MAX_WR_LENGTH));
-        offset += RDMA_MAX_WR_LENGTH;
+            maxMsgSize_));
+        offset += maxMsgSize_;
     }
 
     // 尾块: RDMA_WRITE_WITH_IMM，携带 notify
@@ -817,9 +830,9 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
                 HCCL_E_ROCE_CONNECT);
     CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", caller),
                 HCCL_E_ROCE_CONNECT);
-    if (len > RDMA_MAX_WR_LENGTH) {
-        HCCL_WARNING("[HostCpuRoceChannel::%s] len[0x%llx] exceeds RDMA_MAX_WR_LENGTH[0x%llx], caller should slice before posting.",
-            caller, len, RDMA_MAX_WR_LENGTH);
+    if (len > maxMsgSize_) {
+        HCCL_WARNING("[HostCpuRoceChannel::%s] len[0x%llx] exceeds maxMsgSize_[0x%llx], caller should slice before posting.",
+            caller, len, maxMsgSize_);
     }
 
     // 1. 查找 buffer 索引
@@ -844,11 +857,14 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
 
 HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t len)
 {
+    CHK_PRT_RET(maxMsgSize_ == 0,
+        HCCL_ERROR("[HostCpuRoceChannel::%s] maxMsgSize_ is 0, channel not initialized", __func__),
+        HCCL_E_INTERNAL);
     HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[0x%llx].", __func__, dst, src, len);
     uint32_t wqeNumBefore = wqeNum_;
     uint64_t offset = 0;
     while (offset < len) {
-        uint64_t chunkLen = std::min(len - offset, RDMA_MAX_WR_LENGTH);
+        uint64_t chunkLen = std::min(len - offset, maxMsgSize_);
         CHK_RET(PostRdmaOp(__func__, IBV_WR_RDMA_WRITE,
             static_cast<char *>(const_cast<void *>(src)) + offset,
             static_cast<const char *>(dst) + offset,
@@ -862,11 +878,14 @@ HcclResult HostCpuRoceChannel::Write(void *dst, const void *src, const uint64_t 
 
 HcclResult HostCpuRoceChannel::Read(void *dst, const void *src, const uint64_t len)
 {
+    CHK_PRT_RET(maxMsgSize_ == 0,
+        HCCL_ERROR("[HostCpuRoceChannel::%s] maxMsgSize_ is 0, channel not initialized", __func__),
+        HCCL_E_INTERNAL);
     HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[0x%llx].", __func__, dst, src, len);
     uint32_t wqeNumBefore = wqeNum_;
     uint64_t offset = 0;
     while (offset < len) {
-        uint64_t chunkLen = std::min(len - offset, RDMA_MAX_WR_LENGTH);
+        uint64_t chunkLen = std::min(len - offset, maxMsgSize_);
         CHK_RET(PostRdmaOp(__func__, IBV_WR_RDMA_READ,
             static_cast<char *>(dst) + offset,
             static_cast<const char *>(src) + offset,
