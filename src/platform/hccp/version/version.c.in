@@ -1,0 +1,68 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include <syslog.h>
+#include <string.h>
+
+#ifndef VERSION_LOG_FACILITY
+#  define VERSION_LOG_FACILITY LOG_USER  // 设施: LOG_USER, LOG_DAEMON, LOG_LOCAL0~7
+#endif
+
+#ifndef VERSION_LOG_LEVEL
+#  define VERSION_LOG_LEVEL    LOG_INFO  // 级别: LOG_INFO, LOG_NOTICE, LOG_DEBUG
+#endif
+
+typedef struct {
+    const char* so_name;
+    const char* version;
+    const char* build_time;
+    const char* build_type;
+    const char* compiler;
+    const char* arch;
+    const char* project_type;
+    const char* run_type;
+} hcomm_version_info_t;
+
+__attribute__((visibility("default"), used))
+const char @SAFE_TARGET_NAME@_version_str[] = 
+    "\n"
+    "=========================================\n"
+    "  @TARGET_SO_NAME@ Version Info\n"
+    "-----------------------------------------\n"
+    "  Version:    @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@\n"
+    "  Build Time: @BUILD_TIMESTAMP@ (UTC)\n"
+    "  Build Type: @BUILD_TYPE@\n"
+    "  Compiler:   @COMPILER_INFO@\n"
+    "  Arch:       @TARGET_ARCH@\n"
+    "  Project:    @PROJECT_TYPE@\n"
+    "  Mode:       @RUN_TYPE@\n"
+    "=========================================\n";
+
+__attribute__((constructor(200))) //low priority to log after so constructed
+static void log_version(void)
+{
+    syslog(VERSION_LOG_FACILITY | VERSION_LOG_LEVEL,
+        "[HCCP Version] %s", @SAFE_TARGET_NAME@_version_str);
+}
+
+const hcomm_version_info_t* @SAFE_TARGET_NAME@_get_version_info(void)
+{
+    static const hcomm_version_info_t info = {
+        .so_name = "@TARGET_SO_NAME@",
+        .version = "@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@",
+        .build_time = "@BUILD_TIMESTAMP@",
+        .build_type = "@BUILD_TYPE@",
+        .compiler = "@COMPILER_INFO@",
+        .arch = "@TARGET_ARCH@",
+        .project_type = "@PROJECT_TYPE@",
+        .run_type = "@RUN_TYPE@"
+    };
+    return &info;
+}
