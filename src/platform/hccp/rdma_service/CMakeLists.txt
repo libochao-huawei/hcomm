@@ -46,7 +46,7 @@ set(rs_list
 )
 
 add_library(rs  SHARED ${rs_list})
-
+binary_add_version(rs)
 target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc

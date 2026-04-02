@@ -27,7 +27,7 @@ set(ra_adp_list
 add_library(ra_adp SHARED
     ${ra_adp_list}
 )
-
+binary_add_version(ra_adp)
 target_compile_definitions(ra_adp PRIVATE
     LOG_CPP
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>

@@ -26,7 +26,7 @@ set(ra_list
 )
 
 add_library(ra  SHARED ${ra_list})
-
+binary_add_version(ra)
 target_include_directories(ra PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../hdc

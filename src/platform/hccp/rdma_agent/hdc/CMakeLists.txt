@@ -30,7 +30,7 @@ set(ra_hdc_list
 )
 
 add_library(ra_hdc SHARED ${ra_hdc_list})
-
+binary_add_version(ra_hdc)
 target_compile_definitions(ra_hdc PRIVATE
     LOG_CPP)
 

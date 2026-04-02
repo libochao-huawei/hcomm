@@ -22,7 +22,7 @@ set(ra_peer_list
 
 #编译目标
 add_library(ra_peer SHARED ${ra_peer_list})
-
+binary_add_version(ra_peer)
 target_include_directories(ra_peer PRIVATE
     ${BASE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/
