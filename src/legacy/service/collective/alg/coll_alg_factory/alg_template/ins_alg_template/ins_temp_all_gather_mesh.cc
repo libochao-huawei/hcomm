@@ -69,13 +69,20 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
                    myRank_, tempVTopo_[0].size(), tempInsQues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
-    CHK_RET(LocalCopyToScratch(tempInsQues[0]));
+    // queue arrangement
+    std::vector<InsQuePtr> mainInsQues;
+    for (u32 queIdx = 0; queIdx < majorQueNum_ + 1; queIdx++) {
+        mainInsQues.push_back(tempInsQues[queIdx * queNumPerNeighbor_]);
+    }
+
+    // Local Copy from Input to Output for OPBASE
+    CHK_RET(LocalDataCopy(mainInsQues));
+    if (tempRankSize_ == 1) {
+        return HcclResult::HCCL_SUCCESS;
+    }
 
     // semaphore sync
     CHK_RET(PreSyncInterQueues(tempInsQues));
-
-    // Local Copy from Input to Output
-    CHK_RET(LocalCopyToUsrOut(tempInsQues[0]));
 
     // locate myRank in tempVTopo -> algRank
     u32 myAlgRank;
@@ -88,7 +95,9 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
         HcclResult::HCCL_E_INTERNAL);
 
     // semaphore sync
-    CHK_RET(PostSyncInterQueues(tempInsQues));
+    if (majorQueNum_ > 1) { // more than one rank
+        CHK_RET(PostSyncInterQueues(mainInsQues));
+    }
 
     return HcclResult::HCCL_SUCCESS;
 }

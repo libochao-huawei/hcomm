@@ -13,11 +13,10 @@
 using namespace AscendC;
  
 template<typename T>
-// todo 简化参数
 class AivReduceScatterMesh1D : public AivCommBase {
     constexpr static uint64_t stageNum = 2;  // 生产者 消费者
-    constexpr static uint64_t DATA_SLICE_NUM = 64 * 1024 / sizeof(T);
-
+    constexpr static uint64_t TAG_FLAG_SIZE = 8;
+    constexpr static uint64_t maxRankSize = 8;
 public:
     __aicore__ inline AivReduceScatterMesh1D() {
     }
@@ -92,7 +91,7 @@ private:
     uint64_t outputOffset;
     int32_t curTag;
     uint64_t consumProcessNum;
-    int64_t inputOffVec[MAX_RANK_SIZE];
+    int64_t inputOffVec[maxRankSize];
     uint32_t coreNumPerStage;
 };
  
