@@ -129,7 +129,7 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
 
     CHK_PRT_RET(curTask == nullptr || ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]FindTaskInfo fail, curTask[%p], ret[%d], deviceid[%u], streamid[%u], taskid[%u].",
-            __func__, curTask, ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
+            __func__, curTask.get(), ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
     if (curTask->dfxOpInfo_ == nullptr) {
         HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);

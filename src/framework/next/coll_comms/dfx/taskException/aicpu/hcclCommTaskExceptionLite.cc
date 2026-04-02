@@ -145,7 +145,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
 
     CHK_PRT_RET(curTask == nullptr || ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]FindTaskInfo fail, curTask[%p], ret[%d], devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
-            __func__, curTask, ret, devId_, exceptionInfo.sqId, sqeId), HCCL_SUCCESS);
+            __func__, curTask.get(), ret, devId_, exceptionInfo.sqId, sqeId), HCCL_SUCCESS);
 
     // 每个通信域仅首次上报（N秒快恢时重置）
     if (!aicpuComm->IsErrorReported()) {
