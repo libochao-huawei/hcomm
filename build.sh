@@ -617,10 +617,14 @@ fi
 
 if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=OFF"
 fi
 
 if [ "${BUILD_AARCH}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=OFF"
 fi
 
 if [ "${ASAN}" == "true" ];then
