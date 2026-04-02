@@ -27,7 +27,7 @@
 namespace Hccl {
 
 MAKE_ENUM(DataType, INT8, INT16, INT32, FP16, FP32, INT64, UINT64, UINT8, UINT16, UINT32, 
-            FP64, BFP16, INT128, BF16_SAT, HIF8, FP8E4M3, FP8E5M2, FP8E8M0, MXFP8)
+            FP64, BFP16, INT128, BF16_SAT, HIF8, FP8E4M3, FP8E5M2, FP8E8M0)
 
 const std::unordered_map<DataType, u32, std::EnumClassHash> DATA_TYPE_SIZE_MAP = {
     {DataType::INT8, sizeof(s8)},
@@ -47,8 +47,7 @@ const std::unordered_map<DataType, u32, std::EnumClassHash> DATA_TYPE_SIZE_MAP =
     {DataType::HIF8, 1},
     {DataType::FP8E4M3, 1},
     {DataType::FP8E5M2, 1},
-    {DataType::FP8E8M0, 1},
-    {DataType::MXFP8, 1},
+    {DataType::FP8E8M0, 1}
 };
 
 const std::unordered_map<DataType, HcclDataType, std::EnumClassHash> HCCL_DATA_TYPE_MAP = {
@@ -69,7 +68,6 @@ const std::unordered_map<DataType, HcclDataType, std::EnumClassHash> HCCL_DATA_T
     {DataType::FP8E4M3, HCCL_DATA_TYPE_FP8E4M3},
     {DataType::FP8E5M2, HCCL_DATA_TYPE_FP8E5M2},
     {DataType::FP8E8M0, HCCL_DATA_TYPE_FP8E8M0},
-    {DataType::MXFP8, HCCL_DATA_TYPE_MXFP8},
 };
 
 const std::unordered_map<HcclDataType, DataType, std::EnumClassHash> DATA_TYPE_MAP = {
@@ -90,7 +88,6 @@ const std::unordered_map<HcclDataType, DataType, std::EnumClassHash> DATA_TYPE_M
     {HCCL_DATA_TYPE_FP8E4M3, DataType::FP8E4M3},
     {HCCL_DATA_TYPE_FP8E5M2, DataType::FP8E5M2},
     {HCCL_DATA_TYPE_FP8E8M0, DataType::FP8E8M0},
-    {HCCL_DATA_TYPE_MXFP8, DataType::MXFP8},
 };
 
 const std::unordered_map<uint32_t, std::string> DATA_TYPE_TO_STRING_MAP = {
@@ -111,7 +108,6 @@ const std::unordered_map<uint32_t, std::string> DATA_TYPE_TO_STRING_MAP = {
     {15, "FP8E4M3"},
     {16, "FP8E5M2"},
     {17, "FP8E8M0"},
-    {18, "MXFP8"},
 };
 
 const std::unordered_map<uint32_t, std::string> OP_TYPE_TO_STRING_MAP = {{0, "sum"}, {1, "mul"}, {2, "max"}, {3, "PROD"}};
