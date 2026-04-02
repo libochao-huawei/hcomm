@@ -16,7 +16,7 @@
 namespace Hccl {
 #ifdef CCL_KERNEL_AICPU
 
-RegisterProfCallBack()
+void RegisterProfCallBack()
 {
     if (MsprofRegisterCallback != nullptr) {
         HCCL_INFO("RegisterProfCallBack not null");

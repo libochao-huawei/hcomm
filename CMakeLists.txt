@@ -82,6 +82,7 @@ set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
 set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
 if(ENABLE_TEST)
+    enable_testing()
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)

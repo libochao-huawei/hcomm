@@ -144,6 +144,7 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
     CHK_PRT_RET(channelNum == 0,
         HCCL_ERROR("[%s] invalid param: channelNum is zero", __func__), HCCL_E_PARA);
 
+    std::unordered_map<RankPair*, std::unordered_map<hcomm::EndpointPair*, u32>> reuseSocketIdxMap{};
     for (uint32_t i = 0; i < channelNum; ++i) {
         const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
         const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
@@ -166,18 +167,29 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         uint32_t listenPort = 0;
         CHK_RET(QueryListenPort(rankId_, remoteRank, localEndpointDesc, remoteEndpointDesc, listenPort, hcommDescs[i]));
 
+
+        if (reuseSocketIdxMap.find(rankPair) == reuseSocketIdxMap.end()) {
+            std::unordered_map<hcomm::EndpointPair*, u32> endpointPair2Idx{};
+            endpointPair2Idx.emplace(endpointPair, 0);
+            reuseSocketIdxMap.emplace(rankPair, endpointPair2Idx);
+        } else if (reuseSocketIdxMap[rankPair].find(endpointPair) == reuseSocketIdxMap[rankPair].end()) {
+            reuseSocketIdxMap[rankPair].emplace(endpointPair, 0);
+        }
+        u32& reuseIdx = reuseSocketIdxMap[rankPair][endpointPair];
+
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, listenPort, socket);
+        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d]",
-                __func__, i, remoteRank, localEndpointDesc.protocol),
+            HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
+                __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
             ret);
         CHK_PTR_NULL(socket);
 
         hcommDescs[i].socket = reinterpret_cast<HcommSocket>(socket);
 
-        HCCL_INFO("[%s][%u/%u] socket created successfully, remoteRank[%u], socket[%p]",
-            __func__, i + 1, channelNum, remoteRank, socket);
+        HCCL_INFO("[%s][%u/%u] socket created successfully, remoteRank[%u], socket[%p] reuseIdx[%u]",
+            __func__, i + 1, channelNum, remoteRank, socket, reuseIdx);
+        reuseIdx++;
     }
     return HCCL_SUCCESS;
 }
@@ -324,53 +336,51 @@ HcclResult MyRank::BatchConnectChannels(const HcclChannelDesc* channelDescs, Cha
     std::vector<int32_t> statusVec(channelNum, 0);
     int32_t* statusList = statusVec.data();
     uint32_t retryCount = 0;
-    for (uint32_t i = 0; i < channelNum; ++i) {
-        while (true) {
-            HcclResult ret =  ChannelProcess::ChannelGetStatus(channelHandles + i, 1, statusList + i);
+    while (true) {
+        HcclResult ret =  ChannelProcess::ChannelGetStatus(channelHandles, channelNum, statusList);
 
-            // 卫语句：先处理异常情况
+        // 卫语句：先处理异常情况
 
-            // 1. 检查超时
-            if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - startTime).count();
-                HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
-                    __func__, timeout, channelNum, elapsed, retryCount);
-                Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
-                CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
-                    HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
-                logger::ChannelLogger::PrintChannelErrorDetails(
-                    rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
-                return HCCL_E_TIMEOUT;
-            }
-
-            // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
-            if (ret == HCCL_E_AGAIN) {
-                retryCount++;
-                continue;
-            }
-
-            // 3. 处理失败
-            if (ret != HCCL_SUCCESS) {
-                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::steady_clock::now() - startTime).count();
-                HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
-                    __func__, channelNum, ret, elapsed, retryCount);
-                Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
-                CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
-                    HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
-                logger::ChannelLogger::PrintChannelErrorDetails(
-                    rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
-                return ret;
-            }
-
-            // 4. 正常情况：所有通道连接成功
+        // 1. 检查超时
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - startTime).count();
-            HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
-                __func__, channelNum, elapsed, retryCount);
-            break;
+            HCCL_ERROR("[%s] channel connect timeout after %lld sec, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, channelNum, elapsed, retryCount);
+            Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+            CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+            logger::ChannelLogger::PrintChannelErrorDetails(
+                rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
+            return HCCL_E_TIMEOUT;
         }
+
+        // 2. 处理重试（去除频繁的重试日志，一秒可能重试上千次）
+        if (ret == HCCL_E_AGAIN) {
+            retryCount++;
+            continue;
+        }
+
+        // 3. 处理失败
+        if (ret != HCCL_SUCCESS) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[%s] channel connect failed, channelNum[%u], ret[%d], elapsed[%lld]ms, retryCount[%u]",
+                __func__, channelNum, ret, elapsed, retryCount);
+            Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+            CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+            logger::ChannelLogger::PrintChannelErrorDetails(
+                rankId_, channelNum, channelDescs, channelHandles, statusList, elapsed, tlsStatus);
+            return ret;
+        }
+
+        // 4. 正常情况：所有通道连接成功
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count();
+        HCCL_INFO("[%s] all channels connected successfully, channelNum[%u], elapsed[%lld]ms, retryCount[%u]",
+            __func__, channelNum, elapsed, retryCount);
+        break;
     }
     return HCCL_SUCCESS;
 }

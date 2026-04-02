@@ -40,13 +40,12 @@ bool CcuRepRemPostVar::Translate(CcuInstr *&instr, uint16_t &instrId, const Tran
         Hccl::THROW<Hccl::CcuApiException>("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel",
             __func__, channel);
     }
-    uint32_t rmtXnId{0};
+    channelId = channelImpl->GetChannelId();
     CHK_PRT_THROW(channelImpl->GetRmtXnByIndex(paramIndex, rmtXnId) != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[CcuRepRemPostSem][%s] failed to get remote xn id, channelHandle[0x%llx].",
             __func__, channel),
         Hccl::InternalException, "failed to get remote xn id.");
 
-    uint32_t rmtCkeId{0};
     CHK_PRT_THROW(channelImpl->GetRmtCkeByIndex(semIndex, rmtCkeId) != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[CcuRepRemPostSem][%s] failed to get remote cke id, channelHandle[0x%llx].",
             __func__, channel),

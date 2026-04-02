@@ -40,16 +40,16 @@ bool CcuRepRemWaitSem::Translate(CcuInstr *&instr, uint16_t &instrId, const Tran
         Hccl::THROW<Hccl::CcuApiException>("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel",
             __func__, channel);
     }
-    uint32_t locCkeId{0};
-    CHK_PRT_THROW(channelImpl->GetLocCkeByIndex(semIndex, locCkeId) != HcclResult::HCCL_SUCCESS,
+    channelId = channelImpl->GetChannelId();
+    CHK_PRT_THROW(channelImpl->GetLocCkeByIndex(semIndex, signalId) != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[CcuRepRemWaitSem][%s] failed to get to loc cke id.", __func__),
         Hccl::InternalException, "failed to get resource");
 
     // 需要profiling的使用SetCKEInstr, 否则使用ClearCKEInstr
     if (isProfiling) {
-        SetCKEInstr(instr++, 0, 0, locCkeId, mask, 1);
+        SetCKEInstr(instr++, 0, 0, signalId, mask, 1);
     } else {
-        ClearCKEInstr(instr++, 0, 0, locCkeId, mask, 1);
+        ClearCKEInstr(instr++, 0, 0, signalId, mask, 1);
     }
     CHK_PRT_THROW(instrId > UINT16_MAX - instrCount,
                         HCCL_ERROR("[CcuRepRemWaitSem::Translate]uint16 integer overflow occurs, instrId = [%hu], instrCount = [%hu]", instrId, instrCount),

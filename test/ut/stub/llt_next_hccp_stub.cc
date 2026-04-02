@@ -112,6 +112,14 @@ int RaGetSecRandom(struct RaInfo *info, uint32_t *value)
     return 0;
 }
 
+int RaCtxGetAuxInfo(void *ctx_handle, struct HccpAuxInfoIn *in, struct HccpAuxInfoOut *out) {
+    return 0;
+}
+
+int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *num) {
+    return 0;
+}
+
 namespace Hccl {
 HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
 {
