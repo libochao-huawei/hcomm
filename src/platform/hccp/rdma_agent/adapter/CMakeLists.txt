@@ -27,36 +27,31 @@ set(ra_adp_list
 add_library(ra_adp SHARED
     ${ra_adp_list}
 )
-
+binary_add_version(ra_adp)
 target_compile_definitions(ra_adp PRIVATE
-    LOG_CPP
     $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
 )
 
 target_include_directories(ra_adp PRIVATE
-    ${BASIC_PATH}/external_depends/inc/log
-    ${RDMA_CORE_INCLUDE_DIR}
     ${BASIC_PATH}/inc/network
     ${BASIC_PATH}/inc/private/network
+    ${BASIC_PATH}/common
     ${BASIC_PATH}/rdma_agent/inc
     ${BASIC_PATH}/rdma_agent/hdc/
     ${BASIC_PATH}/rdma_agent/hdc/async/
     ${BASIC_PATH}/rdma_agent/comm
     ${BASIC_PATH}/rdma_agent/adapter
     ${BASIC_PATH}/rdma_agent/adapter/async/
+    ${BASIC_PATH}/rdma_agent/adapter/ctx
     ${BASIC_PATH}/rdma_service
-    ${BASIC_PATH}/common
-    ${TLV_DIR}
     ${BASIC_PATH}/rdma_service/tlv
-    # cann头文件
+    ${BASIC_PATH}/rdma_service/ctx
+    ${BASIC_PATH}/external_depends/host_lite
+    ${BASIC_PATH}/external_depends/inc/log
+    ${TLV_DIR}
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    # rdma头文件
-    ${BASIC_PATH}/external_depends/host_lite
-
-    # HCCP Legacy
-    ${BASIC_PATH}/rdma_agent/adapter/ctx
-    ${BASIC_PATH}/rdma_service/ctx
+    ${RDMA_CORE_INCLUDE_DIR}
 )
 
 if(NOT BUILD_OPEN_PROJECT)
