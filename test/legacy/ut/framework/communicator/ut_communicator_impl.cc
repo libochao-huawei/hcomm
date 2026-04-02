@@ -3175,6 +3175,10 @@ TEST_F(CommunicatorImplTest, ut_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SU
     u64 len = 0;
     int32_t aivCoreLimit = 2;
 
+    std::string tag = "allreduce";
+    void* scratchMem = nullptr;
+    fakeComm.RegisterOffloadScratchBuffer(tag, scratchMem, 10);
+
     void *addr = reinterpret_cast<void *>(0x12345678);
     MOCKER(HrtMalloc).stubs().with(any(),any()).will(returnValue(addr));
     MOCKER(HrtFree).stubs();
