@@ -1004,14 +1004,14 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
     recvSize = recvCount * recvTypeSize;
 }
 
-void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch, bool isHcomSelectAlg)
+void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch)
 {
     if (currentCollOperator == nullptr) {
         std::string msg = StringFormat("currentCollOperator is nullptr");
         THROW<NullPtrException>(msg);
     }
 
-    if (isLaunch && !isHcomSelectAlg) {
+    if (isLaunch) {
         LaunchConvertCollOperatorA2A(opParams);
     } else {
         DefaultConvertCollOperatorA2A(opParams);
@@ -1119,7 +1119,7 @@ void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams)
     HCCL_INFO("[CommunicatorImpl::%s] end.", __func__);
 }
 
-void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch, bool isHcomSelectAlg)
+void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch)
 {
     std::string errorMsg = "CovertToCurrentCollOperator make_unique<CollOperator> failed";
     TRY_CATCH_THROW(InternalException, errorMsg, currentCollOperator = make_unique<CollOperator>(););
@@ -1147,7 +1147,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
     currentCollOperator->debugCase = opParams.debugCase;
     currentCollOperator->sendRecvRemoteRank = opParams.dstRank;
     if (opParams.opType == OpType::ALLTOALL || opParams.opType == OpType::ALLTOALLV || opParams.opType == OpType::ALLTOALLVC) {
-        ConvertCollOperatorA2A(opParams, isLaunch, isHcomSelectAlg);
+        ConvertCollOperatorA2A(opParams, isLaunch);
     } else if (opParams.opType == OpType::BATCHSENDRECV) {
         currentCollOperator->batchSendRecvDataDes.sendRecvItemsPtr = opParams.batchSendRecvDataDes.sendRecvItemsPtr;
         currentCollOperator->batchSendRecvDataDes.itemNum = opParams.batchSendRecvDataDes.itemNum;
@@ -2919,7 +2919,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     WaitReady();
 
     std::string tag = ""; // 算法选择不需要传入tag，获取kernel arg的时候会用到
-    CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD, true, true);
+    CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD);
     // 图模式算子加载选择CollService
     opExecuteConfig = commExecuteConfig;
     ExecAlgSelect(opParams, OpMode::OFFLOAD);
