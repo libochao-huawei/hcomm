@@ -31,7 +31,8 @@ constexpr u32 ONE_HUNDRED_MICROSECOND_OF_USLEEP = 100;
 constexpr u32 ONE_MILLISECOND_OF_USLEEP         = 1000;
 constexpr unsigned int SOCKET_NUM_ONE           = 1;
 constexpr u32 MAX_NUM_OF_WHITE_LIST_NUM         = 16;
-constexpr uint32_t TP_HANDLE_REQUEST_NUM        = 1;
+/** 与 HCCP get_tp_list 一致，见 hccp_ctx.h HCCP_MAX_TPID_INFO_NUM */
+constexpr uint32_t TP_LIST_BUF_CAPACITY = HCCP_MAX_TPID_INFO_NUM;
 constexpr u32      AUTO_LISTEN_PORT             = 0;
 constexpr u64 SOCKET_SEND_MAX_SIZE              = 0x7FFFFFFFFFFFFFFF;
 constexpr u32 MAX_WR_NUM = 1024;
@@ -1385,8 +1386,7 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
        24-31代表芯片配置值b11:64s
     */
     attr.ub.errTimeout       = 16;
-    // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
-    attr.ub.priority         = 2;
+    attr.ub.priority         = in.qos & 0xFU;
     attr.ub.rnrRetry         = RNR_RETRY;
     attr.ub.flag.bs.shareJfr = 1;
     attr.ub.jettyId          = in.jettyId;
@@ -2122,11 +2122,11 @@ RequestHandle RaUbGetTpInfoAsync(const RdmaHandle rdmaHandle, const RaUbGetTpInf
     cfg.peerEid = IpAddressToHccpEid(rmtAddr);
     HCCL_INFO("RaUbGetTpInfoAsync cfg.peerEid=%s", HccpEidDesc(cfg.peerEid).c_str());
 
-    out.resize(sizeof(HccpTpInfo));
+    out.resize(static_cast<size_t>(TP_LIST_BUF_CAPACITY) * sizeof(HccpTpInfo));
     struct HccpTpInfo *info = reinterpret_cast<struct HccpTpInfo *>(out.data());
 
     void *raReqHandle = nullptr;
-    num = TP_HANDLE_REQUEST_NUM; // 指定需要从管控面申请tp handle的数量, hccp 会返回实际个数
+    num = TP_LIST_BUF_CAPACITY; // IN: 缓冲容量；OUT: 实际条数
     s32 ret = RaGetTpInfoListAsync(rdmaHandle, &cfg, info, &num, &raReqHandle);
     if (ret != 0 || !raReqHandle) {
         MACRO_THROW(NetworkApiException, StringFormat("[%s] failed, call interface error[%d] raReqHandle[%p], "

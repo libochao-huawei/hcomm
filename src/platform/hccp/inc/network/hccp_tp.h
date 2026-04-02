@@ -54,7 +54,11 @@ struct TpAttr {
     uint8_t atTimes : 5; // corresponding bitmap bit: 9
     uint8_t sl : 4; // corresponding bitmap bit: 10
     uint8_t ttl; // corresponding bitmap bit: 11
-    uint8_t reserved[78];
+    /** bitmap bit: 12; 16-bit mask aligned with urma: bit i=1 means SL=i is available */
+    uint8_t slAvailable[2];
+    /** bitmap bit: 13 */
+    uint8_t dscpConfigModel;
+    uint8_t reserved[75];
 };
 #pragma pack()
 

@@ -55,7 +55,7 @@ protected:
 
 private:
     MAKE_ENUM(InnerStatus,
-        INIT, JETTY_CREATING, TP_INFO_GETTING,
+        INIT, TP_INFO_GETTING, JETTY_CREATING,
         EXCHANGEABLE, JETTY_IMPORTING,
         CONNECTED,
         CONN_INVALID);
@@ -82,6 +82,7 @@ private:
     uint32_t      funcId{0};
     RdmaHandle    rdmaHandle{nullptr};
     uint32_t      jettyNum{0};
+    uint32_t      qos{0};
 
     // 通过ccu comp 获取 ccu buffer信息
     uint64_t      ccuBufAddr{0};
@@ -111,6 +112,7 @@ private:
     HcclResult    GetLocalCcuRmaBufferInfo();
     bool          CreateJetty();
     bool          GetTpInfo();
+    RaUbGetTpInfoParam BuildTpParam() const;
     void          GenerateLocalPsn();
     void          ResetRequestCtxs();
     HcclResult    StartImportJettyRequest(uint32_t jettyIndex, RequestHandle &reqHandle);

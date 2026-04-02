@@ -36,6 +36,7 @@ using namespace hccl;
  */
 
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
+
 HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
     hccl::CollComm* collComm = hcclComm->GetCollComm();
@@ -49,6 +50,28 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
         channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
         channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ProcessUbcChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hccl::hcclComm *hcclComm)
+{
+    hccl::CollComm *collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::CommConfig commConfig = collComm->GetCommConfig();
+
+    if (channelDesc.channelProtocol != COMM_PROTOCOL_UBC_CTP &&
+        channelDesc.channelProtocol != COMM_PROTOCOL_UBC_TP) {
+        HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBC_CTP/UBC_TP", __func__,
+            static_cast<int>(channelDesc.channelProtocol));
+        return HCCL_E_PARA;
+    }
+    channelDescFinal.ubcAttr.qos = (channelDesc.ubcAttr.qos == INVALID_UINT)
+        ? ((commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) ? EnvConfig::UB_QOS_DEFAULT
+                                                                            : commConfig.GetConfigHcclQos())
+        : channelDesc.ubcAttr.qos;
+    HCCL_INFO("[%s] channelProtocol[%d] qos[%u] (UBC)", __func__,
+        static_cast<int>(channelDescFinal.channelProtocol), channelDescFinal.ubcAttr.qos);
     return HCCL_SUCCESS;
 }
 
@@ -67,9 +90,11 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_HCCS:
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
-        case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
             break;
+        case COMM_PROTOCOL_UBC_CTP:
+        case COMM_PROTOCOL_UBC_TP:
+            return ProcessUbcChannelDesc(channelDesc, channelDescFinal, hcclComm);
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
         default: {
@@ -79,6 +104,7 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_PCIE:    return "COMM_PROTOCOL_PCIE";
                     case COMM_PROTOCOL_SIO:     return "COMM_PROTOCOL_SIO";
                     case COMM_PROTOCOL_UBC_CTP: return "COMM_PROTOCOL_UBC_CTP";
+                    case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
                     case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     default:                    return "UNKNOWN_PROTOCOL";
