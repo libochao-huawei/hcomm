@@ -147,6 +147,9 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     memInfo2.memTag = "newBuffer2";
     void* memHandles[2] = { &memInfo1, &memInfo2 };
 
+    MOCKER(&Hccl::EnvConfig::GetInstance).stubs();
+    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs();
+    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs();
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -173,6 +176,9 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTime
     memInfo.memTag = "testBuffer";
     void* memHandles[1] = { &memInfo };
 
+    MOCKER(&Hccl::EnvConfig::GetInstance).stubs();
+    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs();
+    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs();
     Hccl::SocketStatus fakeSocketStatus = Hccl::SocketStatus::TIMEOUT;
     MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 1);
