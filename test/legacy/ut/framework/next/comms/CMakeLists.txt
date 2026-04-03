@@ -7,17 +7,5 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-add_subdirectory(communicator)
-add_subdirectory(resource_manager)
-add_subdirectory(ccu)
-add_subdirectory(env_config)
-add_subdirectory(misc)
-add_subdirectory(topo)
-add_subdirectory(service)
-add_subdirectory(fault_recovery)
-add_subdirectory(dfx)
-add_subdirectory(device_mode)
-add_subdirectory(interface)
-add_subdirectory(aiv)
-add_subdirectory(group)
-add_subdirectory(next)
+
+add_subdirectory(endpoints)
