@@ -34,4 +34,13 @@ HcclResult RankPairMgr::Get(RankIdPair rankIdPair, RankPair*& out)
     return HCCL_SUCCESS;
 }
 
+ChannelTable RankPairMgr::GetChannelTable()
+{
+    ChannelTable channelTable;
+    for (const auto& rankPair : rankPairMap_) {
+        channelTable[rankPair.first] = rankPair.second->GetEpChannelMap();
+    }
+    return channelTable;
+}
+
 } // namespace hccl
