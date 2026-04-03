@@ -39,7 +39,6 @@ private:
     CcuJetty &operator=(const CcuJetty &that) = delete;
     CcuJetty(CcuJetty &&that) = delete;
     CcuJetty &operator=(CcuJetty &&that) = delete;
-    
 private:
     int32_t devLogicId_{0};
     Hccl::IpAddress ipAddr_{};
