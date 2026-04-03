@@ -41,6 +41,7 @@ public:
             "[InsTempAllGatherMesh1D][CalcScratchMultiple] templateScratchMultiplier[%llu]", tempRankSize_);
         return tempRankSize_;
     }
+    DataSlice CalcDataSliceForLinks(const DataSlice& recvSrcSliceAllLinks, std::vector<float> dataSplitRate, u32 j) const;
 private:
     HcclResult LocalCopyToScratch(InsQuePtr tempInsQue);
     HcclResult LocalCopyToUsrOut(InsQuePtr tempInsQue);
