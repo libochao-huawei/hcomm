@@ -223,6 +223,28 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_GroupModeAndAllocSliceMemFa
     GlobalMockObject::verify();
 }
 
+TEST_F(HcclImplTest, ut_GroupSendRecv_AicpuInitOpTilingDataBuf_Return_HCCL_SUCCESS)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable, 3);
+    std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
+
+    MOCKER_CPP(&HcclCommunicator::AicpuInitOpTilingDataFromOpParam).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitAndCheckAicpuOrderNotify).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::BuildHierarchicalAlgOption).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    communicator->Init(params, rankTable);
+    params.deviceType = DevType::DEV_TYPE_910B;
+    params.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
+
+    AicpuOpTiling opTilingInfo;
+
+    ret = communicator->AicpuInitOpTilingDataBuf(params, params.opType, "", opTilingInfo, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
 TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_hrtSetDevice_Failed_Return_HCCL_E_INTERNAL)
 {
     HcclResult ret = HCCL_SUCCESS;
