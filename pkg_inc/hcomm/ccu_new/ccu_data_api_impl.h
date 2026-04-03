@@ -12,6 +12,7 @@
 #ifndef CCU_DATA_API_IMPL_H
 #define CCU_DATA_API_IMPL_H
 
+#include "hccl_types.h"
 #include "ccu_types.h"
 #include "hcomm_primitives.h"
 #ifdef __cplusplus
