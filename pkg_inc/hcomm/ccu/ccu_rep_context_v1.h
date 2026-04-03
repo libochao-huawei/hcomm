@@ -51,7 +51,6 @@ struct CcuProfilingInfo {
 };
 namespace CcuRep {
 
-
 struct LoopGroupProfilingInfo {
  	     std::vector<CcuProfilingInfo> ccuProfilingInfos;
  	     std::unordered_map<std::shared_ptr<CcuRep::CcuRepBase>, uint32_t> loadRep2ArgIdxMap; // loadArg rep -> argIdx

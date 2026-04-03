@@ -136,5 +136,41 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
  */
 HcclResult CcuReleaseChannel(const int32_t deviceLogicId, const uint8_t dieId, const uint32_t ccuChannelId);
 
+/**
+ * @brief 触发CCU Task Kill
+ *
+ * @param deviceLogicId device逻辑ID
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 该接口会处理全部die，未启用die将跳过
+ */
+HcclResult CcuSetTaskKill(const int32_t deviceLogicId);
+
+/**
+ * @brief 配置CCU Task Kill完成状态
+ *
+ * @param deviceLogicId device逻辑ID
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 该接口会处理全部die，未启用die将跳过
+ */
+HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId);
+
+/**
+ * @brief 清空CCU Task Kill状态
+ *
+ * @param deviceLogicId device逻辑ID
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 该接口会处理全部die，未启用die将跳过
+ */
+HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId);
+
+/**
+ * @brief 清理指定ioDie CCU的全部CKE资源，重置为0
+ *
+ * @param deviceLogicId device逻辑ID
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note 未启用die无需清理将视为成功
+ */
+HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId);
+
 }; // namespace hcomm
 #endif // CCU_DEV_MGR_PUB_H
