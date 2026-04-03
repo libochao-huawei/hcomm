@@ -7,32 +7,22 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef HCCL_COMM_PROFILING_LITE_H
-#define HCCL_COMM_PROFILING_LITE_H
+#ifndef MEM_TRANSPORT_CALLBACK_LITE_H
+#define MEM_TRANSPORT_CALLBACK_LITE_H
+
 #include "mirror_task_manager_lite.h"
-#include "profiling_reporter_lite.h"
-#include "types.h"
+#include "virtual_topo.h"
 
-namespace hccl {
+namespace Hccl{
+class MemTransportCallbackLite {
+    private:
+        const LinkData link_;
+        MirrorTaskManagerLite &mirrorTaskManagerLite_;
 
-class HcclCommProfilingLite {
-public:
-    // 构造函数
-    HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManagerLite* mirrorTaskManagerLite);
-    
-    // 上报所有任务
-    void ReportAllTasks();
-
-    // 更新Profiling统计
-    void UpdateProfStat();
-    
-    // 获取MirrorTaskManager
-    Hccl::MirrorTaskManagerLite* GetMirrorTaskManagerLite() const;
-    
-private:
-    std::unique_ptr<Hccl::MirrorTaskManagerLite> mirrorTaskManagerLite_;
-    std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
+    public:
+        MemTransportCallbackLite(const LinkData link, MirrorTaskManagerLite &mirrorTaskManagerLite);
+        void operator()(u32 streamId, u32 taskId, const TaskParam &taskParam);
 };
-}
 
-#endif 
+}
+#endif
