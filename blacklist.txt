@@ -2,6 +2,7 @@ src/framework/device/framework/aicpu_communicator.cc
 src/framework/device/framework/aicpu_cache_manager.cc
 src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc
 src/framework/communicator/impl/hccl_communicator_device.cc
+src/framework/communicator/hccl_comm_device.cc
 src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
 src/framework/communicator/impl/independent_op/data_api/hccl_api_data_cpu.cc
 src/framework/next/coll_comms/communicator/aicpu/aicpu_indop_process.cc
