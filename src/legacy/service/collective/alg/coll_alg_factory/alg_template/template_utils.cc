@@ -447,4 +447,25 @@ HcclResult BufferTypeToAddr(const BufferType &bufferType, CollAlgOperator &op, u
     addr = buffer->GetAddr();
     return HcclResult::HCCL_SUCCESS;
 }
+ 
+HcclResult CalcDataSplitRateForLinks(const std::vector<LinkData> &links, std::vector<float> &dataSplitRate)
+{
+    //取到第一个对端的link数量来作为数据切分的依据
+    std::vector<u8> linkPortGroupSizes;
+    linkPortGroupSizes.resize(links.size());
+    for (u32 linkIdx = 0; linkIdx < links.size(); linkIdx++) {
+        const LinkData& linkData = links[linkIdx];
+        linkPortGroupSizes[linkIdx] = linkData.GetPortGroupSize();
+    }
+    u32 totalPortNum = accumulate(linkPortGroupSizes.begin(), linkPortGroupSizes.end(), 0);
+    if(totalPortNum == 0){
+        HCCL_ERROR("totalPortNum is zero");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    for(u32 linkIdx = 0; linkIdx < linkPortGroupSizes.size(); linkIdx++){
+        dataSplitRate[linkIdx] = static_cast<float>(linkPortGroupSizes[linkIdx]) / totalPortNum;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+ 
 } // namespace Hccl

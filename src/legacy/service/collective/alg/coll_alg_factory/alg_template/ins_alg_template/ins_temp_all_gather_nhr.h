@@ -59,6 +59,7 @@ public:
             "[InsTempAllGatherNHR][CalcScratchMultiple] templateScratchMultiplier[%llu]", tempRankSize_);
         return tempRankSize_;
     }
+    DataSlice CalcDataSliceForLinks(const DataSlice& recvSrcSliceAllLinks, std::vector<float> dataSplitRate, u32 j) const;
 private:
     TemplateDataParams tempAlgParams_;
     ResLinks tempLinks_;

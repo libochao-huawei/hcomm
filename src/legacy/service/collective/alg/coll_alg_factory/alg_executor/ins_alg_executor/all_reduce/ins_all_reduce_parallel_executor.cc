@@ -52,6 +52,20 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
 
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    for (uint64_t levelNumIdx = 0; levelNumIdx < 2; levelNumIdx++) {
+        rank2PathNumMap.emplace_back();
+        for (auto rankIdx : virtRanks_[levelNumIdx]) {
+            if (rankIdx == myRank_) {
+                continue;
+            }
+            std::vector<NetInstance::Path> tmpPaths = rankGraph->GetPaths(levelNumIdx, myRank_, rankIdx);
+            rank2PathNumMap[levelNumIdx][rankIdx] = tmpPaths.size();
+        }
+    }
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
+
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
@@ -88,6 +102,20 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
 
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    for (uint64_t levelNumIdx = 0; levelNumIdx < 2; levelNumIdx++) {
+        rank2PathNumMap.emplace_back();
+        for (auto rankIdx : virtRanks_[levelNumIdx]) {
+            if (rankIdx == myRank_) {
+                continue;
+            }
+            std::vector<NetInstance::Path> tmpPaths = rankGraph->GetPaths(levelNumIdx, myRank_, rankIdx);
+            rank2PathNumMap[levelNumIdx][rankIdx] = tmpPaths.size();
+        }
+    }
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
+
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
@@ -103,27 +131,10 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqIntra.links, algResReq.levelRankPairs));
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqInter.links, algResReq.levelRankPairs));
     algResReq.primQueueNum = resReqIntra.queNum + resReqInter.queNum;
-    HCCL_INFO("[InsAllReduceParallelExecutor::CalcRes]primQueueNum = %u", algResReq.primQueueNum);
-    std::vector<std::tuple<QId, QId, u32>> notifyRequests;
-
-    for (QId q = 1; q < algResReq.primQueueNum; q++) {
-        notifyRequests.emplace_back(std::make_tuple(0, q, 0));
-        notifyRequests.emplace_back(std::make_tuple(q, 0, 0));
-    }
-
-    for (QId q = resReqIntra.queNum; q < algResReq.primQueueNum; q++) {
-        if(resReqIntra.queNum == q){
-            continue;
-        }
-        notifyRequests.emplace_back(std::make_tuple(resReqIntra.queNum, q, 0));
-        notifyRequests.emplace_back(std::make_tuple(q, resReqIntra.queNum, 0));
-        HCCL_INFO("[InsAllReduceParallelExecutor] CalcRes notifyRequests:%u->%u. %u->%u",resReqIntra.queNum,q, q,resReqIntra.queNum);
-    }
-
-    algResReq.queueNotifys = notifyRequests;
+    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, resReqIntra.queNum, algResReq.queueNotifys));
+    CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqIntra.links, algResReq.links));
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqIntra.links, algResReq.links));
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqInter.links, algResReq.links));
-
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -320,6 +331,19 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     tempAlgIntra.InitReduceInfo(redOp_, dataType_);
     tempAlgIntra.SetCollOp(op);
 
+    std::vector<std::map<u32, u32>>rank2PathNumMap;
+    for (uint64_t levelNumIdx = 0; levelNumIdx < 2; levelNumIdx++) {
+        rank2PathNumMap.emplace_back();
+        for (auto rankIdx : virtRanks_[levelNumIdx]) {
+            auto links = linkMgr->GetLinks(levelNumIdx, rankIdx);
+            if(links.size()!=0){
+                rank2PathNumMap[levelNumIdx][rankIdx]=links.size();
+            }
+        }
+    }
+    tempAlgIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInter.setPathNumMap(rank2PathNumMap[1]);
+    
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntra, tempAlgInter));
     CHK_RET(GenInsQues(tempAlgIntra, tempAlgInter));
