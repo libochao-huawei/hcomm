@@ -202,6 +202,8 @@ HcclResult GetLocalSendRecvInfoforAlltoallV(const CollAlgOperator &opParam, cons
 HcclResult GetLocalSendRecvInfoforAlltoallVC(const CollAlgOperator &opParam, const u32 userRank, const u32 userRankSize, A2ASendRecvInfo &localSendRecvInfo);
 HcclResult GetAlltoAllLocalSendRecvInfo(const CollAlgOperator &opParam, const u32 userRank, const u32 userRankSize, A2ASendRecvInfo &localSendRecvInfo);
 HcclResult BufferTypeToAddr(const BufferType &bufferType, CollAlgOperator &op, uint64_t &addr);
+HcclResult CalcDataSplitRateForLinks(const std::vector<LinkData> &links, std::vector<float> &dataSplitRate);
+DataSlice CalcDataSliceForLinks(const DataSlice& recvSrcSliceAllLinks, std::vector<float> dataSplitRate, u32 j, DataType dataType_);
 } // namespace Hccl
 
 #endif // HCCLV2_COLL_ALG_BASE
