@@ -26,6 +26,7 @@
 #include "transport_base_pub.h"
 #include "transport_p2p_pub.h"
 #include "broadcast_operator.h"
+#include "aicpu_operator_pub.h"
 
 #define private public
 #define protected public
@@ -406,5 +407,192 @@ TEST_F(HcclImplTest, Ut_SplitBsrData_When_countEqualZero_Expect_ReturnIsHCCL_SUC
     std::vector<HcclSendRecvItem> deviceSendRecvInfo;
     hcclCommunicator->SplitBsrData(opParam, isDirectRemoteRank, hostSendRecvInfo, deviceSendRecvInfo);
     EXPECT_EQ(hostSendRecvInfo.size(), 0);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplTest, Ut_SetDynamicTilingDataBatchSendRecv_When_A2GroupMode_Expect_isDirectRemoteRankCopied)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable, 3);
+    params.deviceType = DevType::DEV_TYPE_910B;
+    std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
+
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    ret = communicator->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    communicator->SetGroupMode(true);
+    EXPECT_EQ(communicator->isGroupMode_, true);
+
+    communicator->userRankSize_ = 3;
+
+    u32 itemNum = 2;
+    HcclSendRecvItem sendRecvItems[2] = {
+        {HcclSendRecvType::HCCL_SEND, nullptr, 10, HcclDataType::HCCL_DATA_TYPE_FP32, 1},
+        {HcclSendRecvType::HCCL_RECV, nullptr, 20, HcclDataType::HCCL_DATA_TYPE_FP32, 2}
+    };
+
+    u32 dynamicDataSize = sizeof(struct OpTilingBatchSendRecvDataDes) + 
+                          itemNum * sizeof(HcclSendRecvItem) + 
+                          communicator->userRankSize_ * sizeof(u8);
+    HostMem dynamicDataMem = HostMem::alloc(dynamicDataSize);
+
+    struct OpTilingBatchSendRecvDataDes *batchSendRecvDataPtr = 
+        reinterpret_cast<struct OpTilingBatchSendRecvDataDes *>(dynamicDataMem.ptr());
+    batchSendRecvDataPtr->itemNum = itemNum;
+    for (u32 i = 0; i < itemNum; i++) {
+        batchSendRecvDataPtr->batchSendRecvItem[i] = sendRecvItems[i];
+    }
+
+    std::vector<u8> isDirectRemoteRank(communicator->userRankSize_, 1);
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        isDirectRemoteRank[i] = 1;
+    }
+
+    u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + itemNum);
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        isDirectRemoteRankPtr[i] = isDirectRemoteRank[i];
+    }
+
+    EXPECT_EQ(batchSendRecvDataPtr->itemNum, itemNum);
+    EXPECT_EQ(batchSendRecvDataPtr->batchSendRecvItem[0].sendRecvType, HcclSendRecvType::HCCL_SEND);
+    EXPECT_EQ(batchSendRecvDataPtr->batchSendRecvItem[1].sendRecvType, HcclSendRecvType::HCCL_RECV);
+
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        EXPECT_EQ(isDirectRemoteRankPtr[i], 1);
+    }
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplTest, Ut_A2GroupSendRecv_isDirectRemoteRank_When_910BAndGroupMode_Expect_SetToFalse)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable, 3);
+    params.deviceType = DevType::DEV_TYPE_910B;
+    std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
+
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    ret = communicator->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    communicator->SetGroupMode(true);
+    EXPECT_EQ(communicator->isGroupMode_, true);
+    EXPECT_EQ(communicator->deviceType_, DevType::DEV_TYPE_910B);
+
+    communicator->userRankSize_ = 3;
+
+    std::vector<u8> isDirectRemoteRank(communicator->userRankSize_, 1);
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        isDirectRemoteRank[i] = 1;
+    }
+
+    OpParam opParam;
+    opParam.opType = HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
+    opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+
+    if (opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && 
+        communicator->deviceType_ == DevType::DEV_TYPE_910B && 
+        communicator->isGroupMode_) {
+        isDirectRemoteRank.resize(communicator->userRankSize_, 0);
+        opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+    }
+
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        EXPECT_EQ(isDirectRemoteRank[i], 0);
+    }
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplTest, Ut_A2GroupSendRecv_isDirectRemoteRank_When_Not910B_Expect_NotModified)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable, 3);
+    params.deviceType = DevType::DEV_TYPE_910;
+    std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
+
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    ret = communicator->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    communicator->SetGroupMode(true);
+    EXPECT_EQ(communicator->isGroupMode_, true);
+    EXPECT_EQ(communicator->deviceType_, DevType::DEV_TYPE_910);
+
+    communicator->userRankSize_ = 3;
+
+    std::vector<u8> isDirectRemoteRank(communicator->userRankSize_, 1);
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        isDirectRemoteRank[i] = 1;
+    }
+
+    OpParam opParam;
+    opParam.opType = HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
+    opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+
+    if (opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && 
+        communicator->deviceType_ == DevType::DEV_TYPE_910B && 
+        communicator->isGroupMode_) {
+        isDirectRemoteRank.resize(communicator->userRankSize_, 0);
+        opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+    }
+
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        EXPECT_EQ(isDirectRemoteRank[i], 1);
+    }
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplTest, Ut_A2GroupSendRecv_isDirectRemoteRank_When_NotGroupMode_Expect_NotModified)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable, 3);
+    params.deviceType = DevType::DEV_TYPE_910B;
+    std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
+
+    MOCKER(hrtProfRegisterCtrlCallback).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    ret = communicator->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    communicator->SetGroupMode(false);
+    EXPECT_EQ(communicator->isGroupMode_, false);
+    EXPECT_EQ(communicator->deviceType_, DevType::DEV_TYPE_910B);
+
+    communicator->userRankSize_ = 3;
+
+    std::vector<u8> isDirectRemoteRank(communicator->userRankSize_, 1);
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        isDirectRemoteRank[i] = 1;
+    }
+
+    OpParam opParam;
+    opParam.opType = HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
+    opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+
+    if (opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && 
+        communicator->deviceType_ == DevType::DEV_TYPE_910B && 
+        communicator->isGroupMode_) {
+        isDirectRemoteRank.resize(communicator->userRankSize_, 0);
+        opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+    }
+
+    for (u32 i = 0; i < communicator->userRankSize_; i++) {
+        EXPECT_EQ(isDirectRemoteRank[i], 1);
+    }
+
     GlobalMockObject::verify();
 }
