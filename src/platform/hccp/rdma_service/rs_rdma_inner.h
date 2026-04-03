@@ -12,6 +12,7 @@
 #define RS_RDMA_INNER_H
 
 #include "rs_common_inner.h"
+#include "rs_list.h"
 
 #define RS_WC_NUM 16384
 #define RS_QP_ATTR_MIN_RNR_TIMER 12
@@ -45,5 +46,46 @@ struct RsMrInfo {
     uint32_t rkey;
     uint64_t addr;
     uint64_t len;
+};
+
+struct RsRdevCb {
+    struct rs_cb *rsCb;
+    unsigned int rdevIndex;
+    struct RsIpAddrInfo localIp;
+    int devNum;
+    const char *devName;
+    int pollCqeNum;
+    unsigned char ibPort;
+    unsigned int qpCnt;
+    unsigned int qpMaxNum;
+    unsigned int txDepth;
+    unsigned int rxDepth;
+    unsigned int notifyType;
+    unsigned long long notifyPaBase;
+    unsigned long long notifyVaBase;
+    unsigned long long notifySize;
+    int notifyAccess;
+    unsigned int cqeErrCnt;
+    pthread_mutex_t cqeErrCntMutex;
+
+    pthread_mutex_t rdevMutex;
+
+    struct ibv_device_attr deviceAttr;
+    struct ibv_mr *notifyMr;
+    struct ibv_pd *ibPd;
+    struct ibv_context *ibCtx;
+    struct ibv_device **devList;
+    struct ibv_context_extend *ibCtxEx;
+
+    struct RsListHead qpList;
+    struct RsListHead typicalMrList;
+    struct RsListHead list;
+
+    int supportLite;
+    struct {
+        bool backupFlag;
+        struct rdev rdevInfo;
+        struct ibv_context *ibCtx;
+    } backupInfo;
 };
 #endif // RS_RDMA_INNER_H
