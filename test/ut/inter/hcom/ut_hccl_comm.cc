@@ -46,7 +46,6 @@
 #include "rank_consistentcy_checker.h"
 #include <iostream>
 #include <fstream>
-#include "v80_rank_table.h"
 #include "dlra_function.h"
 #include <fcntl.h>
 #include <unistd.h>
