@@ -447,4 +447,50 @@ HcclResult BufferTypeToAddr(const BufferType &bufferType, CollAlgOperator &op, u
     addr = buffer->GetAddr();
     return HcclResult::HCCL_SUCCESS;
 }
+ 
+HcclResult CalcDataSplitRateForLinks(const std::vector<LinkData> &links, std::vector<float> &dataSplitRate)
+{
+    //取到第一个对端的link数量来作为数据切分的依据
+    std::vector<u8> linkPortGroupSizes;
+    linkPortGroupSizes.resize(links.size());
+    for (u32 linkIdx = 0; linkIdx < links.size(); linkIdx++) {
+        const LinkData& linkData = links[linkIdx];
+        linkPortGroupSizes[linkIdx] = linkData.GetPortGroupSize();
+    }
+    u32 totalPortNum = accumulate(linkPortGroupSizes.begin(), linkPortGroupSizes.end(), 0);
+    if(totalPortNum == 0){
+        HCCL_ERROR("totalPortNum is zero");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    for(u32 linkIdx = 0; linkIdx < linkPortGroupSizes.size(); linkIdx++){
+        dataSplitRate[linkIdx] = static_cast<float>(linkPortGroupSizes[linkIdx]) / totalPortNum;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+DataSlice CalcDataSliceForLinks(const DataSlice& recvSrcSliceAllLinks, std::vector<float> dataSplitRate, u32 j, DataType dataType_)
+{
+    BufferType type = recvSrcSliceAllLinks.GetType();
+    u64 offset = recvSrcSliceAllLinks.GetOffset();
+    u64 size = recvSrcSliceAllLinks.GetSize();
+    u64 AccSize=0;
+    u64 typeSize = DataTypeSizeGet(dataType_);
+    u64 dataCnt = size / typeSize;
+    u64 linkNum = dataSplitRate.size();
+    std::vector<DataSlice>dataSliceForLinks(linkNum);
+    HCCL_INFO("[InsTempAllGatherNHR] Slice data for links");
+    for(u32 linkIdx = 0; linkIdx < linkNum; linkIdx++){
+        if (linkIdx != linkNum - 1) {
+            dataSliceForLinks[linkIdx].SetSize(static_cast<u64>(static_cast<float>(dataCnt) * dataSplitRate[linkIdx]) * typeSize);
+        }
+        else {
+            dataSliceForLinks[linkIdx].SetSize(size - AccSize);
+        }
+        dataSliceForLinks[linkIdx].SetOffset(offset + AccSize);
+        AccSize += dataSliceForLinks[linkIdx].GetSize();
+        dataSliceForLinks[linkIdx].SetBufferType(type);
+    }
+    return dataSliceForLinks[j];
+}
+
 } // namespace Hccl

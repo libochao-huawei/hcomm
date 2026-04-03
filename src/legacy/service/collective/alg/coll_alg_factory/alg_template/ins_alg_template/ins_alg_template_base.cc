@@ -356,4 +356,10 @@ bool InsAlgTemplateBase::IsPcieLink(const ResLinks &tempLinks)
     HCCL_INFO("IsPcieLink[false]");
     return false;
 }
+HcclResult InsAlgTemplateBase::setPathNumMap(const std::map<u32, u32> &rank2PathNumMap)
+{
+    rank2PathNumMap_ = rank2PathNumMap;
+    return HCCL_SUCCESS;
+}
+ 
 } // namespace Hccl
