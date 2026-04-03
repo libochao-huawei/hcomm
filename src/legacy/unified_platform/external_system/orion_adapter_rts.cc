@@ -1171,9 +1171,9 @@ void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr)
     THROW<NotSupportException>(StringFormat("Unsupported rtWriteValue"));
 }
 
-void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args)
+void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args, const std::string& name)
 {
-    aclError ret = aclrtSetDeviceTaskAbortCallback("HCCL", callback, args);
+    aclError ret = aclrtSetDeviceTaskAbortCallback(name.c_str(), callback, args);
     if (ret != ACL_SUCCESS) {
         string msg = StringFormat("call rtSetTaskAbortCallBack failed. ret=[%d].", ret);
         THROW<RuntimeApiException>(msg);

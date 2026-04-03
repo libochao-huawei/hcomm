@@ -49,7 +49,7 @@ private:
     u64 notifyBaseVa_ = 0;
     u64 notifyTotalSize_ = 0;
     struct MrInfoT notifyMrInfo_{};
-    std::unordered_map<u32, u32> resvMemInfo_{}; //type:pollId
+    std::unordered_map<u32, u32> resvMemInfo_{}; //type:poolId
 };
 
 }  // namespace hccl

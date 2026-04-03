@@ -72,7 +72,6 @@ set(EXCLUDE_PLATFORM_DEVICE_REGEX
 list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/legacy/.*")
-list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/typical/.*")
 
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/coll_comms/rank_graphs/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/engine_ctxs/.*")
@@ -202,6 +201,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/resource/socket
     ${HCCL_CODE_ROOT}/src/platform/resource/mem
     ${HCCL_CODE_ROOT}/src/platform/task/
+    ${HCCL_CODE_ROOT}/src/platform/typical/
     ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
     ${HCCL_CODE_ROOT}/src/hccd
 

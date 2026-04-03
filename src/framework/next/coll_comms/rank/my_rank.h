@@ -20,12 +20,16 @@
 #include "comm_mems/comm_mems.h"
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
+#include "communicator/ns_recovery/ns_recovery.h"
+#include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
+
 namespace hccl {
+
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
  */
@@ -51,6 +55,15 @@ public:
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+
+    // Ns recovery
+    void SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<HDCommunicate> kfcStatusTransferD2H);
+    std::vector<ChannelHandle> GetAllChannelList();
+    HcclResult StopLaunch();
+    HcclResult Clean();
+    HcclResult Resume();
+
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
@@ -81,6 +94,9 @@ private:
 
     // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
     RankGraph* rankGraph_{nullptr};
+
+    // Ns recovery
+    std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
 };
 
 } // namespace hccl

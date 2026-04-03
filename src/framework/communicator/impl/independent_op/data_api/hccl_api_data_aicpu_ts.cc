@@ -25,6 +25,7 @@
 #include "hcclCommOp.h"
 #include "hcomm_diag.h"
 #include "hccl_api_data_aicpu_ts.h"
+#include "hccl_diag.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -46,6 +47,27 @@ bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
     return checkDataType && checkReduceType;
 }
  
+HcclResult HcommThreadGetNotifyId(ThreadHandle thread, uint32_t notifyIdx, uint32_t *notifyId)
+{
+    Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
+    CHK_PTR_NULL(threadPtr);
+    LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
+    CHK_PTR_NULL(notifyPtr);
+    *notifyId = notifyPtr->notifyId_;
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
+{
+    CHK_PTR_NULL(commId);
+    CHK_PTR_NULL(hcclDfxOpInfo);
+    HcclDfxOpInfo *aicpuDfxInfo = reinterpret_cast<HcclDfxOpInfo *>(hcclDfxOpInfo);
+    CHK_RET(HcommThreadGetNotifyId(aicpuDfxInfo->cpuTsThread, aicpuDfxInfo->cpuWaitAicpuNotifyIdx, &aicpuDfxInfo->cpuWaitAicpuNotifyId));
+    CHK_RET(AicpuIndopProcess::AicpuDfxOpInfoInit(aicpuDfxInfo, commId));
+
+    return HCCL_SUCCESS;
+}
 
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
