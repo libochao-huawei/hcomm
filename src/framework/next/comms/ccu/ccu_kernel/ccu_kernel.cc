@@ -25,6 +25,10 @@
 #include "ccu_rep_context_v1.h"
 #include "../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"
 
+#include "ccu_log.h"
+
+#include "hcom_common.h"
+
 // todo: 引入头文件需要检查
 #include "ccu_assist_v1.h"
 #include "hccl_comm_pub.h"
@@ -32,31 +36,30 @@
 #include "task_info.h"
 #include "task_param.h"
 
-#include "ccu_log.h"
-
 namespace hcomm {
 
-constexpr uint32_t TOKEN_VALUE_INDEX = 2;
+constexpr u32 TOKEN_VALUE_INDEX = 2;
 constexpr uint16_t INVALID_U16 = 65535;
 
-template <typename T> T CcuKernel::CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
+template <typename T>
+T CcuKernel::CreateResAssist(
+    std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
 {
-    // 获取DieId
-    uint32_t dieId = GetDieId(); // 外部检查避免越界
+    constexpr uint32_t dieId = 0; // 先填个预留的dieId，后续分配
     resRecord[dieId].emplace_back(this);
-
     auto& item = resRecord[dieId].back();
     item.Reset(resRecord[dieId].size(), dieId);
     return item;
 }
 
-template <typename T> std::vector<T> CcuKernel::CreateBlockResAssist(
-    const uint32_t count, std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
+template <typename T>
+std::vector<T> CcuKernel::CreateBlockResAssist(
+    const uint32_t count,
+    std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
 {
     std::vector<T> block;
-    // 获取DieId
-    uint32_t dieId = GetDieId(); // 外部检查避免越界
     block.reserve(count);
+    constexpr uint32_t dieId = 0; // 先填个预留的dieId，后续分配
     for (size_t i = 0; i < count; i++) {
         block.emplace_back(this);
         block.back().Reset(resRecord[dieId].size() + i, dieId);
@@ -69,88 +72,118 @@ CcuKernel::~CcuKernel()
 {
 }
 
-// static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId)
-// {
-//     void *channelPtr{nullptr};
-//     CHK_RET(HcommChannelGet(channel, &channelPtr));
-//     auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
-//     if (channelImpl == nullptr) {
-//         HCCL_ERROR("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel", __func__, channel);
-//         return HcclResult::HCCL_E_PTR;
-//     }
-//     dieId = channelImpl->GetDieId();
-//     return HcclResult::HCCL_SUCCESS;
-// }
-
-// static HcclResult GetDieIdByChannels(const std::vector<ChannelHandle> &channels, uint32_t &dieId)
-// {
-//     if (channels.empty()) {
-//         dieId = 0;
-//         return HcclResult::HCCL_SUCCESS;
-//     }
-
-//     uint32_t firstDieId = 0;
-//     CHK_RET(GetDieIdByChannel(channels[0], firstDieId));
-//     for (const auto channel : channels) {
-//         uint32_t nextDieId = 0;
-//         CHK_RET(GetDieIdByChannel(channel, nextDieId));
-//         if (firstDieId != nextDieId) {
-//             HCCL_ERROR("[%s] failed, the dies of channels are not same.", __func__);
-//             return HcclResult::HCCL_E_PARA;
-//         }
-//     }
-
-//     dieId = firstDieId;
-//     return HcclResult::HCCL_SUCCESS;
-// }
-
-// todo: 需要整改成rep处理结束后
-HcclResult CcuKernel::Init()
+static HcclResult GetDieIdByChannel(const ChannelHandle channel, uint32_t &dieId)
 {
-    // 根据channels 0 判断dieId
-    // 当前默认给的所有channelhandle都属于一个die
-    // uint32_t dieId{0};
-    // CHK_RET(GetDieIdByChannels(channels_, dieId));
-    // CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
-    //     HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].",
-    //         __func__, dieId, CCU_MAX_IODIE_NUM),
-    //     HcclResult::HCCL_E_PARA);
+    void *channelPtr{nullptr};
+    CHK_RET(static_cast<HcclResult>(HcommChannelGet(channel, &channelPtr)));
+    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+    if (channelImpl == nullptr) {
+        HCCL_ERROR("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel", __func__, channel);
+        return HcclResult::HCCL_E_PTR;
+    }
+    dieId = channelImpl->GetDieId();
+    return HcclResult::HCCL_SUCCESS;
+}
 
-    constexpr uint32_t dieId = 1; // todo: 暂时指定2p使用die 1
+static HcclResult GetDieIdByChannels(const std::unordered_set<ChannelHandle> &channels, uint32_t &dieId)
+{
+    if (channels.empty()) {
+        std::array<bool, CCU_MAX_IODIE_NUM> dieEnableInfos{false, false};
+        int32_t devLogicId = HcclGetThreadDeviceId();
+        (void)CcuGetDieEnableInfos(devLogicId, dieEnableInfos);
+        dieId = CCU_MAX_IODIE_NUM;
+        for (uint32_t die = 0; die < CCU_MAX_IODIE_NUM; die++) {
+            if (dieEnableInfos[die]) {
+                dieId = die;
+                break;
+            }
+        }
+
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    uint32_t firstDieId = 0;
+    CHK_RET(GetDieIdByChannel(*channels.begin(), firstDieId));
+    for (const auto channel : channels) {
+        uint32_t nextDieId = 0;
+        CHK_RET(GetDieIdByChannel(channel, nextDieId));
+        if (firstDieId != nextDieId) {
+            HCCL_ERROR("[%s] failed, the dies of channels are not same.", __func__);
+            return HcclResult::HCCL_E_PARA;
+        }
+    }
+
+    dieId = firstDieId;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+static void MoveResourcesToDie(CcuRepResource &res, uint32_t targetDieId)
+{
+    if (targetDieId == 0) return; // 初始资源位于die0，不用设置
+    
+    auto moveAndSet = [&](auto &arr) {
+        arr[targetDieId] = std::move(arr[0]);
+        for (auto &item : arr[targetDieId]) item.SetDieId(targetDieId);
+    };
+    
+    moveAndSet(res.ccubufs);
+    moveAndSet(res.blockCcubufs);
+    moveAndSet(res.executor);
+    moveAndSet(res.blockExecutor);
+    moveAndSet(res.completedEvent);
+    moveAndSet(res.blockCompletedEvent);
+    moveAndSet(res.address);
+    moveAndSet(res.continuousVariable);
+    moveAndSet(res.variable);
+    moveAndSet(res.localNotify);
+}
+
+HcclResult CcuKernel::SelectDie()
+{
+    uint32_t dieId{0};
+    CHK_RET(GetDieIdByChannels(channels_, dieId));
+    CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
+        HCCL_ERROR("[CcuKernel][%s] failed, dieId[%u] should be less than [%u].",
+            __func__, dieId, CCU_MAX_IODIE_NUM),
+        HcclResult::HCCL_E_PARA);
     SetDieId(dieId);
+    MoveResourcesToDie(res_, dieId);
+    
     // todo: 生成SQE粒度profiling信息
     // AddSqeProfiling();
     return HcclResult::HCCL_SUCCESS;
 }
 
-// todo: 需要整改成算法生成sqe
-HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
+CcuResult CcuKernel::GeneTaskParams(uint64_t *taskArgs, uint32_t argsNum,
+    std::vector<CcuTaskParam> &taskParams)
 {
-    auto args    = std::vector<uint64_t>(); // GeneArgs(arg);
-    auto agrsNum = args.size();
-    if (agrsNum != loadArgIndex_) {
+    if (argsNum != loadArgIndex_) {
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
-            "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
-        return HcclResult::HCCL_E_INTERNAL;
+            "argsNum = %d, loadArgInstr= %u", __func__, argsNum, loadArgIndex_);
+        return CcuResult::CCU_E_INTERNAL;
+    }
+
+    if (argsNum != 0) {
+        CCU_CHK_PTR_NULL(taskArgs);
     }
 
     if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
         HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
             "the kernel is not been translated yet.", __func__);
-        return HcclResult::HCCL_E_INTERNAL;
+        return CcuResult::CCU_E_INTERNAL;
     }
 
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
     const uint32_t seqNum
-        = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
+        = (argsNum / CCU_SQE_ARGS_LEN) + ((argsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (argsNum == 0 ? 1 : 0);
 
     const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
     if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
         HCCL_ERROR("[CcuKernel][%s] failed, missionInstrCount[%u] should be greater "
             "than preMissonSqeInsCnt[%u].", __func__, instrInfo_.missionInstrCount,
             preMissonSqeInsCnt);
-        return HcclResult::HCCL_E_INTERNAL;
+        return CcuResult::CCU_E_INTERNAL;
     }
 
     taskParams.resize(seqNum);
@@ -160,15 +193,22 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
         taskParams[index].key         = GetMissionKey();
         taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+
+        const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
+    
         if (index == seqNum - 1) {
-            // index 由计算得出，相乘结果不会溢出
-            const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
             taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
-            std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
         } else {
             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParams[index].args));
+        }
+        
+        // 统一处理参数拷贝
+        if (argsNum > preMissionInsCnt) {
+            const uint32_t argsToCopy = (index == seqNum - 1) 
+                ? std::min(argsNum - preMissionInsCnt, CCU_SQE_ARGS_LEN)
+                : CCU_SQE_ARGS_LEN;
+            std::copy(taskArgs + preMissionInsCnt, taskArgs + preMissionInsCnt + argsToCopy,
+                    std::begin(taskParams[index].args));
         }
 
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
@@ -180,13 +220,15 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         }
     }
 
-    return HcclResult::HCCL_SUCCESS;
+    return CcuResult::CCU_SUCCESS;
 }
 
-HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const
+HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var)
 {
+    channels_.insert(channel);
+
     void *channelPtr{nullptr};
-    CHK_RET(HcommChannelGet(channel, &channelPtr));
+    CHK_RET(static_cast<HcclResult>(HcommChannelGet(channel, &channelPtr)));
     auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
     if (channelImpl == nullptr) {
         HCCL_ERROR("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel", __func__, channel);
@@ -273,6 +315,7 @@ CcuResult CcuKernel::VariableAssign(CcuVariableHandle varHandle, uint64_t immedi
     (*variable) = immediate;
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::VariableAssignVar(CcuVariableHandle varHandle, CcuVariableHandle varA)
 {
     CcuRep::Variable *variable{nullptr};
@@ -297,7 +340,6 @@ CcuResult CcuKernel::VariableAddVarToVar(CcuVariableHandle varHandle, CcuVariabl
     *resVar = *leftVar + *rightVar;
     return CcuResult::CCU_SUCCESS;
 }
-
 
 CcuResult CcuKernel::IfBegin(CcuVariableHandle varHandle, uint64_t immediate,
     CcuConditionType condType, const char *label)
@@ -623,13 +665,13 @@ CcuResult CcuKernel::AddressAddAssignAddr(CcuAddressHandle addrHandle, CcuAddres
     return CcuResult::CCU_SUCCESS;
 }
 
-
 void CcuKernel::Load(const CcuRep::Variable &var)
 {
     auto loadArgRep = std::make_shared<CcuRep::CcuRepLoadArg>(var, loadArgIndex_ % CCU_SQE_ARGS_LEN);
     Append(loadArgRep);
     loadArgIndex_++;
 }
+
 CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle)
 {
     CcuRep::Variable *var{nullptr};
@@ -640,15 +682,6 @@ CcuResult  CcuKernel::LoadArg(CcuVariableHandle varHandle)
     return CcuResult::CCU_SUCCESS;
 }
 
-// void CcuKernel::LoadVariable(uint64_t addr, const CcuRep::Variable &var)
-// {
-//     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, var));
-// }
-
-// void CcuKernel::LoadVariable(uint64_t addr, const CcuRep::Variable &var, uint32_t num)
-// {
-//     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, var, num));
-// }
 CcuResult CcuKernel::LoadVariable(uint64_t addr, CcuVariableHandle varHandle, uint32_t num)
 {
     CcuRep::Variable *var{nullptr};
@@ -669,7 +702,6 @@ CcuResult CcuKernel::LoadVariable(uint64_t addr, CcuVariableHandle varHandle, ui
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
-
 
 void CcuKernel::StoreVariable(const CcuRep::Variable &var, uint64_t addr)
 {
@@ -829,37 +861,29 @@ CcuResult CcuKernel::RemoteAddrCreate(CcuRemoteAddrHandle *handle,
 }
 
 /*RemotePost新接口*/
-HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
+CcuResult CcuKernel::NotifyRecord(const ChannelHandle channel,
+    uint32_t remoteNotifyIdx, uint32_t mask)
 {
+    channels_.insert(channel);
     Append(std::make_shared<CcuRep::CcuRepRemPostSem>(channel, remoteNotifyIdx, mask));
-    return HCCL_SUCCESS;
+    return CCU_SUCCESS;
 }
-/*WriteVariableWithSignal新接口*/
-// HcclResult CcuKernel::NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, 
-//                                         uint32_t remoteVarIdx, const CcuRep::Variable &var, uint32_t mask)
-// {
-//     Append(std::make_shared<CcuRep::CcuRepRemPostVar>(var, channel, remoteVarIdx, remoteNotifyIdx, mask));
-//     return HCCL_SUCCESS;
-// }
-CcuResult CcuKernel::WriteVariableWithSignal(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
+
+CcuResult CcuKernel::WriteVariableWithSignal(const ChannelHandle channel, CcuVariableHandle varHandle,
+    uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
 {
+    channels_.insert(channel);
     CcuRep::Variable *var{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &var));
     Append(std::make_shared<CcuRep::CcuRepRemPostVar>(*var, channel, remoteVarIdx, remoteNotifyIdx, mask));
     return CcuResult::CCU_SUCCESS;
 }
-/*RemoteWait新接口*/
-// HcclResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
-// {
-//     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
-//     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
-//     return HCCL_SUCCESS;
-// }
+
 CcuResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     bool isProfiling = CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK;
     if (isProfiling) {
-        CHK_RET(static_cast<HcclResult>(AddProfiling(channel, "NotifyWait", localNotifyIdx, mask)));
+        CCU_CHK_RET(static_cast<HcclResult>(AddProfiling(channel, "NotifyWait", localNotifyIdx, mask)));
     }
     Append(std::make_shared<CcuRep::CcuRepRemWaitSem>(channel, localNotifyIdx, mask, isProfiling));
     return CcuResult::CCU_SUCCESS;
@@ -869,6 +893,7 @@ CcuResult CcuKernel::NotifyWait(const ChannelHandle channel, uint32_t localNotif
 HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &loc, const CcuRep::RemoteAddr &rem,
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
+    channels_.insert(channel);
     Append(std::make_shared<CcuRep::CcuRepBufRead>(channel, rem, loc, len, event, event.mask));
     return HCCL_SUCCESS;
 }
@@ -891,9 +916,11 @@ CcuResult CcuKernel::ReadBuffer(ChannelHandle channel, CcuBufferHandle localHand
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::CcuBuf &loc,
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
+    channels_.insert(channel);
     Append(std::make_shared<CcuRep::CcuRepBufWrite>(channel, loc, rem, len, event, event.mask));
     return HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::WriteBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
 {
@@ -909,6 +936,7 @@ CcuResult CcuKernel::WriteBuffer(ChannelHandle channel, CcuBufferHandle localHan
     auto ret = WriteNb(channel, *remote, *local, *len, *event);
     return HCCL_TO_CCU_RET(ret);
 }
+
 static bool isLowPrecisionIn(Hccl::DataType dataType)
 {
     return dataType == Hccl::DataType::INT8 || dataType == Hccl::DataType::HIF8 || dataType == Hccl::DataType::FP8E4M3
@@ -1002,29 +1030,32 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::CcuBuf *bufs, uint32_t count, 
 HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
                       const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
+    channels_.insert(channel);
     Append(std::make_shared<CcuRep::CcuRepRead>(channel, loc, rem, len, event, event.mask));
     return HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::Read(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-    {
-        CcuRep::LocalAddr *local{nullptr};
-        CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-        CcuRep::RemoteAddr *remote{nullptr};
-        CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-        CcuRep::Variable *len{nullptr};
-        CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-        CcuRep::CompletedEvent *event{nullptr};
-        CCU_CHK_RET(GetCompletedEventByHandle(eventHandle, &event));
-        auto ret = ReadNb(channel, *local, *remote, *len, *event);
-        return HCCL_TO_CCU_RET(ret);
-    }    
+{
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetCompletedEventByHandle(eventHandle, &event));
+    auto ret = ReadNb(channel, *local, *remote, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+} 
 
 /*ReadReduce新接口*/
 HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
                             const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
                             CcuRep::CompletedEvent event)
 {
+    channels_.insert(channel);
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
@@ -1032,6 +1063,7 @@ HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::Lo
                                                 CcuRep::GetUBReduceType(opType_), event, event.mask));
     return HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::ReadReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
     HcclReduceOp opType, CcuEventHandle eventHandle)
@@ -1047,13 +1079,15 @@ CcuResult CcuKernel::ReadReduce(ChannelHandle channel, CcuLocalAddrHandle localH
     auto ret = ReadReduceNb(channel, *local, *remote, *len, dataType, opType, *event);
     return HCCL_TO_CCU_RET(ret);
 }
-/*Write新接口*/
+
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
 {
+    channels_.insert(channel);
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, event.mask));
     return HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::Write(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
 {
@@ -1070,11 +1104,11 @@ CcuResult CcuKernel::Write(ChannelHandle channel, CcuLocalAddrHandle localHandle
     return HCCL_TO_CCU_RET(ret);
 }
 
-/*WriteReduce新接口*/
 HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
                              const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
                              CcuRep::CompletedEvent event)
 {
+    channels_.insert(channel);
     auto opType_ = HcommReduceOpToHcclReduceOp(opType);
     auto dataType_ = HcommDataTypeToHcclDataType(dataType);
 
@@ -1082,6 +1116,7 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
                                                  CcuRep::GetUBReduceType(opType_), event, event.mask));
     return HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::WriteReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
     HcclReduceOp opType, CcuEventHandle eventHandle)
@@ -1117,11 +1152,12 @@ CcuResult CcuKernel::BlockBufferCreate(CcuBufferHandle *bufferHandles, uint32_t 
     }
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuKernel::GetBufferByHandle(CcuBufferHandle bufferHandle, CcuRep::CcuBuf **buffer)
 {
     return GetResourceByHandle(ccuBufferMap_, bufferHandle, buffer, "buffer");
 }
-/*LocalCopy新接口*/
+
 HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
                            CcuRep::CompletedEvent event)
 {
@@ -1142,6 +1178,7 @@ HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::Cc
     Append(std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, event, event.mask));
     return HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::LocalCopyToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
 {
@@ -1156,6 +1193,7 @@ CcuResult CcuKernel::LocalCopyToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHa
     auto ret = LocalCopyNb(*dst, *src, *len, *event);  // 复用 protected
     return HCCL_TO_CCU_RET(ret);
 }
+
 CcuResult CcuKernel::LocalCopyFromBuffer(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
 {
@@ -1170,6 +1208,7 @@ CcuResult CcuKernel::LocalCopyFromBuffer(CcuLocalAddrHandle dstHandle, CcuBuffer
     auto ret = LocalCopyNb(*dst, *src, *len, *event);
     return HCCL_TO_CCU_RET(ret);
 }
+
 CcuResult CcuKernel::LocalCopy(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
 {
@@ -1185,7 +1224,6 @@ CcuResult CcuKernel::LocalCopy(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle 
     return HCCL_TO_CCU_RET(ret);
 }
 
-/*LocalReduce新接口*/
 HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
                              HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event)
 {
@@ -1196,6 +1234,7 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::
                                                   event, event.mask));
     return HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::LocalAddrReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, HcclDataType dataType,
     HcclReduceOp opType, CcuEventHandle eventHandle)
@@ -1590,10 +1629,6 @@ CcuRep::Variable CcuKernel::CreateVariable()
     return CreateResAssist(res_.variable);
 }
 
-// CcuRep::Variable CcuKernel::CreateContinuousVariable()
-// {
-//     return CreateResAssist(res_.continuousVariable);
-// }
 CcuResult CcuKernel::ContinuousVariableCreate(CcuVariableHandle* varHandle)
 {
     const auto& var = CreateResAssist(res_.continuousVariable);
@@ -1617,6 +1652,7 @@ CcuRep::CompletedEvent CcuKernel::CreateCompletedEvent()
 {
     return CreateResAssist(res_.completedEvent);
 }
+
 CcuResult CcuKernel::SetEventMask(CcuEventHandle eventHandle, uint32_t mask)
 {
     CcuRep::CompletedEvent *event{nullptr};
@@ -1624,6 +1660,7 @@ CcuResult CcuKernel::SetEventMask(CcuEventHandle eventHandle, uint32_t mask)
     event->SetMask(mask);
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuRep::CcuBuf CcuKernel::CreateCcuBuf()
 {
     return CreateResAssist(res_.ccubufs);
@@ -1647,6 +1684,7 @@ CcuRep::RemoteAddr CcuKernel::CreateRemoteAddr()
 CcuRep::RemoteAddr CcuKernel::GetRemoteAddr(const ChannelHandle channel, uint32_t index)
 {
     (void)index;
+    channels_.insert(channel);
     auto mem = CcuRep::RemoteAddr(CreateAddress(), CreateVariable());
     Append(std::make_shared<CcuRep::CcuRepRemMem>(channel, mem));
     return mem;
@@ -1692,6 +1730,7 @@ HcclResult CcuKernel::CreateBlockCompletedEvent(const uint32_t count, CcuRep::Co
 
     return HcclResult::HCCL_SUCCESS;
 }
+
 CcuResult CcuKernel::ContinuousEventCreate(CcuEventHandle *eventHandle, uint32_t num)
 { 
     const auto& event = CreateBlockResAssist(num, res_.blockCompletedEvent);
@@ -1702,6 +1741,7 @@ CcuResult CcuKernel::ContinuousEventCreate(CcuEventHandle *eventHandle, uint32_t
     }
     return CcuResult::CCU_SUCCESS;
 }
+
 void CcuKernel::SetResRepository(const CcuResRepository &resRepo)
 {
     resRepo_ = resRepo;
@@ -1803,7 +1843,8 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
     allCcuProfilingInfos_.clear();
  	auto &ccuProfilingCache = GetProfilingInfo();
  	 
- 	auto taskArgs = GeneArgs(arg);
+ 	// auto taskArgs = GeneArgs(arg);
+    std::vector<uint64_t> taskArgs{}; // todo: 
  	uint32_t count {0};
  	HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {
@@ -1877,7 +1918,8 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
             HCCL_INFO("[GetCcuProfilingInfo] collect lg, residual start i=%lu", i);
             uint64_t residual {0};
             CHK_RET(GetArgIndex(varId2VarIdMap, varId2ArgIndexMap, taskArgs, groupOpSizeInfo_[i].residualId, residual));
-            uint64_t repeatNum = Hccl::CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
+            uint64_t repeatNum = 0;
+            // uint64_t repeatNum = Hccl::CcuRep::ParseRepeatNumFromParallelParam(parallelParam);
             lgProfInfo.ccuProfilingInfos[i].dataSize = repeatNum * moConfig_.memSlice + residual;
             lgProfInfo.ccuProfilingInfos[i].instrId = dynamic_cast<CcuRep::CcuRepLoopGroup*>(lgProfInfo.lgProfilingReps[i + 1].get())->StartInstrId();
             allCcuProfilingInfos_.push_back(lgProfInfo.ccuProfilingInfos[i]);
