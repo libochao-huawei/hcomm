@@ -137,6 +137,10 @@ HcclResult ReduceNHROneshot::RdmaTxRx(LINK &linkLeft, LINK &linkRight, InterServ
         ret = reducerInfo_->run(dispatcher_, linkLeft, baseOffset_, srcMem, srcMem, tempMem, stream_);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ReduceNHROneshot][RunReduceNHROneshot] Rx failed"), ret);
     }
+
+    if (barrierSwitchOn_) {
+        CHK_RET(ExecuteBarrier(linkLeft, linkRight));
+    }
     return HCCL_SUCCESS;
 }
 
@@ -211,5 +215,27 @@ HcclResult ReduceNHROneshot::GetStepInfo(u32 step, u32 nSteps, u32 rank, u32 ran
     }
     return HCCL_SUCCESS;
 }
+
+HcclResult ReduceNHROneshot::ExecuteBarrier(const std::shared_ptr<Transport> &preLink,
+    const std::shared_ptr<Transport> &aftLink)
+{
+    if (preLink != nullptr) {
+        CHK_RET(preLink->TxAck(stream_));
+    }
+    if (aftLink != nullptr) {
+        CHK_RET(aftLink->RxAck(stream_));
+        CHK_RET(aftLink->TxDataSignal(stream_));
+    }
+    if (preLink != nullptr) {
+        CHK_RET(preLink->RxDataSignal(stream_));
+        CHK_RET(preLink->PostFinAck(stream_));
+    }
+    if (aftLink != nullptr) {
+        CHK_RET(aftLink->WaitFinAck(stream_));
+    }
+
+    return HCCL_SUCCESS;
+}
+
 REGISTER_TEMPLATE(TemplateType::TEMPLATE_REDUCE_NHR_ONE_SHOT, ReduceNHROneshot);
 }   // ~~ namespace hccl
