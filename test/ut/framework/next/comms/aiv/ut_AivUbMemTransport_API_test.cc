@@ -19,6 +19,8 @@
 #include "aiv_ub_mem_transport.h"
 #include "reged_mem_mgr.h"
 #include "exchange_ipc_buffer_dto.h"
+#include "env_config/env_config.h"
+#include "base_config.h"
 
 #undef protected
 #undef private
@@ -147,9 +149,10 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     memInfo2.memTag = "newBuffer2";
     void* memHandles[2] = { &memInfo1, &memInfo2 };
 
-    MOCKER(&Hccl::EnvConfig::GetInstance).stubs();
-    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs();
-    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs();
+    MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
+    Hccl::EnvSocketConfig fakeSocketConfig{};
+    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeSocketConfig));
+    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -176,9 +179,10 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTime
     memInfo.memTag = "testBuffer";
     void* memHandles[1] = { &memInfo };
 
-    MOCKER(&Hccl::EnvConfig::GetInstance).stubs();
-    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs();
-    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs();
+    MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
+    Hccl::EnvSocketConfig fakeSocketConfig{};
+    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeSocketConfig));
+    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
     Hccl::SocketStatus fakeSocketStatus = Hccl::SocketStatus::TIMEOUT;
     MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 1);
