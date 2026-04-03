@@ -641,8 +641,9 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
     return true;
 }
 
-bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param)
+bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param) const
 {
+    (void) param;
     HCCL_INFO("[IsSatisfyAlltoallContinuousPipelineCondition] Currently Continuous Pipeline is disabled.");
     return false;
 }
