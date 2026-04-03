@@ -64,8 +64,8 @@ git clone https://gitcode.com/cann/hcomm.git
 | mockcpp-patch | 2.7-h4                 | [mockcpp-2.7_py3.patch](https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h4/mockcpp-2.7_py3.patch)                                                                                   |
 | abseil-cpp    | 20250127.0             | [abseil-cpp-20250127.0.tar.gz](https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.tar.gz)                                                               |
 | protobuf      | 25.1                   | [protobuf-25.1.tar.gz](https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.tar.gz)                                                                                      |
-| rdma-core      | v42.7-h1                   | [rdma-core-42.7.tar.gz](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz.gz)                                                                                      |
-| rdma-core-patch      | v42.7-h1                   | [rdma-core-42.7.patch](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch.gz)                                                                                      |
+| rdma-core      | v42.7-h1                   | [rdma-core-42.7.tar.gz](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.tar.gz)                                                                                      |
+| rdma-core-patch      | v42.7-h1                   | [rdma-core-42.7.patch](https://gitcode.com/cann-src-third-party/rdma-core/releases/download/v42.7-h1/rdma-core-42.7.patch)                                                                                      |
 ### 源码编译
 
 本项目提供一键式编译构建能力，进入代码仓根目录，执行如下命令：
