@@ -252,7 +252,7 @@ void GetDetourTableAndTableIds(const std::vector<LocalId>                       
                                const RankTableInfo                                                  *rankTable)
 {
     std::set<u32>  tableIdSet;
-    HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
+    HcclDetourType detourType = HcclDetourType::HCCL_DETOUR_DISABLE;
     if (rankTable->detour == false){
         detourType = HcclDetourType::HCCL_DETOUR_DISABLE;
     }

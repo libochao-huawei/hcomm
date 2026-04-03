@@ -25,7 +25,6 @@ void EnvConfigStub::Parse()
     rdmaCfg.Parse();
     algoCfg.Parse();
     logCfg.Parse();
-    detourCfg.Parse();
 }
 
 const EnvHostNicConfig &EnvConfigStub::GetHostNicConfig()
@@ -58,9 +57,5 @@ const EnvLogConfig &EnvConfigStub::GetLogConfig()
     return logCfg;
 }
 using namespace std;
-const EnvDetourConfig &EnvConfigStub::GetDetourConfig()
-{
-    return detourCfg;
-}
 
 } // namespace Hccl
