@@ -45,11 +45,11 @@
 #include "ccu_loopgroupcall_v1.h"
 #include "ccu_assist_pub.h"
 
-using CcuKernelHandle = uint64_t;
+#ifndef CCU_PROFILING // 和hccl仓兼容性使用
+#define CCU_PROFILING
+#endif
 
-namespace Hccl {
-    class TaskParam;
-}
+using CcuKernelHandle = uint64_t;
 
 namespace hcomm {
 

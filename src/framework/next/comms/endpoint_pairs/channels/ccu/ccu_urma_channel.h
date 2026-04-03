@@ -35,6 +35,9 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 public:
     uint32_t GetDieId() const;
     uint32_t GetChannelId() const;
