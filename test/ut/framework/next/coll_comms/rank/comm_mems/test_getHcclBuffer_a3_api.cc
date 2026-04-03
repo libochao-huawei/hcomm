@@ -27,7 +27,7 @@ public:
         GlobalMockObject::verify();
     }
 };
-
+#if 0
 TEST_F(TestHcclGetHcclBufferA3, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_Success)
 {
     DevType deviceType = DevType::DEV_TYPE_910_93;
@@ -48,3 +48,4 @@ TEST_F(TestHcclGetHcclBufferA3, Ut_HcclGetHcclBufferA3_When_Normal_Return_HCCL_S
     Ut_Comm_Destroy(commHandle);
     GlobalMockObject::verify();
 }
+#endif

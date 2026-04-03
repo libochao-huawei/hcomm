@@ -287,6 +287,18 @@ HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuUrmaChannel::Clean()
+{
+    CHK_PTR_NULL(impl_);
+    impl_->Clean();
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuUrmaChannel::Resume()
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);

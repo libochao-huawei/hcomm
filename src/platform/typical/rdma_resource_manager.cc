@@ -180,7 +180,8 @@ HcclResult RdmaResourceManager::GetNotifyMrInfo(struct MrInfoT& mrInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult RdmaResourceManager::InitResvMemInfo() {
+HcclResult RdmaResourceManager::InitResvMemInfo() 
+{
     std::string flagValue;
     std::vector<std::string> parts;
     std::vector<std::string> tokens;
@@ -216,11 +217,11 @@ HcclResult RdmaResourceManager::InitResvMemInfo() {
 
         u32 type = std::stoi(tokens[HCCN_RESV_MEM_TYPE_OFFSET]);
         u32 pageSize = std::stoi(tokens[HCCN_RESV_MEM_PAGESIZE_OFFSET]);
-        u32 pollId = std::stoi(tokens[HCCN_RESV_MEM_POOLID_OFFSET]);
+        u32 poolId = std::stoi(tokens[HCCN_RESV_MEM_POOLID_OFFSET]);
         int supportLite;
         if (HCCL_SUCCESS == HrtGetRdmaLiteStatus(rdmaHandle_, &supportLite)) {
             if (((2 == supportLite) && (HCCN_RESV_MEM_PAGESIZE_64K == pageSize)) || (1 == supportLite)) {
-                resvMemInfo_.insert({type, pollId});
+                resvMemInfo_.insert({type, poolId});
             }
         }
         tokens.clear();
@@ -233,12 +234,12 @@ HcclResult RdmaResourceManager::GetResvMemPoolIdByType(u32 type, u32& poolId)
 {
     auto it = resvMemInfo_.find(type);
     if (it == resvMemInfo_.end()) {
-        HCCL_WARNING("[RdmaResourceManager][GetResvMemInfo] can not find [%u].", type);
+        HCCL_WARNING("[RdmaResourceManager][GetResvMemPoolIdByType] can not find [%u].", type);
         return HCCL_E_NOT_FOUND;
     }
 
     poolId = resvMemInfo_[type];
-    HCCL_RUN_INFO("[RdmaResourceManager][GetResvMemInfo] type[%u], resvMemPoolId [%u].", type, poolId);
+    HCCL_RUN_INFO("[RdmaResourceManager][GetResvMemPoolIdByType] type[%u], resvMemPoolId [%u].", type, poolId);
     return HCCL_SUCCESS;
 }
 
