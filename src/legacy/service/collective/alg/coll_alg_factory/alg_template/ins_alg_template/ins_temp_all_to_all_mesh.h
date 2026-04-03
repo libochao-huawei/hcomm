@@ -79,10 +79,13 @@ private :
 
     HcclResult SetConcurrentSendRecvNum(const u32 concurrentSendRecvNum);
 
+    DataSlice CalcDataSliceForLinks(const DataSlice& recvSrcSliceAllLinks, std::vector<float> dataSplitRate, u32 j) const;
+
     u32             concurrentSendRecvNum_ = 8;
     u64 buffBlockSize_ = 0;
     A2ASendRecvInfo localSendRecvInfo_;
     BuffInfo buffInfo_;
+    u32 maxPathNum = 0;
 };
 
 } // namespace Hccl
