@@ -143,11 +143,23 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
 {
     HCCL_DEBUG("[InsV2AllGatherSoleExecutor][Orchestrate] Orchestrate AICPU Start");
     CHK_RET(Init(op, params, insQue));
+    dataType_ = op.dataType;
+    
     CHK_RET(InitCommInfo(topoInfo));
 
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
-
+    algTemplate->SetDataType(dataType_);
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_DEBUG("[InsV2AllGatherSoleExecutor][Orchestrate] topoInfo setPathNumMap by links");
+    for(u32 rankIdx:virtRanks_){
+        auto links = linkMgr->GetLinks(rankIdx);
+        if(links.size()!=0){
+            rank2PathNumMap[rankIdx]=links.size();
+        }
+    }
+    algTemplate->setPathNumMap(rank2PathNumMap);
+ 
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(linkMgr, algTemplate, tempResReq));
 
@@ -238,6 +250,36 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层
+    std::map<u32, u32>rank2PathNumMap;
+    std::set<u32> levelSet = rankGraph->GetLevels(myRank_);
+    for(auto level : levelSet){
+        bool levelFlag=1;
+        for(auto rankIdx : virtRanks_){
+            if(rankIdx == myRank_){
+                continue;
+            }
+            
+            std::vector<NetInstance::Path> tmpPaths =
+            rankGraph->GetPaths(level, myRank_, rankIdx);
+            if(tmpPaths.size()==0)
+            {
+                rank2PathNumMap.clear();
+                levelFlag = 0;
+                break;
+            }
+            rank2PathNumMap[rankIdx] = tmpPaths.size();
+        }
+        if(levelFlag){
+            break;
+        }
+    }
+    HCCL_INFO("[InsV2AllGatherSoleExecutor] CalcRes set rank2PathNumMap.");   
+    if(rank2PathNumMap.size() == 0){
+        HCCL_ERROR("No path to all remoteRank");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    algTemplate->setPathNumMap(rank2PathNumMap);  
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
 
@@ -264,6 +306,36 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffl
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    std::set<u32> levelSet = rankGraph->GetLevels(myRank_);
+    for(auto level : levelSet){
+        bool levelFlag = 1;
+        for(auto rankIdx : virtRanks_){
+            if(rankIdx == myRank_){
+                continue;
+            }
+            
+            std::vector<NetInstance::Path> tmpPaths =
+            rankGraph->GetPaths(level, myRank_, rankIdx);
+            if(tmpPaths.size()==0)
+            {
+                rank2PathNumMap.clear();
+                levelFlag = 0;
+                break;
+            }
+            rank2PathNumMap[rankIdx] = tmpPaths.size();
+        }
+        if(levelFlag){
+            break;
+        }
+    }
+    HCCL_INFO("[InsV2AllGatherSoleExecutor] CalcResOffload set rank2PathNumMap.");   
+    if(rank2PathNumMap.size() == 0){
+        HCCL_ERROR("No path to all remoteRank");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    algTemplate->setPathNumMap(rank2PathNumMap);  
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
     resReq.requiredScratchMemSize = UB_MAX_DATA_SIZE;
