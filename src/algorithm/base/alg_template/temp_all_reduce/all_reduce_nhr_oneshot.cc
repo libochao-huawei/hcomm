@@ -84,7 +84,9 @@ HcclResult AllReduceNHROneshot::RunReduceOneshot(u32 rank, u32 rankSize, const s
     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCE_NHR_ONE_SHOT, dispatcher_);
     CHK_SMART_PTR_NULL(tempAlg);
     CHK_RET(tempAlg->Prepare(reduceAttr_));
-
+    if (!barrierSwitchOn_) {
+        tempAlg->CloseBarrier();
+    }
     HCCL_INFO("[AllReduceNHROneshot][RunReduceOneshot] 1-reduce tempAlg rank[%u] inputMem[%p] outputMem[%p] "
         "mem_size[%llu] count[%llu] planeID:[%d]",
         rank, inputMem_.ptr(), outputMem_.ptr(), outputMem_.size(), count_, profilerInput_.planeID);
