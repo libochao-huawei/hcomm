@@ -146,6 +146,8 @@ TEST_F(InsExecutorTest, ExecuteV82_NormalFlow) {
 
     MockRtsqA5(communicatorImplLite);
     // 验证
+    uint64_t beginTime = 0;
+    communicatorImplLite.SetDfxOpInfo(beginTime);
     communicatorImplLite.insExecutor->ExecuteV82(*queue);
 }
 
@@ -186,6 +188,8 @@ TEST_F(InsExecutorTest, ExecuteV82_SingleMasterTaskQueue)
     }
     MockRtsqA5(communicatorImplLite);
     // 验证
+    uint64_t beginTime = 0;
+    communicatorImplLite.SetDfxOpInfo(beginTime);
     communicatorImplLite.insExecutor->ExecuteV82(*queue);
 }
 
@@ -213,6 +217,8 @@ TEST_F(InsExecutorTest, ExecuteV82_SingleSlaveTaskQueue)
     }
     MockRtsqA5(communicatorImplLite);
     // 验证
+    uint64_t beginTime = 0;
+    communicatorImplLite.SetDfxOpInfo(beginTime);
     communicatorImplLite.insExecutor->ExecuteV82(*queue);
 }
 
@@ -251,5 +257,7 @@ TEST_F(InsExecutorTest, ExecuteV82_MultipleTaskQueue)
     MockAddPreStreamSyncTask(subQueue1);
     MockAddPreStreamSyncTask(subQueue2);
     // 验证
+    uint64_t beginTime = 0;
+    communicatorImplLite.SetDfxOpInfo(beginTime);
     communicatorImplLite.insExecutor->ExecuteV82(*queue);
 }

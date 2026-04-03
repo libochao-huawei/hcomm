@@ -61,6 +61,10 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoIn
         return SelectorStatus::NOT_MATCH;
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
+                // 不支持 inplace 场景
+                return SelectorStatus::NOT_MATCH;
+            }
             if (Is2DieFullMesh()) {
                 primQueueGenName = "CcuReduceScatterMesh1D2Die";
             } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == rankSize_2P)||
@@ -138,6 +142,10 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
         }
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
+                // 不支持 inplace 场景
+                return SelectorStatus::NOT_MATCH;
+            }
             CHK_PRT_RET(op.dataType == DataType::INT8,
                 HCCL_WARNING("[Algo][ReduceScatterAutoSelector] dataType[%s] is not supported yet for "
                              "ccu_schedule mode with ms reduce.",

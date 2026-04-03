@@ -17,7 +17,6 @@
 #include "coll_alg_component.h"
 #include "data_type.h"
 #include "acl/acl_rt.h"
-#include "invalid_params_exception.h"
 
 namespace Hccl {
 CollAlgComponent::CollAlgComponent(RankGraph *rankGraph, DevType devType, u32 myRank, u32 rankSize)
