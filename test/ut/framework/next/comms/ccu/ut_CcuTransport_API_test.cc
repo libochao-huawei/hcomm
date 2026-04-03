@@ -19,6 +19,8 @@
 #include "ccu_urma_channel.h"
 #include "ccu_transport_.h"
 #include "local_ub_rma_buffer.h"
+#include "env_config/env_config.h"
+#include "base_config.h"
 
 #undef protected
 #undef private
@@ -151,6 +153,10 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
     binaryStream.Dump(ccuTransport->sendData_);
     ccuTransport->recvData_ = ccuTransport->sendData_;
 
+    MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
+    Hccl::EnvSocketConfig fakeSocketConfig{};
+    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeSocketConfig));
+    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
     ret = ccuTransport->UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::CcuTransport::CclBufferInfo &bufInfo = ccuTransport->locBufferInfos_[1];
@@ -170,6 +176,10 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Timeout_Expect_Retur
     hcomm::CcuTransport ccuTransport{fakeSocket, std::move(ccuConnection), bufferInfos};
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
     bufferVecTemp.emplace_back();
+    MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
+    Hccl::EnvSocketConfig fakeSocketConfig{};
+    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeSocketConfig));
+    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
     Hccl::SocketStatus fakeSocketStatus = Hccl::SocketStatus::TIMEOUT;
     MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
     HcclResult ret = ccuTransport.UpdateMemInfo(bufferVecTemp);
