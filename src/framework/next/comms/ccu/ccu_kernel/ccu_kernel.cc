@@ -704,7 +704,7 @@ HcclResult GetArgIndex(const std::unordered_map<uint16_t, uint16_t> &varId2VarId
         if (oriVarId != varId) { // 起始varId预期通过LoadArg赋值
             item = varId2ArgIndexMap.find(oriVarId);
             if (item == varId2ArgIndexMap.end()) {
-                HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u)", __func__, varId);
+                HCCL_ERROR("[%s]fail, Invalid goSize variable id(%u), oriVarId = %u", __func__, varId, oriVarId);
                 return HCCL_E_PARA;
             }
         } else {

@@ -48,3 +48,10 @@ TEST_F(TestAicpuIndopProcess, Ut_TestAicpuIndOpNotifyInit_When_ParamNullptr_Retu
     HcclResult ret = AicpuIndopProcess::AicpuIndOpNotifyInit(nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+
+// AicpuIndOpChannelUpdate 空指针测试
+TEST_F(TestAicpuIndopProcess, Ut_TestAicpuIndOpChannelUpdate_When_ParamNullptr_Return_HCCL_E_PTR)
+{
+    HcclResult ret = AicpuIndopProcess::AicpuIndOpChannelUpdate(nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
