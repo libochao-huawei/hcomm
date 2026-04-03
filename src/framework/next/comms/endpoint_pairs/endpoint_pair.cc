@@ -109,4 +109,9 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
     return HCCL_SUCCESS;
 }
 
+const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& EndpointPair::GetChannelHandles()
+{
+    return channelHandles_;
+}
+
 } // namespace hcomm

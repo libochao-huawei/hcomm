@@ -925,6 +925,31 @@ HcclResult CcuComponent::CleanTaskKillState() const
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuComponent::SetTaskKill()
+{
+    std::lock_guard<std::mutex> _lock(innerMutex_);// 加锁，确保线程安全
+    // 初始化状态下，设置任务kill状态
+    if (status == CcuTaskKillStatus::INVALID) {
+        status = CcuTaskKillStatus::INIT;
+    }
+
+    if (status == CcuTaskKillStatus::TASK_KILL) {
+        HCCL_INFO("No need to set task kill, state = %u, devLogicId = %u", status, devLogicId_);
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    if (status != CcuTaskKillStatus::INIT) {
+        HCCL_ERROR("[CcuComponent][%s] failed, cannot be invoked in the current state, "
+            "state = %u, devLogicId = %d.", __func__, status, devLogicId_);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+
+    SetProcess(CcuOpcodeType::CCU_U_OP_SET_TASKKILL);
+    status = CcuTaskKillStatus::TASK_KILL;
+    HCCL_INFO("[CcuComponent][%s] success, state = %u, devLogicId = %d.", __func__, status, devLogicId_);
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuComponent::SetTaskKillDone()
 {
     std::lock_guard<std::mutex> _lock(innerMutex_);

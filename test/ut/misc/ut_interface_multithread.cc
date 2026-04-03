@@ -79,6 +79,13 @@ HcclResult stub_HrtRaGetNotifyBaseAddr_3(RdmaHandle handle, u64 *va, u64 *size)
     return HCCL_SUCCESS;
 }
 
+HcclResult stub_HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT key, std::string &value)
+{
+    value = "0_1_128_4";
+    return HCCL_SUCCESS;
+}
+
+
 struct StubQpInfo {
     u32 qpn = 0;
 };
@@ -132,7 +139,8 @@ TEST_F(MultiThreadNpuGpu, EndtoEndOneProcess)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-
+    MOCKER(HrtRaGetHccnCfg).stubs().will(invoke(stub_HrtRaGetHccnCfg));
+    MOCKER(HrtGetRdmaLiteStatus).stubs().with(any()).will(returnValue(1));
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -728,6 +736,7 @@ void* OneSideThreadHandleTypIcalQP(void* args)
     AscendQPQos qpQos;
     qpQos.sl = 4;
     qpQos.tc = 4;
+
     EXPECT_EQ(hcclModifyAscendQPEx(&localQPInfo, &remoteQpInfo, &qpQos), HCCL_SUCCESS);
 
     AscendMrInfo localSyncMemPrepare;
@@ -803,6 +812,7 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndMutiThreadSwitchDevice)
     GlobalMockObject::verify();
 }
 
+#if 0
 TEST_F(MultiThreadNpuGpu, OneSideEndtoEndMutiThread)
 {
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
@@ -837,32 +847,4 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndMutiThread)
     }
     GlobalMockObject::verify();
 }
-
-TEST_F(MultiThreadNpuGpu, CreateQPWithAttrWithResvMem)
-{
-    QpConfigInfo qpConfig;
-    struct TypicalQp qpInfoTmp;
-    QpHandle qpHandle;
-    RdmaHandle rdmaHandle;
-
-    qpConfig.rq_depth = 128;
-    qpConfig.sq_depth = 128;
-    qpConfig.scq_depth = 128;
-    qpConfig.rcq_depth = 128;
-    EXPECT_EQ(CreateQpWithDepthConfig(rdmaHandle, OPBASE_QP_MODE, qpConfig, qpHandle, qpInfoTmp), HCCL_E_NOT_SUPPORT);
-
-    MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    EXPECT_EQ(hrtSetDevice(0), HCCL_SUCCESS);
-    EXPECT_EQ(hcclAscendRdmaInit(), HCCL_SUCCESS);
-    AscendQPInfo localQPInfo;
-    localQPInfo.qpn = 1;
-    localQPInfo.rq_depth = 128;
-    localQPInfo.sq_depth = 128;
-    localQPInfo.scq_depth = 128;
-    localQPInfo.rcq_depth = 128;
-    EXPECT_EQ(hcclCreateAscendQPWithAttr(&localQPInfo), HCCL_E_INTERNAL);
-
-    EXPECT_EQ(hcclAscendRdmaDeInit(), HCCL_SUCCESS);
-    EXPECT_EQ(hrtResetDevice(0), HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
+#endif

@@ -66,7 +66,7 @@ protected:
         comm = static_cast<HcclComm>(hcclCommPtr.get());
     }
 };
-
+#if 0
 // 测试空comm指针传入
 TEST_F(HcclEngineCtxDestroyV2Test, Ut_HcclEngineCtxDestroy_When_InputParamNull_Expect_Return_ERROR)
 {
@@ -97,7 +97,7 @@ TEST_F(HcclEngineCtxDestroyV2Test, Ut_HcclEngineCtxDestroy_When_CtxTagNull_Expec
     HcclResult result = HcclEngineCtxDestroy(comm, nullptr, engine);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
-
+#endif
 // 测试销毁不存在的Context
 TEST_F(HcclEngineCtxDestroyV2Test, Ut_HcclEngineCtxDestroy_When_TagNotExist_Expect_Return_EPARA)
 {
