@@ -247,11 +247,11 @@ function build_ut() {
   unset LD_LIBRARY_PATH
 
   local BUILD_JOBS
-  if [ "${CPU_NUM}" -ge 8 ]; then
-    BUILD_JOBS=${CPU_NUM} - 1
-  else
+#   if [ "${CPU_NUM}" -ge 8 ]; then
+#     BUILD_JOBS=${CPU_NUM} - 1
+#   else
     BUILD_JOBS=8
-  fi
+#   fi
 
   local LLT_KILL_TIME=200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
@@ -292,7 +292,7 @@ function build_ut() {
   local ctest_log="${log_dir}/ctest_output.log"
   local ctest_summary="${log_dir}/ctest_summary.log"
 
-  ctest -j ${BUILD_JOBS} \
+  ctest -j 2 \
         --build-nocmake \
         --timeout ${LLT_KILL_TIME} \
         --output-on-failure \

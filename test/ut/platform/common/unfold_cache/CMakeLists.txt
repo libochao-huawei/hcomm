@@ -51,7 +51,5 @@ target_link_libraries(hccl_utest_unfold_cache PRIVATE
 )
 add_dependencies(hccl_utest_unfold_cache hccl_llt)
 
-run_llt_test(
-   TARGET hccl_utest_unfold_cache
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_unfold_cache COMMAND hccl_utest_unfold_cache)

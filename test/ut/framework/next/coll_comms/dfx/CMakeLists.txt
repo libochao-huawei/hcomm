@@ -53,7 +53,5 @@ target_link_libraries(hccl_utest_test_dfx_resource PRIVATE
 )
 add_dependencies(hccl_utest_test_dfx_resource hccl_llt)
 
-run_llt_test(
-   TARGET  hccl_utest_test_dfx_resource
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_test_dfx_resource COMMAND hccl_utest_test_dfx_resource)
