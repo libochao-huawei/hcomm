@@ -318,6 +318,11 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
+        if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
+            Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+            CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+        }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),
