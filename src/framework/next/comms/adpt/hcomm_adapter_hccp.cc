@@ -106,7 +106,7 @@ RequestResult HccpGetAsyncReqResult(RequestHandle &reqHandle)
 
     // 返回码非0代表调用查询接口失败，当前仅入参错误时触发
     if (ret != 0) {
-        HCCL_ERROR("[%s] failed to get asynchronous request result[%d], "
+        HCCL_ERROR("[%s] failed to  get asynchronous request result[%d], "
             "reqhandle[%llx].", __func__, ret, reqHandle);
         return RequestResult::GET_REQ_RESULT_FAILED;
     }
