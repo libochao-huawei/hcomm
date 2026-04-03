@@ -532,9 +532,9 @@ private:
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
     void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true, bool isHcomSelectAlg = false);
     void DefaultConvertCollOperatorA2A(const CollOpParams &opParams);
-    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams);
+    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams, bool isHcomSelectAlg = false);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
-    void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
+    void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize, bool isHcomSelectAlg = false) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
     void RegisterAicpuKernel();
 
