@@ -133,10 +133,10 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
         }
     }
     if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
-        if (locRank.nicIp[0].IsInvalid()) {
+        if (!locRank.nicIp[0].IsInvalid()) {
             u32 nicPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
             nicIp_ = locRank.nicIp[0];
-            if (netDevCtxMap_.find(nicIp) == netDevCtxMap_.end()) {
+            if (netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
                 CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, nicPort));
             }
         } else {
@@ -282,10 +282,10 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
     }
 
     if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
-        if (locRank.nicIp[0].IsInvalid()) {
+        if (!locRank.nicIp[0].IsInvalid()) {
             u32 nicPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
             nicIp_ = locRank.nicIp[0];
-            if (netDevCtxMap_.find(nicIp) == netDevCtxMap_.end()) {
+            if (netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
                 CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, nicPort));
             }
         } else {

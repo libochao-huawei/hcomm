@@ -19,12 +19,12 @@ namespace Hccl {
 MAKE_ENUM(SocketRole, SERVER, CLIENT)
 class SocketConfig {
 public:
-    rankId            localRank_;
+    RankId            localRank_;
     RankId            remoteRank;
     LinkData          link;
     uint32_t          listeningPort{DEFAULT_LISTENING_PORT};
     const std::string tag;
-    uint32_t          connectMode; // 0 normal, 1: host(host cpu roce channel) - device(transport ibv)
+    uint32_t          connectMode_; // 0 normal, 1: host(host cpu roce channel) - device(transport ibv)
 
     SocketConfig(RankId remoteRank, const LinkData &link, const std::string &tag)
         : remoteRank(remoteRank), link(link), tag(tag),
@@ -64,10 +64,10 @@ public:
         role = link.GetLocalAddr() < link.GetRemoteAddr() ? SocketRole::SERVER : SocketRole::CLIENT;
  
         if (role == SocketRole::SERVER) { // server: tag_local_remote
-            hccpTag = tag + "_" + to_string(localRank_) + "_" to_string(remoteRank) +
+            hccpTag = tag + "_" + to_string(localRank_) + "_" + to_string(remoteRank) + "_" +
                       link.GetLocalAddr().GetIpStr() + "_" + link.GetRemoteAddr().GetIpStr();
         } else { // client: tag_remote_local
-            hccpTag = tag + "_" + to_string(remoteRank) + "_" to_string(localRank_) +
+            hccpTag = tag + "_" + to_string(remoteRank) + "_" + to_string(localRank_) + "_" +
                       link.GetRemoteAddr().GetIpStr() + "_" + link.GetLocalAddr().GetIpStr();
         }
     }

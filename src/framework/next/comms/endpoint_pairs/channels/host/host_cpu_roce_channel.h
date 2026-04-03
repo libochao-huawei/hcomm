@@ -62,14 +62,14 @@ public:
 
     HcclResult RegisterUserMemHybird();
     HcclResult BuildNotifyWrHybird(const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifRecordWr);
-    HcclResult WriteWithNotifyHybrid(void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx) const;
+    HcclResult WriteWithNotifyHybrid(void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx);
     HcclResult NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_t timeout);
 
     HcclResult CreateNotifyHybird(hccl::MemType notifyType, uint32_t notifyId);
     HcclResult CreateNotifyValueBufferHybird();
     HcclResult CreateNotifyBufferHybird(hccl::MemType notifyType, uint32_t notifyId, u8 *&data, u64 &size);
     hccl::MemType NotifyIdToMemtypeHybird(uint32_t remoteNotifyIdx);
-    HcclResult ConnectSingleQpHybird(std::function<bool()> needStop);
+    HcclResult ConnectSingleQpHybrid(std::function<bool()> needStop);
 
 private:
     HcclResult ParseInputParam();

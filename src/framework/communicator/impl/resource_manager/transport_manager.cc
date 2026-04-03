@@ -1093,7 +1093,7 @@ HcclResult TransportManager::GetTransNewTag(const std::string &tag, std::string 
                 devIpAddr_[0].GetReadableIP() + "_" + remoteLink.ip.GetReadableIP();
         } else {
             newTag = identifier_ + "_" + std::to_string(remoteRank) + "_" + std::to_string(userRank_) + "_" +
-                remoteLink.ip.GetReadableIP() + "_" + devIpAddr_[0].ip.GetReadableIP();
+                remoteLink.ip.GetReadableIP() + "_" + devIpAddr_[0].GetReadableIP();
         }
     } else {
         bool isHccs = isInterRdma ? false : IsHccsTransport(remoteRank, linkType);

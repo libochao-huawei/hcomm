@@ -300,7 +300,9 @@ HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t 
             return HCCL_SUCCESS;
         }());
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = hcclComm->GetEndpointDesc(layer, topoInstId, descNum, endpointDesc));
+    HcclResult ret = hcclComm->GetEndpointDesc(layer, topoInstId, descNum, endpointDesc);
+
+    return ret;
 }
 
 HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info)

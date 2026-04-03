@@ -1480,7 +1480,8 @@ namespace hccl
             (IsEnableRoce() && nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST) ||
             (Is310PDevice() && nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST)) {
             u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
-            CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_HOST, devicePhyID, deviceLogicId_, false));
+            u32 whiteListEn = (GetExternalInputHcclEnableWhitelist() == HCCL_WHITELIST_ON ? 1 : 0);
+            CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_HOST, devicePhyID, deviceLogicId_, whiteListEn));
         }
 
         CHK_RET(InitSocketManager());
@@ -2381,11 +2382,11 @@ namespace hccl
             HcclNetDevCtx nicPortCtx;
             for (i = 0; i < devIpAddr_.size(); i++) {
                 if (devIpAddr_[i].IsInvalid()) {
-                    HCCL_INFO("[Init][Nic]nic num[%u] deviceip is invalid, total nicNum[%u]", i, nicNum);
+                    HCCL_INFO("[Init][Nic]nic num[%u] deviceip is invalid, total nicNum[%u]", i, devIpAddr_.size());
                     continue;
                 }
                 std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-                port = GetNicPort(devicePhyId_, ranksPorts, userRank_, isUseRankPort);
+                port = GetNicPort(devicePhyId_, ranksPorts, userRank_, isUseRankPort_);
                 CHK_RET(HcclNetOpenDev(&nicPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, devIpAddr_[i]));
                 CHK_PTR_NULL(nicPortCtx);
                 netDevCtxMap_.insert(std::make_pair(devIpAddr_[i], nicPortCtx));
@@ -8814,6 +8815,31 @@ namespace hccl
     HcclResult HcclCommunicator::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
     {
         return rankGraph_.GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
+    }
+
+    HcclResult HcclCommunicator::GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
+    {
+        return rankGraph_.GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
+    }
+
+    HcclResult HcclCommunicator::GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
+    {
+        return rankGraph_.GetTopoType(netLayer, topoInstId, topoType);
+    }
+
+    HcclResult HcclCommunicator::GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
+    {
+        return rankGraph_.GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
+    }
+
+    HcclResult HcclCommunicator::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    {
+        return rankGraph_.GetEndpointNum(netLayer, topoInstId, num);
+    }
+
+    HcclResult HcclCommunicator::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
+    {
+        return rankGraph_.GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
     }
 
     HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)

@@ -13,7 +13,7 @@
 
 #include <cstdint>
 #include <cstring>
-#include "platform/hccp/inc/network/hccp_common.h"
+#include "hccp_common.h"
 
 namespace hcomm {
 
@@ -30,13 +30,6 @@ enum class CommStackType : uint8_t {
     COMM_STACK_HOST_CPU_ROCE = 0,    // Host CPU RoCE (ibverbs)
     COMM_STACK_TRANSPORT_IBVERBS = 1, // NPU RoCE (HCCP)
     COMM_STACK_UNKNOWN = 255
-};
-
-// 节点部署类型
-enum class NicDeployType : uint8_t {
-    NIC_DEPLOY_HOST = 0,   // HOST NIC
-    NIC_DEPLOY_DPU = 1,    // DPU/NPU NIC
-    NIC_DEPLOY_UNKNOWN = 255
 };
 
 // 同步模式
@@ -68,11 +61,13 @@ struct RoCECapability {
     uint16_t totalLength;        // 总长度（包括头部和变长数据）
     
     uint8_t nodeType;            // 节点类型（参考 HcclDeviceType）
-    NicDeployType nicDeploy;     // NIC 部署位置
     CommStackType commStack;     // 通信协议栈类型
     SyncMode syncMode;           // 支持的同步模式
-    
-    uint8_t reserved[2];         // 预留字段，用于未来扩展
+    uint8_t pading;
+
+    NICDeployment nicDeploy;     // NIC 部署位置
+
+    uint8_t reserved[4];         // 预留字段，用于未来扩展
     
     // 序列化（直接内存拷贝）
     void Serialize(uint8_t* buffer, size_t& len) const {
@@ -126,52 +121,20 @@ struct RoCECapability {
         version = ROCE_CAPABILITY_VERSION;
         totalLength = sizeof(RoCECapability);
         nodeType = 0;
-        nicDeploy = NicDeployType::NIC_DEPLOY_HOST;
+        nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
         commStack = CommStackType::COMM_STACK_HOST_CPU_ROCE;
         syncMode = SyncMode::SYNC_MODE_WRITE_IMM;
-        memset(reserved, 0, sizeof(reserved));
+        memset_s(reserved, sizeof(reserved), 0, sizeof(reserved));
     }
 } __attribute__((packed));
 
-// ========== 数据交换结构 ==========
-// 注意：使用 packed 属性确保跨模块二进制兼容
 struct HybridExchangeData {
-    // --- QP 信息 ---
     uint32_t qpn;
     uint32_t psn;
     uint8_t gid[HCCP_GID_RAW_LEN];
     uint8_t gidIdx;
-    
-    // --- Buffer 信息 ---
-    uint64_t bufAddr;
-    uint32_t bufRkey;
-    uint32_t bufLkey;
-    uint64_t bufSize;
-    
-    // --- Notify 信息（非对称设计关键）---
-    // HostCpuRoceChannel 提供给 TransportIbverbs（作为立即数发送）
-    uint32_t dpuNotifyId;
-    
-    // TransportIbverbs 提供给 HostCpuRoceChannel（作为写入目标地址）
-    uint64_t hostNotifyAddr;
-    uint32_t hostNotifyRkey;
-    uint32_t hostNotifyOffset;
-    
-    // 序列化（直接内存拷贝）
-    void Serialize(uint8_t* buffer, size_t& len) const {
-        len = sizeof(HybridExchangeData);
-        memcpy(buffer, this, len);
-    }
-    
-    // 反序列化（直接内存拷贝）
-    bool Deserialize(const uint8_t* buffer, size_t len) {
-        if (len < sizeof(HybridExchangeData)) {
-            return false;
-        }
-        memcpy(this, buffer, sizeof(HybridExchangeData));
-        return true;
-    }
-} __attribute__((packed));
+    uint8_t padding[3];
+};
 
 } // namespace hcomm
 

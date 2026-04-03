@@ -139,7 +139,7 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
     // 1. 先查找
     auto it = socketMap_.find(socketConfig);
     if (it != socketMap_.end()) {
-        if (socketConfig.connectMode) {
+        if (socketConfig.connectMode_) {
             socket = it->second.get();
             socket->Destroy();
             socketMap_.erase(it);

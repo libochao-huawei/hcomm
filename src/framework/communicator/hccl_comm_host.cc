@@ -290,9 +290,9 @@ namespace hccl
         return communicator_->GetConnectMode();
     }
 
-    MyRank *hcclComm::GetMyRank()
+    void *hcclComm::GetMyRank()
     {
-        return communicator_->GetMyRank();
+        return (void *)communicator_->GetMyRank();
     }
     HcclResult hcclComm::GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated)
     {

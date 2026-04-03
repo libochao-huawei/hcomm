@@ -135,7 +135,7 @@ namespace hccl
                     HCCL_E_PARA);
         rankInfo.nicDeploy = nicDeploy;
         const RankInfo_t &curRankInfo = servRankList[curRankIndex];
-        if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST && curRankInfo.deviceInfo.deviceIp.size() == 0) {
             // 检查网卡个数
             // 网卡挂载位置在host时，按rank index从网卡列表中获取
             rankInfo.nicIp.push_back(curRankInfo.hostIp);

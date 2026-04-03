@@ -97,7 +97,7 @@ void TopoinfoRanktableConcise::DetectNicDepoly(RankTable_t &rankTable, u32 rankI
 {
     // 只有当hostIp有效而且deviceIp无效时，才使用HOST侧网卡部署，目前策略要求集群中所有卡的deploy
     // 形式一致，所以取ranklist[0]的方式即可
-    if (rankId < rankTable.rankList.Size() &&
+    if (rankId < rankTable.rankList.size() &&
         rankTable.rankList[rankId].deviceInfo.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
         rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
         SetHostUseDevNicFlag(false);
@@ -371,8 +371,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleNicInfo(const nlohmann::json &serv
     }
 
     std::string netProto;
-    rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
-    HcclResult ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "net_protocol", netProto, true);
+    ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "net_protocol", netProto, true);
     CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_NOT_FOUND,
         HCCL_ERROR("[Get][GetSingleNicInfo]get net protocol error"), ret);
     HCCL_DEBUG("[%s.json] -> net_protocol: [%s]. ret[%u]", fileName_.c_str(), netProto.c_str(), ret);

@@ -462,14 +462,12 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
+    if (devType == DevType::DEV_TYPE_950 || thread == 0) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
     } else {
-        auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
-        CHK_PTR_NULL(hostCpuRoceChannelPtr);
-        ret = hostCpuRoceChannelPtr->WriteWithNotify(dst, src, len, remoteNotifyIdx);
+        ret = HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u].",
@@ -522,7 +520,7 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
+    if (devType == DevType::DEV_TYPE_950 || thread == 0) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyRecord(remoteNotifyIdx);
@@ -544,11 +542,6 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
 
 int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx)
 {
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_950) {
-        return HCCL_E_NOT_SUPPORT;
-    }
     return HcommChannelNotifyRecordOnThread(0, channel, remoteNotifyIdx);
 }
 
@@ -559,7 +552,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
+    if (devType == DevType::DEV_TYPE_950 || thread == 0) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->NotifyWait(localNotifyIdx, timeout);
@@ -581,11 +574,6 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
 
 int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType != DevType::DEV_TYPE_950) {
-        return HCCL_E_NOT_SUPPORT;
-    }
     return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeout);
 }
 
@@ -665,7 +653,7 @@ int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_950) {
+    if (devType == DevType::DEV_TYPE_950 || thread == 0) {
         auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
         CHK_PTR_NULL(hostCpuRoceChannelPtr);
         ret = hostCpuRoceChannelPtr->ChannelFence();
@@ -697,8 +685,7 @@ HcclResult HcclDfxRegOpInfo(HcclComm comm, void* hcclDfxOpInfo)
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        return HCCL_SUCCESS;    // AIWAN TODO
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
@@ -753,8 +740,7 @@ HcclResult HcclProfilingReportOp(HcclComm comm, uint64_t beginTime)
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        return HCCL_SUCCESS; // AIWAN TODO
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
@@ -778,8 +764,7 @@ HcclResult HcclReportAicpuKernel(HcclComm comm, uint64_t beginTime, char* kernel
     auto hcclComm = static_cast<hccl::hcclComm*>(comm);
     CHK_PTR_NULL(hcclComm);
     if (!hcclComm->IsCommunicatorV2()) {
-        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
-        return HCCL_E_NOT_SUPPORT;
+        return HCCL_SUCCESS; // AIWAN TODO
     }
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);

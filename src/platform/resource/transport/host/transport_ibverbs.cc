@@ -22,7 +22,7 @@
 #include "../host/transport_ibverbs.h"
 
 // 混合模式（RoCE Cross-Mode）公共类型定义
-#include "framework/next/comms/endpoint_pairs/channels/host/hybrid_mode_types.h"
+#include "../../../../framework/next/comms/endpoint_pairs/channels/host/hybrid_mode_types.h"
 
 using namespace std;
 constexpr u32 RDMA_QP_EXPECT_STATUS_PAUSE = 5;
@@ -2737,7 +2737,6 @@ HcclResult TransportIbverbs::GetTransportId(u32 &id)
     id = cqeErrQpn_;
     return HCCL_SUCCESS;
 }
-}  // namespace hccl
 
 HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
 {
@@ -2747,18 +2746,18 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
     using namespace hcomm;
     RoCECapability localCap;
     localCap.InitDefaults();
-    localCap.nicDeploy = NicDeployType::NIC_DEPLOY_DPU;
+    localCap.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
     localCap.commStack = CommStackType::COMM_STACK_TRANSPORT_IBVERBS;
     
     // 2. 发送本地能力（4字节大小前缀 + 原始结构体数据）
     uint32_t sendSize = sizeof(localCap);
-    CHK_RET(Send(&sendSize, sizeof(sendSize)));
-    CHK_RET(Send(&localCap, sendSize));
+    CHK_RET(defaultSocket_->Send(&sendSize, sizeof(sendSize)));
+    CHK_RET(defaultSocket_->Send(&localCap, sendSize));
     HCCL_INFO("[Hybrid][TransportIbverbs] Sent capability, version=%u", localCap.version);
     
     // 3. 接收对端能力（先读4字节大小，再读数据）
     uint32_t recvSize = 0;
-    CHK_RET(Recv(&recvSize, sizeof(recvSize)));
+    CHK_RET(defaultSocket_->Recv(&recvSize, sizeof(recvSize)));
     
     // 检查大小是否在合理范围内（必须 >= sizeof(RoCECapability) 且 <= 1024）
     if (recvSize < sizeof(RoCECapability) || recvSize > 1024) {
@@ -2768,7 +2767,7 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
     }
     
     std::vector<char> recvData(recvSize);
-    CHK_RET(Recv(recvData.data(), recvSize));
+    CHK_RET(defaultSocket_->Recv(recvData.data(), recvSize));
     
     // 4. 先检查魔数（前4字节），如果不对可能是旧版本，需要回退
     if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
@@ -2789,7 +2788,7 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
     // 6. 校验字段有效性
     if (!remoteCap.Validate()) {
         HCCL_ERROR("[Hybrid][TransportIbverbs] Capability validation failed");
-        return HCCL_E_VERSION;
+        return HCCL_E_INTERNAL;
     }
     
     // 7. 版本兼容性处理（高版本兼容低版本）
@@ -2815,3 +2814,4 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
     return HCCL_SUCCESS;
 }
 
+}  // namespace hccl

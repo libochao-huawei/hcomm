@@ -69,6 +69,21 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
     return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
 }
 
+HcclResult MyRank::GetDevicePortInternal(uint32_t rank, uint32_t *devPort)
+{
+    CHK_PTR_NULL(devPort);
+    CHK_PTR_NULL(rankGraph_);
+    // v1 模式 (mode_ == 0): 强制转换为 RankGraphV1 调用 GetDevicePort
+    // v2 模式 (mode_ != 0): 使用 rankGraph_->GetDevicePort()
+    if (mode_ == 0) {
+        RankGraphV1* rankGraphV1 = static_cast<RankGraphV1*>(rankGraph_);
+        CHK_RET(rankGraphV1->GetDevicePort(rank, devPort));
+    } else {
+        CHK_RET(rankGraph_->GetDevicePort(rank, devPort));
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum, uint32_t mode)
 {
     // EXCEPTION_HANDLE_BEGIN
@@ -81,6 +96,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     EXECEPTION_CATCH(engineCtxs_ = std::make_unique<EngineCtxs>(), return HCCL_E_PTR);
 
     opExpansionMode_ = opExpansionMode;
+    mode_ = mode;
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
@@ -104,13 +120,12 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     return Init(cclBuffer, opExpansionMode, rankNum, 1);
 }
 
-HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
+HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc,
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc)
 {
     // 查询rmtRankId对应的devPort
     uint32_t rmtPort = 0;
-    CHK_PTR_NULL(rankGraph_);
-    CHK_RET(rankGraph_->GetDevicePort(remoteRank, &rmtPort));
+    CHK_RET(GetDevicePortInternal(remoteRank, &rmtPort));
     if (rmtPort > Hccl::MAX_VALUE_DEVICEPORT) {
         HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, rmtPort, remoteRank);
         return HCCL_E_PARA;
@@ -122,7 +137,7 @@ HcclResult MyRank::QueryListenPort(uint32_t localRank, uint32_t remoteRank, cons
     CHK_RET(CommAddrToIpAddress(remoteEndpointDesc.commAddr, remoteIpAddr));
     if (localIpAddr < remoteIpAddr) {
         // 查询localRankId对应的devPort
-        CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
         hcommDesc.role = HcommSocketRole::HCOMM_SOCKET_ROLE_SERVER;
         if (listenPort > Hccl::MAX_VALUE_DEVICEPORT) {
             HCCL_ERROR("[%s] Invalid port[%u] of Rank[%u]", __func__, listenPort, localRank);
@@ -246,8 +261,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 
         // 启动监听
         uint32_t listenPort = 0;
-        CHK_PTR_NULL(rankGraph_);
-        CHK_RET(rankGraph_->GetDevicePort(localRank, &listenPort));
+        CHK_RET(GetDevicePortInternal(localRank, &listenPort));
         CHK_RET(HcommEndpointStartListen(epHandle, listenPort, nullptr));
 
         HCCL_INFO("[%s][%u/%u] remoteRank[%u] epHandle[%p] protocol[%d]",

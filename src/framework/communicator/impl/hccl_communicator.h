@@ -151,7 +151,7 @@ public:
     HcclResult InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable);
     uint32_t GetConnectMode();
     MyRank *GetMyRank() {
-        if (mrRank_ == nullptr) {
+        if (myRank_ == nullptr) {
             return nullptr;
         }
         return myRank_.get();
@@ -458,12 +458,12 @@ public:
     HcclResult SnapshotCheckPreProcess();
     HcclResult SnapshotCheckPostProcess();
 
-    HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
-    HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
+#ifndef CCL_KERNEL_AICPU
     HcclResult LaunchDpuKernel(aclrtFuncHandle &funcHandle);
     HcclResult PrepareDpuKernelResource(aclrtFuncHandle &funcHandle);
     HcclResult InitAndLaunchDpuKernel();
     void InitDpuKernel();
+#endif
 
     //decouple for MC2
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
@@ -487,10 +487,10 @@ public:
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
 #ifndef CCL_KERNEL_AICPU
-    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
-    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
-    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
-    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
     HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
 #endif
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
@@ -1151,7 +1151,7 @@ private:
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
     std::unique_ptr<SymmetricMemory> symmetricMemory_;
 
-    std::unordered_map<std::string, std::sheard_ptr<Hccl::DevBuffer>> tagWorkspaceMap;
+    std::unordered_map<std::string, std::shared_ptr<Hccl::DevBuffer>> tagWorkspaceMap_;
     void *hostShareBuf_{nullptr};
     aclrtStream dpuStream_;
     aclrtContext dpuContext_;
