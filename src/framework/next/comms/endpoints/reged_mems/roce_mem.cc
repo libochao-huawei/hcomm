@@ -159,6 +159,10 @@ HcclResult RoceRegedMemMgr::GetParamsFromMemDesc(const void *memDesc, uint32_t d
 {
     const char *description = static_cast<const char *>(memDesc);
 
+    if (descLen < sizeof(EndpointDesc)) {
+        HCCL_ERROR("[RoceRegedMemMgr][GetParamsFromMemDesc] [%s] descLen[%u] is too small. aim size:[%llu]", __func__, descLen, sizeof(EndpointDesc));
+        return HCCL_E_INTERNAL;
+    }
     // 从memDesc末尾提取EndpointDesc
     if (memcpy_s(&endpointDesc, sizeof(EndpointDesc), description + descLen - sizeof(EndpointDesc), sizeof(EndpointDesc)) != EOK) {
         HCCL_ERROR("[RoceRegedMemMgr][GetParamsFromMemDesc] [%s] endpointDesc copy error. aim size:[%llu]", __func__, sizeof(EndpointDesc));

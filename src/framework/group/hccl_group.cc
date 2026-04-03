@@ -178,6 +178,7 @@ static HcclResult doLaunches(HcclComm comm)
                 case HcclCMDType::HCCL_CMD_REDUCE_SCATTER:
                     HcclReduceScatterInner(const_cast<void *>(taskColl.sendbuff), const_cast<void *>(taskColl.recvbuff), taskColl.recvCount, 
                                 taskColl.recvType, taskColl.op, taskColl.comm, taskColl.stream);
+                    break;
                 case HcclCMDType::HCCL_CMD_ALLREDUCE:
                     HcclAllReduceInner(const_cast<void *>(taskColl.sendbuff), const_cast<void *>(taskColl.recvbuff), taskColl.sendCount, taskColl.sendType, 
                                     taskColl.op, taskColl.comm, taskColl.stream);
