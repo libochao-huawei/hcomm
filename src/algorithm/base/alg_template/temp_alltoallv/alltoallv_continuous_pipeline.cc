@@ -415,7 +415,6 @@ HcclResult AlltoallvContinuousPipeline::InterSdmaRx(const LINK& linkLeft, const 
 {
     const bool needRecvFromLinkLeft = !recvMems.empty();
     const bool needSendToLinkRight = !sendMems.empty();
-        
     // 前同步，通知right我已准备好，可以从我这里读；等待left通知它已准备好，可以从它那里读
     if (needSendToLinkRight) {
         CHK_RET(linkRight->TxAck(stream));
@@ -449,7 +448,7 @@ HcclResult AlltoallvContinuousPipeline::InterSdmaRx(const LINK& linkLeft, const 
     
 // 跨module通信，通过RDMA从link left读或向link right写
 HcclResult AlltoallvContinuousPipeline::InterRdmaTxRx(const LINK& linkLeft, const LINK& linkRight,
-    std::vector<TxMemoryInfo>& sendMems, std::vector<RxMemoryInfo>& recvMems, Stream& stream)
+    std::vector<TxMemoryInfo>& sendMems, std::vector<RxMemoryInfo>& recvMems, Stream& stream) const
 {
     const bool needRecvFromLinkLeft = !recvMems.empty();
     const bool needSendToLinkRight = !sendMems.empty();
