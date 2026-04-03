@@ -46,6 +46,7 @@ public:
     virtual  u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType);
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
     virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
+    HcclResult setPathNumMap(const std::map<u32, u32> &rank2PathNumMap);
     virtual HcclResult AddRanksToGroup(const std::vector<std::vector<RankId>> &tempVTopo, RankGroup &rankGroupX, RankGroup &rankGroupY) const;
 
     void SetCollOp(const CollAlgOperator &op);

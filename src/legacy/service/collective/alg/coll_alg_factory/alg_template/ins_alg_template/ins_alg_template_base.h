@@ -64,6 +64,7 @@ public:
     virtual u64 CalcLoopMaxCount(ParamPool &paramPool);
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
     virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
+    HcclResult setPathNumMap(const std::map<u32, u32> &rank2PathNumMap);
 
     std::vector<std::tuple<QId, QId, u32>> CreateMasterSlaveQueNotifiesRequest(u32 queueNum, u32 pairNum = 1,
                                                                                QId masterId = 0) const;
@@ -111,6 +112,7 @@ protected:
     u32  linkNumBtwPeers_ = 1;
 
     std::map<RankId, std::vector<u32>> rank2BitPos_;
+    std::map<u32, u32>rank2PathNumMap_;
 };
 } // namespace Hccl
 
