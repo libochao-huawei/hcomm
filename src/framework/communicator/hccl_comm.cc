@@ -1189,7 +1189,7 @@ bool hcclComm::GetCommResource(const std::string &tag, void **commContext)
 
 bool hcclComm::GetCommResource(void *&commContext)
 {
-    HCCL_INFO("HCCL_KEY_INFO: GetCommResource commContext[%p]", commContext);
+    HCCL_INFO("HCCL_KEY_INFO : GetCommResource commContext[%p]", commContext);
     return communicator_->GetCommResource(commContext);
 }
 
