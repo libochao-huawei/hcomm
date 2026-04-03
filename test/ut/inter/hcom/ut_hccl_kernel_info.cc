@@ -47,7 +47,6 @@
 #include "hcom_pub.h"
 #include "hccl/hcom.h"
 #include "hccl/hcom_executor.h"
-#include "ranktable/v80_rank_table.h"
 #include <iostream>
 #include <fstream>
 #include "graph/utils/node_utils.h"

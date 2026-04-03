@@ -31,7 +31,6 @@
 #include <hccl/hccl_comm.h>
 #include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
-#include "v80_rank_table.h"
 #include "hccl_communicator.h"
 
 #define private public

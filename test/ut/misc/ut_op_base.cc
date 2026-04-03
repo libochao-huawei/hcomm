@@ -58,7 +58,6 @@
 #include "dltdt_function.h"
 #include <unistd.h>
 #include "externalinput_pub.h"
-#include "v80_rank_table.h"
 #include "externalinput.h"
 #include "op_base.h"
 #include "param_check_pub.h"
