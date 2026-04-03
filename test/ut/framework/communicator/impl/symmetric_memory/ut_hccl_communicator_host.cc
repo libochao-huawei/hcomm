@@ -188,3 +188,77 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_FindSymmetricW
     EXPECT_EQ(retBool, false);
     GlobalMockObject::verify();
 }
+
+// 声明一个与HcclCommunicator相同的类，用于访问私有成员函数
+class TestHcclCommunicator {
+public:
+    HcclResult AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType, 
+        const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize) {
+        // 模拟InitAndCheckAicpuOrderNotify函数，让它返回HCCL_SUCCESS
+        MOCKER_CPP(&HcclCommunicator::InitAndCheckAicpuOrderNotify).stubs().will(returnValue(HCCL_SUCCESS));
+        
+        // 模拟BuildHierarchicalAlgOption函数，让它返回HCCL_SUCCESS
+        MOCKER_CPP(&HcclCommunicator::BuildHierarchicalAlgOption).stubs().will(returnValue(HCCL_SUCCESS));
+        
+        // 模拟UpdateOpIndex函数，让它返回0
+        MOCKER_CPP(&HcclCommunicator::UpdateOpIndex).stubs().will(returnValue(0));
+        
+        // 模拟GetOrderLaunchMode函数，让它返回0
+        MOCKER_CPP(&HcclCommunicator::GetOrderLaunchMode).stubs().will(returnValue(0));
+        
+        // 模拟AicpuInitOpTilingDataFromOpParam函数，让它返回HCCL_SUCCESS
+        MOCKER_CPP(&HcclCommunicator::AicpuInitOpTilingDataFromOpParam).stubs().will(returnValue(HCCL_SUCCESS));
+        
+        // 调用AicpuInitOpTilingDataBuf函数
+        return hcclCommunicator->AicpuInitOpTilingDataBuf(opParam, opType, kernelName, opTilingInfo, dynamicDataSize);
+    }
+    
+    HcclCommunicator* hcclCommunicator;
+};
+
+TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Expect_SkipIsDirectRemoteRank) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910B;
+    hcclCommunicator->isGroupMode_ = true;
+    hcclCommunicator->userRankSize_ = 2;
+    
+    // 准备测试数据
+    OpParam opParam;
+    opParam.opType = HcclCMDType::HCCL_CMD_BATCH_SEND_RECV;
+    opParam.BatchSendRecvDataDes.itemNum = 1;
+    
+    // 分配内存用于测试
+    HcclSendRecvItem sendRecvInfo;
+    opParam.BatchSendRecvDataDes.sendRecvItemsPtr = &sendRecvInfo;
+    
+    // 分配内存用于isDirectRemoteRank
+    u8 isDirectRemoteRank[2] = {1, 0};
+    opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
+    
+    // 调用AicpuInitOpTilingDataBuf函数，它会调用SetDynamicTilingData函数
+    AicpuOpTiling opTilingInfo;
+    opTilingInfo.algName = "test_alg";
+    opTilingInfo.newTag = "test_new_tag";
+    opTilingInfo.floatOverflowMode = 0;
+    opTilingInfo.dumpDebug = 0;
+    
+    std::string kernelName = "test_kernel";
+    u64 dynamicDataSize = 0;
+    
+    // 使用TestHcclCommunicator来访问私有成员函数
+    TestHcclCommunicator testComm;
+    testComm.hcclCommunicator = hcclCommunicator.get();
+    
+    // 调用AicpuInitOpTilingDataBuf函数
+    HcclResult ret = testComm.AicpuInitOpTilingDataBuf(opParam, HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, kernelName, opTilingInfo, dynamicDataSize);
+    
+    // 验证函数返回成功
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    // 验证修改是否正确
+    EXPECT_EQ(hcclCommunicator->deviceType_, DevType::DEV_TYPE_910B);
+    EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
+    EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
+}
