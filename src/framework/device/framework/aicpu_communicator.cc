@@ -1591,7 +1591,8 @@ HcclResult HcclCommAicpu::ReAllocTransportResource(const std::string &newTag, Al
                     }
                     // A3 bsr远端是DirectNpu 链路的话则跳过
                     if ((param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
-                        (param.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        (param.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank]) && 
+                        topoInfo_.deviceType == DevType::DEV_TYPE_910_93) {
                         continue;
                     }
                     bsrTansportRank.insert(transportRequest.remoteUserRank);
@@ -1634,7 +1635,8 @@ HcclResult HcclCommAicpu::AllocTransportResource(const std::string &newTag, cons
                     }
                     // A3 bsr远端是DirectNpu 链路的话则跳过
                     if ((opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
-                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank]) && 
+                        topoInfo_.deviceType == DevType::DEV_TYPE_910_93) {
                         continue;
                     }
                     bsrTansportRank.insert(transportRequest.remoteUserRank);
@@ -1685,7 +1687,8 @@ HcclResult HcclCommAicpu::IncreAllocTransportResource(const std::string &newTag,
                     }
                     // A3 bsr远端是DirectNpu 链路的话则跳过
                     if ((opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
-                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank]) && 
+                        topoInfo_.deviceType == DevType::DEV_TYPE_910_93) {
                         continue;
                     }
                     bsrTansportRank.insert(transportRequest.remoteUserRank);
@@ -5189,7 +5192,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     identifier_ = std::string(commAicpuParam->hcomId);
     topoInfo_.userRankSize = commAicpuParam->userRankSize;
     topoInfo_.userRank = commAicpuParam->userRank; 
-    notifys_.reserve(hccl::HCCL_THREAD_NOTIFY_MAX_NUM);
+    notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
     if (topoInfo_.deviceType == DevType::DEV_TYPE_910_93 || topoInfo_.deviceType == DevType::DEV_TYPE_910B) {
         notifySize_ = NOTIFY_SIZE_FOUR;
     } else {
