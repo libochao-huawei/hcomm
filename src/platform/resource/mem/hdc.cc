@@ -143,10 +143,10 @@ HcclResult HDCommunicate::Put(u32 offset, u32 length, u8 *value)
     HcclResult ret = Write(offset, length, value);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HDCommunicate][Put]Write failed, offset=%u, length=%u", offset, length);
-        lock.unlock();
+        lock.writeUnlock();
         return ret;
     }
-    lock.unlock();
+    lock.writeUnlock();
     return HCCL_SUCCESS;
 }
 
@@ -164,10 +164,10 @@ HcclResult HDCommunicate::Get(u32 offset, u32 length, u8 *value)
     HcclResult ret = Read(offset, length, value);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HDCommunicate][Get]Read failed, offset=%u, length=%u", offset, length);
-        lock.unlock();
+        lock.readUnlock();
         return ret;
     }
-    lock.unlock();
+    lock.readUnlock();
     return HCCL_SUCCESS;
 }
 
