@@ -1070,6 +1070,8 @@ urma_status_t urma_get_tp_list(urma_context_t *ctx, urma_get_tp_cfg_t *cfg, uint
  *       3-DIP: 128 bit                  4-SMA: 48 bit              5-DMA: 48 bit
  *       6-vlan_id: 12 bit               7-vlan_en: 1 bit           8-dscp: 6 bit
  *       9-at_times: 5 bit               10-sl: 4 bit               11-ttl: 8 bit
+ *       12-sl_available: 16 bit（sl_available[0]|(sl_available[1]<<8)，bit i=1 表示可选用 SL=i）
+ *       13-dscp_config_model: 8 bit
  * @param[in] [Required] tp_attr: tp attribution values to set;
  * Return: 0 on success, other value on error
  */
@@ -1086,6 +1088,8 @@ urma_status_t urma_set_tp_attr(const urma_context_t *ctx, const uint64_t tp_hand
  *       3-DIP: 128 bit                  4-SMA: 48 bit              5-DMA: 48 bit
  *       6-vlan_id: 12 bit               7-vlan_en: 1 bit           8-dscp: 6 bit
  *       9-at_times: 5 bit               10-sl: 4 bit               11-ttl: 8 bit
+ *       12-sl_available: 16 bit（sl_available[0]|(sl_available[1]<<8)，bit i=1 表示可选用 SL=i）
+ *       13-dscp_config_model: 8 bit
  * @param[out] [Required] tp_attr: tp attribution values to get;
  * Return: 0 on success, other value on error
  */

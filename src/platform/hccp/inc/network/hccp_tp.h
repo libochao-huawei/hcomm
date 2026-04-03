@@ -54,7 +54,11 @@ struct TpAttr {
     uint8_t atTimes : 5; // corresponding bitmap bit: 9
     uint8_t sl : 4; // corresponding bitmap bit: 10
     uint8_t ttl; // corresponding bitmap bit: 11
-    uint8_t reserved[78];
+    /** bitmap bit: 12；与 urma 一致：16bit 掩码 bit i=1 表示可选用 SL=i（低字节 bit0–7 + 高字节 bit8–15） */
+    uint8_t slAvailable[2];
+    /** bitmap bit: 13 */
+    uint8_t dscpConfigModel;
+    uint8_t reserved[75];
 };
 #pragma pack()
 

@@ -13,6 +13,8 @@
 
 #include <map>
 #include <string>
+#include "enum_factory.h"
+
 namespace Hccl {
 
 MAKE_ENUM(DmaMode, DEFAULT, PUT, GET)

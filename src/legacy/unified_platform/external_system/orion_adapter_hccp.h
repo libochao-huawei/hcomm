@@ -13,6 +13,7 @@
 #include <vector>
 #include <unordered_set>
 #include "hccp_common.h"
+#include "../../framework/env_config/env_config.h"
 #include "ip_address.h"
 #include "data_type.h"
 #include "reduce_op.h"
@@ -431,6 +432,9 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
 
+    /** 策略 SL：低 4bit→attr.ub.priority；默认 EnvConfig::UB_QOS_DEFAULT */
+    u32 qos{EnvConfig::UB_QOS_DEFAULT};
+
     HrtRaUbJettyCreateParamDef() {}
 
     HrtRaUbJettyCreateParamDef(JfcHandle sjfcHandle, JfcHandle rjfcHandle,
@@ -591,14 +595,22 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
 
+    /** 通信域 QoS（0–7）：与 sl_available 联合决定选用哪一档允许 SL（见 TpMgr 策略） */
+    u32  qos{0};
+    /** 0：M=popcount(sl_available)；非 0：M 上限；须 get_tp_attr 带有效 sl_available（属性 12） */
+    u32  slLevelCount{0};
+    bool loopFirstTpLowestSl{false};
+
     explicit RaUbGetTpInfoParamDef() = default;
     RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol)
         : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
 
     std::string Describe() const {
-        return StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
+        return StringFormat(
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u mSl=%u loop1st=%u]",
             locAddr.Describe().c_str(), rmtAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+            tpProtocol.Describe().c_str(),
+            qos, slLevelCount, static_cast<unsigned>(loopFirstTpLowestSl));
     }
 };
 

@@ -87,7 +87,7 @@ protected:
 
 private:
     MAKE_ENUM(UbConnStatus,
-        INIT, TP_INFO_GETTING, JETTY_CREATED,
+        INIT, TP_INFO_GETTING, JETTY_CREATING, JETTY_CREATED,
         JETTY_IMPORTING,
         READY,
         CONN_INVALID);
@@ -98,6 +98,7 @@ private:
     IpAddress    locAddr{};
     IpAddress    rmtAddr{};
     OpMode       opMode{OpMode::OPBASE};
+    bool         devUsed_{false};
     HrtUbJfcMode jfcMode{HrtUbJfcMode::STARS_POLL};
     IpAddress    locIpv4Addr{};
     IpAddress    rmtIpv4Addr{};
@@ -146,6 +147,7 @@ private:
     void         CreateJetty(const bool devUsed);
     void         SetJettyInfo();
     bool         GetTpInfo();
+    RaUbGetTpInfoParam MakeRaUbGetTpParam() const;
     void         UpdateLocTpInfo();
     TpInfo       SelectTpInfo();
     void         ImportJetty();

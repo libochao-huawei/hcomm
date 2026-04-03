@@ -73,14 +73,16 @@ public:
         CommAddr rmtAddr{};
         CcuChannelInfo channelInfo{};
         std::vector<CcuJetty *> ccuJettys{};
+        uint32_t qos{0};
 
         explicit CcuConnectionInfo() = default;
         CcuConnectionInfo(const CcuConnectionType type,
             const CommAddr &locAddr, const CommAddr &rmtAddr,
             const CcuChannelInfo &channelInfo,
-            const std::vector<CcuJetty *> &ccuJettys)
+            const std::vector<CcuJetty *> &ccuJettys,
+            uint32_t qosVal = 0)
             : type(type), locAddr(locAddr), rmtAddr(rmtAddr),
-            channelInfo(channelInfo), ccuJettys(ccuJettys) {}
+            channelInfo(channelInfo), ccuJettys(ccuJettys), qos(qosVal) {}
     };
 
     CcuTransport(Hccl::Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);

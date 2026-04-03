@@ -247,7 +247,8 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     hccl::DeviceMem &devicePackBuf,
     uint32_t listNum, 
     uint32_t totalListNum,
-    uint32_t singleUniqueIdSize)
+    uint32_t singleUniqueIdSize,
+    u32 qos)
 {
     // channelParam资源参数填充
     s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
@@ -258,6 +259,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
     channelParam.singleUniqueIdSize = singleUniqueIdSize;
+    channelParam.qos = qos;
 
     CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
     DevType devType;
@@ -308,6 +310,12 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
 
     HCCL_RUN_INFO("[%s] listNum[%u], commTag[%s]", __func__, listNum, commTag.c_str());
+    CHK_PTR_NULL(hostChannelHandles);
+    CHK_PRT_RET(listNum == 0,
+        HCCL_ERROR("[%s] listNum is zero", __func__), HCCL_E_PARA);
+    auto *aicpuTsUrmaChannel0 = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[0]);
+    u32 qos = static_cast<u32>(aicpuTsUrmaChannel0->GetHccsQos());
+
     std::vector<std::vector<char>> hostPackBuffers(listNum);
     HcclChannelUrmaRes channelParam{};
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
@@ -341,7 +349,7 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
 
     // 填充channelParam参数
     CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf, 
-        listNum, totalListNum, totalListNum / hostPackBuffers.size()));
+        listNum, totalListNum, totalListNum / hostPackBuffers.size(), qos));
     
     // profiling信息
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));

@@ -37,6 +37,9 @@ public:
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
+    /** HCCL QoS（与建链时 HcommChannelDesc::ubcAttr.qos 一致） */
+    uint32_t GetHccsQos() const { return channelDesc_.ubcAttr.qos; }
+
 private:
     HcclResult Makebufs(void **memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
