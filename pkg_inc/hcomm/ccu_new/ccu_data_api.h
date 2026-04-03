@@ -18,6 +18,8 @@
 #include "ccu_types.h"
 #include "ccu_data_resource.h"
 
+#include "hccl_types.h"
+
 #ifdef __cplusplus
 #include "ccu_loop_macro.h"
 class CcuVariable;

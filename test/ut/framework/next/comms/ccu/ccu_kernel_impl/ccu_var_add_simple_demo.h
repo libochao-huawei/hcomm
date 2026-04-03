@@ -464,3 +464,5 @@ CcuResult CcuEventKernel(CcuKernelArg arg)
 
     return CcuResult::CCU_SUCCESS;
 }
+
+#endif // CCU_VAR_ADD_SIMPLE_DEMO_H

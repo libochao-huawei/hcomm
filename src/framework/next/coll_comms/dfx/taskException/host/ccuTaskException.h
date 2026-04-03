@@ -17,7 +17,7 @@
 #include "ccu_error_info_v1.h"
 #include "ccu_rep_base_v1.h"
 #include "ccu_rep_context_v1.h"
-#include "ccu_dev_mgr_pub.h"
+#include "ccu_device_pub.h"
 #include "ccu_jetty_.h"
 
 namespace hcomm {
