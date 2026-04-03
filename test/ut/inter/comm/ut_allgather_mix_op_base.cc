@@ -42,7 +42,6 @@
 #include "config.h"
 #include "topo/topoinfo_ranktableParser_pub.h"
 #include "externalinput_pub.h"
-#include "v80_rank_table.h"
 #include "dltdt_function.h"
 #include <iostream>
 #include <fstream>

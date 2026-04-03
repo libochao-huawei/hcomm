@@ -43,7 +43,6 @@
 #include "externalinput.h"
 #include "config.h"
 #include "topoinfo_ranktableParser_pub.h"
-#include "ranktable/v80_rank_table.h"
 #include "hcom_op_utils.h"
 #include "hcom_ops_kernel_info_store.h"
 #include "external/ge/ge_api_types.h" // ge对内options
