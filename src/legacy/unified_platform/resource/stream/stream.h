@@ -42,6 +42,8 @@ public:
 
     u32 GetId() const;
 
+    u32 GetSqId() const;
+
     bool IsMaster() const;
 
     bool IsSelfOwned() const;

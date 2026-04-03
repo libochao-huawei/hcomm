@@ -55,7 +55,7 @@ void InsExecutor::AddOpCounter(const StreamLite &stream, bool isHead) const
     taskParam.taskPara.Reduce.linkType = DfxLinkType::ONCHIP;
     taskParam.taskPara.Reduce.reduceOp = HcclReduceOp::HCCL_REDUCE_SUM;
     taskParam.taskPara.Reduce.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
-    auto taskInfo = std::make_shared<TaskInfo>(stream.GetId(), taskId, INVALID_VALUE_RANKID, taskParam);
+    auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
     resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
@@ -81,7 +81,15 @@ void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
     auto deviceWaitNotifyId = resMgrFetcher_->GetHostDeviceSyncNotifyLiteMgr()->GetDeviceWaitNotify()->GetId();
     HCCL_INFO("InsExecutor::%s GetDeviceWaitNotify id %u", __func__, deviceWaitNotifyId);
     if (!isMc2) {
+        auto taskId = masterStream->GetRtsq()->GetTaskId();
         masterStream->GetRtsq()->NotifyWait(deviceWaitNotifyId);
+        TaskParam taskParam {};
+        taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
+        taskParam.beginTime                = ProfGetCurCpuTimestamp();
+        taskParam.taskPara.Notify.notifyID = deviceWaitNotifyId;
+        taskParam.taskPara.Notify.value    = 1;
+        auto taskInfo = std::make_shared<TaskInfo>(masterStream->GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
+        resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
     }
     AddOpCounter(*masterStream, true);
 
@@ -94,7 +102,15 @@ void InsExecutor::ExecuteV82(const InsQueue &insQueue, bool isMc2)
     auto hostWaitNotifyId = resMgrFetcher_->GetHostDeviceSyncNotifyLiteMgr()->GetHostWaitNotify()->GetId();
     HCCL_INFO("InsExecutor::%s GetHostWaitNotify id %u", __func__, hostWaitNotifyId);
     if (!isMc2) {
+        auto taskId = masterStream->GetRtsq()->GetTaskId();
         masterStream->GetRtsq()->NotifyRecordLoc(hostWaitNotifyId);
+        TaskParam taskParam {};
+        taskParam.taskType                 = TaskParamType::TASK_NOTIFY_RECORD;
+        taskParam.beginTime                = ProfGetCurCpuTimestamp();
+        taskParam.taskPara.Notify.notifyID = hostWaitNotifyId;
+        taskParam.taskPara.Notify.value    = 1;
+        auto taskInfo = std::make_shared<TaskInfo>(masterStream->GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
+        resMgrFetcher_->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
     }
     masterStream->GetRtsq()->LaunchTask();
 }

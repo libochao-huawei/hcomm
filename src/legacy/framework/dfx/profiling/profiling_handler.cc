@@ -909,19 +909,19 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &st
     hcclMc2Info.rankSize                     = rankSize;
     hcclMc2Info.rankId                       = myRank;
     hcclMc2Info.usrRankId                    = rankInParentComm;
-    hcclMc2Info.aicpuKfcStreamId             = static_cast<uint32_t>(kfcStream.GetId());
+    hcclMc2Info.aicpuKfcStreamId             = static_cast<uint32_t>(kfcStream.GetSqId());
     hcclMc2Info.reserve                      = 0;
     const uint32_t ONCE_REPORT_STREAM_NUM_MAX = 8;
     for (uint32_t streamIndex = 0, reportId = 0; streamIndex < aicpuStreams.size(); streamIndex++) {
-        HCCL_INFO("streamIndex:%u, reportId:%u, streamId:%u", streamIndex, reportId, aicpuStreams[streamIndex]->GetId());
-        hcclMc2Info.commStreamIds[reportId++] = aicpuStreams[streamIndex]->GetId();
+        HCCL_INFO("streamIndex:%u, reportId:%u, streamId(sqId):%u", streamIndex, reportId, aicpuStreams[streamIndex]->GetSqId());
+        hcclMc2Info.commStreamIds[reportId++] = aicpuStreams[streamIndex]->GetSqId();
         if (reportId == ONCE_REPORT_STREAM_NUM_MAX) {
             hcclMc2Info.commStreamSize = reportId;
             ReportMc2AddtionInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info));
             reportId = 0;
         }
         if (streamIndex == (aicpuStreams.size() - 1)) {
-            hcclMc2Info.commStreamIds[reportId++] = stream.GetId();
+            hcclMc2Info.commStreamIds[reportId++] = stream.GetSqId();
             hcclMc2Info.commStreamSize            = reportId;
             ReportMc2AddtionInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info,
                                  sizeof(hcclMc2Info));
@@ -929,8 +929,8 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &st
         }
     }
     if (aicpuStreams.empty()) {
-        HCCL_INFO("only exist main stream, streamId:%u", stream.GetId());
-        hcclMc2Info.commStreamIds[0] = stream.GetId();
+        HCCL_INFO("only exist main stream, streamId(sqId):%u", stream.GetSqId());
+        hcclMc2Info.commStreamIds[0] = stream.GetSqId();
         hcclMc2Info.commStreamSize   = 1; // 只有主流1条
         ReportMc2AddtionInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info));
     }
