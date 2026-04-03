@@ -10,6 +10,8 @@
 
 
 #include "hccl_comm_pub.h"
+#include "hccl_communicator.h"
+#include "aicpu_indop_process.h"
  
 namespace hccl {
 HcclResult hcclComm::RegistTaskAbortHandler() const
@@ -140,6 +142,46 @@ HcclComm hcclComm::GetCommunicatorV2()
 void hcclComm::BinaryUnLoad()
 {
     binHandle_ = nullptr;
+}
+
+HcclResult hcclComm::Resume()
+{
+    if (!IsCommunicatorV2()) {
+        CHK_RET(communicator_->Resume());
+    }
+    return HCCL_SUCCESS;
+}
+HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
+{
+    status = HcclCommStatus::HCCL_COMM_STATUS_READY;
+    if (IsCommunicatorV2()) {
+        ReadWriteLockBase &commAicpuMapMutex = AicpuIndopProcess::AicpuGetCommMutex();
+        ReadWriteLock rwlock(commAicpuMapMutex);
+        rwlock.readLock();
+
+        std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+        auto ret = AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclComm][GetCommStatus]AicpuGetCommAll failed");
+            rwlock.readUnlock();
+            return ret;
+        }
+        for (const auto& deviceComm : aicpuCommInfo) {
+            if (deviceComm.first != identifier_) {
+                continue;
+            }
+            CollCommAicpu* aicpuCommPtr = deviceComm.second->GetCollCommAicpu();
+            if (aicpuCommPtr == nullptr) {
+                HCCL_ERROR("[HcclComm][GetCommStatus]aicpuCommPtr nullptr");
+                rwlock.readUnlock();
+                return HCCL_E_PTR;
+            }
+            status = aicpuCommPtr->GetCommmStatus();
+            break;
+        }
+        rwlock.readUnlock();
+    }
+    return HCCL_SUCCESS;
 }
 
 }  // namespace hccl

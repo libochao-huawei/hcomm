@@ -88,20 +88,28 @@ public:
         return HCCL_SUCCESS;
     }
     uint32_t UpdateIndex();
+    
+    // Todo:在这里做N秒快恢
+    HcclCommStatus GetCommStatus() const;
+    HcclResult Suspend();
+    HcclResult Clean();
+    HcclResult Resume();
 
 private:
     HcclResult DestroyAicpuComm();
     HcclResult InitHDCommunicate();   
     HcclResult InitTaskExceptionHandler();
+    HcclResult InitKfcAndRegisterCollComm();
 
     void* comm_{nullptr};
     uint32_t rankId_{};
     std::string commId_;
     CommConfig config_{};
+    HcclCommStatus commStatus_{HcclCommStatus::HCCL_COMM_STATUS_INVALID};
+    
     ManagerCallbacks callbacks_; 
     s32 deviceLogicId_{0};
     uint32_t index_{0};
-
 
     std::unique_ptr<RankGraph> rankgraph_{nullptr};
     std::unique_ptr<CommEngineResMgr> commEngineResMgr_{nullptr};
@@ -113,6 +121,9 @@ private:
     uintptr_t   addr_{0};
     std::size_t size_{0};
     HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+
+    // NS recover
+    bool isCleaned_{false};
 
     std::shared_ptr<HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<HDCommunicate> kfcStatusTransferD2H_{nullptr};
