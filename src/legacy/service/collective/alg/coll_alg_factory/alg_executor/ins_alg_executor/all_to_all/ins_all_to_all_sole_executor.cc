@@ -73,6 +73,20 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload
     // instantiate a template
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
 
+    std::map<u32, u32>rank2PathNumMap;
+    for(auto rankIdx : virtRanks_){
+        if(rankIdx==myRank_){
+            continue;
+        }
+        std::vector<NetInstance::Path> tmpPaths0 =
+            rankGraph->GetPaths(0, myRank_, rankIdx);
+        std::vector<NetInstance::Path> tmpPaths1 =
+            rankGraph->GetPaths(1, myRank_, rankIdx);
+        rank2PathNumMap[rankIdx] = tmpPaths0.size() + tmpPaths1.size();
+    }
+    HCCL_INFO("[InsAlltoAllSoleExecutor][CalcResOffload] setPathNumMap");
+    tempAlg.setPathNumMap(rank2PathNumMap);
+
     // calculate required insQueues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
@@ -104,6 +118,20 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const 
     // instantiate a template
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
 
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsAlltoAllSoleExecutor][CalcRes] setPathNumMap");
+    for(auto rankIdx : virtRanks_){
+        if(rankIdx==myRank_){
+            continue;
+        }
+        std::vector<NetInstance::Path> tmpPaths0 =
+            rankGraph->GetPaths(0, myRank_, rankIdx);
+        std::vector<NetInstance::Path> tmpPaths1 =
+            rankGraph->GetPaths(1, myRank_, rankIdx);
+        rank2PathNumMap[rankIdx] = tmpPaths0.size() + tmpPaths1.size();
+    }
+    tempAlg.setPathNumMap(rank2PathNumMap);
+
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
@@ -118,7 +146,6 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const 
     algResReq.queueNotifys = tempResReq.queNotifys;
     HCCL_DEBUG("[InsAlltoAllSoleExecutor] Rank[%d], requiredQueNum [%u].", myRank_, algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, tempResReq.links, algResReq.links));
-
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -174,7 +201,7 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
     HCCL_INFO("[InsAlltoAllSoleExecutor] Begin to orchestrate.");
     // init and check params
     CHK_RET(Init(op, params, insQue));
-
+    dataType_ = op.dataType;
     // instantiate a template
     if(topoInfo.vTopo.size() == 0) {
         HCCL_ERROR("[InsAlltoAllSoleExecutor] Rank[%d], vTopo size is zero.", myRank_);
@@ -189,9 +216,20 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(co
     tempAlg.SetCollOp(op);
     tempAlg.SetA2ASendRecvInfo(localSendRecvInfo_);
     tempAlg.SetLoadInfo(params);
+    tempAlg.SetDataType(dataType_);
     HCCL_DEBUG("[InsAlltoAllSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].", myRank_,
                rankSize_, dmaMode_.Describe().c_str());
     virtRankMap_ = topoInfo.virtRankMap[0];
+    virtRanks_ = topoInfo.virtRanks[0];
+    std::map<u32, u32>rank2PathNumMap;
+    for(u32 rankIdx:virtRanks_){
+        auto links0 = linkMgr->GetLinks(0, rankIdx);
+        auto links1 = linkMgr->GetLinks(1, rankIdx);
+        if(links0.size() + links1.size() != 0){
+            rank2PathNumMap[rankIdx] = links0.size() + links1.size();
+        }
+    }
+    tempAlg.setPathNumMap(rank2PathNumMap);
 
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;

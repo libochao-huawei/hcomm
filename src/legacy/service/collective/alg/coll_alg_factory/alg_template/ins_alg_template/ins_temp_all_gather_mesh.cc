@@ -28,7 +28,31 @@ InsTempAllGatherMesh1D::~InsTempAllGatherMesh1D()
 HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
 {
     HCCL_DEBUG("[InsTempAllGatherMesh1D] Enter CalcRes");
-    tempResReq.queNum = tempVTopo_[0].size();
+    CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
+
+    auto& linkReq = tempResReq.links;
+    u32 pathNum = 0;
+    for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
+        auto remoteRank = resReqIter->first;
+        if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
+            HCCL_ERROR("[InsTempAllGatherMesh1D] No path to remoteRank[%u]", remoteRank);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        if (pathNum == 0) {
+            pathNum = rank2PathNumMap_[remoteRank];
+        } else if (rank2PathNumMap_[remoteRank] != pathNum) {
+            HCCL_ERROR("[InsTempAllGatherMesh1D] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], mismatched "
+                       "remoteRank=[%u], pathNum=[%u]",
+                pathNum,
+                remoteRank,
+                rank2PathNumMap_[remoteRank]);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        resReqIter->second = pathNum;
+    }
+    
+    tempResReq.queNum = tempVTopo_[0].size() * pathNum;
+    HCCL_INFO("[InsTempAllGatherMesh1D] tempResReq.queNum = %u", tempResReq.queNum);
     tempResReq.streamNum = tempResReq.queNum;
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
     HCCL_DEBUG("[InsTempAllGatherMesh1D] CalcRes queNotifys size[%zu]", tempResReq.queNotifys.size());
@@ -37,7 +61,6 @@ HcclResult InsTempAllGatherMesh1D::CalcRes(AlgTempResReq &tempResReq)
     tempResReq.localWaitGroupCntNotify.emplace_back(centerQ, 0);
     tempResReq.localBcastPostCntNotify.emplace_back(centerQ, 0);
 
-    CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
     HCCL_DEBUG("[InsTempAllGatherMesh1D] CalcRes done");
     return HcclResult::HCCL_SUCCESS;
 }
@@ -63,30 +86,30 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     tempAlgParams_ = tempAlgParams;
     tempLinks_ = tempLinks;
 
-    CHK_PRT_RET(tempInsQues.size() != tempVTopo_[0].size(),
-        HCCL_ERROR("[InsTempAllGatherMesh1D] RunAllGather Rank [%d], requiredQueNum [%u] not equals to "
-                   "templateQueNum [%u].",
-                   myRank_, tempVTopo_[0].size(), tempInsQues.size()),
-        HcclResult::HCCL_E_INTERNAL);
+    uint32_t linkNum = tempLinks.begin()->second.size();
+    // 流的数量不能少于linkNum
+    CHK_PRT_RET(linkNum > tempInsQues.size(), HCCL_ERROR("[CollAlgFactory] [InsTempAllGatherMesh] Rank [%d], requiredQue Error.", myRank_),
+            HcclResult::HCCL_E_INTERNAL);
+    std::vector<float> dataSplitRate(linkNum);
+    CHK_RET(CalcDataSplitRateForLinks(tempLinks.begin()->second, dataSplitRate));
+    queNumPerNeighbor_ = linkNum;
+    std::vector<InsQuePtr> localInsQues;
+    localInsQues.push_back(tempInsQues[0]);
+    localInsQues.push_back(tempInsQues[tempInsQues.size() - 1]);
 
     CHK_RET(LocalCopyToScratch(tempInsQues[0]));
-
     // semaphore sync
     CHK_RET(PreSyncInterQueues(tempInsQues));
-
     // Local Copy from Input to Output
     CHK_RET(LocalCopyToUsrOut(tempInsQues[0]));
-
     // locate myRank in tempVTopo -> algRank
     u32 myAlgRank;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
-
     // run Mesh 使用第1至rankSize条queue
     CHK_PRT_RET(
         RunMesh(myAlgRank, tempVTopo_[0], tempInsQues) != HcclResult::HCCL_SUCCESS,
         HCCL_ERROR("[InsTempAllGatherMesh1D] Rank [%d], unable to run mesh algorithm.", myRank_),
         HcclResult::HCCL_E_INTERNAL);
-
     // semaphore sync
     CHK_RET(PostSyncInterQueues(tempInsQues));
 
@@ -98,7 +121,6 @@ HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
     if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType) {
         return HcclResult::HCCL_SUCCESS;
     }
-
     u32 myAlgRank;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
@@ -150,10 +172,9 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
         const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
-
-        for (u32 queIdx = 0; queIdx < vTopo.size() - 1; queIdx++) {
-            RankId connectedRank = vTopo[(myAlgRank + 1 + queIdx) % vTopo.size()];
-            
+        u32 queIdx = 0;
+        for (u32 rankIdx = 0; rankIdx < vTopo.size() - 1; rankIdx++) {
+            RankId connectedRank = vTopo[(myAlgRank + 1 + rankIdx) % vTopo.size()];
             u32 connectedAlgRank = 0;
             CHK_RET(GetAlgRank(connectedRank, tempVTopo_[0], connectedAlgRank));
             auto it = tempLinks_.find(connectedRank);
@@ -161,13 +182,28 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
                 HCCL_ERROR("[InsTempAllGatherMesh1D] connectedRank does not exist");
                 return HcclResult::HCCL_E_PARA;
             }
-            CHK_PRT_RET(queIdx + 1 >= tempInsQues.size() || tempLinks_.at(connectedRank).empty(),
-                HCCL_ERROR("[InsTempAllGatherMesh1D] queIdx=%u, tempInsQues.size=%u, connectedRank=%d, tempLinks_.size=%u",
-                           queIdx, tempInsQues.size(), connectedRank, tempLinks_.size()),
+            CHK_PRT_RET(tempLinks_.at(connectedRank).empty(),
+                HCCL_ERROR("[InsTempAllGatherMesh1D] connectedRank=%d, tempLinks_.size=%u",
+                            connectedRank, tempLinks_.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
-            InsQuePtr currQue = tempInsQues[queIdx + 1];
-            LinkData &neighborLinkData = tempLinks_.at(connectedRank)[0];
+            std::vector<LinkData>&neighborLinkDatas = tempLinks_.at(connectedRank);
+            u32 linkNum = rank2PathNumMap_.at(connectedRank);
+            if(linkNum != neighborLinkDatas.size()){
+                HCCL_ERROR("InsTempAllGatherMesh1D::RunMesh linkNum != neighborLinkDatas.size()");
+                return HcclResult::HCCL_E_INTERNAL;
+            }
+            std::vector<float> dataSplitRate(linkNum);
+            CHK_RET(CalcDataSplitRateForLinks(neighborLinkDatas, dataSplitRate));
+            for(u32 j = 0; j < linkNum; j++)
+            {
+                CHK_PRT_RET(queIdx >= tempInsQues.size(),
+                            HCCL_ERROR("[InsTempAllGatherMesh1D] queIdx=%u, tempInsQues.size=%u",
+                            queIdx, tempInsQues.size()),
+                            HcclResult::HCCL_E_INTERNAL);
+            InsQuePtr currQue = tempInsQues[queIdx +1];
+            queIdx++;
+            LinkData &neighborLinkData = neighborLinkDatas[j];
 
             BufferType writeType = (opMode_ == OpMode::OPBASE) ?
                 tempAlgParams_.buffInfo.scratBuffType : tempAlgParams_.buffInfo.inBuffType;
@@ -181,13 +217,16 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             u64 rxOutOffset = tempAlgParams_.outputSliceStride * connectedAlgRank + outBaseOff;
             u64 rxScratchOffset = scratchBase + tempAlgParams_.sliceSize * connectedAlgRank;
             u64 rxSrcOffset = (opMode_ == OpMode::OPBASE) ? rxScratchOffset : rxInOffset;
-
-            vector<DataSlice> txSrcSlices{ DataSlice(tempAlgParams_.buffInfo.inBuffType, txInOffset,
-                                                     tempAlgParams_.sliceSize) };
-            vector<DataSlice> txDstSlices{ DataSlice(writeType,  txDstOffset, tempAlgParams_.sliceSize) };
-            vector<DataSlice> rxSrcSlices{ DataSlice(writeType, rxSrcOffset, tempAlgParams_.sliceSize) };
-            vector<DataSlice> rxDstSlices{ DataSlice(tempAlgParams_.buffInfo.outBuffType, rxOutOffset,
-                                                     tempAlgParams_.sliceSize) };
+            
+            DataSlice txSrcSlice(tempAlgParams_.buffInfo.inBuffType, txInOffset,tempAlgParams_.sliceSize);
+            DataSlice txDstSlice(writeType, txDstOffset, tempAlgParams_.sliceSize);
+            DataSlice rxSrcSlice(writeType, rxSrcOffset, tempAlgParams_.sliceSize);
+            DataSlice rxDstSlice(tempAlgParams_.buffInfo.outBuffType, rxOutOffset, tempAlgParams_.sliceSize);
+            
+            vector<DataSlice> txSrcSlices{ CalcDataSliceForLinks(txSrcSlice, dataSplitRate, j) };
+            vector<DataSlice> txDstSlices{ CalcDataSliceForLinks(txDstSlice, dataSplitRate, j) };
+            vector<DataSlice> rxSrcSlices{ CalcDataSliceForLinks(rxSrcSlice, dataSplitRate, j) };
+            vector<DataSlice> rxDstSlices{ CalcDataSliceForLinks(rxDstSlice, dataSplitRate, j) };
 
             TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
             TxRxLinks sendRecvLinks(neighborLinkData, neighborLinkData);
@@ -196,9 +235,35 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             CHK_PRT_RET(SendRecv(sendRecvInfo, currQue, 0, true, DmaMode::GET),
                 HCCL_ERROR("[InsTempAllGatherMesh1D] sendrecv failed (nbr=%d, queIdx=%u, rpt=%u)", connectedRank,
                 queIdx, rpt), HcclResult::HCCL_E_INTERNAL);
+            }
         }
     }
     return HcclResult::HCCL_SUCCESS;
 }
 
+DataSlice InsTempAllGatherMesh1D::CalcDataSliceForLinks(const DataSlice& recvSrcSliceAllLinks, std::vector<float> dataSplitRate, u32 j) const
+{
+    BufferType type = recvSrcSliceAllLinks.GetType();
+    u64 offset = recvSrcSliceAllLinks.GetOffset();
+    u64 size = recvSrcSliceAllLinks.GetSize();
+    u64 AccSize=0;
+    HCCL_INFO("dataType_=%u",dataType_);
+    u64 typeSize = DataTypeSizeGet(dataType_);
+    u64 dataCnt = size / typeSize;
+    u64 linkNum = dataSplitRate.size();
+    std::vector<DataSlice>dataSliceForLinks (linkNum);
+    HCCL_INFO("[InsTempAllGatherMesh1D] Slice data for links");
+    for(u32 linkIdx = 0; linkIdx < linkNum; linkIdx++){
+        if (linkIdx != linkNum - 1) {
+            dataSliceForLinks[linkIdx].SetSize(static_cast<u64>(static_cast<float>(dataCnt) * dataSplitRate[linkIdx]) * typeSize);
+        }
+        else {
+            dataSliceForLinks[linkIdx].SetSize(size - AccSize);
+        }
+        dataSliceForLinks[linkIdx].SetOffset(offset + AccSize);
+        AccSize += dataSliceForLinks[linkIdx].GetSize();
+        dataSliceForLinks[linkIdx].SetBufferType(type);
+    }
+    return dataSliceForLinks[j];
+}
 } // namespace Hccl
