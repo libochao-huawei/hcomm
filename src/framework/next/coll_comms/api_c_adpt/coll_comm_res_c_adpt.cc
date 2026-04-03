@@ -455,10 +455,11 @@ HcclResult HcclCcuKernelLaunch(HcclComm comm, const ThreadHandle threadHandle,
     EXCEPTION_HANDLE_BEGIN
     const hcomm::CcuTaskArg *ccuTaskArgs = reinterpret_cast<hcomm::CcuTaskArg *>(taskArgs);
     std::vector<hcomm::CcuTaskParam> ccuParams{};
-    auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
-    CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
-        ret);
+    // todo: 需要切到新流程
+    // auto ret = kernel->GeneTaskParam(*ccuTaskArgs, ccuParams);
+    // CHK_PRT_RET(ret != HcclResult::HCCL_SUCCESS,
+    //     HCCL_ERROR("[%s] failed, kernleHandle[0x%llx].", __func__, kernelHandle),
+    //     ret);
 
     if (ccuParams.empty()) {
         HCCL_INFO("[%s] passed, ccu params are empty.", __func__);
