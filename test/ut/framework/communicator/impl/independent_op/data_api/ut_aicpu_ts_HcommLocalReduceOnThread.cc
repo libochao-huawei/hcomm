@@ -8,40 +8,40 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "gtest/gtest.h"
-#include "mockcpp/mokc.h"
-#include <mockcpp/mockcpp.hpp>
-
-#define private public
-#include "aicpu_ts_thread.h"
-#include "aicpu_ts_thread_interface.h"
-#undef private
+#include "ut_aicpu_ts_base.h"
 
 using namespace hccl;
 
-class UtAicpuTsHcommLocalReduceOnThread : public testing::Test
+class UtAicpuTsHcommLocalReduceOnThread : public UtAicpuTsBase
 {
 protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "UtAicpuTsHcommLocalReduceOnThread tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "UtAicpuTsHcommLocalReduceOnThread tests tear down." << std::endl;
+    }
+
     virtual void SetUp() override
     {
-        MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaReduce).stubs().will(returnValue(HCCL_SUCCESS));
-        threadOnDevice.devType_ = DevType::DEV_TYPE_950;
-        threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+        std::cout << "A Test case in UtAicpuTsHcommLocalReduceOnThread SetUp" << std::endl;
+        UtAicpuTsBase::SetUp();
+
+        MOCKER_CPP(&Hccl::IAicpuTsThread::SdmaReduce, HcclResult (Hccl::IAicpuTsThread::*)(uint64_t, uint64_t, uint64_t, uint32_t, uint32_t) const).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
     {
-        GlobalMockObject::verify();
+        UtAicpuTsBase::TearDown();
+        std::cout << "A Test case in UtAicpuTsHcommLocalReduceOnThread TearDown" << std::endl;
     }
 
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
-    uint64_t tempDst[6] = {1, 1, 1, 1, 1, 1};
-    uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
-    void *dst = reinterpret_cast<void *>(tempDst);
-    void *src = reinterpret_cast<void *>(tempSrc);
-    uint64_t len = sizeof(tempDst);
-    uint64_t count = len / sizeof(tempDst[0]);
+    void *dst = reinterpret_cast<void *>(0x2345);
+    void *src = reinterpret_cast<void *>(0x2345);
+    uint64_t count = 1;
     HcommDataType dataType = HCOMM_DATA_TYPE_FP16;
     HcommReduceOp reduceOp = HCOMM_REDUCE_SUM;
     int32_t res{HCCL_E_RESERVED};
@@ -49,47 +49,6 @@ protected:
 
 TEST_F(UtAicpuTsHcommLocalReduceOnThread, Ut_HcommLocalReduceOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));
-    
-    AicpuTsThread aicpuThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
-    HcclResult ret = aicpuThread.Init();
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    std::string mainStr = aicpuThread.GetUniqueId();
-    isDeviceSide = true;
-    GlobalMockObject::verify(); 
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));
-
-     MOCKER(hrtGetDeviceType)
-        .stubs()
-        .with(outBound(DevType::DEV_TYPE_950))
-        .will(returnValue(HCCL_SUCCESS));
-
-    AicpuTsThread mainDevThread(mainStr);
-    ret = mainDevThread.Init();
-    std::function<HcclResult (u32, u32, const Hccl::TaskParam &, u64)> callback = [](u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {return HCCL_SUCCESS;};
-    mainDevThread.SetAddTaskInfoCallback(callback);
-    EXPECT_EQ(ret, HCCL_SUCCESS);  
-
-    void *expectPtr = reinterpret_cast<void *>(0x2345);
-    void *streamPtr = mainDevThread.GetStreamLitePtr();
-    EXPECT_NE(nullptr, streamPtr);
-
-    ret = mainDevThread.LocalNotifyRecord(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-   
-    ret = mainDevThread.LocalNotifyWait(0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    void *src = reinterpret_cast<void *>(0x2345);
-    void *dst = reinterpret_cast<void *>(0x2345);
-    uint64_t sizeByte = 8;
-    thread = reinterpret_cast<ThreadHandle>(&mainDevThread);
     res = HcommLocalReduceOnThread(thread, dst, src, count, dataType, reduceOp);
     EXPECT_EQ(res, HCCL_SUCCESS);
 }

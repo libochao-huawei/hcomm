@@ -180,7 +180,8 @@ HcclResult CollComm::Suspend()
 HcclResult CollComm::Clean()
 {
     if (commStatus_ != HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
-        HCCL_ERROR("[CollComm][Clean] The current communication is not suspended, cannot clean.");
+        HCCL_ERROR("[CollComm][Clean] The current communication is not suspended, cannot clean, status is [%u]", 
+            static_cast<uint32_t>(commStatus_));
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
     if (isCleaned_) {
@@ -200,7 +201,8 @@ HcclResult CollComm::Resume()
         return HcclResult::HCCL_E_INTERNAL;
     }
     if (commStatus_ != HcclCommStatus::HCCL_COMM_STATUS_SUSPENDING) {
-        HCCL_WARNING("[CollComm][Resume] The current communication is normal, no need to resume.");
+        HCCL_WARNING("[CollComm][Resume] The current communication is normal, no need to resume, status is [%u]",
+            static_cast<uint32_t>(commStatus_));
         return HcclResult::HCCL_SUCCESS;
     }
     
@@ -208,7 +210,7 @@ HcclResult CollComm::Resume()
     CHK_SMART_PTR_NULL(myRank_);
     auto ret = myRank_->Resume();
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[CollComm][Resume] %s failed!", __func__);
+        HCCL_ERROR("[CollComm][Resume] %s failed, ret = 0x%016llx", __func__, HCCL_ERROR_CODE(ret));
         return ret;
     }
 

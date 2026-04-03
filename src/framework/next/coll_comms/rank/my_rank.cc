@@ -510,6 +510,10 @@ std::vector<ChannelHandle> MyRank::GetAllChannelList()
 void MyRank::SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 
         std::shared_ptr<HDCommunicate> kfcStatusTransferD2H)
 {
+    if (nsRecoveryProcessor_ == nullptr) {
+        HCCL_ERROR("[MyRank][SetKfcControlTransfer] nsRecoveryProcessor_ is null, cannot set KFC control transfer.");
+        return;
+    }
     nsRecoveryProcessor_->SetKfcControlTransfer(kfcControlTransferH2D, kfcStatusTransferD2H);
 }
 
@@ -518,7 +522,7 @@ HcclResult MyRank::StopLaunch()
     HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch start!");
     auto ret = nsRecoveryProcessor_->StopLaunch();
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][StopLaunch] MyRank::StopLaunch failed!");
+        HCCL_ERROR("[NsRecovery][StopLaunch] MyRank::StopLaunch failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
     }
     HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch success!");
     return ret;
@@ -534,13 +538,13 @@ HcclResult MyRank::Clean()
     }
     auto ret = ChannelProcess::ChannelClean(channelList.data(), channelList.size());
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed!");
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 
     ret = nsRecoveryProcessor_->Clean();
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed!");
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 
@@ -559,13 +563,13 @@ HcclResult MyRank::Resume()
 
     auto ret = ChannelProcess::ChannelResume(channelList.data(), channelList.size());
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed!");
+        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 
     ret = nsRecoveryProcessor_->Resume(binHandle_);
     if (ret != HcclResult::HCCL_SUCCESS) {
-        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed!");
+        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
         return ret;
     }
 

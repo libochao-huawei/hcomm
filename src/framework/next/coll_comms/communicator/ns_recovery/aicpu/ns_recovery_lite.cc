@@ -28,7 +28,7 @@ Hccl::KfcCommand NsRecoveryLite::BackGroundGetCmd()
     Hccl::KfcCommand cmd{Hccl::KfcCommand::NONE};
     auto ret = hdcHandler_->GetKfcCommand(cmd);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("BackGroundGetCmd failed!");
+        HCCL_ERROR("BackGroundGetCmd failed, ret = 0x%016llx, cmd = %s", HCCL_ERROR_CODE(ret), cmd.Describe().c_str());
     }
     return cmd;
 }

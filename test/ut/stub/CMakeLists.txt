@@ -90,6 +90,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/thread.cc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/cpu_ts_thread.cc
 
+    ${HCCL_CODE_ROOT}/src/legacy/interface/aicpu_ts_thread_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc

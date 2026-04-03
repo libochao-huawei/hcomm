@@ -33,7 +33,7 @@ int32_t ProcessTaskAbortPre(const std::vector<CollComm *> &commVector, const std
             ret = comm->Suspend();
         }
         if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
-            HCCL_ERROR("[NsRecovery] finish suspend failed");
+            HCCL_ERROR("[NsRecovery] finish suspend failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
             return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
         }
         HCCL_INFO("[NsRecovery]finish suspend success");
@@ -61,7 +61,7 @@ int32_t ProcessTaskAbortPost(const std::vector<CollComm *> &commVector, int32_t 
             ret = comm->Clean();
         }
         if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
-            HCCL_ERROR("[NsRecovery][Callback] finish clean failed");
+            HCCL_ERROR("[NsRecovery][Callback] finish clean failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
             return static_cast<int>(TaskAbortResult::TASK_ABORT_FAIL);
         }
         HCCL_INFO("[NsRecovery][Callback] finish clean success");
