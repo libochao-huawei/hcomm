@@ -480,18 +480,17 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
         && ((isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB)
         || (!isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_2_MB))));
-    bool isSupportAtomicWrite = topoMatcher_->GetAlgoInfo().isSupportAtomicWrite;
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && isSupportAtomicWrite && !retryEnable_; // 涉及ROCE平面
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
 
     isHccsPlusSio = false;
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
-    } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
+    } else if ((multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) || smallCountOptimMultiPod) {
          algName = "ReduceScatterComm";
     } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
         algName = "ReduceScatterARSFor91093Executor";
-    } else if (smallCountOptimMultiPod || useHostComm || (smallCountOptimMultiServer && !isPowOfTwo &&
+    } else if (useHostComm || (smallCountOptimMultiServer && !isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_256_KB))) {
         algName = "ReduceScatterComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
