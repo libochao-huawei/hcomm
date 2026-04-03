@@ -188,3 +188,50 @@ TEST_F(HcclCommunicatorHostTest, Ut_IsSupportSymmetricMemory_When_FindSymmetricW
     EXPECT_EQ(retBool, false);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclCommunicatorHostTest, Ut_AicpuInitOpTilingDataBuf_When_AlltoallvOpType_Expect_ReturnHCCL_SUCCESS) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    ASSERT_NE(hcclCommunicator, nullptr);
+    
+    hcclCommunicator->userRankSize_ = 2;
+    hcclCommunicator->localAiCpuOpNotify_.resize(10, nullptr);
+    
+    u64 sendCounts[2] = {1024, 1024};
+    u64 recvCounts[2] = {1024, 1024};
+    u64 sdispls[2] = {0, 1024};
+    u64 rdispls[2] = {0, 1024};
+    
+    OpParam opParam;
+    opParam.tag = "test_tag";
+    opParam.DataDes.count = 1024;
+    opParam.DataDes.dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    opParam.isZeroCopy = false;
+    opParam.isCapture = false;
+    opParam.supportSymmetricMemory = false;
+    opParam.needIncreLink = false;
+    opParam.aicpuCacheEnable = 0;
+    opParam.All2AllDataDes.sendType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    opParam.All2AllDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    opParam.All2AllDataDes.sendCounts = sendCounts;
+    opParam.All2AllDataDes.recvCounts = recvCounts;
+    opParam.All2AllDataDes.sdispls = sdispls;
+    opParam.All2AllDataDes.rdispls = rdispls;
+    
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
+    std::string kernelName = "test_kernel";
+    
+    AicpuOpTiling opTilingInfo;
+    opTilingInfo.algName = "test_alg";
+    opTilingInfo.newTag = "test_new_tag";
+    opTilingInfo.algType.algoLevel0 = 0;
+    opTilingInfo.algType.algoLevel1 = 0;
+    opTilingInfo.algType.algoLevel2 = 0;
+    opTilingInfo.floatOverflowMode = 0;
+    opTilingInfo.dumpDebug = 0;
+    
+    u64 dynamicDataSize = sizeof(struct OpTilingAlltoallvDataDes) + 4 * 2 * sizeof(u64);
+    
+    HcclResult ret = hcclCommunicator->AicpuInitOpTilingDataBuf(opParam, opType, kernelName, opTilingInfo, dynamicDataSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(hcclCommunicator->opTilingDataBuf_.ptr(), nullptr);
+}
