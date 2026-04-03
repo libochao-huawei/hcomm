@@ -427,7 +427,6 @@ void CcuTransport::TransResUnpackProc(BinaryStream &binaryStream)
         binaryStream >> cntCke;
         rmtRes.cntCkes.push_back(cntCke);
     }
-    HCCL_INFO("Recv cntCkesSize[%u]", resSzie);
 
     binaryStream >> resSzie;
     rmtRes.xns.clear();
