@@ -12,6 +12,7 @@
 #define HCCL_HDC_PUB_H
 
 #include <mutex>
+#include <memory>
 #include "hccl/base.h"
 #include "mem_device_pub.h"
 #include "mem_host_pub.h"
@@ -73,5 +74,6 @@ private:
     bool supportDevMemReg_{ true };
     ReadWriteLockBase lock_;
 };
+
 }
 #endif // HCCL_HDC_PUB_H

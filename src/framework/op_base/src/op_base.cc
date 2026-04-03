@@ -4889,6 +4889,9 @@ HcclResult HcclCommResume(HcclComm comm)
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         CHK_RET(HcclCommResumeV2(commV2));
+
+        CHK_RET(hcclComm->Resume());
+
         return HCCL_SUCCESS;
     }());
 #endif
@@ -4899,6 +4902,14 @@ HcclResult HcclCommResume(HcclComm comm)
     HCCL_RUN_INFO("HcclCommResume:success, take time:[%lld]us, comm[%s]",
         DURATION_US(endut - startut).count(), hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommGetStatus(HcclComm comm, HcclCommStatus *status)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(status);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    return hcclComm->GetCommStatus(*status);
 }
 
 uint32_t HcclGetCommConfigCapability()
