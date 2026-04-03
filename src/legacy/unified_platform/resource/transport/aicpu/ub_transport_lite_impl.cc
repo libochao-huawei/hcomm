@@ -55,6 +55,11 @@ UbTransportLiteImpl::UbTransportLiteImpl(
 }
 UbTransportLiteImpl::UbTransportLiteImpl(std::vector<char> &uniqueId)
 {
+    Init(uniqueId);
+}
+
+void UbTransportLiteImpl::Init(std::vector<char> &uniqueId)
+{
     BinaryStream binaryStream(uniqueId);
     u32          theType;
     binaryStream >> theType;
@@ -715,6 +720,32 @@ Eid UbTransportLiteImpl::GetRmtEid() const
         return connVec[0]->GetRmtEid();
     }
     return eid;
+}
+
+HcclResult UbTransportLiteImpl::Clean()
+{
+    locNotifyVec.clear();
+    rmtNotifyVec.clear();
+    locBufferVec.clear();
+    rmtBufferVec.clear();
+
+    // 清理connVec，connLite由UbConnLiteMgr管理
+    for (auto &it : connUniqueIdVec) {
+       DECTOR_TRY_CATCH("UbTransportLiteImpl",  UbConnLiteMgr::GetInstance().Clear(it));
+    }
+    connUniqueIdVec.clear();
+    connVec.clear();
+
+    // 清理wqe
+    ClearConnOut();
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbTransportLiteImpl::Resume(std::vector<char> &uniqueId)
+{
+    Init(uniqueId);
+    return HCCL_SUCCESS;
 }
 
 HcclResult UbTransportLiteImpl::Fence()
