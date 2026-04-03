@@ -74,6 +74,10 @@ public:
         offset = off;
     }
 
+    void SetSize(u64 size)
+    {
+        this->size = size;
+    }
 private:
     BufferType type;
     u64        offset;

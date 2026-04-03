@@ -41,13 +41,14 @@ LinkData::LinkData(vector<char> &data)
     binaryStream >> writable;
     binaryStream >> hop;
     binaryStream >> localDieId_;
+    binaryStream >> portGroupSize;
     binaryStream >> fullmesh;
 
     u32 offset;
     u32 addrSize;
     binaryStream >> offset;
     binaryStream >> addrSize;
-
+    
     std::vector<char> locAddr;
     if (data.begin() + offset >= data.end()) {
         THROW<InternalException>("[LinkData][LinkData]invalid offset[%u]", offset);
@@ -80,6 +81,7 @@ std::vector<char> LinkData::GetUniqueId() const
     binaryStream << writable;
     binaryStream << hop;
     binaryStream << localDieId_;
+    binaryStream << portGroupSize;    
     binaryStream << fullmesh;
 
     vector<char> result;
@@ -96,6 +98,7 @@ std::vector<char> LinkData::GetUniqueId() const
 
     binaryStream << offset;
     binaryStream << addrSize;
+    
     binaryStream.Dump(result);
     result.insert(result.end(), loc.begin(), loc.end());
     result.insert(result.end(), rmt.begin(), rmt.end());
