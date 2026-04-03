@@ -16,6 +16,8 @@
 #include "mem_host_pub.h"
 #include "hccl_diag.h"
 
+#include "ccu_kernel.h" // todo: 不合理
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -108,6 +110,11 @@ HcommResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHa
 HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
 HcommResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
+
+// todo: 不合理
+HcclResult HcclReportCcuProfilingInfo(const ThreadHandle threadHandle, uint64_t execId,
+    void *streamProfilingInfos, size_t infoNum,
+    const HcclComm comm, Hccl::TaskParam &taskParam, bool isMaster);
 
 #ifdef __cplusplus
 }

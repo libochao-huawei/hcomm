@@ -8,6 +8,7 @@
 #include "my_rank.h"
 #include "channel_process.h"
 #include "base_config.h"
+#include "ccu_primitives.h"
 #define private public
 using namespace hccl;
 
@@ -110,7 +111,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(&HcommCcuInsCreate).stubs().with().will(returnValue(CcuResult::CCU_SUCCESS));
     ChannelHandle channelHandle = 0xab;
     MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
         .stubs()
