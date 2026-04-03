@@ -7,13 +7,27 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "profiling_command_handle_lite.h"
 #include "log.h"
 #include "prof_common.h"
 #include "profiling_handler_lite.h"
-#include "profiling_command_handle_lite.h"
+
  
 namespace Hccl {
 #ifdef CCL_KERNEL_AICPU
+
+void RegisterProfCallBack()
+{
+    if (MsprofRegisterCallback != nullptr) {
+        HCCL_INFO("RegisterProfCallBack not null");
+        int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
+        if (ret != 0) {
+            THROW<InternalException>(StringFormat("MsprofRegisterCallback failed, ret = %d", ret));
+        }
+    } else {
+        HCCL_INFO("RegisterProfCallBack is null");
+    }
+}
 
 int32_t DeviceCommandHandle(uint32_t profType, void *data, uint32_t len) {
     HCCL_INFO("[%s] start", __func__);
