@@ -223,6 +223,35 @@ TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_GroupModeAndAllocSliceMemFa
     GlobalMockObject::verify();
 }
 
+TEST_F(HcclImplTest, ut_GroupSendRecv_AicpuInitOpTilingDataBuf_Return_HCCL_SUCCESS)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    std::unique_ptr<HcclCommunicator> communicator(new (std::nothrow) HcclCommunicator());
+
+    DeviceMem inputMem = DeviceMem::alloc(4096);
+    DeviceMem outputMem = DeviceMem::alloc(2048);
+    OpParam opParam;
+    opParam.tag = "test";
+    opParam.inputPtr = inputMem.ptr();
+    opParam.inputSize = 4096;
+    opParam.outputPtr = outputMem.ptr();
+    opParam.outputSize = 2048;
+    opParam.DataDes.count = 2048/4;
+    opParam.DataDes.dataType = HCCL_DATA_TYPE_FP32;
+    opParam.stream = Stream(StreamType::STREAM_TYPE_ONLINE);
+    opParam.root = 0;
+
+    MOCKER_CPP(&HcclCommunicator::AicpuInitOpTilingDataFromOpParam).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitAndCheckAicpuOrderNotify).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::BuildHierarchicalAlgOption).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    AicpuOpTiling opTilingInfo;
+
+    ret = communicator->AicpuInitOpTilingDataBuf(opParam, HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, "", opTilingInfo, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    GlobalMockObject::verify();
+}
+
 TEST_F(HcclImplTest, ut_AllocBatchSendRecvLinks_When_hrtSetDevice_Failed_Return_HCCL_E_INTERNAL)
 {
     HcclResult ret = HCCL_SUCCESS;
