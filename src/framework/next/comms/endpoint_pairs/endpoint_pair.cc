@@ -35,9 +35,13 @@ HcclResult EndpointPair::Init()
 
 HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t listenPort, Hccl::Socket*& socket)
 {
+    uint32_t connectMode = 0;
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData));
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, socketTag);
+    if (localEndpointDesc_.loc.locType != remoteEndpointDesc_.loc.locType) {
+        connectMode = 1;
+    }
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, socketTag, rankId_, remoteRankId_, connectMode);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
@@ -48,11 +52,11 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
         std::string socketTagPrefix = socketTag;
-        if (myRank <= rmtRank) {
-            socketTagPrefix += "_" + std::to_string(myRank) + "_" + std::to_string(rmtRank);
-        } else {
-            socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
-        }
+        // if (myRank <= rmtRank) { // AIWAN TODO ：多拼装了rank
+        //     socketTagPrefix += "_" + std::to_string(myRank) + "_" + std::to_string(rmtRank);
+        // } else {
+        //     socketTagPrefix += "_" + std::to_string(rmtRank) + "_" + std::to_string(myRank);
+        // }
         CHK_RET(this->GetSocket(socketTagPrefix, listenPort, socket));
         return HCCL_SUCCESS;
     }

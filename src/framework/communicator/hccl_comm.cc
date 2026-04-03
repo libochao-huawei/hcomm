@@ -145,6 +145,9 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
         params.deviceType, params.logicDevId, params.identifier.c_str());
 
     InitIndependentOp();
+#ifndef CCL_KERNEL_AICPU
+    communicator_->InitMyRank();
+#endif
 
     return HCCL_SUCCESS;
 }

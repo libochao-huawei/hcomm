@@ -35,6 +35,8 @@ public:
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
+    // mode是否初始化ccu
+    HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum, uint32_t mode);
 
     CommMems* GetCommMems() const { return commMems_.get(); }
 
@@ -69,6 +71,9 @@ private:
     // 当前通信域初始化没有处理CommConfig，暂时只使用展开模式
     uint32_t opExpansionMode_{0};
 
+    // 用于区分 v1/v2 模式，v1 模式使用 rankToPortMap_
+    uint32_t mode_{0};
+
     std::unique_ptr<RankPairMgr> rankPairMgr_{nullptr};
     std::unique_ptr<hcomm::EndpointMgr> endpointMgr_{nullptr};
     std::unique_ptr<CommMems> commMems_{nullptr};
@@ -81,6 +86,9 @@ private:
 
     // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
     RankGraph* rankGraph_{nullptr};
+
+    // 内部获取 port 的方法，根据 mode_ 区分 v1/v2
+    HcclResult GetDevicePortInternal(uint32_t rank, uint32_t *devPort);
 };
 
 } // namespace hccl
