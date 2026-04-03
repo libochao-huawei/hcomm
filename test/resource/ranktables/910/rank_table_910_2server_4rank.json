@@ -1,0 +1,144 @@
+{
+  "board_id": "0x0000",
+  "chip_info": "910",
+  "deploy_mode": "lab",
+  "group_count": "1",
+  "group_list": [
+    {
+      "device_num": "8",
+      "group_name": "",
+      "instance_count": "8",
+      "instance_list": [
+        {
+          "devices": [
+            {
+              "device_id": "0",
+              "device_ip": "192.168.0.12",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "0",
+          "server_id": "10.0.0.10"
+        },
+        {
+          "devices": [
+            {
+              "device_id": "1",
+              "device_ip": "192.168.0.14",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "1",
+          "server_id": "10.0.0.10"
+        },
+        {
+          "devices": [
+            {
+              "device_id": "2",
+              "device_ip": "192.168.0.16",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "2",
+          "server_id": "10.0.0.10"
+        },
+        {
+          "devices": [
+            {
+              "device_id": "3",
+              "device_ip": "192.168.0.18",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "3",
+          "server_id": "10.0.0.10"
+        },
+        {
+          "devices": [
+            {
+              "device_id": "0",
+              "device_ip": "192.168.0.22",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "4",
+          "server_id": "10.0.0.11"
+        },
+        {
+          "devices": [
+            {
+              "device_id": "1",
+              "device_ip": "192.168.0.24",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "5",
+          "server_id": "10.0.0.11"
+        },
+        {
+          "devices": [
+            {
+              "device_id": "2",
+              "device_ip": "192.168.0.26",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "6",
+          "server_id": "10.0.0.11"
+        },
+        {
+          "devices": [
+            {
+              "device_id": "3",
+              "device_ip": "192.168.0.28",
+              "device_port": "16666"
+            }
+          ],
+          "rank_id": "7",
+          "server_id": "10.0.0.11"
+        }
+      ],
+      "server_list": [
+        {
+          "para_plane_info": [
+            {
+              "eth0": "192.168.210.2"
+            },
+            {
+              "eth1": "192.168.200.2"
+            },
+            {
+              "eth2": "192.168.210.2"
+            },
+            {
+              "eth3": "192.168.200.2"
+            }
+          ],
+          "server_id": "10.0.0.10"
+        },
+        {
+          "para_plane_info": [
+            {
+              "eth0": "192.168.210.3"
+            },
+            {
+              "eth1": "192.168.200.3"
+            },
+            {
+              "eth2": "192.168.210.3"
+            },
+            {
+              "eth3": "192.168.200.3"
+            }
+          ],
+          "server_id": "10.0.0.11"
+        }
+      ],
+      "server_num": "2"
+    }
+  ],
+  "para_plane_nic_location": "device",
+  "para_plane_nic_name": ["eth0", "eth1", "eth2", "eth3"],
+  "para_plane_nic_num": "8",
+  "status": "completed"
+}

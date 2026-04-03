@@ -1,0 +1,58 @@
+{
+  "rank_count": "4",
+  "rank_list": [
+    {
+      "level_list": [
+        {
+          "fabric_type": "INNER",
+          "id": "az0-rack0",
+          "level": 0,
+          "rank_addr_type": "",
+          "rank_addrs": []
+        }
+      ],
+      "local_id": 0,
+      "rank_id": 0
+    },
+    {
+      "level_list": [
+        {
+          "fabric_type": "INNER",
+          "id": "az0-rack0",
+          "level": 0,
+          "rank_addr_type": "",
+          "rank_addrs": []
+        }
+      ],
+      "local_id": 1,
+      "rank_id": 1
+    },
+    {
+      "level_list": [
+        {
+          "fabric_type": "INNER",
+          "id": "az0-rack0",
+          "level": 0,
+          "rank_addr_type": "",
+          "rank_addrs": []
+        }
+      ],
+      "local_id": 2,
+      "rank_id": 2
+    },
+    {
+      "level_list": [
+        {
+          "fabric_type": "INNER",
+          "id": "az0-rack0",
+          "level": 0,
+          "rank_addr_type": "",
+          "rank_addrs": []
+        }
+      ],
+      "local_id": 3,
+      "rank_id": 3
+    }
+  ],
+  "version": "2.0"
+}

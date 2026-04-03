@@ -1,0 +1,99 @@
+{
+  "server_count": "2",
+  "server_list": [
+    {
+      "device": [
+        {
+          "device_id": "0",
+          "device_ip": "192.168.0.12",
+          "rank_id": "0"
+        },
+        {
+          "device_id": "1",
+          "device_ip": "192.168.1.12",
+          "rank_id": "1"
+        },
+        {
+          "device_id": "2",
+          "device_ip": "192.168.2.12",
+          "rank_id": "2"
+        },
+        {
+          "device_id": "3",
+          "device_ip": "192.168.3.12",
+          "rank_id": "3"
+        },
+        {
+          "device_id": "4",
+          "device_ip": "192.168.4.12",
+          "rank_id": "4"
+        },
+        {
+          "device_id": "5",
+          "device_ip": "192.168.5.12",
+          "rank_id": "5"
+        },
+        {
+          "device_id": "6",
+          "device_ip": "192.168.6.12",
+          "rank_id": "6"
+        },
+        {
+          "device_id": "7",
+          "device_ip": "192.168.7.12",
+          "rank_id": "7"
+        }
+      ],
+      "host_ip": "192.168.0.12",
+      "server_id": "10.0.0.10"
+    },
+    {
+      "device": [
+        {
+          "device_id": "0",
+          "device_ip": "192.168.8.12",
+          "rank_id": "8"
+        },
+        {
+          "device_id": "1",
+          "device_ip": "192.168.9.12",
+          "rank_id": "9"
+        },
+        {
+          "device_id": "2",
+          "device_ip": "192.168.10.12",
+          "rank_id": "10"
+        },
+        {
+          "device_id": "3",
+          "device_ip": "192.168.11.12",
+          "rank_id": "11"
+        },
+        {
+          "device_id": "4",
+          "device_ip": "192.168.12.12",
+          "rank_id": "12"
+        },
+        {
+          "device_id": "5",
+          "device_ip": "192.168.13.12",
+          "rank_id": "13"
+        },
+        {
+          "device_id": "6",
+          "device_ip": "192.168.14.12",
+          "rank_id": "14"
+        },
+        {
+          "device_id": "7",
+          "device_ip": "192.168.15.12",
+          "rank_id": "15"
+        }
+      ],
+      "host_ip": "192.168.0.13",
+      "server_id": "10.0.0.11"
+    }
+  ],
+  "status": "completed",
+  "version": "1.0"
+}
