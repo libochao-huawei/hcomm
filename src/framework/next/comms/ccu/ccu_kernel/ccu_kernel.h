@@ -16,8 +16,8 @@
 #include <array>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
+#include <unordered_set>
 
 #include "ccu_task_arg_v1.h"
 #include "ccu_task_param_v1.h"
@@ -69,7 +69,7 @@ class CcuKernel : public CcuRep::CcuRepContext {
 public:
     CcuKernel() = default;
     ~CcuKernel() override;
-    HcclResult Init();
+    HcclResult SelectDie();
 
     CcuResReq          GetResourceRequest();
     CcuResRepository  &GetResRepository();
@@ -83,7 +83,8 @@ public:
     uint32_t    GetInstrCount();
     void        SetCcuInstrInfo(const CcuRep::CcuInstrInfo &instrInfo);
 
-    HcclResult GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams);
+    CcuResult GeneTaskParams(uint64_t *taskArgs, uint32_t argNum,
+        std::vector<CcuTaskParam> &taskParams);
 
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext *context);
@@ -98,6 +99,7 @@ public:
     HcclResult GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<CcuProfilingInfo> &allCcuProfilingInfo);
 
     const std::vector<CcuProfilingInfo> &GetAllCcuProfilingInfo() { return allCcuProfilingInfos_; };
+
 public:
     CcuResult VariableCreate(CcuVariableHandle *var);
     CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
@@ -184,6 +186,7 @@ public:
     /*========== 远端同步操作 ==========*/
     CcuResult WriteVariableWithSignal(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
     CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
+
 private:
     CcuResult GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable **variable);
     CcuResult GetCompletedEventByHandle(CcuEventHandle eventHandle, CcuRep::CompletedEvent **event);
@@ -226,14 +229,13 @@ private:
     CcuResult GetRemoteAddrByHandle(CcuRemoteAddrHandle handle, CcuRep::RemoteAddr **remoteAddr);
     std::unordered_map<CcuRemoteAddrHandle, CcuRep::RemoteAddr> ccuRemoteAddrMap_{};
 
-
 protected:
     // 子类实现
     // virtual HcclResult Algorithm() = 0;
     // virtual std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) = 0;
 
     // 使用channel中的Variable
-    HcclResult CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var) const;
+    HcclResult CreateVariable(const ChannelHandle channel, uint32_t varIndex, CcuRep::Variable *var);
     CcuRep::Variable CreateVariable();
     CcuRep::Variable CreateContinuousVariable();
     CcuRep::LocalAddr CreateLocalAddr();
@@ -254,11 +256,7 @@ protected:
     HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
     HcclResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
 
-    HcclResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1);
-
-    HcclResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx,
-                                 uint32_t remoteVarIdx, const CcuRep::Variable &var, uint32_t mask = 1);
-    // HcclResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask = 1);
+    CcuResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1);
 
     // 数据操作
     HcclResult WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
@@ -297,7 +295,6 @@ protected:
 
     // void LoadVariable(uint64_t addr, const CcuRep::Variable &var);
     void StoreVariable(const CcuRep::Variable &var, uint64_t addr);
-    // void LoadVariable(uint64_t addr, const CcuRep::Variable &var, uint32_t num);
     // 控制逻辑
     // 宏定义IF、WHILE
     CcuRep::FuncCall Func(const std::string &label);
@@ -320,7 +317,7 @@ private:
     CcuRepResource    res_{};
     CcuResRepository  resRepo_{};
 
-    std::vector<ChannelHandle> channels_;
+    std::unordered_set<ChannelHandle> channels_{};
 
     CcuRep::CcuInstrInfo instrInfo_{};
 
@@ -328,6 +325,7 @@ private:
 
     CcuSharedResource exportedRes_{};
     CcuSharedResource importedRes_{};
+
     std::vector<GroupInfo> groupOpSizeInfo_;
     std::vector<CcuProfilingInfo> allCcuProfilingInfos_;
 
