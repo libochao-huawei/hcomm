@@ -39,8 +39,7 @@ void CollServiceStub::CollAlgComponentInit()
                             .SetMyRank(comm_->GetMyRank())
                             .SetRankSize(comm_->GetRankSize())
                             .SetMainboardId(hcclMainboardId)
-                            .EnableDetour(EnvConfig::GetInstance().GetDetourConfig().GetDetourType()
-                                            == HcclDetourType::HCCL_DETOUR_ENABLE_2P) // 当前只支持4P场景的绕路
+                            .EnableDetour(false) 
                             .Build();
 
     if (collAlgComponent_ == nullptr) {
