@@ -21,6 +21,11 @@
 #include "rdma_handle_manager.h"
 #include "exchange_rdma_conn_dto.h"
 #include "sal.h"
+#include "hybrid_mode_config.h"
+#include "adapter_hccp.h"
+#include "../../../../../legacy/common/binary_stream.h"
+#include "../../../../../platform/resource/notify/notify_pool_impl.h"
+#include "../../../../../platform/hccp/inc/network/hccp_common.h"
 
 namespace hcomm {
 constexpr u32 FENCE_TIMEOUT_MS = 30 * 1000; // 定义最大等待30秒
@@ -32,7 +37,31 @@ HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChann
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
 HostCpuRoceChannel::~HostCpuRoceChannel() {
-    HcclResult ret = DpuNotifyManager::GetInstance().FreeNotifyIds(notifyNum_, localDpuNotifyIds_);
+    HcclResult ret;
+    
+    if (isHybridMode_) {
+        auto qpInfo = connections_[0]->GetQpInfo();
+        struct MrInfoT mrInfo = {nullptr};
+
+        for (uint32_t i = 0; i <= hccl::MEM_TYPE_RESERVED; i++) {
+            if (localMemMsg_[i].addr == nullptr) {
+                continue;
+            }
+
+            mrInfo.addr = localMemMsg_[i].addr;
+            ret = HrtRaMrDereg(qpInfo.qpHandle, &mrInfo);
+            if (ret != HCCL_SUCCESS) {
+                HCCL_WARNING("[%s]notify mr dereg failed, ret=%u.", __FUNCTION__, ret);
+            }
+
+            if (localMemMsg_[i].notifyId != INVALID_DPU_NOTIFY_ID) {
+                delete[] (int8_t *)localMemMsg_[i].addr;
+            }
+            localMemMsg_[i].addr = nullptr;
+        }
+    }
+    
+    ret = DpuNotifyManager::GetInstance().FreeNotifyIds(notifyNum_, localDpuNotifyIds_);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HostCpuRoceChannel::~HostCpuRoceChannel] exception occurred, HcclResult=[%d]", ret);
     }
@@ -183,23 +212,37 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
             CHK_RET(CheckSocketStatus());
             break;
         case RdmaStatus::SOCKET_OK:
+            CHK_RET(ExchangeCapability());
+            rdmaStatus_ = RdmaStatus::CAP_EXCHANGED;
+            break;
+        case RdmaStatus::CAP_EXCHANGED:
             // 准备资源
             CHK_RET(CreateQp());
+            CHK_RET(NegotiateMode());
             rdmaStatus_ = RdmaStatus::QP_CREATED;
             break;
         case RdmaStatus::QP_CREATED:
             // 发送交换数据
-            CHK_RET(ExchangeData());
+            if (isHybridMode_) {
+                CHK_RET(ExchangeDataHybird());
+            } else {
+                CHK_RET(ExchangeData());
+            }
             rdmaStatus_ = RdmaStatus::DATA_EXCHANGE;
             break;
         case RdmaStatus::DATA_EXCHANGE:
+            if (isHybridMode_) {
+                CHK_RET(ConnectSingleQpHybrid([]() -> bool {return 0;}));
+            }
             CHK_RET(ModifyQp());
             rdmaStatus_ = RdmaStatus::QP_MODIFIED;
             // modify完就不需要再轮询状态了，直接向下走准备Rqe的流程。
         case RdmaStatus::QP_MODIFIED:
             // Prepare Rqes
-            for (uint32_t i = 0; i < SEND_RQE_COUNT; ++i) {
-                CHK_RET(IbvPostRecv());
+            if (!isHybridMode_) {
+                for (uint32_t i = 0; i < SEND_RQE_COUNT; ++i) {
+                    CHK_RET(IbvPostRecv());
+                }
             }
         default:
             rdmaStatus_ = RdmaStatus::CONN_OK;
@@ -586,6 +629,35 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     return HCCL_SUCCESS;
 }
 
+hccl::MemType HostCpuRoceChannel::NotifyIdToMemtypeHybird(uint32_t remoteNotifyIdx)
+{
+    if (remoteNotifyIdx == 0) {
+        return hccl::MemType::ACK_NOTIFY_MEM;
+    } else {
+        return hccl::MemType::DATA_NOTIFY_MEM;
+    }
+
+    return hccl::MemType::DATA_NOTIFY_MEM;
+}
+
+HcclResult HostCpuRoceChannel::BuildNotifyWrHybird(const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifRecordWr)
+{
+    hccl::MemType type = NotifyIdToMemtypeHybird(remoteNotifyIdx);
+
+    notifRecordWr.sg_list->addr         = reinterpret_cast<uint64_t>(localMemMsg_[hccl::NOTIFY_SRC_MEM].addr);
+    notifRecordWr.sg_list->length       = localMemMsg_[hccl::NOTIFY_SRC_MEM].len;
+    notifRecordWr.sg_list->lkey         = localMemMsg_[hccl::NOTIFY_SRC_MEM].lkey;
+    notifRecordWr.opcode                = IBV_WR_RDMA_WRITE;
+    notifRecordWr.send_flags            = IBV_SEND_SIGNALED;
+    notifRecordWr.next                  = nullptr;
+    notifRecordWr.num_sge               = 1;
+    notifRecordWr.wr_id                 = 0;
+    notifRecordWr.wr.rdma.rkey          = remoteMemMsg_[type].lkey;
+    notifRecordWr.wr.rdma.remote_addr   = reinterpret_cast<uint64_t>(remoteMemMsg_[type].addr);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 {
     // 1.构造send_WR
@@ -593,7 +665,12 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
     struct ibv_send_wr *sendbadWr = nullptr;
     struct ibv_sge sgList {};
     notifyRecordWr.sg_list      = &sgList;
-    CHK_RET(PrepareNotifyWrResource(MEM_BLOCK_SIZE, remoteNotifyIdx, notifyRecordWr));
+
+    if (isHybridMode_) {
+        BuildNotifyWrHybird(remoteNotifyIdx, notifyRecordWr);
+    } else {
+        CHK_RET(PrepareNotifyWrResource(MEM_BLOCK_SIZE, remoteNotifyIdx, notifyRecordWr));
+    }
 
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
@@ -628,6 +705,10 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
 HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout)
 {
     HCCL_INFO("[HostCpuRoceChannel::NotifyWait] NotifyWait start");
+
+    if (isHybridMode_) {
+        return NotifyWaitHybrid(localNotifyIdx, timeout);
+    }
 
     if (localNotifyIdx >= localDpuNotifyIds_.size()) {
         HCCL_ERROR("[HostCpuRoceChannel::%s] localNotifyIdx[%u] out of the range of localDpuNotifyIds_[%zu].",
@@ -725,6 +806,10 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
     HCCL_INFO("[HostCpuRoceChannel::WriteWithNotify] WriteWithNotify start");
+
+    if (isHybridMode_) {
+        return WriteWithNotifyHybrid(dst, src, len, remoteNotifyIdx);
+    }
 
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
@@ -974,6 +1059,440 @@ HcclResult HostCpuRoceChannel::Clean()
 HcclResult HostCpuRoceChannel::Resume()
 {
     return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::CreateNotifyHybird(hccl::MemType notifyType, uint32_t notifyId)
+{
+    localNotifyAccess_ = 7;
+    localNotifySize_ = 4;
+
+    int8_t *ptr = new (std::nothrow) int8_t[localNotifySize_];
+    CHK_PTR_NULL(ptr);
+
+    memset_s(ptr, localNotifySize_, 0, localNotifySize_);
+
+    struct MrInfoT mrInfo = {nullptr};
+    mrInfo.addr = ptr;
+    mrInfo.size = localNotifySize_;
+    mrInfo.access = localNotifyAccess_;
+    auto qpInfo = connections_[0]->GetQpInfo();
+    CHK_RET(HrtRaMrReg(qpInfo.qpHandle, &mrInfo));
+
+    localMemMsg_[notifyType].addr = ptr;
+    localMemMsg_[notifyType].lkey = mrInfo.lkey;
+    localMemMsg_[notifyType].memType = notifyType;
+    localMemMsg_[notifyType].len = localNotifySize_;
+    localMemMsg_[notifyType].notifyId = notifyId;
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::CreateNotifyValueBufferHybird()
+{
+    CreateNotifyHybird(hccl::MemType::NOTIFY_SRC_MEM, hccl::MemType::NOTIFY_SRC_MEM);
+    *reinterpret_cast<uint32_t *>(localMemMsg_[hccl::MemType::NOTIFY_SRC_MEM].addr) = 1;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::CreateNotifyBufferHybird(hccl::MemType notifyType, uint32_t notifyId, u8 *&data, u64 &size)
+{
+    CreateNotifyHybird(notifyType, notifyId);
+
+    CHK_SAFETY_FUNC_RET(memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[notifyType]), sizeof(hccl::MemMsg)));
+
+    data += sizeof(hccl::MemMsg);
+    size -= sizeof(hccl::MemMsg);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::ExchangeCapability()
+{
+    HCCL_INFO("[Hybrid][HostCpuRoceChannel] Starting capability exchange");
+    
+    // 1. 构造本地能力信息（使用公共头文件中的默认值）
+    RoCECapability localCap;
+    localCap.InitDefaults();
+    localCap.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+    localCap.commStack = CommStackType::COMM_STACK_HOST_CPU_ROCE;
+    
+    // 2. 发送本地能力（4字节大小前缀 + 原始结构体数据）
+    uint32_t sendSize = sizeof(localCap);
+    socket_->Send(&sendSize, sizeof(sendSize));
+    socket_->Send(&localCap, sendSize);
+    HCCL_INFO("[Hybrid][HostCpuRoceChannel] Sent capability, version=%u", localCap.version);
+    
+    // 3. 接收对端能力（先读4字节大小，再读数据）
+    uint32_t recvSize = 0;
+    socket_->Recv(&recvSize, sizeof(recvSize));
+    
+    // 检查大小是否在合理范围内（必须 >= sizeof(RoCECapability) 且 <= 1024）
+    if (recvSize < sizeof(RoCECapability) || recvSize > 1024) {
+        HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Invalid capability size: %u, expected [%zu, 1024]",
+            recvSize, sizeof(RoCECapability));
+        return HCCL_E_PARA;
+    }
+    
+    std::vector<char> recvData(recvSize);
+    socket_->Recv(recvData.data(), recvSize);
+    
+    // 4. 先检查魔数（前4字节），如果不对可能是旧版本，需要回退
+    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+        HCCL_WARNING("[Hybrid][HostCpuRoceChannel] Magic mismatch, peer may be old version. "
+                     "Falling back to native mode.");
+        // 回退到原生模式
+        isHybridMode_ = false;
+        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
+        // 标记为"跳过混合模式协商"，后续流程继续使用原生模式
+        remoteCap_.magic = 0;  // 标记为无效
+        return HCCL_SUCCESS;
+    }
+    
+    // 5. 魔数正确，解析对端能力
+    if (!remoteCap_.Deserialize(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+        HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Failed to deserialize capability");
+        return HCCL_E_PARA;
+    }
+    
+    // 6. 校验字段有效性
+    if (!remoteCap_.Validate()) {
+        HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Capability validation failed");
+        return HCCL_E_INTERNAL;
+    }
+    
+    // 7. 版本兼容性处理（高版本兼容低版本）
+    if (remoteCap_.version > ROCE_CAPABILITY_VERSION) {
+        // 对端版本更高，使用本地版本的功能集（最小公分母）
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Remote version %u > local %u, using local version features",
+            remoteCap_.version, ROCE_CAPABILITY_VERSION);
+    } else if (remoteCap_.version < ROCE_CAPABILITY_VERSION) {
+        // 对端版本更低，使用对端版本的功能集（向下兼容）
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Remote version %u < local %u, using remote version features",
+            remoteCap_.version, ROCE_CAPABILITY_VERSION);
+    }
+    
+    HCCL_INFO("[Hybrid][HostCpuRoceChannel] Capability exchange success, "
+              "remote commStack=%u, version=%u",
+              static_cast<uint8_t>(remoteCap_.commStack), remoteCap_.version);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::NegotiateMode()
+{
+    // 检查是否是回退到原生模式的情况（magic == 0 表示旧版本回退）
+    if (remoteCap_.magic == 0) {
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Skipping mode negotiation, using native mode (fallback)");
+        // isHybridMode_ 已经在 ExchangeCapability 中设置为 false
+        return HCCL_SUCCESS;
+    }
+    
+    if (remoteCap_.commStack == CommStackType::COMM_STACK_TRANSPORT_IBVERBS) {
+        // 对端是 TransportIbverbs，切换到混合模式
+        isHybridMode_ = true;
+        // TransportIbverbs 不支持 Write With Immediate，切换到 Write + Notify
+        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_NOTIFY;
+
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Negotiated to hybrid mode (Write + Notify)");
+    } else {
+        // 对端也是 HostCpuRoceChannel，使用原生模式
+        isHybridMode_ = false;
+        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
+        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Using native mode (Write With Immediate)");
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::RegisterUserMemHybird()
+{
+    struct MrInfoT mrInfo = {nullptr};
+    mrInfo.addr = reinterpret_cast<void *>(localRmaBuffers_[0]->GetAddr());
+    mrInfo.size = localRmaBuffers_[0]->GetSize();
+    mrInfo.access = 7;
+    auto qpInfo = connections_[0]->GetQpInfo();
+    CHK_RET(HrtRaMrReg(qpInfo.qpHandle, &mrInfo));
+
+    localMemMsg_[hccl::USER_OUTPUT_MEM].addr = reinterpret_cast<void *>(localRmaBuffers_[0]->GetAddr());
+    localMemMsg_[hccl::USER_OUTPUT_MEM].lkey = mrInfo.lkey;
+    localMemMsg_[hccl::USER_OUTPUT_MEM].memType = hccl::USER_OUTPUT_MEM;
+    localMemMsg_[hccl::USER_OUTPUT_MEM].len = localRmaBuffers_[0]->GetSize();
+    localMemMsg_[hccl::USER_OUTPUT_MEM].notifyId = INVALID_DPU_NOTIFY_ID;
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::BuildExchangeDataLengthHybird()
+{
+    exchangeDataTotalSize_ = 0;
+    exchangeDataTotalSize_ += sizeof(u32); // qp数量
+    exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * 2; // output、input buffer
+    exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * 3; // 3个Notify
+    exchangeDataTotalSize_ += sizeof(u8); // atomic value
+    if (isHybridMode_) {
+        exchangeDataTotalSize_ += sizeof(HybridExchangeData);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
+{
+    CHK_RET(BuildExchangeDataLengthHybird());
+
+    exchangeDataForSend_.resize(exchangeDataTotalSize_);
+
+    u8 *data = exchangeDataForSend_.data();
+    u64 size = exchangeDataTotalSize_;
+
+    u32 qpNum = 1;
+    memcpy_s(data, size, reinterpret_cast<void *>(&qpNum), sizeof(u32));
+    data += sizeof(u32);
+    size -= sizeof (u32);
+
+    memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[hccl::USER_OUTPUT_MEM]), sizeof(hccl::MemMsg));
+    data += sizeof(hccl::MemMsg);
+    size -= sizeof (hccl::MemMsg);
+    memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[hccl::USER_OUTPUT_MEM]), sizeof(hccl::MemMsg));
+    data += sizeof(hccl::MemMsg);
+    size -= sizeof (hccl::MemMsg);
+
+    CHK_RET(CreateNotifyValueBufferHybird());
+    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_NOTIFY_MEM, 1, data, size));
+    CHK_RET(CreateNotifyBufferHybird(hccl::ACK_NOTIFY_MEM, 0, data, size));
+    CHK_RET(CreateNotifyBufferHybird(hccl::DATA_ACK_NOTIFY_MEM, 2, data, size));
+
+    u8 atomicWrite = 1;
+    memcpy_s(data, size, reinterpret_cast<void *>(&atomicWrite), sizeof(u8));
+    data += sizeof(u8);
+    size -= sizeof (u8);
+
+    if (isHybridMode_) {
+        HybridExchangeData localData;
+        memcpy_s(data, size, reinterpret_cast<void *>(&localData), sizeof(HybridExchangeData));
+        data += sizeof(HybridExchangeData);
+        size -= sizeof (HybridExchangeData);
+    }
+
+    if (size != 0) {
+        HCCL_ERROR("HostCpuRoceChannel::BuildExchangeDataHybird, failed to construct exchange data, size=%llu", size);
+        return HCCL_E_INTERNAL;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::GetRemoteAddrHybird(hccl::MemType memType, u8 *&data, u64 &size)
+{
+    memcpy_s(&remoteMemMsg_[static_cast<u32>(memType)], sizeof(hccl::MemMsg), data, sizeof(hccl::MemMsg));
+    data += sizeof(hccl::MemMsg);
+    size -= sizeof(hccl::MemMsg);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
+{
+    u8 *data = exchangeDataForRecv_.data();
+    u64 size = exchangeDataTotalSize_;
+
+    // u32 localQpNum = 1;  // aiwan
+    u32 remoteQpNum = 0;
+    memcpy_s(reinterpret_cast<void *>(&remoteQpNum), sizeof(u32), data, sizeof(u32));
+    data += sizeof(u32);
+    size -= sizeof(u32);
+
+    CHK_RET(GetRemoteAddrHybird(hccl::USER_OUTPUT_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::USER_INPUT_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::DATA_NOTIFY_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::ACK_NOTIFY_MEM, data, size));
+    CHK_RET(GetRemoteAddrHybird(hccl::DATA_ACK_NOTIFY_MEM, data, size));
+
+    data += sizeof(u8);
+    size -= sizeof(u8);
+
+    if (isHybridMode_) {
+        HybridExchangeData remoteData;
+        (void)memcpy_s(&remoteData, sizeof(HybridExchangeData), data, sizeof(HybridExchangeData));
+        rmtConnDto_.qpn_ = remoteData.qpn;
+        rmtConnDto_.psn_ = remoteData.psn;
+        rmtConnDto_.gid_idx_ = remoteData.gidIdx;
+        (void)memcpy_s(rmtConnDto_.gid_, HCCP_GID_RAW_LEN, remoteData.gid, HCCP_GID_RAW_LEN);
+
+        data += sizeof(HybridExchangeData);
+        size -= sizeof(HybridExchangeData);
+    }
+
+    if (size != 0) {
+        HCCL_ERROR("HostCpuRoceChannel::ParseRecvExchangeDataHybird: failed to parse exchange data, size=%lld", size);
+        return HCCL_E_INTERNAL;
+    }
+
+    Hccl::ExchangeRdmaBufferDto dto((u64)remoteMemMsg_[static_cast<u32>(hccl::USER_OUTPUT_MEM)].addr,
+        remoteMemMsg_[static_cast<u32>(hccl::USER_OUTPUT_MEM)].len,
+        remoteMemMsg_[static_cast<u32>(hccl::USER_OUTPUT_MEM)].lkey, "HcclBuffer");
+    rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>(rdmaHandle_, dto));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::ConnectSingleQpHybrid(std::function<bool()> needStop)
+{
+    auto qpInfo = connections_[0]->GetQpInfo();
+
+    CHK_RET(HrtRaQpConnectAsync(qpInfo.qpHandle, socket_->GetFdHandle(), needStop));
+
+    // 查询QP建链是否成功
+    s32 qpStatus = 0;
+    s32 raRet = 0;
+    constexpr uint32_t timeoutSec = 120;
+    constexpr auto timeout = std::chrono::seconds(timeoutSec);
+    auto startTime = std::chrono::steady_clock::now();
+    HCCL_INFO("HostCpuRoceChannel: waiting for qp status ready...");
+    while (true) {
+        CHK_PRT_RET(needStop(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
+
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            HCCL_ERROR("[Connect][Qp]get qp status timeout_=%lld, qp_status=%d", timeout, qpStatus);
+            return HCCL_E_TIMEOUT;
+        }
+        raRet = hrtGetRaQpStatus(qpInfo.qpHandle, &qpStatus);
+        if ((!raRet) && (qpStatus == 1)) { // 为1时，qp 建链成功
+            HCCL_INFO("In link ibv, QP get status success.");
+            break;
+        } else {
+            SaluSleep(1000);
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::ExchangeDataHybird()
+{
+    HCCL_INFO("[Hybrid] Starting hybrid data exchange");
+
+    CHK_RET(RegisterUserMemHybird());
+
+    CHK_RET(BuildExchangeDataHybird());
+
+    CHK_PRT_RET(!socket_->Send(exchangeDataForSend_.data(), exchangeDataTotalSize_),
+        HCCL_ERROR("[Hybrid] Send exchange data failed"), HCCL_E_NETWORK);
+
+    exchangeDataForRecv_.resize(exchangeDataTotalSize_);
+    CHK_PRT_RET(!socket_->Recv(exchangeDataForRecv_.data(), exchangeDataTotalSize_),
+        HCCL_ERROR("[Hybrid] Recv exchange data failed"), HCCL_E_NETWORK);
+
+    CHK_RET(ParseRecvExchangeDataHybird());
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::WriteWithNotifyHybrid(
+    void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx)
+{
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    HCCL_INFO("[Hybrid] WriteWithNotifyHybrid start, len=%lu", len);
+    
+    // 参数校验
+    CHK_PRT_RET(localRmaBuffers_.empty(),
+        HCCL_ERROR("[Hybrid] localRmaBuffer is Empty"),
+        HCCL_E_ROCE_CONNECT);
+    
+    std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
+    CHK_PRT_RET(qpInfo.empty(),
+        HCCL_ERROR("[Hybrid] qpInfos is Empty"),
+        HCCL_E_ROCE_CONNECT);
+    
+    // 获取本地 buffer 信息
+    hccl::MemType type = NotifyIdToMemtypeHybird(remoteNotifyIdx);
+    
+    // 校验数据长度
+    CHK_PRT_RET(len > localRmaBuffers_[0]->GetSize(),
+        HCCL_ERROR("[Hybrid] Data length %lu exceeds buffer size %lu", len, localRmaBuffers_[0]->GetSize()),
+        HCCL_E_PARA);
+    
+    // 构造发送 WR 链：数据 WR + Notify WR
+    struct ibv_send_wr dataWr{};
+    struct ibv_send_wr notifyWr{};
+    struct ibv_send_wr *badWr = nullptr;
+    struct ibv_sge dataSge{};
+    struct ibv_sge notifySge{};
+    
+    // 1. 数据 WR（RDMA Write）
+    dataSge.addr = reinterpret_cast<uint64_t>(src);
+    dataSge.length = len;
+    dataSge.lkey = localRmaBuffers_[0]->GetLkey();
+    
+    dataWr.wr_id = 0;
+    dataWr.opcode = IBV_WR_RDMA_WRITE;
+    dataWr.send_flags = IBV_SEND_SIGNALED;  // 需要 CQE 确认完成
+    dataWr.sg_list = &dataSge;
+    dataWr.num_sge = 1;
+    dataWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(dst);
+    dataWr.wr.rdma.rkey = rmtRmaBuffers_[0]->GetRkey();
+    
+    // 2. Notify WR（写入对端 TransportIbverbs 的 Notify 内存）
+    notifySge.addr = reinterpret_cast<uint64_t>(localMemMsg_[hccl::NOTIFY_SRC_MEM].addr);
+    notifySge.length = localMemMsg_[hccl::NOTIFY_SRC_MEM].len;
+    notifySge.lkey = localMemMsg_[hccl::NOTIFY_SRC_MEM].lkey;  // 使用本地 buffer 的 lkey
+    
+    notifyWr.wr_id = 1;
+    notifyWr.opcode = IBV_WR_RDMA_WRITE;
+    notifyWr.send_flags = IBV_SEND_SIGNALED;
+    notifyWr.sg_list = &notifySge;
+    notifyWr.num_sge = 1;
+    // Notify 写入对端 hostNotifyAddr 的偏移位置
+    notifyWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(remoteMemMsg_[type].addr);
+    notifyWr.wr.rdma.rkey = remoteMemMsg_[type].lkey;
+    
+    // 链接 WR 链：dataWr -> notifyWr
+    dataWr.next = &notifyWr;
+    notifyWr.next = nullptr;
+
+    // 3. 下发 WR 链
+    int32_t ret = ibv_post_send(qpInfo[0].qp, &dataWr, &badWr);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[Hybrid] ibv_post_send failed, ret=%d", ret),
+        HCCL_E_NETWORK);
+
+    HCCL_INFO("[Hybrid] WriteWithNotifyHybrid success");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HostCpuRoceChannel::NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_t timeout)
+{
+    HCCL_INFO("[Hybrid] NotifyWaitHybrid start, idx=%u", localNotifyIdx);
+    
+    hccl::MemType type = NotifyIdToMemtypeHybird(localNotifyIdx);
+
+    // 使用配置的超时时间和轮询间隔
+    uint32_t pollTimeout = (timeout == 0) ? 
+        HybridModeConfig::GetInstance().GetPollTimeoutMs() : timeout;
+    uint32_t pollInterval = HybridModeConfig::GetInstance().GetPollIntervalMs();
+    
+    // 使用原子操作读取 Notify 内存
+    std::atomic<uint32_t>* notifyAddr =
+        reinterpret_cast<std::atomic<uint32_t>*>(localMemMsg_[type].addr);
+    const uint64_t expectedValue = 1;
+    
+    auto startTime = std::chrono::steady_clock::now();
+    auto waitTime = std::chrono::milliseconds(pollTimeout);
+    
+    while (true) {
+        // 使用原子操作读取，确保内存可见性
+        if (notifyAddr->load(std::memory_order_acquire) == expectedValue) {
+            // 读取成功后清零，为下一次通知做准备
+            notifyAddr->store(0, std::memory_order_release);
+            HCCL_INFO("[Hybrid] NotifyWaitHybrid success");
+            return HCCL_SUCCESS;
+        }
+        
+        // 检查超时
+        if ((std::chrono::steady_clock::now() - startTime) >= waitTime) {
+            HCCL_ERROR("[Hybrid] NotifyWaitHybrid timeout, notify idx:%d", localNotifyIdx);
+            return HCCL_E_TIMEOUT;
+        }
+        
+        // 低频通信场景：简单睡眠即可
+        SaluSleep(pollInterval); // aiwan
+    }
 }
 
 } // namespace hcomm

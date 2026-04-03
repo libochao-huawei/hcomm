@@ -43,7 +43,7 @@
 #include "../nslbdp/hccl_nslbdp.h"
 #include "comm_configer.h"
 #include "hccl_group.h"
-
+#include "hostdpu/dpu_kernel_entrance.h"
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 #include "../../next/comms/api_c_adpt/hcomm_c_adpt.h"
 #endif
@@ -4818,8 +4818,15 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
     CHK_PTR_NULL(comm);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclComm commV2 = hcclComm->GetCommunicatorV2();
-    CHK_PTR_NULL(commV2);
-    return HcclTaskRegisterV2(commV2, msgTag, cb);
+    if (commV2 != nullptr) {
+        return HcclTaskRegisterV2(commV2, msgTag, cb);
+    } else {
+        std::string commId = hcclComm->GetIdentifier();
+        if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
+            return HCCL_E_NOT_FOUND;
+        }
+        return g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
+    }
 #endif
     return HCCL_E_NOT_SUPPORT;
 }
@@ -4831,8 +4838,15 @@ int32_t HcclTaskUnRegister(HcclComm comm,  const char *msgTag)
     CHK_PTR_NULL(comm);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclComm commV2 = hcclComm->GetCommunicatorV2();
-    CHK_PTR_NULL(commV2);
-    return HcclTaskUnRegisterV2(commV2, msgTag);
+    if (commV2 != nullptr) {
+        return HcclTaskUnRegisterV2(commV2, msgTag);
+    } else {
+        std::string commId = hcclComm->GetIdentifier();
+        if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
+            return HCCL_E_NOT_FOUND;
+        }
+        return g_taskServiceMap[commId]->TaskUnRegister(msgTag);
+    }
 #endif
     return HCCL_E_NOT_SUPPORT;
 }

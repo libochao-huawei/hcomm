@@ -296,6 +296,9 @@ private:
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult IsInterServer(const u32 dstRank, bool& isInterServer);
     HcclResult PrintErrorInfo(NicType nicType);
+    uint32_t GetConnectMode(RankId remoteRank);
+    HcclResult GetTransNewTag(const std::string &tag, std::string &newTag, RankId remoteRank,
+        bool &isInterRdma, u32 subCommIndex, TransportLinkType linkType, HcclRankLinkInfo remoteLink, uint32_t mode);
     HcclResult CreateBatchSendRecvLinks(const std::string &tag, const TransportIOMem &transMem,
         struct LinkPoolPara &linkPoolPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);

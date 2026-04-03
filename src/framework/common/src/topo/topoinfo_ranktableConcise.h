@@ -51,7 +51,9 @@ private:
     HcclResult VerifyBackupDeviceIpAndPort(std::vector<RankInfo_t> &rankList, u32 devIndex);
     HcclResult GetSingleSuperDeviceId(const nlohmann::json &deviceListObj, u32 objIndex,
         RankTable_t &clusterInfo, RankInfo_t &rankinfo);
-    void DetectNicDepoly(RankTable_t &rankTable);
+    void DetectNicDepoly(RankTable_t &rankTable, u32 rankId);
+    HcclResult GetSingleNicInfo(const nlohmann::json &serverListObj, u32 objIndex,
+        RankTable_t &clusterInfo, RankInfo_t &rankinfo);
     HcclResult CheckNicDeployConsistence(RankTable_t &clusterInfo, NICDeployment deploy) const;
 
     // 解析超节点信息

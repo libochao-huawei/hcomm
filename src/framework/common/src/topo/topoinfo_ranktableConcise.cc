@@ -19,6 +19,7 @@
 #include <iostream>
 #include <arpa/inet.h>
 
+#include "externalinput.h"
 #include "log.h"
 #include "env_config.h"
 #include "hccl_comm_pub.h"
@@ -92,10 +93,17 @@ HcclResult TopoinfoRanktableConcise::SetIsInterSuperPodRetryEnable(bool isRetryE
     return HCCL_SUCCESS;
 }
 
-void TopoinfoRanktableConcise::DetectNicDepoly(RankTable_t &rankTable)
+void TopoinfoRanktableConcise::DetectNicDepoly(RankTable_t &rankTable, u32 rankId)
 {
     // 只有当hostIp有效而且deviceIp无效时，才使用HOST侧网卡部署，目前策略要求集群中所有卡的deploy
     // 形式一致，所以取ranklist[0]的方式即可
+    if (rankId < rankTable.rankList.size() &&
+        rankTable.rankList[rankId].deviceInfo.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        rankTable.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+        SetHostUseDevNicFlag(false);
+        return;
+    }
+
     auto isIpInvalid = [](const std::vector<HcclIpAddress> &deviceIp) -> bool {
         for (auto &ip : deviceIp) {
             if (!ip.IsInvalid()) { // 遍历vector中所有的IP，只要有任意一个IP有效就认为是有效的，那么返回false
@@ -127,9 +135,6 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
         HCCL_INFO("[ParserClusterInfo] get task num cal mode.");
         return HCCL_SUCCESS;
     }
-
-    DetectNicDepoly(rankTable);
-    CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy));
 
     std::sort(rankTable.rankList.begin(), rankTable.rankList.end(),
         [&](const RankInfo_t &a, const RankInfo_t &b) -> bool {return a.rankId < b.rankId;});
@@ -165,6 +170,10 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
     CHK_PRT_RET(rankId != rankTable.rankList[rankId].rankId,
         HCCL_ERROR("[%s][%s]check rankList[%u] rankId[%u] failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
         LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), rankId, rankTable.rankList[rankId].rankId), HCCL_E_UNAVAIL);
+
+    DetectNicDepoly(rankTable, rankId);
+    CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy));
+
     u32 devId = rankTable.rankList[rankId].deviceInfo.devicePhyId;
     CHK_RET(hrtGetDevice(&params.logicDevId));
 
@@ -346,6 +355,39 @@ HcclResult TopoinfoRanktableConcise::GetDeviceList(const nlohmann::json &serverL
     return HCCL_SUCCESS;
 }
 
+HcclResult TopoinfoRanktableConcise::GetSingleNicInfo(const nlohmann::json &serverListObj, u32 objIndex,
+    RankTable_t &clusterInfo, RankInfo_t &rankinfo)
+{
+    std::string netPosition;
+    rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    HcclResult ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "net_position", netPosition, true);
+    CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_NOT_FOUND,
+        HCCL_ERROR("[Get][GetSingleNicInfo]get net position error"), ret);
+    HCCL_DEBUG("[%s.json] -> net_position: [%s]. ret[%u]", fileName_.c_str(), netPosition.c_str(), ret);
+    if (ret != HCCL_E_NOT_FOUND) {
+        if (netPosition == "host") {
+            rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+        }
+    }
+
+    std::string netProto;
+    ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "net_protocol", netProto, true);
+    CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_NOT_FOUND,
+        HCCL_ERROR("[Get][GetSingleNicInfo]get net protocol error"), ret);
+    HCCL_DEBUG("[%s.json] -> net_protocol: [%s]. ret[%u]", fileName_.c_str(), netProto.c_str(), ret);
+    if (ret != HCCL_E_NOT_FOUND) {
+        if (netProto == "rdma") {
+            SetExternalInputProtocolType(ProtocolType::RDMA);
+            rankinfo.deviceInfo.proto = u32(ProtocolType::RDMA);
+        } else if (netProto == "tcp") {
+            SetExternalInputProtocolType(ProtocolType::TCP);
+            rankinfo.deviceInfo.proto = u32(ProtocolType::TCP);
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult TopoinfoRanktableConcise::GetSingleDevice(const nlohmann::json &deviceListObj, u32 objIndex,
     RankTable_t &clusterInfo, std::string &serverId, u32 &serverIdx, HcclIpAddress &hostIp)
 {
@@ -392,6 +434,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleDevice(const nlohmann::json &devic
     CHK_RET(GetSingleDeviceIp(deviceListObj, objIndex, clusterInfo, rankinfo, deviceType, rankinfo.hostIp.IsInvalid()));
     CHK_RET(GetSingleDevicePort(deviceListObj, objIndex, rankinfo));
     CHK_RET(GetSingleBackupDeviceIp(deviceListObj, objIndex, rankinfo));
+    CHK_RET(GetSingleNicInfo(deviceListObj, objIndex, clusterInfo, rankinfo));
 
     if (SalStrToULong(rankId, HCCL_BASE_DECIMAL, rankinfo.rankId) != HCCL_SUCCESS) {
         RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "value", "variable" ,"expect" }),
