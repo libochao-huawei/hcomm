@@ -811,6 +811,25 @@ std::vector<char> UbMemTransport::GetUniqueIdV2()
     return result;
 }
 
+std::vector<char> UbMemTransport::PackConnData()
+{
+    if (baseStatus != TransportStatus::READY) {
+        MACRO_THROW(InternalException, StringFormat("transport status[%d] is not ready[%d], please check.",
+            baseStatus, TransportStatus::READY));
+    }
+    u32          type = static_cast<u32>(transportType);
+    BinaryStream binaryStream;
+    binaryStream << type;
+    binaryStream << connNum;
+ 
+    auto connUniqueIds = GetConnUniqueIds();
+    binaryStream << connUniqueIds;
+ 
+    std::vector<char> result;
+    binaryStream.Dump(result);
+    return result;
+}
+
 std::vector<char> UbMemTransport::GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue) const
 {
     BinaryStream binaryStream;

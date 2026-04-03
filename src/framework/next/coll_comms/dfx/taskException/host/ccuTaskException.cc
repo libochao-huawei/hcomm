@@ -281,7 +281,6 @@ uint16_t CcuTaskException::GetCcuCKEValue(int32_t deviceId, uint32_t dieId, uint
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]hrtGetDevicePhyIdByIndex fail, deviceId[%u]", __func__, deviceId), INVALID_U16);
 
-
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_GET_CKE;
     inBuff.data.dataInfo.udieIdx       = dieId;
     inBuff.offsetStartIdx              = ckeId;
