@@ -1634,7 +1634,8 @@ HcclResult HcclCommAicpu::AllocTransportResource(const std::string &newTag, cons
                     }
                     // A3 bsr远端是DirectNpu 链路的话则跳过
                     if ((opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
-                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank]) && 
+                        topoInfo_.deviceType == DevType::DEV_TYPE_910_93) {
                         continue;
                     }
                     bsrTansportRank.insert(transportRequest.remoteUserRank);
