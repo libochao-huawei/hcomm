@@ -654,7 +654,6 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
 
 HcclResult CcuTransport::CheckSocketStatus()
 {
-{
     CHK_PTR_NULL(socket_);
     auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
@@ -681,7 +680,6 @@ HcclResult CcuTransport::CheckSocketStatus()
         retryCount++;
     }
     return HCCL_SUCCESS;
-}
 }
 
 HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp)
