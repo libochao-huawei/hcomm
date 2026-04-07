@@ -57,7 +57,8 @@ TEST_F(ProfilingHandlerTest, ReportHostApi_test)
     uint64_t endTime = 2;
     bool cachedReq = true;
     bool isAiCpu = 0;
-    handler.ReportHostApi(opTyep, beginTime, endTime, cachedReq, isAiCpu);
+    uint32_t numBlocks = 1;
+    handler.ReportHostApi(opTyep, beginTime, endTime, cachedReq, isAiCpu, numBlocks);
 }
 
 TEST_F(ProfilingHandlerTest, ReportHcclOp_test)
