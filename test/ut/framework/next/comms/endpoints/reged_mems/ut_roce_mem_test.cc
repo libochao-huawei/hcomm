@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -9,39 +9,40 @@
  */
 
 #include "gtest/gtest.h"
+#include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
-#include <mockcpp/mokc.h>
-
-#define private public
-#define protected public
 #include "roce_mem.h"
 #include "endpoint.h"
-#undef protected
-#undef private
+#include "hcomm_res.h"
+#include "hcomm_c_adpt.h"
 
 using namespace hcomm;
 
 class RoceRegedMemMgrTest : public testing::Test {
 protected:
-    static void SetUpTestCase() {
-        std::cout << "RoceRegedMemMgrTest SetUp" << std::endl;
+    static void SetUpTestCase()
+    {
+        std::cout << "RoceRegedMemMgrTest tests set up." << std::endl;
     }
 
-    static void TearDownTestCase() {
-        std::cout << "RoceRegedMemMgrTest TearDown" << std::endl;
+    static void TearDownTestCase()
+    {
+        std::cout << "RoceRegedMemMgrTest tests tear down." << std::endl;
     }
 
-    virtual void SetUp() {
-        std::cout << "A Test case in RoceRegedMemMgrTest SetUp" << std::endl;
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in RoceRegedMemMgrTest SetUP" << std::endl;
     }
 
-    virtual void TearDown() {
+    virtual void TearDown()
+    {
         GlobalMockObject::verify();
         std::cout << "A Test case in RoceRegedMemMgrTest TearDown" << std::endl;
     }
 };
 
-TEST_F(RoceRegedMemMgrTest, get_params_from_mem_desc_desc_len_too_small)
+TEST_F(RoceRegedMemMgrTest, Ut_GetParamsFromMemDesc_When_DescLenTooSmall_Expect_Return_Error)
 {
     RoceRegedMemMgr roceRegedMemMgr;
     EndpointDesc endpointDesc;
@@ -54,7 +55,7 @@ TEST_F(RoceRegedMemMgrTest, get_params_from_mem_desc_desc_len_too_small)
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
 }
 
-TEST_F(RoceRegedMemMgrTest, get_params_from_mem_desc_desc_len_equal_size)
+TEST_F(RoceRegedMemMgrTest, Ut_GetParamsFromMemDesc_When_DescLenEqualSize_Expect_Return_Success)
 {
     RoceRegedMemMgr roceRegedMemMgr;
     EndpointDesc endpointDesc;
