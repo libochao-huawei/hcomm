@@ -41,11 +41,11 @@ bool LocalRmaBufManager::IsExist(const string &opTag, const PortData &portData, 
 
 LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferType, std::shared_ptr<Buffer> buffer, const PortData &portData)
 {
-    HCCL_INFO("LocalRmaBufManager::Reg, buffer[%s]", buffer->Describe().c_str());
     if (buffer == nullptr) {
         HCCL_ERROR("input buffer is null");
         return nullptr;
     }
+    HCCL_INFO("LocalRmaBufManager::Reg, buffer[%s]", buffer->Describe().c_str());
     if (IsExist(opTag, portData, bufferType)) {
         string msg = StringFormat("opTag=%s bufferType=%s, buffer=%s already reg to portData=%s", opTag.c_str(),
                                   bufferType.Describe().c_str(),
