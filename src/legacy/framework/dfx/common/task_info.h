@@ -37,13 +37,14 @@ public:
  	u64          headOpCounterAddr_{0};   // 执行算子头计数器地址（执行前加一）
     u64          tailOpCounterAddr_{0};   // 执行算子尾计数器地址（执行后加一）
     CommEngine   engine{CommEngine::COMM_ENGINE_RESERVED};
+    u32          numBlocks_{1};           // aiv的核数, 默认为1，aiv场景下变化
 
 public:
     std::string Describe() const
     {
         return StringFormat(
-                "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%s], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[%llx], tailOpCounterAddr[%llx]",
- 	            CollOpToString(op_).c_str(), tag_.c_str(), algType_.c_str(), commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_);
+                "DfxOpInfo: [collOperator:[%s], tag:[%s], algType:[%s], commIndex:[%u], commId[%s], beginTime:[%llu], endTime:[%llu], opIndex[%u], headOpCounterAddr[%llx], tailOpCounterAddr[%llx], numblocks[%u]",
+ 	            CollOpToString(op_).c_str(), tag_.c_str(), algType_.c_str(), commIndex_, commId_.c_str(), beginTime_, endTime_, opIndex_, headOpCounterAddr_, tailOpCounterAddr_, numBlocks_);
     }
 };
 

@@ -83,7 +83,7 @@ void ProfilingHandler::ReportKernel() const
 {
 }
 
-void ProfilingHandler::ReportHostApi(OpType opType, uint64_t beginTime, uint64_t endTime, bool cachedReq, bool isAiCpu)
+void ProfilingHandler::ReportHostApi(OpType opType, uint64_t beginTime, uint64_t endTime, bool cachedReq, bool isAiCpu, uint32_t numBlocks)
 {
     UNUSED(cachedReq);
     HCCL_INFO("[ProfilingHandler]ReportHostApi start.");
@@ -97,7 +97,7 @@ void ProfilingHandler::ReportHostApi(OpType opType, uint64_t beginTime, uint64_t
         ReportAclApi(opType, beginTime, endTime, cmdItemId, threadId);
     }
     ReportNodeApi(beginTime, endTime, cmdItemId, threadId);
-    ReportNodeBasicInfo(endTime, cmdItemId, threadId);
+    ReportNodeBasicInfo(endTime, cmdItemId, threadId, numBlocks);
     HCCL_INFO("[ProfilingHandler]ReportHostApi end.");
 }
 
@@ -503,7 +503,7 @@ void ProfilingHandler::ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint6
     HCCL_INFO("[ProfilingHandler]ReportNodeApi end.");
 }
 
-void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId)
+void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId, uint32_t numBlocks)
 {
     // 获取数据
     MsprofCompactInfo reporterData{};
@@ -516,9 +516,11 @@ void ProfilingHandler::ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemI
     reporterData.data.nodeBasicInfo.taskType = MSPROF_GE_TASK_TYPE_HCCL;
     reporterData.data.nodeBasicInfo.opType   = cmdItemId;
     reporterData.data.nodeBasicInfo.opFlag   = 0;
+    reporterData.data.nodeBasicInfo.blockDim = numBlocks;
     HCCL_INFO("[ProfilingHandler][ReportNodeBasicInfo], reporterData data is: level[%u], type[%u], threadId[%u], "
-              "dataLen[%u], taskType[%u], opFlag[%u]", reporterData.level, reporterData.type, reporterData.threadId,
-              reporterData.dataLen, reporterData.data.nodeBasicInfo.taskType, reporterData.data.nodeBasicInfo.opFlag);
+              "dataLen[%u], taskType[%u], opFlag[%u], blockDim[%u]", reporterData.level, reporterData.type, 
+              reporterData.threadId, reporterData.dataLen, reporterData.data.nodeBasicInfo.taskType,
+              reporterData.data.nodeBasicInfo.opFlag, reporterData.data.nodeBasicInfo.blockDim);
     // 开关未开启，缓存数据
     if (!enableHcclL1_) {
         std::lock_guard<std::mutex> lock(cacheHcclOpInfoMutex_);

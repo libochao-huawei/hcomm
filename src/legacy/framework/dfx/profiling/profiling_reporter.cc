@@ -60,7 +60,7 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     
     // 单算子模式涉及HOST API信息上报
     if (opbased) {
-        profilingHandler_->ReportHostApi(opType, beginTime, endTime, cachedReq, isAiCpu);
+        profilingHandler_->ReportHostApi(opType, beginTime, endTime, cachedReq, isAiCpu, opInfo->numBlocks_);
     }
     HCCL_INFO("[ProfilingReporter]ProfilingReporter reportOp end.");
 }
