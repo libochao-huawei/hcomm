@@ -151,8 +151,8 @@ STATIC int RsSslRecvTagInHandle(struct RsAcceptInfo *acceptInfo, struct RsConnIn
         connTmp->tagSyncTime++;
         size = ssl_adp_read(acceptInfo->ssl, recvBuff, expSize);
         if ((size < 0) && (errno == EINTR)) {
-            connTmp->tagEintrTime++;
-            continue;
+          connTmp->tagEintrTime++;
+          continue;
         }
         expSize -= size;
         recvBuff += size;
