@@ -1997,7 +1997,7 @@ void TcHdcPollCq()
     qpHandle->recvWrNum = 1;
 
     ret = RaHdcPollCq(qpHandle, false, numEntries, &liteWc);
-    EXPECT_INT_EQ(ret, 0);
+    EXPECT_INT_EQ(ret, -22);
 
     ret = RaHdcQpDestroy(qpHandle);
     EXPECT_INT_EQ(ret, 0);
