@@ -1107,7 +1107,7 @@ int RsUbCtxDeinit(struct RsUbDevCb *devCb)
     hccp_run_info("[deinit][rs_ctx]deinit success, phyId:%u, devIndex:0x%x", devCb->phyId, devCb->index);
     free(devCb);
     devCb = NULL;
-    return 0;
+    return ret;
 }
 
 STATIC int RsUbQuerySegCb(struct RsUbDevCb *devCb, uint64_t addr, struct RsSegCb **segCb,
@@ -1209,6 +1209,11 @@ int RsUbCtxLmemReg(struct RsUbDevCb *devCb, struct MemRegAttrT *memAttr, struct 
         goto init_err;
     }
 
+    if (lsegCb->segment == NULL || lsegCb->segment->token_id == NULL) {
+        hccp_err("[init][rs_ctx_lmem] segment/token_id is null");
+        ret = -ESAFEFUNC;
+        goto reg_err;
+    }
     ret = memcpy_s(memInfo->key.value, sizeof(memInfo->key.value), &lsegCb->segInfo.seg, sizeof(urma_seg_t));
     if (ret != 0) {
         hccp_err("[init][rs_ctx_lmem]memcpy_s for seg failed ret:%d", ret);
@@ -1921,8 +1926,11 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
-    }  else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
+    } else if (rjetty_cb->mode == JETTY_IMPORT_MODE_EXP) {
         RsUbCtxExpJettyImport(rjettyCb, &rjetty, &tokenValue);
+    } else {
+        hccp_err("import_jetty failed, invalid mode:%d", rjettyCb->mode);
+        return -EINVAL;
     }
     CHK_PRT_RETURN(rjettyCb->tjetty == NULL, hccp_err("import_jetty failed, mode:%d errno:%d", rjettyCb->mode, errno),
         -EOPENSRC);
@@ -2012,8 +2020,11 @@ int RsUbCtxJettyUnimport(struct RsUbDevCb *devCb, unsigned int remJettyId)
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
 
     ret = RsUrmaUnimportJetty(rjettyCb->tjetty);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_unimport_jetty failed, ret:%d, remJettyId %u", ret, remJettyId),
-        -EOPENSRC);
+    if (ret != 0) {
+        hccp_err("rs_urma_unimport_jetty failed, ret:%d, remJettyId %u", ret, remJettyId);
+        free(rjettyCb);
+        return -EOPENSRC;
+    }
 
     hccp_run_info("[deinit][rs_qp]unimport jetty_id:%u success, rjettyCnt:%u, devIndex:0x%x",
         remJettyId, rjettyCnt, devCb->index);
@@ -2097,6 +2108,7 @@ STATIC int RsUbCtxFillLsge(struct RsUbDevCb *devCb, urma_sge_t *lsge, struct Bat
     } else {
         lsge[0].addr = (uint64_t)(uintptr_t)wrData->inlineData;
         lsge[0].len = wrData->inlineSize;
+        totalLenTmp = lsge[0].len;
         lsge[0].tseg = NULL;
     }
 
