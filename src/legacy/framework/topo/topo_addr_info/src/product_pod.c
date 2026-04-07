@@ -186,9 +186,11 @@ int PodGetRootinfo(int npu_id, unsigned mainboard_id, void *buf, size_t *len)
 
     if (ProcessLayerMesh(npu_id, &layerMesh, &ueList, &spod_info) == 0) {
         RankAddNetLayer(&rank, &layerMesh);
+        printf("DEBUG %s addr_count [%d]\n", __func__, layerMesh.addr_count);
     }
     if (ProcessLayerClos(npu_id, mainboard_id, &layerClos, &ueList, &spod_info) == 0) {
         RankAddNetLayer(&rank, &layerClos);
+        printf("DEBUG %s addr_count [%d]\n", __func__, layerClos.addr_count);
     }
     RootInfoAddRank(&rootinfo, &rank);
     char* rootinfo_buf = RootInfoToString(&rootinfo);

@@ -51,6 +51,7 @@ char* AddrToString(const Addr* addr)
     ret = sprintf_s(buf, max_buffer_size,
         "{\"addr_type\": \"%s\", \"addr\": \"%s\", \"plane_id\": \"%s\", \"ports\": [%s]}",
         addr->addr_type, addr->addr, addr->plane_id, ports);
+    printf("DEBUG %s buf [%s]\n", __func__, buf);
     if (ret < 0) {
         free(buf);
         buf = NULL;
@@ -103,6 +104,7 @@ char* NetLayerToString(const NetLayer *layer)
     }
     memset_s(addr_list, max_buffer_size, 0, max_buffer_size);
     memset_s(buf, max_buffer_size, 0, max_buffer_size);
+    printf("DEBUG %s  net_layer [%d] addr_count [%d]\n", __func__, layer->net_layer, layer->addr_count);
     for(int i = 0; i < layer->addr_count; i++) {
         char *addr = AddrToString(&layer->rank_addr_list[i]);
         if(addr == NULL) {
@@ -125,6 +127,7 @@ char* NetLayerToString(const NetLayer *layer)
         "\"rank_addr_list\": [%s]}",
         layer->net_layer, layer->net_instance_id, layer->net_type, layer->net_attr, addr_list);
     free(addr_list);
+    printf("DEBUG %s buf [%s]\n", __func__, buf);
     if (ret < 0) {
         free(buf);
         buf = NULL;
