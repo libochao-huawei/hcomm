@@ -31,14 +31,14 @@ public:
     u32 CalcScratchMultiple(BufferType input, BufferType output) const;
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &tempAlgParams,
     const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
-    HcclResult CalcSlice(const u64 dataSize, RankSliceInfo &sliceInfoVec);
+    HcclResult CalcSlice(const u64 dataSize, const u64 baseOff, RankSliceInfo &sliceInfoVec);
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
 
 private:
     HcclResult RunAllReduceScatter(const RankSliceInfo &sliceInfoVec, const ResLinks &tempLinks,
-        std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams);
+        std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams, u32 linkIdx);
     HcclResult RunAllReduceAllgather(const RankSliceInfo &sliceInfoVec, const ResLinks &tempLinks,
-        std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams);
+        std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams, u32 linkIdx);
     RankId GetRankFromMap(const u32 rankIdx);
 };
 
