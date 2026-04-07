@@ -1,0 +1,10 @@
+/build/
+/build_out/
+/build_device/
+# /scripts/
+/scripts/package/common
+/scripts/sign
+/third_party/
+/build_hccd/
+/cov
+/output
