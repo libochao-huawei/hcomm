@@ -2865,8 +2865,9 @@ RS_ATTRI_VISI_DEF int RsCreateSrq(unsigned int phyId, unsigned int rdevIndex, st
     struct RsRdevCb *rdevCb = NULL;
     struct RsCqContext *cqContext = NULL;
 
-    CHK_PRT_RETURN(attr == NULL || phyId >= RS_MAX_DEV_NUM,
-        hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(attr == NULL || attr->context == NULL || attr->ibRecvCq == NULL || attr->ibSrq == NULL ||
+        phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM),
+        -EINVAL);
 
     ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phyId[%u] rdev_index[%u], ret %d", phyId, rdevIndex, ret), ret);
@@ -2929,7 +2930,6 @@ RS_ATTRI_VISI_DEF int RsDestroySrq(unsigned int phyId, unsigned int rdevIndex, s
     struct CqAttr cqAttr = {0};
     struct RsCqContext *cqContext = *attr->context;
     cqAttr.qpContext = attr->context;
-
     RsIbvAckCqEvents(cqContext->ibSrqCq, cqContext->numRecvCqEvents);
 
     // 销毁srq cq

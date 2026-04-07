@@ -838,7 +838,6 @@ RS_ATTRI_VISI_DEF int RsSocketAcceptCreditAdd(struct SocketListenInfo conn[], ui
         listenInfo->acceptCreditLimit += creditLimit;
         RS_PTHREAD_MUTEX_ULOCK(&listenInfo->acceptCreditMutex);
         RsSocketListenAddToEpoll(connCb, listenInfo);
-        listenInfo->acceptCreditFlag = true;
     }
 
     return ret;
