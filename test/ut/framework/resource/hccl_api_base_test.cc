@@ -203,7 +203,7 @@ void Ut_MultiServer_MOCK_And_Clusterinfo_File_Create(const char *filename, nlohm
 }
 
 void BaseInit::SetUp() {
-    strcpy(rankTableFileName, "./hccl_utest_framework_resource.json");
+    strcpy(rankTableFileName, "./fwk_resource.json");
     comm = nullptr;
     stream = 0;
     s32 portNum = 7;

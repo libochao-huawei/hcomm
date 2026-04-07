@@ -247,11 +247,11 @@ function build_ut() {
   unset LD_LIBRARY_PATH
 
   local BUILD_JOBS
-#   if [ "${CPU_NUM}" -ge 8 ]; then
-#     BUILD_JOBS=${CPU_NUM}
-#   else
-    BUILD_JOBS=16
-#   fi
+  if [ "${CPU_NUM}" -ge 8 ]; then
+    BUILD_JOBS=$((CPU_NUM-1))
+  else
+    BUILD_JOBS=8
+  fi
 
   local LLT_KILL_TIME=200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
