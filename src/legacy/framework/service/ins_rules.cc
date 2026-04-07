@@ -800,7 +800,9 @@ static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs
         },
         .ccuDetailInfo  = nullptr
     };
- 
+    std::shared_ptr<DfxOpInfo> temp = comm.GetMirrorTaskManager().GetCurrDfxOpInfo();
+    temp->numBlocks_ = aivOpArgs.numBlocks;
+    comm.GetMirrorTaskManager().SetCurrDfxOpInfo(temp);
     SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID, isMaster);
 }
 
