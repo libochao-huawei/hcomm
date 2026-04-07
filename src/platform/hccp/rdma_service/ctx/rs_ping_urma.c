@@ -1083,7 +1083,7 @@ STATIC int RsPongJettyResolveResponsePacket(struct RsPingCtxCb *pingCb, uint32_t
     targetInfo->resultSummary.recvCnt++;
     targetInfo->resultSummary.taskId = header->taskId;
     // rtt timeout, increase timeoutCnt
-    if ((targetInfo->resultSummary.taskAttr.timeoutInterval * RS_PING_MSEC_TO_USEC) < rtt) {
+    if (((uint64_t)targetInfo->resultSummary.taskAttr.timeoutInterval * RS_PING_MSEC_TO_USEC) < rtt) {
         targetInfo->resultSummary.timeoutCnt++;
         hccp_dbg("recvCnt:%u timeoutInterval:%u rtt:%u timeoutCnt:%u", targetInfo->resultSummary.recvCnt,
             targetInfo->resultSummary.taskAttr.timeoutInterval, rtt, targetInfo->resultSummary.timeoutCnt);

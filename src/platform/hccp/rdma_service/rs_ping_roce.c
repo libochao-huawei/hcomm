@@ -616,8 +616,8 @@ STATIC int RsPingCommonCreateAh(struct RsPingCtxCb *pingCb, struct PingLocalComm
 
     ahTmp = RsIbvExpCreateAh(pingCb->rdevCb.ibPd, &attrx);
     if (ahTmp == NULL) {
-        ret = -errno;
-        hccp_err("rs_ibv_exp_create_ah failed, errno:%d", ret);
+        ret = -EFAULT;
+        hccp_err("rs_ibv_exp_create_ah failed, errno:%d", errno);
         return ret;
     }
 
