@@ -1098,7 +1098,6 @@ STATIC void RsDestroyQpList(unsigned int phyId, unsigned int rdevIndex,
             ret = RsQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
             if (ret) {
                 hccp_err("rs_qp_destroy failed, ret:%d", ret);
-                return;
             }
         }
     }
