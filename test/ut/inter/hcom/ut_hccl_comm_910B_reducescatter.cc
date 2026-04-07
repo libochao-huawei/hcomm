@@ -53,6 +53,7 @@
 #include "hcom_private.h"
 #include "rt_external.h"
 #include "acl_rt.h"
+#include "common/CommBaseTest.h
 using namespace std;
 using namespace hccl;
 

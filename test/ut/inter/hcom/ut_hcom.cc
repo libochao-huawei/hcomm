@@ -86,7 +86,7 @@ static nlohmann::json allreduce_topo_switch_connect =
     }
 };
 
-class HcomTest : public testing::Test
+class HcomTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

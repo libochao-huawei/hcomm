@@ -53,7 +53,7 @@
 using namespace std;
 using namespace hccl;
 
-class HcclCommTest910BNHR : public testing::Test
+class HcclCommTest910BNHR : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

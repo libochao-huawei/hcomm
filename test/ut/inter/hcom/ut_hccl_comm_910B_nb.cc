@@ -53,10 +53,12 @@
 #include "hcom_private.h"
 #include "rt_external.h"
 #include "acl_rt.h"
+#include "common/CommBaseTest.h
+#include "common/CommBaseTest.h
 using namespace std;
 using namespace hccl;
 
-class HcclCommTest910BNB : public testing::Test
+class HcclCommTest910BNB : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

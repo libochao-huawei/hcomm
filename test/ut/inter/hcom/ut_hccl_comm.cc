@@ -67,10 +67,11 @@
 #include "hcom_common.h"
 #include "rt_external.h"
 #include "acl_rt.h"
+#include "common/CommBaseTest.h"
 using namespace std;
 using namespace hccl;
 
-class HcclCommTest : public testing::Test
+class HcclCommTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

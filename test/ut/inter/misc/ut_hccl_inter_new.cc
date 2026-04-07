@@ -416,7 +416,7 @@ void* inter_reduce_scatter_task(void* parg)
     return (NULL);
 }
 
-class HcclInterTest : public testing::Test
+class HcclInterTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

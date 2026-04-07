@@ -245,7 +245,7 @@ void* impl_common_all_reduce_task(void* parg)
     return (NULL);
 }
 
-class HcclImplCommonTest : public testing::Test
+class HcclImplCommonTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

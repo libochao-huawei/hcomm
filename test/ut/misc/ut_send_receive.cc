@@ -38,7 +38,7 @@
 #include "env_config.h"
 using namespace std;
 using namespace hccl;
-class ST_Send_Receive_Test : public testing::Test
+class ST_Send_Receive_Test : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()
