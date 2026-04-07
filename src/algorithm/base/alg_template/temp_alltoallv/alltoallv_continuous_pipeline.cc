@@ -59,6 +59,7 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
         needCollectInfo_ = false;
     }
 
+    intraLoopNum_ = GetLocalLoopNum();
     return HCCL_SUCCESS;
 }
 
@@ -843,7 +844,7 @@ HcclResult AlltoallvContinuousPipeline::DoLocalWriteInfoAndFlagAndInterSync()
 
     // 将in buffer的flag区域刷0，第[userRank]个u32设为[LocalLoopNum + 1]
     const u64 flagAreaSize = userRankSize_ * sizeof(u32);
-    flagAreaRefreshData_[userRank_] = GetLocalLoopNum() + 1; // +1是应对LocalLoopNum为0的情况
+    flagAreaRefreshData_[userRank_] = intraLoopNum_ + 1; // +1是应对LocalLoopNum为0的情况
     DeviceMem flagSrc = DeviceMem::create(flagAreaRefreshData_.data(), flagAreaSize);
     DeviceMem flagDst = inBuffer_.range(infoOffsets_[0], flagAreaSize);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, flagDst, flagSrc, mainStream_));
