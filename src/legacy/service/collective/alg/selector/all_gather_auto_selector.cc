@@ -151,7 +151,7 @@ SelectorStatus AllGatherAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
         } else if (topoInfo.Level0Nhr) {
             primQueueGenName = "InsAllGatherParallelNHRNHR";
         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (topoInfo->netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
                 primQueueGenName = "InsAllGatherNHR";
             } else {
                 primQueueGenName = "InsAllGatherParallelMesh1DNHR";
