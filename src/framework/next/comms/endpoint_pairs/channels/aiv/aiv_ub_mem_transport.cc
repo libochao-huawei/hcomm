@@ -237,15 +237,12 @@ void AivUbMemTransport::RmtBufferUnpackProc(Hccl::BinaryStream &binaryStream)
         Hccl::ExchangeIpcBufferDto dto;
         dto.Deserialize(binaryStream);
         HCCL_INFO("[%s] dto[%s]", __func__, dto.Describe().c_str());
-        const char* src = rmtTagTemp_[pos].data();
-        std::string bufTag(src, strnlen(src, HCCL_RES_TAG_MAX_LEN));
         if (dto.size == 0) { // size为0，则为 remote 空buffer
             HCCL_INFO("unpack nullptr, pos=%u", pos);
             rmtBufferVec_.push_back(nullptr);
             rmtRmaBufferVec_.push_back(nullptr);
         } else { // size非0，则构造一个remote buffer
-            HCCL_INFO("[AivUbMemTransport][RmtBufferUnpackProc] unpack buffer tag[%s]", bufTag.c_str());
-            rmtBufferVec_.push_back(std::make_unique<Hccl::RemoteIpcRmaBuffer>(dto, bufTag));
+            rmtBufferVec_.push_back(std::make_unique<Hccl::RemoteIpcRmaBuffer>(dto, "UbMemory"));
             rmtRmaBufferVec_.push_back(rmtBufferVec_.back().get());
         }
     }
