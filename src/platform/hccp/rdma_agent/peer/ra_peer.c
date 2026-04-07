@@ -59,6 +59,8 @@ int RaPeerSocketBatchClose(unsigned int devId, struct SocketCloseInfoT conn[], u
         }
     }
 
+    CHK_PRT_RETURN(
+        closeNum == 0, hccp_warn("[batch_close][ra_peer_socket]there is no socket to close,closeNum is 0"), 0);
     // use attr disuse_linger of the fist conn as the common attr for all(0 by default)
     disuseLinger = conn[0].disuseLinger;
 
