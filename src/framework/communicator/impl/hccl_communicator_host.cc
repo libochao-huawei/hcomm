@@ -4757,7 +4757,7 @@ namespace hccl
                 aivOffloadTag_ = 1;
             }
             GetAivTag(algDesc.aivTagNum, opParam.isCapture, opParam.aivTag);
-            HCCL_INFO("[HcclCommunicator][ExecOpAlltoAll] tag[%s] userRank[%u] cur aiv tag [%d]",
+            HCCL_INFO("[HcclCommunicator][ExecOpAlltoAll] tag[%s] userRank[%u] cur aiv tag [%d].",
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
@@ -5989,10 +5989,7 @@ namespace hccl
         CHK_RET(hrtGetDeviceSatMode(&floatOverflowMode));
         opResPara_.config.floatOverflowMode = floatOverflowMode;
         opResPara_.config.taskMonitorInterval = GetExternalInputDfsTaskMonitorInterval();
-        bool isSupportAtomicWrite = false;
-        if (userRankSize_ > 1) {
-            CHK_RET(IsSupportAtomicWrite(deviceType_, devicePhyId_, isSupportAtomicWrite));
-        }
+        bool isSupportAtomicWrite = false; // 涉及到任务编排，当前不能只判断本机驱动版本是否支持
         opResPara_.config.isSupportAtomicWrite = static_cast<u8>(isSupportAtomicWrite);
         opResPara_.config.notifyWaitTime =
             (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
