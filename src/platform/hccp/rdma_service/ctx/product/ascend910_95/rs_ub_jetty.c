@@ -154,7 +154,7 @@ STATIC int RsSetJettyOpt(struct RsCtxJettyCb *jettyCb)
     uint16_t piType = jettyCb->extMode.piType;
     int ret = 0;
 
-    hccp_dbg("sq.buff:0x%llx, sq.buffSize:%u, piType:%d, sqebbNum:%u, dbCstm:%u", 
+    hccp_dbg("sq.buff:0x%llx, sq.buffSize:%u, piType:%u, sqebbNum:%u, dbCstm:%u", 
         jettyCb->extMode.sq.buffVa,jettyCb->extMode.sq.buffSize, piType, jettyCb->extMode.sqebbNum, dbCstm);
 
     ret = RsUrmaSetJettyOpt(jettyCb->jetty, URMA_JFS_DB_STATUS, (void *)&dbCstm, sizeof(uint8_t));
