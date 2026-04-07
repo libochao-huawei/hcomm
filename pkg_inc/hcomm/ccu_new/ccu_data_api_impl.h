@@ -21,6 +21,9 @@ extern "C" {
 
 extern CcuResult CcuVariableCreateImpl(CcuVariableHandle *var);
 
+extern CcuResult CcuVariableCreateFromChannelImpl(ChannelHandle channel,
+    uint32_t varIndex, CcuVariableHandle *varHandle);
+
 extern CcuResult CcuVariableAssignImpl(CcuVariableHandle resVar, uint64_t immediate);
 
 extern CcuResult CcuVariableAssignVarImpl(CcuVariableHandle dstVarHandle, CcuVariableHandle srcVarHandle);
@@ -158,7 +161,8 @@ extern CcuResult CcuWriteHBMToHBMReduceImpl(
     HcclReduceOp opType, CcuEventHandle event);
 
 /*========== 远端同步操作 ==========*/
-extern CcuResult CcuNotifyRecordImpl(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+extern CcuResult CcuWriteVariableWithNotifyImpl(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+extern CcuResult CcuWriteNotifyImpl(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
 extern CcuResult CcuNotifyWaitImpl(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 #ifdef __cplusplus
 }

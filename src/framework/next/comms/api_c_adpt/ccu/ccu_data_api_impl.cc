@@ -25,6 +25,15 @@ CcuResult CcuVariableCreateImpl(CcuVariableHandle *resVar)
     return CcuResult::CCU_SUCCESS;
 }
 
+CcuResult CcuVariableCreateFromChannelImpl(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->VariableCreate(channel, varIndex, varHandle));
+    return CcuResult::CCU_SUCCESS;
+}
+
 CcuResult CcuVariableAssignImpl(CcuVariableHandle resVar, uint64_t immediate)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -34,6 +43,7 @@ CcuResult CcuVariableAssignImpl(CcuVariableHandle resVar, uint64_t immediate)
     
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuVariableAssignVarImpl(CcuVariableHandle dstVarHandle, CcuVariableHandle srcVarHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -43,6 +53,7 @@ CcuResult CcuVariableAssignVarImpl(CcuVariableHandle dstVarHandle, CcuVariableHa
     
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuVariableAddVarToVarImpl(CcuVariableHandle resVar, CcuVariableHandle varA, CcuVariableHandle varB)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -323,6 +334,7 @@ CcuResult CcuCompletedEventCreateImpl(CcuEventHandle *eventHandle)
     CCU_CHK_RET(kernel->CompletedEventCreate(eventHandle));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuBlockCompletedEventCreateImpl(CcuEventHandle *eventHandle, uint32_t num)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -331,6 +343,7 @@ CcuResult CcuBlockCompletedEventCreateImpl(CcuEventHandle *eventHandle, uint32_t
     CCU_CHK_RET(kernel->ContinuousEventCreate(eventHandle, num));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuSetEventMaskImpl(CcuEventHandle eventHandle, uint32_t mask)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -339,6 +352,7 @@ CcuResult CcuSetEventMaskImpl(CcuEventHandle eventHandle, uint32_t mask)
     CCU_CHK_RET(kernel->SetEventMask(eventHandle, mask));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuRecordEventImpl(CcuEventHandle eventHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -411,6 +425,7 @@ CcuResult CcuLocalCopyHBMToBufferImpl(
     CCU_CHK_RET(kernel->LocalCopyToBuffer(dstBuffer, src, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuLocalCopyBufferToHBMImpl(
     CcuLocalAddrHandle dst, CcuBufferHandle srcBuffer,
     CcuVariableHandle len, CcuEventHandle event)
@@ -421,6 +436,7 @@ CcuResult CcuLocalCopyBufferToHBMImpl(
     CCU_CHK_RET(kernel->LocalCopyFromBuffer(dst, srcBuffer, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuLocalCopyHBMToHBMImpl(
     CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
     CcuVariableHandle len, CcuEventHandle event)
@@ -431,8 +447,8 @@ CcuResult CcuLocalCopyHBMToHBMImpl(
     CCU_CHK_RET(kernel->LocalCopy(dst, src, len, event));
     return CcuResult::CCU_SUCCESS;
 }
-/*========== 本地 Reduce ==========*/
 
+/*========== 本地 Reduce ==========*/
 CcuResult CcuLocalHBMReduceImpl(
     CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
     CcuVariableHandle len, HcclDataType dataType,
@@ -458,6 +474,7 @@ CcuResult CcuLocalBufferReduceImpl(
         buffers, count, dataType, outputDataType, opType, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 /*========== 远端数据传输操作 ==========*/
 CcuResult CcuReadHBMToHBMImpl(
     ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
@@ -469,6 +486,7 @@ CcuResult CcuReadHBMToHBMImpl(
     CCU_CHK_RET(kernel->Read(channel, local, remote, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuReadHBMToBufferImpl(
     ChannelHandle channel, CcuBufferHandle local, CcuRemoteAddrHandle remote,
     CcuVariableHandle len, CcuEventHandle event)
@@ -479,6 +497,7 @@ CcuResult CcuReadHBMToBufferImpl(
     CCU_CHK_RET(kernel->ReadBuffer(channel, local, remote, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuWriteHBMToHBMImpl(
     ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local, 
     CcuVariableHandle len, CcuEventHandle event)
@@ -489,6 +508,7 @@ CcuResult CcuWriteHBMToHBMImpl(
     CCU_CHK_RET(kernel->Write(channel, local, remote, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuWriteBufferToHBMImpl(
     ChannelHandle channel, CcuRemoteAddrHandle remote, CcuBufferHandle local, 
     CcuVariableHandle len, CcuEventHandle event)
@@ -499,6 +519,7 @@ CcuResult CcuWriteBufferToHBMImpl(
     CCU_CHK_RET(kernel->WriteBuffer(channel, local, remote, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuReadHBMToHBMReduceImpl(
     ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
     CcuVariableHandle len, HcclDataType dataType,
@@ -510,6 +531,7 @@ CcuResult CcuReadHBMToHBMReduceImpl(
     CCU_CHK_RET(kernel->ReadReduce(channel, local, remote, len, dataType, opType, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuWriteHBMToHBMReduceImpl(
     ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local,
     CcuVariableHandle len, HcclDataType dataType,
@@ -521,15 +543,27 @@ CcuResult CcuWriteHBMToHBMReduceImpl(
     CCU_CHK_RET(kernel->WriteReduce(channel, remote, local, len, dataType, opType, event));
     return CcuResult::CCU_SUCCESS;
 }
+
 /*========== 远端同步操作 ==========*/
-CcuResult CcuNotifyRecordImpl(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
+CcuResult CcuWriteNotifyImpl(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->WriteVariableWithSignal(channel, varHandle, remoteVarIdx, remoteNotifyIdx, mask));
+    CCU_CHK_RET(kernel->WriteNotify(channel, remoteNotifyIdx, mask));
     return CcuResult::CCU_SUCCESS;
 }
+
+CcuResult CcuWriteVariableWithNotifyImpl(ChannelHandle channel, CcuVariableHandle varHandle,
+    uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->WriteVariableWithNotify(channel, varHandle, remoteVarIdx, remoteNotifyIdx, mask));
+    return CcuResult::CCU_SUCCESS;
+}
+
 CcuResult CcuNotifyWaitImpl(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();

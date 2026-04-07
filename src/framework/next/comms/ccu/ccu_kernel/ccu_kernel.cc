@@ -240,6 +240,16 @@ HcclResult CcuKernel::CreateVariable(const ChannelHandle channel, uint32_t varIn
     return HcclResult::HCCL_SUCCESS;
 }
 
+CcuResult CcuKernel::VariableCreate(const ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle)
+{
+    CcuRep::Variable var(this);
+    CCU_CHK_RET(CreateVariable(channel, varIndex, &var));
+    CcuVariableHandle handle = ccuVarMap_.size();
+    ccuVarMap_.emplace(handle, var);
+    *varHandle = handle;
+    return CcuResult::CCU_SUCCESS;
+}
+
 CcuRepResource &CcuKernel::GetResource()
 {
     return res_;
@@ -861,7 +871,7 @@ CcuResult CcuKernel::RemoteAddrCreate(CcuRemoteAddrHandle *handle,
 }
 
 /*RemotePost新接口*/
-CcuResult CcuKernel::NotifyRecord(const ChannelHandle channel,
+CcuResult CcuKernel::WriteNotify(const ChannelHandle channel,
     uint32_t remoteNotifyIdx, uint32_t mask)
 {
     channels_.insert(channel);
@@ -869,7 +879,7 @@ CcuResult CcuKernel::NotifyRecord(const ChannelHandle channel,
     return CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::WriteVariableWithSignal(const ChannelHandle channel, CcuVariableHandle varHandle,
+CcuResult CcuKernel::WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,
     uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
 {
     channels_.insert(channel);
