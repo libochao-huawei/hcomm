@@ -14,6 +14,10 @@ inline CcuResult Create(CcuBuffer* b)          { return CcuBufferCreate(b); }
 inline CcuResult Create(CcuLocalAddr* la)      { return CcuLocalAddrCreate(la); }
 inline CcuResult Create(CcuRemoteAddr* ra)     { return CcuRemoteAddrCreate(ra); }
 
+inline CcuResult CreateFromChannel(ChannelHandle channel, uint32_t varIndex, CcuVariable *var) {
+    return CcuVariableCreateFromChannel(channel, varIndex, var);
+}
+
 inline CcuResult BlockCreate(CcuBuffer* bufs, uint32_t count) {
     return CcuBlockBufferCreate(bufs, count);
 }
@@ -123,6 +127,10 @@ inline CcuResult WriteReduce(ChannelHandle ch, CcuRemoteAddr remote, CcuLocalAdd
 inline CcuResult WriteVariableWithNotify(ChannelHandle channel, CcuVariable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
 {
     return CcuWriteVariableWithNotify(channel, var, remoteVarIdx, remoteNotifyIdx, mask);
+}
+inline CcuResult WriteNotify(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
+{
+    return CcuWriteNotify(channel, remoteNotifyIdx, mask);
 }
 inline CcuResult NotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
