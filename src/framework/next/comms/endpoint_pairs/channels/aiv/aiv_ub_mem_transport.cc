@@ -40,11 +40,11 @@ HcclResult AivUbMemTransport::FillTagVec(void **memHandles, uint32_t bufferNum,
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
         std::string tag = locMemInfo->memTag;
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
-            HCCL_ERROR("[AivUbMemTransport][Init] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
+            HCCL_ERROR("[AivUbMemTransport][FillTagVec] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
-        HCCL_INFO("[AivUbMemTransport][Init] memHandleNum[%u] memTag[%s]", i, memTag.data());
+        HCCL_INFO("[AivUbMemTransport][FillTagVec] memHandleNum[%u] memTag[%s]", i, memTag.data());
         tagVec.push_back(memTag);
     }
     return HCCL_SUCCESS;
