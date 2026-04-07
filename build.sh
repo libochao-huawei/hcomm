@@ -720,3 +720,4 @@ else
     build_package
     rmdir ${BUILD_DEVICE_DIR}
 fi
+
