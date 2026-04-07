@@ -83,7 +83,7 @@ HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct RaInfo *info, enum SaveSnapshotAct
 HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct RaInfo *info)
 {
     struct RaRdmaHandle *rdmaHandle = NULL;
-    int ret;
+    int ret = 0;
 
     CHK_PRT_RETURN(info == NULL, hccp_err("[restore][snapshot]info is NULL"), ConverReturnCode(OTHERS, -EINVAL));
 
