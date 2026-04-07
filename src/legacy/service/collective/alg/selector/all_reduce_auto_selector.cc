@@ -234,7 +234,11 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
         } else if (topoInfo.Level0Nhr) {
             primQueueGenName = "InsAllReduceParallelNHRNHR";
         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "InsAllReduceParallelMesh1DNHR";
+             if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+                primQueueGenName = "InsAllReduceNHR";
+            } else {
+                primQueueGenName = "InsAllReduceParallelMesh1DNHR";
+            }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             primQueueGenName = "InsAllReduceParallelMesh2DNHR";
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {

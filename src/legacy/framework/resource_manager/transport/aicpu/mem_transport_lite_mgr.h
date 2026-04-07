@@ -14,14 +14,14 @@
 #include "types.h"
 #include "virtual_topo.h"
 #include "mem_transport_lite.h"
-#include "mirror_task_manager.h"
-
+#include "mirror_task_manager_lite.h"
+#include "mem_transport_callback_lite.h"
 
 namespace Hccl {
 
 class MemTransportLiteMgr {
 public:
-    explicit MemTransportLiteMgr(MirrorTaskManager *mirrorTaskMgr) : mirrorTaskMgr_(mirrorTaskMgr)
+    explicit MemTransportLiteMgr(MirrorTaskManagerLite *mirrorTaskMgrLite) : mirrorTaskMgrLite_(mirrorTaskMgrLite)
     {
     }
 
@@ -39,7 +39,7 @@ public:
     void ParseAllPackedData(std::vector<char> &data);
 
 private:
-    MirrorTaskManager *mirrorTaskMgr_ {nullptr};
+    MirrorTaskManagerLite *mirrorTaskMgrLite_ {nullptr};
     bool IsOpbaseExist(const LinkData &linkData);
 
     using MemTransportLiteMap = std::unordered_map<LinkData, std::unique_ptr<MemTransportLite>, hash<Hccl::LinkData>>;

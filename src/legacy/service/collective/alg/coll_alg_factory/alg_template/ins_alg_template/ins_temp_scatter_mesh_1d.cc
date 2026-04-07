@@ -28,7 +28,7 @@ InsTempScatterMesh1D::~InsTempScatterMesh1D()
 HcclResult InsTempScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
 {
     HCCL_DEBUG("Enter InsTempScatterMesh1D::CalcRes");
-    tempResReq.queNum = tempVTopo_[0].size() - 1;
+    tempResReq.queNum = tempVTopo_[0].size();
     tempResReq.streamNum = tempResReq.queNum;
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
 
@@ -59,7 +59,7 @@ HcclResult InsTempScatterMesh1D::GenExtIns(TempFuncs &tempFuncs, TemplateDataPar
 
     opMode_              = tempFuncs.opMode;
     buffInfo_            = tempAlgParams.buffInfo;
-    majorQueNum_ = tempVTopo_[0].size() - 1;
+    majorQueNum_ = tempVTopo_[0].size();
     isZeroCopy_ = opMode_ == OpMode::OFFLOAD && buffInfo_.inBuffType == BufferType::INPUT &&
                   buffInfo_.outBuffType == BufferType::OUTPUT;
 
@@ -102,9 +102,9 @@ HcclResult InsTempScatterMesh1D::RunMeshTx(u32 myAlgRank, u32 repeatTimes, Templ
         if (myAlgRank == algRank) {
             continue;
         }
-        if (tempInsQues.size() < tempVTopo_[0].size() - 1) {
+        if (tempInsQues.size() < tempVTopo_[0].size()) {
             HCCL_ERROR("tempInsQues size [%zu] is smaller than tempVTopo_[0].size() -1 [%zu]", tempInsQues.size(),
-                tempVTopo_[0].size() - 1);
+                tempVTopo_[0].size());
             return HcclResult::HCCL_E_INTERNAL;
         }
         u32 peerRank = tempVTopo_[0][algRank];
@@ -121,9 +121,8 @@ HcclResult InsTempScatterMesh1D::RunMeshTx(u32 myAlgRank, u32 repeatTimes, Templ
         DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
         SlicesList txSlicesList({srcSlice}, {dstSlice});
         DataInfo sendData(linkSend, txSlicesList);
-        CHK_PRT_RET(Send(sendData, tempInsQues[count], 0, true, DmaMode::PUT),
+        CHK_PRT_RET(Send(sendData, tempInsQues[++count], 0, true, DmaMode::PUT),
             HCCL_ERROR("[InsTempScatterMesh1D] BatchSend failed"), HcclResult::HCCL_E_INTERNAL);
-        count++;
     }
     return HcclResult::HCCL_SUCCESS;
 }

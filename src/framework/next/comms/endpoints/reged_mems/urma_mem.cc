@@ -70,7 +70,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     } else {  
         HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
-        return HCCL_E_AGAIN;
+        return HCCL_SUCCESS;
     }
 
     this->allRegisteredBuffers_.push_back(localBuffer);
@@ -94,7 +94,7 @@ HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
     if (!resultPair) {
         HCCL_INFO("[UbRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
                   "(used by other RemoteRank), do not deregister memory.");
-        return HCCL_E_AGAIN;
+        return HCCL_SUCCESS;
     }
     
     // 删除vector中的LocalUbRmaBuffer
