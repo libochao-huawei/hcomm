@@ -1626,6 +1626,9 @@ STATIC int RsInitMemPool(struct RsQpCb *qpCb)
     memAttr.recv_qp_depth = qpCb->rxDepth;
     memAttr.recv_cq_depth = (unsigned int)qpCb->recvCqDepth;
     memAttr.recv_sge_num = qpCb->recvSgeNum;
+    memAttr.use_resv_mem = qpCb->useResvMem;
+    memAttr.resv_mem_pool_id = qpCb->resvMemPoolId;
+    memAttr.ctx = qpCb->ibQp->context;
 
     ret = RsRoceInitMemPool(&memAttr, &qpCb->memResp.memData, qpCb->rdevCb->rsCb->chipId);
     if (ret != 0) {
