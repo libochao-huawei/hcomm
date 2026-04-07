@@ -35,6 +35,9 @@ HCCP_ATTRI_VISI_DEF int RaGetClientSocketErrInfo(struct SocketConnectInfoT conn[
             hccp_err("[get][ra_socket]socket_handle or func is NULL"), ConverReturnCode(SOCKET_OP, -EINVAL));
 
         phyId = socketHandle->rdevInfo.phyId;
+        CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+            hccp_err("[get][ra_socket]RaGetClientSocketErrInfo get phyid failed, phyid[%u] should < max[%u]",
+            phyId, RA_MAX_PHY_ID_NUM), -EINVAL);
 
         ret = RaInetPton(socketHandle->rdevInfo.family, socketHandle->rdevInfo.localIp, localIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret != 0, hccp_err("[get][ra_socket]ra_inet_pton for local_ip failed, ret(%d)", ret),
@@ -72,6 +75,9 @@ HCCP_ATTRI_VISI_DEF int RaGetServerSocketErrInfo(struct SocketListenInfoT conn[]
             hccp_err("[get][ra_socket]socket_handle or func is NULL"), ConverReturnCode(SOCKET_OP, -EINVAL));
 
         phyId = socketHandle->rdevInfo.phyId;
+        CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+            hccp_err("[get][ra_socket]RaGetServerSocketErrInfo get phyid failed, phyid[%u] should < max[%u]",
+            phyId, RA_MAX_PHY_ID_NUM), -EINVAL);
 
         ret = RaInetPton(socketHandle->rdevInfo.family, socketHandle->rdevInfo.localIp, localIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret, hccp_err("[get][ra_socket]ra_inet_pton for server_ip failed, ret(%d)", ret),
