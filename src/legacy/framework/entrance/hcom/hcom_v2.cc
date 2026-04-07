@@ -1354,11 +1354,14 @@ HcclResult HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t f
 
 HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rtStream_t *aiCpuStream)
 {
-    (void)group;
+    CHK_PTR_NULL(group);
+    CHK_PTR_NULL(aiCpuStream);
     (void)streamMode;
-    (void)aiCpuStream;
-    HCCL_WARNING("[HcomMc2AiCpuStreamAllocAndGetV2] Not support");
-    return HCCL_E_NOT_FOUND;
+
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
+    CHK_RET(GetHcclCommV2(group, hcclComm));
+    CHK_RET(hcclComm->Mc2AiCpuStreamAllocAndGetV2(aiCpuStream));
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcomSetAttachedStreamV2()

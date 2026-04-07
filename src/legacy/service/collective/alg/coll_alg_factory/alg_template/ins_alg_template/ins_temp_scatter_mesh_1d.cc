@@ -121,9 +121,8 @@ HcclResult InsTempScatterMesh1D::RunMeshTx(u32 myAlgRank, u32 repeatTimes, Templ
         DataSlice dstSlice(dstBuffType, dstOffset, sliceSize);
         SlicesList txSlicesList({srcSlice}, {dstSlice});
         DataInfo sendData(linkSend, txSlicesList);
-        CHK_PRT_RET(Send(sendData, tempInsQues[count], 0, true, DmaMode::PUT),
+        CHK_PRT_RET(Send(sendData, tempInsQues[++count], 0, true, DmaMode::PUT),
             HCCL_ERROR("[InsTempScatterMesh1D] BatchSend failed"), HcclResult::HCCL_E_INTERNAL);
-        count++;
     }
     return HcclResult::HCCL_SUCCESS;
 }

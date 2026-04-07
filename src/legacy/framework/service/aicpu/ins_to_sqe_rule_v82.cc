@@ -130,7 +130,7 @@ void Interpret(const InsLocalPostTo &ins, const StreamLite &stream, ResMgrFetche
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalWaitFrom &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -159,7 +159,7 @@ void Interpret(const InsLocalWaitFrom &ins, const StreamLite &stream, ResMgrFetc
     taskParam.taskPara.Notify.notifyID = notifyId;
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalCopy &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -196,7 +196,7 @@ void Interpret(const InsLocalCopy &ins, const StreamLite &stream, ResMgrFetcher 
         taskParam.taskPara.DMA.linkType = DfxLinkType::ONCHIP;
         taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_READ;
         auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-        resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);   
+        resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);   
         src += offset;
         dst += offset;    
     }
@@ -237,7 +237,7 @@ void Interpret(const InsLocalCopyExtend &ins, const StreamLite &stream, ResMgrFe
         taskParam.taskPara.DMA.linkType = DfxLinkType::ONCHIP;
         taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_READ;
         auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-        resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+        resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
         src += offset;
         dst += offset; 
     }
@@ -295,7 +295,7 @@ void Interpret(const InsLocalReduce &ins, const StreamLite &stream, ResMgrFetche
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(ins.GetDataType());
     taskParam.taskPara.Reduce.reduceOp = ReduceOpToHcclReduceOp(ins.GetReduceOp());
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalWaitGroup &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -319,7 +319,7 @@ void Interpret(const InsLocalWaitGroup &ins, const StreamLite &stream, ResMgrFet
     taskParam.taskPara.Notify.notifyID = notify.GetId();
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsLocalBcastPost &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -339,7 +339,7 @@ void Interpret(const InsLocalBcastPost &ins, const StreamLite &stream, ResMgrFet
     taskParam.taskPara.Notify.notifyID = notify.GetId();
     taskParam.taskPara.Notify.value    = value;
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 void Interpret(const InsPostReady &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher)
@@ -652,7 +652,7 @@ void Interpret(const InsStreamSync &insStreamSync, const StreamLite &stream, Res
     const uint64_t kPrintSqInterval = 30U;
     uint32_t head = 0;
     uint32_t tail = 0;
-    u32 timeOut = resMgrFetcher->GetExecTimeOut();
+    u32 timeout = resMgrFetcher->GetExecTimeOut() + 10;
     u64 startUsec = GetCurAicpuTimestamp();
     u64 lastUsec = startUsec;
     u32 sqId = stream.GetSqId();
@@ -661,9 +661,9 @@ void Interpret(const InsStreamSync &insStreamSync, const StreamLite &stream, Res
     do {
         head = stream.GetRtsq()->QuerySqHead();
         u64 curUsec = GetCurAicpuTimestamp();
-        if (UNLIKELY(curUsec - startUsec > NANOSECOND_TO_SECOND * timeOut)) {
+        if (UNLIKELY(curUsec - startUsec > NANOSECOND_TO_SECOND * timeout)) {
             string msg = StringFormat("stream sync timeout %lus. curhead:%u, curtail:%u, sqId:%u",
-                timeOut, head, tail, sqId);
+                timeout, head, tail, sqId);
             THROW<TimeoutException>(msg);
         }
 
@@ -725,7 +725,7 @@ void Interpret(const InsAicpuReduce &insAicpuReduce, const StreamLite &stream, R
     taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(insAicpuReduce.GetDataType());
     taskParam.taskPara.Reduce.reduceOp = ReduceOpToHcclReduceOp(insAicpuReduce.GetReduceOp());
     auto taskInfo = std::make_shared<TaskInfo>(stream.GetSqId(), taskId, INVALID_VALUE_RANKID, taskParam);
-    resMgrFetcher->GetMirrorTaskMgr()->AddTaskInfo(taskInfo);
+    resMgrFetcher->GetMirrorTaskMgrLite()->AddTaskInfo(taskInfo);
 }
 
 const std::unordered_map<InstructionType, InsToSqeRule91095, std::EnumClassHash> insRule91095Map{

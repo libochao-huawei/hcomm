@@ -37,6 +37,9 @@ public:
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 private:
     HcclResult Makebufs(void **memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();

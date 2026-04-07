@@ -19,6 +19,12 @@ public:
                        uint16_t mask);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
+    uint32_t    GetMask() { return mask; }
+    uint32_t    GetRmtXnId() { return rmtXnId; }
+    uint32_t    GetRmtCkeId() { return rmtCkeId; }
+    uint16_t    GetParamIndex() { return paramIndex; }
+    Variable    GetParam() { return param; }
+    uint32_t    GetChannelId() { return channelId; }
 
 private:
     Variable                      param;
@@ -26,6 +32,9 @@ private:
     uint16_t                      paramIndex{0};
     uint16_t                      semIndex{0};
     uint16_t                      mask{0};
+    uint32_t                      rmtXnId{0};
+    uint32_t                      rmtCkeId{0};
+    uint32_t                      channelId{0};
 };
 
 }; // namespace CcuRep

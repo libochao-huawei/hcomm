@@ -9,6 +9,7 @@
  */
 
 #include <unordered_set>
+#include <cstring>
 #include "log.h"
 #include "hccl/base.h"
 #include "rank_consistentcy_checker.h"
@@ -463,10 +464,5 @@ HcclResult HcclParseRanktable(const std::string &rankTableM, const std::string &
 
 bool IsSupportHCCLV2(const char *socNamePtr)
 {
-    std::string targetChipVerStr = socNamePtr;
-    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
-    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
-        return true;
-    }
-    return false;
+    return strstr(socNamePtr, "Ascend950") != nullptr;
 }
