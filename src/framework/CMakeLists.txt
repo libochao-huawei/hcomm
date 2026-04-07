@@ -821,7 +821,7 @@ endif()
 
 target_include_directories(hcomm PRIVATE ${ORION_HEAD_LIST})
 add_subdirectory(${HCCL_BASE_DIR}/legacy ${CMAKE_CURRENT_BINARY_DIR}/legacy)
-add_dependencies(hcomm hccl_v2 hccl_aiv_op_950)
+add_dependencies(hcomm hccl_v2 hccl_aiv_op_910_95)
 target_link_libraries(hcomm
     hccl_v2
 )

@@ -4,9 +4,9 @@ set_source_files_properties(
 if(BUILD_OPEN_PROJECT)
     set(CCE_DIR ${ASCEND_CANN_PACKAGE_PATH}/tools/ccec_compiler/bin)
     
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_950.o
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o
         COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h 
-                -o ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_950_tmp.o 
+                -o ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o 
                 --cce-aicore-arch=dav-c310-vec
                 --cce-aicore-input-parameter-size=28000 --cce-aicore-only 
                 -mllvm -cce-aicore-function-stack-size=0x8000 
@@ -24,16 +24,16 @@ if(BUILD_OPEN_PROJECT)
                 -std=c++17 -fstack-protector-all -DONE_CORE_DUMP_SIZE=1024
         
         COMMAND ${CCE_DIR}/ld.lld -m aicorelinux -Ttext=0 
-                ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_950_tmp.o 
-                -static -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_950.o
+                ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o 
+                -static -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o
         
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Compiling and Linking AIV kernel"
     )
 
-    add_custom_target(hccl_aiv_op_950 ALL
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_950.o)
+    add_custom_target(hccl_aiv_op_910_95 ALL
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o)
 
     add_custom_target(hccl_ar_superkernel_mesh_1d_oneshot_int8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int8.o)
@@ -840,8 +840,8 @@ else()
 
     set(TILING_GEN_DIR ${CMAKE_BINARY_DIR}/asc/asc-devkit)
 
-    add_custom_target(hccl_aiv_op_950
-            COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h -o ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_950_tmp.o
+    add_custom_target(hccl_aiv_op_910_95
+            COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h -o ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o
             -DASCENDC_DUMP --cce-aicore-arch=dav-c310-vec
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000 -D__CCE_AICORE__=310 -D__DAV_C310__
@@ -863,7 +863,7 @@ else()
             --cce-aicore-jump-expand=true -std=c++17 -fstack-protector-all -DONE_CORE_DUMP_SIZE=1024
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
             DEPENDS kernel_tiling_headers
-            COMMAND ${CCE_DIR}/ld.lld -m aicorelinux -Ttext=0 ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_950_tmp.o -static -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_950.o
+            COMMAND ${CCE_DIR}/ld.lld -m aicorelinux -Ttext=0 ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o -static -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
@@ -1949,7 +1949,7 @@ else()
  
 endif()
  
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_950.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o OPTIONAL
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 

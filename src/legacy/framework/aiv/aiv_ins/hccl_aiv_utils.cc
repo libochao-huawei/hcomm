@@ -289,7 +289,7 @@ HcclResult GetAivOpBinaryPath(std::string &binaryPath)
                      libPath.c_str());
     }
 
-    binaryPath = libPath + "/lib64/hccl_aiv_op_950.o";
+    binaryPath = libPath + "/lib64/hccl_aiv_op_910_95.o";
 
     HCCL_INFO("[AIV][GetAivOpBinaryPath]binaryPath: %s", binaryPath.c_str());
 

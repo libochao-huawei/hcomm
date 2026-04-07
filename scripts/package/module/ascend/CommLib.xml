@@ -112,7 +112,7 @@
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
         <file value="libhcomm.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libhccl_fwk.so"/>
-        <file value="hccl_aiv_op_950.o"/>
+        <file value="hccl_aiv_op_910_95.o"/>
         <file value="libhccl_v2.so" file_type="shared" release_type="debug"/>
         <file value="libhccl_v2_alg_frame.so" file_type="shared" release_type="debug"/>
         <file value="libhccl_v2_native_alg_repo.so" file_type="shared" release_type="debug"/>
