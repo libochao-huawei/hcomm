@@ -31,6 +31,7 @@ int PodGetRootinfoLen(size_t *len)
 }
 
 #define MAX_PORT_NUM (32)
+//#define MAX_PORT_NUM (16)
 typedef struct rule {
     unsigned int mainboardId;
     int level;
@@ -38,17 +39,19 @@ typedef struct rule {
     int ueId;
     int ports[MAX_PORT_NUM];
     int portNum;
+    int npus[MAX_PORT_NUM];
+    int npuNum;
 }UBEntityRule;
 
 static const UBEntityRule g_ubrules[] = {
-    {MAIN_BOARD_ID_POD, PRODUCT_CLOS_LEVEL, 0, 2, {1,2}, 2},
-    {MAIN_BOARD_ID_POD, PRODUCT_CLOS_LEVEL, 1, 2, {0,1,2,3,5,6}, 6},
-    {MAIN_BOARD_ID_POD_2D, PRODUCT_CLOS_LEVEL, 0, 2, {1,2}, 2},
-    {MAIN_BOARD_ID_POD_2D, PRODUCT_CLOS_LEVEL, 1, 2, {0,1,2,3,5,6}, 6},
+    {MAIN_BOARD_ID_POD, PRODUCT_CLOS_LEVEL, 0, 2, {1,2}, 2, {0,1,2,3}, 4},
+    {MAIN_BOARD_ID_POD, PRODUCT_CLOS_LEVEL, 1, 2, {0,1,2,3,5,6}, 6, {4,5,6,7}, 4},
+    {MAIN_BOARD_ID_POD_2D, PRODUCT_CLOS_LEVEL, 0, 2, {1,2}, 2, {0,1,2,3}, 4},
+    {MAIN_BOARD_ID_POD_2D, PRODUCT_CLOS_LEVEL, 1, 2, {0,1,2,3,5,6}, 6, {4,5,6,7}, 4},
 };
 
 
-static int ProcessLayerMesh(NetLayer *layer, UEList *ueList, struct dcmi_spod_info *spod_info)
+static int ProcessLayerMesh(int npu_id, NetLayer *layer, UEList *ueList, struct dcmi_spod_info *spod_info)
 {
     NetLayerSetNetType(layer, NET_TYPE_MESH);
     char net_instance_id[MAX_INSTANCE_ID_LEN] = {0};
@@ -85,7 +88,28 @@ static int ProcessLayerMesh(NetLayer *layer, UEList *ueList, struct dcmi_spod_in
     return 0;
 }
 
-static int ProcessLayerClos(unsigned int mainBoardId, NetLayer *layer, UEList *ueList, struct dcmi_spod_info *spod_info)
+static const UBEntityRule* GetUBRule(int npu_id, int level, unsigned int mainBoardId, int die, int feId)
+{
+    for (size_t i = 0; i < sizeof(g_ubrules)/sizeof(UBEntityRule); ++i) {
+        if (g_ubrules[i].level != level) {
+            continue;
+        }
+        for (size_t j = 0; j < g_ubrules[i].npuNum; ++j) {
+            if (g_ubrules[i].npus[j] == npu_id) {
+                break;
+            }
+        }
+        if (g_ubrules[i].level != level) {
+            continue;
+        }
+        if (mainBoardId == g_ubrules[i].mainboardId && die == g_ubrules[i].dieId && feId == g_ubrules[i].ueId) {
+            return &g_ubrules[i];
+        }
+    }
+    return NULL;
+}
+
+static int ProcessLayerClos(int npu_id, unsigned int mainBoardId, NetLayer *layer, UEList *ueList, struct dcmi_spod_info *spod_info)
 {
     char net_instance_id[MAX_INSTANCE_ID_LEN] = {0};
     sprintf_s(net_instance_id, sizeof(net_instance_id), "superpod_%ld", spod_info->super_pod_id);
@@ -99,23 +123,23 @@ static int ProcessLayerClos(unsigned int mainBoardId, NetLayer *layer, UEList *u
         if (portGroupIdx < 0) {
             continue;
         }
-        for (size_t r = 0; r < sizeof(g_ubrules)/sizeof(UBEntityRule); ++r) {
-            if (mainBoardId == g_ubrules[r].mainboardId && die == g_ubrules[r].dieId && fe == g_ubrules[r].ueId) {
-                Addr addr;
-                memset_s(&addr, sizeof(Addr), 0x00, sizeof(Addr));
-                AddrSetEID(&addr, &ueList->ueList[i].eidList[portGroupIdx].eid);
-
-                for (int j = 0; j < g_ubrules[r].portNum; ++j) {
-                    char port[MAX_PORT_LEN] = {0};
-                    sprintf_s(port, MAX_PORT_LEN, "%d/%d", die, g_ubrules[r].ports[j]);
-                    AddrAddPort(&addr, port);
-                }
-                char planeId[MAX_PLANE_ID_LEN] = {0};
-                sprintf_s(planeId, sizeof(planeId), "plane_%d", die);
-                AddrSetPlaneId(&addr, planeId);
-                NetLayerAddAddr(layer, &addr);
-            }
+        const UBEntityRule *rule =  GetUBRule(npu_id, PRODUCT_CLOS_LEVEL, mainBoardId, die, fe);
+        if (rule == NULL) {
+            continue;
         }
+        Addr addr;
+        memset_s(&addr, sizeof(Addr), 0x00, sizeof(Addr));
+        AddrSetEID(&addr, &ueList->ueList[i].eidList[portGroupIdx].eid);
+
+        for (int j = 0; j < rule->portNum; ++j) {
+            char port[MAX_PORT_LEN] = {0};
+            sprintf_s(port, MAX_PORT_LEN, "%d/%d", die, rule->ports[j]);
+            AddrAddPort(&addr, port);
+        }
+        char planeId[MAX_PLANE_ID_LEN] = {0};
+        sprintf_s(planeId, sizeof(planeId), "plane_%d", die);
+        AddrSetPlaneId(&addr, planeId);
+        NetLayerAddAddr(layer, &addr);
     }
     return 0;
 }
@@ -138,10 +162,10 @@ int PodGetRootinfo(int npu_id, unsigned mainboard_id, void *buf, size_t *len)
     HalGetUBEntityList(npu_id, &ueList);
     hal_get_spod_info(npu_id, &spod_info);
 
-    if (ProcessLayerMesh(&layerMesh, &ueList, &spod_info) == 0) {
+    if (ProcessLayerMesh(npu_id, &layerMesh, &ueList, &spod_info) == 0) {
         RankAddNetLayer(&rank, &layerMesh);
     }
-    if (ProcessLayerClos(mainboard_id, &layerClos, &ueList, &spod_info) == 0) {
+    if (ProcessLayerClos(npu_id, mainboard_id, &layerClos, &ueList, &spod_info) == 0) {
         RankAddNetLayer(&rank, &layerClos);
     }
     RootInfoAddRank(&rootinfo, &rank);
