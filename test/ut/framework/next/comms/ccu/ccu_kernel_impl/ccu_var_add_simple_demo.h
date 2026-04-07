@@ -8,9 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef CCU_VAR_ADD_SIMPLE_DEMO_H
-#define CCU_VAR_ADD_SIMPLE_DEMO_H
-
 #include "ccu_api.hpp"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
 
@@ -22,7 +19,6 @@ struct CcuVarAddKernelArg {
 
 struct CcuVarAddTaskArg {
 };
-
 CcuResult CcuVarAddDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -88,7 +84,6 @@ CcuResult CcuAddrDemoKernel(CcuKernelArg arg)
 
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuLocalAddrDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -101,7 +96,6 @@ CcuResult CcuLocalAddrDemoKernel(CcuKernelArg arg)
     localAddr.token = token;
     return CcuResult::CCU_SUCCESS;
 }
-
 // CcuResult CcuLocalAddrDemoKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -115,7 +109,6 @@ CcuResult CcuLocalAddrDemoKernel(CcuKernelArg arg)
 //     localAddr.token = token;    // 通过 CcuVariable 重载设置 token
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -142,7 +135,6 @@ CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
     ccu::Wait(evt);
     return CcuResult::CCU_SUCCESS;
 }
-
 // CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -171,7 +163,6 @@ CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
 
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuLocalAddrReduceKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -193,7 +184,6 @@ CcuResult CcuLocalAddrReduceKernel(CcuKernelArg arg)
     ccu::Wait(evt);
     return CcuResult::CCU_SUCCESS;
 }
-
 // CcuResult CcuLocalAddrReduceKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -214,7 +204,6 @@ CcuResult CcuLocalAddrReduceKernel(CcuKernelArg arg)
 //     CcuWaitEvent(evt);
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuLocalBufferReduceKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -242,7 +231,6 @@ CcuResult CcuLocalBufferReduceKernel(CcuKernelArg arg)
     ccu::Wait(evt);
     return CcuResult::CCU_SUCCESS;
 }
-
 // CcuResult CcuLocalBufferReduceKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -271,7 +259,6 @@ CcuResult CcuLocalBufferReduceKernel(CcuKernelArg arg)
 //     CcuWaitEvent(evt);
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -297,7 +284,6 @@ CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
     return CcuResult::CCU_SUCCESS;
 
 }
-
 // CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -324,7 +310,6 @@ CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
 
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 // CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -351,7 +336,6 @@ CcuResult CcuRemoteReadKernel(CcuKernelArg arg)
 
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -376,7 +360,6 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
     ccu::Wait(evt);
     return CcuResult::CCU_SUCCESS;
 }
-
 // CcuResult CcuReadWriteReduceKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -402,7 +385,6 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
 //     CcuWaitEvent(evt);
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuReadWriteReduceKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -429,7 +411,6 @@ CcuResult CcuReadWriteReduceKernel(CcuKernelArg arg)
     ccu::Wait(evt);
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuSyncKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -447,7 +428,6 @@ CcuResult CcuSyncKernel(CcuKernelArg arg)
     ccu::NotifyWait(args->channelHandle, 0, mask);
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuEventKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -461,8 +441,21 @@ CcuResult CcuEventKernel(CcuKernelArg arg)
     ccu::Create(&single_evt);
     ccu::Record(single_evt);
     ccu::Wait(single_evt);
+    ccu::WriteNotify(args->channelHandle, 0, 0x12);
+    ccu::NotifyWait(args->channelHandle, 0, 0x12);
 
     return CcuResult::CCU_SUCCESS;
 }
 
-#endif // CCU_VAR_ADD_SIMPLE_DEMO_H
+CcuResult CcuCreateFromChannelKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    uint32_t varIndex = 0;
+    CcuVariable tmp;
+    ccu::Create(&tmp);
+    ccu::WriteVariableWithNotify(args->channelHandle,tmp, 0, 0, 0);
+    CcuVariable var;
+    ccu::CreateFromChannel(args->channelHandle, 0, &var);
+    var = 1024;
+    return CcuResult::CCU_SUCCESS;
+}
