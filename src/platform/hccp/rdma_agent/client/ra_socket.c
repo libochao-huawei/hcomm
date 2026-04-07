@@ -48,6 +48,9 @@ HCCP_ATTRI_VISI_DEF int RaGetClientSocketErrInfo(struct SocketConnectInfoT conn[
             i, phyId, localIp, remoteIp, conn[i].port, conn[i].tag);
     }
 
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[get][ra_socket]ra get phyid failed, phyid[%u] should < max[%u]",
+        phyId, RA_MAX_PHY_ID_NUM), -EINVAL);
     ret = socketHandle->socketOps->raGetClientSocketErrInfo(phyId, conn, err, num);
     return ConverReturnCode(SOCKET_OP, ret);
 }
@@ -81,6 +84,9 @@ HCCP_ATTRI_VISI_DEF int RaGetServerSocketErrInfo(struct SocketListenInfoT conn[]
             i, phyId, localIp, conn[i].port);
     }
 
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[get][ra_socket]ra server get phyid failed, phyid[%u] should < max[%u]", phyId,
+        RA_MAX_PHY_ID_NUM), -EINVAL);
     ret = socketHandle->socketOps->raGetServerSocketErrInfo(phyId, conn, err, num);
     return ConverReturnCode(SOCKET_OP, ret);
 }

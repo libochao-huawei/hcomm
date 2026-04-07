@@ -152,6 +152,9 @@ HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct PingTargetInfo 
         return ConverReturnCode(RDMA_OP, ret);
     }
 
+    CHK_PRT_RETURN(pingHandleTmp->targetCnt + num < num,
+        hccp_err("[add][ra_ping]pingHandleTmp->targetCnt + num is out of range"), ConverReturnCode(RDMA_OP, -EINVAL));
+
     // increase target cnt
     RA_PTHREAD_MUTEX_LOCK(&pingHandleTmp->mutex);
     pingHandleTmp->targetCnt += num;
