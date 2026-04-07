@@ -234,7 +234,7 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
             SelectorStatus::NOT_MATCH);
 
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (topoInfo->netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
                 primQueueGenName = "InsReduceNHR";
             } else {
                 primQueueGenName = "InsReduceParallelMesh1DNHR";
