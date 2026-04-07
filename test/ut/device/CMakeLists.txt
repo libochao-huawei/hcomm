@@ -80,3 +80,5 @@ run_llt_test(
    TARGET  hccl_utest_device
    TASK_NUM 1
 )
+enable_testing()
+add_test(NAME hccl_utest_device COMMAND hccl_utest_device)
