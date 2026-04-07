@@ -66,7 +66,7 @@ HcclResult TopoinfoRanktableConcise::SetIsInterSuperPodRetryEnable(bool isRetryE
     return HCCL_E_NOT_SUPPORT;
 }
 
-void TopoinfoRanktableConcise::DetectNicDepoly(RankTable_t &rankTable)
+void TopoinfoRanktableConcise::DetectNicDepoly(RankTable_t &rankTable, u32 rankId)
 {
     return;
 }
