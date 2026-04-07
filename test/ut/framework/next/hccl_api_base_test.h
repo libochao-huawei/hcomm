@@ -55,7 +55,6 @@
 #include <hccl/hccl_types.h>
 #include "dltdt_function.h"
 #include "topoinfo_ranktableParser_pub.h"
-#include "v80_rank_table.h"
 #include "externalinput_pub.h"
 #include "op_base.h"
 #include "param_check_pub.h"

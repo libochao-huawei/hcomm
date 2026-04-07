@@ -46,7 +46,6 @@
 #include "rank_consistentcy_checker.h"
 #include <iostream>
 #include <fstream>
-#include "v80_rank_table.h"
 #include "dlra_function.h"
 #include <fcntl.h>
 #include <unistd.h>
@@ -68,10 +67,11 @@
 #include "hcom_common.h"
 #include "rt_external.h"
 #include "acl_rt.h"
+#include "common/ut_comm_base_test.h""
 using namespace std;
 using namespace hccl;
 
-class HcclCommTest : public testing::Test
+class HcclCommTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

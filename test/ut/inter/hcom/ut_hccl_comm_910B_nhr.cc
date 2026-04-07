@@ -37,7 +37,6 @@
 #include "rank_consistentcy_checker.h"
 #include <iostream>
 #include <fstream>
-#include "ranktable/v80_rank_table.h"
 #include "dlra_function.h"
 #include <fcntl.h>
 #include <unistd.h>
@@ -54,7 +53,7 @@
 using namespace std;
 using namespace hccl;
 
-class HcclCommTest910BNHR : public testing::Test
+class HcclCommTest910BNHR : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

@@ -196,7 +196,7 @@ void* impl_common_reduce_scatter_task(void* parg)
     return (NULL);
 }
 
-class ReduceScatterCommonTest : public testing::Test
+class ReduceScatterCommonTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

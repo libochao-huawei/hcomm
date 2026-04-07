@@ -48,7 +48,6 @@
 #include "sal.h"
 #include "config.h"
 //#include "topoinfo_ranktableParser_pub.h"
-#include "ranktable/v80_rank_table.h"
 #include "dlra_function.h"
 #include "network_manager_pub.h"
 #include "hccl_communicator.h"
@@ -417,7 +416,7 @@ void* inter_reduce_scatter_task(void* parg)
     return (NULL);
 }
 
-class HcclInterTest : public testing::Test
+class HcclInterTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

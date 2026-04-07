@@ -45,7 +45,6 @@
 
 #include "externalinput_pub.h"
 #include "../misc/ut_rank_table.h"
-#include "ranktable/v80_rank_table.h"
 #include "param_check_pub.h"
 #include "dltrace_function.h"
 #include <iostream>
@@ -87,7 +86,7 @@ static nlohmann::json allreduce_topo_switch_connect =
     }
 };
 
-class HcomTest : public testing::Test
+class HcomTest : public CommBaseTest
 {
 protected:
     static void SetUpTestCase()

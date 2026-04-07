@@ -263,19 +263,12 @@ function build_ut() {
   fi
 
   local LLT_KILL_TIME=200
-  CMAKE_ARGS="-DPRODUCT_SIDE=host \
-              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-              -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
-              -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
-              -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-              -DENABLE_GCOV=${ENABLE_GCOV} \
-              -DENABLE_TEST=${ENABLE_TEST} \
-              -DENABLE_UT=${ENABLE_UT} \
-              -DOUTPUT_PATH=${OUTPUT_PATH} \
-              -DLLT_KILL_TIME=${LLT_KILL_TIME}"
-
-  echo "CMAKE_ARGS=${CMAKE_ARGS}"
-  cmake ${CMAKE_ARGS} ..
+  cmake_config "-DPRODUCT_SIDE=host \
+                -DENABLE_GCOV=${ENABLE_GCOV} \
+                -DENABLE_TEST=${ENABLE_TEST} \
+                -DENABLE_UT=${ENABLE_UT} \
+                -DOUTPUT_PATH=${OUTPUT_PATH} \
+                -DLLT_KILL_TIME=${LLT_KILL_TIME}"
   if [ $? -ne 0 ]; then
     echo "execute command: cmake ${CMAKE_ARGS} .. failed."
     return 1

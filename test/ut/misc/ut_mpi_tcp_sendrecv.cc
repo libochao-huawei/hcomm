@@ -47,7 +47,6 @@
 #include "hccl/hcom.h"
 #include <hccl/hccl_types.h>
 #include "topoinfo_ranktableParser_pub.h"
-#include "v80_rank_table.h"
 #include "tsd/tsd_client.h"
 #include "dltdt_function.h"
 #include "externalinput_pub.h"
