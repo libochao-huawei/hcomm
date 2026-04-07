@@ -91,7 +91,7 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
 
     if (topoInfo.levelNum > 1) {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (topoInfo->netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
                 primQueueGenName = "InsScatterNHR";
             } else {
                 primQueueGenName = "InsScatterParallelMesh1DNHR";

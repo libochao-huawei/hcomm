@@ -120,13 +120,12 @@ SelectorStatus BroadcastAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
-    (void)op;
     (void)configAlgMap;
+    (void)op;
     HCCL_DEBUG("[BroadcastAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
-
     if (topoInfo.levelNum > 1) {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (topoInfo->netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
                 primQueueGenName = "InsBroadcastNHR";
             } else {
                 primQueueGenName = "InsBroadcastParallelMesh1DNHR";
@@ -156,8 +155,7 @@ SelectorStatus BroadcastAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                     primQueueGenName = "InsBroadcastMesh1DTwoShot";
                 }
             } else {
-                if (topoInfo.level0PcieMix) {
-                    // 预留PCIE mix入口，如果要更新算法可以直接改
+                if (topoInfo.level0PcieMix) {// 预留PCIE mix入口，如果要更新算法可以直接改
                     primQueueGenName = "InsBroadcastParallelMesh1DNHRPcie";
                 } else {
                     primQueueGenName = "InsBroadcastParallelMesh1DNHR";
