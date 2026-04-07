@@ -205,16 +205,16 @@ HcclResult HccsRegedMemMgr::MemoryExport(
     return HCCL_SUCCESS;
 }
 
-HcclResult HccsRegedMemMgr::AddMemDesc(EndpointDesc &endpointDesc, std::string &ipcRmaBufferDesc,
+HcclResult HccsRegedMemMgr::AddMemDesc(EndpointDesc &endpointDesc, const void *memDesc, uint32_t descLen,
     std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(remoteIpcRmaBuffer);
 
-    HCCL_INFO("[%s] addr[%p] size[%lu] start", __FUNCTION__, ipcRmaBufferDesc.c_str(), ipcRmaBufferDesc.length());
+    HCCL_INFO("[%s] addr[%p] size[%lu] start", __FUNCTION__, memDesc, descLen);
 
     // 放到 remoteIpcRmaBufferMgrs_
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(ipcRmaBufferDesc.c_str()), ipcRmaBufferDesc.length());
+    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(memDesc), descLen);
     if(remoteIpcRmaBufferMgrs_.find(endpointDesc) == remoteIpcRmaBufferMgrs_.end()) {
         std::unique_ptr<RemoteIpcRmaBufferMgr> remoteIpcRmaBufferMgr;
         EXECEPTION_CATCH((remoteIpcRmaBufferMgr = std::make_unique<RemoteIpcRmaBufferMgr>()),
@@ -225,8 +225,8 @@ HcclResult HccsRegedMemMgr::AddMemDesc(EndpointDesc &endpointDesc, std::string &
     }
 
     auto resultPair = remoteIpcRmaBufferMgrs_[endpointDesc]->Add(tempKey, remoteIpcRmaBuffer);
-    if(!resultPair.first == remoteIpcRmaBufferMgrs_[endpointDesc].end()) {
-        HCCL_ERROR("[HccsRegedMemMgr][MemoryImport] This memDesc Add failed!");
+    if(!resultPair.first) {
+        HCCL_ERROR("[HccsRegedMemMgr][AddMemDesc] Add memDesc fail!");
         return HCCL_E_INTERNAL;
     }
     if(!resultPair.second) {
@@ -234,16 +234,16 @@ HcclResult HccsRegedMemMgr::AddMemDesc(EndpointDesc &endpointDesc, std::string &
         return HCCL_E_AGAIN;
     }
 
-    HCCL_INFO("[%s] addr[%p] size[%lu] done", __FUNCTION__, ipcRmaBufferDesc.c_str(), ipcRmaBufferDesc.length());
+    HCCL_INFO("[%s] addr[%p] size[%lu] done", __FUNCTION__, memDesc, descLen);
     return HCCL_SUCCESS;
 }
 
-HcclResult HccsRegedMemMgr::DeleteMemDesc(EndpointDesc &endpointDesc, std::string &ipcRmaBufferDesc,
+HcclResult HccsRegedMemMgr::DeleteMemDesc(EndpointDesc &endpointDesc, const void *memDesc, uint32_t descLen,
     std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
 
-    HCCL_INFO("[%s] addr[%p] size[%lu] start", __FUNCTION__, ipcRmaBufferDesc.c_str(), ipcRmaBufferDesc.length());
+    HCCL_INFO("[%s] addr[%p] size[%lu] start", __FUNCTION__, memDesc, descLen);
 
     if(remoteIpcRmaBufferMgrs_.find(endpointDesc) == remoteIpcRmaBufferMgrs_.end()) {
         HCCL_ERROR("[HccsRegedMemMgr][DeleteMemDesc] Remote buffer manager Not Found.");
@@ -251,8 +251,7 @@ HcclResult HccsRegedMemMgr::DeleteMemDesc(EndpointDesc &endpointDesc, std::strin
     }
 
     // 删除 remoteIpcRmaBufferMgrs_
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(ipcRmaBufferDesc.c_str()),
-        ipcRmaBufferDesc.length());
+    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(memDesc),descLen);
     auto remoteIpcRmaBufferPair = remoteIpcRmaBufferMgrs_[endpointDesc]->Find(tempKey);
     if(!remoteIpcRmaBufferPair.first) {
         HCCL_ERROR("[HccsRegedMemMgr][DeleteMemDesc] Remote buffer manager Not Found!");
@@ -274,7 +273,7 @@ HcclResult HccsRegedMemMgr::DeleteMemDesc(EndpointDesc &endpointDesc, std::strin
         remoteIpcRmaBufferMgrs_.erase(endpointDesc);
     }
 
-    HCCL_INFO("[%s] addr[%p] size[%lu] done", __FUNCTION__, ipcRmaBufferDesc.c_str(), ipcRmaBufferDesc.length());
+    HCCL_INFO("[%s] addr[%p] size[%lu] done", __FUNCTION__, memDesc, descLen);
 
     return HCCL_SUCCESS;
 }
@@ -308,7 +307,7 @@ HcclResult HccsRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
             HCCL_ERROR("[HccsRegedMemMgr][[MemoryImport]RemoteIpcRmaBuffer Open failed."), openRet);
     }
 
-    CHK_RET(AddMemDesc(endpointDesc, ipcRmaBufferDesc, remoteIpcRmaBuffer));
+    CHK_RET(AddMemDesc(endpointDesc, memDesc, descLen, remoteIpcRmaBuffer));
 
     outMem->addr = reinterpret_cast<void *>(remoteIpcRmaBuffer->GetAddr());
     outMem->size = remoteIpcRmaBuffer->GetSize();
@@ -329,7 +328,7 @@ HcclResult HccsRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen
     CHK_RET(DeSerializeFromMemDesc(memDesc, descLen, endpointDesc, ipcRmaBufferDesc));
 
     std::shared_ptr<hccl::RemoteIpcRmaBuffer> remoteIpcRmaBuffer;
-    CHK_RET(DeleteMemDesc(endpointDesc, ipcRmaBufferDesc, remoteIpcRmaBuffer));
+    CHK_RET(DeleteMemDesc(endpointDesc, memDesc, descLen, remoteIpcRmaBuffer));
     CHK_PTR_NULL(remoteIpcRmaBuffer);
     HcclResult ret = remoteIpcRmaBuffer->Close();
     CHK_PRT_RET(ret != HCCL_SUCCESS,
