@@ -856,6 +856,9 @@ int RaHdcLitePollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEnt
         return 0;
     }
 
+    CHK_PRT_RETURN(cq == NULL || liteWc == NULL,
+        hccp_err("ra_rdma_lite_poll_cq_v2 failed, cq or liteWc is null"), -EINVAL);
+
     ret = RaRdmaLitePollCqV2(cq, (int)numEntries, liteWc);
     CHK_PRT_RETURN(ret < 0, hccp_err("ra_rdma_lite_poll_cq_v2 failed, ret %d", ret), ret);
     CHK_PRT_RETURN(ret > (int)numEntries,
