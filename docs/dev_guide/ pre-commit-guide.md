@@ -43,7 +43,7 @@ brew install clang-format openjdk@17 maven
 
 ```bash
 # 进入代码仓根目录
-cd /path/to/hccl
+cd /path/to/hcomm
 pre-commit install
 ```
 
