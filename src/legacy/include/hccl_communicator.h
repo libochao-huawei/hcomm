@@ -129,7 +129,6 @@ public:
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc* endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen,
                        void* info);
-    HcclResult InitDeviceListenPort(u32 &linstenPort);
     Trace& GetTrace() const;
 
     u32 GetDeviceLogicId() const;
