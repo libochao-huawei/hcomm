@@ -281,9 +281,9 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
-    CHK_PTR_NULL(mirrorTaskMgr);
-    mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
+    CHK_PTR_NULL(mirrorTaskMgrLite);
+    mirrorTaskMgrLite->SetCurrDfxOpInfo(dfxOpInfoOnce);
     return HCCL_SUCCESS;
 }
 
@@ -297,10 +297,10 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
-    CHK_PTR_NULL(mirrorTaskMgr);
+    Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
+    CHK_PTR_NULL(mirrorTaskMgrLite);
     CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
-    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo()),
+    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo()),
         return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }

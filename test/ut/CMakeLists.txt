@@ -260,6 +260,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
@@ -281,10 +282,14 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/framework
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/dfx/task_exception
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
     ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/task_exception
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/profiling
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/common
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/stream
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream
     ${HCCL_CODE_ROOT}/src/legacy/interface/
