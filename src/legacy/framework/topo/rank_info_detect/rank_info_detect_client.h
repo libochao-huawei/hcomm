@@ -32,7 +32,6 @@ public:
     ~RankInfoDetectClient();
 
     void Setup(RankTableInfo &rankTable);
-    void Update(u32 devicePort, RankTableInfo &rankTable);
 
 private:
     u32                             devPhyId_{0};
