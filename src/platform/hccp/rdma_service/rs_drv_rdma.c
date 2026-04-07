@@ -478,12 +478,12 @@ int RsDrvQpStateModifytoRtr(struct RsQpCb *qpCb, struct ibv_qp_attr *attr)
     (attr->ah_attr).port_num    = qpCb->rdevCb->ibPort;
 
     attr->path_mtu = RsDrvSetMtu(qpCb);
+    CHK_PRT_RETURN(attr->path_mtu < IBV_MTU_1024,
+        hccp_err("qpn[%d] failed to set mtu, mtu[%d] < [%d]", qpCb->qpInfoLo.qpn, attr->path_mtu, IBV_MTU_1024), -EPERM);
     if (qpCb->rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE) {
         attr->max_dest_rd_atomic = RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE;
     } else {
         attr->max_dest_rd_atomic = RS_MAX_RD_ATOMIC_NUM;
-        CHK_PRT_RETURN(attr->path_mtu < IBV_MTU_1024, hccp_err("qpn[%d] failed to set mtu, mtu[%d] < [%d]",
-            qpCb->qpInfoLo.qpn, attr->path_mtu, IBV_MTU_1024), -EPERM);
     }
 
     // get gid_idx dynamically

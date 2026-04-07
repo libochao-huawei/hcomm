@@ -1794,7 +1794,7 @@ STATIC int RsQpcbInitWithAttrs(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb,
     qpCb->ibPd = rdevCb->ibPd;
 
     qpCb->txDepth = qpNorm->extAttrs.qpAttr.cap.max_send_wr;
-    qpCb->rxDepth = qpNorm->extAttrs.qpAttr.cap.max_send_wr;
+    qpCb->rxDepth = qpNorm->extAttrs.qpAttr.cap.max_recv_wr;
     qpCb->sendSgeNum = qpNorm->extAttrs.qpAttr.cap.max_send_sge;
     qpCb->recvSgeNum = qpNorm->extAttrs.qpAttr.cap.max_recv_sge;
     qpCb->sendCqDepth = qpNorm->extAttrs.cqAttr.sendCqDepth;
@@ -2060,8 +2060,12 @@ STATIC void RsQpRelease(struct RsQpCb *qpCb)
     RS_PTHREAD_MUTEX_LOCK(&qpCb->rdevCb->rdevMutex);
     RsListDel(&qpCb->list);
     RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdevCb->rdevMutex);
-    RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
-    RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
+    if (qpCb->ibSendCq != NULL && qpCb->ibRecvCq != NULL) {
+        RsIbvAckCqEvents(qpCb->ibSendCq, qpCb->numSendCqEvents);
+        RsIbvAckCqEvents(qpCb->ibRecvCq, qpCb->numRecvCqEvents);
+    } else {
+        hccp_err("RsIbvAckCqEvents  ack failed:%d, SendCq/RevcCq is null");
+    }
 
     // dereg mr
     RS_PTHREAD_MUTEX_LOCK(&qpCb->qpMutex);
@@ -2865,8 +2869,9 @@ RS_ATTRI_VISI_DEF int RsCreateSrq(unsigned int phyId, unsigned int rdevIndex, st
     struct RsRdevCb *rdevCb = NULL;
     struct RsCqContext *cqContext = NULL;
 
-    CHK_PRT_RETURN(attr == NULL || phyId >= RS_MAX_DEV_NUM,
-        hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(attr == NULL || attr->context == NULL || attr->ibRecvCq == NULL || attr->ibSrq == NULL ||
+        phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM),
+        -EINVAL);
 
     ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phyId[%u] rdev_index[%u], ret %d", phyId, rdevIndex, ret), ret);
@@ -2930,7 +2935,11 @@ RS_ATTRI_VISI_DEF int RsDestroySrq(unsigned int phyId, unsigned int rdevIndex, s
     struct RsCqContext *cqContext = *attr->context;
     cqAttr.qpContext = attr->context;
 
-    RsIbvAckCqEvents(cqContext->ibSrqCq, cqContext->numRecvCqEvents);
+    if (cqContext->ibSrqCq != NULL) {
+        RsIbvAckCqEvents(cqContext->ibSrqCq, cqContext->numRecvCqEvents);
+    } else {
+        hccp_err("RsIbvAckCqEvents ack failed, ibSrqCq is null");
+    }
 
     // 销毁srq cq
     ret = RsCqDestroy(phyId, rdevIndex, &cqAttr);
