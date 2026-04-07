@@ -153,14 +153,6 @@ TEST_F(TopoAddrInfoTest, Ut_Card_4P)
     free(buf);
 }
 
-
-FILE *myfopen(const char* file, const char* mode) {
-    if (strcmp(file, "/etc/hccl_rootinfo.json") == 0) {
-        return NULL;
-    }
-    return fopen(file, mode);
-}
-
 TEST_F(TopoAddrInfoTest, ut_rootinfo_for_pod)
 {
     // mock data
@@ -186,7 +178,6 @@ TEST_F(TopoAddrInfoTest, ut_rootinfo_for_pod)
     MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainboard_id)).will(returnValue(0));
     MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
     MOCKER(HalGetUBEntityList).stubs().with(any(), outBoundP(&ueList)).will(returnValue(0));
-    MOCKER(fopen).stubs().with(any(), any()).will(invoke(myfopen));
 
     size_t bufSize = 4096;
     char* buf = (char*)malloc(bufSize);

@@ -80,6 +80,7 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, UEList *ueList, struct 
         }
         for (unsigned int j = 0; j < ueList->ueList[i].eidNum; ++j) {
             int phyPortId = UrmaEidGetPortId(&ueList->ueList[i].eidList[j].eid);
+            printf("eid index [%d] phyPortId [%d]\n", j, phyPortId);
             if (phyPortId > MAX_MESH_PORT_ID) {
                 continue;
             }
@@ -90,6 +91,7 @@ static int ProcessLayerMesh(int npu_id, NetLayer *layer, UEList *ueList, struct 
             // topo中端口从0开始编，CNA中需要规避全0，从1开始
             sprintf_s(port, MAX_PORT_LEN, "%d/%d", (npu_id % 8) < 4 ? 0 : 1, phyPortId < 2 ? (phyPortId - 1) : (phyPortId + 2));
             AddrAddPort(&addr, port);
+            printf("eid index [%d] -> [%s]\n", j, addr.addr);
             AddrSetPlaneId(&addr, "plane_0");
             NetLayerAddAddr(layer, &addr);
         }
@@ -144,6 +146,7 @@ static int ProcessLayerClos(int npu_id, unsigned int mainBoardId, NetLayer *laye
         Addr addr;
         memset_s(&addr, sizeof(Addr), 0x00, sizeof(Addr));
         AddrSetEID(&addr, &ueList->ueList[i].eidList[portGroupIdx].eid);
+        printf("fe %d die [%d] portGroupIdx [%d] eid = [%s]\n", fe, die, portGroupIdx, addr.addr);
 
         for (int j = 0; j < rule->portNum; ++j) {
             char port[MAX_PORT_LEN] = {0};
