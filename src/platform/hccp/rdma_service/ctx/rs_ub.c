@@ -1107,7 +1107,7 @@ int RsUbCtxDeinit(struct RsUbDevCb *devCb)
     hccp_run_info("[deinit][rs_ctx]deinit success, phyId:%u, devIndex:0x%x", devCb->phyId, devCb->index);
     free(devCb);
     devCb = NULL;
-    return 0;
+    return ret;
 }
 
 STATIC int RsUbQuerySegCb(struct RsUbDevCb *devCb, uint64_t addr, struct RsSegCb **segCb,
@@ -1921,9 +1921,10 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
-    }  else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
+    } else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
         RsUbCtxExpJettyImport(rjettyCb, &rjetty, &tokenValue);
     }
+
     CHK_PRT_RETURN(rjettyCb->tjetty == NULL, hccp_err("import_jetty failed, mode:%d errno:%d", rjettyCb->mode, errno),
         -EOPENSRC);
     return 0;
@@ -2012,11 +2013,15 @@ int RsUbCtxJettyUnimport(struct RsUbDevCb *devCb, unsigned int remJettyId)
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
 
     ret = RsUrmaUnimportJetty(rjettyCb->tjetty);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_unimport_jetty failed, ret:%d, remJettyId %u", ret, remJettyId),
-        -EOPENSRC);
+    if (ret != 0) {
+        hccp_err("rs_urma_unimport_jetty failed, ret:%d, remJettyId %u", ret, remJettyId);
+        ret = -EOPENSRC;
+		goto out;
+    }
 
     hccp_run_info("[deinit][rs_qp]unimport jetty_id:%u success, rjettyCnt:%u, devIndex:0x%x",
         remJettyId, rjettyCnt, devCb->index);
+out:
     free(rjettyCb);
     rjettyCb = NULL;
     return 0;

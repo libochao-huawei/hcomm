@@ -253,7 +253,7 @@ STATIC void RsUbGetAsyncEventResId(urma_async_event_t *event, struct RsUbDevCb *
             *resId = devCb->index;
             break;
         default:
-            hccp_err("invalid event_type:%d dev_index:0x%x", event->event_type, devCb->index);
+            hccp_warn("invalid event_type:%d dev_index:0x%x", event->event_type, devCb->index);
             break;
     }
 }
