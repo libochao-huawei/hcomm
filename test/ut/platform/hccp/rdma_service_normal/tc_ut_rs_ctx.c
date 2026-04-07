@@ -596,6 +596,7 @@ void TcRsCtxQpQueryBatch()
     mocker_invoke(RsGetRsCb, StubRsGetRsCbV1, 10);
     mocker_invoke(RsUbGetDevCb, StubRsUbGetDevCb, 10);
     mocker(RsUbCtxQueryJettyBatch, 1, 0);
+    num = 1;
     ret =  RsCtxQpQueryBatch(&devInfo, ids, attr, &num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();

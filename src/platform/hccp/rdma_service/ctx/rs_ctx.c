@@ -201,9 +201,10 @@ RS_ATTRI_VISI_DEF int RsCtxDeinit(struct RaRsDevInfo *devInfo)
     CHK_PRT_RETURN(ret != 0, hccp_err("get rscb failed, ret:%d", ret), ret);
 
     ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb fail, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
 
-    (void)RsUbCtxDeinit(devCb);
+    ret = RsUbCtxDeinit(devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs ub ctx deinit failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
 
     return ret;
 }
@@ -764,6 +765,8 @@ RS_ATTRI_VISI_DEF int RsCtxQpQueryBatch(struct RaRsDevInfo *devInfo, unsigned in
     RS_CHECK_POINTER_NULL_RETURN_INT(ids);
     RS_CHECK_POINTER_NULL_RETURN_INT(attr);
     RS_CHECK_POINTER_NULL_RETURN_INT(num);
+    CHK_PRT_RETURN(*num == 0 || *num > HCCP_MAX_QP_QUERY_NUM, hccp_err("num[%d] should <= %d and not zero",
+        *num, HCCP_MAX_QP_QUERY_NUM), -EINVAL);
 
     ret = RsGetRsCb(devInfo->phyId, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("get rscb failed, ret:%d", ret), ret);

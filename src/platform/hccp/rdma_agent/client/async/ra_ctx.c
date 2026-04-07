@@ -174,9 +174,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxQpDestroyBatchAsync(void *ctxHandle, void *qpHandle
     CHK_PRT_RETURN(ctxHandle == NULL || qpHandle == NULL || reqHandle == NULL || num == NULL,
         hccp_err("[destroy_batch][ra_qp]ctx_handle or qp_handle or req_handle or num is NULL"),
         ConverReturnCode(RDMA_OP, -EINVAL));
-    CHK_PRT_RETURN(*num == 0 || *num > HCCP_MAX_QP_DESTROY_BATCH_NUM,
-        hccp_err("[destroy_batch][ra_qp]num(%u) is out of range(0, %u]", *num, HCCP_MAX_QP_DESTROY_BATCH_NUM),
-        ConverReturnCode(RDMA_OP, -EINVAL));
 
     ctxHandleTmp = (struct RaCtxHandle *)ctxHandle;
     ret = RaHdcCtxQpDestroyBatchAsync(ctxHandleTmp, qpHandle, num, reqHandle);
