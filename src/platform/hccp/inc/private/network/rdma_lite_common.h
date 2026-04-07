@@ -83,6 +83,8 @@ struct roce_mem_cq_qp_attr {
     int mem_align; // 0,1:4KB, 2:2MB
     unsigned int use_resv_mem;
     unsigned int resv_mem_pool_id;
+    unsigned int resv0;
+    void *ctx; // refer to struct ibv_context
     unsigned int resv[16U];
 };
 
