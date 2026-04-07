@@ -286,6 +286,9 @@ static int RaHdcRecvRetryMsg(HDC_SESSION session, struct drvHdcMsg *pMsgRcv)
     if (rcvBufLen != outBufLen || ret != 0) {
         hccp_err("[recv][ra_hdc_recv_retry_msg]HDC get retry recv msg failed, ret(%d), rcvBufLen:%d, outBufLen:%d",
             ret, rcvBufLen, outBufLen);
+        if (rcvBufLen != outBufLen) {
+            ret = -EPIPE;
+        }
         return ret;
     }
 
