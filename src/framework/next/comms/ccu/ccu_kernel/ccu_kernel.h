@@ -49,8 +49,6 @@
 #endif
 #include "ccu_types.h"
 
-using CcuKernelHandle = uint64_t;
-
 namespace hcomm {
 
 struct GroupInfo {
@@ -102,6 +100,9 @@ public:
 
 public:
     CcuResult VariableCreate(CcuVariableHandle *var);
+    CcuResult VariableCreate(const ChannelHandle channel,
+        uint32_t varIndex, CcuVariableHandle *varHandle);
+
     CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
     CcuResult VariableAssignVar(CcuVariableHandle var, CcuVariableHandle varA);
     CcuResult VariableAddVarToVar(CcuVariableHandle resVar,
@@ -184,7 +185,8 @@ public:
         CcuVariableHandle lenHandle, HcclDataType dataType,
         HcclReduceOp opType, CcuEventHandle eventHandle);
     /*========== 远端同步操作 ==========*/
-    CcuResult WriteVariableWithSignal(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+    CcuResult WriteNotify(const ChannelHandle channel, uint32_t remoteNotifyIdx,  uint32_t mask);
+    CcuResult WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
     CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
 private:
