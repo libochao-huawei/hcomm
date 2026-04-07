@@ -65,7 +65,7 @@ STATIC struct RaAsyncOpHandle *RaHdcIsAsyncOp(unsigned int opcode)
 
 STATIC void HdcAsyncHandlePrivData(struct RaRequestHandle *reqHandle)
 {
-    if (reqHandle->opHandle->privDataHandle == NULL) {
+    if (reqHandle->opHandle == NULL || reqHandle->opHandle->privDataHandle == NULL) {
         return;
     }
 
@@ -653,7 +653,7 @@ int RaHdcInitAsync(struct RaInitConfig *cfg)
     return 0;
 
 err:
-    RaHdcAsyncMutexDeinit(cfg->phyId);
+    RaHdcDeinitAsync(cfg->phyId);
     return -ESRCH;
 }
 

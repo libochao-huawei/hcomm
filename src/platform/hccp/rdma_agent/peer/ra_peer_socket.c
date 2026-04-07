@@ -43,7 +43,7 @@ int RaPeerGetServerSocketErrInfo(unsigned int phyId, struct SocketListenInfoT co
     int ret;
 
     ret = RaGetSocketListenInfo(conn, num, connOut, MAX_SOCKET_NUM);
-    CHK_PRT_RETURN(ret, hccp_err("[get][ra_peer_socket]ra_get_socket_listen_info failed "
+    CHK_PRT_RETURN(ret, hccp_err("[get][ra_peer_socket]ra server get socket info failed "
         "ret(%d)", ret), ret);
 
     RaPeerMutexLock(phyId);
