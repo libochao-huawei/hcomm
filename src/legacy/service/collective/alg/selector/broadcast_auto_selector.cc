@@ -126,7 +126,7 @@ SelectorStatus BroadcastAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
 
     if (topoInfo.levelNum > 1) {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (topoInfo->netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
                 primQueueGenName = "InsBroadcastNHR";
             } else {
                 primQueueGenName = "InsBroadcastParallelMesh1DNHR";
