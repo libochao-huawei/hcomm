@@ -58,7 +58,7 @@ HcclResult AivUbMemTransport::Init()
         HCCL_ERROR("[AivUbMemTransport][Init] bufferNum is 0.");
         return HCCL_E_PARA;
     }
-    HCCL_INFO("channelDesc_.memHandleNum: %u", bufferNum);
+    HCCL_INFO("[AivUbMemTransport][Init] channelDesc_.memHandleNum: %u", bufferNum);
     CHK_RET(FillTagVec(channelDesc_.memHandles, bufferNum, localRmaBufferVec_, localUserMemTag_));
 
     baseStatus_ = Hccl::TransportStatus::INIT;
