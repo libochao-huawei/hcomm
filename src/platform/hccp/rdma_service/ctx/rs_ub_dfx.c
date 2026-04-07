@@ -219,7 +219,7 @@ int RsEpollEventJfcInHandle(struct rs_cb *rsCb, int fd)
     return -ENODEV;
 }
 
-STATIC void RsUbGetAsyncEventResId(urma_async_event_t *event, struct RsUbDevCb *devCb,
+STATIC int RsUbGetAsyncEventResId(urma_async_event_t *event, struct RsUbDevCb *devCb,
     unsigned int *resId)
 {
     switch (event->event_type) {
@@ -254,8 +254,10 @@ STATIC void RsUbGetAsyncEventResId(urma_async_event_t *event, struct RsUbDevCb *
             break;
         default:
             hccp_err("invalid event_type:%d dev_index:0x%x", event->event_type, devCb->index);
-            break;
+            return -EINVAL;
     }
+
+    return 0;
 }
 
 STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
@@ -277,7 +279,12 @@ STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
     }
     RsUrmaAckAsyncEvent(event);
 
-    RsUbGetAsyncEventResId(event, devCb, &asyncEventCb->resId);
+    ret = RsUbGetAsyncEventResId(event, devCb, &asyncEventCb->resId);
+    if (ret != 0) {
+        hccp_err("RsUbGetAsyncEventResId failed, ret:%d errno:%d devIndex:0x%x", ret, errno, devCb->index);
+        goto free_event_cb;
+    }
+
     hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, asyncEventCb->resId,
         devCb->index);
 

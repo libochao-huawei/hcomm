@@ -137,6 +137,8 @@ HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct PingTargetInfo 
     phyId = pingHandleTmp->phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[add][ra_ping]phyId(%u) must less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
+    CHK_PRT_RETURN(pingHandleTmp->targetCnt + num < num,
+        hccp_err("[add][ra_ping]pingHandleTmp->targetCnt + num is out of range"), ConverReturnCode(RDMA_OP, -EINVAL));
 
     RA_PTHREAD_MUTEX_LOCK(&pingHandleTmp->mutex);
     // disallow add target when task is running
