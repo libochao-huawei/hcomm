@@ -25,6 +25,7 @@ constexpr unsigned int DEFAULT_VALUE_DEVICEPORT = 16666;
 constexpr unsigned int MAX_VALUE_DEVICEPORT = 65535;
 constexpr unsigned int MIN_VALUE_DEVICEPORT = 1;
 constexpr unsigned int MAX_LEVEL_lIST  = 8; 
+const IpAddress DEVICE_PORT_KEY_IPADDRESS = IpAddress();  // 用于socketmanager的端口占用，vnic情况下使用
 class NewRankInfo{
 public:
     NewRankInfo() {};

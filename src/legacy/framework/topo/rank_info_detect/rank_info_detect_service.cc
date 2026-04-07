@@ -39,15 +39,6 @@ void RankInfoDetectService::Setup()
     BroadcastRankTable();
 }
 
-void RankInfoDetectService::Update()
-{    
-    // 1. 接收所有rank发来的新localRankTable并整合为全局RankTable
-    GetRankTable();
-    
-    // 2. 将完整RankTable广播给所有rank
-    BroadcastRankTable();
-}
-
 void RankInfoDetectService::GetConnections()
 {
     HCCL_INFO("[RankInfoDetectService::%s] start.", __func__);

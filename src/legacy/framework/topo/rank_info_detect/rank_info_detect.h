@@ -27,7 +27,6 @@ namespace Hccl {
 const u32 RANKINFO_DETECT_SERVER_STATUS_IDLE = 0;
 const u32 RANKINFO_DETECT_SERVER_STATUS_RUNING = 1;
 const u32 RANKINFO_DETECT_SERVER_STATUS_ERROR = 2;
-const u32 RANKINFO_DETECT_SERVER_STATUS_UPDATE = 3;
 
 class RankInfoDetect {
 public:
@@ -35,7 +34,6 @@ public:
 
     void SetupServer(HcclRootHandleV2 &rootHandle);
     void SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle);
-    HcclResult UpdateAgent(u32 devicePort);
     void GetRankTable(RankTableInfo &ranktable) const;
     void WaitComplete(u32 listenPort, u32 listenStatus) const;
 
