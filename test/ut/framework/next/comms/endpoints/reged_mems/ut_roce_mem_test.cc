@@ -64,7 +64,7 @@ TEST_F(RoceRegedMemMgrTest, Ut_GetParamsFromMemDesc_When_DescLenEqualSize_Expect
     char buffer[sizeof(EndpointDesc)];
     uint32_t descLen = sizeof(EndpointDesc);
     
-    MOCKER_CPP_VIRTURL(dto,&Hccl::ExchangeRdmaBufferDto::Deserialize)
+    MOCKER_CPP_VIRTUAL(dto,&Hccl::ExchangeRdmaBufferDto::Deserialize)
         .stubs();
     
     HcclResult ret = roceRegedMemMgrPtr->GetParamsFromMemDesc(buffer, descLen, endpointDesc, dto);
