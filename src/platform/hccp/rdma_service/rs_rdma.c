@@ -1626,8 +1626,6 @@ STATIC int RsInitMemPool(struct RsQpCb *qpCb)
     memAttr.recv_qp_depth = qpCb->rxDepth;
     memAttr.recv_cq_depth = (unsigned int)qpCb->recvCqDepth;
     memAttr.recv_sge_num = qpCb->recvSgeNum;
-    memAttr.use_resv_mem = qpCb->useResvMem;
-    memAttr.resv_mem_pool_id = qpCb->resvMemPoolId;
 
     ret = RsRoceInitMemPool(&memAttr, &qpCb->memResp.memData, qpCb->rdevCb->rsCb->chipId);
     if (ret != 0) {
@@ -1813,8 +1811,6 @@ STATIC int RsQpcbInitWithAttrs(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb,
     qpCb->aiOpSupport = qpNorm->aiOpSupport;
     qpCb->grpId = rdevCb->rsCb->grpId;
     qpCb->cqCstmFlag = qpNorm->extAttrs.dataPlaneFlag.bs.cqCstm;
-    qpCb->useResvMem = qpNorm->extAttrs.cstmFlag.bs.useResvMem;
-    qpCb->resvMemPoolId = qpNorm->extAttrs.resvMemPoolId;
 
     ret = RsEpollCtl(rdevCb->rsCb->connCb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
