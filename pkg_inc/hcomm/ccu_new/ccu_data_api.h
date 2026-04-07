@@ -13,12 +13,11 @@
 
 #include <stdint.h>
 
+#include "hccl_types.h"
 #include "hcomm_primitives.h"
 
 #include "ccu_types.h"
 #include "ccu_data_resource.h"
-
-#include "hccl_types.h"
 
 #ifdef __cplusplus
 #include "ccu_loop_macro.h"
@@ -43,6 +42,9 @@ extern "C" {
  */
 
 extern CcuResult CcuVariableCreate(CcuVariable* variable);
+
+extern CcuResult CcuVariableCreateFromChannel(ChannelHandle channel, uint32_t varIndex, CcuVariable *var);
+
 extern CcuResult CcuAddressCreate(CcuAddress* address);
 //支持从SQE加载参数
 extern CcuResult CcuLoadArg(CcuVariable variable);
@@ -292,7 +294,9 @@ extern CcuResult CcuWriteHBMToHBMReduce(
     HcclReduceOp opType, CcuEvent event);
 
 /*========== 远端同步操作 ==========*/
+
 extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+extern CcuResult CcuWriteNotify(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
 extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
 /**
