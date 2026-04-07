@@ -224,7 +224,7 @@ SelectorStatus ReduceScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
         } else if (topoInfo.Level0Nhr) {
             primQueueGenName = "InsReduceScatterParallelNHRNHR";
         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (topoInfo->netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
                 primQueueGenName = "InsReduceScatterNHR";
             } else {
                 primQueueGenName = "InsReduceScatterParallelMesh1DNHR";
