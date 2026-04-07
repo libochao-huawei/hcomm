@@ -23,6 +23,13 @@ CcuResult CcuVariableCreate(CcuVariable* variable)
     return CcuResult::CCU_SUCCESS;
 }
 
+CcuResult CcuVariableCreateFromChannel(ChannelHandle channel, uint32_t varIndex, CcuVariable *var)
+{
+    CcuVariableHandle varHandle{0};
+    CCU_CHK_RET(CcuVariableCreateFromChannelImpl(channel, varIndex, &varHandle));
+    var->handle = varHandle;
+    return CcuResult::CCU_SUCCESS;
+}
 
 CcuResult CcuIfBegin(CcuVariable *var, uint64_t immediate,
     CcuConditionType condType, const char *label)
@@ -342,9 +349,16 @@ CcuResult CcuWriteHBMToHBMReduce(
 /*========== 远端同步操作 ==========*/
 CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
 {
-    CCU_CHK_RET(CcuNotifyRecordImpl(channel, var.handle, remoteVarIdx, remoteNotifyIdx, mask));
+    CCU_CHK_RET(CcuWriteVariableWithNotifyImpl(channel, var.handle, remoteVarIdx, remoteNotifyIdx, mask));
     return CcuResult::CCU_SUCCESS;
 }
+
+CcuResult CcuWriteNotify(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
+{
+    CCU_CHK_RET(CcuWriteNotifyImpl(channel, remoteNotifyIdx, mask));
+    return CcuResult::CCU_SUCCESS;
+}
+
 CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
 {
     CCU_CHK_RET(CcuNotifyWaitImpl(channel, localNotifyIdx, mask));
