@@ -67,7 +67,7 @@
 #include "hcom_common.h"
 #include "rt_external.h"
 #include "acl_rt.h"
-#include "common/CommBaseTest.h"
+#include "common/ut_comm_base_test.h""
 using namespace std;
 using namespace hccl;
 
