@@ -188,7 +188,18 @@ NetInstance *RankGraph::GetNetInstanceByRankId(u32 netLayer, RankId rankId)
         THROW<NullPtrException>(StringFormat("[RankGraph][GetGroup]GetNetInstance(rankId, netLayer) is nullptr"));
     }
     string netInstId = constInstance->GetNetInstId();
-    return netInsts_.at(netLayer).at(netInstId).get();
+    if (netLayer >= netInsts_.size() || netInsts_.at(netLayer).count(netInstId) == 0) {
+        HCCL_ERROR("[RankGraph][GetNetInstanceByRankId] netLayer[%u] netInstId[%s] is not existed, netInsts size[%u].", netLayer,
+                     netInstId.c_str(), netInsts_.size());
+        return nullptr;
+    }
+    auto &netInstPtr = netInsts_.at(netLayer).at(netInstId);
+    if (netInstPtr == nullptr) {
+        HCCL_ERROR("[RankGraph][GetNetInstanceByRankId] netLayer[%u] netInstId[%s] is nullptr.", netLayer,
+                     netInstId.c_str());
+        return nullptr;
+    }
+    return netInstPtr.get();
 }
 
 const shared_ptr<NetInstance::Peer> RankGraph::GetPeer(RankId rankId) const
