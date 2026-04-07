@@ -109,12 +109,14 @@ int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbo
 
 TaskAbortHandler::TaskAbortHandler()
 {
-    HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector));
+    std::string name = "HCCL";
+    HrtDeviceAbortRegCallBack(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector), name);
 }
 
 TaskAbortHandler::~TaskAbortHandler()
 {
-    DECTOR_TRY_CATCH("TaskAbortHandler", HrtDeviceAbortRegCallBack(nullptr, nullptr));
+    std::string name = "HCCL";
+    DECTOR_TRY_CATCH("TaskAbortHandler", HrtDeviceAbortRegCallBack(nullptr, nullptr, name));
 }
 
 TaskAbortHandler &TaskAbortHandler::GetInstance()

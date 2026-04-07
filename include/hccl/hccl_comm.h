@@ -246,6 +246,14 @@ extern HcclResult HcclCommSuspend(HcclComm comm) HCOMM_WEAK_SYMBOL;
 extern HcclResult HcclCommResume(HcclComm comm) HCOMM_WEAK_SYMBOL;
 
 /**
+ * @brief Get the current status of the communication.
+ * @param comm A pointer identifying the communication resource to query
+ * @param status A pointer to store the retrieved communication status.
+ * @return HcclResult
+*/
+extern HcclResult HcclCommGetStatus(HcclComm comm, HcclCommStatus *status) HCOMM_WEAK_SYMBOL;
+
+/**
  * @brief Set the virtual memory range to HCCL communicator
  * @param comm A pointer identifying the communication resource based on.
  * @param baseVirPtr The base address of memory range

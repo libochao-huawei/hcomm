@@ -93,8 +93,8 @@ HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNu
         CHK_RET(collComm->GetParentRankId(mc2CommInfo.parentRankId));
         HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
         CHK_PTR_NULL(hcclCommDfx);
-        hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
         if (engine == CommEngine::COMM_ENGINE_AICPU_TS || engine == CommEngine::COMM_ENGINE_AICPU) {
+            hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
             HCCL_INFO("[HcclThreadAciqure] ReportThreadAciqureKernel begin");
             const std::string KernelName = "RunAicpuIndOpThreadInit";
             CHK_RET(hcclCommDfx->ReportKernel(beginTime, commId, KernelName, SalGetTid()));
@@ -160,20 +160,22 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
             HCCL_ERROR("[HcclThreadAcquire] HcclThreadAcquire  HcommThreadRegisterDfx failed");
             return HCCL_E_PTR;
         }
-        Thread *threadPtr = reinterpret_cast<Thread *>(*thread);
-        CHK_PTR_NULL(threadPtr);
-        Stream *threadStream = threadPtr->GetStream();
-        CHK_PTR_NULL(threadStream);
-        Mc2CommInfo mc2CommInfo;
-        mc2CommInfo.FreeStreamId = 0;
-        mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->id()));
-        mc2CommInfo.groupname = commId;
-        mc2CommInfo.myRankId = collComm->GetMyRankId();
-        mc2CommInfo.rankSize = collComm->GetRankSize();
-        CHK_RET(collComm->GetParentRankId(mc2CommInfo.parentRankId));
-        HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
-        CHK_PTR_NULL(hcclCommDfx);
-        hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
+        if (engine == CommEngine::COMM_ENGINE_AICPU_TS || engine == CommEngine::COMM_ENGINE_AICPU) {
+            Thread *threadPtr = reinterpret_cast<Thread *>(*thread);
+            CHK_PTR_NULL(threadPtr);
+            Stream *threadStream = threadPtr->GetStream();
+            CHK_PTR_NULL(threadStream);
+            Mc2CommInfo mc2CommInfo;
+            mc2CommInfo.FreeStreamId = 0;
+            mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->id()));
+            mc2CommInfo.groupname = commId;
+            mc2CommInfo.myRankId = collComm->GetMyRankId();
+            mc2CommInfo.rankSize = collComm->GetRankSize();
+            CHK_RET(collComm->GetParentRankId(mc2CommInfo.parentRankId));
+            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+            CHK_PTR_NULL(hcclCommDfx);
+            hcclCommDfx->ReportMc2CommInfo(mc2CommInfo);
+        }
     }
     else {
         auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();

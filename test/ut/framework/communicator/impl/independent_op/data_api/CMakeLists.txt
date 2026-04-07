@@ -24,7 +24,6 @@ set(src_to_test_list
     ut_aicpu_ts_HcommChannelFenceOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/rtsq_base.cc
-
     ${HCCL_LLT_ROOT}/ut/stub/legacy/llt_stub_ub_transport_lite_impl.cc
 )
 
@@ -66,7 +65,5 @@ target_link_libraries(hcomm_utest_api_data_aicpu_ts PRIVATE
 )
 add_dependencies(hcomm_utest_api_data_aicpu_ts hccl_llt)
 
-run_llt_test(
-   TARGET  hcomm_utest_api_data_aicpu_ts
-   TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hcomm_utest_api_data_aicpu_ts COMMAND hcomm_utest_api_data_aicpu_ts)

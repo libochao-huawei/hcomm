@@ -227,7 +227,10 @@ set(HCOMM_LEGACY_INCLUDE_LIST
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/buffer
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel/dpu_notify
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel
-    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/profiling
+    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/task_exception
+ 	${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/profiling
+    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/common
+    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu
     ${HCOMM_CODE_LEGACY}/framework/dfx/task_exception
     ${HCOMM_CODE_LEGACY}/framework/dfx/profiling
     ${HCOMM_CODE_LEGACY}/framework/dfx/common

@@ -48,6 +48,10 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
         return SelectorStatus::NOT_MATCH;
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
+                // 不支持 inplace 场景
+                return SelectorStatus::NOT_MATCH;
+            }
             if (Is2DieFullMesh()) {
                 HCCL_WARNING("[Algo][ReduceAutoSelector] 2DieFullMesh is not supported yet for ccu_ms mode.");
                 return SelectorStatus::NOT_MATCH;
@@ -230,7 +234,11 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
             SelectorStatus::NOT_MATCH);
 
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "InsReduceParallelMesh1DNHR";
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+                primQueueGenName = "InsReduceNHR";
+            } else {
+                primQueueGenName = "InsReduceParallelMesh1DNHR";
+            }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             primQueueGenName = "InsReduceNHR";
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {

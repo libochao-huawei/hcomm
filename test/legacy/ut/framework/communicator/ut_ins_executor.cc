@@ -100,7 +100,8 @@ void MockRtsqA5(CommunicatorImplLite &communicatorImplLite)
     rtsq->sqTail_ = 500;
     rtsq->sqDepth_ = 1000;
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::LaunchTask).stubs().with(any());
-    MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::NotifyWait).stubs().with(any());
+    MOCKER_CPP_VIRTUAL(*rtsq, static_cast<void (RtsqA5::*)(u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
+    MOCKER_CPP_VIRTUAL(*rtsq, static_cast<void (RtsqA5::*)(u32, u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::NotifyRecordLoc).stubs().with(any());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::SdmaReduce).stubs().with(any());
     MOCKER_CPP_VIRTUAL(*rtsq, &RtsqA5::IsRtsqQueueSpaceSufficient).stubs().with(any()).will(returnValue(true));

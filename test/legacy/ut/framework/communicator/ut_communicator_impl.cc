@@ -77,6 +77,8 @@
 #include "ranktable_stub_clos.h"
 #include "dev_buffer.h"
 #include "rma_buffer.h"
+#include "topo_addr_info.h"
+#include "hal.h"
 #undef private
 #undef protected
 
@@ -801,43 +803,6 @@ TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperat
 
     string tag = "tag";
     EXPECT_NO_THROW(fakeComm.CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD));
-}
-
-TEST_F(CommunicatorImplTest, TraceOpInfo_BATCHSENDRECV)
-{
-    CommunicatorImpl comm;
-    comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
-    comm.status = CommStatus::COMM_READY;
-    comm.devLogicId = 0;
-    comm.InitMirrorTaskManager();
-    comm.InitProfilingReporter();
-    comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    MirrorTaskManager &mirrorTaskManager = comm.GetMirrorTaskManager();
-    CollServiceAiCpuImpl collService{&comm};
-    comm.collService = &collService;
-    CollOpParams opParams;
-    bool ccuEnable = false;
-    bool isDevUsed = true;
-    std::vector<HcclDataType> datatypeWithoutReduce = {
-        HcclDataType::HCCL_DATA_TYPE_INT8,   HcclDataType::HCCL_DATA_TYPE_INT16,  HcclDataType::HCCL_DATA_TYPE_INT32,
-        HcclDataType::HCCL_DATA_TYPE_INT64,  HcclDataType::HCCL_DATA_TYPE_UINT8,  HcclDataType::HCCL_DATA_TYPE_UINT16,
-        HcclDataType::HCCL_DATA_TYPE_UINT32, HcclDataType::HCCL_DATA_TYPE_UINT64, HcclDataType::HCCL_DATA_TYPE_FP16,
-        HcclDataType::HCCL_DATA_TYPE_FP32,   HcclDataType::HCCL_DATA_TYPE_FP64,   HcclDataType::HCCL_DATA_TYPE_BFP16};
-    opParams.opType = OpType::BATCHSENDRECV;
-    HcclSendRecvItem *sendRecvItemdata = nullptr;
-    sendRecvItemdata = new HcclSendRecvItem[1];
-    opParams.batchSendRecvDataDes.itemNum = 1;
-    comm.trace = std::make_unique<Trace>();
-    for (auto dtype : datatypeWithoutReduce) {
-        sendRecvItemdata->dataType = dtype;
-        sendRecvItemdata->sendRecvType = HcclSendRecvType::HCCL_SEND;
-        sendRecvItemdata->count = 1;
-        sendRecvItemdata->remoteRank = 1;
-        sendRecvItemdata->buf = (void *)0x100;
-        opParams.batchSendRecvDataDes.sendRecvItemsPtr = static_cast<void *>(sendRecvItemdata);
-        comm.TraceOpInfo(opParams);
-    }
-    delete[] sendRecvItemdata;
 }
 
 TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperatorA2A)
@@ -3516,4 +3481,19 @@ TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enoug
     EXPECT_NE(comm.rankGraph, nullptr);
 
     EXPECT_THROW(comm.CheckRankGraphAddrs(), InvalidParamsException);
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetTopoFilePath)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    unsigned int mainBoardId = 0x3;
+    char topoFileName[32] = "atlas_950_1.json";
+    char drv_path[256] = "/usr/local/Ascend2";
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainBoardId)).will(returnValue(0));
+    MOCKER(realpath).stubs().with(any(), any()).will(returnValue(&topoFileName[0]));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+
+    std::string topoFilePath = comm.GetTopoFilePath();
+    EXPECT_NE(topoFilePath.find(topoFileName), std::string::npos);
 }

@@ -316,6 +316,19 @@ HcclResult AicpuTsUrmaChannel::H2DResPack(std::vector<char>& buffer)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuTsUrmaChannel::Clean()
+{
+    memTransport_.reset();
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuTsUrmaChannel::Resume()
+{
+    BuildConnection();
+    BuildUbMemTransport();
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
     return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
