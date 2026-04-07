@@ -47,9 +47,9 @@ private:
     HcclResult DeSerializeFromMemDesc(const void *memDesc, uint32_t descLen,
         EndpointDesc &endpointDesc, std::string &ipcRmaBufferDesc);
 
-    HcclResult AddMemDesc(EndpointDesc &endpointDesc, std::string &ipcRmaBufferDesc,
+    HcclResult AddMemDesc(EndpointDesc &endpointDesc, const void *memDesc, uint32_t descLen,
         std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer);
-    HcclResult DeleteMemDesc(EndpointDesc &endpointDesc, std::string &ipcRmaBufferDesc,
+    HcclResult DeleteMemDesc(EndpointDesc &endpointDesc, const void *memDesc, uint32_t descLen,
         std::shared_ptr<hccl::RemoteIpcRmaBuffer> &remoteIpcRmaBuffer);
 private:
     HcclNetDevCtx netDevCtx_{};
