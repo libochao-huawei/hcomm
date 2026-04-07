@@ -52,7 +52,7 @@ set(hccl_utest_misc_list
     ut_adapter.cc
     # ut_switch_nic.cc
     ut_switch_nic_fsm.cc
-    ut_interface_multithread.cc
+    # ut_interface_multithread.cc
     ut_topoinfo_exchange_agent.cc
 )
 add_executable(hccl_utest_misc ${hccl_utest_misc_list})

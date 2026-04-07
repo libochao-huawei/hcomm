@@ -17,12 +17,6 @@
 #include "network_manager_pub.h"
 
 namespace hccl{
-//预留后续扩展多个池子信息，使用逗号,间隔resv_mem_$dev_id=$type_$pool_id_$total_mem_size_$page_size
-#define HCCN_RESV_MEM_TYPE_OFFSET (0)
-#define HCCN_RESV_MEM_POOLID_OFFSET (1)
-#define HCCN_RESV_MEM_PAGESIZE_OFFSET (3)
-#define HCCN_RSCV_MEM_COUNT (4)
-#define HCCN_RESV_MEM_PAGESIZE_64K (64)
 constexpr u32 RETRY_CQE_ARRAY_SIZE = 128; // 重执行时获取的CQE数组的最大数量，最大128
 RdmaResourceManager::RdmaResourceManager() : nicDeploy_(NICDeployment::NIC_DEPLOYMENT_DEVICE)
 {
@@ -96,7 +90,6 @@ HcclResult RdmaResourceManager::Init()
     CHK_RET(hrtRaRegGlobalMr(rdmaHandle_, notifyMrInfo_, mrHandle_));
     HCCL_RUN_INFO("[RdmaResourceManager][Init] Register NotifyBaseAddr addr[%p] size[%llu] key[%u]", notifyMrInfo_.addr,
         notifyMrInfo_.size, notifyMrInfo_.lkey);
-    CHK_RET(InitResvMemInfo());
     return HCCL_SUCCESS;
 }
 
@@ -179,67 +172,4 @@ HcclResult RdmaResourceManager::GetNotifyMrInfo(struct MrInfoT& mrInfo)
     HCCL_RUN_INFO("[RdmaResourceManager][GetNotifyMrInfo] SyncMem key[%u].", mrInfo.lkey);
     return HCCL_SUCCESS;
 }
-
-HcclResult RdmaResourceManager::InitResvMemInfo() {
-    std::string flagValue;
-    std::vector<std::string> parts;
-    std::vector<std::string> tokens;
-    std::string token;
-    HcclResult vRet = HrtRaGetHccnCfg(static_cast<std::uint32_t>(nicDeploy_), devicePhyId_,
-        HccnCfgKeyT::HCCN_RESV_MEM_INFO, flagValue);
-    if ((vRet != HCCL_SUCCESS) || (flagValue.empty())) {
-        return vRet;
-    }
-    HCCL_DEBUG("[InitResvMemInfo] resvMemInfo[%s].", flagValue.c_str());
-    std::istringstream partStream(flagValue);
-    while (std::getline(partStream, token, ',')) {
-        parts.push_back(token);
-    }
-    for (auto s:parts) {
-        std::istringstream tokenStream(s);
-        while (std::getline(tokenStream, token, '_')) {
-            tokens.push_back(token);
-        }
-        if (tokens.size() != HCCN_RSCV_MEM_COUNT) {
-            HCCL_ERROR("[InitResvMemInfo] resvMemInfo count[%u] is not equal [%u].",
-                tokens.size(), HCCN_RSCV_MEM_COUNT);
-            return HCCL_E_PARA;
-        }
-        for (u32 i=0; i<tokens.size(); i++) {
-            for (char c:tokens[i]) {
-                if (!std::isdigit(c)) {
-                    HCCL_ERROR("[InitResvMemInfo] resvMemInfo[%s] is invalid.", tokens[i].c_str());
-                    return HCCL_E_PARA;
-                }
-            }
-        }
-
-        u32 type = std::stoi(tokens[HCCN_RESV_MEM_TYPE_OFFSET]);
-        u32 pageSize = std::stoi(tokens[HCCN_RESV_MEM_PAGESIZE_OFFSET]);
-        u32 poolId = std::stoi(tokens[HCCN_RESV_MEM_POOLID_OFFSET]);
-        int supportLite;
-        if (HCCL_SUCCESS == HrtGetRdmaLiteStatus(rdmaHandle_, &supportLite)) {
-            if (((2 == supportLite) && (HCCN_RESV_MEM_PAGESIZE_64K == pageSize)) || (1 == supportLite)) {
-                resvMemInfo_.insert({type, poolId});
-            }
-        }
-        tokens.clear();
-    }
-
-    return HCCL_SUCCESS;
-}
-
-HcclResult RdmaResourceManager::GetResvMemPoolIdByType(u32 type, u32& poolId)
-{
-    auto it = resvMemInfo_.find(type);
-    if (it == resvMemInfo_.end()) {
-        HCCL_WARNING("[RdmaResourceManager][GetResvMemInfo] can not find [%u].", type);
-        return HCCL_E_NOT_FOUND;
-    }
-
-    poolId = resvMemInfo_[type];
-    HCCL_RUN_INFO("[RdmaResourceManager][GetResvMemInfo] type[%u], resvMemPoolId [%u].", type, poolId);
-    return HCCL_SUCCESS;
-}
-
 }

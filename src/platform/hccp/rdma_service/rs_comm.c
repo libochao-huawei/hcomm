@@ -92,7 +92,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
 #endif
     {RA_RS_GET_TLS_ENABLE, 1},
     {RA_RS_GET_SEC_RANDOM, 1},
-    {RA_RS_GET_HCCN_CFG, 2},
+    {RA_RS_GET_HCCN_CFG, 1},
     {RA_RS_GET_ROCE_API_VERSION, 0},
     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
     {RA_RS_GET_DEV_EID_INFO_LIST, 1},

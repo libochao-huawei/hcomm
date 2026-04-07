@@ -328,8 +328,6 @@ int RsDrvCreateCqWithAttrs(struct RsQpCb *qpCb, int isExt, struct CqExtAttr *cqA
         .ai_op_support = qpCb->aiOpSupport,
         .grp_id = qpCb->grpId,
         .cq_cstm_flag = qpCb->cqCstmFlag,
-        .use_resv_mem = qpCb->useResvMem,
-        .resv_mem_pool_id = qpCb->resvMemPoolId,
     };
     struct ibv_comp_channel *channel = qpCb->channel;
 
@@ -1032,9 +1030,8 @@ STATIC int RsDrvExpQpCreateInitWithAttrs(struct ibv_exp_qp_init_attr *qpInitAttr
     CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ENOMEM);
     qpInitAttr->attr.qp_type = qpNorm->extAttrs.qpAttr.qp_type;
     qpInitAttr->attr.sq_sig_all = qpNorm->extAttrs.qpAttr.sq_sig_all;
+
     qpInitAttr->udp_sport = qpCb->udpSport;
-    qpInitAttr->use_resv_mem = qpNorm->extAttrs.cstmFlag.bs.useResvMem;
-    qpInitAttr->resv_mem_pool_id = qpNorm->extAttrs.resvMemPoolId;
 
     return 0;
 }
@@ -1059,7 +1056,6 @@ STATIC int RsDrvExpQpCreateWithAttrs(struct RsQpCb *qpCb, struct RsQpNormWithAtt
     qpInitAttr.ai_op_support = qpCb->aiOpSupport;
     qpInitAttr.grp_id = qpCb->grpId;
     qpInitAttr.qp_cstm_flag = qpCb->aiOpSupport;
-
     /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     qpCb->ibQp = RsIbvExpCreateQp(qpCb->ibPd, &qpInitAttr, &qpCb->qpResp.qpData);
     CHK_PRT_RETURN(qpCb->ibQp == NULL, hccp_err("rs_ibv_exp_create_qp failed"), -ENOMEM);
@@ -1111,6 +1107,7 @@ STATIC int RsDrvNormalQpCreateInitWithAttrs(struct ibv_qp_init_attr *qpInitAttr,
     CHK_PRT_RETURN(ret, hccp_err("memcpy_s for qp_init_attr failed, ret:%d", ret), -ENOMEM);
     qpInitAttr->qp_type = qpNorm->extAttrs.qpAttr.qp_type;
     qpInitAttr->sq_sig_all = qpNorm->extAttrs.qpAttr.sq_sig_all;
+
     return ret;
 }
 
