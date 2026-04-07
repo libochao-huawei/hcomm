@@ -346,6 +346,8 @@ public:
     std::mutex operatorlock_;
     HcclResult Suspend();
     HcclResult Resume();
+    HcclResult GetCommStatus(HcclCommStatus &status);
+
     HcclResult InitZeroCopyMemoryAgent();
     HcclResult DeinitZeroCopyMemoryAgent();
     HcclResult SetMemoryRange(void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);

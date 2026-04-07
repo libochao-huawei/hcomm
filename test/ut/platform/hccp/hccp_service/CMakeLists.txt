@@ -50,8 +50,9 @@ target_include_directories(hccp_utest PRIVATE
     ${SRC_DIR}/src/platform/hccp/external_depends/rdma-core/include	 
     ${CANN_3RD_LIB_PATH}/json/include/	 
     ${CANN_3RD_LIB_PATH}/gtest/include/	 
-    ${CANN_3RD_LIB_PATH}/mockcpp/include/	 
+    ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+    ${CANN_3RD_LIB_PATH}/boost/
 )
 
 target_compile_options(hccp_utest PRIVATE
@@ -80,7 +81,5 @@ target_link_libraries(hccp_utest PRIVATE
     -ldl
 )
 
-run_llt_test(
-    TARGET hccp_utest
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccp_utest COMMAND hccp_utest)

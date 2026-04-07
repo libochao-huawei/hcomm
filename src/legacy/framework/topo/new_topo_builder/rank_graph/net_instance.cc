@@ -208,6 +208,25 @@ string NetInstance::Describe() const
                         netType.Describe().c_str(), rankIds.size());
 }
 
+void CheckPortGroupSize(u32 netLayer, NetInstance::Link& srcLink, NetInstance::Link& dstLink)
+{
+    auto srcConnIface = srcLink.GetSourceIface();
+    auto targetConnIface = dstLink.GetTargetIface();
+    auto srcPortGroupSize = static_cast<u8>(srcConnIface->GetPorts().size());
+    auto tgtPortGroupSize = static_cast<u8>(targetConnIface->GetPorts().size());
+    if (srcPortGroupSize != tgtPortGroupSize) {
+        auto srcPeer = srcLink.GetSourceNode();
+        auto targetPeer = dstLink.GetTargetNode();
+        auto localAddr = srcConnIface->GetAddr();
+        auto remoteAddr = targetConnIface->GetAddr();
+        auto localRankId = std::dynamic_pointer_cast<NetInstance::Peer>(srcPeer)->GetRankId();
+        auto remoteRankId = std::dynamic_pointer_cast<NetInstance::Peer>(targetPeer)->GetRankId();
+        THROW<InvalidParamsException>(StringFormat("[GetPaths][CheckPortGroupSize] portGroupSize is not equal => src[%u], target[%u]."
+                "LocatedInfo: NetLayer[%u], localRank[%u], rmtRank[%u], localAddr[%s], rmtAddr[%s]", srcPortGroupSize, tgtPortGroupSize,
+                netLayer, localRankId, remoteRankId, localAddr.Describe().c_str(), remoteAddr.Describe().c_str()));
+    }
+}
+
 vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, const RankId dstRankId) const
 {
     vector<NetInstance::Path> paths;
@@ -249,6 +268,7 @@ vector<NetInstance::Path> InnerNetInstance::GetPaths(const RankId srcRankId, con
         if (!srcToFabricLinks.empty() && !fabricToDstLinks.empty()) {
             for (auto& srcLink : srcToFabricLinks) {
                 for (auto& dstLink : fabricToDstLinks) {
+                    CheckPortGroupSize(netLayer, srcLink, dstLink);
                     NetInstance::Path path;
                     path.links = {srcLink, dstLink};
                     paths.emplace_back(path);
@@ -295,6 +315,7 @@ vector<NetInstance::Path> ClosNetInstance::GetPaths(const RankId srcRankId, cons
         });
 
         if (!srcToFabricLink.IsEmpty() && !fabricToDstLink.IsEmpty()) {
+            CheckPortGroupSize(netLayer, srcToFabricLink, fabricToDstLink);
             NetInstance::Path path;
             path.links = {srcToFabricLink, fabricToDstLink};
             paths.emplace_back(path);

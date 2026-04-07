@@ -27,6 +27,7 @@ namespace hcomm {
 
 // 暂时放在adapter
 constexpr uint32_t URMA_EID_LEN = 16;
+MAKE_ENUM(HrtNetworkMode, PEER, HDC);
 
 using Eid = HccpEid; // 使用hccp定义的union表示eid
 
@@ -128,6 +129,10 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxhandle, const HrtRaUbCreateJetty
 HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreateJettyParam &in,
     std::vector<char> &out, void *&jettyHandle, RequestHandle &reqHandle);
 
+MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
+constexpr u32 MAX_JETTY_QUERY_NUM = 128;
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num);
+
 using HrtRaUbJettyImportedOutParam = struct HrtRaUbJettyImportedOutParamDef {
     TargetJettyHandle handle{0};
     u64               targetJettyVa{0};
@@ -160,5 +165,6 @@ HcclResult HccpUbTpImportJettyAsync(const CtxHandle ctxHandle,
     const HccpUbJettyImportedInParam &in, std::vector<char> &out,
     void *&remQpHandle, RequestHandle &reqHandle);
 
+HcclResult HccpRaCustomChannel(HrtNetworkMode mode, uint32_t phyId, void *customIn, void *customOut);
 } // namespace hcomm
 #endif // HCOMM_ADAPTER_HCCP_H

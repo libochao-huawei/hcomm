@@ -3515,7 +3515,6 @@ stream_class::stream_class(s32 device_id) : deviceId_(device_id), streamId_(-1),
  */
 stream_class::~stream_class()
 {
-    HCCL_INFO("HCCL TEST stream_class xigou1");
     try
     {
         // 退出信息记录, 方便问题定位

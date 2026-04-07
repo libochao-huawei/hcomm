@@ -27,7 +27,7 @@ public:
     std::string &GetUniqueId() override;
     uint32_t GetNotifyNum() const override;
     LocalNotify *GetNotify(uint32_t index) const override;
-    HcclResult GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &notifyNum, std::string &notifyDesc);
+    HcclResult GetNotifyByUniqueId(u32 &notifyNum, std::string &notifyDesc);
     HcclResult SupplementNotify(uint32_t notifyNum) override;
     HcclResult SupplementNotify(u32 notifyNum, const std::string &notifyDesc);
 

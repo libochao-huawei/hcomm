@@ -71,7 +71,7 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
             return GetParaNotify();
         default:
-            return "unknown task";
+            return this->taskParam_.taskType.Describe();
     }
 }
 
