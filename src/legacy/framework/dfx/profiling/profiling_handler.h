@@ -133,7 +133,7 @@ public:
 
     void ReportKernel() const;
 
-    void ReportHostApi(OpType opType, uint64_t beginTime, uint64_t endTime, bool cachedReq, bool isAiCpu); 
+    void ReportHostApi(OpType opType, uint64_t beginTime, uint64_t endTime, bool cachedReq, bool isAiCpu, uint32_t numBlocks); 
 
     void ReportHcclOp(const DfxOpInfo &opInfo, bool cachedReq);
 
@@ -154,7 +154,7 @@ public:
     void ReportHcclMC2CommInfo(const u32 kfcStreamId, const std::vector<u32> &aicpuStreamsId, const std::string &id,
                                 RankId myRank, u32 rankSize, RankId rankInParentComm);
     void ReportNodeApi(uint64_t beginTime, uint64_t endTime, uint64_t cmdItemId, uint32_t threadId);
-    void ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId);
+    void ReportNodeBasicInfo(uint64_t timeStamp, uint64_t cmdItemId, uint32_t threadId, uint32_t numBlocks);
 private:
     explicit ProfilingHandler();
 
