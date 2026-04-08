@@ -135,8 +135,23 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
     }
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();
+
+    auto &rankList = rankTable_->ranks;
+    if (static_cast<u32>(myRank_) >= rankList.size()) {
+        THROW<InvalidParamsException>(
+            StringFormat("[RankGraphBuilder][AddFabricInfo] invalid myRank[%u] >= ranksize[%u]",
+                static_cast<u32>(myRank_), rankList.size())
+        );
+    }
+    auto &rankLevelInfoList = rankList[myRank_].rankLevelInfos;
+    if (netLayer >= rankLevelInfoList.size()) {
+        THROW<InvalidParamsException>(
+            StringFormat("[RankGraphBuilder][AddFabricInfo] invalid netLayer[%u] >= rankLevelInfosize[%u]",
+                netLayer, rankLevelInfoList.size())
+        );
+    }
     // 根据planeId确认Fabric个数，每个fabricId对应一个planeId
-    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(rankTable_->ranks[myRank_].rankLevelInfos[netLayer].rankAddrs);
+    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(rankLevelInfoList[netLayer].rankAddrs);
 
     if (planeId2Node.size() == 0) {
         HCCL_WARNING("[RankGraphBuilder][AddFabricInfo] current rankId[%d] netLayer[%u] group no net plane", myRank_, netLayer);
