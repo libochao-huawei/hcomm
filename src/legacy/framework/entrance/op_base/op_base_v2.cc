@@ -395,7 +395,7 @@ HcclResult HcclCommInitClusterInfoConfigV2(
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("Entry-HcclCommInitClusterInfoConfig V910_95, commEngine[%u]", config->hcclOpExpansionMode);
+    HCCL_RUN_INFO("Entry-HcclCommInitClusterInfoConfig V950, commEngine[%u]", config->hcclOpExpansionMode);
 
     CHK_RET(CallSingletons()); // 临时规避，在初始化通信域前声明单例保证时序
 
@@ -474,7 +474,7 @@ HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag)
 
 HcclResult HcclGetRootInfoV2(HcclRootInfo *rootInfo)
 {
-    HCCL_RUN_INFO("Entry-HcclGetRootInfo V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetRootInfo V950");
     HcclUs startut = TIME_NOW();
 
     // 执行root节点作为server端流程, 获得rootHandle
@@ -587,7 +587,7 @@ HcclResult HcclCommInitAllV2(uint32_t ndev, int32_t *devices, HcclComm *comms)
             devicesStr += " ";
         }
     }
-    HCCL_RUN_INFO("Entry-HcclCommInitAll V910_95, ndev:[%u], devices:[%s].", ndev, devicesStr.c_str());
+    HCCL_RUN_INFO("Entry-HcclCommInitAll V950, ndev:[%u], devices:[%s].", ndev, devicesStr.c_str());
 
     std::future<HcclResult> threadResult;
     std::unique_ptr<std::thread> getCommThread;
@@ -621,7 +621,7 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
     CHK_PTR_NULL(communicator);
     string commId = communicator->GetId();
     HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
-    HCCL_RUN_INFO("Entry-HcclCommDestroy V910_95 comm[%s]", commId.c_str());
+    HCCL_RUN_INFO("Entry-HcclCommDestroy V950 comm[%s]", commId.c_str());
 
     if (communicator->GetCommStatus() == CommStatus::COMM_INUSE) {
         HCCL_WARNING("[HcclCommDestroy] comm is in use, please try again later");
@@ -655,7 +655,7 @@ HcclResult HcclCommDestroyV2(HcclComm comm)
 
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("HcclCommDestroy V910_95 comm[%s] success, take time [%lld]us, deviceLogicId[%d], devPhyId[%d].", commId.c_str(),
+    HCCL_RUN_INFO("HcclCommDestroy V950 comm[%s] success, take time [%lld]us, deviceLogicId[%d], devPhyId[%d].", commId.c_str(),
                   DURATION_US(TIME_NOW() - startut), deviceLogicId, devPhyId);
     return HCCL_SUCCESS;
 }
@@ -824,7 +824,7 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
         rankIdSet.insert(rankIds[i]);
     }
 
-    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V910_95 rankIds[%s], subCommRankId[%u], commEngine[%u], hcclBufferSize[%u] MB",
+    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V950 rankIds[%s], subCommRankId[%u], commEngine[%u], hcclBufferSize[%u] MB",
                 printRankIds.str().c_str(), subCommRankId, config->hcclOpExpansionMode, config->hcclBufferSize);
 
     HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
@@ -836,7 +836,7 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
             return HCCL_SUCCESS;
         }
     }
-    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V910_95 config->hcclBufferSize[%u] MB", config->hcclBufferSize);
+    HCCL_RUN_INFO("Entry-HcclCreateSubCommConfig V950 config->hcclBufferSize[%u] MB", config->hcclBufferSize);
 
     CHK_PRT_RET(UNLIKELY(config->hcclBufferSize == 0),
         HCCL_ERROR("HcclCreateSubCommConfigV2 config: hcclBufferSize is 0 MB, invalid para"),
@@ -942,14 +942,14 @@ HcclResult HcclCreateSubCommConfigV2(const HcclComm *comm, uint32_t rankNum, uin
 
 HcclResult HcclGetRankIdV2(HcclComm comm, uint32_t *rank)
 {
-    HCCL_RUN_INFO("Entry-HcclGetRankId V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetRankId V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto ret = communicator->GetRankId(*rank);
     if (ret != HcclResult::HCCL_SUCCESS) {
         return HCCL_E_INTERNAL;
     }
     /* 关键状态记录 */
-    HCCL_RUN_INFO("Entry-HcclGetRankId V910_95 success, comm[%s], rankIdPtr[%p], rankId[%u]",
+    HCCL_RUN_INFO("Entry-HcclGetRankId V950 success, comm[%s], rankIdPtr[%p], rankId[%u]",
                   communicator->GetId().c_str(), rank, *rank);
     return HCCL_SUCCESS;
 }
@@ -971,13 +971,13 @@ HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
 
 HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize)
 {
-    HCCL_RUN_INFO("Entry-HcclGetRankSize V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetRankSize V950");
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankSize);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("Entry-HcclGetRankSize V910_95, commId[%s], deviceLogicId[%d], devPhyId[%d]", communicator->GetId().c_str(),
+    HCCL_RUN_INFO("Entry-HcclGetRankSize V950, commId[%s], deviceLogicId[%d], devPhyId[%d]", communicator->GetId().c_str(),
                   deviceLogicId, devPhyId);
     auto ret = communicator->GetRankSize(rankSize);
     if (ret != HCCL_SUCCESS) {
@@ -985,7 +985,7 @@ HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize)
         return HCCL_E_INTERNAL;
     }
     /* 关键状态记录 */
-    HCCL_RUN_INFO("Entry-HcclGetRankSize V910_95 success, comm[%s], rankSizePtr[%p], rankSize[%u]",
+    HCCL_RUN_INFO("Entry-HcclGetRankSize V950 success, comm[%s], rankSizePtr[%p], rankSize[%u]",
                   communicator->GetId().c_str(), rankSize, *rankSize);
     return HCCL_SUCCESS;
 }
@@ -1266,7 +1266,7 @@ HcclResult HcclBarrierV2(HcclComm comm, aclrtStream stream)
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("Entry-HcclBarrier V910_95, commId[%s], deviceLogicId[%d], devPhyId[%d]", communicator->GetId().c_str(),
+    HCCL_RUN_INFO("Entry-HcclBarrier V950, commId[%s], deviceLogicId[%d], devPhyId[%d]", communicator->GetId().c_str(),
                   deviceLogicId, devPhyId);
     // 申请Device内存
     auto ret = communicator->CreateBarrierMemory(sendBuf, recvBuf, count);
@@ -1292,7 +1292,7 @@ HcclResult HcclBarrierV2(HcclComm comm, aclrtStream stream)
     opParams.count   = count;
     opParams.opTag   = tag;
     ret = communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream));
-    HCCL_RUN_INFO("Entry-HcclBarrier V910_95 success, take time [%lld]us, commId[%s], deviceLogicId[%d]",
+    HCCL_RUN_INFO("Entry-HcclBarrier V950 success, take time [%lld]us, commId[%s], deviceLogicId[%d]",
                   DURATION_US(TIME_NOW() - startut), communicator->GetId().c_str(), deviceLogicId);
     return ret;
 }
@@ -1301,14 +1301,14 @@ HcclResult HcclGetHeterogModeV2(HcclComm comm, HcclHeterogMode *mode)
 {
     (void)comm;
     *mode = HCCL_HETEROG_MODE_HOMOGENEOUS;
-    HCCL_INFO("[HcclGetHeterogModeV2] 910_95 only support homogeneous chip mode");
+    HCCL_INFO("[HcclGetHeterogModeV2] 950 only support homogeneous chip mode");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommSuspendV2(HcclComm comm)
 {
     CHK_PTR_NULL(comm);
-    HCCL_ERROR("HcclCommSuspend V910_95 not support suspend");
+    HCCL_ERROR("HcclCommSuspend V950 not support suspend");
 
     return HCCL_E_NOT_SUPPORT;
 }
@@ -1371,7 +1371,7 @@ HcclResult HcclGetOpArgsV2(void **opArgs)
 {
     CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclGetOpArgs V910_95, start malloc opArgs in %p", opArgs);
+        HCCL_RUN_INFO("Entry-HcclGetOpArgs V950, start malloc opArgs in %p", opArgs);
     }
     HcclOpArgs *opArgsMem = (HcclOpArgs *)malloc(sizeof(HcclOpArgs));
     if (opArgsMem == nullptr) {
@@ -1388,7 +1388,7 @@ HcclResult HcclFreeOpArgsV2(void *opArgs)
 {
     CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclFreeOpArgs V910_95, free opArgs[%p]", opArgs);
+        HCCL_RUN_INFO("Entry-HcclFreeOpArgs V950, free opArgs[%p]", opArgs);
     }
     free(opArgs);
     opArgs = nullptr;
@@ -1399,7 +1399,7 @@ HcclResult HcclSetOpSrcDataTypeV2(void *opArgs, uint8_t srcDataType)
 {
     CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclSetOpSrcDataType V910_95, opArgs[%p] set srcDataType[%u]", opArgs, srcDataType);
+        HCCL_RUN_INFO("Entry-HcclSetOpSrcDataType V950, opArgs[%p] set srcDataType[%u]", opArgs, srcDataType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     if (srcDataType >= (sizeof(MC2_DATA_TYPE) / sizeof(MC2_DATA_TYPE[0]))) {
@@ -1414,7 +1414,7 @@ HcclResult HcclSetOpDstDataTypeV2(void *opArgs, uint8_t dstDataType)
 {
     CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclSetOpDstDataType V910_95, opArgs[%p] set dstDataType[%u]", opArgs, dstDataType);
+        HCCL_RUN_INFO("Entry-HcclSetOpDstDataType V950, opArgs[%p] set dstDataType[%u]", opArgs, dstDataType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     if (dstDataType >= (sizeof(MC2_DATA_TYPE) / sizeof(MC2_DATA_TYPE[0]))) {
@@ -1429,7 +1429,7 @@ HcclResult HcclSetOpReduceTypeV2(void *opArgs, uint32_t reduceType)
 {
     CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclSetOpReduceType V910_95, opArgs[%p] set reduceType[%u]", opArgs, reduceType);
+        HCCL_RUN_INFO("Entry-HcclSetOpReduceType V950, opArgs[%p] set reduceType[%u]", opArgs, reduceType);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     if (reduceType >= (sizeof(MC2_REDUCE_TYPE) / sizeof(MC2_REDUCE_TYPE[0]))) {
@@ -1444,7 +1444,7 @@ HcclResult HcclSetOpCountV2(void *opArgs, uint64_t count)
 {
     CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclSetOpCount V910_95, opArgs[%p] set count[%llu]", opArgs, count);
+        HCCL_RUN_INFO("Entry-HcclSetOpCount V950, opArgs[%p] set count[%llu]", opArgs, count);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     CHK_RET(HcomCheckCountV2(count));
@@ -1457,7 +1457,7 @@ HcclResult HcclSetOpAlgConfigV2(void *opArgs, char *algConfig)
     CHK_PTR_NULL(opArgs);
     CHK_PTR_NULL(algConfig);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclSetOpAlgConfig V910_95, opArgs[%p]", opArgs);
+        HCCL_RUN_INFO("Entry-HcclSetOpAlgConfig V950, opArgs[%p]", opArgs);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     s32 ret = strcpy_s(opArgsPtr->algConfig, ALG_CONFIG_SIZE, algConfig);
@@ -1475,7 +1475,7 @@ HcclResult HcclSetOpCommEngineV2(void *opArgs, uint8_t commEngine)
 {
     CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclSetOpCommEngine V910_95, commEngine[%u]", commEngine);
+        HCCL_RUN_INFO("Entry-HcclSetOpCommEngine V950, commEngine[%u]", commEngine);
     }
     HcclOpArgs *opArgsPtr = static_cast<HcclOpArgs *>(opArgs);
     opArgsPtr->commEngine = HcclAccelerator(static_cast<HcclAccelerator::Value>(commEngine));
@@ -1517,7 +1517,7 @@ HcclResult HcclCommResPrepareV2(HcclComm comm, char *opName, void* opArgs, void 
     opNameStr = opNameStr.substr(0, MAX_OP_NAME_SIZE);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclCommResPrepare V910_95, opName[%s], opArgs addr[%p], commId[%s]", opNameStr.c_str(), opArgs, communicator->GetId().c_str());
+        HCCL_RUN_INFO("Entry-HcclCommResPrepare V950, opName[%s], opArgs addr[%p], commId[%s]", opNameStr.c_str(), opArgs, communicator->GetId().c_str());
     }
     return HcclCommResPrepareWithOpMode(communicator, opNameStr, static_cast<HcclOpArgs *>(opArgs), addr);
 }
@@ -1542,7 +1542,7 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     CHK_RET(communicator->GetDevMemWorkSpace(memTagStr, size, addr, newCreated));
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclDevMemAcquire V910_95, memTag[%s], addr[%p], size[%llu], commId[%s]", memTagStr.c_str(), *addr, *size, communicator->GetId().c_str());
+        HCCL_RUN_INFO("Entry-HcclDevMemAcquire V950, memTag[%s], addr[%p], size[%llu], commId[%s]", memTagStr.c_str(), *addr, *size, communicator->GetId().c_str());
     }
     return HCCL_SUCCESS;
 }
@@ -1554,7 +1554,7 @@ HcclResult HcclGetHcclBufferV2(HcclComm comm, void **addr, uint64_t *size)
     CHK_PTR_NULL(size);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclGetHcclBuffer V910_95, commId[%s]", communicator->GetId().c_str());
+        HCCL_RUN_INFO("Entry-HcclGetHcclBuffer V950, commId[%s]", communicator->GetId().c_str());
     }
     CHK_RET(communicator->GetLocalCclBuffer(addr, size));
     /* 关键状态记录 */
@@ -1571,9 +1571,9 @@ HcclResult HcclGetRemoteIpcHcclBufV2(HcclComm comm, uint64_t remoteRank, void **
     CHK_PTR_NULL(size);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclGetRemoteIpcHcclBuf V910_95 start, remoteRank[%llu], addr[%p], size[%llu], commId[%s]", remoteRank, *addr, *size, communicator->GetId().c_str());
+        HCCL_RUN_INFO("Entry-HcclGetRemoteIpcHcclBuf V950 start, remoteRank[%llu], addr[%p], size[%llu], commId[%s]", remoteRank, *addr, *size, communicator->GetId().c_str());
     }
-    HCCL_ERROR("Entry-HcclGetRemoteIpcHcclBuf V910_95 not support, commId[%s]", communicator->GetId().c_str());
+    HCCL_ERROR("Entry-HcclGetRemoteIpcHcclBuf V950 not support, commId[%s]", communicator->GetId().c_str());
     return HCCL_E_NOT_SUPPORT;
 }
  
@@ -1584,7 +1584,7 @@ HcclResult HcclGetAicpuOpStreamAndNotifyV2(HcclComm comm, rtStream_t *opstream, 
     CHK_PTR_NULL(aicpuNotify);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclGetAicpuOpStreamAndNotify V910_95, aicpuNotifyNum[%u], commId[%s]", aicpuNotifyNum, communicator->GetId().c_str());
+        HCCL_RUN_INFO("Entry-HcclGetAicpuOpStreamAndNotify V950, aicpuNotifyNum[%u], commId[%s]", aicpuNotifyNum, communicator->GetId().c_str());
     }
     CHK_RET(communicator->GetAicpuOpStreamNotify(opstream, aicpuNotifyNum, aicpuNotify));
     return HCCL_SUCCESS;
@@ -1594,12 +1594,12 @@ HcclResult HcclCommResumeV2(HcclComm comm)
 {
     CHK_PTR_NULL(comm);
     HcclUs startut = TIME_NOW();
-    HCCL_RUN_INFO("Entry-HcclCommResume V910_95");
+    HCCL_RUN_INFO("Entry-HcclCommResume V950");
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
     CHK_RET(static_cast<HcclResult>(Hccl::HcclCcuResumePfeTableProcess(deviceLogicId)));
     CHK_RET(HcclCommResumeImplV2(comm));
-    HCCL_RUN_INFO("Entry-HcclCommResume V910_95 success, deviceLogicId[%d], devPhyId[%d], take time [%lld]us", 
+    HCCL_RUN_INFO("Entry-HcclCommResume V950 success, deviceLogicId[%d], devPhyId[%d], take time [%lld]us", 
         deviceLogicId, devPhyId, DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -1752,7 +1752,7 @@ HcclResult HcclCommInitRootInfoV2(
 {
     HcclUs startut = TIME_NOW();
     CHK_PTR_NULL(rootInfo);
-    HCCL_RUN_INFO("Entry-HcclCommInitRootInfo V910_95, rankId[%u], rankNum[%u].", rank, nRanks);
+    HCCL_RUN_INFO("Entry-HcclCommInitRootInfo V950, rankId[%u], rankNum[%u].", rank, nRanks);
 
     // 获取rootHandle
     HcclRootHandleV2 rootHandle{};
@@ -1767,7 +1767,7 @@ HcclResult HcclCommInitRootInfoV2(
     /* 接口交互信息日志 */
     s32 deviceLogicId = HcclGetThreadDeviceId();
     s32 devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
-    HCCL_RUN_INFO("Entry-Entry-HcclCommInitRootInfo V910_95, ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
+    HCCL_RUN_INFO("Entry-Entry-HcclCommInitRootInfo V950, ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
         "netMode[%s] identifier[%s], deviceLogicId[%d], devPhyId[%d]", nRanks, rank, rootHandle.ip, rootHandle.listenPort,
         rootHandle.netMode.Describe().c_str(), identifier.c_str(), deviceLogicId, devPhyId);
 
@@ -1788,7 +1788,7 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     HcclUs startut = TIME_NOW();
     CHK_PTR_NULL(rootInfo);
     CHK_PTR_NULL(config);
-    HCCL_RUN_INFO("Entry-HcclCommInitRootInfoConfig V910_95: nRanks[%u], rank[%u], commEngine[%u]", nRanks, rank, config->hcclOpExpansionMode);
+    HCCL_RUN_INFO("Entry-HcclCommInitRootInfoConfig V950: nRanks[%u], rank[%u], commEngine[%u]", nRanks, rank, config->hcclOpExpansionMode);
     // 获取rootHandle
     HcclRootHandleV2 rootHandle{};
     s32 sRet = memcpy_s(&rootHandle, sizeof(rootHandle), rootInfo->internal, sizeof(rootHandle));
@@ -2509,7 +2509,7 @@ HcclResult HcclGetCcuTaskInfoLegacy(HcclComm comm, void *tilingData, void *ccuTa
 
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
-        HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V910_95, commId[%s], tilingData[%p], ccuTaskGroup[%p]",
+        HCCL_RUN_INFO("Entry-HcclGetCcuTaskInfo V950, commId[%s], tilingData[%p], ccuTaskGroup[%p]",
              communicator->GetId(), tilingData, ccuTaskGroup);
     }
     auto ret = communicator->GetCcuTaskInfo(tilingData, ccuTaskGroup);
@@ -2820,7 +2820,7 @@ HcclResult HcclSetConfigV2(HcclConfig config, HcclConfigValue configValue)
 {
     (void)(config);
     (void)(configValue);
-    HCCL_WARNING("DETERMINISTIC_ENABLE is default option in 910_95! Can not set.");
+    HCCL_WARNING("DETERMINISTIC_ENABLE is default option in 950! Can not set.");
     return HCCL_SUCCESS;
 }
 HcclResult HcclGetConfigV2(HcclConfig config, HcclConfigValue *configValue)
@@ -2828,7 +2828,7 @@ HcclResult HcclGetConfigV2(HcclConfig config, HcclConfigValue *configValue)
     (void)(config);
     constexpr int32_t DETERMINISTIC_ENABLE = 1; // A5支持确定性，不需要配置
     (*configValue).value = DETERMINISTIC_ENABLE; 
-    HCCL_WARNING("DETERMINISTIC_ENABLE is default option in 910_95!");
+    HCCL_WARNING("DETERMINISTIC_ENABLE is default option in 950!");
     return HCCL_SUCCESS;
 }
 
@@ -2847,7 +2847,7 @@ HcclResult HcommFlushV2()
 
 HcclResult CommGetCCLBufSizeCfgV2(HcclComm comm, uint64_t *cclBufSize)
 {
-    HCCL_RUN_INFO("Entry-CommGetCCLBufSizeCfg V910_95");
+    HCCL_RUN_INFO("Entry-CommGetCCLBufSizeCfg V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     CHK_RET(communicator->GetConfigInCCLbufferSize(cclBufSize));
     return HCCL_SUCCESS;
@@ -2855,7 +2855,7 @@ HcclResult CommGetCCLBufSizeCfgV2(HcclComm comm, uint64_t *cclBufSize)
 
 HcclResult HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum)
 {
-    HCCL_RUN_INFO("Entry-HcclGetNetLayersV2 V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetNetLayersV2 V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto ret = communicator->GetNetLayers(netLayers, netLayerNum);
     if (ret != HCCL_SUCCESS) {
@@ -2867,7 +2867,7 @@ HcclResult HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *net
 
 HcclResult HcclGetInstSizeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
 {
-    HCCL_RUN_INFO("Entry-HcclGetInstSizeByNetLayerV2 V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetInstSizeByNetLayerV2 V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto ret = communicator->GetInstSizeByNetLayer(netLayer, rankNum);
     if (ret != HCCL_SUCCESS) {
@@ -2881,7 +2881,7 @@ HcclResult HcclGetInstSizeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_
 
 HcclResult HcclGetInstRanksByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum)
 {
-    HCCL_RUN_INFO("Entry-HcclGetInstRanksByNetLayerV2 V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetInstRanksByNetLayerV2 V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetInstRanksByNetLayer(netLayer, ranks, rankNum);
     if (ret != HCCL_SUCCESS) {
@@ -2895,7 +2895,7 @@ HcclResult HcclGetInstRanksByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32
 
 HcclResult HcclGetInstTopoTypeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
 {
-    HCCL_RUN_INFO("Entry-HcclGetInstTopoTypeByNetLayer V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetInstTopoTypeByNetLayer V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetInstTopoTypeByNetLayer(netLayer, topoType);
     if (ret != HCCL_SUCCESS) {
@@ -2910,7 +2910,7 @@ HcclResult HcclGetInstTopoTypeByNetLayerV2(HcclComm comm, uint32_t netLayer, uin
 HcclResult HcclGetInstSizeListByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList,
                                            uint32_t *listSize)
 {
-    HCCL_RUN_INFO("Entry-HcclGetInstSizeListByNetLayer V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetInstSizeListByNetLayer V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
     if (ret != HCCL_SUCCESS) {
@@ -2926,7 +2926,7 @@ HcclResult HcclGetInstSizeListByNetLayerV2(HcclComm comm, uint32_t netLayer, uin
 HcclResult HcclGetLinksV2(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList,
                           uint32_t *listSize)
 {
-    HCCL_RUN_INFO("Entry-HcclGetInstSizeListByNetLayer V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetInstSizeListByNetLayer V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
     if (ret != HCCL_SUCCESS) {
@@ -2940,7 +2940,7 @@ HcclResult HcclGetLinksV2(HcclComm comm, uint32_t netLayer, uint32_t srcRank, ui
 
 HcclResult HcclGetTopoInstsByLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
 {
-    HCCL_RUN_INFO("Entry-HcclGetTopoInstsByLayer V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetTopoInstsByLayer V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
     if (ret != HCCL_SUCCESS) {
@@ -2954,7 +2954,7 @@ HcclResult HcclGetTopoInstsByLayerV2(HcclComm comm, uint32_t netLayer, uint32_t 
 
 HcclResult HcclGetTopoTypeV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
 {
-    HCCL_RUN_INFO("Entry-HcclGetInstSizeListByNetLayer V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetInstSizeListByNetLayer V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetTopoType(netLayer, topoInstId, topoType);
     if (ret != HCCL_SUCCESS) {
@@ -2969,7 +2969,7 @@ HcclResult HcclGetTopoTypeV2(HcclComm comm, uint32_t netLayer, uint32_t topoInst
 HcclResult HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks,
                                   uint32_t *rankNum)
 {
-    HCCL_RUN_INFO("Entry-HcclGetRanksByTopoInst V910_95");
+    HCCL_RUN_INFO("Entry-HcclGetRanksByTopoInst V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
     if (ret != HCCL_SUCCESS) {
@@ -2983,7 +2983,7 @@ HcclResult HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t t
 
 HcclResult HcclRankGraphGetEndpointNumV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num)
 {
-    HCCL_RUN_INFO("Entry-HcclRankGraphGetEndpointNum V910_95");
+    HCCL_RUN_INFO("Entry-HcclRankGraphGetEndpointNum V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointNum(layer, topoInstId, num);
     if (ret != HCCL_SUCCESS) {
@@ -2995,7 +2995,7 @@ HcclResult HcclRankGraphGetEndpointNumV2(HcclComm comm, uint32_t layer, uint32_t
 
 HcclResult HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
 {
-    HCCL_RUN_INFO("Entry-HcclRankGraphGetEndpointDesc V910_95");
+    HCCL_RUN_INFO("Entry-HcclRankGraphGetEndpointDesc V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointDesc(layer, topoInstId, descNum, endpointDesc);
     if (ret != HCCL_SUCCESS) {
@@ -3007,7 +3007,7 @@ HcclResult HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_
 
 HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info)
 {
-    HCCL_RUN_INFO("Entry-HcclRankGraphGetEndpointInfo V910_95");
+    HCCL_RUN_INFO("Entry-HcclRankGraphGetEndpointInfo V950");
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     auto                    ret          = communicator->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
     if (ret != HCCL_SUCCESS) {
@@ -3023,7 +3023,7 @@ HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useB
     (void) ranks;
     (void) useBackup;
     (void) nRanks;
-    HCCL_ERROR("HcclCommWorkingDevNicSetV2 not support V910_95.");
+    HCCL_ERROR("HcclCommWorkingDevNicSetV2 not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3034,7 +3034,7 @@ HcclResult HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size
     (void) size;
     (void) alignment;
     (void) flags;
-    HCCL_ERROR("HcclCommSetMemoryRangeV2 not support V910_95.");
+    HCCL_ERROR("HcclCommSetMemoryRangeV2 not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3042,7 +3042,7 @@ HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr)
 {
     (void) comm;
     (void) baseVirPtr;
-    HCCL_ERROR("HcclCommUnsetMemoryRangeV2 not support V910_95.");
+    HCCL_ERROR("HcclCommUnsetMemoryRangeV2 not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3054,7 +3054,7 @@ HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size
     (void) offset;
     (void) handle;
     (void) flags;
-    HCCL_ERROR("HcclCommActivateCommMemoryV2 not support V910_95.");
+    HCCL_ERROR("HcclCommActivateCommMemoryV2 not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -3062,7 +3062,7 @@ HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr)
 {
     (void) comm;
     (void) virPtr;
-    HCCL_ERROR("HcclCommDeactivateCommMemoryV2 not support V910_95.");
+    HCCL_ERROR("HcclCommDeactivateCommMemoryV2 not support V950.");
     return HCCL_E_NOT_SUPPORT;
 }
 

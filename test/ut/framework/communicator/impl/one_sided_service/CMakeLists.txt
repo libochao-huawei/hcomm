@@ -52,7 +52,5 @@ target_link_libraries(hccl_utest_framework_one_sided_service PRIVATE
 )
 add_dependencies(hccl_utest_framework_one_sided_service hccl_llt)
 
-run_llt_test(
-    TARGET  hccl_utest_framework_one_sided_service
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_utest_framework_one_sided_service COMMAND hccl_utest_framework_one_sided_service)
