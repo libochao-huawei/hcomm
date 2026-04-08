@@ -1205,3 +1205,40 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit_tmp)
 
     GlobalMockObject::verify();
 }
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_transport_roce_Init_hrtRaGetQpAttr_error)
+{
+    MachinePara machinePara;
+    machinePara.deviceLogicId = 0;
+    HcclIpAddress invalidIp;
+    TransportResourceInfo transportResourceInfo;
+    std::chrono::milliseconds timeout;
+
+    // 设置 inputMem 和 outputMem 以通过空指针检查
+    u64 inputAddr = 0;
+    u64 outputAddr = 0;
+    DeviceMem inputMem = DeviceMem::create(&inputAddr, sizeof(inputAddr));
+    DeviceMem outputMem = DeviceMem::create(&outputAddr, sizeof(outputAddr));
+    machinePara.inputMem = inputMem;
+    machinePara.outputMem = outputMem;
+    machinePara.localIpAddr = invalidIp;
+
+    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+
+    // Mock NetworkManager::GetRaResourceInfo 以返回包含 socket handle 的数据
+    RaResourceInfo raResourceInfo;
+    raResourceInfo.nicSocketMap[invalidIp].nicSocketHandle = (void*)0x1000;
+    raResourceInfo.nicSocketMap[invalidIp].nicRdmaHandle = (void*)0x2000;
+    
+    MOCKER_CPP(&NetworkManager::GetRaResourceInfo)
+        .stubs()
+        .with(outBound(raResourceInfo))
+        .will(returnValue(HCCL_SUCCESS));
+    
+    MOCKER(hrtRaGetQpAttr).stubs().will(returnValue(HCCL_E_RUNTIME));
+
+    HcclResult ret = roce.Init();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+
+    GlobalMockObject::verify();
+}
