@@ -207,6 +207,7 @@ public:
     virtual HcclResult SignalRecord(HcclRtNotify signal, hccl::Stream &stream, u32 userRank, u64 offset = INVALID_U64,
         s32 stage = INVALID_VALUE_STAGE, bool inchip = false, u64 signalAddr = INVALID_U64,
         u32 notifyId = INVALID_UINT);
+
     virtual HcclResult SignalWait(HcclRtNotify signal, hccl::Stream &stream, u32 userRank, u32 remoteUserRank,
         s32 stage = INVALID_VALUE_STAGE, bool inchip = false, u32 notifyId = INVALID_UINT,
         u32 timeOut = NOTIFY_INVALID_WAIT_TIME);
