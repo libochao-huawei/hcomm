@@ -12,6 +12,9 @@
 
 #include "base_mem_transport.h"
 #include "virtual_topo.h"
+#include "remote_notify.h"
+#include "local_ipc_rma_buffer.h"
+#include "remote_rma_buffer.h"
 
 namespace Hccl {
 class P2PTransport : public BaseMemTransport {
