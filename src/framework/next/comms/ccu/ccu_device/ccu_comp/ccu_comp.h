@@ -82,6 +82,7 @@ private:
         const std::vector<JettyInfo> &jettyInfos);
     HcclResult GetLoopTpInfo(const uint8_t dieId, const CommAddr &commAddr, TpInfo &tpInfo);
     HcclResult GetLoopTpAttr(const uint8_t dieId, const CommAddr &commAddr, TpAttrInfo &tpAttrInfo);
+    HcclResult RequestNewLoopTpInfo(const CommAddr &commAddr, TpInfo &tpInfo);
     uint32_t GetNewPsn();
     HcclResult ConfigLoopChannel(const uint8_t dieId, const CommAddr &commAddr,
         const ChannelInfo &channelInfo);

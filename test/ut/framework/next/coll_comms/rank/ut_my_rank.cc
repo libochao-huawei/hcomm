@@ -4,9 +4,12 @@
 #include <mockcpp/mockcpp.hpp>
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
+#include "hccl/hccl_res.h"
+#include <hccl/hccl_comm.h>
 #include "hcomm_c_adpt.h"
 #include "channel_process.h"
 #include "base_config.h"
+#include "config/env_config.h"
 #define private public
 #include "my_rank.h"
 #undef private
@@ -72,7 +75,7 @@ protected:
     Hccl::RankIpPortMapPtr rankIpPortMap;
 };
 
-void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
+HcclResult InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
 {
     RankGraphStub rankGraphStub;
     std::shared_ptr<Hccl::RankGraph> rankGraphV2 = rankGraphStub.Create2PGraph();
@@ -84,10 +87,11 @@ void InitCollComm(std::shared_ptr<hccl::hcclComm> hcclCommPtr)
     cclBuffer.addr = (void*)0x1000;
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
     HcclCommConfig config;
+    HcclCommConfigInit(&config);
     config.hcclOpExpansionMode = 1;
     config.hcclRdmaTrafficClass = 0xFFFFFFFF;
     config.hcclRdmaServiceLevel = 0xFFFFFFFF;
-    hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
+    return hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
 }
 
 TEST_F(MyRankTest, Ut_When_QueryListenPort_Listen_Port_Expect_SUCCESS)
@@ -200,7 +204,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
 
     std::vector<HcommChannelDesc> hcommDesc(3);
     for (u32 i = 0; i < 3; ++i) {
-        hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i]);
+        hcommDesc[i] = MyRankUtils::ChannelDescHccl2Hcomm(channelDesc[i], myRank.config_);
     }
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 1, "test", hcommDesc), HCCL_SUCCESS);
     std::vector<ChannelHandle> hostChannelHandles(3);
@@ -655,10 +659,12 @@ TEST_F(MyRankTest, Ut_WaitAllAsyncComplete_When_AllOk_Expect_Success)
 TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 {
     HcclResult ret = HCCL_SUCCESS;
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();;
-    InitCollComm(hcclCommPtr);
+    std::shared_ptr<hccl::hcclComm> hcclCommPtr = std::make_shared<hccl::hcclComm>();
+    ASSERT_EQ(InitCollComm(hcclCommPtr), HCCL_SUCCESS);
     hccl::CollComm* collComm = hcclCommPtr->GetCollComm();
+    ASSERT_NE(collComm, nullptr);
     hccl::MyRank* myRank = collComm->GetMyRank();
+    ASSERT_NE(myRank, nullptr);
     CollCommConfigConsistency &collCommConfigConsistency = myRank->GetCollCommConfigConsistency();
     std::vector<u8> localData = {0xDE, 0xAD, 0xBE, 0xEF};
     ret = collCommConfigConsistency.AddExchangeInfo(localData.data(), localData.size());
@@ -668,13 +674,8 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
     MOCKER_CPP(&Hccl::Socket::GetAsyncStatus)
         .stubs()
         .will(returnValue(Hccl::SocketStatus(Hccl::SocketStatus::OK)));
-    // mock SendAsync/RecvAsync成功
-    MOCKER_CPP(&Hccl::Socket::SendAsync)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::RecvAsync)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::SendAsync).stubs().will(ignoreReturnValue());
+    MOCKER_CPP(&Hccl::Socket::RecvAsync).stubs().will(ignoreReturnValue());
     // mock 超时配置
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut)
         .stubs()
@@ -690,4 +691,65 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 
     ret = myRank->BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcCtp_Sets_CommDomainQos_FromCommConfig)
+{
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(5u), HCCL_SUCCESS);
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, 5u);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcTp_Sets_CommDomainQos_FromCommConfig)
+{
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(2u), HCCL_SUCCESS);
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, 2u);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Uboe_Sets_CommDomainQos_FromCommConfig)
+{
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(7u), HCCL_SUCCESS);
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBOE;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, 7u);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcTp_QosUnset_UsesUbQosDefault)
+{
+    CommConfig commConfig("ut");
+    ASSERT_EQ(commConfig.SetConfigHcclQos(HCCL_COMM_QOS_CONFIG_NOT_SET), HCCL_SUCCESS);
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.qos, 4u); // 与 EnvConfig::UB_QOS_DEFAULT 一致
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)
+{
+    CommConfig commConfig("ut");
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_ROCE;
+    in.roceAttr.retryCnt = 3u;
+    in.roceAttr.retryInterval = 20u;
+    in.roceAttr.tc = 8u;
+    in.roceAttr.sl = 4u;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in, commConfig);
+    EXPECT_EQ(out.roceAttr.retryCnt, 3u);
+    EXPECT_EQ(out.roceAttr.retryInterval, 20u);
+    EXPECT_EQ(out.roceAttr.tc, 8u);
+    EXPECT_EQ(out.roceAttr.sl, 4u);
 }
