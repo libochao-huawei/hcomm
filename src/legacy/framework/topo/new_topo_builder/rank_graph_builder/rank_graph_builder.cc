@@ -138,9 +138,9 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
 
     // 根据planeId确认Fabric个数，每个fabricId对应一个planeId
     const auto& ranks = rankTable_->ranks;
-    if (myRank_ >= ranks.size()) {
+    if (static_cast<u32>(myRank_) >= ranks.size()) {
         THROW<InvalidParamsException>(StringFormat("[RankGraphBuilder][AddFabricInfo] myRank_[%u] out of range, "
-            "ranks size[%u]", myRank_, ranks.size()));
+            "ranks size[%u]", static_cast<u32>(myRank_), ranks.size()));
     }
     const auto& myRankLevelInfos = ranks[myRank_].rankLevelInfos;
     if (netLayer >= myRankLevelInfos.size()) {
