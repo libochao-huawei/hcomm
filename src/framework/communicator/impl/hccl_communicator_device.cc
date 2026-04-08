@@ -1558,6 +1558,27 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult HcclCommunicator::GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult HcclCommunicator::GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult HcclCommunicator::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult HcclCommunicator::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::GetHeterogMode(HcclHeterogMode *mode)
     {
         return HCCL_SUCCESS;
@@ -1634,6 +1655,23 @@ namespace hccl
     HcclResult HcclCommunicator::HandleExistAlgResource(const std::string& newTag, const std::string& algName,
         HcclCMDType opType, const OpParam& opParam, std::unique_ptr<CollAlgOperator>& algOperator,
         bool selectAivAlg, bool aicpuUnfoldModeFor910B, bool needRecreateAlltoallComm)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InitMyRank()
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult HcclCommunicator::CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr)
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult HcclCommunicator::InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable)
+    {
+        return HCCL_SUCCESS;
+    }
+    uint32_t HcclCommunicator::GetConnectMode()
     {
         return HCCL_SUCCESS;
     }
