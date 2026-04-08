@@ -47,6 +47,15 @@ uint8_t ReduceOpcode(uint8_t copyDataType)
 void AddOneNotifyWaitSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyId, const uint8_t *sqeIn, uint8_t *sqeType,
     const dfx::DfxTimeOutConfig &dfxTimeOutConfig)
 {
+    if (sqeIn == nullptr) {
+        HCCL_ERROR("[SQE] sqeIn is nullptr");
+        return;
+    }
+    
+    if (sqeType == nullptr) {
+        HCCL_ERROR("[SQE] sqeType is nullptr");
+        return;
+    }
     (void)dfxTimeOutConfig;
     *sqeType = SqeType::NOTIFY_SQE_V2;
     rtStarsNotifySqeV2_t * const sqe = (rtStarsNotifySqeV2_t * const)sqeIn;
@@ -60,6 +69,15 @@ void AddOneNotifyWaitSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyId, con
 
 void AddOneRecordSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyId, const uint8_t *sqeIn, uint8_t *sqeType)
 {
+    if (sqeIn == nullptr) {
+        HCCL_ERROR("[SQE] sqeIn is nullptr");
+        return;
+    }
+    
+    if (sqeType == nullptr) {
+        HCCL_ERROR("[SQE] sqeType is nullptr");
+        return;
+    }
     *sqeType = SqeType::NOTIFY_SQE_V2;
     rtStarsNotifySqeV2_t * const sqe = (rtStarsNotifySqeV2_t * const)sqeIn;
     sqe->header.type = RT_HW_STARS_SQE_TYPE_NOTIFY_RECORD;
@@ -73,6 +91,15 @@ void AddOneRecordSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyId, const u
 void AddOneWriteValueRecordSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyWRAddr, const uint8_t *sqeIn,
     uint8_t *sqeType)
 {
+    if (sqeIn == nullptr) {
+        HCCL_ERROR("[SQE] sqeIn is nullptr");
+        return;
+    }
+    
+    if (sqeType == nullptr) {
+        HCCL_ERROR("[SQE] sqeType is nullptr");
+        return;
+    }
     *sqeType = SqeType::WRITE_VALUE_SQE_V2;
     rtStarsWriteValueSqeV2_t * const sqe = (rtStarsWriteValueSqeV2_t * const)sqeIn;
     sqe->header.type = RT_HW_STARS_SQE_TYPE_WRITE_VALUE;
@@ -92,6 +119,15 @@ void AddOneMemcpySqeV2(uint16_t streamId, uint16_t taskId, const void *src, uint
     const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
     uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType, uint32_t hcclQos)
 {
+    if (sqeIn == nullptr) {
+        HCCL_ERROR("[SQE] sqeIn is nullptr");
+        return;
+    }
+    
+    if (sqeType == nullptr) {
+        HCCL_ERROR("[SQE] sqeType is nullptr");
+        return;
+    }
     (void)partId;
     (void)linkType;
     *sqeType = SqeType::MEMCPY_ASYNC_SQE_V2;
@@ -148,6 +184,15 @@ void AddOneMemcpySqeV2(uint16_t streamId, uint16_t taskId, const void *src, uint
 void AddOneEventResetSqeV2(uint16_t streamId, int32_t eventId, uint16_t taskId, int64_t phyChipId, int64_t phyDieId,
     u64 addr, const uint8_t *sqeIn, uint8_t *sqeType)
 {
+    if (sqeIn == nullptr) {
+        HCCL_ERROR("[SQE] sqeIn is nullptr");
+        return;
+    }
+    
+    if (sqeType == nullptr) {
+        HCCL_ERROR("[SQE] sqeType is nullptr");
+        return;
+    }
     (void)phyChipId;
     (void)phyDieId;
     *sqeType = SqeType::WRITE_VALUE_SQE_V2;

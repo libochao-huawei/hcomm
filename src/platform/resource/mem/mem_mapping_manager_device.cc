@@ -41,6 +41,7 @@ HcclResult MemMappingManager::MapMem(s32 deviceLogicID, void *addr, u64 size, vo
 // 先去map找内存，找到后引用计数--，减到0后做解映射，从map移除
 HcclResult MemMappingManager::ReleaseDevVA(s32 deviceLogicID, void *addr, u64 size)
 {
+    CHK_PTR_NULL(addr);
     std::unique_lock<std::mutex> lockMapping(mappedHostToDevMutex_);
     DevType devType;
     CHK_RET(hrtHalGetDeviceType(deviceLogicID, devType));

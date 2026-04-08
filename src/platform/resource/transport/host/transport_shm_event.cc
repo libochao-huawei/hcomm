@@ -555,7 +555,7 @@ HcclResult TransportShmEvent::Init()
 
     isInited_ = true;
     HCCL_INFO("[TransportShmEvent] init success! serverId[%s] localRank[%u], localIp[%s], remoteRank[%u], "
-        "remoteIp[%u], linkTag[%s]", machinePara_.serverId.c_str(), machinePara_.localUserrank,
+        "remoteIp[%s], linkTag[%s]", machinePara_.serverId.c_str(), machinePara_.localUserrank,
         selfIp_.GetReadableAddress(), machinePara_.remoteUserrank, peerIp_.GetReadableAddress(), linkTag_.c_str());
     return HCCL_SUCCESS;
 }
@@ -634,9 +634,9 @@ HcclResult TransportShmEvent::GetMemInfo(uintptr_t memPtr, MemType &memType, u64
     HCCL_DEBUG("GetMemInfo inputShmMem_ ptr[%p] uintptr[%llx] size[%llu Byte]",
         inputShmMem_.ptr(), reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), inputShmMem_.size());
     HCCL_DEBUG("GetMemInfo outputShmMem_ ptr[%p] uintptr[%llx] size[%llu Byte]",
-        outputShmMem_.ptr(), reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), outputShmMem_.size());
+        outputShmMem_.ptr(), reinterpret_cast<uintptr_t>(outputShmMem_.ptr()), outputShmMem_.size());
     HCCL_DEBUG("GetMemInfo envelopeShmQue_ ptr[%p] uintptr[%llx] size[%llu Byte]",
-        envelopeShmQue_.ptr(), reinterpret_cast<uintptr_t>(inputShmMem_.ptr()), envelopeShmQue_.size());
+        envelopeShmQue_.ptr(), reinterpret_cast<uintptr_t>(envelopeShmQue_.ptr()), envelopeShmQue_.size());
     HCCL_DEBUG("GetMemInfo input param memPtr[%llx]", memPtr);
 
     uintptr_t shmPtr = reinterpret_cast<uintptr_t>(inputShmMem_.ptr());
@@ -664,6 +664,7 @@ HcclResult TransportShmEvent::GetMemInfo(uintptr_t memPtr, MemType &memType, u64
 HcclResult TransportShmEvent::Send(const TransData &sendData, const TransportEndPointParam &epParam)
 {
     Stream tmpStream(nullptr);
+    CHK_PTR_NULL(isendDoneNotify_);
     CHK_RET(isendDoneNotify_->Post(tmpStream, dispatcher_));
     return HCCL_SUCCESS;
 }
@@ -820,6 +821,7 @@ HcclResult TransportShmEvent::FrontEnvelope(HcclEnvelopePcie &envelope)
             queBeginAddr + queInfo.tail * sizeof(HcclEnvelopePcie), sizeof(HcclEnvelopePcie)));
     } else {
         ShmEnvelopeQue *quePtr = static_cast<ShmEnvelopeQue *>(localEnvelopeShmQue_);
+        CHK_PTR_NULL(quePtr);
         envelope = quePtr->que[quePtr->queInfo.tail];
     }
     return HCCL_SUCCESS;

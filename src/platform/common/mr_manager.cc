@@ -192,8 +192,8 @@ map<MrMapKey, MrInfo> MrManager::GetUnregMap()
 std::map<HostMappingKey, HostMappingInfo>::iterator MrManager::SearchMappingMap(u64 userAddr, u64 userSize)
 {
     for (auto iter = mappedHostToDevMap_.begin(); iter != mappedHostToDevMap_.end(); ++iter) {
-        if ((userAddr >= iter->first.addr) &&
-            (userAddr + userSize <= iter->first.size + iter->first.addr) &&
+        if ((userAddr >= iter->first.addr) && (userSize <= iter->first.size) &&
+            (userAddr - iter->first.addr <= iter->first.size - userSize) &&
             (iter->first.devId == curDevId_)) {
             return iter;
         }
