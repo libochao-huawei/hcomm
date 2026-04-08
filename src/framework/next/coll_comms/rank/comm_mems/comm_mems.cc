@@ -190,7 +190,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
     return HCCL_SUCCESS;
 }
 
-HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<MemHandle> &memHandleVec,
+HcclResult CommMems::SetMemHandles(HcommMemHandle *memHandles, const std::vector<MemHandle> &memHandleVec,
     hcomm::RegedMemMgr::CommMemInfo &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec)
 {
     if (memHandleVec.size() == 0) {
