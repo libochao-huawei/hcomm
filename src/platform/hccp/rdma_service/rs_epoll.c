@@ -868,7 +868,7 @@ RS_ATTRI_VISI_DEF int RsWaitEventHandle(int eventHandle, struct SocketEventInfoT
         hccp_err("events_num is NULL");
         return -EINVAL;
     }
-
+    // warn here
     ret = RsEpollWaitHandle(eventHandle, (struct epoll_event *)eventInfos,
         timeout, maxevents, eventsNum);
     CHK_PRT_RETURN(ret, hccp_err("rs_epoll_wait_handle failed ret(%d)", ret), ret);
