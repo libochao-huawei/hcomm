@@ -58,7 +58,17 @@ HcclResult RtsNotify::Open()
     inchip = false;
     isLocal = false;
     CHK_RET(UpdateNotifyInfo());
-    CHK_RET(hrtNotifyGetAddr(notifyPtr, &address));
+    // CHK_RET(hrtNotifyGetAddr(notifyPtr, &address));
+
+    Hccl::HrtDevResInfo devResInfo;
+    devResInfo.dieId    = 0;
+    devResInfo.procType = Hccl::HrtDevResProcType::PROCESS_CP1;
+    devResInfo.resType  = Hccl::HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
+    devResInfo.resId    = id;
+    devResInfo.flag     = 0;
+    auto resAddrInfo = HrtGetDevResAddress(devResInfo);
+    address = resAddrInfo.address;
+    size = resAddrInfo.len;
 
     return HCCL_SUCCESS;
 }
