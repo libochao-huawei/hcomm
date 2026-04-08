@@ -40,7 +40,7 @@ CommMems::CommMems(uint64_t bufferSize)
 {
     cclMemInfo_.mem.addr = nullptr;
     cclMemInfo_.mem.size = 0;
-    cclMemInfo_.mem.type = HcclMemType::HCCL_MEM_TYPE_DEVICE;
+    cclMemInfo_.mem.type = CommMemType::COMM_MEM_TYPE_DEVICE;
 }
 
 HcclResult CommMems::Add(void *addr, uint64_t len)
@@ -106,7 +106,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
         HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
         HCCL_E_MEMORY);
 
-    const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
+    const auto key = MakeKey(mem.mem.addr, static_cast<size_t>(mem.mem.size));
  
     std::lock_guard<std::mutex> addLock(memMutex_);
 
@@ -196,9 +196,9 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
             return HCCL_E_NOT_FOUND;
         }
         HcclMem mem;
-        mem.addr = (*handles[i]).addr;
-        mem.size = (*handles[i]).size;
-        mem.type = ConvertCommToHcclMemType((*handles[i]).memType);
+        mem.addr = (*handles[i]).mem.addr;
+        mem.size = (*handles[i]).mem.size;
+        mem.type = ConvertCommToHcclMemType((*handles[i]).mem.type);
         memTag.push_back(opReverseBindings_[handles[i]]);
         memVec.push_back(mem);
     }
