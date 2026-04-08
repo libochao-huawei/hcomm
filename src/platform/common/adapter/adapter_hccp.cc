@@ -2115,7 +2115,7 @@ HcclResult CreateCqAndQp(RdmaHandle &rdmaHandle, string &label, QpConfig &config
         CHK_RET(CreateCq(rdmaHandle, cq));
         QpInfo qp(config, rdmaHandle, nullptr, nullptr, cq.context, cq.sq, cq.rq, info.srq,
             info.srqCq, info.srqContext);
-        HcclResult ret = CreateNormalQp(rdmaHandle, cq);
+        HcclResult ret = CreateNormalQp(rdmaHandle, qp);
         if(ret != HCCL_SUCCESS) {
             DestroyCq(rdmaHandle, cq);
             return ret;
