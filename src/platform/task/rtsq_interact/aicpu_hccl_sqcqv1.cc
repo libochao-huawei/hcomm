@@ -414,6 +414,24 @@ void AddOneCacheMemcpyRecordPlaceholderSqeV1(uint16_t streamId, uint16_t taskId,
     const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
     uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType, uint32_t hcclQos)
 {
+    if (sqeIn == nullptr) {
+        HCCL_ERROR("[AddOneCacheMemcpyRecordPlaceholderSqeV1] sqeIn is nullptr");
+        return;
+    }
+    
+    if (sqeType == nullptr) {
+        HCCL_ERROR("[AddOneCacheMemcpyRecordPlaceholderSqeV1] sqeType is nullptr");
+        return;
+    }
+    if (src == nullptr) {
+        HCCL_ERROR("[AddOneCacheMemcpyRecordPlaceholderSqeV1] src is nullptr");
+        return;
+    }
+    
+    if (dst == nullptr) {
+        HCCL_ERROR("[AddOneCacheMemcpyRecordPlaceholderSqeV1] dst is nullptr");
+        return;
+    }
     (void)ssid;
     (void)devId;
     (void)overflowAddr;
