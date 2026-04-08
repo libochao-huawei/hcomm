@@ -1487,31 +1487,31 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
     auto creatEventFuncPtr = [](rtNotify_t *notify) -> s32 {
         CHK_RT_RET(aclrtCreateEvent(notify));
         aclrtStream stream = nullptr;
-        HcclResult ret = aclrtCreateStream(&stream);
-        if (ret != HCCL_SUCCESS) {
+        aclError ret = aclrtCreateStream(&stream);
+        if (ret != ACL_SUCCESS) {
             aclrtDestroyStream(*notify);
             return ret;
         }
         ret = aclrtRecordEvent(*notify, stream);
-        if (ret != HCCL_SUCCESS) {
+        if (ret != ACL_SUCCESS) {
             aclrtDestroyStream(stream);
             aclrtDestroyStream(*notify);
             return ret;
         }
         ret = aclrtResetEvent(*notify, stream);
-        if (ret != HCCL_SUCCESS) {
+        if (ret != ACL_SUCCESS) {
             aclrtDestroyStream(stream);
             aclrtDestroyStream(*notify);
             return ret;
         }
         ret = aclrtSynchronizeStream(stream);
-        if (ret != HCCL_SUCCESS) {
+        if (ret != ACL_SUCCESS) {
             aclrtDestroyStream(stream);
             aclrtDestroyStream(*notify);
             return ret;
         }
         ret = aclrtDestroyStream(stream);
-        if (ret != HCCL_SUCCESS) {
+        if (ret != ACL_SUCCESS) {
             aclrtDestroyStream(*notify);
             return ret;
         }
