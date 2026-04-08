@@ -9,6 +9,7 @@
  */
 
 #include <cstdlib>
+
 #include "ccu_component.h"
 
 #include "sal.h"
@@ -24,8 +25,61 @@
 #include "ccu_res_specs.h"
 
 #include "ccu_channel_mgr_v1.h"
+#include "env_config.h"
+#include "hccp_tp.h"
 
 namespace Hccl {
+
+namespace {
+constexpr uint32_t kLoopTpAttrSlAvailableBit = 18U;
+constexpr uint32_t kLoopTpAttrBitmapSl = (1U << 10U);
+
+static uint32_t SlValueAtRankInMask16(uint32_t mask, uint32_t rank)
+{
+    uint32_t seen = 0;
+    for (uint32_t bit = 0; bit < 16U; ++bit) {
+        if ((mask & (1U << bit)) != 0U) {
+            if (seen == rank) {
+                return bit;
+            }
+            ++seen;
+        }
+    }
+    return 0;
+}
+
+// 与 Next 侧环回 MakeLoopGetTpInfoParam(loopFirstTpLowestSl=true) 一致：首 TP + slBitmap 中最低档 SL → jetty qos
+static uint8_t ResolveLoopJettyQosFromTpSl(RdmaHandle rdmaHandle, uint64_t tpHandle, uint32_t devPhyId)
+{
+    if (tpHandle == 0U) {
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+
+    struct TpAttr tpAttr {};
+    uint32_t attrBitmap = (1U << kLoopTpAttrSlAvailableBit) | kLoopTpAttrBitmapSl;
+    RequestHandle reqHandle = 0;
+    const HcclResult startRet =
+        HrtRaGetTpAttrAsync(devPhyId, rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle);
+    if (startRet == HcclResult::HCCL_E_NOT_SUPPORT) {
+        HCCL_WARNING("[CcuComponent][ResolveLoopJettyQosFromTpSl] HrtRaGetTpAttrAsync not supported, "
+            "use UB_QOS_DEFAULT.");
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+    if (startRet != HcclResult::HCCL_SUCCESS) {
+        HCCL_WARNING("[CcuComponent][ResolveLoopJettyQosFromTpSl] HrtRaGetTpAttrAsync failed ret[%u], "
+            "use UB_QOS_DEFAULT.", static_cast<uint32_t>(startRet));
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+
+    const uint16_t slMask = static_cast<uint16_t>(tpAttr.slBitmap);
+    if (slMask == 0U) {
+        HCCL_WARNING("[CcuComponent][ResolveLoopJettyQosFromTpSl] slBitmap empty, use UB_QOS_DEFAULT.");
+        return static_cast<uint8_t>(UB_QOS_DEFAULT);
+    }
+    const uint32_t mappedSl = SlValueAtRankInMask16(slMask, 0U);
+    return static_cast<uint8_t>(mappedSl & 0xFU);
+}
+} // namespace
 
 constexpr uint16_t INVAILD_LOOP_CHANNEL_ID = 0xFFFF;
 
@@ -44,6 +98,20 @@ constexpr u32 MAX_CKE_DATA_ARRAY_SIZE = 8;
 // 环境是A+X时，配置die0的MS交织粒度为1<<7 = 128
 constexpr uint32_t MSID_CONFIG_AX_MAINBOARD = 7;
 constexpr TpProtocol LOOP_JETTY_PROTOCOL = TpProtocol::TP; // 环回使用TP避免被环境link down阻塞
+
+// 与 TpManager 缓存键一致：须与 RequestNewTpInfo / Deinit::ReleaseTpInfo 使用同一套 qos 与环回标志
+static RaUbGetTpInfoParam MakeCcuLoopRaUbGetTpInfoParam(const IpAddress &locAddr, const IpAddress &rmtAddr)
+{
+    RaUbGetTpInfoParam p{};
+    p.locAddr = locAddr;
+    p.rmtAddr = rmtAddr;
+    p.tpProtocol = LOOP_JETTY_PROTOCOL;
+    p.qos = 0U;
+    p.slLevelCount = 0U;
+    p.loopFirstTpLowestSl = true;
+    p.ccuLoopbackGetTpInfo = true;
+    return p;
+}
 
 CcuComponent &CcuComponent::GetInstance(const int32_t deviceLogicId)
 {
@@ -102,8 +170,7 @@ void CcuComponent::Deinit()
     for (const auto &item : tpInfoMap) {
         const auto &ipAddr = item.first;
         const auto &tpInfo = item.second;
-        (void)TpManager::GetInstance(devLogicId)
-            .ReleaseTpInfo({ipAddr, ipAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+        (void)TpManager::GetInstance(devLogicId).ReleaseTpInfo(MakeCcuLoopRaUbGetTpInfoParam(ipAddr, ipAddr), tpInfo);
     }
 
     createdOutParamMap.clear();
@@ -417,16 +484,21 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
 
     auto &createdVec = createdOutParamMap[dieId];
     auto &importedVec = importedOutParamMap[dieId];
+
+    const TpInfo loopTpInfo = GetTpInfo(ipAddr);
+    const uint8_t loopJettyQos = ResolveLoopJettyQosFromTpSl(rdmaHandle, loopTpInfo.tpHandle, devPhyId);
+
     for (const auto &jettyInfo : jettyInfos) {
         const auto jettyMode = HrtJettyMode::CCU_CCUM_CACHE; // 当前仅支持该模式
-        const HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
+        HrtRaUbCreateJettyParam req{jfcHandle, jfcHandle, ccuBufTokenValue,
             tokenIdHandle, jettyMode, jettyInfo.taJettyId, jettyInfo.sqBufVa,
             jettyInfo.sqBufSize, jettyInfo.wqeBBStartId, jettyInfo.sqDepth, errTimeout};
+        req.qos = loopJettyQos;
         auto createdOutParam = HrtRaUbCreateJetty(rdmaHandle, req);
         createdVec.emplace_back(createdOutParam);
 
         const auto psn = GetPsn(ipAddr);
-        const auto jettyImportCfg = GetJettyImportCfg(tpInfo, psn);
+        const auto jettyImportCfg = GetJettyImportCfg(loopTpInfo, psn);
         const auto importedOutParam = RaUbTpImportJetty(rdmaHandle, createdOutParam.key,
             createdOutParam.keySize, ccuBufTokenValue, jettyImportCfg);
         importedVec.emplace_back(ImportOutParamPair{rdmaHandle, importedOutParam});
@@ -440,11 +512,14 @@ TpInfo CcuComponent::RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddres
     TpInfo tpInfo{};
 
     auto &tpManager = TpManager::GetInstance(devLogicId);
+    // 与 Next `MakeLoopGetTpInfoParam` 对齐：环回与通信域 hcclQos 解耦；SL 由 GetTpAttr.slBitmap + loopFirstTpLowestSl 决定
+    const RaUbGetTpInfoParam loopParam = MakeCcuLoopRaUbGetTpInfoParam(srcIpAddr, dstIpAddr);
+
     const auto timeout = std::chrono::milliseconds(LOOP_CHANNEL_WAIT_TIMEOUT_MS);
     const auto startTime = std::chrono::steady_clock::now();
-    auto ret = tpManager.GetTpInfo({srcIpAddr, dstIpAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+    auto ret = tpManager.GetTpInfo(loopParam, tpInfo);
     while (ret == HcclResult::HCCL_E_AGAIN) {
-        ret = tpManager.GetTpInfo({srcIpAddr, dstIpAddr, LOOP_JETTY_PROTOCOL}, tpInfo);
+        ret = tpManager.GetTpInfo(loopParam, tpInfo);
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
             THROW<InternalException>("[CcuComponent][%s] failed, get tp info "
                 "timeout[%d ms], devLogicId[%d].", __func__, timeout, devLogicId);
@@ -452,8 +527,8 @@ TpInfo CcuComponent::RequestNewTpInfo(const IpAddress &srcIpAddr, const IpAddres
     }
 
     if (ret != HcclResult::HCCL_SUCCESS) {
-        THROW<InternalException>("[CcuComponent][%s] failed, ret[%u], "
-            "devLogicId[%d].", __func__, devLogicId, ret);
+        THROW<InternalException>("[CcuComponent][%s] failed, ret[%d], "
+            "devLogicId[%d].", __func__, static_cast<int>(ret), devLogicId);
     }
 
     return tpInfo;

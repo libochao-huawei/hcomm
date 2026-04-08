@@ -97,11 +97,12 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
 
+    constexpr uint32_t kJettyQos = HCCL_COMM_QOS_CONFIG_DEFAULT_UB;
     unique_ptr<hcomm::CcuConnection> connection;
     if (tpProtocol == hcomm::TpProtocol::CTP) {
-        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs);
+        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
     } else {
-        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs);
+        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
     }
 
     return {std::move(connection), std::move(ccuJettys)};

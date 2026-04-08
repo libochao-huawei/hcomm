@@ -12,11 +12,27 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #include "tp_manager.h"
+#include "hccp.h"
+#include "orion_adapter_hccp.h"
 #include "orion_adapter_rts.h"
 #include "internal_exception.h"
 #include "env_config/env_config.h"
 
 using namespace Hccl;
+
+namespace {
+
+void MockDeviceTpAttrAsyncSupport()
+{
+    u32 tpAttrVersion = 2U;
+    MOCKER(RaGetInterfaceVersion)
+        .stubs()
+        .with(any(), any(), outBoundP(&tpAttrVersion, sizeof(tpAttrVersion)))
+        .will(returnValue(0));
+    MOCKER(HrtRaSetTpAttrAsync).stubs().will(returnValue(HCCL_SUCCESS));
+}
+
+} // namespace
 
 class TpManagerTest : public testing::Test {
 protected:
@@ -35,6 +51,8 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<DevId>(0)));
         void *rdmaHandle = (void*)0x200;
         MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+        MOCKER(RaGetInterfaceVersion).defaults().will(returnValue(static_cast<s32>(-1)));
+        TpManager::GetInstance(0).Init();
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;
     }
 
@@ -260,4 +278,80 @@ TEST_F(TpManagerTest, Ut_GetTpTotalTimeout_MaxRetryTimes_ReturnsCorrectTimeout)
     uint32_t tpTimeOutMs = 0;
     EXPECT_EQ(TpManager::GetTpTotalTimeout(tpAttrInfo, tpTimeOutMs), HCCL_SUCCESS);
     EXPECT_EQ(tpTimeOutMs, 32000);
+}
+
+TEST_F(TpManagerTest, tp_manager_device_qos_sl_mapping_success)
+{
+    MockDeviceTpAttrAsyncSupport();
+
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("8.0.0.1");
+    IpAddress rmtAddr("8.0.0.2");
+    const TpProtocol protocol = TpProtocol::TP;
+    RaUbGetTpInfoParam param{locAddr, rmtAddr, protocol};
+    param.qos = 5U;
+    TpInfo tpInfo{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+}
+
+TEST_F(TpManagerTest, tp_manager_loop_first_tp_lowest_sl_success)
+{
+    MockDeviceTpAttrAsyncSupport();
+
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("8.0.0.3");
+    IpAddress rmtAddr("8.0.0.4");
+    const TpProtocol protocol = TpProtocol::TP;
+    RaUbGetTpInfoParam param{locAddr, rmtAddr, protocol};
+    param.loopFirstTpLowestSl = true;
+    param.qos = 2U;
+    TpInfo tpInfo{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(param, tpInfo);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_TRUE(tpInfo.hasMappedJettyPriority);
+}
+
+TEST_F(TpManagerTest, tp_manager_qos_cache_by_key_success)
+{
+    HcclResult result;
+    const int32_t devLogicId = 0;
+    IpAddress locAddr("8.0.0.5");
+    IpAddress rmtAddr("8.0.0.6");
+    const TpProtocol protocol = TpProtocol::TP;
+
+    RaUbGetTpInfoParam paramQos0{locAddr, rmtAddr, protocol};
+    paramQos0.qos = 0U;
+    TpInfo tpInfo0{};
+
+    RaUbGetTpInfoParam paramQos7{locAddr, rmtAddr, protocol};
+    paramQos7.qos = 7U;
+    TpInfo tpInfo7{};
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo0);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos0, tpInfo0);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos7, tpInfo7);
+    EXPECT_EQ(result, HCCL_E_AGAIN);
+    result = TpManager::GetInstance(devLogicId).GetTpInfo(paramQos7, tpInfo7);
+    EXPECT_EQ(result, HCCL_SUCCESS);
 }
