@@ -29,10 +29,10 @@ constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传�
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                  const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                 const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+                                 const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
       opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr),
-      rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
+      rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid()), qos_(qos), devUsed_(devUsed)
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
     devLogicId = HrtGetDevice();
@@ -58,29 +58,33 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
         THROW<InternalException>("integer overflow occurs");
     }
 
-    CreateJetty(devUsed);
+    if (!devUsed_) {
+        CreateJetty(devUsed_);
+    } else {
+        HCCL_INFO("[DevUbConnection][Constructor] devUsed: defer CreateJetty until GetTpInfo maps qos.");
+    }
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                      const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                     const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+                                     const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::TP;
 }
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                        const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                       const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+                                       const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::CTP;
 }
 
 DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                          const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
-                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr, const u8 qos)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr, qos)
 {
     tpProtocol = TpProtocol::UBOE;
 }
@@ -154,6 +158,16 @@ RmaConnStatus DevUbConnection::GetStatus()
             HCCL_INFO("[DevUbConnection][%s] start, status[%s], ubConnStatus[%s].", __func__, status.Describe().c_str(),
                       ubConnStatus.Describe().c_str());
 
+            if (devUsed_) {
+                if (!GetTpInfo()) {
+                    ubConnStatus = UbConnStatus::TP_INFO_GETTING;
+                    break;
+                }
+                CreateJetty(devUsed_);
+                ubConnStatus = UbConnStatus::JETTY_CREATING;
+                break;
+            }
+
             SetJettyInfo();
 
             if (!GetTpInfo()) {
@@ -166,10 +180,22 @@ RmaConnStatus DevUbConnection::GetStatus()
             break;
         }
         case UbConnStatus::TP_INFO_GETTING: {
-            if (GetTpInfo()) {
-                status       = RmaConnStatus::EXCHANGEABLE;
-                ubConnStatus = UbConnStatus::JETTY_CREATED;
+            if (!GetTpInfo()) {
+                break;
             }
+            if (devUsed_) {
+                CreateJetty(devUsed_);
+                ubConnStatus = UbConnStatus::JETTY_CREATING;
+                break;
+            }
+            status       = RmaConnStatus::EXCHANGEABLE;
+            ubConnStatus = UbConnStatus::JETTY_CREATED;
+            break;
+        }
+        case UbConnStatus::JETTY_CREATING: {
+            SetJettyInfo();
+            status       = RmaConnStatus::EXCHANGEABLE;
+            ubConnStatus = UbConnStatus::JETTY_CREATED;
             break;
         }
         case UbConnStatus::JETTY_CREATED: {
@@ -312,6 +338,10 @@ void DevUbConnection::CreateJetty(const bool devUsed)
         HCCL_INFO("[DevUbConnection][%s] HrtJettyMode is DEV_USED.", __func__);
     }
 
+    req.qos = qos_;
+    HCCL_INFO("[DevUbConnection][%s] jetty create qos[%u] (maps to attr.ub.priority lower 4 bits).", __func__,
+        static_cast<unsigned int>(qos_));
+
     reqHandle = RaUbCreateJettyAsync(rdmaHandle, req, reqDataBuffer, jettyHandlePtr);
 }
 
@@ -339,12 +369,22 @@ bool DevUbConnection::GetTpInfo()
             __func__, tpProtocol.Describe().c_str());
         ThrowAbnormalStatus(std::string(__func__));
     }
-    
-    auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(
-        {locAddr, rmtAddr, tpProtocol}, tpInfo);
+
+    RaUbGetTpInfoParam p{};
+    p.locAddr = locAddr;
+    p.rmtAddr = rmtAddr;
+    p.tpProtocol = tpProtocol;
+    p.qos = qos_;
+    p.slLevelCount = 0;
+    p.loopFirstTpLowestSl = false;
+
+    auto ret = TpManager::GetInstance(devLogicId).GetTpInfo(p, tpInfo);
 
     switch (ret) {
         case HcclResult::HCCL_SUCCESS:
+            if (tpInfo.hasMappedJettyPriority) {
+                qos_ = static_cast<u8>(tpInfo.mappedJettyPriority & 0xFU);
+            }
             GenerateLocalPsn();
             return true;
         case HcclResult::HCCL_E_AGAIN:
