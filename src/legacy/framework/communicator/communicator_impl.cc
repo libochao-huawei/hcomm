@@ -2400,12 +2400,13 @@ MirrorTaskManager &CommunicatorImpl::GetMirrorTaskManager() const
 
 CommunicatorImpl::~CommunicatorImpl()
 {
+    (void)DestroyDpuKernelResource();
+    g_taskServiceMap.erase(id);
+
     HCCL_INFO("[~CommunicatorImpl] start CommunicatorImpl destroy, commId[%s]", id.c_str());
     (void)NotifyAicpuDestroyComm();
     ccuDrvHandle = nullptr;
 
-    (void)DestroyDpuKernelResource();
-    g_taskServiceMap.erase(id);
     DeInitPreResource();
     HCCL_RUN_INFO("[~CommunicatorImpl] cclBuffer free, commId[%s] ", id.c_str());
 }
@@ -2423,7 +2424,7 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
         return HCCL_SUCCESS;
     }
 
-    CHK_RET(WaitDpuKernelThreadTerminate());
+    (void)WaitDpuKernelThreadTerminate();
 
     // 切换回 dpu ctx
     if (ACL_SUCCESS != aclrtSetCurrentContext(dpuContext)) {
@@ -2434,12 +2435,14 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     HCCL_INFO("Destroy Stream");
     if (aclrtDestroyStreamForce(dpuStream) != ACL_SUCCESS) {
         HCCL_ERROR("Destroy Stream Failed");
+        (void)aclrtSetCurrentContext(npuContext);
         return HCCL_E_RUNTIME;
     }
     // reset DPU kernel 线程
     HCCL_INFO("Start to reset DPU device");
     if (HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
         HCCL_ERROR("ResetXpuDevice Failed");
+        (void)aclrtSetCurrentContext(npuContext);
         return HCCL_E_RUNTIME;
     }
     // 切回 npu ctx
@@ -2468,14 +2471,8 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
         HCCL_ERROR("Terminate TaskRun Fail");
         return HCCL_E_RUNTIME;
     }
-    HcclUs        startTime                   = std::chrono::steady_clock::now();
-    constexpr u32 waitTransportReadyTimeoutMs = 200 * 1000; // 定义最大等待200秒
-    auto          timeout                     = std::chrono::milliseconds(waitTransportReadyTimeoutMs);
+
     do {
-        if (std::chrono::steady_clock::now() - startTime >= timeout) {
-            HCCL_ERROR("Wait Terminate TaskRun TimeOut");
-            return HCCL_E_TIMEOUT;
-        }
         if (aclrtMemcpy(&flag, sizeof(flag), dstPtr, sizeof(flag), aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST)
             != ACL_SUCCESS) {
             HCCL_ERROR("Read Terminate TaskRun Signal Fail");
