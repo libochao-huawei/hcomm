@@ -24,9 +24,9 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
     std::vector<CcuChannelInfo> &ccuChannelInfos)
 {
     HCCL_INFO("[%s] new allocation request: deviceLogicId[%d], ipAddr[%s], "
-        "channelnum[%u], jettyNum[%u], sqSize[%u].", __func__, deviceLogicId,
+        "channelnum[%u], jettyNum[%u], sqSize[%u], ubJettyJfsPriority[%u].", __func__, deviceLogicId,
         ccuChannelPara.ipAddr.Describe().c_str(), ccuChannelPara.channelNum,
-        ccuChannelPara.jettyNum, ccuChannelPara.sqSize);
+        ccuChannelPara.jettyNum, ccuChannelPara.sqSize, ccuChannelPara.ubJettyJfsPriority);
     // 入参校验拦截
     CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
         HCCL_ERROR("[CcuAllocChannels]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
@@ -41,6 +41,7 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
         para.feId = dieIdAndFuncId.second;
         para.jettyNum = ccuChannelPara.jettyNum;
         para.sqSize = ccuChannelPara.sqSize;
+        para.ubJettyJfsPriority = ccuChannelPara.ubJettyJfsPriority;
         return CcuComponent::GetInstance(deviceLogicId).AllocChannels(dieId, para, ccuChannelInfos);
     );
 }
