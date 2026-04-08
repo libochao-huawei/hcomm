@@ -33,6 +33,16 @@ typedef uint32_t EndpointAttrDieId;
 typedef uint32_t EndpointAttrLocation;
 
 /**
+ * @brief 通信设备Link方向
+ */
+typedef enum {
+    COMM_LINK_DIRECTION_INVALID = -1,   // 未初始化
+    COMM_LINK_DIRECTION_BOTH = 0,       // 发送和接收
+    COMM_LINK_DIRECTION_SEND_ONLY = 1,  // 只能发送
+    COMM_LINK_DIRECTION_RECV_ONLY = 2,  // 只能接收
+} CommLinkDirection;
+
+/**
  * @brief 通信拓扑枚举
  */
 typedef enum {
@@ -66,6 +76,7 @@ typedef struct {
     CommAbiHeader header;
     EndpointDesc srcEndpointDesc;
     EndpointDesc dstEndpointDesc;
+    CommLinkDirection direction;
     union {
         uint8_t raws[128];
         struct {
@@ -103,6 +114,7 @@ static inline HcclResult CommLinkInit(CommLink *commLink, uint32_t linkNum)
             // 初始化链路属性（显式设置保留值）
             commLink->linkAttr.linkProtocol = COMM_PROTOCOL_RESERVED;
             commLink->linkAttr.hop          = 1;
+            commLink->direction = COMM_LINK_DIRECTION_INVALID;
             commLink++;  // 移动到下一个描述符
         } else {
             return HCCL_E_PTR;

@@ -189,6 +189,7 @@ namespace Hccl {
     {
         for (const auto &link : path.links) {
             const NetInstance::Link *peer2peer = &link;
+            int linkDirection = peer2peer->GetLinkDirection();
             for (LinkProtocol protocol : link.GetLinkProtocols()) {
                 CommLink commLink;
                 CommLinkInit(&commLink, 1);
@@ -197,6 +198,7 @@ namespace Hccl {
                 commLink.linkAttr.hop = peer2peer->GetHop();
                 commLink.srcEndpointDesc.protocol = commProtocol;
                 commLink.dstEndpointDesc.protocol = commProtocol;
+                commLink.direction = static_cast<CommLinkDirection>(linkDirection);
 
                 // 设置源端点
                 std::shared_ptr<NetInstance::ConnInterface> srcConnInterface = link.GetSourceIface();
