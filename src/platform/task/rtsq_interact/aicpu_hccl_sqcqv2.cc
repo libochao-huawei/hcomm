@@ -47,6 +47,15 @@ uint8_t ReduceOpcode(uint8_t copyDataType)
 void AddOneNotifyWaitSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyId, const uint8_t *sqeIn, uint8_t *sqeType,
     const dfx::DfxTimeOutConfig &dfxTimeOutConfig)
 {
+    if (sqeIn == nullptr) {
+        HCCL_ERROR("[SQE] sqeIn is nullptr");
+        return;
+    }
+    
+    if (sqeType == nullptr) {
+        HCCL_ERROR("[SQE] sqeType is nullptr");
+        return;
+    }
     (void)dfxTimeOutConfig;
     *sqeType = SqeType::NOTIFY_SQE_V2;
     rtStarsNotifySqeV2_t * const sqe = (rtStarsNotifySqeV2_t * const)sqeIn;
