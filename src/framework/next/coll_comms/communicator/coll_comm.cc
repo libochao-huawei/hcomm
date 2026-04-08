@@ -15,6 +15,7 @@
 #include "kfc.h"
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
+#include "hcom_common.h"
 
 constexpr uint32_t MULTIPLE = 4;               // 用于A5判断TC是否为4的倍数
 constexpr uint32_t TC_MAX = 255;               // TC的最大值（不区分芯片类型）
@@ -64,9 +65,6 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
 
-    EXECEPTION_CATCH(
-        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
-        return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
@@ -83,7 +81,18 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
                 HCCL_ERROR_CODE(HCCL_E_PARA), sl),
             HCCL_E_PARA);
         CHK_RET(config_.SetConfigServiceLevel(sl));
+
+        u32 qos = config->hcclQos;
+        CHK_PRT_RET((qos != 0xFFFFFFFFu) && (qos > 7u),
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclQos[%u], must be 0xFFFFFFFF or in [0,7]",
+                HCCL_ERROR_CODE(HCCL_E_PARA), qos),
+            HCCL_E_PARA);
+        CHK_RET(config_.SetConfigHcclQos(qos));
     }
+
+    EXECEPTION_CATCH(
+        myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get(), rankIpPortMap_),
+        return HCCL_E_PTR);
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
     CHK_RET(hrtGetDevice(&deviceLogicId_));
 
