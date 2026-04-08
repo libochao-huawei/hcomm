@@ -383,7 +383,7 @@ HcclResult TransportRoce::Init()
     isInited_ = true;
 
     struct QpAttr attr{};
-    hrtRaGetQpAttr(tagQpInfo_.qpHandle, &attr);
+    CHK_RET(hrtRaGetQpAttr(tagQpInfo_.qpHandle, &attr));
     HCCL_USER_CRITICAL_LOG("create hccl transport:communicator[%s], local rank[%u] ip[%s], remote rank[%u] ip[%s], "\
         "transporttype[%s], rdma qpn[%u], rdma qp sport[%u].", machinePara_.collectiveId.c_str(), machinePara_.localUserrank, 
         machinePara_.localIpAddr.GetReadableAddress(), machinePara_.remoteUserrank, machinePara_.remoteIpAddr.GetReadableAddress(),
@@ -557,7 +557,7 @@ HcclResult TransportRoce::RxAsync(UserMemType srcMemType, u64 srcOffset, void *d
         TransData recvData(reinterpret_cast<u64>(nullptr), reinterpret_cast<u64>(dst), len, HCCL_DATA_TYPE_INT8);
         HcclMessageInfo* tmpMsg;
         HcclStatus status;
-        GenerateRecvMessage(envelope, tmpMsg, status);
+        CHK_RET(GenerateRecvMessage(envelope, tmpMsg, status));
         CHK_RET(Imrecv(recvData, *tmpMsg, request));
         HCCL_INFO("request->transportRequest.requestType[%d]", request->transportRequest.requestType);
     }
