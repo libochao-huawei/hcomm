@@ -35,6 +35,8 @@ protected:
         MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<DevId>(0)));
         void *rdmaHandle = (void*)0x200;
         MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+        MOCKER(RaGetInterfaceVersion).defaults().will(returnValue(static_cast<s32>(-1)));
+        TpManager::GetInstance(0).Init();
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;
     }
 

@@ -18,6 +18,7 @@
 #include "hccp_ctx.h"
 
 #include "enum_factory.h"
+#include "env_config.h"
 #include "hccl_rank_graph.h"
 
 // orion 暂时复用
@@ -100,6 +101,8 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
     u8 errTimeout{16};
+    /// 低 4bit 映射 UB Jetty 创建属性中的 priority（attr.ub.priority = qos & 0xF）
+    u32              qos{EnvConfig::UB_QOS_DEFAULT};
 
     HrtRaUbJettyCreateParamDef() {}
 
@@ -143,7 +146,7 @@ using HrtRaUbJettyImportedOutParam = struct HrtRaUbJettyImportedOutParamDef {
     u32               tpn{0};
 };
 
-MAKE_ENUM(TpProtocol, CTP, RTP);
+MAKE_ENUM(TpProtocol, CTP, RTP, UBOE);
 
 struct JettyImportCfg {
     u64 localTpHandle{0};
