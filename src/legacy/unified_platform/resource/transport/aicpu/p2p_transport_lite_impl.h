@@ -28,12 +28,15 @@ public:
                                  std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
 
     P2PTransportLiteImpl(std::vector<char> &uniqueId);
+    void Init(std::vector<char> &uniqueId);
 
     ~P2PTransportLiteImpl() override;
 
     std::string Describe() const override;
 
     Buffer GetRmtBuffer(u32 index) override;
+
+    HcclResult BuildLocRmaBufferLite(const uintptr_t addr, const size_t size, RmaBufferLite &rmaBufferLite) override;
 
     void Post(u32 index, const StreamLite &stream) override;
 
@@ -69,9 +72,18 @@ private:
             return StringFormat("RmtP2PBufLite[addr=0x%llx, size=0x%llx]", addr, size);
         }
     };
+    struct LocP2PBufLite {
+        u64         addr;
+        u64         size;
+        std::string Describe() const
+        {
+            return StringFormat("LocP2PBufLite[addr=0x%llx, size=0x%llx]", addr, size);
+        }
+    };
 
     std::vector<RmtP2PNotifyLite> rmtNotifyVec;
     std::vector<RmtP2PBufLite> rmtBufferVec;
+    std::vector<LocP2PBufLite> locBufferVec;
 
     std::vector<std::unique_ptr<NotifyLite>> locNotifyVec;
 
