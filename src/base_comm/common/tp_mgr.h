@@ -11,12 +11,15 @@
 #ifndef TP_MGR_H
 #define TP_MGR_H
 
+#include <cstdint>
+#include <functional>
 #include <mutex>
 #include <vector>
 #include <unordered_map>
 
 #include "hccl_types.h"
 #include "hcomm_adapter_hccp.h"
+#include "hccp_tp.h"
 #include "orion_adpt_utils.h"
 
 namespace hcomm {
@@ -48,22 +51,34 @@ constexpr uint8_t AT_GEAR_MAX = 3;
 constexpr uint8_t AT_GEAR_DEFAULT = 2;
 constexpr uint32_t AT_TIMEOUT_MAP[4] = {16, 128, 1000, 4000};
 
+/// 与 GetTpInfo / ReleaseTpInfo 中 info、req 两级 map 的 qos 键一致（param.qos 低 8 位）
+using QosKey = uint32_t;
+
 using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr locAddr{};
     CommAddr rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
+    /// 参与 TP/SL 分组与缓存键（0–7），连接侧已归一化
+    uint32_t qos{EnvConfig::UB_QOS_DEFAULT};
+    /// 非 0 时与 sl_available 推导的 M 取 min 作为可用档位数上限
+    uint32_t slLevelCount{0};
+    /// 环回等场景：首 TPID + 掩码内最小 SL
+    bool loopFirstTpLowestSl{false};
+    /// 仅 CCU 设备环回 GetTpInfo：与通信域 hcclQos 解耦，SL 来自 GetTpAttr.slBitmap；写回 SL 经 HrtRaSetTpAttrAsync（HDC）
+    bool ccuLoopbackGetTpInfo{false};
 
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
-        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
+        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol) {}
 
     std::string Describe() const {
         Hccl::IpAddress locIpAddr{}, rmtIpAddr{};
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
-        return Hccl::StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
-            locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+        return Hccl::StringFormat(
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d, ccuLoop=%d]",
+            locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(), tpProtocol.Describe().c_str(), qos,
+            static_cast<int>(loopFirstTpLowestSl), static_cast<int>(ccuLoopbackGetTpInfo));
     }
 };
 
@@ -74,9 +89,11 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 using TpHandle = uint64_t;
 struct TpInfo {
     TpHandle tpHandle{0};
+    uint32_t mappedJettyPriority{0};
+    bool hasMappedJettyPriority{false};
 
     TpInfo() = default;
-    TpInfo(const TpHandle handle)
+    explicit TpInfo(const TpHandle handle)
         : tpHandle(handle) {}
 };
 
@@ -139,10 +156,15 @@ private:
     * tpInfoNum: 查询到的TP信息个数，当前为复用TP，只会申请1个
     * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
     */
+    enum class ReqPhase : uint8_t { WAIT_LIST = 0, WAIT_TP_ATTR = 1 };
+
     struct RequestCtx {
+        ReqPhase phase{ReqPhase::WAIT_LIST};
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
         std::vector<char> dataBuffer;
+        TpAttr tpAttr{};
+        uint32_t tpAttrBitmap{0};
     };
 
     struct TpAttrRequestCtx {
@@ -151,12 +173,15 @@ private:
     };
 
     using TpAttrCtxMap = std::unordered_map<TpHandle, TpAttrCtx>;
-    using TpAttrReqCtxMap  = std::unordered_map<TpHandle, TpAttrRequestCtx>;
+    using TpAttrReqCtxMap = std::unordered_map<TpHandle, TpAttrRequestCtx>;
 
-    using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
-    using ReqCtxMap  = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, RequestCtx>>;
+    /// 三级索引：先按本端 IP，再按对端 IP，最后按 QoS 档（0–7，与 GetTpInfo/TP-SL 策略里用的档位一致）。
+    using InfoQosMap = std::unordered_map<uint32_t, TpInfoCtx>;
+    using InfoRmtMap = std::unordered_map<Hccl::IpAddress, InfoQosMap>;
+    using InfoCtxMap = std::unordered_map<Hccl::IpAddress, InfoRmtMap>;
+    using ReqQosMap = std::unordered_map<uint32_t, RequestCtx>;
+    using ReqRmtMap = std::unordered_map<Hccl::IpAddress, ReqQosMap>;
+    using ReqCtxMap = std::unordered_map<Hccl::IpAddress, ReqRmtMap>;
 
 private:
     TpMgr() = default;
@@ -166,10 +191,19 @@ private:
 
     HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     HcclResult FindAndGetTpAttr(const TpHandle tpHandle, TpAttrInfo &tpAttrInfo);
+    HcclResult LookupInfoCtxEntry(InfoCtxMap &infoMap, const Hccl::IpAddress &locAddr, const Hccl::IpAddress &rmtAddr,
+        QosKey qosKey, InfoCtxMap::iterator &lit, InfoRmtMap::iterator &rit, InfoQosMap::iterator &qosIt) const;
+    HcclResult PollGetTpInfoReqCtx(std::unique_lock<std::mutex> &reqCtxLock, const GetTpInfoParam &param, TpInfo &tpInfo);
+    HcclResult BeginGetTpInfoListRequest(const GetTpInfoParam &param, ReqQosMap &qosMap, QosKey qosKey);
+    HcclResult AdvanceGetTpInfoWaitList(const GetTpInfoParam &param, RequestCtx &reqCtx, ReqQosMap &qosMap,
+        ReqQosMap::iterator it, std::unique_lock<std::mutex> &reqCtxLock);
+
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
+    HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
     HcclResult StartGetTpAttrRequest(const GetTpAttrParam &param, TpAttrRequestCtx &reqCtx, CtxHandle ctxHandle) const;
-    HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const GetTpInfoParam &param,
-        TpInfo &tpInfo);
+    HcclResult BuildTpInfoAndCommitQosAttr(const GetTpInfoParam &param, const RequestCtx &reqCtx,
+        const struct HccpTpInfo *baseInfoPtr, uint32_t tpListIndex, uint32_t mappedSl, TpInfo &tmpTpInfo);
+    HcclResult HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
     HcclResult HandleCompletedTpAttrRequest(const TpAttrRequestCtx reqCtx, const TpHandle tpHandle,
         TpAttrInfo &tpAttrInfo);
 
@@ -188,6 +222,9 @@ private:
     InfoCtxMap rtpInfoMap_;
     ReqCtxMap  rtpReqMap_;
 
+    InfoCtxMap uboeInfoMap_;
+    ReqCtxMap  uboeReqMap_;
+
     TpAttrCtxMap tpAttrCtxMap_;
     TpAttrReqCtxMap tpAttrReqCtxMap_;
 
@@ -196,6 +233,9 @@ private:
 
     std::mutex rtpInfoMutex_;
     std::mutex rtpReqMutex_;
+
+    std::mutex uboeInfoMutex_;
+    std::mutex uboeReqMutex_;
 
     std::mutex tpAttrCtxMutex_;
     std::mutex tpAttrReqMutex_;
