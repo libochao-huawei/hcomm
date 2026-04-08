@@ -136,22 +136,18 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();
 
-    auto &rankList = rankTable_->ranks;
-    if (static_cast<u32>(myRank_) >= rankList.size()) {
-        THROW<InvalidParamsException>(
-            StringFormat("[RankGraphBuilder][AddFabricInfo] invalid myRank[%u] >= ranksize[%u]",
-                static_cast<u32>(myRank_), rankList.size())
-        );
-    }
-    auto &rankLevelInfoList = rankList[myRank_].rankLevelInfos;
-    if (netLayer >= rankLevelInfoList.size()) {
-        THROW<InvalidParamsException>(
-            StringFormat("[RankGraphBuilder][AddFabricInfo] invalid netLayer[%u] >= rankLevelInfosize[%u]",
-                netLayer, rankLevelInfoList.size())
-        );
-    }
     // 根据planeId确认Fabric个数，每个fabricId对应一个planeId
-    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(rankLevelInfoList[netLayer].rankAddrs);
+    const auto& ranks = rankTable_->ranks;
+    if (myRank_ >= ranks.size()) {
+        THROW<InvalidParamsException>(StringFormat("[RankGraphBuilder][AddFabricInfo] myRank_[%u] out of range, "
+            "ranks size[%u]", myRank_, ranks.size()));
+    }
+    const auto& myRankLevelInfos = ranks[myRank_].rankLevelInfos;
+    if (netLayer >= myRankLevelInfos.size()) {
+        THROW<InvalidParamsException>(StringFormat("[RankGraphBuilder][AddFabricInfo] netLayer[%u] out of range, "
+            "rankLevelInfos size[%u], myRank_[%u]", netLayer, myRankLevelInfos.size(), myRank_));
+    }
+    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(myRankLevelInfos[netLayer].rankAddrs);
 
     if (planeId2Node.size() == 0) {
         HCCL_WARNING("[RankGraphBuilder][AddFabricInfo] current rankId[%d] netLayer[%u] group no net plane", myRank_, netLayer);
