@@ -16,6 +16,7 @@
 #include "data_type.h"
 #include "reduce_op.h"
 #include "orion_adapter_rts.h"
+#include "ipc_remote_notify.h"
 #include "rts_cnt_notify.h"
 #include "rts_1ton_cnt_notify.h"
 
