@@ -1133,6 +1133,7 @@ HcclResult TransportIbverbs::GetIndOpRemoteMem(HcclMem **remoteMem, uint32_t *me
 
 HcclResult TransportIbverbs::GetRemoteMem(UserMemType memType, void **remotePtr)
 {
+    CHK_PTR_NULL(remotePtr);
     switch (memType) {
         case UserMemType::INPUT_MEM:
         case UserMemType::OUTPUT_MEM:
@@ -1640,6 +1641,8 @@ HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u
 HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemPtr, u64 srcMemSize,
                                        Stream &stream)
 {
+    CHK_PTR_NULL(memMsg.addr);
+    CHK_PTR_NULL(srcMemPtr);
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !useAtomicWrite_) {
         struct SgList list = {0};
         struct SendWr wr = {nullptr};
@@ -1905,6 +1908,7 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
             return HCCL_E_NOT_SUPPORT;
         }
     }
+    CHK_PTR_NULL(memPtr);
     struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = memPtr;
     mrInfo.size = memSize;
@@ -1941,6 +1945,8 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
 HcclResult TransportIbverbs::RegCustomUserMemWithMsg(void *addr, u64 size, 
     MemMsg &memMsg, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(exchangeDataPtr);
     struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = addr;
     mrInfo.size = size;
@@ -2061,6 +2067,7 @@ HcclResult TransportIbverbs::GetRemoteAddr(MemType memType, u8*& exchangeDataPtr
 
 HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
 {
+    CHK_PTR_NULL(exchangeDataPtr);
     u32 remoteDmemNum = 0;
     s32 sRet = memcpy_s(reinterpret_cast<void*>(&remoteDmemNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
@@ -2104,6 +2111,7 @@ HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& excha
 
 HcclResult TransportIbverbs::GetRemoteNotifyAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize, MemMsg& memMsg)
 {
+    CHK_PTR_NULL(exchangeDataPtr);
     s32 sRet = memcpy_s(&memMsg, sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][GetRemoteNotifyAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
         "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",
@@ -2321,10 +2329,10 @@ HcclResult TransportIbverbs::GetLocalRdmaNotify(std::vector<HcclSignalInfo> &rdm
     CHK_SMART_PTR_NULL(ackNotify_);
     CHK_RET(ackNotify_->GetNotifyData(signalInfo));
     rdmaNotify.push_back(signalInfo);
-    CHK_SMART_PTR_NULL(ackNotify_);
+    CHK_SMART_PTR_NULL(dataNotify_);
     CHK_RET(dataNotify_->GetNotifyData(signalInfo));
     rdmaNotify.push_back(signalInfo);
-    CHK_SMART_PTR_NULL(ackNotify_);
+    CHK_SMART_PTR_NULL(dataAckNotify_);
     CHK_RET(dataAckNotify_->GetNotifyData(signalInfo));
     rdmaNotify.push_back(signalInfo);
     // 提取新增的notify资源
@@ -2489,6 +2497,8 @@ HcclResult TransportIbverbs::GetAiRMAQueueInfo(std::vector<HcclAiRMAQueueInfo> &
 HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *localAddr, u64 length, Stream &stream,
     WqeType wqeType, struct WrAuxInfo &aux)
 {
+    CHK_PTR_NULL(remoteAddr);
+    CHK_PTR_NULL(localAddr);
     // 单qp & 多qp
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
