@@ -302,6 +302,10 @@ HcclResult SalIsDirExist(const std::string &dir, s32 &status)
 #if HCOMM_T_DESC("数学计算处理函数", true)
 s32 SalLog2(s32 data)
 {
+    if (data <= 0) {
+        HCCL_ERROR("[SalLog2] Invalid input[%d], must be positive", data);
+        return -1;  
+    }
     return static_cast<s32>(log2(data));
 }
 #endif
@@ -592,7 +596,7 @@ HcclResult CheckHexUInt(const std::string& str)
         HCCL_ERROR("[Check][HexUInt]string[%s] is not a valid hexadecimal uint value.", str.c_str());
         return HCCL_E_PARA;
     }
-    for (int i = 2; i < 10; i++) {  // 从第2个字符到第10个字符判断是否是有效字符
+    for (int i = 2; i < 10; i++) {  // 从第2个字符到第9个字符判断是否是有效字符
         if ((str[i] >= '0' && str[i] <= '9') ||
             (str[i] >= 'a' && str[i] <= 'f') ||
             (str[i] >= 'A' && str[i] <= 'F')) {

@@ -650,6 +650,9 @@ HcclResult DispatcherPub::DealTbeReduce(const void *src1, const void *src2, u64 
 HcclResult DispatcherPub::TbeReduceAsync(const void *src1, const void *src2, u64 count,
     const HcclDataType datatype, HcclReduceOp redOp, Stream& stream, const void *dst)
 {
+    CHK_PTR_NULL(src1);
+    CHK_PTR_NULL(src2);
+    CHK_PTR_NULL(dst);
     HCCL_DEBUG("Enter--para: src1[%p], src2[%p], count[%llu], datatype[%s], red_op[%s], dst[%p].",
         src1, src2, count, GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str(), dst);
     uint64_t beginTime = GetMsprofSysCycleTime();
@@ -756,7 +759,7 @@ HcclResult DispatcherPub::InlineReduceAsync(const void *src, u64 count, const Hc
 
         u32 taskID = 0;
         u32 streamID = 0;
-        hrtGetTaskIdAndStreamID(taskID, streamID);
+        CHK_RET(hrtGetTaskIdAndStreamID(taskID, streamID));
         PLF_CONFIG_INFO(PLF_TASK,
             "%s para: dst[%p] src[%p] count[%llu] rtReduceOp[%d] runtimeDataType[%d] taskID[%u] streamID[%u] "\
             "remoteUserRank[%u] inLinkType[%d]", __func__, dstSplit, srcSplit, contSplit / SIZE_TABLE[datatype],
@@ -795,6 +798,10 @@ HcclResult DispatcherPub::GetCallbackResult()
 
 void HostNicTcpCallBackProfiling(RaSocketParams *params, std::chrono::microseconds duration)
 {
+    if (params == nullptr) {
+        HCCL_ERROR("[HostNicTcpCallBackProfiling] params is nullptr");
+        return;
+    }
     hccl::TaskParaHost para(params->taskInfo.streamId, params->taskInfo.taskId, params->len, duration,
         params->taskInfo.tag);
     hccl::TaskPara taskPara(TaskType::TASK_HOST, para);
@@ -820,10 +827,18 @@ void HostNicCallbackSendWr(void *fnData)
         params->wr.memList.len, duration, params->taskInfo.tag);
     hccl::TaskPara taskPara(TaskType::TASK_HOST, para);
     taskPara.profilerType = ProfilerType::TASK_PROFILING;
+    if (params->callback == nullptr) {
+        HCCL_ERROR("[Send][Wr] callback is nullptr");
+        return;
+    }
     params->callback(params->callBackUserPtr, (void *)&taskPara, sizeof(struct TaskPara));
 
     // 单算子场景内存需要及时释放
     if (params->workMode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+        if (params->dispatcherPtr == nullptr) {
+            HCCL_ERROR("[Send][Wr] dispatcherPtr is nullptr");
+            return;
+        }
         DispatcherPub *tmpDispatcherPtr = static_cast<DispatcherPub *>(params->dispatcherPtr);
         ret = tmpDispatcherPtr->DelHostNICRdmaTask(params->taskInfo.streamId, params->taskInfo.taskId);
         if (ret != HCCL_SUCCESS) {
@@ -935,6 +950,10 @@ void WaitHostNicTcpSendDone(void *dispatcher)
 
 void StartHostNicTcpSendThread(void *fnData)
 {
+    if (fnData == nullptr) {
+        HCCL_ERROR("[StartHostNicTcpSendThread] fnData is nullptr");
+        return;
+    }
     RaSocketParams *params = static_cast<RaSocketParams *>(fnData);
     DispatcherPub *tmpDispatcherPtr = static_cast<DispatcherPub *>(params->dispatcherPtr);
     HcclResult ret = tmpDispatcherPtr->SetHostNicTcpSendThreadPara(fnData);
@@ -1065,6 +1084,7 @@ HcclResult DispatcherPub::HostNicTcpRecv(FdHandle socketFdHandle, const void *so
 
 HcclResult DispatcherPub::SetHostNicTcpSendThreadPara(void *fnData)
 {
+    CHK_PTR_NULL(fnData);
     std::unique_ptr<RaSocketParams> params = nullptr;
     auto tmpRaSocketParamsPtr = new (std::nothrow) RaSocketParams(*(static_cast<RaSocketParams *>(fnData)));
     CHK_PTR_NULL(tmpRaSocketParamsPtr);
@@ -1180,7 +1200,7 @@ HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &w
 
     u32 taskID = 0;
     u32 streamID = 0;
-    hrtGetTaskIdAndStreamID(taskID, streamID);
+    CHK_RET(hrtGetTaskIdAndStreamID(taskID, streamID));
     PLF_CONFIG_INFO(PLF_TASK,
         "%s para: qpn[%u] wqeIndex[%u] rdmaType[%d] notifyId[0x%016llx] taskID[%u] streamID[%u]",
         __func__, qpn, wqeIndex, rdmaType, notifyID, taskID, streamID);
@@ -1230,7 +1250,7 @@ HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr 
 
     u32 taskID = 0;
     u32 streamID = 0;
-    hrtGetTaskIdAndStreamID(taskID, streamID);
+    CHK_RET(hrtGetTaskIdAndStreamID(taskID, streamID));
     PLF_CONFIG_INFO(PLF_TASK,
         "%s para: dbindex[%u] dbinfo[%llu] rdmaType[%d] notifyId[0x%016llx] offset[%llu] taskID[%u] streamID[%u]",
         __func__, dbindex, dbinfo, rdmaType, notifyID, offset, taskID, streamID);
