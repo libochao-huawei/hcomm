@@ -17,6 +17,7 @@
 namespace hccl {
 HcclResult MemMappingManager::MapMem(s32 deviceLogicID, void *addr, u64 size, void *&devVA)
 {
+    CHK_PTR_NULL(addr);
     if (IsRequireMapping(addr, size, devVA)) {
         DevType devType;
         CHK_RET(hrtHalGetDeviceType(deviceLogicID, devType));
