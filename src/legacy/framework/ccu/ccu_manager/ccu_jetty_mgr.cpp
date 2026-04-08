@@ -13,6 +13,7 @@
 #include <unordered_set>
 
 #include "ccu_dev_mgr.h"
+#include "communicator_impl.h"
 #include "internal_exception.h"
 #include "invalid_params_exception.h"
 
@@ -23,7 +24,8 @@ constexpr uint32_t CCU_CLOS_REQUEST_SQ_SIZE = 16;  // CLOS场景的默认SQ大�
 constexpr uint32_t CCU_DEFAULT_REQUEST_CHANNEL_NUM = 1;
 constexpr uint32_t CCU_DEFAULT_REQUEST_JETTY_NUM = 0; // 申请数量为0时，由平台层决定提供数量
 
-CcuJettyMgr::CcuJettyMgr(int32_t devLogicId): devLogicId_(devLogicId)
+CcuJettyMgr::CcuJettyMgr(int32_t devLogicId, CommunicatorImpl *comm)
+    : devLogicId_(devLogicId), comm_(comm)
 {
 }
 
@@ -85,11 +87,12 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
         return HcclResult::HCCL_SUCCESS;
     }
     // 已有的资源不足，需要新增资源，获取的channel数量可能超过申请数量
+    const u8 jfsPrio = comm_ != nullptr ? comm_->GetUbJettyJfsPriority() : static_cast<u8>(2u);
     const CcuChannelPara channelPara{batchKey, CCU_DEFAULT_REQUEST_CHANNEL_NUM,
-            CCU_DEFAULT_REQUEST_JETTY_NUM, sqSize};  // 使用传入的sqSize参数
-    HCCL_INFO("[CcuJettyMgr][%s] try to alloc ccu channels with channelPara[channelNum=%u, jettyNum=%u, sqSize=%u], "
+            CCU_DEFAULT_REQUEST_JETTY_NUM, sqSize, jfsPrio};
+    HCCL_INFO("[CcuJettyMgr][%s] try to alloc ccu channels with channelPara[channelNum=%u, jettyNum=%u, sqSize=%u, ubJettyJfsPriority=%u], "
         "locAddr[%s], devLogicId[%d].", __func__, channelPara.channelNum, channelPara.jettyNum,
-        channelPara.sqSize, batchKey.Describe().c_str(), devLogicId_);
+        channelPara.sqSize, channelPara.ubJettyJfsPriority, batchKey.Describe().c_str(), devLogicId_);
     std::vector<CcuChannelInfo> channelInfos;
     auto ret = CcuAllocChannels(devLogicId_, channelPara, channelInfos);
     // 如果资源不足，平台层返回不可用错误，需要上层感知不可用进行降级处理
