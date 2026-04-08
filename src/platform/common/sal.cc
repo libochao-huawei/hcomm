@@ -592,7 +592,7 @@ HcclResult CheckHexUInt(const std::string& str)
         HCCL_ERROR("[Check][HexUInt]string[%s] is not a valid hexadecimal uint value.", str.c_str());
         return HCCL_E_PARA;
     }
-    for (int i = 2; i < 10; i++) {  // 从第2个字符到第10个字符判断是否是有效字符
+    for (int i = 2; i < 10; i++) {  // 从第2个字符到第9个字符判断是否是有效字符
         if ((str[i] >= '0' && str[i] <= '9') ||
             (str[i] >= 'a' && str[i] <= 'f') ||
             (str[i] >= 'A' && str[i] <= 'F')) {
