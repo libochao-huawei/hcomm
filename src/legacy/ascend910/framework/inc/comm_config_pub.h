@@ -108,6 +108,7 @@ public:
     HcclResult SetConfigTrafficClass(u32 trafficClass);
     HcclResult SetConfigServiceLevel(u32 serviceLevel);
     const std::string& GetConfigGroupName() const;  // 获取通信域名称
+    HcclResult SetConfigHcclQos(u32 hcclQos);
 
 private:
     void InitAlgoConfig();
