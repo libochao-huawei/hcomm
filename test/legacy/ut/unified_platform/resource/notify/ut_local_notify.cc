@@ -57,7 +57,7 @@ protected:
     u32  fakeNotifyId                   = 1;
     u64  fakeOffset                     = 200;
     u64  fakeAddress                    = 300;
-    u32  fakePid                        = 100;
+    s32  fakePid                        = 100;
     char fakeName[RTS_IPC_MEM_NAME_LEN] = "testRtsNotify";
 };
 
@@ -116,7 +116,7 @@ protected:
     u32  fakeNotifyId                   = 1;
     u32  fakeOffset                     = 200;
     u64  fakeAddress                    = 300;
-    u32  fakePid                        = 100;
+    s32  fakePid                        = 100;
     u64  fakeVa                         = 100;
     u64  fakeSize                       = 1024;
     char fakeName[RTS_IPC_MEM_NAME_LEN] = "testRtsNotify";
@@ -212,7 +212,7 @@ protected:
     u32  fakeNotifyId                   = 1;
     u64  fakeOffset                     = 200;
     u64  fakeAddress                    = 300;
-    u32  fakePid                        = 100;
+    s32  fakePid                        = 100;
     u64  fakeVa                         = 100;
     u64  fakeSize                       = 1024;
     char fakeName[RTS_IPC_MEM_NAME_LEN] = "testRtsNotify";

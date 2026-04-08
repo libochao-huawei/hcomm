@@ -7,6 +7,12 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-add_subdirectory(common)
-add_subdirectory(profiling)
-add_subdirectory(task_exception)
+target_sources(hccl_v2 PRIVATE
+    mirror_task_manager_lite.cc
+)
+
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+target_sources(ccl_kernel PRIVATE
+    mirror_task_manager_lite.cc
+)
+endif()

@@ -170,11 +170,11 @@ HcclResult TaskService::TaskRun()
     HCCL_INFO("[TaskService::%s] TaskService{npu2dpuMem:%p; dpu2npuMem:%p; hostMem:%p}", __func__, npu2dpuMem_,
               dpu2npuMem_, hostMem_);
     if (dataSize_ == 0) {
-        HCCL_ERROR("[TaskService::%s] dataSize[%zu] illegal", __func__, dataSize_);
+        HCCL_ERROR("[TaskService::%s] dataSize[%d] illegal", __func__, dataSize_);
         return HCCL_E_INTERNAL;
     }
     if (dataSize_ > hostMemSize_) {
-        HCCL_ERROR("[TaskService::%s] hostMemSize[%zu] less than dataSize[%zu]", __func__, hostMemSize_, dataSize_);
+        HCCL_ERROR("[TaskService::%s] hostMemSize[%d] less than dataSize[%d]", __func__, hostMemSize_, dataSize_);
         return HCCL_E_INTERNAL;
     }
     uint8_t flag{0};

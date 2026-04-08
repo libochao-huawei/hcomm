@@ -9,7 +9,6 @@
  */
 #include "mem_transport_lite_mgr.h"
 #include "binary_stream.h"
-#include "mem_transport_callback.h"
 
 namespace Hccl {
 
@@ -56,8 +55,8 @@ void MemTransportLiteMgr::ParseOpbasePackedData(std::vector<char> &data)
         binaryStream >> transpUniqueId;
 
         if (!IsOpbaseExist(link)) {
-            auto transportCallback = MemTransportCallback(link, *mirrorTaskMgr_);
-            auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallback);
+            auto transportCallbackLite = MemTransportCallbackLite(link, *mirrorTaskMgrLite_);
+            auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallbackLite);
             HCCL_INFO("Build New OpBase Link=%s, transport=%s", link.Describe().c_str(), lite->Describe().c_str());
             opBaseTranspMap[link] = std::move(lite);
         }
@@ -88,8 +87,8 @@ void MemTransportLiteMgr::ParseOffloadPackedData(const std::string &opTag, std::
 
         std::vector<char> transpUniqueId;
         binaryStream >> transpUniqueId;
-        auto transportCallback = MemTransportCallback(link, *mirrorTaskMgr_);
-        auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallback);
+        auto transportCallbackLite = MemTransportCallbackLite(link, *mirrorTaskMgrLite_);
+        auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallbackLite);
         HCCL_INFO("MemTransportLiteMgr::ParseOffloadPackedData: %s, %s", link.Describe().c_str(), lite->Describe().c_str());
         offloadTranspMap[opTag][link] = std::move(lite);
     }
@@ -109,8 +108,8 @@ void MemTransportLiteMgr::ParseOpbaseAllPackedData(BinaryStream &binaryStream)
         binaryStream >> transpUniqueId;
 
         if (!IsOpbaseExist(link)) {
-            auto transportCallback = MemTransportCallback(link, *mirrorTaskMgr_);
-            auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallback);
+            auto transportCallbackLite = MemTransportCallbackLite(link, *mirrorTaskMgrLite_);
+            auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallbackLite);
             HCCL_INFO("Build New OpBase Link=%s, transport=%s", link.Describe().c_str(), lite->Describe().c_str());
             opBaseTranspMap[link] = std::move(lite);
         }
@@ -136,8 +135,8 @@ void MemTransportLiteMgr::ParseOffloadAllPackedData(BinaryStream &binaryStream)
 
             std::vector<char> transpUniqueId;
             binaryStream >> transpUniqueId;
-            auto transportCallback = MemTransportCallback(link, *mirrorTaskMgr_);
-            auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallback);
+            auto transportCallbackLite = MemTransportCallbackLite(link, *mirrorTaskMgrLite_);
+            auto lite = std::make_unique<MemTransportLite>(transpUniqueId, transportCallbackLite);
             HCCL_INFO("MemTransportLiteMgr::ParseOffloadAllPackedData: %s, %s",
                        link.Describe().c_str(), lite->Describe().c_str());
             offloadTranspMap[opTag][link] = std::move(lite);

@@ -171,10 +171,6 @@ HcclResult CollServiceAiCpuImpl::AllocCollOpResourceNoRegister(CollOperator &op,
     DevBuffer *mem = nullptr;
     comm->SetCommStatus(CommStatus::COMM_BUILDING);
     mem = OpBasedCollProcess(op, comm->GetCurAlgName());
-    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s], opAlgTag[%s]",
-                             op.opType.Describe().c_str(), comm->GetOpBaseOpIndex(), comm->GetId().c_str(),
-                             comm->GetCurAlgName().c_str(), opAlgTag.c_str());
-    comm->GetTrace().Save(info);
     CHK_RET(AicpuMc2CommResourcePrepare(op, comm->GetCurAlgName(), mem, opAlgTag, addr));
     return HCCL_SUCCESS;
 }
@@ -432,8 +428,8 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     constexpr u32 numBlocks = 1;
     HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
 			reinterpret_cast<void *>(kernelParamBuf_.get()->GetAddr()), sizeof(HcclKernelParamLite) + dynamicDataSize);
-    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
-                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str());
+    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode, %s"
+                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str(), mStream.Describe().c_str());
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
