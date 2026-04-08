@@ -87,7 +87,7 @@ struct ChannelPara {
     uint32_t feId;
     uint32_t jettyNum;
     uint32_t sqSize;
-    uint8_t qos{2};
+    uint8_t qos{4};
 };
 
 using JettyInfo = CcuJettyInfo;

@@ -16,6 +16,7 @@
 #include <unordered_map>
 
 #include "hccl/hccl_types.h"
+#include "types.h"
 
 #include "ccu_channel_mgr.h"
 #include "ccu_res_allocator.h"
@@ -30,6 +31,8 @@ public:
     CcuComponent &operator=(const CcuComponent &that) = delete;
 
     static CcuComponent &GetInstance(const int32_t deviceLogicId);
+    /** 与 TryInitCcuFeature 中 GetCommQos 对齐；环回 ChannelPara::qos 用此值。未调用时默认 2（单测直接 Init 兼容） */
+    void SetLoopChannelUbQos(u8 qos);
     void Init();
     void Deinit();
 
@@ -69,6 +72,7 @@ public:
 private:
     static constexpr uint32_t INVALID_DEV_ID = 0xFFFFFFFF;
     bool ifInit{false};
+    u8 loopChannelUbQos_{4};
     int32_t devLogicId{static_cast<int32_t>(INVALID_DEV_ID)};
     uint32_t devPhyId{INVALID_DEV_ID};
     CcuVersion ccuVersion{CcuVersion::CCU_INVALID};

@@ -95,6 +95,11 @@ flowchart LR
    - Jetty 上下文分配完成后，对每个 **`jettyInfo`**：**`jettyInfo.qos = channelPara.qos`**。  
    这样每个 **`CcuJettyInfo`** 携带与通信域一致的 QoS。
 
+3. **环回（loop）通道**（`CcuComponent::CreateLoopChannel`）  
+   - 历史上 **`ChannelPara` 仅用三字段初始化**，**`qos` 固定为结构体默认 `2`**，与通信域无关。  
+   - 现与 **`CcuJettyMgr` 取 `comm_->GetCommQos()`** 同一思路：在 **`CommunicatorImpl::TryInitCcuFeature`** 里、调用 **`GetCcuDriver()`** 之前，执行 **`CcuComponent::GetInstance(devLogicId).SetLoopChannelUbQos(GetCommQos())`**，再拉 CCU 驱动；**`CreateLoopChannel`** 使用 **`ChannelPara{..., loopChannelUbQos_}`**，环回 **`attr.ub.priority`** 与当前通信域一致。  
+   - **不**走 `TryInitCcuFeature`、仅直接 **`CcuComponent::Init()`** 的单测等：仍用成员默认 **`loopChannelUbQos_{2}`**（与旧行为兼容）。
+
 ---
 
 ### 3.4 创建 UB Jetty（`CcuJetty` 异步 与 `CcuComponent` 同步）
@@ -130,6 +135,8 @@ flowchart LR
 | 建域拷贝 `hcclQos` | `src/legacy/framework/entrance/op_base/op_base_v2.cc` |
 | `HcclCommunicator` 默认 `hcclQos` | `src/legacy/framework/communicator/hccl_communicator.cc` |
 | `config` 合并、`GetCommQos` | `src/legacy/framework/communicator/communicator_impl.cc` |
+| 环回 `ChannelPara::qos`、`SetLoopChannelUbQos` | `ccu_component.h` / `ccu_component.cpp` |
+| `TryInitCcuFeature` 在 `GetCcuDriver` 前 `SetLoopChannelUbQos(GetCommQos())` | `src/legacy/framework/communicator/communicator_impl.cc` |
 | `CcuJettyMgr` 取 QoS并组 `CcuChannelPara` | `src/legacy/framework/ccu/ccu_manager/ccu_jetty_mgr.cpp` |
 | 注入 `CcuJettyMgr` 的 `comm` | `src/legacy/framework/ccu/ccu_communicator.h` |
 | `CcuChannelPara` / `CcuJettyInfo` | `src/legacy/unified_platform/pub_inc/ccu/ccu_dev_mgr.h` |
