@@ -1205,3 +1205,46 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit_tmp)
 
     GlobalMockObject::verify();
 }
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_transport_roce_Init_hrtRaGetQpAttr_error)
+{
+    MachinePara machinePara;
+    machinePara.deviceLogicId = 0;
+    HcclIpAddress invalidIp;
+    TransportResourceInfo transportResourceInfo;
+    std::chrono::milliseconds timeout;
+
+    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+
+    MOCKER(hrtRaGetQpAttr).stubs().will(returnValue(HCCL_E_RUNTIME));
+
+    HcclResult ret = roce.Init();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_transport_roce_RxAsync_GenerateRecvMessage_error)
+{
+    MachinePara machinePara;
+    machinePara.deviceLogicId = 0;
+    machinePara.localUserrank = 0;
+    machinePara.remoteUserrank = 1;
+    HcclIpAddress invalidIp;
+    TransportResourceInfo transportResourceInfo;
+    std::chrono::milliseconds timeout;
+
+    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+    roce.Init();
+
+    void *dst = malloc(1024);
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+
+    MOCKER(GenerateRecvMessage).stubs().will(returnValue(HCCL_E_INTERNAL));
+
+    HcclResult ret = roce.RxAsync(UserMemType::INPUT_MEM, 0, dst, 1024, stream);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    free(dst);
+    GlobalMockObject::verify();
+}

@@ -2076,3 +2076,140 @@ TEST_F(LinkIbvExpTest, ut_transport_ibverbs_TxWithReduce)
         dispatcherPtr = nullptr;
     }
 }
+
+TEST_F(LinkIbvExpTest, ut_transport_ibverbs_GetRemoteMem_nullptr)
+{
+    std::chrono::milliseconds timeout;
+    MachinePara machinePara;
+    machinePara.localDeviceId = 0;
+
+    LinkIbvExpTmp linktmp(dispatcher, machinePara, timeout);
+    linktmp.Init();
+
+    void *remotePtr = nullptr;
+    HcclResult ret = linktmp.GetRemoteMem(UserMemType::INPUT_MEM, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret = linktmp.GetRemoteMem(UserMemType::INPUT_MEM, &remotePtr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(LinkIbvExpTest, ut_transport_ibverbs_TxSendNotifyWqe_nullptr)
+{
+    MOCKER(stub_ibv_exp_post_send).stubs().with(any()).will(returnValue(0));
+
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+
+    std::chrono::milliseconds timeout;
+    MachinePara machinePara;
+    machinePara.localDeviceId = 0;
+    machinePara.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+
+    LinkIbvExpTmp linktmp(dispatcher, machinePara, timeout);
+    linktmp.Init();
+    linktmp.useAtomicWrite_ = false;
+
+    MemMsg memMsg;
+    memMsg.addr = nullptr;
+    u8 srcMemData[1024] = {0};
+
+    HcclResult ret = linktmp.TxSendNotifyWqe(memMsg, srcMemData, 1024, stream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    memMsg.addr = reinterpret_cast<void*>(0x1000);
+    ret = linktmp.TxSendNotifyWqe(memMsg, nullptr, 1024, stream);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(LinkIbvExpTest, ut_transport_ibverbs_RegUserMem_nullptr)
+{
+    std::chrono::milliseconds timeout;
+    MachinePara machinePara;
+    machinePara.localDeviceId = 0;
+
+    LinkIbvExpTmp linktmp(dispatcher, machinePara, timeout);
+    linktmp.Init();
+
+    u8* exchangeDataPtr = nullptr;
+    u64 exchangeDataBlankSize = 0;
+
+    HcclResult ret = linktmp.RegUserMem(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(LinkIbvExpTest, ut_transport_ibverbs_RegCustomUserMemWithMsg_nullptr)
+{
+    std::chrono::milliseconds timeout;
+    MachinePara machinePara;
+    machinePara.isAicpuModeEn = true;
+
+    LinkIbvExpTmp linktmp(dispatcher, machinePara, timeout);
+    linktmp.Init();
+
+    MemMsg memMsg;
+    u8* exchangeDataPtr = nullptr;
+    u64 exchangeDataBlankSize = 0;
+
+    HcclResult ret = linktmp.RegCustomUserMemWithMsg(nullptr, 1024, memMsg, exchangeDataPtr, exchangeDataBlankSize);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret = linktmp.RegCustomUserMemWithMsg(reinterpret_cast<void*>(0x1000), 1024, memMsg, exchangeDataPtr, exchangeDataBlankSize);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(LinkIbvExpTest, ut_transport_ibverbs_GetIndOpRemoteAddr_nullptr)
+{
+    std::chrono::milliseconds timeout;
+    MachinePara machinePara;
+    machinePara.isAicpuModeEn = true;
+
+    LinkIbvExpTmp linktmp(dispatcher, machinePara, timeout);
+    linktmp.Init();
+
+    u8* exchangeDataPtr = nullptr;
+    u64 exchangeDataBlankSize = 0;
+
+    HcclResult ret = linktmp.GetIndOpRemoteAddr(exchangeDataPtr, exchangeDataBlankSize);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(LinkIbvExpTest, ut_transport_ibverbs_GetRemoteNotifyAddr_nullptr)
+{
+    std::chrono::milliseconds timeout;
+    MachinePara machinePara;
+    machinePara.isAicpuModeEn = true;
+
+    LinkIbvExpTmp linktmp(dispatcher, machinePara, timeout);
+    linktmp.Init();
+
+    u8* exchangeDataPtr = nullptr;
+    u64 exchangeDataBlankSize = 0;
+    MemMsg memMsg;
+
+    HcclResult ret = linktmp.GetRemoteNotifyAddr(exchangeDataPtr, exchangeDataBlankSize, memMsg);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(LinkIbvExpTest, ut_transport_ibverbs_WriteCommon_nullptr)
+{
+    MOCKER(stub_ibv_exp_post_send).stubs().with(any()).will(returnValue(0));
+
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+
+    std::chrono::milliseconds timeout;
+    MachinePara machinePara;
+    machinePara.localDeviceId = 0;
+
+    LinkIbvExpTmp linktmp(dispatcher, machinePara, timeout);
+    linktmp.Init();
+
+    u8 localMem[1024] = {0};
+    u8 remoteMem[1024] = {0};
+    struct WrAuxInfo aux = {0};
+
+    HcclResult ret = linktmp.WriteCommon(nullptr, localMem, 1024, stream, WqeType::WQE_TYPE_DATA, aux);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret = linktmp.WriteCommon(remoteMem, nullptr, 1024, stream, WqeType::WQE_TYPE_DATA, aux);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}

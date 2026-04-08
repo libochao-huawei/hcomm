@@ -1397,3 +1397,57 @@ TEST_F(ExternalInputTest, ut_external_input_env_HCCL_DEBUG_CONFIG)
     EXPECT_EQ(GetExternalInputDebugConfig(), config);
     unsetenv("HCCL_DEBUG_CONFIG");
 }
+
+TEST_F(ExternalInputTest, ut_external_input_collect_retry_enable_from_config)
+{
+    HcclResult ret;
+    std::vector<std::string> retryEnables;
+
+    retryEnables = {"L1:0", "L2:1"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    retryEnables = {"L1"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {"L2"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {":0"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {":1"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {"L1:"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {"L2:"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {""};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {"L0:0"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    retryEnables = {"L1:0", "L1:1"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {"L3:0"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    retryEnables = {"L1:2"};
+    ret = CollectRetryEnableFromConfig(retryEnables);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
