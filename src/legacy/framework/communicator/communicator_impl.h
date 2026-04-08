@@ -124,6 +124,8 @@ public:
 
     bool GetCommCcuFeatureFlag() const;
 
+    u8 GetUbJettyJfsPriority() const;
+
     virtual DataBufManager &GetDataBufferManager() const; // NOTE:添加 virtual用于UT打桩
 
     virtual LocalRmaBufManager &GetLocalRmaBufManager() const;
