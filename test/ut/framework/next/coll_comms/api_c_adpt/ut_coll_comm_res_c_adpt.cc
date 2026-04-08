@@ -1,5 +1,7 @@
 #include "../../hccl_api_base_test.h"
 #include "hccl/hccl_res.h"
+#include "hccl_common.h"
+#include "config/env_config.h"
 #include "independent_op_context_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
@@ -12,6 +14,11 @@
 #define private public
 
 using namespace hccl;
+
+HcclResult ProcessUbcChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hcclComm *hcclComm);
+HcclResult ProcessUboeChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hcclComm *hcclComm);
 
 class HcclChannelDescTest : public BaseInit {
 public:
@@ -165,4 +172,87 @@ TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_Notifynum_Exceeds_Return_
 
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_WrongProtocol_Expect_E_PARA)
+{
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_ROCE;
+    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcCtp_QosUnset_UsesCommHcclQos)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(5u);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
+    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(out.ubAttr.qos, 5u);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_UbcTp_QosUnset_UsesUbQosDefault)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(HCCL_COMM_QOS_CONFIG_NOT_SET);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
+    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(out.ubAttr.qos, EnvConfig::UB_QOS_DEFAULT);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUbcChannelDesc_When_ExplicitUbQos_Preserved)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(1u);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
+    in.ubAttr.qos = 6u;
+    ret = ProcessUbcChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(out.ubAttr.qos, 6u);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUboeChannelDesc_When_WrongProtocol_Expect_E_PARA)
+{
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
+    ret = ProcessUboeChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclChannelDescTest, Ut_ProcessUboeChannelDesc_When_Uboe_QosUnset_UsesCommHcclQos)
+{
+    hcclCommPtr->GetCollComm()->GetCommConfig().SetConfigHcclQos(3u);
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    HcclChannelDesc in{};
+    HcclChannelDesc out{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    ASSERT_EQ(HcclChannelDescInit(&out, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBOE;
+    ret = ProcessUboeChannelDesc(in, out, hcclCommPtr.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(out.ubAttr.qos, 3u);
 }

@@ -1318,7 +1318,9 @@ typedef union urma_get_tp_cfg_flag {
         uint32_t uboe            : 1;
         uint32_t pre_defined     : 1;
         uint32_t dynamic_defined : 1;
-        uint32_t reserved        : 26;
+        uint32_t udp             : 5;
+        uint32_t group_id        : 15;
+        uint32_t reserved        : 6;
     } bs;
     uint32_t value;
 } urma_get_tp_cfg_flag_t;
@@ -1353,25 +1355,28 @@ typedef struct urma_active_tp_cfg urma_bind_jetty_ex_cfg_t;
 
 #pragma pack(1)
 typedef struct urma_tp_attr_value {
-    uint8_t retry_times_init : 3;
-    uint8_t at : 5;
-    uint8_t sip[URMA_IP_ADDR_BYTES];
-    uint8_t dip[URMA_IP_ADDR_BYTES];
-    uint8_t sma[URMA_MAC_BYTES];
-    uint8_t dma[URMA_MAC_BYTES];
-    uint16_t vlan_id : 12;
-    uint8_t vlan_en : 1;
-    uint8_t dscp : 6;
-    uint8_t at_times : 5;
-    uint8_t sl : 4;
-    uint8_t ttl;
-    uint16_t ack_udp_srcport;
-    uint16_t data_udp_srcport;
-    uint8_t udp_srcport_range : 4;
-    uint8_t spray_en : 1;
-    uint8_t udp_global_en : 1;
-    uint8_t reserve_0 : 2;
-    uint8_t reserved[73];
+	uint8_t retry_times_init : 3;
+	uint8_t at : 5;
+	uint8_t sip[URMA_IP_ADDR_BYTES];
+	uint8_t dip[URMA_IP_ADDR_BYTES];
+	uint8_t sma[URMA_MAC_BYTES];
+	uint8_t dma[URMA_MAC_BYTES];
+	uint16_t vlan_id : 12;
+	uint8_t vlan_en : 1;
+	uint8_t dscp : 6;
+	uint8_t at_times : 5;
+	uint8_t sl : 4;
+	uint8_t ttl;
+	uint16_t ack_udp_srcport;
+	uint16_t data_udp_srcport;
+	uint8_t udp_srcport_range : 4;
+	uint8_t spray_en : 1;
+	uint8_t udp_global_en : 1;
+	uint8_t reserve_0 : 2;
+	uint16_t sl_bitmap;
+	uint8_t dscp_config_mode : 1;  // DSCP configuration mode. 0-service plane, 1-management and control plane
+	uint8_t reserve_1 : 7;
+	uint8_t reserved[70];
 } urma_tp_attr_value_t;
 #pragma pack()
 
