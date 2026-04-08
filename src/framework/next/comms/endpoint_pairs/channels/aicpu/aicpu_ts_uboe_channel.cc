@@ -17,6 +17,7 @@
 #include "user_remote_mem_getter.h"
 
 // Orion
+#include "adapter_rts_common.h"
 #include "coll_alg_param.h"
 #include "topo_common_types.h"
 #include "virtual_topo.h"
@@ -112,8 +113,11 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
-    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_, 
-        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr);
+    const u8 qosPre = static_cast<u8>(
+        (channelDesc_.ubAttr.qos > 7U) ? Hccl::kRaUbGetTpInfoParamDefaultQos : (channelDesc_.ubAttr.qos & 7U));
+
+    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_,
+        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr, qosPre);
     CHK_SMART_PTR_NULL(ubConn);
 
     commonRes_.connVec.clear();

@@ -26,6 +26,7 @@
 #include "rdma_handle_manager.h"
 #include "internal_exception.h"
 #include "hccl_types.h"
+#include "config/env_config.h"
 
 #undef private
 #undef protected
@@ -95,11 +96,13 @@ pair<unique_ptr<hcomm::CcuConnection>, vector<unique_ptr<hcomm::CcuJetty>>> Mock
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
 
+    // 全局 struct EnvConfig（config/env_config.h）；须加 :: 以免与 using namespace Hccl 下的 Hccl::EnvConfig 混淆
+    constexpr uint32_t kJettyQos = ::EnvConfig::UB_QOS_DEFAULT;
     unique_ptr<hcomm::CcuConnection> connection;
     if (tpProtocol == hcomm::TpProtocol::CTP) {
-        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs);
+        connection = make_unique<hcomm::CcuCtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
     } else {
-        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs);
+        connection = make_unique<hcomm::CcuRtpConnection>(locAddr, rmtAddr, channelInfo, ccuJettyPtrs, kJettyQos);
     }
 
     return {std::move(connection), std::move(ccuJettys)};

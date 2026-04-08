@@ -25,25 +25,26 @@
 #include "rdma_handle_manager.h"
 #include "orion_adapter_rts.h"
 #include "orion_adapter_hccp.h"
+#include "env_config/env_config.h"
 
 namespace hcomm {
 
 CcuConnection::CcuConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : locAddr_(locAddr), rmtAddr_(rmtAddr), channelInfo_(channelInfo), ccuJettys_(ccuJettys), qos_(qos)
 {
 }
 
 CcuRtpConnection::CcuRtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::RTP;
 }
 
 CcuCtpConnection::CcuCtpConnection(const CommAddr &locAddr, const CommAddr &rmtAddr,
-    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys)
-    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys)
+    const CcuChannelInfo &channelInfo, const std::vector<CcuJetty *> &ccuJettys, uint32_t qos)
+    : CcuConnection(locAddr, rmtAddr, channelInfo, ccuJettys, qos)
 {
     tpProtocol_ = TpProtocol::CTP;
 }
@@ -124,45 +125,48 @@ HcclResult CcuConnection::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
+// 初始化子状态机（仅当 status_ == CcuConnStatus::INIT 时，由 StatusMachine -> 本函数驱动；GetStatus 可多次调用以轮询推进）。
+// 异步约定：某步返回 HCCL_E_AGAIN 表示未完成，保持/设置 innerStatus_ 后 return SUCCESS，外层下轮再进入。
+// 状态与转移：
+//   INIT --GetTpInfo=AGAIN--> TP_INFO_GETTING --下轮 GetTpInfo--> ...
+//   INIT/TP_INFO_GETTING --GetTpInfo 成功--> 写入 mappedJettyPriority 到各 jetty --> JETTY_CREATING
+//   （TP 成功后本函数内 [[fallthrough]]，同一轮继续执行 CreateJetty，等价于原先连续两段逻辑。）
+//   JETTY_CREATING --CreateJetty=AGAIN--> 保持 JETTY_CREATING，下轮只走建 jetty 分支（不再 GetTpInfo）。
+//   JETTY_CREATING --CreateJetty 成功--> EXCHANGEABLE，且 status_ -> EXCHANGEABLE，初始化阶段结束。
+// 其余 innerStatus_ 进入 default，视为非法，ReturnErrorStatus。
 HcclResult CcuConnection::UpdateInitStatus()
 {
     switch (innerStatus_) {
-        case InnerStatus::INIT:
-        case InnerStatus::JETTY_CREATING: {
-            auto ret = CreateJetty();
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::JETTY_CREATING;
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
-
-            ret = GetTpInfo(); // 不退出继续调用下个异步接口
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                innerStatus_ = InnerStatus::TP_INFO_GETTING;
-                break;
-            }
-            CHK_RET(ret);
-            // 如果有缓存的tp信息，可以直接完成
-            innerStatus_ = InnerStatus::EXCHANGEABLE;
-            status_      = CcuConnStatus::EXCHANGEABLE;
-            break;
+    case InnerStatus::INIT:
+    case InnerStatus::TP_INFO_GETTING: {
+        auto ret = GetTpInfo();
+        if (ret == HcclResult::HCCL_E_AGAIN) {
+            innerStatus_ = InnerStatus::TP_INFO_GETTING;
+            return HcclResult::HCCL_SUCCESS;
         }
-        case InnerStatus::TP_INFO_GETTING: {
-            auto ret = GetTpInfo(); // 不退出继续调用下个异步接口
-            if (ret == HcclResult::HCCL_E_AGAIN) {
-                break; // 状态不改变退出，下轮状态机进入继续执行
-            }
-            CHK_RET(ret);
-
-            innerStatus_ = InnerStatus::EXCHANGEABLE;
-            status_      = CcuConnStatus::EXCHANGEABLE;
-            break;
+        CHK_RET(ret);
+        CHK_PRT_RET(!tpInfo_.hasMappedJettyPriority,
+            HCCL_ERROR("[CcuConnection][%s] TpMgr did not provide mappedJettyPriority.", __func__),
+            HcclResult::HCCL_E_INTERNAL);
+        for (auto *jetty : ccuJettys_) {
+            jetty->SetMappedJettyPriority(tpInfo_.mappedJettyPriority);
         }
-        default:
-            return ReturnErrorStatus(std::string(__func__));
+        innerStatus_ = InnerStatus::JETTY_CREATING;
+        [[fallthrough]];
     }
-
-    return HcclResult::HCCL_SUCCESS;
+    case InnerStatus::JETTY_CREATING: {
+        auto ret = CreateJetty();
+        if (ret == HcclResult::HCCL_E_AGAIN) {
+            return HcclResult::HCCL_SUCCESS;
+        }
+        CHK_RET(ret);
+        innerStatus_ = InnerStatus::EXCHANGEABLE;
+        status_      = CcuConnStatus::EXCHANGEABLE;
+        return HcclResult::HCCL_SUCCESS;
+    }
+    default:
+        return ReturnErrorStatus(std::string(__func__));
+    }
 }
 
 HcclResult CcuConnection::CreateJetty()
@@ -202,6 +206,18 @@ void CcuConnection::GenerateLocalPsn()
     jettyImportCfg_.localPsn = GetRandomNum();
 }
 
+GetTpInfoParam CcuConnection::MakeGetTpInfoParam() const
+{
+    GetTpInfoParam param;
+    param.locAddr = locAddr_;
+    param.rmtAddr = rmtAddr_;
+    param.tpProtocol = tpProtocol_;
+    param.qos = (qos_ > 7U) ? EnvConfig::UB_QOS_DEFAULT : (qos_ & 7U);
+    param.slLevelCount = 0;
+    param.loopFirstTpLowestSl = false;
+    return param;
+}
+
 HcclResult CcuConnection::GetTpInfo()
 {
     if (tpProtocol_ == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
@@ -210,8 +226,7 @@ HcclResult CcuConnection::GetTpInfo()
         return HcclResult::HCCL_E_PARA;
     }
 
-    HcclResult ret = TpMgr::GetInstance(devPhyId_)
-        .GetTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+    HcclResult ret = TpMgr::GetInstance(devPhyId_).GetTpInfo(MakeGetTpInfoParam(), tpInfo_);
     if (ret == HcclResult::HCCL_E_AGAIN) {
         // 此处可能刷屏，非必要勿加日志
         return ret;
@@ -477,9 +492,9 @@ HcclResult CcuConnection::ReleaseConnRes()
     importJettyCtxs_.clear();
 
     if (tpInfo_.tpHandle != 0) { // tp handle 复用，只释放一次
-        (void)TpMgr::GetInstance(devPhyId_)
-            .ReleaseTpInfo({locAddr_, rmtAddr_, tpProtocol_}, tpInfo_);
+        (void)TpMgr::GetInstance(devPhyId_).ReleaseTpInfo(MakeGetTpInfoParam(), tpInfo_);
         tpInfo_.tpHandle = 0;
+        tpInfo_.hasMappedJettyPriority = false;
     }
 
     // CcuJetty 生命周期跟随通信域CcuJettyMgr
