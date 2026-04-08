@@ -110,6 +110,49 @@ HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
     return HCCL_SUCCESS;
 }
 
+HcclResult ProcessUbcChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hccl::hcclComm *hcclComm)
+{
+    hccl::CollComm *collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::CommConfig commConfig = collComm->GetCommConfig();
+
+    if (channelDesc.channelProtocol != COMM_PROTOCOL_UBC_CTP &&
+        channelDesc.channelProtocol != COMM_PROTOCOL_UBC_TP) {
+        HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBC_CTP/UBC_TP", __func__,
+            static_cast<int>(channelDesc.channelProtocol));
+        return HCCL_E_PARA;
+    }
+    channelDescFinal.ubAttr.qos = (channelDesc.ubAttr.qos == INVALID_UINT)
+        ? ((commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) ? EnvConfig::UB_QOS_DEFAULT
+                                                                            : commConfig.GetConfigHcclQos())
+        : channelDesc.ubAttr.qos;
+    HCCL_INFO("[%s] channelProtocol[%d] qos[%u] (UBC)", __func__,
+        static_cast<int>(channelDescFinal.channelProtocol), channelDescFinal.ubAttr.qos);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ProcessUboeChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal,
+    hccl::hcclComm *hcclComm)
+{
+    hccl::CollComm *collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::CommConfig commConfig = collComm->GetCommConfig();
+
+    if (channelDesc.channelProtocol != COMM_PROTOCOL_UBOE) {
+        HCCL_ERROR("[%s] unexpected channelProtocol[%d], expect UBOE", __func__,
+            static_cast<int>(channelDesc.channelProtocol));
+        return HCCL_E_PARA;
+    }
+    channelDescFinal.ubAttr.qos = (channelDesc.ubAttr.qos == INVALID_UINT)
+        ? ((commConfig.GetConfigHcclQos() == HCCL_COMM_QOS_CONFIG_NOT_SET) ? EnvConfig::UB_QOS_DEFAULT
+                                                                            : commConfig.GetConfigHcclQos())
+        : channelDesc.ubAttr.qos;
+    HCCL_INFO("[%s] channelProtocol[%d] qos[%u] (UBOE)", __func__,
+        static_cast<int>(channelDescFinal.channelProtocol), channelDescFinal.ubAttr.qos);
+    return HCCL_SUCCESS;
+}
+
 HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
 {
     channelDescFinal.remoteRank = channelDesc.remoteRank;
@@ -127,9 +170,11 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
         case COMM_PROTOCOL_UBC_CTP:
-        case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_UBC_TP:
+            return ProcessUbcChannelDesc(channelDesc, channelDescFinal, hcclComm);
         case COMM_PROTOCOL_UBOE:
+            return ProcessUboeChannelDesc(channelDesc, channelDescFinal, hcclComm);
+        case COMM_PROTOCOL_UB_MEM:
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);

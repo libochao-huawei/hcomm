@@ -17,10 +17,13 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <cstring>
+
 #include "hccp.h"
 #include "hccp_ctx.h"
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
+#include "hccp_tp.h"
 #include "orion_adapter_hccp.h"
 #include "hccp_nda.h"
  
@@ -74,6 +77,49 @@ int RaGetTpInfoListAsync(void *ctx_handle, struct GetTpCfg *cfg, struct HccpTpIn
     *req_handle = &a;
     return 0;
 }
+
+extern "C" {
+
+int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
+{
+    static char kStubRaTpAttrReq{};
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    if (attr != nullptr) {
+        (void)std::memset(attr, 0, sizeof(struct TpAttr));
+        attr->slBitmap = 1U;
+        attr->dscpConfigMode = 1U;
+    }
+    if (reqHandle != nullptr) {
+        *reqHandle = &kStubRaTpAttrReq;
+    }
+    return 0;
+}
+
+int RaCtxSetTpAttr(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr)
+{
+    (void)ctxHandle;
+    (void)tpHandle;
+    (void)attrBitmap;
+    (void)attr;
+    return 0;
+}
+
+int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, char *value, unsigned int *valueLen)
+{
+    (void)info;
+    (void)key;
+    if (value != nullptr && valueLen != nullptr && *valueLen > 0U) {
+        value[0] = '\0';
+    }
+    if (valueLen != nullptr) {
+        *valueLen = 0U;
+    }
+    return -1;
+}
+
+} // extern "C"
  
 int RaCustomChannel(struct RaInfo info, struct CustomChanInfoIn *in,
     struct CustomChanInfoOut *out)

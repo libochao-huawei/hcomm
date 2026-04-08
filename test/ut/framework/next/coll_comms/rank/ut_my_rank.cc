@@ -4,6 +4,7 @@
 #include <mockcpp/mockcpp.hpp>
 #include "rank_graph_interface.h"
 #include "rank_graph_v2.h"
+#include "hccl/hccl_res.h"
 #include "hcomm_c_adpt.h"
 #include "channel_process.h"
 #include "base_config.h"
@@ -690,4 +691,50 @@ TEST_F(MyRankTest, Ut_BatchExchange_When_NewRankConsistent_Expect_Success)
 
     ret = myRank->BatchExchangeAndCheckConsistency(channelDescs, hcommDescVec, 1, "test_tag");
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcCtp_Copies_UbAttrQos)
+{
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_CTP;
+    in.ubAttr.qos = 5u;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
+    EXPECT_EQ(out.ubAttr.qos, 5u);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_UbcTp_Copies_UbAttrQos)
+{
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBC_TP;
+    in.ubAttr.qos = 2u;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
+    EXPECT_EQ(out.ubAttr.qos, 2u);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Uboe_Copies_UbAttrQos)
+{
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_UBOE;
+    in.ubAttr.qos = 7u;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
+    EXPECT_EQ(out.ubAttr.qos, 7u);
+}
+
+TEST_F(MyRankTest, Ut_ChannelDescHccl2Hcomm_When_Roce_DoesNotUseUbAttrBranch)
+{
+    HcclChannelDesc in{};
+    ASSERT_EQ(HcclChannelDescInit(&in, 1), HCCL_SUCCESS);
+    in.channelProtocol = COMM_PROTOCOL_ROCE;
+    in.roceAttr.retryCnt = 3u;
+    in.roceAttr.retryInterval = 20u;
+    in.roceAttr.tc = 8u;
+    in.roceAttr.sl = 4u;
+    HcommChannelDesc out = MyRankUtils::ChannelDescHccl2Hcomm(in);
+    EXPECT_EQ(out.roceAttr.retryCnt, 3u);
+    EXPECT_EQ(out.roceAttr.retryInterval, 20u);
+    EXPECT_EQ(out.roceAttr.tc, 8u);
+    EXPECT_EQ(out.roceAttr.sl, 4u);
 }
