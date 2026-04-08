@@ -55,8 +55,8 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     auto buffer0 = std::make_shared<Buffer>(0x100, 0x100);
     auto locBuffer0 = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
     CommMemInfo memInfo0{};
-    memInfo0.addr = (void*)0x100;
-    memInfo0.size = (uint64_t)0x100;
+    memInfo0.mem.addr = (void*)0x100;
+    memInfo0.mem.size = (uint64_t)0x100;
     memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
 
     auto buffer1 = std::make_shared<Buffer>(0x101, 0x101);
@@ -64,9 +64,9 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     CommMemInfo memInfo1{};
     memInfo1.mem.addr = (void*)0x101;
     memInfo1.mem.size = (uint64_t)0x101;
-    std::string memTag = "buffer1";
-    strncpy_s(memInfo1->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
-    memInfo1.mem.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
+    std::string tag = "buffer1";
+    strncpy_s(memInfo1.memTag, sizeof(memInfo1.memTag), tag.c_str(), tag.size());
+    memInfo1.mem.type = CommMemType::COMM_MEM_TYPE_DEVICE;
     memInfo1.bufferHandle = static_cast<void*>(locBuffer1.get());
 
     std::vector<CommMemInfo*> memInfos{};
@@ -121,8 +121,8 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
     auto buffer0 = std::make_shared<Buffer>(0x100, 0x100);
     auto locBuffer0 = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
     CommMemInfo memInfo0{};
-    memInfo0.addr = (void*)0x100;
-    memInfo0.size = (uint64_t)0x100;
+    memInfo0.mem.addr = (void*)0x100;
+    memInfo0.mem.size = (uint64_t)0x100;
     memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
     std::vector<CommMemInfo*> memInfos{};
     memInfos.push_back(&memInfo0);

@@ -12,12 +12,12 @@
 #include "mockcpp/mokc.h"
 #include <mockcpp/mockcpp.hpp>
 #include "orion_adapter_hccp.h"
+#include "hcomm_c_adpt.h"
 
 #define private public
 #define protected public
 
 #include "aiv_ub_mem_transport.h"
-#include "reged_mem_mgr.h"
 #include "exchange_ipc_buffer_dto.h"
 #include "env_config/env_config.h"
 #include "base_config.h"
@@ -144,11 +144,11 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     CommMemInfo memInfo1{};
     memInfo1.bufferHandle = reinterpret_cast<void*>(mockBuffer1.get());
     std::string memTag1 = "newBuffer1";
-    memcpy_s(memInfo1.memTag.data(), memInfo1.memTag.size(), memTag1.c_str(), memTag1.size());
+    memcpy_s(memInfo1.memTag, sizeof(memInfo1.memTag), memTag1.c_str(), memTag1.size());
     CommMemInfo memInfo2{};
     memInfo2.bufferHandle = reinterpret_cast<void*>(mockBuffer2.get());
     std::string memTag2 = "newBuffer2";
-    memcpy_s(memInfo2.memTag.data(), memInfo2.memTag.size(), memTag2.c_str(), memTag2.size());
+    memcpy_s(memInfo2.memTag, sizeof(memInfo2.memTag), memTag2.c_str(), memTag2.size());
     void* memHandles[2] = { &memInfo1, &memInfo2 };
 
     MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
@@ -179,7 +179,7 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTime
     CommMemInfo memInfo{};
     memInfo.bufferHandle = reinterpret_cast<void*>(mockBuffer.get());
     std::string memTag = "testBuffer";
-    memcpy_s(memInfo.memTag.data(), memInfo.memTag.size(), memTag.c_str(), memTag.size());
+    memcpy_s(memInfo.memTag, sizeof(memInfo.memTag), memTag.c_str(), memTag.size());
     void* memHandles[1] = { &memInfo };
 
     MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
