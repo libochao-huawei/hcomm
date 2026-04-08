@@ -31,6 +31,7 @@ constexpr u32 DEVISOR_VALUE_FOUR = 4;
 constexpr u32 MAX_WQE_PER_DOORBELL = 300;
 constexpr u32 QP_QUEUE_DEPTH_MAX = 32768;
 constexpr u32 QP_QUEUE_DEPTH_MIN = 128;
+#define HCCN_RESV_MEM_TYPE_PDCCL (0)
 struct MrInfoT AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 {
     struct MrInfoT innerMrInfo = {};
@@ -79,7 +80,12 @@ HcclResult hcclCreateAscendQPWithAttr(AscendQPInfo* ascendQPInfo)
     CHK_RET(CheckDepth(ascendQPInfo->rq_depth));
     CHK_RET(CheckDepth(ascendQPInfo->rcq_depth));
     struct TypicalQp qpInfo;
-    QpConfigInfo qpConfigInfo{ascendQPInfo->sq_depth, ascendQPInfo->rq_depth, ascendQPInfo->scq_depth, ascendQPInfo->rcq_depth};
+    QpConfigInfo qpConfigInfo{ascendQPInfo->sq_depth, ascendQPInfo->rq_depth, ascendQPInfo->scq_depth, ascendQPInfo->rcq_depth, 0, 0};
+    u32 poolId;
+    if (HCCL_SUCCESS == RdmaResourceManager::GetInstance().GetResvMemPoolIdByType(HCCN_RESV_MEM_TYPE_PDCCL, poolId)) {
+        qpConfigInfo.use_resv_mem = 1;
+        qpConfigInfo.resv_mem_pool_id = poolId;
+    }
     CHK_RET(TypicalQpManager::GetInstance().CreateQp(qpInfo, qpConfigInfo));
     ascendQPInfo->qpn = qpInfo.qpn;
     ascendQPInfo->gidIdx = qpInfo.gidIdx;
