@@ -165,7 +165,7 @@ HcclResult PetersonLock::Unlock()
     }
 
     /* 释放锁 */
-    WriteSelfFlag(FLAG_UNLOCK);
+    CHK_RET(WriteSelfFlag(FLAG_UNLOCK));
 
     HCCL_DEBUG("[PetersonLock][Unlock] type [%s] release the lock", typeName_.c_str());
     return HCCL_SUCCESS;

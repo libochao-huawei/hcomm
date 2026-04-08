@@ -35,6 +35,7 @@ HcclResult HcclDispatcherAicpuInit(HcclDispatcher *dispatcher, const u32 devPhyI
     DispatcherPub *pDispatcher = nullptr;
     if (type == DispatcherType::DISPATCHER_AICPU) {
         pDispatcher = new (std::nothrow) DispatcherAiCpu(devPhyId);
+        CHK_PTR_NULL(pDispatcher);
         pDispatcher->SetHcclQos(hcclQos);
  	  	pDispatcher->SetMpamid(0);
  	    HCCL_INFO("HcclDispatcherAicpuInit hcclQos = %u", pDispatcher->GetHcclQos());
@@ -792,7 +793,7 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
         for (size_t i = 0; i < placeholderIdxes.size(); ++i) {
             // [bufferSqeStartIdx, curPlaceholderIdx) -> [cacheableSqeStartIdx, cacheableSqeStartIdx + curPlaceholderIdx - bufferSqeStartIdx)
             const size_t curPlaceholderIdx = placeholderIdxes[i];
-            HCCL_INFO("[DispatcherAicpu][LaunchTask] %uth placeholder copy dispatchedSqeArray[%u:%u) into cachedSqeArrays[%u][%u:%u)", i, bufferSqeStartIdx, curPlaceholderIdx, arrayIdx, cacheableSqeStartIdx, cacheableSqeStartIdx + curPlaceholderIdx - bufferSqeStartIdx);
+            HCCL_INFO("[DispatcherAicpu][LaunchTask] %zuth placeholder copy dispatchedSqeArray[%zu:%zu) into cachedSqeArrays[%zu][%zu:%zu)", i, bufferSqeStartIdx, curPlaceholderIdx, arrayIdx, cacheableSqeStartIdx, cacheableSqeStartIdx + curPlaceholderIdx - bufferSqeStartIdx);
             if (curPlaceholderIdx <= bufferSqeStartIdx) { // NO non-placeholder dispatched SQE to admit
                 // NOTE: NO need to change cacheableSqeStartIdx
                 bufferSqeStartIdx = curPlaceholderIdx + 1;
