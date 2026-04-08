@@ -224,7 +224,7 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
 
     // 确保root info流程先销毁server socket 再返回
     // 可能失败，需要将错误状态带出
-    EXECPTION_CATCH(serverSocket->Destroy(), hasException = true);
+    EXECEPTION_CATCH(serverSocket->Destroy(), hasException = true);
     HrtResetDevice(devLogicId);
 
     // 若有异常则设置error状态退出

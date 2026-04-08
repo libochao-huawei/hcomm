@@ -1317,6 +1317,10 @@ HcclResult HcclCommSuspendV2(HcclComm comm)
 
 HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2Tiling, void **commContext)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(stream);
+    CHK_PTR_NULL(mc2Tiling);
+    CHK_PTR_NULL(commContext);
     HcclUs startut = TIME_NOW();
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
 
@@ -1367,11 +1371,12 @@ HcclResult HcclAllocComResourceByTilingV2(HcclComm comm, void *stream, void *mc2
 
 HcclResult HcclGetOpArgsV2(void **opArgs)
 {
+    CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclGetOpArgs V910_95, start malloc opArgs in %p", opArgs);
     }
     HcclOpArgs *opArgsMem = (HcclOpArgs *)malloc(sizeof(HcclOpArgs));
-    if (opArgs == nullptr) {
+    if (opArgsMem == nullptr) {
         HCCL_ERROR("[HcclGetOpArgs] malloc HcclOpArgs mem fail, please check.");
         return HCCL_E_INTERNAL;
     }
@@ -1383,6 +1388,7 @@ HcclResult HcclGetOpArgsV2(void **opArgs)
  
 HcclResult HcclFreeOpArgsV2(void *opArgs)
 {
+    CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclFreeOpArgs V910_95, free opArgs[%p]", opArgs);
     }
@@ -1393,6 +1399,7 @@ HcclResult HcclFreeOpArgsV2(void *opArgs)
  
 HcclResult HcclSetOpSrcDataTypeV2(void *opArgs, uint8_t srcDataType)
 {
+    CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclSetOpSrcDataType V910_95, opArgs[%p] set srcDataType[%u]", opArgs, srcDataType);
     }
@@ -1407,6 +1414,7 @@ HcclResult HcclSetOpSrcDataTypeV2(void *opArgs, uint8_t srcDataType)
  
 HcclResult HcclSetOpDstDataTypeV2(void *opArgs, uint8_t dstDataType)
 {
+    CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclSetOpDstDataType V910_95, opArgs[%p] set dstDataType[%u]", opArgs, dstDataType);
     }
@@ -1421,6 +1429,7 @@ HcclResult HcclSetOpDstDataTypeV2(void *opArgs, uint8_t dstDataType)
  
 HcclResult HcclSetOpReduceTypeV2(void *opArgs, uint32_t reduceType)
 {
+    CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclSetOpReduceType V910_95, opArgs[%p] set reduceType[%u]", opArgs, reduceType);
     }
@@ -1435,6 +1444,7 @@ HcclResult HcclSetOpReduceTypeV2(void *opArgs, uint32_t reduceType)
  
 HcclResult HcclSetOpCountV2(void *opArgs, uint64_t count)
 {
+    CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclSetOpCount V910_95, opArgs[%p] set count[%llu]", opArgs, count);
     }
@@ -1446,6 +1456,8 @@ HcclResult HcclSetOpCountV2(void *opArgs, uint64_t count)
  
 HcclResult HcclSetOpAlgConfigV2(void *opArgs, char *algConfig)
 {
+    CHK_PTR_NULL(opArgs);
+    CHK_PTR_NULL(algConfig);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclSetOpAlgConfig V910_95, opArgs[%p]", opArgs);
     }
@@ -1463,6 +1475,7 @@ HcclResult HcclSetOpAlgConfigV2(void *opArgs, char *algConfig)
  
 HcclResult HcclSetOpCommEngineV2(void *opArgs, uint8_t commEngine)
 {
+    CHK_PTR_NULL(opArgs);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclSetOpCommEngine V910_95, commEngine[%u]", commEngine);
     }
@@ -1473,6 +1486,9 @@ HcclResult HcclSetOpCommEngineV2(void *opArgs, uint8_t commEngine)
  
 HcclResult HcclCommResPrepareWithOpMode(Hccl::HcclCommunicator *communicator, const std::string &opName, HcclOpArgs *opArgs, void **addr)
 {
+    CHK_PTR_NULL(communicator);
+    CHK_PTR_NULL(opArgs);
+    CHK_PTR_NULL(addr);
     OpType opType = GetOpTypeV2(opName);
     if (opType == OpType::OPTYPEINVALID) {
         HCCL_ERROR("[HcclCommResPrepareWithOpMode] The opName %s match opType is %s", opName.c_str(), opType.Describe().c_str());
@@ -1495,6 +1511,10 @@ HcclResult HcclCommResPrepareWithOpMode(Hccl::HcclCommunicator *communicator, co
  
 HcclResult HcclCommResPrepareV2(HcclComm comm, char *opName, void* opArgs, void **addr)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(opName);
+    CHK_PTR_NULL(opArgs);
+    CHK_PTR_NULL(addr);
     std::string opNameStr(opName);
     opNameStr = opNameStr.substr(0, MAX_OP_NAME_SIZE);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
@@ -1506,6 +1526,11 @@ HcclResult HcclCommResPrepareV2(HcclComm comm, char *opName, void* opArgs, void 
 
 HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(memTag);
+    CHK_PTR_NULL(size);
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(newCreated);
     std::string memTagStr = "";
     if (memTag != nullptr) {
         char tmpMemTag[MAX_MEM_TAG_SIZE];
@@ -1526,6 +1551,9 @@ HcclResult HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size
  
 HcclResult HcclGetHcclBufferV2(HcclComm comm, void **addr, uint64_t *size)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(size);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclGetHcclBuffer V910_95, commId[%s]", communicator->GetId().c_str());
@@ -1540,6 +1568,9 @@ HcclResult HcclGetHcclBufferV2(HcclComm comm, void **addr, uint64_t *size)
  
 HcclResult HcclGetRemoteIpcHcclBufV2(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(size);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclGetRemoteIpcHcclBuf V910_95 start, remoteRank[%llu], addr[%p], size[%llu], commId[%s]", remoteRank, *addr, *size, communicator->GetId().c_str());
@@ -1550,6 +1581,9 @@ HcclResult HcclGetRemoteIpcHcclBufV2(HcclComm comm, uint64_t remoteRank, void **
  
 HcclResult HcclGetAicpuOpStreamAndNotifyV2(HcclComm comm, rtStream_t *opstream, u8 aicpuNotifyNum, void **aicpuNotify)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(opstream);
+    CHK_PTR_NULL(aicpuNotify);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HCCL_RUN_INFO("Entry-HcclGetAicpuOpStreamAndNotify V910_95, aicpuNotifyNum[%u], commId[%s]", aicpuNotifyNum, communicator->GetId().c_str());
@@ -1560,6 +1594,7 @@ HcclResult HcclGetAicpuOpStreamAndNotifyV2(HcclComm comm, rtStream_t *opstream, 
 
 HcclResult HcclCommResumeV2(HcclComm comm)
 {
+    CHK_PTR_NULL(comm);
     HcclUs startut = TIME_NOW();
     HCCL_RUN_INFO("Entry-HcclCommResume V910_95");
     s32 deviceLogicId = HcclGetThreadDeviceId();
@@ -1573,6 +1608,7 @@ HcclResult HcclCommResumeV2(HcclComm comm)
 
 HcclResult HcclCommResumeImplV2(HcclComm comm)
 {
+    CHK_PTR_NULL(comm);
     return HcclCommOperationImplV2(comm, "HcclCommResumeV2", [](Hccl::HcclCommunicator &communicator) {
         HCCL_RUN_INFO("Entry-HcclCommResume commId[%s]", communicator.GetId().c_str());
         return static_cast<HcclResult>(communicator.Resume());

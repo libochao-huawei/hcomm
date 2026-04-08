@@ -111,9 +111,9 @@ public:
         return &connectedLinkMgr;
     }
 
-    MirrorTaskManager *GetMirrorTaskMgr() override
+    MirrorTaskManagerLite *GetMirrorTaskMgrLite() override
     {
-        return mirrorTaskMgr.get();
+        return mirrorTaskMgrLite.get();
     }
 
     DevId GetDevPhyId()
@@ -148,9 +148,9 @@ public:
     Cnt1tonNotifyLiteMgr          cnt1tonNotifyLiteMgr;
     CntNto1NotifyLiteMgr          cntNto1NotifyLiteMgr;
     ConnectedLinkMgr              connectedLinkMgr;
-    std::unique_ptr<MirrorTaskManager>           mirrorTaskMgr
-    = std::make_unique<MirrorTaskManager>(0, &GlobalMirrorTasks::Instance(), true);
-    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgr.get());
+    std::unique_ptr<MirrorTaskManagerLite>           mirrorTaskMgrLite
+    = std::make_unique<MirrorTaskManagerLite>();
+    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgrLite.get());
     CollOperator                  currentOp;
     std::vector<std::unique_ptr<RmaBufferLite>> rmaBufferLiteVec;
     std::unordered_map<DataBuffer, SendRecvItemTokenInfo> sendRecvTokenMap;

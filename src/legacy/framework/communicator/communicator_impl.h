@@ -253,7 +253,7 @@ public:
 
     virtual u32 GetStep() const;
     bool        IsCommReady();
-    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true);
+    void CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch = true, bool isHcomSelectAlg = false);
 
     virtual MirrorTaskManager &GetMirrorTaskManager() const;
     virtual ProfilingReporter &GetProfilingReporter() const;
@@ -382,6 +382,7 @@ public:
     ErrorMessageReport GetAicpuTaskException();
     aclrtFuncHandle GetAicpuKernelFuncHandle(const char *kernelName) const;
     bool IsCommWithPCIEProtocol() const;   // 判断通信域内是否有rank之间存在PCIE链路
+    HcclResult Mc2AiCpuStreamAllocAndGetV2(rtStream_t *aiCpuStream);
 
 private:
     std::string                                id;
@@ -524,16 +525,13 @@ private:
     void InitHDCommunicate();
     void InitOneSidedService();
     void InitUbMemoryTransportMgr();
-    void TraceStartInfo(u32 streamId, const CollOpParams &opParams, OpMode opMode) const;
-    void TraceOpInfo(const CollOpParams &opParams) const;
-    void TraceEndInfo(HcclUs startut, HcclUs endut, const CollOpParams &opParams) const;
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
-    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);
+    void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true, bool isHcomSelectAlg = false);
     void DefaultConvertCollOperatorA2A(const CollOpParams &opParams);
-    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams);
+    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams, bool isHcomSelectAlg = false);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
-    void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
+    void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize, bool isHcomSelectAlg = false) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
     void RegisterAicpuKernel();
 

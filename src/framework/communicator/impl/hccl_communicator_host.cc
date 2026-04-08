@@ -4302,9 +4302,12 @@ namespace hccl
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
         if (opParam.isCapture) {
-            newTag += "_Capture" + std::to_string(captureCnt_);
-            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            captureCnt_++;
+            // aclgraph使用新的Tag，避免影响其他操作
+            newTag += "_Capture";
+            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
+            if (isInGraphCaptureZeroCopy) {
+                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            }
         }
 
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && userRankSize_ > 1) {
@@ -4314,6 +4317,25 @@ namespace hccl
             NslbDp_CollectOperTable(opType, opParam, algOperator->GetAlgType(), algName);
         }
 
+        // 资源创建
+        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
+            auto resTmp = resMap_[newTag];
+            ++captureCnt_;
+            newTag += std::to_string(captureCnt_);
+            resMap_[newTag] = resTmp;
+            AlgResourceRequest resRequest;
+            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
+            if (IsEnableBackupLink()) {
+                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+            }
+            // 记录指令信息用于一致性校验
+            CHK_RET(RecordOpPara(opType, opParam));
+            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+            // 移除tag对应的指令信息
+            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+        }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
@@ -4389,6 +4411,11 @@ namespace hccl
                 opParam.BatchSendRecvDataDes.sendRecvItemsPtr = aicpuSendRecvInfo.data();
                 opParam.BatchSendRecvDataDes.itemNum = aicpuSendRecvInfo.size();
             }
+        }
+        // A2 Group SendRecv 将isDirectRemoteRank全部置为false
+        if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
+            isDirectRemoteRank.resize(userRankSize_, 0);
+            opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
         }
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
@@ -4614,9 +4641,12 @@ namespace hccl
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
         if (opParam.isCapture) {
-            newTag += "_Capture" + std::to_string(captureCnt_);
-            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            captureCnt_++;
+            // aclgraph使用新的Tag，避免影响其他操作
+            newTag += "_Capture";
+            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
+            if (isInGraphCaptureZeroCopy) {
+                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            }
         }
 
         auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
@@ -4629,6 +4659,24 @@ namespace hccl
         }
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
+        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
+            auto resTmp = resMap_[newTag];
+            ++captureCnt_;
+            newTag += std::to_string(captureCnt_);
+            resMap_[newTag] = resTmp;
+            AlgResourceRequest resRequest;
+            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
+            if (IsEnableBackupLink()) {
+                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+            }
+            // 记录指令信息用于一致性校验
+            CHK_RET(RecordOpPara(opType, opParam));
+            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+            // 移除tag对应的指令信息
+            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+        }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool aicpuUnfoldModeFor910B =
             deviceType_ == DevType::DEV_TYPE_910B && opParam.aicpuUnfoldMode && algName == "RunAlltoAllVStaged";
@@ -7162,14 +7210,11 @@ namespace hccl
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
-            if (deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
-                // 如果是A2的GroupSendRecv则跳过下面这段
-            } else {
-                u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
-                for (u32 i = 0; i < userRankSize_; i++) {
-                    CHK_PTR_NULL(isDirectRemoteRankPtr + i);
-                    isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
-                }
+
+            u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
+            for (u32 i = 0; i < userRankSize_; i++) {
+                CHK_PTR_NULL(isDirectRemoteRankPtr + i);
+                isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
             }
         } else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             CHK_RET(SetDynamicTilingDataAlltoall(opParam, dynamicDataMem));

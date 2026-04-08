@@ -45,7 +45,7 @@ uint32_t HcclKernelEntrance(void *args)
         HCCL_ERROR("HcclKernelEntrance Args is null.");
         return 1;
     }
-    
+
     auto *kernelParam = reinterpret_cast<HcclKernelParamLite *>(args);
     AicpuUtils::GetInstance().CreateSingleInstance(args);
     NsRecoveryHandlerFunc::GetInstance();

@@ -37,8 +37,8 @@ protected:
 
     virtual void SetUp()
     {
-        mirrorTaskMgr = new MirrorTaskManager(0, &GlobalMirrorTasks::Instance(), false);
-        memTransportLiteMgr = new MemTransportLiteMgr(mirrorTaskMgr);
+        mirrorTaskMgrLite = new MirrorTaskManagerLite();
+        memTransportLiteMgr = new MemTransportLiteMgr(mirrorTaskMgrLite);
         algInfo = new CollAlgInfo(mode, tag);
         std::cout << "A Test case in RmtDataBufferMgr SetUP" << std::endl;
     }
@@ -46,14 +46,14 @@ protected:
     virtual void TearDown()
     {
         delete memTransportLiteMgr;
-        delete mirrorTaskMgr;
+        delete mirrorTaskMgrLite;
         delete algInfo;
         GlobalMockObject::verify();
         std::cout << "A Test case in RmtDataBufferMgr TearDown" << std::endl;
     }
 
     MemTransportLiteMgr *memTransportLiteMgr;
-    MirrorTaskManager *mirrorTaskMgr;
+    MirrorTaskManagerLite *mirrorTaskMgrLite;
     CollAlgInfo *algInfo;
     std::string tag = "tag";
     OpMode mode{OpMode::OPBASE};
@@ -168,9 +168,9 @@ TEST_F(RmtDataBufferMgrTest, get_GetBuffer_opbase_success)
 {
     std::vector<char> liteData = BuildUbTransportLiteUniqueId();
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
-    std::unique_ptr<MemTransportLite> transportLite = std::make_unique<MemTransportLite>(liteData, transportCallback);
+    MirrorTaskManagerLite mirrorTaskMgrLite;
+    auto transportCallbackLite = MemTransportCallbackLite(linkData, mirrorTaskMgrLite);
+    std::unique_ptr<MemTransportLite> transportLite = std::make_unique<MemTransportLite>(liteData, transportCallbackLite);
     memTransportLiteMgr->opBaseTranspMap[linkData] = std::move(transportLite);
     RmtDataBufferMgr rmtDataBufferMgr(memTransportLiteMgr, algInfo);
 

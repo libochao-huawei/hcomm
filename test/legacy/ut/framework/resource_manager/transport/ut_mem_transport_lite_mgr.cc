@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -167,8 +167,8 @@ protected:
 
 TEST_F(MemTransportLiteMgrTest, test_get_and_reset)
 {
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
+    MirrorTaskManagerLite mirrorTaskMgrLite;
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
     LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
 
     EXPECT_EQ(liteMgr.GetOpbase(linkData), nullptr);
@@ -191,8 +191,8 @@ TEST_F(MemTransportLiteMgrTest, test_parse_opbase_packed_data)
     std::vector<char> packedData;
     binaryStream.Dump(packedData);
 
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
+    MirrorTaskManagerLite mirrorTaskMgrLite;
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
 
     liteMgr.ParseOpbasePackedData(packedData);
 }
@@ -213,8 +213,8 @@ TEST_F(MemTransportLiteMgrTest, test_parse_offload_packed_data)
     std::vector<char> packedData;
     binaryStream.Dump(packedData);
 
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
+    MirrorTaskManagerLite mirrorTaskMgrLite;
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
 
     const string opTag = "opTag";
     EXPECT_NO_THROW(liteMgr.ParseOffloadPackedData(opTag, packedData)); 
@@ -245,7 +245,7 @@ TEST_F(MemTransportLiteMgrTest, test_parse_all_packed_data)
     std::vector<char> packedData;
     binaryStream.Dump(packedData);
 
-    MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
-    MemTransportLiteMgr liteMgr(&mirrorTaskMgr);
+    MirrorTaskManagerLite mirrorTaskMgrLite;
+    MemTransportLiteMgr liteMgr(&mirrorTaskMgrLite);
     EXPECT_NO_THROW(liteMgr.ParseAllPackedData(packedData)); 
 }
