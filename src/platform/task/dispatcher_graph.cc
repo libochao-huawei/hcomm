@@ -320,6 +320,8 @@ HcclResult DispatcherGraph::ReduceAsync(const void *src, void *dst, u64 dataCoun
 HcclResult DispatcherGraph::InlineReduceAsync(const void *src, u64 dataCount, const HcclDataType datatype,
     HcclReduceOp redOp, Stream &stream, void *dst, u32 remoteUserRank, hccl::LinkType inLinkType)
 {
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
     uint64_t beginTime = GetMsprofSysCycleTime();
     if (UNLIKELY(disableFfts_)) {
         return DispatcherPub::InlineReduceAsync(
@@ -566,6 +568,10 @@ HcclResult DispatcherGraph::SetGraphTailVectorReduceDescSdma(void *devMem, const
 HcclResult DispatcherGraph::SetGraphDescVectorReduce(const void *src, const void *dst, int count, void *addrListDevMemPtr,
     void *funcAddr, uint32_t numBlocks, const HcclDataType dataType, HcclReduceOp redOp, Stream &stream)
 {
+    CHK_PTR_NULL(src);
+    CHK_PTR_NULL(dst);
+    CHK_PTR_NULL(addrListDevMemPtr);
+    CHK_PTR_NULL(funcAddr);
     uint64_t beginTime = GetMsprofSysCycleTime();
     u32 ctxIdx = 0;
     CHK_RET(GraphAddVectorReduceTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), count, addrListDevMemPtr,
@@ -605,6 +611,9 @@ HcclResult DispatcherGraph::SetGraphDescVectorReduce(const void *src, const void
 HcclResult DispatcherGraph::TailVectorReduce(const void *tailSrc1, const void *tailSrc2, u64 tailCount,
     const HcclDataType dataType, HcclReduceOp redOp, Stream &stream, void *tailDst)
 {
+    CHK_PTR_NULL(tailSrc1);
+    CHK_PTR_NULL(tailSrc2);
+    CHK_PTR_NULL(tailDst);
     void *devMem1 = nullptr;
     void *devMem2 = nullptr;
     TbeReduceArg args{};
