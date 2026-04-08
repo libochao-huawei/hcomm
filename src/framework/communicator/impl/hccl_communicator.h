@@ -57,6 +57,8 @@
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
+#include "my_rank.h"
+#include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
@@ -142,6 +144,17 @@ public:
     u32 GetModuleNum();
 
     u32 GetRealUserRank();
+
+    HcclResult InitMyRank();
+    HcclResult CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr);
+    HcclResult InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable);
+    uint32_t GetConnectMode();
+    MyRank *GetMyRank() {
+        if (myRank_ == nullptr) {
+            return nullptr;
+        }
+        return myRank_.get();
+    }
 
     HcclResult GetCommParams(HcclCommParams &params); // 逆向解析获取HcclCommParams参数
 
@@ -443,10 +456,26 @@ public:
     HcclResult SnapshotCheckPreProcess();
     HcclResult SnapshotCheckPostProcess();
 
+    HcclResult LaunchDpuKernel(aclrtFuncHandle &funcHandle);
+    HcclResult PrepareDpuKernelResource(aclrtFuncHandle &funcHandle);
+    HcclResult InitAndLaunchDpuKernel();
+    void InitDpuKernel();
+    HcclResult DestroyDpuKernelResource();
+    HcclResult WaitDpuKernelThreadTerminate();
+
     //decouple for MC2
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
+
+    HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
+    HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
+    const std::shared_ptr<Hccl::DevBuffer> GetKFCWorkSpace(const char *memTag) const {
+        std::string tag = memTag != nullptr ? std::string(memTag) : "";
+        auto it = tagWorkspaceMap_.find(tag);
+        return it != tagWorkspaceMap_.end() ? it->second : nullptr;
+    }
+
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
@@ -455,6 +484,12 @@ public:
     HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+
+    HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+    HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+    HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+    HcclResult GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num);
+    HcclResult GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
 
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
 
@@ -1104,6 +1139,8 @@ private:
 #ifndef CCL_KERNEL_AICPU
     RankGraphV1 rankGraph_;
 #endif
+    std::unique_ptr<MyRank> myRank_{nullptr};
+    uint32_t myRankConnectMode_{0};
 
     // for group
     bool isGroupMode_ {false};
@@ -1118,6 +1155,13 @@ private:
     u32 hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
     std::unique_ptr<SymmetricMemory> symmetricMemory_;
+
+    std::unordered_map<std::string, std::shared_ptr<Hccl::DevBuffer>> tagWorkspaceMap_;
+    void *hostShareBuf_{nullptr};
+    aclrtStream dpuStream_;
+    aclrtContext dpuContext_;
+    aclrtContext npuContext_;
+    bool isDpuKernelLaunched_ = false;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
