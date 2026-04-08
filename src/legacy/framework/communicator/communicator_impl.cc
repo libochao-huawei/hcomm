@@ -1795,14 +1795,12 @@ bool CommunicatorImpl::GetCommCcuFeatureFlag() const
     return IsCommUsingCcuMs() || IsCommUsingCcuSched(); // 通信域粒度
 }
 
-u8 CommunicatorImpl::GetUbJettyJfsPriority() const
+u8 CommunicatorImpl::GetCommQos() const
 {
-    constexpr u32 kNotSet = HCCL_COMM_QOS_CONFIG_NOT_SET;
-    u32 qos = config.hcclQos;
-    if (qos == kNotSet) {
-        return 2u;
+    if (config.hcclQos == HCCL_COMM_QOS_CONFIG_NOT_SET) {
+        return static_cast<u8>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB);
     }
-    return static_cast<u8>(qos > 15u ? 15u : qos);
+    return static_cast<u8>(config.hcclQos);
 }
 
 HcclResult CommunicatorImpl::AllocCommResource(void *mc2Tiling, void **commContext)
