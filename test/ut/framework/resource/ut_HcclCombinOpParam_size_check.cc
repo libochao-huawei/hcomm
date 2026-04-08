@@ -9,6 +9,7 @@
  */
 
 #include "gtest/gtest.h"
+// A2对应的数据结构
 #include "aicpu_operator_pub.h"
 
 class HcclCombinOpParamStructTest : public ::testing::Test {
@@ -19,7 +20,7 @@ protected:
 
 TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamSize)
 {
-    EXPECT_EQ(sizeof(HcclCombinOpParam), 8944u);
+    EXPECT_EQ(sizeof(HcclCombinOpParam), 8928u);
 }
 
 TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamFieldOffsets)
@@ -30,34 +31,32 @@ TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamFieldOffsets)
     EXPECT_EQ(offsetof(HcclCombinOpParam, winSize), 24u);
     EXPECT_EQ(offsetof(HcclCombinOpParam, windowsIn), 32u);
     EXPECT_EQ(offsetof(HcclCombinOpParam, windowsOut), 288u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, xnAddr), 544u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, ckeAddr), 552u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, msAddr), 560u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, msSize), 568u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, opType), 576u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, algorithmType), 608u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, wq), 616u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, cq), 3744u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, streamInfo), 6872u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, signalInfo), 7192u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, config), 8808u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, overFlowAddr), 8864u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, onlyRead), 8872u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcControlTransferH2DParams), 8876u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcStatusTransferD2HParams), 8896u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, padding), 8906u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, winExpSize), 8924u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsExp), 8932u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, hcomId), 544u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, streamInfo), 672u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, signalInfo), 1184u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, config), 8448u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, overFlowAddr), 8496u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, onlyRead),8504u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcControlTransferH2DParams), 8512u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcStatusTransferD2HParams), 8552u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, padding), 8592u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, winExpSize), 8608u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsExp), 8616u);
     EXPECT_EQ(offsetof(HcclCombinOpParam, multiServerFlag), 8872u);
     EXPECT_EQ(offsetof(HcclCombinOpParam, ibverbsData), 8880u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, ibverbsDataSize), 8888u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, sizeOfAiRMAInfo), 8896u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, aiRMAInfo), 8904u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, capabilityPtr), 8912u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, capabilitySize), 8920u);
 }
 
 TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamFieldSizes)
 {
     EXPECT_EQ(sizeof(HcclMC2WorkSpace), 16u);
     EXPECT_EQ(sizeof(HcclStreamInfo), 16u);
-    EXPECT_EQ(sizeof(HcclCombinOpSignalParam), 616u);
-    EXPECT_EQ(sizeof(HcclOpConfig), 56u);
-    EXPECT_EQ(sizeof(HcclAiRMAWQ), 72u);
+    EXPECT_EQ(sizeof(HcclCombinOpSignalParam), 7264u);
+    EXPECT_EQ(sizeof(HcclOpConfig), 48u);
+    EXPECT_EQ(sizeof(HcclAiRMAWQ), 64u);
     EXPECT_EQ(sizeof(HcclAiRMACQ), 56u);
 }
