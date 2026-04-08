@@ -12,6 +12,7 @@
 #define NOTIFY_BASE_H
 
 #include "adapter_rts.h"
+#include "orion_adapter_rts.h"
 #include "adapter_hal.h"
 #include "hccl/base.h"
 
