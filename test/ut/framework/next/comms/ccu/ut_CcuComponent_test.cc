@@ -51,3 +51,63 @@ TEST_F(CcuComponentTest, Ut_CcuComponent_Init_When_Mock_Is_Fine_Expect_Return_Ok
 
     EXPECT_EQ(ccuComponent.Init(), HcclResult::HCCL_SUCCESS);
 }
+
+TEST_F(CcuComponentTest, Ut_CcuComponent_CleanDieCkes_InvalidDieId)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    const hcomm::CcuVersion ccuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(devLogicId);
+    MockCcuResourcesDefault(devLogicId, ccuVersion);
+
+    hcomm::CcuComponent ccuComponent{};
+    ccuComponent.devLogicId_ = devLogicId;
+
+    // 使用非法的 dieId（等于上限），期望参数错误返回
+    const uint8_t badDieId = static_cast<uint8_t>(hcomm::CCU_MAX_IODIE_NUM);
+    EXPECT_EQ(ccuComponent.CleanDieCkes(badDieId), HcclResult::HCCL_E_PARA);
+}
+
+TEST_F(CcuComponentTest, Ut_CcuComponent_CleanDieCkes_DieDisabled_NoOp)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    const hcomm::CcuVersion ccuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(devLogicId);
+    MockCcuResourcesDefault(devLogicId, ccuVersion);
+
+    hcomm::CcuComponent ccuComponent{};
+    ccuComponent.devLogicId_ = devLogicId;
+
+    // 确保 die 被标记为不可用，CleanDieCkes 应直接返回成功且不调用外部驱动
+    ccuComponent.dieEnableFlags_.fill(false);
+    EXPECT_EQ(ccuComponent.CleanDieCkes(0), HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(CcuComponentTest, Ut_CcuComponent_SetTaskKill_Transitions)
+{
+    const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    const hcomm::CcuVersion ccuVersion = hcomm::CcuVersion::CCU_V1;
+    MockCcuNetworkDeviceDefault(devLogicId);
+    MockCcuResourcesDefault(devLogicId, ccuVersion);
+
+    hcomm::CcuComponent ccuComponent{};
+    ccuComponent.devLogicId_ = devLogicId;
+
+    // 保证所有 die 为不可用，以避免 SetProcess 内部调用真实驱动函数
+    ccuComponent.dieEnableFlags_.fill(false);
+
+    // 初始态置为 INVALID，首次调用应将状态置为 TASK_KILL
+    ccuComponent.status = hcomm::CcuComponent::CcuTaskKillStatus::INVALID;
+    EXPECT_EQ(ccuComponent.SetTaskKill(), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(ccuComponent.status, hcomm::CcuComponent::CcuTaskKillStatus::TASK_KILL);
+
+    // 再次调用，因已处于 TASK_KILL，应直接返回成功且不改变状态
+    EXPECT_EQ(ccuComponent.SetTaskKill(), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(ccuComponent.status, hcomm::CcuComponent::CcuTaskKillStatus::TASK_KILL);
+
+    // 调用 SetTaskKillDone，应将状态恢复为 INIT
+    EXPECT_EQ(ccuComponent.SetTaskKillDone(), HcclResult::HCCL_SUCCESS);
+    EXPECT_EQ(ccuComponent.status, hcomm::CcuComponent::CcuTaskKillStatus::INIT);
+
+    // 调用 CleanTaskKillState（const 方法），仅验证返回值
+    EXPECT_EQ(ccuComponent.CleanTaskKillState(), HcclResult::HCCL_SUCCESS);
+}

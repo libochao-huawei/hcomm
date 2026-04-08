@@ -19,7 +19,6 @@ public:
     void TearDown() override {
         BaseInit::TearDown();
         GlobalMockObject::verify();
-        remove(rankTableFileName);
     }
 };
 

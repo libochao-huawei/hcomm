@@ -52,7 +52,7 @@ protected:
 TEST_F(ProfilingReporterLiteTest, Call_profilingReporterLite_api_test)
 {
     GlobalMirrorTasks &globalMirrorTasks = GlobalMirrorTasks::Instance();
-    MirrorTaskManager mirrorTaskManager(0, &globalMirrorTasks, 0);
+    MirrorTaskManagerLite mirrorTaskManagerLite;
      // 初始化TaskParam
     TaskParam taskParam = {.taskType = TaskParamType::TASK_NOTIFY_RECORD,
         .beginTime = 0,
@@ -66,13 +66,12 @@ TEST_F(ProfilingReporterLiteTest, Call_profilingReporterLite_api_test)
     dfxOpInfo->op_ = op;
     CommunicatorImplLite* comm = new CommunicatorImplLite(0);
     dfxOpInfo->comm_ = comm;
-    mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
+    mirrorTaskManagerLite.SetCurrDfxOpInfo(dfxOpInfo);
     std::shared_ptr<TaskInfo> taskInfo1 = std::make_shared<TaskInfo>(3, 0, 0, taskParam, dfxOpInfo);
     std::shared_ptr<TaskInfo> taskInfo2 = std::make_shared<TaskInfo>(0, 1, 1, taskParam, dfxOpInfo);
-    mirrorTaskManager.AddTaskInfo(taskInfo1);
-    mirrorTaskManager.AddTaskInfo(taskInfo2);
-
-    ProfilingReporterLite profilingReporter(&mirrorTaskManager, &ProfilingHandlerLite::GetInstance());
+    mirrorTaskManagerLite.AddTaskInfo(taskInfo1);
+    mirrorTaskManagerLite.AddTaskInfo(taskInfo2);
+    ProfilingReporterLite profilingReporter(&mirrorTaskManagerLite, &ProfilingHandlerLite::GetInstance());
     profilingReporter.Init();
     profilingReporter.ReportAllTasks();
     profilingReporter.UpdateProfStat();

@@ -249,10 +249,9 @@ TEST_F(TestAicpuTsThread, Ut_AicpuTsThread_Init_On_A5_Device_Get_StreamId_Notify
 
     std::string mainStr = aicpuThread.GetUniqueId();
     GlobalMockObject::verify();
-    s32 streamId = 0;
     u32 notifyNum = 0;
     std::string notifyDesc;
-    ret = aicpuThread.GetStreamIdAndNotifyByUniqueId(streamId, notifyNum, notifyDesc);
+    ret = aicpuThread.GetNotifyByUniqueId(notifyNum, notifyDesc);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     AicpuTsThread mainDevThread(mainStr);

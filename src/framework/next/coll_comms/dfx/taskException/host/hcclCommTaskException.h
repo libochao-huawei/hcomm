@@ -19,7 +19,6 @@
 #include "orion_adapter_hccp.h"
 #include "rdma_handle_manager.h"
 
-
 namespace hcomm {
 using RdmaHandle = void*;
 using GetAicpuTaskExceptionCallBackHcomm = std::function<Hccl::ErrorMessageReport()>; 
@@ -40,7 +39,6 @@ private:
 
     static void PrintGroupErrorMessage(Hccl::ErrorMessageReport &errorMessage, Hccl::TaskInfo &exceptionTaskInfo, std::string &groupRankContent, std::string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, Hccl::ErrorMessageReport &errorMessage, std::string &stageErrInfo);
-
     static HcclResult PrintUbRegisters(s32 devLogicId, RdmaHandle rdmaHandle);
 
 private:
@@ -63,4 +61,4 @@ private:
 };
 } // namespace hccl
 
-#endif // HCCL_TASK_EXCEPTION_HANDLER_H
+#endif

@@ -11,6 +11,10 @@
 #include "ccu_api_exception.h"
 #include "ccu_rep_assign_v1.h"
 #include "const_val.h"
+
+#include "hcomm_c_adpt.h"  // 需优化
+#include "../../../endpoint_pairs/channels/ccu/ccu_urma_channel.h"  // 需优化
+
 namespace hcomm {
 namespace CcuRep {
 
@@ -38,8 +42,28 @@ void CcuRepContext::SetCurrentBlock(std::shared_ptr<CcuRep::CcuRepBlock> repBloc
     activeBlock = repBlock;
 }
 
+/**
+ * @details:保存rep信息，后续有arg后配合补全profiling信息
+ */
+void CcuRepContext::CollectProfilingReps(std::shared_ptr<CcuRep::CcuRepBase> rep)
+{
+    if (rep->Type() == CcuRepType::ASSIGN) {
+        auto assignRep = dynamic_cast<CcuRepAssign *>(rep.get());
+        if (assignRep->subType == AssignSubType::VAR_TO_VAR) {
+            lgProfilingInfo.assignProfilingReps.push_back(rep);
+        }
+    } else if (CurrentBlock()->Type() != CcuRep::CcuRepType::LOOP_BLOCK
+            && (rep->Type() == CcuRepType::LOC_WAIT_EVENT || rep->Type() == CcuRepType::REM_WAIT_SEM
+                || rep->Type() == CcuRepType::REM_WAIT_GROUP)) {
+        waitCkeProfilingReps.push_back(rep);
+    } else if (rep->Type() == CcuRepType::LOOPGROUP) {
+        allLgProfilingReps.push_back(rep);
+    }
+}
+
 void CcuRepContext::Append(std::shared_ptr<CcuRep::CcuRepBase> rep)
 {
+    CollectProfilingReps(rep);
     CurrentBlock()->Append(rep);
 }
 
@@ -99,6 +123,135 @@ void CcuRepContext::SetMissionKey(uint32_t missionKey)
 uint32_t CcuRepContext::GetMissionKey() const
 {
     return missionKey;
+}
+
+std::vector<CcuProfilingInfo> &CcuRepContext::GetProfilingInfo()
+{
+    return profilingInfo;
+}
+
+const std::vector<std::shared_ptr<CcuRepBase>> &CcuRepContext::GetWaiteCkeProfilingReps() const
+{
+    return waitCkeProfilingReps;
+}
+
+LoopGroupProfilingInfo &CcuRepContext::GetLGProfilingInfo()
+{
+    return lgProfilingInfo;
+}
+
+void CcuRepContext::AddSqeProfiling()
+{
+    profilingInfo.clear();
+    // 生成SQE粒度profiling信息
+    ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
+    ccuProfilingInfoCache.name      = "CCU_KERNEL";
+    ccuProfilingInfoCache.dieId     = GetDieId();
+    HCCL_DEBUG("[%s]type[%d], name[%s], dieId[%u]", __func__, ccuProfilingInfoCache.type,
+        ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.dieId);
+    profilingInfo.push_back(ccuProfilingInfoCache);
+}
+    
+int32_t CcuRepContext::AddProfiling(const std::string &name, uint32_t mask)
+{
+    ccuProfilingInfoCache.type  = (uint8_t)CcuProfilinType::CCU_WAITCKE_PROFILING;
+    ccuProfilingInfoCache.name  = name;
+    ccuProfilingInfoCache.ckeId = INVALID_CKE_ID;
+    ccuProfilingInfoCache.mask  = mask;
+    CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId), INVALID_VALUE_CHANNELID,
+        sizeof(ccuProfilingInfoCache.channelId)));
+
+    HCCL_INFO("[%s]name[%s], mask[%u], type[%d]", __func__, name.c_str(), mask, ccuProfilingInfoCache.type);
+    profilingInfo.push_back(ccuProfilingInfoCache);
+    return HCCL_SUCCESS;
+}
+    
+int32_t CcuRepContext::AddProfiling(const ChannelHandle channel, const std::string &name, uint32_t signalIndex, uint32_t mask)
+{
+    void *channelPtr{nullptr};
+    CHK_RET(static_cast<HcclResult>(HcommChannelGet(channel, &channelPtr)));
+    auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+
+    ccuProfilingInfoCache.type     = (uint8_t)CcuProfilinType::CCU_WAITCKE_PROFILING;
+    ccuProfilingInfoCache.name     = name;
+    CHK_RET(channelImpl->GetLocCkeByIndex(signalIndex, ccuProfilingInfoCache.ckeId));
+    ccuProfilingInfoCache.mask     = mask;
+    CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
+                            INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
+    ccuProfilingInfoCache.channelId[0] = channelImpl->GetChannelId();
+    ccuProfilingInfoCache.channelHandle[0] = channel;
+
+    HCCL_INFO("[%s]channelHandle[0x%llx], name[%s], signalIndex[%u], mask[%u], type[%d], ckeId[%u], channelId[%u]",
+        __func__, channel, name.c_str(), signalIndex, mask, ccuProfilingInfoCache.type, ccuProfilingInfoCache.ckeId,
+        ccuProfilingInfoCache.channelId[0]);
+    profilingInfo.push_back(ccuProfilingInfoCache);
+    return HCCL_SUCCESS;
+}
+    
+int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channelNum)
+{
+    CHK_PTR_NULL(channels);
+    ccuProfilingInfoCache.type           = (uint8_t)CcuProfilinType::CCU_LOOPGROUP_PROFILING;
+    ccuProfilingInfoCache.name           = "GroupBroadcast";
+    ccuProfilingInfoCache.reduceOpType   = 0xFF; // 0xFF 无效值
+    ccuProfilingInfoCache.inputDataType  = 0xFF; // 0xFF 无效值
+    ccuProfilingInfoCache.outputDataType = 0xFF; // 0xFF 无效值
+    ccuProfilingInfoCache.missionId      = GetMissionId();
+
+    CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
+                                INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
+    for (u32 i = 0; i < channelNum; i++) {
+        void *channelPtr{nullptr};
+        CHK_RET(static_cast<HcclResult>(HcommChannelGet(channels[i], &channelPtr)));
+        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+        CHK_PTR_NULL(channelImpl);
+        ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+        ccuProfilingInfoCache.channelHandle[i] = channels[i];
+        HCCL_INFO("[%s]type[%d], name[%s], missionId[%u], channelHandle[0x%llx], channelId[%u]",
+            __func__, ccuProfilingInfoCache.type, ccuProfilingInfoCache.name.c_str(), ccuProfilingInfoCache.missionId,
+            ccuProfilingInfoCache.channelHandle[i], ccuProfilingInfoCache.channelId[i]);
+    }
+
+    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
+    if (!allLgProfilingReps.empty()) {
+        lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
+    }
+    return HCCL_SUCCESS;
+}
+    
+int32_t CcuRepContext::AddProfiling(const ChannelHandle *channels, uint32_t channelNum, HcommDataType hcommDataType,
+    HcommDataType hcommOutputDataType, HcommReduceOp hcommOpType)
+{
+    HcclDataType dataType = static_cast<HcclDataType>(hcommDataType);
+    HcclDataType outputDataType = static_cast<HcclDataType>(hcommOutputDataType);
+    HcclReduceOp opType = static_cast<HcclReduceOp>(hcommOpType);
+
+    CHK_PTR_NULL(channels);
+    ccuProfilingInfoCache.type           = (uint8_t)CcuProfilinType::CCU_LOOPGROUP_PROFILING;
+    ccuProfilingInfoCache.name           = "GroupReduce";
+    ccuProfilingInfoCache.reduceOpType   = opType;
+    ccuProfilingInfoCache.inputDataType  = dataType;
+    ccuProfilingInfoCache.outputDataType = outputDataType;
+    ccuProfilingInfoCache.missionId      = GetMissionId();
+    
+    CHK_SAFETY_FUNC_RET(memset_s(ccuProfilingInfoCache.channelId, sizeof(ccuProfilingInfoCache.channelId),
+                                    INVALID_VALUE_CHANNELID, sizeof(ccuProfilingInfoCache.channelId)));
+    for (u32 i = 0; i < channelNum; ++i) {
+        void *channelPtr{nullptr};
+        CHK_RET(static_cast<HcclResult>(HcommChannelGet(channels[i], &channelPtr)));
+        auto *channelImpl = dynamic_cast<CcuUrmaChannel *>(static_cast<Channel *>(channelPtr));
+        CHK_PTR_NULL(channelImpl);
+        ccuProfilingInfoCache.channelId[i] = channelImpl->GetChannelId();
+        ccuProfilingInfoCache.channelHandle[i] = channels[i];
+        HCCL_INFO("[%s]type[%d], name[%s], opType[%d], dataType[%d], outputDataType[%d], missionId[%u], "
+            "channelHandle[0x%llx], channelId[%u]", __func__, ccuProfilingInfoCache.type,
+            ccuProfilingInfoCache.name.c_str(), opType, dataType, outputDataType, ccuProfilingInfoCache.missionId,
+            ccuProfilingInfoCache.channelHandle[i], ccuProfilingInfoCache.channelId[i]);
+    }
+
+    lgProfilingInfo.ccuProfilingInfos.push_back(ccuProfilingInfoCache);
+    lgProfilingInfo.lgProfilingReps.push_back(allLgProfilingReps.back());
+    return HCCL_SUCCESS;
 }
 
 }; // namespace CcuRep

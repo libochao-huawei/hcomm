@@ -51,6 +51,7 @@ bool CcuRepRead::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &
         Hccl::THROW<Hccl::CcuApiException>("[%s] failed to cast channel[0x%llx] to CcuUrmaChannel",
             __func__, channel);
     }
+    channelId = channelImpl->GetChannelId();
     TransRmtMemToLocMemInstr(instr++, loc.addr.Id(), loc.token.Id(), rem.addr.Id(), rem.token.Id(), len.Id(),
                              channelImpl->GetChannelId(), dataType, opType, sem.Id(), mask, 0, 0, 1, 1, reduceFlag);
 

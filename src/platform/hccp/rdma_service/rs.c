@@ -29,6 +29,7 @@
 #include "rs_inner.h"
 #include "rs_rdma_inner.h"
 #include "rs_drv_rdma.h"
+#include "rs_nda.h"
 #include "rs_epoll.h"
 #include "rs_tls.h"
 #include "ssl_adp.h"
@@ -71,131 +72,6 @@ static struct rs_cb *RsGetCurRsCb(void)
     }
     return NULL;
 }
-
-struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
-    // outer opcode version: 1.0
-    {RA_RS_SOCKET_CONN, 2},
-    {RA_RS_SOCKET_CLOSE, 2},
-    {RA_RS_SOCKET_ABORT, 1},
-    {RA_RS_SOCKET_LISTEN_START, 2},
-    {RA_RS_SOCKET_LISTEN_STOP, 2},
-    {RA_RS_GET_SOCKET, 3},
-    {RA_RS_SOCKET_SEND, 1},
-    {RA_RS_SOCKET_RECV, 1},
-    {RA_RS_QP_CREATE, 2},
-    {RA_RS_QP_CREATE_WITH_ATTRS, 1},
-    {RA_RS_AI_QP_CREATE, 3},
-    {RA_RS_AI_QP_CREATE_WITH_ATTRS, 1},
-    {RA_RS_TYPICAL_QP_CREATE, 1},
-    {RA_RS_QP_DESTROY, 1},
-    {RA_RS_QP_CONNECT, 2},
-    {RA_RS_TYPICAL_QP_MODIFY, 2},
-    {RA_RS_QP_BATCH_MODIFY, 2},
-    {RA_RS_QP_STATUS, 1},
-    {RA_RS_QP_INFO, 1},
-    {RA_RS_MR_REG, 2},
-    {RA_RS_MR_DEREG, 1},
-    {RA_RS_TYPICAL_MR_REG_V1, 2},
-    {RA_RS_TYPICAL_MR_REG, 1},
-    {RA_RS_REMAP_MR, 1},
-    {RA_RS_TYPICAL_MR_DEREG, 1},
-    {RA_RS_SEND_WR, 1},
-    {RA_RS_GET_NOTIFY_BA, 2},
-    {RA_RS_INIT, 2},
-    {RA_RS_DEINIT, 1},
-    {RA_RS_SOCKET_INIT, 1},
-    {RA_RS_SOCKET_DEINIT, 1},
-    {RA_RS_RDEV_INIT, 2},
-    {RA_RS_RDEV_INIT_WITH_BACKUP, 1},
-    {RA_RS_RDEV_GET_PORT_STATUS, 1},
-    {RA_RS_RDEV_DEINIT, 1},
-    {RA_RS_WLIST_ADD, 1},
-    {RA_RS_WLIST_ADD_V2, 1},
-    {RA_RS_WLIST_DEL, 1},
-    {RA_RS_WLIST_DEL_V2, 1},
-    {RA_RS_ACCEPT_CREDIT_ADD, 1},
-    {RA_RS_GET_IFADDRS, 2},
-    {RA_RS_GET_IFADDRS_V2, 3},
-    {RA_RS_GET_INTERFACE_VERSION, 1},
-    {RA_RS_SEND_WRLIST, 1},
-    {RA_RS_SEND_WRLIST_V2, 1},
-    {RA_RS_SEND_WRLIST_EXT, 1},
-    {RA_RS_SEND_WRLIST_EXT_V2, 1},
-    {RA_RS_SEND_NORMAL_WRLIST, 1},
-    {RA_RS_SET_TSQP_DEPTH, 1},
-    {RA_RS_GET_TSQP_DEPTH, 1},
-    {RA_RS_SET_QP_ATTR_QOS, 1},
-    {RA_RS_SET_QP_ATTR_TIMEOUT, 1},
-    {RA_RS_SET_QP_ATTR_RETRY_CNT, 1},
-    {RA_RS_GET_CQE_ERR_INFO, 1},
-    {RA_RS_GET_LITE_SUPPORT, 2},
-    {RA_RS_GET_LITE_RDEV_CAP, 1},
-    {RA_RS_GET_LITE_QP_CQ_ATTR, 1},
-    {RA_RS_GET_LITE_CONNECTED_INFO, 1},
-    {RA_RS_GET_LITE_MEM_ATTR, 1},
-    {RA_RS_PING_INIT, 1},
-    {RA_RS_PING_ADD, 1},
-    {RA_RS_PING_START, 1},
-    {RA_RS_PING_GET_RESULTS, 1},
-    {RA_RS_PING_STOP, 1},
-    {RA_RS_PING_DEL, 1},
-    {RA_RS_PING_DEINIT, 1},
-    {RA_RS_GET_CQE_ERR_INFO_NUM, 1},
-    {RA_RS_GET_CQE_ERR_INFO_LIST, 1},
-    {RA_RS_GET_VNIC_IP_INFOS_V1, 1},
-    {RA_RS_GET_VNIC_IP_INFOS, 1},
-#ifdef CONFIG_TLV
-    {RA_RS_TLV_INIT_V1, 2},
-    {RA_RS_TLV_INIT, 1},
-    {RA_RS_TLV_DEINIT, 1},
-    {RA_RS_TLV_REQUEST, 1},
-#endif
-    {RA_RS_GET_TLS_ENABLE, 1},
-    {RA_RS_GET_SEC_RANDOM, 1},
-    {RA_RS_GET_HCCN_CFG, 1},
-    {RA_RS_GET_ROCE_API_VERSION, 0},
-    {RA_RS_GET_DEV_EID_INFO_NUM, 1},
-    {RA_RS_GET_DEV_EID_INFO_LIST, 1},
-    {RA_RS_CTX_INIT, 1},
-    {RA_RS_CTX_GET_ASYNC_EVENTS, 1},
-    {RA_RS_CTX_DEINIT, 1},
-    {RA_RS_GET_EID_BY_IP, 1},
-    {RA_RS_GET_TP_INFO_LIST, 1},
-    {RA_RS_GET_TP_ATTR, 1},
-    {RA_RS_SET_TP_ATTR, 1},
-    {RA_RS_CTX_TOKEN_ID_ALLOC, 1},
-    {RA_RS_CTX_TOKEN_ID_FREE, 1},
-    {RA_RS_LMEM_REG, 1},
-    {RA_RS_LMEM_UNREG, 1},
-    {RA_RS_RMEM_IMPORT, 1},
-    {RA_RS_RMEM_UNIMPORT, 1},
-    {RA_RS_CTX_CHAN_CREATE, 1},
-    {RA_RS_CTX_CHAN_DESTROY, 1},
-    {RA_RS_CTX_CQ_CREATE, 1},
-    {RA_RS_CTX_QUERY_QP_BATCH, 1},
-    {RA_RS_CTX_CQ_DESTROY, 1},
-    {RA_RS_CTX_QP_DESTROY_BATCH, 1},
-    {RA_RS_CTX_QP_CREATE, 1},
-    {RA_RS_CTX_QP_DESTROY, 1},
-    {RA_RS_CTX_QP_IMPORT, 1},
-    {RA_RS_CTX_QP_UNIMPORT, 1},
-    {RA_RS_CTX_QP_BIND, 1},
-    {RA_RS_CTX_QP_UNBIND, 1},
-    {RA_RS_CTX_BATCH_SEND_WR, 1},
-    {RA_RS_CUSTOM_CHANNEL, 1},
-    {RA_RS_CTX_UPDATE_CI, 1},
-    {RA_RS_CTX_GET_AUX_INFO, 1},
-    {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},
-
-    // inner opcode version
-    {RA_RS_HDC_SESSION_CLOSE, 1},
-    {RA_RS_GET_VNIC_IP, 1},
-    {RA_RS_NOTIFY_CFG_SET, 1},
-    {RA_RS_NOTIFY_CFG_GET, 1},
-    {RA_RS_SET_PID, 1},
-    {RA_RS_ASYNC_HDC_SESSION_CONNECT, 1},
-    {RA_RS_ASYNC_HDC_SESSION_CLOSE, 1},
-};
 
 RS_ATTRI_VISI_DEF void RsGetCurTime(struct timeval *time)
 {
@@ -1054,16 +930,22 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
     }
 #endif
 
-    ret = RsSetupPdAndNotify(rdevCb);
-    if (ret) {
-        hccp_err("rs_get_sq_depth_and_qp_max_num failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
+    ret = RsInitNdaCb(rdevCb);
+    if (ret != 0) {
+        hccp_err("RsInitNdaCb failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
         goto unmmap_ai_db;
     }
 
-    rdevCb->ibCtxEx = RsNdaIbvOpenExtend(rdevCb->ibCtx);
+    ret = RsSetupPdAndNotify(rdevCb);
+    if (ret != 0) {
+        hccp_err("RsSetupPdAndNotify failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
+        goto free_nda_cb;
+    }
 
     return 0;
 
+free_nda_cb:
+    RsFreeNdaCb(rdevCb);
 unmmap_ai_db:
 #ifdef CUSTOM_INTERFACE
     if (RsIsCustomInterfaceSupported()) {
@@ -1077,62 +959,6 @@ destroy_cqe_mutex:
 destroy_rdev_mutex:
     pthread_mutex_destroy(&rdevCb->rdevMutex);
     return ret;
-}
-
-int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb)
-{
-    struct halSensorNodeCfg cfg = { 0 };
-    int ret;
-
-    if (rsCb->sensorNode.sensorHandle != 0) {
-        return 0;
-    }
-
-    // some non-hdc scenarios don't have corresponding API, skip to register sensor node
-    if (rsCb->hccpMode != NETWORK_OFFLINE) {
-        return 0;
-    }
-
-    ret = rsGetLocalDevIDByHostDevID(phyId, &rsCb->sensorNode.logicDevid);
-    if (ret) {
-        hccp_err("[init][rs_rdev]rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)", phyId, ret);
-        return ret;
-    }
-
-    ret = sprintf_s(cfg.name, sizeof(cfg.name), "roce_rs_%d", getpid());
-    if (ret <= 0) {
-        hccp_err("[init][rs_rdev]sprintf_s name err, ret:%d, phyId:%u", ret, phyId);
-        return -ESAFEFUNC;
-    }
-
-    cfg.NodeType = HAL_DMS_DEV_TYPE_HCCP;
-    cfg.SensorType = RDMA_CQE_ERR_SENSOR_TYPE;
-    cfg.AssertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_MASK;
-    cfg.DeassertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE_MASK;
-    ret = DlHalSensorNodeRegister(rsCb->sensorNode.logicDevid, &cfg, &rsCb->sensorNode.sensorHandle);
-    if (ret != 0) {
-        hccp_err("[init][rs_rdev]dl_hal_sensor_node_register failed, phyId(%u), logicDevid(%u), ret(%d)",
-            phyId, rsCb->sensorNode.logicDevid, ret);
-        return ret;
-    }
-
-    return 0;
-}
-
-void RsSensorNodeUnregister(struct rs_cb *rsCb)
-{
-    // no need to unregister sensor node
-    if (rsCb->sensorNode.sensorHandle == 0) {
-        return;
-    }
-
-    RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
-    if (RsListEmpty(&rsCb->rdevList)) {
-        (void)DlHalSensorNodeUnregister(rsCb->sensorNode.logicDevid, rsCb->sensorNode.sensorHandle);
-        rsCb->sensorNode.sensorUpdateCnt = 0;
-        rsCb->sensorNode.sensorHandle = 0;
-    }
-    RS_PTHREAD_MUTEX_ULOCK(&rsCb->mutex);
 }
 
 int RsRetryTimeoutExceptionCheck(struct SensorNode *sensorNode)
@@ -1338,7 +1164,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 
     RsIbvDeallocPd(rdevCb->ibPd);
 
-    (void)RsNdaIbvCloseExtend(rdevCb->ibCtxEx);
+    RsFreeNdaCb(rdevCb);
 
     RsIbvCloseDevice(rdevCb->ibCtx);
 
@@ -2126,28 +1952,6 @@ RS_ATTRI_VISI_DEF int RsGetVnicIpInfos(unsigned int phyId, enum IdType type, uns
         }
     }
 
-    return 0;
-}
-
-RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version)
-{
-    int i;
-    unsigned int interfaceVersion = 0; // default interface is 0 (0: not support this interface opcode)
-    int num = sizeof(gInterfaceInfoList) / sizeof(gInterfaceInfoList[0]);
-
-    CHK_PRT_RETURN(version == NULL, hccp_err("rs_get_interface_version failed! version is null"), -EINVAL);
-
-    for (i = 0; i < num; i++) {
-        if (opcode == gInterfaceInfoList[i].opcode && opcode != RA_RS_GET_ROCE_API_VERSION) {
-            interfaceVersion = gInterfaceInfoList[i].version;
-            break;
-        } else if (opcode == RA_RS_GET_ROCE_API_VERSION) {
-            interfaceVersion = RsRoceGetApiVersion();
-            break;
-        }
-    }
-
-    *version = interfaceVersion;
     return 0;
 }
 
