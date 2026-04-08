@@ -259,6 +259,7 @@ HcclResult Stream::SetMode(const uint64_t stmMode)
 
 HcclResult Stream::GetMode(uint64_t *const stmMode)
 {
+    CHK_PTR_NULL(stmMode);
     if (modeGotFlag_ == false) {
         HcclResult ret = hrtStreamGetMode(stream_, &streamMode_);
         if (ret != HCCL_SUCCESS) {
