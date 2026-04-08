@@ -13,6 +13,7 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
+#include "comm_mems.h"
 
 // Orion
 #include "coll_alg_param.h"

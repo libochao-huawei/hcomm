@@ -131,7 +131,8 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     }
  
     *memHandle = h.get();
-    HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle, (unsigned long long)h->mem.size);
+    HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle,
+        (unsigned long long)h->mem.size);
     return HCCL_SUCCESS;
 }
  
