@@ -259,9 +259,9 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
     myRank.commMems_ = std::make_unique<CommMems>((uint64_t)0x100);
 
-    auto memInfo = std::make_unique<hcomm::RegedMemMgr::CommMemInfo>();
+    auto memInfo = hcomm::RegedMemMgr::CommMemInfo{};
     std::vector<hcomm::RegedMemMgr::CommMemInfo*> mems{};
-    mems.push_back(memInfo.get());
+    mems.push_back(&memInfo);
     void **memHandles = reinterpret_cast<void**>(mems.data());
     std::vector<MemHandle> memHandleVec{};
     memHandleVec.emplace_back((void*)0x100);
