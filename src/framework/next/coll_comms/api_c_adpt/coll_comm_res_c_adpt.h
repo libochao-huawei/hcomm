@@ -13,6 +13,7 @@
 #include <cstdint>
 #include "hccl/hccl_res.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
