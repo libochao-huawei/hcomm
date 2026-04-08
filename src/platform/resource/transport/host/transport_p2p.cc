@@ -1400,6 +1400,7 @@ HcclResult TransportP2p::GetIndOpRemoteMem(HcclMem **remoteMem, uint32_t *memNum
 
 HcclResult TransportP2p::GetRemoteMem(UserMemType memType, void **remotePtr)
 {
+    CHK_PTR_NULL(remotePtr);
     switch (memType) {
         case UserMemType::INPUT_MEM: {
             *remotePtr = remoteInputPtr_;
