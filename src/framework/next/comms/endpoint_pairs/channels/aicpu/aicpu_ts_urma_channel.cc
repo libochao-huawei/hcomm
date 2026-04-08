@@ -35,7 +35,7 @@ HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
         HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
             reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->mem.memType), locMemInfo->memTag)
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
         ));
     }
     return HCCL_SUCCESS;
