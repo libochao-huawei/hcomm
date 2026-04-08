@@ -297,29 +297,29 @@ extern HcclResult UpdateOpExecStatus(AicpuComContext *ctx, HcclOpExecFSM &fsmSta
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-HcclResult HcclGetCommHandleByCtx(void *ctx, void **opHandle) {
+inline HcclResult HcclGetCommHandleByCtx(void *ctx, void **opHandle) {
     return HCCL_SUCCESS;
 }
-HcclResult HcclReleaseComm(void* opHandle) {
+inline HcclResult HcclReleaseComm(void* opHandle) {
     return HCCL_SUCCESS;
 }
-HcclResult HcclGetTaskStatus(void* opHandle, HcclTaskStatus *status) {
+inline HcclResult HcclGetTaskStatus(void* opHandle, HcclTaskStatus *status) {
     *status = HcclTaskStatus::HCCL_NORMAL_STATUS;
     return HCCL_SUCCESS;
 }
-HcclResult HcclCheckFinishByStream(void* opHandle) {
+inline HcclResult HcclCheckFinishByStream(void* opHandle) {
     return HCCL_SUCCESS;
 }
-HcclResult HcclPrintTaskExceptionAllComm(void* opHandle) {
+inline HcclResult HcclPrintTaskExceptionAllComm(void* opHandle) {
     return HCCL_SUCCESS;
 }
-HcclResult HcclLaunchCcoreWait(void* opHandle, uint64_t waitAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast) {
+inline HcclResult HcclLaunchCcoreWait(void* opHandle, uint64_t waitAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast) {
     return HCCL_SUCCESS;
 }
-HcclResult HcclLaunchCcorePost(void* opHandle, uint64_t recordAddr, uint32_t turnNum, uint64_t turnNumAddr) {
+inline HcclResult HcclLaunchCcorePost(void* opHandle, uint64_t recordAddr, uint32_t turnNum, uint64_t turnNumAddr) {
     return HCCL_SUCCESS;
 }
-HcclResult HcclLaunchOp(void* opHandle, HcclOpData* data) {
+inline HcclResult HcclLaunchOp(void* opHandle, HcclOpData* data) {
     return HCCL_SUCCESS;
 }
 #ifdef __cplusplus
