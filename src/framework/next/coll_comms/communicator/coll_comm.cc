@@ -15,8 +15,10 @@
 #include "kfc.h"
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
+#include "coll_comm_res_c_adpt.h"
 
 namespace hccl {
+
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
     : comm_(comm), rankId_(rankId), commId_ (commName), callbacks_(callbacks)
 {
@@ -57,14 +59,14 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
         u32 tc = config->hcclRdmaTrafficClass;
-        CHK_PRT_RET((tc != 0xFFFFFFFFu) && (tc >= 255 || (tc % 4 != 0)),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255) and a multiple of 4",
+        CHK_PRT_RET((tc != TC_DEFAULT) && (tc > TC_MAX || (tc % MULTIPLE != 0)),
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
                 HCCL_ERROR_CODE(HCCL_E_PARA), tc),
             HCCL_E_PARA);
         CHK_RET(config_.SetConfigTrafficClass(tc));
 
         u32 sl = config->hcclRdmaServiceLevel;
-        CHK_PRT_RET((sl != 0xFFFFFFFFu) && (sl > 7u),
+        CHK_PRT_RET((sl != SL_DEFAULT) && (sl > SL_MAX),
             HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
                 HCCL_ERROR_CODE(HCCL_E_PARA), sl),
             HCCL_E_PARA);

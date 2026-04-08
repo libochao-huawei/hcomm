@@ -13,6 +13,17 @@
 #include <cstdint>
 #include "hccl/hccl_res.h"
 
+constexpr uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
+constexpr uint32_t MULTIPLE = 4;               // 用于A5判断TC是否为4的倍数
+constexpr uint32_t TC_MAX = 255;               // TC的最大值（不区分芯片类型）
+constexpr uint32_t RETRY_INTERVAL_MIN = 5u;    // retryInterval范围的最小值（不区分芯片类型）
+constexpr uint32_t A5_RETRY_INTERVAL_MAX = 24u;// A5的retryInterval范围的最大值
+constexpr uint32_t RETRY_CNT_MIN = 1u;         // retryCnt范围的最小值（不区分芯片类型）
+constexpr uint32_t RETRY_CNT_MAX = 7u;         // retryCnt范围的最大值（不区分芯片类型）
+constexpr uint32_t SL_MAX = 7u;                // sl范围的最大值，sl即serviceLevel（不区分芯片类型）
+constexpr uint32_t TC_DEFAULT = 0xFFFFFFFFu;   // TC的默认值（不区分芯片类型）
+constexpr uint32_t SL_DEFAULT = 0xFFFFFFFFu;   // SL的默认值（不区分芯片类型）
+
 #ifdef __cplusplus
 extern "C" {
 #endif

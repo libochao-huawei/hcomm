@@ -8,10 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "coll_comm_res_c_adpt.h"
 #include "../rank/my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
 #include "env_config.h"
+#include "../../../../legacy/framework/env_config/env_config.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 
 #include "hcom_common.h"
@@ -35,17 +37,63 @@ using namespace hccl;
  * @endcode
  */
 
-const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
-HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
+
+static void FillChannelDescFinal(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, bool isCommunicatorV2)
+{
+    channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
+    if (isCommunicatorV2) {
+        auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
+        channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? rdmaConfig.GetRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
+        channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? rdmaConfig.GetRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
+        channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? rdmaConfig.GetRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
+        channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? rdmaConfig.GetRdmaServerLevel() : commConfig.GetConfigServiceLevel();
+    } else {
+        channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
+        channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
+        channelDescFinal.roceAttr.tc = (channelDesc.roceAttr.tc == 0xFF) ? EnvConfig::GetExternalInputRdmaTrafficClass() : channelDesc.roceAttr.tc;
+        channelDescFinal.roceAttr.sl = (channelDesc.roceAttr.sl == 0xFF) ? EnvConfig::GetExternalInputRdmaServerLevel() : channelDesc.roceAttr.sl;
+    
+    }
+}
+
+static HcclResult CheckA5Config(hccl::hcclComm *hcclComm)
 {
     hccl::CollComm* collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
     hccl::CommConfig commConfig = collComm->GetCommConfig();
-    channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
-    channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
-    channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
-    channelDescFinal.roceAttr.tc = (commConfig.GetConfigTrafficClass() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTrafficClass() : commConfig.GetConfigTrafficClass();
-    channelDescFinal.roceAttr.sl = (commConfig.GetConfigServiceLevel() == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaServerLevel() : commConfig.GetConfigServiceLevel();
+    u32 tc = commConfig.GetConfigTrafficClass();
+    CHK_PRT_RET((tc != TC_DEFAULT) && (tc > TC_MAX || (tc % MULTIPLE != 0)),
+        HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
+            HCCL_ERROR_CODE(HCCL_E_PARA), tc),
+        HCCL_E_PARA);
+
+    u32 sl = commConfig.GetConfigServiceLevel();
+    CHK_PRT_RET((sl != SL_DEFAULT) && (sl > SL_MAX),
+        HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaServiceLevel[%u], must be 0xFFFFFFFF or in [0,7]",
+            HCCL_ERROR_CODE(HCCL_E_PARA), sl),
+        HCCL_E_PARA);
+
+    u32 retryInterval = channelDesc.roceAttr.retryInterval;
+    CHK_PRT_RET((retryInterval != INVALID_UINT) && (retryInterval < RETRY_INTERVAL_MIN || retryInterval > A5_RETRY_INTERVAL_MAX),
+        HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaRetryInterval[%u], must be 0xFFFFFFFF or in [5,24]",
+        HCCL_ERROR_CODE(HCCL_E_PARA), retryInterval),
+        HCCL_E_PARA);
+
+    u32 retryCnt = channelDesc.roceAttr.retryCnt;
+    CHK_PRT_RET((retryCnt != INVALID_UINT) && (retryCnt < RETRY_CNT_MIN || retryCnt > RETRY_CNT_MAX),
+        HCCL_ERROR("[ProcessRoceChannelDesc]errNo[0x%016llx] invalid hcclRdmaRetryCnt[%u], must be 0xFFFFFFFF or in [1,7]",
+        HCCL_ERROR_CODE(HCCL_E_PARA), retryCnt),
+        HCCL_E_PARA);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ProcessRoceChannelDesc(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, hccl::hcclComm *hcclComm)
+{
+    bool isCommunicatorV2 = hcclComm->IsCommunicatorV2();
+    if (isCommunicatorV2) { // A5
+        CHK_RET(CheckA5Config(hcclComm));
+    }
+    FillChannelDescFinal(channelDesc, channelDescFinal, isCommunicatorV2);
     HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__,
         channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
         channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
@@ -112,7 +160,7 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
         reinterpret_cast<const uint8_t *>(&channelDesc) + sizeof(CommAbiHeader), copySize));
  
     if (channelDesc.header.version >= HCCL_CHANNEL_VERSION_ONE) {
-        ProcessHcclChannelDesc(channelDesc, channelDescFinal, hcclComm);
+        CHK_RET(ProcessHcclChannelDesc(channelDesc, channelDescFinal, hcclComm));
     }
  
     if (channelDesc.header.version > HCCL_CHANNEL_VERSION) {
