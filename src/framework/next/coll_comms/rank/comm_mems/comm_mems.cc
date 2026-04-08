@@ -40,7 +40,7 @@ CommMems::CommMems(uint64_t bufferSize)
 {
     cclMemInfo_.mem.addr = nullptr;
     cclMemInfo_.mem.size = 0;
-    cclMemInfo_.mem.memType = HcclMemType::HCCL_MEM_TYPE_DEVICE;
+    cclMemInfo_.mem.type = HcclMemType::HCCL_MEM_TYPE_DEVICE;
 }
 
 HcclResult CommMems::Add(void *addr, uint64_t len)
@@ -59,7 +59,7 @@ HcclResult CommMems::Init(HcclMem cclBuffer)
 {
     cclMemInfo_.mem.addr = cclBuffer.addr;
     cclMemInfo_.mem.size = cclBuffer.size;
-    cclMemInfo_.mem.memType = ConvertHcclToCommMemType(cclBuffer.type);
+    cclMemInfo_.mem.type = ConvertHcclToCommMemType(cclBuffer.type);
     std::string memTag = "HcclBuffer";
     errno_t sRet = strncpy_s(cclMemInfo_->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
     CHK_PRT_RET(sRet != EOK,
@@ -73,7 +73,7 @@ HcclResult CommMems::GetMemoryHandles(std::vector<HcclMem> &mem)
 {
     HcclMem memTemp;
     memTemp.size = cclMemInfo_.mem.size;
-    memTemp.type = ConvertCommToHcclMemType(cclMemInfo_.mem.memType);
+    memTemp.type = ConvertCommToHcclMemType(cclMemInfo_.mem.type);
     memTemp.addr = cclMemInfo_.mem.addr;
     mem.push_back(memTemp);
 
@@ -100,7 +100,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     EXECEPTION_CATCH(h = std::make_shared<CommMemInfo>(), return HCCL_E_PTR);
     h->mem.addr    = mem.addr;
     h->mem.size    = mem.size;
-    h->mem.memType = mem.type;
+    h->mem.type    = mem.type;
     errno_t sRet = strncpy_s(h->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
@@ -181,7 +181,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
 {
     HcclMem memTemp;
     memTemp.size = cclMemInfo_.mem.size;
-    memTemp.type = ConvertCommToHcclMemType(cclMemInfo_.mem.memType);
+    memTemp.type = ConvertCommToHcclMemType(cclMemInfo_.mem.type);
     memTemp.addr = cclMemInfo_.mem.addr;
     memVec.push_back(memTemp);
     memTag.push_back("HcclBuffer");

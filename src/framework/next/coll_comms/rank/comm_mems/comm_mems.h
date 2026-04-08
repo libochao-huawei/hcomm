@@ -23,8 +23,8 @@
 namespace std {
     template <>
     struct hash<CommMemInfo> {
-        size_t operator()(const CommMemInfo& memHandle) const {
-            return std::hash<void*>()(memHandle.addr);
+        size_t operator()(const CommMemInfo& memInfo) const {
+            return std::hash<void*>()(memInfo.mem.addr);
         }
     };
 }
@@ -32,7 +32,7 @@ namespace std {
 namespace hccl {
 struct CommMemInfoEqual {
     bool operator()(const CommMemInfo& lhs, const CommMemInfo& rhs) const {
-        return lhs.addr == rhs.addr;
+        return lhs.mem.addr == rhs.mem.addr;
     }
 };
 
