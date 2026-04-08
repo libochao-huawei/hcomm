@@ -91,7 +91,7 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelProcess::ChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
+HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
 {
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
     // 1) D2H 映射

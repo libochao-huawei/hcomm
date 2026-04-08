@@ -27,7 +27,7 @@ namespace hcomm {
 AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
-HcclResult AicpuTsUrmaChannel::Makebufs(void **memHandles, uint32_t memHandleNum,
+HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
     bufs.clear();
@@ -334,7 +334,7 @@ HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***mem
     return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
-HcclResult AicpuTsUrmaChannel::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
 {
     CHK_RET(Makebufs(memHandles, memHandleNum, bufsTemp));
     CHK_RET(BuildBuffer(bufsTemp));

@@ -33,7 +33,7 @@ public:
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
-    HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum) override;
+    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
@@ -41,7 +41,7 @@ public:
     virtual HcclResult Resume() override;
 
 private:
-    HcclResult Makebufs(void **memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
+    HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
     HcclResult BuildAttr();
     HcclResult BuildConnection();

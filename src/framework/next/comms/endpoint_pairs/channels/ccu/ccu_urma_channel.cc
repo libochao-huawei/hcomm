@@ -32,7 +32,7 @@ CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
 {
 }
 
-HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
+HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
@@ -61,7 +61,7 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
 }
 
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
-    const Hccl::LinkData &linkData, Hccl::Socket *socket, void **memHandles,
+    const Hccl::LinkData &linkData, Hccl::Socket *socket, HcommMemHandle *memHandles,
     uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
 {
     HCCL_INFO("[CcuUrmaChannel][%s] begin", __func__);
@@ -309,7 +309,7 @@ HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag,
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
-HcclResult CcuUrmaChannel::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+HcclResult CcuUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
 {
     std::vector<CcuTransport::CclBufferInfo> bufferVecTemp{};
     CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferVecTemp));
