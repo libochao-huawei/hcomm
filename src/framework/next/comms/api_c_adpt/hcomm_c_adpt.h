@@ -20,6 +20,8 @@
 extern "C" {
 #endif // __cplusplus
 
+const uint32_t HCOMM_RES_TAG_MAX_LEN = 255;
+
 typedef struct {
     int32_t devPhyId;
     uint32_t superPodId;
@@ -44,6 +46,12 @@ typedef struct {
     uint32_t sdid;
     int32_t pid;
 } HcommMemGrantInfo;
+
+struct CommMemInfo {
+    CommMem mem {};
+    void* bufferHandle {nullptr};
+    char memTag[HCOMM_RES_TAG_MAX_LEN] = {0};
+};
 
 /**
  * @brief 通信设备Endpoint监听配置结构体

@@ -141,12 +141,14 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_Normal_Exp
     auto buffer2 = std::make_shared<Hccl::Buffer>(0x2000, 0x2000);
     auto mockBuffer2 = std::make_shared<LocalRmaBufferStub>(buffer2, 0x2000, 0x2000, 0, 2000);
 
-    hcomm::RegedMemMgr::CommMemInfo memInfo1{};
+    CommMemInfo memInfo1{};
     memInfo1.bufferHandle = reinterpret_cast<void*>(mockBuffer1.get());
-    memInfo1.memTag = "newBuffer1";
-    hcomm::RegedMemMgr::CommMemInfo memInfo2{};
+    std::string memTag1 = "newBuffer1";
+    memcpy_s(memInfo1.memTag.data(), memInfo1.memTag.size(), memTag1.c_str(), memTag1.size());
+    CommMemInfo memInfo2{};
     memInfo2.bufferHandle = reinterpret_cast<void*>(mockBuffer2.get());
-    memInfo2.memTag = "newBuffer2";
+    std::string memTag2 = "newBuffer2";
+    memcpy_s(memInfo2.memTag.data(), memInfo2.memTag.size(), memTag2.c_str(), memTag2.size());
     void* memHandles[2] = { &memInfo1, &memInfo2 };
 
     MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
@@ -174,9 +176,10 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_SocketTime
     auto aivTransport = std::make_shared<hcomm::AivUbMemTransport>(fakeSocket, desc);
     auto buffer = std::make_shared<Hccl::Buffer>(0x1000, 0x1000);
     auto mockBuffer = std::make_shared<LocalRmaBufferStub>(buffer, 0x1000, 0x1000, 0, 1000);
-    hcomm::RegedMemMgr::CommMemInfo memInfo{};
+    CommMemInfo memInfo{};
     memInfo.bufferHandle = reinterpret_cast<void*>(mockBuffer.get());
-    memInfo.memTag = "testBuffer";
+    std::string memTag = "testBuffer";
+    memcpy_s(memInfo.memTag.data(), memInfo.memTag.size(), memTag.c_str(), memTag.size());
     void* memHandles[1] = { &memInfo };
 
     MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
@@ -193,7 +196,7 @@ TEST_F(AivUbMemTransportTest, ut_AivUbMemTransport_UpdateMemInfo_When_bufferNumI
 {
     HcommChannelDesc desc{};
     auto aivTransport = std::make_shared<hcomm::AivUbMemTransport>(fakeSocket, desc);
-    hcomm::RegedMemMgr::CommMemInfo memInfo{};
+    CommMemInfo memInfo{};
     void* memHandles[1] = { &memInfo };
     HcclResult ret = aivTransport->UpdateMemInfo(memHandles, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);

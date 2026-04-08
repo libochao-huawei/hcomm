@@ -19,9 +19,23 @@
 #include "hccl_mem_defs.h"
 #include "rma_buffer_mgr.h"
 #include "hcomm_c_adpt.h"
-#include "reged_mem_mgr.h"
 
-namespace hccl { 
+namespace std {
+    template <>
+    struct hash<CommMemInfo> {
+        size_t operator()(const CommMemInfo& memHandle) const {
+            return std::hash<void*>()(memHandle.addr);
+        }
+    };
+}
+
+namespace hccl {
+struct CommMemInfoEqual {
+    bool operator()(const CommMemInfo& lhs, const CommMemInfo& rhs) const {
+        return lhs.addr == rhs.addr;
+    }
+};
+
 CommMemType ConvertHcclToCommMemType(HcclMemType hcclType);
 HcclMemType ConvertCommToHcclMemType(CommMemType commType);
 
@@ -30,7 +44,7 @@ HcclMemType ConvertCommToHcclMemType(CommMemType commType);
  */
 class CommMems {
 public:
-    using Handle = std::shared_ptr<hcomm::RegedMemMgr::CommMemInfo>;
+    using Handle = std::shared_ptr<CommMemInfo>;
     using MemKey = hccl::BufferKey<uintptr_t, uint64_t>;
     using Table  = hccl::RmaBufferMgr<MemKey, Handle>;
  
@@ -51,13 +65,11 @@ public:
     HcclResult GetTagMemoryHandles(void** memHandles, uint32_t memHandleNum, std::vector<HcclMem> &mem, 
         std::vector<std::string> &memTag);
     HcclResult SetMemHandles(HcommMemHandle *memHandles, const std::vector<MemHandle> &memHandleVec,
-        hcomm::RegedMemMgr::CommMemInfo &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec);
+        CommMemInfo &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec);
 
 private:
     uint64_t bufferSize_{};
-    void*   addr_{nullptr};
-    std::size_t size_{0};
-    HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+    CommMemInfo cclMemInfo_{};
  
     static inline MemKey MakeKey(void* addr, uint64_t size) {
         return MemKey(reinterpret_cast<uintptr_t>(addr), static_cast<uint64_t>(size));
@@ -70,7 +82,7 @@ private:
     // 每个 tag 一份 registry
     std::unordered_map<std::string, TagRegistry> tagRegs_;
     // 每个tag 1个 CommMemInfo
-    std::unordered_map<std::string, std::shared_ptr<hcomm::RegedMemMgr::CommMemInfo>> opBindings_;
+    std::unordered_map<std::string, std::shared_ptr<CommMemInfo>> opBindings_;
     std::unordered_map<void*, std::string> opReverseBindings_;
 };
 }  // namespace hccl
