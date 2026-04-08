@@ -61,7 +61,7 @@ HcclResult CommMems::Init(HcclMem cclBuffer)
     cclMemInfo_.mem.size = cclBuffer.size;
     cclMemInfo_.mem.type = ConvertHcclToCommMemType(cclBuffer.type);
     std::string memTag = "HcclBuffer";
-    errno_t sRet = strncpy_s(cclMemInfo_->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
+    errno_t sRet = strncpy_s(cclMemInfo_.memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
     CHK_PRT_RET(sRet != EOK,
         HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
         HCCL_E_MEMORY);
@@ -106,7 +106,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
         HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
         HCCL_E_MEMORY);
 
-    const auto key = MakeKey(mem.mem.addr, static_cast<size_t>(mem.mem.size));
+    const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
  
     std::lock_guard<std::mutex> addLock(memMutex_);
 
@@ -131,7 +131,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     }
  
     *memHandle = h.get();
-    HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle, (unsigned long long)h->size);
+    HCCL_INFO("[CommRegMem] ok. tag[%s] memHandle[%p] size[%llu]", memTag.c_str(), *memHandle, (unsigned long long)h->mem.size);
     return HCCL_SUCCESS;
 }
  
@@ -152,7 +152,7 @@ HcclResult CommMems::CommUnregMem(const std::string& memTag, const void* memHand
     size_t erasedCount  = 0;  // RmaBufferMgr::Del 返回 true 的次数（ref 归零而“擦除”）
     
     if (h.get() == memHandle) {
-        const auto key = MakeKey(h->addr, static_cast<size_t>(h->size));
+        const auto key = MakeKey(h->mem.addr, static_cast<size_t>(h->mem.size));
         try {
             if (reg.table.Del(key)) {
                 ++erasedCount;            // 该 key 的引用归零并从表中移除
