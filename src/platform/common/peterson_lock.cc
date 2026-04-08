@@ -38,6 +38,7 @@ HcclResult PetersonLock::Init()
         }
     }
 
+    CHK_PTR_NULL(devMem_.ptr());
     auto buffer = reinterpret_cast<u8 *>(devMem_.ptr());
     size_t offset = 0;
     turn_ = reinterpret_cast<volatile u32 *>(buffer + offset);
@@ -165,7 +166,7 @@ HcclResult PetersonLock::Unlock()
     }
 
     /* 释放锁 */
-    WriteSelfFlag(FLAG_UNLOCK);
+    CHK_RET(WriteSelfFlag(FLAG_UNLOCK));
 
     HCCL_DEBUG("[PetersonLock][Unlock] type [%s] release the lock", typeName_.c_str());
     return HCCL_SUCCESS;
@@ -174,8 +175,10 @@ HcclResult PetersonLock::Unlock()
 HcclResult PetersonLock::WriteSelfFlag(u32 selfFlag)
 {
     if (type_ == Type::DEVICE) {
+        CHK_PTR_NULL(deviceFlag_);
         *deviceFlag_ = selfFlag;
     } else {
+        CHK_PTR_NULL(hostFlag_);
         u32 hostFlag = selfFlag;
         if (hrtMemSyncCopy(const_cast<u32 *>(hostFlag_), sizeof(u32), &hostFlag,
             sizeof(u32), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE) != HCCL_SUCCESS) {
