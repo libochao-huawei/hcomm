@@ -90,6 +90,7 @@ HcclResult CcuJettyMgr::GetAvailableBatch(const BatchKey &batchKey, ResourceBatc
     // 已有的资源不足，需要新增资源，获取的channel数量可能超过申请数量
     const u8 qos = comm_ != nullptr ? comm_->GetCommQos()
                                     : static_cast<u8>(HCCL_COMM_QOS_CONFIG_DEFAULT_UB);
+    HCCL_INFO("CcuJettyMgr::GetAvailableBatch qos = %u", qos);
     const CcuChannelPara channelPara{batchKey, CCU_DEFAULT_REQUEST_CHANNEL_NUM,
             CCU_DEFAULT_REQUEST_JETTY_NUM, sqSize, qos};
     HCCL_INFO("[CcuJettyMgr][%s] try to alloc ccu channels with channelPara[channelNum=%u, jettyNum=%u, sqSize=%u, qos=%u], "
