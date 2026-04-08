@@ -63,8 +63,7 @@ HcclResult CommMems::Init(HcclMem cclBuffer)
     std::string memTag = "HcclBuffer";
     errno_t sRet = strncpy_s(cclMemInfo_.memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
     CHK_PRT_RET(sRet != EOK,
-        HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
-        HCCL_E_MEMORY);
+        HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", sRet), HCCL_E_MEMORY);
     HCCL_INFO("[CommMems][Init] addr[%p] size[%u] memType[%u]", cclBuffer.addr, cclBuffer.size, cclBuffer.type);
     return HCCL_SUCCESS;
 }
@@ -103,8 +102,7 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     h->mem.type    = mem.type;
     errno_t sRet = strncpy_s(h->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
     CHK_PRT_RET(sRet != EOK,
-        HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
-        HCCL_E_MEMORY);
+        HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", sRet), HCCL_E_MEMORY);
 
     const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
  
