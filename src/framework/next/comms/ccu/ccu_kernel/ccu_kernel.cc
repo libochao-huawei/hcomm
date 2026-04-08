@@ -19,6 +19,7 @@
 #include "ccu_dev_mgr_imp.h"
 #include "env_config.h"
 #include "ccu_rep_type_v1.h"
+#include "mmpa_api.h"
 
 #include "hcomm_c_adpt.h"
 
@@ -32,12 +33,33 @@
 
 #include "task_param.h"
 #include "ccu_ctx.h"
-
+#include <cerrno>
+#include <cstddef>
 
 namespace hcomm {
+using std::begin;
 
 constexpr uint32_t TOKEN_VALUE_INDEX = 2;
 constexpr uint16_t INVALID_U16 = 65535;
+
+static bool IsVerboseGeneTaskArgLogEnabled()
+{
+    constexpr unsigned long DISABLE_VERBOSE_ARG_LOG_LEVEL = 3;
+    const char *logLevelEnv = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_GLOBAL_LOG_LEVEL, logLevelEnv);
+    if (logLevelEnv == nullptr || logLevelEnv[0] == '\0') {
+        return false;
+    }
+
+    errno = 0;
+    char *end = nullptr;
+    const unsigned long logLevel = std::strtoul(logLevelEnv, &end, 10);
+    if (errno != 0 || end == logLevelEnv) {
+        return true;
+    }
+
+    return logLevel != DISABLE_VERBOSE_ARG_LOG_LEVEL;
+}
 
 template <typename T> T CcuKernel::CreateResAssist(std::array<std::vector<T>, CCU_MAX_IODIE_NUM> &resRecord)
 {
@@ -131,24 +153,24 @@ HcclResult CcuKernel::Init()
 
 HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskParam> &taskParams)
 {
-    auto args    = GeneArgs(arg);
-    auto agrsNum = args.size();
-    if (agrsNum != loadArgIndex_) {
+    const auto args = GeneArgs(arg);
+    const auto argsNum = static_cast<uint32_t>(args.size());
+    if (argsNum != loadArgIndex_) {
         HCCL_ERROR("[CcuKernel][%s] failed, args number does not match the Load instruction, "
-            "agrsNum = %d, loadArgInstr= %u", __func__, agrsNum, loadArgIndex_);
+            "agrsNum = %u, loadArgInstr= %u", __func__, argsNum, loadArgIndex_);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
     if (instrInfo_.missionInstrCount == 0 || instrInfo_.instrVec.empty()) {
         HCCL_ERROR("[CcuKernel][%s] failed, mission instructions are empty, "
             "the kernel is not been translated yet.", __func__);
-        return HcclResult::HCCL_E_INTERNAL;
+        return HcclResult:: HCCL_E_INTERNAL;
     }
 
     // 如果agrs数量超过sqe arg的最大数量，则返回多个TaskParam，前面几个只从sqe中加载args;
     // args数量大于等于0、小于等于最大值时，返回1个TaskParam
     const uint32_t seqNum
-        = (agrsNum / CCU_SQE_ARGS_LEN) + ((agrsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (agrsNum == 0 ? 1 : 0);
+        = (argsNum / CCU_SQE_ARGS_LEN) + ((argsNum % CCU_SQE_ARGS_LEN) == 0 ? 0 : 1) + (argsNum == 0 ? 1 : 0);
 
     const uint32_t preMissonSqeInsCnt = (seqNum - 1) * CCU_SQE_ARGS_LEN;
     if (instrInfo_.missionInstrCount < preMissonSqeInsCnt) {
@@ -158,13 +180,21 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
         return HcclResult::HCCL_E_INTERNAL;
     }
 
+    const uint32_t dieId = GetDieId();
+    const uint32_t missionId = GetMissionId();
+    const uint32_t missionKey = GetMissionKey();
+    const uint32_t missionStartInstrId = instrInfo_.missionStartInstrId;
+    static const bool enableVerboseArgLog = IsVerboseGeneTaskArgLogEnabled();
+
     taskParams.resize(seqNum);
     for (uint32_t index = 0; index < seqNum; index++) {
-        taskParams[index].dieId       = GetDieId();
-        taskParams[index].missionId   = GetMissionId();
-        taskParams[index].instStartId = instrInfo_.missionStartInstrId + index * CCU_SQE_ARGS_LEN;
-        taskParams[index].key         = GetMissionKey();
-        taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
+        auto &taskParam = taskParams[index];
+        const uint32_t argOffset = index * CCU_SQE_ARGS_LEN;
+        taskParam.dieId       = dieId;
+        taskParam.missionId   = missionId;
+        taskParam.instStartId = missionStartInstrId + argOffset;
+        taskParam.key         = missionKey;
+        taskParam.argSize     = CCU_SQE_ARGS_LEN;
         if (index == seqNum - 1) {
             // index 由计算得出，相乘结果不会溢出
             const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
@@ -172,16 +202,20 @@ HcclResult CcuKernel::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskPa
             std::copy(std::begin(args) + preMissionInsCnt, std::end(args), std::begin(taskParams[index].args));
         } else {
             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
-            std::copy(std::begin(args) + index * CCU_SQE_ARGS_LEN, std::begin(args) + (index + 1) * CCU_SQE_ARGS_LEN,
-                      std::begin(taskParams[index].args));
+            std::copy(std::begin(args) + static_cast<std::size_t>(index * CCU_SQE_ARGS_LEN),
+                std::begin(args) + static_cast<std::size_t>((index + 1) * CCU_SQE_ARGS_LEN),
+                std::begin(taskParams[index].args));
         }
 
-        HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
-                  taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
-                  taskParams[index].instCnt, taskParams[index].argSize);
-        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
-            if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
+        if (enableVerboseArgLog) {
+            HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
+                taskParam.dieId, taskParam.missionId, taskParam.instStartId, taskParam.instCnt, taskParam.argSize);
+            for (uint32_t i = 0; i < taskParam.argSize; ++i) {
+                if (i == TOKEN_VALUE_INDEX) {
+                    continue;
+                }
+                HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", static_cast<unsigned long>(i), taskParam.args[i]);
+            }
         }
     }
 
