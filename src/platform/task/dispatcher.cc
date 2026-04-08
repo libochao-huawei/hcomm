@@ -777,8 +777,19 @@ HcclResult DispatcherPub::ReduceAsync(const void *src, void *dst, u64 dataCount,
 HcclResult DispatcherPub::SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &src, hccl::Stream &stream,
     u32 remoteUserRank, hccl::LinkType inLinkType, u32 notifyId)
 {
-    HCCL_ERROR("does not support this interface.");
-    return HCCL_E_NOT_SUPPORT;
+    CHK_RET(MemcpyAsync(dst.ptr(), dst.size(), src.ptr(), src.size(), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, 
+        stream, remoteUserRank, inLinkType));
+
+    u32 taskID = 0;
+    u32 streamID = 0;
+    hrtGetTaskIdAndStreamID(taskID, streamID);
+    // DMA record notify， 用于hccs断链快恢复场景，profiling在MemcpyAsync中记录
+    PLF_CONFIG_INFO(PLF_TASK,
+        "%s para: linkType[%u] srcPtr[%p] srcSize[%llu] dstPtr[%p] taskId[%u] streamId[%u] remoteRank[%u] notifyId[%u]",
+        __func__, inLinkType, src.ptr(), src.size(), dst.ptr(), taskID, streamID, remoteUserRank, notifyId);
+    HCCL_RUN_INFO("%s para: linkType[%u] srcPtr[%p] srcSize[%llu] dstPtr[%p] taskId[%u] streamId[%u] remoteRank[%u] notifyId[%u]",
+        __func__, inLinkType, src.ptr(), src.size(), dst.ptr(), taskID, streamID, remoteUserRank, notifyId);
+    return HCCL_SUCCESS;
 }
 
 HcclResult DispatcherPub::RdmaRecord(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
