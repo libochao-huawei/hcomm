@@ -26,7 +26,7 @@ public:
         RECV_MEM_FIN, CONNECT_FAILED, SOCKET_TIMEOUT, READY);
     AivUbMemTransport(Hccl::Socket *socket, HcommChannelDesc &channelDesc);
     ~AivUbMemTransport() = default;
-    HcclResult FillTagVec(void **memHandles, uint32_t bufferNum, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
+    HcclResult FillTagVec(HcommMemHandle *memHandles, uint32_t bufferNum, std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     HcclResult Init();
     Hccl::TransportStatus GetStatus();
@@ -34,7 +34,7 @@ public:
     HcclResult GetMemTag(char **memTag, uint32_t memNum);
     HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum);
     HcclResult CheckSocketStatus();
-    HcclResult UpdateMemInfo(void **memHandles, uint32_t memHandleNum);
+    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum);
 
 private:
     Hccl::Socket *socket_{}; // 交换所用的socket

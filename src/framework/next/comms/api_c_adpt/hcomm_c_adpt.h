@@ -107,7 +107,7 @@ HcommResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHa
 
 HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngine engine,
     HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *channels);
-HcommResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
+HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
 
 #ifdef __cplusplus
 }

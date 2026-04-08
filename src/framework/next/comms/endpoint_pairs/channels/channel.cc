@@ -68,7 +68,7 @@ HcclResult Channel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32
     return HCCL_SUCCESS;
 }
 
-HcclResult Channel::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+HcclResult Channel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
 {
     HCCL_WARNING("[UpdateMemInfo] not support.");
     return HCCL_SUCCESS;

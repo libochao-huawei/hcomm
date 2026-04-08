@@ -22,7 +22,7 @@ namespace hcomm {
 AivUbMemTransport::AivUbMemTransport(Hccl::Socket *socket, HcommChannelDesc &channelDesc) : socket_(socket), 
     channelDesc_(channelDesc) {}
 
-HcclResult AivUbMemTransport::FillTagVec(void **memHandles, uint32_t bufferNum,
+HcclResult AivUbMemTransport::FillTagVec(HcommMemHandle *memHandles, uint32_t bufferNum,
     std::vector<Hccl::LocalIpcRmaBuffer *> &bufferVec, std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec)
 {
     uint32_t totalBufferNum = localRmaBufferVec_.size() + bufferNum;
@@ -352,7 +352,7 @@ HcclResult AivUbMemTransport::CheckSocketStatus()
     return HCCL_SUCCESS;
 }
 
-HcclResult AivUbMemTransport::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
 {
     if (memHandleNum == 0) {
         HCCL_WARNING("[AivUbMemTransport][UpdateMemInfo] bufferNum is 0.");
