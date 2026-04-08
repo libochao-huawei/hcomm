@@ -66,6 +66,10 @@ HcclResult CcuChannelMgrV1::Alloc(const ChannelPara &channelPara,
             "feId[%u], devLogicId[%d], dieId[%u].", __func__, channelId, feId, devLogicId, dieId),
         ret);
 
+    for (auto &ji : channelInfo.jettyInfos) {
+        ji.jfsPriority = channelPara.ubJettyJfsPriority;
+    }
+
     channelInfo.channelId = channelId;
     channelInfo.dieId = dieId;
     channelResInfos[channelId].feId = feId;
