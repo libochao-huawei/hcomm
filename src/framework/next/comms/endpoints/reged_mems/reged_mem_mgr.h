@@ -21,28 +21,6 @@ namespace hcomm {
  */
 class RegedMemMgr {
 public:
-    struct CommMemInfo {
-        void* addr {nullptr};
-        uint64_t size {0};
-        CommMemType memType {COMM_MEM_TYPE_INVALID};
-        void* bufferHandle {nullptr};
-        std::string memTag {};
-
-        CommMemInfo()
-        {
-        }
-
-        CommMemInfo(void *addr, uint64_t size, CommMemType memType, void *bufferHandle, const std::string &memTag) :
-            addr(addr), size(size), memType(memType), bufferHandle(bufferHandle), memTag(memTag)
-        {
-        }
-    };
-    struct CommMemInfoEqual {
-        bool operator()(const CommMemInfo& lhs, const CommMemInfo& rhs) const {
-            return lhs.addr == rhs.addr;
-        }
-    };
-
     RegedMemMgr() = default;
     virtual ~RegedMemMgr() = default;
 
@@ -65,15 +43,6 @@ public:
  
     RdmaHandle rdmaHandle_{nullptr};
 };
-}
-
-namespace std {
-    template <>
-    struct hash<hcomm::RegedMemMgr::CommMemInfo> {
-        size_t operator()(const hcomm::RegedMemMgr::CommMemInfo& memHandle) const {
-            return std::hash<void*>()(memHandle.addr);
-        }
-    };
 }
 
 #endif // REGED_MEM_MGR_H

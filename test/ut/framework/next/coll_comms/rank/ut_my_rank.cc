@@ -267,9 +267,8 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     memHandleVec.emplace_back((void*)0x100);
     memHandleVec.emplace_back((void*)0x101);
 
-    hcomm::RegedMemMgr::CommMemInfo cclBufferHandle{};
     std::vector<MemHandle> commMemHandleVec{};
-    HcclResult ret = myRank.commMems_->SetMemHandles(memHandles, memHandleVec, cclBufferHandle, commMemHandleVec);
+    HcclResult ret = myRank.commMems_->SetMemHandles(memHandles, memHandleVec, commMemHandleVec);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::RegedMemMgr::CommMemInfo** handles = reinterpret_cast<hcomm::RegedMemMgr::CommMemInfo**>(memHandles);
     EXPECT_EQ(handles[0]->bufferHandle, (void*)0x101);

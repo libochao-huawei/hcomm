@@ -54,21 +54,22 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     RdmaHandle rdmaHandle = (void*)0x100;
     auto buffer0 = std::make_shared<Buffer>(0x100, 0x100);
     auto locBuffer0 = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
-    hcomm::RegedMemMgr::CommMemInfo memInfo0{};
+    CommMemInfo memInfo0{};
     memInfo0.addr = (void*)0x100;
     memInfo0.size = (uint64_t)0x100;
     memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
 
     auto buffer1 = std::make_shared<Buffer>(0x101, 0x101);
     auto locBuffer1 = make_shared<Hccl::LocalUbRmaBuffer>(buffer1, rdmaHandle);
-    hcomm::RegedMemMgr::CommMemInfo memInfo1{};
-    memInfo1.addr = (void*)0x101;
-    memInfo1.size = (uint64_t)0x101;
-    memInfo1.memTag = "buffer1";
-    memInfo1.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
+    CommMemInfo memInfo1{};
+    memInfo1.mem.addr = (void*)0x101;
+    memInfo1.mem.size = (uint64_t)0x101;
+    std::string memTag = "buffer1";
+    strncpy_s(memInfo1->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
+    memInfo1.mem.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
     memInfo1.bufferHandle = static_cast<void*>(locBuffer1.get());
 
-    std::vector<hcomm::RegedMemMgr::CommMemInfo*> memInfos{};
+    std::vector<CommMemInfo*> memInfos{};
     memInfos.push_back(&memInfo0);
     memInfos.push_back(&memInfo1);
 
@@ -119,11 +120,11 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
     RdmaHandle rdmaHandle = (void*)0x100;
     auto buffer0 = std::make_shared<Buffer>(0x100, 0x100);
     auto locBuffer0 = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
-    hcomm::RegedMemMgr::CommMemInfo memInfo0{};
+    CommMemInfo memInfo0{};
     memInfo0.addr = (void*)0x100;
     memInfo0.size = (uint64_t)0x100;
     memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
-    std::vector<hcomm::RegedMemMgr::CommMemInfo*> memInfos{};
+    std::vector<CommMemInfo*> memInfos{};
     memInfos.push_back(&memInfo0);
 
     void **memHandles = reinterpret_cast<void**>(memInfos.data());

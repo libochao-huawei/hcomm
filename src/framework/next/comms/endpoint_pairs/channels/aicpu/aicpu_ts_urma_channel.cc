@@ -13,7 +13,6 @@
 #include "orion_adpt_utils.h"
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
-#include "comm_mems.h"
 
 // Orion
 #include "coll_alg_param.h"
@@ -32,11 +31,11 @@ HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<RegedMemMgr::CommMemInfo *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag.c_str());
+        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
+        HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->addr), locMemInfo->size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->memType), locMemInfo->memTag.c_str())
+            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.memType), locMemInfo->memTag)
         ));
     }
     return HCCL_SUCCESS;

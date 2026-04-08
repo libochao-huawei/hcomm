@@ -38,6 +38,9 @@ HcclMemType ConvertCommToHcclMemType(CommMemType commType) {
 CommMems::CommMems(uint64_t bufferSize)
     : bufferSize_(bufferSize)
 {
+    cclMemInfo_.mem.addr = nullptr;
+    cclMemInfo_.mem.size = 0;
+    cclMemInfo_.mem.memType = HcclMemType::HCCL_MEM_TYPE_DEVICE;
 }
 
 HcclResult CommMems::Add(void *addr, uint64_t len)
@@ -47,16 +50,21 @@ HcclResult CommMems::Add(void *addr, uint64_t len)
 
 HcclResult CommMems::GetHcclBuffer(void *&addr, uint64_t &len)
 {
-    addr = reinterpret_cast<void*>(addr_);
-    len = static_cast<uint64_t>(size_);
+    addr = reinterpret_cast<void*>(cclMemInfo_.mem.addr);
+    len = static_cast<uint64_t>(cclMemInfo_.mem.size);
     return HCCL_SUCCESS;
 }
 
 HcclResult CommMems::Init(HcclMem cclBuffer)
 {
-    addr_ = cclBuffer.addr;
-    size_ = cclBuffer.size;
-    memType_ = cclBuffer.type;
+    cclMemInfo_.mem.addr = cclBuffer.addr;
+    cclMemInfo_.mem.size = cclBuffer.size;
+    cclMemInfo_.mem.memType = ConvertHcclToCommMemType(cclBuffer.type);
+    std::string memTag = "HcclBuffer";
+    errno_t sRet = strncpy_s(cclMemInfo_->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
+    CHK_PRT_RET(sRet != EOK,
+        HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
+        HCCL_E_MEMORY);
     HCCL_INFO("[CommMems][Init] addr[%p] size[%u] memType[%u]", cclBuffer.addr, cclBuffer.size, cclBuffer.type);
     return HCCL_SUCCESS;
 }
@@ -64,9 +72,9 @@ HcclResult CommMems::Init(HcclMem cclBuffer)
 HcclResult CommMems::GetMemoryHandles(std::vector<HcclMem> &mem)
 {
     HcclMem memTemp;
-    memTemp.size = size_;
-    memTemp.type = memType_;
-    memTemp.addr = addr_;
+    memTemp.size = cclMemInfo_.mem.size;
+    memTemp.type = ConvertHcclToCommMemType(cclMemInfo_.mem.memType);
+    memTemp.addr = cclMemInfo_.mem.addr;
     mem.push_back(memTemp);
 
     HCCL_INFO("[CommMems][%s] HcclMem: size[%u], addr[%p], type[%d]", 
@@ -82,15 +90,22 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     CHK_PRT_RET(memHandle == nullptr, HCCL_ERROR("[CommRegMem] memHandle is null. tag[%s]", memTag.c_str()), HCCL_E_PARA);
     CHK_PRT_RET(mem.addr == nullptr || mem.size == 0, HCCL_ERROR("[CommRegMem] invalid mem. addr[%p] size[%llu]",
         mem.addr, (unsigned long long)mem.size), HCCL_E_PARA);
+    if (UNLIKELY(memTag.size() >= HCOMM_RES_TAG_MAX_LEN)) {
+        HCCL_ERROR("[CommRegMem] memTag.size() exceeds limit[%u]", HCOMM_RES_TAG_MAX_LEN);
+        return HCCL_E_PARA;
+    }
 
     // 组装句柄（仅域内管理，无进程级注册）
     Handle h;
-    EXECEPTION_CATCH(h = std::make_shared<hcomm::RegedMemMgr::CommMemInfo>(), return HCCL_E_PTR);
-    h->addr    = mem.addr;
-    h->size    = static_cast<uint64_t>(mem.size);
-    h->memType = static_cast<CommMemType>(mem.type);
-    h->memTag  = memTag;
- 
+    EXECEPTION_CATCH(h = std::make_shared<CommMemInfo>(), return HCCL_E_PTR);
+    h->mem.addr    = mem.addr;
+    h->mem.size    = mem.size;
+    h->mem.memType = mem.type;
+    errno_t sRet = strncpy_s(h->memTag, HCOMM_RES_TAG_MAX_LEN, memTag.c_str(), memTag.size());
+    CHK_PRT_RET(sRet != EOK,
+        HCCL_ERROR("[CommRegMem] strncpy_s failed, return [%d].", __func__, sRet),
+        HCCL_E_MEMORY);
+
     const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
  
     std::lock_guard<std::mutex> addLock(memMutex_);
@@ -165,15 +180,15 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
     std::vector<std::string> &memTag)
 {
     HcclMem memTemp;
-    memTemp.size = size_;
-    memTemp.type = memType_;
-    memTemp.addr = addr_;
+    memTemp.size = cclMemInfo_.mem.size;
+    memTemp.type = ConvertHcclToCommMemType(cclMemInfo_.mem.memType);
+    memTemp.addr = cclMemInfo_.mem.addr;
     memVec.push_back(memTemp);
     memTag.push_back("HcclBuffer");
  
     // 增加入参检查
     std::lock_guard<std::mutex> lock(memMutex_);
-    hcomm::RegedMemMgr::CommMemInfo** handles = reinterpret_cast<hcomm::RegedMemMgr::CommMemInfo**>(memHandles);
+    CommMemInfo** handles = reinterpret_cast<CommMemInfo**>(memHandles);
     for (uint32_t i = 0; i < memHandleNum; i++) {
         auto it = opReverseBindings_.find(handles[i]);
         if (it == opReverseBindings_.end()) {
@@ -191,21 +206,17 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
 }
 
 HcclResult CommMems::SetMemHandles(HcommMemHandle *memHandles, const std::vector<MemHandle> &memHandleVec,
-    hcomm::RegedMemMgr::CommMemInfo &cclBufferHandle, std::vector<MemHandle> &commMemHandleVec)
+    std::vector<MemHandle> &commMemHandleVec)
 {
     if (memHandleVec.size() == 0) {
         HCCL_ERROR("[CommMems][SetMemHandles] memHandleVecSize is 0.");
         return HCCL_E_PARA;
     }
     CHK_PTR_NULL(memHandleVec[0]);
-    cclBufferHandle.addr = addr_;
-    cclBufferHandle.size = size_;
-    cclBufferHandle.memType = ConvertHcclToCommMemType(memType_);
-    cclBufferHandle.bufferHandle = memHandleVec[0];
-    cclBufferHandle.memTag = "HcclBuffer";
-    commMemHandleVec.push_back(static_cast<void*>(&cclBufferHandle));
+    cclMemInfo_.bufferHandle = memHandleVec[0];
+    commMemHandleVec.push_back(static_cast<void*>(&cclMemInfo_));
 
-    hcomm::RegedMemMgr::CommMemInfo **handles = reinterpret_cast<hcomm::RegedMemMgr::CommMemInfo**>(memHandles);
+    CommMemInfo **handles = reinterpret_cast<CommMemInfo**>(memHandles);
     for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
         CHK_PTR_NULL(memHandleVec[i]);
         (*handles[i - 1]).bufferHandle = memHandleVec[i];

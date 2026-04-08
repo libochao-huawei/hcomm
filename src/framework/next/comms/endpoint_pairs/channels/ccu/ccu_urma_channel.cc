@@ -21,8 +21,6 @@
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
 
-#include "comm_mems.h"
-
 namespace hcomm {
 
 CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
@@ -36,7 +34,7 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<RegedMemMgr::CommMemInfo *>(memHandles[i]);
+        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
         CHK_PTR_NULL(locMemInfo);
         auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
         CHK_PTR_NULL(locRmaBuffer);
@@ -50,8 +48,8 @@ HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            reinterpret_cast<uintptr_t>(locMemInfo->addr),
-            static_cast<uint32_t>(locMemInfo->size),
+            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
+            static_cast<uint32_t>(locMemInfo->mem.size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
             locMemInfo->memType,
