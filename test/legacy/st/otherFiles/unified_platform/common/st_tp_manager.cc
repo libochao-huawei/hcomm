@@ -12,6 +12,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #include "tp_manager.h"
+#include "hccp.h"
 #include "orion_adapter_rts.h"
 #include "env_config/env_config.h"
 
@@ -32,6 +33,8 @@ protected:
     virtual void SetUp()
     {
         MOCKER(HrtGetDevicePhyIdByIndex).defaults().will(returnValue(static_cast<DevId>(0)));
+        MOCKER(RaGetInterfaceVersion).defaults().will(returnValue(static_cast<s32>(-1)));
+        TpManager::GetInstance(0).Init();
         std::cout << "A Test case in TpManagerTest SetUP" << std::endl;
     }
 

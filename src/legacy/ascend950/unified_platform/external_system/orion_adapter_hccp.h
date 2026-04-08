@@ -23,6 +23,14 @@
 
 namespace Hccl {
 using namespace std;
+
+/// 与 `Hccl::UB_QOS_DEFAULT`（legacy/framework/env_config/env_config.h）及 Next `EnvConfig::UB_QOS_DEFAULT` 数值一致；
+/// 本头文件不 include env_config，避免经 base_config.h 拉入 dma_mode.h 导致 platform 等目标缺头编译失败。
+constexpr u32 kRaUbGetTpInfoParamDefaultQos = 4U;
+
+/// 单次向管控面查询 TP 列表条数上限（异步接口传入/返回 num；与 buffer 中 HccpTpInfo 条数一致）。
+constexpr uint32_t TP_HANDLE_REQUEST_NUM = 8U;
+
 constexpr u32 DEFAULT_INIT_PHY_ID  = 0;
 constexpr u32 DEFAULT_INIT_NIC_POS = 0;
 constexpr u32 DEFAULT_HDC_TYPE     = 6;
@@ -433,6 +441,8 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     // HOST_OFFLOAD / HOST_OPBASE / CACHE_LOCK_DWQE 类型的Jetty ，需要指定WQEBB的数目
     // STADARD 类型Jetty，该参数代表SQ深度
     u32              sqDepth{0};
+    /// UB Jetty priority（低 4bit）；GetQpCreateAttr 写入 attr.ub.priority
+    u8               qos{4};
     u32              rqDepth{64};
     HrtTransportMode transMode{HrtTransportMode::RM}; // 仅能使用RM模式的Jetty
     u8 errTimeout{16};
@@ -597,15 +607,23 @@ using RaUbGetTpInfoParam = struct RaUbGetTpInfoParamDef {
     IpAddress locAddr{};
     IpAddress rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
+    /// 与 Next TpMgr 一致：参与 SL→jetty priority 映射（0–7）；默认见 kRaUbGetTpInfoParamDefaultQos
+    uint32_t qos{kRaUbGetTpInfoParamDefaultQos};
+    uint32_t slLevelCount{0U};
+    bool loopFirstTpLowestSl{false};
+    /// 与 Next `GetTpInfoParam::ccuLoopbackGetTpInfo` 对齐：标识 CCU 设备环回 GetTpInfo（便于日志/后续分支）
+    bool ccuLoopbackGetTpInfo{false};
 
     explicit RaUbGetTpInfoParamDef() = default;
     RaUbGetTpInfoParamDef(const IpAddress &locAddr, const IpAddress &rmtAddr, TpProtocol tpProtocol)
-        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
+        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol) {}
 
     std::string Describe() const {
-        return StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
-            locAddr.Describe().c_str(), rmtAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+        return StringFormat(
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d, ccuLoop=%d]",
+            locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), tpProtocol.Describe().c_str(),
+            static_cast<unsigned>(qos & 0xFFU), static_cast<int>(loopFirstTpLowestSl),
+            static_cast<int>(ccuLoopbackGetTpInfo));
     }
 };
 
