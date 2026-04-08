@@ -1205,3 +1205,21 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_DeInit_tmp)
 
     GlobalMockObject::verify();
 }
+
+TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_transport_roce_Init_hrtRaGetQpAttr_error)
+{
+    MachinePara machinePara;
+    machinePara.deviceLogicId = 0;
+    HcclIpAddress invalidIp;
+    TransportResourceInfo transportResourceInfo;
+    std::chrono::milliseconds timeout;
+
+    TransportRoce roce(dispatcher, nullptr, machinePara, timeout, invalidIp, invalidIp, 18000, 18000, transportResourceInfo);
+
+    MOCKER(hrtRaGetQpAttr).stubs().will(returnValue(HCCL_E_RUNTIME));
+
+    HcclResult ret = roce.Init();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+
+    GlobalMockObject::verify();
+}

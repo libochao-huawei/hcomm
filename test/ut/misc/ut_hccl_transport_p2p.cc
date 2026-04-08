@@ -591,3 +591,19 @@ TEST_F(LinkPcieTest, ut_SpecifyLink)
     ret = hrtIpcSetMemoryAttr(&name, ACL_RT_IPC_MEM_ATTR_ACCESS_LINK, 1);
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }
+
+TEST_F(LinkPcieTest, ut_transport_p2p_GetRemoteMem_nullptr)
+{
+    MachinePara machine_para;
+    machine_para.deviceLogicId = 0;
+    std::shared_ptr<LinkPcieTmp> linktmp = nullptr;
+    std::chrono::milliseconds timeout = std::chrono::milliseconds(10);
+    linktmp.reset(new LinkPcieTmp(dispatcherPtr, machine_para, timeout));
+
+    void *remotePtr = nullptr;
+    HcclResult ret = linktmp->GetRemoteMem(UserMemType::INPUT_MEM, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    ret = linktmp->GetRemoteMem(UserMemType::INPUT_MEM, &remotePtr);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
