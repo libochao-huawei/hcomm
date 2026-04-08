@@ -104,6 +104,7 @@ private:
     HcclResult InitTaskExceptionHandler();
     HcclResult InitKfcAndRegisterCollComm();
     HcclResult GetRankIpPortMap();
+    HcclResult ApplyUserCommConfig(HcclCommConfig *config, uint32_t &opExpansionMode);
 
     void* comm_{nullptr};
     uint32_t rankId_{};
