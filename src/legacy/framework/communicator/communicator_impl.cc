@@ -1508,7 +1508,8 @@ void CommunicatorImpl::TryInitCcuFeature()
     if (ccuDrvHandle) { // 已开启ccu驱动时跳过
         return;
     }
-    // 打开ccu驱动后初始化ccu资源
+    // 打开ccu驱动前写入环回 Channel 的 UB QoS，与 GetCommQos 一致（同 CcuJettyMgr 取 comm QoS 的思路）
+    CcuComponent::GetInstance(devLogicId).SetLoopChannelUbQos(GetCommQos());
     ccuDrvHandle = CommManager::GetInstance(devLogicId).GetCcuDriver();
     if (ccuDrvHandle == nullptr) {
         HCCL_WARNING("CCU not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
