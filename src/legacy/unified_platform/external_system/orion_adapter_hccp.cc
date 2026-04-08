@@ -1385,7 +1385,7 @@ static struct QpCreateAttr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
        24-31代表芯片配置值b11:64s
     */
     attr.ub.errTimeout       = 16;
-    u32 pri = in.jfsPriority;
+    u32 pri = in.qos;
     if (pri > 15u) {
         pri = 15u;
     }
