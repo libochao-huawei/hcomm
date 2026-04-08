@@ -21,9 +21,11 @@
 
 namespace Hccl {
 
+class CommunicatorImpl;
+
 class CcuJettyMgr final {
 public:
-    explicit CcuJettyMgr(int32_t devLogicId);
+    explicit CcuJettyMgr(int32_t devLogicId, CommunicatorImpl *comm = nullptr);
     ~CcuJettyMgr();
 
     HcclResult PrepareCreate(const std::vector<LinkData> &links);
@@ -40,6 +42,7 @@ public:
 
 private:
     int32_t devLogicId_{0};
+    CommunicatorImpl *comm_{nullptr};
     bool    isReleased{true};
 
     struct ResIdHash {
