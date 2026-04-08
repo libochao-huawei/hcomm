@@ -165,9 +165,9 @@ HcclResult TransportP2p::Init()
 
 void TransportP2p::SetUseSdmaToSignalRecord()
 {
-    // AICPU展开时，在节点间使用SDMA进行notify record操作，STARS可检出节点间链路异常，触发HCCL重执行
-    useSdmaToSignalRecord_ = ((transportAttr_.relationship & HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER) == 0) &&
-        ((transportAttr_.linkType == LinkType::LINK_HCCS_SW) || (transportAttr_.linkType == LinkType::LINK_HCCS));
+    // AICPU或者HOST展开时，在节点间使用SDMA进行notify record操作，STARS可检出节点间链路异常，触发HCCL重执行
+    useSdmaToSignalRecord_ = ((transportAttr_.relationship & HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER) == 0) &&	 
+         ((transportAttr_.linkType == LinkType::LINK_HCCS_SW) || (transportAttr_.linkType == LinkType::LINK_HCCS));
 }
 
 HcclResult TransportP2p::ParseSpecifyLink(LinkTypeInServer &linkType)
@@ -806,8 +806,26 @@ HcclResult TransportP2p::ParseReceivedExchangeData()
 HcclResult TransportP2p::SignalRecord(std::shared_ptr<RemoteNotify> &remoteSignal, u64 remoteSignalAddr, u64 remoteSignalOffset,
     Stream &stream)
 {
-    return dispatcher_->SignalRecord(remoteSignal->ptr(), stream, machinePara_.remoteWorldRank, remoteSignalOffset,
-        INVALID_VALUE_STAGE, false, remoteSignalAddr);
+    if (useSdmaToSignalRecord_) {
+        HCCL_INFO("liliguo TransportP2p::SignalRecord localWorldRank[%u], remoteWorldRank[%u], remoteSignalAddr[%p], "
+            "remoteSignalOffset[%llu]", machinePara_.localWorldRank, machinePara_.remoteWorldRank, remoteSignalAddr, remoteSignalOffset);
+        // return dispatcher_->SignalRecord(remoteSignal->ptr(), stream, machinePara_.remoteWorldRank, remoteSignalOffset,
+        //     INVALID_VALUE_STAGE, false, remoteSignalAddr);
+        DeviceMem dstDevMem = DeviceMem::create(reinterpret_cast<void *>(remoteSignalAddr), 
+            transportAttr_.signalRecordBuff.length);
+        DeviceMem srcDevMem = DeviceMem::create(reinterpret_cast<void *>(transportAttr_.signalRecordBuff.address), 
+            transportAttr_.signalRecordBuff.length);
+        CHK_SMART_PTR_NULL(dstDevMem);
+        CHK_SMART_PTR_NULL(srcDevMem);
+
+        HcclSignalInfo notifyInfo;
+        CHK_RET(remoteSignal->GetNotifyData(notifyInfo));
+        return dispatcher_->SignalRecord(dstDevMem, srcDevMem, stream, machinePara_.remoteWorldRank, transportAttr_.linkType, 
+            notifyInfo.resId);
+    } else {
+        return dispatcher_->SignalRecord(remoteSignal->ptr(), stream, machinePara_.remoteWorldRank, remoteSignalOffset,
+            INVALID_VALUE_STAGE, false, remoteSignalAddr);
+    }
 }
 
 HcclResult TransportP2p::TxDataSignal(Stream &stream)
