@@ -11,3 +11,4 @@ src/framework/device/debug/dfx/taskexception/task_exception.cc
 src/framework/next/coll_comms/api_c_adpt/coll_comm_res_c_adpt.cc
 src/framework/device/framework/aicpu_communicator.cc
 src/framework/device/framework/aicpu_communicator.h
+src/framework/cluster_maintenance/recovery/operator_retry/opretry_manager.cc
