@@ -57,8 +57,8 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
         u32 tc = config->hcclRdmaTrafficClass;
-        CHK_PRT_RET((tc != 0xFFFFFFFFu) && (tc >= 255 || (tc % 4 != 0)),
-            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255) and a multiple of 4",
+        CHK_PRT_RET((tc != 0xFFFFFFFFu) && (tc > 255 || (tc % 4 != 0)),
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclRdmaTrafficClass[%u], must be 0xFFFFFFFF or in [0,255] and a multiple of 4",
                 HCCL_ERROR_CODE(HCCL_E_PARA), tc),
             HCCL_E_PARA);
         CHK_RET(config_.SetConfigTrafficClass(tc));
