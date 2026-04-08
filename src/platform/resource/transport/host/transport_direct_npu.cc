@@ -333,7 +333,7 @@ HcclResult TransportDirectNpu::GetQpAttr()
     std::string logInfo = "create hccl transport:" + std::string(stackLogBuffer);
     for (u32 i = 0; i < qpHandles_.size(); i++){
         struct QpAttr attr{};
-        hrtRaGetQpAttr(qpHandles_[i], &attr);
+        CHK_RET(hrtRaGetQpAttr(qpHandles_[i], &attr));
         HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]",
             logInfo.c_str(), attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
     }
@@ -687,7 +687,7 @@ HcclResult TransportDirectNpu::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream
 
 HcclResult TransportDirectNpu::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
 {
-    CHK_PRT(RxData(srcMemType, srcOffset, dst, len, stream));
+    CHK_RET(RxData(srcMemType, srcOffset, dst, len, stream));
     return HCCL_SUCCESS;
 }
 
@@ -789,6 +789,8 @@ HcclResult TransportDirectNpu::RegUserMem(MemType memType, u8*& exchangeDataPtr,
 
 HcclResult TransportDirectNpu::GetMemInfo(UserMemType memType, void **dstMemPtr, u64 *dstMemSize)
 {
+    CHK_PTR_NULL(dstMemPtr);
+    CHK_PTR_NULL(dstMemSize);
     switch (memType) {
         case UserMemType::INPUT_MEM: {
             *dstMemPtr = remoteMemMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].addr;
