@@ -160,6 +160,7 @@ HcclResult TransportTcp::RxAsync(UserMemType srcMemType, u64 srcOffset, void *ds
     u64 recvBufferSize = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostRecvBuffer_.size() :
         deviceRecvBuffer_.size();
     HcclResult ret = HCCL_SUCCESS;
+    CHK_PTR_NULL(dispatcher_);
     ret = dispatcher_->HostNicTcpRecv(defaultSocket_->GetFdHandle(),
         recvBufferPtr, recvBufferSize, dst, len, stream, nicDeploy_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
