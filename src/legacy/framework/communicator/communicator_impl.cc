@@ -1758,6 +1758,16 @@ bool CommunicatorImpl::GetCommCcuFeatureFlag() const
     return IsCommUsingCcuMs() || IsCommUsingCcuSched(); // 通信域粒度
 }
 
+u8 CommunicatorImpl::GetUbJettyJfsPriority() const
+{
+    constexpr u32 kNotSet = HCCL_COMM_QOS_CONFIG_NOT_SET;
+    u32 qos = config.hcclQos;
+    if (qos == kNotSet) {
+        return 2u;
+    }
+    return static_cast<u8>(qos > 15u ? 15u : qos);
+}
+
 HcclResult CommunicatorImpl::AllocCommResource(void *mc2Tiling, void **commContext)
 {
     bool isAiv = (GetCommExecuteConfig().accState == AcceleratorState::AIV || GetCommExecuteConfig().accState == AcceleratorState::AIV_ONLY);

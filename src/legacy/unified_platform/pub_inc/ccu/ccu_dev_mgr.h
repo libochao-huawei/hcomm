@@ -22,11 +22,13 @@ struct CcuChannelPara {
     uint32_t channelNum{0};
     uint32_t jettyNum{0};
     uint32_t sqSize{0};
+    uint8_t ubJettyJfsPriority{2};
 
     CcuChannelPara() = default;
     CcuChannelPara(const IpAddress &ip, const uint32_t channelNum,
-        const uint32_t jettyNum, const uint32_t sqSize)
-        : ipAddr(ip), channelNum(channelNum), jettyNum(jettyNum), sqSize(sqSize) {
+        const uint32_t jettyNum, const uint32_t sqSize, uint8_t ubJettyJfsPriority = 2)
+        : ipAddr(ip), channelNum(channelNum), jettyNum(jettyNum), sqSize(sqSize),
+          ubJettyJfsPriority(ubJettyJfsPriority) {
     }
 };
 
@@ -42,11 +44,13 @@ struct CcuJettyInfo {
 
     uint64_t sqBufVa{0};
     uint32_t sqBufSize{0};
+    uint8_t jfsPriority{2};
 
     std::string ToString() const {
         return StringFormat("jettyType=%d, jettyCtxId=%u, taJettyId=%u, sqDepth=%u, "
-                            "wqeBBStartId=%u, sqBufVa=%llu, sqBufSize=%u.",
-                            jettyType, jettyCtxId, taJettyId, sqDepth, wqeBBStartId, sqBufVa, sqBufSize);
+                            "wqeBBStartId=%u, sqBufVa=%llu, sqBufSize=%u, jfsPriority=%u.",
+                            jettyType, jettyCtxId, taJettyId, sqDepth, wqeBBStartId, sqBufVa, sqBufSize,
+                            jfsPriority);
     }
 };
 
