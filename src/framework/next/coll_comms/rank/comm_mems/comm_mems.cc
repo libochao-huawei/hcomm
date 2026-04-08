@@ -73,7 +73,7 @@ HcclResult CommMems::GetMemoryHandles(std::vector<HcclMem> &mem)
 {
     HcclMem memTemp;
     memTemp.size = cclMemInfo_.mem.size;
-    memTemp.type = ConvertHcclToCommMemType(cclMemInfo_.mem.memType);
+    memTemp.type = ConvertCommToHcclMemType(cclMemInfo_.mem.memType);
     memTemp.addr = cclMemInfo_.mem.addr;
     mem.push_back(memTemp);
 
@@ -181,7 +181,7 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
 {
     HcclMem memTemp;
     memTemp.size = cclMemInfo_.mem.size;
-    memTemp.type = ConvertHcclToCommMemType(cclMemInfo_.mem.memType);
+    memTemp.type = ConvertCommToHcclMemType(cclMemInfo_.mem.memType);
     memTemp.addr = cclMemInfo_.mem.addr;
     memVec.push_back(memTemp);
     memTag.push_back("HcclBuffer");
