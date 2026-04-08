@@ -213,7 +213,7 @@ bool GetTableIds(const std::vector<LocalId> &localIds, std::unordered_map<LocalI
 }
 
 void SetDetourTable4P(const std::set<u32>                                             &tableIdSet,
-                      unordered_map<LocalId, unordered_map<LocalId, vector<LocalId>>> &detourTable)
+                      unordered_map<LocalId, unordered_map<LocalId, vector<Direction>>> &detourTable)
 {
     if (tableIdSet == std::set<u32>{0, 1, 2, 3}) { // tableId必须为 0 1 2 3，才能使用DETOUR4PTABLE_0123绕路
         detourTable = DETOUR_4P_TABLE_0123;
@@ -233,7 +233,7 @@ void SetDetourTable4P(const std::set<u32>                                       
 }
 
 void SetDetourTable2P(const std::set<u32>                                             &tableIdSet,
-                      unordered_map<LocalId, unordered_map<LocalId, vector<LocalId>>> &detourTable)
+                      unordered_map<LocalId, unordered_map<LocalId, vector<Direction>>> &detourTable)
 {
     if (tableIdSet == std::set<u32>{0, 1} || tableIdSet == std::set<u32>{2, 3} || 
         tableIdSet == std::set<u32>{4, 5} || tableIdSet == std::set<u32>{6, 7}) {
@@ -247,7 +247,7 @@ void SetDetourTable2P(const std::set<u32>                                       
 }
 
 void GetDetourTableAndTableIds(const std::vector<LocalId>                                           &localIds,
-                               std::unordered_map<LocalId, unordered_map<LocalId, vector<LocalId>>> &detourTable,
+                               std::unordered_map<LocalId, unordered_map<LocalId, vector<Direction>>> &detourTable,
                                std::unordered_map<LocalId, u32>                                     &tableIds,
                                const RankTableInfo                                                  *rankTable)
 {
@@ -293,8 +293,18 @@ void GetDetourTableAndTableIds(const std::vector<LocalId>                       
     }
 }
 
+void GenDetourData(DetourData &detourData, LocalId &srcLocalId, LocalId &dstLocalId, LocalId &detourLocalId,
+                   RankId &srcRankId, RankId &dstRankId)
+{
+    detourData.detourPhyPeerId = PhyTopo::Peer::GetId(detourLocalId); // 绕路可能没有绕路节点的rankid
+    detourData.srcPhyPeerId    = PhyTopo::Peer::GetId(srcLocalId);
+    detourData.dstPhyPeerId    = PhyTopo::Peer::GetId(dstLocalId);
+    detourData.srcNetInstPeer  = rankGraph->GetPeer(srcRankId);
+    detourData.dstNetInstPeer  = rankGraph->GetPeer(dstRankId);
+}
+
 void AddDetourLinks(const PhyTopo *phyTopo, RankGraph *rankGraph,
-                    std::unordered_map<LocalId, unordered_map<LocalId, vector<LocalId>>> &detourTable,
+                    std::unordered_map<LocalId, unordered_map<LocalId, vector<Direction>>> &detourTable,
                     std::unordered_map<LocalId, u32>                                     &tableIds, 
                     const RankTableInfo                                                  *rankTable)
 {
@@ -310,24 +320,42 @@ void AddDetourLinks(const PhyTopo *phyTopo, RankGraph *rankGraph,
         for (const auto &dstRankId : innerRanks) {
             LocalId dstLocalId = rankGraph->GetLocalId(dstRankId);
             u32     dstTableId = tableIds[dstLocalId];
-
             if (detourTable.count(srcTableId) == 0 || detourTable[srcTableId].count(dstTableId) == 0) {
                 continue;
             }
-
-            auto detourTableIds = detourTable[srcTableId][dstTableId];
-            for (auto &detourTableId : detourTableIds) {
+            auto detourTableDirections = detourTable[srcTableId][dstTableId];
+            for (u32 detourTableId = 0; detourTableId < detourTableDirections.size(); i++) {
+                if (detourTableDirections[detourTableId] == Direction::INVALID) {
+                    continue;
+                }
                 LocalId detourLocalId = detourTableId + srcLocalId - srcTableId;
-
-                // 插入detourlink
-                DetourData detourData;
-                detourData.detourPhyPeerId = PhyTopo::Peer::GetId(detourLocalId); // 绕路可能没有绕路节点的rankid
-                detourData.srcPhyPeerId    = PhyTopo::Peer::GetId(srcLocalId);
-                detourData.dstPhyPeerId    = PhyTopo::Peer::GetId(dstLocalId);
-                detourData.srcNetInstPeer  = rankGraph->GetPeer(srcRankId);
-                detourData.dstNetInstPeer  = rankGraph->GetPeer(dstRankId);
-
-                AddDetourLink(innerNetInst, detourData, phyTopoGraph, rankTable);
+                switch (detourTableDirections[detourTableId])
+                {
+                    case Direction::SEND:
+                    {
+                        DetourData detourData;
+                        GenDetourData(detourData, srcLocalId, dstLocalId, detourLocalId, srcRankId, dstRankId);
+                        AddDetourLink(innerNetInst, detourData, phyTopoGraph, rankTable);
+                        break;
+                    }
+                    case Direction::RECV:
+                    {
+                        DetourData detourData;
+                        GenDetourData(detourData, dstLocalId, srcLocalId, detourLocalId, dstRankId, srcRankId);
+                        AddDetourLink(innerNetInst, detourData, phyTopoGraph, rankTable);
+                        break;
+                    }
+                    case Direction::BOTH:
+                    {
+                        DetourData detourData0;
+                        GenDetourData(detourData0, srcLocalId, dstLocalId, detourLocalId, srcRankId, dstRankId);
+                        AddDetourLink(innerNetInst, detourData0, phyTopoGraph, rankTable);
+                        DetourData detourData1;
+                        GenDetourData(detourData1, dstLocalId, srcLocalId, detourLocalId, dstRankId, srcRankId);
+                        AddDetourLink(innerNetInst, detourData1, phyTopoGraph, rankTable);
+                        break;
+                    }
+                }
             }
         }
     }
@@ -336,7 +364,7 @@ void AddDetourLinks(const PhyTopo *phyTopo, RankGraph *rankGraph,
 void DetourService::InsertDetourLinks(RankGraph *rankGraph, const RankTableInfo *rankTable)
 {
     std::unordered_map<LocalId, u32>                                     tableIds;
-    std::unordered_map<LocalId, unordered_map<LocalId, vector<LocalId>>> detourTable;
+    std::unordered_map<LocalId, unordered_map<LocalId, vector<Direction>>> detourTable;
 
     // 获取innerGroup的localIds
     std::vector<LocalId> localIds = GetInnerLocalIds(rankGraph);

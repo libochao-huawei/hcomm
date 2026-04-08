@@ -194,6 +194,21 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    void LinkDFX(CommLink &commLink)
+    {
+        HCCL_INFO("ZZY hop[%u]", commLink.linkAttr.hop);
+        int idx = 0;
+        for (uint8_t d : commLink.srcEndpointDesc.commAddr.eid) {
+            HCCL_INFO("ZZY link src eid[%d] is [%02hhX]", idx, d);
+            idx++;
+        }
+        int idx = 0;
+        for (uint8_t d : commLink.dstEndpointDesc.commAddr.eid) {
+            HCCL_INFO("ZZY link dst eid[%d] is [%02hhX]", idx, d);
+            idx++;
+        }
+    }
+
     static HcclResult InsertInnerLink(const NetInstance::Path &path, std::vector<CommLink> &linkListVec)
     {
         for (const auto &link : path.links) {
@@ -238,7 +253,7 @@ namespace Hccl {
                     commLink.srcEndpointDesc.loc.device.devPhyId = srcPeer->GetDeviceId();
                     commLink.dstEndpointDesc.loc.device.devPhyId = dstPeer->GetDeviceId();
                 }
-
+                LinkDFX(commLink);
                 linkListVec.emplace_back(std::move(commLink));
             }
         }

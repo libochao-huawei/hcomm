@@ -38,7 +38,7 @@ protected:
 
 TEST_F(DetourServiceTest, SetDetourTable4P)
 {
-    unordered_map<LocalId, unordered_map<LocalId, vector<LocalId>>> detourTable;
+    unordered_map<LocalId, unordered_map<LocalId, vector<Direction>>> detourTable;
     std::set<u32> tableIdSet = {0, 1, 2, 3};
     SetDetourTable4P(tableIdSet, detourTable);
     EXPECT_EQ(detourTable, DETOUR_4P_TABLE_0123);

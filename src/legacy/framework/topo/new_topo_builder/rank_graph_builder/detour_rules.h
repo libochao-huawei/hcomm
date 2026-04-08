@@ -14,20 +14,27 @@
 #include <unordered_map>
 #include <vector>
 #include "topo_common_types.h"
-
+ 
 namespace Hccl {
+enum class Direction
+{
+    INVALID = -1,
+    SEND,
+    RECV,
+    BOTH,
+};
 
-extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<LocalId>>> DETOUR_2P_TABLE_01;
+extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<Direction>>> DETOUR_2P_TABLE_01;
 
-extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<LocalId>>> DETOUR_2P_TABLE_04;
+extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<Direction>>> DETOUR_2P_TABLE_04;
 
-extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<LocalId>>> DETOUR_4P_TABLE_0123;
+extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<Direction>>> DETOUR_4P_TABLE_0123;
 
-extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<LocalId>>> DETOUR_4P_TABLE_4567;
+extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<Direction>>> DETOUR_4P_TABLE_4567;
 
-extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<LocalId>>> DETOUR_4P_TABLE_0246;
+extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<Direction>>> DETOUR_4P_TABLE_0246;
 
-extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<LocalId>>> DETOUR_4P_TABLE_1357;
+extern const std::unordered_map<LocalId, std::unordered_map<LocalId, std::vector<Direction>>> DETOUR_4P_TABLE_1357;
 
 } // namespace Hccl
 
