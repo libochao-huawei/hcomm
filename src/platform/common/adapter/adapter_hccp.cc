@@ -1362,7 +1362,7 @@ HcclResult hrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, const void *dat
 
 HcclResult hrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u64 sendSize, std::function<bool()> needStop)
 {
-    CHK_PTR_NULL(sendSize);
+    CHK_PTR_NULL(data);
     if (sendSize > SOCKET_SEND_MAX_SIZE) {
         HCCL_ERROR("[Send][RaSocket]errNo[0x%016llx] ra socket send size is too large, " \
             "data[%p], size[%llu Byte]", HCCL_ERROR_CODE(HCCL_E_NETWORK), data, sendSize);

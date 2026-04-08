@@ -67,6 +67,7 @@ HcclResult DlTraceFunction::DlATraceFunctionInterInit() {
 
 HcclResult DlTraceFunction::DlTraceFunctionInit()
 {
+    HcclResult ret;
     std::lock_guard<std::mutex> lock(handleMutex_);
     if (handle_ == nullptr) {
         handle_ = HcclDlopen("libascend_trace.so", RTLD_NOW);
@@ -80,7 +81,7 @@ HcclResult DlTraceFunction::DlTraceFunctionInit()
             CHK_PRT_RET(handle_ == nullptr, HCCL_ERROR("dlopen [%s] failed, %s", "libutrace.so",\
             (errMsg_utrace == nullptr) ? "please check the file exist or permission denied." : errMsg_utrace),\
             HCCL_E_OPEN_FILE_FAILURE);
-            HcclResult ret = DlUTraceFunctionInterInit();
+            ret = DlUTraceFunctionInterInit();
             if (ret != HCCL_SUCCESS) {
                 (void)HcclDlclose(handle_);
                 return ret;

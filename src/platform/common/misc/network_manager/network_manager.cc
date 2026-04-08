@@ -431,7 +431,6 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
         hrtRaSocketDeInit(socketHandle);
         HrtRaDeInit(&config);
         raResourceInfo_.nicSocketMap.erase(ipAddr);
-        raResourceInfo_.nicRdmaHandle.erase(ipAddr);
         return ret;
     }
     return HCCL_SUCCESS;
@@ -772,7 +771,7 @@ HcclResult NetworkManager::StopVnicSocketHandle(const HcclIpAddress &localIp)
 
     // 销毁socket
     if (ipSock.nicSocketHandle != nullptr) {
-        HcclResult ret = hrtRaSocketDeInit(ipSocket.nicSocketHandle);
+        HcclResult ret = hrtRaSocketDeInit(ipSock.nicSocketHandle);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[Stop][NicsSocket]VNIC socket deInit not successfully.");
         }
@@ -1627,7 +1626,7 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
 
     ret = HeterogStartListen(ipAddr, port);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[PsWorkerRaInit] HeterogStartListen failed, ret[%d]", ret);、
+        HCCL_ERROR("[PsWorkerRaInit] HeterogStartListen failed, ret[%d]", ret);
         (void)hrtRaSocketDeInit(socketHandle);
         raResourceInfo_.nicSocketMap.erase(ipAddr);
         raResourceInfo_.hostNetSocketMap.erase(ipAddr);
