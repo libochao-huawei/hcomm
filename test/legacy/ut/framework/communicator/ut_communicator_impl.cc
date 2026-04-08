@@ -3497,3 +3497,16 @@ TEST_F(CommunicatorImplTest, Ut_GetTopoFilePath)
     std::string topoFilePath = comm.GetTopoFilePath();
     EXPECT_NE(topoFilePath.find(topoFileName), std::string::npos);
 }
+
+TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_DpuStream_Uninit_Failed)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    comm.isDpuKernelLaunched = true;
+    MOCKER(aclrtSetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().with(any()).will(returnValue(ACL_ERROR_INVALID_PARAM));
+    MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(ignoreReturnValue());
+
+    HcclResult ret = comm.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+}
