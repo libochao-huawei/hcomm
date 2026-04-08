@@ -262,3 +262,22 @@ TEST_F(StreamTest, aicpu_stream_constructor)
     EXPECT_EQ(buff2.sqHead, 0);
     EXPECT_EQ(buff2.sqTail, 100);
 }
+
+TEST_F(StreamTest, GetMode_nullptr_test)
+{
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+
+    HcclResult ret = stream.GetMode(nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(StreamTest, GetMode_success_test)
+{
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+
+    uint64_t stmMode = 0;
+    HcclResult ret = stream.GetMode(&stmMode);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

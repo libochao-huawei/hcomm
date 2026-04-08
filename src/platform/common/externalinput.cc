@@ -1737,7 +1737,7 @@ HcclResult CollectRetryEnableFromConfig(const std::vector<std::string> &retryEna
         u32 level = 0;
         bool retryEnable = false;
         std::size_t found = retryEnableLevel.find(":");
-        if ((found == 0) || (found == (retryEnableLevel.length() - 1))) {
+        if ((found == std::string::npos) || (found == 0) || (found == (retryEnableLevel.length() - 1))) {
             HCCL_ERROR("[CollectRetryEnableFromConfig] Hccl retryEnableLevel is invalid.");
             return HCCL_E_PARA;
         }
