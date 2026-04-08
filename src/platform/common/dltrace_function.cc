@@ -80,9 +80,18 @@ HcclResult DlTraceFunction::DlTraceFunctionInit()
             CHK_PRT_RET(handle_ == nullptr, HCCL_ERROR("dlopen [%s] failed, %s", "libutrace.so",\
             (errMsg_utrace == nullptr) ? "please check the file exist or permission denied." : errMsg_utrace),\
             HCCL_E_OPEN_FILE_FAILURE);
-            CHK_RET(DlUTraceFunctionInterInit());
+            HcclResult ret = DlUTraceFunctionInterInit();
+            if (ret != HCCL_SUCCESS) {
+                (void)HcclDlclose(handle_);
+                return ret;
+            }
         } else {
-            CHK_RET(DlATraceFunctionInterInit());
+            ret = DlATraceFunctionInterInit();
+            if (ret != HCCL_SUCCESS) {
+                (void)HcclDlclose(handle_);
+                handle_ = nullptr;
+                return ret;
+            }
         }
     }
     return HCCL_SUCCESS;
