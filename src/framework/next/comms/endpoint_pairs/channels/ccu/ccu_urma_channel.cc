@@ -98,7 +98,7 @@ static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
         CcuTransport::CcuConnectionType::UBC_TP;
 
     CcuTransport::CcuConnectionInfo connectionInfo{type_,
-        locAddr, rmtAddr, channelInfo, ccuJettys};
+        locAddr, rmtAddr, channelInfo, ccuJettys, channelDesc_.ubcAttr.qos};
 
     std::vector<CcuTransport::CclBufferInfo> bufferInfos{};
     CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferInfos));
