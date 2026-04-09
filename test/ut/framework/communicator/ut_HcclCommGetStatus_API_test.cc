@@ -22,23 +22,31 @@ public:
     }
 };
 
-// TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR) {
-//     UT_COMM_CREATE_DEFAULT(comm);
+TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR) {
+    UT_COMM_CREATE_DEFAULT(comm);
 
-//     HcclResult ret = HcclCommGetStatus(comm, nullptr);
-//     EXPECT_EQ(ret, HCCL_E_PTR);
+    char commId[256] = {0};
+    HcclResult ret = HcclGetCommName(comm, commId);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 
-//     Ut_Comm_Destroy(comm);
-// }
+    ret = HcclCommGetStatus(commId, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 
-// TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
-//     UT_COMM_CREATE_DEFAULT(comm);
+    Ut_Comm_Destroy(comm);
+}
 
-//     HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
-//     HcclResult ret = HcclCommGetStatus(comm, &status);
-//     EXPECT_EQ(ret, HCCL_SUCCESS);
-//     // After successful create, comm status should be READY
-//     EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
+TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
+    UT_COMM_CREATE_DEFAULT(comm);
 
-//     Ut_Comm_Destroy(comm);
-// }
+    char commId[256] = {0};
+    HcclResult ret = HcclGetCommName(comm, commId);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
+    ret = HcclCommGetStatus(commId, &status);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    // After successful create, comm status should be READY
+    EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
+
+    Ut_Comm_Destroy(comm);
+}
