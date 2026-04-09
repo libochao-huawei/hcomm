@@ -120,9 +120,6 @@ HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, unsigned int moduleType, s
         hccp_err("[request][ra_tlv]module_type(%u) invalid, must smaller than (%u)",
         moduleType, TLV_MODULE_TYPE_MAX), -EINVAL);
 
-    CHK_PRT_RETURN(moduleType == TLV_MODULE_TYPE_NSLB,
-        hccp_warn("[request][ra_tlv]module_type(%u) is not support", moduleType), -EINVAL);
-
     tlvHandleTmp = (struct RaTlvHandle *)tlvHandle;
     CHK_PRT_RETURN(sendMsg->length > tlvHandleTmp->bufferSize,
         hccp_err("[request][ra_tlv]send length(%u) out of range(%u)",
@@ -132,7 +129,7 @@ HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, unsigned int moduleType, s
 
     RA_PTHREAD_MUTEX_LOCK(&tlvHandleTmp->mutex);
     ret = tlvHandleTmp->tlvOps->raTlvRequest(tlvHandleTmp, moduleType, sendMsg, recvMsg);
-    if (ret == -EUSERS) {
+    if (ret == -EUSERS || ret == -ENOTSUPP) {
         hccp_warn("[request][ra_tlv]ra_tlv_request unsuccessful, ret(%d), phyId(%u) sendType(%u)",
             ret, tlvHandleTmp->initInfo.phyId, sendMsg->type);
     } else if (ret != 0) {

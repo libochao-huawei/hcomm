@@ -62,11 +62,11 @@ void CcuContextReduceScatterMesh2D::InitResources()
     step0BaseOffset_   = CreateVariable();
     step0AddOffset_    = CreateVariable();
     step1AddOffset_    = CreateVariable();
+    xAxisGroupOpSize_  = CreateGroupOpSize();
+    yAxisGroupOpSize_  = CreateGroupOpSize();
     localAxisSignal_   = CreateMaskSignal();
     anotherAxisSignal_ = CreateMaskSignal();
     yAxisOffset_       = CreateVariable();
-    xAxisGroupOpSize_  = CreateGroupOpSize();
-    yAxisGroupOpSize_  = CreateGroupOpSize();
 
     ExportMaskSignal(localAxisSignal_, localAxisSignalName_);
     anotherAxisSignal_ = ImportMaskSignal(anotherAxisSignalName_);
@@ -263,7 +263,7 @@ std::vector<uint64_t> CcuContextReduceScatterMesh2D::GeneArgs(const CcuTaskArg &
     uint64_t outputAddr  = taskArg->outputAddr_;
     uint64_t tokenInfo   = taskArg->token_;
     uint64_t outputSize  = taskArg->outputSize_;
-    uint64_t offset      = taskArg->offSet_;
+    uint64_t offset      = taskArg->offset_;
     uint64_t yAxisOffset = taskArg->xAxisSize_;
     uint64_t xAxisSize   = taskArg->xAxisSize_;
     uint64_t yAxisSize   = taskArg->yAxisSize_;

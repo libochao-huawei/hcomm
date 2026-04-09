@@ -109,9 +109,14 @@ HcclResult InsTempScatterNHR::RunNHR(TemplateDataParams &templateDataParams, Res
 HcclResult InsTempScatterNHR::GenExtIns(TempFuncs &tempFuncs,TemplateDataParams &templateDataParams,
                                         ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    } else {
+        dmaMode_ = DmaMode::PUT;
+    }
     opMode_              = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
-    buffInfo_            = templateDataParams.buffInfo; 
+    buffInfo_            = templateDataParams.buffInfo;
 
     HCCL_INFO("[InsTempScatterNHR] Run start");
 
@@ -147,7 +152,7 @@ HcclResult InsTempScatterNHR::BatchSend(AicpuNHRStepInfo &stepInfo, const ResLin
     }
     SlicesList txSlicesList(srcDstSlices, srcDstSlices);
     DataInfo sendData(linkSend, txSlicesList);
-    CHK_PRT_RET(Send(sendData, queue, 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempScatterNHR] BatchSend failed"),
+    CHK_PRT_RET(Send(sendData, queue, 0, true, dmaMode_), HCCL_ERROR("[InsTempScatterNHR] BatchSend failed"),
         HcclResult::HCCL_E_INTERNAL);
     return HcclResult::HCCL_SUCCESS;
 }
@@ -165,7 +170,7 @@ HcclResult InsTempScatterNHR::BatchRecv(AicpuNHRStepInfo &stepInfo, const ResLin
     }
     SlicesList rxSlicesList(srcDstSlices, srcDstSlices);
     DataInfo recvData(linkRecv, rxSlicesList);
-    CHK_PRT_RET(Recv(recvData, queue, 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempScatterNHR] BatchTxRx Recv failed"),
+    CHK_PRT_RET(Recv(recvData, queue, 0, true, dmaMode_), HCCL_ERROR("[InsTempScatterNHR] BatchTxRx Recv failed"),
         HcclResult::HCCL_E_INTERNAL);
     return HcclResult::HCCL_SUCCESS;
 }
@@ -195,7 +200,7 @@ HcclResult InsTempScatterNHR::BatchSR(AicpuNHRStepInfo &stepInfo, const ResLinks
     SlicesList rxSlicesList(rxSrcDstSlices, rxSrcDstSlices);
     TxRxSlicesList txRxSlicesList(txSlicesList, rxSlicesList);
     SendRecvInfo sendRecvInfo(linkSendRecv, txRxSlicesList);
-    CHK_PRT_RET(SendRecv(sendRecvInfo, queue, 0, true, DmaMode::PUT), HCCL_ERROR("[InsTempScatterNHR] BatchTxRx SendRecv failed"),
+    CHK_PRT_RET(SendRecv(sendRecvInfo, queue, 0, true, dmaMode_), HCCL_ERROR("[InsTempScatterNHR] BatchTxRx SendRecv failed"),
         HcclResult::HCCL_E_INTERNAL);
     return HcclResult::HCCL_SUCCESS;
 }

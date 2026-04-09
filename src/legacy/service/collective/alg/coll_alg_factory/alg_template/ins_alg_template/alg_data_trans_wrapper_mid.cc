@@ -16,7 +16,7 @@ HcclResult PreSyncQues(const std::vector<InsQuePtr> &syncQueues, const u32 postQ
                        bool enableCounterNotify)
 {
     if (syncQueues.size() <= 1) {
-        HCCL_WARNING("[InsCollAlgFactory] [AlgDataTrans] PreSyncQues: syncQueues size [%u], do nothing.",
+        HCCL_WARNING("[InsCollAlgFactory] [AlgDataTrans] PreSyncQues: syncQueues size [%zu], do nothing.",
                      syncQueues.size());
         return HcclResult::HCCL_SUCCESS;
     }
@@ -24,14 +24,14 @@ HcclResult PreSyncQues(const std::vector<InsQuePtr> &syncQueues, const u32 postQ
     CHK_PRT_RET(
         postQueIdx >= syncQueues.size(),
         HCCL_ERROR(
-            "[InsCollAlgFactory] [AlgDataTrans] PreSyncQues: postQueIdx [%u] out of idx range for syncQueues [%u].",
+            "[InsCollAlgFactory] [AlgDataTrans] PreSyncQues: postQueIdx [%u] out of idx range for syncQueues [%zu].",
             postQueIdx, syncQueues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
     if (enableCounterNotify) {
         std::unique_ptr<InsLocalBcastPost> insLocalBcastPost = std::make_unique<InsLocalBcastPost>(topicId);
         CHK_PTR_NULL(insLocalBcastPost);
-        for (u32 queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
+        for (size_t queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
             if (queIdx != postQueIdx) {
                 insLocalBcastPost->Append(syncQueues[queIdx]->GetId()); // add queIdx to semaphore post
                 std::unique_ptr<Instruction> insLocalWaitFrom
@@ -42,7 +42,7 @@ HcclResult PreSyncQues(const std::vector<InsQuePtr> &syncQueues, const u32 postQ
         }
         syncQueues[postQueIdx]->Append(std::move(insLocalBcastPost)); // semaphore post
     } else {
-        for (u32 queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
+        for (size_t queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
             if (queIdx != postQueIdx) {
                 // semaphore post
                 std::unique_ptr<Instruction> insLocalPostTo
@@ -65,7 +65,7 @@ HcclResult PostSyncQues(const std::vector<InsQuePtr> &syncQueues, const u32 wait
                         bool enableCounterNotify)
 {
     if (syncQueues.size() <= 1) {
-        HCCL_WARNING("[InsCollAlgFactory] [AlgDataTrans] PreSyncQues: syncQueues size [%u], do nothing.",
+        HCCL_WARNING("[InsCollAlgFactory] [AlgDataTrans] PreSyncQues: syncQueues size [%zu], do nothing.",
                      syncQueues.size());
         return HcclResult::HCCL_SUCCESS;
     }
@@ -73,14 +73,14 @@ HcclResult PostSyncQues(const std::vector<InsQuePtr> &syncQueues, const u32 wait
     CHK_PRT_RET(
         waitQueIdx >= syncQueues.size(),
         HCCL_ERROR(
-            "[InsCollAlgFactory] [AlgDataTrans] PostSyncQues: waitQueIdx [%u] out of idx range for syncQueues [%u].",
+            "[InsCollAlgFactory] [AlgDataTrans] PostSyncQues: waitQueIdx [%u] out of idx range for syncQueues [%zu].",
             waitQueIdx, syncQueues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
     if (enableCounterNotify) {
         std::unique_ptr<InsLocalWaitGroup> insLocalWaitGroup = std::make_unique<InsLocalWaitGroup>(topicId);
         CHK_PTR_NULL(insLocalWaitGroup);
-        for (u32 queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
+        for (size_t queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
             if (queIdx != waitQueIdx) {
                 insLocalWaitGroup->Append(syncQueues[queIdx]->GetId()); // add queIdx to semaphore wait
 
@@ -92,7 +92,7 @@ HcclResult PostSyncQues(const std::vector<InsQuePtr> &syncQueues, const u32 wait
         }
         syncQueues[waitQueIdx]->Append(std::move(insLocalWaitGroup)); // semaphore wait
     } else {
-        for (u32 queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
+        for (size_t queIdx = 0; queIdx < syncQueues.size(); queIdx++) {
             if (queIdx != waitQueIdx) {
                 // semaphore post
                 std::unique_ptr<Instruction> insLocalPostTo
@@ -301,15 +301,15 @@ HcclResult MultiTxDataWithFinCounter(const std::vector<LinkData> &links, const s
 
     CHK_PRT_RET(
         links.size() != queues.size(),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiTxDataWithFinCounter: num of links [%u] given non-equal "
-                   "with num of queues given [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiTxDataWithFinCounter: num of links [%zu] given non-equal "
+                   "with num of queues given [%zu].",
                    links.size(), queues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
     CHK_PRT_RET(
         links.size() != slices.size(),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiTxDataWithFinCounter: num of links [%u] given non-equal "
-                   "with num of slices given [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiTxDataWithFinCounter: num of links [%zu] given non-equal "
+                   "with num of slices given [%zu].",
                    links.size(), slices.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -644,8 +644,8 @@ HcclResult MultiTxRxDataWithFinCounter(const std::vector<TxRxLinks> &links, cons
 
     CHK_PRT_RET(
         links.size() != slices.size(),
-        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiTxRxDataWithFinCounter: num of links [%u] given non-equal "
-                   "with num of slices given [%u].",
+        HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] MultiTxRxDataWithFinCounter: num of links [%zu] given non-equal "
+                   "with num of slices given [%zu].",
                    links.size(), slices.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -735,7 +735,7 @@ HcclResult LocalReduce(InsQuePtr queue, const DataSlice &srcSlice, const DataSli
     CHK_PRT_RET(
         srcSlice.GetSize() != dstSlice.GetSize(),
         HCCL_ERROR(
-            "[InsCollAlgFactory] [AlgDataTrans] LocalReduce: src slice size [%u] is not equal to dst slice size [%u].",
+            "[InsCollAlgFactory] [AlgDataTrans] LocalReduce: src slice size [%zu] is not equal to dst slice size [%zu].",
             srcSlice.GetSize(), dstSlice.GetSize()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -750,8 +750,8 @@ HcclResult LocalReduceSlices(InsQuePtr queue, const std::vector<DataSlice> &srcS
                              const std::vector<DataSlice> &dstSlices, const DataType dataType, const ReduceOp reduceOp)
 {
     CHK_PRT_RET(srcSlices.size() != dstSlices.size(),
-                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalReduceSlices: num of src slices [%u], is not equal "
-                           "to num of dst slices [%u].",
+                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalReduceSlices: num of src slices [%zu], is not equal "
+                           "to num of dst slices [%zu].",
                            srcSlices.size(), dstSlices.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
@@ -762,8 +762,8 @@ HcclResult LocalReduceSlices(InsQuePtr queue, const std::vector<DataSlice> &srcS
     for (u32 sliceIdx = 0; sliceIdx < srcSlices.size(); sliceIdx++) {
         CHK_PRT_RET(
             srcSlices[sliceIdx].GetSize() != dstSlices[sliceIdx].GetSize(),
-            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalReduceSlices: [%u]-th slice, src slice size [%u] "
-                       "is not equal to dst slice size [%u].",
+            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalReduceSlices: [%zu]-th slice, src slice size [%zu] "
+                       "is not equal to dst slice size [%zu].",
                        sliceIdx, srcSlices[sliceIdx].GetSize(), dstSlices[sliceIdx].GetSize()),
             HcclResult::HCCL_E_INTERNAL);
         try {
@@ -804,7 +804,7 @@ HcclResult LocalCopy(InsQuePtr queue, const DataSlice &srcSlice, const DataSlice
     CHK_PRT_RET(
         srcSlice.GetSize() != dstSlice.GetSize(),
         HCCL_ERROR(
-            "[InsCollAlgFactory] [AlgDataTrans] LocalCopy: src slice size [%u] is not equal to dst slice size [%u].",
+            "[InsCollAlgFactory] [AlgDataTrans] LocalCopy: src slice size [%zu] is not equal to dst slice size [%zu].",
             srcSlice.GetSize(), dstSlice.GetSize()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -828,8 +828,8 @@ HcclResult LocalCopySlices(InsQuePtr queue, const std::vector<DataSlice> &srcSli
 
     for (u32 sliceIdx = 0; sliceIdx < srcSlices.size(); sliceIdx++) {
         CHK_PRT_RET(srcSlices[sliceIdx].GetSize() != dstSlices[sliceIdx].GetSize(),
-                    HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalCopySlices: [%u]-th slice, src slice size [%u] "
-                               "is not equal to dst slice size [%u].",
+                    HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] LocalCopySlices: [%u]-th slice, src slice size [%zu] "
+                               "is not equal to dst slice size [%zu].",
                                sliceIdx, srcSlices[sliceIdx].GetSize(), dstSlices[sliceIdx].GetSize()),
                     HcclResult::HCCL_E_INTERNAL);
 
@@ -876,7 +876,7 @@ HcclResult AicpuReduce(InsQuePtr queue, const DataSlice &srcSlice, const DataSli
     CHK_PRT_RET(
         srcSlice.GetSize() != dstSlice.GetSize(),
         HCCL_ERROR(
-            "[InsCollAlgFactory] [AlgDataTrans] AicpuReduce: src slice size [%u] is not equal to dst slice size [%u].",
+            "[InsCollAlgFactory] [AlgDataTrans] AicpuReduce: src slice size [%zu] is not equal to dst slice size [%zu].",
             srcSlice.GetSize(), dstSlice.GetSize()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -891,8 +891,8 @@ HcclResult AicpuReduceSlices(InsQuePtr queue, const std::vector<DataSlice> &srcS
                              const std::vector<DataSlice> &dstSlices, const DataType dataType, const ReduceOp reduceOp)
 {
     CHK_PRT_RET(srcSlices.size() != dstSlices.size(),
-                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] AicpuReduceSlices: num of src slices [%u], is not equal "
-                           "to num of dst slices [%u].",
+                HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] AicpuReduceSlices: num of src slices [%zu], is not equal "
+                           "to num of dst slices [%zu].",
                            srcSlices.size(), dstSlices.size()),
                 HcclResult::HCCL_E_INTERNAL);
 
@@ -903,8 +903,8 @@ HcclResult AicpuReduceSlices(InsQuePtr queue, const std::vector<DataSlice> &srcS
     for (u32 sliceIdx = 0; sliceIdx < srcSlices.size(); sliceIdx++) {
         CHK_PRT_RET(
             srcSlices[sliceIdx].GetSize() != dstSlices[sliceIdx].GetSize(),
-            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] AicpuReduceSlices: [%u]-th slice, src slice size [%u] "
-                       "is not equal to dst slice size [%u].",
+            HCCL_ERROR("[InsCollAlgFactory] [AlgDataTrans] AicpuReduceSlices: [%u]-th slice, src slice size [%zu] "
+                       "is not equal to dst slice size [%zu].",
                        sliceIdx, srcSlices[sliceIdx].GetSize(), dstSlices[sliceIdx].GetSize()),
             HcclResult::HCCL_E_INTERNAL);
 

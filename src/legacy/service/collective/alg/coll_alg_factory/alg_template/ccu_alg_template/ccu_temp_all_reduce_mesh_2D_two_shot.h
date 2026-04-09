@@ -27,21 +27,21 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of All Reduce ccu mesh 2D with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of All Reduce ccu mesh 2D TwoShot with tempRankSize [%u].", tempRankSize_);
     }
 
+    HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec, const BuffInfo &buffInfo,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues) override;
-    HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult CalcSliceInfo(const AllignInfo &allignInfo, const u64 dataSize, RankSliceInfo &sliceInfoVec) override;
     // init reduceInfo
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
+    HcclResult GetBufferAddr(const TempFuncs &tempFuncs, 
+         uint64_t &inputAddr, uint64_t &outputAddr);
     HcclResult PrepareLinks(const ResLinks &tempLinks);
     HcclResult PrepareRankGroups();
-    HcclResult GetBufferAddr(const TempFuncs &tempFuncs,
-        uint64_t &inputAddr, uint64_t &outputAddr);
 
     // 内部计算用到的变量
     ReduceOp reduceOp_;

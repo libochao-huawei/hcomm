@@ -1326,7 +1326,7 @@ const char *fake_rtGetSocVersionV91095()
     return socName.c_str();
 }
 
-TEST_F(RuntimeTest, ut_hrtGetDeviceType_910_95_return_ok)
+TEST_F(RuntimeTest, ut_hrtGetDeviceType_950_return_ok)
 {
     CallBackInitRts();
     MOCKER(aclrtGetSocName)
@@ -1339,7 +1339,7 @@ TEST_F(RuntimeTest, ut_hrtGetDeviceType_910_95_return_ok)
     EXPECT_EQ(deviceType, DevType::DEV_TYPE_950);
 }
 
-TEST_F(RuntimeTest, ut_hrtGetDeviceTypeBySocVersion_910_95_return_ok)
+TEST_F(RuntimeTest, ut_hrtGetDeviceTypeBySocVersion_950_return_ok)
 {
     log_level_set_stub(3);
     DevType deviceType;

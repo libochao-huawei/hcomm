@@ -34,7 +34,7 @@ string TaskInfo::GetAlgTypeName() const
         HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "NULL";
     }
-    return this->dfxOpInfo_->algType_.Describe();
+    return this->dfxOpInfo_->algType_;
 }
 
 string TaskInfo::GetBaseInfo() const
@@ -71,7 +71,7 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
             return GetParaNotify();
         default:
-            return "unknown task";
+            return this->taskParam_.taskType.Describe();
     }
 }
 
@@ -119,19 +119,12 @@ string TaskInfo::GetOpInfo() const
         return "";
     }
     const auto opInfo = this->dfxOpInfo_;
-    string addr = "";
-    if (opInfo->op_.inputMem != nullptr && opInfo->op_.outputMem != nullptr) {
-        addr = StringFormat("src:[0x%llx], dst:[0x%llx], ",
-            static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
-            static_cast<u64>(opInfo->op_.outputMem->GetAddr()));
-    }
-    return StringFormat("commIndex[%u], opType[%s], commId[%s], count[%llu], reduceType[%s], %sdataType[%s]",
+    return StringFormat("commIndex[%u], opType[%s], commId[%s], count[%llu], reduceType[%s], dataType[%s]",
         opInfo->commIndex_,
         opInfo->op_.opType.Describe().c_str(),
         opInfo->commId_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
-        addr.c_str(),
         opInfo->op_.dataType.Describe().c_str());
 }
 

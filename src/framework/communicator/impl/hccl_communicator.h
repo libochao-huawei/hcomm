@@ -69,6 +69,7 @@ constexpr u8 INPLACE_PRESYNC_STATUS_SEVEN = 7;
 constexpr u32 NSLBDP_HCCP_VERSION = 1;
 constexpr u32 NSLBDP_HCCP_NICPOSION = 1;
 constexpr u32 AICPU_LOCAL_NOTIFY_SIZE = 8; // aicpu场景本地控制时序的notify数量，对应枚举：enum AicpuLocalNotifyIdx
+constexpr u32 AICPU_LOCAL_EVENT_SIZE = 2; // aicpu场景本地控制时序的event数量，对应枚举：enum AicpuLocalEventIdx
 constexpr u32 CACHEMAP_MAXSIZE = 65536;
 constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
@@ -470,10 +471,10 @@ public:
 
     void SetHcclQos(u32 hcclQos);
  	u32 GetHcclQos();
-    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
-    HcclResult DeregisterWindow(CommSymWindow winHandle);
+    HcclResult RegisterWindow(void* ptr, size_t size, HcclCommSymWindow *winHandle);
+    HcclResult DeregisterWindow(HcclCommSymWindow winHandle);
     HcclResult InitSymmetricMemory();
-    HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+    HcclResult GetCommSymWin(void* ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
 private:
 
     bool IsEnableRoce();
@@ -604,11 +605,18 @@ private:
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup,
         std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H);
     HcclResult SaveRankInfoHasLinked(const AlgResourceRequest& resRequest);
-    HcclResult RecordOpPara(HcclCMDType opType, OpParam &opParam);
+    HcclResult RecordOpPara(HcclCMDType opType, const OpParam &opParam);
     HcclResult SaveTopoDesc(std::string &identifier);
 
     HcclResult SetAicpuUnfoldFlag();
     bool GetAicpuUnfoldFlag();
+
+    HcclResult ReAllocScratchMemForAlltoall(HcclCMDType opType, const OpParam &opParam,
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
+
+    HcclResult HandleExistAlgResource(const std::string& newTag, const std::string& algName,
+        HcclCMDType opType, const OpParam& opParam, std::unique_ptr<CollAlgOperator>& algOperator,
+        bool selectAivAlg, bool aicpuUnfoldModeFor910B, bool needRecreateAlltoallComm);
     u32 deviceNumPerServer_;
     HcclDispatcher dispatcher_; // dispatcher放到最后析构
     DispatcherCtxPtr dispatcherCtx_{nullptr};
@@ -651,6 +659,7 @@ private:
     bool interServer_;
     std::unique_ptr<WorkspaceResource> workSpaceRes_;
     std::vector<u32> enableP2PDevices_;
+    std::unordered_set<u32> enableP2PRankIds_;
     bool isSingleMeshAggregation_;
     CCLBufferManager cclBufferManager_;
     bool isExecuteProfilingInit_;
@@ -819,7 +828,7 @@ private:
         const HcclCMDType opType);
     HcclResult OrchestrateAicpu(const HcclCMDType &opType, const std::string &algName, const OpParam &param,
         const AlgResourceResponse &algResource, const std::string &newTag, AlgType algType, bool isCustom = false,
-        bool needIncreLink = false);
+        bool needIncreLink = false, bool needRecreateAlltoallComm = false);
     template <typename T>
     HcclResult CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDeviceMem, const std::vector<T> &srcVec);
     template <typename T>
@@ -919,6 +928,7 @@ private:
     std::vector<Stream> attachedStreams_;
     std::vector<std::shared_ptr<LocalNotify>> localAiCpuNotifyRes_;
     std::shared_ptr<LocalNotify> localAiCpuOpNotify_[AICPU_LOCAL_NOTIFY_SIZE] = { nullptr };
+    HcclRtEvent localAicpuOpEvent_[AICPU_LOCAL_EVENT_SIZE] = { nullptr }; // 用于控制Aclgraph模式按序下发控制流入图的event
     u32 workSpaceSize_;
     DeviceMem workSpace_;
     DeviceMem mc2DeviceMem_;

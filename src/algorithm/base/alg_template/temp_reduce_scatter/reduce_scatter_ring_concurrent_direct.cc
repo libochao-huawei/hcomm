@@ -336,7 +336,7 @@ HcclResult ReduceScatterRingConcurrentDirect::ReducerRun(const HcclDispatcher di
 {
     CHK_PTR_NULL(stream.ptr());
     bool isSpInlineReduce = link->IsSpInlineReduce();
-    if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttr_)) {
+    if (isSpInlineReduce && static_cast<bool>((INLINE_REDUCE_BITMASK & reduceAttr_))) {
         CHK_RET(ReducerRunSpInlineReduce(dispatcher, link, reducerMems, stream));
     } else {
         CHK_RET(ReducerRunNoSpInlineReduce(dispatcher, link, reducerMems, stream));

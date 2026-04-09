@@ -136,7 +136,7 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();
     // 根据planeId确认Fabric个数，每个fabricId对应一个planeId
-    std::unordered_map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(rankTable_->ranks[myRank_].rankLevelInfos[netLayer].rankAddrs);
+    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(rankTable_->ranks[myRank_].rankLevelInfos[netLayer].rankAddrs);
 
     if (planeId2Node.size() == 0) {
         HCCL_WARNING("[RankGraphBuilder][AddFabricInfo] current rankId[%d] netLayer[%u] group no net plane", myRank_, netLayer);
@@ -198,7 +198,7 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
     std::set<RankId> rankIds = innerNetInstance->GetRankIds();
 
     // 存储所有fabric节点，key为topoInstId
-    std::unordered_map<u32, std::shared_ptr<NetInstance::Fabric>> fabNodes;
+    std::map<u32, std::shared_ptr<NetInstance::Fabric>> fabNodes;
 
     // 3. 遍历所有rank节点，根据topoInstId创建fabric节点
     for (RankId rankId : rankIds) {
@@ -256,10 +256,10 @@ void RankGraphBuilder::AddTopoDescFabricInfo()
     HCCL_INFO("[RankGraphBuilder][AddTopoDescFabricInfo] Successfully completed fabric link construction");
 }
 
-std::unordered_map<PlaneId, FabricId> GetFabricsFromAddrInfo(std::vector<AddressInfo> rankAddrs)
+std::map<PlaneId, FabricId> GetFabricsFromAddrInfo(const std::vector<AddressInfo>& rankAddrs)
 {
-    std::unordered_map<PlaneId, FabricId> planeId2FabricId;
-    for (auto addrInfo : rankAddrs) {
+    std::map<PlaneId, FabricId> planeId2FabricId;
+    for (const auto& addrInfo : rankAddrs) {
         if (planeId2FabricId.count(addrInfo.planeId) == 0) {
             FabricId fabId = planeId2FabricId.size();
             planeId2FabricId[addrInfo.planeId] = fabId;
@@ -288,7 +288,7 @@ void RankGraphBuilder::BuildFromRankTable()
     for (const auto &rankInfo : rankTable_->ranks) {
         updaterFor64Plus1_.SaveReplaceInfo(rankInfo);   // 暂存备份替换信息
         RankId rankId = rankInfo.rankId;
-        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId);
+        shared_ptr<NetInstance::Peer> peer = make_shared<NetInstance::Peer>(rankId, rankInfo.localId, rankInfo.replacedLocalId, rankInfo.deviceId, rankInfo.devicePort);
         rankGraph_->AddPeer(peer);
         peers_.emplace(rankId, peer);  // rankid2peer
 
@@ -488,30 +488,43 @@ void RankGraphBuilder::UpdateTopoInstForMyRankOnly()
 }
 
 std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
-        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::unordered_map<std::string, IpAddress> portAddrMap, 
+        std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, const std::map<std::string, IpAddress>& portAddrMap, 
         const TopoType topoType, const u32 topoInstId) {
     std::vector<std::shared_ptr<NetInstance::ConnInterface>> netConnIFaces;
     std::set<string> phyPorts = phyConnIFace->GetPorts();
-    std::unordered_map<IpAddress, std::set<string>> addr2Ports;
+    std::map<IpAddress, std::set<string>> addr2Ports;
     for (auto port: phyPorts) {
-        auto itPort = portAddrMap.find(port);
-        if(itPort == portAddrMap.end()) {
-            HCCL_WARNING("[RankGraphBuilder][ConstructConnIFromPhyTopoConnIAndPortMap] topo use port [%s] not find addrs in ranktable.", port.c_str());
-            continue;
-        }
-        auto it = addr2Ports.find(itPort->second);
-        if (it == addr2Ports.end()) {
-            std::set<std::string> newPorts;
-            newPorts.insert(port);
-            addr2Ports[itPort->second] = newPorts;
+        if (*(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE) {
+            IpAddress tempIp;
+            auto it = addr2Ports.find(tempIp);
+            if (it == addr2Ports.end()) {
+                std::set<std::string> newPorts;
+                newPorts.insert("d2h");
+                addr2Ports[tempIp] = newPorts;
+            } else {
+                it->second.insert("d2h");
+            }
         } else {
-            it->second.insert("8080");
+            auto itPort = portAddrMap.find(port);
+            if (itPort == portAddrMap.end()) {
+                HCCL_WARNING("[RankGraphBuilder][ConstructConnIFromPhyTopoConnIAndPortMap] topo use port [%s] not find addrs in ranktable.", port.c_str());
+                continue;
+            }
+            auto it = addr2Ports.find(itPort->second);
+            if (it == addr2Ports.end()) {
+                std::set<std::string> newPorts;
+                newPorts.insert(port);
+                addr2Ports[itPort->second] = newPorts;
+            } else {
+                it->second.insert("8080");
+            }
         }
     }
 
     for (auto it = addr2Ports.begin(); it != addr2Ports.end(); ++it) {
+        auto linkType = *(phyConnIFace->GetLinkProtocols().begin()) == LinkProtocol::PCIE ? LinkType::PEER2NET : LinkType::PEER2PEER;
         shared_ptr<NetInstance::ConnInterface> netConnIFace =
-            make_shared<NetInstance::ConnInterface>(it->first, it->second, phyConnIFace->GetPos(), LinkType::PEER2PEER,
+            make_shared<NetInstance::ConnInterface>(it->first, it->second, phyConnIFace->GetPos(), linkType,
                                                     phyConnIFace->GetLinkProtocols(), topoType, topoInstId);
         netConnIFaces.push_back(netConnIFace);
     }

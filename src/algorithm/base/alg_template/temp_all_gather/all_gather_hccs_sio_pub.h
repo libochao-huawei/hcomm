@@ -22,7 +22,7 @@ public:
     HcclResult Prepare(SubCommInfo &outerCommInfoHccs, SubCommInfo &outerCommInfoSio, DeviceMem &usrInMem,
         DeviceMem &usrOutMem, u64 count, const HcclDataType dataType, const Stream &mainStream,
         std::vector<Stream> &meshStreams, std::vector<std::shared_ptr<LocalNotify>> &meshSignal,
-        std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux, u32 userRank, HcomCollOpInfo *opInfo);
+        std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux, u32 userRank, HcomCollOpInfo *opInfo) override;
     HcclResult RunAsync(const u32 rank, const u32 rankSize, const std::vector<LINK> &links) override;
 
 protected:

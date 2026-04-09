@@ -1952,13 +1952,13 @@ void Heartbeat::AddInconsistentOpRecord(const std::string &identifier, const OpI
  
         auto search = inconsistentOpMap_.find(iter->second);//SR tag
         if (search == inconsistentOpMap_.end()) {
-            inconsistentOpMap_.insert(std::make_pair(iter->second, OpInconsistentInfo(status, localInfo, remoteInfo)));
+            inconsistentOpMap_.insert(std::make_pair(iter->second, OpInconsistentInfo(status, localInfo, remoteInfo, localOpInfo)));
             HCCL_INFO("[%s] save record SR[%s] identifier[%s] index[%d]", __func__, identifier.c_str() , iter->second.c_str(), localOpInfo.index);
         }
     } else {
         auto search = inconsistentOpMap_.find(identifier);//AR identifier
         if (search == inconsistentOpMap_.end()) {
-            inconsistentOpMap_.insert(std::make_pair(identifier, OpInconsistentInfo(status, localInfo, remoteInfo)));
+            inconsistentOpMap_.insert(std::make_pair(identifier, OpInconsistentInfo(status, localInfo, remoteInfo, localOpInfo)));
             HCCL_INFO("[%s] save record identifier[%s] index[%d]", __func__, identifier.c_str(), localOpInfo.index);
         }
     }
@@ -1973,9 +1973,17 @@ HcclResult Heartbeat::CheckOpInconsistentError(const std::string &identifier, Hc
     auto search = inconsistentOpMap_.find(identifier);
     if (search != inconsistentOpMap_.end()) {
         result = HCCL_E_PARA;
-        HCCL_ERROR("[%s]find inconsistent op error [%d], in comm [%s]", __func__, result, identifier.c_str());
-        RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"para_name", "local_para", "remote_para" }),
-            std::vector<std::string>({ GetInconsistentTypeStr(search->second.inconsistentType),
+        const OpInconsistentInfo& inconsistentInfo = search->second;
+        std::string opInfo = "Unknown";
+        for (const auto& pair : HCCL_OPTYPE_NAME_MAP) {
+            if (pair.second == inconsistentInfo.opInfoDesc.opType) {
+                opInfo = std::string(pair.first);
+                break;
+            }
+        }
+        HCCL_ERROR("[%s]find inconsistent op [%s] error [%d], in comm [%s]", __func__, opInfo, result, identifier.c_str());
+        RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para" }),
+            std::vector<std::string>({ opInfo, identifier, GetInconsistentTypeStr(search->second.inconsistentType),
             search->second.localInfo, search->second.remoteInfo }));
     }
     return HCCL_SUCCESS;

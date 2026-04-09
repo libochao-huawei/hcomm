@@ -23,8 +23,13 @@ RankGraphV2::RankGraphV2(void *rankGraphPtr)
 
 HcclResult RankGraphV2::GetRankSize(uint32_t *rankSize)
 {
-    HCCL_RUN_INFO("3->RankGraphImpl = %p", pImpl.get());
     return pImpl->GetRankSize(rankSize);
+}
+
+HcclResult RankGraphV2::GetDevicePort(const uint32_t rank, uint32_t *devPort)
+{
+    CHK_RET(pImpl->GetDevicePort(rank, devPort));
+    return HCCL_SUCCESS;
 }
 
 HcclResult RankGraphV2::GetRankId(uint32_t *rank)

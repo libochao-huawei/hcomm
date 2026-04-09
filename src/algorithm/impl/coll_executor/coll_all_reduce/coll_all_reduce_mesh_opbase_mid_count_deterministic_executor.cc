@@ -76,7 +76,7 @@ bool CollAllReduceMeshOpbaseMidCountDeterministicExecutor::IsSmallData(const u64
 }
 
 HcclResult CollAllReduceMeshOpbaseMidCountDeterministicExecutor::PrepareSlicesInfo(const OpParam &param,
-    ExecMem &execMem, std::vector<Slice>& dataSegsSlice, GroupSlicesInfo& groupSlicesInfo, const u32 sliceSize)
+    const ExecMem &execMem, std::vector<Slice>& dataSegsSlice, GroupSlicesInfo& groupSlicesInfo, const u32 sliceSize)
 {
     const u32 perDataSize = SIZE_TABLE[param.DataDes.dataType];
     MemBlockInfo memInfo;

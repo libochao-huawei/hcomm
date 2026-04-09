@@ -2287,7 +2287,7 @@ STATIC int RsFillIfnum(unsigned int phyId, bool isAll, unsigned int *num, unsign
     int family, ret;
     *num = 0;
 
-    if (!isPeer) {
+    if (isPeer == 0) {
         type = RsGetDeviceType(phyId);
         CHK_PRT_RETURN(type == RS_HARDWARE_UNKNOWN, hccp_err("rs_get_device_type failed, type[%d]", type), -EINVAL);
     }
@@ -2303,7 +2303,7 @@ STATIC int RsFillIfnum(unsigned int phyId, bool isAll, unsigned int *num, unsign
         if ((family != AF_INET) && (family != AF_INET6)) {
             continue;
         }
-        if (!isPeer) {
+        if (isPeer == 0) {
             ret = RsCheckDstInterface(phyId, ifa->ifa_name, type, isAll);
             if (ret < 0) {
                 hccp_err("rs_check_dst_interface failed, ret[%d]", ret);

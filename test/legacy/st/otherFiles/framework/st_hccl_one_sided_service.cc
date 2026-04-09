@@ -128,8 +128,9 @@ TEST_F(HcclOneSidedServiceTest, test_ExchangeMemDesc)
     void *rdmaHandle = (void *)0x100;
     IpAddress ipAddress("1.0.0.0");
     Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    bool isRecvFirst = false;
     std::unique_ptr<UbMemTransport> transport =
-        make_unique<UbMemTransport>(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+        make_unique<UbMemTransport>(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     oneSidedServiceA.linkDataMap_.emplace(RankIdB, linkData1);
     MOCKER_CPP(&ConnectionsBuilder::BatchBuild).stubs().will(returnValue(0));
@@ -219,8 +220,9 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     void *rdmaHandle = (void *)0x100;
     IpAddress ipAddress("1.0.0.0");
     Socket fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    bool isRecvFirst = false;
     std::unique_ptr<UbMemTransport> transport =
-        make_unique<UbMemTransport>(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
+        make_unique<UbMemTransport>(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     transport->baseStatus = TransportStatus::READY;
 
     oneSidedServiceA.linkDataMap_.emplace(RankIdB, linkData1);

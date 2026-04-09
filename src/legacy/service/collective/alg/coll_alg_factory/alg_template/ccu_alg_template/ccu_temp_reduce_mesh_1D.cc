@@ -55,6 +55,9 @@ HcclResult CcuTempReduceMesh1D::CalcRes(AlgTempResReq &tempResReq)
 HcclResult CcuTempReduceMesh1D::GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, const ResLinks &tempLinks,
                    std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     buffInfo_ = templateDataParams.buffInfo;
     opMode_   = tempFuncs.opMode;
     CcuInstructionReduceMesh1D ccuIns;
@@ -72,9 +75,9 @@ HcclResult CcuTempReduceMesh1D::GenExtIns(const TempFuncs &tempFuncs, const Temp
     CHK_RET(GetToken(op_, token));
     uint64_t inputSliceStride   = templateDataParams.inputSliceStride;
     uint64_t outputSliceStride  = templateDataParams.outputSliceStride;
-    uint64_t repeatNum          = templateDataParams.repeatNum;
     uint64_t inputRepeatStride  = templateDataParams.inputRepeatStride;
     uint64_t outputRepeatStride = templateDataParams.outputRepeatStride;
+    uint64_t repeatNum          = templateDataParams.repeatNum;
     uint64_t normalSliceSize    = templateDataParams.sliceSize;
     uint64_t lastSliceSize      = templateDataParams.tailSize;
     uint64_t repeatNumVar       = UINT64_MAX - repeatNum;

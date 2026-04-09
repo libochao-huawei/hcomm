@@ -37,13 +37,13 @@ public:
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
+    ReduceOp reduceOp_;
+    DataType dataType_;
     HcclResult CalcSlice(const u64 dataSize, RankSliceInfo &sliceInfoVec);
     HcclResult GetStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
     HcclResult GetReduceScatterStepInfo(u32 step, NHRStepInfo &stepInfo);
     HcclResult GetAllGatherStepInfo(u32 step, u32 nSteps, NHRStepInfo &stepInfo);
     uint32_t virtRankId2RankId(const u32 virtRankId);
-    ReduceOp reduceOp_;
-    DataType dataType_;
 };
 
 } // namespace Hccl

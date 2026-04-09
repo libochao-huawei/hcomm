@@ -343,7 +343,7 @@ HcclResult ReduceScatterPlantLocalReduce::RunLocalReduce(u32 groupId, const MemB
     u32 dataUnitSize = DataUnitSize(dataType_);
     if (dataUnitSize == 0) {
         HCCL_ERROR("[ReduceScatterPlantLocalReduce][RunLocalReduce]data type[%s] out of range[%d, %d]",
-                GetDataTypeEnumStr(dataType_).c_str(), HCCL_DATA_TYPE_INT8, HCCL_DATA_TYPE_RESERVED - 1);
+                GetDataTypeEnumStr(dataType_).c_str(), HCCL_DATA_TYPE_INT8, static_cast<int>(HCCL_DATA_TYPE_RESERVED) - 1);
         return HCCL_E_INTERNAL;
     }
     u64 count = sliceSize / dataUnitSize;

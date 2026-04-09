@@ -41,14 +41,14 @@ public:
 
 class CcuTaskArgAllGatherMesh1D : public CcuTaskArg {
 public:
-    explicit CcuTaskArgAllGatherMesh1D(uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offSet,
+    explicit CcuTaskArgAllGatherMesh1D(uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offset,
         uint64_t token) :
-        inputAddr_(inputAddr), outputAddr_(outputAddr), sliceSize_(sliceSize), offSet_(offSet), token_(token) {}
+        inputAddr_(inputAddr), outputAddr_(outputAddr), sliceSize_(sliceSize), offset_(offset), token_(token) {}
 
     uint64_t inputAddr_;
     uint64_t outputAddr_;
     uint64_t sliceSize_;
-    uint64_t offSet_;
+    uint64_t offset_;
     uint64_t token_;
 };
 
@@ -58,7 +58,7 @@ public:
     {
     }
 
-    void Init(uint32_t rankId, uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offSet,
+    void Init(uint32_t rankId, uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offset,
         uint64_t token, CollAlgOperator &op, std::vector<std::vector<RankId>> &tempVTopo)
     {
         u32 maxDimNum = 1;
@@ -72,10 +72,15 @@ public:
         outputAddr_ = outputAddr;
         sliceSize_ = sliceSize;
         token_ = token;
-        offSet_ = offSet;
         op_ = op;
         tempVTopo_ = tempVTopo;
+        offset_ = offset;
         return;
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::string Describe() const override
@@ -85,12 +90,8 @@ public:
 
     CcuInstType GetInstType() const override
     {
+        HCCL_INFO("CcuInstructionAllGatherMesh1D instype is CCU_ALLGATHER_MESH_1D_DIRECT.");
         return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -100,7 +101,7 @@ public:
 
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override
     {
-        return std::make_unique<CcuTaskArgAllGatherMesh1D>(inputAddr_, outputAddr_, sliceSize_, offSet_, token_);
+        return std::make_unique<CcuTaskArgAllGatherMesh1D>(inputAddr_, outputAddr_, sliceSize_, offset_, token_);
     }
 
 private:
@@ -110,7 +111,7 @@ private:
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t sliceSize_{0};
-    uint64_t offSet_{0};
+    uint64_t offset_{0};
     uint64_t token_{0};
     CollAlgOperator op_;
     std::vector<std::vector<RankId>> tempVTopo_;

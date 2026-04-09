@@ -20,8 +20,16 @@ public:
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
 
+    uint16_t GetSrcId() { return src.Id(); }
+    uint16_t GetDstAddrId() { return dst.addr.Id(); }
+    uint16_t GetDstTokenId() { return dst.token.Id(); }
+    uint16_t GetLenId() { return len.Id(); }
+    uint16_t GetSemId() { return sem.Id(); }
+    uint32_t GetMask() { return mask; }
+    uint32_t GetChannelId() { return channelId; }
 private:
     ChannelHandle channel;
+    uint32_t channelId{0};
 
     CcuBuf src;
     RemoteAddr    dst;

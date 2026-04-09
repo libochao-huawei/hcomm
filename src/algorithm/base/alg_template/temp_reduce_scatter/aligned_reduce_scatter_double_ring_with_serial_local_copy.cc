@@ -308,17 +308,18 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::RunReduceScatter(c
     return HCCL_SUCCESS;
 }
 
-HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::GetActiveSubstreamNum(u32 &activeSubstreamNum)
+HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::GetActiveSubstreamNumWithSerial(u32 &activeSubstreamNum)
 {
+    constexpr u32 IDX_2 = 2;
     activeSubstreamNum = subStreams_.size();
     if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
-        if (subStreams_.size() <= 2) {
-            HCCL_ERROR("[GetActiveSubstreamNum]subStreams_.size()[%zu] <= 2",
+        if (subStreams_.size() <= IDX_2) {
+            HCCL_ERROR("[GetActiveSubstreamNumWithSerial]subStreams_.size()[%zu] <= 2",
                 subStreams_.size());
             return HCCL_E_PARA;
         }
         if (disableDMAReduce_) {
-            activeSubstreamNum = subStreams_.size() - 2;
+            activeSubstreamNum = subStreams_.size() - IDX_2;
         } else {
             activeSubstreamNum = subStreams_.size() - 1;
         }
@@ -332,7 +333,7 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::ExecEmptyTasks()
 {
     HCCL_DEBUG("[AlignedReduceScatterDoubleRingWithSerialLocalCopy] ExecEmptyTasks");
     u32 activeSubstreamNum = 0;
-    CHK_RET(GetActiveSubstreamNum(activeSubstreamNum));
+    CHK_RET(GetActiveSubstreamNumWithSerial(activeSubstreamNum));
     for (u32 signalIndex = 0; signalIndex < activeSubstreamNum; signalIndex++) {
         CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem_, outputMem_, subStreams_[signalIndex], dispatcher_));
     }
@@ -344,7 +345,7 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::MainRecordSub()
 {
     HCCL_DEBUG("[AlignedReduceScatterDoubleRingWithSerialLocalCopy] MainRecordSub");
     u32 activeSubstreamNum = 0;
-    CHK_RET(GetActiveSubstreamNum(activeSubstreamNum));
+    CHK_RET(GetActiveSubstreamNumWithSerial(activeSubstreamNum));
     for (u32 signalIndex = 0; signalIndex < activeSubstreamNum; signalIndex++) {
         CHK_RET(LocalNotify::Post(stream_, dispatcher_, subSignals_[signalIndex],
             profilerInput_.stage));
@@ -356,7 +357,7 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::SubWaitMain()
 {
     HCCL_DEBUG("[AlignedReduceScatterDoubleRingWithSerialLocalCopy] SubWaitMain");
     u32 activeSubstreamNum = 0;
-    CHK_RET(GetActiveSubstreamNum(activeSubstreamNum));
+    CHK_RET(GetActiveSubstreamNumWithSerial(activeSubstreamNum));
     for (u32 streamIndex = 0; streamIndex < activeSubstreamNum; streamIndex++) {
         CHK_RET(LocalNotify::Wait(subStreams_[streamIndex], dispatcher_, subSignals_[streamIndex],
             profilerInput_.stage));
@@ -368,7 +369,7 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::MainWaitSub()
 {
     HCCL_DEBUG("[AlignedReduceScatterDoubleRingWithSerialLocalCopy] MainWaitSub");
     u32 activeSubstreamNum = 0;
-    CHK_RET(GetActiveSubstreamNum(activeSubstreamNum));
+    CHK_RET(GetActiveSubstreamNumWithSerial(activeSubstreamNum));
     for (u32 signalIndex = 0; signalIndex < activeSubstreamNum; signalIndex++) {
         CHK_RET(LocalNotify::Wait(stream_, dispatcher_, mainSignals_[signalIndex], profilerInput_.stage));
     }
@@ -379,7 +380,7 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::SubRecordMain()
 {
     HCCL_DEBUG("[AlignedReduceScatterDoubleRingWithSerialLocalCopy] SubRecordMain");
     u32 activeSubstreamNum = 0;
-    CHK_RET(GetActiveSubstreamNum(activeSubstreamNum));
+    CHK_RET(GetActiveSubstreamNumWithSerial(activeSubstreamNum));
     for (u32 streamIndex = 0; streamIndex < activeSubstreamNum; streamIndex++) {
         CHK_RET(LocalNotify::Post(subStreams_[streamIndex], dispatcher_, mainSignals_[streamIndex],
             profilerInput_.stage));

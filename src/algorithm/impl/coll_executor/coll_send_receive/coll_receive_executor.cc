@@ -130,7 +130,7 @@ HcclResult CollReceiveExecutor::RunLoop(OpParam &param, AlgResourceResponse &alg
         HCCL_DEBUG("RecvOutPlace:curOutputPtr[%p], curCount[%llu], curSize[%llu]", curOutputPtr, curCount, curSize);
 
         if(topoAttr_.deviceType != DevType::DEV_TYPE_910_93 || topoAttr_.isDiffDeviceType ||
-            (topoAttr_.superPodNum > 1 || (topoAttr_.moduleNum > 1 && topoMatcher_->GetExternalInputInterHccsDisable()))) {
+            (topoAttr_.superPodNum > 1 || (topoAttr_.moduleNum > 1 && static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable())))) {
             // 非A3场景不做DMA消减；A3的RDMA场景，也不做DMA消减
             DeviceMem outCommMem(algRes.cclOutputMem.ptr(), curSize);
             DeviceMem outMem(curOutputPtr, curSize);

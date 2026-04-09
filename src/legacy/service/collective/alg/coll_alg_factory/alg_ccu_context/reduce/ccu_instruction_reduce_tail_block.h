@@ -71,19 +71,20 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionReduceTailBlock instype is CCU_REDUCE_TAILBLOCK_DIRECT.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionReduceTailBlock");
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override

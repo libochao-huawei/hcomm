@@ -45,8 +45,10 @@ void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbase
     bool isAiCpu = false;
     // 新老流程判断
     if (opInfo->isIndop_ == true) {
-        // 暂时默认true
-        isAiCpu = true;
+        if (opInfo->engine == COMM_ENGINE_AICPU_TS || opInfo->engine == COMM_ENGINE_AICPU) {
+            HCCL_INFO("[ProfilingReporter][ReportOp] ReportOp Aicpu,opInfo->engine:[%d]", opInfo->engine);
+            isAiCpu = true;
+        }
     } else {
         CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);
         CHECK_NULLPTR(commImp, "[]commImp is nullptr!");
@@ -74,7 +76,7 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
     HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks start.");
     std::lock_guard<std::mutex> lock(profMutex);
     s32 deviceLogicId = HrtGetDevice();
-    if (deviceLogicId >= (s32)MAX_MODULE_DEVICE_NUM || deviceLogicId < 0) {
+    if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
         HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
         return;
     }
@@ -134,7 +136,7 @@ void ProfilingReporter::UpdateProfStat(void)
     if (enableHcclL1_ != newEnableHcclL1) {
         enableHcclL1_ = newEnableHcclL1;
         s32 deviceLogicId = HrtGetDevice();
-        if (deviceLogicId >= (s32)MAX_MODULE_DEVICE_NUM || deviceLogicId < 0) {
+        if (deviceLogicId >= static_cast<s32>(MAX_MODULE_DEVICE_NUM) || deviceLogicId < 0) {
             HCCL_ERROR("[ProfilingReporter][ReportAllTasks] deviceLogicId[%d] out of range", deviceLogicId);
             return;
         }

@@ -96,7 +96,7 @@ TEST_F(TaskExceptionHandlerLiteTest, test_process_when_task_more_than_50)
     dfxOpInfo->op_.dataCount = 0xff;
     dfxOpInfo->op_.reduceOp = ReduceOp::MAX;
     dfxOpInfo->op_.dataType = DataType::FP8E4M3;
-    dfxOpInfo->algType_ = AlgType::BINARY_HD;
+    dfxOpInfo->algType_ = AlgType{AlgType::BINARY_HD}.Describe();
     dfxOpInfo->op_.inputMem = make_shared<Buffer>(0x111122223333, 0);
     dfxOpInfo->op_.outputMem = make_shared<Buffer>(0xaaaabbbbcccc, 0);
     CommunicatorImplLite communicator{0};    // Mock CommunicatorImpl

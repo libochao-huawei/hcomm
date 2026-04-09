@@ -58,6 +58,12 @@ SelectorStatus AutoSelectorBase::Select(const CollAlgOperator &op, CollAlgParams
                SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
     }
     if (IsStarsState(params.opExecuteConfig)) {
+        // level0是PCIE混合的场景，且CLOS规模大于8，选择AIV_ONLY算法
+        if (topoInfo.level0PcieMix && topoInfo.level0BigClosRange) {
+            params.opExecuteConfig.accState = AcceleratorState::AIV_ONLY;
+            return (op.opType == OpType::BARRIER) ? SelectorStatus::NOT_MATCH :
+                SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+        }
         ret = SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
         if ((ret == SelectorStatus::MATCH)&&(params.opExecuteConfig.accState == AcceleratorState::CCU_FALLBACK)) {
             params.opExecuteConfig.accState = AcceleratorState::AICPU_TS;

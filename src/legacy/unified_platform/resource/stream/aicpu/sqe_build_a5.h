@@ -17,6 +17,9 @@ namespace Hccl {
 // 普通notify的record
 void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn);
 
+// 普通notify的wait (带timeout参数)
+void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, uint8_t * const sqeIn);
+
 // 普通notify的wait
 void BuildA5SqeNotifyRecord(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn);
 
@@ -45,6 +48,9 @@ void BuildA5SqeCCoreNotifyWait(u32 streamId, u32 taskId, u64 waitAddr, u64 actAd
 
 // CCore notify的record
 void BuildA5SqeCCoreNotifyRecord(u32 streamId, u32 taskId, u64 writeAddr, u64 valueAddr, uint8_t * const sqeIn);
+
+// P2P的WriteValue
+void BuildA5SqeP2pWriteValue(u32 streamId, u32 taskId, u64 remoteAddr, u32 writeValue, uint8_t * const sqeIn);
 
 u32 GetKernelExecTimeoutFromEnvConfig();
 

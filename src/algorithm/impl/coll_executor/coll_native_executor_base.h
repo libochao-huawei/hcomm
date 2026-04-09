@@ -108,7 +108,7 @@ protected:
         std::vector<Stream> &streams,
         u32 recordStreamNum, u32 waitStreamNum,
         std::vector<Stream> &recordStreams, std::vector<Stream> &waitStreams);
-    HcclResult HoldAllRanksOnCurrentOp(OpParam &param, ExecMem &execMem, PrepareData &prepareData, std::vector<LINK> links);
+    HcclResult HoldAllRanksOnCurrentOp(const OpParam &param, ExecMem &execMem, PrepareData &prepareData, std::vector<LINK> links);
     HcclResult HoldAllRanksOnCurrentOpWithSingleStream(OpParam &param, ExecMem &execMem, std::vector<LINK> links);
     HcclResult SendRecvSignalOnLinks(OpParam &param, ExecMem &execMem, std::vector<LINK> links);
     bool OpSyncCheckCommSize(const CommPlane levelIndex, const u32 expectedSize);

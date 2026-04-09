@@ -20,8 +20,8 @@ class BatchSendRecvOperator : public CollAlgOperator {
 public:
     BatchSendRecvOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~BatchSendRecvOperator();
-    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag);
+    ~BatchSendRecvOperator() override;
+    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag) override;
 };
 }
 #endif /** __BATCHSENDRECV_OPERATOR_H__ */

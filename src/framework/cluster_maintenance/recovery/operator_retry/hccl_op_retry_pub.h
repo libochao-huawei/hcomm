@@ -235,7 +235,16 @@ struct OpRetryAgentInfo {
     HcclNetDevCtx netDevCtx;
     HcclNetDevCtx backUpNetDevCtx;
 };
+
+typedef enum {
+    RETRY_INFO_CMD = 1,
+    RETRY_COMMAND_INFO_CMD,
+    LINK_PORT_STATUS_CMD,
+    ACTIVE_SWITCH_INFO_CMD,
+} RetryStructCommand;
+
 struct RetryInfo {
+    u32 cmd = RETRY_INFO_CMD;
     u32 rankId = 0;
     RetryState retryState = RETRY_STATE_RESERVED; // 重执行状态机当前状态
     bool linkState = true; // 预留, link状态
@@ -245,6 +254,7 @@ struct RetryInfo {
     bool isNeedReportOpRetryErr = false; // 针对重执行算子不一致和inplace场景，上报故障
 };
 struct RetryCommandInfo{
+    u32 cmd = RETRY_COMMAND_INFO_CMD;
     RetryCommand command;
     HcclOpIdentifier opId;
 };

@@ -20,7 +20,7 @@ namespace Hccl {
 
 MAKE_ENUM(SocketStatus, INIT, LISTEN_STARTING, LISTENING, CONNECT_STARTING, CONNECTING, SENDING, RECVING, OK, TIMEOUT)
 
-MAKE_ENUM(NicType, DEVICE_NIC_TYPE, HOST_NIC_TYPE)
+MAKE_ENUM(NicType, DEVICE_NIC_TYPE, HOST_NIC_TYPE, DEVICE_VNIC_TYPE)
 
 using FdHandle = void *;
 class Socket {
@@ -55,6 +55,11 @@ public:
     
     bool Listen(u32 &port);
     bool ISend(void *data, u64 size, u64& compSize) const;
+
+    bool IsListen() const
+    {
+        return isListening;
+    }
 
     SocketStatus GetAsyncStatus();
 

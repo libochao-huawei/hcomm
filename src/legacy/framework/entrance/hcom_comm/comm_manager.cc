@@ -469,6 +469,33 @@ HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcomGetCommV2(void **commV2)
+{
+    CHK_PTR_NULL(commV2);
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    CHK_PTR_NULL(hcomCommInfoV2.pComm);
+    *commV2 = static_cast<void *>(hcomCommInfoV2.pComm.get());
+    HCCL_INFO("[HcomGetCommV2] success.");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2)
+{
+    HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
+    auto iter = hcomCommInfoV2.hcclGroupMap.find(group);
+    if (iter == hcomCommInfoV2.hcclGroupMap.end()) {
+        HCCL_ERROR("[HcomGetGroupParamsV2] group[%s] not found", group);
+        return HCCL_E_PARA;
+    }
+    HcclGroupParamsV2 &groupParamsV2 = iter->second;
+    HcclGroupParamsV2 *groupParamsTem = static_cast<HcclGroupParamsV2*>(groupParams);
+    *groupParamsTem = groupParamsV2;
+    CHK_PTR_NULL(groupParamsV2.pComm);
+    *commV2 = static_cast<Hccl::HcclCommunicator*>(groupParamsV2.pComm.get());
+    HCCL_INFO("[HcomGetGroupParamsV2] success. group[%s]", group);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomDestroyV2(void)
 {
     HcclCommInfoV2 &hcomCommInfoV2 = GetCommInfoV2();
@@ -520,7 +547,7 @@ static HcclResult GetRankTableInfo(const char *rankTablePath, std::string &rankt
 HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
 {
     // 待解决：目前主要为了芯片验证，非最终版本
-    HCCL_RUN_INFO("Entry-HcomInitByFile V910_95, ranktable[%s], identify[%s]", rankTablePath, identify);
+    HCCL_RUN_INFO("Entry-HcomInitByFile V950, ranktable[%s], identify[%s]", rankTablePath, identify);
     
     // 解析myRank
     s32 myRank;
@@ -583,7 +610,7 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
 HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
 {
     // 待解决：目前主要为了芯片验证，非最终版本
-    HCCL_RUN_INFO("Entry-HcomInitByString V910_95, rankTableM[%s], identify[%s]", rankTableM, identify);
+    HCCL_RUN_INFO("Entry-HcomInitByString V950, rankTableM[%s], identify[%s]", rankTableM, identify);
     
     // 解析myRank
     s32 myRank;

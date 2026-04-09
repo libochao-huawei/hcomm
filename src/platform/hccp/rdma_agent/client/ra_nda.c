@@ -28,3 +28,29 @@ HCCP_ATTRI_VISI_DEF int RaNdaGetDirectFlag(void *rdmaHandle, int *directFlag)
     ret = RaPeerNdaGetDirectFlag(rdevHandleTmp, directFlag);
     return ConverReturnCode(RDMA_OP, ret);
 }
+
+HCCP_ATTRI_VISI_DEF int RaNdaCqCreate(void *rdmaHandle, struct NdaCqInitAttr *attr, struct NdaCqInfo *info,
+    void **cqHandle)
+{
+    struct RaRdmaHandle *rdevHandleTmp = (struct RaRdmaHandle *)rdmaHandle;
+    int ret = 0;
+
+    CHK_PRT_RETURN(rdmaHandle == NULL || attr == NULL || info == NULL || cqHandle == NULL,
+        hccp_err("[create][RaNdaCq]rdmaHandle or attr or info or cqHandle is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = RaPeerNdaCqCreate(rdevHandleTmp, attr, info, cqHandle);
+    return ConverReturnCode(RDMA_OP, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int RaNdaCqDestroy(void *rdmaHandle, void *cqHandle)
+{
+    struct RaRdmaHandle *rdevHandleTmp = (struct RaRdmaHandle *)rdmaHandle;
+    int ret = 0;
+
+    CHK_PRT_RETURN(rdmaHandle == NULL || cqHandle == NULL,
+        hccp_err("[destroy][RaNdaCq]rdmaHandle or cqHandle is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+    
+    ret = RaPeerNdaCqDestroy(rdevHandleTmp, cqHandle);
+    return ConverReturnCode(RDMA_OP, ret);
+}

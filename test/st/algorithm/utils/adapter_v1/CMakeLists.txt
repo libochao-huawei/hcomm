@@ -10,15 +10,15 @@ set(adaption_to_test_list
     ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/slog_stub.cc
     ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/network_manager_stub.cc
     ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/error_manager_stub.cpp
-    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/hccl_aiv_stub.cc
+    # ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/hccl_aiv_stub.cc
     ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/sal_stub.cc
 
     # #aiv业务代码
-    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_base_stub.cc
-    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_copy_stub.cc
-    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_memory_stub.cc
-    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_sync_stub.cc
-    ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/sync_interface.cc
+    # ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_base_stub.cc
+    # ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_copy_stub.cc
+    # ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_memory_stub.cc
+    # ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/aiv_sync_stub.cc
+    # ${HCOMM_ALG_UTILS_ROOT}/adapter_v1/aiv/sync_interface.cc
 
     ${HCOMM_CODE_PLATFORM}/resource/mem/mem_host.cc
     ${HCOMM_CODE_PLATFORM}/resource/mem/mem_device.cc

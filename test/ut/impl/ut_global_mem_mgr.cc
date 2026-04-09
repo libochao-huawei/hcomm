@@ -198,3 +198,24 @@ TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_backupInit)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
+
+HcclResult hrtGetDeviceRefreshForTest(s32* deviceLogicID)
+{
+    *deviceLogicID = 0;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(GlobalMemMgrTest, Ut_GlobalMemMgr_InicNic_When_Normal_Expect_Success)
+{
+    MOCKER(hrtGetDeviceRefresh).stubs().will(invoke(hrtGetDeviceRefreshForTest));
+    MOCKER(HcclNetInit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcclNetDeInit).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = GlobalMemRegMgr::GetInstance().InitNic();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = GlobalMemRegMgr::GetInstance().DeInitNic();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}

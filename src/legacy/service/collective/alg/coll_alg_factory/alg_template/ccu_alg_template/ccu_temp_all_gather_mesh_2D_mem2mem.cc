@@ -99,12 +99,7 @@ HcclResult CcuTempAllGatherMeshMem2Mem2D::GenExtIns(const TempFuncs &tempFuncs,
 
     RankGroup rankGroupX;
     RankGroup rankGroupY;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroupX.AddRank(peer);
-    }
-    for (auto &peer : tempVTopo_[1]) {
-        rankGroupY.AddRank(peer);
-    }
+    AddRanksToGroup(tempVTopo_,rankGroupX,rankGroupY);
 
     uint64_t inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
     uint64_t outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;

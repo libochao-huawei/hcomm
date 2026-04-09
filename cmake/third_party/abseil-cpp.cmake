@@ -24,16 +24,16 @@ else()
     # 下载
     message(STATUS "[ThirdParty] Downloading ${ABSEIL_NAME} from ${ABSEIL_URL}")
     set(ABSEIL_PROJECT_URL ${ABSEIL_URL})
-
-    include(ExternalProject)
-    ExternalProject_Add(third_party_abseil_cpp
-        URL ${ABSEIL_PROJECT_URL}
-        URL_HASH SHA256=16242f394245627e508ec6bb296b433c90f8d914f73b9c026fddb905e27276e8
-        DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
-        DOWNLOAD_NO_PROGRESS TRUE
-        DOWNLOAD_NO_EXTRACT TRUE    # 仅下载，不解压
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-    )
 endif()
+
+include(ExternalProject)
+ExternalProject_Add(third_party_abseil_cpp
+    URL ${ABSEIL_PROJECT_URL}
+    URL_HASH SHA256=16242f394245627e508ec6bb296b433c90f8d914f73b9c026fddb905e27276e8
+    DOWNLOAD_DIR ${CANN_3RD_LIB_PATH}
+    DOWNLOAD_NO_PROGRESS TRUE
+    DOWNLOAD_NO_EXTRACT TRUE    # 仅下载，不解压
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)

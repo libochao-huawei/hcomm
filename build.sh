@@ -37,16 +37,8 @@ BUILD_CB_TEST="false"
 
 ENABLE_UT="off"
 ENABLE_ST="off"
+ENABLE_GCOV="off"
 CMAKE_BUILD_TYPE="Debug"
-HCOMM_LIB_NAME="libhcomm.so"
-INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
-ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
-DPU_INSTALL_PATH="opp/built-in/op_impl/dpu"
-DPU_JSON="<file value=\"libccl_dpu.json\"/>"
-DPU_LIB="<file value=\"libccl_dpu.so\" file_type=\"shared\" install_softlink=\"\$(TARGET_ENV)/lib64/libccl_dpu.so\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -81,6 +73,13 @@ function clean()
     mkdir -p ${BUILD_DIR}
 }
 
+function rmdir()
+{
+    if [ "${DO_NOT_CLEAN}" = "false" ] && [ $# -gt 0 ]; then
+        rm -rf "$@"
+    fi
+}
+
 function cmake_config()
 {
     local extra_option="$1"
@@ -103,7 +102,7 @@ function build_package(){
 function build_device(){
     cmake_config
     log "Info: build_device"
-    TARGET_LIST="hccp_service.bin rs ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom"
+    TARGET_LIST="hccp_service.bin rs net_co ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json aicpu_custom"
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
@@ -181,6 +180,48 @@ function build_test() {
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
         && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
     fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_aicpu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_aicpu_2d_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/aicpu_2d_testcase/legacy_alg_aicpu_2d_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_hf16p_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_1d_hf16p_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_hf16p_testcase/legacy_alg_ccu_1d_hf16p_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part1" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_1d_testcase_part1
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part1/legacy_alg_ccu_1d_testcase_part1
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part2" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_1d_testcase_part2
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part2/legacy_alg_ccu_1d_testcase_part2
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_alg_ccu_reduce" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_ccu_reduce
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_reduce_testcase/legacy_alg_ccu_reduce
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_function_ut_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_function_ut_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/function_ut_testcase/legacy_alg_function_ut_testcase
+    fi
+
+    if [ "${TEST_TASK_NAME}" == "legacy_alg_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
+        build legacy_alg_testcase
+        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
+        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/legacy_alg_testcase/legacy_alg_testcase
+    fi
 }
 
 function build_kernel() {
@@ -201,16 +242,24 @@ function build_ut() {
   mk_dir ${OUTPUT_PATH}
   mk_dir "${BUILD_DIR}"
   local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
+  local log_dir="${OUTPUT_PATH}/ut_logs" && mk_dir "${log_dir}"
   cd "${BUILD_DIR}"
   unset LD_LIBRARY_PATH
 
-  local LLT_KILL_TIME=1200
+  local BUILD_JOBS
+  if [ "${CPU_NUM}" -ge 8 ]; then
+    BUILD_JOBS=$((CPU_NUM-1))
+  else
+    BUILD_JOBS=8
+  fi
+
+  local LLT_KILL_TIME=200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
               -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
               -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
               -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-              -DENABLE_COV=${ENABLE_COV} \
+              -DENABLE_GCOV=${ENABLE_GCOV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
@@ -223,8 +272,8 @@ function build_ut() {
     return 1
   fi
 
-  # make all
-  cmake --build . -j${CPU_NUM}
+  echo "Building all test targets..."
+  cmake --build . -j${BUILD_JOBS}
   run_ret=${PIPESTATUS[0]}
   echo "exit code: ${run_ret}"
   if [ "${run_ret}" -eq 137 ]
@@ -232,24 +281,51 @@ function build_ut() {
       echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
       exit 1
   fi
-  if [ $? -ne 0 ]; then
-    echo "execute command: make -j${THREAD_NUM} failed."
+  if [ "${run_ret}" -ne 0 ]; then
+    echo "execute command: cmake --build . -j${BUILD_JOBS} failed."
     return 1
   fi
   echo "build success!"
+
+  echo "Running tests with CTest (parallel jobs: ${BUILD_JOBS})..."
+
+  local ctest_log="${log_dir}/ctest_output.log"
+  local ctest_summary="${log_dir}/ctest_summary.log"
+
+  ctest -j ${BUILD_JOBS} \
+        --build-nocmake \
+        --timeout ${LLT_KILL_TIME} \
+        --output-on-failure \
+        --stop-on-failure \
+        --test-output-size-failed 10000000 \
+        -O "${ctest_log}" \
+        2>&1 | tee "${ctest_summary}"
+  
+  local ctest_ret=${PIPESTATUS[0]}
+  
+  if [ "${ctest_ret}" -eq 137 ]; then
+      echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
+      exit 1
+  fi
+  
+  if [ "${ctest_ret}" -ne 0 ]; then
+    echo "CTest execution failed. See logs in ${log_dir}"
+    return 1
+  fi
+  
+  echo "Build and tests completed successfully!"
+  echo "Test logs saved in: ${log_dir}"
 }
 
 function make_ut_gov() {
-  if [[ "X$ENABLE_UT" = "Xon" || "X$ENABLE_COV" = "Xon" ]]; then
+  if [[ "X$ENABLE_UT" = "Xon" && "X$ENABLE_GCOV" = "Xon" ]]; then
     echo "Generated coverage statistics, please wait..."
     cd ${CURRENT_DIR}
     rm -rf ${CURRENT_DIR}/cov
     mkdir -p ${CURRENT_DIR}/cov
-    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/all.info
-    lcov -r cov/all.info */src/platform/hccp/external_depends/* -o cov/tmp.info
-    lcov -e cov/all.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
-    # LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
-    # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${CANN_3RD_LIB_PATH}/*" -o cov/coverage.info
+    lcov -c -d ${BUILD_DIR}/test/ut/ -d ${BUILD_DIR}/test/legacy/ut/ -o cov/coverage.info
+    lcov -r cov/coverage.info */src/platform/hccp/external_depends/* -o cov/coverage.info
+    lcov -e cov/coverage.info */src/algorithm/* */src/common/* */src/hccd/* */src/legacy/* */src/framework/* */src/platform/* */src/pub_inc/* -o cov/coverage.info
 
     cd ${CURRENT_DIR}/cov
     genhtml coverage.info
@@ -268,67 +344,6 @@ function run_ut() {
   else
     echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
   fi
-}
-
-function xml_add_orion_so() {
-    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
-        echo "error:file $INSTALL_XML_FILE not exist."
-        exit 1
-    fi
-
-    strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO" "$ORION_AIV_OP")
-    dpu_json_string="$DPU_JSON"
-    dpu_lib_string="$DPU_LIB"
-    not_found=()
-    for str in "${strings[@]}"; do
-        if ! grep -q "$str" "$INSTALL_XML_FILE"; then
-            not_found+=("$str")
-        fi
-    done
-
-    if [[ ${#not_found[@]} -eq 0 ]]; then
-        echo "orion lib has been existed in $INSTALL_XML_FILE"
-        return
-    fi
-
-    insert_content=""
-    for str in "${not_found[@]}"; do
-        insert_content+="$str"$'
-        '
-    done
-
-    temp_file=$(mktemp)
-    while IFS= read -r line; do
-        echo "$line" >> "$temp_file"
-        if [[ "$line" == *"$HCOMM_LIB_NAME"* ]]; then
-            echo "$insert_content" >> "$temp_file"
-        fi
-
-        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"json"* ]]; then
-            echo "$dpu_json_string" >> "$temp_file"
-        fi
-
-        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"lib64"* ]]; then
-            echo "$dpu_lib_string" >> "$temp_file"
-        fi
-    done < "$INSTALL_XML_FILE"
-    mv "$temp_file" "$INSTALL_XML_FILE"
-}
-
-function xml_delete_orion_so() {
-    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
-        echo "error:file $INSTALL_XML_FILE not exist."
-        exit 1
-    fi
-
-    temp_file=$(mktemp)
-    while IFS= read -r line; do
-        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* ||
-            "$line" == *"$ORION_AIV_OP"* || "$line" == *"$DPU_JSON"* || "$line" == *"$DPU_LIB"* ]]; then
-            echo "$line" >> "$temp_file"
-        fi
-    done < "$INSTALL_XML_FILE"
-    mv "$temp_file" "$INSTALL_XML_FILE"
 }
 
 # print usage message
@@ -423,6 +438,46 @@ while [[ $# -gt 0 ]]; do
         TEST_TASK_NAME="executor_pipeline_hccl_test"
         shift
         ;;
+    --legacy_all_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_all_testcase"
+        shift
+        ;;
+    --legacy_aicpu_2d_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_aicpu_2d_testcase"
+        shift
+        ;;
+    --legacy_ccu_1d_hf16p_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_hf16p_testcase"
+        shift
+        ;;
+    --legacy_ccu_1d_testcase_part1)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_testcase_part1"
+        shift
+        ;;
+    --legacy_ccu_1d_testcase_part2)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_ccu_1d_testcase_part2"
+        shift
+        ;;
+    --legacy_alg_ccu_reduce)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_alg_ccu_reduce"
+        shift
+        ;;
+    --legacy_function_ut_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_function_ut_testcase"
+        shift
+        ;;
+    --legacy_alg_testcase)
+        TEST="partial"
+        TEST_TASK_NAME="legacy_alg_testcase"
+        shift
+        ;;
     --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
         KERNEL="true"
         shift
@@ -440,6 +495,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --cov)
+        ENABLE_GCOV="on"
         COV="true"
         shift
         ;;
@@ -491,10 +547,14 @@ fi
 
 if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=OFF"
 fi
 
 if [ "${BUILD_AARCH}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=OFF"
 fi
 
 if [ "${ASAN}" == "true" ];then
@@ -542,7 +602,7 @@ cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
-    # make_ut_gov
+    make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
 elif [ "${KERNEL}" == "true" ]; then
@@ -577,7 +637,7 @@ elif [ "${FULL_MODE}" == "true" ]; then
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
+    rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}
@@ -588,5 +648,5 @@ else
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR}
+    rmdir ${BUILD_DEVICE_DIR}
 fi

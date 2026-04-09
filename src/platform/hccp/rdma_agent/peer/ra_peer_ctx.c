@@ -383,6 +383,67 @@ int RaPeerCtxQpDestroy(struct RaCtxQpHandle *qpHandle)
     return ret;
 }
 
+int RaPeerCtxGetTpInfoList(struct RaCtxHandle *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
+    unsigned int *num)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetTpInfoList(&devInfo, cfg, infoList, num);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[get][RaTpInfo]RsGetTpInfoList failed, ret[%d] phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+    }
+
+    return ret;
+}
+
+int RaPeerCtxGetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsGetTpAttr(&devInfo, attrBitmap, tpHandle, attr);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[get][RaTpAttr]RsGetTpAttr failed, ret[%d] phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+    }
+
+    return ret;
+}
+
+int RaPeerCtxSetTpAttr(struct RaCtxHandle *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr)
+{
+    unsigned int phyId = ctxHandle->attr.phyId;
+    struct RaRsDevInfo devInfo = {0};
+    int ret = 0;
+
+    RaRsSetDevInfo(&devInfo, phyId, ctxHandle->devIndex);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsSetTpAttr(&devInfo, attrBitmap, tpHandle, attr);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[set][RaTpAttr]RsSetTpAttr failed, ret[%d] phyId[%u] devIndex[0x%x]",
+            ret, phyId, ctxHandle->devIndex);
+    }
+
+    return ret;
+}
+
 STATIC void RaPeerPrepareQpImport(struct QpImportInfoT *qpInfo, struct RsJettyImportAttr *importAttr)
 {
     struct RaRsJettyImportAttr *raRsImportAttr = NULL;

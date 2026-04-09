@@ -33,6 +33,12 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 |   │   ├── base                      # 通信算法模板
 |   │   ├── impl                      # 通信算法实现
 |   │   └── pub_inc                   # 通信算法模块头文件
+│   ├── commom                        # 公共基础功能目录
+|   │   ├── debug                     # 调试配置管理
+|   │   ├── error_code                # 错误码管理
+|   │   ├── health                    # 健康检查与一致性校验
+|   │   ├── launch_device             # kernel加载处理
+|   │   └── stream                    # 流管理工具
 │   ├── framework                     # 通信框架源码目录
 |   │   ├── cluster_maintenance       # 集群维护，包括：快照、心跳、算子重执行等
 |   │   ├── common                    # 通信框架通用逻辑
@@ -42,6 +48,15 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 |   │   ├── inc                       # 通信框架模块头文件
 |   │   ├── nslbdp                    # 数据面网络负载均衡
 |   │   └── op_base                   # 通信域、单算子接口入口
+│   ├── hccd                          # 提供进程间点对点通信能力
+│   ├── legacy                        # 历史版本兼容目录
+|   │   ├── common                    # 公共基础组件
+|   │   ├── framework                 # 框架核心实现
+|   │   ├── include                   # 公共接口头文件
+|   │   ├── interface                 # 接口适配层
+|   │   ├── local_build               # 本地构建工具
+|   │   ├── service                   # 服务层
+|   │   └── unified_platform          # 统一平台层
 │   └── platform                      # 通信平台源码目录
 |   │   ├── comm_primitive            # 通信原语
 |   │   ├── common                    # 通信平台通用逻辑
@@ -51,6 +66,10 @@ HCOMM通信基础库采用分层解耦的设计思路，将通信能力划分为
 |   │   ├── ping_mesh                 # 网络探测功能
 |   │   ├── resource                  # 通信资源管理
 |   │   └── task                      # 下发任务管理
+│   ├── pub_inc                       # 公共接口头文件目录
+|   │   ├── aicpu                     # AICPU 专用接口
+|   │   ├── inner                     # 内部实现专用接口
+|   │   └── new                       # 新架构下的公共接口
 ├── python                            # Python 包
 ├── include                           # 对外头文件
 ├── pkg_inc                           # 包间接口头文件

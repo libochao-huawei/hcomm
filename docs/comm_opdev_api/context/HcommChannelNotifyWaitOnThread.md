@@ -29,7 +29,7 @@
 ## 函数原型<a name="section62999330"></a>
 
 ```
-int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut)
 ```
 
 ## 参数说明<a name="section2672115"></a>
@@ -67,7 +67,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
 <p id="p262361016478"><a name="p262361016478"></a><a name="p262361016478"></a>取值范围：[0, <a href="HcclChannelAcquire.md">HcclChannelAcquire</a>接口传入的channelDescs参数中的notifyNum)。</p>
 </td>
 </tr>
-<tr id="row175001219470"><td class="cellrowborder" valign="top" width="20.200000000000003%" headers="mcps1.1.4.1.1 "><p id="p417896134720"><a name="p417896134720"></a><a name="p417896134720"></a>timeout</p>
+<tr id="row175001219470"><td class="cellrowborder" valign="top" width="20.200000000000003%" headers="mcps1.1.4.1.1 "><p id="p417896134720"><a name="p417896134720"></a><a name="p417896134720"></a>timeOut</p>
 </td>
 <td class="cellrowborder" valign="top" width="17.169999999999998%" headers="mcps1.1.4.1.2 "><p id="p12877275471"><a name="p12877275471"></a><a name="p12877275471"></a>输入</p>
 </td>

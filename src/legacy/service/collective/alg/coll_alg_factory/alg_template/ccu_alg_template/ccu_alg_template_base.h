@@ -13,6 +13,7 @@
 
 #include "const_val.h"
 #include "template_utils.h"
+#include "ccu_rank_group.h"
 #include "instruction.h"
 #include "ins_queue.h"
 #include "coll_operator.h"
@@ -45,6 +46,7 @@ public:
     virtual  u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType);
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
     virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
+    virtual HcclResult AddRanksToGroup(const std::vector<std::vector<RankId>> &tempVTopo, RankGroup &rankGroupX, RankGroup &rankGroupY) const;
 
     void SetCollOp(const CollAlgOperator &op);
     void SetDmaMode(const DmaMode dmaMode);

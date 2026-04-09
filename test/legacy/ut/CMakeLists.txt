@@ -22,7 +22,7 @@ add_executable(hccl_v2_utest ${HCCL_V2_UTEST_FILES})
 FILE(GLOB_RECURSE ut_sources_list LIST_DIRECTORIES TRUE ${HCCL_LLT_ROOT}/ut)
 
 foreach (dir ${ut_sources_list})
-    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "test/legacy") AND (NOT ${dir} MATCHES "legacy/depends"))
+    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "test/legacy") AND (NOT ${dir} MATCHES "legacy/depends") AND (NOT ${dir} MATCHES "legacy/st/algorithm"))
         target_include_directories(hccl_v2_utest PUBLIC ${dir})
     endif ()
 endforeach ()
@@ -72,6 +72,7 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${CANN_3RD_LIB_PATH}/gtest/include/
         ${CANN_3RD_LIB_PATH}/mockcpp/include/
         ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
+        ${CANN_3RD_LIB_PATH}/boost/
         ${HCCL_LLT_ROOT}/common/virtual_topo_stub/
         ${HCCL_LLT_ROOT}/ut/framework/topo/ranktable/
         ${HCCL_CODE_ROOT}/externel_depends/tsch
@@ -124,7 +125,6 @@ add_subdirectory(framework)
 add_subdirectory(aicpu)
 add_subdirectory(unified_platform)
 
-run_llt_test(
-    TARGET hccl_v2_utest
-    TASK_NUM 1
-)
+enable_testing()
+add_test(NAME hccl_v2_utest COMMAND hccl_v2_utest)
+

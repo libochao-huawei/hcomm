@@ -47,8 +47,7 @@ const std::unordered_set<HcclDataType, EnumHashV2> HCCL_SUPPORT_DATA_TYPE_V2 = {
     HCCL_DATA_TYPE_HIF8,
     HCCL_DATA_TYPE_FP8E4M3,
     HCCL_DATA_TYPE_FP8E5M2,
-    HCCL_DATA_TYPE_FP8E8M0,
-    HCCL_DATA_TYPE_MXFP8
+    HCCL_DATA_TYPE_FP8E8M0
 };
 
 const std::unordered_set<HcclReduceOp, EnumHashV2> HCCL_SUPPORT_REDUCE_OP_V2 = {
@@ -89,7 +88,6 @@ const std::map<HcclDataType, std::string> HCOM_DATA_TYPE_STR_MAP_V2 {
     {HcclDataType::HCCL_DATA_TYPE_FP8E4M3, "fp8e4m3"},
     {HcclDataType::HCCL_DATA_TYPE_FP8E5M2, "fp8e5m2"},
     {HcclDataType::HCCL_DATA_TYPE_FP8E8M0, "fp8e8m0"},
-    {HcclDataType::HCCL_DATA_TYPE_MXFP8, "mxfp8"},
     {HcclDataType::HCCL_DATA_TYPE_RESERVED, "reserved"}
 };
 
@@ -112,7 +110,11 @@ HcclResult HcomCheckTagV2(const char *tag)
         string errReason = "please check tagLen that is out of range, range[1," + std::to_string(TAG_MAX_LEN) + "]";
         RPT_INPUT_ERR(true, "EI0003", vector<string>({"ccl_op", "value", "parameter", "expect"}),\
             vector<string>({"HcomCheckTagV2", std::to_string(tagLen), "tag", errReason}));
-        HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is too long, range[1,%u]", HCCL_E_PARA, TAG_MAX_LEN);
+        if (tagLen == 0) {
+            HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is empty", HCCL_E_PARA);
+        } else {
+            HCCL_ERROR("[Check][Tag]errNo[0x%llx] tag is too long, range[1,%u]", HCCL_E_PARA, TAG_MAX_LEN);
+        }
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -449,6 +451,9 @@ HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTab
     // 校验文件是否存在
     char resolvedPath[PATH_MAX] = {0};
     if (realpath(clusterInfo, resolvedPath) == nullptr) {
+        std::string rankTablePath(clusterInfo);
+        RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({"error_reason", "ranktable_path"}), 
+            std::vector<std::string>({rankTablePath, "The rankTable file path is not a valid real path or the permission is insufficient."}));
         HCCL_ERROR("RanktableRealPath: %s is not a valid real path", clusterInfo);
         return HCCL_E_PARA;
     }

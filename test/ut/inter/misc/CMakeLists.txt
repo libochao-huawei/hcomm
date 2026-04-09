@@ -109,7 +109,7 @@ else()
         $<BUILD_INTERFACE:mmpa_headers>
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:cce_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers> 
@@ -122,8 +122,6 @@ else()
     )
 
     add_dependencies(hccl_utest_inter_misc hccl_llt hccl_llt_open)
-    run_llt_test(
-    TARGET  hccl_utest_inter_misc
-    TASK_NUM 1
-    )
+    enable_testing()
+    add_test(NAME hccl_utest_inter_misc COMMAND hccl_utest_inter_misc)
 endif()

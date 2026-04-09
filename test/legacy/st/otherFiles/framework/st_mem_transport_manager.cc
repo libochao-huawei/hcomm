@@ -96,10 +96,11 @@ TEST(MemTransportManagerTest, MemTransportManager_get_transport_success)
     RdmaHandleManager::GetInstance().tokenInfoMap[rdmaHandle] = make_unique<TokenInfoManager>(0, rdmaHandle);
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    unique_ptr<UbMemTransport>        transportOpbase = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;
+    unique_ptr<UbMemTransport>        transportOpbase = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     BaseMemTransport                 *transportOpbasePtr = transportOpbase.get();
     transportManager.opTagOpbasedMap[linkData] = std::move(transportOpbase);
-    unique_ptr<UbMemTransport>        transportOffload = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    unique_ptr<UbMemTransport>        transportOffload = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
     BaseMemTransport                 *transportOffloadPtr = transportOffload.get();
     transportManager.opTagOffloadMap[opTag][linkData] = std::move(transportOffload);
 
@@ -124,8 +125,9 @@ TEST(MemTransportManagerTest, MemTransportManager_get_transport_nullptr)
     void                             *rdmaHandle = (void *)0x100;
     IpAddress                         ipAddress("1.0.0.0");
     Socket                            fakeSocket(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-    transportManager.opTagOpbasedMap[linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
-    transportManager.opTagOffloadMap[opTag][linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes);
+    bool                              isRecvFirst = false;
+    transportManager.opTagOpbasedMap[linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
+    transportManager.opTagOffloadMap[opTag][linkData] = make_unique<UbMemTransport>(locRes, attr, linkData, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
 
     // opbase
     LinkData linkData1(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 2, 0, 2);

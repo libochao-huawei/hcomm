@@ -208,10 +208,6 @@ std::vector<uint64_t> CcuContextReduceMesh1D::GeneArgs(const CcuTaskArg &arg)
     if (taskArg == nullptr) {
         THROW<NullPtrException>(StringFormat("CcuContextReduceMesh1D::taskArg ptr is null"));
     }
-    uint64_t inputAddr  = taskArg->inputAddr_;
-    uint64_t outputAddr = taskArg->outputAddr_;
-    uint64_t tokenInfo  = taskArg->token_;
-
     uint64_t currentRankSliceInputOffset  = taskArg->inputSliceStride_ * rankId_;
     uint64_t currentRankSliceOutputOffset = taskArg->outputSliceStride_ * rankId_;
     uint64_t repeatNum                    = taskArg->repeatNum_;
@@ -220,6 +216,9 @@ std::vector<uint64_t> CcuContextReduceMesh1D::GeneArgs(const CcuTaskArg &arg)
     uint64_t normalSliceSize              = taskArg->normalSliceSize_;
     uint64_t lastSliceSize                = taskArg->lastSliceSize_;
     uint64_t repeatNumVar                 = taskArg->repeatNumVar_;
+    uint64_t inputAddr  = taskArg->inputAddr_;
+    uint64_t outputAddr = taskArg->outputAddr_;
+    uint64_t tokenInfo  = taskArg->token_;
 
     auto     goSize     = CalGoSize(normalSliceSize);
 

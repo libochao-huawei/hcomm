@@ -26,7 +26,7 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of All Reduce ccu mesh 2D with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of All Reduce ccu mesh 2D OneShot with tempRankSize [%u].", tempRankSize_);
     }
 
     HcclResult Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec, const BuffInfo &buffInfo,
@@ -37,19 +37,19 @@ public:
     void InitReduceInfo(const ReduceOp &reduceOp, const DataType &dataType);
 
 private:
-    HcclResult PrepareLinks(const ResLinks &tempLinks);
     HcclResult PrepareRankGroups();
+    HcclResult PrepareLinks(const ResLinks &tempLinks);
     HcclResult GetBufferAddr(const TempFuncs &tempFuncs,
         uint64_t &inputAddr, uint64_t &outputAddr, uint64_t &scratchAddr);
 
     // 内部计算用到的变量
     ReduceOp reduceOp_;
     DataType dataType_;
+    RankGroup rankGroupX_;
+    RankGroup rankGroupY_;
     std::vector<uint64_t> dimSize_;
     std::vector<LinkData> linksX_;
     std::vector<LinkData> linksY_;
-    RankGroup rankGroupX_;
-    RankGroup rankGroupY_;
 };
 
 } // namespace Hccl

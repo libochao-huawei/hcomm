@@ -29,6 +29,7 @@ namespace Hccl {
 class CommunicatorImpl;
 class SocketManager {
 public:
+    SocketManager() = default;
     SocketManager(const CommunicatorImpl &communicator, u32 localRank, u32 devicePhyId, u32 deviceLogicId,
                   std::function<shared_ptr<Socket>(IpAddress &localIpAddress, IpAddress &remoteIpAddress,
                                                    u32 listenPort, SocketHandle socketHandle, const std::string &tag,
@@ -55,6 +56,8 @@ public:
     bool DestroyConnectedSocket(SocketConfig &socketConfig);
 
     Socket *GetConnectedSocket(SocketConfig &socketConfig) const;
+
+    bool CheckServerPortListening(const PortData &portData) const;
 
     void DestroyAll();
 

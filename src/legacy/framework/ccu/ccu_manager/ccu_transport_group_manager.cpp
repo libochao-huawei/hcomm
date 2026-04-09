@@ -26,7 +26,7 @@ CcuTransportGroupMgr::CcuTransportGroupMgr(CommunicatorImpl &comm) : comm(&comm)
 CcuTransportGroupMgr::~CcuTransportGroupMgr()
 {
     if (!isDestroyed) {
-        Destroy();
+        DECTOR_TRY_CATCH("CcuTransportGroupMgr", Destroy());
     }
 }
 

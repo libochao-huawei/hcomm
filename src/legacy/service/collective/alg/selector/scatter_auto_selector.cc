@@ -28,6 +28,8 @@ SelectorStatus ScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, co
 SelectorStatus ScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[ScatterAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -60,6 +62,9 @@ SelectorStatus ScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoIn
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "CcuScatterMesh1D";
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][ScatterAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
             }
@@ -80,11 +85,17 @@ SelectorStatus ScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoIn
 SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[ScatterAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "InsScatterParallelMesh1DNHR";
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+                primQueueGenName = "InsScatterNHR";
+            } else {
+                primQueueGenName = "InsScatterParallelMesh1DNHR";
+            }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             HCCL_WARNING("[Algo][ScatterAutoSelector] level0Shape[%d] is not supported yet for aicpu levelNum > 1.",
                 topoInfo.level0Shape);
@@ -106,10 +117,18 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "InsScatterMesh1D";
             } else {
+                if (topoInfo.level0PcieMix) {
+                    // 预留PCIE mix入口，如果要更新算法可以直接改
+                    primQueueGenName = "InsScatterParallelMesh1DNHRPcie";
+                }
                 primQueueGenName = "InsScatterMesh1D";
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
-            primQueueGenName = "InsScatterMesh1D";
+            if (topoInfo.level0PcieMix) {
+                primQueueGenName = "InsScatterNHR";
+            } else {
+                primQueueGenName = "InsScatterMesh1D";
+            }
         } else {
             HCCL_WARNING("[ScatterAutoSelector] topo not match");
             return SelectorStatus::NOT_MATCH;
@@ -122,6 +141,8 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
 SelectorStatus ScatterAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[ScatterAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // aiv 直接走打平 mesh

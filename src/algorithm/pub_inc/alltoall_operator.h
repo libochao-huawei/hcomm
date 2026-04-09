@@ -30,7 +30,7 @@ public:
     HcclResult SelectAlgforAlltoAll(const OpParam& param, std::string& algName, std::string& copyMode,
         const ResourceLimit& resourceLimit);
     HcclResult SelectAlgforAiv(const OpParam& param, std::string& algName);
-    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag);
+    HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag) override;
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName, std::string& newTag,
         const ResourceLimit& resourceLimit) override;
 
@@ -54,7 +54,6 @@ public:
     bool IsSatisfyAlltoallContinuousPipelineCondition(const OpParam& param);
 
 private:
-    bool IsA3PipelineCondition(const OpParam& param);
     bool IsSatisfyAlltoallPipelineCondition();
     bool IsBufferSatisfyAlltoAllAivCondition(const OpParam& param);
     HcclResult RunAlltoAllVTwoLevelPipeline(DeviceMem &sendBuf, DeviceMem &recvBuf,

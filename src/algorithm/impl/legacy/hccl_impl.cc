@@ -607,14 +607,16 @@ HcclResult hcclImpl::CreateCommByAlg(const std::string &tag, const AlgType algTy
         commInfoLevel2.commType), HCCL_E_INTERNAL);
     commThreadWaitResultLevel2 = WaitCommThread(commThreadPtrLevel2_);
 
-    CHK_PRT_RET(commThreadWaitResultLevel0 || commThreadWaitResultLevel1 || commThreadWaitResultLevel2 ||
-    commThreadWaitResultLevel0Rdma || commThreadWaitResultLevel1Rdma,
+    CHK_PRT_RET(static_cast<bool>(commThreadWaitResultLevel0) || static_cast<bool>(commThreadWaitResultLevel1) ||
+    static_cast<bool>(commThreadWaitResultLevel2) || static_cast<bool>(commThreadWaitResultLevel0Rdma) ||
+    static_cast<bool>(commThreadWaitResultLevel1Rdma),
         HCCL_ERROR("[Create][CommByAlg]wait thread failed.algoLevel0[%d] Level1[%d] Level2[%d] Level0rdma[%d]" \
             " Level1rdma[%d]", commThreadWaitResultLevel0, commThreadWaitResultLevel1, commThreadWaitResultLevel2,
             commThreadWaitResultLevel0Rdma, commThreadWaitResultLevel1Rdma), HCCL_E_INTERNAL);
 
-    CHK_PRT_RET(commThreadResultLevel0 || commThreadResultLevel1 || commThreadResultLevel2 ||
-    commThreadResultLevel0Rdma || commThreadResultLevel1Rdma,
+    CHK_PRT_RET(static_cast<bool>(commThreadResultLevel0) || static_cast<bool>(commThreadResultLevel1) ||
+    static_cast<bool>(commThreadResultLevel2) || static_cast<bool>(commThreadResultLevel0Rdma) ||
+    static_cast<bool>(commThreadResultLevel1Rdma),
         HCCL_ERROR("[Create][CommByAlg]CreateComm failed. result: Level0[%d] Level1[%d] Level2[%d]" \
             " Level0rdma[%d] Level1rdma[%d].", commThreadResultLevel0, commThreadResultLevel1, commThreadResultLevel2,
             commThreadResultLevel0Rdma, commThreadResultLevel1Rdma), HCCL_E_INTERNAL);

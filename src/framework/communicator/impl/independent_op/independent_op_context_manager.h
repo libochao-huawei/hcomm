@@ -16,6 +16,7 @@
 #include <functional>
 #include <unordered_map>
 #include <mutex>
+#include <string>
 
 namespace hccl {
 struct HcclMemHash {

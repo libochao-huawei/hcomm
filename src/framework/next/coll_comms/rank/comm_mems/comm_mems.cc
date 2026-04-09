@@ -82,38 +82,32 @@ HcclResult CommMems::CommRegMem(const std::string& memTag, const CommMem& mem,
     CHK_PRT_RET(memHandle == nullptr, HCCL_ERROR("[CommRegMem] memHandle is null. tag[%s]", memTag.c_str()), HCCL_E_PARA);
     CHK_PRT_RET(mem.addr == nullptr || mem.size == 0, HCCL_ERROR("[CommRegMem] invalid mem. addr[%p] size[%llu]",
         mem.addr, (unsigned long long)mem.size), HCCL_E_PARA);
- 
+
     // 组装句柄（仅域内管理，无进程级注册）
     Handle h;
     EXECEPTION_CATCH(h = std::make_shared<CommMemHandle>(), return HCCL_E_PTR);
     h->addr    = mem.addr;
     h->size    = static_cast<uint64_t>(mem.size);
     h->memType = static_cast<CommMemType>(mem.type);
+    h->memTag  = memTag;
  
     const auto key = MakeKey(mem.addr, static_cast<size_t>(mem.size));
  
     std::lock_guard<std::mutex> addLock(memMutex_);
+
+    auto opIt = opBindings_.find(memTag);
+    if (opIt != opBindings_.end()) {
+        HCCL_ERROR("[CommRegMem] memTag[%s] has already been registered.", memTag.c_str());
+        return HCCL_E_PARA;
+    }
+
     auto& reg = tagRegs_[memTag];
  
     // 同tag内做区间冲突/幂等复用
-    auto res = reg.table.Add(key, h);
-    if (!res.second) {
-        // 只能用 Find 的返回值来判定：
-        // - 等于(全集命中)：Find(key).first == true（允许，Add 内已 ref）
-        // - 子集/超集/交集：Find(key).first 可能为 true(子) 或 false(交/超/空)，但都属于冲突！
-        auto f = reg.table.Find(key);
-        if (!f.first || !(f.second && f.second->addr == mem.addr && f.second->size == mem.size)) {
-            HCCL_ERROR("[CommRegMem] overlap in tag[%s], key=%s", memTag.c_str(), key.ToString().c_str());
-            return HCCL_E_PARA;
-        }
-        h = f.second;
-    }
- 
+    reg.table.AddWithoutCheck(key, h);
+
     // 加入绑定map
-    auto opIt = opBindings_.find(memTag);
-    if (opIt == opBindings_.end()) {
-        opBindings_.emplace(memTag, h); 
-    }
+    opBindings_.emplace(memTag, h);
 
     // 新增反查map，用于aiv建链交换内存
     auto opRevIt = opReverseBindings_.find(h.get());
@@ -192,6 +186,27 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
         mem.type = ConvertCommToHcclMemType((*handles[i]).memType);
         memTag.push_back(opReverseBindings_[handles[i]]);
         memVec.push_back(mem);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommMems::SetMemHandles(void **memHandles, const std::vector<void *> &memHandleVec,
+    std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles)
+{
+    if (memHandleVec.size() == 0) {
+        HCCL_ERROR("[CommMems][SetMemHandles] memHandleVecSize is 0.");
+        return HCCL_E_PARA;
+    }
+    CHK_PTR_NULL(memHandleVec[0]);
+    commMemHandles.emplace_back(std::make_unique<CommMemHandle>(addr_, size_, ConvertHcclToCommMemType(memType_),
+        memHandleVec[0], "HcclBuffer"));
+
+    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
+        CHK_PTR_NULL(memHandleVec[i]);
+        (*handles[i - 1]).bufferHandle = memHandleVec[i];
+        commMemHandles.emplace_back(std::make_unique<CommMemHandle>((*handles[i - 1]).addr, (*handles[i - 1]).size,
+            (*handles[i - 1]).memType, memHandleVec[i], (*handles[i - 1]).memTag));
     }
     return HCCL_SUCCESS;
 }

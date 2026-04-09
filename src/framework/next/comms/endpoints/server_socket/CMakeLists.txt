@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     server_socket_mgr.cc
+    server_socket_manager.cc
 )
 
 target_sources(hcomm PRIVATE

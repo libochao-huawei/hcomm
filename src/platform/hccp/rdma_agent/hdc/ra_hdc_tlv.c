@@ -78,7 +78,7 @@ STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDa
         head, sizeof(struct TlvRequestMsgHead));
 
     ret = RaHdcProcessMsg(RA_RS_TLV_REQUEST, phyId, (char *)tlvData, sizeof(union OpTlvRequestData));
-    CHK_PRT_RETURN(ret == -EUSERS, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret == -EUSERS || ret == -ENOTSUPP, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
         ret, phyId), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
@@ -127,7 +127,7 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
     while (head.offset < sendMsg->length) {
         head.sendBytes = (head.totalBytes - head.offset) >= MAX_TLV_MSG_DATA_LEN ?
             MAX_TLV_MSG_DATA_LEN : (head.totalBytes - head.offset);
-        ret = memcpy_s(&(tlvData.txData.head), sizeof(struct TlvRequestMsgHead),
+        (void)memcpy_s(&(tlvData.txData.head), sizeof(struct TlvRequestMsgHead),
             &head, sizeof(struct TlvRequestMsgHead));
 
         (void)memset_s(tlvData.txData.data, MAX_TLV_MSG_DATA_LEN, 0, MAX_TLV_MSG_DATA_LEN);
@@ -136,7 +136,7 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
             ret, phyId, head.sendBytes), -ESAFEFUNC);
 
         ret = RaHdcProcessMsg(RA_RS_TLV_REQUEST, phyId, (char *)&tlvData, sizeof(union OpTlvRequestData));
-        CHK_PRT_RETURN(ret == -EUSERS, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
+        CHK_PRT_RETURN(ret == -EUSERS || ret == -ENOTSUPP, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
             ret, phyId), ret);
         CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
             ret, phyId), ret);

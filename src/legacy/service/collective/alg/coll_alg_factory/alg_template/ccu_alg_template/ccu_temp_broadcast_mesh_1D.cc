@@ -89,6 +89,9 @@ HcclResult CcuTempBroadcastMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
                                           std::vector<InsQuePtr> &tempInsQues)
 {
     (void)sliceInfoVec;
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempBroadcastMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     buffInfo_ = buffInfo;
     opMode_ = tempFuncs.opMode;
     CcuInstructionBroadcastMesh1D ccuInsBroadcastMesh1D;
@@ -96,20 +99,20 @@ HcclResult CcuTempBroadcastMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 
-    // 只传userIn的起始位置，不带偏移，偏移已在offSet中包含
+    // 只传userIn的起始位置，不带偏移，偏移已在offset中包含
     uint64_t inputAddr;
     // userOut 的位置，需要带上偏移
     uint64_t outputAddr;
     GetInAndOutAddr(tempFuncs, inputAddr, outputAddr);
     uint64_t sliceSize = tempFuncs.usrData.usrInSlices[0].GetSize(); //
 
-    uint64_t offSet = 0;
+    uint64_t offset = 0;
 
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 
     ccuInsBroadcastMesh1D.Init(static_cast<uint32_t>(myRank_), static_cast<uint32_t>(rootId_), inputAddr, outputAddr,
-                               sliceSize, offSet, token, op_, tempVTopo_);
+                               sliceSize, offset, token, op_, tempVTopo_);
 
     std::vector<LinkData> links;
     for (auto &pair : tempLinks) {

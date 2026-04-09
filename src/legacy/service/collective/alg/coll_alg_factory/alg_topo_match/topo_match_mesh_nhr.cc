@@ -65,17 +65,8 @@ HcclResult TopoMatchMeshNHR::GenerateLevel0(const std::set<RankId> &rankSet, u32
 HcclResult TopoMatchMeshNHR::MatchTopo(std::vector<std::vector<std::vector<RankId>>> &vTopo,
     std::vector<std::vector<RankId>> &virtRanks, std::vector<std::map<RankId, u32>> &virtRankMap)
 {
-    CHK_PRT_RET(devType_ != DevType::DEV_TYPE_950,
-        HCCL_ERROR("[CollAlgFactory] [TopoMatchMeshNHR] Rank [%d], deviceType [%s] not supported yet.",
-            myRank_,
-            DevTypeToString(devType_).c_str()),
-        HcclResult::HCCL_E_PARA);
     // 获取并校验当前通信层数
     std::set<u32> levelSet = rankGraph_->GetLevels(myRank_);
-    CHK_PRT_RET((levelSet.size() != COMM_LEVEL_SIZE_2),  // 获取当前rank通信层数
-        HCCL_ERROR("[CollAlgFactory] [TopoMatchMeshNHR] Rank [%d], Invalid virtual topo.", myRank_),
-        HcclResult::HCCL_E_PARA);
-
     HCCL_DEBUG("[CollAlgFactory] [TopoMatchMeshNHR] Rank [%d], virtual topo levelSet[%u][%s]",
         myRank_,
         levelSet.size(),
@@ -96,10 +87,6 @@ HcclResult TopoMatchMeshNHR::MatchTopo(std::vector<std::vector<std::vector<RankI
         return HcclResult::HCCL_E_PTR;
     }
     std::set<RankId> rankSetR0 = netInstance->GetRankIds();  // 得到此pod上所有rank
-    HCCL_DEBUG("[CollAlgFactory] [TopoMatchMeshNHR] Rank [%d], all ranks [%u] in this pod levelSet [%s]",
-        myRank_,
-        levelSet.size(),
-        PrintSet<u32>(levelSet).c_str());
     rankOnSameBoardVector_.resize(RANK_SIZE_EIGHT, {});
     rankOnSameSlotVector_.resize(RANK_SIZE_EIGHT, {});
     CHK_RET(CalcRankOnSamePlaneOfR0(rankOnSameBoardVector_, rankOnSameSlotVector_, numRanksPerBoard_));

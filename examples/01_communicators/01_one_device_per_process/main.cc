@@ -15,9 +15,9 @@
 #include <chrono>
 #include <cstring>
 
-#include "hccl/hccl.h"
-#include "hccl/hccl_types.h"
-#include "mpi.h"
+#include <hccl/hccl.h>
+#include <hccl/hccl_types.h>
+#include <mpi.h>
 
 #define ACLCHECK(ret)                                                                          \
     do {                                                                                       \

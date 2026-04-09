@@ -78,8 +78,8 @@ void CcuContextAllReduceMeshDetour1D::CreateMultiOpReduceDetour(DataType &dataTy
     moConfig.loopCount = CcuRep::CCU_MS_DEFAULT_LOOP_COUNT;
     moConfig.msInterleave = pathNumPerPeer * rankSize_;
     if (moRes.executor.size() == 0) {
-        moRes.executor = CreateBlockExecutor(moConfig.loopCount);
         moRes.maskSignal = CreateBlockMaskSignal(moConfig.loopCount);
+        moRes.executor = CreateBlockExecutor(moConfig.loopCount);
         moRes.ccuBuffer = CreateBlockCcuBuffer(moConfig.loopCount * moConfig.msInterleave);
     }
     std::string loopType = "reduceDetour";
@@ -89,8 +89,8 @@ void CcuContextAllReduceMeshDetour1D::CreateMultiOpReduceDetour(DataType &dataTy
     CcuRep::LoopBlock lb(this, loopType + "_loop");
     {
         // loopblock的形参
-        std::vector<CcuRep::Memory> src;
         std::vector<CcuRep::Memory> dst;
+        std::vector<CcuRep::Memory> src;
         std::vector<CcuRep::Variable> lengths;
         for (uint64_t i = 0; i < pathNumPerPeer; i++) {
             lengths.emplace_back(CreateVariable());

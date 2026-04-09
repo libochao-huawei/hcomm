@@ -32,6 +32,8 @@ SelectorStatus AlltoAllAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoI
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AlltoAllAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -54,6 +56,9 @@ SelectorStatus AlltoAllAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoI
                 } else {
                     primQueueGenName = "CcuAlltoAllMesh1D";
                 }
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
                     topoInfo.level0Shape);
@@ -78,6 +83,8 @@ SelectorStatus AlltoAllAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AlltoAllAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -99,6 +106,8 @@ SelectorStatus AlltoAllAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "InsAlltoAllMesh";
+            } else if (topoInfo.level0PcieMix) {
+                    primQueueGenName = "InsAlltoAllMesh";
             } else {
                 primQueueGenName = "InsAlltoAllMesh";
             }
@@ -118,6 +127,8 @@ SelectorStatus AlltoAllAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
                                                    const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                    std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AlltoAllAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // aiv 直接走打平 mesh

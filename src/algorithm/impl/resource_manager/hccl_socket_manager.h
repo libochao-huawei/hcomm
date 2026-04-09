@@ -121,7 +121,7 @@ public:
 
     HcclResult WaitLinksEstablishCompleted(HcclSocketRole localRole,
         std::map <u32, std::vector<std::shared_ptr<HcclSocket> > > &socketsMap, std::map<u32, u32> &dstRankToUserRank,
-        RankInfo &loaclRankInfo, RankInfo &remoteRankInfo, const HcclNetDevCtx &netDevCtx);
+        const RankInfo &loaclRankInfo, const RankInfo &remoteRankInfo, const HcclNetDevCtx &netDevCtx);
     void DestroySockets();
 
     void AbortAndDeleteSocket(const std::string &commTag, HcclSocketRole role,

@@ -19,6 +19,7 @@
 #include "invalid_params_exception.h"
 #include "not_support_exception.h"
 #include "internal_exception.h"
+#include "orion_adapter_hccp.h"
 
 namespace Hccl {
 
@@ -40,6 +41,7 @@ LinkData::LinkData(vector<char> &data)
     binaryStream >> writable;
     binaryStream >> hop;
     binaryStream >> localDieId_;
+    binaryStream >> fullmesh;
 
     u32 offset;
     u32 addrSize;
@@ -78,12 +80,14 @@ std::vector<char> LinkData::GetUniqueId() const
     binaryStream << writable;
     binaryStream << hop;
     binaryStream << localDieId_;
+    binaryStream << fullmesh;
 
     vector<char> result;
     binaryStream.Dump(result);
 
     auto loc = localAddr_.GetUniqueId();
     auto rmt = remoteAddr_.GetUniqueId();
+    HCCL_INFO("[LinkData::%s] localAddr[%s], remoteAddr[%s].", __func__, localAddr_.Describe().c_str(), remoteAddr_.Describe().c_str());
 
     u32 offset   = result.size();
     u32 addrSize = loc.size();
@@ -96,6 +100,17 @@ std::vector<char> LinkData::GetUniqueId() const
     result.insert(result.end(), loc.begin(), loc.end());
     result.insert(result.end(), rmt.begin(), rmt.end());
     return result;
+}
+
+void LinkData::UpdateIpAddrWithPCIE()
+{
+#ifndef CCL_KERNEL_AICPU
+    if (linkProtocol_ == LinkProtocol::PCIE) {
+        // 更新localAddr和remoteAddr为vinc ip
+        HrtRaSocketGetVnicIpInfos(localDeviceId_, DeviceIdType::DEVICE_ID_TYPE_PHY_ID, localDeviceId_, localAddr_);
+        HrtRaSocketGetVnicIpInfos(localDeviceId_, DeviceIdType::DEVICE_ID_TYPE_PHY_ID, remoteDeviceId_, remoteAddr_);
+    }
+#endif
 }
 
 } // namespace Hccl

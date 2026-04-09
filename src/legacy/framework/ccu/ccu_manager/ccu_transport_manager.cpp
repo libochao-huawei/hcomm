@@ -199,7 +199,13 @@ void CcuTransportMgr::DumpNotReadyTransports(vector<std::pair<CcuTransport*, Lin
 {
     HCCL_ERROR("Dump ccu timeout transport info, transport size[%u]", transports.size());
     for (auto transIter = transports.begin(); transIter != transports.end(); ++transIter) {
-        HCCL_ERROR("CcuTransport[%s]", (*transIter).first->Describe().c_str());
+        string allStr = (*transIter).first->Describe();
+ 	    size_t pos = allStr.find("Socket");
+ 	    if(pos != string::npos) {
+ 	        HCCL_ERROR("CcuTransport[%s]", allStr.substr(0,pos).c_str());
+ 	        allStr=allStr.substr(pos);
+ 	    }
+ 	    HCCL_ERROR("CcuTransport[%s]", allStr.c_str());
         HCCL_ERROR("LinkData[%s]", (*transIter).second.Describe().c_str());
     }
 }

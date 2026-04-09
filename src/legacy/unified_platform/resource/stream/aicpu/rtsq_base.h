@@ -69,6 +69,13 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 
+    virtual void NotifyWait(u32 notifyId, u32 timeout)
+    {
+        (void)notifyId;
+        (void)timeout;
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
     virtual void Cnt1toNNotifyWait(u32 notifyId, u32 value)
     {
         (void)notifyId;
@@ -126,6 +133,13 @@ public:
         (void)size;
         (void)partId;
         (void)reduceIn;
+        MACRO_THROW(NotSupportException, StringFormat("not supported."));
+    }
+
+    virtual void P2PWriteValue(u64 remoteAddr, u32 writeValue)
+    {
+        (void)remoteAddr;
+        (void)writeValue;
         MACRO_THROW(NotSupportException, StringFormat("not supported."));
     }
 

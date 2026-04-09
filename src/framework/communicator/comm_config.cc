@@ -344,6 +344,7 @@ HcclResult CommConfig::SetConfigOpExpansionMode(const CommConfigHandle &config)
             break;
         case COMM_CONFIG_OPEXPANSION_HOST:
             aivMode_ = false;
+            aicpuUnfold_ = false;
             HCCL_INFO("CommConfig is set to 1(host), aicpuUnfold_ is [%d] and aivMode_ is [%d].", aicpuUnfold_, aivMode_);
             break;
         case COMM_CONFIG_OPEXPANSION_AICPU:
@@ -639,6 +640,18 @@ HcclResult CommConfig::SetSpecificAlgTypeConfig(std::vector<std::string> &algos)
         algoConfig_[HcclCMDType::HCCL_CMD_ALLTOALL];
     algoConfig_[HcclCMDType::HCCL_CMD_ALLTOALLVC] =
         algoConfig_[HcclCMDType::HCCL_CMD_ALLTOALL];
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommConfig::SetConfigTrafficClass(u32 trafficClass)
+{
+    trafficClass_ = trafficClass;
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommConfig::SetConfigServiceLevel(u32 serviceLevel)
+{
+    serviceLevel_ = serviceLevel;
     return HCCL_SUCCESS;
 }
 

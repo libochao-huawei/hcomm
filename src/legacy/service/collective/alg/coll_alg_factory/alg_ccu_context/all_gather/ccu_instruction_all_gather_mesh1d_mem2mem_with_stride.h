@@ -84,6 +84,11 @@ public:
               uint64_t outputRepeatStride, uint64_t normalSliceSize, uint64_t lastSliceSize,
               uint64_t isInputOutputEqual)
     {
+        u32 maxDimNum = 1;
+        if (tempVTopo.size() != maxDimNum) {
+            THROW<InvalidParamsException>(StringFormat(
+                "[CcuInstructionAllGatherMesh1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
+        }
         dimSize_.push_back(tempVTopo[0].size());
         rankId_             = rankId;
         repeatNum_          = repeatNum;
@@ -102,20 +107,16 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionAllGatherMesh1D instype is CCU_ALLGATHER_MESH_1D_MEM2MEM_WITH_STRIDE_DIRECT.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionAllGatherMesh1D rankId [%u], instType[%s]", rankId_,
                             instType_.Describe().c_str());
-    }
-
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -130,6 +131,10 @@ public:
             outputRepeatStride_, normalSliceSize_, lastSliceSize_, isInputOutputEqual_);
     }
 
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
 private:
     CcuInstType                      instType_ = CcuInstType::CCU_ALLGATHER_MESH_1D_MEM2MEM_WITH_STRIDE_DIRECT;
     std::vector<uint64_t>            dimSize_;

@@ -36,7 +36,7 @@ HcclResult ShareCCLbufferMgr::CreateDevMem(u64 size, DeviceMem &buffer)
     buffer = DeviceMem::alloc(size);
     CHK_PRT_RET(buffer.ptr() == nullptr,HCCL_ERROR("[ShareCCLbufferMgr][CreateDevMem]Create ccl buffer fail,buffer ptr is nullptr"),HCCL_E_PTR);
     HCCL_INFO("[ShareCCLbufferMgr][CreateDevMem] buffer ptr[%p], size[%llu]", buffer.ptr(), buffer.size());
-    CHK_PRT_RET(size && !buffer, HCCL_ERROR("[ShareCCLbufferMgr][CreateDevMem]Create ccl buffer size[%llu] fail,"
+    CHK_PRT_RET(static_cast<bool>(size) && !buffer, HCCL_ERROR("[ShareCCLbufferMgr][CreateDevMem]Create ccl buffer size[%llu] fail,"
         "please check env ironmental variable HCCL_BUFFSIZE.", size), HCCL_E_PTR);
     return HCCL_SUCCESS;
 }

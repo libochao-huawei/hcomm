@@ -238,7 +238,7 @@ HcclResult CollCommExecutor::MultiRingAllGather(const std::string &tag, DeviceMe
                                               subSignalsInOneRing));
         }
         if (ringIndex != (ringNum - 1)) { // 最后一个环是主stream，所以这里减1，符合条件的走从stream
-            if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+            if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                 workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 if (opInfo != nullptr) {
                     algResResp_->threadManage[ringIndex]->Prepare(
@@ -342,7 +342,7 @@ HcclResult CollCommExecutor::MultiRingAllGather(const std::string &tag, DeviceMe
                 "return[%d]", ringIndex, ret), ret);
 
             for (u32 ring = 0; ring < (ringNum - 1); ring++) {
-                if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+                if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                     workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                     algResResp_->threadManage[ring]->WaitDone(); // 单算子模式，等待线程处理完成信号
                 }
@@ -414,7 +414,7 @@ HcclResult CollCommExecutor::MultiRingAllGatherConcurrent(const std::string &tag
         }
         bool isSdma = multRingsSliceZero[ringIndex].first;
         if (ringIndex != (ringNum - 1)) { // 最后一个环是主stream，所以这里减1，符合条件的走从stream
-            if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+            if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                 workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 if (opInfo != nullptr) {
                     ExecutorType type = isSdma ?
@@ -520,7 +520,7 @@ HcclResult CollCommExecutor::MultiRingAllGatherConcurrent(const std::string &tag
                 "return[%d]", ringIndex, ret), ret);
 
             for (u32 ring = 0; ring < (ringNum - 1); ring++) {
-                if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+                if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                     workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                     algResResp_->threadManage[ring]->WaitDone(); // 单算子模式，等待线程处理完成信号
                 }
@@ -822,7 +822,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatter(const std::string &tag, Devi
                     HCCL_ERROR("[CollCommExecutor][MultiRingReduceScatter]active stream[%u], failed",
                     ringIndex), ret);
             }
-            if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+            if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                 workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 /* 更新线程参数 */
                 if (opInfo != nullptr) {
@@ -928,7 +928,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatter(const std::string &tag, Devi
                 HCCL_ERROR("[CollCommExecutor][MultiRingReduceScatter]stream[%u],ReduceScatter(ring) run "\
                 "failed,return[%d]", ringIndex, ret), ret);
             for (u32 ring = 0; ring < (ringNum - 1); ring++) {
-                if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+                if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                     workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                     algResResp_->threadManage[ring]->WaitDone();
                 }
@@ -1113,7 +1113,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatterConcurrent(const std::string 
                         ringIndex), ret);
             }
 
-            if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+            if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                 workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 /* 更新线程参数 */
                 if (opInfo != nullptr) {
@@ -1227,7 +1227,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatterConcurrent(const std::string 
                 HCCL_ERROR("[CollCommExecutor][MultiRingReduceScatterConcurrent]stream[%u],ReduceScatter(ring) run "\
                 "failed,return[%d]", ringIndex, ret), ret);
             for (u32 ring = 0; ring < (ringNum - 1); ring++) {
-                if (!topoMatcher_->GetExternalInputHcclEnableFfts() &&
+                if (!static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts()) &&
                     workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                     algResResp_->threadManage[ring]->WaitDone();
                 }
@@ -1458,7 +1458,7 @@ HcclResult CollCommExecutor::MultiStreamReduceScatterMeshAtomic(const std::strin
     std::unique_ptr<AlgTemplateBase> tempAlg;
     DeviceMem deviceOutputMem = inputMem;
     if (topoAttr_.isSingleMeshAggregation && (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-        (reduceAttr & INLINE_REDUCE_BITMASK) && (opInfo != nullptr)) {
+        static_cast<bool>((reduceAttr & INLINE_REDUCE_BITMASK)) && (opInfo != nullptr)) {
         if (((opInfo -> count) * unitSize <= HCCL_SMALL_COUNT_32_KB) &&
             (topoAttr_.deviceNumPerAggregation == DEVICE_EIGHT)) {
             deviceOutputMem = outputMem;
@@ -2041,7 +2041,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
         std::unique_ptr<AlgTemplateBase> tempAlg;
         if (opInfo == nullptr) {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(tempAlg);
         }
         else if (opInfo->inputAddr != nullptr) {
@@ -2049,7 +2049,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
                                               subSignalsInOneRing));
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(tempAlg);
             CHK_RET(tempAlg->Prepare(const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank, subStreamsInOneRing,
                 mainSignalsInOneRing, subSignalsInOneRing, rankOrder, userMemInputSlices));
@@ -2057,7 +2057,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
         else {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING_DIRECT, dispatcher_);
-            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(tempAlg);
             CHK_RET(tempAlg->Prepare(
                 const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank, rankOrder, userMemInputSlices));
@@ -2116,13 +2116,13 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
                 if (opInfo == nullptr) {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
-                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
+                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
                     CHK_SMART_PTR_NULL(tempAlg);
                 }
                 else if (opInfo->inputAddr != nullptr) {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT, dispatcher_);
-                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
+                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_CONCURRENT_DIRECT in COMM_LEVEL0", __func__);
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank,
                         subStreamsInOneRing, mainSignalsInOneRing, subSignalsInOneRing, rankOrder, userMemInputSlices));
@@ -2130,7 +2130,7 @@ HcclResult CollCommExecutor::MultiRingScatter(const std::string &tag, DeviceMem 
                 else {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_SCATTER_RING_DIRECT, dispatcher_);
-                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
+                    HCCL_CONFIG_INFO(HCCL_ALG, "[%s][KernelRun] Run TEMPLATE_SCATTER_RING_DIRECT in COMM_LEVEL0", __func__);
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(
                         const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank, rankOrder, userMemInputSlices));

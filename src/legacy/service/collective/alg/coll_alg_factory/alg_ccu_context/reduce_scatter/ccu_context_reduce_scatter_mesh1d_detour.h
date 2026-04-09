@@ -41,14 +41,14 @@ private:
 
     DataType dataType_;
     DataType outputDataType_;
-    std::vector<CcuRep::Variable> input_;
-    std::vector<CcuRep::Variable> output_;
-    std::vector<CcuRep::Variable> token_;
     CcuRep::Variable offset_;
     CcuRep::Variable iterNum_;
     CcuRep::Variable tailSize_;
     GroupOpSize groupOpSize_;
     std::vector<CcuRep::Variable> lengths_;
+    std::vector<CcuRep::Variable> input_;
+    std::vector<CcuRep::Variable> output_;
+    std::vector<CcuRep::Variable> token_;
 };
 } // namespace Hccl
 

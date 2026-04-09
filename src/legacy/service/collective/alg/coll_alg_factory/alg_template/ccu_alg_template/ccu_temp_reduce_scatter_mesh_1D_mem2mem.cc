@@ -65,11 +65,12 @@ HcclResult CcuTempReduceScatterMeshMem2Mem1D::GenExtIns(const TempFuncs    &temp
                                                         const TemplateDataParams &templateDataParams,
                                                         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceScatterMeshMem2Mem1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_   = tempFuncs.opMode;
     buffInfo_ = templateDataParams.buffInfo;
-
     CcuInstructionReduceScatterMeshMem2Mem1D ccuIns;
-
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 

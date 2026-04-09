@@ -236,8 +236,6 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_Exec20times_Expect_ReturnIsHCC
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM(comm, stream);
 }
 
-#if 0
-
 TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_2Server4Rank_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT_RECVBUFV(HCCL_COM_DATA_SIZE,
@@ -253,5 +251,3 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_2Server4Rank_Expect_ReturnIsHC
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
-
-#endif

@@ -67,7 +67,7 @@ struct dcmi_spod_info {
     unsigned int server_index;
     unsigned int chassis_id;
     unsigned int super_pod_type;
-    char reserve[6];
+    unsigned int reserve[6];
 };
 
 #define MAIN_BOARD_ID_CARD_NOMESH (0x68)
@@ -89,8 +89,6 @@ int hal_get_device_pcie_info(int phyId, struct dcmi_pcie_info_all* pcieInfo);
 int hal_get_spod_info(int phyId, struct dcmi_spod_info* spodInfo);
 
 int hal_get_npu_count();
-
-int hal_get_phyid_from_logicid(unsigned int logicId, unsigned int* phyId);
 
 int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId);
 

@@ -22,7 +22,7 @@ public:
         HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
     ~ScatterOperator() override;
     HcclResult SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
-        std::string& newTag);
+        std::string& newTag) override;
 private:
 };
 }

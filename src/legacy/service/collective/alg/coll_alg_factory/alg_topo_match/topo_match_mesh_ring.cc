@@ -25,10 +25,6 @@ HcclResult TopoMatchMeshRing::MatchTopo(std::vector<std::vector<std::vector<Rank
                                         std::vector<std::vector<RankId>>              &virtRanks,
                                         std::vector<std::map<RankId, u32>>            &virtRankMap)
 {
-    CHK_PRT_RET(devType_ != DevType::DEV_TYPE_950,
-        HCCL_ERROR("[CollAlgFactory] [TopoMatchMeshRing] Rank [%d], deviceType [%s] not supported yet.", myRank_,
-                    DevTypeToString(devType_).c_str()),
-        HcclResult::HCCL_E_PARA);
     // 获取并校验当前通信层数
     std::set<u32> levelSet = rankGraph_->GetLevels(myRank_);
     CHK_PRT_RET((levelSet.size() == COMM_LEVEL_SIZE_0),   //获取当前rank通信层数
@@ -67,11 +63,8 @@ HcclResult TopoMatchMeshRing::MatchTopo(std::vector<std::vector<std::vector<Rank
         for (auto vRankIter = virtRanks.begin(); vRankIter != virtRanks.end(); vRankIter++) {
             vTopo.push_back({*vRankIter});
         }
-    } else if (levelSet.size() == COMM_LEVEL_SIZE_2) {
-        CHK_RET(MeshRingTopoForAllLevel(rankSetR0, vTopo, virtRanks));
     } else {
-        HCCL_ERROR("[CollAlgFactory] [TopoMatchMeshRing] Rank [%d], virtual topo not supported yet.", myRank_);
-        return HcclResult::HCCL_E_NOT_SUPPORT;
+        CHK_RET(MeshRingTopoForAllLevel(rankSetR0, vTopo, virtRanks));
     }
     // generate rank mapping
     CHK_PRT_RET(

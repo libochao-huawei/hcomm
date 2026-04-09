@@ -104,28 +104,29 @@ public:
         repeatNumVar_       = repeatNumVar;
         return;
     }
- 
+
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionBroadcastMesh1DMem2Mem instype is CCU_BROADCAST_MESH_1D_MEM2MEM.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionBroadcastMesh1DMem2Mem rankId [%u], instType[%s]", rankId_,
                             instType_.Describe().c_str());
     }
  
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
- 
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
- 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgBroadcastMesh1DMem2Mem>(dimSize_, rankId_, rootId_, op_, tempVTopo_);
     }
- 
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
+
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override
     {
         return std::make_unique<CcuTaskArgBroadcastMesh1DMem2Mem>(

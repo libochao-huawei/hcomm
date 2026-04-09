@@ -76,17 +76,21 @@ public:
         }
 
         dimSize_.push_back(tempVTopo[0].size());
-
         rankId_              = rankId;
         op_                  = op;
         rmtReduceWithMyRank_ = rmtReduceWithMyRank;
         tempVTopo_           = tempVTopo;
-
         inputAddr_   = inputAddr;
         outputAddr_  = outputAddr;
         scratchAddr_ = scratchAddr;
         sliceSize_   = sliceSize;
         token_       = token;
+    }
+
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionReduceScatterMesh1D2Die instype is CCU_REDUCE_SCATTER_MESH_1D_2DIE.");
+        return instType_;
     }
 
     std::string Describe() const override
@@ -95,14 +99,9 @@ public:
                             instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
@@ -125,7 +124,6 @@ private:
     CollAlgOperator                  op_;
     bool                             rmtReduceWithMyRank_{true};
     std::vector<std::vector<RankId>> tempVTopo_;
-
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t scratchAddr_{0};

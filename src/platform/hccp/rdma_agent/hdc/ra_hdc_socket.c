@@ -79,7 +79,7 @@ int RaHdcSocketListenStart(unsigned int phyId, struct SocketListenInfoT conn[], 
 
     ret = RaHdcProcessMsg(RA_RS_SOCKET_LISTEN_START, phyId, (char *)&socketListenData,
         sizeof(union OpSocketListenData));
-    CHK_PRT_RETURN(ret == -EADDRINUSE, hccp_run_warn("[listen_start][ra_hdc_socket]ra hdc message process unsuccessful,"
+    CHK_PRT_RETURN(ret == -EADDRINUSE, hccp_warn("[listen_start][ra_hdc_socket]ra hdc message process unsuccessful,"
         " ret(%d) phyId(%u)", ret, phyId), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[listen_start][ra_hdc_socket]ra hdc message process failed, ret(%d) phyId(%u)",
         ret, phyId), ret);

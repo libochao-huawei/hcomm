@@ -38,6 +38,9 @@ public:
     virtual ~CcuRepBase();
     virtual bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) = 0;
     virtual std::string Describe()                                     = 0;
+    virtual uint32_t GetId() {
+        return 0;
+    }
 
     CcuRepType Type() const;
     bool       Translated() const;

@@ -20,7 +20,7 @@ public:
     explicit AlltoAllVStagedBase(const HcclDispatcher dispatcher);
     ~AlltoAllVStagedBase() override;
 
-    virtual HcclResult Prepare(DeviceMem &sendMem, DeviceMem &recvMem, StageAlltoAllVAddrInfo& sendAddrInfo,
+    HcclResult Prepare(DeviceMem &sendMem, DeviceMem &recvMem, StageAlltoAllVAddrInfo& sendAddrInfo,
         StageAlltoAllVAddrInfo& recvAddrInfo, bool isAlltoAllZCopyMode, Stream &mainStream) override;
 
 protected:

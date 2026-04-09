@@ -160,6 +160,7 @@ target_sources(hccl_v2_utest
 
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/aicpu/mem_transport_lite.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+        ${HCCL_V2_CODE_ROOT}/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
 
         ${HCCL_V2_CODE_ROOT}/unified_platform/ccu/ccu_device/ccu_device_manager.cpp
         ${HCCL_V2_CODE_ROOT}/unified_platform/ccu/ccu_device/ccu_res_specs.cpp
@@ -238,6 +239,7 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/dfx/common/task_info.cc
         ${HCCL_V2_CODE_ROOT}/framework/dfx/common/global_mirror_tasks.cc
         ${HCCL_V2_CODE_ROOT}/framework/dfx/common/mirror_task_manager.cc
+        ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/common/mirror_task_manager_lite.cc
         ${HCCL_V2_CODE_ROOT}/framework/dfx/common/mc2_global_mirror_tasks.cc
 
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/transport/mem_transport_callback.cc
@@ -247,6 +249,7 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/device_mode/aicpu_kernel_launcher.cpp
         ${HCCL_V2_CODE_ROOT}/framework/device_mode/aicpu_ins_preprocessor.cpp
         ${HCCL_V2_CODE_ROOT}/framework/resource_manager/stream/aicpu_stream_manager.cpp
+        ${HCCL_V2_CODE_ROOT}/framework/resource_manager/transport/aicpu/mem_transport_callback_lite.cc
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/task_exception/task_exception_func.cpp
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/task_exception/task_exception_handler_lite.cpp
         ${HCCL_V2_CODE_ROOT}/framework/dfx/aicpu/profiling/profiling_handler_lite.cc
@@ -283,6 +286,17 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/topo/rank_info_detect/rank_info_detect.cc
         ${HCCL_V2_CODE_ROOT}/framework/topo/rank_info_detect/rank_info_dispatcher.cc
         ${HCCL_V2_CODE_ROOT}/framework/topo/rank_info_detect/socket_agent.cc
+
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/eid_util.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/hal.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/host_rdma.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/pcie_nic.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_card.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_server.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/product_pod.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/rank_info_types.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/topo_addr_info.c
+        ${HCCL_V2_CODE_ROOT}/framework/topo/topo_addr_info/src/topo.c
 
         ${HCCL_V2_CODE_ROOT}/framework/aiv/aiv_ins_preprocessor.cpp
         ${HCCL_V2_CODE_ROOT}/framework/aiv/aiv_ins/aiv_ins.cc

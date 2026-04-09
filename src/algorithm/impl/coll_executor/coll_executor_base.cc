@@ -125,7 +125,7 @@ HcclResult CollExecutorBase::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 data
     return HCCL_SUCCESS;
 }
 
-HcclResult CollExecutorBase::GetNumBlocks(u32& numBlocks)
+HcclResult CollExecutorBase::GetNumBlocks(u32& numBlocks) const
 {
     numBlocks = numBlocks_;
     return HCCL_SUCCESS;
