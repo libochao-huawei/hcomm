@@ -191,7 +191,7 @@ private:
     std::vector<u64> localRecvCounts_;
     std::vector<u64> localRecvDispls_;
 
-    std::vector<u32> flagAreaRefreshData_;
+    std::vector<u64> flagAreaRefreshData_;
 
     u32 waitFlagTimeoutSec_{0};   // 等待Flag的超时时间，单位秒
 
