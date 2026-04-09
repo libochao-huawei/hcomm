@@ -16,7 +16,8 @@
 namespace Hccl {
 
 constexpr u64 AG_2D_SMALL_DATA_SIZE = 1 * 1024 * 1024;
-constexpr u64 AG_CCU_1D_MAX_DATA_SIZE = 64 * 1024 * 1024;
+constexpr u64 AG_CCU_PARALLEL_MAX_DATA_SIZE = 64 * 1024 * 1024;
+constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
@@ -105,7 +106,7 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 } else {
                     ratio = DEFAULT_RANK_SIZE / rankSize_;
                 }
-                if (dataSize_ * ratio < AG_CCU_1D_MAX_DATA_SIZE) {
+                if (dataSize_ * ratio < AG_CCU_PARALLEL_MAX_DATA_SIZE) {
                     primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
                 } else {
                     return SelectorStatus::NOT_MATCH;
@@ -141,7 +142,7 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 } else {
                     ratio = DEFAULT_RANK_SIZE / rankSize_;
                 }
-                if (dataSize_ * ratio < AG_CCU_1D_MAX_DATA_SIZE) {
+                if (dataSize_ * ratio < AG_CCU_PARALLEL_MAX_DATA_SIZE) {
                     primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
                 } else {
                     return SelectorStatus::NOT_MATCH;
