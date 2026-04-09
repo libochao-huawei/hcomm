@@ -12,6 +12,7 @@ set(src_list
     host_cpu_roce_channel.cc
     host_rdma_connection.cc
     dpu_notify/dpu_notify_manager.cc
+    hybrid_mode_config.cc
 )
 
 target_sources(hcomm PRIVATE
