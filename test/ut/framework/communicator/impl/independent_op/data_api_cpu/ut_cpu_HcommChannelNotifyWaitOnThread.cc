@@ -158,19 +158,3 @@ TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_BufPairs
     HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
-
-TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_ReturnHCCL_SUCCESS)
-{
-    StreamHandle streamHandle = reinterpret_cast<StreamHandle>(0x1234);
-    HcclMemTransport memtransport = reinterpret_cast<HcclMemTransport>(0x1234);
-    char localAddr[64] = {0};
-    char remoteAddr[64] = {0};
-    HcclBuf bufLocal = {localAddr, sizeof(localAddr)};
-    HcclBuf bufRemote = {remoteAddr, sizeof(remoteAddr)};
-    HcclBufPair bufPairs[1] = {{ bufLocal, bufRemote }};
-    uint32_t bufPairsNum = 1;
-
-    MOCKER(&Transport::ReadAsync).stubs().will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}

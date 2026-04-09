@@ -113,16 +113,9 @@ TEST_F(SalTest, ut_atrace_error_test)
 
 TEST_F(SalTest, ut_DlTraceFunctionInit_UTrace_Failed_Expect_ReturnError)
 {
-    DlTraceFunction::GetInstance().DlTraceFunctionInit();
-    MOCKER(HcclDlopen)
-    .stubs()
-    .will(returnValue(reinterpret_cast<void*>(0x1234)));
-    MOCKER(DlUTraceFunctionInterInit)
+    MOCKER(DlTraceFunction::DlUTraceFunctionInterInit)
     .stubs()
     .will(returnValue(HCCL_E_INTERNAL));
-    MOCKER(HcclDlclose)
-    .stubs()
-    .will(returnValue(0));
 
     DlTraceFunction &dlTrace = DlTraceFunction::GetInstance();
     dlTrace.handle_ = nullptr;
@@ -133,16 +126,9 @@ TEST_F(SalTest, ut_DlTraceFunctionInit_UTrace_Failed_Expect_ReturnError)
 
 TEST_F(SalTest, ut_DlTraceFunctionInit_ATrace_Failed_Expect_ReturnError)
 {
-    DlTraceFunction::GetInstance().DlTraceFunctionInit();
-    MOCKER(HcclDlopen)
-    .stubs()
-    .will(returnValue(reinterpret_cast<void*>(0x1234)));
-    MOCKER(DlATraceFunctionInterInit)
+    MOCKER(DlTraceFunction::DlATraceFunctionInterInit)
     .stubs()
     .will(returnValue(HCCL_E_INTERNAL));
-    MOCKER(HcclDlclose)
-    .stubs()
-    .will(returnValue(0));
 
     DlTraceFunction &dlTrace = DlTraceFunction::GetInstance();
     dlTrace.handle_ = nullptr;
