@@ -18,10 +18,9 @@ USER_ID=$(id -u)
 CPU_NUM=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
 JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
-COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 FULL_MODE="false"  # 新增变量，用于控制是否全量构建
-KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
+BUILD_MODE="HOST_ONLY"
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
@@ -38,7 +37,8 @@ BUILD_CB_TEST="false"
 ENABLE_UT="off"
 ENABLE_ST="off"
 ENABLE_GCOV="off"
-CMAKE_BUILD_TYPE="Debug"
+BUILD_TYPE="Release"
+TEST_BUILD_PROFILE="dev"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -64,7 +64,7 @@ function clean()
         rm -rf ${BUILD_DIR}
     fi
 
-    if [ -z "${TEST}" ] && [ -z "${KERNEL}" ];then
+    if [ -z "${TEST}" ] && [ "${BUILD_MODE}" != "DEVICE_MINIMAL" ];then
         if [ -n "${BUILD_OUTPUT_DIR}" ];then
             rm -rf ${BUILD_OUTPUT_DIR}
         fi
@@ -130,7 +130,9 @@ function build_cb_test_verify(){
 
 function build_test() {
     ENABLE_ST="on"
-    cmake_config -DENABLE_ST=${ENABLE_ST}
+    local test_build_type
+    test_build_type=$(get_test_build_type)
+    cmake_config -DENABLE_ST=${ENABLE_ST} -DTEST_BUILD_PROFILE=${TEST_BUILD_PROFILE} -DCMAKE_BUILD_TYPE=${test_build_type}
 
     LIBRARY_DIR="${BUILD_DIR}/test:${ASCEND_HOME_PATH}/lib64:"
     # 每日构建sdk包安装路径
@@ -254,14 +256,17 @@ function build_ut() {
   fi
 
   local LLT_KILL_TIME=200
+  local test_build_type
+  test_build_type=$(get_test_build_type)
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
-              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+              -DCMAKE_BUILD_TYPE=${test_build_type} \
               -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
               -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
               -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
               -DENABLE_GCOV=${ENABLE_GCOV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
+              -DTEST_BUILD_PROFILE=${TEST_BUILD_PROFILE} \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
               -DLLT_KILL_TIME=${LLT_KILL_TIME}"
 
@@ -346,17 +351,30 @@ function run_ut() {
   fi
 }
 
+function get_test_build_type() {
+  if [ "${TEST_BUILD_PROFILE}" = "coverage" ]; then
+    echo "Debug"
+  else
+    echo "RelWithDebInfo"
+  fi
+}
+
 # print usage message
 function usage() {
   echo "Usage:"
   echo "  sh build.sh --pkg [-h | --help] [-j<N>]"
   echo "              [--cann_3rd_lib_path=<PATH>] [-p|--package-path <PATH>]"
-  echo "              [--asan]"
+  echo "              [--asan] [--build-mode=<host_only|device_minimal|device_full>]"
+  echo "              [--test-profile=<dev|coverage>]"
   echo "              [--sign-script <PATH>] [--enable-sign] [--version <VERSION>]"
   echo ""
   echo "Options:"
   echo "    -h, --help     Print usage"
   echo "    --asan         Enable AddressSanitizer"
+  echo "    --build-mode=<MODE>"
+  echo "                   Build mode: host_only/device_minimal/device_full, Default: host_only"
+  echo "    --test-profile=<PROFILE>"
+  echo "                   Test build profile: dev/coverage, Default: dev"
   echo "    -build-type=<TYPE>"
   echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
   echo "    -j<N>          Set the number of threads used for building, default is 8"
@@ -386,6 +404,16 @@ while [[ $# -gt 0 ]]; do
     --build-type=*)
         OPTARG=$1
         BUILD_TYPE="${OPTARG#*=}"
+        shift
+        ;;
+    --build-mode=*)
+        OPTARG=$1
+        BUILD_MODE="$(echo "${OPTARG#*=}" | tr '[:lower:]' '[:upper:]')"
+        shift
+        ;;
+    --test-profile=*)
+        OPTARG=$1
+        TEST_BUILD_PROFILE="${OPTARG#*=}"
         shift
         ;;
     --ccache)
@@ -478,12 +506,12 @@ while [[ $# -gt 0 ]]; do
         TEST_TASK_NAME="legacy_alg_testcase"
         shift
         ;;
-    --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
-        KERNEL="true"
+    --aicpu)
+        BUILD_MODE="DEVICE_MINIMAL"
         shift
         ;;
     --full)
-        FULL_MODE="true"
+        BUILD_MODE="DEVICE_FULL"
         shift
         ;;
     --build_aarch)
@@ -495,8 +523,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --cov)
-        ENABLE_GCOV="on"
-        COV="true"
+        TEST_BUILD_PROFILE="coverage"
         shift
         ;;
     --noclean)
@@ -537,12 +564,38 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+case "${BUILD_MODE}" in
+    HOST_ONLY|DEVICE_MINIMAL|DEVICE_FULL)
+        ;;
+    *)
+        log "Error: Unsupported build mode: ${BUILD_MODE}"
+        usage
+        exit 1
+        ;;
+esac
+
+case "${TEST_BUILD_PROFILE}" in
+    dev|coverage)
+        ;;
+    *)
+        log "Error: Unsupported test profile: ${TEST_BUILD_PROFILE}"
+        usage
+        exit 1
+        ;;
+esac
+
+if [ "${TEST_BUILD_PROFILE}" = "coverage" ]; then
+    ENABLE_GCOV="on"
+else
+    ENABLE_GCOV="off"
+fi
+
 if [ -n "${TEST}" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_TEST=ON"
 fi
 
-if [ "${KERNEL}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device"
+if [ "${BUILD_MODE}" == "DEVICE_FULL" ];then
+    FULL_MODE="true"
 fi
 
 if [ "${FULL_MODE}" == "true" ];then
@@ -561,9 +614,7 @@ if [ "${ASAN}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_ASAN=ON"
 fi
 
-if [ "${COV}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=ON"
-fi
+CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=$(echo "${ENABLE_GCOV}" | tr '[:lower:]' '[:upper:]')"
 
 if [ -n "${ascend_package_path}" ];then
     ASCEND_CANN_PACKAGE_PATH=${ascend_package_path}
@@ -605,8 +656,6 @@ if [ "${ENABLE_UT}" == "on" ]; then
     make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
-elif [ "${KERNEL}" == "true" ]; then
-    build_kernel
 elif [ "${BUILD_FWK_HLT}" == "true" ]; then
     log "Info: Building fwk_test with MOCK_HCCL=${MOCK_FWK_HLT}"
     cmake ${CUSTOM_OPTION} -DMOCK_HCCL=${MOCK_FWK_HLT} ../test/hlt
@@ -622,7 +671,7 @@ elif [ "${BUILD_CB_TEST}" == "true" ]; then
     else
         log "Info: Building cb_test_verify success"
     fi
-elif [ "${FULL_MODE}" == "true" ]; then
+elif [ "${BUILD_MODE}" == "DEVICE_FULL" ]; then
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}
     cd ${BUILD_DEVICE_DIR}
@@ -638,15 +687,15 @@ elif [ "${FULL_MODE}" == "true" ]; then
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
     rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
-else
+elif [ "${BUILD_MODE}" == "DEVICE_MINIMAL" ]; then
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}
     cd ${BUILD_DEVICE_DIR}
     CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
     build_kernel
-    cd .. & cd ${BUILD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
-    build_package
     rmdir ${BUILD_DEVICE_DIR}
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
+    build_package
 fi

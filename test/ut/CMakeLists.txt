@@ -12,6 +12,11 @@ set(HCCL_CODE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 message(STATUS "${HCCL_CODE_ROOT}/src/platform/common/ *******************************************")
 set(HCCL_LLT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+# Centralize gcov linkage so UT targets do not need to repeat -lgcov locally.
+link_libraries(
+    $<$<BOOL:${ENABLE_GCOV}>:-lgcov>
+)
+
 set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}
     ${HCCL_CODE_ROOT}/include

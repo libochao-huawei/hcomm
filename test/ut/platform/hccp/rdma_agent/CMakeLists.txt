@@ -119,7 +119,6 @@ target_link_libraries(rdma_agent_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lrt
     -pthread
-    -lgcov
     -ldl
 )
 

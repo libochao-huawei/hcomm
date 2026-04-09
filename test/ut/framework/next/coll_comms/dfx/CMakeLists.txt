@@ -33,7 +33,7 @@ target_compile_options(hccl_utest_test_dfx_resource PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    -fno-access-control
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
  
@@ -47,7 +47,6 @@ target_link_libraries(hccl_utest_test_dfx_resource PRIVATE
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi
-    -lgcov
     -lrt
     -ldl
 )

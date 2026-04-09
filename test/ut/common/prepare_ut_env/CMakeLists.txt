@@ -23,7 +23,7 @@ target_compile_options(hccl_ut_prepare_env   PRIVATE
 
 target_compile_options(hccl_ut_prepare_env   PRIVATE 
     -U_FORTIFY_SOURCE
-    -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    -fno-access-control
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
 )
 
@@ -32,7 +32,6 @@ target_link_libraries(hccl_ut_prepare_env  PRIVATE
     -pthread
     -Wl,--whole-archive
     -Wl,--no-whole-archive
-    -lgcov
     -lrt
     -pthread
 )

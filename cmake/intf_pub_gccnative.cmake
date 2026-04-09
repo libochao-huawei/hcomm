@@ -17,20 +17,20 @@ target_compile_definitions(intf_pub_base INTERFACE
 
 target_compile_options(intf_pub_base INTERFACE
     -D_GLIBCXX_USE_CXX11_ABI=0
-    -g
-    --coverage
+    $<$<BOOL:${ENABLE_GCOV}>:-g>
+    $<$<NOT:$<BOOL:${ENABLE_GCOV}>>:-g1>
+    $<$<BOOL:${ENABLE_GCOV}>:--coverage>
     -w
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all -fno-stack-protector -fno-omit-frame-pointer -g>
-    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address;-fsanitize=leak;-fsanitize-recover=address,all;-fno-stack-protector;-fno-omit-frame-pointer;-g>
+    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs;-ftest-coverage>
     -fPIC
     -pipe
 )
 
 target_link_options(intf_pub_base INTERFACE
-    -fprofile-arcs -ftest-coverage
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
-    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address;-fsanitize=leak;-fsanitize-recover=address>
+    $<$<BOOL:${ENABLE_GCOV}>:--coverage;-fprofile-arcs;-ftest-coverage>
 )
 
 target_link_libraries(intf_pub_base INTERFACE

@@ -35,7 +35,6 @@ target_link_libraries(aicpu_kfc_utest_misc PRIVATE
     hccl_llt
     -Wl,--whole-archive
     -Wl,--no-whole-archi
-    -lgcov
     -lrt
     -ldl
 )

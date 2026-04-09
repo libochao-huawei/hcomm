@@ -57,7 +57,7 @@ target_include_directories(hccp_utest PRIVATE
 
 target_compile_options(hccp_utest PRIVATE
         -U_FORTIFY_SOURCE
- 	     -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    -fno-access-control
  	     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
  	     -Wall
  	     -Wextra
@@ -77,7 +77,6 @@ target_link_libraries(hccp_utest PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lrt
     -pthread
-    -lgcov
     -ldl
 )
 
