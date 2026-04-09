@@ -97,7 +97,7 @@ private:
     HcclResult DoLocalWriteInfoAndFlagAndInterSync();
 
     // 轮询等待某个rank的flag，阻塞函数
-    HcclResult WaitValueOfRank(const u32 rank, u64& value);
+    HcclResult WaitValueOfRank(const u32 rank, const HcclUs &startTimeUs, u32& value);
 
     // 等待counts信息并刷新recive info，阻塞函数
     HcclResult WaitAndCalReceiveInfo();
@@ -132,13 +132,13 @@ private:
     // 获取每个rank对应的内存分块偏移值，bufferIdx为0或1表示启用乒乓时的两组内存
     inline u64 GetDataBlockOffset(const u32 rank, const u32 bufferIdx) const;
 
-    // 计算buffer分块后，一共要循环多少轮才能处理完所有数据
-    u32 GetTotalLoopNum() const;
-
     // 刷新某个rank的send info，counts-[count]，displ+[count]
     HcclResult UpdateLocalSendInfo(const u32 targetRank, const u64 count);
     // 刷新某个rank的receive info，counts-[count]，displ+[count]
     HcclResult UpdateLocalRecvInfo(const u32 sourceRank, const u64 count);
+
+    // 计算本地loop数，后续和module内其他rank进行比较，取最大的loop数作为总loop数
+    u32 GetLocalLoopNum() const;
 
     HcclWorkflowMode workMode_ = HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED;
 
@@ -191,15 +191,14 @@ private:
     std::vector<u64> localRecvCounts_;
     std::vector<u64> localRecvDispls_;
 
-    std::vector<u64> flagAreaRefreshData_;
+    std::vector<u32> flagAreaRefreshData_;
 
     u32 waitFlagTimeoutSec_{0};   // 等待Flag的超时时间，单位秒
 
     u32 flagAreaRefreshFlag_{0}; // 标识flag区域已经被刷0，避免刷0的任务还没执行，下发态kernel就开始轮询
     u32 flagAreaRefreshValue_{1};
 
-    u64 localMaxSendCount_{0}; // 本rank发送的最大数据量，广播给其他rank，用于计算loop数
-    u64 intraMaxSendCount_{0}; // 本module内所有rank发送的最大数据量，用于计算loop数
+    u32 intraLoopNum_{0}; // 本module内所有rank的最大loop数
 };
 
 }
