@@ -215,6 +215,7 @@ typedef struct {
         } hccsAttr;
         struct {
             uint32_t sqDepth;         ///< UB队列深度，0表示使用默认值
+            uint32_t qos;             ///< 通信域 QoS（UBC_CTP / UBC_TP），与 HcclChannelDesc::ubcAttr.qos 对齐
         } ubAttr;
     };
 } HcommChannelDesc;

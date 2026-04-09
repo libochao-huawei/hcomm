@@ -17,6 +17,7 @@
 
 #include "hccl_types.h"
 #include "hcomm_adapter_hccp.h"
+#include "hccp_tp.h"
 #include "orion_adpt_utils.h"
 
 namespace hcomm {
@@ -25,18 +26,25 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
     CommAddr locAddr{};
     CommAddr rmtAddr{};
     TpProtocol tpProtocol{TpProtocol::CTP};
+    /// 参与 TP/SL 分组与缓存键（0–7），连接侧已归一化
+    uint32_t qos{EnvConfig::UB_QOS_DEFAULT};
+    /// 非 0 时与 sl_available 推导的 M 取 min 作为可用档位数上限
+    uint32_t slLevelCount{0};
+    /// 环回等场景：首 TPID + 掩码内最小 SL
+    bool loopFirstTpLowestSl{false};
 
     explicit GetTpInfoParamDef() = default;
     GetTpInfoParamDef(const CommAddr &locAddr, const CommAddr &rmtAddr, TpProtocol tpProtocol)
-        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol){};
+        : locAddr(locAddr), rmtAddr(rmtAddr), tpProtocol(tpProtocol) {}
 
     std::string Describe() const {
         Hccl::IpAddress locIpAddr{}, rmtIpAddr{};
         (void)CommAddrToIpAddress(locAddr, locIpAddr);
         (void)CommAddrToIpAddress(rmtAddr, rmtIpAddr);
-        return Hccl::StringFormat("RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s]",
-            locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(),
-            tpProtocol.Describe().c_str());
+        return Hccl::StringFormat(
+            "RaUbGetTpInfoParam[locAddr=%s, rmtAddr=%s, tpProtocol=%s, qos=%u, loopFirstTpLowestSl=%d]",
+            locIpAddr.Describe().c_str(), rmtIpAddr.Describe().c_str(), tpProtocol.Describe().c_str(), qos,
+            static_cast<int>(loopFirstTpLowestSl));
     }
 };
 
@@ -47,9 +55,11 @@ using GetTpInfoParam = struct GetTpInfoParamDef {
 using TpHandle = uint64_t;
 struct TpInfo {
     TpHandle tpHandle{0};
+    uint32_t mappedJettyPriority{0};
+    bool hasMappedJettyPriority{false};
 
     TpInfo() = default;
-    TpInfo(const TpHandle handle)
+    explicit TpInfo(const TpHandle handle)
         : tpHandle(handle) {}
 };
 
@@ -76,16 +86,22 @@ private:
     * tpInfoNum: 查询到的TP信息个数，当前为复用TP，只会申请1个
     * dataBuffer: 查询到的TP信息数据，原始数据保留缓冲区
     */
+    enum class ReqPhase : uint8_t { WAIT_LIST = 0, WAIT_TP_ATTR = 1 };
+
     struct RequestCtx {
+        ReqPhase phase{ReqPhase::WAIT_LIST};
         RequestHandle handle{0};
         uint32_t tpInfoNum{0};
         std::vector<char> dataBuffer;
+        TpAttr tpAttr{};
+        uint32_t tpAttrBitmap{0};
     };
 
+    using QosKey = uint32_t;
     using InfoCtxMap = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, TpInfoCtx>>;
-    using ReqCtxMap  = std::unordered_map<Hccl::IpAddress,
-        std::unordered_map<Hccl::IpAddress, RequestCtx>>;
+        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, TpInfoCtx>>>;
+    using ReqCtxMap = std::unordered_map<Hccl::IpAddress,
+        std::unordered_map<Hccl::IpAddress, std::unordered_map<QosKey, RequestCtx>>>;
 
 private:
     TpMgr() = default;
@@ -95,8 +111,10 @@ private:
 
     HcclResult FindAndGetTpInfo(const GetTpInfoParam &param, TpInfo &tpInfo);
     HcclResult StartGetTpInfoListRequest(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
-    HcclResult HandleCompletedRequest(const RequestCtx reqCtx, const GetTpInfoParam &param,
-        TpInfo &tpInfo);
+    HcclResult StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestCtx &reqCtx) const;
+    HcclResult HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam &param, TpInfo &tpInfo);
+
+    static QosKey TpInfoCacheQos(const GetTpInfoParam &param);
 
     InfoCtxMap &GetInfoCtxMap(const TpProtocol tpProtocol);
     ReqCtxMap  &GetReqCtxMap(const TpProtocol tpProtocol);
