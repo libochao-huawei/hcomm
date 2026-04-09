@@ -139,7 +139,7 @@ struct EnvConfig {
  	static const u32 HCCL_QOS_MAX = 7;
  	static const u32 HCCL_QOS_DEFAULT = 6;
     /// UBC CCU 路径：通信域 QoS 未配置或与 TP 策略分组对齐时的默认 QoS（0–7）
-    static const u32 UB_QOS_DEFAULT = HCCL_QOS_DEFAULT;
+    static const u32 UB_QOS_DEFAULT = 4;
     // 解析RDMATrafficClass
     HcclResult ParseRDMATrafficClass();
     // 解析RDMAServerLevel
