@@ -395,10 +395,7 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
             CHK_RET(algParaVec.at(step).part0FuncPtr(
                 tempFuncs, tempAlgParams, algParaVec.at(step).part0links, algParaVec.at(step).part0Que));
         }
-        CHK_RET(PostSyncQues(syncQueues_, 0));
-        // 再处理part1数据
-        CHK_RET(PreSyncQues(syncQueues_, 0));
-        // 第一步的时候server内topo包含root_的rank进行展开，其它rank不展开
+        // 再处理part1数据, 第一步的时候server内topo包含root_的rank进行展开，其它rank不展开
         u64 sliceSizePart1 = max(dataParameters.sliceSize.at(1).at(step), dataParameters.tailSize.at(1).at(step));
         if ((!isFirst || intraLocalRoot_ == root_) && sliceSizePart1 > 0) {
             // 数据1的server内的scatter算法
