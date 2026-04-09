@@ -52,10 +52,13 @@ HcclResult InsTempScatterNHR::PreCopy(TemplateDataParams &templateDataParams, st
     }
     for (u32 r = 0; r < templateDataParams.repeatNum; r++) {
         for (u32 algRank = 0; algRank < tempRankSize_; algRank++) {
-            DataSlice srcSlice(BufferType::INPUT, r * templateDataParams.inputRepeatStride + templateDataParams.inputSliceStride * algRank + buffInfo_.inBuffBaseOff,
-                                templateDataParams.sliceSize);
-            DataSlice dstSlice(BufferType::SCRATCH, r * tempRankSize_ * templateDataParams.sliceSize + buffInfo_.scratchBuffBaseOff + algRank * templateDataParams.sliceSize,
-                               templateDataParams.sliceSize);
+            u64 sliceSize = templateDataParams.tailSize;
+            u64 srcOffset = r * templateDataParams.inputRepeatStride + templateDataParams.inputSliceStride * algRank +
+                            buffInfo_.inBuffBaseOff;
+            DataSlice srcSlice(BufferType::INPUT, srcOffset, sliceSize);
+            u64 dstOffset = r * ((tempRankSize_ - 1) * templateDataParams.sliceSize + templateDataParams.tailSize) +
+                            buffInfo_.scratchBuffBaseOff + algRank * templateDataParams.sliceSize;
+            DataSlice dstSlice(BufferType::SCRATCH, dstOffset, sliceSize);
             LocalCopy(tempInsQues[0], srcSlice, dstSlice);
         }
     }
@@ -67,11 +70,14 @@ HcclResult InsTempScatterNHR::PostCopy(TemplateDataParams &templateDataParams, s
 {   
     u32 myAlgRank;
     GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
+    u64 sliceSize = templateDataParams.sliceSize;
+    UpdateRxSliceSize(templateDataParams, sliceSize);
     for (u32 r = 0; r < templateDataParams.repeatNum; r++) {
         u64 dstOffset = buffInfo_.outBuffBaseOff + r * templateDataParams.sliceSize;
-        u64 srcOffset = r * tempRankSize_ * templateDataParams.sliceSize + buffInfo_.scratchBuffBaseOff + myAlgRank * templateDataParams.sliceSize;
-        DataSlice dstSlice(buffInfo_.outBuffType, dstOffset, templateDataParams.sliceSize);
-        DataSlice srcSlice(BufferType::SCRATCH, srcOffset, templateDataParams.sliceSize);
+        u64 srcOffset = r * ((tempRankSize_ - 1) * templateDataParams.sliceSize + templateDataParams.tailSize) +
+                        buffInfo_.scratchBuffBaseOff + myAlgRank * templateDataParams.sliceSize;
+        DataSlice dstSlice(buffInfo_.outBuffType, dstOffset, sliceSize);
+        DataSlice srcSlice(BufferType::SCRATCH, srcOffset, sliceSize);
         if (buffInfo_.outBuffType == BufferType::SCRATCH && srcOffset == dstOffset) {
             continue;
         }
@@ -146,8 +152,11 @@ HcclResult InsTempScatterNHR::BatchSend(AicpuNHRStepInfo &stepInfo, const ResLin
     std::vector<DataSlice> srcDstSlices;
     for (u32 i = 0; i < stepInfo.txSliceIdxs.size(); i++) {
         u32 txId = stepInfo.txSliceIdxs[i];
-        u64 srcDstOffset = repeat * tempRankSize_ * templateDataParams.sliceSize + buffInfo_.scratchBuffBaseOff + txId * templateDataParams.sliceSize;
-        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, templateDataParams.sliceSize);
+        u64 srcDstOffset = repeat * ((tempRankSize_ - 1) * templateDataParams.sliceSize + templateDataParams.tailSize) +
+                           buffInfo_.scratchBuffBaseOff + txId * templateDataParams.sliceSize;
+        // 发送的一定是root
+        u64 sliceSize = templateDataParams.tailSize;
+        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, sliceSize);
         srcDstSlices.push_back(srcDstSlice);
     }
     SlicesList txSlicesList(srcDstSlices, srcDstSlices);
@@ -160,12 +169,15 @@ HcclResult InsTempScatterNHR::BatchSend(AicpuNHRStepInfo &stepInfo, const ResLin
 HcclResult InsTempScatterNHR::BatchRecv(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks, InsQuePtr &queue,
                                         TemplateDataParams &templateDataParams, u32 repeat) const
 {
+    u64 sliceSize = templateDataParams.sliceSize;
+    UpdateRxSliceSize(templateDataParams, sliceSize);
     const LinkData &linkRecv = tempLinks.at(stepInfo.fromRank)[0];
     std::vector<DataSlice> srcDstSlices;
     for (u32 i = 0; i < stepInfo.rxSliceIdxs.size(); i++) {
         u32 rxId = stepInfo.rxSliceIdxs[i];
-        u64 srcDstOffset = repeat * tempRankSize_ * templateDataParams.sliceSize + buffInfo_.scratchBuffBaseOff + rxId * templateDataParams.sliceSize;
-        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, templateDataParams.sliceSize);
+        u64 srcDstOffset = repeat * ((tempRankSize_ - 1) * templateDataParams.sliceSize + templateDataParams.tailSize) +
+                           buffInfo_.scratchBuffBaseOff + rxId * templateDataParams.sliceSize;
+        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, sliceSize);
         srcDstSlices.push_back(srcDstSlice);
     }
     SlicesList rxSlicesList(srcDstSlices, srcDstSlices);
@@ -185,16 +197,21 @@ HcclResult InsTempScatterNHR::BatchSR(AicpuNHRStepInfo &stepInfo, const ResLinks
     std::vector<DataSlice> txSrcDstSlices;
     for (u32 i = 0; i < stepInfo.txSliceIdxs.size(); i++) {
         u32 txId = stepInfo.txSliceIdxs[i];
-        u64 srcDstOffset = repeat * tempRankSize_ * templateDataParams.sliceSize + buffInfo_.scratchBuffBaseOff + txId * templateDataParams.sliceSize;
-        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, templateDataParams.sliceSize);
+        u64 sliceSize = templateDataParams.sliceSize;
+        u64 srcDstOffset = repeat * ((tempRankSize_ - 1) * templateDataParams.sliceSize + templateDataParams.tailSize) +
+                           buffInfo_.scratchBuffBaseOff + txId * templateDataParams.sliceSize;
+        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, sliceSize);
         txSrcDstSlices.push_back(srcDstSlice);
     }
     SlicesList txSlicesList(txSrcDstSlices, txSrcDstSlices);
     std::vector<DataSlice> rxSrcDstSlices;
     for (u32 i = 0; i < stepInfo.rxSliceIdxs.size(); i++) {
         u32 rxId = stepInfo.rxSliceIdxs[i];
-        u64 srcDstOffset = repeat * tempRankSize_ * templateDataParams.sliceSize + buffInfo_.scratchBuffBaseOff + rxId * templateDataParams.sliceSize;
-        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, templateDataParams.sliceSize);
+        u64 srcDstOffset = repeat * ((tempRankSize_ - 1) * templateDataParams.sliceSize + templateDataParams.tailSize) +
+                           buffInfo_.scratchBuffBaseOff + rxId * templateDataParams.sliceSize;
+        u64 sliceSize = templateDataParams.sliceSize;
+        UpdateRxSliceSize(templateDataParams, sliceSize);
+        DataSlice srcDstSlice(BufferType::SCRATCH, srcDstOffset, sliceSize);
         rxSrcDstSlices.push_back(srcDstSlice);
     }
     SlicesList rxSlicesList(rxSrcDstSlices, rxSrcDstSlices);
@@ -263,5 +280,15 @@ HcclResult InsTempScatterNHR::GetStepInfo(u32 step, u32 nSteps, AicpuNHRStepInfo
     return HcclResult::HCCL_SUCCESS;
 }
 
-
+void InsTempScatterNHR::UpdateRxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize) const
+{
+    // 根据传入参数的tailSize和当前是否是最后一张卡刷新
+    u32 myAlgRank;
+    GetAlgRank(myRank_, tempVTopo_[0], myAlgRank);
+    // 支持不均匀切分的情况下需要把尾部数据放到最后一张卡上
+    if (myAlgRank == tempVTopo_[0].size() - 1) {
+        sliceSize = tempAlgParams.tailSize;
+    }
+    return;
+}
 } // namespace Hccl
