@@ -155,6 +155,9 @@ HcclResult TransportTcp::RxAsync(UserMemType srcMemType, u64 srcOffset, void *ds
     }
     CHK_PTR_NULL(dst);
 
+    CHK_PRT_RET(len > UINT64_MAX - TCP_BUFFER_SIZE,
+        HCCL_ERROR("[TransportTcp][RxAsync]len[%llu] exceeds maximum allowed size", len), HCCL_E_PARA);
+
     const void* recvBufferPtr = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostRecvBuffer_.ptr() :
         deviceRecvBuffer_.ptr();
     u64 recvBufferSize = nicDeploy_ == NICDeployment::NIC_DEPLOYMENT_HOST ? hostRecvBuffer_.size() :
