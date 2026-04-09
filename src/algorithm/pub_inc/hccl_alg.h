@@ -94,7 +94,7 @@ private:
 #endif
 #endif
     HcclResult InitTopoInfo(HcclTopoInfo& topoInfo, HcclTopoAttr &topoAttr);
-    HcclResult InitAlgoInfo(HcclAlgoInfo& algoInfo, HcclAlgoAttr &algoAttr);
+    HcclResult InitAlgoInfo(HcclAlgoInfo& algoInfo, HcclAlgoAttr &algoAttr) const;
     HcclResult InitExternalEnable(HcclExternalEnable& externalEnable);
 
     // 缓存初始传入传入的属性值

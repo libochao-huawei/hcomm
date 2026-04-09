@@ -301,7 +301,7 @@ HcclResult HcclAlg::InitTopoInfo(HcclTopoInfo& topoInfo, HcclTopoAttr &topoAttr)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAlg::InitAlgoInfo(HcclAlgoInfo& algoInfo, HcclAlgoAttr &algoAttr)
+HcclResult HcclAlg::InitAlgoInfo(HcclAlgoInfo& algoInfo, HcclAlgoAttr &algoAttr) const
 {
     algoInfo.identifier = algoAttr.identifier;
     algoInfo.inlineReduceSwitchOn = algoAttr.inlineReduceSwitchOn;
