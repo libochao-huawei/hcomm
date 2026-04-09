@@ -50,8 +50,9 @@ if(NOT DEFINED PROJECT_VERSION)
     endif()
 endif()
 
-# 设置时间戳
-string(TIMESTAMP BUILD_TIMESTAMP "%Y%m%d%H%M%S")
+# 设置时间戳 (格式: YYYYmmdd_HHMMSS)
+# CMake 3.20+ 支持 %f (毫秒)，这里使用简化格式
+string(TIMESTAMP BUILD_TIMESTAMP "%Y%m%d_%H%M%S")
 
 # 设置TARGET_ENV变量 (用于JSON配置中的路径替换)
 if(CPACK_ARCH STREQUAL "aarch64")

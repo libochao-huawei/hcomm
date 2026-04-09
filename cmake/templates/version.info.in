@@ -1,1 +1,5 @@
 Version=@PROJECT_VERSION@
+version_dir=cann
+required_package_runtime_version="CUR_MAJOR_MINOR_VER"
+required_package_metadef_version="CUR_MAJOR_MINOR_VER"
+timestamp=@BUILD_TIMESTAMP@
