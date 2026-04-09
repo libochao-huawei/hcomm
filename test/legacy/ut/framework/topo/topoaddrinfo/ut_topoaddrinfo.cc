@@ -1,10 +1,12 @@
 #include "gtest/gtest.h"
+#include <time.h>
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #include <cstdlib>
 #include <string>
 #include <stdint.h>
 #include <ctype.h>
+#include <dlfcn.h>
 #include "securec.h"
 #include "topo_addr_info.h"
 #include "hal.h"
@@ -214,4 +216,57 @@ TEST_F(TopoAddrInfoTest, ut_rootinfo_for_pod)
     EXPECT_TRUE(strstr(buf, "dfdf14d8") !=  NULL);
     EXPECT_TRUE(strstr(buf, "dfdf10d8") !=  NULL);
     free(buf);
+}
+
+int mock_dcmi_init()
+{
+    // 模拟初始化耗时
+    sleep(1);
+    return 0;
+}
+
+int mock_dcmiv2_get_mainboard_id(int npu_id, unsigned int* mainboard_id)
+{
+    *mainboard_id = 0x07;
+    return 0;
+}
+
+int mock_get_logicid_from_chipphy_id(unsigned int phyId, unsigned int* logicId)
+{
+   *logicId = phyId;
+   return 0;
+}
+
+void *mock_dlsym(void *handle, const char *symbol)
+{
+    if (strcmp(symbol, "dcmiv2_init") == 0) {
+        return (void*)mock_dcmi_init;
+    }
+    if (strcmp(symbol, "dcmiv2_get_mainboard_id") == 0) {
+        return (void*)mock_dcmiv2_get_mainboard_id;
+    }
+    if (strcmp(symbol, "dcmiv2_get_dev_id_from_chip_phyid") == 0) {
+        return (void*)mock_get_logicid_from_chipphy_id;
+    }
+    return (void*)0x1;
+}
+
+void *mock_dlopen(const char *filename, int flag)
+{
+    return (void*)0x1;
+}
+
+TEST_F(TopoAddrInfoTest, ut_multi_init)
+{
+    // mock data
+    unsigned int mainBoardId1 = 0;
+    unsigned int mainBoardId2 = 0;
+    unsigned int expectedMainboardId = 0x07;
+    MOCKER(hal_dlopen).stubs().with(any(), any()).will(invoke(mock_dlopen));
+    MOCKER(hal_dlsym).stubs().with(any(), any()).will(invoke(mock_dlsym));
+    hal_get_mainboard_id(0, &mainBoardId1);
+    EXPECT_EQ(mainBoardId1, expectedMainboardId);
+    // 连续初始化两次，模拟多线程初始化，第二次进入等待状态
+    hal_get_mainboard_id(0, &mainBoardId2);
+    EXPECT_EQ(mainBoardId2, expectedMainboardId);
 }
