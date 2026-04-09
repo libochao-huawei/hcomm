@@ -947,11 +947,10 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     //FlagTaskInfo Report
     Hccl::FlagTaskInfo flagTaskInfo;
     flagTaskInfo.streamId = streamLitePtr->GetId();
-    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId() - 1;
+    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    CHK_RET(AicpuIndopProcess::ReportAllTasks(groupname));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
