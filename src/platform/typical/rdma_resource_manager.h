@@ -27,6 +27,7 @@ public:
     HcclResult GetCqeErrInfo(struct CqeErrInfo *infoList, u32 *num);
     HcclResult GetCqeErrInfoByQpn(u32 qpn, struct HcclErrCqeInfo *errCqeList, u32 *num);
     HcclResult GetNotifyMrInfo(struct MrInfoT& mrInfo);
+    HcclResult GetResvMemPoolIdByType(u32 type, u32& poolId);
 private:
     RdmaResourceManager();
     ~RdmaResourceManager();
@@ -34,6 +35,7 @@ private:
     RdmaResourceManager(RdmaResourceManager&&) = delete;
     RdmaResourceManager& operator=(RdmaResourceManager const&) = delete;
     RdmaResourceManager& operator=(RdmaResourceManager &&) = delete;
+    HcclResult InitResvMemInfo();
 private:
     s32 deviceLogicId_{};
     u32 devicePhyId_{};
@@ -47,6 +49,7 @@ private:
     u64 notifyBaseVa_ = 0;
     u64 notifyTotalSize_ = 0;
     struct MrInfoT notifyMrInfo_{};
+    std::unordered_map<u32, u32> resvMemInfo_{}; //type:pollId
 };
 
 }  // namespace hccl

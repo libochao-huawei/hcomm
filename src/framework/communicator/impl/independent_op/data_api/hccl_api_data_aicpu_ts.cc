@@ -290,8 +290,7 @@ std::unordered_map<HcommDataType, Hccl::DataType> mapHcommDataTypeToA5 = {
     {HcommDataType::HCOMM_DATA_TYPE_HIF8,    Hccl::DataType::HIF8},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E4M3, Hccl::DataType::FP8E4M3},
     {HcommDataType::HCOMM_DATA_TYPE_FP8E5M2, Hccl::DataType::FP8E5M2},
-    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0},
-    {HcommDataType::HCOMM_DATA_TYPE_MXFP8,   Hccl::DataType::MXFP8},
+    {HcommDataType::HCOMM_DATA_TYPE_FP8E8M0, Hccl::DataType::FP8E8M0}
 #endif
 };
 
@@ -948,11 +947,10 @@ HcclResult HcommProfilingReportKernelEndTask(uint64_t thread, const char* groupn
     //FlagTaskInfo Report
     Hccl::FlagTaskInfo flagTaskInfo;
     flagTaskInfo.streamId = streamLitePtr->GetId();
-    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId() - 1;
+    flagTaskInfo.taskId = streamLitePtr->GetRtsq()->GetTaskId();
     flagTaskInfo.type = Hccl::MainStreamTaskType::TAIL;
     
     Hccl::ProfilingHandlerLite::GetInstance().ReportMainStreamTask(flagTaskInfo);
-    CHK_RET(AicpuIndopProcess::ReportAllTasks(groupname));
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }

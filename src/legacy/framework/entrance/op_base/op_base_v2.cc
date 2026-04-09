@@ -2372,11 +2372,19 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     CHK_PTR_NULL(comm);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     const std::string tag = "HcclBatchSendRecvV2_" + communicator->GetId();
-    
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(sendRecvInfo);
     CHK_PRT_RET(itemNum == 0, HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);
     CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
+    u32 rankSize = 0;
+    CHK_RET(communicator->GetRankSize(&rankSize)); // 获取rankSize, 后续需要校验userrank是否在0到rankSize-1之间
+    for (uint32_t i = 0; i < itemNum; i++) {
+        if ((sendRecvInfo + i)->buf == nullptr) {
+            continue; // 支持数据量为0的场景，buf为空的跳过
+        }
+        CHK_RET_AND_PRINT_IDE(HcomCheckOpParamV2(tag.c_str(), (sendRecvInfo + i)->count, (sendRecvInfo + i)->dataType, stream), tag.c_str());
+        CHK_RET(HcomCheckUserRankV2(rankSize, (sendRecvInfo + i)->remoteRank));
+    }
 
     /* 记录接口交互信息日志 */
     char stackLogBufferV2[LOG_TMPBUF_SIZE];
@@ -2393,7 +2401,6 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
         std::string logInfo = "Entry-HcclBatchSendRecvV2:" + std::string(stackLogBufferV2);
         if (isCapture) {
             CHK_PTR_NULL(rtModel);
-            // 获取不到modelId会报错
             CHK_RET(GetModelId(rtModel, modelId));
             logInfo += ", model id[" + to_string(modelId) + "].";
         }
@@ -2407,15 +2414,12 @@ HcclResult HcclBatchSendRecvV2(HcclSendRecvItem *sendRecvInfo, uint32_t itemNum,
     opParams.dataType = HcclDataTypeToDataType(sendRecvInfo->dataType);
     
     CHK_RET_AND_PRINT_IDE(communicator->LoadOpbasedCollOp(opParams, static_cast<void*>(stream)), tag.c_str());
-
     if (EnvConfig::GetInstance().GetLogConfig().GetEntryLogEnable()) {
         HcclUs endut = TIME_NOW();
-        /* 关键状态记录 */
         std::string endInfo = "HcclBatchSendRecvV2:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag + std::string(stackLogBufferV2);
         communicator->GetTrace().Save(endInfo);
     }
-
     return HCCL_SUCCESS;
 }
 
