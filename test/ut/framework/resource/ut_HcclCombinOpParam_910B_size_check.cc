@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -9,21 +9,20 @@
  */
 
 #include "gtest/gtest.h"
-// A2对应的数据结构
 #include "aicpu_operator_pub.h"
 
-class HcclCombinOpParamStructTest : public ::testing::Test {
+class HcclCombinOpParam910BStructTest : public ::testing::Test {
 protected:
     void SetUp() override {}
     void TearDown() override {}
 };
 
-TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamSize)
+TEST_F(HcclCombinOpParam910BStructTest, TestHcclCombinOpParamSize)
 {
     EXPECT_EQ(sizeof(HcclCombinOpParam), 8928u);
 }
 
-TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamFieldOffsets)
+TEST_F(HcclCombinOpParam910BStructTest, TestHcclCombinOpParamFieldOffsets)
 {
     EXPECT_EQ(offsetof(HcclCombinOpParam, mc2WorkSpace), 0u);
     EXPECT_EQ(offsetof(HcclCombinOpParam, rankId), 16u);
@@ -51,7 +50,7 @@ TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamFieldOffsets)
     EXPECT_EQ(offsetof(HcclCombinOpParam, capabilitySize), 8920u);
 }
 
-TEST_F(HcclCombinOpParamStructTest, TestHcclCombinOpParamFieldSizes)
+TEST_F(HcclCombinOpParam910BStructTest, TestHcclCombinOpParamFieldSizes)
 {
     EXPECT_EQ(sizeof(HcclMC2WorkSpace), 16u);
     EXPECT_EQ(sizeof(HcclStreamInfo), 16u);
