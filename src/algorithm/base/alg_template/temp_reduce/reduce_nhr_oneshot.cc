@@ -217,7 +217,7 @@ HcclResult ReduceNHROneshot::GetStepInfo(u32 step, u32 nSteps, u32 rank, u32 ran
 }
 
 HcclResult ReduceNHROneshot::ExecuteBarrier(const std::shared_ptr<Transport> &preLink,
-    const std::shared_ptr<Transport> &aftLink)
+    const std::shared_ptr<Transport> &aftLink) const
 {
     if (preLink != nullptr) {
         CHK_RET(preLink->TxAck(stream_));
