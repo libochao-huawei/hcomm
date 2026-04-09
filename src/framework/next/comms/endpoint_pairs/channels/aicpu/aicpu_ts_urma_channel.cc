@@ -101,6 +101,7 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     
     Hccl::IpAddress     locAddr;
     Hccl::IpAddress     rmtAddr;
+    // TODO UBOE OK 本端EID去rmaManager里面查询，对端通过Socket交换
     CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr));
     CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
 
@@ -108,6 +109,7 @@ HcclResult AicpuTsUrmaChannel::BuildConnection()
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
+    // TODO UBOE OK 新增AicpuTsUboeChannel，里面增加DevUboeConnection，不在此处增加分支
     std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
     switch (protocol) {
         case Hccl::LinkProtocol::UB_TP:
@@ -250,6 +252,7 @@ HcclResult AicpuTsUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
     return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
 }
 
+// TODO UBOE OK 本端EID在创建Connection的时候已经知道了，对端EID在uboe Channel GetStatus里面交换(不要transport了，参考host_cpu_roce_channel)
 ChannelStatus AicpuTsUrmaChannel::GetStatus()
 {
     Hccl::TransportStatus transportStatus = memTransport_->GetStatus();
