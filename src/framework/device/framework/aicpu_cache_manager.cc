@@ -313,9 +313,18 @@ namespace hccl {
             return HCCL_SUCCESS;
         }
 
+        // 屏蔽aicpu cache + zero copy + 确定性计算场景下的确定性问题
+        const HcclCMDType opType = param.opType;
+        const uint32_t isDeterministic = topoMatcherPtr->GetExternalInputHcclDeterministic();
+        HCCL_INFO("[AicpuCacheManager][%s] zcopy[%d] + opType[%d] + isDeterministic[%u]",
+            __func__, param.isZeroCopy, opType, isDeterministic);
+        if (param.isZeroCopy && opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && isDeterministic != 0) {
+            HCCL_INFO("[AicpuCacheManager][%s] deterministic issue is not supported for unfolding cache", __func__);
+            return HCCL_SUCCESS;
+        }
+
         // 目前V类算子、batch类型算子、以及send/recv不考虑动态缓存 (使用白名单而非黑名单管理, 避免非预期算子进入cache机制)
         // 注意: 如果想要通过比较缓存刷新后的SQE与正常算子展开的SQE来debug, 可以将想要比较的算子从以下的cache白名单中移除, 重新打包运行
-        const HcclCMDType opType = param.opType;
         if (opType == HcclCMDType::HCCL_CMD_BROADCAST ||
             opType == HcclCMDType::HCCL_CMD_REDUCE ||
             opType == HcclCMDType::HCCL_CMD_ALLGATHER ||
