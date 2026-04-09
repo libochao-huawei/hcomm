@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * This program is free software, you can redistribute it and/or modify it under terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
@@ -10,9 +10,9 @@
 
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * This program is free software, you can redistribute it and/or modify it under terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * Please refer to License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
@@ -22,6 +22,7 @@
 #include "hccp_async.h"
 #include "hccp_async_ctx.h"
 #include "orion_adapter_hccp.h"
+#include "hccl/base.h"
  
 int RaCtxQpCreate(void *ctx_handle, struct QpCreateAttr *attr, struct QpCreateInfo *info,
     void **qp_handle)
@@ -121,13 +122,6 @@ int RaCtxQpQueryBatch(void *qp_handle[], struct JettyAttr attr[], unsigned int *
 }
 
 namespace Hccl {
-HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
-{
-    (void)info;
-    tlsStatus = TlsStatus::DISABLE;
-    return HCCL_SUCCESS;
-}
-
 void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
 {
     return;
@@ -138,3 +132,41 @@ void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args
     return;
 }
 } // namespace Hccl
+
+// Stub implementations for test
+HcclResult hrtRaAiQpCreate(u32 deviceId, void* nicRdmaHandle, struct RaQpCreateAttr *attrs, 
+    struct AiQpInfo *aiQpInfo, void **qpHandle)
+{
+    (void)deviceId;
+    (void)nicRdmaHandle;
+    (void)attrs;
+    (void)aiQpInfo;
+    static u8 mockQpHandle[16] = {0};
+    *qpHandle = mockQpHandle;
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtRaQpCreateWithAttrs(void* nicRdmaHandle, struct RaQpCreateAttr *attrs, void **qpHandle)
+{
+    (void)nicRdmaHandle;
+    (void)attrs;
+    static u8 mockQpHandle[16] = {0};
+    *qpHandle = mockQpHandle;
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtRaGetQpAttr(void* qpHandle, struct QpAttr *attr)
+{
+    (void)qpHandle;
+    if (attr != nullptr) {
+        attr->qpn = 12345;
+        attr->udpSport = 10000;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaQpDestroy(void* qpHandle)
+{
+    (void)qpHandle;
+    return HCCL_SUCCESS;
+}
