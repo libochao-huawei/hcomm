@@ -521,11 +521,6 @@ HcclResult HcclCommunicator::GetEndpointInfo(uint32_t rankId, const EndpointDesc
     return pimpl->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
 }
 
-HcclResult HcclCommunicator::InitDeviceListenPort(u32 &linstenPort)
-{
-    return pimpl->InitDeviceListenPort(linstenPort);
-}
-
 Trace& HcclCommunicator::GetTrace() const
 {
     return pimpl->GetTrace();
