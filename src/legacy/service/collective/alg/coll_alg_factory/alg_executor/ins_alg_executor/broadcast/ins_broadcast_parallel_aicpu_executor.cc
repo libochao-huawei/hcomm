@@ -273,13 +273,13 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     syncQueues_.emplace_back(intraQue_.at(0));
     syncQueues_.emplace_back(interQue_.at(0));
 
-    CHK_RET(WrapPrepResLinks(type, resReqIntraScatter.links, intraLinks_));
-    CHK_RET(WrapPrepResLinks(type, resReqInterScatter.links, interLinks_));
-    CHK_RET(WrapPrepResLinks(type, resReqIntraAllGather.links, intraLinks_));
-    CHK_RET(WrapPrepResLinks(type, resReqInterAllGather.links, interLinks_));
+    CHK_RET(WrapPrepResLinks(type, resReqIntraScatter.links, scatterIntraLinks_));
+    CHK_RET(WrapPrepResLinks(type, resReqInterScatter.links, scatterInterLinks_));
+    CHK_RET(WrapPrepResLinks(type, resReqIntraAllGather.links, allGatherIntraLinks_));
+    CHK_RET(WrapPrepResLinks(type, resReqInterAllGather.links, allGatherInterLinks_));
     HCCL_INFO(
-        "[InsBroadcastParallelAiCpuExecutor] intraLinks size[%zu], interLinks size[%zu]", intraLinks_.size(),
-        interLinks_.size());
+        "[InsBroadcastParallelAiCpuExecutor] scatterIntraLinks size[%zu], scatterInterLinks size[%zu], allGatherIntraLinks size[%zu], allGatherInterLinks size[%zu]", scatterIntraLinks_.size(),
+        scatterInterLinks_.size(), allGatherIntraLinks_.size(), allGatherInterLinks_.size());
     return HcclResult::HCCL_SUCCESS;
 }
 
