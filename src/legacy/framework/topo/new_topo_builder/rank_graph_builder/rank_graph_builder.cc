@@ -69,7 +69,7 @@ std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId
 
     if (links.empty()) {
         THROW<InvalidParamsException>(
-            StringFormat("[RankGraphBuilder][GetPhyLink] SourceNode localId[%d] Edge does not exist.", localId));
+            StringFormat("[RankGraphBuilder][GetPhyLink] SourceNode localId[%d] edge does not exist.", localId));
     }
     return links;
 }
