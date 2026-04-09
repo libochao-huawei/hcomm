@@ -335,7 +335,6 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
         reqCtx.tpAttr.reserved[1] = 0x00U;
         reqCtx.handle = 0;
         reqCtx.phase = ReqPhase::WAIT_TP_ATTR;
-        EXCEPTION_HANDLE_END
         return HcclResult::HCCL_SUCCESS;
     }
 
