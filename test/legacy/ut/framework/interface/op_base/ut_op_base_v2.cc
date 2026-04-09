@@ -201,6 +201,9 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2)
     unique_ptr<HcclSendRecvItem> sendRecvInfo = make_unique<HcclSendRecvItem>();
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(static_cast<HcclResult(*)(const char*, u64, HcclDataType, const void*)>(&HcomCheckOpParamV2))
+        .stubs().with(any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&HcomCheckUserRankV2).stubs().with(any(),any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclBatchSendRecvV2(sendRecvInfo.get(), itemNum, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
@@ -221,6 +224,9 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2_With_Log)
     unique_ptr<HcclSendRecvItem> sendRecvInfo = make_unique<HcclSendRecvItem>();
 
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(static_cast<HcclResult(*)(const char*, u64, HcclDataType, const void*)>(&HcomCheckOpParamV2))
+        .stubs().with(any(), any(), any(), any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(&HcomCheckUserRankV2).stubs().with(any(),any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclBatchSendRecvV2(sendRecvInfo.get(), itemNum, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
 

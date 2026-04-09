@@ -67,7 +67,7 @@ struct dcmi_spod_info {
     unsigned int server_index;
     unsigned int chassis_id;
     unsigned int super_pod_type;
-    char reserve[6];
+    unsigned int reserve[6];
 };
 
 #define MAIN_BOARD_ID_CARD_NOMESH (0x68)
