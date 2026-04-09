@@ -98,10 +98,13 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     localInsQues.push_back(tempInsQues[tempInsQues.size() - 1]);
 
     CHK_RET(LocalCopyToScratch(tempInsQues[0]));
-    // semaphore sync
-    CHK_RET(PreSyncInterQueues(tempInsQues));
+
     // Local Copy from Input to Output
     CHK_RET(LocalCopyToUsrOut(tempInsQues[0]));
+
+    // semaphore sync
+    CHK_RET(PreSyncInterQueues(tempInsQues));
+
     // locate myRank in tempVTopo -> algRank
     u32 myAlgRank;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
@@ -118,9 +121,6 @@ HcclResult InsTempAllGatherMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
 
 HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
 {
-    if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType) {
-        return HcclResult::HCCL_SUCCESS;
-    }
     u32 myAlgRank;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], myAlgRank));
     u64 sliceSize = ((myAlgRank == tempRankSize_ - 1) && (tempAlgParams_.tailSize != 0)) ? tempAlgParams_.tailSize :tempAlgParams_.sliceSize;
@@ -130,7 +130,9 @@ HcclResult InsTempAllGatherMesh1D::LocalCopyToUsrOut(InsQuePtr tempInsQue)
 
         const u64 inOff = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
         const u64 outOff = tempAlgParams_.outputSliceStride * myAlgRank + outBaseOff;
-
+        if (tempAlgParams_.buffInfo.inBuffType == tempAlgParams_.buffInfo.outBuffType && inOff == outOff) {
+            continue;
+        }
         DataSlice src(tempAlgParams_.buffInfo.inBuffType, inOff, sliceSize);
         DataSlice dst(tempAlgParams_.buffInfo.outBuffType, outOff, sliceSize);
         HCCL_INFO("[InsTempAllGatherMesh1D] in:%s -> out:%s", src.Describe().c_str(), dst.Describe().c_str());
@@ -149,7 +151,7 @@ HcclResult InsTempAllGatherMesh1D::LocalCopyToScratch(InsQuePtr tempInsQue)
 
     if (opMode_ == OpMode::OPBASE) {
         for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
-            const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
+            const u64 scratchRepeatStride = tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize;
             const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
             const u64 outBaseOff = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
             const u64 inOff = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
@@ -215,7 +217,7 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
                 const u64 inBaseOff = tempAlgParams_.buffInfo.inBuffBaseOff + rpt * tempAlgParams_.inputRepeatStride;
                 const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
-                const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
+                const u64 scratchRepeatStride = tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize;
                 const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
 
                 u64 txInOffset = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
