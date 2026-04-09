@@ -139,17 +139,17 @@ HcclResult InsTempAllGatherNHR::LocalDataCopy(std::vector<InsQuePtr> &tempInsQue
 {
     u32 algRankIdx = 0;
     CHK_RET(GetAlgRank(myRank_, tempVTopo_[0], algRankIdx));
-
+    u64 sliceSize = algRankIdx == (tempRankSize_ - 1) ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
     for (u64 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 inBaseOff  = tempAlgParams_.buffInfo.inBuffBaseOff  + rpt * tempAlgParams_.inputRepeatStride;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff +
-            rpt * (tempAlgParams_.sliceSize * tempRankSize_);
+                                rpt * (tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize);
 
         const u64 inOff = tempAlgParams_.inputSliceStride  * algRankIdx + inBaseOff;
         const u64 scOff = scratchBase + tempAlgParams_.sliceSize * algRankIdx;
 
-        DataSlice src(tempAlgParams_.buffInfo.inBuffType,   inOff, tempAlgParams_.sliceSize);
-        DataSlice dst(tempAlgParams_.buffInfo.scratBuffType, scOff, tempAlgParams_.sliceSize);
+        DataSlice src(tempAlgParams_.buffInfo.inBuffType,   inOff, sliceSize);
+        DataSlice dst(tempAlgParams_.buffInfo.scratBuffType, scOff, sliceSize);
 
         auto ins = std::make_unique<InsLocalCopy>(src, dst);
          tempInsQues[0]->Append(std::move(ins));
@@ -165,14 +165,15 @@ HcclResult InsTempAllGatherNHR::PostLocalCopy(std::vector<InsQuePtr> &tempInsQue
     for (u64 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff +
-            rpt * (tempAlgParams_.sliceSize * tempRankSize_);
+                                rpt * (tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize);
 
         for (u32 algIdx = 0; algIdx < tempRankSize_; ++algIdx) {
             const u64 scratchOffset = scratchBase + tempAlgParams_.sliceSize * algIdx;
             const u64 outOffset = tempAlgParams_.outputSliceStride * algIdx + outBaseOff;
-
-            DataSlice src(tempAlgParams_.buffInfo.scratBuffType, scratchOffset, tempAlgParams_.sliceSize);
-            DataSlice dst(tempAlgParams_.buffInfo.outBuffType,   outOffset,     tempAlgParams_.sliceSize);
+            // 如果是最后一张卡需要用尾部数据计算
+            u64 sliceSize = algIdx == (tempRankSize_ - 1) ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;
+            DataSlice src(tempAlgParams_.buffInfo.scratBuffType, scratchOffset, sliceSize);
+            DataSlice dst(tempAlgParams_.buffInfo.outBuffType,   outOffset,     sliceSize);
 
             auto ins = std::make_unique<InsLocalCopy>(src, dst);
             tempInsQues[0]->Append(std::move(ins));
@@ -188,7 +189,7 @@ HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
     CHK_RET(PreSyncQues(tempInsQues, mainQueIdx));
     const u32 nSteps = GetNHRStepNum(tempRankSize_);
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
-        const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
+        const u64 scratchRepeatStride = tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
         for (u32 step = 0; step < nSteps; ++step) {
             AicpuNHRStepInfo stepInfo;
@@ -220,10 +221,11 @@ HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
                     const u32 rxIdx = stepInfo.rxSliceIdxs[i];                
                     const u64 txScratchOff = scratchBase + tempAlgParams_.sliceSize * txIdx;
                     const u64 rxScratchOff = scratchBase + tempAlgParams_.sliceSize * rxIdx;
-                    DataSlice txSrcSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, tempAlgParams_.sliceSize);
-                    DataSlice txDstSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, tempAlgParams_.sliceSize);
-                    DataSlice rxSrcSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, tempAlgParams_.sliceSize);
-                    DataSlice rxDstSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, tempAlgParams_.sliceSize);
+                    u32 sliceSize = txIdx == tempRankSize_ - 1 ? tempAlgParams_.tailSize : tempAlgParams_.sliceSize;                    
+                    DataSlice txSrcSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, sliceSize);
+                    DataSlice txDstSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, txScratchOff, sliceSize);
+                    DataSlice rxSrcSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, sliceSize);
+                    DataSlice rxDstSliceAllLink(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, sliceSize);
                     txSrcSlices.emplace_back(CalcDataSliceForLinks(txSrcSliceAllLink, dataSplitRate, j, dataType_));
                     txDstSlices.emplace_back(CalcDataSliceForLinks(txDstSliceAllLink, dataSplitRate, j, dataType_));
                     rxSrcSlices.emplace_back(CalcDataSliceForLinks(rxSrcSliceAllLink, dataSplitRate, j, dataType_));
