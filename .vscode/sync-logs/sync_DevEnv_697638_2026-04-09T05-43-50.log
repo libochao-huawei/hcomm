@@ -1,0 +1,151 @@
+
+========== 2026/4/9 13:43:50 ==========
+正在同步代码到 DevEnv_697638...
+本地路径: e:\sourcecode\cann\hcomm
+远程路径: /home/l00614971
+
+执行命令: ****c:/Users/luomin/.trae-cn/extensions/openlibing.resourcemanage-0.0.19/out/tools/bin/bash.exe -c "c:/Users/luomin/.trae-cn/extensions/openlibing.resourcemanage-0.0.19/out/tools/bin/rsync.exe -avR --chown=root:root --no-group --chmod=D755,F644 --progress -e 'c:/Users/luomin/.trae-cn/extensions/openlibing.resourcemanage-0.0.19/out/tools/bin/ssh.exe -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /cygdrive/c/Users/luomin/.ssh/id_rsa -p 45020' /cygdrive/e/sourcecode/cann/./hcomm/ root@123.60.114.234:/home/l00614971/"
+
+bash.exe: warning: could not find /tmp, please create!
+Warning: Permanently added '[123.60.114.234]:45020' (ED25519) to the list of known hosts.
+sending incremental file list
+hcomm/
+hcomm/.git/
+hcomm/.git/COMMIT_EDITMSG
+             58 100%    0.00kB/s    0:00:00               58 100%    0.00kB/s    0:00:00 (xfr#1, ir-chk=1015/1044)
+hcomm/.git/index
+          1,856   0%  604.17kB/s    0:00:01          869,704 100%  118.49MB/s    0:00:00 (xfr#2, ir-chk=1009/1044)
+hcomm/.git/logs/HEAD
+            700   9%   52.58kB/s    0:00:00            7,454 100%  559.95kB/s    0:00:00 (xfr#3, ir-chk=1052/1109)
+hcomm/.git/logs/refs/heads/pr2
+            700  25%   42.72kB/s    0:00:00            2,775 100%  169.37kB/s    0:00:00 (xfr#4, ir-chk=1046/1109)
+hcomm/.git/logs/refs/remotes/origin/pr2
+            700  46%   34.18kB/s    0:00:00            1,495 100%   73.00kB/s    0:00:00 (xfr#5, ir-chk=1038/1109)
+hcomm/.git/objects/
+hcomm/.git/objects/02/
+hcomm/.git/objects/02/e7c20287d1dd0a8f0ad9799de5ae6555351708
+            114 100%    4.12kB/s    0:00:00              114 100%    4.12kB/s    0:00:00 (xfr#6, ir-chk=1058/1297)
+hcomm/.git/objects/12/
+hcomm/.git/objects/12/8f43bdce2ef291a8670eb0c5c00864ecd74e65
+             94 100%    3.06kB/s    0:00:00               94 100%    3.06kB/s    0:00:00 (xfr#7, ir-chk=1046/1297)
+hcomm/.git/objects/17/
+hcomm/.git/objects/17/cd4b2b4615a8ccadf9ef5fee2f70c88cfafbd3
+            272 100%    8.05kB/s    0:00:00              272 100%    8.05kB/s    0:00:00 (xfr#8, ir-chk=1041/1297)
+hcomm/.git/objects/18/a4f0741704e19e25a8af04edb9ddb8d2422fd8
+            700   1%   18.99kB/s    0:00:01           37,726 100%  995.72kB/s    0:00:00 (xfr#9, ir-chk=1040/1297)
+hcomm/.git/objects/1d/9f5a8cf2d6ee39eca87b9d7446244041d048bf
+            700  26%   17.09kB/s    0:00:00            2,660 100%   64.94kB/s    0:00:00 (xfr#10, ir-chk=1037/1297)
+hcomm/.git/objects/2c/
+hcomm/.git/objects/2c/a1ebdf50a1383f2ab09cb8b09f6c46609fe8ab
+            869 100%   19.29kB/s    0:00:00              869 100%   19.29kB/s    0:00:00 (xfr#11, ir-chk=1029/1297)
+hcomm/.git/objects/3a/d54a2227e3c14865127a0ed644ee5e4aac9840
+            700  30%   14.24kB/s    0:00:00            2,266 100%   46.10kB/s    0:00:00 (xfr#12, ir-chk=1012/1297)
+hcomm/.git/objects/c0/
+hcomm/.git/objects/c0/c71605b4fe0611d4a64ef500b35b14e77b61be
+         13,684 100%  247.47kB/s    0:00:00           13,684 100%  247.47kB/s    0:00:00 (xfr#13, ir-chk=1005/1432)
+hcomm/.git/objects/de/
+hcomm/.git/objects/de/bc00ba74604486f9ade335da42d62fe03d6017
+            258 100%    4.34kB/s    0:00:00              258 100%    4.34kB/s    0:00:00 (xfr#14, ir-chk=1009/1472)
+hcomm/.git/objects/e8/f7cf056ae5c66edb8b8e7105b4e132cac8c0c7
+            700  31%   11.03kB/s    0:00:00            2,197 100%   34.60kB/s    0:00:00 (xfr#15, ir-chk=1048/1522)
+hcomm/.git/objects/ed/2d092491478404c4b84c2d0d3d4f1b2effe259
+            700  33%   10.52kB/s    0:00:00            2,105 100%   31.63kB/s    0:00:00 (xfr#16, ir-chk=1043/1522)
+hcomm/.git/refs/heads/
+hcomm/.git/refs/heads/pr2
+             41 100%    0.62kB/s    0:00:00               41 100%    0.62kB/s    0:00:00 (xfr#17, ir-chk=1001/1527)
+hcomm/.git/refs/remotes/origin/
+hcomm/.git/refs/remotes/origin/pr2
+             41 100%    0.61kB/s    0:00:00               41 100%    0.61kB/s    0:00:00 (xfr#18, ir-chk=1013/1547)
+hcomm/.vscode/
+hcomm/.vscode/sync-logs/
+hcomm/cmake/
+hcomm/cmake/func.cmake
+            700   3%   10.20kB/s    0:00:01           18,574 100%  266.75kB/s    0:00:00 (xfr#19, ir-chk=1071/1616)
+hcomm/cmake/package.cmake
+            700  10%   10.05kB/s    0:00:00            6,830 100%   98.09kB/s    0:00:00 (xfr#20, ir-chk=1065/1616)
+hcomm/cmake/scripts/
+hcomm/cmake/scripts/parser_ini.py
+         10,692 100%  153.55kB/s    0:00:00           10,692 100%  153.55kB/s    0:00:00 (xfr#21, ir-chk=1061/1616)
+hcomm/python/
+hcomm/python/setup.py
+          1,119 100%   15.18kB/s    0:00:00            1,119 100%   15.18kB/s    0:00:00 (xfr#22, ir-chk=1011/1814)
+hcomm/python/hccl/
+hcomm/python/hccl/__init__.py
+            886 100%   12.02kB/s    0:00:00              886 100%   12.02kB/s    0:00:00 (xfr#23, ir-chk=1008/1814)
+hcomm/python/hccl/manage/
+hcomm/python/hccl/manage/__init__.py
+            861 100%   11.68kB/s    0:00:00              861 100%   11.68kB/s    0:00:00 (xfr#24, ir-chk=1005/1814)
+hcomm/python/hccl/manage/api.py
+          7,751 100%  105.13kB/s    0:00:00            7,751 100%  105.13kB/s    0:00:00 (xfr#25, ir-chk=1004/1814)
+hcomm/python/hccl/split/
+hcomm/python/hccl/split/__init__.py
+            861 100%   11.68kB/s    0:00:00              861 100%   11.68kB/s    0:00:00 (xfr#26, ir-chk=1003/1814)
+hcomm/python/hccl/split/api.py
+          5,668 100%   75.82kB/s    0:00:00            5,668 100%   75.82kB/s    0:00:00 (xfr#27, ir-chk=1002/1814)
+hcomm/scripts/
+hcomm/scripts/package/
+hcomm/scripts/package/common/
+hcomm/scripts/package/common/__init__.py
+            847 100%   11.33kB/s    0:00:00              847 100%   11.33kB/s    0:00:00 (xfr#28, ir-chk=1028/1849)
+hcomm/scripts/package/common/py/
+hcomm/scripts/package/common/py/__init__.py
+            847 100%   11.18kB/s    0:00:00              847 100%   11.18kB/s    0:00:00 (xfr#29, ir-chk=1023/1849)
+hcomm/scripts/package/common/py/filelist.py
+         17,468 100%  230.52kB/s    0:00:00           17,468 100%  230.52kB/s    0:00:00 (xfr#30, ir-chk=1022/1849)
+hcomm/scripts/package/common/py/merge_binary_info_config.py
+          2,814 100%   37.14kB/s    0:00:00            2,814 100%   37.14kB/s    0:00:00 (xfr#31, ir-chk=1021/1849)
+hcomm/scripts/package/common/py/packer.py
+          5,799 100%   76.53kB/s    0:00:00            5,799 100%   76.53kB/s    0:00:00 (xfr#32, ir-chk=1020/1849)
+hcomm/scripts/package/common/py/pkg_parser.py
+         40,478 100%  534.18kB/s    0:00:00           40,478 100%  534.18kB/s    0:00:00 (xfr#33, ir-chk=1019/1849)
+hcomm/scripts/package/common/py/version_info.py
+         13,077 100%  172.57kB/s    0:00:00           13,077 100%  172.57kB/s    0:00:00 (xfr#34, ir-chk=1018/1849)
+hcomm/scripts/package/common/py/utils/
+hcomm/scripts/package/common/py/utils/comm_log.py
+          2,570 100%   33.46kB/s    0:00:00            2,570 100%   33.46kB/s    0:00:00 (xfr#35, ir-chk=1016/1849)
+hcomm/scripts/package/common/py/utils/funcbase.py
+          2,427 100%   31.60kB/s    0:00:00            2,427 100%   31.60kB/s    0:00:00 (xfr#36, ir-chk=1015/1849)
+hcomm/scripts/package/common/py/utils/pkg_utils.py
+          5,638 100%   73.41kB/s    0:00:00            5,638 100%   73.41kB/s    0:00:00 (xfr#37, ir-chk=1014/1849)
+hcomm/scripts/package/hcomm/
+hcomm/scripts/sign/
+hcomm/scripts/sign/add_header_sign.py
+         23,984 100%  312.29kB/s    0:00:00           23,984 100%  312.29kB/s    0:00:00 (xfr#38, ir-chk=1005/1875)
+hcomm/scripts/sign/common_log.py
+          4,438 100%   57.03kB/s    0:00:00            4,438 100%   57.03kB/s    0:00:00 (xfr#39, ir-chk=1004/1875)
+hcomm/scripts/sign/community_sign_build.py
+          4,704 100%   60.44kB/s    0:00:00            4,704 100%   60.44kB/s    0:00:00 (xfr#40, ir-chk=1003/1875)
+hcomm/scripts/signtool/esbc_header/
+hcomm/scripts/signtool/esbc_header/esbc_header.py
+          4,908 100%   63.07kB/s    0:00:00            4,908 100%   63.07kB/s    0:00:00 (xfr#41, ir-chk=1003/1881)
+hcomm/scripts/signtool/image_extract/
+hcomm/scripts/signtool/image_extract/ci_img_headler.py
+          1,773 100%   22.78kB/s    0:00:00            1,773 100%   22.78kB/s    0:00:00 (xfr#42, ir-chk=1002/1881)
+hcomm/scripts/signtool/image_pack/
+hcomm/scripts/signtool/image_pack/__init__.py
+              0 100%    0.00kB/s    0:00:00 (xfr#43, ir-chk=1015/1895)
+hcomm/scripts/signtool/image_pack/image_pack.py
+          3,905 100%   50.18kB/s    0:00:00            3,905 100%   50.18kB/s    0:00:00 (xfr#44, ir-chk=1014/1895)
+hcomm/scripts/signtool/image_pack/ini_gen.py
+          5,039 100%   63.91kB/s    0:00:00            5,039 100%   63.91kB/s    0:00:00 (xfr#45, ir-chk=1013/1895)
+hcomm/scripts/signtool/image_pack/tools.py
+            914 100%   11.59kB/s    0:00:00              914 100%   11.59kB/s    0:00:00 (xfr#46, ir-chk=1012/1895)
+hcomm/scripts/signtool/image_pack/hi_platform/
+hcomm/scripts/signtool/image_pack/hi_platform/__init__.py
+              0 100%    0.00kB/s    0:00:00 (xfr#47, ir-chk=1010/1895)
+hcomm/scripts/signtool/image_pack/hi_platform/platform.py
+          9,872 100%  125.20kB/s    0:00:00            9,872 100%  125.20kB/s    0:00:00 (xfr#48, ir-chk=1009/1895)
+hcomm/test/st/algorithm/CMakeLists.txt
+            700   6%    1.25kB/s    0:00:08           11,637 100%   20.70kB/s    0:00:00 (xfr#49, ir-chk=1005/7688)
+
+sent 473,017 bytes  received 10,292 bytes  56,859.88 bytes/sec
+total size is 86,783,779  speedup is 179.56
+
+✅ 代码同步完成！
+
+开始处理换行符...
+项目目录: /home/l00614971/hcomm
+执行命令: if which dos2unix > /dev/null 2>&1; then find /home/l00614971/hcomm -type f -name "*.sh" -print0 | xargs -0 dos2unix && find /home/l00614971/hcomm -type f -name "*.py" -print0 | xargs -0 dos2unix && echo "DOS2UNIX_DONE" || echo "DOS2UNIX_EXEC_FAILED"; else find /home/l00614971/hcomm -type f -name "*.sh" -print0 | xargs -0 sed -i 's/\r$//' && find /home/l00614971/hcomm -type f -name "*.py" -print0 | xargs -0 sed -i 's/\r$//' && echo "DOS2UNIX_DONE" || echo "DOS2UNIX_EXEC_FAILED"; fi
+✅ 换行符处理完成！
+DOS2UNIX_DONE
+

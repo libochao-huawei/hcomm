@@ -108,7 +108,8 @@ STATIC int RsJfcResAddrMunmap(struct RsCtxJfcCb *jfcCb, struct UdmaVaInfo *vaInf
     struct res_map_info_in resInfoIn = {0};
     int ret = 0;
 
-    resInfoIn.res_id = jfcCb->jfcId;
+    resInfoIn.res_id = RsGenerateMmapResId(jfcCb->jfcId, jfcCb->devCb->devAttr.ub.dieId,
+        jfcCb->devCb->devAttr.ub.funcId);
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = (enum res_addr_type)vaInfo->resType;
     resInfoIn.priv_len = sizeof(struct UdmaVaInfo);
@@ -127,7 +128,8 @@ STATIC int RsJfcResAddrMmap(struct RsCtxJfcCb *jfcCb, struct UdmaVaInfo *vaInfo,
     struct res_map_info_in resInfoIn = {0};
     int ret = 0;
 
-    resInfoIn.res_id = jfcCb->jfcId;
+    resInfoIn.res_id = RsGenerateMmapResId(jfcCb->jfcId, jfcCb->devCb->devAttr.ub.dieId,
+        jfcCb->devCb->devAttr.ub.funcId);
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = (enum res_addr_type)vaInfo->resType;
     resInfoIn.priv_len = sizeof(struct UdmaVaInfo);

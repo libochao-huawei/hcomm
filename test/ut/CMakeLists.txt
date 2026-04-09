@@ -332,7 +332,7 @@ add_subdirectory(platform/common/unfold_cache)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/cluster_maintenance)
 add_subdirectory(framework/op_base_api)
-# add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
+add_subdirectory(framework/hcom)
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)
