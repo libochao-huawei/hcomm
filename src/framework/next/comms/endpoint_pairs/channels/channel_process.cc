@@ -247,7 +247,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     hccl::DeviceMem &devicePackBuf,
     uint32_t listNum, 
     uint32_t totalListNum,
-    uint32_t singleUniqueIdSize)
+    hccl::DeviceMem &channelSizeAddr)
 {
     // channelParam资源参数填充
     s32 sRet = strncpy_s(channelParam.hcomId, HCOMID_MAX_LENGTH, commTag.c_str(), HCOMID_MAX_LENGTH - 1);
@@ -257,7 +257,7 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     channelParam.listNum = listNum;
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
-    channelParam.singleUniqueIdSize = singleUniqueIdSize;
+    channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
 
     CHK_RET(hrtGetDevice(&channelParam.deviceLogicId));
     DevType devType;
@@ -313,11 +313,13 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     CHK_SAFETY_FUNC_RET(memset_s(&channelParam, sizeof(channelParam), 0, sizeof(channelParam)));
 
     // 获取host侧序列化的地址
+    std::vector<u32> channelSizeVec{};
     uint32_t totalListNum = 0;
     for (uint32_t index = 0; index < listNum; index++) {
         auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
         CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
         totalListNum += hostPackBuffers[index].size();
+        channelSizeVec.push_back(hostPackBuffers[index].size());
     }
     HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
 
@@ -335,13 +337,21 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
         totalListNum,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
+    hccl::DeviceMem channelSizeAddr = hccl::DeviceMem::alloc(channelSizeVec.size() * sizeof(u32));
+    CHK_PTR_NULL(channelSizeAddr.ptr());
+
+    CHK_RET(hrtMemSyncCopy(channelSizeAddr.ptr(),
+        channelSizeVec.size() * sizeof(u32),
+        channelSizeVec.data(),
+        channelSizeVec.size() * sizeof(u32),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     // 为device侧的channelList分配内存
     hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
     CHK_PTR_NULL(deviceChannelList.ptr());
 
     // 填充channelParam参数
     CHK_RET(FillChannelParam(channelParam, commTag, deviceChannelList, devicePackBuf, 
-        listNum, totalListNum, totalListNum / hostPackBuffers.size()));
+        listNum, totalListNum, channelSizeAddr));
     
     // profiling信息
     hccl::DeviceMem remoteRankList = hccl::DeviceMem::alloc(listNum * sizeof(u32));
@@ -651,12 +661,23 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
 
     // 获取host侧序列化的地址
     uint32_t totalListNum = 0;
+    std::vector<u32> channelSizeVec{};
     for (uint32_t index = 0; index < listNum; index++) {
         auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
         CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));   // todo:后续只打包connction
         totalListNum += hostPackBuffers[index].size();
+        channelSizeVec.push_back(hostPackBuffers[index].size());
     }
     HCCL_INFO("[%s] totalListNum[%llu]", __func__, totalListNum);
+
+    hccl::DeviceMem channelSizeAddr = hccl::DeviceMem::alloc(channelSizeVec.size() * sizeof(u32));
+    CHK_PTR_NULL(channelSizeAddr.ptr());
+
+    CHK_RET(hrtMemSyncCopy(channelSizeAddr.ptr(),
+    channelSizeVec.size() * sizeof(u32),
+    channelSizeVec.data(),
+    channelSizeVec.size() * sizeof(u32),
+    HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
 
     // 分配连续的host内存，将序列化的地址放入其中
     hccl::HostMem hostPackBuf = hccl::HostMem::alloc(totalListNum);
@@ -678,7 +699,7 @@ HcclResult ChannelProcess::ChannelUpdateKernelLaunch(ChannelHandle* deviceChanne
     channelParam.listNum = listNum;
     channelParam.uniqueIdAddr = static_cast<void *>(devicePackBuf.ptr());
     channelParam.uniqueIdSize = totalListNum;
-    channelParam.singleUniqueIdSize = totalListNum / hostPackBuffers.size();
+    channelParam.channelSizeAddr = static_cast<void *>(channelSizeAddr.ptr());
 
     // 将 host 侧的 channel handles 拷贝到 device 内存，供内核使用
     hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
