@@ -42,10 +42,16 @@ HcclResult Channel::CreateChannel(
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
+            // TODO UBOE OK 新增AicpuTsUboeChannel
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
+                channelPtr.reset(new (std::nothrow) AicpuTsUboeChannel(
+                endpointHandle, channelDesc
+            ));
+            }
             channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(
                 endpointHandle, channelDesc
             ));
-            break; 
+            break;
         case COMM_ENGINE_AIV:
             channelPtr.reset(
                 new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));

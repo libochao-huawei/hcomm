@@ -131,6 +131,7 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
 
         // 单锁：D2H 映射 + 查 map + 锁内调用 GetStatus()
         HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
+            // TODO UBOE OK copy一个新的channel
             status = channel.GetStatus();  // 锁内调用，防止 destroy 并发释放
             return HcclResult::HCCL_SUCCESS;
         });
@@ -317,6 +318,8 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     uint32_t totalListNum = 0;
     for (uint32_t index = 0; index < listNum; index++) {
         auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
+        
+        // TODO UBOE OK 打包资源到device侧
         CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
         totalListNum += hostPackBuffers[index].size();
         channelSizeVec.push_back(hostPackBuffers[index].size());
