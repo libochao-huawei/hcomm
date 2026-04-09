@@ -944,6 +944,7 @@ HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, co
     u32 txSendDataTimes = (len == 0) ? 1 : (len + RDMA_SEND_MAX_SIZE - 1) / RDMA_SEND_MAX_SIZE;
     CHK_RET(GetMemInfo(dstMemType, &dstMemPtr, &dstMemSize));
 
+    CHK_PTR_NULL(dstMemPtr);
     if (dstOffset > dstMemSize) {
         HCCL_ERROR("[TransportIbverbs][TxAsync]dst_mem_type=%d, dst_mem_ptr=%p, dst_offset=%llu, dst_mem_size=%llu Byte",
             dstMemType, dstMemPtr, dstOffset, dstMemSize);
