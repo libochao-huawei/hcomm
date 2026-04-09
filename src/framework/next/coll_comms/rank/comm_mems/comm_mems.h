@@ -20,50 +20,31 @@
 #include "rma_buffer_mgr.h"
 #include "hcomm_c_adpt.h"
 
-namespace hccl { 
-struct CommMemHandle {
-    void* addr {nullptr};
-    uint64_t size {0};
-    CommMemType memType {COMM_MEM_TYPE_INVALID};
-    void* bufferHandle {nullptr};
-    std::string memTag {};
+namespace std {
+    template <>
+    struct hash<CommMemInfo> {
+        size_t operator()(const CommMemInfo& memInfo) const {
+            return std::hash<void*>()(memInfo.mem.addr);
+        }
+    };
+}
 
-    CommMemHandle()
-    {
-    }
-
-    CommMemHandle(void *addr, uint64_t size, CommMemType memType, void *bufferHandle, const std::string &memTag) :
-        addr(addr), size(size), memType(memType), bufferHandle(bufferHandle), memTag(memTag)
-    {
-    }
-};
-struct CommMemHandleEqual {
-    bool operator()(const CommMemHandle& lhs, const CommMemHandle& rhs) const {
-        return lhs.addr == rhs.addr;
+namespace hccl {
+struct CommMemInfoEqual {
+    bool operator()(const CommMemInfo& lhs, const CommMemInfo& rhs) const {
+        return lhs.mem.addr == rhs.mem.addr;
     }
 };
 
 CommMemType ConvertHcclToCommMemType(HcclMemType hcclType);
 HcclMemType ConvertCommToHcclMemType(CommMemType commType);
 
-}  // namespace hccl
- 
-namespace std {
-    template <>
-    struct hash<hccl::CommMemHandle> {
-        size_t operator()(const hccl::CommMemHandle& memHandle) const {
-            return std::hash<void*>()(memHandle.addr);
-        }
-    };
-}
-
-namespace hccl {
 /**
  * @note 职责：集合通信域内MyRank的通信内存管理，包括HCCL Buffer和其他待注册到EndPoint内存
  */
 class CommMems {
 public:
-    using Handle = std::shared_ptr<CommMemHandle>;
+    using Handle = std::shared_ptr<CommMemInfo>;
     using MemKey = hccl::BufferKey<uintptr_t, uint64_t>;
     using Table  = hccl::RmaBufferMgr<MemKey, Handle>;
  
@@ -83,14 +64,12 @@ public:
     HcclResult CommUnregMem(const std::string& tag, const void* rawHandle);
     HcclResult GetTagMemoryHandles(void** memHandles, uint32_t memHandleNum, std::vector<HcclMem> &mem, 
         std::vector<std::string> &memTag);
-    HcclResult SetMemHandles(void **memHandles, const std::vector<void *> &memHandleVec,
-        std::vector<std::unique_ptr<CommMemHandle>> &commMemHandles);
+    HcclResult SetMemHandles(HcommMemHandle *memHandles, const std::vector<MemHandle> &memHandleVec,
+        std::vector<MemHandle> &commMemHandleVec);
 
 private:
     uint64_t bufferSize_{};
-    void*   addr_{nullptr};
-    std::size_t size_{0};
-    HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+    CommMemInfo cclMemInfo_{};
  
     static inline MemKey MakeKey(void* addr, uint64_t size) {
         return MemKey(reinterpret_cast<uintptr_t>(addr), static_cast<uint64_t>(size));
@@ -102,10 +81,10 @@ private:
     std::mutex memMutex_;
     // 每个 tag 一份 registry
     std::unordered_map<std::string, TagRegistry> tagRegs_;
-    // 每个tag 1个 CommMemHandle
-    std::unordered_map<std::string, std::shared_ptr<CommMemHandle>> opBindings_;
+    // 每个tag 1个 CommMemInfo
+    std::unordered_map<std::string, std::shared_ptr<CommMemInfo>> opBindings_;
     std::unordered_map<void*, std::string> opReverseBindings_;
 };
-}
+}  // namespace hccl
 
 #endif // COMM_MEMS_H
