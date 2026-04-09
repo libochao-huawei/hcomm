@@ -18,6 +18,8 @@
 
 namespace hcomm {
 
+constexpr uint32_t kMgrCount = 16;
+
 CcuKernelMgr::~CcuKernelMgr()
 {
     if (!initializedFlag_) {
@@ -36,13 +38,13 @@ CcuKernelMgr::~CcuKernelMgr()
 
 CcuKernelMgr &CcuKernelMgr::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM];
+    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM + 1];
 
     int32_t devLogicId = deviceLogicId;
-    if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) > MAX_MODULE_DEVICE_NUM) {
         HCCL_WARNING("[CcuKernelMgr][%s] use the backup device, devLogicId[%d] should be "
             "less than %u.", __func__, devLogicId, MAX_MODULE_DEVICE_NUM);
-        devLogicId = MAX_MODULE_DEVICE_NUM; // 使用备份设备
+        devLogicId = MAX_MODULE_DEVICE_NUM;
     }
 
     kernelManager[devLogicId].devLogicId_ = devLogicId;
@@ -63,13 +65,26 @@ HcclResult CcuKernelMgr::Init()
 
 HcclResult CcuKernelMgr::Deinit()
 {
-    // 不需要主动释放CCU指令空间等资源，因为设备管理与kernelMgr都为静态，生命周期一致
     std::unique_lock<std::mutex> lock(kernelMapMutex_);
+
+    if (instructionLoadDevMem_) {
+        (void)hrtFree(instructionLoadDevMem_);
+        instructionLoadDevMem_ = nullptr;
+    }
+
+    for (auto &kernelPair : kernelMap_) {
+        (void)ReleaseInstrRes(kernelPair.second.get(), devLogicId_);
+    }
+
+    for (const auto &handle : translatorResPack.handles) {
+        (void)CcuDevMgrImp::ReleaseResHandle(devLogicId_, handle);
+    }
     translatorResPack.handles.clear();
-    initializedFlag_ = false;
+
     kernelMap_.clear();
     translators.clear();
     referenceMgrs.clear();
+    initializedFlag_ = false;
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -107,7 +122,7 @@ static void DumpResReqInfo(const CcuResReq &totalRes)
 inline int32_t GetResTotalNum(const std::vector<ResInfo> &resInfos)
 {
     int32_t resNum = 0;
-    for (ResInfo resInfo : resInfos) {
+    for (const ResInfo &resInfo : resInfos) {
         resNum += static_cast<int32_t>(resInfo.num);
     }
     return resNum;
@@ -181,12 +196,21 @@ static bool CheckResIfAvailable(const CcuResReq &totalRes, const CcuResReq &resR
     return true;
 }
 
-static void MoveResInfo(std::vector<ResInfo> &dest, std::vector<ResInfo> &source,
+static bool MoveResInfo(std::vector<ResInfo> &dest, std::vector<ResInfo> &source,
     const uint32_t resNum)
 {
-    // Register 前序流程已检查资源不足场景
     if (resNum == 0) {
-        return;
+        return true;
+    }
+
+    uint32_t sourceTotal = 0;
+    for (const auto &info : source) {
+        sourceTotal += info.num;
+    }
+    if (resNum > sourceTotal) {
+        HCCL_ERROR("[CcuKernelMgr][MoveResInfo] resNum[%u] exceeds sourceTotal[%u].",
+            resNum, sourceTotal);
+        return false;
     }
 
     dest.clear();
@@ -198,38 +222,49 @@ static void MoveResInfo(std::vector<ResInfo> &dest, std::vector<ResInfo> &source
         dest.emplace_back(srcBlock.startId, take);
 
         if (take == srcBlock.num) {
-            // 完全用掉这个资源，source中移除
             iter = source.erase(iter);
         } else {
-            // 只用了部分，更新source中的资源
             srcBlock.startId += take;
             srcBlock.num -= take;
         }
 
-        remain -= take; // 更新剩余需要的资源数量
+        remain -= take;
     }
+
+    return true;
 }
 
-static void LoadRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack)
+static HcclResult LoadRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack)
 {
     const CcuResReq &resReq = kernel->GetResourceRequest();
     CcuResRepository &totalResRepo = resPack.GetCcuResRepo();
     CcuResRepository kernelResRepo{};
 
-    for (uint8_t i = 0; i < CCU_MAX_IODIE_NUM; i++) { // todo: 建议改成dieId
-        MoveResInfo(kernelResRepo.loopEngine[i], totalResRepo.loopEngine[i], resReq.loopEngineReq[i]);
-        MoveResInfo(kernelResRepo.blockLoopEngine[i], totalResRepo.blockLoopEngine[i], resReq.blockLoopEngineReq[i]);
-        MoveResInfo(kernelResRepo.ms[i], totalResRepo.ms[i], resReq.msReq[i]);
-        MoveResInfo(kernelResRepo.blockMs[i], totalResRepo.blockMs[i], resReq.blockMsReq[i]);
-        MoveResInfo(kernelResRepo.cke[i], totalResRepo.cke[i], resReq.ckeReq[i]);
-        MoveResInfo(kernelResRepo.blockCke[i], totalResRepo.blockCke[i], resReq.blockCkeReq[i]);
-        MoveResInfo(kernelResRepo.continuousXn[i], totalResRepo.continuousXn[i], resReq.continuousXnReq[i]);
-        MoveResInfo(kernelResRepo.xn[i], totalResRepo.xn[i], resReq.xnReq[i]);
-        MoveResInfo(kernelResRepo.gsa[i], totalResRepo.gsa[i], resReq.gsaReq[i]);
-        MoveResInfo(kernelResRepo.mission.mission[i], totalResRepo.mission.mission[i], resReq.missionReq.req[i]);
+    for (uint8_t i = 0; i < CCU_MAX_IODIE_NUM; i++) {
+        CHK_RET(MoveResInfo(kernelResRepo.loopEngine[i], totalResRepo.loopEngine[i], resReq.loopEngineReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.blockLoopEngine[i], totalResRepo.blockLoopEngine[i], resReq.blockLoopEngineReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.ms[i], totalResRepo.ms[i], resReq.msReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.blockMs[i], totalResRepo.blockMs[i], resReq.blockMsReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.cke[i], totalResRepo.cke[i], resReq.ckeReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.blockCke[i], totalResRepo.blockCke[i], resReq.blockCkeReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.continuousXn[i], totalResRepo.continuousXn[i], resReq.continuousXnReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.xn[i], totalResRepo.xn[i], resReq.xnReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.gsa[i], totalResRepo.gsa[i], resReq.gsaReq[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
+        CHK_RET(MoveResInfo(kernelResRepo.mission.mission[i], totalResRepo.mission.mission[i], resReq.missionReq.req[i]) ?
+            HcclResult::HCCL_SUCCESS : HcclResult::HCCL_E_INTERNAL);
     }
 
     kernel->SetResRepository(kernelResRepo);
+    return HcclResult::HCCL_SUCCESS;
 }
 
 static HcclResult AllocInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_t devLogicId)
@@ -259,11 +294,9 @@ HcclResult CcuKernelMgr::AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack
         return HcclResult::HCCL_E_UNAVAIL;
     }
 
-    // 申请指令空间资源
     CHK_RET(AllocInstrRes(kernel, devLogicId_));
 
-    // 资源从respack转移至kernel
-    LoadRes(kernel, resPack);
+    CHK_RET(LoadRes(kernel, resPack));
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -272,10 +305,10 @@ template <typename T1, typename T2>
 HcclResult ResetRepResourceTemplate(std::vector<T1> &resource, const std::vector<T2> &repository,
     const uint32_t startIndex = 0)
 {
-    if (resource.size() > repository.size() - startIndex) {
+    if (startIndex >= repository.size() || resource.size() > repository.size() - startIndex) {
         HCCL_ERROR("[CcuKernelMgr][ResetRepResourceTemplate]resource size[%u] bigger "
-            "repository size[%u] typeid[%s]",
-            resource.size(), repository.size(), typeid(T1).name());
+            "repository size[%u] startIndex[%u] typeid[%s]",
+            resource.size(), repository.size(), startIndex, typeid(T1).name());
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -318,9 +351,8 @@ static HcclResult SaveKernelMissionInfo(CcuKernel *kernel,
         __func__, devLogicId, dieId);
 
     kernel->SetMissionKey(missionKey);
-    // 从missionId中获取一个元素并从missionId中删除，当前应只有一个元素，且无需删除
     if (missionId[dieId].empty()) {
-        HCCL_ERROR("[%s] failed, devLogicId[%d] dieId[%u] do not have misions.",
+        HCCL_ERROR("[%s] failed, devLogicId[%d] dieId[%u] do not have missions.",
             __func__, devLogicId, dieId);
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -349,8 +381,12 @@ static void DumpResRepositoryInfo(const CcuResRepository &resRepo)
 
 inline void ExpandResInfo(std::vector<ResInfo> &expendResInfos, const std::vector<ResInfo> &resInfos)
 {
-    // 将resInfo中的资源信息还原为单个资源粒度
-    for (auto &resInfo : resInfos) {
+    uint32_t totalNum = 0;
+    for (const auto &resInfo : resInfos) {
+        totalNum += resInfo.num;
+    }
+    expendResInfos.reserve(expendResInfos.size() + totalNum);
+    for (const auto &resInfo : resInfos) {
         for (uint32_t id = 0; id < resInfo.num; id++) {
             expendResInfos.push_back({(resInfo.startId + id), {1}});
         }
@@ -579,13 +615,11 @@ HcclResult CcuKernelMgr::InstantiationTranslator(const uint16_t dieId)
     auto hbmTokenInfo = GetTokenInfo(tmpDevMem.GetAddr(), 1);
 
     CcuResReq totalResReq{};
-    // 实例化CcuRepReferenceManager和CcuRepTranslator，并为CcuRepReferenceManager绑定物理资源
-    for (uint32_t i = 0; i < 16; i++) {  // mgr有16个
+    for (uint32_t i = 0; i < kMgrCount; i++) {
         referenceMgrs[dieId][i] = std::make_shared<CcuRepReferenceManager>(dieId);
         translators[dieId][i]   = std::make_shared<CcuRepTranslator>(devLogicId_,
             dieId, referenceMgrs[dieId][i], tmpChannelId, ccuTokenInfo, hbmTokenInfo);
 
-        // 统计&合并refManager和translaotr所有资源REQ
         auto refMangerResReq = CcuRep::CcuRepReferenceManager::GetResReq(dieId);
         auto transLatorResReq = CcuRep::CcuRepTranslator::GetResReq(dieId);
         MergeCcuResReq(totalResReq, refMangerResReq);
@@ -594,13 +628,12 @@ HcclResult CcuKernelMgr::InstantiationTranslator(const uint16_t dieId)
 
     DumpResReqInfo(totalResReq);
 
-    // 为refManager和translaotr申请物理资源
     CcuResHandle handle;
     CHK_RET(CcuDevMgrImp::AllocResHandle(devLogicId_, totalResReq, handle));
     translatorResPack.handles.push_back(handle);
 
     CcuRepResource translatorRepRes;
-    for (uint32_t i = 0; i < 16; i++) {  // mgr有16个
+    for (uint32_t i = 0; i < kMgrCount; i++) {
         referenceMgrs[dieId][i]->GetRes(translatorRepRes);
         translators[dieId][i]->GetRes(translatorRepRes);
     }
