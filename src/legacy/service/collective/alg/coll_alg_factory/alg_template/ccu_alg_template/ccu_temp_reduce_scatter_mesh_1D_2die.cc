@@ -77,7 +77,9 @@ HcclResult CcuTempReduceScatterMesh1D2Die::GenExtIns(const TempFuncs &tempFuncs,
               tempAlgParams.sliceSize, tempAlgParams.inputSliceStride, tempAlgParams.outputSliceStride,
               tempAlgParams.repeatNum, tempAlgParams.inputRepeatStride, tempAlgParams.outputRepeatStride,
               tempAlgParams.tailSize);
-
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceScatterMesh1D2Die] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     uint64_t inputAddr  = BufferTypeToAddr(tempAlgParams.buffInfo.inBuffType) + tempAlgParams.buffInfo.inBuffBaseOff;
     uint64_t outputAddr = BufferTypeToAddr(tempAlgParams.buffInfo.outBuffType) + tempAlgParams.buffInfo.outBuffBaseOff;
     uint64_t scratchAddr

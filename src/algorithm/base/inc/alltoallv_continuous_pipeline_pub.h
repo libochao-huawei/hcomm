@@ -97,7 +97,7 @@ private:
     HcclResult DoLocalWriteInfoAndFlagAndInterSync();
 
     // 轮询等待某个rank的flag，阻塞函数
-    HcclResult WaitFlagOfRank(const u32 rank);
+    HcclResult WaitValueOfRank(const u32 rank, u64& value);
 
     // 等待counts信息并刷新recive info，阻塞函数
     HcclResult WaitAndCalReceiveInfo();
@@ -116,8 +116,8 @@ private:
     HcclResult WaitRdmaSubStreamFinish();
 
     // 跨module通信，通过SDMA从link left读
-    HcclResult InterSdmaRx(const LINK& linkLeft, const LINK& linkRight, const std::vector<RxMemoryInfo>& recvMems,
-        Stream& stream);
+    HcclResult InterSdmaRx(const LINK& linkLeft, const LINK& linkRight, std::vector<TxMemoryInfo>& sendMems,
+        std::vector<RxMemoryInfo>& recvMems, Stream& stream);
 
     // 跨module通信，通过RDMA从link left读或向link right写
     HcclResult InterRdmaTxRx(const LINK& linkLeft, const LINK& linkRight, std::vector<TxMemoryInfo>& sendMems,
@@ -191,12 +191,15 @@ private:
     std::vector<u64> localRecvCounts_;
     std::vector<u64> localRecvDispls_;
 
-    std::vector<u32> flagAreaRefreshData_;
+    std::vector<u64> flagAreaRefreshData_;
 
     u32 waitFlagTimeoutSec_{0};   // 等待Flag的超时时间，单位秒
 
-    u32 flagAreaRefreshFlag{0}; // 标识flag区域已经被刷0，避免刷0的任务还没执行，下发态kernel就开始轮询
-    u32 flagAreaRefreshValue{1};
+    u32 flagAreaRefreshFlag_{0}; // 标识flag区域已经被刷0，避免刷0的任务还没执行，下发态kernel就开始轮询
+    u32 flagAreaRefreshValue_{1};
+
+    u64 localMaxSendCount_{0}; // 本rank发送的最大数据量，广播给其他rank，用于计算loop数
+    u64 intraMaxSendCount_{0}; // 本module内所有rank发送的最大数据量，用于计算loop数
 };
 
 }

@@ -17,7 +17,7 @@
 #include "hcomm_diag.h"
 
 namespace hccl {
-constexpr u32 OP_INFO_MAX_SIZE = 1024;
+constexpr u32 OP_INFO_MAX_SIZE = 2048;
 struct IndOpInfo {
     uint8_t opInfo[OP_INFO_MAX_SIZE] {0};
     HcommGetOpInfoCallback callback = nullptr;

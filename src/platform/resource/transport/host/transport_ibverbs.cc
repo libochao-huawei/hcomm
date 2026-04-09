@@ -511,7 +511,7 @@ void TransportIbverbs::ModifyAtomicWriteAfterReduce(u32 &preWrOpcode, u64 wqeTyp
                        wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA_ACK_NOTIFY);
     if (useAtomicWrite_ && preWrOpcode == RA_WR_RDMA_REDUCE_WRITE && isNotifyWqe) {
         opcode = RA_WR_RDMA_ATOMIC_WRITE;
-        immData = htobe32(0x1);
+        immData = machinePara_.isAicpuModeEn ? htobe32(0x1) : 0x1; // aicpu展开时，HCCL直调RoCE驱动，需进行字节序转换
     }
     HCCL_DEBUG("%s preWrOpcode[%u] useAtomicWrite[%d] wqeType[%d] opcode[0x%x] immdata[%u]",
         __func__, preWrOpcode, useAtomicWrite_, wqeType, opcode, immData);

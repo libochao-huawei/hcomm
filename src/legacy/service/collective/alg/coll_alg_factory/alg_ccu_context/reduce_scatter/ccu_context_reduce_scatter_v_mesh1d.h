@@ -38,7 +38,7 @@ private:
     std::vector<CcuRep::Variable> input_;
     CcuRep::Variable output_;
     std::vector<CcuRep::Variable> token_;
-    CcuRep::Variable mySliceOffSet_;
+    CcuRep::Variable mySliceOffset_;
     GroupOpSize groupOpSize_;
 
     std::vector<CcuRep::Memory> nMemory_;

@@ -264,7 +264,7 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
             devLogicId, rping->GetDeviceLogicId());
         return HCCN_E_PARA;
     }
-    HCCL_DEBUG("[HccnRpingAddTargetWithCfg] device id is %d", devLogicId);
+    HCCL_DEBUG("[HccnRpingAddTargetWithCfg] device id is %d.", devLogicId);
 
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
@@ -292,7 +292,7 @@ HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, 
     }
 
     delete[] input;
-    HCCL_RUN_INFO("[HccnRpingAddTargetWithCfg]Device[%d] add targetNum %u success", devLogicId, targetNum);
+    HCCL_RUN_INFO("[HccnRpingAddTargetWithCfg]Device[%d] add targetNum %u success.", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
  
@@ -342,7 +342,7 @@ HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, Hccn
     }
 
     delete[] input;
-    HCCL_RUN_INFO("[HccnRpingRemoveTarget]Device[%d] remove targetNum %u success", devLogicId, targetNum);
+    HCCL_RUN_INFO("[HccnRpingRemoveTarget]Device[%d] remove targetNum %u success.", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
 
@@ -406,7 +406,11 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         input[h].addrType = target[h].addrType;
     }
     int *state = new (std::nothrow) int[targetNum];
-    CHK_PRT_RET(state == nullptr, HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed."), HCCN_E_MEM);
+    if (state == nullptr) {
+        HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed.");
+        delete[] input;
+        return HCCN_E_MEM;
+    }
     ret = rping->HccnRpingGetTarget(static_cast<u32>(devLogicId), targetNum, input, state);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HccnRpingGetTarget]Device[%d] get targetNum %u fail, ret[%d]", devLogicId, targetNum, ret);
@@ -418,7 +422,7 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     ConvertTargetState(targetNum, state, targetState);
     delete[] input;
     delete[] state;
-    HCCL_RUN_INFO("[HccnRpingGetTarget]Device[%d] get targetNum %u success", devLogicId, targetNum);
+    HCCL_RUN_INFO("[HccnRpingGetTarget]Device[%d] get targetNum %u success.", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
 
@@ -445,7 +449,7 @@ HccnResult HccnRpingBatchPingStart(HccnRpingCtx rpingCtx, uint32_t pktNum, uint3
         HCCL_ERROR("[HccnRpingBatchPingStart]task start failed, devLogicId[%d], ret[%d], pktNum:%u, interval:%u, timeout:%u.",
         devLogicId, ret, pktNum, interval, timeout), HCCN_E_FAIL);
 
-    HCCL_RUN_INFO("[HccnRpingBatchPingStart]task start success, devLogicId:%d, pktNum:%u, interval:%u, timeout:%u",
+    HCCL_RUN_INFO("[HccnRpingBatchPingStart]task start success, devLogicId:%d, pktNum:%u, interval:%u, timeout:%u.",
         devLogicId, pktNum, interval, timeout);
     return HCCN_SUCCESS;
 }
@@ -471,7 +475,7 @@ HccnResult HccnRpingBatchPingStop(HccnRpingCtx rpingCtx)
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HccnRpingBatchPingStop]task stop failed, devLogicId[%d] ret[%d].", devLogicId, ret), HCCN_E_FAIL);
 
-    HCCL_RUN_INFO("[HccnRpingBatchPingStop]task stop success, devLogicId[%d]", devLogicId);
+    HCCL_RUN_INFO("[HccnRpingBatchPingStop]task stop success, devLogicId[%d].", devLogicId);
     return HCCN_SUCCESS;
 }
 
@@ -564,7 +568,7 @@ HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     PutResult(targetNum, result, output); 
     delete[] input;
     delete[] output;
-    HCCL_RUN_INFO("[HccnRpingGetResult]Device[%d] get result success, targetNum[%u]", devLogicId, targetNum);
+    HCCL_RUN_INFO("[HccnRpingGetResult]Device[%d] get result success, targetNum[%u].", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
 
@@ -591,7 +595,7 @@ HccnResult HccnRpingGetPayload(HccnRpingCtx rpingCtx, void **payload, uint32_t *
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetPayload]Device[%d] get payload fail, ret[%d]", devLogicId, ret),
         HCCN_E_FAIL);
 
-    HCCL_RUN_INFO("[HccnRpingGetPayload]Device[%d] get payload success, payloadLen[%u]", devLogicId, *payloadLen);
+    HCCL_RUN_INFO("[HccnRpingGetPayload]Device[%d] get payload success, payloadLen[%u].", devLogicId, *payloadLen);
     return HCCN_SUCCESS;
 }
 

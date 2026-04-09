@@ -39,7 +39,7 @@ bool LocalRmaBufManager::IsExist(const string &opTag, const PortData &portData, 
            && bufs[opTag][portData].find(bufferType) != bufs[opTag][portData].end();
 }
 
-LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferType, std::shared_ptr<Buffer> buffer, const PortData &portData)
+LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferType, std::shared_ptr<Buffer> buffer, const PortData &portData, LinkProtocol linkProtocol)
 {
     HCCL_INFO("LocalRmaBufManager::Reg, buffer[%s]", buffer->Describe().c_str());
     if (buffer == nullptr) {
@@ -58,7 +58,7 @@ LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferTy
         return bufs[opTag][portData][bufferType].get();
     } else {
         if (portData.GetProto() == LinkProtoType::RDMA) {
-            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData);
+            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData, linkProtocol);
             bufs[opTag][portData][bufferType]
                 = make_unique<LocalRdmaRmaBuffer>(buffer, rdmaHandle);
             return bufs[opTag][portData][bufferType].get();
@@ -67,7 +67,7 @@ LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferTy
             if (comm->GetOpAiCpuTSFeatureFlag()) { // 算子粒度
                 bufs[opTag][portData][bufferType] = make_unique<LocalUbRmaBuffer>(buffer);
             } else {
-                RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData);
+                RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData, linkProtocol);
                 bufs[opTag][portData][bufferType] = make_unique<LocalUbRmaBuffer>(buffer, rdmaHandle);
             }
             return bufs[opTag][portData][bufferType].get();

@@ -63,15 +63,7 @@ typedef void *HcclConn;
 /**
  * @brief handle to HCCL Window
  */
-typedef void *CommSymWindow;
-
-/**
- * @brief Symmetric Memory Flag
- */
-typedef enum {
-    HCCL_WIN_DEFAULT = 0,       /**< 先不支持，预留 */
-    HCCL_WIN_COLL_SYMMETRIC = 1 /**< 启用对称内存 */
-} symmetricMemoryFlag;
+typedef void *HcclCommSymWindow;
 
 /**
  * @brief HCCL Reduction operation
@@ -227,6 +219,14 @@ typedef enum {
     HCCL_CMD_BARRIER,
     HCCL_CMD_MAX
 } HcclCMDType;
+
+typedef enum {
+    HCCL_COMM_STATUS_READY = 0,
+    HCCL_COMM_STATUS_SUSPENDING = 1,
+    HCCL_COMM_STATUS_INVALID = 254,
+    HCCL_COMM_STATUS_RESERVED = 255
+} HcclCommStatus;
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

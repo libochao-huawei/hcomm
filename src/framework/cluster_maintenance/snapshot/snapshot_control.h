@@ -14,6 +14,7 @@
 #include <mutex>
 #include <functional>
 #include "hccl_common.h"
+#include "referenced.h"
 
 namespace hccl {
 using SnapshotSetInvalidComm = std::function<HcclResult(bool)>;
@@ -37,9 +38,11 @@ class SnapshotControl {
 public:
     static SnapshotControl& GetInstance(s32 deviceLogicId);
     SnapshotStatus GetStatus();
-    HcclResult RegisterComm(std::string &identifier, SnapshotSetInvalidComm setInvalidCommCallback,
+    HcclResult RegisterComm(const std::string &identifier, SnapshotSetInvalidComm setInvalidCommCallback,
         SnapshotCheckPreProcess preProcessCallback, SnapshotCheckPostProcess postProcessCallback);
-    HcclResult UnRegisterComm(std::string &identifier);
+    HcclResult RegisterBackup(const std::string &identifier, u32 backupDevicePhyId);
+    HcclResult UnRegisterComm(const std::string &identifier);
+    HcclResult UnRegisterBackup(const std::string &identifier, u32 backupDevicePhyId);
     HcclResult PreProcess();
     HcclResult PostProcess();
     HcclResult Recovery();
@@ -52,13 +55,18 @@ private:
     HcclResult CheckCommsPostProcess();
     HcclResult MarkInvalidComms();
 
+    HcclResult DevicePreProcess();
+    HcclResult DevicePostProcess();
+    HcclResult DeviceRestore();
+
     static bool registered;
     std::mutex statusMutex_;
     SnapshotStatus status_{ SnapshotStatus::DEFAULT };
     std::mutex commMutex_;
-    std::map<std::string, SnapshotCallbacks> commCallbacks_;
+    std::map<const std::string, SnapshotCallbacks> commCallbacks_;
     s32 deviceLogicId_ { INVALID_INT };
     u32 devicePhyId_ { INVALID_UINT };
+    std::map<u32, Referenced> backupDeviceCount_; // key是backupDevPhyId
 };
 } // namespace hccl
 #endif // HCCL_SNAPSHOT_CONTROL_H

@@ -79,6 +79,9 @@ struct ibv_exp_qp_init_attr {
     unsigned int ai_op_support;
     unsigned int grp_id;
     unsigned int qp_cstm_flag;
+    unsigned int use_resv_mem;
+    unsigned int resv_mem_pool_id;
+    unsigned int resv[16U];
 };
 
 struct wr_exp_rsp {
@@ -99,6 +102,7 @@ struct ibv_post_send_ext_attr {
 struct ibv_exp_ah_attr {
     struct ibv_ah_attr attr;
     uint32_t           udp_sport;
+    uint32_t           resv[4U];
 };
 
 struct verbs_context_exp {

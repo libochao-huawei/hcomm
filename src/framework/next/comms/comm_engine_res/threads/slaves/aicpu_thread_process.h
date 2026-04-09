@@ -22,7 +22,10 @@ public:
     static HcclResult InitThreads(ThreadMgrAicpuParam *param);
     static HcclResult AicpuThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuThreadDestroy(ThreadMgrAicpuParam *param);
+    static HcclResult AicpuThreadSupplementNotify(ThreadMgrAicpuParam *param);
 private:
+    static HcclResult ResumeThread(ThreadMgrAicpuParam *param,
+        std::vector<std::shared_ptr<hccl::Thread>> &outThreads, bool isSupplementNotify);
     static std::mutex mutex_;
     static std::vector<std::shared_ptr<hccl::Thread>> threads_;
 };

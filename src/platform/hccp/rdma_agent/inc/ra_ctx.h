@@ -11,7 +11,6 @@
 #ifndef RA_CTX_H
 #define RA_CTX_H
 
-#include <pthread.h>
 #include "hccp_ctx.h"
 #include "ra_rs_ctx.h"
 
@@ -21,12 +20,6 @@ struct RaCtxHandle {
     struct CtxInitAttr attr;
     unsigned int devIndex;
     struct DevBaseAttr devAttr;
-    union {
-        struct {
-            pthread_mutex_t devMutex;
-            bool disabledLiteThread;
-        } rdma;
-    };
 };
 
 struct RaTokenIdHandle {

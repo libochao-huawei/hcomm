@@ -43,8 +43,9 @@ private:
     HcclResult BatchSend(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks, InsQuePtr &queue, TemplateDataParams &templateDataParams, u32 repeat) const;
     HcclResult BatchRecv(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks, InsQuePtr &queue, TemplateDataParams &templateDataParams, u32 repeat) const;
     HcclResult BatchSR(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks, InsQuePtr &queue, TemplateDataParams &templateDataParams, u32 repeat) const;
+    void UpdateRxSliceSize(const TemplateDataParams& tempAlgParams, u64& sliceSize) const;
 };
 
 } // namespace Hccl
 
-#endif // !HCCLV2_INS_TEMP_REDUCE_SCATTER_NHR
+#endif // !HCCLV2_INS_TEMP_SCATTER_NHR

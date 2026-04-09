@@ -24,6 +24,8 @@ public:
 
     void NotifyWait(u32 notifyId) override;
 
+    void NotifyWait(u32 notifyId, u32 timeout);
+
     void NotifyRecordLoc(u32 notifyId) override;
 
     void Cnt1toNNotifyWait(u32 notifyId, u32 value) override;

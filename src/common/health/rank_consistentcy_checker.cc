@@ -412,7 +412,7 @@ void RankConsistentcyChecker::ReportCrcCheckFailed(const HcclCMDInfo &hcclCMDInf
 }
 
 void RankConsistentcyChecker::ReportCommonError(const HcclCMDInfo &hcclCMDInfo, const std::string &paraName,
-    const std::string &localParaStr, const std::string &remoteParaStr, const std::string &errorMsg) {
+    const std::string &localParaStr, const std::string &remoteParaStr, const std::string &errorMsg) const {
     std::string opInfo = "Unknown";
     for (const auto& pair : HCCL_OPTYPE_NAME_MAP) {
         if (pair.second == hcclCMDInfo.cmdType) {
@@ -444,7 +444,7 @@ void RankConsistentcyChecker::CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheck
 
     if (localInfo->cmdType != remoteInfo->cmdType) {
         ReportCmdInfoCheckFailed(*localInfo, "cmdType",
-            (uint32_t)localInfo->cmdType, (uint32_t)remoteInfo->cmdType);
+            static_cast<uint32_t>(localInfo->cmdType), static_cast<uint32_t>(remoteInfo->cmdType));
     }
 
     if (localInfo->count != remoteInfo->count) {
@@ -453,11 +453,11 @@ void RankConsistentcyChecker::CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheck
 
     if (localInfo->dataType != remoteInfo->dataType) {
         ReportCmdInfoCheckFailed(*localInfo, "dataType",
-            (uint32_t)localInfo->dataType, (uint32_t)remoteInfo->dataType);
+            static_cast<uint32_t>(localInfo->dataType), static_cast<uint32_t>(remoteInfo->dataType));
     }
 
     if (localInfo->op != remoteInfo->op) {
-        ReportCmdInfoCheckFailed(*localInfo, "op", (uint32_t)localInfo->op, (uint32_t)remoteInfo->op);
+        ReportCmdInfoCheckFailed(*localInfo, "op", static_cast<uint32_t>(localInfo->op), static_cast<uint32_t>(remoteInfo->op));
     }
 
     if (!CompareSection(localInfo->group, remoteInfo->group, GROUP_NAME_MAX_LEN + 1)) {

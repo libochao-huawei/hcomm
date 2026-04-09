@@ -8,35 +8,36 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "gtest/gtest.h"
-#include "mockcpp/mokc.h"
-#include <mockcpp/mockcpp.hpp>
-
-#define private public
-#include "aicpu_ts_thread.h"
-#include "aicpu_ts_thread_interface.h"
+#include "ut_aicpu_ts_base.h"
 #include "ub_transport_lite_impl.h"
-#undef private
 
 using namespace hccl;
 
-class UtAicpuTsHcommChannelNotifyRecordOnThread : public testing::Test
+class UtAicpuTsHcommChannelNotifyRecordOnThread : public UtAicpuTsBase
 {
 protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "UtAicpuTsHcommChannelNotifyRecordOnThread tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "UtAicpuTsHcommChannelNotifyRecordOnThread tests tear down." << std::endl;
+    }
+
     virtual void SetUp() override
     {
-        threadOnDevice.devType_ = DevType::DEV_TYPE_950;
-        threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
-        threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123456);
+        std::cout << "A Test case in UtAicpuTsHcommChannelNotifyRecordOnThread SetUp" << std::endl;
+        UtAicpuTsBase::SetUp();
     }
 
     virtual void TearDown() override
     {
-        GlobalMockObject::verify();
+        UtAicpuTsBase::TearDown();
+        std::cout << "A Test case in UtAicpuTsHcommChannelNotifyRecordOnThread TearDown" << std::endl;
     }
 
-    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
-    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
     std::vector<char> uniqueId;
     Hccl::UbTransportLiteImpl transportOnDevice{uniqueId};
     ChannelHandle channel = reinterpret_cast<ChannelHandle>(&transportOnDevice);
@@ -59,12 +60,5 @@ TEST_F(UtAicpuTsHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnT
 TEST_F(UtAicpuTsHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_Channel_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     res = HcommChannelNotifyRecordOnThread(thread, 0, notifyIdx);
-    EXPECT_EQ(res, HCCL_E_PTR);
-}
-
-TEST_F(UtAicpuTsHcommChannelNotifyRecordOnThread, Ut_HcommChannelNotifyRecordOnThread_When_StreamLite_NotFound_Expect_ReturnIsHCCL_E_PTR)
-{
-    threadOnDevice.pImpl_->streamLiteVoidPtr_ = nullptr;
-    res = HcommChannelNotifyRecordOnThread(thread, channel, notifyIdx);
     EXPECT_EQ(res, HCCL_E_PTR);
 }

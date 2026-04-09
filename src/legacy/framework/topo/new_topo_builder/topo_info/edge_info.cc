@@ -22,7 +22,9 @@ const unordered_map<string, LinkProtocol> EdgeInfo::strToLinkProtocol =
         {"HCCS", LinkProtocol::HCCS},
         {"PCIE", LinkProtocol::PCIE},
         {"TCP", LinkProtocol::TCP},
-        {"UB_MEM", LinkProtocol::UB_MEM}});
+        {"UB_MEM", LinkProtocol::UB_MEM},
+        {"UBOE", LinkProtocol::UBOE}
+    });
 
 const unordered_map<std::string, TopoType> EdgeInfo::strToTopoType =
     (unordered_map<string, TopoType>{{"CLOS", TopoType::CLOS},

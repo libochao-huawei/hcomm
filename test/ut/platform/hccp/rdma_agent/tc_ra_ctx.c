@@ -1937,3 +1937,112 @@ void TcRaRsCtxGetCrErrInfoList()
     free(outBuf);
     outBuf = NULL;
 }
+
+void TcRaCtxGetTpInfoList()
+{
+    struct HccpTpInfo infoList[HCCP_MAX_TPID_INFO_NUM] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct GetTpCfg cfg = {0};
+    unsigned int num = 0;
+    int ret = 0;
+
+    ret = RaCtxGetTpInfoList(NULL, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetTpInfoList(&ctxHandle, &cfg, NULL, &num);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetTpInfoList(&ctxHandle, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, 128103);
+
+    num = 1;
+    ret = RaCtxGetTpInfoList(&ctxHandle, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, 0);
+}
+
+void TcRaPeerCtxGetTpInfoList()
+{
+    struct HccpTpInfo infoList[HCCP_MAX_TPID_INFO_NUM] = {0};
+    struct RaCtxHandle ctxHandle = {0};
+    struct GetTpCfg cfg = {0};
+    unsigned int num = 1;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsGetTpInfoList, 1, -1);
+    ret = RaPeerCtxGetTpInfoList(&ctxHandle, &cfg, infoList, &num);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+}
+
+void TcRaCtxGetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    ret = RaCtxGetTpAttr(NULL, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxGetTpAttr(&ctxHandle, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 0);
+
+    mocker_clean();
+    mocker(RaPeerCtxGetTpAttr, 1, -1);
+    ret = RaCtxGetTpAttr(&ctxHandle, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128100);
+    mocker_clean();
+}
+
+void TcRaPeerCtxGetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsGetTpAttr, 1, -1);
+    ret = RaPeerCtxGetTpAttr(&ctxHandle, tpHandle, &attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+}
+
+void TcRaCtxSetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    ret = RaCtxSetTpAttr(NULL, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128103);
+
+    ret = RaCtxSetTpAttr(&ctxHandle, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 0);
+
+    mocker_clean();
+    mocker(RaPeerCtxSetTpAttr, 1, -1);
+    ret = RaCtxSetTpAttr(&ctxHandle, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, 128100);
+    mocker_clean();
+}
+
+void TcRaPeerCtxSetTpAttr()
+{
+    struct RaCtxHandle ctxHandle = {0};
+    struct TpAttr attr = {0};
+    uint32_t attrBitmap = 0;
+    uint64_t tpHandle = 0;
+    int ret = 0;
+
+    mocker_clean();
+    mocker(RsSetTpAttr, 1, -1);
+    ret = RaPeerCtxSetTpAttr(&ctxHandle, tpHandle, attrBitmap, &attr);
+    EXPECT_INT_EQ(ret, -1);
+    mocker_clean();
+}

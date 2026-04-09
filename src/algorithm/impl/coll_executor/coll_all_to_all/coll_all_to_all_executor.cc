@@ -124,8 +124,8 @@ HcclResult CollAlltoAllExecutor::CalcResRequest(const OpParam& param, AlgResourc
     CHK_RET(CalcCommInfo(opTransport));
 
     CHK_RET(BuildResourceRequest(scratchMemSize, streamNum, notifyNum, aivBufferRequest, opTransport, resourceRequest));
-    HCCL_INFO("streamNum[%u], notifyNum[%u], sctrachMemSize[%llu], aivBufferRequest[%llu]",
-        resourceRequest.streamNum, resourceRequest.notifyNum, resourceRequest.scratchMemSize,
+    HCCL_INFO("[CollAlltoAllExecutor][%s] streamNum[%u], notifyNum[%u], sctrachMemSize[%llu], aivBufferRequest[%llu]",
+        __func__, resourceRequest.streamNum, resourceRequest.notifyNum, resourceRequest.scratchMemSize,
         resourceRequest.aivBufferRequest);
     // 打印建链诉求
     for (u32 levelIndex = 0; levelIndex < COMM_LEVEL_RESERVED; levelIndex++) {
@@ -161,6 +161,7 @@ HcclResult CollAlltoAllExecutor::SetExcutorExtraInfo(const std::vector<SendRecvI
     allMeshAggregationSendRecvInfo_.clear();
     allMeshAggregationSendRecvInfo_ = allMeshAggregationSendRecvInfo;
     UpdateAlltoAllZCopyMode(allMeshAggregationSendRecvInfo_, cclbufferSize);
+    HCCL_DEBUG("[%s] allMeshAggregationSendRecvInfo_ size[%u]", __func__, allMeshAggregationSendRecvInfo_.size());
 
     return HCCL_SUCCESS;
 }
@@ -181,7 +182,7 @@ void CollAlltoAllExecutor::UpdateAlltoAllZCopyMode(std::vector<SendRecvInfo> &al
         bool isAlltoAllZCopyMode = (maxSendSize <= cclbufferSize) &&
                                    (maxRecvSize <= cclbufferSize);
         if (isAlltoAllZCopyMode) {
-           isAlltoAllZCopyMode_ = true;
+            isAlltoAllZCopyMode_ = true;
         }
         HCCL_INFO("[CollAlltoAllExecutor][UpdateAlltoAllZCopyMode] maxSendSize[%llu], maxRecvSize[%llu], "\
             "cclBufferSize[%llu]", maxSendSize, maxRecvSize, cclbufferSize);

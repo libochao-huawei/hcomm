@@ -40,7 +40,7 @@ void CcuContextAllGatherVMesh1D::LoadArgs()
     Load(input_);
     Load(output_[rankId_]);
     Load(token_[rankId_]);
-    Load(mySliceOffSet_);
+    Load(mySliceOffset_);
     Load(groupOpSize_);
     return;
 }
@@ -67,7 +67,7 @@ void CcuContextAllGatherVMesh1D::InitResources()
             transportIdx++;
         }
     }
-    mySliceOffSet_ = CreateVariable();
+    mySliceOffset_ = CreateVariable();
     groupOpSize_   = CreateGroupOpSize();
     input_        = CreateVariable();
     AllocGoResource(LOOP_NUMS_PCIE_STD, MS_NUMS_PER_LOOP_PCIE_STD);
@@ -117,7 +117,7 @@ void CcuContextAllGatherVMesh1D::DoGroupBroadcast()
             curId = rankSize_ - 1;
         }
         dst[curId].addr = output_[rankIdx];
-        dst[curId].addr += mySliceOffSet_;
+        dst[curId].addr += mySliceOffset_;
         dst[curId].token = token_[rankIdx];
     }
     GroupBroadcast(transports, dst, src, groupOpSize_);
@@ -144,7 +144,7 @@ std::vector<uint64_t> CcuContextAllGatherVMesh1D::GeneArgs(const CcuTaskArg &arg
     uint64_t              inputAddr           = taskArg->inputAddr_;
     uint64_t              outputAddr          = taskArg->outputAddr_;
     uint64_t              tokenInfo           = taskArg->token_;
-    uint64_t              mySliceOutputOffset = taskArg->offSet_;
+    uint64_t              mySliceOutputOffset = taskArg->offset_;
     uint64_t              mySliceSize         = taskArg->sliceSize_;
     auto                  goSize              = CalGoSize(mySliceSize);
     std::vector<uint64_t> args             = {inputAddr, outputAddr, tokenInfo, mySliceOutputOffset};

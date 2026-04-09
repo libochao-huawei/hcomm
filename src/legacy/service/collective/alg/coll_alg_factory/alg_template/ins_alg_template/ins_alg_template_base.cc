@@ -57,7 +57,7 @@ u64 InsAlgTemplateBase::CalcLoopMaxCount(ParamPool &paramPool)
 
 HcclResult InsAlgTemplateBase::PostCopyOpbase(const UsrData &usrData, std::vector<InsQuePtr> &tempInsQues) const
 {
-    for (u32 i = 0; i < usrData.scratchOutSlices.size(); i++) {
+    for (size_t i = 0; i < usrData.scratchOutSlices.size(); i++) {
         std::unique_ptr<Instruction> insLocalCopy
             = std::make_unique<InsLocalCopy>(usrData.scratchOutSlices[i], usrData.usrOutSlices[i]);
         tempInsQues[0]->Append(std::move(insLocalCopy));
@@ -68,7 +68,7 @@ HcclResult InsAlgTemplateBase::PostCopyOpbase(const UsrData &usrData, std::vecto
 
 HcclResult InsAlgTemplateBase::PreCopyOpbase(const UsrData &usrData, std::vector<InsQuePtr> &tempInsQues) const
 {
-    for (u32 i = 0; i < usrData.usrInSlices.size(); i++) {
+    for (size_t i = 0; i < usrData.usrInSlices.size(); i++) {
         std::unique_ptr<Instruction> insLocalCopy
             = std::make_unique<InsLocalCopy>(usrData.usrInSlices[i], usrData.scratchInSlices[i]);
         tempInsQues[0]->Append(std::move(insLocalCopy));
@@ -154,13 +154,13 @@ HcclResult InsAlgTemplateBase::PreSync(const u32 queIdx, std::vector<InsQuePtr> 
         // Semaphore Post
         if (enableCounterNotify_) {
             std::unique_ptr<InsLocalBcastPost> insLocalBcastPost = std::make_unique<InsLocalBcastPost>(0);
-            for (u32 qidx = 1; qidx < syncInsQues.size(); qidx++) {
+            for (size_t qidx = 1; qidx < syncInsQues.size(); qidx++) {
                 insLocalBcastPost->Append(syncInsQues[qidx]->GetId());
             }
             CHK_PTR_NULL(insLocalBcastPost);
             currInsQue->Append(std::move(insLocalBcastPost));
         } else {
-            for (u32 qidx = 1; qidx < syncInsQues.size(); qidx++) {
+            for (size_t qidx = 1; qidx < syncInsQues.size(); qidx++) {
                 std::unique_ptr<Instruction> insLocalPostTo
                     = std::make_unique<InsLocalPostTo>(syncInsQues[qidx]->GetId());
                 CHK_PTR_NULL(insLocalPostTo);
@@ -191,13 +191,13 @@ HcclResult InsAlgTemplateBase::PostSync(const u32 queIdx, std::vector<InsQuePtr>
         // Semaphore Wait
         if (enableCounterNotify_) {
             std::unique_ptr<InsLocalWaitGroup> insLocalWaitGroup = std::make_unique<InsLocalWaitGroup>(0);
-            for (u32 qidx = 1; qidx < syncInsQues.size(); qidx++) {
+            for (size_t qidx = 1; qidx < syncInsQues.size(); qidx++) {
                 insLocalWaitGroup->Append(syncInsQues[qidx]->GetId());
             }
             CHK_PTR_NULL(insLocalWaitGroup);
             currInsQue->Append(std::move(insLocalWaitGroup));
         } else {
-            for (u32 qidx = 1; qidx < syncInsQues.size(); qidx++) {
+            for (size_t qidx = 1; qidx < syncInsQues.size(); qidx++) {
                 std::unique_ptr<Instruction> insLocalWaitFrom
                     = std::make_unique<InsLocalWaitFrom>(syncInsQues[qidx]->GetId());
                 CHK_PTR_NULL(insLocalWaitFrom);
@@ -223,7 +223,7 @@ HcclResult InsAlgTemplateBase::PostSync(const u32 queIdx, std::vector<InsQuePtr>
 
 HcclResult InsAlgTemplateBase::PreSyncInterQueues(std::vector<InsQuePtr> &syncInsQues) const
 {
-    for (u32 queIdx = 0; queIdx < syncInsQues.size(); queIdx++) {
+    for (size_t queIdx = 0; queIdx < syncInsQues.size(); queIdx++) {
         CHK_PRT_RET(PreSync(queIdx, syncInsQues) != HcclResult::HCCL_SUCCESS,
                     HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Que [%u], Semaphore Synchronization Failed.", myRank_,
                                syncInsQues[queIdx]->GetId()),
@@ -235,7 +235,7 @@ HcclResult InsAlgTemplateBase::PreSyncInterQueues(std::vector<InsQuePtr> &syncIn
 
 HcclResult InsAlgTemplateBase::PostSyncInterQueues(std::vector<InsQuePtr> &syncInsQues) const
 {
-    for (u32 queIdx = 0; queIdx < syncInsQues.size(); queIdx++) {
+    for (size_t queIdx = 0; queIdx < syncInsQues.size(); queIdx++) {
         CHK_PRT_RET(PostSync(queIdx, syncInsQues) != HcclResult::HCCL_SUCCESS,
                     HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Que [%u], Semaphore Synchronization Failed.", myRank_,
                                syncInsQues[queIdx]->GetId()),

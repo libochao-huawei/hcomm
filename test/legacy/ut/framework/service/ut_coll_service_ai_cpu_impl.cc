@@ -442,7 +442,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RecoverTransport_When_Normal_Expect_Success)
 
     MOCKER_CPP(&LocalRmaBufManager::Reg,
                LocalRmaBuffer *
-                   (LocalRmaBufManager::*)(const std::string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+                   (LocalRmaBufManager::*)(const std::string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .will(returnValue(rmaBuffer));
 
@@ -509,7 +509,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_RegisterCclBuffer_When_Normal_Expect_Success
 
     MOCKER_CPP(&LocalRmaBufManager::Reg,
                LocalRmaBuffer *
-                   (LocalRmaBufManager::*)(const std::string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+                   (LocalRmaBufManager::*)(const std::string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .will(returnValue(rmaBuffer));
 
@@ -595,7 +595,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Succe
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -691,7 +691,7 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Loop_Expect_Success
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -849,7 +849,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));

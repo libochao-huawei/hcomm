@@ -94,6 +94,36 @@ HcclResult HostRdmaConnection::CreateQp()
     HCCL_INFO("HostRdmaConnection CreateCqAndQp");
     CHK_RET(Hccl::HrtRaCreateQpWithCq(qpInfo_.rdmaHandle, -1, -1, sendCompChannel_,
         recvCompChannel_, qpInfo_, isHdcMode_));
+    
+    struct QosAttr qosAttr = {0};
+    qosAttr.tc = qpInfo_.trafficClass;
+    qosAttr.sl = qpInfo_.serviceLevel;
+    HCCL_INFO("[%s]Set qp qos success by config, TC[%u] SL[%u]", __func__, qosAttr.tc, qosAttr.sl);
+
+    roceAttr_.tc = qpInfo_.trafficClass;
+    roceAttr_.sl = qpInfo_.serviceLevel;
+    roceAttr_.retryCnt = qpInfo_.retryCnt;
+    roceAttr_.retryInterval = qpInfo_.retryInterval;
+
+    ret = RaSetQpAttrQos(qpInfo_.qpHandle, &qosAttr);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrQos]errNo[0x%016llx] RaSetQpAttrQos fail. "
+        "return[%d], params: qpHandle[%p], trafficClass[%u], serviceLevel[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qpHandle, qosAttr.tc, qosAttr.sl),
+        HCCL_E_NETWORK);
+    ret = RaSetQpAttrTimeout(qpInfo_.qpHandle, &(qpInfo_.retryInterval));
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrTimeout]errNo[0x%016llx] RaSetQpAttrTimeout fail. "
+        "return[%d], params: qpHandle[%p], retryInterval[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qpHandle, qpInfo_.retryInterval),
+        HCCL_E_NETWORK);
+    ret = RaSetQpAttrRetryCnt(qpInfo_.qpHandle, &(qpInfo_.retryCnt));
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrRetryCnt]errNo[0x%016llx] RaSetQpAttrRetryCnt fail. "
+        "return[%d], params: qpHandle[%p], retryCnt[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qpHandle, qpInfo_.retryCnt),
+        HCCL_E_NETWORK);
+
     rdmaConnStatus_ = RdmaConnStatus::QP_CREATED;
     return HCCL_SUCCESS;
 }
@@ -183,16 +213,24 @@ HcclResult HostRdmaConnection::ModifyQp()
         return HCCL_E_ROCE_CONNECT;
     }
 
+    HCCL_INFO("[HostRdmaConnection::ModifyQp] HostRdmaConnection qpInfo_: serviceLevel[%d], trafficClass[%d], retryCnt[%d], retryInterval[%d]. "
+               "roceAttr_: sl[%d], tc[%d], retryCnt[%d], retryInterval[%d]", qpInfo_.serviceLevel, qpInfo_.trafficClass, qpInfo_.retryCnt, qpInfo_.retryInterval,
+               roceAttr_.sl, roceAttr_.tc, roceAttr_.retryCnt, roceAttr_.retryInterval);
+
     struct TypicalQp localQp;
     struct TypicalQp rmtQp;
-    localQp.sl = SL_TEMP;
-    localQp.tc = TC_TEMP;
-    localQp.retryCnt = RETRY_CNT_TEMP;
-    localQp.retryTime = RETRY_TIME_TEMP;
+    localQp.sl = roceAttr_.sl;
+    localQp.tc = roceAttr_.tc;
+    localQp.retryCnt = roceAttr_.retryCnt;
+    localQp.retryTime = roceAttr_.retryInterval;
     localQp.qpn = localQpAttr.qpn;
     localQp.psn = localQpAttr.psn;
     localQp.gidIdx = localQpAttr.gidIdx;
     (void)memcpy_s(localQp.gid, HCCP_GID_RAW_LEN, localQpAttr.gid, HCCP_GID_RAW_LEN);
+    rmtQp.sl = qpInfo_.serviceLevel;
+    rmtQp.tc = qpInfo_.trafficClass;
+    rmtQp.retryCnt = qpInfo_.retryCnt;
+    rmtQp.retryTime = qpInfo_.retryInterval;
     rmtQp.qpn = rmtQpAttr_.qpn;
     rmtQp.psn = rmtQpAttr_.psn;
     rmtQp.gidIdx = rmtQpAttr_.gid_idx;

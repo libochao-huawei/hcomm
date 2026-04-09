@@ -54,8 +54,12 @@ inline void CheckLinkIsValid(const LinkData &link, const string &desc)
         return;
     } else if (link.GetType() == PortDeploymentType::DEV_NET) {
         auto linkProtocol = link.GetLinkProtocol();
+        HCCL_INFO("[CheckLinkIsValid] linkProtocol is[%s]", linkProtocol.Describe().c_str());
         if (linkProtocol == LinkProtocol::ROCE ||
-            linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP) {
+            linkProtocol == LinkProtocol::UB_CTP || 
+            linkProtocol == LinkProtocol::UB_TP ||
+            linkProtocol == LinkProtocol::UBOE
+        ) {
             return;
         }
     }

@@ -314,6 +314,122 @@ TEST_F(RankInfoDetectServiceTest, Ut_ParseRankTable_When_Normal_Expect_Success)
     EXPECT_NO_THROW(rankInfoDetectService_->ParseRankTable(rankInfoMsg));
 }
 
+bool RecvRemoteAgentIdStub(RankInfoDetectService* thisPtr, SocketAgent &connSocketAgent, std::string &agentId)
+{
+    static int nextRank = 0;
+    agentId = std::to_string(nextRank);
+    nextRank ++;
+    return true;
+}
 
+TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_Last_Fail_Expect_Print_Connected_Socket)
+{
+    MOCKER_CPP(&HostSocketHandleManager::Get).stubs().with(any(), any()).will(returnValue(hccpSocketHandle));
 
+    MOCKER_CPP(&std::chrono::steady_clock::now)
+        .stubs()
+        // start time
+        .will(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(0))))
+        // execute time
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(10))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(20))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(30))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(40))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(50))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(60))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(70))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(80))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(90))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(100))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(100000))));
 
+    MOCKER_CPP(&Socket::GetStatus)
+        .stubs()
+        // 第一次连接中成功
+        .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
+        .then(returnValue((SocketStatus)SocketStatus::OK))
+        // 第二次成功
+        .then(returnValue((SocketStatus)SocketStatus::OK))
+        // 第三次超时后成功
+        .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
+        .then(returnValue((SocketStatus)SocketStatus::TIMEOUT))
+        .then(returnValue((SocketStatus)SocketStatus::TIMEOUT))
+        .then(returnValue((SocketStatus)SocketStatus::TIMEOUT))
+        .then(returnValue((SocketStatus)SocketStatus::OK))
+        // 第四次异常
+        .then(throws(InternalException("Internal Error Happens")));
+
+    u32 rankSize = 4;
+    void *msg = &rankSize;
+    u64 msgLen = sizeof(u32);
+    u64 &revMsgLen = msgLen;
+    MOCKER_CPP(&SocketAgent::RecvMsg)
+            .stubs()
+            .with(outBound(msg), outBound(revMsgLen))
+            .will(returnValue(true));
+
+    string agentId{"0"};
+    MOCKER_CPP(&RankInfoDetectService::RecvRemoteAgentId)
+            .stubs()
+            .with(any(), outBound(agentId))
+            .will(invoke(RecvRemoteAgentIdStub));
+    
+    MOCKER_CPP(&RankInfoDetectService::RecvRemoteRankSize)
+            .stubs()
+            .with(any(), outBound(rankSize))
+            .will(returnValue(true));
+
+    rankInfoDetectService_->GetConnections();
+}
+
+TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_Sudden_Fail)
+{
+    MOCKER_CPP(&HostSocketHandleManager::Get).stubs().with(any(), any()).will(returnValue(hccpSocketHandle));
+
+    MOCKER_CPP(&Socket::GetStatus)
+        .stubs()
+        // 第一次连接中成功
+        .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
+        .then(returnValue((SocketStatus)SocketStatus::OK))
+        // 第二次先超时，后失败
+        .then(returnValue((SocketStatus)SocketStatus::CONNECTING))
+        .then(returnValue((SocketStatus)SocketStatus::TIMEOUT))
+        .then(throws(InternalException("Internal Error Happens")));
+
+    MOCKER_CPP(&std::chrono::steady_clock::now)
+        .stubs()
+        // start time
+        .will(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(0))))
+        // execute time
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(20))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(40))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(60))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(80))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(100))))
+        .then(returnValue(std::chrono::time_point<std::chrono::steady_clock>(std::chrono::seconds(100000))));
+
+    u32 rankSize = 4;
+    void *msg = &rankSize;
+    u64 msgLen = sizeof(u32);
+    u64 &revMsgLen = msgLen;
+    MOCKER_CPP(&SocketAgent::RecvMsg)
+            .stubs()
+            .with(outBound(msg), outBound(revMsgLen))
+            .will(returnValue(true));
+
+    string agentId{"0"};
+    MOCKER_CPP(&RankInfoDetectService::RecvRemoteAgentId)
+            .stubs()
+            .with(any(), outBound(agentId))
+            .will(invoke(RecvRemoteAgentIdStub));
+    
+    MOCKER_CPP(&RankInfoDetectService::RecvRemoteRankSize)
+            .stubs()
+            .with(any(), outBound(rankSize))
+            .will(returnValue(true));
+
+    rankInfoDetectService_->GetConnections();
+
+    auto res1 = rankInfoDetectService_->connSockets_.size();
+    EXPECT_EQ(1, res1);
+}
