@@ -53,6 +53,14 @@ endif()
 # 设置时间戳
 string(TIMESTAMP BUILD_TIMESTAMP "%Y%m%d%H%M%S")
 
+# 设置TARGET_ENV变量 (用于JSON配置中的路径替换)
+if(CPACK_ARCH STREQUAL "aarch64")
+    set(TARGET_ENV "aarch64-linux")
+else()
+    set(TARGET_ENV "x86_64-linux")
+endif()
+message(STATUS "TARGET_ENV set to: ${TARGET_ENV}")
+
 # 生成filelist.csv
 generate_filelist_csv("${JSON_CONFIG_FILE}" "${CSV_OUTPUT}")
 
