@@ -17,6 +17,7 @@ namespace Hccl {
 constexpr u64 RS_2D_SMALL_DATA_SIZE = 1024 * 1024;
 constexpr u64 RS_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 RS_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
+constexpr u64 RS_CCU_1D_MAX_DATA_SIZE = 64 * 1024 * 1024;
 constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus ReduceScatterAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
@@ -135,7 +136,18 @@ SelectorStatus ReduceScatterAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &
                                  "ccu_schedule mode with ms reduce. levelNum[%u]",
                         op.dataType.Describe().c_str(), topoInfo.levelNum),
                     SelectorStatus::NOT_MATCH);
-                primQueueGenName = "CcuReduceScatterParallelMesh1DNHR";
+                double ratio; // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
+                if (rankSize_ == 0) {
+                    HCCL_WARNING("[ReduceScatterAutoSelector]the selector is not set RankSize_]");
+                    ratio = 1;
+                } else {
+                    ratio = DEFAULT_RANK_SIZE / rankSize_;
+                }
+                if (dataSize_ * ratio < RS_CCU_1D_MAX_DATA_SIZE) {
+                    primQueueGenName = "CcuReduceScatterParallelMesh1DNHR";
+                } else {
+                    return SelectorStatus::NOT_MATCH;
+                }
             }
         } else {
             HCCL_WARNING("[Algo][ReduceScatterAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
