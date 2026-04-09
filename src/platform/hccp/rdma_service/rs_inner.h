@@ -569,7 +569,6 @@ struct rs_cb {
 
 extern __thread struct rs_cb *gRsCb;
 
-int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
 int RsGetHccpMode(unsigned int chipId);
 int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb);
 int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag);

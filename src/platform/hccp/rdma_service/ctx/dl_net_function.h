@@ -21,6 +21,9 @@ struct RsNetOps {
     unsigned long long (*rsNetGetCqeBaseAddr)(unsigned int dieId);
 };
 
+int RsNetAdaptApiInit(void);
+int RsOpenNetSo(void);
+void RsCloseNetSo(void);
 int RsNetApiInit(void);
 void RsNetApiDeinit(void);
 
