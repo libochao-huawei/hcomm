@@ -34,7 +34,6 @@ public:
     ~RankInfoDetectService();
 
     void Setup();
-    void Update();
 
 private:
     u32                                                      devPhyId_{0};
