@@ -11,12 +11,14 @@
 
 #include <algorithm>
 
+#include "adapter_hccp.h"
 #include "endpoint_pair.h"
 #include "exception_handler.h"
+#include "hccl_network.h"
+#include "hccl_net_dev_defs.h"
 #include "log.h"
 #include "rma_buffer.h"
 #include "securec.h"
-#include "hccl_net_dev_defs.h"
 
 namespace hcomm {
 
@@ -283,6 +285,21 @@ HcclResult AicpuTsRoceRegedMemMgr::GetAllRoceMemDetails(std::vector<RoceMemDetai
             localOut.size() - 1U, static_cast<unsigned long long>(r.addr), static_cast<unsigned long long>(r.devAddr),
             static_cast<unsigned long long>(r.size), r.key);
     }
+    CHK_PTR_NULL(rdmaHandle_);
+    CHK_PTR_NULL(netDev_);
+    auto *netCtx = static_cast<hccl::NetDevContext *>(netDev_);
+    struct MrInfoT mrInfo{};
+    CHK_RET(HrtRaGetNotifyMrInfo(static_cast<u32>(netCtx->GetPhyId()), rdmaHandle_, &mrInfo));
+    CHK_PTR_NULL(mrInfo.addr);
+    RoceMemDetails notifyMd{};
+    notifyMd.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(mrInfo.addr));
+    notifyMd.devAddr = notifyMd.addr;
+    notifyMd.size = static_cast<u64>(mrInfo.size);
+    notifyMd.key = mrInfo.lkey;
+    localOut.push_back(notifyMd);
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllRoceMemDetails][local][notify] addr[0x%llx] devAddr[0x%llx] size[%llu] key[%u]",
+        static_cast<unsigned long long>(notifyMd.addr), static_cast<unsigned long long>(notifyMd.devAddr),
+        static_cast<unsigned long long>(notifyMd.size), notifyMd.key);
     for (const auto &epMgr : remoteRdmaRmaBufferMgrs_) {
         const auto &mgr = epMgr.second;
         if (mgr == nullptr) {
