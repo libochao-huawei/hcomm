@@ -39,15 +39,6 @@ ENABLE_UT="off"
 ENABLE_ST="off"
 ENABLE_GCOV="off"
 CMAKE_BUILD_TYPE="Debug"
-HCOMM_LIB_NAME="libhcomm.so"
-INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
-ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
-ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
-DPU_INSTALL_PATH="opp/built-in/op_impl/dpu"
-DPU_JSON="<file value=\"libccl_dpu.json\"/>"
-DPU_LIB="<file value=\"libccl_dpu.so\" file_type=\"shared\" install_softlink=\"\$(TARGET_ENV)/lib64/libccl_dpu.so\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -257,7 +248,7 @@ function build_ut() {
 
   local BUILD_JOBS
   if [ "${CPU_NUM}" -ge 8 ]; then
-    BUILD_JOBS=${CPU_NUM}
+    BUILD_JOBS=$((CPU_NUM-1))
   else
     BUILD_JOBS=8
   fi
@@ -353,67 +344,6 @@ function run_ut() {
   else
     echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
   fi
-}
-
-function xml_add_orion_so() {
-    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
-        echo "error:file $INSTALL_XML_FILE not exist."
-        exit 1
-    fi
-
-    strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO" "$ORION_AIV_OP")
-    dpu_json_string="$DPU_JSON"
-    dpu_lib_string="$DPU_LIB"
-    not_found=()
-    for str in "${strings[@]}"; do
-        if ! grep -q "$str" "$INSTALL_XML_FILE"; then
-            not_found+=("$str")
-        fi
-    done
-
-    if [[ ${#not_found[@]} -eq 0 ]]; then
-        echo "orion lib has been existed in $INSTALL_XML_FILE"
-        return
-    fi
-
-    insert_content=""
-    for str in "${not_found[@]}"; do
-        insert_content+="$str"$'
-        '
-    done
-
-    temp_file=$(mktemp)
-    while IFS= read -r line; do
-        echo "$line" >> "$temp_file"
-        if [[ "$line" == *"$HCOMM_LIB_NAME"* ]]; then
-            echo "$insert_content" >> "$temp_file"
-        fi
-
-        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"json"* ]]; then
-            echo "$dpu_json_string" >> "$temp_file"
-        fi
-
-        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"lib64"* ]]; then
-            echo "$dpu_lib_string" >> "$temp_file"
-        fi
-    done < "$INSTALL_XML_FILE"
-    mv "$temp_file" "$INSTALL_XML_FILE"
-}
-
-function xml_delete_orion_so() {
-    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
-        echo "error:file $INSTALL_XML_FILE not exist."
-        exit 1
-    fi
-
-    temp_file=$(mktemp)
-    while IFS= read -r line; do
-        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* ||
-            "$line" == *"$ORION_AIV_OP"* || "$line" == *"$DPU_JSON"* || "$line" == *"$DPU_LIB"* ]]; then
-            echo "$line" >> "$temp_file"
-        fi
-    done < "$INSTALL_XML_FILE"
-    mv "$temp_file" "$INSTALL_XML_FILE"
 }
 
 # print usage message

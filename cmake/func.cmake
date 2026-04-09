@@ -9,6 +9,146 @@
 # -----------------------------------------------------------------------------------------------------------
 
 # =============================================================================
+# Function: compare_versions (CMake版本比较)
+#
+# 比较两个版本号
+# Usage:
+#   compare_versions(RESULT VERSION1 OPERATOR VERSION2)
+#   OPERATOR: >=, >, <=, <, =
+# =============================================================================
+function(compare_versions RESULT VERSION1 OP VERSION2)
+    # 将版本号分割为列表
+    string(REPLACE "." ";" v1_parts "${VERSION1}")
+    string(REPLACE "." ";" v2_parts "${VERSION2}")
+
+    # 补齐长度
+    list(LENGTH v1_parts len1)
+    list(LENGTH v2_parts len2)
+    if(len1 LESS len2)
+        math(EXPR max_len "${len2} - 1")
+        foreach(i RANGE ${len1} ${max_len})
+            list(APPEND v1_parts "0")
+        endforeach()
+    elseif(len2 LESS len1)
+        math(EXPR max_len "${len1} - 1")
+        foreach(i RANGE ${len2} ${max_len})
+            list(APPEND v2_parts "0")
+        endforeach()
+    endif()
+
+    # 逐段比较
+    set(compare_result "UNKNOWN")
+    set(v1_len 0)
+    set(v2_len 0)
+    list(LENGTH v1_parts v1_len)
+    list(LENGTH v2_parts v2_len)
+
+    math(EXPR max_idx "${v1_len} - 1")
+    foreach(idx RANGE ${max_idx})
+        list(GET v1_parts ${idx} v1_part)
+        list(GET v2_parts ${idx} v2_part)
+
+        if(v1_part GREATER v2_part)
+            set(compare_result "GREATER")
+            break()
+        elseif(v1_part LESS v2_part)
+            set(compare_result "LESS")
+            break()
+        endif()
+    endforeach()
+
+    if("${compare_result}" STREQUAL "UNKNOWN")
+        set(compare_result "EQUAL")
+    endif()
+
+    # 根据操作符判断结果
+    set(result FALSE)
+    if("${OP}" STREQUAL ">=")
+        if("${compare_result}" STREQUAL "GREATER" OR "${compare_result}" STREQUAL "EQUAL")
+            set(result TRUE)
+        endif()
+    elseif("${OP}" STREQUAL ">")
+        if("${compare_result}" STREQUAL "GREATER")
+            set(result TRUE)
+        endif()
+    elseif("${OP}" STREQUAL "<=")
+        if("${compare_result}" STREQUAL "LESS" OR "${compare_result}" STREQUAL "EQUAL")
+            set(result TRUE)
+        endif()
+    elseif("${OP}" STREQUAL "<")
+        if("${compare_result}" STREQUAL "LESS")
+            set(result TRUE)
+        endif()
+    elseif("${OP}" STREQUAL "=" OR "${OP}" STREQUAL "==")
+        if("${compare_result}" STREQUAL "EQUAL")
+            set(result TRUE)
+        endif()
+    else()
+        set(result TRUE)
+    endif()
+
+    set(${RESULT} ${result} PARENT_SCOPE)
+endfunction()
+
+
+# =============================================================================
+# Function: check_single_dependency (检查单个依赖)
+#
+# 检查单个包的版本依赖
+# =============================================================================
+function(check_single_dependency RESULT ascend_path dep_name dep_spec)
+    # 解析操作符和版本要求
+    set(OP "")
+    set(req_ver "")
+
+    if(dep_spec MATCHES "^>=")
+        set(OP ">=")
+        string(REPLACE ">=" "" req_ver "${dep_spec}")
+    elseif(dep_spec MATCHES "^>")
+        set(OP ">")
+        string(REPLACE ">" "" req_ver "${dep_spec}")
+    elseif(dep_spec MATCHES "^<=")
+        set(OP "<=")
+        string(REPLACE "<=" "" req_ver "${dep_spec}")
+    elseif(dep_spec MATCHES "^<")
+        set(OP "<")
+        string(REPLACE "<" "" req_ver "${dep_spec}")
+    else()
+        set(OP "=")
+        set(req_ver "${dep_spec}")
+    endif()
+
+    # 读取已安装包的version.info文件
+    set(ver_file "${ascend_path}/share/info/${dep_name}/version.info")
+    if(NOT EXISTS "${ver_file}")
+        message(WARNING "Package ${dep_name} not found at ${ver_file}")
+        set(${RESULT} FALSE PARENT_SCOPE)
+        return()
+    endif()
+
+    # 读取并解析版本
+    file(READ "${ver_file}" ver_content)
+    if(ver_content MATCHES "Version=([0-9.]+)")
+        set(installed_ver "${CMAKE_MATCH_1}")
+    else()
+        message(WARNING "Cannot parse version from ${ver_file}")
+        set(${RESULT} FALSE PARENT_SCOPE)
+        return()
+    endif()
+
+    # 比较版本
+    compare_versions(compare_ok "${installed_ver}" "${OP}" "${req_ver}")
+    if(NOT compare_ok)
+        message(STATUS "Dependency check: ${dep_name} version ${installed_ver} does NOT satisfy ${OP} ${req_ver}")
+    else()
+        message(STATUS "Dependency check: ${dep_name} version ${installed_ver} satisfies ${OP} ${req_ver}")
+    endif()
+
+    set(${RESULT} ${compare_ok} PARENT_SCOPE)
+endfunction()
+
+
+# =============================================================================
 # Function: pack_targets_and_files
 #
 # Packs targets and/or files into a flat tar.gz archive (no directory structure).
@@ -283,15 +423,51 @@ function(set_run_dependencies pkg_name depend)
     set(CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS "${CANN_VERSION_${CANN_VERSION_CURRENT_PACKAGE}_RUN_DEPS}" PARENT_SCOPE)
 endfunction()
 
-# 检查构建依赖
+# 检查构建依赖 (CMake实现，无需Python)
 function(check_pkg_build_deps pkg_name)
-    execute_process(
-        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_build_dependencies.py "$ENV{ASCEND_HOME_PATH}" ${CANN_VERSION_${pkg_name}_BUILD_DEPS}
-        RESULT_VARIABLE result
-    )
-    if(result)
+    # 检查ASCEND_HOME_PATH环境变量
+    if(NOT DEFINED ENV{ASCEND_HOME_PATH})
+        message(STATUS "ASCEND_HOME_PATH not set, skip dependency check")
+        return()
+    endif()
+
+    set(ascend_path "$ENV{ASCEND_HOME_PATH}")
+
+    # 检查ascend_path是否存在
+    if(NOT EXISTS "${ascend_path}")
+        message(WARNING "ASCEND_HOME_PATH ${ascend_path} does not exist, skip dependency check")
+        return()
+    endif()
+
+    # 获取构建依赖列表
+    set(deps ${CANN_VERSION_${pkg_name}_BUILD_DEPS})
+    set(all_ok TRUE)
+
+    # 遍历依赖列表 (格式: pkg_name1 dep_spec1 pkg_name2 dep_spec2 ...)
+    list(LENGTH deps deps_len)
+    if(deps_len EQUAL 0)
+        message(STATUS "No build dependencies defined for ${pkg_name}")
+        return()
+    endif()
+
+    math(EXPR deps_len "${deps_len} - 1")
+    foreach(i RANGE 0 ${deps_len} STEP 2)
+        list(GET deps ${i} dep_pkg)
+        math(EXPR j "${i} + 1")
+        if(j LESS_EQUAL deps_len)
+            list(GET deps ${j} dep_ver)
+            check_single_dependency(ok "${ascend_path}" "${dep_pkg}" "${dep_ver}")
+            if(NOT ok)
+                set(all_ok FALSE)
+            endif()
+        endif()
+    endforeach()
+
+    if(NOT all_ok)
         message(FATAL_ERROR "Check ${pkg_name} build dependencies failed!")
     endif()
+
+    message(STATUS "All build dependencies for ${pkg_name} are satisfied")
 endfunction()
 
 set(HOST_ONLY "false")
@@ -299,17 +475,47 @@ if (NOT FULL_MODE)
 set(HOST_ONLY "true")
 endif()
 
-# 添加生成version.info的目标
+# 添加生成version.info的目标 (CMake实现，无需Python)
 # 目标名格式为：version_${包名}_info
 function(add_version_info_targets)
     foreach(pkg_name ${CANN_VERSION_PACKAGES})
-        add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/version.${pkg_name}.info
-            COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_version_info.py --output ${CMAKE_BINARY_DIR}/version.${pkg_name}.info
-                    "${CANN_VERSION_${pkg_name}_VERSION}" ${CANN_VERSION_${pkg_name}_RUN_DEPS}
-            COMMAND ${CMAKE_COMMAND} -E echo "host_only=${HOST_ONLY}" >> ${CMAKE_BINARY_DIR}/version.${pkg_name}.info
-            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_version_info.py
-            VERBATIM
+        set(VERSION_FILE ${CMAKE_BINARY_DIR}/version.${pkg_name}.info)
+
+        # 生成时间戳 (格式: YYYYmmdd_HHMMSS)
+        string(TIMESTAMP BUILD_TIMESTAMP "%Y%m%d_%H%M%S")
+
+        # 写入基本版本信息
+        file(WRITE ${VERSION_FILE}
+            "Version=${CANN_VERSION_${pkg_name}_VERSION}\n"
+            "version_dir=cann\n"
         )
-        add_custom_target(version_${pkg_name}_info ALL DEPENDS ${CMAKE_BINARY_DIR}/version.${pkg_name}.info)
+
+        # 写入运行依赖信息
+        set(deps ${CANN_VERSION_${pkg_name}_RUN_DEPS})
+        list(LENGTH deps deps_len)
+        if(deps_len GREATER 0)
+            math(EXPR deps_len "${deps_len} - 1")
+            foreach(i RANGE 0 ${deps_len} STEP 2)
+                list(GET deps ${i} dep_pkg)
+                math(EXPR j "${i} + 1")
+                if(j LESS_EQUAL deps_len)
+                    list(GET deps ${j} dep_ver)
+                    file(APPEND ${VERSION_FILE}
+                        "required_package_${dep_pkg}_version=\"${dep_ver}\"\n"
+                    )
+                endif()
+            endforeach()
+        endif()
+
+        # 写入时间戳
+        file(APPEND ${VERSION_FILE} "timestamp=${BUILD_TIMESTAMP}\n")
+
+        # 写入host_only信息
+        file(APPEND ${VERSION_FILE} "host_only=${HOST_ONLY}\n")
+
+        add_custom_target(version_${pkg_name}_info ALL
+            DEPENDS ${VERSION_FILE}
+            COMMENT "Generating version.info for ${pkg_name}"
+        )
     endforeach()
 endfunction()

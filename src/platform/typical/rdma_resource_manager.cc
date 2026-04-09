@@ -233,12 +233,12 @@ HcclResult RdmaResourceManager::GetResvMemPoolIdByType(u32 type, u32& poolId)
 {
     auto it = resvMemInfo_.find(type);
     if (it == resvMemInfo_.end()) {
-        HCCL_WARNING("[RdmaResourceManager][GetResvMemInfo] can not find [%u].", type);
+        HCCL_WARNING("[RdmaResourceManager][GetResvMemPoolIdByType] can not find [%u].", type);
         return HCCL_E_NOT_FOUND;
     }
 
     poolId = resvMemInfo_[type];
-    HCCL_RUN_INFO("[RdmaResourceManager][GetResvMemInfo] type[%u], resvMemPoolId [%u].", type, poolId);
+    HCCL_RUN_INFO("[RdmaResourceManager][GetResvMemPoolIdByType] type[%u], resvMemPoolId [%u].", type, poolId);
     return HCCL_SUCCESS;
 }
 
