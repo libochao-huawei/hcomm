@@ -7,7 +7,12 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-#### CPACK to package run #####
+#### CPACK to package run (No Python Dependency) ####
+
+# 检查CMake版本 - JSON解析需要3.19+
+if(CMAKE_VERSION VERSION_LESS "3.19")
+    message(FATAL_ERROR "CMake 3.19 or higher is required (current: ${CMAKE_VERSION})")
+endif()
 
 # download makeself package
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/third_party/makeself-fetch.cmake)

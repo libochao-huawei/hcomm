@@ -1,0 +1,344 @@
+{
+  "version": "1.0",
+  "package": {
+    "name": "hcomm",
+    "version": "@PROJECT_VERSION@",
+    "description": "Huawei Collective Communication Library"
+  },
+  "defaults": {
+    "permission": "440",
+    "owner": "$username:$usergroup",
+    "install_prefix": "/usr/local/Ascend",
+    "target_env": "$TARGET_ENV"
+  },
+  "runtime_libs": {
+    "base_dir": "build/lib64",
+    "install_dir": "lib64",
+    "files": [
+      {
+        "src": "libhcomm.so",
+        "softlink": "@TARGET_ENV@/lib64/libhccl_fwk.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libhccl_v2.so",
+        "release_type": "debug",
+        "install_type": "all"
+      },
+      {
+        "src": "libhccl_v2_alg_frame.so",
+        "release_type": "debug",
+        "install_type": "all"
+      },
+      {
+        "src": "libhccl_v2_native_alg_repo.so",
+        "release_type": "debug",
+        "install_type": "all"
+      },
+      {
+        "src": "libhccl_alg.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libhccl_plf.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libhccl_legacy.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libtopoaddrinfo.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libra.so",
+        "install_type": "run;devel;docker"
+      },
+      {
+        "src": "libra_hdc.so",
+        "install_type": "all"
+      },
+      {
+        "src": "librs.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libra_peer.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libtls_adp.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libccl_dpu.so",
+        "softlink": "@TARGET_ENV@/lib64/libccl_dpu.so",
+        "install_type": "all"
+      },
+      {
+        "src": "libccl_kernel.so",
+        "install_type": "all"
+      }
+    ],
+    "object_files": [
+      "dynamic_mul_int8_v80.o",
+      "dynamic_minimum_int8_v80.o",
+      "dynamic_maximum_int8_v80.o",
+      "dynamic_add_int8_v80.o",
+      "dynamic_mul_int64_v80.o",
+      "dynamic_minimum_int64_v80.o",
+      "dynamic_maximum_int64_v80.o",
+      "dynamic_add_int64_v80.o",
+      "dynamic_mul_float32_v80.o",
+      "dynamic_minimum_float32_v80.o",
+      "dynamic_maximum_float32_v80.o",
+      "dynamic_mul_float16_v80.o",
+      "dynamic_add_float16_v80.o",
+      "dynamic_minimum_float16_v80.o",
+      "dynamic_maximum_float16_v80.o",
+      "dynamic_mul_int32_v80.o",
+      "dynamic_minimum_int32_v80.o",
+      "dynamic_maximum_int32_v80.o",
+      "dynamic_add_int32_v80.o"
+    ]
+  },
+  "headers": {
+    "base_dir": "build/include",
+    "files": [
+      {
+        "src": "hccl/hccl_comm.h",
+        "dst": "include/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hccl/hccl_types.h",
+        "dst": "include/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hccl/hccl_rank_graph.h",
+        "dst": "include/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hccl/hccl_res.h",
+        "dst": "include/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hccl/hccl_sym_win.h",
+        "dst": "include/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hcomm/hcomm_primitives.h",
+        "dst": "include/hcomm",
+        "softlink": "@TARGET_ENV@/include/hccl/hcomm_primitives.h",
+        "install_type": "devel"
+      },
+      {
+        "src": "hcomm/hcomm_res_defs.h",
+        "dst": "include/hcomm",
+        "softlink": "@TARGET_ENV@/include/hccl/hcomm_res_defs.h",
+        "install_type": "devel"
+      },
+      {
+        "src": "hcomm/hcomm_res.h",
+        "dst": "include/hcomm",
+        "install_type": "devel"
+      }
+    ],
+    "pkg_inc_files": [
+      {
+        "src": "hccl/base.h",
+        "dst": "pkg_inc/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hccl/hccl_ex.h",
+        "dst": "pkg_inc/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hccl/hcom.h",
+        "dst": "pkg_inc/hccl",
+        "install_type": "devel"
+      },
+      {
+        "src": "hcomm/ccu/ccu_common.h",
+        "dst": "pkg_inc/hcomm/ccu",
+        "install_type": "devel"
+      }
+    ]
+  },
+  "scripts": {
+    "base_dir": "scripts/package/hcomm/scripts",
+    "install_dir": "share/info/hcomm/script",
+    "permission": "550",
+    "files": [
+      "install.sh",
+      "uninstall.sh",
+      "hcomm_func.sh",
+      "hcomm_custom_install.sh",
+      "hcomm_custom_uninstall.sh",
+      "hcomm_custom_create_softlink.sh",
+      "hcomm_custom_remove_softlink.sh",
+      "run_hcomm_install.sh",
+      "run_hcomm_uninstall.sh",
+      "run_hcomm_upgrade.sh",
+      "ver_check.sh",
+      "help.info"
+    ]
+  },
+  "config_files": [
+    {
+      "src": "scripts/package/common/sh/common_func.inc",
+      "dst": "share/info/hcomm/script",
+      "permission": "440"
+    },
+    {
+      "src": "scripts/package/common/sh/install_common_parser.sh",
+      "dst": "share/info/hcomm/script",
+      "permission": "440"
+    },
+    {
+      "src": "scripts/package/common/sh/common_func_v2.inc",
+      "dst": "share/info/hcomm/script",
+      "permission": "440"
+    },
+    {
+      "src": "scripts/package/common/sh/multi_version.inc",
+      "dst": "share/info/hcomm/script",
+      "permission": "440"
+    },
+    {
+      "src": "scripts/package/common/cfg/path.cfg",
+      "dst": "hcomm/conf",
+      "permission": "440"
+    }
+  ],
+  "version_info": {
+    "src": "build/version.hcomm.info",
+    "dst": "share/info/hcomm/version.info",
+    "permission": "440"
+  },
+  "directories": [
+    {
+      "path": "@TARGET_ENV@/bin",
+      "permission": "550",
+      "softlink": "bin"
+    },
+    {
+      "path": "@TARGET_ENV@/lib64",
+      "permission": "550",
+      "softlink": "lib64"
+    },
+    {
+      "path": "@TARGET_ENV@/include",
+      "permission": "550",
+      "softlink": "include"
+    },
+    {
+      "path": "@TARGET_ENV@/conf",
+      "permission": "550",
+      "softlink": "conf"
+    },
+    {
+      "path": "@TARGET_ENV@/pkg_inc",
+      "permission": "550",
+      "softlink": "pkg_inc"
+    },
+    {
+      "path": "@TARGET_ENV@/devlib/device",
+      "permission": "550"
+    },
+    {
+      "path": "share/info/hcomm",
+      "permission": "750"
+    },
+    {
+      "path": "share/info/hcomm/script",
+      "permission": "550"
+    },
+    {
+      "path": "var",
+      "permission": "750"
+    },
+    {
+      "path": "compat",
+      "permission": "550"
+    },
+    {
+      "path": "opp/built-in/op_impl/aicpu",
+      "permission": "550"
+    },
+    {
+      "path": "opp/built-in/op_impl/aicpu/kernel",
+      "permission": "550"
+    },
+    {
+      "path": "opp/built-in/op_impl/aicpu/config",
+      "permission": "440"
+    },
+    {
+      "path": "opp/built-in/op_impl/dpu",
+      "permission": "440"
+    }
+  ],
+  "aicpu_files": [
+    {
+      "src": "build/ccl_kernel.json",
+      "dst": "built-in/data/op/aicpu",
+      "install_path": "opp/built-in/op_impl/aicpu/config",
+      "install_type": "all",
+      "optional": true
+    },
+    {
+      "src": "build/libaicpu_custom.so",
+      "dst": "built-in/data/op/aicpu",
+      "install_path": "opp/built-in/op_impl/aicpu/kernel",
+      "install_type": "all",
+      "optional": true
+    },
+    {
+      "src": "build/libaicpu_custom.json",
+      "dst": "built-in/data/op/aicpu",
+      "install_path": "opp/built-in/op_impl/aicpu/config",
+      "install_type": "all",
+      "optional": true
+    },
+    {
+      "src": "build/libccl_dpu.json",
+      "dst": "built-in/data/op/dpu",
+      "install_path": "opp/built-in/op_impl/dpu",
+      "install_type": "all",
+      "optional": true
+    }
+  ],
+  "optional_packages": [
+    {
+      "src": "build/aicpu_hcomm.tar.gz",
+      "dst": "Ascend/aicpu",
+      "optional": true,
+      "install_type": "all"
+    },
+    {
+      "src": "build/cann-hcomm-compat.tar.gz",
+      "dst": "Ascend/aicpu",
+      "optional": true,
+      "install_type": "all"
+    },
+    {
+      "src": "build/cann-hccd-compat.tar.gz",
+      "dst": "Ascend/aicpu",
+      "optional": true,
+      "install_type": "all"
+    }
+  ],
+  "python_wheel": {
+    "src": "build/hccl-0.1.0-py3-none-any.whl",
+    "dst": "lib64",
+    "install_type": "all"
+  }
+}
