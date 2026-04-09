@@ -340,7 +340,7 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     u64 totalSliceCount = (rankIdxLevel1_ != rankSizeLevel1_ - 1) 
     ? sliceCount * rankSizeLevel0_ 
     : (dataCount - sliceCount * rankSizeLevel0_ * (rankSizeLevel1_ - 1));
-
+    HCCL_INFO("InsAllReduceParallelExecutorV2 GenRSIntraParams1 begin");
     u64 sliceCountTmp;
     if(sliceCount != 0) {
         sliceCountTmp = totalSliceCount / rankSizeLevel0_;
@@ -349,7 +349,7 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     }
 
     u64 tailSizeCount = totalSliceCount - sliceCountTmp * (rankSizeLevel0_ - 1);
-
+    HCCL_INFO("InsAllReduceParallelExecutorV2 GenRSIntraParams1 cal params ");
     u64 sliceBytes = sliceCountTmp * dataTypeSize_;
     u64 tailSize = tailSizeCount * dataTypeSize_;
     params.buffInfo.inBuffType      = BufferType::OUTPUT;
@@ -365,6 +365,7 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     params.inputRepeatStride    = 0;
     params.outputRepeatStride   = 0;
     params.tailSize = tailSize;
+    HCCL_INFO("InsAllReduceParallelExecutorV2 GenRSIntraParams1 end");
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2, typename InsAlgTemplate3>
@@ -402,6 +403,7 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     params.inputRepeatStride    = 0;
     params.outputRepeatStride   = 0;
     params.tailSize = tailSize;
+    HCCL_INFO("InsAllReduceParallelExecutorV2 GenAGIntraParams1 end");
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2, typename InsAlgTemplate3>
@@ -424,6 +426,7 @@ void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplat
     params.inputRepeatStride    = 0;
     params.outputRepeatStride   = 0;
     params.tailSize = tailSize;
+    HCCL_INFO("InsAllReduceParallelExecutorV2 GenAGInterParams1 end");
 }
 
 /*

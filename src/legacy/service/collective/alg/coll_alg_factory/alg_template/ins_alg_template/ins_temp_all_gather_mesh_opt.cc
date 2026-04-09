@@ -178,7 +178,7 @@ HcclResult InsTempAllGatherMesh1DOpt::RunMesh(const u32 myAlgRank, const std::ve
 
             BufferType writeType = (opMode_ == OpMode::OPBASE) ?
                 tempAlgParams_.buffInfo.scratBuffType : tempAlgParams_.buffInfo.inBuffType;
-
+            HCCL_INFO("[InsTempAllGatherMesh1DOpt] offset cal");
             u64 txInOffset = tempAlgParams_.inputSliceStride * myAlgRank + inBaseOff;
             u64 txOutOffset = tempAlgParams_.outputSliceStride * myAlgRank + outBaseOff;
             u64 txScratchOffset = scratchBase + tempAlgParams_.sliceSize * myAlgRank;
