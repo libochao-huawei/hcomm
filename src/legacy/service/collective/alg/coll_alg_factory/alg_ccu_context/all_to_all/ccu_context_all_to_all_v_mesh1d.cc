@@ -125,10 +125,9 @@ void CcuContextAllToAllVMesh1D::LoadArgs()
     Load(token_[rankId_]);
     Load(srcOffset_);
     Load(dstOffset_);
+    Load(xnMaxTransportGoSize_);
     if (loadFromMem) {
         Load(a2avXnAddr_);
-    } else {
-        Load(xnMaxTransportGoSize_);
     }
     
     // 恢复当前卡对所有卡的收发信息
@@ -210,22 +209,14 @@ void CcuContextAllToAllVMesh1D::DoAll2AllVMultiLoop()
                         LocalPost(locMask_, (1 << rankId_));
                     }
                     CCU_IF(sendRecvInfo_[rankId_].tailSize != 0) { // 尾块数据量不为 0，则需要发送尾块数据
-                        if (loadFromMem) {
-                            LocalCopy(dst_[rankId_], src_[rankId_], sendRecvInfo_[rankId_].tailSize, locMask_, 1 << rankId_);
-                        } else {
-                            GroupCopy(dst_[rankId_], src_[rankId_], sendRecvInfo_[rankId_].tailGoSize);
-                            LocalPost(locMask_, 1 << rankId_);
-                        }
+                        GroupCopy(dst_[rankId_], src_[rankId_], sendRecvInfo_[rankId_].tailGoSize);
+                        LocalPost(locMask_, 1 << rankId_);
                     }
                     completedRankCount_ += xnConst1_;  // 之后一轮循环完成，更新已完成的rank数
                 }
                 CCU_IF(sendRecvInfo_[rankId_].loopNum != UINT64_MAX - 1) { // 未完成，则继续循环，发送整块数据
-                    if (loadFromMem) {
-                        LocalCopy(dst_[rankId_], src_[rankId_], xnMaxTransportSize_, locMask_, 1 << rankId_);
-                    } else {
-                        GroupCopy(dst_[rankId_], src_[rankId_], xnMaxTransportGoSize_);
-                        LocalPost(locMask_, 1 << rankId_);
-                    }
+                    GroupCopy(dst_[rankId_], src_[rankId_], xnMaxTransportGoSize_);
+                    LocalPost(locMask_, 1 << rankId_);
                     // 更新偏移
                     src_[rankId_].addr += xnMaxTransportSize_;
                     dst_[rankId_].addr += xnMaxTransportSize_;
@@ -270,15 +261,15 @@ std::vector<uint64_t> CcuContextAllToAllVMesh1D::GeneArgs(const CcuTaskArg &arg)
               inputAddr, outputAddr, srcOffset, dstOffset);
     std::vector<uint64_t> processReturn = {inputAddr, outputAddr, tokenInfo, srcOffset, dstOffset};
 
-    if (loadFromMem) {
-        processReturn.push_back(0);  // 空地址占位，保证参数个数与load个数一致
-        return processReturn;
-    }
     uint64_t xnMaxTransportSize   = UB_MAX_TRANS_SIZE;
     HCCL_INFO("[CcuContextAllToAllVMesh1D][GeneArgs] CalGoSize size[%llu]", xnMaxTransportSize);
     auto     xnMaxTransportGoSize = CalGoSize(xnMaxTransportSize);
     for (auto val : xnMaxTransportGoSize) {
         processReturn.push_back(val);
+    }
+    if (loadFromMem) {
+        processReturn.push_back(0);  // 空地址占位，保证参数个数与load个数一致
+        return processReturn;
     }
     uint64_t rankSize = taskArg->sliceSize_.size();
     for (uint64_t i = 0; i < rankSize; i++) {
@@ -319,15 +310,21 @@ void CcuContextAllToAllVMesh1D::LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &s
         // 要求client端排列内存为[size,send,recv][size,send,recv]...
         LoadVariable(a2avXnAddr_, sendRecvInfo.tailSize);
         a2avXnAddr_ += xnLength_;
-
         LoadVariable(a2avXnAddr_, sendRecvInfo.sendOffset);
         a2avXnAddr_ += xnLength_;
-
         // 跳过recvSize
         a2avXnAddr_ += xnLength_;
-
         LoadVariable(a2avXnAddr_, sendRecvInfo.recvOffset);
         a2avXnAddr_ += xnLength_;
+        LoadVariable(a2avXnAddr_, sendRecvInfo.loopNum);
+        a2avXnAddr_ += xnLength_;
+        LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.addrOffset);
+        a2avXnAddr_ += xnLength_;
+        LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.loopParam);
+        a2avXnAddr_ += xnLength_;
+        LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.parallelParam);
+        a2avXnAddr_ += xnLength_;
+        LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.residual);
     } else {
         Load(sendRecvInfo.tailSize);
         Load(sendRecvInfo.loopNum);
