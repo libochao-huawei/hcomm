@@ -9,6 +9,7 @@
  */
 #include "hal.h"
 #include <stdio.h>
+#include <time.h>
 #include <dlfcn.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -30,6 +31,9 @@
 #define DRIVER_DRFAULT_INSTALL_PATH "/usr/local/Ascend"
 #define DRIVER_TOPO_FILE_DIR_PATH "driver/topo/950"
 #define MAX_TOPO_FILENAME_LEN   (64)
+
+#define HAL_TURE  (1)
+#define HAL_FALSE (0)
 
 enum dcmi_main_cmd {
     DCMI_MAIN_CMD_DVPP = 0,
@@ -84,7 +88,15 @@ static int (*get_logicid_from_phyid)(unsigned int phy_id, unsigned int* logic_id
 int load_dcmi()
 {
     static void* dcmi = NULL;
+    static volatile int isInit = HAL_FALSE;
+    const int maxWaitTime = 10;
     if (dcmi != NULL) {
+        for (int i = 0; i < maxWaitTime; i++) {
+            if (isInit == HAL_TURE) {
+                return 0;
+            }
+            sleep(1);
+        }
         return 0;
     }
     if(dcmi == NULL) {
@@ -109,6 +121,7 @@ int load_dcmi()
         return -1;
     }
     (void)dcmi_init(); //  dcmi_init可能已经调用过了
+    isInit = HAL_TURE;
     return 0;
 }
 
