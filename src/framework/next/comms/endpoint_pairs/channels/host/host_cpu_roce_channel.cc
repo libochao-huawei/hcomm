@@ -743,13 +743,15 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     CHK_PRT_RET(maxMsgSize_ == 0,
         HCCL_ERROR("[HostCpuRoceChannel::%s] maxMsgSize_ is 0, channel not initialized", __func__),
         HCCL_E_INTERNAL);
+    CHK_PRT_RET(GetQpInfos().empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__),
+        HCCL_E_ROCE_CONNECT);
     HCCL_INFO("[HostCpuRoceChannel::%s] START. dst[%p], src[%p], len[0x%llx], remoteNotifyIdx[%u].",
         __func__, dst, src, len, remoteNotifyIdx);
     uint32_t wqeNumBefore = wqeNum_;
 
     // 前 N-1 块: 普通 RDMA_WRITE
     uint64_t offset = 0;
-    while (offset + maxMsgSize_ < len) {
+    while (len - offset > maxMsgSize_) {
         CHK_RET(PostRdmaOp(__func__, IBV_WR_RDMA_WRITE,
             static_cast<char *>(const_cast<void *>(src)) + offset,
             static_cast<const char *>(dst) + offset,
@@ -761,9 +763,6 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     void *tailDst = static_cast<char *>(dst) + offset;
     const void *tailSrc = static_cast<const char *>(src) + offset;
     uint64_t tailLen = len - offset;
-
-    CHK_PRT_RET(GetQpInfos().empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__),
-        HCCL_E_ROCE_CONNECT);
 
     // 构造 WR
     struct ibv_send_wr writeWithNotifyWr{};
