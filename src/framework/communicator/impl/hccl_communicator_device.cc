@@ -1193,6 +1193,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult AicpuInitOpTilingDataAicpuCache(const OpParam &opParam, const HcclCMDType &opType, AicpuOpTilingData *opTilingData)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType,
                                                           const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize)
     {
