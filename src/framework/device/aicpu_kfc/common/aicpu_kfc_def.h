@@ -119,6 +119,20 @@ struct KFCResInitTask {
     bool isCustom;
 };
 
+struct AlgInfo {
+    u64 offset;
+    u64 opParam;  // 内容语义为u64 opParamKey
+};
+
+struct OpResCtx {
+    u64 version;
+    u64 workspace;
+    u64 workspaceSize;
+    u64 rankId;
+    u64 rankSize;
+    AlgInfo algInfo[8];
+};
+
 struct PostSendTaskParam {
     // For DataCopy
     u32 lKey;

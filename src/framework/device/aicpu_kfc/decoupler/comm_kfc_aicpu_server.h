@@ -11,12 +11,30 @@
 #ifndef HCCL_COMM_KFC_AICPU_SERVER_H
 #define HCCL_COMM_KFC_AICPU_SERVER_H
 
-#include <unordered_set>
+#include <string>
+#include <vector>
 #include <unordered_map>
 #include "hccl_msg.h"
 #include <hccl/hccl_types.h>
 #include "aicpu_hccl_common.h"
 #include "common/aicpu_kfc_def.h"
+#include "comm_kfc_open_kernel_adapter.h"
+#include "dispatcher.h"
+
+namespace hccl {
+class HcclCommAicpu;
+class Stream;
+}
+
+struct ServerExecCtx {
+    u64 offset;
+    u64 opParamKey;
+    std::string commName;
+    OpenOpParamBuffer baseOpParam;
+    hccl::HcclCommAicpu *commAicpu{nullptr};
+    HcclDispatcher dispatcher{nullptr};
+    hccl::Stream *mainStream{nullptr};
+};
 
 class CommKfcAicpuServer {
 public:
@@ -24,13 +42,14 @@ public:
     ~CommKfcAicpuServer() = default;
     HcclApi::HcclMsgArea *GetMsgAreaAddr() const { return msgArea_; }
     u32 GetRankNum() const { return rankNum_; }
-    HcclResult AddOpContext(const HcclApi::CommKfcContext *ctx);
+    HcclResult AddOpContext(const OpResCtx *ctx);
     HcclResult Orchestrate(const HcclApi::HcclMsg &msg, HcclApi::HcclMsgExt &extMsg, u32 msgPos);
     HcclResult Finalize(u32 msgPos);
     HcclResult IsAllTaskFinished(u32 msgPos, bool &isFinish);
     HcclResult InterGroupSync(const CommKfcAicpuServer &otherServer, HcclHandle handle);
     HcclResult CheckTimeOut(u32 msgPos);
     HcclResult ErrorDfxProcess(HcclResult errorCode);
+    const ServerExecCtx *MatchExecCtx(u64 opParamKey) const;
 
 private:
 #ifdef CCL_LLT
@@ -48,6 +67,8 @@ private:
     std::unordered_map<uintptr_t, void *> ctxToOpHandle_{};
     std::unordered_map<HcclHandle, u32> handleIdToMsgPos_{};
     std::unordered_map<HcclHandle, u32> handleIdToRepeat_{};
+    std::vector<ServerExecCtx> execCtxList_{};
+    const ServerExecCtx *syncExecCtx_{nullptr};
     HcclApi::HcclMsgArea *msgArea_{nullptr};
     u64 lastMsgTimestamp_{0UL};
     u64 timeout_{30UL};

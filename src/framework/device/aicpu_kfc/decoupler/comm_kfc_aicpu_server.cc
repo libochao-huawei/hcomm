@@ -13,6 +13,9 @@
 #include "log.h"
 #include "common/aicpu_kfc_utils.h"
 #include "hccl_mc2_ex.h"
+#include "framework/aicpu_communicator.h"
+#include "framework/aicpu_hccl_process.h"
+#include "hccl_common.h"
 
 using namespace HcclApi;
 namespace {
@@ -59,37 +62,87 @@ void FormatOpData(const HcclMsg &msg, HcclMsgExt &extMsg, u32 rankNum, u32 repea
               static_cast<u32>(data.opType), static_cast<u32>(data.reduceOp),
               static_cast<u32>(data.dataType), data.dataCount, data.input, data.output);
 }
+
+hccl::HcclCommAicpu *FindCommAicpuByName(const std::string &commName)
+{
+    std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
+    if (AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo) != HCCL_SUCCESS) {
+        return nullptr;
+    }
+    for (auto &commInfo : aicpuCommInfo) {
+        if (commInfo.second != nullptr && commInfo.first == commName) {
+            return commInfo.second;
+        }
+    }
+    return nullptr;
+}
 }
 
-HcclResult CommKfcAicpuServer::AddOpContext(const CommKfcContext *ctx)
+HcclResult CommKfcAicpuServer::AddOpContext(const OpResCtx *ctx)
 {
     CHK_PTR_NULL(ctx);
-    if (ctxToOpHandle_.find(ctx->hcclContext) != ctxToOpHandle_.end()) {
-        HCCL_INFO("Group %u: ctx %#llx is already added.", groupIdx_, ctx->hcclContext);
-        return HCCL_SUCCESS;
-    }
-
-    CHK_PRT_RET(msgArea_ != nullptr && reinterpret_cast<u64>(msgArea_) != ctx->apiCtx.workSpace,
+    CHK_PRT_RET(msgArea_ != nullptr && reinterpret_cast<u64>(msgArea_) != ctx->workspace,
                 HCCL_ERROR("Group %u: message area addr should be %#llx, not %#llx.",
-                           groupIdx_, msgArea_, ctx->apiCtx.workSpace),
+                           groupIdx_, msgArea_, ctx->workspace),
                 HCCL_E_PARA);
-    void *opHandle = nullptr;
-    HcclResult ret = HcclGetCommHandleByCtx(reinterpret_cast<void *>(ctx->hcclContext), &opHandle);
-    CHK_PRT_RET(ret != HCCL_SUCCESS || opHandle == nullptr,
-                HCCL_ERROR("Group %u: failed to get op handle by HCCL ctx %#llx.", groupIdx_, ctx->hcclContext),
-                HCCL_E_PARA);
-    ctxToOpHandle_[ctx->hcclContext] = opHandle;
     if (msgArea_ == nullptr) {
-        msgArea_ = reinterpret_cast<HcclMsgArea *>(ctx->apiCtx.workSpace);
+        msgArea_ = reinterpret_cast<HcclMsgArea *>(ctx->workspace);
         turnNumsAddr_ = reinterpret_cast<u64>(msgArea_ + 1);
-        rankNum_ = ctx->apiCtx.rankNum;
+        rankNum_ = static_cast<u32>(ctx->rankSize);
         std::iota(reinterpret_cast<u32 *>(turnNumsAddr_),
                   reinterpret_cast<u32 *>(turnNumsAddr_) + UINT8_MAX + 1U, 0U);
         KeepAlive();
     }
-    HCCL_INFO("Group %u: add op handle %#llx, HCCL context %#llx, message area address %#llx.",
-              groupIdx_, opHandle, ctx->hcclContext, msgArea_);
+
+    for (u32 i = 0U; i < 8U; ++i) {
+        const AlgInfo &algInfo = ctx->algInfo[i];
+        const u64 opParamKey = algInfo.opParam;
+        if (opParamKey == 0U) {
+            continue;
+        }
+        if (MatchExecCtx(opParamKey) != nullptr) {
+            HCCL_INFO("Group %u: opParamKey %#llx is already added.", groupIdx_, opParamKey);
+            continue;
+        }
+
+        OpenOpParamBuffer baseOpParam{};
+        CHK_RET(LoadOpenOpParamData(opParamKey, baseOpParam));
+        std::string commName = baseOpParam.CommName();
+        CHK_PRT_RET(commName.empty(),
+                    HCCL_ERROR("Group %u: empty comm name for opParamKey %#llx.", groupIdx_, opParamKey),
+                    HCCL_E_PARA);
+        hccl::HcclCommAicpu *commAicpu = FindCommAicpuByName(commName);
+        CHK_PRT_RET(commAicpu == nullptr,
+                    HCCL_ERROR("Group %u: failed to find commAicpu for commName[%s], opParamKey %#llx.",
+                               groupIdx_, commName.c_str(), opParamKey),
+                    HCCL_E_PARA);
+
+        ServerExecCtx execCtx{};
+        execCtx.offset = algInfo.offset;
+        execCtx.opParamKey = opParamKey;
+        execCtx.commName = commName;
+        execCtx.baseOpParam = std::move(baseOpParam);
+        execCtx.commAicpu = commAicpu;
+        execCtx.dispatcher = commAicpu->GetDispatcher();
+        execCtx.mainStream = &commAicpu->GetMainStream();
+        execCtxList_.push_back(execCtx);
+        HCCL_INFO("Group %u: add exec ctx for opParamKey %#llx, commName[%s], message area address %#llx.",
+                  groupIdx_, opParamKey, commName.c_str(), msgArea_);
+    }
+
+    CHK_PRT_RET(execCtxList_.empty(), HCCL_ERROR("Group %u: no exec ctx is added.", groupIdx_), HCCL_E_PARA);
+    syncExecCtx_ = &execCtxList_.front();
     return HCCL_SUCCESS;
+}
+
+const ServerExecCtx *CommKfcAicpuServer::MatchExecCtx(u64 opParamKey) const
+{
+    for (const auto &execCtx : execCtxList_) {
+        if (execCtx.opParamKey == opParamKey) {
+            return &execCtx;
+        }
+    }
+    return nullptr;
 }
 
 HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMsg, u32 msgPos)
