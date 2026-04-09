@@ -22,7 +22,7 @@
 #include "buffer.h"
 #include "local_ub_rma_buffer.h"
 #include "rdma_handle_manager.h"
-#include "env_config/env_config.h"
+#include "env_config.h"
 
 namespace hcomm {
 

@@ -16,7 +16,7 @@
 #include <shared_mutex>
 
 #include "../../../../../legacy/unified_platform/resource/socket/socket.h"
-#include "env_config/env_config.h"
+#include "env_config.h"
 #include "op_mode.h"
 #include "binary_stream.h"
 #include "ccu_conn.h"

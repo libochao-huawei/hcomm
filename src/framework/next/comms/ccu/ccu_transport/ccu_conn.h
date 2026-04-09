@@ -11,7 +11,7 @@
 #ifndef CCU_CONN_H
 #define CCU_CONN_H
 
-#include "env_config/env_config.h"
+#include "env_config.h"
 #include "tp_mgr.h"
 #include "ccu_jetty_.h"
 #include "ccu_dev_mgr_imp.h"
