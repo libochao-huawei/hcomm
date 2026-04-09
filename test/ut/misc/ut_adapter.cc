@@ -67,6 +67,120 @@ TEST_F(HccpTest, ut_CheckAutoListenVersion)
     GlobalMockObject::verify();
 }
 
+TEST_F(HccpTest, Ut_CreateQp_SetQpAttrQosFail_Expect_DestoryQp)
+{
+    MOCKER(hrtRaGetInterfaceVersion)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(HrtRaQpCreate)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrQos)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(HrtRaQpDestroy)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    QpInfo qp;
+    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
+    qp.trafficClass = 4;
+    qp.serviceLevel = 0;
+    qp.attr.maxWr = 128;
+    qp.attr.maxSendSge = 1;
+    qp.attr.maxRecvSge = 1;
+
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    s32 qpMode = 0;
+    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_CreateQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
+{
+    MOCKER(hrtRaGetInterfaceVersion)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(HrtRaQpCreate)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrQos)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrTimeOut)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(HrtRaQpDestroy)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    QpInfo qp;
+    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
+    qp.trafficClass = 4;
+    qp.serviceLevel = 0;
+    qp.attr.maxWr = 128;
+    qp.attr.maxSendSge = 1;
+    qp.attr.maxRecvSge = 1;
+
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    s32 qpMode = 0;
+    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_CreateQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
+{
+    MOCKER(hrtRaGetInterfaceVersion)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(HrtRaQpCreate)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrQos)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrTimeOut)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrRetryCnt)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(HrtRaQpDestroy)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    QpInfo qp;
+    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
+    qp.trafficClass = 4;
+    qp.serviceLevel = 0;
+    qp.attr.maxWr = 128;
+    qp.attr.maxSendSge = 1;
+    qp.attr.maxRecvSge = 1;
+
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    s32 qpMode = 0;
+    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
 TEST_F(HccpTest, Ut_CreateNormalQp_SetQpAttrQosFail_Expect_DestoryQp)
 {
     MOCKER(hrtRaGetInterfaceVersion)
@@ -178,13 +292,118 @@ TEST_F(HccpTest, Ut_CreateNormalQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
     GlobalMockObject::verify();
 }
 
-TEST_F(HccpTest, Ut_CreateQp_SetQpAttrQosFail_Expect_DestoryQp)
+TEST_F(HccpTest, Ut_CreateCqAndQp_CreateNormalQpFail_Expect_DestoryCq)
 {
     MOCKER(hrtRaGetInterfaceVersion)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HrtRaQpCreate)
+    MOCKER(hrtRaNormalQpCreate)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(hrtRaDestroyCq)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    string label = "test_label";
+    QpConfig config(HcclIpAddress("1.1.1.1"), HcclIpAddress("2.2.2.2"), 128, 1, 1, 0, 0);
+    QpInfo info;
+    info.srq = nullptr;
+    info.srqCq = nullptr;
+    info.srqContext = nullptr;
+    HcclResult ret = CreateCqAndQp(rdmaHandle, label, config, info);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_CreateQpWithCq_CreateNormalQpFail_Expect_DestoryCq)
+{
+    MOCKER(hrtRaGetInterfaceVersion)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaNormalQpCreate)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(hrtRaDestroyCq)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    QpInfo info;
+    info.srq = nullptr;
+    info.srqCq = nullptr;
+    info.srqContext = nullptr;
+    info.trafficClass = 4;
+    info.serviceLevel = 0;
+    HcclResult ret = CreateQpWithCq(rdmaHandle, 0, 0, nullptr, nullptr, info, false, false);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_CreateQpWithDepthConfig_hrtRaGetQpAttrFail_Expect_DestoryQp)
+{
+    MOCKER(hrtGetDevice)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtGetDevicePhyIdByIndex)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaGetInterfaceVersion)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaQpCreateWithAttrs)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaGetQpAttr)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(HrtRaQpDestroy)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    s32 qpMode = 0;
+    QpConfigInfo qpConfig;
+    qpConfig.sq_depth = 128;
+    qpConfig.rq_depth = 128;
+    qpConfig.scq_depth = 256;
+    qpConfig.rcq_depth = 256;
+    qpConfig.use_resv_mem = false;
+    qpConfig.resv_mem_pool_id = 0;
+    QpHandle qpHandle = nullptr;
+    struct TypicalQp qpInfo{};
+    HcclResult ret = CreateQpWithDepthConfig(rdmaHandle, qpMode, qpConfig, qpHandle, qpInfo);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrQosFail_Expect_DestoryQp)
+{
+    MOCKER(hrtGetDevice)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtGetDevicePhyIdByIndex)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaGetInterfaceVersion)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaAiQpCreate)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
@@ -196,29 +415,38 @@ TEST_F(HccpTest, Ut_CreateQp_SetQpAttrQosFail_Expect_DestoryQp)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
-    QpInfo qp;
-    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
-    qp.trafficClass = 4;
-    qp.serviceLevel = 0;
-    qp.attr.maxWr = 128;
-    qp.attr.maxSendSge = 1;
-    qp.attr.maxRecvSge = 1;
-
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
-    s32 qpMode = 0;
-    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    struct AiQpInfo aiQpInfo;
+    aiQpInfo.aiQpAddr = 0x1234;
+    aiQpInfo.aiScqAddr = 0x5678;
+    aiQpInfo.aiRcqAddr = 0x9abc;
+    QpInfo info;
+    info.qpHandle = nullptr;
+    info.qpMode = 0;
+    info.trafficClass = 4;
+    info.serviceLevel = 0;
+    u32 devicePhyId = 0;
+    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     GlobalMockObject::verify();
 }
 
-TEST_F(HccpTest, Ut_CreateQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
+TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
 {
+    MOCKER(hrtGetDevice)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtGetDevicePhyIdByIndex)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
     MOCKER(hrtRaGetInterfaceVersion)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HrtRaQpCreate)
+    MOCKER(hrtRaAiQpCreate)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
@@ -234,29 +462,38 @@ TEST_F(HccpTest, Ut_CreateQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
-    QpInfo qp;
-    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
-    qp.trafficClass = 4;
-    qp.serviceLevel = 0;
-    qp.attr.maxWr = 128;
-    qp.attr.maxSendSge = 1;
-    qp.attr.maxRecvSge = 1;
-
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
-    s32 qpMode = 0;
-    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    struct AiQpInfo aiQpInfo;
+    aiQpInfo.aiQpAddr = 0x1234;
+    aiQpInfo.aiScqAddr = 0x5678;
+    aiQpInfo.aiRcqAddr = 0x9abc;
+    QpInfo info;
+    info.qpHandle = nullptr;
+    info.qpMode = 0;
+    info.trafficClass = 4;
+    info.serviceLevel = 0;
+    u32 devicePhyId = 0;
+    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     GlobalMockObject::verify();
 }
 
-TEST_F(HccpTest, Ut_CreateQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
+TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrRetoryCntFail_Expect_DestoryQp)
 {
+    MOCKER(hrtGetDevice)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtGetDevicePhyIdByIndex)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
     MOCKER(hrtRaGetInterfaceVersion)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HrtRaQpCreate)
+    MOCKER(hrtRaAiQpCreate)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
@@ -276,18 +513,70 @@ TEST_F(HccpTest, Ut_CreateQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
-    QpInfo qp;
-    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
-    qp.trafficClass = 4;
-    qp.serviceLevel = 0;
-    qp.attr.maxWr = 128;
-    qp.attr.maxSendSge = 1;
-    qp.attr.maxRecvSge = 1;
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    struct AiQpInfo aiQpInfo;
+    aiQpInfo.aiQpAddr = 0x1234;
+    aiQpInfo.aiScqAddr = 0x5678;
+    aiQpInfo.aiRcqAddr = 0x9abc;
+    QpInfo info;
+    info.qpHandle = nullptr;
+    info.qpMode = 0;
+    info.trafficClass = 4;
+    info.serviceLevel = 0;
+    u32 devicePhyId = 0;
+    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_CreateAiQp_QpIsNullptr_Expect_DestoryQp)
+{
+    MOCKER(hrtGetDevice)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtGetDevicePhyIdByIndex)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaGetInterfaceVersion)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaAiQpCreate)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrQos)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrTimeOut)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(hrtRaSetQpAttrRetryCnt)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
+
+    MOCKER(HrtRaQpDestroy)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_SUCCESS));
 
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
-    s32 qpMode = 0;
-    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    struct AiQpInfo aiQpInfo;
+    aiQpInfo.aiQpAddr = 0;
+    aiQpInfo.aiScqAddr = 0x5678;
+    aiQpInfo.aiRcqAddr = 0x9abc;
+    QpInfo info;
+    info.qpHandle = nullptr;
+    info.qpMode = 0;
+    info.trafficClass = 4;
+    info.serviceLevel = 0;
+    u32 devicePhyId = 0;
+    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
+    EXPECT_EQ(ret, HCCL_E_PARA);
 
     GlobalMockObject::verify();
 }

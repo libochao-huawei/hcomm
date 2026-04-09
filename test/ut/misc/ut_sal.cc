@@ -113,7 +113,7 @@ TEST_F(SalTest, ut_atrace_error_test)
 
 TEST_F(SalTest, ut_DlTraceFunctionInit_UTrace_Failed_Expect_ReturnError)
 {
-    MOCKER(DlTraceFunction::DlUTraceFunctionInterInit)
+    MOCKER(hccl::DlTraceFunction::DlUTraceFunctionInterInit)
     .stubs()
     .will(returnValue(HCCL_E_INTERNAL));
 
@@ -126,7 +126,7 @@ TEST_F(SalTest, ut_DlTraceFunctionInit_UTrace_Failed_Expect_ReturnError)
 
 TEST_F(SalTest, ut_DlTraceFunctionInit_ATrace_Failed_Expect_ReturnError)
 {
-    MOCKER(DlTraceFunction::DlATraceFunctionInterInit)
+    MOCKER(hccl::DlTraceFunction::DlATraceFunctionInterInit)
     .stubs()
     .will(returnValue(HCCL_E_INTERNAL));
 
