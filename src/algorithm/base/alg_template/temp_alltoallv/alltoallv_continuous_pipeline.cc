@@ -32,6 +32,7 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
         localRecvDispls_ = std::move(localSendRecvInfo.recvDispls);
         needCollectInfo_ = true; // 需要收集信息
         std::copy(localRecvCounts_.begin(), localRecvCounts_.end(), intraRecvCounts_[intraRankId_].begin());
+        localRecvCounts_[userRank_] = 0; // 将本rank接收的数据量设为0，避免计算loop数时被考虑进去
     } else {
         // 适配算法分析器，实际业务不会走这个分支
         SendRecvInfo &localSendRecvInfo = sendRecvInfoList[userRank_];
