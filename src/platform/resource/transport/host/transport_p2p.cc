@@ -1113,6 +1113,15 @@ HcclResult TransportP2p::RecvIpcMemMesg(void **memPtr, u8 *memName, u64 &offset)
 
     CHK_RET(SalStrToULonglong(remoteOffsetName, HCCL_BASE_DECIMAL, offset));
 
+    // 添加offset和size的校验
+    CHK_PRT_RET(size == 0,
+        HCCL_ERROR("[Recv][IpcMemMesg]size[%llu] is zero, remote userrank[%u] local rank[%u]",
+            size, machinePara_.remoteUserrank, machinePara_.localUserrank), HCCL_E_INTERNAL);
+    
+    CHK_PRT_RET(offset >= size,
+        HCCL_ERROR("[Recv][IpcMemMesg]offset[%llu] >= size[%llu], remote userrank[%u] local rank[%u]",
+            offset, size, machinePara_.remoteUserrank, machinePara_.localUserrank), HCCL_E_INTERNAL);
+
     /* 根据名字，获取对端IPC 内存 */
     ret = WaitPeerMemConfig(memPtr, const_cast<u8 *>(memName), size, offset);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1132,6 +1141,22 @@ HcclResult TransportP2p::TxAsync(UserMemType dstMemType, u64 dstOffset, const vo
     if (((machinePara_.linkAttribute & 0x2) == 0) && (src != nullptr)) {  // 不支持目的端发起
         void *dstMemPtr = nullptr;
         CHK_RET(GetRemoteMem(dstMemType, &dstMemPtr));
+        
+        CHK_PTR_NULL(dstMemPtr);
+
+        // 获取远程内存大小
+        u64 remoteMemSize = 0;
+        CHK_RET(GetRemoteMemSize(dstMemType, remoteMemSize));
+        
+        // 检查dstOffset是否越界
+        CHK_PRT_RET(dstOffset >= remoteMemSize,
+            HCCL_ERROR("[TransportP2p][TxAsync]dstOffset[%llu] >= remoteMemSize[%llu], dstMemType=%d",
+                dstOffset, remoteMemSize, dstMemType), HCCL_E_INTERNAL);
+        
+        // 检查len是否越界
+        CHK_PRT_RET(len > (remoteMemSize - dstOffset),
+            HCCL_ERROR("[TransportP2p][TxAsync]len[%llu] > (remoteMemSize[%llu] - dstOffset[%llu]), dstMemType=%d",
+                len, remoteMemSize, dstOffset, dstMemType), HCCL_E_INTERNAL);
 
         DeviceMem dstDevMem(static_cast<s8 *>(dstMemPtr) + dstOffset, len);
         DeviceMem srcDevMem(const_cast<void *>(src), len);
@@ -1178,6 +1203,18 @@ HcclResult TransportP2p::RxData(UserMemType srcMemType, u64 srcOffset, void *dst
         void *srcMemPtr = nullptr;
         CHK_RET(GetRemoteMem(srcMemType, &srcMemPtr));
 
+         // 获取远程内存大小
+        u64 remoteMemSize = 0;
+        CHK_RET(GetRemoteMemSize(srcMemType, remoteMemSize));
+        // 检查srcOffset是否越界
+        CHK_PRT_RET(srcOffset >= remoteMemSize,
+            HCCL_ERROR("[TransportP2p][RxData]srcOffset[%llu] >= remoteMemSize[%llu], srcMemType=%d",
+                srcOffset, remoteMemSize, srcMemType), HCCL_E_INTERNAL);
+        // 检查len是否是否越界
+        CHK_PRT_RET(len > (remoteMemSize - srcOffset),
+            HCCL_ERROR("[TransportP2p][RxData]len[%llu] > (remoteMemSize[%llu] - srcOffset[%llu]), srcMemType=%d",
+                len, remoteMemSize, srcOffset, srcMemType), HCCL_E_INTERNAL);
+
         DeviceMem srcDevMem(static_cast<s8 *>(srcMemPtr) + srcOffset, len);
         DeviceMem dstDevMem(static_cast<s8 *>(dst), len);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstDevMem, srcDevMem, stream, machinePara_.remoteWorldRank,
@@ -1197,6 +1234,22 @@ HcclResult TransportP2p::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stre
             void *dstMemPtr = nullptr;
             CHK_RET(GetRemoteMem(mem.dstMemType, &dstMemPtr));
 
+            CHK_PTR_NULL(dstMemPtr);
+
+            // 获取远程内存大小
+            u64 remoteMemSize = 0;
+            CHK_RET(GetRemoteMemSize(mem.dstMemType, remoteMemSize));
+            
+            // 检查dstOffset是否越界
+            CHK_PRT_RET(mem.dstOffset >= remoteMemSize,
+                HCCL_ERROR("[TransportP2p][TxAsync]dstOffset[%llu] >= remoteMemSize[%llu], dstMemType=%d",
+                    mem.dstOffset, remoteMemSize, mem.dstMemType), HCCL_E_INTERNAL);
+            
+            // 检查len是否越界
+            CHK_PRT_RET(mem.len > (remoteMemSize - mem.dstOffset),
+                HCCL_ERROR("[TransportP2p][TxAsync]len[%llu] > (remoteMemSize[%llu] - dstOffset[%llu]), dstMemType=%d",
+                    mem.len, remoteMemSize, mem.dstOffset, mem.dstMemType), HCCL_E_INTERNAL);
+            
             DeviceMem dstDevMem(static_cast<s8 *>(dstMemPtr) + mem.dstOffset, mem.len);
             DeviceMem srcDevMem(const_cast<void *>(mem.src), mem.len);
             /* 增加hccl 数据传输时数据地址和size记录 */
@@ -1227,6 +1280,22 @@ HcclResult TransportP2p::RxAsync(UserMemType srcMemType, u64 srcOffset, void *ds
         void *srcMemPtr = nullptr;
         CHK_RET(GetRemoteMem(srcMemType, &srcMemPtr));
 
+        CHK_PTR_NULL(srcMemPtr);
+        
+        // 获取远程内存大小
+        u64 remoteMemSize = 0;
+        CHK_RET(GetRemoteMemSize(srcMemType, remoteMemSize));
+        
+        // 检查srcOffset是否越界
+        CHK_PRT_RET(srcOffset >= remoteMemSize,
+            HCCL_ERROR("[TransportP2p][RxAsync]srcOffset[%llu] >= remoteMemSize[%llu], srcMemType=%d",
+                srcOffset, remoteMemSize, srcMemType), HCCL_E_INTERNAL);
+        
+        // 检查len是否越界
+        CHK_PRT_RET(len > (remoteMemSize - srcOffset),
+            HCCL_ERROR("[TransportP2p][RxAsync]len[%llu] > (remoteMemSize[%llu] - srcOffset[%llu]), srcMemType=%d",
+                len, remoteMemSize, srcOffset, srcMemType), HCCL_E_INTERNAL);
+
         DeviceMem srcDevMem(static_cast<s8 *>(srcMemPtr) + srcOffset, len);
         DeviceMem dstDevMem(static_cast<s8 *>(dst), len);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstDevMem, srcDevMem, stream, machinePara_.remoteWorldRank,
@@ -1248,6 +1317,22 @@ HcclResult TransportP2p::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stre
             CHK_PTR_NULL(mem.dst);
             void *srcMemPtr = nullptr;
             CHK_RET(GetRemoteMem(mem.srcMemType, &srcMemPtr));
+
+            CHK_PTR_NULL(srcMemPtr);
+            
+            // 获取远程内存大小
+            u64 remoteMemSize = 0;
+            CHK_RET(GetRemoteMemSize(mem.srcMemType, remoteMemSize));
+            
+            // 检查srcOffset是否越界
+            CHK_PRT_RET(mem.srcOffset >= remoteMemSize,
+                HCCL_ERROR("[TransportP2p][RxAsync]srcOffset[%llu] >= remoteMemSize[%llu], srcMemType=%d",
+                    mem.srcOffset, remoteMemSize, mem.srcMemType), HCCL_E_INTERNAL);
+            
+            // 检查len是否越界
+            CHK_PRT_RET(mem.len > (remoteMemSize - mem.srcOffset),
+                HCCL_ERROR("[TransportP2p][RxAsync]len[%llu] > (remoteMemSize[%llu] - srcOffset[%llu]), srcMemType=%d",
+                    mem.len, remoteMemSize, mem.srcOffset, mem.srcMemType), HCCL_E_INTERNAL);
 
             DeviceMem srcDevMem(static_cast<s8 *>(srcMemPtr) + mem.srcOffset, mem.len);
             DeviceMem dstDevMem(static_cast<s8 *>(mem.dst), mem.len);
@@ -1453,6 +1538,9 @@ HcclResult TransportP2p::WaitPeerMemConfig(void **memPtr, const u8 *memName, uin
     CHK_PTR_NULL(memPtr);
     CHK_PTR_NULL(memName);
 
+    CHK_PRT_RET(offset >= size,
+        HCCL_ERROR("[Wait][WaitPeerMemConfig]offset[%llu] >= size[%llu], invalid offset", 
+            offset, size), HCCL_E_INTERNAL);
     bool firstOpened = false;
     // 支持进程间、进程内都可以通过name获取对端内存
     HcclResult ret = MemNameRepository::GetInstance(machinePara_.deviceLogicId)
@@ -1595,6 +1683,12 @@ HcclResult TransportP2p::SumCheckSizeAndConsisten(ExInfoType exInfoType, u32 rig
 
 HcclResult TransportP2p::ConstructMemIncludeInfoForSend(u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
 {
+    const u64 requiredSize = 4 * sizeof(u64);  // 32字节
+    if (exchangeDataBlankSize < requiredSize) {
+        HCCL_ERROR("[%s] exchangeDataBlankSize[%llu] < requiredSize[%llu]", 
+                   __func__, exchangeDataBlankSize, requiredSize);
+        return HCCL_E_INTERNAL;
+    }
     u64 outputSize = machinePara_.outputMem.size();
     u64 outputOffset = reinterpret_cast<u64>(machinePara_.outputMem.ptr())- reinterpret_cast<u64>(machinePara_.mem[0].ptr());
     CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize, &outputSize, sizeof(u64)));
