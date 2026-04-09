@@ -361,8 +361,20 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
     }
 
     const struct HccpTpInfo *baseInfoPtr = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
-    const uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
-    const uint32_t mPop = PopCount16(slMask);
+    uint16_t slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
+    uint32_t mPop = PopCount16(slMask);
+    HCCL_INFO("[TpMgr][%s] after get_tp_attr: slMask[0x%04x] mPop[%u] reserved[0/1][%u,%u] tpAttrBitmap[0x%x] param[%s].",
+        __func__, static_cast<unsigned>(slMask), mPop,
+        static_cast<unsigned>(static_cast<uint8_t>(reqCtx.tpAttr.reserved[0])),
+        static_cast<unsigned>(static_cast<uint8_t>(reqCtx.tpAttr.reserved[1])), reqCtx.tpAttrBitmap,
+        param.Describe().c_str());
+    if (mPop == 0U) {
+        // RS 未回填 sl_available 时临时兜底：16bit 掩码 bit2–bit6 置 1（0x007C）
+        reqCtx.tpAttr.reserved[0] = 0x7CU;
+        reqCtx.tpAttr.reserved[1] = 0x00U;
+        slMask = ReadSlAvailableMask16(reqCtx.tpAttr);
+        mPop = PopCount16(slMask);
+    }
     if (mPop == 0U) {
         HCCL_ERROR("[TpMgr][%s] sl_available mask empty after get_tp_attr, param[%s].", __func__,
             param.Describe().c_str());
