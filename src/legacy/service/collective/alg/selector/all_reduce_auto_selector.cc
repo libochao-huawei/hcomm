@@ -18,7 +18,7 @@ constexpr u64 AR_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_SMALL_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 AR_ONESHOT_1D_MAX_DATA_SIZE = 16 * 1024;
-constexpr u64 AR_CCU_1D_MAX_DATA_SIZE = 64 * 1024 *1024;
+constexpr u64 AR_CCU_PARALLEL_MAX_DATA_SIZE = 64 * 1024 *1024;
 constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
@@ -156,7 +156,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 } else {
                     ratio = DEFAULT_RANK_SIZE / rankSize_;
                 }
-                if (dataSize_ * ratio < AR_CCU_1D_MAX_DATA_SIZE) {
+                if (dataSize_ * ratio < AR_CCU_PARALLEL_MAX_DATA_SIZE) {
                     primQueueGenName = "CcuAllReduceParallelMesh1DNHR";
                 } else {
                     return SelectorStatus::NOT_MATCH;
@@ -220,7 +220,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 } else {
                     ratio = DEFAULT_RANK_SIZE / rankSize_;
                 }
-                if (dataSize_ * ratio < AR_CCU_1D_MAX_DATA_SIZE) {
+                if (dataSize_ * ratio < AR_CCU_PARALLEL_MAX_DATA_SIZE) {
                     primQueueGenName = "CcuAllReduceParallelMesh1DNHR";
                 } else {
                     return SelectorStatus::NOT_MATCH;
