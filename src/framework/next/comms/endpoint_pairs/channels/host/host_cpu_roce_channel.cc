@@ -757,7 +757,8 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     const void *tailSrc = static_cast<const char *>(src) + offset;
     uint64_t tailLen = len - offset;
 
-    CHK_PRT_RET(GetQpInfos().empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(GetQpInfos().empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__),
+        HCCL_E_ROCE_CONNECT);
 
     // 构造 WR
     struct ibv_send_wr writeWithNotifyWr{};
@@ -831,7 +832,8 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
     CHK_PRT_RET(rmtRmaBuffers_.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] rmtRmaBuffers is Empty", caller),
                 HCCL_E_ROCE_CONNECT);
     if (len > maxMsgSize_) {
-        HCCL_WARNING("[HostCpuRoceChannel::%s] len[0x%llx] exceeds maxMsgSize_[0x%llx], caller should slice before posting.",
+        HCCL_WARNING(
+            "[HostCpuRoceChannel::%s] len[0x%llx] exceeds maxMsgSize_[0x%llx], caller should slice before posting.",
             caller, len, maxMsgSize_);
     }
 
