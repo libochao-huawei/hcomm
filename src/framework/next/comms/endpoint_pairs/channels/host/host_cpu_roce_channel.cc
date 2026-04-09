@@ -192,6 +192,7 @@ ChannelStatus HostCpuRoceChannel::GetStatus()
     return status;
 }
 
+
 HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
     switch (rdmaStatus_) {
         case RdmaStatus::INIT:
