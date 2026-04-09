@@ -39,6 +39,7 @@
 
 #include "adapter_rts.h"
 #include "adapter_hal.h"
+#include "hcomm_res_defs.h"
 
 #include "runtime/rt_error_codes.h"
 #include "mmpa_api.h"
@@ -3514,7 +3515,6 @@ stream_class::stream_class(s32 device_id) : deviceId_(device_id), streamId_(-1),
  */
 stream_class::~stream_class()
 {
-    HCCL_INFO("HCCL TEST stream_class xigou1");
     try
     {
         // 退出信息记录, 方便问题定位

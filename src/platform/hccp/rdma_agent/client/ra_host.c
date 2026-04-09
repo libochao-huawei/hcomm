@@ -1165,13 +1165,13 @@ HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct QpExtAttrs 
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     hccp_run_info("Input parameters: phyId[%u] qp_mode[%d] cq_attr{%d,%d,%d,%d} qpAttr.cap{%u,%u,%u,%u,%u}"\
-        " qp_type[%u] sqSigAll[%d], cnt[%u]", phyId, extAttrs->qpMode,
+        " qp_type[%u] sqSigAll[%d], cnt[%u], useResvMem[%u], resvMemPoolId[%u]", phyId, extAttrs->qpMode,
         extAttrs->cqAttr.sendCqDepth, extAttrs->cqAttr.sendCqCompVector,
         extAttrs->cqAttr.recvCqDepth, extAttrs->cqAttr.recvCqCompVector,
         extAttrs->qpAttr.cap.max_send_wr, extAttrs->qpAttr.cap.max_recv_wr,
         extAttrs->qpAttr.cap.max_send_sge, extAttrs->qpAttr.cap.max_recv_sge,
         extAttrs->qpAttr.cap.max_inline_data, extAttrs->qpAttr.qp_type, extAttrs->qpAttr.sq_sig_all,
-        rdmaHandleTmp->qpCnt);
+        rdmaHandleTmp->qpCnt, extAttrs->cstmFlag.bs.useResvMem, extAttrs->resvMemPoolId);
 
     rdmaHandleTmp->qpCnt++;
     ret = rdmaHandleTmp->rdmaOps->raQpCreateWithAttrs(rdmaHandleTmp, extAttrs, qpHandle);

@@ -108,6 +108,7 @@
 #include "../../../legacy/framework/dfx/task_exception/task_exception_handler.h"
 #include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
 #include "../../../legacy/include/hccl_communicator.h"
+#include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
 #include "acl/acl_rt.h"
 
 
@@ -145,6 +146,11 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
 std::pair<TokenIdHandle, uint32_t> RdmaHandleManager::GetTokenIdInfo(RdmaHandle rdmaHandle, const BufferKey<uintptr_t, u64> &bufKey)
 {
     return {0x12345678, 12345678};
+}
+
+bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
+{
+    return true;
 }
  
 SocketStatus Socket::GetAsyncStatus()
@@ -400,6 +406,24 @@ bool Socket::Recv(void *recvBuf, u32 size) const
     return true;
 }
 
+RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
+{
+}
+void RtsqBase::Reset() {}
+
+StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds)
+    : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
+{
+    rtsq = std::make_unique<RtsqBase>(phyId, id, sqIds);
+}
+
+StreamLite::StreamLite(u32 id, u32 sqIds, u32 phyId, u32 cqIds, bool launchFlag)
+    : id(id), sqId(sqIds), devPhyId(phyId), cqId(cqIds)
+{
+    (void)launchFlag;
+    rtsq = std::make_unique<RtsqBase>(phyId, id, sqIds);
+}
+
 u32 StreamLite::GetId() const
 {
     return 2;
@@ -416,18 +440,16 @@ u32 StreamLite::GetDevPhyId() const
 {
     return 2;
 }
-RtsqBase::RtsqBase(u32 devPhyId, u32 streamId, u32 sqId) : devPhyId_(devPhyId), streamId_(streamId), sqId_(sqId)
-{
-}
-void RtsqBase::Reset() {
 
-}
 RtsqBase *StreamLite::GetRtsq() const
 {
-    RtsqBase *rtSq = new RtsqBase(1, 2, 3);
-    return rtSq;
+    return rtsq.get();
 }
 
+u32 GetKernelExecTimeoutFromEnvConfig()
+{
+    return 0;
+}
 
 
 
@@ -523,20 +545,28 @@ std::vector<char> AicpuResPackageHelper::GetPackedData(
 
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), locIpv4Addr(locIpv4Addr), rmtIpv4Addr(rmtIpv4Addr), rmtEid(rmtAddr.GetReverseEid())
 {}
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
+    const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode, const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
 {}
+
+DevUbUboeConnection::DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                                         const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode,
+                                         const IpAddress &locIpv4Addr, const IpAddress &rmtIpv4Addr)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr)
+{
+    tpProtocol = TpProtocol::UBOE;
+}
 
 std::vector<char> DevUbConnection::GetUniqueId() const
 {
@@ -930,9 +960,9 @@ RtsNotify::~RtsNotify()
 {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
-    const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1)
+    const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
     : BaseMemTransport(commonLocRes, attr, linkData, socket, TransportType::UB), rdmaHandle(rdmaHandle1),
-      locCntNotifyRes(locCntNotifyRes1)
+      locCntNotifyRes(locCntNotifyRes1), isRecvFirst_(isRecvFirst)
 {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
@@ -942,7 +972,8 @@ UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, co
       locCntNotifyRes(locCntNotifyRes1)
 {}
 
-HcclResult UbMemTransport::FillTagVec()
+HcclResult UbMemTransport::FillTagVec(std::vector<LocalRmaBuffer *> &bufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {
     return HCCL_SUCCESS;
 }
@@ -1039,7 +1070,8 @@ bool UbMemTransport::RecvDataProcess()
     return ConnVecUnpackProc(binaryStream);
 }
 
-void UbMemTransport::BufferVecPack(BinaryStream &binaryStream)
+void UbMemTransport::BufferVecPack(BinaryStream &binaryStream, std::vector<LocalRmaBuffer *> &bufferVec,
+        std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &localUserMemTag)
 {}
 
 void UbMemTransport::CntNotifyVecPack(BinaryStream &binaryStream)
@@ -1137,6 +1169,16 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
 }
 
 HcclResult UbMemTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, uint32_t *memNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::CheckSocketStatus()
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbMemTransport::UpdateMemInfo(std::vector<LocalRmaBuffer *> &bufferVecTemp)
 {
     return HCCL_SUCCESS;
 }
@@ -1557,6 +1599,49 @@ MirrorTaskManager::~MirrorTaskManager()
 {
 }
 
+MirrorTaskManagerLite::MirrorTaskManagerLite()
+{
+    
+}
+
+void MirrorTaskManagerLite::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
+{
+   
+}
+
+void MirrorTaskManagerLite::RegFullyCallBack(std::function<void()> callBack)
+{
+    
+}
+
+void MirrorTaskManagerLite::AddTaskInfo(std::shared_ptr<TaskInfo> taskInfo)
+{
+    
+}
+
+bool MirrorTaskManagerLite::IsStaticGraphMode(const CollOperator &collOperator) const
+{
+    return false;
+}
+
+void MirrorTaskManagerLite::SetCurrDfxOpInfo(std::shared_ptr<DfxOpInfo> dfxOpInfo)
+{
+   
+}
+
+std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
+{
+   return nullptr;
+}
+
+TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
+{
+   
+}
+
+MirrorTaskManagerLite::~MirrorTaskManagerLite()
+{
+}
 ProfilingHandler::ProfilingHandler()
 {
     
@@ -1943,8 +2028,8 @@ void ProfilingReporter::CallReportMc2CommInfo(const u32 kfcStreamId,
 
 std::array<ProfilingReporter::lastPosesMap, 65> ProfilingReporter::allLastPoses_{};
 
-ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager *mirrorTaskMgr, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
-    : mirrorTaskMgr_(mirrorTaskMgr), profilingHandlerLite_(profilingHandlerLite)
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMgrLite, ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
+    : mirrorTaskMgrLite_(mirrorTaskMgrLite), profilingHandlerLite_(profilingHandlerLite)
 {}
 
 ProfilingReporterLite::~ProfilingReporterLite()
@@ -2063,6 +2148,39 @@ u32 Hccl::HcclCommunicator::GetRankInParentComm()
     return 0;
 }
 
+HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
+{
+    return HCCL_SUCCESS;
+}
+
+uint16_t CcuRep::ParseRepeatNumFromParallelParam(uint64_t parallelParam)
+{
+    return 3;
+}
+
+HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
+{
+    return HCCL_SUCCESS;
+}
+void HrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
+{
+}
+
+HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
+{
+    return HCCL_SUCCESS;
+}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)
@@ -2089,3 +2207,4 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
+

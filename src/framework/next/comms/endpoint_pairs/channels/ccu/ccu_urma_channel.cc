@@ -21,8 +21,6 @@
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
 
-#include "comm_mems.h"
-
 namespace hcomm {
 
 CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
@@ -32,36 +30,36 @@ CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
 {
 }
 
-HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
+HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto *locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(memHandles[i]);
+        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
+        CHK_PTR_NULL(locMemInfo);
+        auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
         CHK_PTR_NULL(locRmaBuffer);
         HCCL_INFO("[BuildBufferInfos] locRmaBuffer[%s]", locRmaBuffer->Describe().c_str());
-        auto *buffer = locRmaBuffer->GetBuf();
-        CHK_PTR_NULL(buffer);
 
         std::array<char, HCCL_RES_TAG_MAX_LEN> memTag{};
-        std::string tag = buffer->GetMemTag();
+        std::string tag = locMemInfo->memTag;
         if (UNLIKELY(tag.size() >= HCCL_RES_TAG_MAX_LEN)) {
             HCCL_ERROR("[BuildBufferInfos] tagSize exceeds limit[%u]", HCCL_RES_TAG_MAX_LEN);
             return HCCL_E_PARA;
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            buffer->GetAddr(),
-            static_cast<uint32_t>(buffer->GetSize()),
+            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
+            static_cast<uint32_t>(locMemInfo->mem.size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            hccl::ConvertHcclToCommMemType(buffer->GetMemType()),
+            locMemInfo->mem.type,
             memTag);
     }
     return HCCL_SUCCESS;
 }
 
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
-    const Hccl::LinkData &linkData, Hccl::Socket *socket, void **memHandles,
+    const Hccl::LinkData &linkData, Hccl::Socket *socket, HcommMemHandle *memHandles,
     uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
 {
     HCCL_INFO("[CcuUrmaChannel][%s] begin", __func__);
@@ -143,7 +141,7 @@ HcclResult CcuUrmaChannel::Init()
 
     CHK_PTR_NULL(locEndpointHandle_);
     void *endpoint{nullptr};
-    CHK_RET(HcommEndpointGet(locEndpointHandle_, &endpoint));
+    CHK_RET(static_cast<HcclResult>(HcommEndpointGet(locEndpointHandle_, &endpoint)));
     UrmaEndpoint *ccuEndpoint = dynamic_cast<UrmaEndpoint *>(static_cast<Endpoint *>(endpoint));
     CHK_PTR_NULL(ccuEndpoint);
     const auto &locEndpointDesc = ccuEndpoint->GetEndpointDesc();
@@ -153,6 +151,11 @@ HcclResult CcuUrmaChannel::Init()
     auto linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(locEndpointDesc, channelDesc_.remoteEndpoint, linkData));
 
+    if (channelDesc_.memHandleNum == 0) {
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, unsupport memHandleNum[%u].",
+            __func__, channelDesc_.memHandleNum);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
     CHK_PTR_NULL(channelDesc_.memHandles);
 
     // 当前建链不支持资源扩容，CCU资源默认固定为16
@@ -287,8 +290,27 @@ HcclResult CcuUrmaChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuUrmaChannel::Clean()
+{
+    CHK_PTR_NULL(impl_);
+    impl_->Clean();
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuUrmaChannel::Resume()
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
+}
+
+HcclResult CcuUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
+{
+    std::vector<CcuTransport::CclBufferInfo> bufferVecTemp{};
+    CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferVecTemp));
+    return impl_->UpdateMemInfo(bufferVecTemp);
 }
 }  // namespace hcomm

@@ -7,8 +7,6 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-#编译目标
-set(target net_co)
 
 #net_adapt
 aux_source_directory(net_adapt/init srcs)
@@ -49,16 +47,16 @@ aux_source_directory(idl/src/data_sync/protocol/msgcodec/base srcs)
 aux_source_directory(idl/src/plugin/twl_tmr/src srcs)
 aux_source_directory(util/. srcs)
 
-add_library(${target} SHARED "")
+add_library(net_co SHARED)
 
-target_sources(${target} PRIVATE ${srcs})
+target_sources(net_co PRIVATE ${srcs})
 set(NETCO_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../netco/)
 
 set(bkf_dep_include
     ${NETCO_PATH}/idl/src/bdep/include
     ${NETCO_PATH}/idl/src/bdep/include/avl_dopra
     ${NETCO_PATH}/idl/src/bdep/avl_dopra/src/v_avlbase/include
-    )
+)
 
 set(includes
     ${bkf_dep_include}
@@ -90,16 +88,16 @@ set(includes
     ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-    )
-
-target_include_directories(${target} PRIVATE ${includes})
-if (DEVICE_MODE)
-target_link_directories(${target} PRIVATE
-   ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
 )
+
+target_include_directories(net_co PRIVATE ${includes})
+if(DEVICE_MODE)
+    target_link_directories(net_co PRIVATE
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+    )
 endif()
 
-target_compile_options(${target} PRIVATE
+target_compile_options(net_co PRIVATE
 	-Werror
 	-Wfloat-equal
 	-Wall
@@ -111,17 +109,16 @@ target_compile_options(${target} PRIVATE
 	$<$<CONFIG:Debug>:-g>
 )
 
-target_link_options(${target} PRIVATE
+target_link_options(net_co PRIVATE
     -Wl,-Bsymbolic
     -rdynamic
     -s
     -Wl,-z,relro,-z,now
     -Wl,-z,noexecstack
-    -pie
 )
 
 #链接动态库
-target_link_libraries(${target} PRIVATE
+target_link_libraries(net_co PRIVATE
     -Wl,--no-as-needed
     c_sec
     $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>

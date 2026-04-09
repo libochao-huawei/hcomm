@@ -10,6 +10,7 @@
 add_subdirectory(new_topo_builder)
 add_subdirectory(rank_info_detect)
 add_subdirectory(ranktable)
+add_subdirectory(topoaddrinfo)
 
 target_sources(hccl_v2_utest
         PUBLIC

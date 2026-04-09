@@ -727,3 +727,18 @@ int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int id
 {
     return 0;
 }
+
+int RaGetEidByIp(void *ctxHandle, struct IpInfo ip[], union HccpEid eid[], unsigned int *num)
+{
+    return 0;
+}
+
+int RaSetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t attrBitmap, struct TpAttr *attr, void **reqHandle)
+{
+    return 0;
+}
+
+int RaGetTpAttrAsync(void *ctxHandle, uint64_t tpHandle, uint32_t *attrBitmap, struct TpAttr *attr, void **reqHandle)
+{
+    return 0;
+}

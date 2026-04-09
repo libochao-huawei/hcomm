@@ -192,9 +192,11 @@ HcclResult CcuTempAllReduceMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                           std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllReduceMeshDetour1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
-
     CcuInstructionAllReduceMeshDetour1D ccuInsAllReduceMeshDetour1D;
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
@@ -203,7 +205,7 @@ HcclResult CcuTempAllReduceMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
     GetAddrInfo(tempFuncs, inputAddr, outputAddr);
 
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
-    uint64_t offSet = sliceInfoVec[myRank_][0].offset;   // 自己需要 reduce 的数据基于 inputAddr 的偏移
+    uint64_t offset = sliceInfoVec[myRank_][0].offset;   // 自己需要 reduce 的数据基于 inputAddr 的偏移
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 
@@ -214,11 +216,11 @@ HcclResult CcuTempAllReduceMeshDetour1D::Run(const TempFuncs &tempFuncs, const R
     std::vector<LinkData> links;
     ProcessLinks(links, tempLinks);
 
-    ccuInsAllReduceMeshDetour1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, offSet, token, op_, tempVTopo_, iterNum,
+    ccuInsAllReduceMeshDetour1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, offset, token, op_, tempVTopo_, iterNum,
         tailOffset, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_, lengths_);
     HCCL_INFO("[CcuTempAllReduceMeshDetour1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu], outputAddr[%llu],"\
         "sliceSize[%llu], offset[%llu], iterNum[%llu], tailOffset[%llu], tailSize[%llu], singleTransportSize_[%u], detourPathNum_[%u], pathNumPerPeer_[%u]",
-        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offSet, iterNum, tailOffset, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_);
+        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offset, iterNum, tailOffset, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_);
 
     HCCL_INFO("[CcuTempAllReduceMeshDetour1D] links.size[%zu]", links.size());
     ccuInsAllReduceMeshDetour1D.SetLinks(links);

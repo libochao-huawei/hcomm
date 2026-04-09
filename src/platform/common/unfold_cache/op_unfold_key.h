@@ -27,7 +27,8 @@ struct OpUnfoldKey{
     explicit OpUnfoldKey();
     explicit OpUnfoldKey(const OpUnfoldKey& other); // 拷贝构造函数 (make_pair需要)
 
-    HcclResult Init(const HcclCMDType curOpType, const HcclDataType curDataType, const HcclReduceOp curReduceType, const bool curIsZeroCopy, const uint64_t curInputSize, const bool curIsInplacePreSync, const HcclWorkflowMode curWorkflowMode);
+    HcclResult Init(const HcclCMDType curOpType, const HcclDataType curDataType, const HcclReduceOp curReduceType, const bool curIsZeroCopy,
+        const uint64_t curInputSize, const bool curIsInplacePreSync, const HcclWorkflowMode curWorkflowMode, const bool curIsCapture);
 
     // 用于debug
     std::string GetKeyString() const;
@@ -50,6 +51,9 @@ struct OpUnfoldKey{
 
     // 是否为图模式 (可能存在同一个通信域下的同一个算子, 既执行图模式又执行单算子模式下的算法)
     HcclWorkflowMode workflowMode; // 0: 图模式; 1: 单算子模式
+
+    // 是否为aclgraph (aclgraph资源在graph销毁时释放)
+    bool isCapture;
 };
 
 }; // namespace hccl
@@ -77,6 +81,8 @@ struct hash<hccl::OpUnfoldKey> {
         // 假设workflowMode <= 255
         const size_t workflowModeHashValue = hashUint8(static_cast<uint8_t>(key.workflowMode));
 
+        const size_t isCaptureHashValue = hashBool(key.isCapture);
+        
         // 简单的哈希混合
         size_t hashValue = opTypeHashValue;
         hashValue ^= dataTypeHashValue;
@@ -85,6 +91,7 @@ struct hash<hccl::OpUnfoldKey> {
         hashValue ^= inputSizeHashValue;
         hashValue ^= isInplacePreSyncHashValue;
         hashValue ^= workflowModeHashValue;
+        hashValue ^= isCaptureHashValue;
 
         return hashValue;
     }

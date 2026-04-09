@@ -490,9 +490,9 @@ HcclResult TransportHeterog::CheckConsistentFrame()
     if (remoteRankTableCrc != localRankTableCrc) {
         RPT_INPUT_ERR(true,
             "EI0005",
-            std::vector<std::string>({"para_name", "local_para", "remote_para"}),
+            std::vector<std::string>({"ccl_op", "group", "para_name", "local_para", "remote_para"}),
             std::vector<std::string>(
-                {"ranktable CRC", std::to_string(localRankTableCrc), std::to_string(remoteRankTableCrc)}));
+                {"HcomBatchGet", transTag_, "ranktable CRC", std::to_string(localRankTableCrc), std::to_string(remoteRankTableCrc)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] ranktable CRC check failed, crcValue[%u], receive crcvalue[%u].",
             LOG_KEYWORDS_INIT_CHANNEL.c_str(),
             LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),

@@ -131,7 +131,7 @@ SnapshotStatus SnapshotControl::GetStatus()
     return status_;
 }
 
-HcclResult SnapshotControl::RegisterComm(std::string &identifier, SnapshotSetInvalidComm setInvalidCommCallback,
+HcclResult SnapshotControl::RegisterComm(const std::string &identifier, SnapshotSetInvalidComm setInvalidCommCallback,
     SnapshotCheckPreProcess preProcessCallback, SnapshotCheckPostProcess postProcessCallback)
 {
     std::lock_guard<std::mutex> lock(commMutex_);
@@ -147,8 +147,16 @@ HcclResult SnapshotControl::RegisterComm(std::string &identifier, SnapshotSetInv
     return HCCL_SUCCESS;
 }
 
+HcclResult SnapshotControl::RegisterBackup(const std::string &identifier, u32 backupDevicePhyId)
+{
+    std::lock_guard<std::mutex> lock(commMutex_);
+    backupDeviceCount_[backupDevicePhyId].Ref();
+    HCCL_RUN_INFO("[SnapshotControl][RegisterBackup] comm[%s] register backup device to snapshot control, "
+        "devId[%d], backupDevPhyId[%u].", identifier.c_str(), deviceLogicId_, backupDevicePhyId);
+    return HCCL_SUCCESS;
+}
 
-HcclResult SnapshotControl::UnRegisterComm(std::string &identifier)
+HcclResult SnapshotControl::UnRegisterComm(const std::string &identifier)
 {
     std::lock_guard<std::mutex> lock(commMutex_);
     auto callbackIter = commCallbacks_.find(identifier);
@@ -167,6 +175,31 @@ HcclResult SnapshotControl::UnRegisterComm(std::string &identifier)
     return HCCL_SUCCESS;
 }
 
+HcclResult SnapshotControl::UnRegisterBackup(const std::string &identifier, u32 backupDevicePhyId)
+{
+    std::lock_guard<std::mutex> lock(commMutex_);
+    auto backupIter = backupDeviceCount_.find(backupDevicePhyId);
+    if (backupIter == backupDeviceCount_.end()) {
+        HCCL_WARNING("[SnapshotControl][UnRegisterBackup] comm[%s] backupDevicePhyId[%u] has not been registered, "
+            "devId[%d]", identifier.c_str(), backupDevicePhyId, deviceLogicId_);
+        return HCCL_SUCCESS;
+    }
+    int count = backupDeviceCount_[backupDevicePhyId].Unref();
+    if (count < 0) {
+        HCCL_WARNING("[SnapshotControl][UnRegisterBackup] comm[%s] unregister backup device exceed, "
+            "devId[%d], count[%d]", identifier.c_str(), deviceLogicId_, count);
+        return HCCL_SUCCESS;
+    }
+    HCCL_RUN_INFO("[SnapshotControl][UnRegisterBackup] release backup device phydId[%u], comm[%s], "
+            "devId[%d], count[%d]", backupDevicePhyId, identifier.c_str(), deviceLogicId_, count);
+    if (count == 0) {
+        backupDeviceCount_.erase(backupIter);
+        HCCL_RUN_INFO("[SnapshotControl][UnRegisterBackup] backup device phydId[%u] is totally released, "
+            "devId[%d], count[%d]", backupDevicePhyId, deviceLogicId_, count);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult SnapshotControl::CheckCommsPreProcess()
 {
     std::lock_guard<std::mutex> lock(commMutex_);
@@ -179,19 +212,39 @@ HcclResult SnapshotControl::CheckCommsPreProcess()
     return HCCL_SUCCESS;
 }
 
+HcclResult SnapshotControl::DevicePreProcess()
+{
+    std::lock_guard<std::mutex> lock(commMutex_);
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_, true));
+
+    HcclResult ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_,
+        HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[SnapshotControl][DevicePreProcess] call SnapShotSaveAction fail, devicePhyId[%u], action[%u]",
+        devicePhyId_, HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING), ret);
+    HCCL_INFO("[SnapshotControl][DevicePreProcess] device[%u] do device pre-process success, devId[%d].",
+        devicePhyId_, deviceLogicId_);
+
+    for (auto backupIter : backupDeviceCount_) {
+        ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), backupIter.first,
+            HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[SnapshotControl][DevicePreProcess] call SnapShotSaveAction fail, backup devicePhyId[%u], "
+            "action[%u]", backupIter.first, HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING), ret);
+        HCCL_INFO("[SnapshotControl][DevicePreProcess] backup device[%u] do device pre-process success, devId[%d].",
+            backupIter.first, deviceLogicId_);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult SnapshotControl::PreProcess()
 {
     CHK_RET(SetStatus(SnapshotStatus::PRE_SNAPSHOT));
     CHK_RET(CheckCommsPreProcess());
 
-    if (devicePhyId_ == INVALID_UINT) {
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
+    if (commCallbacks_.size()) {
+        CHK_RET(DevicePreProcess());
     }
-    HcclResult ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_,
-        HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[SnapshotControl][PreProcess] call SnapShotSaveAction fail, devicePhyId[%u], action[%u]",
-        devicePhyId_, HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_PRE_PROCESSING), ret);
 
     HCCL_INFO("[SnapshotControl][PreProcess] snapshot pre-process success, devId[%d], devPhyId[%u].",
         deviceLogicId_, devicePhyId_);
@@ -210,16 +263,36 @@ HcclResult SnapshotControl::CheckCommsPostProcess()
     return HCCL_SUCCESS;
 }
 
-HcclResult SnapshotControl::PostProcess()
+HcclResult SnapshotControl::DevicePostProcess()
 {
-    if (devicePhyId_ == INVALID_UINT) {
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
-    }
+    std::lock_guard<std::mutex> lock(commMutex_);
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_, true));
+
     HcclResult ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_,
         HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_POST_PROCESSING);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[SnapshotControl][PostProcess] call SnapShotSaveAction fail, devicePhyId[%u], action[%u]",
+        HCCL_ERROR("[SnapshotControl][DevicePostProcess] call SnapShotSaveAction fail, devicePhyId[%u], action[%u]",
         devicePhyId_, HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_POST_PROCESSING), ret);
+    HCCL_INFO("[SnapshotControl][DevicePostProcess] device[%u] do device post-process success, devId[%d].",
+        devicePhyId_, deviceLogicId_);
+    
+    for (auto backupIter : backupDeviceCount_) {
+        ret = SnapShotSaveAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), backupIter.first,
+            HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_POST_PROCESSING);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[SnapshotControl][DevicePostProcess] call SnapShotSaveAction fail, backup devicePhyId[%u], "
+            "action[%u]", backupIter.first, HcclSaveSnapShotAction::HCCL_SAVE_SNAPSHOT_ACTION_POST_PROCESSING), ret);
+        HCCL_INFO("[SnapshotControl][DevicePostProcess] backup device[%u] do device post-process success, devId[%d].",
+            backupIter.first, deviceLogicId_);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult SnapshotControl::PostProcess()
+{
+    if (commCallbacks_.size()) {
+        CHK_RET(DevicePostProcess());
+    }
 
     if (GetStatus() != SnapshotStatus::RESTORE_SNAPSHOT) {
         CHK_RET(SetStatus(SnapshotStatus::POST_SNAPSHOT));
@@ -244,16 +317,34 @@ HcclResult SnapshotControl::MarkInvalidComms()
     return HCCL_SUCCESS;
 }
 
+HcclResult SnapshotControl::DeviceRestore()
+{
+    std::lock_guard<std::mutex> lock(commMutex_);
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_, true));
+
+    HcclResult ret = SnapShotRestoreAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[SnapshotControl][DeviceRestore] call SnapShotRestoreAction fail, "
+        "devicePhyId[%u]", devicePhyId_), ret);
+    HCCL_INFO("[SnapshotControl][DeviceRestore] device[%u] do SnapShotRestoreAction success, devId[%d].",
+        devicePhyId_, deviceLogicId_);
+    
+    for (auto backupIter : backupDeviceCount_) {
+        ret = SnapShotRestoreAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), backupIter.first);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[SnapshotControl][DeviceRestore] call SnapShotRestoreAction fail, "
+            "backup devicePhyId[%u]", backupIter.first), ret);
+        HCCL_INFO("[SnapshotControl][DeviceRestore] backup device[%u] do SnapShotRestoreAction success, devId[%d].",
+            backupIter.first, deviceLogicId_);
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult SnapshotControl::Recovery()
 {
     HCCL_ERROR("-------------------- THE ABOVE AND THIS ERROR LOG CAN BE IGNORED. --------------------");
 
-    if (devicePhyId_ == INVALID_UINT) {
-        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId_), devicePhyId_));
+    if (commCallbacks_.size()) {
+        CHK_RET(DeviceRestore());
     }
-    HcclResult ret = SnapShotRestoreAction(static_cast<s32>(NICDeployment::NIC_DEPLOYMENT_DEVICE), devicePhyId_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[SnapshotControl][Recovery] call SnapShotRestoreAction fail, devicePhyId[%u]", devicePhyId_), ret);
 
     // set device status to stopped, need to skip device operations
     CHK_RET(MarkInvalidComms());

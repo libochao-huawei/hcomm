@@ -25,6 +25,7 @@
 #include "comm_configer.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
+#include "sal_pub.h"
 
 namespace hccl
 {
@@ -271,7 +272,7 @@ namespace hccl
         return communicator_->GetHeterogMode(mode);
     }
 
-     HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
+    HcclResult hcclComm::InitCollComm(void* commV2, void* rankGraph, uint32_t userRank,
         HcclMem cclBuffer, const std::string &commName, HcclCommConfig *config) {
         // 不校验config，为空时配置默认加速模式
 
@@ -391,6 +392,26 @@ namespace hccl
     CollComm* hcclComm::GetCollComm() 
     {
         return collComm_!= nullptr ? collComm_.get() : nullptr;
+    }
+
+    HcclResult hcclComm::Resume()
+    {
+        if (IsCommunicatorV2()) {
+            CHK_RET(collComm_->Resume());
+        } else {
+            CHK_RET(communicator_->Resume());
+        }
+        
+        return HCCL_SUCCESS;
+    }
+    HcclResult hcclComm::GetCommStatus(HcclCommStatus &status)
+    {
+        if (IsCommunicatorV2()) {
+            status = collComm_->GetCommStatus();
+        } else {
+            status = HcclCommStatus::HCCL_COMM_STATUS_READY;
+        }
+        return HCCL_SUCCESS;
     }
 
 } // namespace hccl

@@ -105,6 +105,8 @@ public:
     const std::string& GetConfigBufferName() const;
     u32 GetConfigHcclQos() const;
     u64 GetConfigSymmetricMemoryStride() const;
+    HcclResult SetConfigTrafficClass(u32 trafficClass);
+    HcclResult SetConfigServiceLevel(u32 serviceLevel);
 
 private:
     void InitAlgoConfig();

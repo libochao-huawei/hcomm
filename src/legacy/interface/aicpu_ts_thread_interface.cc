@@ -15,6 +15,7 @@
 
 #include "stream_lite.h"
 #include "rtsq_a5.h"
+#include "sqe_build_a5.h"
 
 namespace Hccl {
 
@@ -94,15 +95,21 @@ void IAicpuTsThread::LaunchTask() const
 
 HcclResult IAicpuTsThread::NotifyWait(uint32_t notifyId) const
 {
+    return NotifyWait(notifyId, GetKernelExecTimeoutFromEnvConfig());
+}
+
+HcclResult IAicpuTsThread::NotifyWait(uint32_t notifyId, uint32_t timeout) const
+{
     RtsqBase *rtsqA5 = nullptr;
     CHK_RET(GetRtsqWithNullCheck(streamLiteVoidPtr_, rtsqA5));
     
-    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], notifyId [%u]",
+    HCCL_INFO("[IAicpuTsThread::%s] @ Stream id [%u], notifyId [%u], timeout [%u]",
         __func__,
         static_cast<StreamLite *>(streamLiteVoidPtr_)->GetId(),
-        notifyId);
+        notifyId,
+        timeout);
 
-    rtsqA5->NotifyWait(notifyId);
+    rtsqA5->NotifyWait(notifyId, timeout);
 
     return HCCL_SUCCESS;
 }
@@ -184,6 +191,7 @@ HcclResult IAicpuTsThread::SdmaReduce(uint64_t dstAddr, uint64_t srcAddr, uint64
 
 HcclResult IAicpuTsThread::GetStreamLitePtr(void **streamLitePtrPtr) const
 {
+    CHK_PTR_NULL(streamLitePtrPtr);
     CHK_PTR_NULL(streamLiteVoidPtr_);
     *streamLitePtrPtr = streamLiteVoidPtr_;
     return HCCL_SUCCESS;

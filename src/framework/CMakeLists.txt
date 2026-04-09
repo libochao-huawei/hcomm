@@ -366,6 +366,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_ahc_broke.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hd_stage.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hccs_sio.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_graph_pipeline.cc
         
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce/all_reduce_recursive_hd.cc
@@ -579,6 +580,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_2level_pipeline_excecutor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/310P/coll_all_to_all_v_for_310p_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_continuous_pipeline_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_staged_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/registry/coll_alg_exec_registry.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/alg_profiling.cc

@@ -36,7 +36,7 @@ public:
     HcclResult CalcSliceInfo(const AllignInfo &allignInfo, const u64 dataSize, RankSliceInfo &sliceInfoVec) override;
 private:
     void GetAddrInfo(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec,
-        uint64_t &inputAddr, uint64_t &outputAddr, uint64_t &offSet);
+        uint64_t &inputAddr, uint64_t &outputAddr, uint64_t &offset);
     void CalcDetourOffset(uint64_t sliceSize, uint64_t &tailOffset, uint64_t &tailSize, uint64_t &loopIterNum);
     void ProcessLinks(std::vector<LinkData> &links, const ResLinks &tempLinks) const;
 

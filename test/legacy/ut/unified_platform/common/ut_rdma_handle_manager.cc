@@ -13,7 +13,24 @@
 #include <mockcpp/mockcpp.hpp>
 #define protected public
 #define private public
+#include "socket_manager.h"
+#include "rma_conn_manager.h"
+#include "rma_connection.h"
+#include "p2p_connection.h"
+#include "types.h"
+#include "socket.h"
+#include "communicator_impl.h"
+#include "virtual_topo.h"
+#include "op_mode.h"
+#include "coll_operator.h"
+#include "json_parser.h"
 #include "rdma_handle_manager.h"
+#include "dev_rdma_connection.h"
+#include "rank_table.h"
+#include "timeout_exception.h"
+#include "ccu_context_mgr_imp.h"
+#include "ccu_res_batch_allocator.h"
+#include "ccu_component.h"
 #undef protected
 #undef private
 
@@ -66,7 +83,7 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_and_create)
     PortData           localPortData(0, basePortType, 0, IpAddress());
 
     // when
-    auto res = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData);
+    auto res = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
 
     // then
     EXPECT_EQ(rdmaHandle, res);
@@ -80,8 +97,8 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_twice)
     PortData           localPortData(0, basePortType, 0, IpAddress());
 
     // when
-    auto res1 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData);
-    auto res2 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData);
+    auto res1 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
+    auto res2 = RdmaHandleManager::GetInstance().Get(devicePhyId, localPortData, LinkProtocol::UB_CTP);
 
     // then
     EXPECT_EQ(res1, res2);
@@ -114,4 +131,79 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_token_id_handle)
 
     std::pair<TokenIdHandle, uint32_t> expectResult(0, 0);
     EXPECT_EQ(RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle1), expectResult);
+}
+
+// 增加对 CreateUbConn 的覆盖测试
+TEST_F(RdmaHandleManagerTest, CreateUbConn_Returns_DevUbTpConnection)
+{
+    int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 1;
+    vector<HrtDevEidInfo> eidInfoListStbu;
+    HrtDevEidInfo         eidInfo;
+    eidInfo.name    = "udma0";
+    eidInfo.dieId   = 0;
+    eidInfo.funcId  = 3;
+    eidInfo.chipId  = static_cast<uint32_t>(devLogicId);
+    eidInfoListStbu.push_back(eidInfo);
+
+    eidInfo.name    = "udma1";
+    eidInfo.dieId   = 1;
+    eidInfo.funcId  = 4;
+    eidInfo.chipId  = static_cast<uint32_t>(devLogicId);
+    eidInfoListStbu.push_back(eidInfo);
+
+    MOCKER(HrtRaGetDevEidInfoList)
+        .stubs()
+        .with(any())
+        .will(returnValue(eidInfoListStbu));
+    MOCKER(HraGetRtpEnable).stubs().with(any()).will(returnValue(true));
+
+    // 简单 stub：返回 device 0 避免对 Impl 的完整初始化
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+
+    FdHandle fakeFdHandle = (void *)100;
+    int fakeFdStatus = SOCKET_CONNECTED;
+    RaSocketFdHandleParam fakeParam(fakeFdHandle, fakeFdStatus);
+
+    MOCKER(RaGetOneSocket).stubs()
+        .with(any(), any())
+        .will(returnValue(fakeParam));
+
+    u8 buf[70] = {0};
+    RequestHandle fakeReqHandle = 1;
+    unsigned long long dataSize = 70;
+    MOCKER(HrtRaSocketSendAsync)
+        .stubs()
+        .with(any(), any(), any(), outBound(dataSize))
+        .will(returnValue(fakeReqHandle));
+
+    MOCKER(HrtRaSocketRecvAsync)
+        .stubs()
+        .with(any(), any(), any(), outBound(dataSize))
+        .will(returnValue(fakeReqHandle));
+
+    MOCKER_CPP(&RmaConnManager::Ipv4UnPack).stubs().with(any(), any()).will(ignoreReturnValue());
+
+    // 构造 LinkData (UB 协议)
+    BasePortType basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    LinkData linkData(basePortType, 0, 1, 0, 1);
+    linkData.linkProtocol_ = LinkProtocol::UBOE;
+
+    // 构造临时 socket（测试中 private 被置为 public）
+    void *hccpSocketHandle = nullptr;
+    IpAddress ipAddress("1.0.0.0");
+    Socket *socket = new Socket(hccpSocketHandle, ipAddress, 0, ipAddress, "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
+
+    // minimal CommunicatorImpl 放入 manager（构造函数只保存引用）
+    CommunicatorImpl impl;
+    impl.currentCollOperator = std::make_unique<CollOperator>();
+    RmaConnManager rmaConnManager(impl);
+
+    std::string tag = "test_tp";
+    auto conn = rmaConnManager.CreateUbConn(socket, tag, linkData, HrtUbJfcMode::STARS_POLL);
+    EXPECT_NE(conn.get(), nullptr);
+    // 对应分支应返回 DevUbUboeConnection
+    DevUbUboeConnection *uboeConn = dynamic_cast<DevUbUboeConnection *>(conn.get());
+    EXPECT_NE(uboeConn, nullptr);
+
+    delete socket;
 }

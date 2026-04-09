@@ -85,12 +85,12 @@ HcclResult CollBatchSendRecvGroupExecutor::Orchestrate(OpParam& param, AlgResour
     CHK_RET(CheckCommSize(COMM_COMBINE_ORDER, COMM_SIZE_TWO));
     CHK_RET(GetPairWiseList(param.BatchSendRecvDataDes.sendRecvItemsPtr, param.BatchSendRecvDataDes.itemNum));
     CHK_RET(ProcessSelfSendRecvTasks(param.stream));
-    CHK_RET(CalcBufferSliceSize());
     if (topoAttr_.userRankSize == 1) {
         HCCL_INFO("tag[%s] BatchSendRecvGroup Excutor orchestrate success, take time [%lld]us.",
             param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
         return HCCL_SUCCESS;
     }
+    CHK_RET(CalcBufferSliceSize());
 
     bool isBig = false;
     CHK_RET(isGroupBigCount(param.BatchSendRecvDataDes.sendRecvItemsPtr, param.BatchSendRecvDataDes.itemNum, isBig));
@@ -631,6 +631,13 @@ u64 CollBatchSendRecvGroupExecutor::CalcRecvLoopMaxCount(const u32 unitSize) con
 
 HcclResult CollBatchSendRecvGroupExecutor::CalcStreamNum(u32& streamNum)
 {
+    if (topoAttr_.userRankSize == 1) {
+        sendStreamNum_ = 0;
+        recvStreamNum_ = 0;
+        streamNum = 0;
+        HCCL_INFO("[CollBatchSendRecvGroupExecutor] Only one rank, do not need substream, streamNum[%u]", streamNum);
+        return HCCL_SUCCESS;
+    }
     sendStreamNum_ = GROUP_MAX_CONCURRENT;
     recvStreamNum_ = GROUP_MAX_CONCURRENT;
     streamNum = sendStreamNum_ + recvStreamNum_; // 有限度并发

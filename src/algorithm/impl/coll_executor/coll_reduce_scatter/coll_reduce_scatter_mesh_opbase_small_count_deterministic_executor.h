@@ -26,6 +26,9 @@ private:
     HcclResult CalcLevel0CommInfo(TransportMemType inputType,
                                   TransportMemType outputType,
                                   std::vector<LevelNSubCommTransport> &opTransport) override;
+    HcclResult CalcLevel1CommInfo(TransportMemType inputType,
+        TransportMemType outputType,
+        std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
     /* *************** 任务编排 *************** */
     u64 CalcLoopMaxCount(const u32 unitSize) override;

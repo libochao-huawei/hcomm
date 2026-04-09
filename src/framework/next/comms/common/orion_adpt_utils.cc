@@ -120,7 +120,8 @@ static HcclResult EndpointLocTypeToPortDeploymentType(const EndpointLocType locT
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp,
+    Hccl::LinkData &linkData, u32 reuseIdx)
 {
     Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
     CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
@@ -142,14 +143,14 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
         portDeploymentType,
         linkProtocol, 
         locDevPhyId, rmtDevPhyId,
-        locAddr, rmtAddr
+        locAddr, rmtAddr, reuseIdx
     );
 
     return HCCL_SUCCESS;
 }
 
 HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const uint32_t rmtRank,
-    const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+    const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData, u32 reuseIdx)
 {
     Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
     CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
@@ -167,7 +168,7 @@ HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const ui
         portDeploymentType,
         linkProtocol, 
         myRank, rmtRank,
-        locAddr, rmtAddr
+        locAddr, rmtAddr, reuseIdx
     );
 
     return HCCL_SUCCESS;

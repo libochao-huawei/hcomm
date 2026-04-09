@@ -88,13 +88,13 @@ public:
           Consumer();
         }
     }
- 
+
     uint32_t coreNumPerStage;
     uint32_t targetRank;
-    GM_ADDR peerMemThisCore;
+    GM_ADDR  peerMemThisCore;
     uint64_t inputOffset;
     uint64_t outputOffset;
-    int32_t curTag;
+    int32_t  curTag;
     uint64_t curCount;
     uint64_t dataBufferSize;
 };

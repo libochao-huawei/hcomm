@@ -122,7 +122,6 @@ enum {
 #define BITMAP_WORD_NUM  320
 #define BITMAP_WORD_SIZE (BITMAP_WORD_LEN * BITMAP_WORD_NUM)
 #define PAGE_ALIGN_4KB   (4 * 1024)
-#define PAGE_ALIGN_2MB   (2 * 1024 * 1024)
 
 enum hns_roce_qp_cap_flags {
     HNS_ROCE_QP_CAP_RQ_RECORD_DB = (1 << 0),

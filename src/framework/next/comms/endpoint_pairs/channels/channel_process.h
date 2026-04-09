@@ -10,6 +10,7 @@
 #ifndef CHANNEL_PROCESS_H
 #define CHANNEL_PROCESS_H
 
+#include "hcomm_c_adpt.h"
 #include "channel.h"
 #include "mem_host_pub.h"
 #include <mutex>
@@ -23,6 +24,7 @@ public:
     ~ChannelProcess() = default;
     static HcclResult CreateChannelsLoop(EndpointHandle endpointHandle, CommEngine engine,
         HcommChannelDesc *channelDescs, uint32_t channelNum, ChannelHandle *outHandles);
+    static HcclResult ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
     static HcclResult ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum, CommEngine engine);
     static HcclResult SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
         uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle);
@@ -30,11 +32,17 @@ public:
     static HcclResult ChannelKernelLaunchForComm(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
     static HcclResult ChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
-    static HcclResult ChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remoteMem, uint32_t *memNum, char **memTags);
+    static HcclResult ChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags);
     static HcclResult ChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
     static HcclResult ChannelKernelDestroy(ChannelHandle *channelHandles, uint32_t listNum, aclrtBinHandle binHandle);
     static HcclResult ChannelDestroy(const ChannelHandle *channels, uint32_t channelNum, aclrtBinHandle binHandle = nullptr);
     static HcclResult ChannelGet(const ChannelHandle channelHandle, void **channel);
+
+    static HcclResult ChannelClean(const ChannelHandle *channelList, uint32_t channelNum);
+    static HcclResult ChannelResume(const ChannelHandle *channelList, uint32_t channelNum);
+    static HcclResult ChannelUpdateKernelLaunch(ChannelHandle* deviceChannelHandles, ChannelHandle* hostChannelHandles, 
+        uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
+    
 private:
     template <typename Func>
     static HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func);
@@ -48,6 +56,8 @@ private:
     static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, 
         uint32_t listNum, aclrtBinHandle binHandle);
 
+    static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
+    
     static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
     static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
     static std::mutex g_ChannelMapMtx;

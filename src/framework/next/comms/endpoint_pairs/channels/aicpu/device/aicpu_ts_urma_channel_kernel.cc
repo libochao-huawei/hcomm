@@ -24,6 +24,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void 
     HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(devAddr);
     return AicpuIndopProcess::AicpuIndOpChannelInit(commParam);
 }
+
 __attribute__((visibility("default"))) uint32_t RunAicpuChannelInitV2(void *args)
 {
     HCCL_RUN_INFO("RunAicpuIndOpChannelInitV2Internal start.");
@@ -40,6 +41,15 @@ __attribute__((visibility("default"))) uint32_t RunAicpuChannelDestroyV2(void *a
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
     HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(devAddr);
     return AicpuChannelProcess::AicpuChannelDestroy(commParam);
+}
+
+__attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelUpdateV2(void *args)
+{
+    HCCL_RUN_INFO("RunAicpuIndOpChannelUpdateV2 start.");
+    CHK_PTR_NULL(args);
+    uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
+    HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(devAddr);
+    return AicpuIndopProcess::AicpuIndOpChannelUpdate(commParam);
 }
 
 }

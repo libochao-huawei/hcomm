@@ -18,7 +18,7 @@
 
 namespace Hccl {
 
-const uint32_t ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE =  8; // fullmesh最大的并发数量
+const uint32_t ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE =  16; // fullmesh最大的并发数量
 
 class InsTempAlltoAllMesh : public InsAlgTemplateBase {
 public:

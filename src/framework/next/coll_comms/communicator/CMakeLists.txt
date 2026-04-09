@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     coll_comm.cc
+    coll_comm_mgr.cc
 )
 
 target_sources(hcomm PRIVATE
@@ -16,4 +17,10 @@ target_sources(hcomm PRIVATE
 )
 
 add_subdirectory(aicpu)
+add_subdirectory(ns_recovery)
+
+target_include_directories(hcomm PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/ns_recovery
+)
+
 

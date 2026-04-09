@@ -9,18 +9,13 @@
  */
 
 #include "ins_all_reduce_parallel_executor.h"
-
 #include <cmath>
-
 #include "log.h"
-
 #include "ins_coll_alg_registry.h"
-
 #include "topo_match_mesh_nhr.h"
 #include "topo_match_concurr_mesh_nhr.h"
 #include "topo_match_mesh_nhr_pcie.h"
 #include "alg_data_trans_wrapper.h"
-
 #include "ins_temp_all_reduce_nhr.h"
 #include "ins_temp_all_reduce_mesh_1D_two_shot.h"
 #include "ins_temp_all_reduce_mesh_2D_two_shot.h"
@@ -341,7 +336,6 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr insQue)
 {
     HCCL_INFO("[InsAllReduceParallelExecutor] Host Orchestrate begins.");
-    ;
     // init and check params
     CHK_RET(Init(op, params, insQue));
 

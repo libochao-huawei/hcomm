@@ -1660,10 +1660,6 @@ HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtSt
         std::vector<std::string>({"HcomGetDevType", "nullptr", "group", "non-null pointer"}));
     CHK_PTR_NULL(group);
 
- #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-        HCCLV2_FUNC_RUN(HcomMc2AiCpuStreamAllocAndGetV2(group, streamMode, aiCpuStream));
-#endif
-
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),
@@ -1676,7 +1672,10 @@ HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtSt
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
- 
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomMc2AiCpuStreamAllocAndGetV2(group, streamMode, aiCpuStream));
+#endif
     std::shared_ptr<hccl::hcclComm> hcclComm;
     ret = HcomGetCommByGroup(group, hcclComm);
     // 兼容V2，获取通信域失败由外层判断，此处不报ERROR

@@ -136,11 +136,6 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
         // 算法编排返回insQueue, 包含ccu扩展指令和aicpu扩展指令
         shared_ptr<InsQueue> insQueue = Orchestrate(op);
         AllocQueueNotify(*insQueue);
-        // 日志打印
-        auto info
-            = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                        comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-        comm->GetTrace().Save(info);
         // 获取insQueue中所有Ins的linkDats
         std::vector<LinkData> uniqueLinks = GetUniqueLinks(insQueue);
         // 将通讯域设置为transport建链中状态
@@ -385,9 +380,6 @@ void CollServiceDeviceMode::GetCcuTaskInfo(void *tilingData, void *ccuTaskGroup)
                   std::begin(group->ccuTaskInfo[index].args));
         HCCL_INFO("ccu task info, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u]", taskParams[index].dieId,
                   taskParams[index].missionId, taskParams[index].instStartId, taskParams[index].instCnt);
-        for (uint64_t i = 0; i < taskParams[index].argSize; i++) {
-            HCCL_INFO("arg[%u] = %lu", i, taskParams[index].args[i]);
-        }
     }
 
     HCCL_INFO("[CollServiceDeviceMode::%s] end.", __func__);

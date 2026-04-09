@@ -348,7 +348,7 @@ HcclResult ProfilingManager::UpdateStartReportSqeIdx(s32 streamId, u32 newSqeTai
         HCCL_INFO("[UpdateStartReportSqeIdx]streamId:%d is not find, newSqeTailIdx:%u", streamId, newSqeTailIdx);
     } else {
         // 到2048时，更新成0;
-        newSqeTailIdx = (iter->second == hccl::HCCL_SQE_MAX_CNT) ? 0 : newSqeTailIdx;
+        newSqeTailIdx = (newSqeTailIdx == hccl::HCCL_SQE_MAX_CNT) ? 0 : newSqeTailIdx;
         HCCL_INFO("[UpdateStartReportSqeIdx] streamId:%d, lastSqeTailIdx:%u, newSqeTailIdx:%u", streamId,
             iter->second, newSqeTailIdx);
         iter->second = newSqeTailIdx;

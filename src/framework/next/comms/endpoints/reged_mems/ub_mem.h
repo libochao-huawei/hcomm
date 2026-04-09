@@ -38,6 +38,7 @@ public:
  
 private:
     std::unique_ptr<LocalIpcRmaBufferMgr> localIpcRmaBufferMgr_{};
+    std::vector<std::shared_ptr<Hccl::LocalIpcRmaBuffer>> allRegisteredBuffers_;
 };
 }
  
