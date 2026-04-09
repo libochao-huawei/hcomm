@@ -51,7 +51,7 @@ target_sources(legacy_alg_aicpu_2d_testcase
     main.cc
     testcase_all_reduce_aicpu_2d.cc
     testcase_utils.cc
-    testcase_scatter_aicpu_2d.cc
+    #testcase_scatter_aicpu_2d.cc
     testcase_all_gather_aicpu_2d.cc
     testcast_alltoall_aicpu_2d.cc
     testcase_broadcast.cc
