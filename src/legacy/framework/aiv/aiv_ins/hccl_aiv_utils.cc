@@ -66,7 +66,8 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_scatter_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E4M3},
     {"aiv_scatter_fp8_e5m2_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E5M2},
     {"aiv_scatter_fp8_e8m0_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::FP8E8M0},
-
+    {"aiv_scatter_fp8_e8m0_t", HcclCMDType::HCCL_CMD_SCATTER, DataType::MXFP8},
+    // allgather
     {"aiv_all_gather_half", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP16},
     {"aiv_all_gather_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::INT16},
     {"aiv_all_gather_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::UINT16},
@@ -83,6 +84,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_gather_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E4M3},
     {"aiv_all_gather_fp8_e5m2_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E5M2},
     {"aiv_all_gather_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::FP8E8M0},
+    {"aiv_all_gather_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLGATHER, DataType::MXFP8},
     //allreduce
     {"aiv_allreduce_half", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::FP16},
     {"aiv_allreduce_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT16},
@@ -108,6 +110,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_broadcast_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E4M3},
     {"aiv_broadcast_fp8_e5m2_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E5M2},
     {"aiv_broadcast_fp8_e8m0_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::FP8E8M0},
+    {"aiv_broadcast_fp8_e8m0_t", HcclCMDType::HCCL_CMD_BROADCAST, DataType::MXFP8},
     // allreduce two shot
     {"aiv_allreduce_mesh1d_twoshot_half", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::FP16, KernelArgsType::ARGS_TYPE_TWO_SHOT},
     {"aiv_allreduce_mesh1d_twoshot_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, DataType::INT16,KernelArgsType::ARGS_TYPE_TWO_SHOT},
@@ -133,6 +136,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_alltoall_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E4M3},
     {"aiv_alltoall_fp8_e5m2_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E5M2},
     {"aiv_alltoall_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::FP8E8M0},
+    {"aiv_alltoall_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLTOALL, DataType::MXFP8},
     // alltoallv
     {"aiv_alltoallv_half", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP16},
     {"aiv_alltoallv_int16_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::INT16},
@@ -150,6 +154,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_alltoallv_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E4M3},
     {"aiv_alltoallv_fp8_e5m2_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E5M2},
     {"aiv_alltoallv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::FP8E8M0},
+    {"aiv_alltoallv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_ALLTOALLV, DataType::MXFP8},
     // reduce
     {"aiv_reduce_half", HcclCMDType::HCCL_CMD_REDUCE, DataType::FP16},
     {"aiv_reduce_int16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT16},
@@ -183,6 +188,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_send_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_SEND, DataType::FP8E4M3},
     {"aiv_send_fp8_e5m2_t", HcclCMDType::HCCL_CMD_SEND, DataType::FP8E5M2},
     {"aiv_send_fp8_e8m0_t", HcclCMDType::HCCL_CMD_SEND, DataType::FP8E8M0},
+    {"aiv_send_fp8_e8m0_t", HcclCMDType::HCCL_CMD_SEND, DataType::MXFP8},
     // recv
     {"aiv_recv_int8_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::INT8},
     {"aiv_recv_int16_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::INT16},
@@ -200,6 +206,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_recv_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP8E4M3},
     {"aiv_recv_fp8_e5m2_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP8E5M2},
     {"aiv_recv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::FP8E8M0},
+    {"aiv_recv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_RECEIVE, DataType::MXFP8},
     // batchSendRecv
     {"aiv_batchSendRecv_int8_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::INT8},
     {"aiv_batchSendRecv_int16_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::INT16},
@@ -217,6 +224,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_batchSendRecv_fp8_e4m3fn_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP8E4M3},
     {"aiv_batchSendRecv_fp8_e5m2_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP8E5M2},
     {"aiv_batchSendRecv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::FP8E8M0},
+    {"aiv_batchSendRecv_fp8_e8m0_t", HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, DataType::MXFP8},
 };
 using AivExtraKernelArgs = struct AivExtraKernelArgsDef {
     const void* buffersIn; // 注册的CCLIN地址，所有卡可访问
