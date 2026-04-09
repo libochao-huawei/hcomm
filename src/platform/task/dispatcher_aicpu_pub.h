@@ -81,6 +81,8 @@ public:
     HcclResult LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges,
         const std::vector<OpUnfoldMemRange>& userOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams,
         const bool profL1Enable, const bool isAlltoallv, const AlltoallvMetadata& alltoallvMetadata, const AlltoallvSendRecvInfo& alltoallvSendRecvInfo);
+    
+    HcclCMDType opType;
 
     HcclResult LaunchTask(Stream &stream, bool isBlockLaunch);
     HcclResult TbeReduceAsync(const void *src1, const void *src2, u64 count, const HcclDataType datatype,

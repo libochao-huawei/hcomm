@@ -37,14 +37,14 @@ public:
     HcclResult ClearEntryForAlltoallv(); // 清理与alltoallv类算子相关的cache entry
 
     // 只会在DEBUG_LEVEL下打印SQE内容 (通过比较打印算子正常展开的SQE与缓存的SQE, 判断刷新后的SQE是否正确)
-    static HcclResult DumpSqeContent(const uint8_t *sqePtr, const uint8_t sqeType);
+    static HcclResult DumpSqeContent(const uint8_t *sqePtr, const uint8_t sqeType, const bool forceDump = false);
 
 private:
     using CacheHashMap = std::unordered_map<OpUnfoldKey, OpUnfoldCacheEntry *>;
 
     // 只会在DEBUG_LEVEL下打印SQE header的内容
-    static HcclResult DumpSqeHeader(const rtStarsSqeHeader_t& sqeHeader);
-    static HcclResult DumpSqeHeader(const rtStarsSqeHeaderV2_t& sqeHeader);
+    static HcclResult DumpSqeHeader(const rtStarsSqeHeader_t& sqeHeader, const bool forceDump = false);
+    static HcclResult DumpSqeHeader(const rtStarsSqeHeaderV2_t& sqeHeader, const bool forceDump = false);
 
     CacheHashMap cacheHashMap_; // key-entry mapping
 };
