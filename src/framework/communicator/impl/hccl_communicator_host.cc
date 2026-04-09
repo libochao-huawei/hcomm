@@ -8723,12 +8723,12 @@ namespace hccl
             HcclCMDType::HCCL_CMD_INVALID, false, isIndOp);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed to alloc transport, tag[%s], isAicpuModeEn[%d], ret[%d]",
-                __func__, tag, isAicpuModeEn, ret);
+                __func__, tag.c_str(), isAicpuModeEn, ret);
             return ret;
         }
 
         HCCL_RUN_INFO("[%s] Alloc transport success, tag[%s], isAicpuModeEn[%d], ret[%d]",
-            __func__, tag, isAicpuModeEn, ret);
+            __func__, tag.c_str(), isAicpuModeEn, ret);
         return HCCL_SUCCESS;
     }
 
