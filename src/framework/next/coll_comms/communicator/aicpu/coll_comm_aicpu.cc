@@ -148,8 +148,10 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
+    u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr);
+    u32* addSize = reinterpret_cast<u32*>(commParam->channelSize);
     for (u32 index = 0; index < commParam->listNum; index++) {
-        std::vector<char> data(commParam->singleUniqueIdSize);
+        std::vector<char> data(* addSize);
 
         // 计算地址块的偏移
         u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
