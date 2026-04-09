@@ -2039,18 +2039,21 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
     // Hdc模式下HCCP不支持hrtRaGetQpContext接口
     HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQp] SetQpAttrQos fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Timeout时间
     ret = SetQpAttrTimeOut(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQp] SetQpAttrTimeOut fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Retry Cnt重传次数
     ret = SetQpAttrRetryCnt(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
@@ -2075,18 +2078,21 @@ HcclResult CreateNormalQp(RdmaHandle rdmaHandle, QpInfo& qp)
     CHK_RET(hrtRaNormalQpCreate(rdmaHandle, &ibQpAttr, qp.qpHandle, qp.qp));
     HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Timeout时间
     ret = SetQpAttrTimeOut(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Retry Cnt重传次数
     ret = SetQpAttrRetryCnt(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
@@ -2117,6 +2123,7 @@ HcclResult CreateCqAndQp(RdmaHandle &rdmaHandle, string &label, QpConfig &config
             info.srqCq, info.srqContext);
         HcclResult ret = CreateNormalQp(rdmaHandle, qp);
         if(ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateCqAndQp] CreateNormalQp fail, ret[%d], destory CQ", ret);
             DestroyCq(rdmaHandle, cq);
             return ret;
         }
@@ -2220,7 +2227,8 @@ HcclResult CreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
         info.recvCq = qp.recvCq;
     } else {
         HcclResult ret = CreateNormalQp(rdmaHandle, qp);
-        if(ret != HCCL_SUCCESS) {
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[CreateQpWithCq] CreateNormalQp fail, ret[%d], destory CQ", ret);
             DestroyCq(rdmaHandle, cq);
             return ret;
         }
@@ -2265,16 +2273,19 @@ HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &
 
     HcclResult ret = SetQpAttrQos(info.qpHandle, info.trafficClass, info.serviceLevel);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateAiQp] SetQpAttrQos fail, ret[%d], destory qpHandle", ret);
         HrtRaQpDestroy(info.qpHandle);
         return ret;
     }
     ret = SetQpAttrTimeOut(info.qpHandle);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateAiQp] SetQpAttrTimeOut fail, ret[%d], destory qpHandle", ret);
         HrtRaQpDestroy(info.qpHandle);
         return ret;
     }
     ret = SetQpAttrRetryCnt(info.qpHandle);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CreateAiQp] SetQpAttrRetryCnt fail, ret[%d], destory qpHandle", ret);
         HrtRaQpDestroy(info.qpHandle);
         return ret;
     }
@@ -2971,7 +2982,7 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
     struct QpAttr attr{};
     HcclResult ret = hrtRaGetQpAttr(qpHandle, &attr);
     if(ret != HCCL_SUCCESS) {
-        HCCL_ERROR("hrtRaGetQpAttr failed, ret[%d].", ret);
+        HCCL_ERROR("[CreateQpWithDepthConfig] hrtRaGetQpAttr failed, ret[%d].", ret);
         HrtRaQpDestroy(qpHandle);
         return ret;
     }

@@ -761,7 +761,7 @@ HcclResult NetworkManager::StopVnicSocketHandle(const HcclIpAddress &localIp)
             HCCL_ERROR("[NetworkManager][StopVnicSocketHandle]errNo[0x%016llx] stop vnic listen failed, "
                 "devid[%u], ip[%s], port[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
                 localIp.GetReadableAddress(), port);
-            continue;
+            break;
         }
         IPPortListenRefMapVnicDevice_[localIp][port].Clear();
         HCCL_INFO("[NetworkManager][StopVnicSocketHandle] ip[%s] stop listen port[%u]",

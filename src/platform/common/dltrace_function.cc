@@ -84,6 +84,7 @@ HcclResult DlTraceFunction::DlTraceFunctionInit()
             ret = DlUTraceFunctionInterInit();
             if (ret != HCCL_SUCCESS) {
                 (void)HcclDlclose(handle_);
+                handle_ = nullptr;
                 return ret;
             }
         } else {

@@ -1489,30 +1489,35 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
         aclrtStream stream = nullptr;
         aclError ret = aclrtCreateStream(&stream);
         if (ret != ACL_SUCCESS) {
-            aclrtDestroyStream(*notify);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destory event.", ret);
+            aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtRecordEvent(*notify, stream);
         if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destory stream and event.", ret);
             aclrtDestroyStream(stream);
-            aclrtDestroyStream(*notify);
+            aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtResetEvent(*notify, stream);
         if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destory stream and event.", ret);
             aclrtDestroyStream(stream);
-            aclrtDestroyStream(*notify);
+            aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtSynchronizeStream(stream);
         if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destory stream and event.", ret);
             aclrtDestroyStream(stream);
-            aclrtDestroyStream(*notify);
+            aclrtDestroyEvent(*notify);
             return ret;
         }
         ret = aclrtDestroyStream(stream);
         if (ret != ACL_SUCCESS) {
-            aclrtDestroyStream(*notify);
+            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destory event.", ret);
+            aclrtDestroyEvent(*notify);
             return ret;
         }
         return 0;
@@ -1987,6 +1992,7 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
     s32 streamId = 0;
     HcclResult hcclRet = hrtGetStreamId(stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destory stream.", ret);
         aclrtDestroyStream(*stream);
         return hcclRet;
     }
