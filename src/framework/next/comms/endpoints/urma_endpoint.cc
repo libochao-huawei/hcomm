@@ -39,6 +39,7 @@ HcclResult UrmaEndpoint::Init()
         return ret;
     }
 
+    // TODO UBOE OK ipAddr查EID
     u32 devPhyId;
     s32 deviceLogicId;
     ret = hrtGetDevice(&deviceLogicId);
@@ -64,6 +65,7 @@ HcclResult UrmaEndpoint::Init()
     HCCL_INFO("%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__, devPhyId, ipAddr.Describe().c_str(), ctxHandle_);
 
+    // TODO UBOE OK 复用UbRegedMemMgr
     EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
