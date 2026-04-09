@@ -313,13 +313,19 @@ namespace hccl {
             return HCCL_SUCCESS;
         }
 
+        // Always disable cache
+        HCCL_INFO("[AicpuCacheManager][%s] opType[%d]: not supported for unfolding cache", __func__, opType);
+        return HCCL_SUCCESS;
+
         // 屏蔽aicpu cache + zero copy + 确定性计算场景下的确定性问题
+        // DEBUG: 只对RS做cache
         const HcclCMDType opType = param.opType;
-        const uint32_t isDeterministic = topoMatcherPtr->GetExternalInputHcclDeterministic();
-        HCCL_INFO("[AicpuCacheManager][%s] zcopy[%d] + opType[%d] + isDeterministic[%u]",
-            __func__, param.isZeroCopy, opType, isDeterministic);
-        if (param.isZeroCopy && opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && isDeterministic != 0) {
-            HCCL_INFO("[AicpuCacheManager][%s] deterministic issue is not supported for unfolding cache", __func__);
+        // const uint32_t isDeterministic = topoMatcherPtr->GetExternalInputHcclDeterministic();
+        // HCCL_INFO("[AicpuCacheManager][%s] zcopy[%d] + opType[%d] + isDeterministic[%u]",
+        //     __func__, param.isZeroCopy, opType, isDeterministic);
+        // if (param.isZeroCopy && opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && isDeterministic != 0) {
+        if (opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER) {
+            HCCL_INFO("[AicpuCacheManager][%s] opType[%d] != %d: not supported for unfolding cache", __func__, opType, HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
             return HCCL_SUCCESS;
         }
 

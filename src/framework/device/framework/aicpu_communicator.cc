@@ -3391,6 +3391,8 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, uint32_t &beginSqePos,
     uint32_t &endSqePos)
 {
+    (reinterpret_cast<DispatcherAiCpu *>(dispatcher_))->opType = param.opType;
+
     LogControl logControl(false, false); // 重执行ERROR日志控制，析构时重置日志设置
     PrepareMc2Handler();
     HcclResult ret = HCCL_SUCCESS;
