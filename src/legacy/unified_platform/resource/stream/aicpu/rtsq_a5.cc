@@ -72,7 +72,7 @@ void RtsqA5::MakeSureAvailableSpace()
     auto                       timeout = std::chrono::seconds(timeoutValue);
     const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
     auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;
-    HCCL_INFO("RtsqA5::%s timeout: %u, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
+    HCCL_INFO("RtsqA5::%s timeout: %u s, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
               sqId_);
 
     HCCL_INFO("RtsqA5::%s start", __func__);
