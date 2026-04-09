@@ -172,3 +172,48 @@ TEST_F(TransportDeviceP2pAiCpu_UT, transport_init_A3_between_servers)
     ret = transDevP2p.SignalRecord(transDevP2p.remoteSendReadyNotify_, transDevP2p.remoteSendReadyAddress_, 0, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 测试TransportP2p的基本初始化和参数验证
+TEST_F(TransportDeviceP2pAiCpu_UT, transport_basic_param_check)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    
+    // 验证基本成员变量初始化正确
+    EXPECT_EQ(transDevP2p.remoteInputPtr_, transDevP2pData.inputBufferPtr);
+    EXPECT_EQ(transDevP2p.remoteOutputPtr_, transDevP2pData.outputBufferPtr);
+    EXPECT_EQ(transDevP2p.transportAttr_.linkType, transDevP2pData.transportAttr.linkType);
+}
+
+// 测试TransportP2p的Init函数 - 使用成功的constructor_and_init测试覆盖
+TEST_F(TransportDeviceP2pAiCpu_UT, transport_init_success_coverage)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    
+    // 验证Init成功
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(transDevP2p.remoteSendReadyAddress_, u64(100));
+}
+
+// 测试TransportP2p的构造函数参数验证
+TEST_F(TransportDeviceP2pAiCpu_UT, transport_constructor_param_check)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    
+    // 验证构造函数正确初始化了成员变量
+    EXPECT_EQ(transDevP2p.transportAttr_.linkType, transDevP2pData.transportAttr.linkType);
+    EXPECT_EQ(transDevP2p.remoteInputPtr_, transDevP2pData.inputBufferPtr);
+    EXPECT_EQ(transDevP2p.remoteOutputPtr_, transDevP2pData.outputBufferPtr);
+}
