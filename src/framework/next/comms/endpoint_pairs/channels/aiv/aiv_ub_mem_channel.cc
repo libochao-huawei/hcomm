@@ -84,6 +84,11 @@ HcclResult AivUbMemChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag
     return transport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
+HcclResult AivUbMemChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
+{
+    return transport_->UpdateMemInfo(memHandles, memHandleNum);
+}
+
 HcclResult AivUbMemChannel::Clean()
 {
     // 该模式当前不支持N秒快恢

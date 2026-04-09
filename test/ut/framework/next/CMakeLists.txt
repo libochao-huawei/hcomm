@@ -15,6 +15,7 @@ set(src_to_test_list
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
+    comms/ccu/ut_CcuTransport_API_test.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
