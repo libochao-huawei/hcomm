@@ -753,3 +753,19 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     HcclResult ret = impl_->WriteWithNotify((void *)0x1, (void *)0x2, 250, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// Test GetHcclBuffer null pointer check
+TEST_F(HostCpuRoceChannelTest, Ut_GetHcclBuffer_When_AddrIsNull_Expect_HCCL_E_PARA)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl = CreateInitAndConnect();
+    
+    // Clear rmtRmaBuffers_ to simulate GetAddr() returning null pointer
+    impl->rmtRmaBuffers_.clear();
+    
+    void* addr = nullptr;
+    uint64_t size = 0;
+    HcclResult ret = impl->GetHcclBuffer(addr, size);
+    // remote buffer is empty, should return HCCL_E_PARA (value 4)
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
