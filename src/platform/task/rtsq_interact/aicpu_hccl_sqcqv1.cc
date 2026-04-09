@@ -254,7 +254,7 @@ void AddOneRdmaDbSendSqeV1(uint16_t streamId, uint16_t taskId, uint64_t dbInfo, 
     sqe->write_addr_high = static_cast<uint32_t>((dbAddr >> UINT32_BIT_NUM) & MASK_17_BIT);
     sqe->rdmaWrLenth = length; // wr len
     sqe->rdmaType = static_cast<uint32_t>(rdmaType);
-    HCCL_DEBUG("[SQE]RdmaDbSend: length=%u, rdmaType=%u, dbAddr=0x%lx, streamId=%u, taskId=%u.",
+    HCCL_INFO("[SQE]RdmaDbSend: length=%u, rdmaType=%u, dbAddr=0x%lx, streamId=%u, taskId=%u.",
         length, rdmaType, dbAddr, streamId, taskId);
 }
 
