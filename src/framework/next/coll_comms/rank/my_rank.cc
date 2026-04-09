@@ -31,12 +31,15 @@ HcommChannelDesc ChannelDescHccl2Hcomm(const HcclChannelDesc &hcclDesc)
     hcommDesc.memHandles = reinterpret_cast<HcommMemHandle *>(hcclDesc.memHandles);
     hcommDesc.memHandleNum = hcclDesc.memHandleNum;
     (void)memcpy_s(hcommDesc.raws, sizeof(hcommDesc.raws), hcclDesc.raws, sizeof(hcommDesc.raws));
-
-    hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
-    hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
-    hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
-    hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
-    
+    if (hcclDesc.channelProtocol == COMM_PROTOCOL_ROCE) {
+        hcommDesc.roceAttr.retryCnt = hcclDesc.roceAttr.retryCnt;
+        hcommDesc.roceAttr.retryInterval = hcclDesc.roceAttr.retryInterval;
+        hcommDesc.roceAttr.sl = hcclDesc.roceAttr.sl;
+        hcommDesc.roceAttr.tc = hcclDesc.roceAttr.tc;
+    } else if (hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_CTP ||
+               hcclDesc.channelProtocol == COMM_PROTOCOL_UBC_TP) {
+        hcommDesc.ubcAttr.qos = hcclDesc.ubcAttr.qos;
+    }
     return hcommDesc;
 }
 
