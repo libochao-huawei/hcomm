@@ -67,6 +67,24 @@ typedef enum {
     COMM_ENGINE_CCU = 5,          ///< CCU引擎
 } CommEngine;
 
+const std::map<CommEngine, std::string> COMMENGINE_STATUS_STR_MAP{
+    {CommEngine::COMM_ENGINE_CPU, "COMM_ENGINE_CPU"},
+    {CommEngine::COMM_ENGINE_CPU_TS, "COMM_ENGINE_CPU_TS"},
+    {CommEngine::COMM_ENGINE_AICPU, "COMM_ENGINE_AICPU"},
+    {CommEngine::COMM_ENGINE_AICPU_TS, "COMM_ENGINE_AICPU_TS"},
+    {CommEngine::COMM_ENGINE_AIV, "COMM_ENGINE_AIV"},
+    {CommEngine::COMM_ENGINE_CCU, "COMM_ENGINE_CCU"}}
+};
+inline std::string GetCommEngineStatusStr(CommEngine status)
+{
+    auto iter = COMMENGINE_STATUS_STR_MAP.find(status);
+    if (iter == COMMENGINE_STATUS_STR_MAP.end()) {
+        return "Unknown";
+    } else {
+        return iter->second;
+    }
+}
+
 /**
  * @brief 通信协议类型枚举
  */
