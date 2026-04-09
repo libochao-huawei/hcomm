@@ -16,8 +16,6 @@
 namespace Hccl {
 
 constexpr u64 AG_2D_SMALL_DATA_SIZE = 1 * 1024 * 1024;
-constexpr u64 AG_CCU_PARALLEL_MAX_DATA_SIZE = 64 * 1024 * 1024;
-constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
@@ -99,17 +97,10 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 HCCL_WARNING("[Algo][AllGatherAutoSelector] 2DieFullMesh is not supported yet for schedule mode.");
                 return SelectorStatus::NOT_MATCH;
             } else {
-                double ratio; // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
-                if (rankSize_ == 0) {
-                    HCCL_WARNING("[AllGatherAutoSelector]the selector is not set RankSize_]");
-                    ratio = 1;
+                if(IsSmallDataCCU(dataSize_, rankSize_)){
+                    primQueueGenName = "CcuAllGatherParallelMesh1DNHR";//64M以下跑ccu
                 } else {
-                    ratio = DEFAULT_RANK_SIZE / rankSize_;
-                }
-                if (dataSize_ * ratio < AG_CCU_PARALLEL_MAX_DATA_SIZE) {
-                    primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
-                } else {
-                    return SelectorStatus::NOT_MATCH;
+                    return SelectorStatus::NOT_MATCH;//64M以上切为aicpu
                 }
             }
         } else {
@@ -135,17 +126,10 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                 HCCL_WARNING("[Algo][AllGatherAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
                 return SelectorStatus::NOT_MATCH;
             } else {
-                double ratio; // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
-                if (rankSize_ == 0) {
-                    HCCL_WARNING("[AllGatherAutoSelector]the selector is not set RankSize_]");
-                    ratio = 1;
+                if(IsSmallDataCCU(dataSize_, rankSize_)){
+                    primQueueGenName = "CcuAllGatherParallelMesh1DNHR";//64M以下跑ccu
                 } else {
-                    ratio = DEFAULT_RANK_SIZE / rankSize_;
-                }
-                if (dataSize_ * ratio < AG_CCU_PARALLEL_MAX_DATA_SIZE) {
-                    primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
-                } else {
-                    return SelectorStatus::NOT_MATCH;
+                    return SelectorStatus::NOT_MATCH;//64M以上切为aicpu
                 }
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
