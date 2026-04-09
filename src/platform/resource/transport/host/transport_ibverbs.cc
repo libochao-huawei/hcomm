@@ -632,20 +632,20 @@ HcclResult TransportIbverbs::CreateOneQp(
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode),
         HCCL_E_ROCE_CONNECT);
 
-    // 表示没有通过config配置，则使用环境变量配置
-    CHK_RET(SetQpAttrQos(qpHandle, machinePara_.tc, machinePara_.sl));
-    // 配置RDMA Timeout时间
-    CHK_RET(SetQpAttrTimeOut(qpHandle));
-    // 配置RDMA Retry Cnt重传次数
-    CHK_RET(SetQpAttrRetryCnt(qpHandle));
-    // qpn map 插入
-    struct QpAttr attr{} ;
-    CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
+    // 表示没有通过config配置，则使用环境变量配置 
+     CHK_RET(SetQpAttrQos(qpHandle, machinePara_.tc, machinePara_.sl)); 
+     // 配置RDMA Timeout时间 
+     CHK_RET(SetQpAttrTimeOut(qpHandle)); 
+     // 配置RDMA Retry Cnt重传次数 
+     CHK_RET(SetQpAttrRetryCnt(qpHandle)); 
+     // qpn map 插入 
+     struct QpAttr attr{} ;	 
+     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
 
-    g_qpn2IbversLinkMap_.Emplace(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn), this);
-
-    HCCL_DEBUG("ra qp create success, use input udpSport[%u].", udpSport);
-    return HCCL_SUCCESS;
+     g_qpn2IbversLinkMap_.Emplace(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn), this);	 
+ 
+     HCCL_DEBUG("ra qp create success, use input udpSport[%u].", udpSport);	 
+     return HCCL_SUCCESS;
 }
 
 HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创建QP（下沉模板不够用多QP）
@@ -676,15 +676,16 @@ HcclResult TransportIbverbs::CreateMultiQp(s32 qpMode, u32 qpsPerConnection)
     // 配置了多qp源端口号时的处理流程
     if (machinePara_.srcPorts.size() > 0) {
         HCCL_DEBUG("[TransportIbverbs][CreateMultiQp]use Multi qp create qps.");
+
         // 创建qp
         for (const auto &port : machinePara_.srcPorts) {
             QpHandle qpHandle = nullptr;
             AiQpInfo tmpAiQpInfo{};
-            CHK_RET(CreateOneQp(qpMode,
-                qpsPerConnection,
-                qpHandle,
-                tmpAiQpInfo,
-                machinePara_.isAicpuModeEn, port));
+            CHK_RET(CreateOneQp(qpMode,	 
+                 qpsPerConnection,	 
+                 qpHandle,	 
+                 tmpAiQpInfo,	 
+                 machinePara_.isAicpuModeEn, port));
             multiCombineQpHandles_.push_back(CombineQpHandle(qpHandle));
             combineAiQpInfos_.push_back(CombineQpInfo(tmpAiQpInfo));
         }
@@ -944,6 +945,7 @@ HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, co
     u32 txSendDataTimes = (len == 0) ? 1 : (len + RDMA_SEND_MAX_SIZE - 1) / RDMA_SEND_MAX_SIZE;
     CHK_RET(GetMemInfo(dstMemType, &dstMemPtr, &dstMemSize));
 
+    CHK_PTR_NULL(dstMemPtr);
     if (dstOffset > dstMemSize) {
         HCCL_ERROR("[TransportIbverbs][TxAsync]dst_mem_type=%d, dst_mem_ptr=%p, dst_offset=%llu, dst_mem_size=%llu Byte",
             dstMemType, dstMemPtr, dstOffset, dstMemSize);
