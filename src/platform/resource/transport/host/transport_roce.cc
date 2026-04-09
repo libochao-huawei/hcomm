@@ -207,6 +207,9 @@ HcclResult TransportRoce::GetSocketInfo()
 {
     CHK_RET(GetSocketInfos(socketsInfo_));
     for (u32 nicIdx = 0; nicIdx < socketsInfo_.size(); nicIdx++) {
+        CHK_PRT_RET(socketsInfo_[nicIdx].empty(),
+            HCCL_ERROR("[Get][SocketInfo]socketsInfo_[%u] is empty, cannot access index 0", nicIdx),
+            HCCL_E_INTERNAL);
         if (nicSocketHandle_ == socketsInfo_[nicIdx][0].socketHandle) {
             for (u32 fdHandleIdx = 0; fdHandleIdx < socketsInfo_[nicIdx].size(); fdHandleIdx++) {
                 socketFdHandles_.push_back(socketsInfo_[nicIdx][fdHandleIdx].fdHandle);

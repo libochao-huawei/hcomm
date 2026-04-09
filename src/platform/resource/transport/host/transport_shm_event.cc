@@ -355,6 +355,10 @@ HcclResult TransportShmEvent::WaitPeerMemConfig(void **memPtr, const u8 *memName
     CHK_PTR_NULL(memPtr);
     CHK_PTR_NULL(memName);
 
+    CHK_PRT_RET(offset >= size,
+        HCCL_ERROR("[Wait][WaitPeerMemConfig]offset[%llu] >= size[%llu], invalid offset", 
+            offset, size), HCCL_E_INTERNAL);
+
     bool firstOpened = false;
     // 支持进程间、进程内都可以通过name获取对端内存
     HcclResult ret = MemNameRepository::GetInstance(deviceLogicId_)->OpenIpcMem(memPtr, size, memName, 65,
