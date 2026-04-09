@@ -576,14 +576,22 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     }
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
+    u64 totalSize = 0;
+    for (u32 i = 0; i < insNum; i++) {
+        totalSize += GetRmaBufSlicelite(loc[i]).GetSize();
+    }
+
+    auto lastLocSlice = GetRmaBufSlicelite(loc[insNum - 1]);
+    RmaBufSliceLite locWithTotalSize(lastLocSlice.GetAddr(), totalSize, lastLocSlice.GetLkey(), lastLocSlice.GetTokenId());
+
     if (transferOp[insNum - 1].reduceIn.reduceOp == ReduceOp::INVALID) {
         DmaOp dmaOp = DmaOp::HCCL_DMA_WRITE;
         if (transferOp[insNum - 1].transType == TransferType::READ) {
             dmaOp = DmaOp::HCCL_DMA_READ;
         }
-        ProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), stream, dmaOp, taskId);
+        ProfilingProcess(locWithTotalSize, GetRmtRmaBufSliceLite(rmt[insNum - 1]), stream, dmaOp, taskId);
     } else {
-        ReduceProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), transferOp[insNum - 1].reduceIn, stream, taskId);
+        ReduceProfilingProcess(locWithTotalSize, GetRmtRmaBufSliceLite(rmt[insNum - 1]), transferOp[insNum - 1].reduceIn, stream, taskId);
     }
 }
 
