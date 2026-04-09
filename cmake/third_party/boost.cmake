@@ -14,9 +14,13 @@ set(BOOST_NAME "boost")
 set(BOOST_FILE "boost_1_87_0.tar.gz")
 set(BOOST_URL "https://gitcode.com/cann-src-third-party/boost/releases/download/v1.87.0/${BOOST_FILE}")
 set(BOOST_PKG_PATH ${CANN_3RD_LIB_PATH}/${BOOST_FILE})
-set(BOOST_SRC_PATH ${PROJECT_SOURCE_DIR}/build/third_party/boost)
+set(BOOST_SRC_PATH ${CANN_3RD_LIB_PATH}/boost)
 
-if(NOT EXISTS ${BOOST_SRC_PATH}/boost/config.hpp)
+if(EXISTS ${BOOST_SRC_PATH}/boost/config.hpp)
+    # 离线编译场景，优先使用已解压的源码目录
+    message(STATUS "[ThirdParty] Found boost source: ${BOOST_SRC_PATH}")
+    add_custom_target(third_party_boost)
+else()
     if(EXISTS ${BOOST_PKG_PATH})
         # 离线编译场景，优先使用已下载的包
         message(STATUS "[ThirdParty] Found local boost package: ${BOOST_PKG_PATH}")

@@ -21,7 +21,6 @@
 #include "env_config.h"
 #include "data_type.h"
 #include "template_utils.h"
-#include "ccu_alg_template_base.h"
 #include "buffer_type.h"
 #include "ccu_alg_template_base.h"
 #include "executor_utils.h"

@@ -39,7 +39,7 @@ SocketHandle SocketHandleManager::Create(DevId devicePhyId, const PortData &loca
     RaInterface intf{};
     intf.phyId = devicePhyId;
     if (localPort.GetType() == PortDeploymentType::P2P) {
-        intf.address = IpAddress(devicePhyId);
+        intf.address = localPort.GetAddr();
     } else if (localPort.GetType() == PortDeploymentType::DEV_NET) {
         intf.address = localPort.GetAddr();
     } else {

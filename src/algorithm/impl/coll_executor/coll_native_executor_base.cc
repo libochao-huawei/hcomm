@@ -337,8 +337,8 @@ HcclResult CollNativeExecutorBase::AddSubStreamToProfiling()
 {
 #ifndef OPEN_HCCL_TEST
     if (((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-        hccl::ProfilingManagerPub::GetAddtionInfoState() &&
-        hccl::ProfilingManagerPub::GetTaskApiState() &&
+        static_cast<bool>(hccl::ProfilingManagerPub::GetAddtionInfoState()) &&
+        static_cast<bool>(hccl::ProfilingManagerPub::GetTaskApiState()) &&
         !hccl::ProfilingManagerPub::GetThreadCaptureStatus())) {
         return HCCL_SUCCESS;
     }
@@ -470,7 +470,7 @@ HcclResult CollNativeExecutorBase::GenerateRecordWaitStreams(
 }
 
 HcclResult CollNativeExecutorBase::HoldAllRanksOnCurrentOp(
-    OpParam &param, ExecMem &execMem, PrepareData &prepareData, std::vector<LINK> links)
+    const OpParam &param, ExecMem &execMem, PrepareData &prepareData, std::vector<LINK> links)
 {
     (void) param;
     u32 subStreamsNum = (*prepareData.subStreamsPtr).size();

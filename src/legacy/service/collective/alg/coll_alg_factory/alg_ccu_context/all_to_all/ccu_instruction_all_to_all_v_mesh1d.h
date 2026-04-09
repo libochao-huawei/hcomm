@@ -45,17 +45,17 @@ class CcuTaskArgAllToAllVMesh1D : public CcuTaskArg {
 public:
     explicit CcuTaskArgAllToAllVMesh1D(uint64_t inputAddr, uint64_t outputAddr, std::vector<uint64_t> sliceSize,
         uint64_t token, uint64_t srcOffset, uint64_t dstOffset, const A2ASendRecvInfo& localSendRecvInfo) :
-        inputAddr(inputAddr), outputAddr(outputAddr), sliceSize(sliceSize), token(token), srcOffset(srcOffset),
-        dstOffset(dstOffset),
-        localSendRecvInfo(localSendRecvInfo) {}
+        inputAddr_(inputAddr), outputAddr_(outputAddr), sliceSize_(sliceSize), token_(token), srcOffset_(srcOffset),
+        dstOffset_(dstOffset),
+        localSendRecvInfo_(localSendRecvInfo) {}
 
-    uint64_t inputAddr;
-    uint64_t outputAddr;
-    std::vector<uint64_t> sliceSize;
-    uint64_t token;
-    uint64_t srcOffset;
-    uint64_t dstOffset;
-    A2ASendRecvInfo localSendRecvInfo;
+    uint64_t inputAddr_;
+    uint64_t outputAddr_;
+    std::vector<uint64_t> sliceSize_;
+    uint64_t token_;
+    uint64_t srcOffset_;
+    uint64_t dstOffset_;
+    A2ASendRecvInfo localSendRecvInfo_;
 };
 
 class CcuInstructionAllToAllVMesh1D : public CcuInstruction {
@@ -89,24 +89,25 @@ public:
         return;
     }
 
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionAllToAllVMesh1D instype is CCU_ALLTOALLV_MESH_1D_DIRECT.");
+        return instType_;
+    }
+
     std::string Describe() const override
     {
         return StringFormat("CcuInstructionAllToAllVMesh1D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgAllToAllVMesh1D>(dimSize_, rankId_, op_, tempVTopo_, loadFromMem_);
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override

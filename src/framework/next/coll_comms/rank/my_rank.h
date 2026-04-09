@@ -20,16 +20,22 @@
 #include "comm_mems/comm_mems.h"
 #include "engine_ctxs/engine_ctxs.h"
 #include "endpoint_mgr.h"
+#include "communicator/ns_recovery/ns_recovery.h"
+#include "hdc_pub.h"
+#include "rank_graph.h"
+#include "orion_adapter_hccp.h"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 
+
 namespace hccl {
+
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config, const ManagerCallbacks& callbacks, RankGraph* rankGraph);
     ~MyRank();
 
     HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum);
@@ -49,13 +55,25 @@ public:
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
     HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
+
+    // Ns recovery
+    void SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<HDCommunicate> kfcStatusTransferD2H);
+    std::vector<ChannelHandle> GetAllChannelList();
+    HcclResult StopLaunch();
+    HcclResult Clean();
+    HcclResult Resume();
+
 private:
-    HcclResult BatchCreateSockets(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+    HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(const HcclChannelDesc* channelDescs, ChannelHandle *channelHandles, uint32_t channelNum);
     HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
+    HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
+        const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
+    HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
@@ -73,6 +91,12 @@ private:
     std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
 
     ManagerCallbacks callbacks_;
+
+    // RankGraph (临时放在myRank里面，后面会随着createchannel整体迁移到RankPairMgr上)
+    RankGraph* rankGraph_{nullptr};
+
+    // Ns recovery
+    std::unique_ptr<NsRecoveryProcessor> nsRecoveryProcessor_{nullptr};
 };
 
 } // namespace hccl

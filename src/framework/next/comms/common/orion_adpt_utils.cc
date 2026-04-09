@@ -34,7 +34,8 @@ HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr
 
     if (commAddr.type == COMM_ADDR_TYPE_EID){
         Hccl::Eid inputEid;
-        std::memcpy(inputEid.raw, commAddr.eid, Hccl::URMA_EID_LEN);
+        s32 sret = memcpy_s(inputEid.raw, Hccl::URMA_EID_LEN, commAddr.eid, Hccl::URMA_EID_LEN);
+        CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
         ipAddr = Hccl::IpAddress(inputEid);
         return HCCL_SUCCESS;
     }
@@ -119,7 +120,8 @@ static HcclResult EndpointLocTypeToPortDeploymentType(const EndpointLocType locT
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp,
+    Hccl::LinkData &linkData, u32 reuseIdx)
 {
     Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
     CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
@@ -141,14 +143,14 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
         portDeploymentType,
         linkProtocol, 
         locDevPhyId, rmtDevPhyId,
-        locAddr, rmtAddr
+        locAddr, rmtAddr, reuseIdx
     );
 
     return HCCL_SUCCESS;
 }
 
 HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const uint32_t rmtRank,
-    const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData)
+    const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData, u32 reuseIdx)
 {
     Hccl::PortDeploymentType portDeploymentType = Hccl::PortDeploymentType::INVALID;
     CHK_RET(EndpointLocTypeToPortDeploymentType(locEp.loc.locType, portDeploymentType));
@@ -166,7 +168,7 @@ HcclResult EndpointDescPairToLinkDataWithRankIds(const uint32_t myRank, const ui
         portDeploymentType,
         linkProtocol, 
         myRank, rmtRank,
-        locAddr, rmtAddr
+        locAddr, rmtAddr, reuseIdx
     );
 
     return HCCL_SUCCESS;

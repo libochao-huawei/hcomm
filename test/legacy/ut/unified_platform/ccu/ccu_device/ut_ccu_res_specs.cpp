@@ -143,7 +143,7 @@ void MockCcuOneDieResource(CcuResSpecifications &ccuResSpecs,
 {
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().with(any()).will(returnValue(MAX_MODULE_DEVICE_NUM));
 
-    ccuResSpecs.Init(devLogicId);
+    ccuResSpecs.Init();
     ccuResSpecs.ccuVersion = ccuVersion;
     ccuResSpecs.dieEnableFlags[dieId] = true;
 
@@ -192,7 +192,7 @@ TEST_F(CcuResSpecsTest, Ut_Init_When_CcuDriverOk_Expect_Return_Ok)
 
     CcuResSpecifications ccuResSpecs;
     const int32_t devLogicId = MAX_MODULE_DEVICE_NUM; // 避免影响其他用例
-    ccuResSpecs.Init(devLogicId);
+    ccuResSpecs.Init();
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
         EXPECT_EQ(ccuResSpecs.dieEnableFlags[dieId], true);
     }
@@ -206,7 +206,7 @@ TEST_F(CcuResSpecsTest, Ut_Init_When_AX_Mainboard_Expect_IsAX_Equals_To_True)
     MockRtGetDeviceInfo(outVal);
 
     CcuResSpecifications ccuResSpecs;
-    ccuResSpecs.Init(devLogicId);
+    ccuResSpecs.Init();
     EXPECT_EQ(ccuResSpecs.isAX, true);
 }
 
@@ -218,7 +218,7 @@ TEST_F(CcuResSpecsTest, Ut_Init_When_Not_AX_Mainboard_Expect_IsAX_Equals_To_Fals
     MockRtGetDeviceInfo(outVal);
 
     CcuResSpecifications ccuResSpecs;
-    ccuResSpecs.Init(devLogicId);
+    ccuResSpecs.Init();
     EXPECT_EQ(ccuResSpecs.isAX, false);
 }
 

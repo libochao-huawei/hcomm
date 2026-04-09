@@ -38,7 +38,7 @@ struct HcclAicpuCommunicatorLite {
     HcclAicpuLocBufLite opBaseScratch;
     uint64_t            opCounterAddr;
     char                commId[COMM_NAME_MAX_LENGTH]{0};
-    u32                 opIndex{0};
+    u32                 opIndex_{0};
 };
 
 struct HcclAicpuOpLite {
@@ -56,6 +56,23 @@ struct HcclAicpuOpLite {
 struct HcclDeviceEnvConfigLite {
     u32  hcclExecTimeout{1080};
     bool taskExceptionEnable{true};
+};
+
+struct BatchSendRecvDataDes {
+    u32 itemNum;
+    HcclSendRecvItem batchSendRecvItem[];
+};
+
+struct AllToAllvDataDes {
+    u8 sendType;
+    u8 recvType;
+    u64 sendRecvInfos[];
+};
+
+struct AllToAllvcDataDes {
+    u8 sendType;
+    u8 recvType;
+    u64 sendCountMatrix[];
 };
 
 struct HcclKernelParamLite {

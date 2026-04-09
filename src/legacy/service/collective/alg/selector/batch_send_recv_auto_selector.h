@@ -21,8 +21,9 @@ namespace Hccl {
 class BatchSendRecvAutoSelector : public AutoSelectorBase {
 private:
     SelectorStatus SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
-                                   const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
-                                   std::string                                 &primQueueGenName) const override;
+        const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const override;
+    SelectorStatus SelectAivAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
+        const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const override;
 };
 
 } // namespace Hccl

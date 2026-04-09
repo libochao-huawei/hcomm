@@ -283,7 +283,7 @@ std::vector<uint64_t> CcuContextAllGatherMeshMem2Mem2D::GeneArgs(const CcuTaskAr
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t xAxisSize  = taskArg->xAxisSize_;
     uint64_t yAxisSize  = taskArg->yAxisSize_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
     uint64_t sliceSize  = xAxisSize + yAxisSize;
     uint64_t tokenValue = taskArg->token_;
 

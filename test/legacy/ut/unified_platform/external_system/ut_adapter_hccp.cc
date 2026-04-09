@@ -237,6 +237,17 @@ TEST_F(AdapterHccpTest, hrtRaSocketListenOneStart_again)
     EXPECT_THROW(HrtRaSocketListenOneStart(listenInfo), NetworkApiException);
 }
 
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketTryListenOneStart_When_InValid_IP_Expect_Throw_Exception)
+{
+    MOCKER(RaSocketListenStart).stubs().will(returnValue(SOCK_EADDRNOTAVAIL));
+
+    SocketHandle socketHandle = nullptr;
+
+    RaSocketListenParam listenInfo(socketHandle, 0);
+
+    EXPECT_THROW(HrtRaSocketTryListenOneStart(listenInfo), NetworkApiException);
+}
+
 TEST_F(AdapterHccpTest, HrtRaSocketInit_OK)
 {
     // Given
@@ -808,4 +819,183 @@ TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_0_Expect_Return_False
     RdmaHandle handle = (void *)0x1234;
 
     EXPECT_EQ(HraGetRtpEnable(handle), false);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_InfoIsNull_Expect_ReturnPtrError)
+{
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+
+    HcclResult ret = HrtRaGetTlsStatus(nullptr, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(tlsStatus, TlsStatus::UNKNOWN);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_InterfaceVersionQueryFails_Expect_ReturnNotSupportAndUnknown)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::DISABLE;
+
+    MOCKER(RaGetInterfaceVersion).stubs().will(returnValue(-1));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(tlsStatus, TlsStatus::UNKNOWN);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_InterfaceVersionTooLow_Expect_ReturnNotSupportAndUnknown)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::DISABLE;
+    u32 lowVersion = 0;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&lowVersion, sizeof(lowVersion)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(tlsStatus, TlsStatus::UNKNOWN);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_RaGetTlsEnableFails_Expect_ReturnNetworkErrorAndDisable)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    u32 supportVersion = 1;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .will(returnValue(0));
+    MOCKER(RaGetTlsEnable).stubs().will(returnValue(-1));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+    EXPECT_EQ(tlsStatus, TlsStatus::DISABLE);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_TlsEnableIsTrue_Expect_ReturnSuccessAndEnable)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    u32 supportVersion = 1;
+    bool tlsEnable = true;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .will(returnValue(0));
+    MOCKER(RaGetTlsEnable).stubs()
+        .with(any(), outBoundP(&tlsEnable, sizeof(tlsEnable)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tlsStatus, TlsStatus::ENABLE);
+}
+
+TEST_F(AdapterHccpTest, Ut_HrtRaGetTlsStatus_When_TlsEnableIsFalse_Expect_ReturnSuccessAndDisable)
+{
+    RaInfo info {};
+    info.phyId = 0;
+    TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+    u32 supportVersion = 1;
+    bool tlsEnable = false;
+
+    MOCKER(RaGetInterfaceVersion).stubs()
+        .with(any(), any(), outBoundP(&supportVersion, sizeof(supportVersion)))
+        .will(returnValue(0));
+    MOCKER(RaGetTlsEnable).stubs()
+        .with(any(), outBoundP(&tlsEnable, sizeof(tlsEnable)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetTlsStatus(&info, tlsStatus);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(tlsStatus, TlsStatus::DISABLE);
+}
+
+
+TEST_F(AdapterHccpTest, HrtRaGetEidByIp_ok)
+{
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    std::vector<IpAddress> ipV4AddrList;
+    ipV4AddrList.emplace_back(IpAddress(1)); // simple IPv4 placeholder
+    std::vector<IpAddress> eidAddrList;
+
+    unsigned int fakeNum = 1;
+    union HccpEid fakeEid[1];
+    (void)memset_s(fakeEid, sizeof(fakeEid), 0, sizeof(fakeEid));
+    // set a non-zero raw to avoid all-zero ambiguity
+    fakeEid[0].raw[0] = 1;
+
+    MOCKER(RaGetEidByIp)
+        .stubs()
+        .with(any(), any(), outBoundP(fakeEid, sizeof(fakeEid)), outBoundP(&fakeNum, sizeof(fakeNum)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(eidAddrList.size(), 1u);
+}
+
+TEST_F(AdapterHccpTest, HrtRaGetEidByIp_ra_get_eid_by_ip_error)
+{
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    std::vector<IpAddress> ipV4AddrList;
+    ipV4AddrList.emplace_back(IpAddress(1));
+    std::vector<IpAddress> eidAddrList;
+
+    MOCKER(RaGetEidByIp).stubs().will(returnValue(1));
+
+    EXPECT_THROW(HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList), NetworkApiException);
+}
+
+TEST_F(AdapterHccpTest, HrtRaGetEidByIp_count_mismatch_returns_internal)
+{
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    std::vector<IpAddress> ipV4AddrList;
+    ipV4AddrList.emplace_back(IpAddress(1));
+    std::vector<IpAddress> eidAddrList;
+
+    // Ra returns success but reports different num (0) than input size (1)
+    unsigned int returnedNum = 0;
+    union HccpEid fakeEid[1];
+    (void)memset_s(fakeEid, sizeof(fakeEid), 0, sizeof(fakeEid));
+
+    MOCKER(RaGetEidByIp)
+        .stubs()
+        .with(any(), any(), outBoundP(fakeEid, sizeof(fakeEid)), outBoundP(&returnedNum, sizeof(returnedNum)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList);
+
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    EXPECT_TRUE(eidAddrList.empty());
+}
+
+TEST_F(AdapterHccpTest, HrtRaGetEidByIp_empty_input_ok)
+{
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    std::vector<IpAddress> ipV4AddrList; // empty
+    std::vector<IpAddress> eidAddrList;
+
+    unsigned int returnedNum = 0;
+    MOCKER(RaGetEidByIp)
+        .stubs()
+        .with(any(), any(), any(), outBoundP(&returnedNum, sizeof(returnedNum)))
+        .will(returnValue(0));
+
+    HcclResult ret = HrtRaGetEidByIp(handle, ipV4AddrList, eidAddrList);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(eidAddrList.empty());
 }

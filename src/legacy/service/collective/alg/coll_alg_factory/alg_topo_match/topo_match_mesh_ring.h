@@ -46,4 +46,4 @@ private:
 };
 } // namespace Hccl
 
-#endif // !HCCLV2_TOPO_MATCH_RING_RING
+#endif // !HCCLV2_TOPO_MATCH_MESH_RING

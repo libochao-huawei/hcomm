@@ -41,11 +41,11 @@ private:
     void DoGroupBroadcast(CcuRep::Variable &srcBase, std::vector<CcuRep::Variable> &dstBase, CcuRep::Variable &offset,
         GroupOpSize &goSize);
 
-    std::vector<uint64_t> dimSize_;
     uint32_t axisId_{0};
     DataType dataType_;
     DataType outputDataType_;
-
+    uint16_t selfBit_{0};
+    uint16_t allBit_{0};
     uint32_t otherAxisId_{0};
     std::vector<uint64_t> myRankIdxInAxis_;
     uint64_t myRankIdxInCurrentAxis_{0};
@@ -53,9 +53,7 @@ private:
     uint64_t myRankIdxInOtherAxis_{0};
     uint64_t otherAxisRankSize_{0};
 
-    uint16_t selfBit_{0};
-    uint16_t allBit_{0};
-
+    std::vector<uint64_t> dimSize_;
     std::vector<CcuRep::Variable> inputAddr_;
     std::vector<CcuRep::Variable> outputAddr_;
     std::vector<CcuRep::Variable> token_;

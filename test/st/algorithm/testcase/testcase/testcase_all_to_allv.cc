@@ -487,7 +487,6 @@ TEST_F(AllToAllVTest, alltoallv_test_910_93_opbase_2superpod_RunAlltoAllDirectFu
 
 TEST_F(AllToAllVTest, alltoallv_test_91093_opbase_AlltoAllMeshAivFor91093Executor)
 {
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch, HcclResult(const AivOpArgs&, const AivTopoArgs&,
     const AivResourceArgs&, const AivAlgArgs&, const ExtraArgsV2&,
     AivProfilingInfo&)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -519,7 +518,6 @@ TEST_F(AllToAllVTest, alltoallv_test_91093_opbase_AlltoAllMeshAivFor91093Executo
 
 TEST_F(AllToAllVTest, alltoallv_test_91093_opbase_AlltoAllMeshAivFor91093Executor2)
 {
-    MOCKER(ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(ExecuteKernelLaunch, HcclResult(const AivOpArgs&, const AivTopoArgs&,
     const AivResourceArgs&, const AivAlgArgs&, const ExtraArgsV2&,
     AivProfilingInfo&)).stubs().will(returnValue(HCCL_SUCCESS));

@@ -17,6 +17,8 @@ namespace Hccl {
 SelectorStatus AllGatherVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AllGatherVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     if (topoInfo.levelNum > 1) {
         HCCL_WARNING("[Algo][AllGatherVAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
@@ -38,6 +40,9 @@ SelectorStatus AllGatherVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "CcuAllGatherVMesh1D";
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][AllGatherVAutoSelector] level0 PCIE mix is not supported yet for ccu_ms mode.");
+                return SelectorStatus::NOT_MATCH;
             } else { // MS 不支持
                 HCCL_WARNING("[Algo][AllGatherVAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
                     topoInfo.level0Shape);
@@ -60,6 +65,8 @@ SelectorStatus AllGatherVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
 SelectorStatus AllGatherVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)op;
+    (void)configAlgMap;
     HCCL_DEBUG("[AllGatherVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -81,6 +88,9 @@ SelectorStatus AllGatherVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &top
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
                 primQueueGenName = "CcuAllGatherVMesh1D";
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][AllGatherVAutoSelector] level0 PCIE mix is not supported yet for ccu_ms mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 HCCL_WARNING("[Algo][AllGatherVAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
                 topoInfo.level0Shape);

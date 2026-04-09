@@ -11,9 +11,11 @@
 #define AICPU_TS_URMA_CHANNEL_H
 
 #include "../channel.h"
+#include "../../sockets/socket_mgr.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../legacy/framework/resource_manager/socket/socket_manager.h"
 #include "../../../../../../legacy/unified_platform/pub_inc/buffer_key.h"
 #include "rma_connection.h"
 #include "ub_mem_transport.h"
@@ -30,16 +32,23 @@ public:
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
+    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
+    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 private:
+    HcclResult Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum, std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult ParseInputParam();
     HcclResult BuildAttr();
     HcclResult BuildConnection();
     HcclResult BuildNotify();
-    HcclResult BuildBuffer();
+    HcclResult BuildBuffer(std::vector<std::shared_ptr<Hccl::Buffer>> &bufs);
     HcclResult BuildUbMemTransport();
+    HcclResult BuildSocket();
 
     HcclResult PackOpData(std::vector<char> &data);
 
@@ -54,6 +63,7 @@ private:
     EndpointDesc                                                remoteEp_{};
     uint32_t                                                    notifyNum_{0};
     std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_{};
+    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufsTemp{}; // channel 复用时暂存新增 buffer
 
     // --------------------- 具体成员 ---------------------
     Hccl::Socket*                                               socket_{nullptr};
@@ -61,9 +71,12 @@ private:
     std::unique_ptr<Hccl::UbMemTransport>                       memTransport_{nullptr};
     Hccl::BaseMemTransport::Attribution                         attr_{};
     Hccl::BaseMemTransport::CommonLocRes                        commonRes_{};
+    std::vector<Hccl::LocalRmaBuffer *>                         bufferVecTemp_; // channel 复用时暂存新增 rmaBuffer
     std::vector<std::unique_ptr<Hccl::DevUbConnection>>         connections_{};
     std::vector<std::unique_ptr<Hccl::LocalUbRmaBuffer>>        localRmaBuffers_{};
     std::vector<std::unique_ptr<Hccl::UbLocalNotify>>           localNotifies_{};
+    std::unique_ptr<Hccl::Socket>                               serverSocket_;
+    std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
 };
 
 } // namespace hcomm

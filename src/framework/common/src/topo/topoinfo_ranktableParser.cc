@@ -122,8 +122,8 @@ HcclResult TopoInfoRanktableParser::ReadFile(const std::string &readFile)
     if (!infile) {
         RPT_INPUT_ERR(true,
                 "EI0004",
-                std::vector<std::string>({"error_reason", "ranktable_path"}),
-                std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, readFile.c_str()}));
+                std::vector<std::string>({"ranktable_path", "error_reason"}),
+                std::vector<std::string>({readFile.c_str(), RANKTABLE_PARSE_ERROR_REASON}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx],open file %s failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_INTERNAL), readFile.c_str());
         return HCCL_E_INTERNAL;
@@ -134,8 +134,8 @@ HcclResult TopoInfoRanktableParser::ReadFile(const std::string &readFile)
         } catch (...) {
             RPT_INPUT_ERR(true,
                 "EI0004",
-                std::vector<std::string>({"error_reason", "ranktable_path"}),
-                std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, readFile.c_str()}));
+                std::vector<std::string>({"ranktable_path", "error_reason"}),
+                std::vector<std::string>({readFile.c_str(), RANKTABLE_PARSE_ERROR_REASON}));
             HCCL_ERROR("[%s][%s]errNo[0x%016llx] load file[%s] to json fail. please check json file!",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(),
@@ -230,8 +230,8 @@ HcclResult TopoInfoRanktableParser::LoadString(const std::string &string)
     if (string.empty()) {
         RPT_INPUT_ERR(true,
         "EI0004",
-        std::vector<std::string>({"error_reason", "ranktable_path"}),
-        std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, string}));
+        std::vector<std::string>({"ranktable_path", "error_reason"}),
+        std::vector<std::string>({string, RANKTABLE_PARSE_ERROR_REASON}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] json string length is zero", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
@@ -241,8 +241,8 @@ HcclResult TopoInfoRanktableParser::LoadString(const std::string &string)
     HcclResult ret = JsonUtils::ParseInformation(fileContent_, string);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0004",
-        std::vector<std::string>({"error_reason", "ranktable_path"}),
-        std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, string}));
+        std::vector<std::string>({"ranktable_path", "error_reason"}),
+        std::vector<std::string>({string, RANKTABLE_PARSE_ERROR_REASON}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]Failed to read the string %s into JSON.", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), string.c_str()), ret);
@@ -273,8 +273,8 @@ HcclResult TopoInfoRanktableParser::LoadFileInit(std::string &rankTableM)
     HcclResult ret = LoadFile(rankTableFile_);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0004",
-        std::vector<std::string>({"error_reason", "ranktable_path"}),
-        std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, rankTableFile_}));
+        std::vector<std::string>({"ranktable_path", "error_reason"}),
+        std::vector<std::string>({rankTableFile_, RANKTABLE_PARSE_ERROR_REASON}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]load file[%s] error", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), rankTableFile_.c_str()), ret);

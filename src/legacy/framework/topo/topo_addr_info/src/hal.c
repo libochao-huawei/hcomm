@@ -65,8 +65,7 @@ typedef enum {
 
 
 static int (*dcmi_init)(void);
-static int (*dcmi_get_card_id_device_id_from_logicid)(int *card_id, int *device_id, int logic_id);
-static int (*dcmi_get_urma_device_cnt)(int card_id, int device_id, unsigned int *dev_cnt);
+
 static int (*dcmiv2_get_urma_device_cnt)(int npu_id, unsigned int *dev_cnt);
 
 static int (*dcmiv2_get_eid_list_by_urma_dev_index)(int npu_id,
@@ -80,9 +79,7 @@ static int (*dcmiv2_get_device_pcie_info)(int npu_id, struct dcmi_pcie_info_all*
 
 static int (*dcmiv2_get_device_info)(int npu_id, enum dcmi_main_cmd main_cmd, unsigned int sub_cmd, void *buf, unsigned int*size);
 
-static int (*dcmi_get_device_phyid_from_logicid)(unsigned int logic_id, unsigned int* phy_id);
-
-static int (*dcmi_get_device_logicid_from_phyid)(unsigned int phy_id, unsigned int* logic_id);
+static int (*get_logicid_from_phyid)(unsigned int phy_id, unsigned int* logic_id);
 
 int load_dcmi()
 {
@@ -97,21 +94,18 @@ int load_dcmi()
         return -1;
     }
     dcmi_init = dlsym(dcmi, "dcmiv2_init");
-    dcmi_get_card_id_device_id_from_logicid = dlsym(dcmi, "dcmi_get_card_id_device_id_from_logicid");
-    dcmi_get_urma_device_cnt = dlsym(dcmi, "dcmi_get_urma_device_cnt");
     dcmiv2_get_urma_device_cnt = dlsym(dcmi, "dcmiv2_get_urma_device_cnt");
     dcmiv2_get_eid_list_by_urma_dev_index = dlsym(dcmi, "dcmiv2_get_eid_list_by_urma_dev_index");
     dcmiv2_get_mainboard_id = dlsym(dcmi, "dcmiv2_get_mainboard_id");
     dcmiv2_get_device_pcie_info = dlsym(dcmi, "dcmiv2_get_device_pcie_info");
     dcmiv2_get_device_info = dlsym(dcmi, "dcmiv2_get_device_info");
-    dcmi_get_device_phyid_from_logicid = dlsym(dcmi, "dcmi_get_device_phyid_from_logicid");
-    dcmi_get_device_logicid_from_phyid = dlsym(dcmi, "dcmi_get_device_logicid_from_phyid");
+    get_logicid_from_phyid = dlsym(dcmi, "dcmiv2_get_dev_id_from_chip_phyid");
 
-    if ((dcmi_init == NULL) || (dcmi_get_card_id_device_id_from_logicid == NULL)
-     || (dcmi_get_urma_device_cnt == NULL) ||(dcmiv2_get_urma_device_cnt == NULL)
+    if ((dcmi_init == NULL)
+     || (dcmiv2_get_urma_device_cnt == NULL)
      || (dcmiv2_get_eid_list_by_urma_dev_index == NULL) || (dcmiv2_get_mainboard_id == NULL)
      || (dcmiv2_get_device_pcie_info ==NULL) || (dcmiv2_get_device_info == NULL)
-     || (dcmi_get_device_phyid_from_logicid == NULL) || (dcmi_get_device_logicid_from_phyid == NULL)) {
+     || (get_logicid_from_phyid == NULL)) {
         return -1;
     }
     (void)dcmi_init(); //  dcmi_init可能已经调用过了
@@ -254,20 +248,12 @@ int hal_get_npu_count()
     return count;
 }
 
-int hal_get_phyid_from_logicid(unsigned int logicId, unsigned int* phyId)
-{
-    if (load_dcmi() != 0) {
-        return -1;
-    }
-    return dcmi_get_device_phyid_from_logicid(logicId, phyId);
-}
-
 int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId)
 {
     if (load_dcmi() != 0) {
         return -1;
     }
-    return dcmi_get_device_logicid_from_phyid(phyId, logicId);
+    return get_logicid_from_phyid(phyId, logicId);
 }
 
 

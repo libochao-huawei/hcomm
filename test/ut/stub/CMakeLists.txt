@@ -62,6 +62,7 @@ set(EXCLUDE_COMMON_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc"
     "${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc"
+    "${HCCL_CODE_ROOT}/src/common/launch_device/launch_device.cc"
     )
 list(REMOVE_ITEM COMMON_SOURCES ${EXCLUDE_COMMON_DEVICE_REGEX})
 
@@ -71,7 +72,6 @@ set(EXCLUDE_PLATFORM_DEVICE_REGEX
 list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/legacy/.*")
-list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/typical/.*")
 
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/coll_comms/rank_graphs/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/engine_ctxs/.*")
@@ -89,8 +89,10 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/thread.cc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/cpu_ts_thread.cc
 
+    ${HCCL_CODE_ROOT}/src/legacy/interface/aicpu_ts_thread_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
@@ -353,6 +355,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/

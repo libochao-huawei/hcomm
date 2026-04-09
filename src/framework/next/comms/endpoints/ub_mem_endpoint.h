@@ -22,7 +22,7 @@ public:
     ~UbMemEndpoint() = default;
     // 构造函数
     HcclResult Init() override;
-    HcclResult ServerSocketListen() override;
+    HcclResult ServerSocketListen(const uint32_t port) override;
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
     HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;

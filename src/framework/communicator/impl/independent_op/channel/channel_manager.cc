@@ -582,7 +582,12 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     channelParam.listNum = listNum;
 
     // 将建链获取的远端数据填充到channelParam
-    CHK_RET(ParseChannelRemoteDataToMem(opTransportResponse, channelParam));
+    HcclResult ret = ParseChannelRemoteDataToMem(opTransportResponse, channelParam);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] ParseChannelRemoteDataToMem failed, return [%d].", __func__, ret);
+        ReleaseChannelParam(channelParam);
+        return ret;
+    }
 
     // 创建局部流
     Stream localStream(StreamType::STREAM_TYPE_ONLINE);
@@ -600,8 +605,7 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
 
     // 下kernel
     std::string kernelName = "RunAicpuIndOpChannelInit";
-    struct InitTask
-    {
+    struct InitTask {
         u64 context;
         bool isCustom;
     };

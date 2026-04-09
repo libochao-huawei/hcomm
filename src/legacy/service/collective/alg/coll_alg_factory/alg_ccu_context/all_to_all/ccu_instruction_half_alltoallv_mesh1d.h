@@ -34,10 +34,10 @@ public:
         return signature;
     }
     std::vector<uint64_t> dimSize;
-    uint32_t rankId;
-    CollAlgOperator op;
-    uint32_t missionId;
-    uint64_t cclBufferAddr;
+    uint32_t              rankId;
+    CollAlgOperator       op;
+    uint32_t              missionId;
+    uint64_t              cclBufferAddr;
     std::vector<std::vector<RankId>> tempVTopo;
 };
 
@@ -61,12 +61,18 @@ public:
                 "[CcuInstructionHalfAllToAllVMesh1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
         }
         dimSize_.push_back(tempVTopo[0].size());
-        missionId_ = mId;
-        rankId_ = rankId;
+        missionId_     = mId;
+        rankId_        = rankId;
         cclBufferAddr_ = scratchAddr;
-        op_ = op;
-        tempVTopo_ = tempVTopo;
+        op_            = op;
+        tempVTopo_     = tempVTopo;
         return;
+    }
+
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionHalfAllToAllVMesh1D instype is CCU_HALF_ALLTOALLV_MESH_1D.");
+        return instType_;
     }
 
     std::string Describe() const override
@@ -75,14 +81,9 @@ public:
             rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
+        void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override

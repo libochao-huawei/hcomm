@@ -15,8 +15,8 @@
 namespace Hccl {
 namespace CcuRep {
 
-CcuRepRemPostSem::CcuRepRemPostSem(const CcuTransport &transport, uint16_t semIndex, uint16_t mask)
-    : transport(transport), semIndex(semIndex), mask(mask)
+CcuRepRemPostSem::CcuRepRemPostSem(const CcuTransport &transport, uint16_t semIndex, uint16_t mask, bool single)
+    : transport(transport), semIndex(semIndex), mask(mask) ,single(single)
 {
     type       = CcuRepType::REM_POST_SEM;
     instrCount = 1;
@@ -27,7 +27,8 @@ bool CcuRepRemPostSem::Translate(CcuInstr *&instr, uint16_t &instrId, const Tran
     this->instrId = instrId;
     translated    = true;
 
-    SyncCKEInstr(instr++, transport.GetRmtCntCkeByIndex(semIndex), dep.reserveCkeId, mask, transport.GetChannelId(), 0,
+    auto ckeId = single?transport.GetRmtCkeByIndex(semIndex):transport.GetRmtCntCkeByIndex(semIndex);
+    SyncCKEInstr(instr++, ckeId, dep.reserveCkeId, mask, transport.GetChannelId(), 0,
                  0, 0, 0, 1);
     CHK_PRT_THROW((instrId > UINT16_MAX - instrCount),
                         HCCL_ERROR("[CcuRepRemPostSem::Translate]uint16 integer overflow occurs, instrId = [%hu], instrCount = [%hu]", instrId, instrCount),

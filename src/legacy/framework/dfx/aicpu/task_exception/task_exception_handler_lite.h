@@ -25,7 +25,7 @@ public:
     // task exception处理逻辑
     static void Process(CommunicatorImplLite *aicpuComm, rtLogicCqReport_t* exceptionInfo);
     static std::string GetGroupRankInfo(const TaskInfo& taskInfo);
-    static void PrintTaskContextInfo(uint32_t sqId, uint32_t taskId);
+    static void PrintTaskContextInfo(CommunicatorImplLite *aicpuComm, uint32_t sqId, uint32_t taskId);
 
 private:
     // 私有构造函数

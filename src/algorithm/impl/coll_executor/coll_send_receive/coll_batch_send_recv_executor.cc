@@ -217,7 +217,7 @@ HcclResult CollBatchSendRecvExecutor::GetRecvTargetLink(u32 remoteUserRank, LINK
 
 HcclResult CollBatchSendRecvExecutor::RunLoopInHostUnfoldMode(OpParam& param)
 {
-    if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+    if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         auto meta = HcclOpMetaInfo::GetOneForBatchSendRecv();
         CHK_RET(InitTask(dispatcher_, param.stream, meta.isEnableCache, meta.GetCacheKey()));
         // 多流子图前后需加空拷贝
@@ -263,7 +263,7 @@ HcclResult CollBatchSendRecvExecutor::RunLoopInHostUnfoldMode(OpParam& param)
 
     CHK_RET(SubPostMainWait(param.stream, algResResp_->slaveStreams[STREAM_INDEX_0]));
     HCCL_INFO("[BatchSendRecv] Stream sync: subStream record, main stream wait.");
-    if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+    if (static_cast<bool>(topoMatcher_->GetExternalInputHcclEnableFfts())) {
         // 多流子图前后需加空拷贝
         CHK_RET(AlgTemplateBase::ExecEmptyTask(algResResp_->cclInputMem,
             algResResp_->cclOutputMem, param.stream, dispatcher_));

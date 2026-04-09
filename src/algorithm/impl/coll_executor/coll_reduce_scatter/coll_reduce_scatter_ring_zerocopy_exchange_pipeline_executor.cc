@@ -230,7 +230,7 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunSuperPodPos
 }
 
 HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunIntraServer(
-    const OpParam &param, ExecMem &execMem, u32 step)
+    const OpParam &param, const ExecMem &execMem, u32 step)
 {
     (void)execMem;
     // 计算slice信息, 将user in分成level2RankSize_块, 每个step处理一块blockIndex, 每个block需要分成level0RankSize_片

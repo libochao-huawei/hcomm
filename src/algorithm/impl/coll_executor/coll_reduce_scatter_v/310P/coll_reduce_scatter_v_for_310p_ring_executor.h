@@ -18,7 +18,7 @@ class CollReduceScatterVFor310PRingExecutor : public CollReduceScatterVExecutor 
 public:
     explicit CollReduceScatterVFor310PRingExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollReduceScatterVFor310PRingExecutor() = default;
+    ~CollReduceScatterVFor310PRingExecutor() override = default;
 
 private:
     /* *************** 资源计算 *************** */

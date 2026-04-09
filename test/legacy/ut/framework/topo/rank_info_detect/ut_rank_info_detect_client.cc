@@ -40,7 +40,7 @@
 #include "orion_adapter_rts.h"
 #include "env_config.h"
 #include "base_config.h"
-#include "json_parser.h"
+#include "topo_addr_info.h"
 
 using namespace Hccl;
 
@@ -93,6 +93,29 @@ protected:
     SocketHandle socketHandle;
 };
 
+namespace {
+NewRankInfo BuildRankInfoForTls(u32 rankId, TlsStatus tlsStatus)
+{
+    NewRankInfo rankInfo {};
+    rankInfo.rankId = rankId;
+    rankInfo.localId = rankId;
+    rankInfo.replacedLocalId = rankId;
+    rankInfo.rankLevelInfos.emplace_back(RankLevelInfo {});
+    rankInfo.tlsStatus = tlsStatus;
+    return rankInfo;
+}
+
+void BuildRankTableForTls(RankTableInfo &rankTable, const std::vector<TlsStatus> &tlsStatusList)
+{
+    rankTable.version = "2.0";
+    rankTable.rankCount = tlsStatusList.size();
+    rankTable.ranks.clear();
+    for (u32 idx = 0; idx < tlsStatusList.size(); ++idx) {
+        rankTable.ranks.emplace_back(BuildRankInfoForTls(idx, tlsStatusList[idx]));
+    }
+}
+}
+
 TEST_F(RankInfoDetectClientTest, Ut_CheckStatus_When_Normal_Expect_Success)
 {
     MOCKER_CPP(&Socket::GetStatus)
@@ -144,11 +167,69 @@ TEST_F(RankInfoDetectClientTest, Ut_ConstructRankTable_When_Normal_Expect_Succes
         .will(returnValue(
             const_cast<char*>(testJsonPath.c_str()) 
         ));
+    std::string testJsonContent = R"({
+        "version": "2.0",
+        "topo_file_path": "rootInfo.json",
+        "rank_count" : 2,
+        "rank_list": [
+            {
+                "rank_id": 0,
+                "device_id": 0,
+                "local_id": 0,
+                "level_list":  [
+                    {
+                        "net_layer": 0,
+                        "net_instance_id" : "az0-rack0",
+                        "net_type": "TOPO_FILE_DESC",
+                        "net_attr": "",
+                        "rank_addr_list": [
+                        {
+                        "addr_type": "IPV4",
+                        "addr": "223.0.0.28",
+                        "ports": [ "0/0" ]
+                        }
+                        ]
+                    }
+                ]
+            },
+            {
+                "rank_id": 1,
+                "local_id": 1,
+                "device_id": 1,
+                "level_list":  [
+                    {
+                        "net_layer": 0,
+                        "net_instance_id" : "az0-rack0",
+                        "net_type": "TOPO_FILE_DESC",
+                        "net_attr": "",
+                        "rank_addr_list": [
+                        {
+                        "addr_type": "IPV4",
+                        "addr": "223.0.0.10",
+                        "ports": [ "0/1" ]
+                        }
+                        ]
+                    }
+                ]
+            }
+        ]
+    })";
+    size_t expectedSize = testJsonContent.size();
+    MOCKER(TopoAddrInfoGetSize)
+        .stubs()
+        .with(0, outBoundP(&expectedSize, sizeof(size_t)))
+        .will(returnValue(0));
+    const char* rootInfoCtx = testJsonContent.c_str();
+    MOCKER(TopoAddrInfoGet)
+        .stubs()
+        .with(0, outBoundP(const_cast<char*>(rootInfoCtx), testJsonContent.size()), outBoundP(&expectedSize, sizeof(size_t)))
+        .will(returnValue(0));
 
     EXPECT_NO_THROW(rankInfoDetectClient_->ConstructRankTable(localRankTable));
 
     EXPECT_EQ(localRankTable.version, "2.0");
     EXPECT_EQ(localRankTable.rankCount, 2);
+
 }
 
 TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
@@ -190,3 +271,49 @@ TEST_F(RankInfoDetectClientTest, Ut_RecvRankTable_When_Normal_Expect_Success)
 
     EXPECT_NO_THROW(rankInfoDetectClient_->RecvRankTable());
 }
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_AllRanksEnable_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::ENABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_AllRanksDisable_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::DISABLE, TlsStatus::DISABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_EnableAndDisableMixed_Expect_ReturnParaError)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownConsistentAndUnknownExists_Expect_ReturnSuccess)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::UNKNOWN});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankInfoDetectClientTest, Ut_VerifyTlsConsistency_When_KnownInconsistentAndUnknownExists_Expect_ReturnParaError)
+{
+    BuildRankTableForTls(rankInfoDetectClient_->rankTable_, {TlsStatus::ENABLE, TlsStatus::DISABLE, TlsStatus::UNKNOWN});
+
+    HcclResult ret = rankInfoDetectClient_->VerifyTlsConsistency();
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+

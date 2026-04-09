@@ -21,9 +21,9 @@ private:
     /* *************** 资源计算 *************** */
     // HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
+    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType) const;
     HcclResult CalcLevel1CommInfo(TransportMemType inputType, TransportMemType outputType,
-        std::vector<LevelNSubCommTransport>& opTransport) ;
+        std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcLevel2CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     
@@ -32,9 +32,9 @@ private:
     u64 CalcDstMemOffset(const OpParam &param, u64 inputMemSize) const;
     HcclResult PrepareL2DataSlices(const OpParam &param, const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
         u64 inputMemSize, std::vector<Slice> &dataSlices) const;
-    HcclResult RunLevel2ByNHR(const OpParam &param, ExecMem &execMem, SubCommInfo  &level1CommInfo, SubCommInfo &level2CommInfo);
+    HcclResult RunLevel2ByNHR(const OpParam &param, ExecMem &execMem, SubCommInfo  &level1CommInfo, SubCommInfo &level2CommInfo) const;
     HcclResult PrepareL1DataSlices(const OpParam &param, const SubCommInfo &level1CommInfo, const SubCommInfo &level2CommInfo,
-        u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices);
+        u64 inputMemSize, u32 moduleId, std::vector<Slice> &dataSlices) const;
     HcclResult RunLevel1ByNHR(const OpParam &param, ExecMem &execMem, SubCommInfo  &level1CommInfo, SubCommInfo &level2CommInfo);
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
 };

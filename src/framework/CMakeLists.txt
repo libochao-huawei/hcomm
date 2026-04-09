@@ -69,7 +69,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/
     ${HCCL_BASE_DIR}/framework/communicator/impl/resource_manager
     ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service
-    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy_memory_agent
+    ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
@@ -109,7 +109,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
-    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/slaves/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/device/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/server_socket/
 
     # ccu 头文件
@@ -366,6 +366,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_ahc_broke.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hd_stage.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_hccs_sio.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather/all_gather_graph_pipeline.cc
         
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce/all_reduce_recursive_hd.cc
@@ -579,6 +580,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_2level_pipeline_excecutor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/310P/coll_all_to_all_v_for_310p_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_continuous_pipeline_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_staged_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/registry/coll_alg_exec_registry.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/alg_profiling.cc
@@ -693,7 +695,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/hcom
         ${HCCL_BASE_DIR}/framework/communicator/impl/
         ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service/
-        ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy_memory_agent
+        ${HCCL_BASE_DIR}/framework/communicator/impl/zero_copy
         ${HCCL_BASE_DIR}/framework/communicator/impl/resource_manager
         ${HCCL_BASE_DIR}/framework/op_base/src/
         ${HCCL_BASE_DIR}/framework/device/
@@ -905,7 +907,7 @@ if(NOT BUILD_OPEN_PROJECT)
         $<BUILD_INTERFACE:msprof_headers>
         $<BUILD_INTERFACE:slog_headers>
         $<BUILD_INTERFACE:hccl_headers>
-        $<BUILD_INTERFACE:runtime_headers>
+        $<BUILD_INTERFACE:npu_runtime_headers>
         $<BUILD_INTERFACE:atrace_headers>
         $<BUILD_INTERFACE:kernel_tiling_headers>
         -Wl,--no-as-needed
@@ -982,7 +984,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         message(STATUS "framework ASCEND_CANN_PACKAGE_ENV_PATH=${ASCEND_CANN_PACKAGE_ENV_PATH}")
         set(CCL_KERNEL_PLF_PATH
             -Wl,--whole-archive
-            ${HCCL_BASE_DIR}/../build/src/libccl_kernel_plf.a
+            ccl_kernel_plf_a
             -Wl,--no-whole-archive
             -Wl,-Bsymbolic
         )

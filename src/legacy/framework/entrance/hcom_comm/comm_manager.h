@@ -35,9 +35,9 @@ using HcclGroupParamsV2 = struct TagHcclGroupParamsInfoV2 {
     u32 serverNum;                /* * 用于标识group内服务器总数 */
     u32 totalRanks;              /* * 用于指示group内的节点总数, rank范围[0, totalRanks-1] */
     std::vector<u32> groupRanks;  // 内部存储wordrankid，其下标表示groupid
+    std::shared_ptr<Hccl::HcclCommunicator> pComm;
     u32 refCounter = 0;
     bool destroyFlag = false;
-    std::shared_ptr<Hccl::HcclCommunicator> pComm;
 };
 
 MAKE_ENUM(DeviceStatus, DEVICE_IDLE = 0, DEVICE_RECOVERED, DEVICE_READY);
@@ -106,6 +106,8 @@ HcclResult HcomDestroyGroupImplV2(const std::string &group);
 HcclResult HcomGetWorldRankFromGroupRankV2(const char *group, u32 groupRank, u32 *worldRank);
 HcclResult HcomGetGroupRankFromWorldRankV2(u32 worldRank, const char *group, u32 *groupRank);
 HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize);
+HcclResult HcomGetCommV2(void **commV2);
+HcclResult HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
 HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify);
 HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify);
 HcclResult CallSingletons();

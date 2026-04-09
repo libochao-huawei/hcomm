@@ -21,9 +21,18 @@ public:
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
 
+    uint16_t GetLocAddrId() { return loc.addr.Id(); }
+    uint16_t GetLocTokenId() { return loc.token.Id(); }
+    uint16_t GetRemAddrId() { return rem.addr.Id(); }
+    uint16_t GetRemTokenId() { return rem.token.Id(); }
+    uint16_t GetLenId() { return len.Id(); }
+    uint16_t GetSemId() { return sem.Id(); }
+    uint32_t GetMask() { return mask; }
+    uint32_t GetChannelId() { return channelId; }
+
 private:
     ChannelHandle channel;
-
+    uint32_t channelId{0};
     RemoteAddr   rem;
     LocalAddr   loc;
     Variable len;

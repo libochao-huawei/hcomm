@@ -41,14 +41,14 @@ public:
 
 class CcuTaskArgReduceScatterMesh1D : public CcuTaskArg {
 public:
-    explicit CcuTaskArgReduceScatterMesh1D(uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offSet,
+    explicit CcuTaskArgReduceScatterMesh1D(uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offset,
         uint64_t token) :
-        inputAddr_(inputAddr), outputAddr_(outputAddr), sliceSize_(sliceSize), offSet_(offSet), token_(token) {}
+        inputAddr_(inputAddr), outputAddr_(outputAddr), sliceSize_(sliceSize), offset_(offset), token_(token) {}
 
     uint64_t inputAddr_;
     uint64_t outputAddr_;
     uint64_t sliceSize_;
-    uint64_t offSet_;
+    uint64_t offset_;
     uint64_t token_;
 };
 
@@ -58,7 +58,7 @@ public:
     {
     }
 
-    void Init(uint32_t rankId, uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offSet,
+    void Init(uint32_t rankId, uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t offset,
         uint64_t token, CollAlgOperator &op, std::vector<std::vector<RankId>> &tempVTopo)
     {
         u32 maxDimNum = 1;
@@ -67,15 +67,21 @@ public:
                 "[CcuInstructionReduceScatterMesh1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
         }
         dimSize_.push_back(tempVTopo[0].size());
-        rankId_ = rankId;
-        inputAddr_ = inputAddr;
+        rankId_     = rankId;
+        inputAddr_  = inputAddr;
         outputAddr_ = outputAddr;
-        sliceSize_ = sliceSize;
-        token_ = token;
-        offSet_ = offSet;
-        op_ = op;
-        tempVTopo_ = tempVTopo;
+        sliceSize_  = sliceSize;
+        token_      = token;
+        offset_     = offset;
+        op_         = op;
+        tempVTopo_  = tempVTopo;
         return;
+    }
+
+    CcuInstType GetInstType() const override
+    {
+        HCCL_INFO("CcuInstructionReduceScatterMesh1D instype is CCU_REDUCE_SCATTER_MESH_1D_DIRECT.");
+        return instType_;
     }
 
     std::string Describe() const override
@@ -83,24 +89,19 @@ public:
         return StringFormat("CcuInstructionReduceScatterMesh1D rankId [%u], instType[%s]", rankId_, instType_.Describe().c_str());
     }
 
-    CcuInstType GetInstType() const override
-    {
-        return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
-    }
-
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         return std::make_unique<CcuCtxArgReduceScatterMesh1D>(dimSize_, rankId_, op_, tempVTopo_);
     }
 
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
+
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override
     {
-        return std::make_unique<CcuTaskArgReduceScatterMesh1D>(inputAddr_, outputAddr_, sliceSize_, offSet_, token_);
+        return std::make_unique<CcuTaskArgReduceScatterMesh1D>(inputAddr_, outputAddr_, sliceSize_, offset_, token_);
     }
 
 private:
@@ -110,7 +111,7 @@ private:
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};
     uint64_t sliceSize_{0};
-    uint64_t offSet_{0};
+    uint64_t offset_{0};
     uint64_t token_{0};
     CollAlgOperator op_;
     std::vector<std::vector<RankId>> tempVTopo_;

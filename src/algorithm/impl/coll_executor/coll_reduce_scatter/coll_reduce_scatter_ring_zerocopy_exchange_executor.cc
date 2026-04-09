@@ -48,7 +48,7 @@ HcclResult CollReduceScatterRingZerocopyExchangeExecutor::CalcExchangeCommInfo(s
     for (u32 subCommIndex = 0; subCommIndex < commTransport.size(); subCommIndex++) {
         for (auto &transportRequest : commTransport[subCommIndex].transportRequests) {
             transportRequest.isUsedRdma = (topoAttr_.superPodNum > 1 ||
-                (topoMatcher_->GetExternalInputInterHccsDisable() && topoAttr_.serverNum > 1));
+                (static_cast<bool>(topoMatcher_->GetExternalInputInterHccsDisable()) && topoAttr_.serverNum > 1));
         }
     }
     return HCCL_SUCCESS;

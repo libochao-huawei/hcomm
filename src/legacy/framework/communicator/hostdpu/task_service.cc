@@ -163,25 +163,26 @@ HcclResult TaskService::SynchronizeControlInfo()
 
 HcclResult TaskService::TaskRun()
 {
-    // 检查shmem和hostMem是否非空
     CHK_PTR_NULL(hostMem_);
     CHK_PTR_NULL(npu2dpuMem_);
     CHK_PTR_NULL(dpu2npuMem_);
     HCCL_INFO("[TaskService::%s] TaskService{npu2dpuMem:%p; dpu2npuMem:%p; hostMem:%p}", __func__, npu2dpuMem_,
               dpu2npuMem_, hostMem_);
     if (dataSize_ == 0) {
-        HCCL_ERROR("[TaskService::%s] dataSize[%zu] illegal", __func__, dataSize_);
+        HCCL_ERROR("[TaskService::%s] dataSize[%d] illegal", __func__, dataSize_);
         return HCCL_E_INTERNAL;
     }
     if (dataSize_ > hostMemSize_) {
-        HCCL_ERROR("[TaskService::%s] hostMemSize[%zu] less than dataSize[%zu]", __func__, hostMemSize_, dataSize_);
+        HCCL_ERROR("[TaskService::%s] hostMemSize[%d] less than dataSize[%d]", __func__, hostMemSize_, dataSize_);
         return HCCL_E_INTERNAL;
     }
     uint8_t flag{0};
     uint8_t *srcFlagPtr = static_cast<uint8_t *>(npu2dpuMem_);
     uint8_t *srcTaskTypePtr = srcFlagPtr + sizeof(flag);
-    HCCL_INFO("[TaskService::TaskRun] TaskService{shareHBM:%p}", srcFlagPtr);
     std::string taskTypeStr;
+
+    CHK_RET(WriteFlag(srcFlagPtr, TASK_UNSET)); // 初始化重置flag 为 0
+
     while (true) {
         CHK_RET(ReadFlag(srcFlagPtr, flag));
         switch (flag) {

@@ -47,3 +47,29 @@ TEST_F(P2PEnableManagerTest, should_successfully_add_device_pairs_to_set_after_c
     // 原因：P2PEnableManager是单例，容易受其他UT用例的影响，目前RmaConnManager相关UT会影响
     EXPECT_EQ(devicePairs.size(), 0);
 }
+
+TEST_F(P2PEnableManagerTest, enable_p2p_success_and_disable_p2p_success)
+{
+    MOCKER(HrtEnableP2P).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtDisableP2P).stubs().will(returnValue(HCCL_SUCCESS));
+
+    std::vector<u32> enableP2PDevices_;
+    for (u32 i = 1; i < 4; i++) {
+        enableP2PDevices_.emplace_back(i);
+    }
+    HcclResult ret = P2PEnableManager::GetInstance().EnableP2P(enableP2PDevices_);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = P2PEnableManager::GetInstance().DisableP2P(enableP2PDevices_);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(P2PEnableManagerTest, disable_p2p_success_when_not_enable)
+{
+    std::vector<u32> enableP2PDevices_;
+    for (u32 i = 1; i < 4; i++) {
+        enableP2PDevices_.emplace_back(i);
+    }
+    HcclResult ret = P2PEnableManager::GetInstance().DisableP2P(enableP2PDevices_);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

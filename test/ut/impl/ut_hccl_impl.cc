@@ -49,6 +49,7 @@
 #include "coll_all_gatherv_mesh_aiv_smallcount_executor.h"
 #include "coll_all_gather_mesh_aiv_for_910_93_executor.h"
 #include "coll_all_gather_v_mesh_executor.h"
+#include "coll_aligned_all_gather_v_double_ring_for_910_93_executor.h"
 #include "coll_reduce_scatter_v_aiv_big_count_executor.h"
 #include "coll_reduce_scatter_v_mesh_aiv_smallcount_executor.h"
 #include "coll_reduce_scatter_v_for_310p_ring_executor.h"
@@ -4212,6 +4213,113 @@ TEST_F(HcclImplTest, ut_AllGatherVFor910BExecutor_Mesh)
 
     ret = executor->Orchestrate(opParam, resourceResponse);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    implBase->profilerManager_->TaskAivProfilerHandle(nullptr, 10);
+
+    implBase = nullptr;
+
+    delete executor;
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclImplTest, ut_AllGatherVFor91093Executor_ZeroCount)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    std::string tag = "test";
+    DeviceMem inputMem = DeviceMem::alloc(4096);
+    DeviceMem outputMem = DeviceMem::alloc(4096);
+    u64 count = 1024;
+    HcclDataType dataType = HCCL_DATA_TYPE_FP32;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    Stream stream(StreamType::STREAM_TYPE_ONLINE);
+
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParamForOneServer(params, rankTable);
+    params.deviceType = DevType::DEV_TYPE_910_93;
+    std::unique_ptr<HcclCommunicator> implBase(new (std::nothrow) HcclCommunicator());
+
+    MOCKER_CPP(&HcclCommunicator::InitRaResource)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+
+    ret = implBase->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    std::unique_ptr<hcclImpl> &impl = implBase->implAlg_->pimpl_;
+    std::shared_ptr<AlgConfigurator> algConfigurator = implBase->implAlg_->algConfigurator_;
+
+    impl->deviceLogicId_ = 0;
+    impl->deviceType_ = DevType::DEV_TYPE_910_93;
+    algConfigurator->algType_[HcclCMDType::HCCL_CMD_REDUCE_SCATTER].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_DOUBLE_RING;
+    algConfigurator->algType_[HcclCMDType::HCCL_CMD_REDUCE_SCATTER].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_RING;
+    impl->topoType_ = TopoType::ALG_LEVEL0_NP_DOUBLE_RING;
+
+    (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+
+    CCLBufferManager &cclBufferManager = implBase->implAlg_->cclBufferManager_;
+    const HcclDispatcher dispatcher = implBase->implAlg_->dispatcher_;
+    std::unique_ptr<TopoMatcher> &topoMatcher = implBase->implAlg_->topoMatcher_;
+    topoMatcher->topoInfo_.deviceLogicId = 0;
+    topoMatcher->topoInfo_.deviceType = DevType::DEV_TYPE_910_93;
+    topoMatcher->topoInfo_.topoType = TopoType::ALG_LEVEL0_NP_DOUBLE_RING;
+    std::unique_ptr<AllGatherVOperator> operation(
+        new (std::nothrow) AllGatherVOperator(algConfigurator.get(), cclBufferManager, dispatcher, topoMatcher));
+
+
+    CollAlignedAllGatherVDoubleRingFor91093Executor *executor = new CollAlignedAllGatherVDoubleRingFor91093Executor(impl->dispatcher_, topoMatcher);
+
+    std::vector<u64> counts {0, 1, 0, 0};
+    std::vector<u64> displs {0};
+    for (auto i = 1; i < counts.size(); ++i) {
+            displs.emplace_back(displs[i-1] + counts[i-1]);
+    }
+
+    OpParam opParam;
+    opParam.tag = "test";
+    opParam.inputPtr = inputMem.ptr();
+    opParam.inputSize = 0;
+    opParam.outputPtr = outputMem.ptr();
+    opParam.outputSize = 1;
+    opParam.VDataDes.counts = counts.data();
+    opParam.VDataDes.displs = displs.data();
+    opParam.VDataDes.dataType = HCCL_DATA_TYPE_FP32;
+    opParam.stream = Stream(StreamType::STREAM_TYPE_ONLINE);
+
+    std::string algName = "";
+    std::string newTag = opParam.tag;
+    ret = operation->SelectAlg(tag, opParam, algName, newTag);
+    opParam.tag = newTag;
+
+    MOCKER_CPP(&TransportManager::Alloc)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+    MOCKER(CollExecutorBase::RunTemplate)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+    SubCommInfo mockCommInfo {0, 1, std::vector<LINK>()};
+    MOCKER_CPP(&CollNativeExecutorBase::GetSubCommInfo)
+    .stubs()
+    .will(returnValue(mockCommInfo));
+
+    AlgResourceRequest resourceRequest;
+    AlgResourceResponse resourceResponse;
+    ret = executor->CalcResRequest(opParam, resourceRequest);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    implBase->AllocAlgResource(newTag, HcclCMDType::HCCL_CMD_ALLGATHER_V, opParam, resourceRequest, resourceResponse);
+    resourceResponse.cclInputMem = inputMem;
+    resourceResponse.cclOutputMem = outputMem;
+    DeviceMem scratchMem = DeviceMem::alloc(4096);
+    resourceResponse.scratchMem = scratchMem;
+    resourceResponse.slaveStreams.resize(1);
+    resourceResponse.notifiesMain.resize(1);
+    resourceResponse.notifiesAux.resize(1);
+    resourceResponse.notifiesDevMain.resize(1);
+    resourceResponse.notifiesDevAux.resize(1);
+
+    ret = executor->Orchestrate(opParam, resourceResponse);
+    // EXPECT_EQ(ret, HCCL_SUCCESS);
 
     implBase->profilerManager_->TaskAivProfilerHandle(nullptr, 10);
 

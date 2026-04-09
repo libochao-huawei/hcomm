@@ -14,6 +14,7 @@
 #include <memory>
 #include <hccl/base.h>
 #include <hccl/hccl_types.h>
+#include <unordered_set>
 #include "hccl_network_pub.h"
 #include "hccl_socket.h"
 #include "topoinfo_struct.h"
@@ -30,7 +31,8 @@ public:
 
     // 为了尽可能保障框架依赖兼容性，除了引用以外，参数不通过构造函数传递
     virtual HcclResult Config(const HcclDispatcher &dispatcher, const HcclRankLinkInfo &localRankInfo,
-        const RankTable_t *rankTable, std::string identifier = "", bool isStandardCard = false);
+        const RankTable_t *rankTable, std::string identifier = "", bool isStandardCard = false,
+        const std::unordered_set<u32>& enableP2PRankIds = {});
     
     // 析构时要处理的逻辑
     virtual HcclResult DeInit();
@@ -53,6 +55,7 @@ protected:
 
     std::string identifier_;
     bool isStandardCard_{false};
+    std::unordered_set<u32> enableP2PRankIds_;
 };
 }
 

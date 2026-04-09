@@ -26,7 +26,7 @@ public:
 
     std::string Describe() const override
     {
-        return StringFormat("Template of ReduceScatter ccu nhr 1D mem2mem with tempRankSize [%u].", tempRankSize_);
+        return StringFormat("Template of Reduce Scatter ccu nhr 1D mem2mem with tempRankSize [%u].", tempRankSize_);
     }
 
     HcclResult GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,

@@ -15,10 +15,23 @@
 #include <unordered_map>
 #include "stream_lite.h"
 #include "buffer.h"
+#include "internal_exception.h"
 #include "rma_buffer_lite.h"
 #include "mem_transport_common.h"
 #include "rmt_rma_buf_slice_lite.h"
 namespace Hccl {
+
+inline HcclReduceOp ConvertReduceOpToHcclReduceOp(ReduceOp reduceOp)
+{
+    static std::map<ReduceOp, HcclReduceOp> reduceTypeMap = {{ReduceOp::SUM, HcclReduceOp::HCCL_REDUCE_SUM},
+                                                             {ReduceOp::PROD, HcclReduceOp::HCCL_REDUCE_PROD},
+                                                             {ReduceOp::MAX, HcclReduceOp::HCCL_REDUCE_MAX},
+                                                             {ReduceOp::MIN, HcclReduceOp::HCCL_REDUCE_MIN}};
+    if (UNLIKELY(reduceTypeMap.find(reduceOp) == reduceTypeMap.end())) {
+        THROW<InternalException>(StringFormat("reduceOp[%u] is invalid", reduceOp));
+    }
+    return reduceTypeMap[reduceOp];
+}
 
 MAKE_ENUM(TransferType, WRITE, READ)
 

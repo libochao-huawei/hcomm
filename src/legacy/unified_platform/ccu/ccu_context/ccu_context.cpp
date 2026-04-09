@@ -84,10 +84,6 @@ HcclResult CcuContext::GeneTaskParam(const CcuTaskArg &arg, std::vector<CcuTaskP
         HCCL_INFO("[GeneTaskParam]task Param, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], argSize[%u]",
                   taskParams[index].dieId, taskParams[index].missionId, taskParams[index].instStartId,
                   taskParams[index].instCnt, taskParams[index].argSize);
-        for (uint32_t i = 0; i < taskParams[index].argSize; i++) {
-            if (i == TOKEN_VALUE_INDEX) { continue; }
-            HCCL_INFO("[GeneTaskParam]arg[%lu] = %lu", i, taskParams[index].args[i]);
-        }
     }
     return HCCL_SUCCESS;
 }
@@ -341,9 +337,9 @@ void CcuContext::LocalWait(const CcuRep::MaskSignal &sig, uint32_t mask)
     }
 }
 
-void CcuContext::RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask)
+void CcuContext::RemotePost(const CcuTransport &transport, uint32_t signalIndex, uint32_t mask, bool single)
 {
-    Append(std::make_shared<CcuRep::CcuRepRemPostSem>(transport, signalIndex, mask));
+    Append(std::make_shared<CcuRep::CcuRepRemPostSem>(transport, signalIndex, mask, single));
 }
 
 void CcuContext::WriteVariableWithSignal(const CcuTransport &transport, const CcuRep::Variable &var, uint32_t varIndex,

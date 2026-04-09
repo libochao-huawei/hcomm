@@ -118,6 +118,7 @@ HcclResult HcomQueryGroupRef(const char *group, u32 &groupRef);
 bool HcomCheckrtMemcpyAddrAsync(const std::string& group = HCCL_WORLD_GROUP);
 HcclResult HcomGetbackloggedByGroup(const char *group, std::vector<u32> &groupRanks, s32 &groupSize);
 HcomInfo& HcomGetCtxHomInfo(void);
+HcclResult HcomInitCollComm(uint32_t rank, void **commV2, HcclCommPtr &comm);
 
 #ifdef __cplusplus
 extern "C" {

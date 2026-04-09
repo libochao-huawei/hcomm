@@ -30,7 +30,7 @@ constexpr u64 TINY_MEM_SIZE = 2 * 1024 * 1024; // AlltoAll算子的tinyMem size
 constexpr u64 MAX_ALLTOALLV_DIRECT_FULLMESH_RANKSIZE = 64;  // alltoallv在A2支持directfulmesh的最大ranksize
 constexpr u64 MAX_ALLTOALLV_DIRECT_FULLMESH_SERVER_NUM = 8; // alltoallv在A2支持directfulmesh的最大server数
 
-bool IsAlgTypeLevel0Mesh(AlgTypeLevel0 &originalAlgTypeLevel0);
+bool IsAlgTypeLevel0Mesh(const AlgTypeLevel0 &originalAlgTypeLevel0);
 
 bool IsSupportUnifiedMarch(const OpParam& param, const TopoType& topoType, u32 serverNum, u32 superPodNum);
 bool IsAlltoAllvcSatisfyBufferSize(const OpParam& param, u32 userRankSize, u64 cclbufferSize);
@@ -49,7 +49,7 @@ bool CheckUserInMemNotLargerThanCCLInMem(const HcclCMDType &opType, OpParam &par
 bool ExecutorOnlySupportDMAReduce(const std::string& algName);
 bool ExecutorCanSupportDMAReduce(const std::string& algName);
 bool ExecutorNoSupportDMAReduce(const std::string& algName);
-bool ExecutorSupportInPlace(OpParam &param, const std::string& algName, bool retryEnable,
+bool ExecutorSupportInPlace(const OpParam &param, const std::string& algName, bool retryEnable,
     InplaceSupportRetryStatus &inPlaceSupportRetryStatus);
 bool FitRetryConditionforInPlaceOp(const HcclCMDType &opType, OpParam &param, const std::string& algName,
     u64 commInputSize, u32 userRankSize, bool retryEnable, InplaceSupportRetryStatus &inPlaceSupportRetryStatus);

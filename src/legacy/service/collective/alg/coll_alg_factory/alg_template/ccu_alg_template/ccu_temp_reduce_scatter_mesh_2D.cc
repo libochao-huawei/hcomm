@@ -117,46 +117,34 @@ HcclResult CcuTempReduceScatterMesh2D::Run(const TempFuncs &tempFuncs, const Ran
 
     RankGroup rankGroupX;
     RankGroup rankGroupY;
-    for (auto &peer : tempVTopo_[0]) {
-        rankGroupX.AddRank(peer);
-    }
-
-    for (auto &peer : tempVTopo_[1]) {
-        rankGroupY.AddRank(peer);
-    }
+    AddRanksToGroup(tempVTopo_,rankGroupX,rankGroupY);
 
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
+    uint64_t offset;
     uint64_t outputSize = static_cast<uint64_t>(op_.outputMem->GetSize());
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
-            // 从UserIn获取数据
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
             // 当前loop的size大小
-            offSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
+            offset = tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 从inBuff获取数据
             inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
             // 从inBuff获取数据，只需要加上rank偏移
-            offSet = sliceInfoVec[myRank_][0].offset;
+            offset = sliceInfoVec[myRank_][0].offset;
         }
         if (tempFuncs.isBottom) {
-            // 把数据写入UserOut
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
                 + tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 把数据写入outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
         }
     } else {
-        // 图模式没有tempFuncs.usrData，直接通过buffInfo_获取输入输出地址
+        offset = tempFuncs.usrData.usrOutSlices[0].GetOffset();
         inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-        offSet = tempFuncs.usrData.usrOutSlices[0].GetOffset();
     }
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
-
     uint64_t token;
     CHK_RET(GetToken(op_, token));
 
@@ -170,11 +158,11 @@ HcclResult CcuTempReduceScatterMesh2D::Run(const TempFuncs &tempFuncs, const Ran
 
         CcuInstructionReduceScatterMesh2D ccuInsReduceScatterMesh2D;
         ccuInsReduceScatterMesh2D.Init(dimSize_, static_cast<uint32_t>(myRank_), inputAddr, outputAddr, axisId, outputSize,
-            xAxisSize, yAxisSize, offSet, token, op_, tempVTopo_);
+            xAxisSize, yAxisSize, offset, token, op_, tempVTopo_);
 
         HCCL_INFO("[CcuTempReduceScatterMesh2D] Init: dimSize0[%llu], dimSize1[%llu], myRank_[%d], inputAddr[%llu],"\
             "outputAddr[%llu], sliceSize[%llu], xAxisSize[%llu], yAxisSize[%llu], offset[%llu]",
-        dimSize_[0], dimSize_[1], myRank_, inputAddr, outputAddr, outputSize, xAxisSize, yAxisSize, offSet);
+        dimSize_[0], dimSize_[1], myRank_, inputAddr, outputAddr, outputSize, xAxisSize, yAxisSize, offset);
 
         ccuInsReduceScatterMesh2D.SetLinks(axisId == 0 ? linksX_ : linksY_);
         ccuInsReduceScatterMesh2D.SetRankGroup(axisId == 0 ? rankGroupX : rankGroupY);

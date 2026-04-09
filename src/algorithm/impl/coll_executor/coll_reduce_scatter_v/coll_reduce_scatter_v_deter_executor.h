@@ -42,7 +42,7 @@ private:
     HcclResult RunReduceScattervLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo) ;
     HcclResult RunReduceScattervLevel1ForMeshTopo(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
     HcclResult CalReduceScatterVSliceData(const OpParam &param, u32 level0RankSize, u32 level1RankSize, std::vector<Slice> &dataSlices);
-    HcclResult RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
+    HcclResult RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem, const SubCommInfo &level0CommInfo);
     u32 all2allOffset_ = 0;
     u64 maxCount_ = 0;
     bool isNeedSpaceBorrow_ = false;

@@ -1319,7 +1319,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_mix_ReduceScatterMixExecutor_deter_comm
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivSmallCountExecutor)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1345,7 +1344,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivSmallCountEx
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivExecutor)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1371,7 +1369,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivExecutor)
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivFor91093Executor1)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1397,7 +1394,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivFor91093Exec
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivFor91093Executor2)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1537,7 +1533,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_a2_ReduceScatterAivRdmaExecutor_2_s
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_ReduceScatterMeshAivSmallCountExecutor)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -1789,7 +1784,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_910_93_offload_2die_hccs_sio)
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_mesh_small_deter)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     setenv("HCCL_DETERMINISTIC", "true", 1);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
@@ -1817,7 +1811,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_mesh_small_deter)
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_mesh_deter)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     setenv("HCCL_DETERMINISTIC", "true", 1);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
@@ -1845,7 +1838,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_mesh_deter)
 TEST_F(ReduceScatterTest, reduce_scatter_aiv_mesh_mid_deter)
 {
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
-    MOCKER(hccl::ClearAivSyncBuf).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hccl::ExecuteKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
     setenv("HCCL_DETERMINISTIC", "true", 1);
     setenv("HCCL_OP_EXPANSION_MODE", "AIV", 1);
@@ -2025,6 +2017,29 @@ TEST_F(ReduceScatterTest, ReduceScatterOrderPreservedFor91093Executor3)
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.algName = "ReduceScatterOrderPreservedFor91093Executor";
     checkerOpParam.aicpuUnfoldMode = true;
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(ReduceScatterTest, ReduceScatterMeshOpbaseSmallCountDeterministicExecutor_NB_3Server)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 3, 8);
+
+    setenv("HCCL_ALGO", "level0:NA;level1:NB;level2:NB", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.DataDes.count = 8;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "ReduceScatterMeshOpbaseSmallCountDeterministicExecutor";
 
     Checker checker;
     HcclResult ret;

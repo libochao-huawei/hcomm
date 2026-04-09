@@ -87,7 +87,7 @@ HcclResult Sender::run(const std::shared_ptr<Transport> &link, const std::vector
             senderMem.src.ptr(), senderMem.src.size()});
     }
 
-    if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttribute_)) {
+    if (isSpInlineReduce && static_cast<bool>((INLINE_REDUCE_BITMASK & reduceAttribute_))) {
         // link支持inline reduce 并且 reduceAttribute_ 也支持
         // notify 下一个rank做 inline reduce
         CHK_RET(link->Post(notifyIdx, stream));

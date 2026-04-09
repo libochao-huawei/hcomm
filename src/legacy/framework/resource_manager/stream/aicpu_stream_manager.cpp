@@ -69,6 +69,7 @@ void AicpuStreamManager::AllocFreeStream()
 {
     if (freeStream  == nullptr) {
         freeStream = std::make_unique<Stream>(false, false);
+        HCCL_RUN_INFO("AicpuStreamManager %s allocted: %s", __func__, freeStream->Describe().c_str());
     }
 }
 

@@ -20,6 +20,7 @@ namespace Hccl {
 
 constexpr uint64_t SMALL_COUNT_512KB = 512*1024; // Byte, UB协议一次传输的最大size
 constexpr uint64_t LARGE_COUNT_1024KB = 1024*1024; // Byte, 可掩盖多mission尾块开销
+constexpr uint64_t AIV_ALL_REDUCE_SMALL_COUNT = 64*1024;
 class AutoSelectorBase : public BaseSelector {
 public:
     SelectorStatus Select(const CollAlgOperator &op, CollAlgParams &params,

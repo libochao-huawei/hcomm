@@ -40,6 +40,8 @@ public:
     // Profiling相关接口（直接暴露，不通过GetProfilingImpl）
     HcclResult ReportAllTasks(bool cachedReq);
     HcclResult ReportOp(u64 beginTime, bool cachedReq, bool opbased);
+    // CCU上报
+    HcclResult ReporCcuTaskInfo(u64 beginTime, u64 endTime, bool cachedReq, bool opbased);// TODO
     void ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo);
     HcclResult UpdateProfStat();
 

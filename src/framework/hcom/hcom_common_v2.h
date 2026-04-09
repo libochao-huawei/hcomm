@@ -19,6 +19,8 @@ HcclResult __attribute__((weak)) HcomDestroyGroupImplV2(const std::string &group
 HcclResult __attribute__((weak)) HcomGetWorldRankFromGroupRankV2(const char *group, u32 groupRank, u32 *worldRank);
 HcclResult __attribute__((weak)) HcomGetGroupRankFromWorldRankV2(u32 worldRank, const char *group, u32 *groupRank);
 HcclResult __attribute__((weak)) HcomGetRankSizeV2(const char *group, u32 *rankSize);
+HcclResult __attribute__((weak)) HcomGetCommV2(void **commV2);
+HcclResult __attribute__((weak)) HcomGetGroupParamsV2(const char *group, void* groupParams, void **commV2);
 HcclResult __attribute__((weak)) HcomInitByFileV2(const char *rankTablePath, const char *identify);
 HcclResult __attribute__((weak)) HcomInitByStringV2(const char *rankTableM, const char *identify);
 #ifdef __cplusplus

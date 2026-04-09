@@ -33,10 +33,11 @@ CcuContextAllReduceMeshMem2Mem1D::CcuContextAllReduceMeshMem2Mem1D(
     if (ctxArg == nullptr) {
         THROW<NullPtrException>(StringFormat("CcuContextAllReduceMeshMem2Mem1D::ctxArg ptr is null"));
     }
-    rankId_         = ctxArg->rankId_;
-    rankSize_       = ctxArg->dimSize_[0];
     dataType_       = ctxArg->op_.dataType;
     outputDataType_ = ctxArg->op_.outputDataType;
+    rankId_         = ctxArg->rankId_;
+    rankSize_       = ctxArg->dimSize_[0];
+    reduceOp_ = ctxArg->op_.reduceOp;
     if (outputDataType_ == DataType::INVALID) {
         outputDataType_ = dataType_;
         HCCL_INFO("[CcuContextAllReduceMeshMem2Mem1D] outputDataType is [INVALID], set outputDataType to[%s]",
@@ -49,7 +50,6 @@ CcuContextAllReduceMeshMem2Mem1D::CcuContextAllReduceMeshMem2Mem1D(
     if (ctxArg->dimSize_.size() > 0) {
         rankSize_ = ctxArg->dimSize_[0];
     }
-    reduceOp_ = ctxArg->op_.reduceOp;
     HCCL_INFO("[CcuContextAllReduceMeshMem2Mem1D] Init, CtxArgs are rankId[%u], rankSize_[%u], dataType[%s], "
               "outputDataType[%s], reduceOp[%s]",
               rankId_, rankSize_, dataType_.Describe().c_str(), outputDataType_.Describe().c_str(),
@@ -130,14 +130,14 @@ void CcuContextAllReduceMeshMem2Mem1D::CreateReduceLoop(uint32_t size, DataType 
     uint32_t usedBufNum   = size > expansionNum ? size : expansionNum;
 
     for (int32_t index = 0; index < 2; index++) { // 需要实例化2个Loop
-        CcuRep::Memory dst = CreateMemory();
         CcuRep::Memory src = CreateMemory();
+        CcuRep::Memory dst = CreateMemory();
         std::vector<CcuRep::Memory> scratch;
         for (uint32_t i = 0; i < size; i++) {
             scratch.emplace_back(CreateMemory());
         }
-        CcuRep::Variable            len = CreateVariable();
         CcuRep::Variable            lenForExpansion = CreateVariable();
+        CcuRep::Variable            len = CreateVariable();
         CcuRep::LoopBlock           lb(this, GetLoopBlockTag(loopType, index));
         lb(dst, src, scratch, len, lenForExpansion);
 
@@ -173,12 +173,10 @@ void CcuContextAllReduceMeshMem2Mem1D::ReduceLoopGroup(CcuRep::Memory outDstOrg,
     const uint32_t size = scratchOrg.size();
 
     CcuRep::Memory dst = CreateMemory();
-    dst = outDstOrg;
-
     CcuRep::Memory src = CreateMemory();
-    src = srcOrg;
-
     std::vector<CcuRep::Memory> scratch;
+    dst = outDstOrg;
+    src = srcOrg;
     for (uint32_t idx = 0; idx < size; idx++) {
         scratch.push_back(CreateMemory());
         scratch[idx] = scratchOrg[idx];
@@ -200,18 +198,17 @@ void CcuContextAllReduceMeshMem2Mem1D::ReduceLoopGroup(CcuRep::Memory outDstOrg,
     CCU_IF(goSize.loopParam != 0)                   // goSize1
     {
         CcuRep::Variable loopParam = CreateVariable();
+        CcuRep::Variable sliceSize = CreateVariable();
         loopParam = CcuRep::GetLoopParam(0, moConfig.memSlice * moConfig.loopCount, 0);
         loopParam += goSize.loopParam;
-
-        CcuRep::Variable sliceSize = CreateVariable();
-        sliceSize          = moConfig.memSlice;
         sliceSizeExpansion = moConfig.memSlice * expansionNum;
+        sliceSize          = moConfig.memSlice;
 
         auto lc = Loop(GetLoopBlockTag(loopType, 0))(dst, src, scratch, sliceSize, sliceSizeExpansion);
 
         CcuRep::Variable paraCfg = CreateVariable();
-        paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);
         CcuRep::Variable offsetCfg = CreateVariable();
+        paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);
         offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
 
         LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
@@ -251,10 +248,10 @@ void CcuContextAllReduceMeshMem2Mem1D::ReduceLoopGroup(CcuRep::Memory outDstOrg,
         auto lc1 = Loop(GetLoopBlockTag(loopType, 1))(dst, src, scratch, sliceSize, sliceSizeExpansion);
 
         CcuRep::Variable loopCfg0 = CreateVariable();
-        loopCfg0 = CcuRep::GetLoopParam(0, 0, 1);
         CcuRep::Variable loopCfg1 = CreateVariable();
-        loopCfg1 = CcuRep::GetLoopParam(0, 0, 1);
         CcuRep::Variable offsetCfg = CreateVariable();
+        loopCfg0 = CcuRep::GetLoopParam(0, 0, 1);
+        loopCfg1 = CcuRep::GetLoopParam(0, 0, 1);
         offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
 
         LoopGroup({lc0, lc1}, {loopCfg0, loopCfg1}, goSize.parallelParam, offsetCfg);

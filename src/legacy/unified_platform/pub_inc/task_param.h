@@ -96,6 +96,7 @@ struct ParaCcu {
     u32 instrId;
     u64 costumArgs[CCU_COSTOM_ARGS_LEN];
     u64 executeId;
+    u64 ccuKernelHandle{0};
 };
 
 struct ParaAiv{
@@ -107,6 +108,7 @@ struct ParaAiv{
     void* flagMem;
     u64 flagMemSize;
     u32 rank;
+    u32 sendRecvRemoteRank;
     bool isOpbase;
     HcclDataType dataType;
 };

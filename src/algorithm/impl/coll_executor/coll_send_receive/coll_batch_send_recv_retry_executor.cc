@@ -183,7 +183,7 @@ HcclResult CollBatchSendRecvRetryExecutor::RunLoop(OpParam &param, AlgResourceRe
 
     // 执行当前需执行的算子
     for (const auto& itemPtr : curSendRecvPair) {
-        if (param.BatchSendRecvDataDes.isDirectRemoteRank[itemPtr->remoteRank]) {
+        if (static_cast<bool>(param.BatchSendRecvDataDes.isDirectRemoteRank[itemPtr->remoteRank])) {
             // device direct链路的任务会在host侧下发，此处需要跳过
             continue;
         }

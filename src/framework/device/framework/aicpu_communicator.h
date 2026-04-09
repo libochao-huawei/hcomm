@@ -206,7 +206,7 @@ private:
         std::vector<std::vector<std::vector<u32>>> &vectorInfo);
     HcclResult ParseTlvToSubGroupVector(u64 srcTlv, u64 srcTlvTotalLength,
         std::vector<std::vector<std::vector<std::vector<u32>>>> &vectorInfo);
-    HcclResult InitLocalTagRes(const ListCommon &head);
+    HcclResult InitLocalTagRes(const ListCommon &head, bool reAllocFlag = false);
     HcclResult InitRemoteTagRes(u32 &rankId, const ListCommon &head, const std::string &newTag, u32 notifyNum,
        TransportLinkType linkType = TransportLinkType::RDMA);
     template <typename T>
@@ -248,8 +248,8 @@ private:
         std::vector<std::shared_ptr<LocalNotify>> &notifiesAux);
     HcclResult AllocStreamsResource(
         const std::string &newTag, const HcclOpResParam *commParam, const u32 streamNum, std::vector<Stream> &streams);
-    HcclResult AllocScratchMemResource(
-        const std::string &newTag, const HcclOpResParam *commParam, const u64 &scratchMemSize, DeviceMem &scratchMem);
+    HcclResult AllocScratchMemResource(const std::string &newTag, const HcclOpResParam *commParam,
+        const u64 &scratchMemSize, DeviceMem &scratchMem, bool reAllocFlag = false);
     HcclResult AllocAlgResource(const std::string &newTag, const OpParam &opParam, const HcclOpResParam *commParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult CalcResRequest(const std::string &algName, const OpParam &param,
@@ -417,6 +417,33 @@ private:
     HcclResult PrepareSymmetricMemory(const OpParam &param, OpCommTransport &opTransportResponse);
     HcclResult PrepareSymmetricMemRanges(const AlgResourceResponse &algResource, uint64_t inputSize, uint64_t outputSize,
                                         std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
+
+    HcclResult CalSendRecvInfoForAlltoall(const OpParam &param);
+    HcclResult CalSendRecvInfoFor910B(const std::string &algName, const OpParam &param,
+        std::unique_ptr<CollExecutorBase> &executor);
+    void HandleExistTagReAlloc(HccltagLocalResV2* tagRes, const std::string& tag, bool reAllocFlag, 
+        ListCommon*& curList, bool& needSkip);
+
+    // 获取指定索引的算子信息
+    const AicpuOpInfo* GetOpInfoFromSqIdx(u32 sqIdx, SqeRingBuffer *sqeContextBuffer);
+    
+    // 打印算子数据信息
+    void PrintOpDataInfo(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor);
+    
+    // 打印task序列行
+    void PrintTaskLine(bool isMonitor, u32 lineNum, u32 totalPrinted, const std::string& taskLine) const;
+    
+    // 更新算子上下文
+    void UpdateOpContext(u32& opIndex, std::string& opTag, u32& lineCount, std::vector<std::string>& currentOpTasks, u32 newOpIndex, const std::string& newOpTag) const;
+    
+    // 准备下一行数据
+    void PrepareNextLine(u32 opIndex, u32& lineCount, std::vector<std::string>& currentOpTasks) const;
+    
+    // 拼接task列表为字符串
+    std::string ConcatTaskLine(const std::vector<std::string>& tasks) const;
+    
+    // 打印剩余未满行的tasks
+    void PrintRemainingTasks(bool isMonitor, u32 lineCount, u32 printedCount, const std::vector<std::string>& currentOpTasks) const;
 
     std::unordered_map<s32, u32> opExecIndexMap_;
 

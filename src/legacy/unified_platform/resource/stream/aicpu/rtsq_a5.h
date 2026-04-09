@@ -24,6 +24,8 @@ public:
 
     void NotifyWait(u32 notifyId) override;
 
+    void NotifyWait(u32 notifyId, u32 timeout);
+
     void NotifyRecordLoc(u32 notifyId) override;
 
     void Cnt1toNNotifyWait(u32 notifyId, u32 value) override;
@@ -37,6 +39,8 @@ public:
     void SdmaCopy(u64 srcAddr, u64 dstAddr, u32 size, u32 partId) override;
 
     void SdmaReduce(u64 srcAddr, u64 dstAddr, u32 size, u32 partId, const ReduceIn &reduceIn) override;
+
+    void P2PWriteValue(u64 remoteAddr, u32 writeValue) override;
 
     void UbDbSend(const UbJettyLiteId &jettyLiteId, u16 piValue) override;
 

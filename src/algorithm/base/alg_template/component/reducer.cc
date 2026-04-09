@@ -237,7 +237,7 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
     bool isSpInlineReduce = link->IsSpInlineReduce();
     HcclResult ret = HCCL_SUCCESS;
     
-    if (isSpInlineReduce && (INLINE_REDUCE_BITMASK & reduceAttribute_)) {
+    if (isSpInlineReduce && static_cast<bool>((INLINE_REDUCE_BITMASK & reduceAttribute_))) {
         CHK_RET(link->Wait(notifyIdx, stream));
         void *remoteMem = nullptr;
         CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteMem));

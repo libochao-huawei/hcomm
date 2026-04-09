@@ -49,6 +49,7 @@ void Interpret(const InsWaitFinAck &ins, const StreamLite &stream, ResMgrFetcher
 void Interpret(const InsRead &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher);
 void Interpret(const InsReadReduce &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher);
 void Interpret(const InsBatchRead &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher);
+void Interpret(const InsReadExtend &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher);
 void Interpret(const InsBatchWrite &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher);
 void Interpret(const InsWrite &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher);
 void Interpret(const InsWriteExtend &ins, const StreamLite &stream, ResMgrFetcher *resMgrFetcher);

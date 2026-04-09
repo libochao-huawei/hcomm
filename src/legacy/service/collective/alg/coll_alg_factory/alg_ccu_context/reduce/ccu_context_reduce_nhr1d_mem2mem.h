@@ -66,13 +66,15 @@ private:
     std::vector<CcuRep::Variable> output_;
     std::vector<CcuRep::Variable> token_;
     CcuRep::Variable isInputOutputEqual_;
+    CcuRep::Variable die0LastSliceSize_;
+    CcuRep::Variable die1LastSliceSize_;
+    CcuRep::Variable repeatInputOffset_;
+    CcuRep::Variable repeatOutputOffset_;
     CcuRep::Variable die0Size_;
     CcuRep::Variable die1Size_;
     CcuRep::Variable sliceSize_;
     CcuRep::Variable die0SliceSize_;
     CcuRep::Variable die1SliceSize_;
-    CcuRep::Variable die0LastSliceSize_;
-    CcuRep::Variable die1LastSliceSize_;
 
     // 跨轴同步信号
     std::string        localAxisSignalName_;
@@ -82,8 +84,6 @@ private:
     CcuRep::MaskSignal localSignal_;
 
     std::vector<CcuRep::Variable> sliceOffset_;
-    CcuRep::Variable repeatInputOffset_;
-    CcuRep::Variable repeatOutputOffset_;
 
     CcuRep::Memory srcMem_;
     CcuRep::Memory dstMem_;

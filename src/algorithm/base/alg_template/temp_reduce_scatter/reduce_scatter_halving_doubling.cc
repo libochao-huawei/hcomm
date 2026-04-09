@@ -124,7 +124,7 @@ HcclResult ReduceScatterHalvingDoubling::RunDestRducer(const LINK &link,
         return HCCL_E_INTERNAL;
     }
 
-    if (link->IsSpInlineReduce() && (INLINE_REDUCE_BITMASK & reduceAttr_)) {
+    if (link->IsSpInlineReduce() && static_cast<bool>((INLINE_REDUCE_BITMASK & reduceAttr_))) {
         reduceSrcMem = inputMem_.range(rxSlice.offset, rxSlice.size);
     } else {
         reduceSrcMem = outputMem_.range(rxSlice.offset, rxSlice.size);

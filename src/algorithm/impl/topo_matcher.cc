@@ -293,8 +293,9 @@ u32 TopoMatcher::GetExternalInputInterHccsDisable()
 
 bool TopoMatcher::GetARSFlag()
 {
-    bool isARSTrue = (topoInfo_.deviceType == DevType::DEV_TYPE_910_93) && topoInfo_.multiModuleDiffDeviceNumMode
-        && !topoInfo_.multiSuperPodDiffDeviceNumMode;
+    bool isARSTrue = (topoInfo_.deviceType == DevType::DEV_TYPE_910_93) && 
+        static_cast<bool>(topoInfo_.multiModuleDiffDeviceNumMode) && 
+        !static_cast<bool>(topoInfo_.multiSuperPodDiffDeviceNumMode);
     return isARSTrue;
 }
  

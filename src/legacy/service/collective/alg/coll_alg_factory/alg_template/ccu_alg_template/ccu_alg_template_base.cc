@@ -141,7 +141,7 @@ HcclResult CcuAlgTemplateBase::GetToken(const CollAlgOperator &op, uint64_t &tok
                                      static_cast<uint64_t>(op.scratchMem->GetSize()));
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("[GetToken] Both inputMem and outputMem are null");
+    HCCL_WARNING("[GetToken] Both inputMem and outputMem are null");
     return HCCL_E_PTR;
 }
 u32 CcuAlgTemplateBase::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType)
@@ -168,6 +168,18 @@ uint64_t CcuAlgTemplateBase::BufferTypeToAddr(const BufferType bufferType)
     } else {
         return 0;
     }
+}
+
+HcclResult CcuAlgTemplateBase::AddRanksToGroup(const std::vector<std::vector<RankId>> &tempVTopo, RankGroup &rankGroupX, RankGroup &rankGroupY) const
+{
+    for (auto &peer : tempVTopo[0]) {
+        rankGroupX.AddRank(peer);
+    }
+
+    for (auto &peer : tempVTopo[1]) {
+        rankGroupY.AddRank(peer);
+    }
+    return HCCL_SUCCESS;
 }
 
 HcclResult CcuAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)

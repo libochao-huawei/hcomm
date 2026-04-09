@@ -48,8 +48,6 @@ HcclResult GetStreamCaptureInfo(rtStream_t stream, rtModel_t &rtModel, bool &isC
         HCCL_ERROR("[%s]Unsupported stream capture status.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
-    HCCL_RUN_INFO("[%s] captureStatus[%d] isCapture[%d]", __func__,
-                  static_cast<int>(captureStatus), static_cast<int>(isCapture));
     return HCCL_SUCCESS;
 }
 

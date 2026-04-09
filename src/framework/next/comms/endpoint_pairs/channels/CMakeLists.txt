@@ -10,6 +10,7 @@
 
 set(src_list
     channel.cc
+    channel_process.cc
 )
 
 target_sources(hcomm PRIVATE

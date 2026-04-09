@@ -16,6 +16,8 @@
 #include "exception_util.h"
 #include "stl_util.h"
 #include "preempt_port_manager.h"
+#include "timeout_exception.h"
+#include "p2p_enable_manager.h"
 
 namespace Hccl {
 
@@ -35,6 +37,16 @@ void SocketManager::BatchCreateSockets(const vector<LinkData> &links)
         return;
     }
 
+    for (auto &link: pendingLinks) {
+        if (link.GetLinkProtocol() == LinkProtocol::PCIE) {
+            std::vector<uint32_t> remoteDevices;
+            remoteDevices.push_back(link.GetRemoteDeviceId());
+            auto ret = P2PEnableManager::GetInstance().WaitP2PEnabled(remoteDevices);
+            if (ret != HCCL_SUCCESS) {
+                THROW<TimeoutException>(StringFormat("WaitP2PEnabled failed, devicePhyId=%d", link.GetRemoteDeviceId()));
+            }
+        }
+    }
     BatchServerInit(pendingLinks);
     BatchAddWhiteList(pendingLinks);
     BatchCreateConnectedSockets(pendingLinks);
@@ -68,7 +80,12 @@ void SocketManager::BatchAddWhiteList(const vector<LinkData> &links)
         wlistInfo.connLimit = 1;
         wlistInfo.remoteIp = link.GetRemoteAddr();
 
-        SocketConfig socketConfig(link.GetRemoteRankId(), link, socketTag_);
+        std::string  linkTag  = socketTag_;
+        // 获取到reuseIdx不为0时，tag需要拼接_reuseIdx；为0时不拼接，不影响原socket公用
+        if (link.GetReuseIdx() != "0") {
+            linkTag += ("_" + link.GetReuseIdx());
+        }
+        SocketConfig socketConfig(link.GetRemoteRankId(), link, linkTag);
         string       hccpSocketTag = socketConfig.GetHccpTag();
 
         wlistInfo.tag = hccpSocketTag;
@@ -87,6 +104,9 @@ void SocketManager::BatchCreateConnectedSockets(const vector<LinkData> &links)
     for (auto &link : links) {
         auto         remoteRank = link.GetRemoteRankId();
         std::string  socketTag  = socketTag_;
+        if (link.GetReuseIdx() != "0") {
+            socketTag += ("_" + link.GetReuseIdx());
+        }
         SocketConfig socketConfig(remoteRank, link, socketTag);
         CreateConnectedSocket(socketConfig);
     }
@@ -106,12 +126,13 @@ void SocketManager::ServerInit(PortData &localPort)
     SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
     IpAddress    ipAddress        = localPort.GetAddr();
     u32 serverListenPort          = DEFAULT_VALUE_DEVICEPORT;
-    auto iter = rankListenPortMap.find(devicePhyId);
+    auto iter = rankListenPortMap.find(localPort.GetRankId());
     if (iter != rankListenPortMap.end()) {
         serverListenPort = iter->second;
     }
+    NicType nicType = localPort.GetType() == PortDeploymentType::P2P ? NicType::DEVICE_VNIC_TYPE : NicType::DEVICE_NIC_TYPE;
     auto         serverSocket     = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server",
-                                                   SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+                                                   SocketRole::SERVER, nicType);
     bool success = serverSocket->Listen(serverListenPort);
     if (success) {
         HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
@@ -198,9 +219,9 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
     if (iter != rankListenPortMap.end()) {
         serverListenPort = iter->second;
     }
-
+    NicType nicType = socketConfig.link.GetLocalPort().GetType() == PortDeploymentType::P2P ? NicType::DEVICE_VNIC_TYPE : NicType::DEVICE_NIC_TYPE;
     auto tmpSocket = socketProducer(localIpAddress, remoteIpAddress, serverListenPort, socketHandle, hccpSocketTag,
-                                    socketRole, NicType::DEVICE_NIC_TYPE);
+                                    socketRole, nicType);
     HCCL_INFO("[SocketManager::%s] Device %u connect async the remote rank %d port %u.", __func__, devicePhyId, socketConfig.remoteRank, serverListenPort);
     tmpSocket->ConnectAsync();
     connectedSocketMap[socketConfig] = std::move(tmpSocket);
@@ -306,6 +327,7 @@ bool SocketManager::DelWhiteList(PortData &localPort, vector<RaSocketWhitelist> 
 
 void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap)
 {
+    std::lock_guard<std::mutex> lock(socketLock);
     std::unordered_map<u32, u32> &staticMap = SocketManager::GetDeviceServerListenPortMap();
     staticMap.clear();
     for (auto &pair : rankListenPortMap) {
@@ -330,6 +352,17 @@ std::unordered_map<PortData, shared_ptr<Socket>> &SocketManager::GetServerSocket
 {
     static std::unordered_map<PortData, shared_ptr<Socket>> serverSocketMap;
     return serverSocketMap;
+}
+
+bool SocketManager::CheckServerPortListening(const PortData &portData) const
+{
+    std::lock_guard<std::mutex> lock(socketLock);
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    auto iterSocket = serverSocketMap.find(portData);
+    if (iterSocket == serverSocketMap.end()) {
+        return false;
+    }
+    return true;
 }
 
 } // namespace Hccl

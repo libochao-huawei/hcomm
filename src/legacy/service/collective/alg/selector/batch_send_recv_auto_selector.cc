@@ -34,5 +34,23 @@ SelectorStatus BatchSendRecvAutoSelector::SelectAicpuAlgo(const TopoInfo &topoIn
     return SelectorStatus::MATCH;
 }
 
+SelectorStatus BatchSendRecvAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
+                                                      const CollAlgOperator &op,
+                                                      const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
+                                                      std::string &primQueueGenName) const
+{
+    (void) topoInfo;
+    std::vector<HcclAlgoType> algos = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+    auto it = configAlgMap.find(op.opType);
+    if (it != configAlgMap.end()) {
+        algos = it->second;
+    }
+
+    HCCL_INFO("[BatchSendRecvAutoSelector] select AIV algo for BatchSendRecv");
+
+    primQueueGenName = "AivBatchSendRecv";
+    return SelectorStatus::MATCH;
+}
+
 REGISTER_SELECTOR_BY_OPTYPE(OpType::BATCHSENDRECV, 18, BatchSendRecvAutoSelector);
 } // namespace Hccl

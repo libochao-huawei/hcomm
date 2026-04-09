@@ -52,7 +52,7 @@ public:
     virtual HcclResult CreatePairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum);
     virtual HcclResult GetPairWiseList(std::vector<std::vector<HcclSendRecvItem*>> &sendRecvPairList);
     virtual HcclResult CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID);
-    HcclResult GetNumBlocks(u32& numBlocks);
+    HcclResult GetNumBlocks(u32& numBlocks) const;
     HcclResult SetNumBlocks(const u32& numBlocks);
     HcclResult GetCache(HcclCacheInfo& cacheInfo);
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);

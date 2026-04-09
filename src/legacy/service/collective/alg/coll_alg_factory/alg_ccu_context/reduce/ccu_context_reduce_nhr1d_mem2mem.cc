@@ -70,10 +70,10 @@ void CcuContextReduceNHR1DMem2mem::InitResources()
 {
     die0Size_           = CreateVariable();
     die1Size_           = CreateVariable();
-    die0SliceSize_      = CreateVariable();
-    die1SliceSize_      = CreateVariable();
     die0LastSliceSize_  = CreateVariable();
     die1LastSliceSize_  = CreateVariable();
+    die0SliceSize_      = CreateVariable();
+    die1SliceSize_      = CreateVariable();
     localAxisSignal_    = CreateMaskSignal();
     localSignal_        = CreateMaskSignal();
     if (axisSize_ > 1) {
@@ -171,15 +171,13 @@ void CcuContextReduceNHR1DMem2mem::DoReduceScatterNHRSingleStep(const NHRStepInf
     const std::vector<u32> &sendSliceIdxList  = nhrStepInfo.txSliceIdxs;
     srcMem_.token                         = token_[myRankIdx_];
     dstMem_.token                         = token_[toRankIdx];
-
-    uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
-    uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
-
     uint16_t sendSignalId = nhrStepInfo.toRank / RANK_NUM_PER_CKE;
     uint16_t sendBit      = 1 << (nhrStepInfo.toRank % RANK_NUM_PER_CKE);
+    uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
+    uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
     if (nhrStepInfo.step != 0) {
         // 通知fromRank，可以写入
-        RemotePost(*recvTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+        RemotePost(*recvTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
 
         // 等待toRank通知其可以写入
         RemoteWait(*sendTransport, sendSignalId + signalNum_ * CKE_IDX_3, sendBit);
@@ -210,7 +208,7 @@ void CcuContextReduceNHR1DMem2mem::DoReduceScatterNHRSingleStep(const NHRStepInf
     }
     LocalWait(localSignal_, (1 << (sendSliceIdxList.size() % RANK_NUM_PER_CKE)) - 1);
     // 通知toRank数据写入完毕
-    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit);
+    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit, true);
     // 等待fromRank通知数据写入完毕
     uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
     uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
@@ -228,8 +226,8 @@ void CcuContextReduceNHR1DMem2mem::DoWriteReduceSlice(const u32 &toRank, CcuRep:
     
     // 添加 die1 偏移
     if (axisId_ == 1) {
-        src.addr += die0Size_;
         dst.addr += die0Size_;
+        src.addr += die0Size_;
     }
 
     // allreduce切片的最后一块slice，大小可能不一致
@@ -258,9 +256,9 @@ void CcuContextReduceNHR1DMem2mem::DoGatherNHRSingleStep(const NHRStepInfo &nhrS
 {
     u32& toRankIdx = indexMap_[nhrStepInfo.toRank];
     u32& fromRankIdx = indexMap_[nhrStepInfo.fromRank];
-    u32  sendSliceIdx = 0;
-    CcuTransport           *sendTransport = transports[toRankIdx];
     CcuTransport           *recvTransport = transports[fromRankIdx];
+    CcuTransport           *sendTransport = transports[toRankIdx];
+    u32  sendSliceIdx = 0;
     const std::vector<u32> &sendSliceIdxList  = nhrStepInfo.txSliceIdxs;
     srcMem_.token                         = token_[myRankIdx_];
     dstMem_.token                         = token_[toRankIdx];
@@ -288,7 +286,7 @@ void CcuContextReduceNHR1DMem2mem::DoGatherNHRSingleStep(const NHRStepInfo &nhrS
 
     if (nhrStepInfo.step + 1 != stepInfoVector_.size()) {   // 最后一步不需要同步
         // 通知toRank，写入完毕
-        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+        RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
         // 等待fromRank通知写入完毕
         uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
         uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
@@ -388,8 +386,8 @@ void CcuContextReduceNHR1DMem2mem::DoLocalCopySlice(CcuRep::Memory &src, CcuRep:
     bool islastSlice;
     // 添加 die1 偏移
     if (axisId_ == 1) {
-        src.addr += die0Size_;
         dst.addr += die0Size_;
+        src.addr += die0Size_;
     }
 
     islastSlice = (copySliceIdx + 1 == dimSize_);

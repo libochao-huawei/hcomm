@@ -54,7 +54,7 @@ void ProfilingHandlerLite::ReportHcclOpInfo(const DfxOpInfo &opInfo) const
     if (aicpu::GetTaskAndStreamId(taskId, streamId) != aicpu::status_t::AICPU_ERROR_NONE) {
         THROW<InternalException>("[ProfilingHandler] Failed to get task id and stream id.");
     }
-    hcclOpInfo.algType  = GetProfHashId(opInfo.algType_.Describe().c_str(), opInfo.algType_.Describe().length());
+    hcclOpInfo.algType  = GetProfHashId(opInfo.algType_.c_str(), opInfo.algType_.length());
     if (taskId > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
         THROW<InvalidParamsException>("[ProfilingHandler] taskId is larger than u32.");
     }

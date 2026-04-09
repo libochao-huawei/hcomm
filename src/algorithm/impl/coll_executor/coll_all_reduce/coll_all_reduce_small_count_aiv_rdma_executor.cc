@@ -98,7 +98,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalNumBlocks(u32& numBlocks, 
         HCCL_WARNING("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
 
-    HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+    HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
@@ -168,13 +168,13 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::InterServerHDOneshot(const Op
         interLinks[peer]->RxAck(const_cast<Stream&>(param.stream));
         if (interLinks[peer]->IsSupportTransportWithReduce() && 
             ((interLinks[peer]->GetLinkType() == LinkType::LINK_STANDARD_ROCE) ||
-            (RDMA_REDUCE_BITMASK & reduceAttr))) {
+            static_cast<bool>((RDMA_REDUCE_BITMASK & reduceAttr)))) {
             HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][InterServerHDOneshot] inter use RDMA");
             CHK_RET(senderInfo->run(interLinks[peer], sliceForWriteOffset, src, const_cast<Stream&>(param.stream),
                 UserMemType::INPUT_MEM));
             CHK_RET(reducerInfo->run(dispatcher_, interLinks[peer], 0, src, src, src, 
                 const_cast<Stream&>(param.stream), DstMemType::RESULT_INPUT_MEM, UserMemType::INPUT_MEM));
-        } else if (interLinks[peer]->IsSpInlineReduce() && (INLINE_REDUCE_BITMASK & reduceAttr)) {
+        } else if (interLinks[peer]->IsSpInlineReduce() && static_cast<bool>((INLINE_REDUCE_BITMASK & reduceAttr))) {
             HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][InterServerHDOneshot] inter use SDMA");
             CHK_RET(senderInfo->run(interLinks[peer], sliceForWriteOffset, src, const_cast<Stream&>(param.stream),
                 UserMemType::INPUT_MEM));

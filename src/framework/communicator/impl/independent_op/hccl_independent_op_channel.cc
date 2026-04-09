@@ -25,7 +25,7 @@ HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
-        ret = HcommChannelGetNotifyNum(channel, notifyNum);
+        ret = static_cast<HcclResult>(HcommChannelGetNotifyNum(channel, notifyNum));
     }
     else {
         auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
@@ -76,6 +76,9 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
 
 HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
 {
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(buffer);
+    CHK_PTR_NULL(size);
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
@@ -88,9 +91,6 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
             return HCCL_SUCCESS;
         }());
 #endif
-    CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(buffer);
-    CHK_PTR_NULL(size);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CommBuffer commBuffer;
     HcclResult ret = HCCL_SUCCESS;
@@ -110,8 +110,6 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
     return HCCL_SUCCESS;
 }
 
-constexpr uint32_t MEM_NUM_MAX = 256;  // memNum的默认限制最大为256
-
 HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32_t *memNum, CommMem **remoteMems,
     char ***memTags)
 {
@@ -119,10 +117,6 @@ HcclResult HcclChannelGetRemoteMems(HcclComm comm, ChannelHandle channel, uint32
     CHK_PTR_NULL(remoteMems);
     CHK_PTR_NULL(memTags);
     CHK_PTR_NULL(memNum);
-    CHK_PRT_RET(
-        (*memNum > MEM_NUM_MAX), HCCL_ERROR("[%s]Invalid memNum, memNum[%u], max memNum[%u]",
-        __func__, *memNum, MEM_NUM_MAX), HCCL_E_PARA
-    );
 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(

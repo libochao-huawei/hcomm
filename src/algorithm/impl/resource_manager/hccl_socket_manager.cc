@@ -824,7 +824,7 @@ HcclResult HcclSocketManager::WaitLinkEstablish(std::shared_ptr<HcclSocket> sock
 
 HcclResult HcclSocketManager::WaitLinksEstablishCompleted(HcclSocketRole localRole,
     std::map <u32, std::vector<std::shared_ptr<HcclSocket> > > &socketsMap, std::map<u32, u32> &dstRankToUserRank,
-    RankInfo &loaclRankInfo, RankInfo &remoteRankInfo, const HcclNetDevCtx &netDevCtx)
+    const RankInfo &loaclRankInfo, const RankInfo &remoteRankInfo, const HcclNetDevCtx &netDevCtx)
 {
     (void) loaclRankInfo;
     (void) remoteRankInfo;

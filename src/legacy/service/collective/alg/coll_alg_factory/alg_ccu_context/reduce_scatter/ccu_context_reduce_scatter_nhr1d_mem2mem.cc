@@ -246,7 +246,7 @@ void CcuContextReduceScatterNHR1DMem2Mem::DoRepeatReduceScatterNHRSingleStep(con
     // 被写之前告诉写自己的rank自己准备好了-前同步
     uint16_t recvSignalIdPrev = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
     uint16_t recvBitPrev      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
-    RemotePost(*recvTransport, recvSignalIdPrev + signalNum_ * CKE_IDX_3, recvBitPrev);
+    RemotePost(*recvTransport, recvSignalIdPrev + signalNum_ * CKE_IDX_3, recvBitPrev, true);
 
     uint16_t selfSignalIdPrev = rankId_ / RANK_NUM_PER_CKE;
     uint16_t selfBitPrev      = 1 << (rankId_ % RANK_NUM_PER_CKE);
@@ -263,11 +263,11 @@ void CcuContextReduceScatterNHR1DMem2Mem::DoRepeatReduceScatterNHRSingleStep(con
     // 写之后告诉对面写完了-后同步
     uint16_t selfSignalId = rankId_ / RANK_NUM_PER_CKE;
     uint16_t selfBit      = 1 << (rankId_ % RANK_NUM_PER_CKE);
-    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_4, selfBit, true);
 
     uint16_t recvSignalId = nhrStepInfo.fromRank / RANK_NUM_PER_CKE;
     uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % RANK_NUM_PER_CKE);
-    RemoteWait(*recvTransport, recvSignalId + signalNum_ * CKE_IDX_3, recvBit);
+    RemoteWait(*recvTransport, recvSignalId + signalNum_ * CKE_IDX_4, recvBit);
 }
 
 void CcuContextReduceScatterNHR1DMem2Mem::DoRepeatSendRecvSlices(const u32 &toRank, CcuRep::Memory &src,

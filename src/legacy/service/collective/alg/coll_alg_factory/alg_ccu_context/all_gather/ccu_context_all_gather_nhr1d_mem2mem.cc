@@ -14,13 +14,13 @@ namespace Hccl {
 
 constexpr uint16_t OUTPUT_XN_ID    = 1;
 constexpr uint16_t TOKEN_XN_ID     = 2;
+constexpr uint16_t FST_AXIS_ID     = 0;
+constexpr uint16_t SEC_AXIS_ID     = 1;
 constexpr uint16_t CKE_IDX_0       = 0;
 constexpr uint16_t CKE_IDX_1       = 1;
 constexpr uint16_t CKE_IDX_2       = 2;
 constexpr uint16_t CKE_IDX_3       = 3;
 constexpr uint16_t CKE_IDX_4       = 4;
-constexpr uint16_t FST_AXIS_ID     = 0;
-constexpr uint16_t SEC_AXIS_ID     = 1;
 constexpr uint16_t BIT_NUM_PER_CKE = 16; // 本rank给远端置位时应当写的CKE，16个对端一个CKE
 
 CcuContextAllGatherNHR1D::CcuContextAllGatherNHR1D(const CcuCtxArg &arg, const std::vector<CcuTransport *> &transports,
@@ -247,7 +247,7 @@ void CcuContextAllGatherNHR1D::DoRepeatAllGatherNHRSingleStep(const NHRStepInfo 
 if (nhrStepInfo.step + 1 != stepInfoVector_.size()){
     uint16_t selfSignalId = rankId_ / BIT_NUM_PER_CKE;
     uint16_t selfBit      = 1 << (rankId_ % BIT_NUM_PER_CKE);
-    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit);
+    RemotePost(*sendTransport, selfSignalId + signalNum_ * CKE_IDX_3, selfBit, true);
     uint16_t recvSignalId = nhrStepInfo.fromRank / BIT_NUM_PER_CKE;
     uint16_t recvBit      = 1 << (nhrStepInfo.fromRank % BIT_NUM_PER_CKE);
     RemoteWait(*recvTransport, recvSignalId + signalNum_ * CKE_IDX_3, recvBit);

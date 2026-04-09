@@ -37,6 +37,7 @@
 #include "hccl_tbe_task.h"
 #include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
+#include "hcom_common.h"
 
 using namespace std;
 using namespace hccl;
@@ -167,7 +168,19 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     CHK_PTR_NULL(rankTableM);
     CHK_PTR_NULL(identify);
 
-    HCCLV2_FUNC_RUN(HcomInitByStringV2(rankTableM, identify));
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            CHK_RET(HcomInitByStringV2(rankTableM, identify));
+            s32 myRank = std::atoi(identify);
+            Hccl::RankId rank = static_cast<Hccl::RankId>(myRank);
+            void *commV2 = nullptr;
+            CHK_RET(HcomGetCommV2(&commV2));
+            CHK_RET(HcomInitCollComm(rank, &commV2, hcomInfo.pComm));
+            u32 rankNum = 0;
+            CHK_RET(HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum));
+            CHK_RET(HcomSetGroupTopoInfo(HCCL_WORLD_GROUP, rankNum));
+            return HCCL_SUCCESS;
+        }());
 
     if (initConfig != nullptr) {
         DevType devType;
@@ -416,18 +429,22 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
     CHK_RET(hrtGetDevice(&deviceLogicId));
 
     // 参数合法性校验
+    RPT_INPUT_ERR(recvCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGatherV", "nullptr", "recvCounts", "non-null pointer"}));
     CHK_PTR_NULL(recvCounts);
+    RPT_INPUT_ERR(rdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomAllGatherV", "nullptr", "rdispls", "non-null pointer"}));
     CHK_PTR_NULL(rdispls);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
-        std::vector<std::string>({"HcomAllGatherV", "nullptr", "sendBuf", "non-null pointer"}));
-    CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
-        std::vector<std::string>({"HcomAllGatherV", "nullptr", "recvBuf", "non-null pointer"}));
-    CHK_PTR_NULL(recvBuf);
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcomAllGatherV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
-
+    if (UNLIKELY(sendCount > 0 && sendBuf == nullptr)) {
+            RPT_INPUT_ERR(true, "EI0003",\
+            std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+            std::vector<std::string>({"HcomAllGatherV", "nullptr", "sendBuf", "non-null pointer"}));
+            CHK_PTR_NULL(sendBuf);
+    }
+    
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     s32 streamId = 0;
     ret = hrtGetStreamId(stream, streamId);
@@ -437,9 +454,12 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
     HCCL_USER_CRITICAL_LOG("Entry-HcomAllGatherV:tag[%s], inputPtr[%p], outputPtr[%p], sendCount[%llu], dataType[%s], "\
         "recvCounts[%p], rdispls[%p], group[%s], streamId[%d], deviceLogicId[%d]", tag, sendBuf, recvBuf, sendCount,
         GetDataTypeEnumStr(dataType).c_str(), recvCounts, rdispls, strGroup.c_str(), streamId, deviceLogicId);
-    CHK_RET(PrintMemoryAttr(sendBuf));
-    CHK_RET(PrintMemoryAttr(recvBuf));
-
+    if (sendBuf != nullptr) {
+        CHK_RET(PrintMemoryAttr(sendBuf));
+    } 
+    if (recvBuf != nullptr){
+        CHK_RET(PrintMemoryAttr(recvBuf));
+    }
     HCCLV2_FUNC_RUN(
         HcomAllGatherVV2(tag, const_cast<void*>(sendBuf), sendCount, const_cast<void*>(recvBuf), const_cast<void*>(recvCounts), const_cast<void*>(rdispls), dataType, group, stream));
     CHK_RET(HcomCheckOpParam(tag, 0, dataType, group, stream));
@@ -692,19 +712,23 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
 {
     HcclUs startut = TIME_NOW();
     uint64_t beginTime = hrtMsprofSysCycleTime();
+
     // 入参合法性校验
-    CHK_PTR_NULL(sendCounts);
-    CHK_PTR_NULL(sdispls);
-    RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
-        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "sendBuf", "non-null pointer"}));
-    CHK_PTR_NULL(sendBuf);
-    RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
-        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "recvBuf", "non-null pointer"}));
-    CHK_PTR_NULL(recvBuf);
-    CHK_RET(HcomCheckReductionOp("HcomReduceScatterV", op));
-    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
+    RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
         std::vector<std::string>({"HcomReduceScatterV", "nullptr", "stream", "non-null pointer"}));
     CHK_PTR_NULL(stream);
+    RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "sendCounts", "non-null pointer"}));
+    CHK_PTR_NULL(sendCounts);
+    RPT_INPUT_ERR(sdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "sdispls", "non-null pointer"}));
+    CHK_PTR_NULL(sdispls);
+    if (UNLIKELY(recvCount > 0 && recvBuf == nullptr)) {
+        RPT_INPUT_ERR(true, "EI0003",\
+        std::vector<std::string>({"ccl_op", "value", "parameter", "value"}),\
+        std::vector<std::string>({"HcomReduceScatterV", "nullptr", "recvBuf", "non-null pointer"}));
+        CHK_PTR_NULL(recvBuf);
+    }
 
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -713,8 +737,12 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
     HCCL_RUN_INFO("Entry-HcomReduceScatterV:tag[%s], inputPtr[%p], outputPtr[%p], count[%llu], dataType[%s], op[%s], "\
         "group[%s], streamId[%d]", tag, sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(),
         GetReduceOpEnumStr(op).c_str(), strGroup.c_str(), streamId);
-    CHK_RET(PrintMemoryAttr(sendBuf));
-    CHK_RET(PrintMemoryAttr(recvBuf));
+    if (sendBuf != nullptr) {
+        CHK_RET(PrintMemoryAttr(sendBuf));
+    } 
+    if (recvBuf != nullptr){
+        CHK_RET(PrintMemoryAttr(recvBuf));
+    }
 
     HCCLV2_FUNC_RUN(
         HcomReduceScatterVV2(tag, sendBuf, const_cast<void*>(sendCounts), const_cast<void*>(sdispls), recvBuf, recvCount, dataType, op, group, stream));
@@ -885,6 +913,7 @@ HcclResult HcclCommGraphAllGather(const char *tag, void *inputPtr, void *outputP
     // HcclCommGraphAllGatherV2
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -937,6 +966,7 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     // HcomGraphAllReduceV2
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -997,6 +1027,7 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
      // HcomGraphReduceV2
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -1050,6 +1081,7 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
     CHK_RET(PrintMemoryAttr(ptr));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -1104,6 +1136,7 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
 
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -1156,6 +1189,7 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
     CHK_RET(PrintMemoryAttr(inputPtr));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -1207,6 +1241,7 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
     CHK_RET(PrintMemoryAttr(outputPtr));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -1272,6 +1307,7 @@ HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
     HCCL_INFO("HcclCommGraphGetRankSize:opBaseHcom[%lld]", opBaseHcom);
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -1299,6 +1335,7 @@ HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
     HCCL_INFO("HcclCommGraphGetRankId:opBaseHcom[%lld]", opBaseHcom);
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);
@@ -2503,6 +2540,7 @@ HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
     HCCLV2_FUNC_RUN([&]() -> HcclResult {
         hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm *>(opBaseHcom);
+        CHK_PTR_NULL(hcclComm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         opBaseHcom = reinterpret_cast<s64>(commV2);

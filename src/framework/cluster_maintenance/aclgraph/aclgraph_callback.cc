@@ -53,8 +53,8 @@ HcclResult AclgraphCallback::CleanCaptureRes(u64 modelId)
     }
 
     bool isResourceReleaseFailed = false;
-    for (auto commIt : modelIt->second) {
-        for (auto newTag : commIt.second) {
+    for (auto &commIt : modelIt->second) {
+        for (auto &newTag : commIt.second) {
             ret = commIt.first->ClearOpResource(newTag);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[%s] modelID[%llu] tag[%s] resource release fail, ret[%d]",
@@ -83,7 +83,7 @@ void AclgraphCallback::CleanCaptureRes(HcclCommunicator *communicator)
     }
 
     std::lock_guard<std::mutex> lock(resMutex_);
-    for (auto modelIt : captureResMap_) {
+    for (auto &modelIt : captureResMap_) {
         if (modelIt.second.find(communicator) != modelIt.second.end()) {
             modelIt.second.erase(communicator);
         }
@@ -92,6 +92,7 @@ void AclgraphCallback::CleanCaptureRes(HcclCommunicator *communicator)
     HCCL_INFO("[%s] communicator[%p] resource release success", __func__, communicator);
 }
 
+// 记录aclgraph下发的所有tag, 首次记录时注册aclgraph销毁回调
 HcclResult AclgraphCallback::InsertNewTagToCaptureResMap(HcclCommunicator *communicator,
     const std::string &newTag, const OpParam &opParam)
 {

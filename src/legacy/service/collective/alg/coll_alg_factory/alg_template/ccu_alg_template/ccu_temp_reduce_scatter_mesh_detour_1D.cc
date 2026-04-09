@@ -70,18 +70,18 @@ HcclResult CcuTempReduceScatterMeshDetour1D::CalcResDetour(const RankGraph *rank
         RankId neighborRank = tempVTopo_[0][(myAlgRank + 1 + queIdx) % tempRankSize_];
         uint32_t linkNum = GetPathsFromRankGraph(rankGraph, myRank_, neighborRank).size();
         tempResReq.links[neighborRank] = linkNum;
-        HCCL_INFO("[CalcResDetour] RankSize[%u], MyRank[%d]--Neighbor[%d], linkNum[%u]",
+        HCCL_INFO("[CcuTempReduceScatterMeshDetour1D][CalcResDetour] RankSize[%u], MyRank[%d]--Neighbor[%d], linkNum[%u]",
             tempRankSize_, myRank_, neighborRank, linkNum);
 
         // 2P支持2,3,4条link，4P支持2条link，注意绕路link分两条
         CHK_PRT_RET((tempRankSize_ == 2 && (linkNum <= 1 || linkNum > 1 + 3 * 2)) ||
                     (tempRankSize_ == 4 && linkNum != 1 + 1 * 2), // 4P场景下，1条直连，绕路拆成2条
-            HCCL_ERROR("[CalcResDetour] Invalid linkNum[%u] for RankSize[%u].", linkNum, tempRankSize_),
+            HCCL_ERROR("[CcuTempReduceScatterMeshDetour1D][CalcResDetour] Invalid linkNum[%u] for RankSize[%u].", linkNum, tempRankSize_),
                 HcclResult::HCCL_E_INTERNAL);
         if (queIdx == 0) {
             detourPathNum_ = (tempRankSize_ == 2) ? (linkNum - 1) / 2 : 1; // 2P时去掉直连有2N条绕路link，对应N个绕路路径
             pathNumPerPeer_ = (tempRankSize_ == 2) ? (detourPathNum_ + 1) : detourPathNum_ + 2;  // 4P直连有2条，固定3条
-            HCCL_INFO("[CalcResDetour] detourPathNum[%u], pathNum[%u]", detourPathNum_, pathNumPerPeer_);
+            HCCL_INFO("[CcuTempReduceScatterMeshDetour1D][CalcResDetour] detourPathNum[%u], pathNum[%u]", detourPathNum_, pathNumPerPeer_);
         }
     }
 
@@ -109,7 +109,7 @@ void CcuTempReduceScatterMeshDetour1D::ProcessLinks(std::vector<LinkData> &links
         if (pair.second.empty()) {
             continue;
         }
-        HCCL_INFO("[ProcessLinks] rankId[%d], linkSize[%zu]", pair.first, pair.second.size());
+        HCCL_INFO("[CcuTempReduceScatterMeshDetour1D][ProcessLinks] rankId[%d], linkSize[%zu]", pair.first, pair.second.size());
         for (uint32_t i = 0; i < pair.second.size(); i++) {
             LinkData curLink = pair.second[i];
             if (curLink.GetHop() == 1) {
@@ -120,7 +120,7 @@ void CcuTempReduceScatterMeshDetour1D::ProcessLinks(std::vector<LinkData> &links
                 recvLinks.emplace_back(curLink);
             } else {
                 THROW<InvalidParamsException>(StringFormat(
-                    "[ProcessLinks] Rank[%d]--Peer[%d]--link[%d], unexpected link type.", myRank_, pair.first, i));
+                    "[CcuTempReduceScatterMeshDetour1D][ProcessLinks] Rank[%d]--Peer[%d]--link[%d], unexpected link type.", myRank_, pair.first, i));
             }
         }
     }
@@ -135,21 +135,21 @@ void CcuTempReduceScatterMeshDetour1D::ProcessLinks(std::vector<LinkData> &links
     if (sendLinks.size() != recvLinks.size() || directLinks.size() != tempRankSize_ - 1 ||
         sendLinks.size() % directLinks.size() != 0 || recvLinks.size() % directLinks.size() != 0) {
         THROW<InvalidParamsException>(StringFormat(
-            "[ProcessLinks] Unexpected directLinkSize[%u]--sendLinkSize[%u]--recvLinkSize[%u].",
+            "[CcuTempReduceScatterMeshDetour1D][ProcessLinks] Unexpected directLinkSize[%u]--sendLinkSize[%u]--recvLinkSize[%u].",
                 directLinks.size(), sendLinks.size(), recvLinks.size()));
     }
     for (uint32_t i = 0; i < directLinks.size(); i++) {
-        HCCL_INFO("[ProcessLinks] directLinks[%u]: peer[%d], linkType[%s]",
+        HCCL_INFO("[CcuTempReduceScatterMeshDetour1D][ProcessLinks] directLinks[%u]: peer[%d], linkType[%s]",
             i, directLinks[i].GetRemoteRankId(), directLinks[i].GetDirection().Describe().c_str());
         links.emplace_back(directLinks[i]);
     }
     for (uint32_t i = 0; i < sendLinks.size(); i++) {
-        HCCL_INFO("[ProcessLinks] sendLinks[%u]: peer[%d], linkType[%s]",
+        HCCL_INFO("[CcuTempReduceScatterMeshDetour1D][ProcessLinks] sendLinks[%u]: peer[%d], linkType[%s]",
             i, sendLinks[i].GetRemoteRankId(), sendLinks[i].GetDirection().Describe().c_str());
         links.emplace_back(sendLinks[i]);
     }
     for (uint32_t i = 0; i < recvLinks.size(); i++) {
-        HCCL_INFO("[ProcessLinks] recvLinks[%u]: peer[%d], linkType[%s]",
+        HCCL_INFO("[CcuTempReduceScatterMeshDetour1D][ProcessLinks] recvLinks[%u]: peer[%d], linkType[%s]",
             i, recvLinks[i].GetRemoteRankId(), recvLinks[i].GetDirection().Describe().c_str());
         links.emplace_back(recvLinks[i]);
     }
@@ -161,44 +161,42 @@ HcclResult CcuTempReduceScatterMeshDetour1D::Run(const TempFuncs &tempFuncs, con
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                           std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempReduceScatterMeshDetour1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
-
     CcuInstructionReduceScatterMeshDetour1D ccuInsReduceScatterMeshDetour1D;
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offSet;
+    uint64_t offset;
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             // 从UserIn获取数据
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[myRank_].GetType());
             // 需要加上UserIn的偏移，包含了loop偏移和rank偏移
-            offSet = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
+            offset = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
         } else {
-            // 从inBuff获取数据
-            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
             // 从inBuff获取数据，只需要加上rank偏移
-            offSet = sliceInfoVec[myRank_][0].offset;
+            offset = sliceInfoVec[myRank_][0].offset;
+            inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         }
         if (tempFuncs.isBottom) {
-            // 把数据写入UserOut
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType())
                 + tempFuncs.usrData.usrOutSlices[0].GetOffset();
         } else {
-            // 把数据写入outBuff
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
         }
     } else {
-        // 图模式没有tempFuncs.usrData，直接通过buffInfo_获取输入输出地址
-        inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
+        offset = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
+        inputAddr  = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff;
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff + tempFuncs.usrData.usrOutSlices[0].GetOffset();
-        offSet = tempFuncs.usrData.usrInSlices[myRank_].GetOffset();
     }
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
-    HCCL_INFO("inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
+    HCCL_INFO("[CcuTempReduceScatterMeshDetour1D]inputAddr[%llu], outputAddr[%llu]", inputAddr, outputAddr);
     uint64_t token;
     CHK_RET(GetToken(op_, token));
     // 计算搬运整块的iterNum
@@ -211,11 +209,11 @@ HcclResult CcuTempReduceScatterMeshDetour1D::Run(const TempFuncs &tempFuncs, con
     std::vector<LinkData> links;
     ProcessLinks(links, tempLinks);
 
-    ccuInsReduceScatterMeshDetour1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, offSet, token, op_, tempVTopo_, iterNum,
+    ccuInsReduceScatterMeshDetour1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, offset, token, op_, tempVTopo_, iterNum,
         tailOffSet, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_, lengths_);
     HCCL_INFO("[CcuTempReduceScatterMeshDetour1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu], outputAddr[%llu],"\
         "sliceSize[%llu], offset[%llu], iterNum[%llu], tailOffSet[%llu], tailSize[%llu], singleTransportSize_[%u], detourPathNum_[%u], pathNumPerPeer_[%u]",
-        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offSet, iterNum, tailOffSet, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_);
+        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offset, iterNum, tailOffSet, tailSize, singleTransportSize_, detourPathNum_, pathNumPerPeer_);
     HCCL_INFO("[CcuTempReduceScatterMeshDetour1D] links.size[%zu]", links.size());
     ccuInsReduceScatterMeshDetour1D.SetLinks(links);
     RankGroup rankGroup;

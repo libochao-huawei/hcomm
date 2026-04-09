@@ -82,6 +82,11 @@ public:
               uint64_t smallDataSliceSize, uint64_t inputRepeatStride, uint64_t outputRepeatStride,
               uint64_t normalSliceSize, uint64_t lastSliceSize, uint64_t repeatNumVar)
     {
+        u32 maxDimNum = 1;
+        if (tempVTopo.size() != maxDimNum) {
+            THROW<InvalidParamsException>(StringFormat(
+                "[CcuInstructionReduceMeshMem2Mem1D] tempVTopo size is not 1, size is [%zu].", tempVTopo.size()));
+        }
         dimSize_.push_back(tempVTopo[0].size());
         rankId_ = rankId;
         rootId_ = rootId;
@@ -102,25 +107,26 @@ public:
         return;
     }
 
-    std::string Describe() const override
-    {
-        return StringFormat("CcuInstructionReduceMeshMem2Mem1D rankId [%u], instType[%d]", rankId_, instType_);
-    }
-
     CcuInstType GetInstType() const override
     {
+        HCCL_INFO("CcuInstructionReduceMeshMem2Mem1D instype is CCU_REDUCE_MESH_1D_MEM2MEM.");
         return instType_;
-    }
-
-    void SetInstType(CcuInstType instType)
-    {
-        instType_ = instType;
     }
 
     std::unique_ptr<CcuCtxArg> GetCtxArg() const override
     {
         HCCL_INFO("[CcuInstructionReduceMeshMem2Mem1D] GetCtxArg begin");
         return std::make_unique<CcuCtxArgReduceMeshMem2Mem1D>(dimSize_, rankId_, rootId_, op_, tempVTopo_);
+    }
+
+    void SetInstType(CcuInstType instType) 
+    { 
+        instType_ = instType; 
+    }
+
+    std::string Describe() const override
+    {
+        return StringFormat("CcuInstructionReduceMeshMem2Mem1D rankId [%u], instType[%d]", rankId_, instType_);
     }
 
     std::unique_ptr<CcuTaskArg> GetTaskArg() const override

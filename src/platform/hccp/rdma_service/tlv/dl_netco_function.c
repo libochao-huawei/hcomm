@@ -18,10 +18,10 @@ void *gNetcoApiHandle = NULL;
 struct RsNetcoOps gNetcoOps;
 #else
 struct RsNetcoOps gNetcoOps = {
-    .rsNetcoInit = Net_CoInitFactory,
-    .rsNetcoDeinit = NET_CoDestruct,
-    .rsNetcoEventDispatch = NET_CoFdEventDispatch,
-    .rsNetcoTblAddUpd = NET_CoTblAddUpd,
+    .rsNetcoInit = NetCoInitFactory,
+    .rsNetcoDeinit = NetCoDestruct,
+    .rsNetcoEventDispatch = NetCoFdEventDispatch,
+    .rsNetcoTblAddUpd = NetCoTblAddUpd,
 };
 #endif
 
@@ -33,7 +33,7 @@ STATIC int RsOpenLibnetCoSo(void)
         if (gNetcoApiHandle != NULL) {
             return 0;
         }
-        hccp_err("hccp_dlopen[libnet_co.so] failed! errno=%d, dlerror: %s", errno, dlerror());
+        hccp_err("HccpDlopen[libnet_co.so] failed! errno=%d, dlerror: %s", errno, dlerror());
         return -EINVAL;
     } else {
         hccp_run_info("netco_api dlopen again!");
@@ -57,20 +57,20 @@ STATIC int RsNetcoTblApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
     gNetcoOps.rsNetcoInit = (void *(*)(int, NetCoIpPortArg))
-        HccpDlsym(gNetcoApiHandle, "Net_CoInitFactory");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoInit, "Net_CoInitFactory");
+        HccpDlsym(gNetcoApiHandle, "NetCoInitFactory");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoInit, "NetCoInitFactory");
 
     gNetcoOps.rsNetcoDeinit = (void (*)(void *))
-        HccpDlsym(gNetcoApiHandle, "NET_CoDestruct");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoDeinit, "NET_CoDestruct");
+        HccpDlsym(gNetcoApiHandle, "NetCoDestruct");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoDeinit, "NetCoDestruct");
 
     gNetcoOps.rsNetcoEventDispatch = (unsigned int (*)(void *, int, unsigned int))
-        HccpDlsym(gNetcoApiHandle, "NET_CoFdEventDispatch");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoEventDispatch, "NET_CoFdEventDispatch");
+        HccpDlsym(gNetcoApiHandle, "NetCoFdEventDispatch");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoEventDispatch, "NetCoFdEventDispatch");
 
     gNetcoOps.rsNetcoTblAddUpd = (int (*)(void *, unsigned int, char *, unsigned int))
-        HccpDlsym(gNetcoApiHandle, "NET_CoTblAddUpd");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoTblAddUpd, "NET_CoTblAddUpd");
+        HccpDlsym(gNetcoApiHandle, "NetCoTblAddUpd");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoTblAddUpd, "NetCoTblAddUpd");
 #endif
     return 0;
 }
@@ -79,12 +79,12 @@ STATIC int RsNetcoApiInit(void)
 {
     int ret;
     ret = RsOpenLibnetCoSo();
-    CHK_PRT_RETURN(ret, hccp_err("hccp_dlopen[libnet_co.so] failed! ret=[%d],"\
+    CHK_PRT_RETURN(ret != 0, hccp_err("HccpDlopen[libnet_co.so] failed! ret=[%d],"\
     "Please check network adapter driver has been installed", ret), ret);
 
     ret = RsNetcoTblApiInit();
     if (ret != 0) {
-        hccp_err("[rs_netco_tbl_api_init]hccp_dlopen failed! ret=[%d]", ret);
+        hccp_err("[rs_netco_tbl_api_init]HccpDlopen failed! ret=[%d]", ret);
         RsCloseNetcoSo();
         return ret;
     }

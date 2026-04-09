@@ -42,7 +42,7 @@ private:
     HcclResult KernelRunIntraServerPre(const OpParam &param, ExecMem &execMem) override;
     HcclResult KernelRunInterServer(const OpParam &param, ExecMem &execMem) override;
 
-    HcclResult RunIntraServer(const OpParam &param, ExecMem &execMem, u32 step);
+    HcclResult RunIntraServer(const OpParam &param, const ExecMem &execMem, u32 step);
     HcclResult RunInterServerPreProcess(const OpParam &param, const ExecMem &execMem, u32 step);
     HcclResult RunInterServer(const OpParam &param, ExecMem &execMem, u32 step);
     HcclResult RunInterServerPostProcess(const OpParam &param, const ExecMem &execMem, u32 step);

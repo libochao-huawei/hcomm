@@ -89,6 +89,10 @@ HcclResult InsTempAllReduceNHR::GenExtIns(const TempFuncs &tempFuncs, const Temp
     const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[InsTempAllReduceNHR][GenExtIns] AllReduceNHR begin: rank[%d] start", myRank_);
+    if (IsPcieLink(tempLinks)) {
+        dmaMode_ = DmaMode::GET;
+    }
+
     opMode_ = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
     queNum_ = tempVTopo_.size();

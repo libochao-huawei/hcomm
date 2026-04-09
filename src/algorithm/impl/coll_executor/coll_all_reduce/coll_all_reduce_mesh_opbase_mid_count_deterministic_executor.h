@@ -33,7 +33,7 @@ private:
     bool IsSmallData(const u64 totalSize, const u64 curSize) override;
     HcclResult RunLoopInner(OpParam &param, const ReduceType &reduceType, ExecMem &execMem) override;
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
-    HcclResult PrepareSlicesInfo(const OpParam &param, ExecMem &execMem, std::vector<Slice>& dataSegsSlice,
+    HcclResult PrepareSlicesInfo(const OpParam &param, const ExecMem &execMem, std::vector<Slice>& dataSegsSlice,
         GroupSlicesInfo& groupSlicesInfo, const u32 sliceSize);
     HcclResult RunReduceScatterLevel0(const OpParam &param, ExecMem &execMem, GroupSlicesInfo& groupSlicesInfo);
     HcclResult RunAllReduceLevel1(const OpParam &param, ExecMem &execMem, const std::vector<Slice>& dataSegsSlice);

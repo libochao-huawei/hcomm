@@ -88,4 +88,11 @@ HcclResult CommEngineResMgr::HcclThreadExportToCommEngine(uint32_t threadNum, co
     return threadMgr_->HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
 }
 
+HcclResult CommEngineResMgr::HcclThreadResGetInfo(ThreadHandle thread, ThreadResType resType, uint32_t infoLen, void **info)
+{
+    CHK_SMART_PTR_NULL(threadMgr_);
+    return threadMgr_->HcclThreadResGetInfo(thread, resType, infoLen, info);
+}
+
+
 }

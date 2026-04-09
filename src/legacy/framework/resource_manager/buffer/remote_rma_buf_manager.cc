@@ -47,12 +47,12 @@ unique_ptr<RemoteRmaBuffer> RemoteRmaBufManager::Create(const LinkData &linkData
     } else {
         auto linkProtocol = linkData.GetLinkProtocol();
         if (linkProtocol == LinkProtocol::ROCE) {
-            RdmaHandle rdmaHandle
-                = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+                comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
             return make_unique<RemoteRdmaRmaBuffer>(rdmaHandle);
         } else if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP) {
-            RdmaHandle rdmaHandle
-                = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
+            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
+                comm->GetDevicePhyId(), linkData.GetLocalPort(), linkData.GetLinkProtocol());
             return make_unique<RemoteUbRmaBuffer>(rdmaHandle);
         }
         string msg = StringFormat("LinkData[%s] is error", linkData.Describe().c_str());

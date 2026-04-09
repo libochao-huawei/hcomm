@@ -33,6 +33,11 @@ public:
 
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
     HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
+    HcclResult GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum) override;
+    HcclResult UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum) override;
+
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
 
 public:
     uint32_t GetDieId() const;
@@ -46,6 +51,9 @@ public:
 
     HcclResult GetRmtBuffer(uint64_t &addr, uint32_t &size,
         uint32_t &tokenId, uint32_t &tokenValue) const;
+    
+    EndpointHandle GetlocEndPointHandle() { return locEndpointHandle_; }
+    HcommChannelDesc GetChannelDesc() { return channelDesc_; }
 
 private:
     std::unique_ptr<CcuTransport> impl_{nullptr};

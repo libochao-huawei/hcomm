@@ -25,6 +25,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[AllReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     u32 rankSize_2P = 2;
  	u32 rankSize_4P = 4;
@@ -95,6 +96,9 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                 } else {
                     primQueueGenName = "CcuAllReduceMesh1DOneShot";
                 }
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][AllReduceAutoSelector] level0 PCIE mix is not supported yet for ccu_ms mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {  // MS 不支持
                 HCCL_WARNING("[Algo][AllReduceAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
                     topoInfo.level0Shape);
@@ -117,6 +121,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
 SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[AllReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     // ccu 模式不支持 PROD
     CHK_PRT_RET(op.reduceOp == ReduceOp::PROD,
@@ -192,6 +197,9 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                     return SelectorStatus::NOT_MATCH;
                 }
                 primQueueGenName = "CcuAllReduceMeshMem2Mem1D";
+            } else if (topoInfo.level0PcieMix) {
+                HCCL_WARNING("[Algo][AllReduceAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
             } else {
                 primQueueGenName = "CcuAllReduceParallelMesh1DNHR";
             }
@@ -213,6 +221,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
 SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[AllReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
@@ -221,11 +230,15 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
             return SelectorStatus::NOT_MATCH;
         }
         if (topoInfo.Level1Nhr) {
-            primQueueGenName = "AllReduceAutoSelector";
+            primQueueGenName = "InsAllReduceNHR";
         } else if (topoInfo.Level0Nhr) {
             primQueueGenName = "InsAllReduceParallelNHRNHR";
         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "InsAllReduceParallelMesh1DNHR";
+             if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+                primQueueGenName = "InsAllReduceNHR";
+            } else {
+                primQueueGenName = "InsAllReduceParallelMesh1DNHR";
+            }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             primQueueGenName = "InsAllReduceParallelMesh2DNHR";
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
@@ -287,6 +300,8 @@ SelectorStatus AllReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, 
                                  "yet for aicpu mode.",
                         topoInfo.level0Shape);
                     return SelectorStatus::NOT_MATCH;
+                } else if (topoInfo.level0PcieMix) {
+                    primQueueGenName = "InsAllReduceParallelMesh1DNHRPcie";
                 } else {
                     primQueueGenName = "InsAllReduceParallelMesh1DNHR";
                 }
@@ -312,6 +327,7 @@ SelectorStatus AllReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
+    (void)configAlgMap;
     HCCL_DEBUG("[AllReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     //aiv 模式不支持 PROD
@@ -320,13 +336,13 @@ SelectorStatus AllReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
             op.reduceOp.Describe().c_str()),
         SelectorStatus::NOT_MATCH);
 
-    if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
+    if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
         HCCL_WARNING("[Algo][AllReduceAutoSelector] aiv mode not support INT64, UINT64, FP64.");
         return SelectorStatus::NOT_MATCH;
     }
 
     // aiv 直接走打平 mesh
-    if (IsSmallData(dataSize_)) {
+    if (dataSize_ <= AIV_ALL_REDUCE_SMALL_COUNT) {
         primQueueGenName = "AivAllReduceMesh1DOneShot";
     } else {
         primQueueGenName = "AivAllReduceMesh1DTwoShot";

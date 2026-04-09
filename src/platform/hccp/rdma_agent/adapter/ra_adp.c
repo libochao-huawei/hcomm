@@ -1102,7 +1102,7 @@ STATIC int RaRsGetNotifyBa(char *inBuf, char *outBuf, int *outLen, int *opResult
     }
 
     getNotifyBaData = (union OpGetNotifyBaData *)(outBuf + sizeof(struct MsgHead));
-    getNotifyBaData->rxData.va = (unsigned long long)info.addr;
+    getNotifyBaData->rxData.va = (unsigned long long)(uintptr_t)info.addr;
     getNotifyBaData->rxData.size = info.size;
     getNotifyBaData->rxData.access = info.access;
     getNotifyBaData->rxData.lkey = info.lkey;
@@ -1771,7 +1771,7 @@ STATIC int RecvHandleSendPkt(HDC_SESSION session, unsigned int *closeSession, un
         goto out;
     }
 
-    if (!rcvBufLen) {
+    if (rcvBufLen == 0) {
         *closeSession = 1;
         hccp_warn("rcv_buf_len is 0, Session disconnect.");
         RA_HDC_OPS.freeMsg(msgRcv);
@@ -1805,7 +1805,7 @@ STATIC void RaHdcRecvHandleSendPkt(const unsigned int chipId)
     int ret;
 
     ret = RecvHandleSendPkt(gHdcServer[chipId].hdcSession, &closeSession, chipId);
-    if (closeSession || ret) {
+    if (closeSession != 0 || ret != 0) {
         hccp_warn("recv_handle_send_pkt close_session[%u] ret[%d]", closeSession, ret);
         RA_PTHREAD_MUTEX_LOCK(&gHdcInitPara.mutex);
         gHdcInitPara.connectStatus = HDC_UNCONNECTED;
