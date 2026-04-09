@@ -187,10 +187,10 @@ HcclResult HccpUbCreateJetty(const CtxHandle ctxHandle, const HrtRaUbCreateJetty
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
         "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
         "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u].",
+        "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u].",
         attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode,
         attr.ub.mode, attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa,
-        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType);
+        attr.ub.extMode.sq.buffSize, attr.ub.extMode.piType, attr.ub.priority);
 
     struct QpCreateInfo info {};
     void *qpHandle = nullptr;
@@ -274,7 +274,7 @@ HcclResult HccpUbCreateJettyAsync(const CtxHandle ctxhandle, const HrtRaUbCreate
     HCCL_INFO("Create jetty, input params: attr.ub.jettyId[%u], attr.rqDepth[%u], "
               "attr.sqDepth[%u], attr.transportMode[%d], attr.ub.mode[%d], "
               "attr.ub.extMode.sqebbNum[%u], attr.ub.extMode.sq.buffVa[%llx], "
-              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], priority[%u].",
+              "attr.ub.extMode.sq.buffSize[%u], attr.ub.extMode.piType[%u], attr.ub.priority[%u].",
               attr.ub.jettyId, attr.rqDepth, attr.sqDepth, attr.transportMode, attr.ub.mode,
               attr.ub.extMode.sqebbNum, attr.ub.extMode.sq.buffVa, attr.ub.extMode.sq.buffSize,
               attr.ub.extMode.piType, attr.ub.priority);
