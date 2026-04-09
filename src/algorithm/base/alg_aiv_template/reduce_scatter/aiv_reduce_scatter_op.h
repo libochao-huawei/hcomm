@@ -44,7 +44,7 @@ __aicore__ inline void aiv_reduce_scatter_##type##_inner(KERNEL_ARGS_DEF) { \
     if (isOpBase) { \
         if (aivRdmaStep >= 0) { \
             return aiv_reduce_scatter_910b_rdma<type>(KERNEL_ARGS_CALL); \
-        } else if (len * sizeof(type) > AIV_REDUCE_SCATTER_MID_SIZE) { \
+        } else if (len * sizeof(type) > (devType == DEV_TYPE_910B ? AIV_REDUCE_SCATTER_MID_SIZE : AIV_REDUCE_SCATTER_SMALL_SIZE)) { \
             return aiv_reduce_scatter_910b_bigdata<type>(KERNEL_ARGS_CALL); \
         } else if (len * sizeof(type) > UB_MAX_DATA_SIZE) { \
             return aiv_reduce_scatter_910b_middata<type>(KERNEL_ARGS_CALL); \
