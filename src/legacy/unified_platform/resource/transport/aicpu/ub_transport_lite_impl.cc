@@ -411,7 +411,7 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     }
 }
 
-void UbTransportLiteImpl::ProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt, const StreamLite &stream,
+void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
     if (callback_ == nullptr && newCallback_ == nullptr)
@@ -423,15 +423,46 @@ void UbTransportLiteImpl::ProfilingProcess(const RmaBufSliceLite &loc, const Rmt
     TaskParam taskParam{};
     taskParam.taskType = TaskParamType::TASK_UB;
     taskParam.beginTime = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.DMA.src      = reinterpret_cast<void *>(loc.GetAddr());
-    taskParam.taskPara.DMA.dst      = reinterpret_cast<void *>(rmt.GetAddr());
-    taskParam.taskPara.DMA.size     = loc.GetSize();
+    taskParam.taskPara.DMA.src      = src;
+    taskParam.taskPara.DMA.dst      = dst;
+    taskParam.taskPara.DMA.size     = size;
     taskParam.taskPara.DMA.notifyID = INVALID_VALUE_NOTIFYID;
     taskParam.taskPara.DMA.notifyValue = 0xffffffff;
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp    = dmaOp;
     taskParam.taskPara.DMA.locEid = GetLocEid();
     taskParam.taskPara.DMA.rmtEid = GetRmtEid();
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
+}
+
+void UbTransportLiteImpl::ReduceProfilingProcess(void *src, void *dst, u64 size,
+                                                 const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
+{
+    if (callback_ == nullptr && newCallback_ == nullptr)
+    {
+        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+        return;
+    }
+
+    TaskParam taskParam {};
+    taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
+    taskParam.beginTime = ProfGetCurCpuTimestamp();
+    taskParam.taskPara.Reduce.src = src;
+    taskParam.taskPara.Reduce.dst = dst;
+    taskParam.taskPara.Reduce.size = size;
+    taskParam.taskPara.Reduce.notifyID = INVALID_VALUE_NOTIFYID;
+    taskParam.taskPara.Reduce.notifyValue = 1;
+    taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
+    taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
+    taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
+    taskParam.taskPara.Reduce.locEid   = GetLocEid();
+    taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
     if (callback_ != nullptr) {
         callback_(stream.GetSqId(), taskId, taskParam);
     }
@@ -454,7 +485,9 @@ void UbTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, cons
     connVec[0]->Read(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, stream, DmaOp::HCCL_DMA_READ, taskId);
+    ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
+                     reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
+                     locRmaBufSlicelite.GetSize(), stream, DmaOp::HCCL_DMA_READ, taskId);
 }
 
 void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
@@ -470,7 +503,9 @@ void UbTransportLiteImpl::Write(const RmaBufferLite &loc, const Buffer &rmt, con
     connVec[0]->Write(locRmaBufSlicelite, rmtRmaBufSlicelite, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, stream, DmaOp::HCCL_DMA_WRITE, taskId);
+    ProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
+                     reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
+                     locRmaBufSlicelite.GetSize(), stream, DmaOp::HCCL_DMA_WRITE, taskId);
 }
 
 void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -487,38 +522,9 @@ void UbTransportLiteImpl::ReadReduce(const RmaBufferLite &loc, const Buffer &rmt
     connVec[0]->ReadReduce(reduceIn, locRmaBufSlicelite, rmtRmaBufSlicelite, stream, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ReduceProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, reduceIn, stream, taskId);
-}
-
-void UbTransportLiteImpl::ReduceProfilingProcess(const RmaBufSliceLite &loc, const RmtRmaBufSliceLite &rmt,
-                                                 const ReduceIn &reduceIn, const StreamLite &stream, u32 taskId)
-{
-    if (callback_ == nullptr && newCallback_ == nullptr)
-    {
-        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
-        return;
-    }
-
-    TaskParam taskParam {};
-    taskParam.taskType = TaskParamType::TASK_UB_REDUCE_INLINE;
-    taskParam.beginTime = ProfGetCurCpuTimestamp();
-    taskParam.taskPara.Reduce.src = reinterpret_cast<void *>(loc.GetAddr());
-    taskParam.taskPara.Reduce.dst = reinterpret_cast<void *>(rmt.GetAddr());
-    taskParam.taskPara.Reduce.size = loc.GetSize();
-    taskParam.taskPara.Reduce.notifyID = INVALID_VALUE_NOTIFYID;
-    taskParam.taskPara.Reduce.notifyValue = 1;
-    taskParam.taskPara.Reduce.linkType = DfxLinkType::UB;
-    taskParam.taskPara.Reduce.reduceOp = ConvertReduceOpToHcclReduceOp(reduceIn.reduceOp);
-    taskParam.taskPara.Reduce.dataType = DataTypeToHcclDataType(reduceIn.dataType);
-    taskParam.taskPara.Reduce.locEid   = GetLocEid();
- 	taskParam.taskPara.Reduce.rmtEid   = GetRmtEid();
-    if (callback_ != nullptr) {
-        callback_(stream.GetSqId(), taskId, taskParam);
-    }
-
-    if (newCallback_ != nullptr) {
-        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
-    }
+    ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
+                            reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
+                            locRmaBufSlicelite.GetSize(), reduceIn, stream, taskId);
 }
 
 void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,
@@ -536,7 +542,9 @@ void UbTransportLiteImpl::WriteReduce(const RmaBufferLite &loc, const Buffer &rm
                             rmtRmaBufSlicelite, cfg, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
-    ReduceProfilingProcess(locRmaBufSlicelite, rmtRmaBufSlicelite, reduceIn, stream, taskId);
+    ReduceProfilingProcess(reinterpret_cast<void *>(locRmaBufSlicelite.GetAddr()),
+                            reinterpret_cast<void *>(rmtRmaBufSlicelite.GetAddr()),
+                            locRmaBufSlicelite.GetSize(), reduceIn, stream, taskId);
 }
 
 void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, const std::vector<Buffer> &rmt,
@@ -576,14 +584,22 @@ void UbTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, c
     }
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
 
+    u64 totalSize = 0;
+    for (u32 i = 0; i < insNum; i++) {
+        totalSize += GetRmaBufSlicelite(loc[i]).GetSize();
+    }
     if (transferOp[insNum - 1].reduceIn.reduceOp == ReduceOp::INVALID) {
         DmaOp dmaOp = DmaOp::HCCL_DMA_WRITE;
         if (transferOp[insNum - 1].transType == TransferType::READ) {
             dmaOp = DmaOp::HCCL_DMA_READ;
         }
-        ProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), stream, dmaOp, taskId);
+        ProfilingProcess(reinterpret_cast<void *>(GetRmaBufSlicelite(loc[insNum - 1]).GetAddr()),
+                         reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt[insNum - 1]).GetAddr()),
+                         totalSize, stream, dmaOp, taskId);
     } else {
-        ReduceProfilingProcess(GetRmaBufSlicelite(loc[insNum - 1]), GetRmtRmaBufSliceLite(rmt[insNum - 1]), transferOp[insNum - 1].reduceIn, stream, taskId);
+        ReduceProfilingProcess(reinterpret_cast<void *>(GetRmaBufSlicelite(loc[insNum - 1]).GetAddr()),
+                               reinterpret_cast<void *>(GetRmtRmaBufSliceLite(rmt[insNum - 1]).GetAddr()),
+                               totalSize, transferOp[insNum - 1].reduceIn, stream, taskId);
     }
 }
 
