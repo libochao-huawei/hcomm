@@ -962,6 +962,7 @@ HcclResult HostCpuRoceChannel::GetHcclBuffer(void*& addr, uint64_t& size)
         return HCCL_E_INTERNAL;
     }
     addr = reinterpret_cast<void*>(rmtRmaBuffers_[0]->GetAddr());
+    CHK_PTR_NULL(addr);
     size = static_cast<uint64_t>(rmtRmaBuffers_[0]->GetSize());
     return HCCL_SUCCESS;
 }

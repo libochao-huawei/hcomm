@@ -231,6 +231,9 @@ HcommResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, const
     EXCEPTION_HANDLE_BEGIN
     CHK_PTR_NULL(mem);
     CHK_PTR_NULL(memHandle);
+    CHK_PTR_NULL(mem->addr);
+    CHK_PRT_RET(mem->size == 0,
+        HCCL_ERROR("[RoceRegedMemMgr][RegisterMemory] The size of mem[%p] to register is 0.", mem.addr),  HCCL_E_PARA);
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(endpoint == nullptr, HCCL_ERROR("[%s] endpoint not found, endpointHandle[0x%llx]",
         __func__, endpointHandle), HCCL_E_NOT_FOUND);
