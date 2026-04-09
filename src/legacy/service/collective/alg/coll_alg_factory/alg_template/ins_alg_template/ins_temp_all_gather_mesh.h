@@ -45,6 +45,8 @@ private:
     HcclResult LocalCopyToScratch(InsQuePtr tempInsQue);
     HcclResult LocalCopyToUsrOut(InsQuePtr tempInsQue);
     HcclResult RunMesh(const u32 myAlgRank, const std::vector<RankId> &vTopo, std::vector<InsQuePtr> &tempInsQues);
+    void CalcTxRxSlices(const u32 myAlgRank, u32 connectedAlgRank, std::vector<float> dataSplitRate, u64 tailSize, u64 sendSliceSize, u64 recvSliceSize,
+                        std::vector<DataSlice> &txSrcSlices, std::vector<DataSlice> &txDstSlices, std::vector<DataSlice> &rxSrcSlices, std::vector<DataSlice> &rxDstSlices);
 
     u32 majorQueNum_       = 0;
     u32 queNumPerNeighbor_ = 1;
