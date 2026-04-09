@@ -847,7 +847,7 @@ namespace hccl {
             CHK_PTR_NULL(zeroCopyExchangerPtr.get());
             CHK_RET(zeroCopyExchangerPtr->PrepareRemoteUserMemRanges(inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
         } else if (workflowMode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB || // 图模式
-            param.aicpuCacheEnable > FORCE_OP_BASE_DELTA || param.isCapture) { // 存在强制单算子模式转换 (即图模式建链+单算子模式展开)
+            param.aicpuCacheEnable > FORCE_OP_BASE_DELTA) { // 存在强制单算子模式转换 (即图模式建链+单算子模式展开)
             HCCL_INFO("[AicpuCacheManager][PrepareUserMemRanges] check transport resource for potential user memory of remote ranks");
 
             // 遍历所有transport信息, 更新remote ranks' user input/output memory ranges
