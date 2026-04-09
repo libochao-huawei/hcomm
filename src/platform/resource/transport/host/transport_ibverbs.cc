@@ -169,6 +169,10 @@ HcclResult TransportIbverbs::Stop()
  
 HcclResult TransportIbverbs::Resume()
 {
+    // 检查combineQpHandles_是否为空
+    CHK_PRT_RET(combineQpHandles_.empty(),
+        HCCL_ERROR("[TransportIbverbs][Resume]combineQpHandles_ is empty, cannot resume QP"),
+        HCCL_E_INTERNAL);
     HcclResult ret = hrtRaQpBatchModify(nicRdmaHandle_, &combineQpHandles_[0].qpHandle, combineQpHandles_.size(),
                                         RDMA_QP_EXPECT_STATUS_CONNECTED);
     if (ret != HCCL_SUCCESS) {
@@ -632,20 +636,47 @@ HcclResult TransportIbverbs::CreateOneQp(
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode),
         HCCL_E_ROCE_CONNECT);
 
-    // 表示没有通过config配置，则使用环境变量配置
-    CHK_RET(SetQpAttrQos(qpHandle, machinePara_.tc, machinePara_.sl));
-    // 配置RDMA Timeout时间
-    CHK_RET(SetQpAttrTimeOut(qpHandle));
-    // 配置RDMA Retry Cnt重传次数
-    CHK_RET(SetQpAttrRetryCnt(qpHandle));
-    // qpn map 插入
     struct QpAttr attr{} ;
-    CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
+    // 表示没有通过config配置，则使用环境变量配置
+    ret = SetQpAttrQos(qpHandle, machinePara_.tc, machinePara_.sl);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s][%s]SetQpAttrQos failed, localDeviceId[%d], qpMode[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode);
+        goto ERR_HANDLE;
+    }
+    
+    // 配置RDMA Timeout时间
+    ret = SetQpAttrTimeOut(qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s][%s]SetQpAttrTimeOut failed, localDeviceId[%d], qpMode[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode);
+        goto ERR_HANDLE;
+    }
+    
+    // 配置RDMA Retry Cnt重传次数
+    ret = SetQpAttrRetryCnt(qpHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s][%s]SetQpAttrRetryCnt failed, localDeviceId[%d], qpMode[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode);
+        goto ERR_HANDLE;
+    }
+    // qpn map 插入
+    ret = hrtRaGetQpAttr(qpHandle, &attr);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s][%s]hrtRaGetQpAttr failed, localDeviceId[%d], qpMode[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode);
+        goto ERR_HANDLE;
+    }
 
     g_qpn2IbversLinkMap_.Emplace(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn), this);
 
     HCCL_DEBUG("ra qp create success, use input udpSport[%u].", udpSport);
     return HCCL_SUCCESS;
+
+ERR_HANDLE:
+    // 释放已创建的QP资源
+    (void)DestroyQP(qpHandle);
+    return ret;
 }
 
 HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创建QP（下沉模板不够用多QP）
@@ -676,15 +707,41 @@ HcclResult TransportIbverbs::CreateMultiQp(s32 qpMode, u32 qpsPerConnection)
     // 配置了多qp源端口号时的处理流程
     if (machinePara_.srcPorts.size() > 0) {
         HCCL_DEBUG("[TransportIbverbs][CreateMultiQp]use Multi qp create qps.");
+
+        // 记录初始大小，用于失败时回滚
+        size_t initialHandleSize = multiCombineQpHandles_.size();
+        size_t initialInfoSize = combineAiQpInfos_.size();
+
         // 创建qp
         for (const auto &port : machinePara_.srcPorts) {
             QpHandle qpHandle = nullptr;
             AiQpInfo tmpAiQpInfo{};
-            CHK_RET(CreateOneQp(qpMode,
+            HcclResult ret = CreateOneQp(qpMode,
                 qpsPerConnection,
                 qpHandle,
                 tmpAiQpInfo,
-                machinePara_.isAicpuModeEn, port));
+                machinePara_.isAicpuModeEn, port);
+
+            if (ret != HCCL_SUCCESS) {
+                // 创建失败，释放已创建的资源
+                HCCL_ERROR("[TransportIbverbs][CreateMultiQp] CreateOneQp failed, start to cleanup created resources.");
+                
+                // 释放已创建的 QP 资源
+                for (size_t i = initialHandleSize; i < multiCombineQpHandles_.size(); i++) {
+                    if (multiCombineQpHandles_[i].qpHandle != nullptr) {
+                        struct QpAttr attr{};
+                        (void)hrtRaGetQpAttr(multiCombineQpHandles_[i].qpHandle, &attr);
+                        g_qpn2IbversLinkMap_.Erase(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn));
+                        (void)HrtRaQpDestroy(multiCombineQpHandles_[i].qpHandle);
+                    }
+                }
+                
+                // 清理 vector
+                multiCombineQpHandles_.resize(initialHandleSize);
+                combineAiQpInfos_.resize(initialInfoSize);
+                
+                return ret;
+            }
             multiCombineQpHandles_.push_back(CombineQpHandle(qpHandle));
             combineAiQpInfos_.push_back(CombineQpInfo(tmpAiQpInfo));
         }
@@ -944,12 +1001,17 @@ HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, co
     u32 txSendDataTimes = (len == 0) ? 1 : (len + RDMA_SEND_MAX_SIZE - 1) / RDMA_SEND_MAX_SIZE;
     CHK_RET(GetMemInfo(dstMemType, &dstMemPtr, &dstMemSize));
 
+    CHK_PTR_NULL(dstMemPtr);
     if (dstOffset > dstMemSize) {
         HCCL_ERROR("[TransportIbverbs][TxAsync]dst_mem_type=%d, dst_mem_ptr=%p, dst_offset=%llu, dst_mem_size=%llu Byte",
             dstMemType, dstMemPtr, dstOffset, dstMemSize);
         return HCCL_E_INTERNAL;
     }
 
+    // 检查len是否越界
+    CHK_PRT_RET(len > (dstMemSize - dstOffset),
+        HCCL_ERROR("[TransportIbverbs][TxPayLoad]len[%llu] > (dstMemSize[%llu] - dstOffset[%llu]), dst_mem_type=%d",
+            len, dstMemSize, dstOffset, dstMemType), HCCL_E_INTERNAL);
     dstMemPtr = reinterpret_cast<void *>(reinterpret_cast<char *>(dstMemPtr) + dstOffset);
     CHK_RET(ConstructPayLoadWqe(dstMemPtr, src, len, wqeType, aux, wqeInfoVec, txSendDataTimes));
 
@@ -2061,6 +2123,10 @@ HcclResult TransportIbverbs::GetRemoteAddr(MemType memType, u8*& exchangeDataPtr
 
 HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
 {
+    // 检查是否有足够空间读取remoteDmemNum
+    CHK_PRT_RET(exchangeDataBlankSize < sizeof(u32),
+        HCCL_ERROR("[GetIndOpRemoteAddr] exchangeDataBlankSize[%llu] < sizeof(u32)[%zu]",
+            exchangeDataBlankSize, sizeof(u32)), HCCL_E_INTERNAL);
     u32 remoteDmemNum = 0;
     s32 sRet = memcpy_s(reinterpret_cast<void*>(&remoteDmemNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
@@ -2068,6 +2134,11 @@ HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& excha
         HCCL_ERROR_CODE(HCCL_E_MEMORY), sRet, sizeof(u32), sizeof(u32)), HCCL_E_MEMORY);
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
+    // 检查是否有足够空间读取所有MemMsg
+    u64 requiredSize = static_cast<u64>(remoteDmemNum) * sizeof(MemMsg);
+    CHK_PRT_RET(exchangeDataBlankSize < requiredSize,
+        HCCL_ERROR("[GetIndOpRemoteAddr] exchangeDataBlankSize[%llu] < requiredSize[%llu] for remoteDmemNum[%u]",
+            exchangeDataBlankSize, requiredSize, remoteDmemNum), HCCL_E_INTERNAL);
 
     remoteUserDeviceMemMsg_.resize(remoteDmemNum);
     for (u32 i = 0; i < remoteDmemNum; i++) {
@@ -2079,7 +2150,10 @@ HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& excha
         exchangeDataBlankSize -= sizeof(MemMsg);
         CHK_PTR_NULL(remoteUserDeviceMemMsg_[i].addr);
     }
-
+    // 检查是否有足够空间读取remoteHmemNum
+    CHK_PRT_RET(exchangeDataBlankSize < sizeof(u32),
+        HCCL_ERROR("[GetIndOpRemoteAddr] exchangeDataBlankSize[%llu] < sizeof(u32)[%zu]",
+            exchangeDataBlankSize, sizeof(u32)), HCCL_E_INTERNAL);
     u32 remoteHmemNum = 0;
     sRet = memcpy_s(reinterpret_cast<void*>(&remoteHmemNum), sizeof(u32), exchangeDataPtr, sizeof(u32));
     CHK_PRT_RET(sRet != EOK,
@@ -2088,6 +2162,11 @@ HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& excha
     exchangeDataPtr += sizeof(u32);
     exchangeDataBlankSize -= sizeof(u32);
 
+    // 检查是否有足够空间读取所有MemMsg
+    requiredSize = static_cast<u64>(remoteHmemNum) * sizeof(MemMsg);
+    CHK_PRT_RET(exchangeDataBlankSize < requiredSize,
+        HCCL_ERROR("[GetIndOpRemoteAddr] exchangeDataBlankSize[%llu] < requiredSize[%llu] for remoteHmemNum[%u]",
+            exchangeDataBlankSize, requiredSize, remoteHmemNum), HCCL_E_INTERNAL);
     remoteUserHostMemMsg_.resize(remoteHmemNum);
     for (u32 i = 0; i < remoteHmemNum; i++) {
         sRet = memcpy_s(&remoteUserHostMemMsg_[i], sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
@@ -2104,6 +2183,10 @@ HcclResult TransportIbverbs::GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& excha
 
 HcclResult TransportIbverbs::GetRemoteNotifyAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize, MemMsg& memMsg)
 {
+    // 检查是否有足够空间读取MemMsg
+    CHK_PRT_RET(exchangeDataBlankSize < sizeof(MemMsg),
+        HCCL_ERROR("[GetRemoteNotifyAddr] exchangeDataBlankSize[%llu] < sizeof(MemMsg)[%zu]",
+            exchangeDataBlankSize, sizeof(MemMsg)), HCCL_E_INTERNAL);
     s32 sRet = memcpy_s(&memMsg, sizeof(MemMsg), exchangeDataPtr, sizeof(MemMsg));
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][GetRemoteNotifyAddr]errNo[0x%016llx] In lbv exp get remote addr, "\
         "memcpy failed. errorno[%d], params:destMaxSize[%zu],count[%zu]",

@@ -179,6 +179,11 @@ HcclResult HDCommunicate::Write(u32 offset, u32 length, u8 *value)
         return HCCL_SUCCESS;
     }
     CHK_PTR_NULL(value);
+
+    u32 contentSize = hostMem_.size() - HCCL_HDC_CONTROL_WORDS * sizeof(u32);
+    CHK_PRT_RET(offset + length > contentSize,
+        HCCL_ERROR("[HDCommunicate][Write]offset[%u] + length[%u] > contentSize[%u], invalid length", 
+            offset, length, contentSize), HCCL_E_INTERNAL);
     u32 head = *headCntAddr_;
     head++;
     *headCntAddr_ = head;

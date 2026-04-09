@@ -142,15 +142,56 @@ HcclResult TransportRoce::CreateCqAndQp()
     void *tagRecvChannel = nullptr;
     void *dataSendCompChannel = nullptr;
     void *dataRecvCompChannel = nullptr;
-    CHK_RET(hrtRaCreateCompChannel(nicRdmaHandle_, &tagSendChannel));
-    CHK_RET(hrtRaCreateCompChannel(nicRdmaHandle_, &tagRecvChannel));
-    CHK_RET(hrtRaCreateCompChannel(nicRdmaHandle_, &dataSendCompChannel));
-    CHK_RET(hrtRaCreateCompChannel(nicRdmaHandle_, &dataRecvCompChannel));
-
+    HcclResult ret = hrtRaCreateCompChannel(nicRdmaHandle_, &tagSendChannel);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[TransportRoce][CreateCqAndQp] create tagSendChannel failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+    
+    ret = hrtRaCreateCompChannel(nicRdmaHandle_, &tagRecvChannel);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[TransportRoce][CreateCqAndQp] create tagRecvChannel failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, tagSendChannel);
+        return ret;
+    }
+    
+    ret = hrtRaCreateCompChannel(nicRdmaHandle_, &dataSendCompChannel);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[TransportRoce][CreateCqAndQp] create dataSendCompChannel failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, tagSendChannel);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, tagRecvChannel);
+        return ret;
+    }
+    
+    ret = hrtRaCreateCompChannel(nicRdmaHandle_, &dataRecvCompChannel);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[TransportRoce][CreateCqAndQp] create dataRecvCompChannel failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, tagSendChannel);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, tagRecvChannel);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, dataSendCompChannel);
+        return ret;
+    }
+    
     // 创建CQ和QP
     HCCL_INFO("TransportRoce CreateCqAndQp");
-    CHK_RET(CreateQpWithCq(nicRdmaHandle_, -1, -1, tagSendChannel, tagRecvChannel, tagQpInfo_));
-    CHK_RET(CreateQpWithCq(nicRdmaHandle_, -1, -1, dataSendCompChannel, dataRecvCompChannel, dataQpInfo_));
+    ret = CreateQpWithCq(nicRdmaHandle_, -1, -1, tagSendChannel, tagRecvChannel, tagQpInfo_);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[TransportRoce][CreateCqAndQp] create tagQp failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, tagSendChannel);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, tagRecvChannel);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, dataSendCompChannel);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, dataRecvCompChannel);
+        return ret;
+    }
+    
+    ret = CreateQpWithCq(nicRdmaHandle_, -1, -1, dataSendCompChannel, dataRecvCompChannel, dataQpInfo_);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[TransportRoce][CreateCqAndQp] create dataQp failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        (void)DestroyQpWithCq(tagQpInfo_);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, dataSendCompChannel);
+        (void)hrtRaDestroyCompChannel(nicRdmaHandle_, dataRecvCompChannel);
+        return ret;
+    }
 
     return HCCL_SUCCESS;
 }
@@ -207,6 +248,9 @@ HcclResult TransportRoce::GetSocketInfo()
 {
     CHK_RET(GetSocketInfos(socketsInfo_));
     for (u32 nicIdx = 0; nicIdx < socketsInfo_.size(); nicIdx++) {
+        CHK_PRT_RET(socketsInfo_[nicIdx].empty(),
+            HCCL_ERROR("[Get][SocketInfo]socketsInfo_[%u] is empty, cannot access index 0", nicIdx),
+            HCCL_E_INTERNAL);
         if (nicSocketHandle_ == socketsInfo_[nicIdx][0].socketHandle) {
             for (u32 fdHandleIdx = 0; fdHandleIdx < socketsInfo_[nicIdx].size(); fdHandleIdx++) {
                 socketFdHandles_.push_back(socketsInfo_[nicIdx][fdHandleIdx].fdHandle);
@@ -987,6 +1031,13 @@ HcclResult TransportRoce::WaitSendAsyncCompleteAndRecv(const SendRecvParam &send
             HCCL_E_INTERNAL);
     }
 
+    // 释放分配的资源
+    if (msg != nullptr) {
+        CHK_RET(FreeRecvMessage(*msg));
+    }
+    if (recvRequest != nullptr) {
+        CHK_RET(FreeRequest(*recvRequest));
+    }
     return HCCL_SUCCESS;
 }
 
