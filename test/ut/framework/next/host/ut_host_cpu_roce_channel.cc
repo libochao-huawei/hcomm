@@ -613,3 +613,53 @@ TEST_F(HostCpuRoceChannelTest, Ut_Read_When_Normal_Expect_HCCL_SUCCESS)
     HcclResult ret = impl_->Read(localAddr, remoteAddr, size);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 测试GetHcclBuffer的空指针检查 - 覆盖diff中的空指针检查
+TEST_F(HostCpuRoceChannelTest, Ut_GetHcclBuffer_NullCheck_Expect_Success)
+{
+    DevType devType = DevType::DEV_TYPE_950;
+    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
+    MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    // construct
+    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
+    channelDesc.memHandles = &memHandle;
+    channelDesc.memHandleNum = 1;
+    channelDesc.notifyNum = 4;
+    auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
+    // Init
+    EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
+    // connect
+    hcomm::ChannelStatus status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::DATA_EXCHANGE);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
+    EXPECT_EQ(status, ChannelStatus::READY);
+    
+    // 测试GetHcclBuffer - 覆盖空指针检查
+    void* addr = nullptr;
+    uint64_t size = 0;
+    impl_->rmtRmaBuffers_.push_back(std::make_unique<Hccl::RemoteRdmaRmaBuffer>((Hccl::RdmaHandle)0x1000));
+    impl_->rmtRmaBuffers_[0]->addr = (uintptr_t)0x0002;
+    impl_->rmtRmaBuffers_[0]->size = 1024;
+    
+    HcclResult ret = impl_->GetHcclBuffer(addr, size);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(addr, nullptr);
+    EXPECT_EQ(size, 1024);
+}
