@@ -172,3 +172,44 @@ TEST_F(TransportDeviceP2pAiCpu_UT, transport_init_A3_between_servers)
     ret = transDevP2p.SignalRecord(transDevP2p.remoteSendReadyNotify_, transDevP2p.remoteSendReadyAddress_, 0, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 测试TransportP2p::WaitPeerMemConfig的边界检查 - offset >= size
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_boundary_check_wait_peer_mem_config_offset_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试offset >= size的情况，应该返回错误
+    void* memPtr = nullptr;
+    u8 memName[] = "test_mem";
+    u64 size = 0x1000;
+    u64 offset = 0x1000;  // offset == size
+
+    ret = transDevP2p.WaitPeerMemConfig(&memPtr, memName, size, offset);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+}
+
+// 测试TransportP2p::ConstructMemIncludeInfoForSend的边界检查 - 空间不足
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_boundary_check_construct_mem_include_info_space_insufficient)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试exchangeDataBlankSize不足的情况
+    u8 exchangeData[10];  // 只分配10字节
+    u8* exchangeDataPtr = exchangeData;
+    u64 exchangeDataBlankSize = 10;  // 需要4*sizeof(u64)=32字节
+
+    ret = transDevP2p.ConstructMemIncludeInfoForSend(exchangeDataPtr, exchangeDataBlankSize);
+    EXPECT_NE(ret, HCCL_SUCCESS);  // 应该返回错误
+}
