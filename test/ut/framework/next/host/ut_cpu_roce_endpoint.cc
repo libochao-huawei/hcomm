@@ -287,7 +287,7 @@ TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnH
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
-// GetCapabilities 正常调用，返回成功且maxMsgSz为1GB
+// GetCapabilities 正常调用，返回成功且maxMsgSize为1GB
 TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_Normal_Expect_ReturnSuccess_And_MaxMsgSz1GB)
 {
     Hccl::IpAddress localIp("1.0.0.0");
@@ -305,7 +305,7 @@ TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_Normal_Expect_ReturnSuccess_
     ret = endpoint->GetCapabilities(caps);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     static constexpr uint64_t EXPECTED_MAX_MSG_SZ = 1ULL * 1024 * 1024 * 1024;
-    EXPECT_EQ(caps.maxMsgSz, EXPECTED_MAX_MSG_SZ);
+    EXPECT_EQ(caps.maxMsgSize, EXPECTED_MAX_MSG_SZ);
 }
 
 // GetCapabilities 多次调用，验证缓存一致性
@@ -328,5 +328,5 @@ TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_CalledTwice_Expect_SameResul
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = endpoint->GetCapabilities(caps2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(caps1.maxMsgSz, caps2.maxMsgSz);
+    EXPECT_EQ(caps1.maxMsgSize, caps2.maxMsgSize);
 }

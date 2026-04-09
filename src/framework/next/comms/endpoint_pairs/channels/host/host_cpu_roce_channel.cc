@@ -84,12 +84,17 @@ HcclResult HostCpuRoceChannel::ParseInputParam()
 
     auto* localCpuRoceEpPtr = dynamic_cast<CpuRoceEndpoint *>(localEpPtr);
     if (localCpuRoceEpPtr == nullptr) {
-        HCCL_ERROR("[HostCpuRoceChannel][%s] endpointHandle_ is NOT CpuRoceEndpoint.", __func__);
+        HCCL_ERROR("[HostCpuRoceChannel][%s] endpointHandle_ is not CpuRoceEndpoint.", __func__);
         return HCCL_E_INTERNAL;
     }
     CpuRoceEndpoint::Capabilities caps{};
     CHK_RET(localCpuRoceEpPtr->GetCapabilities(caps));
-    maxMsgSize_ = caps.maxMsgSz;
+    maxMsgSize_ = caps.maxMsgSize;
+    constexpr uint64_t TWO_GB = 0x80000000ULL; // 2GB
+    if (maxMsgSize_ > TWO_GB) {
+        HCCL_RUN_WARNING("[HostCpuRoceChannel][%s] maxMsgSize_[0x%llx] exceeds 2GB, value may be incorrect.",
+            __func__, maxMsgSize_);
+    }
     HCCL_INFO("[HostCpuRoceChannel][%s] maxMsgSize_[0x%llx].", __func__, maxMsgSize_);
 
     return HCCL_SUCCESS;

@@ -39,7 +39,7 @@ public:
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
     struct Capabilities {
-        uint64_t maxMsgSz{0};
+        uint64_t maxMsgSize{0};
         // 按需扩展
     };
     HcclResult GetCapabilities(Capabilities &caps);
