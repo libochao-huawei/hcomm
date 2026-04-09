@@ -18,7 +18,7 @@
 #include "hccp_ctx.h"
 
 #include "enum_factory.h"
-#include "env_config/env_config.h"
+#include "env_config.h"
 #include "hccl_rank_graph.h"
 
 // orion 暂时复用

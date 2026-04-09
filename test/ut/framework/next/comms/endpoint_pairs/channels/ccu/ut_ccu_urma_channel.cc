@@ -2,7 +2,7 @@
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 
-#include "env_config/env_config.h"
+#include "env_config.h"
 
 #define private public
 #include "next/comms/endpoint_pairs/channels/ccu/ccu_urma_channel.h"
