@@ -191,7 +191,7 @@ HcclResult CollAllReduceMixExecutor::KernelRun(const OpParam &param, ExecMem &ex
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
         level1Executor = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_RING, 
             dispatcher_);
-        HCCL_INFO("[CollAllReduceMixExecutor][KernelRun]AllReduce mix: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_RING in COMM_LEVEL1", __func__);
         CHK_SMART_PTR_NULL(level1Executor);
         CHK_RET(level1Executor->Prepare(reduceAttr));
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
@@ -200,10 +200,11 @@ HcclResult CollAllReduceMixExecutor::KernelRun(const OpParam &param, ExecMem &ex
             curSize, topoAttr_.deviceNumPerAggregation, level0CommInfo.localRankSize);
         if (curSize / topoAttr_.deviceNumPerAggregation <= NHR_ALLREDUCE_SMALL_SIZE) {
             level1Executor = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR_ONESHOT, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR_ONESHOT in COMM_LEVEL1", __func__);
         } else {
             level1Executor = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL1", __func__);
         }
-        HCCL_INFO("[CollAllReduceMixExecutor][KernelRun]AllReduce mix: using nhr algo inter-server.");
         CHK_SMART_PTR_NULL(level1Executor);
         CHK_RET(level1Executor->Prepare(reduceAttr));
     } else {
@@ -245,6 +246,7 @@ HcclResult CollAllReduceMixExecutor::KernelRun(const OpParam &param, ExecMem &ex
     } else if (topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
         std::unique_ptr<AlgTemplateBase> level0Executor = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_MESH_ATOMIC, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_MESH_ATOMIC in COMM_LEVEL0", __func__);
         CHK_SMART_PTR_NULL(level0Executor);
         CHK_RET(level0Executor->Prepare(algResResp_->slaveStreams, algResResp_->notifiesMain, algResResp_->notifiesAux, topoAttr_.userRank, 
             nullptr, level0CommInfo.localRank, level0CommInfo.localRankSize));
