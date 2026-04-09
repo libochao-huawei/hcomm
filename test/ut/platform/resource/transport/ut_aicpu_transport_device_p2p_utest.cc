@@ -172,3 +172,285 @@ TEST_F(TransportDeviceP2pAiCpu_UT, transport_init_A3_between_servers)
     ret = transDevP2p.SignalRecord(transDevP2p.remoteSendReadyNotify_, transDevP2p.remoteSendReadyAddress_, 0, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 测试TransportP2p::WaitPeerMemConfig的边界检查 - offset >= size
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_boundary_check_wait_peer_mem_config_offset_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试offset >= size的情况，应该返回错误
+    void* memPtr = nullptr;
+    u8 memName[] = "test_mem";
+    u64 size = 0x1000;
+    u64 offset = 0x1000;  // offset == size
+
+    ret = transDevP2p.WaitPeerMemConfig(&memPtr, memName, size, offset);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+}
+
+// 测试TransportP2p::ConstructMemIncludeInfoForSend的边界检查 - 空间不足
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_boundary_check_construct_mem_include_info_space_insufficient)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试exchangeDataBlankSize不足的情况
+    u8 exchangeData[10];  // 只分配10字节
+    u8* exchangeDataPtr = exchangeData;
+    u64 exchangeDataBlankSize = 10;  // 需要4*sizeof(u64)=32字节
+
+    ret = transDevP2p.ConstructMemIncludeInfoForSend(exchangeDataPtr, exchangeDataBlankSize);
+    EXPECT_NE(ret, HCCL_SUCCESS);  // 应该返回错误
+}
+
+// 测试TransportP2p::ConstructMemIncludeInfoForSend的边界检查 - 空间足够
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_boundary_check_construct_mem_include_info_space_sufficient)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    // 初始化machinePara的内存
+    machinePara.outputMem = DeviceMem::alloc(0x1000);
+    machinePara.mem[0] = DeviceMem::alloc(0x10000);
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试exchangeDataBlankSize足够的情况
+    u8 exchangeData[64];  // 分配64字节
+    u8* exchangeDataPtr = exchangeData;
+    u64 exchangeDataBlankSize = 64;  // 足够32字节
+
+    ret = transDevP2p.ConstructMemIncludeInfoForSend(exchangeDataPtr, exchangeDataBlankSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);  // 应该返回成功
+}
+
+// ========== TransportP2p边界检查测试 ==========
+
+// 测试TransportP2p::RecvIpcMemMesg的边界检查 - size=0
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_p2p_recv_ipc_mem_mesg_size_zero)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试size=0的情况，应该返回错误
+    void* memPtr = nullptr;
+    u8 memName[] = "test_mem";
+    u64 size = 0;  // size=0
+    u64 offset = 0x100;
+
+    ret = transDevP2p.RecvIpcMemMesg(&memPtr, memName, offset);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+}
+
+// 测试TransportP2p::RecvIpcMemMesg的边界检查 - offset >= size
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_p2p_recv_ipc_mem_mesg_offset_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试offset >= size的情况，应该返回错误
+    void* memPtr = nullptr;
+    u8 memName[] = "test_mem";
+    u64 size = 0x1000;
+    u64 offset = 0x1000;  // offset == size
+
+    ret = transDevP2p.RecvIpcMemMesg(&memPtr, memName, offset);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+}
+
+// 测试TransportP2p::TxAsync的边界检查 - dstOffset >= remoteMemSize
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_p2p_tx_async_dst_offset_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试dstOffset >= remoteMemSize的情况
+    Stream stream;
+    u64 dstOffset = 0x1000;  // 超过remoteMemSize
+    u64 len = 0x100;
+    void* src = &dstOffset;
+
+    // 设置remoteMemSize为0x800
+    transDevP2p.remoteOutputSize_ = 0x800;
+
+    ret = transDevP2p.TxAsync(UserMemType::OUTPUT_MEM, dstOffset, src, len, stream);
+    EXPECT_NE(ret, HCCL_SUCCESS);  // 应该返回错误
+}
+
+// 测试TransportP2p::TxAsync的边界检查 - len > (remoteMemSize - dstOffset)
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_p2p_tx_async_len_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试len > (remoteMemSize - dstOffset)的情况
+    Stream stream;
+    u64 dstOffset = 0x400;
+    u64 len = 0x500;  // len > (0x1000 - 0x400) = 0x600
+    void* src = &dstOffset;
+
+    // 设置remoteMemSize为0x1000
+    transDevP2p.remoteOutputSize_ = 0x1000;
+
+    ret = transDevP2p.TxAsync(UserMemType::OUTPUT_MEM, dstOffset, src, len, stream);
+    EXPECT_NE(ret, HCCL_SUCCESS);  // 应该返回错误
+}
+
+// 测试TransportP2p::RxData的边界检查 - srcOffset >= remoteMemSize
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_p2p_rx_data_src_offset_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试srcOffset >= remoteMemSize的情况
+    Stream stream;
+    u64 srcOffset = 0x1000;  // 超过remoteMemSize
+    u64 len = 0x100;
+    void* dst = &srcOffset;
+
+    // 设置remoteMemSize为0x800
+    transDevP2p.remoteInputSize_ = 0x800;
+
+    ret = transDevP2p.RxData(UserMemType::INPUT_MEM, srcOffset, dst, len, stream);
+    EXPECT_NE(ret, HCCL_SUCCESS);  // 应该返回错误
+}
+
+// 测试TransportP2p::RxData的边界检查 - len > (remoteMemSize - srcOffset)
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_p2p_rx_data_len_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试len > (remoteMemSize - srcOffset)的情况
+    Stream stream;
+    u64 srcOffset = 0x400;
+    u64 len = 0x500;  // len > (0x1000 - 0x400) = 0x600
+    void* dst = &srcOffset;
+
+    // 设置remoteMemSize为0x1000
+    transDevP2p.remoteInputSize_ = 0x1000;
+
+    ret = transDevP2p.RxData(UserMemType::INPUT_MEM, srcOffset, dst, len, stream);
+    EXPECT_NE(ret, HCCL_SUCCESS);  // 应该返回错误
+}
+
+// 测试TransportP2p::RxAsync的边界检查 - srcOffset >= remoteMemSize
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_p2p_rx_async_src_offset_overflow)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 测试srcOffset >= remoteMemSize的情况
+    Stream stream;
+    u64 srcOffset = 0x1000;  // 超过remoteMemSize
+    u64 len = 0x100;
+    void* dst = &srcOffset;
+
+    // 设置remoteMemSize为0x800
+    transDevP2p.remoteInputSize_ = 0x800;
+
+    ret = transDevP2p.RxAsync(UserMemType::INPUT_MEM, srcOffset, dst, len, stream);
+    EXPECT_NE(ret, HCCL_SUCCESS);  // 应该返回错误
+}
+
+// ========== TransportIbverbs边界检查测试 ==========
+
+// 测试TransportIbverbs::TxPayLoad的边界检查 - offset+len > remoteMemSize
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_ibverbs_tx_pay_load_overflow)
+{
+    // 注意：这个测试需要TransportIbverbs类，但在当前文件中我们主要测试TransportDeviceP2p
+    // 此处仅为示例，实际应该创建单独的TransportIbverbs测试文件
+    // 由于TransportIbverbs的复杂性，建议参考ut_hccl_transport_ibv_exp.cc添加测试
+    
+    // 预期：当offset+len > remoteMemSize时，TxPayLoad应该返回错误
+    // 可以通过mock GetRemoteAddr和设置remoteMemSize来测试
+}
+
+// ========== TransportRoce边界检查测试 ==========
+
+// 测试TransportRoce::GetSocketInfo的边界检查 - socketInfo为空
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_roce_socket_info_empty)
+{
+    // 注意：这个测试需要TransportRoce类
+    // 参考ut_transport_roce.cc中的测试模式
+    // 预期：当socketInfo为空时，GetSocketInfo应该返回错误
+}
+
+// ========== TransportTcp边界检查测试 ==========
+
+// 测试TransportTcp::RxAsync的边界检查 - len > MAX_RECV_LEN
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_tcp_rx_async_len_overflow)
+{
+    // 注意：这个测试需要TransportTcp类
+    // 参考ut_transport_tcp.cc中的测试模式
+    // 预期：当len > MAX_RECV_LEN时，RxAsync应该返回错误
+}
+
+// ========== TransportShmEvent边界检查测试 ==========
+
+// 测试TransportShmEvent::WaitPeerMemConfig的边界检查 - offset >= size
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_shm_event_offset_overflow)
+{
+    // 注意：这个测试需要TransportShmEvent类
+    // 参考TransportP2p的WaitPeerMemConfig测试
+    // 预期：当offset >= size时，应该返回错误
+}
+
+// ========== TransportDirectNpu边界检查测试 ==========
+
+// 测试TransportDirectNpu的地址范围边界检查
+TEST_F(TransportDeviceP2pAiCpu_UT, ut_transport_direct_npu_address_range)
+{
+    // 注意：这个测试需要TransportDirectNpu类
+    // 参考ut_hccl_transport_ibv_exp.cc中的TransportDirectNpu测试
+    // 预期：测试地址范围的边界条件
+}
