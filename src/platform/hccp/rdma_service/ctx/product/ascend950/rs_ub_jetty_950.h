@@ -8,19 +8,20 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef RS_UB_JFC_H
-#define RS_UB_JFC_H
+#ifndef RS_UB_JETTY_950_H
+#define RS_UB_JETTY_950_H
 
 #include "urma_types.h"
 #include "udma_u_ctl.h"
+#include "dl_hal_function.h"
 #include "rs_ctx_inner.h"
 
-union CreateJfcCfg {
-    struct udma_u_lock_jfc_cfg lockJfcCfg;
-    struct udma_u_jfc_cfg_ex jfcCfgEx;
-};
+#define WQEBB_NUM_PER_SQE 4ULL
+#define PAGE_4K 0x1000
+#define ALIGN_DOWN(x, a) ((x) & (~((a) - 1)))
 
-int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb);
-int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc);
-
-#endif // RS_UB_JFC_H
+void RsUbCtxExtJettyCreate950(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
+void RsUbCtxExtJettyDelete950(struct RsCtxJettyCb *jettyCb);
+void RsUbVaMunmapBatch950(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
+void RsUbFreeJettyIdBatch950(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
+#endif // RS_UB_JETTY_H
