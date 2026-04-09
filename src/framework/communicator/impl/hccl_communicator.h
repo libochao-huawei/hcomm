@@ -547,6 +547,7 @@ private:
     u64 CalcOpTilingVDataDesVDataLen(const u32 rankSize) const;
     HcclResult AicpuInitOpTilingDataFromOpParam(const OpParam &opParam, const HcclCMDType &opType,
         struct OpTilingData* opTilingData);
+    HcclResult AicpuInitOpTilingDataAicpuCache(const OpParam &opParam, const HcclCMDType &opType, struct OpTilingData *opTilingData);
     HcclResult AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType,
         const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize);
     HcclResult AicpuKfcTilingDataLaunchIn(const OpParam &opParam, const DeviceMem &deviceContext,

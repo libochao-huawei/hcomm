@@ -5,3 +5,6 @@ src/framework/device/framework/aicpu_cache_manager.cc
 src/framework/device/debug/dfx/taskexception/task_exception.cc
 src/framework/device/framework/aicpu_communicator.cc
 src/framework/device/framework/aicpu_communicator.h
+src/framework/next/coll_comms/communicator/aicpu/coll_comm_aicpu.cc
+src/framework/next/comms/endpoint_pairs/channels/channel_process.cc
+src/framework/next/comms/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.cc
