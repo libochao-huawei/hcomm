@@ -1132,6 +1132,7 @@ HcclResult TransportP2p::TxAsync(UserMemType dstMemType, u64 dstOffset, const vo
     if (((machinePara_.linkAttribute & 0x2) == 0) && (src != nullptr)) {  // 不支持目的端发起
         void *dstMemPtr = nullptr;
         CHK_RET(GetRemoteMem(dstMemType, &dstMemPtr));
+        CHK_PTR_NULL(dstMemPtr);
 
         DeviceMem dstDevMem(static_cast<s8 *>(dstMemPtr) + dstOffset, len);
         DeviceMem srcDevMem(const_cast<void *>(src), len);
@@ -1143,10 +1144,12 @@ HcclResult TransportP2p::TxAsync(UserMemType dstMemType, u64 dstOffset, const vo
     }
 
     /* 发起send_ready_signal事件 */
-    ret = SignalRecord(remoteSendReadyNotify_, remoteSendReadyAddress_, remoteSendReadyOffset_, stream);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[TransportP2p][TxAsync]errNo[0x%016llx]In tx async, signal record failed.",
-            HCCL_ERROR_CODE(ret)), ret);
+    if (remoteSendReadyNotify_ != nullptr && remoteSendReadyNotify_->ptr() != nullptr) {
+        ret = SignalRecord(remoteSendReadyNotify_, remoteSendReadyAddress_, remoteSendReadyOffset_, stream);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[TransportP2p][TxAsync]errNo[0x%016llx]In tx async, signal record failed.",
+                HCCL_ERROR_CODE(ret)), ret);
+    }
 
     return HCCL_SUCCESS;
 }
@@ -1196,7 +1199,8 @@ HcclResult TransportP2p::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stre
             CHK_PTR_NULL(mem.src);
             void *dstMemPtr = nullptr;
             CHK_RET(GetRemoteMem(mem.dstMemType, &dstMemPtr));
-
+            CHK_PTR_NULL(dstMemPtr);
+            
             DeviceMem dstDevMem(static_cast<s8 *>(dstMemPtr) + mem.dstOffset, mem.len);
             DeviceMem srcDevMem(const_cast<void *>(mem.src), mem.len);
             /* 增加hccl 数据传输时数据地址和size记录 */
@@ -1219,13 +1223,16 @@ HcclResult TransportP2p::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stre
 HcclResult TransportP2p::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
 {
     /* 等待send_ready_signal事件 */
-    CHK_RET(dispatcher_->SignalWait(localSendReadyNotify_->ptr(), stream, machinePara_.localUserrank,
-        machinePara_.remoteWorldRank, INVALID_VALUE_STAGE, false, localSendReadyNotify_->notifyId_));
+    if (localSendReadyNotify_ != nullptr && localSendReadyNotify_->ptr() != nullptr) {
+        CHK_RET(dispatcher_->SignalWait(localSendReadyNotify_->ptr(), stream, machinePara_.localUserrank,
+            machinePara_.remoteWorldRank, INVALID_VALUE_STAGE, false, localSendReadyNotify_->notifyId_));
+    }
 
     /* 目的端发起数据传输 */
     if ((machinePara_.linkAttribute & 0x2) && (dst != nullptr)) {  // 支持目的端发起
         void *srcMemPtr = nullptr;
         CHK_RET(GetRemoteMem(srcMemType, &srcMemPtr));
+        CHK_PTR_NULL(srcMemPtr);
 
         DeviceMem srcDevMem(static_cast<s8 *>(srcMemPtr) + srcOffset, len);
         DeviceMem dstDevMem(static_cast<s8 *>(dst), len);
@@ -1248,6 +1255,7 @@ HcclResult TransportP2p::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stre
             CHK_PTR_NULL(mem.dst);
             void *srcMemPtr = nullptr;
             CHK_RET(GetRemoteMem(mem.srcMemType, &srcMemPtr));
+            CHK_PTR_NULL(srcMemPtr);
 
             DeviceMem srcDevMem(static_cast<s8 *>(srcMemPtr) + mem.srcOffset, mem.len);
             DeviceMem dstDevMem(static_cast<s8 *>(mem.dst), mem.len);
