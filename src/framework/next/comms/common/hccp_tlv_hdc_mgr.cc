@@ -95,10 +95,13 @@ HcclResult HccpTlvHdcMgr::Deinit()
         return HcclResult::HCCL_SUCCESS;
     }
 
-    CHK_RET(HccpTlvDeinit(tlvHandle_));
+    HcclResult ret = HccpTlvDeinit(tlvHandle_);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[Deinit]HccpTlvDeinit failed");
+    }
     tlvHandle_ = nullptr;
     initFlag_ = false;
-    return HcclResult::HCCL_SUCCESS;
+    return ret;
 }
 
 HccpTlvHdcMgr::~HccpTlvHdcMgr()
