@@ -41,6 +41,11 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload(
 
     // instantiate a template
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2ScatterSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlg.setPathNumMap(rank2PathNumMap);  
     tempAlg.SetDmaMode(dmaMode_);
     tempAlg.SetRoot(root_);
 
@@ -79,6 +84,11 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(const R
 
     // instantiate a template
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2ScatterSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlg.setPathNumMap(rank2PathNumMap);
     tempAlg.SetDmaMode(dmaMode_);
     tempAlg.SetRoot(root_);
 
@@ -112,18 +122,23 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
     HCCL_INFO("[InsScatterSoleExecutor]ScatterSoleExecutor Orchestrate begin");
     // init and check params
     CHK_RET(Init(op, params, insQue));
-
+    
     // Topo Match
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
     HCCL_INFO("[InsScatterSoleExecutor] Rank[%d], [%s].", myRank_, topoMatch.Describe().c_str());
-
+    dataType_ = op.dataType;
     // instantiate a template
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
     tempAlg.SetDmaMode(dmaMode_);
     tempAlg.SetCollOp(op); // ccu需要传递op信息
     tempAlg.SetRoot(root_);
-
+    tempAlg.SetDataType(dataType_);
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2ScatterSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlg.setPathNumMap(rank2PathNumMap);
     // calculate required insQues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
@@ -177,6 +192,7 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
     virtRanks_ = topoInfo.virtRanks[0];       // 本通信域内的 rank 集合
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
+    dataType_ = op.dataType;
     CHK_PRT_RET(dataTypeSize_ == 0,
                 HCCL_ERROR("Scatter_[CollAlgFactory] Rank [%d], Invalid dataTypeSize_ [%u].", myRank_, dataTypeSize_),
                 HcclResult::HCCL_E_INTERNAL);
@@ -185,6 +201,12 @@ HcclResult InsScatterSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate(con
     HCCL_DEBUG("Scatter_[InsScatterSoleExecutor] Rank[%d], Init insAlgTemplate with rankSize [%u] and dmaMode [%s].",
             myRank_, rankSize_, dmaMode_.Describe().c_str());
     InsAlgTemplate tempAlg(myRank_, rankSize_, vTopo_, virtRankMap_);
+    tempAlg.SetDataType(dataType_);
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2ScatterSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlg.setPathNumMap(rank2PathNumMap);
     tempAlg.SetDmaMode(dmaMode_);
     tempAlg.SetCollOp(op); // ccu需要传递op信息
     tempAlg.SetRoot(root_);
