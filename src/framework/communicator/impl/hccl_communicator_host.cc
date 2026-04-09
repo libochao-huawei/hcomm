@@ -7170,9 +7170,10 @@ namespace hccl
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));
         opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
         // 开启aicpu cache, 且原来是图模式建链但强制走单算子模式展开
+        // 开启aicpu cache，isCapture为true，且是图模式，证明选择了aclgraph零拷贝算法，需要强制刷新cache
         if (opParam.aicpuCacheEnable != 0 &&
             GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
-            (IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy)) {
+            ((IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy) || opParam.isCapture)) {
             // 环境变量传入的aicpuCacheEnable一定 < 10
             constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
             CHK_PRT_RET(opParam.aicpuCacheEnable >= FORCE_OP_BASE_DELTA,
