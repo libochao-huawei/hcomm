@@ -753,3 +753,18 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expe
     HcclResult ret = impl_->WriteWithNotify((void *)0x1, (void *)0x2, 250, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 测试 GetHcclBuffer 空指针检查
+TEST_F(HostCpuRoceChannelTest, Ut_GetHcclBuffer_When_AddrIsNull_Expect_HCCL_E_PTR)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl = CreateInitAndConnect();
+    
+    // 清空 rmtRmaBuffers_ 以模拟 GetAddr() 返回空指针
+    impl->rmtRmaBuffers_.clear();
+    
+    void* addr = nullptr;
+    uint64_t size = 0;
+    HcclResult ret = impl->GetHcclBuffer(addr, size);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
