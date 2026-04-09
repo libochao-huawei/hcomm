@@ -227,8 +227,8 @@ function(generate_filelist_csv JSON_FILE OUTPUT_CSV)
                 set(SOFTLINK "${SOFTLINK}")
             endif()
 
-            # 构建CSV行
-            string(APPEND CSV_LINE "lib64,copy,lib64/${SRC},${DEF_PREFIX}/lib64/${SRC},")
+            # 构建CSV行 - 文件实际安装在hcomm/lib64/下
+            string(APPEND CSV_LINE "lib64,copy,hcomm/lib64/${SRC},${DEF_PREFIX}/lib64/${SRC},")
             string(APPEND CSV_LINE "TRUE,${DEF_PERM},${DEF_OWNER},${TYPE},${SOFTLINK},")
             string(APPEND CSV_LINE "all,N,FALSE,NA,CommLib,NA,all,FALSE\n")
 
@@ -244,7 +244,7 @@ function(generate_filelist_csv JSON_FILE OUTPUT_CSV)
         foreach(IDX RANGE ${OBJ_LAST})
             string(JSON OBJ GET ${JSON_CONTENT} runtime_libs object_files ${IDX})
 
-            string(APPEND CSV_LINE "lib64,copy,lib64/${OBJ},${DEF_PREFIX}/lib64/${OBJ},")
+            string(APPEND CSV_LINE "lib64,copy,hcomm/lib64/${OBJ},${DEF_PREFIX}/lib64/${OBJ},")
             string(APPEND CSV_LINE "TRUE,${DEF_PERM},${DEF_OWNER},all,NA,")
             string(APPEND CSV_LINE "all,N,FALSE,NA,CommLib,NA,all,FALSE\n")
 
@@ -271,7 +271,10 @@ function(generate_filelist_csv JSON_FILE OUTPUT_CSV)
                 set(TYPE "devel")
             endif()
 
-            string(APPEND CSV_LINE "include,copy,${DST}/$(basename ${SRC}),${DEF_PREFIX}/${DST}/$(basename ${SRC}),")
+            # 提取文件名
+            get_filename_component(BASENAME "${SRC}" NAME)
+
+            string(APPEND CSV_LINE "include,copy,hcomm/${DST}/${BASENAME},${DEF_PREFIX}/${DST}/${BASENAME},")
             string(APPEND CSV_LINE "FALSE,${DEF_PERM},${DEF_OWNER},${TYPE},NA,")
             string(APPEND CSV_LINE "all,N,FALSE,NA,CommLib,NA,all,FALSE\n")
 
@@ -313,7 +316,10 @@ function(generate_filelist_csv JSON_FILE OUTPUT_CSV)
                 set(PERM "440")
             endif()
 
-            string(APPEND CSV_LINE "config,copy,${DST},$(basename ${DST}),")
+            # 提取文件名
+            get_filename_component(BASENAME "${DST}" NAME)
+
+            string(APPEND CSV_LINE "config,copy,${DST},${BASENAME},")
             string(APPEND CSV_LINE "TRUE,${PERM},${DEF_OWNER},all,NA,")
             string(APPEND CSV_LINE "all,N,FALSE,NA,CommLib,NA,all,FALSE\n")
 
