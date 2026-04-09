@@ -327,20 +327,6 @@ function(sign_file)
     get_filename_component(input_name "${ARG_INPUT}" NAME)
     set(output_sig "${signatures_dir}/${input_name}")
 
-    if(EXISTS "${SIGN_SCRIPT}")
-        get_filename_component(EXT ${SIGN_SCRIPT} EXT)  # 获取文件扩展名
-
-        if(${EXT} STREQUAL ".sh")
-            set(sign_cmd bash ${SIGN_SCRIPT} ${output_sig} ${ARG_CONFIG} ${sign_flag})
-        elseif(${EXT} STREQUAL ".py")
-            set(root_dir ${CMAKE_SOURCE_DIR})
-            message(STATUS "Detected +++VERSION_INFO: ${VERSION_INFO}")
-            set(sign_cmd python3 ${root_dir}/scripts/sign/add_header_sign.py ${signatures_dir} ${sign_flag} --bios_check_cfg=${ARG_CONFIG} --sign_script=${SIGN_SCRIPT} --version=${VERSION_INFO})
-        endif()
-    else()
-        set(sign_cmd )
-    endif()
-
     # Ensure dir exists
     file(MAKE_DIRECTORY "${signatures_dir}")
 

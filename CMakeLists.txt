@@ -109,7 +109,6 @@ elseif(BUILD_OPEN_PROJECT)
     add_version_info_targets()
     pack_built_in()
     add_subdirectory(src)
-    add_subdirectory(python)
 
     set(HCCL_HEAD
         include/hccl/hccl_comm.h

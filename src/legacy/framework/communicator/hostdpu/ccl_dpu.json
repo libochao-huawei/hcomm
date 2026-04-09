@@ -1,0 +1,9 @@
+{
+    "RunDpuRpcSrvLaunch": {
+        "opInfo": {
+            "functionName": "RunDpuRpcSrvLaunch",
+            "kernelSo": "libccl_dpu.so",
+            "opKernelLib": "KFCKernel"
+        }
+    }
+}
