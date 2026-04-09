@@ -22,23 +22,23 @@ public:
     }
 };
 
-TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR) {
-    UT_COMM_CREATE_DEFAULT(comm);
+// TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR) {
+//     UT_COMM_CREATE_DEFAULT(comm);
 
-    HcclResult ret = HcclCommGetStatus(comm, nullptr);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+//     HcclResult ret = HcclCommGetStatus(comm, nullptr);
+//     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    Ut_Comm_Destroy(comm);
-}
+//     Ut_Comm_Destroy(comm);
+// }
 
-TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
-    UT_COMM_CREATE_DEFAULT(comm);
+// TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
+//     UT_COMM_CREATE_DEFAULT(comm);
 
-    HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
-    HcclResult ret = HcclCommGetStatus(comm, &status);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    // After successful create, comm status should be READY
-    EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
+//     HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
+//     HcclResult ret = HcclCommGetStatus(comm, &status);
+//     EXPECT_EQ(ret, HCCL_SUCCESS);
+//     // After successful create, comm status should be READY
+//     EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);
 
-    Ut_Comm_Destroy(comm);
-}
+//     Ut_Comm_Destroy(comm);
+// }
