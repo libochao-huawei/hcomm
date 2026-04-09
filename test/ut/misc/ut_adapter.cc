@@ -13,6 +13,7 @@
 
 #include "network/hccp.h"
 #include "dlra_function.h"
+#include "adapter_rts_common.h"
 
 #define private public
 #define protected public
@@ -579,4 +580,63 @@ TEST_F(HccpTest, Ut_CreateAiQp_QpIsNullptr_Expect_DestoryQp)
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_hrtStreamCreate_hrtStreamIdFail_Expect_DestoryStream)
+{
+    MOCKER(aclrtCreateStream)
+    .expects(atMost(1))
+    .will(returnValue(ACL_SUCCESS));
+
+    MOCKER(hrtGetStreamId)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(aclrtDestroyStream)
+    .expects(atMost(1))
+    .will(returnValue(ACL_SUCCESS));
+
+    aclrtStream stream = nullptr;
+    HcclResult ret = hrtStreamCreate(&stream);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_hrtStreamCreateWithFlags_hrtGetStreamIdFail_Expect_DestoryStream)
+{
+    MOCKER(aclrtCreateStreamWithConfig)
+    .expects(atMost(1))
+    .will(returnValue(ACL_SUCCESS));
+
+    MOCKER(hrtGetStreamId)
+    .expects(atMost(1))
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(aclrtDestroyStream)
+    .expects(atMost(1))
+    .will(returnValue(ACL_SUCCESS));
+
+    aclrtStream stream = nullptr;
+    int32_t priority = 0;
+    uint32_t flags = 0;
+    HcclResult ret = hrtStreamCreate(&stream, priority, flags);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_hrtMemcpy_CountExceedsDestMax_Expect_ParaError)
+{
+    void *dst = malloc(100);
+    const void *src = malloc(100);
+    uint64_t destMax = 50;
+    uint64_t count = 100;
+    HcclRtMemcpyKind kind = HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE;
+    
+    HcclResult ret = hrtMemcpy(dst, src, destMax, count, kind);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    free(dst);
+    free(src);
 }
