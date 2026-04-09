@@ -24,6 +24,8 @@ namespace hcomm {
 namespace {
 
 constexpr uint32_t kTpAttrSlAvailableBit = 12U;
+// URMA 头文件仅定义 tp_attr bitmap 0–11；bit12 由驱动扩展。为 false 时走 RaGetTpAttrAsync。
+static constexpr bool kSkipRaGetTpAttrStubSlAvailable = true;
 
 static uint32_t PopCount16(uint32_t mask)
 {
@@ -327,6 +329,15 @@ HcclResult TpMgr::StartGetTpAttrForFirstTp(const GetTpInfoParam &param, RequestC
     EXCEPTION_HANDLE_BEGIN
     (void)memset_s(&reqCtx.tpAttr, sizeof(reqCtx.tpAttr), 0, sizeof(reqCtx.tpAttr));
     reqCtx.tpAttrBitmap = (1U << kTpAttrSlAvailableBit);
+
+    if (kSkipRaGetTpAttrStubSlAvailable) {
+        reqCtx.tpAttr.reserved[0] = 0x7CU;
+        reqCtx.tpAttr.reserved[1] = 0x00U;
+        reqCtx.handle = 0;
+        reqCtx.phase = ReqPhase::WAIT_TP_ATTR;
+        EXCEPTION_HANDLE_END
+        return HcclResult::HCCL_SUCCESS;
+    }
 
     const struct HccpTpInfo *list = reinterpret_cast<const struct HccpTpInfo *>(reqCtx.dataBuffer.data());
     const uint64_t firstTpHandle = list[0].tpHandle;
