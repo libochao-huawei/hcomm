@@ -290,19 +290,12 @@ TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnH
 // GetCapabilities 正常调用，返回成功且maxMsgSize为1GB
 TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_Normal_Expect_ReturnSuccess_And_MaxMsgSz1GB)
 {
-    Hccl::IpAddress localIp("1.0.0.0");
-    EndpointDesc endpointDesc;
+    EndpointDesc endpointDesc{};
     endpointDesc.protocol = COMM_PROTOCOL_ROCE;
-    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
-    void* endpointHandle{nullptr};
-    MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    hcomm::CpuRoceEndpoint* endpoint = static_cast<hcomm::CpuRoceEndpoint*>(endpointHandle);
+    hcomm::CpuRoceEndpoint endpoint(endpointDesc);
     hcomm::CpuRoceEndpoint::Capabilities caps;
-    ret = endpoint->GetCapabilities(caps);
+    HcommResult ret = endpoint.GetCapabilities(caps);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     static constexpr uint64_t EXPECTED_MAX_MSG_SZ = 1ULL * 1024 * 1024 * 1024;
     EXPECT_EQ(caps.maxMsgSize, EXPECTED_MAX_MSG_SZ);
@@ -311,22 +304,15 @@ TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_Normal_Expect_ReturnSuccess_
 // GetCapabilities 多次调用，验证缓存一致性
 TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_CalledTwice_Expect_SameResult)
 {
-    Hccl::IpAddress localIp("1.0.0.0");
-    EndpointDesc endpointDesc;
+    EndpointDesc endpointDesc{};
     endpointDesc.protocol = COMM_PROTOCOL_ROCE;
-    endpointDesc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    endpointDesc.commAddr.addr = localIp.GetBinaryAddress().addr;
     endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
-    void* endpointHandle{nullptr};
-    MOCKER_CPP(&Hccl::RdmaHandleManager::GetByAddr).stubs().will(returnValue(rdmaHandle));
-    HcommResult ret = HcommEndpointCreate(&endpointDesc, &endpointHandle);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    hcomm::CpuRoceEndpoint* endpoint = static_cast<hcomm::CpuRoceEndpoint*>(endpointHandle);
+    hcomm::CpuRoceEndpoint endpoint(endpointDesc);
     hcomm::CpuRoceEndpoint::Capabilities caps1;
     hcomm::CpuRoceEndpoint::Capabilities caps2;
-    ret = endpoint->GetCapabilities(caps1);
+    HcommResult ret = endpoint.GetCapabilities(caps1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = endpoint->GetCapabilities(caps2);
+    ret = endpoint.GetCapabilities(caps2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(caps1.maxMsgSize, caps2.maxMsgSize);
 }

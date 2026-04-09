@@ -79,6 +79,41 @@ protected:
         std::cout << "A Test case in HostCpuRoceChannelTest TearDown" << std::endl;
         delete fakeSocket;
     }
+    void SetupSuccessfulConnectionMocks()
+    {
+        DevType devType = DevType::DEV_TYPE_950;
+        MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(
+            returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
+        MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(
+            returnValue(HCCL_SUCCESS));
+    }
+
+    std::unique_ptr<hcomm::HostCpuRoceChannel> CreateInitAndConnect(uint32_t notifyNum = 4)
+    {
+        memHandle_ = static_cast<void*>(localRdmaRmaBuffer.get());
+        channelDesc.memHandles = &memHandle_;
+        channelDesc.memHandleNum = 1;
+        channelDesc.notifyNum = notifyNum;
+        auto impl = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
+        EXPECT_EQ(impl->Init(), HCCL_SUCCESS);
+        hcomm::ChannelStatus status = impl->GetStatus();
+        EXPECT_EQ(impl->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+        status = impl->GetStatus();
+        status = impl->GetStatus();
+        status = impl->GetStatus();
+        EXPECT_EQ(impl->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
+        return impl;
+    }
+
     std::shared_ptr<Hccl::Buffer> localBufferPtr;
     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
     std::vector<std::shared_ptr<Hccl::Buffer>> bufs{std::make_shared<Hccl::Buffer>((uintptr_t)2, 64)};
@@ -86,6 +121,7 @@ protected:
     EndpointHandle endpointHandle{};
     HcommChannelDesc channelDesc{};
     Hccl::Socket* fakeSocket;
+    void* memHandle_{nullptr};
 };
 
 // Mock endpoint that is NOT CpuRoceEndpoint, used to test dynamic_cast failure
@@ -674,31 +710,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_WriteAndReadAndWriteWithNotify_When_MaxMsgSize
 // Write: len > maxMsgSize_ 时触发分片循环
 TEST_F(HostCpuRoceChannelTest, Ut_Write_When_LenExceedsMaxMsgSize_Expect_Slicing_SUCCESS)
 {
-    DevType devType = DevType::DEV_TYPE_950;
-    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    // construct + Init + connect
-    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
-    channelDesc.memHandles = &memHandle;
-    channelDesc.memHandleNum = 1;
-    channelDesc.notifyNum = 4;
-    auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
-    EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
-    hcomm::ChannelStatus status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
-    status = impl_->GetStatus();
-    status = impl_->GetStatus();
-    status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
     // 设置小的 maxMsgSize_ 以触发分片
     impl_->maxMsgSize_ = 100;
     // mock PostRdmaOp
@@ -711,31 +724,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_Write_When_LenExceedsMaxMsgSize_Expect_Slicing
 // Read: len > maxMsgSize_ 时触发分片循环
 TEST_F(HostCpuRoceChannelTest, Ut_Read_When_LenExceedsMaxMsgSize_Expect_Slicing_SUCCESS)
 {
-    DevType devType = DevType::DEV_TYPE_950;
-    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    // construct + Init + connect
-    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
-    channelDesc.memHandles = &memHandle;
-    channelDesc.memHandleNum = 1;
-    channelDesc.notifyNum = 4;
-    auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
-    EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
-    hcomm::ChannelStatus status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
-    status = impl_->GetStatus();
-    status = impl_->GetStatus();
-    status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
     // 设置小的 maxMsgSize_ 以触发分片
     impl_->maxMsgSize_ = 100;
     // mock PostRdmaOp
@@ -748,31 +738,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_Read_When_LenExceedsMaxMsgSize_Expect_Slicing_
 // WriteWithNotify: len > maxMsgSize_ 时触发分片 (前 N-1 块 RDMA_WRITE + 尾块 RDMA_WRITE_WITH_IMM)
 TEST_F(HostCpuRoceChannelTest, Ut_WriteWithNotify_When_LenExceedsMaxMsgSize_Expect_Slicing_SUCCESS)
 {
-    DevType devType = DevType::DEV_TYPE_950;
-    MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
-    MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::IbvPostRecv).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::BufferVecPack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    // construct + Init + connect
-    void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
-    channelDesc.memHandles = &memHandle;
-    channelDesc.memHandleNum = 1;
-    channelDesc.notifyNum = 4;
-    auto impl_ = std::make_unique<hcomm::HostCpuRoceChannel>(endpointHandle, channelDesc);
-    EXPECT_EQ(impl_->Init(), HCCL_SUCCESS);
-    hcomm::ChannelStatus status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
-    status = impl_->GetStatus();
-    status = impl_->GetStatus();
-    status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CONN_OK);
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
     // 设置小的 maxMsgSize_ 以触发分片
     impl_->maxMsgSize_ = 100;
     // mock 前 N-1 块的 PostRdmaOp
