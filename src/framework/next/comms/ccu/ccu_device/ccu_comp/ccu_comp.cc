@@ -24,7 +24,7 @@
 #include "exception_handler.h"
 #include "adapter_rts_common.h"
 #include "ccu_error_info_v1.h"
-#include "env_config/env_config.h"
+#include "env_config.h"
 
 namespace hcomm {
 
