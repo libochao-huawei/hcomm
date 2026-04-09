@@ -937,28 +937,33 @@ add_subdirectory(next)
 if(NOT KERNEL_MODE)
     SET(HCCL_CMAKE_DIR ${HCCL_OPEN_CODE_BASE_DIR}/../cmake/)
     message(STATUS "HCCL_CMAKE_DIR = ${HCCL_CMAKE_DIR}")
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-        COMMAND ${HI_PYTHON} ${HCCL_CMAKE_DIR}/scripts/parser_ini.sh ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.json
+        ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
+        COPYONLY
     )
     add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
 
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.sh ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/aicpu_custom.json
+        ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        COPYONLY
     )
+
     add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
 
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
-        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.sh ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/ccl_dpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/ccl_dpu.json
+        ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        COPYONLY
     )
+    
     add_custom_target(dpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
         DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
@@ -1003,10 +1008,12 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             -lpthread
         )
 
-        add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.sh ${HCCL_BASE_DIR}/../src/framework/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        configure_file(
+            ${HCCL_BASE_DIR}/../src/framework/device/framework/aicpu_custom.json
+            ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+            COPYONLY
         )
+
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL

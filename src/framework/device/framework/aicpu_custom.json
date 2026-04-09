@@ -1,0 +1,282 @@
+{
+    "HcclKernelEntrance": {
+        "opInfo": {
+            "functionName": "HcclKernelEntrance",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "HcclUpdateCommKernelEntrance": {
+        "opInfo": {
+            "functionName": "HcclUpdateCommKernelEntrance",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuChannelDestroyV2": {
+        "opInfo": {
+            "functionName": "RunAicpuChannelDestroyV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuChannelInitV2": {
+        "opInfo": {
+            "functionName": "RunAicpuChannelInitV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuIndOpChannelInit": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpChannelInit",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuIndOpChannelInitV2": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpChannelInitV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuIndOpChannelUpdateV2": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpChannelUpdateV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuIndOpCommInit": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpCommInit",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuIndOpNotify": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpNotify",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuIndOpThreadInit": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpThreadInit",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuKfcResInit": {
+        "opInfo": {
+            "functionName": "RunAicpuKfcResInit",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuKfcResInitV2": {
+        "opInfo": {
+            "functionName": "RunAicpuKfcResInitV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunch": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunch",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_allgather": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_allgather_v": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_allreduce": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_alltoall": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_alltoallv": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_alltoallvc": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_barrier": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_get": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_put": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_send_recv": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_write": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_broadcast": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_finalize": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_gather": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_half_alltoallv": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_receive": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_reduce": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_reduce_scatter": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_reduce_scatter_v": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_scatter": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_send": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuThreadDestroy": {
+        "opInfo": {
+            "functionName": "RunAicpuThreadDestroy",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuThreadInit": {
+        "opInfo": {
+            "functionName": "RunAicpuThreadInit",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunAicpuThreadSupplementNotify": {
+        "opInfo": {
+            "functionName": "RunAicpuThreadSupplementNotify",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunTransportRoceRx": {
+        "opInfo": {
+            "functionName": "RunTransportRoceRx",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    },
+    "RunTransportRoceTx": {
+        "opInfo": {
+            "functionName": "RunTransportRoceTx",
+            "kernelSo": "libaicpu_custom.so",
+            "opKernelLib": "CUSTAICPUKernel"
+        }
+    }
+}
