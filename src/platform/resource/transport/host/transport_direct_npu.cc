@@ -865,7 +865,7 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
 
     if (reinterpret_cast<u64>(src) >= inputMemDetails.addr && reinterpret_cast<u64>(src) < inputMemDetails.addr + inputMemDetails.size) {
         apiParam.lKey = inputMemDetails.key;
-    } else if (reinterpret_cast<u64>(src) >= outputMemDetails.addr && reinterpret_cast<u64>(src) <= outputMemDetails.addr + outputMemDetails.size) {
+    } else if (reinterpret_cast<u64>(src) >= outputMemDetails.addr && reinterpret_cast<u64>(src) < outputMemDetails.addr + outputMemDetails.size) {
         apiParam.lKey = outputMemDetails.key;
     } else {
         HCCL_ERROR("[TransportDirectNpu][TxData]src_ptr=%p is out of range, inputmem src[%p], size[%llu];"

@@ -172,3 +172,54 @@ TEST_F(TransportDeviceP2pAiCpu_UT, transport_init_A3_between_servers)
     ret = transDevP2p.SignalRecord(transDevP2p.remoteSendReadyNotify_, transDevP2p.remoteSendReadyAddress_, 0, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
+
+// 测试TransportP2p的基本初始化和参数验证
+TEST_F(TransportDeviceP2pAiCpu_UT, transport_basic_param_check)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SERVER;
+    transDevP2pData.transportAttr.relationship |= HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
+
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    
+    // 验证基本成员变量初始化正确
+    EXPECT_EQ(transDevP2p.remoteInputPtr_, transDevP2pData.inputBufferPtr);
+    EXPECT_EQ(transDevP2p.remoteOutputPtr_, transDevP2pData.outputBufferPtr);
+    EXPECT_EQ(transDevP2p.transportAttr_.linkType, transDevP2pData.transportAttr.linkType);
+}
+
+// 测试TransportP2p的Init函数和空指针检查
+TEST_F(TransportDeviceP2pAiCpu_UT, transport_init_null_check_coverage)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    transDevP2pData.transportAttr.relationship = 0;
+    
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    
+    // 验证Init成功
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(transDevP2p.remoteSendReadyAddress_, u64(100));
+}
+
+// 测试TransportP2p的SignalRecord功能
+TEST_F(TransportDeviceP2pAiCpu_UT, transport_signal_record_functionality)
+{
+    transDevP2pData.transportAttr.linkType = LinkType::LINK_HCCS_SW;
+    
+    TransportDeviceP2p transDevP2p(dispatcher, notifyPool, machinePara, timeout, transDevP2pData);
+    HcclResult ret = transDevP2p.Init();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    // Mock SignalRecord调用
+    MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, 
+        HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
+        s32, bool, u64, u32))
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    
+    Stream stream;
+    ret = transDevP2p.SignalRecord(transDevP2p.remoteSendReadyNotify_, 
+        transDevP2p.remoteSendReadyAddress_, 0, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}

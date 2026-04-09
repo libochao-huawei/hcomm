@@ -335,3 +335,41 @@ TEST_F(HcommCAdptTest, ut_HcommResMgrInit_MultiDevice_Expect_Success)
     EXPECT_EQ(ret1, HCCL_SUCCESS);
     EXPECT_EQ(ret2, HCCL_SUCCESS);
 }
+
+// 测试HcommMemReg的空指针检查 - mem->addr为空
+TEST_F(HcommCAdptTest, ut_HcommMemReg_When_MemAddrNull_Expect_E_PTR)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    CommMem mem{};
+    mem.addr = nullptr;
+    mem.size = 1024;
+    char memTag[] = "test_mem";
+    MemHandle memHandle = 0;
+    
+    MOCKER(ChannelProcess::ChannelGet)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    
+    HcommResult ret = HcommMemReg(endpointHandle, memTag, &mem, &memHandle);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+// 测试HcommMemReg的size为0的检查
+TEST_F(HcommCAdptTest, ut_HcommMemReg_When_MemSizeZero_Expect_E_PARA)
+{
+    EndpointHandle endpointHandle = reinterpret_cast<EndpointHandle>(0x12345);
+    CommMem mem{};
+    mem.addr = malloc(1024);
+    mem.size = 0;
+    char memTag[] = "test_mem";
+    MemHandle memHandle = 0;
+    
+    MOCKER(ChannelProcess::ChannelGet)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    
+    HcommResult ret = HcommMemReg(endpointHandle, memTag, &mem, &memHandle);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    
+    free(mem.addr);
+}
