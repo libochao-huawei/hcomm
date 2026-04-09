@@ -349,6 +349,21 @@ function(generate_filelist_csv JSON_FILE OUTPUT_CSV)
         endforeach()
     endif()
 
+    # 添加动态生成的文件到filelist.csv
+    # 注意: 这些文件已经在staging目录中,需要添加到filelist.csv以便安装脚本能处理它们
+
+    # version.info - 在包中的位置是share/info/hcomm/version.info
+    string(APPEND CSV_LINE "config,copy,share/info/hcomm/version.info,share/info/hcomm,")
+    string(APPEND CSV_LINE "TRUE,440,\${username}:\${usergroup},all,NA,")
+    string(APPEND CSV_LINE "all,N,FALSE,NA,CommLib,NA,all,FALSE\n")
+
+    # scene.info - 在包中的位置是share/info/hcomm/scene.info
+    string(APPEND CSV_LINE "config,copy,share/info/hcomm/scene.info,share/info/hcomm,")
+    string(APPEND CSV_LINE "TRUE,440,\${username}:\${usergroup},all,NA,")
+    string(APPEND CSV_LINE "all,N,FALSE,NA,CommLib,NA,all,FALSE\n")
+
+    file(APPEND "${OUTPUT_CSV}" "${CSV_LINE}")
+
     message(STATUS "Generated filelist.csv: ${OUTPUT_CSV}")
 endfunction()
 
