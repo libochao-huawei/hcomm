@@ -76,7 +76,7 @@ void InsCollAlgBase::SetDmaMode(const DmaMode dmaMode)
     return;
 }
 
-void InsCollAlgBase::SetRmaDataBufferMgr(const RmtDataBufferMgr* rmaDataBufferMgr)
+void InsCollAlgBase::SetRmaDataBufferMgr(const RmtDataBufferMgr *rmaDataBufferMgr)
 {
     (void)rmaDataBufferMgr;
     return;
@@ -92,11 +92,11 @@ HcclResult InsCollAlgBase::Init(const CollAlgOperator &op, const CollAlgParams &
 {
     // init params
     CHK_PRT_RET(InitParams(op, params) != HcclResult::HCCL_SUCCESS,
-                HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Fail to init params.", myRank_), HcclResult::HCCL_E_PARA);
+        HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Fail to init params.", myRank_), HcclResult::HCCL_E_PARA);
 
     // init queMap
     CHK_PRT_RET(GenInsQueMap(insQue) != HcclResult::HCCL_SUCCESS,
-                HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Fail to init insQueMap.", myRank_), HcclResult::HCCL_E_PARA);
+        HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Fail to init insQueMap.", myRank_), HcclResult::HCCL_E_PARA);
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -104,32 +104,32 @@ HcclResult InsCollAlgBase::Init(const CollAlgOperator &op, const CollAlgParams &
 HcclResult InsCollAlgBase::InitParams(const CollAlgOperator &op, const CollAlgParams &params)
 {
     op_ = op;
-    opMode_        = params.opMode;
+    opMode_ = params.opMode;
     maxTmpMemSize_ = params.maxTmpMemSize;
 
     CHK_PRT_RET((maxTmpMemSize_ == 0) && (opMode_ == OpMode::OPBASE),
-                HCCL_ERROR("[InsCollAlgFactory] maxTmpMemSize equals to zero for OPBASE."), HcclResult::HCCL_E_PARA);
+        HCCL_ERROR("[InsCollAlgFactory] maxTmpMemSize equals to zero for OPBASE."), HcclResult::HCCL_E_PARA);
 
-    CHK_PRT_RET(InitDataInfo(op, dataType_, outputDataType_, dataCount_), HCCL_ERROR("[InsCollAlgFactory] unable to init DataInfo."),
-                HcclResult::HCCL_E_PARA);
+    CHK_PRT_RET(InitDataInfo(op, dataType_, outputDataType_, dataCount_),
+        HCCL_ERROR("[InsCollAlgFactory] unable to init DataInfo."), HcclResult::HCCL_E_PARA);
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
 
     CHK_PRT_RET(InitOpInfo(op, opType_, redOp_, root_), HCCL_ERROR("[InsCollAlgFactory] unable to init OpInfo."),
-                HcclResult::HCCL_E_PARA);
+        HcclResult::HCCL_E_PARA);
 
     return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult InsCollAlgBase::GenInsQueMap(InsQuePtr insQue)
 {
-    if(insQue == nullptr) {
+    if (insQue == nullptr) {
         HCCL_ERROR("[InsCollAlgBase] insQue is nullptr.");
         return HcclResult::HCCL_E_PTR;
     }
     CHK_PRT_RET(!insQue->IsMaster(),
-                HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Input Primitive Queue is not a master queue.", myRank_),
-                HcclResult::HCCL_E_PARA);
+        HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Input Primitive Queue is not a master queue.", myRank_),
+        HcclResult::HCCL_E_PARA);
     queId2InsQue_.insert(std::make_pair(insQue->GetId(), insQue));
     return HcclResult::HCCL_SUCCESS;
 }
@@ -137,8 +137,7 @@ HcclResult InsCollAlgBase::GenInsQueMap(InsQuePtr insQue)
 HcclResult InsCollAlgBase::InitQueue(const u32 &requiredQueNum, std::vector<InsQuePtr> &requiredQue)
 {
     CHK_PRT_RET(!static_cast<bool>(queId2InsQue_.count(0)),
-                HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Invalid queId2InsQue Map.", myRank_),
-                HcclResult::HCCL_E_INTERNAL);
+        HCCL_ERROR("[InsCollAlgFactory] Rank [%d], Invalid queId2InsQue Map.", myRank_), HcclResult::HCCL_E_INTERNAL);
     InsQuePtr insQue = queId2InsQue_[0];
 
     for (u32 queIdx = 0; queIdx < requiredQueNum; queIdx++) {
@@ -154,13 +153,14 @@ HcclResult InsCollAlgBase::InitQueue(const u32 &requiredQueNum, std::vector<InsQ
 HcclResult InsCollAlgBase::SetLinkPrty(const std::vector<BasePortType> &linkPriority)
 {
     CHK_PRT_RET(linkPriority.size() == 0, HCCL_ERROR("[InsCollAlgFactory] Invalid given link priority."),
-                HcclResult::HCCL_E_PARA);
+        HcclResult::HCCL_E_PARA);
     linkPriority_.assign(linkPriority.begin(), linkPriority.end());
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult InsCollAlgBase::CalcParallelNotifyReq(const u32 primQueueNum, std::vector<std::tuple<QId, QId, u32>> &queueNotifys) const
+HcclResult InsCollAlgBase::CalcParallelNotifyReq(
+    const u32 primQueueNum, const u32 IntraqueNum, std::vector<std::tuple<QId, QId, u32>> &queueNotifys) const
 {
     u32 slaveNum = primQueueNum - 1;
     std::vector<std::tuple<QId, QId, u32>> notifyRequests;
@@ -169,6 +169,13 @@ HcclResult InsCollAlgBase::CalcParallelNotifyReq(const u32 primQueueNum, std::ve
     for (QId q = 1; q < primQueueNum; q++) {
         notifyRequests.emplace_back(std::make_tuple(0, q, 0));
         notifyRequests.emplace_back(std::make_tuple(q, 0, 0));
+    }
+    for (QId q = IntraqueNum; q < primQueueNum; q++) {
+        if (IntraqueNum == q) {
+            continue;
+        }
+        notifyRequests.emplace_back(std::make_tuple(IntraqueNum, q, 0));
+        notifyRequests.emplace_back(std::make_tuple(q, IntraqueNum, 0));
     }
     queueNotifys = notifyRequests;
     return HcclResult::HCCL_SUCCESS;
@@ -200,15 +207,15 @@ LinkReq InsCollAlgBase::GetSeqLinksUnion(const LinkReq &linkReq0, const LinkReq 
         if (retLinkReq.find(linkReqIter->first) == retLinkReq.end()) {
             retLinkReq.insert(std::pair<RankId, u32>(linkReqIter->first, linkReqIter->second));
         } else {
-            u32 tmpLinkReq                 = retLinkReq[linkReqIter->first];
+            u32 tmpLinkReq = retLinkReq[linkReqIter->first];
             retLinkReq[linkReqIter->first] = std::max(tmpLinkReq, linkReqIter->second);
         }
     }
     return retLinkReq;
 }
 
-HcclResult InsCollAlgBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
-{   
+HcclResult InsCollAlgBase::CalNumBlocks(u32 &numBlocks, u64 dataSize, u32 numBlocksLimit)
+{
     numBlocks = 0;
     (void)dataSize;
     (void)numBlocksLimit;

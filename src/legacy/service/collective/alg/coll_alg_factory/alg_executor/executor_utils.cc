@@ -47,7 +47,7 @@ HcclResult InitOpInfo(const CollAlgOperator &op, OpType &opType, ReduceOp &redOp
 
 HcclResult InitDataInfo(const CollAlgOperator &op, DataType &dataType, DataType &outputDataType, u64 &dataCount)
 {
-    dataType  = op.dataType;
+    dataType = op.dataType;
     dataCount = op.dataCount;
     outputDataType = op.outputDataType;
     if (outputDataType == DataType::INVALID) {
@@ -58,8 +58,8 @@ HcclResult InitDataInfo(const CollAlgOperator &op, DataType &dataType, DataType 
 }
 
 // Get Prior Link from virtual topo
-const std::vector<NetInstance::Path> GetPathsFromRankGraph(const RankGraph *rankGraph,
-    const RankId srcRank, const RankId dstRank)
+const std::vector<NetInstance::Path> GetPathsFromRankGraph(
+    const RankGraph *rankGraph, const RankId srcRank, const RankId dstRank)
 {
     // 遍历当前节点的所有层级，返回两个节点间查到到的所有path
     std::vector<NetInstance::Path> pathList;
@@ -73,7 +73,8 @@ const std::vector<NetInstance::Path> GetPathsFromRankGraph(const RankGraph *rank
 
 HcclResult AddToResLinks(const RankId vNeighborRank, const LinkData &linkData, ResLinks &resLinks)
 {
-    HCCL_DEBUG("RankId [%d] linkData.des[%s] resLinks[%zu]", vNeighborRank, linkData.Describe().c_str(), resLinks.size());
+    HCCL_DEBUG(
+        "RankId [%d] linkData.des[%s] resLinks[%zu]", vNeighborRank, linkData.Describe().c_str(), resLinks.size());
     auto rankLinkIter = resLinks.find(vNeighborRank);
     if (rankLinkIter == resLinks.end()) {
         std::vector<LinkData> tmpLinks = {linkData};
@@ -84,22 +85,21 @@ HcclResult AddToResLinks(const RankId vNeighborRank, const LinkData &linkData, R
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult PrepResLinks(const RankId myRank, const RankGraph *rankGraph,
-                        const std::vector<BasePortType> &linkPriority, const LinkReq &linkReq, ResLinks &resLinks)
+HcclResult PrepResLinks(const RankId myRank, const RankGraph *rankGraph, const std::vector<BasePortType> &linkPriority,
+    const LinkReq &linkReq, ResLinks &resLinks)
 {
     HCCL_DEBUG("PrepResLinks linkPriority.size()[%zu], linkReq.size()[%zu]", linkPriority.size(), linkReq.size());
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
-        const std::vector<NetInstance::Path> tmpPaths =
-            GetPathsFromRankGraph(rankGraph, myRank, resReqIter->first);
+        const std::vector<NetInstance::Path> tmpPaths = GetPathsFromRankGraph(rankGraph, myRank, resReqIter->first);
         if (resReqIter->second == 1) {
             CHK_PRT_RET(tmpPaths.size() == 0,
                 HCCL_ERROR("[CollAlgFactory] Unable to obtain valid link, srcRank [%d], dstRank [%d].", myRank,
-                resReqIter->first), HcclResult::HCCL_E_INTERNAL);
-            LinkData requiredLinkData(tmpPaths[0]);  // 当前只取第一条path
+                    resReqIter->first),
+                HcclResult::HCCL_E_INTERNAL);
+            LinkData requiredLinkData(tmpPaths[0]); // 当前只取第一条path
             // updata res
             CHK_PRT_RET(AddToResLinks(resReqIter->first, requiredLinkData, resLinks) != HcclResult::HCCL_SUCCESS,
-                        HCCL_ERROR("[CollAlgFactory] Rank [%d], Fail to prepare links.", myRank),
-                        HcclResult::HCCL_E_INTERNAL);
+                HCCL_ERROR("[CollAlgFactory] Rank [%d], Fail to prepare links.", myRank), HcclResult::HCCL_E_INTERNAL);
         } else {
             CHK_PRT_RET(tmpPaths.size() < resReqIter->second,
                 HCCL_ERROR("[CollAlgFactory] Rank [%d], available linkNum smaller than required.", myRank),
@@ -109,8 +109,8 @@ HcclResult PrepResLinks(const RankId myRank, const RankGraph *rankGraph,
                 LinkData requiredLinkData(tmpPaths[linkNum]);
                 // updata res
                 CHK_PRT_RET(AddToResLinks(resReqIter->first, requiredLinkData, resLinks) != HcclResult::HCCL_SUCCESS,
-                            HCCL_ERROR("[CollAlgFactory] Rank [%d], Fail to prepare links.", myRank),
-                            HcclResult::HCCL_E_INTERNAL);
+                    HCCL_ERROR("[CollAlgFactory] Rank [%d], Fail to prepare links.", myRank),
+                    HcclResult::HCCL_E_INTERNAL);
             }
         }
     }
@@ -143,22 +143,20 @@ HcclResult PrepResLinks(const RankId myRank, const LinkReq &linkReq, ConnectedLi
             }
         }
     }
-
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CalcResLinks(const RankId myRank, const RankGraph *rankGraph,
-                        const std::vector<BasePortType> &linkPriority, const LinkReq &linkReq,
-                        std::vector<LinkData> &links)
+HcclResult CalcResLinks(const RankId myRank, const RankGraph *rankGraph, const std::vector<BasePortType> &linkPriority,
+    const LinkReq &linkReq, std::vector<LinkData> &links)
 {
     HCCL_DEBUG("CalcResLinks linkPriority.size()[%zu]", linkPriority.size());
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
-        const std::vector<NetInstance::Path> tmpPaths =
-            GetPathsFromRankGraph(rankGraph, myRank, resReqIter->first);
+        const std::vector<NetInstance::Path> tmpPaths = GetPathsFromRankGraph(rankGraph, myRank, resReqIter->first);
         if (resReqIter->second == 1) {
             CHK_PRT_RET(tmpPaths.size() == 0,
                 HCCL_ERROR("[CollAlgFactory] Unable to obtain valid link, srcRank [%d], dstRank [%d].", myRank,
-                resReqIter->first), HcclResult::HCCL_E_INTERNAL);
+                    resReqIter->first),
+                HcclResult::HCCL_E_INTERNAL);
             // updata res
             links.emplace_back(tmpPaths[0]);
         } else {
@@ -190,7 +188,7 @@ HcclResult CalcLinkInfo(const RankId myRank, const RankGraph *rankGraph, const L
         }
         // 当前场景只考虑两层拓扑场景
         u32 levelIdx = 0;
-        const NetInstance* netInstance = rankGraph->GetNetInstanceByRankId(levelIdx, myRank);
+        const NetInstance *netInstance = rankGraph->GetNetInstanceByRankId(levelIdx, myRank);
         std::set<RankId> rankSet = netInstance->GetRankIds();
         auto rankInRankSet = std::find(rankSet.begin(), rankSet.end(), remoteRank);
         if (rankInRankSet != rankSet.end()) {
@@ -198,6 +196,89 @@ HcclResult CalcLinkInfo(const RankId myRank, const RankGraph *rankGraph, const L
         } else {
             algTempLinksInfo.push_back(std::make_pair(1, remoteRank));
         }
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::vector<std::vector<RankId>>&virtRanks_,
+     RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap){
+    for (uint64_t levelNumIdx = 0; levelNumIdx < 2; levelNumIdx++) {
+        rank2PathNumMap.emplace_back();
+        for (auto rankIdx : virtRanks_[levelNumIdx]) {
+            if (rankIdx == myRank_) {
+                continue;
+            }
+            std::vector<NetInstance::Path> tmpPaths = rankGraph->GetPaths(levelNumIdx, myRank_, rankIdx);
+            rank2PathNumMap[levelNumIdx][rankIdx] = tmpPaths.size();
+        }
+    }
+    if(rank2PathNumMap.size() == 0){
+        HCCL_ERROR("No path to all remoteRank");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+
+
+HcclResult SetPathNumMapByRankGraphMultiLevel(const RankGraph *rankGraph, std::vector<RankId>&virtRanks_,
+    RankId myRank_, std::map<u32, u32>&rank2PathNumMap){
+    std::set<u32> levelSet = rankGraph->GetLevels(myRank_);
+    for(auto level : levelSet){
+        bool levelFlag=1;
+        for(auto rankIdx : virtRanks_){
+            if(rankIdx == myRank_){
+                continue;
+            }
+            std::vector<NetInstance::Path> tmpPaths =
+            rankGraph->GetPaths(level, myRank_, rankIdx);
+            if(tmpPaths.size()==0){
+                rank2PathNumMap.clear();
+                levelFlag = 0;
+                break;
+            }
+            rank2PathNumMap[rankIdx] = tmpPaths.size();
+        }
+        if(levelFlag){
+            break;
+        }
+    }
+    if(rank2PathNumMap.size() == 0){
+        HCCL_ERROR("No path to all remoteRank");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vector<std::vector<RankId>>&virtRanks_,
+     RankId myRank_, std::vector<map<u32, u32>>&rank2PathNumMap){
+    for (uint64_t levelNumIdx = 0; levelNumIdx < 2; levelNumIdx++) {
+        rank2PathNumMap.emplace_back();
+        for (auto rankIdx : virtRanks_[levelNumIdx]) {
+            auto links = linkMgr->GetLinks(levelNumIdx, rankIdx);
+            if(links.size()!=0){
+                rank2PathNumMap[levelNumIdx][rankIdx]=links.size();
+            }
+        }
+    }
+    if(rank2PathNumMap.size() == 0){
+        HCCL_ERROR("No path to all remoteRank");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult SetPathNumMapByLinkMgrMultiLevel(ConnectedLinkMgr *linkMgr, std::vector<RankId>&virtRanks_,
+    RankId myRank_, map<u32, u32>&rank2PathNumMap){
+    for(u32 rankIdx:virtRanks_){
+        auto links = linkMgr->GetLinks(rankIdx);
+        if(links.size()!=0){
+            rank2PathNumMap[rankIdx]=links.size();
+        }
+    }
+    if(rank2PathNumMap.size() == 0){
+        HCCL_ERROR("No path to all remoteRank");
+        return HcclResult::HCCL_E_INTERNAL;
     }
     return HcclResult::HCCL_SUCCESS;
 }

@@ -115,4 +115,11 @@ HcclResult AivAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     return HCCL_SUCCESS;
 }
 
+HcclResult AivAlgTemplateBase::setPathNumMap(const std::map<u32, u32> &rank2PathNumMap)
+{
+    (void)rank2PathNumMap;
+    HCCL_WARNING("[AivAlgTemplateBase] Unsupported interface of setPathNumMap!");
+    return HCCL_SUCCESS;
+}
+ 
 } // namespace Hccl
