@@ -9,6 +9,7 @@
  */
 #include "hal.h"
 #include <stdio.h>
+#include <time.h>
 #include <dlfcn.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -84,7 +85,14 @@ static int (*get_logicid_from_phyid)(unsigned int phy_id, unsigned int* logic_id
 int load_dcmi()
 {
     static void* dcmi = NULL;
+    static volatile int isInit = false;
     if (dcmi != NULL) {
+        for (int i = 0; i < 10; i++) {
+            if (isInit) {
+                return 0;
+            }
+            sleep(1);
+        }
         return 0;
     }
     if(dcmi == NULL) {
@@ -109,6 +117,7 @@ int load_dcmi()
         return -1;
     }
     (void)dcmi_init(); //  dcmi_init可能已经调用过了
+    isInit = true;
     return 0;
 }
 
