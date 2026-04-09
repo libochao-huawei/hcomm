@@ -663,7 +663,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         opExecuteConfig = commExecuteConfig;
         ExecAlgSelect(opParams, OpMode::OPBASE);    // 根据配置选择对应的collService
         if (dynamic_cast<CollServiceDefaultImpl *>(collService) != nullptr) {
-            HCCL_ERROR("Opbase mode is not supported in expanding on the host in 910_95");
+            HCCL_ERROR("Opbase mode is not supported in expanding on the host in 950");
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
@@ -755,7 +755,7 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
         ExecAlgSelect(opParams, OpMode::OPBASE);
         CHK_PTR_NULL(collService);
         if (dynamic_cast<CollServiceDefaultImpl *>(collService) != nullptr) {
-            HCCL_ERROR("The op base is not supported in expanding on the host in 910_95 with MC2.");
+            HCCL_ERROR("The op base is not supported in expanding on the host in 950 with MC2.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
  
@@ -915,7 +915,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         opExecuteConfig = commExecuteConfig;
         ExecAlgSelect(opParams, OpMode::OFFLOAD);
 
-        if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 910_95不支持HOST_TS模式
+        if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 950不支持HOST_TS模式
             HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] HOSTCPU_TS is not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
@@ -2742,7 +2742,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
         case HcclAccelerator::AICPU_TS:
             commAccelerator = AcceleratorState::AICPU_TS;
             break;
-        case HcclAccelerator::HOSTCPU_TS: // 910_95不支持HOST展开，进行拦截
+        case HcclAccelerator::HOSTCPU_TS: // 950不支持HOST展开，进行拦截
             HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in 950", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
         case HcclAccelerator::AICPU:
@@ -3030,7 +3030,7 @@ HcclResult CommunicatorImpl::ReLoadOffloadOp()
 
     ExecAlgSelect(curOpParams, OpMode::OFFLOAD); // 根据配置选择对应的collService
 
-    if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 910_95不支持HOST_TS模式
+    if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 950不支持HOST_TS模式
             HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadOp] HOSTCPU_TS is not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
     }

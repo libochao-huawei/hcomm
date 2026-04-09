@@ -223,6 +223,10 @@ void RankInfoDetect::SetupRankInfoDetectService(shared_ptr<Socket> serverSocket,
 
     // 第二次发送的ranktable带有端口信息
     EXECEPTION_CATCH(rankInfoDetectService->Update(), hasException = true);
+
+    // 确保root info流程先销毁server socket 再返回
+    // 可能失败，需要将错误状态带出
+    EXECEPTION_CATCH(serverSocket->Destroy(), hasException = true);
     HrtResetDevice(devLogicId);
 
     // 若有异常则设置error状态退出
