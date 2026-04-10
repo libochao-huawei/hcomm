@@ -16,7 +16,7 @@
 #include "framework/aicpu_communicator.h"
 #include "framework/aicpu_hccl_process.h"
 #include "hccl_common.h"
-#include "../../../../legacy/unified_platform/resource/stream/aicpu/sqe_build_a5.h"
+#include "sqe_build_a5.h"
 
 using namespace HcclApi;
 namespace {

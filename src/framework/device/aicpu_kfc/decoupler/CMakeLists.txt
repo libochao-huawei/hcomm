@@ -37,6 +37,7 @@ target_compile_options(ccl_kernel_decoupler PRIVATE
 
 target_include_directories(ccl_kernel_decoupler PRIVATE
     ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/inc
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/stream/aicpu
     $<TARGET_PROPERTY:ccl_kernel,INCLUDE_DIRECTORIES>
 )
 
