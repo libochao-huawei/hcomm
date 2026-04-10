@@ -635,7 +635,7 @@ TEST_F(HccpTest, Ut_hrtStreamCreateWithFlags_hrtGetStreamIdFail_Expect_DestorySt
 TEST_F(HccpTest, Ut_hrtMemcpy_CountExceedsDestMax_Expect_ParaError)
 {
     void *dst = malloc(100);
-    const void *src = malloc(100);
+    void *src = malloc(100);
     uint64_t destMax = 50;
     uint64_t count = 100;
     HcclRtMemcpyKind kind = HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE;
