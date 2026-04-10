@@ -430,7 +430,7 @@ HcclResult HcclOneSideServiceAicpu::CleanStreamFunc()
     CHK_RET(CleanStream(execStream_));
     execStreamEnable_ = true;
     HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc reset stream sq buffer success"
-        "SetStreanEnable streamid[%d]", streamInfo.actualStreamId);
+        "SetStreamEnable streamid[%d]", streamInfo.actualStreamId);
     return HCCL_SUCCESS;
 }
 
