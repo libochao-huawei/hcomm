@@ -56,9 +56,9 @@
         <file value="ccu_api.hpp"/>
         <file value="ccu_buffer.hpp"/>
         <file value="ccu_control_api.h"/>
-        <file value="ccu_control_flow_macro.h"/>
         <file value="ccu_data_api_impl.h"/>
-        <file value="ccu_if_label_stack.hpp"/>
+        <file value="ccu_data_api.h"/>
+        <file value="ccu_data_resource.h"/>
         <file value="ccu_data_utils.hpp"/>
         <file value="ccu_event.hpp"/>
         <file value="ccu_local_addr.hpp"/>
