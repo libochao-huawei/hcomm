@@ -396,10 +396,12 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
     nicRdevInfo.localIp.addr6 = ipAddr.GetBinaryAddress().addr6;
     SocketHandle socketHandle = nullptr;
     HcclResult ret = hrtRaSocketInit(NETWORK_PEER_ONLINE, nicRdevInfo, socketHandle);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HeterogInit]errNo[0x%016llx] ra socket init failed, ip[%s], return[%d]",
-        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret),
-        HCCL_E_TCP_CONNECT);
+            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret);
+        HrtRaDeInit(&config);
+        return HCCL_E_TCP_CONNECT;
+    }
     HCCL_INFO("ip[%s] socket init OK", ipAddr.GetReadableAddress());
 
     IpSocket ipSocketInfo;
@@ -410,10 +412,29 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
 
     /*  device网卡初始化暂不考虑 */
     if (!GetExternalInputHcclIsTcpMode()) {
-        CHK_RET(InitRdmaHandle(devId, ipAddr));
+        ret = InitRdmaHandle(devId, ipAddr);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HeterogInit] InitRdmaHandle fail, ret[%d], destory resource.", ret);
+            hrtRaSocketDeInit(socketHandle);
+            HrtRaDeInit(&config);
+            return ret;
+        }
     }
 
-    CHK_RET(HeterogStartListen(ipAddr, port));
+    ret = HeterogStartListen(ipAddr, port);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HeterogInit] HeterogStartListen fail, ret[%d], destory resource.", ret);
+        if (!GetExternalInputHcclIsTcpMode()) {
+            auto& ipSock = raResourceInfo_.nicSocketMap[ipAddr];
+            if (ipSock.nicRdmaHandle != nullptr) {
+                (void)HrtRaRdmaDeInit(ipSock.nicRdmaHandle, NO_USE);
+            }
+        }
+        hrtRaSocketDeInit(socketHandle);
+        HrtRaDeInit(&config);
+        raResourceInfo_.nicSocketMap.erase(ipAddr);
+        return ret;
+    }
     return HCCL_SUCCESS;
 }
 
@@ -522,7 +543,7 @@ HcclResult NetworkManager::GetConfigAndRaDeinit(struct RaInitConfig &config, NIC
         CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionInit());
         bool supportMultiProcHCCP = false;
         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
-        if(supportMultiProcHCCP || hasBackup) {
+        if (supportMultiProcHCCP || hasBackup) {
             isMultiProc = true;
             config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
         }
@@ -570,7 +591,7 @@ HcclResult NetworkManager::DeInit(NICDeployment nicDeploy, bool resetDeviceFlag,
         CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionInit());
         bool supportMultiProcHCCP = false;
         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
-        if(supportMultiProcHCCP || hasBackup) {
+        if (supportMultiProcHCCP || hasBackup) {
             isMultiProc = true;
             config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
         }
@@ -742,16 +763,16 @@ HcclResult NetworkManager::StopVnicSocketHandle(const HcclIpAddress &localIp)
             HCCL_ERROR("[NetworkManager][StopVnicSocketHandle]errNo[0x%016llx] stop vnic listen failed, "
                 "devid[%u], ip[%s], port[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
                 localIp.GetReadableAddress(), port);
-            return HCCL_E_INTERNAL;
+            break;
         }
-        ipSock.listenedPort.erase(port);
         IPPortListenRefMapVnicDevice_[localIp][port].Clear();
         HCCL_INFO("[NetworkManager][StopVnicSocketHandle] ip[%s] stop listen port[%u]",
             localIp.GetReadableAddress(), port);
     }
+    ipSock.listenedPort.clear();
 
     // 销毁socket
-    CHK_PRT_RET(ipSock.nicSocketHandle != nullptr && hrtRaSocketDeInit(ipSock.nicSocketHandle),
+    CHK_PRT_RET(ipSock.nicSocketHandle != nullptr && hrtRaSocketDeInit(ipSock.nicSocketHandle),	 
         HCCL_ERROR("[Stop][NicsSocket]VNIC socket deInit not successfully"), HCCL_E_NETWORK);
     ipSock.nicSocketHandle = nullptr;
     raResourceInfo_.vnicSocketMap.erase(localIp);
@@ -1059,20 +1080,33 @@ HcclResult NetworkManager::StopNic(const HcclIpAddress &ipAddr, u32 port)
 HcclResult NetworkManager::StopAllDeviceNicSockets()
 {
     HcclResult ret;
-    for (auto itSocket : raResourceInfo_.nicSocketMap) {
-        for (auto itPort : itSocket.second.listenedPort) {
+    for (auto &itSocket : raResourceInfo_.nicSocketMap) {
+        std::set<u32> listenedPorts = itSocket.second.listenedPort;
+        for (auto itPort : listenedPorts) {
             ret = StopNicsSocketListen(itSocket.first, itPort);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
+            if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s], "
                            "port[%u],return[%d]",
-                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret),
-                HCCL_E_INTERNAL);
+                    HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret);
+                itSocket.second.listenedPort.erase(itPort);
+                break;
+            }
         }
         ret = StopNicsSocket(itSocket.first);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
+        if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s],return[%d]",
-            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret),
-            HCCL_E_INTERNAL);
+                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret);
+            if (itSocket.second.nicRdmaHandle != nullptr) {
+                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicRdmaHandle is not nullptr.");
+                (void)HrtRaRdmaDeInit(itSocket.second.nicRdmaHandle, notifyType_);
+                itSocket.second.nicRdmaHandle = nullptr;
+            }
+            if (itSocket.second.nicSocketHandle != nullptr) {
+                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicSocketHandle is not nullptr.");
+                (void)HrtRaRdmaDeInit(itSocket.second.nicSocketHandle, notifyType_);
+                itSocket.second.nicSocketHandle = nullptr;
+            }
+        }
     }
 
     raResourceInfo_.nicSocketMap.clear();
@@ -1089,17 +1123,19 @@ HcclResult NetworkManager::StopAllDeviceVnicSockets()
         if (itSocket.second.nicSocketHandle != nullptr) {
             for (auto itPort : itSocket.second.listenedPort) {
                 ret = StopListenSocket(itSocket.second.nicSocketHandle, itPort);
-                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                if (ret != HCCL_SUCCESS) {
                     HCCL_ERROR("[Stop][AllDeviceVnicSockets]errNo[0x%016llx] stop vnic socket listen failed, "
-                    "devid[%u], ip[%s], port[%u], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
-                    itSocket.first.GetReadableAddress(), itPort, ret), HCCL_E_INTERNAL);
+                               "devid[%u], ip[%s], port[%u], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT),
+                                devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret);
+                }
                 IPPortListenRefMapVnicDevice_[itSocket.first][itPort].Clear();
             }
             ret = hrtRaSocketDeInit(itSocket.second.nicSocketHandle);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
+            if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[Stop][AllDeviceVnicSockets]errNo[0x%016llx] deinit vnic socket failed, "
-                "devid[%u], ip[%s], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
-                itSocket.first.GetReadableAddress(), ret), HCCL_E_INTERNAL);
+                           "devid[%u], ip[%s], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
+                            itSocket.first.GetReadableAddress(), ret);
+            }
             itSocket.second.nicSocketHandle = nullptr;
         }
     }
@@ -1313,13 +1349,25 @@ HcclResult NetworkManager::StopHostNetAndListen(SocketHandle socketHandle, const
 }
 HcclResult NetworkManager::StopAllHostNicSockets()
 {
+    HcclResult ret;
     for (auto itSocket : raResourceInfo_.hostNetSocketMap) {
         for (auto itPort : itSocket.second.listenedPort) {
-            CHK_RET(StopListenSocket(itSocket.second.nicSocketHandle, itPort));
-            HCCL_INFO("ip[%s] port[%u] stop success.", itSocket.first.GetReadableAddress(), itPort);
+            ret = (StopListenSocket(itSocket.second.nicSocketHandle, itPort));
+            if (ret != HCCL_SUCCESS) {
+                HCCL_ERROR("[Stop][StopAllHostNicSockets]errNo[0x%016llx] stop listen socket failed,"
+                    "devid[%u], ip[%s], port[%u], return[%d].", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT),
+                    devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret);
+            } else {
+                HCCL_INFO("ip[%s] port[%u] stop success.", itSocket.first.GetReadableAddress(), itPort);
+            }
         }
-        CHK_RET(hrtRaSocketDeInit(itSocket.second.nicSocketHandle));
-        HCCL_INFO("ip[%s] deinit success.", itSocket.first.GetReadableAddress());
+        ret = hrtRaSocketDeInit(itSocket.second.nicSocketHandle);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[Stop][StopAllHostNicSockets]errNo[0x%016llx] deinit socket failed, devid[%u], ip[%s], return[%d]",
+                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret);
+        } else {
+            HCCL_INFO("ip[%s] deinit success.", itSocket.first.GetReadableAddress());
+        }
         hostNicSocketClientRef_[itSocket.first].Clear();
     }
 
@@ -1537,7 +1585,15 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
 
     if (!isRaInitRepeated_) {
         HCCL_INFO("PsWorkerRaInit call HrtRaInit. devicePhyId[%u] isRaInitRepeated_[%u]", devicePhyId_, isRaInitRepeated_);
-        CHK_RET(HrtRaInit(&config));
+        HcclResult hcclRet = HrtRaInit(&config);
+        if (hcclRet != HCCL_SUCCESS) {
+            HCCL_ERROR("[PsWorkerRaInit] ra init failed, ret[%d].", hcclRet);
+            if (isTsdProcessOpen_) {
+                (void)hrtCloseNetService();
+                isTsdProcessOpen_ = false;
+            }
+            return hcclRet;
+        }
     }
 
     struct rdev nicRdevInfo;
@@ -1548,10 +1604,18 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
     SocketHandle socketHandle = nullptr;
     NetworkMode raSocketInitMode = (isHostUseDevNic_) ? NETWORK_OFFLINE : NETWORK_PEER_ONLINE;
     HcclResult ret = hrtRaSocketInit(raSocketInitMode, nicRdevInfo, socketHandle);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[Init][HostSocket]errNo[0x%016llx] ra socket init failed, ip[%s], return[%d]",
-        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret),
-        HCCL_E_TCP_CONNECT);
+            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret);
+        if (!isRaInitRepeated_) {
+            (void)HrtRaDeInit(&config);
+        }
+        if (isTsdProcessOpen_) {
+            (void)hrtCloseNetService();
+            isTsdProcessOpen_ = false;
+        }
+        return HCCL_E_TCP_CONNECT;
+    }
     HCCL_INFO("ip[%s] socket init OK, devicePhyId_[%u], socketHandle[%llu]", ipAddr.GetReadableAddress(), devicePhyId_,
         hash<void *>{}(socketHandle));
 
@@ -1561,7 +1625,21 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
     raResourceInfo_.nicSocketMap.insert(std::make_pair(ipAddr, ipSocketInfo));
     raResourceInfo_.hostNetSocketMap.insert(std::make_pair(ipAddr, ipSocketInfo));
 
-    CHK_RET(HeterogStartListen(ipAddr, port));
+    ret = HeterogStartListen(ipAddr, port);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[PsWorkerRaInit] HeterogStartListen failed, ret[%d]", ret);
+        (void)hrtRaSocketDeInit(socketHandle);
+        raResourceInfo_.nicSocketMap.erase(ipAddr);
+        raResourceInfo_.hostNetSocketMap.erase(ipAddr);
+        if (!isRaInitRepeated_) {
+            (void)HrtRaDeInit(&config);
+        }
+        if (isTsdProcessOpen_) {
+            (void)hrtCloseNetService();
+            isTsdProcessOpen_ = false;
+        }
+        return ret;
+    }
 
     return HCCL_SUCCESS;
 }
@@ -1581,11 +1659,11 @@ HcclResult NetworkManager::CloseHccpSubProc()
     if (locaLogDevid != deviceLogicId_) {
         hrtSetDevice(deviceLogicId_);
     }
-    CHK_RET(hrtCloseNetService());
-
+    HcclResult ret = hrtCloseNetService();
     if (locaLogDevid != deviceLogicId_) {
         hrtSetDevice(locaLogDevid);
     }
+    CHK_RET(ret);
     subPid_ = 0;
 
     return HCCL_SUCCESS;

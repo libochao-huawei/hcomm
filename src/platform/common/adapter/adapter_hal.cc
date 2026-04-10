@@ -280,8 +280,8 @@ HcclResult hrtHalGetChipInfo(uint32_t devId, std::string &chipName)
     drvError_t ret = DlHalFunction::GetInstance().dlHalGetChipInfo(devId, &chipInfo);
     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] hrtHalGetChipInfo fail,"
         "return[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret), HCCL_E_DRV);
-    chipName = reinterpret_cast<char *>(chipInfo.type);
-    chipName += reinterpret_cast<char *>(chipInfo.name);
+    chipName = std::string(reinterpret_cast<char *>(chipInfo.type)) +
+               std::string(reinterpret_cast<char *>(chipInfo.name));
     HCCL_INFO("hrtHalGetChipInfo succ chipName[%s]", chipName.c_str());
     return HCCL_SUCCESS;
 }
