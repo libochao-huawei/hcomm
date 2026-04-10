@@ -18,10 +18,46 @@
 #include "topo.h"
 #include "product_card.h"
 #include "product_server.h"
+#include "product_pod.h"
 
 #define MAX_DUMP_FILE_LEN (256)
 #define DEFAULT_RANKINFO_FILE_PATH "/etc/hccl_rootinfo.json"
 #define DEFAULT_RANKINFO_SIZE (4096)
+
+typedef int (*GetSizeFuncType)(size_t* size);
+
+typedef int (*GetRootinfoFuncType)(int npu_id, unsigned int mainboard_id, void *buf, size_t* len);
+
+typedef struct {
+    uint32_t mainboard_id;
+    GetSizeFuncType get_size_func;
+} GetSizeFuncTable;
+
+typedef struct {
+   uint32_t mainboard_id;
+   GetRootinfoFuncType get_rootinfo_func;
+} GetRootinfoFuncTable;
+
+static GetSizeFuncTable g_get_size_func_table[] = {
+    {MAIN_BOARD_ID_CARD_NOMESH, GetCardRankInfoLen},
+    {MAIN_BOARD_ID_CARD_2PMESH, GetCardRankInfoLen},
+    {MAIN_BOARD_ID_CARD_4PMESH, GetCardRankInfoLen},
+    {MAIN_BOARD_ID_SERVER_8PMESH, ServerGetRootinfoLen},
+    {MAIN_BOARD_ID_SERVER_TYPE1, ServerGetRootinfoLen},
+    {MAIN_BOARD_ID_POD, PodGetRootinfoLen},
+    {MAIN_BOARD_ID_POD_2D, PodGetRootinfoLen},
+};
+
+static GetRootinfoFuncTable g_get_rootinfo_func_table[] = {
+    {MAIN_BOARD_ID_CARD_NOMESH, GetCardRankInfo},
+    {MAIN_BOARD_ID_CARD_2PMESH, GetCardRankInfo},
+    {MAIN_BOARD_ID_CARD_4PMESH, GetCardRankInfo},
+    {MAIN_BOARD_ID_SERVER_8PMESH, ServerGetRootinfo},
+    {MAIN_BOARD_ID_SERVER_TYPE1, ServerGetRootinfo},
+    {MAIN_BOARD_ID_POD, PodGetRootinfo},
+    {MAIN_BOARD_ID_POD_2D, PodGetRootinfo},
+};
+
 
 int TopoAddrInfoGetSize(int phyId, size_t* size)
 {
@@ -41,14 +77,11 @@ int TopoAddrInfoGetSize(int phyId, size_t* size)
         return ret;
     }
 
-    if (mainboard_id == MAIN_BOARD_ID_SERVER_8PMESH) {
-        return ServerGetRootinfoLen(size);
-    }
-
-    if ((mainboard_id == MAIN_BOARD_ID_CARD_NOMESH)
-      ||(mainboard_id ==  MAIN_BOARD_ID_CARD_2PMESH)
-      ||(mainboard_id ==  MAIN_BOARD_ID_CARD_4PMESH)) {
-        return GetCardRankInfoLen(size);
+    // 从g_get_size_func_table中查找对应的函数
+    for (size_t i = 0; i < sizeof(g_get_size_func_table) / sizeof(g_get_size_func_table[0]); i++) {
+        if (g_get_size_func_table[i].mainboard_id == mainboard_id) {
+            return g_get_size_func_table[i].get_size_func(size);
+        }
     }
     (*size) = DEFAULT_RANKINFO_SIZE;
     return 0;
@@ -116,14 +149,13 @@ int TopoAddrInfoGet(int phyId, char* rankInfo, size_t *bufSize)
     if (ret != 0) {
         return ret;
     }
-    if ((mainboard_id == MAIN_BOARD_ID_CARD_NOMESH)
-      ||(mainboard_id ==  MAIN_BOARD_ID_CARD_2PMESH)
-      ||(mainboard_id ==  MAIN_BOARD_ID_CARD_4PMESH)) {
-        ret = GetCardRankInfo(phyId, mainboard_id, rankInfo, bufSize);
+
+    ret = -1;
+    for (size_t i = 0; i < sizeof(g_get_rootinfo_func_table)/sizeof(GetRootinfoFuncTable); ++i) {
+        if (g_get_rootinfo_func_table[i].mainboard_id == mainboard_id) {
+            ret = g_get_rootinfo_func_table[i].get_rootinfo_func(phyId, mainboard_id, rankInfo, bufSize);
+            break;
+        }
     }
-    if ((mainboard_id == MAIN_BOARD_ID_SERVER_8PMESH)
-      ||(mainboard_id == MAIN_BOARD_ID_SERVER_TYPE1)) {
-        ret = ServerGetRootinfo(phyId, mainboard_id, rankInfo, bufSize);
-    }
-    return 0;
+    return ret;
 }

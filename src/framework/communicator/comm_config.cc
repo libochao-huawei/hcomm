@@ -344,6 +344,7 @@ HcclResult CommConfig::SetConfigOpExpansionMode(const CommConfigHandle &config)
             break;
         case COMM_CONFIG_OPEXPANSION_HOST:
             aivMode_ = false;
+            aicpuUnfold_ = false;
             HCCL_INFO("CommConfig is set to 1(host), aicpuUnfold_ is [%d] and aivMode_ is [%d].", aicpuUnfold_, aivMode_);
             break;
         case COMM_CONFIG_OPEXPANSION_AICPU:

@@ -42,7 +42,7 @@ public:
     virtual u64            GetCounterAddr()                  = 0;
 
     virtual MemTransportLiteMgr *GetTransportLiteMgr() = 0;
-    virtual MirrorTaskManager   *GetMirrorTaskMgr()    = 0;
+    virtual MirrorTaskManagerLite   *GetMirrorTaskMgrLite()    = 0;
 };
 } // namespace Hccl
 
