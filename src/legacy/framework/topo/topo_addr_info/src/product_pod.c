@@ -72,10 +72,10 @@ static const UBEntityRule g_ubrules[] = {
 
 static int ProcessLayerMesh(int npu_id, NetLayer *layer, UEList *ueList, struct dcmi_spod_info *spod_info)
 {
-    NetLayerSetNetType(layer, NET_TYPE_MESH);
     char net_instance_id[MAX_INSTANCE_ID_LEN] = {0};
     sprintf_s(net_instance_id, sizeof(net_instance_id), "sp%ld_chassis%ld", spod_info->super_pod_id, spod_info->chassis_id);
     NetLayerInit(layer, PRODUCT_MESH_LEVEL, net_instance_id);
+    NetLayerSetNetType(layer, NET_TYPE_MESH);
 
 
     int meshEntityId = UBGetMaxEntityId(ueList);
