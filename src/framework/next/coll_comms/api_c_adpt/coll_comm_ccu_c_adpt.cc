@@ -18,22 +18,24 @@
 /**
  * @note 职责：集合通信的通信域CCU管理的C接口的C到C++适配
  */
+
 HcclResult HcclCommQueryCcuIns(HcclComm comm,
-    CcuInsHandle *insHandles, uint32_t *insNum)
+    CcuInsHandle *ccuInsHandles, uint32_t *insNum)
 {
     EXCEPTION_HANDLE_BEGIN
 
     HcclUs startut = TIME_NOW();
+    u64 beginTime =  Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     CHK_PTR_NULL(comm);
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const auto &commId = hcclComm->GetIdentifier();
     HCCL_INFO("[%s] CommId[%s] query ccu instance.", __func__, commId.c_str());
 
-    CHK_PTR_NULL(insHandles);
+    CHK_PTR_NULL(ccuInsHandles);
     CHK_PTR_NULL(insNum);
 
-    // CCU不支持A5之前代际
+     // CCU只支持A5代际
     if (!hcclComm->IsCommunicatorV2()) {
         HCCL_WARNING("[%s] is not supported.", __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
@@ -53,7 +55,7 @@ HcclResult HcclCommQueryCcuIns(HcclComm comm,
         return HcclResult::HCCL_E_UNAVAIL;
     }
 
-    insHandles[0] = ccuInsHandle;
+    ccuInsHandles[0] = ccuInsHandle;
     *insNum = 1;
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startut));
