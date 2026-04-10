@@ -48,6 +48,10 @@ public:
         return opExpansionMode_;
     }
 
+    CcuInsHandle GetCcuInstance() {
+        return ccuInsHandle_;
+    }
+
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     

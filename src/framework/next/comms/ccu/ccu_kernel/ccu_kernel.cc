@@ -804,7 +804,7 @@ CcuResult CcuKernel::CompletedEventRecord(CcuEventHandle eventHandle)
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetCompletedEventByHandle(eventHandle, &event));
     // 复用已有的 RecordEvent 实现（内部 Append CcuRepLocRecordEvent）
-    auto ret = RecordEvent(*event);
+    CCU_CHK_RET(RecordEvent(*event));
     return CcuResult::CCU_SUCCESS;
 }
 
@@ -813,7 +813,7 @@ CcuResult CcuKernel::CompletedEventWait(CcuEventHandle eventHandle)
     CcuRep::CompletedEvent *event{nullptr};
     CCU_CHK_RET(GetCompletedEventByHandle(eventHandle, &event));
     // 复用已有的 WaitEvent 实现（内部 Append CcuRepLocWaitEvent）
-    auto ret = WaitEvent(*event);
+    CCU_CHK_RET(WaitEvent(*event));
     return CcuResult::CCU_SUCCESS;
 }
 
