@@ -626,7 +626,7 @@ TEST_F(HccpTest, Ut_hrtStreamCreateWithFlags_hrtGetStreamIdFail_Expect_DestorySt
     aclrtStream stream = nullptr;
     int32_t priority = 0;
     uint32_t flags = 0;
-    HcclResult ret = hrtStreamCreate(&stream, priority, flags);
+    HcclResult ret = hrtStreamCreateWithFlags(&stream, priority, flags);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     GlobalMockObject::verify();
@@ -635,12 +635,12 @@ TEST_F(HccpTest, Ut_hrtStreamCreateWithFlags_hrtGetStreamIdFail_Expect_DestorySt
 TEST_F(HccpTest, Ut_hrtMemcpy_CountExceedsDestMax_Expect_ParaError)
 {
     void *dst = malloc(100);
-    void *src = malloc(100);
+    const void *src = malloc(100);
     uint64_t destMax = 50;
     uint64_t count = 100;
     HcclRtMemcpyKind kind = HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE;
     
-    HcclResult ret = hrtMemcpy(dst, src, destMax, count, kind);
+    HcclResult ret = hrtMemcpy(dst, destMax, src, count, kind);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     free(dst);

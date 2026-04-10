@@ -2078,14 +2078,14 @@ HcclResult CreateNormalQp(RdmaHandle rdmaHandle, QpInfo& qp)
     CHK_RET(hrtRaNormalQpCreate(rdmaHandle, &ibQpAttr, qp.qpHandle, qp.qp));
     HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrQos fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
     // 配置RDMA Timeout时间
     ret = SetQpAttrTimeOut(qp.qpHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
+        HCCL_ERROR("[CreateNormalQp] SetQpAttrTimeOut fail, ret[%d], destory QP", ret);
         HrtRaQpDestroy(qp.qpHandle);
         return ret;
     }
