@@ -14,6 +14,8 @@
 
 #include "../../../../../legacy/unified_platform/resource/mem/user_remote_mem_getter.h"
 
+#include "env_config/env_config.h"
+
 namespace hcomm {
 
 constexpr uint32_t FINISH_MSG_SIZE = 128;
@@ -168,14 +170,9 @@ HcclResult CcuTransport::StatusMachine()
 {
     EXCEPTION_HANDLE_BEGIN
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-    if (socketStatus == Hccl::SocketStatus::INIT) {
+    if (socketStatus == Hccl::SocketStatus::INIT || socketStatus == Hccl::SocketStatus::TIMEOUT) {
         HCCL_ERROR("[CcuTransport][GetStatus]socket timeout or no link, please check");
         return HcclResult::HCCL_E_INTERNAL;
-    }
-    
-    if (socketStatus == Hccl::SocketStatus::TIMEOUT) {
-        transStatus_ = TransStatus::SOCKET_TIMEOUT;
-        return HcclResult::HCCL_SUCCESS; // 操作成功，置成错误状态
     }
     
     if (socketStatus != Hccl::SocketStatus::OK) {
@@ -195,13 +192,21 @@ HcclResult CcuTransport::StatusMachine()
             if (connStatus == CcuConnStatus::EXCHANGEABLE
                 || connStatus == CcuConnStatus::CONNECTED) {
                 // connection完成本端资源创建或复用时，发送本端资源信息
-                CHK_RET(SendConnAndTransInfo());
-                transStatus_ = TransStatus::SEND_ALL_INFO;
+                CHK_RET(SendDataSize());
+                transStatus_ = TransStatus::SEND_DATA_SIZE;
             }
 
             // connection状态非错误但未达到目标状态时，transport保持当前状态
             break;
         }
+        case CcuTransport::TransStatus::SEND_DATA_SIZE:
+            CHK_RET(RecvDataSize());
+            transStatus_ = TransStatus::RECV_DATA_SIZE;
+            break;
+        case CcuTransport::TransStatus::RECV_DATA_SIZE:
+            CHK_RET(SendConnAndTransInfo());
+            transStatus_ = TransStatus::SEND_ALL_INFO;
+            break;
         case CcuTransport::TransStatus::SEND_ALL_INFO:
             CHK_RET(RecvConnAndTransInfo());
             transStatus_ = TransStatus::RECV_ALL_INFO;
@@ -254,19 +259,42 @@ HcclResult CcuTransport::StatusMachine()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTransport::SendConnAndTransInfo()
+HcclResult CcuTransport::SendDataSize()
 {
     Hccl::BinaryStream binaryStream;
     CHK_RET(HandshakeMsgPack(binaryStream));
     CHK_RET(ConnInfoPack(binaryStream));
     CHK_RET(TransResPack(binaryStream));
-    CHK_RET(BufferInfoPack(binaryStream));
+    CHK_RET(BufferInfoPack(binaryStream, locBufferInfos_));
     binaryStream.Dump(sendData_);
+    u32 sendSize = sendData_.size();
+
+    // 发送数据包尺寸
+    EXCEPTION_HANDLE_BEGIN
+    socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    EXCEPTION_HANDLE_END
+    HCCL_INFO("[CcuTransport::%s] Send size[%u] of data success. [%zu] bytes sent.",
+        __func__, sendSize, sizeof(sendSize));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::RecvDataSize()
+{
+    // 接收数据包尺寸
+    EXCEPTION_HANDLE_BEGIN
+    socket_->RecvAsync(reinterpret_cast<u8 *>(&exchangeDataSize_), sizeof(exchangeDataSize_));
+    EXCEPTION_HANDLE_END
+    HCCL_INFO("[CcuTransport::%s] Receive size[%u] of data success. [%zu] bytes received.",
+        __func__, exchangeDataSize_, sizeof(exchangeDataSize_));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::SendConnAndTransInfo()
+{
     // 当前socket失败会抛异常，需要统一整改
     EXCEPTION_HANDLE_BEGIN
     socket_->SendAsync(reinterpret_cast<u8 *>(sendData_.data()), sendData_.size());
     EXCEPTION_HANDLE_END
-    exchangeDataSize_ = sendData_.size();
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -285,6 +313,8 @@ HcclResult CcuTransport::RecvDataProcess()
     CHK_RET(HandshakeMsgUnpack(binaryStream));
     CHK_RET(ConnInfoUnpackProc(binaryStream));
     CHK_RET(TransResUnpackProc(binaryStream));
+    rmtBufferInfos_.clear();
+    remoteUserMemTag_.clear();
     CHK_RET(BufferInfoUnpack(binaryStream));
     return HcclResult::HCCL_SUCCESS;
 }
@@ -352,12 +382,12 @@ HcclResult CcuTransport::TransResPack(Hccl::BinaryStream &binaryStream)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuTransport::BufferInfoPack(Hccl::BinaryStream &binaryStream) const
+HcclResult CcuTransport::BufferInfoPack(Hccl::BinaryStream &binaryStream, std::vector<CclBufferInfo> &bufferVec) const
 {
-    u32 locBufferNum = locBufferInfos_.size();
+    u32 locBufferNum = bufferVec.size();
     binaryStream << locBufferNum;
     for (u32 pos = 0; pos < locBufferNum; ++pos) {
-        locBufferInfos_[pos].Pack(binaryStream);
+        bufferVec[pos].Pack(binaryStream);
     }
     return HcclResult::HCCL_SUCCESS;
 }
@@ -409,8 +439,6 @@ HcclResult CcuTransport::TransResUnpackProc(Hccl::BinaryStream &binaryStream)
 
 HcclResult CcuTransport::BufferInfoUnpack(Hccl::BinaryStream &binaryStream)
 {
-    rmtBufferInfos_.clear();
-    remoteUserMemTag_.clear();
     u32 rmtBufferNum{0};
     binaryStream >> rmtBufferNum;
     CHK_PRT_RET(rmtBufferNum > MAX_BUFFER_NUM,
@@ -621,6 +649,71 @@ HcclResult CcuTransport::GetUserRemoteMem(CommMem **remoteMem, char ***memTags, 
         userMemCount, cacheValid_, rmtBufferInfos_, remoteUserMemTag_, remoteUserMems_, tagCopies_, tagPointers_,
         cacheBuilder, remoteMem, memTags, memNum};
     CHK_RET(Hccl::GetRemoteUserMem(remoteMemCtx));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::CheckSocketStatus()
+{
+    CHK_PTR_NULL(socket_);
+    auto timeout = std::chrono::seconds(Hccl::EnvConfig::GetInstance().GetSocketConfig().GetLinkTimeOut());
+    auto startTime = std::chrono::steady_clock::now();
+    uint32_t retryCount = 0;
+    while(true) {
+        EXCEPTION_HANDLE_BEGIN
+        Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
+        if (socketStatus == Hccl::SocketStatus::OK) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_INFO("[CcuTransport][%s] success, elapsed[%lld]ms, retryCount[%u]",
+                __func__, elapsed, retryCount);
+            break;
+        }
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout ||
+            socketStatus == Hccl::SocketStatus::TIMEOUT) {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime).count();
+            HCCL_ERROR("[CcuTransport][%s] channel connect timeout after %lld sec, elapsed[%lld]ms, retryCount[%u]",
+                __func__, timeout, elapsed, retryCount);
+            return HCCL_E_TIMEOUT;
+        }
+        EXCEPTION_HANDLE_END
+        retryCount++;
+    }
     return HCCL_SUCCESS;
+}
+
+HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> &bufferVecTemp)
+{
+    if (bufferVecTemp.size() == 0) {
+        HCCL_WARNING("[CcuTransport][UpdateMemInfo] bufferNum is 0.");
+        return HCCL_SUCCESS;
+    }
+    uint32_t totalBufferNum = locBufferInfos_.size() + bufferVecTemp.size();
+    if (UNLIKELY(totalBufferNum > MAX_BUFFER_NUM)) {
+        HCCL_ERROR("[CcuTransport][UpdateMemInfo] totalBufferNum[%u] exceeds limit[%u]", totalBufferNum, MAX_BUFFER_NUM);
+        return HCCL_E_PARA;
+    }
+    HCCL_INFO("[CcuTransport][UpdateMemInfo] bufferNum[%zu]", bufferVecTemp.size());
+    sendData_.clear();
+    Hccl::BinaryStream sendStream;
+    CHK_RET(BufferInfoPack(sendStream, bufferVecTemp));
+    sendStream.Dump(sendData_);
+    u32 sendSize = sendData_.size();
+    EXCEPTION_HANDLE_BEGIN
+    socket_->SendAsync(reinterpret_cast<u8 *>(&sendSize), sizeof(sendSize));
+    EXCEPTION_HANDLE_END
+    HCCL_INFO("[CcuTransport][UpdateMemInfo] Send size[%u] of data success. [%zu] bytes sent.",
+        sendSize, sizeof(sendSize));
+    CHK_RET(CheckSocketStatus());
+    CHK_RET(RecvDataSize());
+    CHK_RET(CheckSocketStatus());
+    CHK_RET(SendConnAndTransInfo());
+    CHK_RET(CheckSocketStatus());
+    CHK_RET(RecvConnAndTransInfo());
+    CHK_RET(CheckSocketStatus());
+    Hccl::BinaryStream recvStream(recvData_);
+    CHK_RET(BufferInfoUnpack(recvStream));
+    locBufferInfos_.insert(locBufferInfos_.end(), bufferVecTemp.begin(), bufferVecTemp.end());
+    return HcclResult::HCCL_SUCCESS;
 }
 } // namespace hcomm

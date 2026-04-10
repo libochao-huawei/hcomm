@@ -176,6 +176,7 @@ HcclResult CreateCommConfig(uint32_t rank, HcclCommConfig *config, HcclComm *com
     
         HcclGroupParamsV2 params{};
         params.pComm = opbasedCommInfoV2.pComm;
+        params.groupRank = static_cast<Hccl::RankId>(rank);
         std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
         opbasedCommInfoV2.hcclGroupMap[commId] = params;
     
@@ -246,6 +247,7 @@ HcclResult CreateCommConfigRootInfo(uint32_t rank, const HcclCommConfig *config,
 
         HcclGroupParamsV2 params{};
         params.pComm = opbasedCommInfoV2.pComm;
+        params.groupRank = static_cast<Hccl::RankId>(rank);
         std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
         opbasedCommInfoV2.hcclGroupMap[identifier] = params;
 
@@ -341,6 +343,7 @@ HcclResult HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, Hcc
  	 
         HcclGroupParamsV2 params{};
         params.pComm = opbasedCommInfoV2.pComm;
+        params.groupRank = static_cast<Hccl::RankId>(rank);
         std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
         opbasedCommInfoV2.hcclGroupMap[commId] = params;
  	 
@@ -1724,6 +1727,7 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
  	    // 保存通信域
  	    HcclGroupParamsV2 params{};
  	    params.pComm = opbasedCommInfoV2.pComm;
+        params.groupRank = static_cast<Hccl::RankId>(rank);
  	    std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
  	    opbasedCommInfoV2.hcclGroupMap[identifier] = params;
  	
