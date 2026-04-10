@@ -34,6 +34,7 @@
 
 #define AIV_ALL_REDUCE_KERNEL_DEF(type) \
 __aicore__ inline void aiv_all_reduce_##type##_inner(KERNEL_ARGS_DEF) { \
+    AIV_INFO_HINT; \
     if (devType == DEV_TYPE_910B && deterministic == 1) { \
         if (len * sizeof(type) < AIV_ALL_REDUCE_DETER_SMALL_SIZE) { \
             return aiv_all_reduce_deter_910b_smalldata<type>(KERNEL_ARGS_CALL); \
@@ -76,6 +77,7 @@ __aicore__ inline void aiv_all_reduce_##type##_inner(KERNEL_ARGS_DEF) { \
 
 #define AIV_ALL_REDUCE_KERNEL_DEF_A3(type) \
 __aicore__ inline void aiv_all_reduce_cn_##type##_inner(KERNEL_ARGS_DEF_A3) { \
+    AIV_INFO_HINT; \
     if(deterministic != 0) { \
         return aiv_all_reduce_91093_deter<type>(KERNEL_ARGS_CALL_A3); \
     } else { \

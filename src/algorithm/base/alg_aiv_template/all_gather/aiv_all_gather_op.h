@@ -24,6 +24,7 @@
 
 #define AIV_ALL_GATHER_KERNEL_DEF(type) \
 __aicore__ inline void aiv_all_gather_##type##_inner(KERNEL_ARGS_DEF) { \
+    AIV_INFO_HINT; \
     if (isOpBase) { \
         if (aivRdmaStep >= 0) { \
             return aiv_all_gather_910b_rdma<type>(KERNEL_ARGS_CALL); \
@@ -45,6 +46,7 @@ __aicore__ inline void aiv_all_gather_##type##_inner(KERNEL_ARGS_DEF) { \
 
 #define AIV_ALL_GATHER_KERNEL_DEF_A3(type) \
 __aicore__ inline void aiv_all_gather_cn_##type##_inner(KERNEL_ARGS_DEF_A3) { \
+    AIV_INFO_HINT; \
     if (isOpBase) { \
         return aiv_all_gather_crossnode_91093<type>(KERNEL_ARGS_CALL_A3); \
     } \

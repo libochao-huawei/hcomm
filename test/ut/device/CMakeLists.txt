@@ -17,7 +17,6 @@ set(hccl_utest_device_src_list
     ut_engine_aicpu_interface.cc
 
     ${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc
     ${HCCL_CODE_ROOT}/src/framework/common/src/config/env_config_aicpu.cc
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc
