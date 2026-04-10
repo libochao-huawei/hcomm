@@ -414,6 +414,7 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
     if (!GetExternalInputHcclIsTcpMode()) {
         ret = InitRdmaHandle(devId, ipAddr);
         if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HeterogInit] InitRdmaHandle fail, ret[%d], destory resource.", ret);
             hrtRaSocketDeInit(socketHandle);
             HrtRaDeInit(&config);
             return ret;
@@ -422,6 +423,7 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
 
     ret = HeterogStartListen(ipAddr, port);
     if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HeterogInit] HeterogStartListen fail, ret[%d], destory resource.", ret);
         if (!GetExternalInputHcclIsTcpMode()) {
             auto& ipSock = raResourceInfo_.nicSocketMap[ipAddr];
             if (ipSock.nicRdmaHandle != nullptr) {
@@ -771,6 +773,7 @@ HcclResult NetworkManager::StopVnicSocketHandle(const HcclIpAddress &localIp)
 
     // 销毁socket
     if (ipSock.nicSocketHandle != nullptr) {
+        HCCL_ERROR("[StopVnicSocketHandle] ipSock.nicSocketHandle is nullptr.");
         HcclResult ret = hrtRaSocketDeInit(ipSock.nicSocketHandle);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[Stop][NicsSocket]VNIC socket deInit not successfully.");
@@ -1099,10 +1102,12 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
             HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s],return[%d]",
                 HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret);
             if (itSocket.second.nicRdmaHandle != nullptr) {
+                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicRdmaHandle is not nullptr.");
                 (void)HrtRaRdmaDeInit(itSocket.second.nicRdmaHandle, notifyType_);
                 itSocket.second.nicRdmaHandle = nullptr;
             }
             if (itSocket.second.nicSocketHandle != nullptr) {
+                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicSocketHandle is not nullptr.");
                 (void)HrtRaRdmaDeInit(itSocket.second.nicSocketHandle, notifyType_);
                 itSocket.second.nicSocketHandle = nullptr;
             }

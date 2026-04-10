@@ -2017,6 +2017,7 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
     s32 streamId = 0;
     HcclResult hcclRet = hrtGetStreamId(stream, streamId);
     if (hcclRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destory stream.", ret);
         aclrtDestroyStream(*stream);
         return hcclRet;
     }
