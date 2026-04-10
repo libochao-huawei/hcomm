@@ -99,17 +99,11 @@ enum class CommPattern {
 };
 
 #define AIV_INFO(format,...) do { \
-    if(logLevel_==1) { \
-        AscendC::PRINTF(format, ##__VA_ARGS__); \
-    } \
+    AscendC::PRINTF(format, ##__VA_ARGS__); \
 } while(0)
 
-#define AIV_ERROR(condition, format,...) do { \
-    if(condition) { \
-        AscendC::PrintfImpl(DumpType::DUMP_SCALAR, "[AIV_ERROR] %s:%d:" format, __FILE__, __LINE__, ##__VA_ARGS__); \
-        trap(); \
-    } \
-} while(0)
+#define AIV_INFO_HINT \
+    AIV_INFO("Aiv log dump is enabled in [%s]", __func__)
 
 #define KERNEL_ARGS_DEF \
 GM_ADDR buffIn0, GM_ADDR buffIn1, GM_ADDR buffIn2, GM_ADDR buffIn3, \
@@ -389,8 +383,6 @@ public:
         seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         logLevel_ = GetLogLevel();
         uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
-        AscendC::InitDump(false, GM_OUT[rank_] + offset, ONE_CORE_DUMP_SIZE);
-        AIV_INFO("[AivCommBase::Init][Init]initdumpaddr is [%p], tag is [%d]", GM_OUT[rank_] + offset, tag_);
 
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);

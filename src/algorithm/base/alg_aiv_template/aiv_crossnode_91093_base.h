@@ -384,8 +384,6 @@ __aicore__ inline void AivCrossNode91093Base::InitSetCheckClearArgsTensor()
 {
     logLevel_ = GetLogLevel();
     uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
-    AscendC::InitDump(false, flagAddrSelf_ + offset, ONE_CORE_DUMP_SIZE);
-    AIV_INFO("[Init]initdumpaddr is [%p], tag is [%d]", flagAddrSelf_ + offset, tag_);
     pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE * FLAG_BUF_NUM);
     localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, 0);
     localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE);
