@@ -9,7 +9,6 @@
  */
 
 #include <unordered_set>
-#include <cstring>
 #include "log.h"
 #include "hccl/base.h"
 #include "rank_consistentcy_checker.h"
@@ -58,8 +57,8 @@ HcclResult HcomGetRanktableRealPath(const char *rankTable, std::string &realFile
     if (rankTablePathLen == (RANK_TABLE_MAX_LEN + 1) || rankTablePathLen == 0) {
         RPT_INPUT_ERR(true,
         "EI0004",
-        std::vector<std::string>({"ranktable_path", "error_reason"}),
-        std::vector<std::string>({std::string(rankTable), RANKTABLE_PARSE_ERROR_REASON}));
+        std::vector<std::string>({"error_reason", "ranktable_path"}),
+        std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, std::string(rankTable)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable file name is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTablePathLen);
         return HCCL_E_PARA;
@@ -69,8 +68,8 @@ HcclResult HcomGetRanktableRealPath(const char *rankTable, std::string &realFile
     if (realpath(rankTable, realFile) == nullptr) {
         RPT_INPUT_ERR(true,
             "EI0004",
-            std::vector<std::string>({"ranktable_path", "error_reason"}),
-            std::vector<std::string>({std::string(rankTable), RANKTABLE_PARSE_ERROR_REASON}));
+            std::vector<std::string>({"error_reason", "ranktable_path"}),
+            std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, std::string(rankTable)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] path %s is not a valid real path", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTable);
         return HCCL_E_PARA;
@@ -87,8 +86,8 @@ HcclResult HcomCheckRankTable(const char *rankTableM, u32 &rankTableSize)
     if (rankTableLen == (STRING_MAX_LENGTH + 1) || rankTableLen == 0) {
         RPT_INPUT_ERR(true,
             "EI0004",
-            std::vector<std::string>({"ranktable_path", "error_reason"}),
-            std::vector<std::string>({std::string(rankTableM), RANKTABLE_PARSE_ERROR_REASON}));
+            std::vector<std::string>({"error_reason", "ranktable_path"}),
+            std::vector<std::string>({RANKTABLE_PARSE_ERROR_REASON, std::string(rankTableM)}));
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable string is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTableLen);
         return HCCL_E_PARA;
@@ -464,5 +463,10 @@ HcclResult HcclParseRanktable(const std::string &rankTableM, const std::string &
 
 bool IsSupportHCCLV2(const char *socNamePtr)
 {
-    return strstr(socNamePtr, "Ascend950") != nullptr;
+    std::string targetChipVerStr = socNamePtr;
+    HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
+    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
+        return true;
+    }
+    return false;
 }

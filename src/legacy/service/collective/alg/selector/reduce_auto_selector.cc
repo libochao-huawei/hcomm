@@ -15,10 +15,7 @@
 
 namespace Hccl {
 
-constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
-constexpr u64 REDUCE_CCU_1D_MAX_DATA_SIZE = 64 * 1024 *1024;
-constexpr u64 REDUCE_CCU_1D_MAX_DATA_SIZE_INT8 = 16 * 1024 *1024;
-constexpr double DEFAULT_RANK_SIZE = 8.0;
+constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 
 SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
@@ -48,10 +45,6 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
         return SelectorStatus::NOT_MATCH;
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (IsInputOutputOverlap(op.inputMem, op.outputMem) == true) {
-                // 不支持 inplace 场景
-                return SelectorStatus::NOT_MATCH;
-            }
             if (Is2DieFullMesh()) {
                 HCCL_WARNING("[Algo][ReduceAutoSelector] 2DieFullMesh is not supported yet for ccu_ms mode.");
                 return SelectorStatus::NOT_MATCH;
@@ -134,66 +127,25 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
         }
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            double ratio;
-            if(rankSize_ == 0){
-                HCCL_WARNING("[Algo][ReduceAutoSelector] the selector is not set RankSize_");
-                ratio = 1;
-            } else {
-                if(op.dataType == DataType::INT8){
-                    ratio = DEFAULT_RANK_SIZE / rankSize_;
-                } else {
-                    ratio = (DEFAULT_RANK_SIZE / rankSize_) * (DEFAULT_RANK_SIZE / rankSize_);
-                }
-            }
             if (Is2DieFullMesh()) {
                 HCCL_WARNING("[Algo][ReduceAutoSelector] 2DieFullMesh is not supported yet for ccu schedule mode.");
                 return SelectorStatus::NOT_MATCH;
-            }
-            if(op.dataType == DataType::INT8){
-                if(dataSize_ * ratio >= REDUCE_CCU_1D_MAX_DATA_SIZE_INT8){
-                    HCCL_INFO("[Algo][ReduceAutoSelector] fallback to aicpu.");
-                    return SelectorStatus::NOT_MATCH;
-                } else {
-                    primQueueGenName = "CcuReduceMeshMem2Mem1D";
-                }
+            } else if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+                HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 8MB, fallback to aicpu.", dataSize_);
+                return SelectorStatus::NOT_MATCH;
             } else {
-                if(dataSize_ * ratio >= REDUCE_CCU_1D_MAX_DATA_SIZE){
-                    HCCL_INFO("[Algo][ReduceAutoSelector] fallback to aicpu.");
-                    return SelectorStatus::NOT_MATCH;
-                } else {
-                    primQueueGenName = "CcuReduceMeshTwoShotMem2Mem1D";
-                }
+                primQueueGenName = "CcuReduceMeshMem2Mem1D";
             }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             primQueueGenName = "CcuReduceMeshMem2Mem2D";
         } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
             if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
                 // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
-                double ratio;
-                if (rankSize_ == 0){
-                    HCCL_WARNING("[Algo][ReduceAutoSelector] the selector is not set RankSize_");
-                    ratio = 1;
+                if (dataSize_ >= REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+                    HCCL_INFO("[Algo][ReduceAutoSelector] Mesh1D dataSize[%llu] >= 8MB, fallback to aicpu.", dataSize_);
+                    return SelectorStatus::NOT_MATCH;
                 } else {
-                    if (op.dataType == DataType::INT8) {
-                        ratio = DEFAULT_RANK_SIZE / rankSize_;
-                    } else {
-                        ratio = (DEFAULT_RANK_SIZE / rankSize_) * (DEFAULT_RANK_SIZE / rankSize_);
-                    }
-                }
-                if(op.dataType == DataType::INT8){
-                    if(dataSize_ * ratio >= REDUCE_CCU_1D_MAX_DATA_SIZE_INT8){
-                        HCCL_INFO("[Algo][ReduceAutoSelector] fallback to aicpu.");
-                        return SelectorStatus::NOT_MATCH;
-                    } else {
-                        primQueueGenName = "CcuReduceMeshMem2Mem1D";
-                    }
-                } else {
-                    if(dataSize_ * ratio >= REDUCE_CCU_1D_MAX_DATA_SIZE){
-                        HCCL_INFO("[Algo][ReduceAutoSelector] fallback to aicpu.");
-                        return SelectorStatus::NOT_MATCH;
-                    } else {
-                        primQueueGenName = "CcuReduceMeshTwoShotMem2Mem1D";
-                    }
+                    primQueueGenName = "CcuReduceMeshMem2Mem1D";
                 }
             } else if (topoInfo.level0PcieMix) {
                 HCCL_WARNING("[Algo][ReduceAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
@@ -234,11 +186,7 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
             SelectorStatus::NOT_MATCH);
 
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
-                primQueueGenName = "InsReduceNHR";
-            } else {
-                primQueueGenName = "InsReduceParallelMesh1DNHR";
-            }
+            primQueueGenName = "InsReduceParallelMesh1DNHR";
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             primQueueGenName = "InsReduceNHR";
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {

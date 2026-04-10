@@ -195,10 +195,6 @@ void Ut_MultiServer_MOCK_And_Clusterinfo_File_Create(const char *filename, nlohm
         .with(outBound(deviceType))
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(hrtRaGetInterfaceVersion)
-        .stubs()
-        .will(returnValue(HCCL_SUCCESS));
-
     Ut_Clusterinfo_File_Create(filename, rankTable);
 }
 
@@ -244,4 +240,5 @@ void BaseInit::SetUp() {
 }
 void BaseInit::TearDown() {
     rtCloseNetService();
+    remove(rankTableFileName);
 }

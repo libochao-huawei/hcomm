@@ -171,9 +171,9 @@ public:
         return rmaBufferLiteVec[type].get();
     }
 
-    MirrorTaskManagerLite *GetMirrorTaskMgrLite() override
+    MirrorTaskManager *GetMirrorTaskMgr() override
     {
-        return mirrorTaskMgrLite.get();
+        return mirrorTaskMgr.get();
     }
 
     HostDeviceSyncNotifyLiteMgr   hostDeviceSyncNotifyLiteMgr;
@@ -182,10 +182,10 @@ public:
     Cnt1tonNotifyLiteMgr          cnt1tonNotifyLiteMgr;
     CntNto1NotifyLiteMgr          cntNto1NotifyLiteMgr;
     ConnectedLinkMgr              connectedLinkMgr;
-    std::unique_ptr<MirrorTaskManagerLite>           mirrorTaskMgrLite
-        = std::make_unique<MirrorTaskManagerLite>();
+    std::unique_ptr<MirrorTaskManager>           mirrorTaskMgr
+        = std::make_unique<MirrorTaskManager>(0, &GlobalMirrorTasks::Instance(), true);
  
-    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgrLite.get());
+    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgr.get());
     CollOperator                  currentOp;
     std::vector<std::unique_ptr<RmaBufferLite>> rmaBufferLiteVec;
     std::unordered_map<DataBuffer, SendRecvItemTokenInfo> sendRecvTokenMap;
@@ -230,8 +230,7 @@ protected:
         locCntRes.desc.push_back('0');
         locCntRes.desc.push_back(0);
 
-        bool isRecvFirst = false;
-        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
+        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
         ubTransport.baseStatus = TransportStatus::READY;
         LinkData linkData(BasePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB), 0, 1, 0, 1);
         MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);

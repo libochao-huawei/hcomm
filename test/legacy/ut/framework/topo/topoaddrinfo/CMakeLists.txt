@@ -10,5 +10,4 @@
 target_sources(hccl_v2_utest
         PUBLIC
         ut_eid.cc
-        ut_topoaddrinfo.cc
 )

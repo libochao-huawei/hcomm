@@ -17,7 +17,6 @@ set(src_to_test_list
     ut_HcclCommDestroy_API_test.cc
     ut_HcclCommEngineCtx_API_test.cc
     ut_HcclCommGetHandleWithName_API_test.cc
-    ut_HcclCommGetStatus_API_test.cc
     ut_HcclCommInitAll_API_test.cc
     ut_HcclCommInitClusterInfoConfig_API_test.cc
     ut_HcclCommInitClusterInfo_API_test.cc
@@ -38,10 +37,8 @@ set(src_to_test_list
     ut_HcclGetRankSize_API_test.cc
     ut_HcclGetRootInfo_API_test.cc
     ut_HcclGetStreamNumforAivMode_API_test.cc
-    ut_HcclChannelGetHcclBuffer_API_test.cc
     # ut_HcclSetConfig_API_test.cc
     # ut_HcclTopoInfoDetect_API_test.cc
-    ut_hccl_comm_host.cc
 )
 
 add_executable(hccl_utest_framework_communicator ${src_to_test_list})
@@ -82,5 +79,7 @@ target_link_libraries(hccl_utest_framework_communicator PRIVATE
 )
 add_dependencies(hccl_utest_framework_communicator hccl_llt)
 
-enable_testing()
-add_test(NAME hccl_utest_framework_communicator COMMAND hccl_utest_framework_communicator)
+run_llt_test(
+   TARGET  hccl_utest_framework_communicator
+   TASK_NUM 1
+)

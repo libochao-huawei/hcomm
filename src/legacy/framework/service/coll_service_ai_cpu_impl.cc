@@ -16,8 +16,6 @@
 #include "env_config.h"
 #include "stl_util.h"
 #include "snap_shot_parse.h"
-#include "stream_utils.h"
-#include "runtime_api_exception.h"
 
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
@@ -171,6 +169,10 @@ HcclResult CollServiceAiCpuImpl::AllocCollOpResourceNoRegister(CollOperator &op,
     DevBuffer *mem = nullptr;
     comm->SetCommStatus(CommStatus::COMM_BUILDING);
     mem = OpBasedCollProcess(op, comm->GetCurAlgName());
+    auto info = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s], opAlgTag[%s]",
+                             op.opType.Describe().c_str(), comm->GetOpBaseOpIndex(), comm->GetId().c_str(),
+                             comm->GetCurAlgName().c_str(), opAlgTag.c_str());
+    comm->GetTrace().Save(info);
     CHK_RET(AicpuMc2CommResourcePrepare(op, comm->GetCurAlgName(), mem, opAlgTag, addr));
     return HCCL_SUCCESS;
 }
@@ -288,7 +290,7 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     param.kernel.comm.rankSize = comm->GetRankSize();
     param.kernel.comm.devType  = comm->GetDevType();
     param.kernel.comm.devPhyId = comm->GetDevicePhyId();
-    param.kernel.comm.opIndex_  = comm->GetOpIndex();
+    param.kernel.comm.opIndex  = comm->GetOpIndex();
     param.kernel.comm.opCounterAddr = static_cast<u64>(counterBuf->GetAddr());
     auto ret = strcpy_s(param.kernel.comm.commId, sizeof(param.kernel.comm.commId), comm->GetId().data());
     if (ret != EOK) {
@@ -407,29 +409,13 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
     const aclrtFuncHandle funcHandle = comm->GetAicpuKernelFuncHandle(param.kernelName);
-
-    bool isCapture = false;
-    rtModel_t rtModel = nullptr;
-    CHK_RET_THROW(
-        RuntimeApiException,
-        StringFormat("[CollServiceAiCpuImpl][%s] GetStreamCaptureInfo fail, streamId[%u]", __func__, stream.GetId()),
-        GetStreamCaptureInfo(stream.GetPtr(), rtModel, isCapture));
-    Stream *mStreamPtr = nullptr;
-    if (opMode == OpMode::OPBASE || isCapture) {
-        comm->GetAicpuStreamManager().AllocFreeStream();
-        mStreamPtr = comm->GetAicpuStreamManager().GetFreeStream();
-        comm->GetAicpuStreamManager().AclGraphCaptureFreeStream(&stream);
-    } else {
-        mStreamPtr = &stream;
-    }
-    auto& mStream = *mStreamPtr;
-
+    auto& mStream = (opMode == OpMode::OPBASE) ? (*comm->GetAicpuStreamManager().GetFreeStream()) : stream;
     std::string mode = (opMode == OpMode::OPBASE) ? "OPBASE" : "OFFLOAD";
     constexpr u32 numBlocks = 1;
     HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, mStream.GetPtr(), &cfg,
 			reinterpret_cast<void *>(kernelParamBuf_.get()->GetAddr()), sizeof(HcclKernelParamLite) + dynamicDataSize);
-    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode, %s"
-                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str(), mStream.Describe().c_str());
+    HCCL_INFO("[AicpuKernelLauncher][AicpuKernelLaunch] param.kernel.algName: %s, %s mode "
+                "HrtAicpuLaunchKernelWithHostArgs end!", param.kernel.algName, mode.c_str());
     taskParam.taskType = TaskParamType::TASK_AICPU_KERNEL;
     taskParam.endTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
@@ -564,7 +550,7 @@ void CollServiceAiCpuImpl::AllocOpMem(const CollOperator &op)
     HCCL_INFO("[AllocOpMem] op.opType[%d]", op.opType);
 }
 
-u64 CollServiceAiCpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize) const
+u64 CollServiceAiCpuImpl::CalcOpDynamicDataSize(const CollOperator &op, const OpType &opType, const u32 &rankSize)
 {
     u64 dynamicDataSize = 0ULL;
     switch (opType) {

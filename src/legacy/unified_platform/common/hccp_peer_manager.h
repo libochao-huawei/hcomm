@@ -31,8 +31,7 @@ public:
 private:
     std::unordered_map<s32, Referenced> instances_; // key: deviceLogicId
     std::mutex                          managerMutex_;
-    bool isDestroy{false};
-
+    
     HccpPeerManager() = default;
     ~HccpPeerManager();
     void DeInitAll();

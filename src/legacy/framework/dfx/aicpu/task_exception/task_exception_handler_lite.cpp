@@ -14,7 +14,6 @@
 #include "error_message_v2.h"
 #include "dlhal_function_v2.h"
 #include "task_param.h"
-#include "kernel_param_lite.h"
 
 #include "task_struct_v2.h"
 #include "task_scheduler_error.h"
@@ -81,7 +80,7 @@ HcclResult GenerateErrorMessageReport(const CommunicatorImplLite *aicpuComm, std
     errMsgInfo.taskId = taskInfo->taskId_;
     errMsgInfo.rankId = aicpuComm->GetMyRank();
     errMsgInfo.rankSize = aicpuComm->GetRankSize();
-    strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo->dfxOpInfo_ == nullptr ? AlgType{AlgType::MESH}.Describe().c_str() : taskInfo->dfxOpInfo_->algType_.c_str());
+    errMsgInfo.algType = taskInfo->dfxOpInfo_ == nullptr ? static_cast<Hccl::AlgType>(AlgType::MESH) : taskInfo->dfxOpInfo_->algType_;
     errMsgInfo.opIndex = taskInfo->dfxOpInfo_ == nullptr ? 0 : taskInfo->dfxOpInfo_->commIndex_;
     errMsgInfo.opType = taskInfo->dfxOpInfo_->op_.opType;
     errMsgInfo.count = taskInfo->dfxOpInfo_->op_.dataCount;
@@ -264,10 +263,12 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     }
     // exceptionInfo->taskId和exceptionInfo->streamId拼成sqeId
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo->taskId << 16) | static_cast<uint32_t>(exceptionInfo->streamId);
-    const auto curTask = aicpuComm->GetMirrorTaskMgrLite()->GetTaskInfo(exceptionInfo->sqId, sqeId);
+    const auto curTask = GlobalMirrorTasks::Instance().GetTaskInfo(
+            0, exceptionInfo->sqId, sqeId);
     if (curTask == nullptr) {
         // 未找到异常对应的TaskInfo
-        HCCL_ERROR("Exception task not found. streamId(sqId)[%u], taskId(sqeId)[%u].", exceptionInfo->sqId, sqeId);
+        HCCL_ERROR("Exception task not found. deviceId[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
+                   0, exceptionInfo->sqId, sqeId);
         return;
     }
 
@@ -295,7 +296,7 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
 
     HCCL_ERROR("[TaskExceptionHandlerLite][%s]Task from HCCL run failed.", __func__);
     if (curTask->taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
-        PrintTaskContextInfo(aicpuComm, exceptionInfo->sqId, sqeId);
+        PrintTaskContextInfo(exceptionInfo->sqId, sqeId);
     }
     if (curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY || curTask->taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY
         || curTask->taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE || curTask->taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
@@ -305,13 +306,12 @@ void TaskExceptionHandlerLite::Process(CommunicatorImplLite *aicpuComm, rtLogicC
     PrintEid(curTask);
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, base information is %s.", curTask->GetBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, para information is %s.", curTask->GetParaInfo().c_str());
-    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.", GetGroupRankInfo(*curTask).c_str());
- 	if(curTask->dfxOpInfo_ != nullptr && curTask->dfxOpInfo_->headOpCounterAddr_ != 0 && curTask->dfxOpInfo_->tailOpCounterAddr_ != 0) {
- 	    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].",
- 	    static_cast<u32>(*(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_))),
- 	    static_cast<u32>(*(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_))),
- 	    curTask->dfxOpInfo_->opIndex_);
- 	}
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, groupRank information is %s.",
+        GetGroupRankInfo(*curTask).c_str());
+    std::pair<float, float> floatCounter;
+ 	floatCounter.first =  *(reinterpret_cast<float *>(curTask->dfxOpInfo_->headOpCounterAddr_));
+ 	floatCounter.second = *(reinterpret_cast<float *>(curTask->dfxOpInfo_->tailOpCounterAddr_));
+    HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, headOpCounter[%u] tailOpCounter[%u] opIndex[%u].", static_cast<u32>(floatCounter.first), static_cast<u32>(floatCounter.second), curTask->dfxOpInfo_->opIndex_);
     HCCL_ERROR("[TaskExceptionHandlerLite]Task run failed, opData information is %s.", GetOpDataInfo(*curTask).c_str());
 }
 
@@ -326,12 +326,12 @@ string TaskExceptionHandlerLite::GetGroupRankInfo(const TaskInfo& taskInfo)
  	    commImplLite->GetId().c_str(), commImplLite->GetRankSize(), commImplLite->GetMyRank(), taskInfo.remoteRank_);
 }
 
-void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuComm, uint32_t sqId, uint32_t taskId)
+void TaskExceptionHandlerLite::PrintTaskContextInfo(uint32_t sqId, uint32_t taskId)
 {
-    auto queue = aicpuComm->GetMirrorTaskMgrLite()->GetQueue(sqId);
+    auto queue = GlobalMirrorTasks::Instance().GetQueue(0, sqId);
     if (queue == nullptr) {
         // 未找到异常对应的TaskQueue
-        HCCL_ERROR("Exception task queue not found. streamId(sqId)[%u].", sqId);
+        HCCL_ERROR("Exception task queue not found. deviceId[%u], streamId(sqId)[%u].", 0, sqId);
         return;
     }
 
@@ -339,7 +339,7 @@ void TaskExceptionHandlerLite::PrintTaskContextInfo(CommunicatorImplLite *aicpuC
     auto taskItorPtr = queue->Find(func);
     if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
-        HCCL_ERROR("Exception task not found. streamId(sqId)[%u], taskId(sqeId)[%u].", sqId, taskId);
+        HCCL_ERROR("Exception task not found. deviceId[%u], streamId(sqId)[%u], taskId(sqeId)[%u].", 0, sqId, taskId);
         return;
     }
 

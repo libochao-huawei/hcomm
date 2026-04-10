@@ -24,11 +24,6 @@ u32 GetKernelExecTimeoutFromEnvConfig()
 
 void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, uint8_t * const sqeIn)
 {
-    BuildA5SqeNotifyWait(streamId, taskId, notifyId, GetKernelExecTimeoutFromEnvConfig(), sqeIn);
-}
-
-void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, uint8_t * const sqeIn)
-{
     (void) streamId;
     Rt91095StarsNotifySqe *sqe = (Rt91095StarsNotifySqe *)sqeIn;
 
@@ -41,7 +36,7 @@ void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, u
     sqe->header.taskId     = static_cast<uint16_t>(taskId >> LOW_BITS);
     sqe->header.wrCqe      = 1U;
     sqe->notifyId          = notifyId;
-    sqe->timeout           = timeout;
+    sqe->timeout           = GetKernelExecTimeoutFromEnvConfig();
 
     HCCL_INFO("[SQE]NotifyWait: notifyId=%lu, timeout=%us, streamId=%u, taskId=%u", notifyId, sqe->timeout, streamId, taskId);
 }

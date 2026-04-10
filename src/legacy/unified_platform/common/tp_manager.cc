@@ -67,7 +67,7 @@ bool TpManager::CheckRequestResult(RequestHandle &reqHandle) const
 }
 
 HcclResult CheckTpProtocol(const TpProtocol tpProtocol) {
-    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP && tpProtocol != TpProtocol::UBOE) {
+    if (tpProtocol != TpProtocol::CTP && tpProtocol != TpProtocol::TP) {
         HCCL_WARNING("[TpManager][%s] failed, tpProtocol[%d] is not supported.",
             __func__, tpProtocol);
         return HcclResult::HCCL_E_NOT_SUPPORT;
@@ -205,58 +205,22 @@ HcclResult TpManager::HandleCompletedRequest(const TpManager::RequestCtx reqCtx,
 
 TpManager::InfoCtxMap& TpManager::GetInfoCtxMap(const TpProtocol tpProtocol)
 {
-    switch (tpProtocol) {
-        case TpProtocol::CTP:
-            return ctpInfoMap;
-        case TpProtocol::TP:
-            return tpInfoMap;
-        case TpProtocol::UBOE:
-            return uboeInfoMap;
-        default:
-            return tpInfoMap;
-    }
+    return tpProtocol == TpProtocol::CTP ? ctpInfoMap : tpInfoMap;
 }
 
 TpManager::ReqCtxMap& TpManager::GetReqCtxMap(const TpProtocol tpProtocol)
 {
-    switch (tpProtocol) {
-        case TpProtocol::CTP:
-            return ctpReqMap;
-        case TpProtocol::TP:
-            return tpReqMap;
-        case TpProtocol::UBOE:
-            return uboeReqMap;
-        default:
-            return tpReqMap;
-    }
+    return tpProtocol == TpProtocol::CTP ? ctpReqMap : tpReqMap;
 }
 
 std::mutex& TpManager::GetInfoCtxMutex(const TpProtocol tpProtocol)
 {
-    switch (tpProtocol) {
-        case TpProtocol::CTP:
-            return ctpInfoMutex;
-        case TpProtocol::TP:
-            return tpInfoMutex;
-        case TpProtocol::UBOE:
-            return uboeInfoMutex;
-        default:
-            return tpInfoMutex;
-    }
+    return tpProtocol == TpProtocol::CTP ? ctpInfoMutex : tpInfoMutex;
 }
 
 std::mutex& TpManager::GetReqCtxMutex(const TpProtocol tpProtocol)
 {
-    switch (tpProtocol) {
-        case TpProtocol::CTP:
-            return ctpReqMutex;
-        case TpProtocol::TP:
-            return tpReqMutex;
-        case TpProtocol::UBOE:
-            return uboeReqMutex;
-        default:
-            return tpReqMutex;
-    }
+    return tpProtocol == TpProtocol::CTP ? ctpReqMutex : tpReqMutex;
 }
 
 } // namespace Hccl

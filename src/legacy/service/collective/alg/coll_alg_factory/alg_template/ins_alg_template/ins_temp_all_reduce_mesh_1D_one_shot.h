@@ -36,6 +36,7 @@ public:
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
     HcclResult RunAllReduce(const TemplateDataParams &tempAlgParams, const RankSliceInfo &sliceInfoVec, const ResLinks &tempLinks,
         std::vector<InsQuePtr> &tempInsQues);
+private:
 };
 
 } // namespace Hccl

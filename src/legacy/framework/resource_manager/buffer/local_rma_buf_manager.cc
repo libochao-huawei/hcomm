@@ -39,13 +39,13 @@ bool LocalRmaBufManager::IsExist(const string &opTag, const PortData &portData, 
            && bufs[opTag][portData].find(bufferType) != bufs[opTag][portData].end();
 }
 
-LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferType, std::shared_ptr<Buffer> buffer, const PortData &portData, LinkProtocol linkProtocol)
+LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferType, std::shared_ptr<Buffer> buffer, const PortData &portData)
 {
+    HCCL_INFO("LocalRmaBufManager::Reg, buffer[%s]", buffer->Describe().c_str());
     if (buffer == nullptr) {
         HCCL_ERROR("input buffer is null");
         return nullptr;
     }
-    HCCL_INFO("LocalRmaBufManager::Reg, buffer[%s]", buffer->Describe().c_str());
     if (IsExist(opTag, portData, bufferType)) {
         string msg = StringFormat("opTag=%s bufferType=%s, buffer=%s already reg to portData=%s", opTag.c_str(),
                                   bufferType.Describe().c_str(),
@@ -58,7 +58,7 @@ LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferTy
         return bufs[opTag][portData][bufferType].get();
     } else {
         if (portData.GetProto() == LinkProtoType::RDMA) {
-            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData, linkProtocol);
+            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData);
             bufs[opTag][portData][bufferType]
                 = make_unique<LocalRdmaRmaBuffer>(buffer, rdmaHandle);
             return bufs[opTag][portData][bufferType].get();
@@ -67,7 +67,7 @@ LocalRmaBuffer *LocalRmaBufManager::Reg(const string &opTag, BufferType bufferTy
             if (comm->GetOpAiCpuTSFeatureFlag()) { // 算子粒度
                 bufs[opTag][portData][bufferType] = make_unique<LocalUbRmaBuffer>(buffer);
             } else {
-                RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData, linkProtocol);
+                RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), portData);
                 bufs[opTag][portData][bufferType] = make_unique<LocalUbRmaBuffer>(buffer, rdmaHandle);
             }
             return bufs[opTag][portData][bufferType].get();

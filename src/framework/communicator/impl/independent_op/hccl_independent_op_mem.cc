@@ -107,7 +107,8 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
-            const std::string &commId = hcclComm->GetIdentifier();
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
             hccl::CollComm* collComm = hcclComm->GetCollComm();
             CHK_PTR_NULL(collComm);
             auto myRank = collComm->GetMyRank();

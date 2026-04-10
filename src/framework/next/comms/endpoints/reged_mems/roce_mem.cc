@@ -43,8 +43,7 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
     } else {
         // 构造LocalRdmaRmaBuffer
         std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
-        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr),
-            mem.size, static_cast<HcclMemType>(mem.type), memTag)),
+        EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
             return HCCL_E_PTR);
 
         EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
@@ -70,7 +69,7 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
     } else {  
         HCCL_INFO("[RoceRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);;
-        return HCCL_SUCCESS;
+        return HCCL_E_AGAIN;
     }
 
     this->allRegisteredBuffers_.push_back(localBuffer);
@@ -94,7 +93,7 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     if (!resultPair) {
         HCCL_INFO("[RoceRegedMemMgr][[UnregisterMemory] Memory reference count is larger than 0"
                   "(used by other RemoteRank), do not deregister memory.");
-        return HCCL_SUCCESS;
+        return HCCL_E_AGAIN;
     }
 
     // 删除vector中的LocalRdmaRmaBuffer
@@ -161,10 +160,6 @@ HcclResult RoceRegedMemMgr::GetParamsFromMemDesc(const void *memDesc, uint32_t d
 {
     const char *description = static_cast<const char *>(memDesc);
 
-     if (descLen < sizeof(EndpointDesc)) {
- 	         HCCL_ERROR("[RoceRegedMemMgr][GetParamsFromMemDesc] [%s] descLen[%u] is too small. aim size:[%llu]", __func__, descLen, sizeof(EndpointDesc));
- 	         return HCCL_E_INTERNAL;
- 	}
     // 从memDesc末尾提取EndpointDesc
     if (memcpy_s(&endpointDesc, sizeof(EndpointDesc), description + descLen - sizeof(EndpointDesc), sizeof(EndpointDesc)) != EOK) {
         HCCL_ERROR("[RoceRegedMemMgr][GetParamsFromMemDesc] [%s] endpointDesc copy error. aim size:[%llu]", __func__, sizeof(EndpointDesc));

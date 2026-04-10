@@ -9,7 +9,7 @@
  */
 #ifndef HCCL_COMM_PROFILING_LITE_H
 #define HCCL_COMM_PROFILING_LITE_H
-#include "mirror_task_manager_lite.h"
+#include "mirror_task_manager.h"
 #include "profiling_reporter_lite.h"
 #include "types.h"
 
@@ -18,7 +18,7 @@ namespace hccl {
 class HcclCommProfilingLite {
 public:
     // 构造函数
-    HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManagerLite* mirrorTaskManagerLite);
+    HcclCommProfilingLite(Hccl::DevId deviceId, Hccl::MirrorTaskManager* mirrorTaskManager);
     
     // 上报所有任务
     void ReportAllTasks();
@@ -27,10 +27,10 @@ public:
     void UpdateProfStat();
     
     // 获取MirrorTaskManager
-    Hccl::MirrorTaskManagerLite* GetMirrorTaskManagerLite() const;
+    Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
     
 private:
-    std::unique_ptr<Hccl::MirrorTaskManagerLite> mirrorTaskManagerLite_;
+    std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
     std::unique_ptr<Hccl::ProfilingReporterLite> profilingReporterLite_;
 };
 }

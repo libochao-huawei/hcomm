@@ -187,10 +187,9 @@ void RankInfoDetectClient::ConstructRankTable(RankTableInfo &localRankTable)
     std::string filePath = "/etc/hccl_rootinfo.json";
     JsonParser jsonParser{};
     nlohmann::json parseJson{};
-    std::ifstream file(filePath);
-    if (file.good()) {
+    try {
         jsonParser.ParseFileToJson(filePath, parseJson);
-    } else {
+    } catch (...) {
         size_t bufSize;
         s32 result = TopoAddrInfoGetSize(devPhyId_, &bufSize); // 获取rankInfo大小，用于提前分配内存
         CHK_PRT_THROW(result != 0 || bufSize > MAX_BUFFER_LEN,

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -9,13 +7,13 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-
 import argparse
 import configparser
 import json
 import os
 import stat
 from collections import defaultdict
+from distutils import util
 
 
 COLOR_BOLD = "\033[1m"
@@ -24,16 +22,6 @@ COLOR_END = "\033[0m"
 COLOR_GREEN = "\033[91m"
 COLOR_RED = "\033[91m"
 CUSTOM_PREF = "custom"
-
-
-def strtobool(val):
-    val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
-        return 1
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
-        return 0
-    else:
-        raise ValueError("invalid truth value %r" % (val,))
 
 
 class IniParser(object):
@@ -109,7 +97,7 @@ class IniParser(object):
         if CUSTOM_PREF in op_info:
             custom_set = op_info.get(CUSTOM_PREF)
             # NOTE: do not use bool(xxx) here, bool('False') returns True
-            if bool(strtobool(custom_set)):
+            if bool(util.strtobool(custom_set)):
                 self.custom_ops_info[op_name] = self.aicpu_ops_info.get(op_name)
 
     def check_op_input_output(self, io_sec_info):

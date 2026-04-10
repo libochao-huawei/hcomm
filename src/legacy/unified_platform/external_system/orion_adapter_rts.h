@@ -308,7 +308,7 @@ void           HrtEventRecord(RtEvent_t eventPtr, aclrtStream streamPtr);
 HrtEventStatus HrtEventQueryStatus(RtEvent_t eventPtr);
 
 void HrtWriteValue(u64 addr, u32 piVal, const aclrtStream streamPtr);
-void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args, const std::string& name);
+void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args);
 HcclResult HrtEnableP2P(u32 deviceLogicId, u32 devicePhyId);
 HcclResult HrtDisableP2P(u32 deviceLogicId, u32 devicePhyId);
 HcclResult HrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status);

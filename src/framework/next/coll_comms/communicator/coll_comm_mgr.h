@@ -13,8 +13,7 @@
 #include <unordered_set>
 #include <memory>
 #include <mutex>
-#include <vector>
-#include "coll_comm.h"
+// #include "coll_comm.h"
 
 namespace hccl {
 /**
@@ -22,16 +21,7 @@ namespace hccl {
  */
 class CollCommMgr {
 public:
-    static CollCommMgr *GetInstance();
-    void RegisteCollComm(CollComm* collComm);
-    void UnRegisteCollComm(CollComm* collComm);
-    std::unordered_map<std::string, CollComm*> GetAllCollComms();
 
-private:
-    static CollCommMgr* instance_;
-    std::unordered_map<std::string, CollComm*> allCollComms_;
-
-    std::mutex mutex_;
 };
 }
 #endif // COLL_COMM_MGR_H

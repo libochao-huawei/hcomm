@@ -67,8 +67,8 @@ protected:
         locCntRes.vec.push_back(&localCntNotify);
         locCntRes.desc.push_back('0');
         locCntRes.desc.push_back(0);
-        bool isRecvFirst = false;
-        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
+
+        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
         ubTransport.baseStatus = TransportStatus::READY;
         MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
         auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);

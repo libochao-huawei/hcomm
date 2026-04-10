@@ -11,24 +11,27 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    ut_CcuComponent_test.cc
+    ut_CcuDevMgr_API_test.cc
+    ut_CcuTransport_API_test.cc
+    # stubs/llt_orion_stub.cc
+    stubs/llt_hccp_stub.cc
 )
 
-add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
+add_executable(hccl_utest_framework_ccu_dev_mgr_api ${src_to_test_list})
 
 #头文件搜索路径
-target_include_directories(hccl_utest_comms_ccu_features PRIVATE
+target_include_directories(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
 
-target_compile_definitions(hccl_utest_comms_ccu_features PRIVATE
+target_compile_definitions(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hccl_utest_comms_ccu_features PRIVATE
+target_compile_options(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -36,11 +39,10 @@ target_compile_options(hccl_utest_comms_ccu_features PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_comms_ccu_features PRIVATE
+target_link_directories(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
-
-target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
+target_link_libraries(hccl_utest_framework_ccu_dev_mgr_api PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -51,8 +53,9 @@ target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
     -lrt
     -ldl
 )
+add_dependencies(hccl_utest_framework_ccu_dev_mgr_api hccl_llt)
 
-add_dependencies(hccl_utest_comms_ccu_features hccl_llt)
-
-enable_testing()
-add_test(NAME hccl_utest_comms_ccu_features COMMAND hccl_utest_comms_ccu_features)
+run_llt_test(
+   TARGET  hccl_utest_framework_ccu_dev_mgr_api
+   TASK_NUM 1
+)

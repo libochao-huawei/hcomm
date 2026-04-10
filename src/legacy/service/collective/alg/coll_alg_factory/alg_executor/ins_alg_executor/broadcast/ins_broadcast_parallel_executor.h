@@ -23,7 +23,7 @@ public:
 
     std::string Describe() const override
     {
-        return "Instruction based Broadcast Parallel Executor.";
+        return "Instruction based All Gather Parallel Executor.";
     }
 
     HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;

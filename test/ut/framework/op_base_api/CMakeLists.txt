@@ -64,5 +64,7 @@ target_link_libraries(hccl_utest_framework_op_base_api PRIVATE
 )
 add_dependencies(hccl_utest_framework_op_base_api hccl_llt)
 
-enable_testing()
-add_test(NAME hccl_utest_framework_op_base_api COMMAND hccl_utest_framework_op_base_api)
+run_llt_test(
+   TARGET  hccl_utest_framework_op_base_api
+   TASK_NUM 1
+)

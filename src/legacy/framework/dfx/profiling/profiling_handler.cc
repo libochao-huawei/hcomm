@@ -106,6 +106,7 @@ void ProfilingHandler::ReportHcclOp(const DfxOpInfo &opInfo, bool cachedReq)
     if (cachedReq && enableHcclL0_) {
         std::lock_guard<std::mutex> lock(cacheOpInfosMutex_);
         cacheOpInfos_.push_back(opInfo);
+        return;
     }
     HCCL_INFO("[ProfilingHandler]ReportHcclOp start.");
     uint32_t threadId = SalGetTid();
@@ -122,8 +123,7 @@ void ProfilingHandler::ReportHcclTaskApi(TaskParamType taskType, uint64_t beginT
     reporterData.threadId = SalGetTid();
     reporterData.beginTime = beginTime;
     reporterData.endTime = endTime;
-    const std::string proName(GetProfTaskOpNameV2(taskType));
-    reporterData.itemId = GetProfHashId(proName.c_str(), proName.length());
+    reporterData.itemId = GetProfHashId(taskType.Describe().c_str(), taskType.Describe().length());
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskApi, reporterData data is: level[%u], type[%u], threadId[%u], "
               "beginTime[%llu], endTime[%llu], itemId[%llu]",
               reporterData.level, reporterData.type, reporterData.threadId, reporterData.beginTime,
@@ -314,15 +314,9 @@ void ProfilingHandler::GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfili
     uint64_t groupName        = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(),
                                               taskInfo.dfxOpInfo_->op_.opTag.length());
     ccuTaskInfo.groupName     = groupName;
-    if (taskInfo.dfxOpInfo_->isIndop_ == true) {
-        ccuTaskInfo.rankId   = taskInfo.dfxOpInfo_->op_.myRank;
-        ccuTaskInfo.ranksize = taskInfo.dfxOpInfo_->rankSize_;
-    } else {
-        CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
-        ccuTaskInfo.rankId        = commImp->GetIdIndex(); 
-        ccuTaskInfo.ranksize      = commImp->GetRankSize();
-    }
-
+    CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
+    ccuTaskInfo.rankId        = commImp->GetIdIndex(); 
+    ccuTaskInfo.ranksize      = commImp->GetRankSize();
     ccuTaskInfo.streamId      = taskInfo.streamId_;
     ccuTaskInfo.taskId        = taskInfo.taskId_;
     ccuTaskInfo.dieId         = info.dieId;
@@ -348,14 +342,9 @@ void ProfilingHandler::GetCcuGroupInfo(const TaskInfo &taskInfo, const CcuProfil
     ccuGroupInfo.itemId  = GetProfHashId(info.name.c_str(), info.name.length());
     uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
     ccuGroupInfo.groupName      = groupName;
-    if (taskInfo.dfxOpInfo_->isIndop_ == true) {
-        ccuGroupInfo.rankId   = taskInfo.dfxOpInfo_->op_.myRank;
-        ccuGroupInfo.ranksize = taskInfo.dfxOpInfo_->rankSize_;
-    } else {
-        CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
-        ccuGroupInfo.rankId        = commImp->GetIdIndex(); 
-        ccuGroupInfo.ranksize      = commImp->GetRankSize();
-    }
+    CommunicatorImpl *commImp        = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
+    ccuGroupInfo.rankId         = commImp->GetIdIndex();
+    ccuGroupInfo.ranksize       = commImp->GetRankSize();
     ccuGroupInfo.workFlowMode   = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     ccuGroupInfo.streamId       = taskInfo.streamId_;
     ccuGroupInfo.taskId         = taskInfo.taskId_;
@@ -411,14 +400,9 @@ void ProfilingHandler::GetCcuWaitSignalInfo(const TaskInfo &taskInfo, const CcuP
     waitSignalInfo.itemId       = GetProfHashId(info.name.c_str(), info.name.length());
     uint64_t groupName = GetProfHashId(taskInfo.dfxOpInfo_->op_.opTag.c_str(), taskInfo.dfxOpInfo_->op_.opTag.length());
     waitSignalInfo.groupName    = groupName;
-    if (taskInfo.dfxOpInfo_->isIndop_ == true) {
-        waitSignalInfo.rankId   = taskInfo.dfxOpInfo_->op_.myRank;
-        waitSignalInfo.ranksize = taskInfo.dfxOpInfo_->rankSize_;
-    } else {
-        CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
-        waitSignalInfo.rankId        = commImp->GetIdIndex(); 
-        waitSignalInfo.ranksize      = commImp->GetRankSize();
-    }
+    CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(taskInfo.dfxOpInfo_->comm_);
+    waitSignalInfo.rankId       = commImp->GetIdIndex();
+    waitSignalInfo.ranksize     = commImp->GetRankSize();
     waitSignalInfo.workFlowMode = static_cast<u32>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     waitSignalInfo.streamId  = taskInfo.streamId_;
     waitSignalInfo.taskId    = taskInfo.taskId_;
@@ -572,7 +556,7 @@ void ProfilingHandler::ReportHcclOpInfo(uint64_t timeStamp, const DfxOpInfo &opI
     reporterData.data.hcclopInfo.relay    = 0;
     reporterData.data.hcclopInfo.retry    = 0;
     reporterData.data.hcclopInfo.dataType = opInfo.op_.dataType;
-    reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.c_str(), opInfo.algType_.length());
+    reporterData.data.hcclopInfo.algType  = GetProfHashId(opInfo.algType_.Describe().c_str(), opInfo.algType_.Describe().length());
     uint64_t groupName                     = GetProfHashId(opInfo.op_.opTag.c_str(), opInfo.op_.opTag.length());
     reporterData.data.hcclopInfo.groupName = groupName;
     u32 ranksize{0};

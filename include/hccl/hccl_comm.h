@@ -194,7 +194,7 @@ extern uint32_t HcclGetCommConfigCapability() HCOMM_WEAK_SYMBOL;
  * @brief Initialize the comm configuration.
  * @param config Pointer to the comm configuration that needs to be initialized.
 */
-static inline void HcclCommConfigInit(HcclCommConfig *config)
+inline void HcclCommConfigInit(HcclCommConfig *config)
 {
     if (config == nullptr) {
         return;
@@ -244,14 +244,6 @@ extern HcclResult HcclCommSuspend(HcclComm comm) HCOMM_WEAK_SYMBOL;
  * @param comm A pointer identifying the communication resource based on.
 */
 extern HcclResult HcclCommResume(HcclComm comm) HCOMM_WEAK_SYMBOL;
-
-/**
- * @brief Get the current status of the communication.
- * @param comm A pointer identifying the communication resource to query
- * @param status A pointer to store the retrieved communication status.
- * @return HcclResult
-*/
-extern HcclResult HcclCommGetStatus(HcclComm comm, HcclCommStatus *status) HCOMM_WEAK_SYMBOL;
 
 /**
  * @brief Set the virtual memory range to HCCL communicator
@@ -319,7 +311,7 @@ extern HcclResult HcclGroupEnd();
  * @param flag The flag of this memory window, now only support 0
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, HcclCommSymWindow *winHandle, uint32_t flag);
+extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag);
 
 /**
  * @brief Deregister a memory window for HCCL communication.
@@ -327,7 +319,7 @@ extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t siz
  * @param winHandle A pointer identifying the registered memory window handle.
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle);
+extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
 
 /**
  * @brief Get symmetric memory offset and window for HCCL communication.
@@ -339,17 +331,16 @@ extern HcclResult HcclCommSymWinDeregister(HcclCommSymWindow winHandle);
  * @param offset A size_t identifying the offset of symmetric memory heap.
  * @return HcclResult
  */
-extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, HcclCommSymWindow *winHandle, size_t *offset);
+extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 
 typedef enum {
     HCCL_OP_EXPANSION_MODE_INVALID = -1,
-    HCCL_OP_EXPANSION_MODE_AI_CPU = 0,
-    HCCL_OP_EXPANSION_MODE_AIV = 1,
-    HCCL_OP_EXPANSION_MODE_HOST = 2,
-    HCCL_OP_EXPANSION_MODE_HOST_TS = 3,
+    HCCL_OP_EXPANSION_AI_CPU = 0,
+    HCCL_OP_EXPANSION_AIV = 1,
+    HCCL_OP_EXPANSION_HOST = 2,
+    HCCL_OP_EXPANSION_HOST_TS = 3,
     HCCL_OP_EXPANSION_CCU_MS = 4,
-    HCCL_OP_EXPANSION_CCU_SCHED = 5,
-    HCCL_OP_EXPANSION_AIV_ONLY = 6
+    HCCL_OP_EXPANSION_CCU_SCHED = 5
 } HcclOpExpansionMode;
 
 typedef enum {

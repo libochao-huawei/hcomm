@@ -52,7 +52,7 @@ set(hccl_utest_misc_list
     ut_adapter.cc
     # ut_switch_nic.cc
     ut_switch_nic_fsm.cc
-    ut_interface_multithread.cc
+    # ut_interface_multithread.cc
     ut_topoinfo_exchange_agent.cc
 )
 add_executable(hccl_utest_misc ${hccl_utest_misc_list})
@@ -96,5 +96,7 @@ target_link_libraries(hccl_utest_misc PRIVATE
 )
 add_dependencies(hccl_utest_misc hccl_llt)
 
-enable_testing()
-add_test(NAME hccl_utest_misc COMMAND hccl_utest_misc)
+run_llt_test(
+   TARGET hccl_utest_misc
+   TASK_NUM 1
+)

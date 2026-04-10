@@ -36,13 +36,6 @@ public:
             return true;
         }
     };
-    struct RoceAttr {
-        uint32_t queueNum{0};
-        uint32_t retryCnt{0};
-        uint32_t retryInterval{0};
-        uint32_t tc{0};
-        uint32_t sl{0};
-    };
     MAKE_ENUM(RdmaConnStatus, CLOSED, INIT, QP_CREATED, QP_MODIFIED, SOCKET_TIMEOUT)
     HostRdmaConnection(Hccl::Socket *socket, RdmaHandle rdmaHandle);
 
@@ -74,7 +67,6 @@ private:
     // OpMode              opMode_{OpMode::OPBASE};
 
     Hccl::QpInfo        qpInfo_;
-    RoceAttr            roceAttr_{};
     void                *sendCompChannel_{nullptr};
     void                *recvCompChannel_{nullptr};
     bool                isHdcMode_{false};

@@ -9,7 +9,6 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcclCommTaskException.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/ccuTaskException.cc
 )
 
 target_sources(hcomm PRIVATE

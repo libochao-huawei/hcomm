@@ -19,6 +19,10 @@ UbMemEndpoint::UbMemEndpoint(const EndpointDesc &endpointDesc) : Endpoint(endpoi
 
 HcclResult UbMemEndpoint::Init()
 {
+    s32 deviceLogicId;
+    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(ServerSocketMgr::ListenStart(deviceLogicId, endpointDesc_.commAddr, Hccl::NicType::DEVICE_NIC_TYPE));
+
     EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<UbMemRegedMemMgr>(), return HCCL_E_INTERNAL);
 
     return HcclResult::HCCL_SUCCESS;

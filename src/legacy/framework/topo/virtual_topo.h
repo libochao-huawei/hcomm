@@ -36,9 +36,9 @@ public:
         : type(portType.GetType()), linkProtocol_(ConnProto2LinkProtocol(portType.GetProto())), localRankId_(localRankId),
           remoteRankId_(remoteRankId), localPortId_(localPortId), remotePortId_(remotePortId){};
     LinkData(PortDeploymentType portDeploymentType, LinkProtocol linkProtocol, RankId localRankId,
-        RankId remoteRankId, IpAddress localAddr, IpAddress remoteAddr, u32 reuseIdx = 0)
+        RankId remoteRankId, IpAddress localAddr, IpAddress remoteAddr)
     : type(portDeploymentType), linkProtocol_(linkProtocol), localRankId_(localRankId), remoteRankId_(remoteRankId),
-        localAddr_(localAddr), remoteAddr_(remoteAddr), reuseIdx_(reuseIdx) {};
+        localAddr_(localAddr), remoteAddr_(remoteAddr){};
     
     explicit LinkData(const NetInstance::Path &path)
     {
@@ -77,6 +77,11 @@ public:
             localDieId_ = srcConnIface->GetLocalDieId();
             hop = path.links[0].GetHop();
             portGroupSize = static_cast<u8>(srcConnIface->GetPorts().size());
+            auto tgtPortGroupSize = static_cast<u8>(targetConnIface->GetPorts().size());
+            if (portGroupSize != tgtPortGroupSize) {
+                HCCL_ERROR("[LinkData][Constructor]srcConnIface.portGroupSize[%u] is not euqal to targetConnIface.portGroupSize[%u]",
+                    static_cast<u32>(portGroupSize), static_cast<u32>(tgtPortGroupSize));
+            }
             fullmesh = false;  // 多链路场景，非fullmesh
         } else {
             HCCL_ERROR("[LinkData][Constructor]path.links.size()[%u] is invalid", path.links.size());
@@ -98,7 +103,7 @@ public:
         return type == rhs.type && linkProtocol_ == rhs.linkProtocol_ && localRankId_ == rhs.localRankId_
                && remoteRankId_ == rhs.remoteRankId_ && localAddr_ == rhs.localAddr_
                && remoteAddr_ == rhs.remoteAddr_ && hop == rhs.hop && direction == rhs.direction
-               && portGroupSize == rhs.portGroupSize && fullmesh == rhs.fullmesh && reuseIdx_ == rhs.reuseIdx_;
+               && portGroupSize == rhs.portGroupSize && fullmesh == rhs.fullmesh;
     }
 
     bool operator!=(const LinkData &rhs) const
@@ -171,21 +176,14 @@ public:
         if (rhs.localPortId_ < localPortId_) {
             return false;
         }
-        if (reuseIdx_ < rhs.reuseIdx_) {
-            return true;
-        }
-        if (rhs.reuseIdx_ < reuseIdx_) {
-            return false;
-        }
         return remotePortId_ < rhs.remotePortId_;
     }
 
     string Describe() const
     {
-        return StringFormat("LinkData:type=%s, protocol=%s, localRankId=%d, localAddr=%s, remoteRankId=%d, "
-                            "remoteAddr=%s, reuseIdx=%u",
+        return StringFormat("LinkData:type=%s, protocol=%s, localRankId=%d, localAddr=%s, remoteRankId=%d, remoteAddr=%s",
                             type.Describe().c_str(), linkProtocol_.Describe().c_str(), localRankId_,
-                            localAddr_.Describe().c_str(), remoteRankId_, remoteAddr_.Describe().c_str(), reuseIdx_);
+                            localAddr_.Describe().c_str(), remoteRankId_, remoteAddr_.Describe().c_str());
     };
 
     PortData GetLocalPort() const
@@ -286,11 +284,6 @@ public:
         return fullmesh;
     };
 
-    std::string GetReuseIdx() const
-    {
-        return std::to_string(reuseIdx_);
-    };
-
 private:
     PortDeploymentType type;
     LinkProtocol       linkProtocol_;
@@ -309,7 +302,6 @@ private:
     DeviceId localDeviceId_;
     DeviceId remoteDeviceId_;
     bool               fullmesh{false};  // 标识是否为全互联单链路场景
-    u32                reuseIdx_{0};     // socket复用idx，加在socket建链tag后面
 };
 } // namespace Hccl
 

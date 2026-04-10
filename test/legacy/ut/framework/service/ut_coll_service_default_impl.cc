@@ -413,7 +413,7 @@ TEST_F(CollServiceDefaultImplTest, test_base_register_offload_buf)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
 
@@ -496,13 +496,6 @@ TEST_F(CollServiceDefaultImplTest, test_init)
     MOCKER_CPP(&CommunicatorImpl::GetTopoFilePath).stubs().will(returnValue(topoInfoPath));
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
 
-    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
-    RdmaHandle handlePtr = handle.get();
-    MOCKER(HrtRaUbCtxInit)
-        .stubs()
-        .with(any())
-        .will(returnValue(handlePtr));
-
     MOCKER(HrtGetDevice).stubs().will(returnValue(1));
     MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<DevId>(1)));
     DevType devType = DevType::DEV_TYPE_950;
@@ -546,13 +539,6 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
 
-    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
-    RdmaHandle handlePtr = handle.get();
-    MOCKER(HrtRaUbCtxInit)
-        .stubs()
-        .with(any())
-        .will(returnValue(handlePtr));
-
     GenRankTableFile4p();
     GenTopoFile();
 
@@ -561,7 +547,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_op_based_mode)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -644,13 +630,6 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
     MOCKER(HrtDevMemAlignWithPage).stubs();
     MOCKER(HrtIpcDestroyMemoryName).stubs();
 
-    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
-    RdmaHandle handlePtr = handle.get();
-    MOCKER(HrtRaUbCtxInit)
-        .stubs()
-        .with(any())
-        .will(returnValue(handlePtr));
-
     GenRankTableFile4p();
     GenTopoFile();
     const string rankTablePath = "ranktable.json";
@@ -662,7 +641,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());
@@ -842,12 +821,6 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
     MOCKER_CPP(&CommunicatorImpl::GetTopoFilePath).stubs().will(returnValue(topoInfoPath));
     MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
 
-    std::unique_ptr<RdmaHandle> handle = std::make_unique<RdmaHandle>();
-    RdmaHandle handlePtr = handle.get();
-    MOCKER(HrtRaUbCtxInit)
-        .stubs()
-        .with(any())
-        .will(returnValue(handlePtr));
 
     GenRankTableFile4p();
     GenTopoFile();
@@ -858,7 +831,7 @@ TEST_F(CollServiceDefaultImplTest, test_load_with_offload_mode_with_task)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
     MOCKER_CPP(&CommunicatorImpl::SetCommExecuteConfig).stubs().will(ignoreReturnValue());

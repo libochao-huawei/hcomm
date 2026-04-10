@@ -35,7 +35,7 @@ void ConnLocalCntNotifyManager::ApplyFor(u32 topicId, vector<LinkData> links)
     HCCL_INFO("topicId=%u apply for now", topicId);
 
     // 拿到并存储全部的portData
-    set<std::pair<PortData, LinkProtocol>> ports;
+    set<PortData> ports;
     for (auto &link : links) {
         auto linkProtocol = link.GetLinkProtocol();
         bool ifUbProto = linkProtocol == LinkProtocol::UB_TP || linkProtocol == LinkProtocol::UB_CTP;
@@ -48,7 +48,7 @@ void ConnLocalCntNotifyManager::ApplyFor(u32 topicId, vector<LinkData> links)
         HCCL_INFO("topicId=%u, linkData=%s", topicId, link.Describe().c_str());
 
         auto portData = link.GetLocalPort();
-        ports.insert(std::make_pair(portData, linkProtocol));
+        ports.insert(portData);
     }
 
     u32 count = 2;
@@ -56,10 +56,8 @@ void ConnLocalCntNotifyManager::ApplyFor(u32 topicId, vector<LinkData> links)
 
     for (u32 i = 0; i < count; ++i) {
         rtsNotifyPool[topicId][i] = std::make_unique<RtsCntNotify>();
-        for (auto &portLinkProtoPair : ports) {
-            auto port = portLinkProtoPair.first;
-            auto linkProtocol = portLinkProtoPair.second;
-            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), port, linkProtocol);
+        for (auto &port : ports) {
+            RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), port);
             if (rdmaHandle == nullptr) {
                 string msg = StringFormat("Failed to get rdma handle for devicePhyId %u, port %u",
                                           comm->GetDevicePhyId(), port);

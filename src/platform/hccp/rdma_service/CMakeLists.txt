@@ -19,8 +19,6 @@ set(rs_list
     rs_socket.c
     rs_rdma.c
     rs_nda.c
-    rs_comm.c
-    rs_drv_sensor.c
     rs_drv_rdma.c
     rs_drv_socket.c
     dl_ibverbs_function.c

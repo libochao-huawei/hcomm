@@ -75,9 +75,10 @@ HcclResult CcuTempAllToAllMesh1D2Die::GenExtIns(const TempFuncs          &tempFu
     buffInfo_ = templateDataParams.buffInfo;
 
     CcuInstructionAllToAllMesh1D2Die ccuInsAllToAllMesh1D2Die;
-    CHK_PRT_RET(tempInsQues.empty(),
-        HCCL_ERROR("[CcuTempAllToAllMesh1D2Die] empty queue"), HcclResult::HCCL_E_INTERNAL);
-    CHK_PTR_NULL(tempInsQues[0]);
+    if (tempInsQues.size() == 0) {
+        HCCL_ERROR("[CcuTempAllToAllMesh1D2Die] tempInsQues.size() is 0.");
+        return HcclResult::HCCL_E_INTERNAL;
+    }
 
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);

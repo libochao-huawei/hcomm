@@ -54,14 +54,13 @@ void ConnLocalNotifyManager::ApplyFor(RankId remoteRankId, const LinkData &linkD
         } else if (linkData.GetType() == PortDeploymentType::DEV_NET) {
             auto linkProtocol = linkData.GetLinkProtocol();
             if (linkProtocol == LinkProtocol::ROCE) {
-                RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(
-                    comm->GetDevicePhyId(), linkData.GetLocalPort(), linkProtocol);
+                RdmaHandle rdmaHandle
+                    = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
                 notifyPool[remoteRankId][linkData][i] = make_unique<RdmaLocalNotify>(rdmaHandle, comm->GetOpAiCpuTSFeatureFlag()); // 算子粒度
                 continue;
-            } else if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP ||
-                       linkProtocol == LinkProtocol::UBOE) {
-                RdmaHandle rdmaHandle = 
-                    RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort(), linkProtocol);
+            } else if (linkProtocol == LinkProtocol::UB_CTP || linkProtocol == LinkProtocol::UB_TP) {
+                RdmaHandle rdmaHandle
+                    = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
                 notifyPool[remoteRankId][linkData][i] = make_unique<UbLocalNotify>(rdmaHandle, comm->GetOpAiCpuTSFeatureFlag()); // 算子粒度
             } else {
                 // 待修改: 仅支持 P2P 和 RDMA 申请 notify
