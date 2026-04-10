@@ -50,38 +50,22 @@
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm/ccu" dst_path="pkg_inc/hcomm/ccu" install_path="$(TARGET_ENV)/pkg_inc/hcomm/ccu" install_type="devel" install_mod="440">
         <file value="ccu_assist_pub.h"/>
-        <file value="ccu_common.h"/>
-        <file value="ccu_condition_v1.h"/>
-        <file value="ccu_kernel_resource.h"/>
-        <file value="ccu_datatype_v1.h"/>
-        <file value="ccu_funccall_v1.h"/>
-        <file value="ccu_instr_info_v1.h"/>
-        <file value="ccu_interface_assist_v1.h"/>
-        <file value="ccu_kernel_arg.h"/>
-        <file value="ccu_kernel_signature.h"/>
-        <file value="ccu_kernel.h"/>
-        <file value="ccu_loopblock_v1.h"/>
-        <file value="ccu_loopcall_v1.h"/>
-        <file value="ccu_loopgroupcall_v1.h"/>
-        <file value="ccu_microcode_v1.h"/>
-        <file value="ccu_operator_v1.h"/>
-        <file value="ccu_rep_arg_v1.h"/>
-        <file value="ccu_rep_base_v1.h"/>
-        <file value="ccu_rep_block_v1.h"/>
-        <file value="ccu_rep_context_v1.h"/>
-        <file value="ccu_rep_funcblock_v1.h"/>
-        <file value="ccu_rep_funccall_v1.h"/>
-        <file value="ccu_rep_jump_v1.h"/>
-        <file value="ccu_rep_jumplabel_v1.h"/>
-        <file value="ccu_rep_loopblock_v1.h"/>
-        <file value="ccu_rep_loopcall_v1.h"/>
-        <file value="ccu_rep_reference_manager_v1.h"/>
-        <file value="ccu_rep_type_v1.h"/>
-        <file value="ccu_repeat_v1.h"/>
-        <file value="ccu_res_repo.h"/>
-        <file value="ccu_task_arg_v1.h"/>
-        <file value="ccu_task_param_v1.h"/>
-        <file value="hccl_ccu_res.h"/>
+    </file_info>
+    <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm/ccu_new" dst_path="pkg_inc/hcomm/ccu_new" install_path="$(TARGET_ENV)/pkg_inc/hcomm/ccu_new" install_type="devel" install_mod="440">
+        <file value="ccu_address.hpp"/>
+        <file value="ccu_api.hpp"/>
+        <file value="ccu_buffer.hpp"/>
+        <file value="ccu_control_api.h"/>
+        <file value="ccu_data_api_impl.h"/>
+        <file value="ccu_data_api.h"/>
+        <file value="ccu_data_resource.h"/>
+        <file value="ccu_data_utils.hpp"/>
+        <file value="ccu_event.hpp"/>
+        <file value="ccu_local_addr.hpp"/>
+        <file value="ccu_loop_macro.h"/>
+        <file value="ccu_remote_addr.hpp"/>
+        <file value="ccu_types.h"/>
+        <file value="ccu_variable.hpp"/>
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/pkg_inc/hcomm" dst_path="pkg_inc/hcomm" install_path="$(TARGET_ENV)/pkg_inc/hcomm" install_type="devel" install_mod="440">
         <file value="hcomm_primitives_expt.h"/>
