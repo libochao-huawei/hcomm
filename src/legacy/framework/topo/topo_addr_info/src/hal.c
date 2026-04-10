@@ -9,6 +9,7 @@
  */
 #include "hal.h"
 #include <stdio.h>
+#include <time.h>
 #include <dlfcn.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -30,6 +31,9 @@
 #define DRIVER_DRFAULT_INSTALL_PATH "/usr/local/Ascend"
 #define DRIVER_TOPO_FILE_DIR_PATH "driver/topo/950"
 #define MAX_TOPO_FILENAME_LEN   (64)
+
+#define HAL_TURE  (1)
+#define HAL_FALSE (0)
 
 enum dcmi_main_cmd {
     DCMI_MAIN_CMD_DVPP = 0,
@@ -81,25 +85,43 @@ static int (*dcmiv2_get_device_info)(int npu_id, enum dcmi_main_cmd main_cmd, un
 
 static int (*get_logicid_from_phyid)(unsigned int phy_id, unsigned int* logic_id);
 
+void* hal_dlopen(const char *filename, int flag)
+{
+    return dlopen(filename, flag);
+}
+
+void* hal_dlsym(void *handle, const char *symbol)
+{
+    return dlsym(handle, symbol);
+}
+
 int load_dcmi()
 {
     static void* dcmi = NULL;
+    static volatile int isInit = HAL_FALSE;
+    const int maxWaitTime = 10;
     if (dcmi != NULL) {
+        for (int i = 0; i < maxWaitTime; i++) {
+            if (isInit == HAL_TURE) {
+                return 0;
+            }
+            sleep(1);
+        }
         return 0;
     }
     if(dcmi == NULL) {
-        dcmi=dlopen("libdcmi.so", RTLD_LAZY);
+        dcmi=hal_dlopen("libdcmi.so", RTLD_LAZY);
     }
     if(dcmi == NULL) {
         return -1;
     }
-    dcmi_init = dlsym(dcmi, "dcmiv2_init");
-    dcmiv2_get_urma_device_cnt = dlsym(dcmi, "dcmiv2_get_urma_device_cnt");
-    dcmiv2_get_eid_list_by_urma_dev_index = dlsym(dcmi, "dcmiv2_get_eid_list_by_urma_dev_index");
-    dcmiv2_get_mainboard_id = dlsym(dcmi, "dcmiv2_get_mainboard_id");
-    dcmiv2_get_device_pcie_info = dlsym(dcmi, "dcmiv2_get_device_pcie_info");
-    dcmiv2_get_device_info = dlsym(dcmi, "dcmiv2_get_device_info");
-    get_logicid_from_phyid = dlsym(dcmi, "dcmiv2_get_dev_id_from_chip_phyid");
+    dcmi_init = hal_dlsym(dcmi, "dcmiv2_init");
+    dcmiv2_get_urma_device_cnt = hal_dlsym(dcmi, "dcmiv2_get_urma_device_cnt");
+    dcmiv2_get_eid_list_by_urma_dev_index = hal_dlsym(dcmi, "dcmiv2_get_eid_list_by_urma_dev_index");
+    dcmiv2_get_mainboard_id = hal_dlsym(dcmi, "dcmiv2_get_mainboard_id");
+    dcmiv2_get_device_pcie_info = hal_dlsym(dcmi, "dcmiv2_get_device_pcie_info");
+    dcmiv2_get_device_info = hal_dlsym(dcmi, "dcmiv2_get_device_info");
+    get_logicid_from_phyid = hal_dlsym(dcmi, "dcmiv2_get_dev_id_from_chip_phyid");
 
     if ((dcmi_init == NULL)
      || (dcmiv2_get_urma_device_cnt == NULL)
@@ -109,6 +131,7 @@ int load_dcmi()
         return -1;
     }
     (void)dcmi_init(); //  dcmi_init可能已经调用过了
+    isInit = HAL_TURE;
     return 0;
 }
 

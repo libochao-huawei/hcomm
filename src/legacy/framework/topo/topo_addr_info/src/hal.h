@@ -96,6 +96,12 @@ int get_server_id(char* server_id, size_t buf_size);
 
 int hal_get_driver_install_path(char *value_buf, size_t buf_size);
 
+/**
+ * 添加一层适配，便于测试
+ */
+void *hal_dlopen(const char *filename, int flag);
+void *hal_dlsym(void *handle, const char *symbol);
+
 #ifdef __cplusplus
 }
 #endif

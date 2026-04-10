@@ -69,7 +69,7 @@ std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId
 
     if (links.empty()) {
         THROW<InvalidParamsException>(
-            StringFormat("[RankGraphBuilder][GetPhyLink] SourceNode localId[%d] Edge not exist.", localId));
+            StringFormat("[RankGraphBuilder][GetPhyLink] SourceNode localId[%d] edge does not exist.", localId));
     }
     return links;
 }
@@ -566,7 +566,7 @@ std::vector<std::shared_ptr<PhyTopo::Link>> GetPeer2PeerPhyLinks(std::shared_ptr
     });
     if (links.empty()) {
         HCCL_WARNING(
-            "[RankGraphBuilder][GetPeer2PeerPhyLinks] srcLocalId[%u] dstLocalId[%u] edge not exist.", srcLocalId, dstLocalId);
+            "[RankGraphBuilder][GetPeer2PeerPhyLinks] srcLocalId[%u] dstLocalId[%u] edge does not exist.", srcLocalId, dstLocalId);
     }
     return links;
 }
