@@ -24,6 +24,7 @@
 
 #define AIV_ALL_TO_ALL_KERNEL_DEF(type) \
 __aicore__ inline void aiv_all_to_all_##type##_inner(KERNEL_ARGS_DEF) { \
+    AIV_INFO_HINT; \
     if (devType == DEV_TYPE_910_93 && serverNum > 1) { \
         if (isOpBase) { \
             return aiv_all_to_all_91093<type>(KERNEL_ARGS_CALL); \

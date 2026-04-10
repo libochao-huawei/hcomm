@@ -18,7 +18,6 @@ namespace hccl {
 constexpr u64 PLF_ALG = 0x1ULL << 0;
 constexpr u64 PLF_TASK = 0x1ULL << 1;
 constexpr u64 PLF_RES = 0x1ULL << 2;
-constexpr u64 PLF_AIV_OPS_EXC = 0x1ULL << 3;
 }
 
 // config要求传入宏名字作为日志打印关键字，不可以传入其他变量或常量

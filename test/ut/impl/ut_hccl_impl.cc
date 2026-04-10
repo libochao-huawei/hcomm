@@ -1793,6 +1793,7 @@ TEST_F(HcclImplTest, ut_hcclImpl_run_fast_double_ring_for_910_93_executer_by_all
     HcclCommParams params;
     RankTable_t rankTable;
     setenv("HCCL_ALGO", "level0:ring", 1);
+    setenv("HCCL_DEBUG_CONFIG", "AIV_OPS_EXC", 1);
     ret = InitEnvVarParam();
     TestConstructParam_1server_4p(params, rankTable);
     params.deviceType = DevType::DEV_TYPE_910_93;

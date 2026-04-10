@@ -447,6 +447,7 @@ TEST_F(CommInitTest, ut_InitEnvConfig)
 {
     setenv("HCCL_RDMA_TC", "120", 1);
     setenv("HCCL_RDMA_SL", "2", 1);
+    setenv("HCCL_DEBUG_CONFIG", "AIV_OPS_EXC", 1);
 
     HcclResult ret = HCCL_SUCCESS;
     ret = InitEnvParam();
@@ -454,6 +455,7 @@ TEST_F(CommInitTest, ut_InitEnvConfig)
 
     unsetenv("HCCL_RDMA_TC");
     unsetenv("HCCL_RDMA_SL");
+    unsetenv("HCCL_DEBUG_CONFIG");
 }
 
 TEST_F(CommInitTest, ut_device_CheckDeviceType_Error)
