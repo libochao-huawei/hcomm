@@ -668,9 +668,7 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
     auto startTime = std::chrono::steady_clock::now();
     auto waitTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(timeout));
     while (true) {
-        HCCL_INFO("[HostCpuRoceChannel::NotifyWait] start to poll cq, qp_state = [%u]", qpInfo[0].qp->state);
         auto actualNum = ibv_poll_cq(qpInfo[0].recvCq, 1, &wc);
-        HCCL_INFO("[HostCpuRoceChannel::NotifyWait] actualNum = %d; imm_data = %u", actualNum, wc.imm_data);
         CHK_PRT_RET(actualNum < 0, HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq err. actualNum=%d", __func__, actualNum),
                     HCCL_E_NETWORK);
 
