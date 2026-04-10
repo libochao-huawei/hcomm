@@ -29,7 +29,7 @@ public:
 
     void Algorithm() override;
     std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) override;
-    static void RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args);
+    static void RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args, u32 myRank);
 
 protected:
     // a2a 对每个对端的发送接收信息
@@ -41,7 +41,7 @@ protected:
         GroupOpSize      tailGoSize;
     };
     void CreateVariables();
-    void LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo);
+    void LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo, const uint64_t rankIdx);
     void LoadArgs();
     void PreSync();
     void PostSync();
