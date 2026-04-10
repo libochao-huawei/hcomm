@@ -985,6 +985,8 @@ HcclResult HostCpuRoceChannel::ChannelFence()
                 break; // 所有的wqe都已经完成，退出循环
             }
             startTime = std::chrono::steady_clock::now(); // 有进展，重置超时计时
+            HCCL_INFO("[HostCpuRoceChannel::%s] partial CQE completed[%u], remaining wqeNum[%u].",
+                __func__, actualNum32, wqeNum_);
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
