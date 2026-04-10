@@ -21,8 +21,6 @@
 // 暂时引入orion
 #include "local_ub_rma_buffer.h"
 
-#include "comm_mems.h"
-
 namespace hcomm {
 
 CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
@@ -32,11 +30,11 @@ CcuUrmaChannel::CcuUrmaChannel(const EndpointHandle locEndpointHandle,
 {
 }
 
-HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
+HcclResult BuildBufferInfos(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<CcuTransport::CclBufferInfo> &bufferInfos)
 {
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
+        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
         CHK_PTR_NULL(locMemInfo);
         auto locRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(locMemInfo->bufferHandle);
         CHK_PTR_NULL(locRmaBuffer);
@@ -50,18 +48,18 @@ HcclResult BuildBufferInfos(void **memHandles, uint32_t memHandleNum,
         }
         CHK_SAFETY_FUNC_RET(memcpy_s(memTag.data(), memTag.size(), tag.c_str(), tag.size()));
         bufferInfos.emplace_back(
-            reinterpret_cast<uintptr_t>(locMemInfo->addr),
-            static_cast<uint32_t>(locMemInfo->size),
+            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr),
+            static_cast<uint32_t>(locMemInfo->mem.size),
             locRmaBuffer->GetTokenId(),
             locRmaBuffer->GetTokenValue(),
-            locMemInfo->memType,
+            locMemInfo->mem.type,
             memTag);
     }
     return HCCL_SUCCESS;
 }
 
 static HcclResult CreateCcuTransport(UrmaEndpoint *ccuEndpoint,
-    const Hccl::LinkData &linkData, Hccl::Socket *socket, void **memHandles,
+    const Hccl::LinkData &linkData, Hccl::Socket *socket, HcommMemHandle *memHandles,
     uint32_t memHandleNum, std::unique_ptr<CcuTransport> &impl)
 {
     HCCL_INFO("[CcuUrmaChannel][%s] begin", __func__);
@@ -153,6 +151,11 @@ HcclResult CcuUrmaChannel::Init()
     auto linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(locEndpointDesc, channelDesc_.remoteEndpoint, linkData));
 
+    if (channelDesc_.memHandleNum == 0) {
+        HCCL_ERROR("[CcuUrmaChannel][%s] failed, unsupport memHandleNum[%u].",
+            __func__, channelDesc_.memHandleNum);
+        return HcclResult::HCCL_E_NOT_SUPPORT;
+    }
     CHK_PTR_NULL(channelDesc_.memHandles);
 
     // 当前建链不支持资源扩容，CCU资源默认固定为16
@@ -302,5 +305,12 @@ HcclResult CcuUrmaChannel::Resume()
 HcclResult CcuUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***memTag, uint32_t *memNum)
 {
     return impl_->GetUserRemoteMem(remoteMem, memTag, memNum);
+}
+
+HcclResult CcuUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
+{
+    std::vector<CcuTransport::CclBufferInfo> bufferVecTemp{};
+    CHK_RET(BuildBufferInfos(memHandles, memHandleNum, bufferVecTemp));
+    return impl_->UpdateMemInfo(bufferVecTemp);
 }
 }  // namespace hcomm

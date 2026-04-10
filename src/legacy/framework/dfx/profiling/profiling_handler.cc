@@ -963,7 +963,7 @@ void ProfilingHandler::ReportHcclMC2CommInfo(const Stream &kfcStream, Stream &st
         }
     }
     if (aicpuStreams.empty()) {
-        HCCL_INFO("only exist main stream, streamId:%u", stream.GetSqId());
+        HCCL_INFO("only exist main stream, streamId(sqId):%u", stream.GetSqId());
         hcclMc2Info.commStreamIds[0] = stream.GetSqId();
         hcclMc2Info.commStreamSize   = 1; // 只有主流1条
         ReportMc2AddtionInfo(DlProfFunction::GetInstance().dlMsprofSysCycleTime(), &hcclMc2Info, sizeof(hcclMc2Info));
