@@ -96,8 +96,10 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
             } else if (Is2DieFullMesh()) {
                 HCCL_WARNING("[Algo][AllGatherAutoSelector] 2DieFullMesh is not supported yet for schedule mode.");
                 return SelectorStatus::NOT_MATCH;
+            } else if(IsSmallDataCCU(dataSize_, rankSize_)){
+                    primQueueGenName = "CcuAllGatherParallelMesh1DNHR";//64M以下跑ccu
             } else {
-                primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
+                return SelectorStatus::NOT_MATCH;//64M以上切为aicpu
             }
         } else {
             HCCL_WARNING("[Algo][AllGatherAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
@@ -121,8 +123,10 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
             } else if (topoInfo.level0PcieMix) {
                 HCCL_WARNING("[Algo][AllGatherAutoSelector] level0 PCIE mix is not supported yet for ccu schedule mode.");
                 return SelectorStatus::NOT_MATCH;
+            } else if(IsSmallDataCCU(dataSize_, rankSize_)){
+                primQueueGenName = "CcuAllGatherParallelMesh1DNHR";//64M以下跑ccu
             } else {
-                primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
+                return SelectorStatus::NOT_MATCH;//64M以上切为aicpu
             }
         } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
             HCCL_WARNING("[Algo][AllGatherAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
