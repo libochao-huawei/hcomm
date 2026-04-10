@@ -565,6 +565,8 @@ if [ "${COV}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=ON"
 fi
 
+CUSTOM_OPTION="${CUSTOM_OPTION} -DASCENDC_DUMP=0" # AIV算子调测阶段可配置为1以打开AscendC打印功能
+
 if [ -n "${ascend_package_path}" ];then
     ASCEND_CANN_PACKAGE_PATH=${ascend_package_path}
 elif [ -n "${ASCEND_HOME_PATH}" ];then

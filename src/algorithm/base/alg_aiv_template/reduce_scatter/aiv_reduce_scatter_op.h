@@ -32,6 +32,7 @@
 
 #define AIV_REDUCE_SCATTER_KERNEL_DEF(type) \
 __aicore__ inline void aiv_reduce_scatter_##type##_inner(KERNEL_ARGS_DEF) { \
+    AIV_INFO_HINT; \
     if (devType == DEV_TYPE_910B && deterministic == 1) { \
         if (rankSize * len * sizeof(type) < AIV_REDUCE_SCATTER_DETER_SMALL_SIZE) { \
             return aiv_reduce_scatter_deter_910b_smalldata<type>(KERNEL_ARGS_CALL); \
@@ -64,6 +65,7 @@ __aicore__ inline void aiv_reduce_scatter_##type##_inner(KERNEL_ARGS_DEF) { \
 
 #define AIV_REDUCE_SCATTER_KERNEL_DEF_A3(type) \
 __aicore__ inline void aiv_reduce_scatter_cn_##type##_inner(KERNEL_ARGS_DEF_A3) { \
+    AIV_INFO_HINT; \
     if (deterministic == 1){ \
         return aiv_reduce_scatter_91093_deter<type>(KERNEL_ARGS_CALL_A3); \
     } \
