@@ -780,7 +780,6 @@ int32_t HcommBatchModeEnd(const char *batchTag)
 
 int32_t HcommAcquireComm(const char* commId)
 {
-    HCCL_ERROR("hcommAcquireCommcommId, commId[%s]", commId);
     CHK_PTR_NULL(commId);
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
@@ -797,7 +796,6 @@ int32_t HcommAcquireComm(const char* commId)
 
 HcclResult HcclCommGetStatus(const char* commId, HcclCommStatus *status)
 {
-    HCCL_ERROR("hcommHcclCommGetStatuscommId, commId[%s]", commId);
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(status);
     *status = HcclCommStatus::HCCL_COMM_STATUS_READY;

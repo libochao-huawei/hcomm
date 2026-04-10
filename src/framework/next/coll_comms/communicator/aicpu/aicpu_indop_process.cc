@@ -97,7 +97,6 @@ HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 
 CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &group)
 {
-    HCCL_ERROR("[AicpuGetCommbyGroup]hcommAicpuGetCommMgrbyGroupcommId comm group [%s] has been used",group.c_str());
     auto startTime = std::chrono::steady_clock::now();
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
     constexpr u32 pollTimeoutMs = 10000; // 轮询超时时间10ms //临时规避host侧在临时流下发kernel获取锁超时的问题
