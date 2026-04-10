@@ -65,13 +65,13 @@ void CcuContextReduceScatterMesh1D::Algorithm()
             transportIdx++;
         }
     }
-    offSet_ = CreateVariable();
+    offset_ = CreateVariable();
     groupOpSize_ = CreateGroupOpSize();
 
     Load(input_[rankId_]);
     Load(output_[0]);
     Load(token_[rankId_]);
-    Load(offSet_);
+    Load(offset_);
     Load(groupOpSize_);
     for (auto t : transports) {
         WriteVariableWithSignal(*t, input_[rankId_], INPUT_XN_ID, CKE_IDX_1, selfBit); // index = 1，传递output信息
@@ -97,7 +97,7 @@ void CcuContextReduceScatterMesh1D::Algorithm()
             curId = rankSize_ - 1;
         }
         src[curId].addr = input_[rankIdx];
-        src[curId].addr += offSet_;
+        src[curId].addr += offset_;
         src[curId].token = token_[rankIdx];
     }
 
@@ -120,7 +120,7 @@ std::vector<uint64_t> CcuContextReduceScatterMesh1D::GeneArgs(const CcuTaskArg &
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
-    uint64_t offset     = taskArg->offSet_;
+    uint64_t offset     = taskArg->offset_;
     uint64_t sliceSize  = taskArg->sliceSize_;
     auto     goSize     = CalGoSize(sliceSize);
     return {inputAddr, outputAddr, tokenInfo, offset, goSize[0], goSize[1], goSize[2], goSize[3]};

@@ -99,6 +99,7 @@ void CcuContextReduceMeshMem2Mem1D::InitResource()
     locMask_              = CreateMaskSignal();
     localGoSize_          = CreateGroupOpSize();
     chunkOffset_          = CreateVariable();
+    AllocGoResource(CCU_MS_LOCAL_COPY_LOOP_COUNT, LOCAL_COPY_MS_PER_LOOP);
 }
 
 void CcuContextReduceMeshMem2Mem1D::LoadArgs()

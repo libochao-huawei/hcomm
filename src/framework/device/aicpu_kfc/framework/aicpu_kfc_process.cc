@@ -1823,7 +1823,7 @@ u32 AicpuKfcProcess::AicpuRunRpcServerForMC2(KFCTaskV2 *task)
     std::vector<u32> groupIds{};
     for (int i = 0; i < static_cast<int>(task->ctxNum); i++) {
         commParam[i] = reinterpret_cast<HcclOpResParam *>(task->context[i]);
-        CHK_RET(PrepareHcommInstance(commParam[i]));
+        CHK_RET(static_cast<HcclResult>(PrepareHcommInstance(commParam[i])));
         groupIds.emplace_back(GetComGroupIdx(commParam[i]->hcomId));
     }
     HcclResult ret = RunRpcServerApiV2(reinterpret_cast<void *>(task->tilingData), groupIds);

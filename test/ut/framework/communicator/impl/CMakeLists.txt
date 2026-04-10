@@ -8,4 +8,5 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(independent_op)
+add_subdirectory(one_sided_service)
 add_subdirectory(symmetric_memory)

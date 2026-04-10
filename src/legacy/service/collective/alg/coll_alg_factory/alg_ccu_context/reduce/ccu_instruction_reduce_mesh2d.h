@@ -45,16 +45,16 @@ public:
 class CcuTaskArgReduceMesh2D : public CcuTaskArg {
 public:
     explicit CcuTaskArgReduceMesh2D(uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize,
-        uint64_t xAxisSize, uint64_t yAxisSize, uint64_t offSet, uint64_t token) :
+        uint64_t xAxisSize, uint64_t yAxisSize, uint64_t offset, uint64_t token) :
         inputAddr_(inputAddr), outputAddr_(outputAddr), sliceSize_(sliceSize), xAxisSize_(xAxisSize), yAxisSize_(yAxisSize),
-        offSet_(offSet), token_(token) {}
+        offset_(offset), token_(token) {}
 
     uint64_t inputAddr_;
     uint64_t outputAddr_;
     uint64_t sliceSize_;
     uint64_t xAxisSize_;
     uint64_t yAxisSize_;
-    uint64_t offSet_;
+    uint64_t offset_;
     uint64_t token_;
 };
 
@@ -65,7 +65,7 @@ public:
     }
 
     void Init(std::vector<uint64_t> dimSize, uint32_t rankId, uint32_t rootId, uint64_t axisId, uint64_t inputAddr, uint64_t outputAddr, uint64_t sliceSize, uint64_t xAxisSize,
-        uint64_t yAxisSize, uint64_t offSet, uint64_t token, CollAlgOperator &op, std::vector<std::vector<RankId>> &tempVTopo)
+        uint64_t yAxisSize, uint64_t offset, uint64_t token, CollAlgOperator &op, std::vector<std::vector<RankId>> &tempVTopo)
     {
         dimSize_ = dimSize;
         rankId_ = rankId;
@@ -76,7 +76,7 @@ public:
         sliceSize_ = sliceSize;
         xAxisSize_ = xAxisSize;
         yAxisSize_ = yAxisSize;
-        offSet_ = offSet;
+        offset_ = offset;
         token_ = token;
         op_ = op;
         tempVTopo_ = tempVTopo;
@@ -109,7 +109,7 @@ public:
     {
         HCCL_INFO("[CcuInstructionReduceMesh2D] GetTaskArg begin");
         return std::make_unique<CcuTaskArgReduceMesh2D>(inputAddr_, outputAddr_, sliceSize_, xAxisSize_,
-            yAxisSize_, offSet_, token_);
+            yAxisSize_, offset_, token_);
     }
 
 private:
@@ -118,7 +118,7 @@ private:
     uint32_t rankId_{0};
     uint32_t rootId_{0};
     uint64_t axisId_{0};
-    uint64_t offSet_{0};
+    uint64_t offset_{0};
     uint64_t token_{0};
     uint64_t inputAddr_{0};
     uint64_t outputAddr_{0};

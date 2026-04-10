@@ -25,7 +25,8 @@ namespace Hccl {
 class DevUbConnection : public RmaConnection {
 public:
     DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                    const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
+                    const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
+                    const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
     void          Connect() override;
     RmaConnStatus GetStatus() override;
     bool          Suspend() override;
@@ -98,6 +99,8 @@ private:
     IpAddress    rmtAddr{};
     OpMode       opMode{OpMode::OPBASE};
     HrtUbJfcMode jfcMode{HrtUbJfcMode::STARS_POLL};
+    IpAddress    locIpv4Addr{};
+    IpAddress    rmtIpv4Addr{};
     u32          tokenValue{GetUbToken()};
     Eid          rmtEid{};
     Eid          locEid{};
@@ -162,18 +165,30 @@ private:
     
     std::unique_ptr<BaseTask> ConstructTaskUbSend(const HrtRaUbSendWrRespParam &sendWrResp, const SqeConfig &config);
     void                      UpdateCiVal(u32 ci);
+    HcclResult                SetTpAttrAsync();
+    HcclResult                GetTpAttrAsync();
+    HcclResult                Ipv4ToIpArray(const char *ipv4Str, uint8_t ipArr[16U]);
 };
 
 class DevUbTpConnection : public DevUbConnection {
 public:
     DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                      const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
+                      const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
+                      const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
 };
 
 class DevUbCtpConnection : public DevUbConnection {
 public:
     DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
+                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
+                       const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
+};
+
+class DevUbUboeConnection : public DevUbConnection {
+public:
+    DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
+                        const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
+                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress());
 };
 
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);

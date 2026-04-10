@@ -93,6 +93,7 @@ static HcclResult ConvertToNetDevInfo(const HcclNetDevInfos &src, Hccl::NetDevIn
 HcclResult HcclNetDevOpenV2(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
     CHK_PTR_NULL(info);  
+    CHK_PTR_NULL(netDev);
 
     Hccl::NetDevInfo pltInfo;
     HcclResult ret = ConvertToNetDevInfo(*info, pltInfo);
@@ -114,11 +115,13 @@ HcclResult HcclNetDevOpenV2(const HcclNetDevInfos *info, HcclNetDev *netDev)
         return ret;
     }
     *netDev = static_cast<HcclNetDev>(hcclNetDev);
+    HCCL_INFO("HcclNetDevOpenV2: successfully opened netDev[%p]!", *netDev);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclNetDevCloseV2(HcclNetDev netDev)
 {
+    HCCL_INFO("[HcclNetDevCloseV2] netDev[%p].", netDev);
     CHK_PTR_NULL(netDev);
     Hccl::InnerNetDevManager *netDevMgr = &Hccl::InnerNetDevManager::GetInstance();
     CHK_PTR_NULL(netDevMgr);
@@ -135,9 +138,15 @@ HcclResult HcclNetDevGetAddrV2(const HcclNetDev netDev, HcclAddress *addr)
     if (ipAddr.GetFamily() == AF_INET) {
         addr->type = HCCL_ADDR_TYPE_IP_V4;
         addr->addr = ipAddr.GetBinaryAddress().addr;
+        unsigned char *ipv4Addr = reinterpret_cast<unsigned char*>(&addr->addr);
+        HCCL_DEBUG("IPv4 Address: %d.%d.%d.%d", ipv4Addr[0], ipv4Addr[1], ipv4Addr[2], ipv4Addr[3]);
     } else if (ipAddr.GetFamily() == AF_INET6) {
         addr->type  = HCCL_ADDR_TYPE_IP_V6;
         addr->addr6 = ipAddr.GetBinaryAddress().addr6;
+        unsigned short *ipv6Addr = reinterpret_cast<unsigned short*>(&addr->addr6);
+        HCCL_DEBUG("IPv6 Address: %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
+                    ipv6Addr[0], ipv6Addr[1], ipv6Addr[2], ipv6Addr[3],
+                    ipv6Addr[4], ipv6Addr[5], ipv6Addr[6], ipv6Addr[7]);
     } else {        
         HCCL_ERROR("HcclNetDevGetAddrV2 fail, devPhyId[%u]",
                            static_cast<HcclNetDevice *>(netDev)->GetNetDevInfo().devId);
@@ -150,6 +159,7 @@ HcclResult HcclNetDevGetBusAddrV2(HcclDeviceId dstDevId, HcclAddress *busAddr)
 {
     (void)dstDevId;
     (void)busAddr;
+    HCCL_ERROR("HcclNetDevGetBusAddrV2: failed to get bus address for device[%d], busAddr[%p].", dstDevId, busAddr);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -158,5 +168,7 @@ HcclResult HcclNetDevGetNicAddrV2(int32_t devicePhyId, HcclAddress **addr, uint3
     (void)devicePhyId;
     (void)addr;
     (void)addrNum;
+    HCCL_ERROR("HcclNetDevGetNicAddrV2: failed to get NIC address for devicePhyId[%d], addr[%p], addrNum[%p].",
+                devicePhyId, addr, addrNum);
     return HCCL_E_NOT_SUPPORT;
 }

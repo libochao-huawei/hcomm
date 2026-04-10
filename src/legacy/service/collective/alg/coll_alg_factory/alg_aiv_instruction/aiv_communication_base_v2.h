@@ -31,6 +31,7 @@ constexpr uint64_t AIV_TAG_MOVE_RIGHT_BITS = 16;
 constexpr uint64_t LOW_16_BITS = 0xFFFF;
 constexpr uint32_t AIV_FLAG_CLEAR_OFFSET = 1040 * 1024;
 constexpr uint32_t BATCH_SEND_RECV_ITEM_SIZE = 16; // 注意要和host侧的BATCH_SEND_RECV_ITEM_SIZE保持一致
+constexpr uint64_t DATA_LIMIT = 512 * 1024;
 
 typedef enum {
     HCCL_SEND = 0,

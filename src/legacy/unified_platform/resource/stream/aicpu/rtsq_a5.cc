@@ -72,7 +72,7 @@ void RtsqA5::MakeSureAvailableSpace()
     auto                       timeout = std::chrono::seconds(timeoutValue);
     const std::chrono::seconds printInterval(PRINT_INTERVAL); // 打印间隔30s
     auto                       lastPrintTime = std::chrono::steady_clock::now() - printInterval;
-    HCCL_INFO("RtsqA5::%s timeout: %u, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
+    HCCL_INFO("RtsqA5::%s timeout: %u s, cur head: %u, tail: %u, sqId: %u", __func__, timeoutValue, sqHead_, sqTail_,
               sqId_);
 
     HCCL_INFO("RtsqA5::%s start", __func__);
@@ -198,9 +198,14 @@ void RtsqA5::RefreshInfo()
 
 void RtsqA5::NotifyWait(u32 notifyId)
 {
-    BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, GetCurrSqeBuffer());
+    NotifyWait(notifyId, GetKernelExecTimeoutFromEnvConfig());
+}
+
+void RtsqA5::NotifyWait(u32 notifyId, u32 timeout)
+{
+    BuildA5SqeNotifyWait(streamId_, taskId_, notifyId, timeout, GetCurrSqeBuffer());
     HCCL_INFO("RtsqA5::NotifyWait: notifyWait Sqe: %s", Bytes2hex(GetCurrSqeBuffer(), rtsqSqeSize).c_str());
-    HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u", streamId_, taskId_, notifyId);
+    HCCL_INFO("RtsqA5::NotifyWait: streamId %u, taskId %u, notifyId %u, timeout %u", streamId_, taskId_, notifyId, timeout);
     RefreshInfo();
 }
 

@@ -34,7 +34,7 @@ CcuDriverHandle::~CcuDriverHandle()
         CtxMgrImp::GetInstance(devLogicId).Deinit();
         CcuResBatchAllocator::GetInstance(devLogicId).Deinit();
         CcuComponent::GetInstance(devLogicId).Deinit();
-        CcuResSpecifications::GetInstance(devLogicId).Reset();
+        CcuResSpecifications::GetInstance(devLogicId).Deinit();
         // 关闭ccu驱动通道
         auto tlvHandle = HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId);
         HrtRaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_UNINIT);
@@ -52,6 +52,7 @@ HcclResult CcuDriverHandle::Init() const
         return HCCL_E_UNAVAIL;
     }
 
+    CcuResSpecifications::GetInstance(devLogicId).Init();
     CcuComponent::GetInstance(devLogicId).Init();
     CcuResBatchAllocator::GetInstance(devLogicId).Init();
     CtxMgrImp::GetInstance(devLogicId).Init();

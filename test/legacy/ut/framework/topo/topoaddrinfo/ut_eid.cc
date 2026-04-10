@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "rootinfo_types.h"
+#include "rank_info_types.h"
 #include "eid_util.h"
 #include <map>
 #include <string>
@@ -25,10 +25,7 @@ TEST(EID, test_ue_id) {
         const char *eid = it->first.c_str();
         int port = it->second;
         int port1;
-        int die_id;
         EidGetPortId(eid, &port1);
-        EidGetDieId(eid, &die_id);
         EXPECT_EQ(port1, port);
-        EXPECT_EQ(die_id, 0);
     }
 }

@@ -75,8 +75,10 @@ uint32_t CcuTempBroadcastNHRMem2Mem1D::virtRankId2RankId(const uint32_t virtRank
 HcclResult CcuTempBroadcastNHRMem2Mem1D::GenExtIns(const TempFuncs &tempFuncs, TemplateDataParams &tempAlgParams,
                                                 const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempBroadcastNHRMem2Mem1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
-
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 

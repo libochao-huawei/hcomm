@@ -37,6 +37,8 @@ extern "C" {
  */
 extern HcclResult CommFence(ThreadHandle thread, ChannelHandle channel);
 
+extern int32_t HcommFlush();
+
 /** @} */  // 同步
 /** @} */  // 本地操作接口
 

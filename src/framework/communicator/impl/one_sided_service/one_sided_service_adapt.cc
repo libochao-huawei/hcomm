@@ -422,6 +422,7 @@ HcclResult HcclBatchPut(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, 
 {
     EXCEPTION_HANDLE_BEGIN
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            CHK_PTR_NULL(comm);
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
             HcclComm commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);
@@ -464,6 +465,7 @@ HcclResult HcclBatchGet(HcclComm comm, u32 remoteRank, HcclOneSideOpDesc* desc, 
 {
     EXCEPTION_HANDLE_BEGIN
         HCCLV2_FUNC_RUN([&]() -> HcclResult {
+            CHK_PTR_NULL(comm);
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
             HcclComm commV2 = hcclComm->GetCommunicatorV2();
             CHK_PTR_NULL(commV2);

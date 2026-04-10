@@ -34,7 +34,7 @@ HcclResult EngineCtxs::CreateCommEngineCtx(const std::string &tag, CommEngine en
             __func__, tag.c_str(), engine), HCCL_E_PARA);
     }
 
-    CHK_RET(HcommEngineCtxCreate(engine, size, ctx));
+    CHK_RET(static_cast<HcclResult>(HcommEngineCtxCreate(engine, size, ctx)));
     contextMap_[tag][engine] = {HCCL_MEM_TYPE_NUM, *ctx, size}; // type不需要使用
     HCCL_INFO("[%s]create context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;
@@ -44,20 +44,23 @@ HcclResult EngineCtxs::GetCommEngineCtx(const std::string &tag, CommEngine engin
 {
     std::lock_guard<std::mutex> lock(mutex_); 
     // Ctx未创建返回
-    if (contextMap_.find(tag) == contextMap_.end()) {
+    const auto &tagIter = contextMap_.find(tag);
+    if (tagIter == contextMap_.end()) {
         HCCL_INFO("[%s] not exist a context with tag[%s]", __func__, tag.c_str());
-        return HCCL_E_PARA;
-    } else {
-        auto engineCtxMap = contextMap_[tag];
-        if (engineCtxMap.find(engine) == engineCtxMap.end()) {
-            HCCL_INFO("[%s] not exist a context with tag[%s], engine[%d]", __func__, tag.c_str(), engine);
-            return HCCL_E_PARA;
-        }
+        return HCCL_E_NOT_FOUND;
     }
 
-    *ctx = contextMap_[tag][engine].addr;
-    *size = contextMap_[tag][engine].size;
-    HCCL_INFO("[%s]get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);    
+    const auto &engineCtxMap = tagIter->second;
+    const auto &engineIter = engineCtxMap.find(engine);
+    if (engineIter == engineCtxMap.end()) {
+        HCCL_INFO("[%s] not exist a context with tag[%s], engine[%d]", __func__, tag.c_str(), engine);
+        return HCCL_E_NOT_FOUND;
+    }
+
+    const auto &ctxRes = engineIter->second;
+    *ctx = ctxRes.addr;
+    *size = ctxRes.size;
+    HCCL_INFO("[%s] get context success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;
 }
 
@@ -71,7 +74,8 @@ HcclResult EngineCtxs::CopyCommEngineCtx(const std::string &tag, CommEngine engi
         HCCL_ERROR("[%s]Copy engine ctx failed: buffer overflow detected. tag[%s], engine[%d], "
                     "dstSize[%llu], dstCtxOffset[%llu], copySize[%llu]",
                     __func__, tag.c_str(), engine, dstSize, dstCtxOffset, size), HCCL_E_PARA);
-    CHK_RET(HcommEngineCtxCopy(engine, reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, srcCtx, size)); // 增加大小判断，增加强转
+    CHK_RET(static_cast<HcclResult>(HcommEngineCtxCopy(
+        engine, reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, srcCtx, size))); // 增加大小判断，增加强转
     HCCL_INFO("[%s]copy engine ctx success, tag[%s], engine[%d]", __func__, tag.c_str(), engine);
     return HCCL_SUCCESS;
 }
@@ -91,7 +95,7 @@ HcclResult EngineCtxs::DestroyEngineCtx(const std::string &tag, CommEngine engin
     }
     // 获取内存信息
     HcclMem& memInfo = engineCtxMap[engine];
-    CHK_RET(HcommEngineCtxDestroy(engine, memInfo.addr));
+    CHK_RET(static_cast<HcclResult>(HcommEngineCtxDestroy(engine, memInfo.addr)));
     // 从映射中移除
     engineCtxMap.erase(engine);
     if (engineCtxMap.empty()) {

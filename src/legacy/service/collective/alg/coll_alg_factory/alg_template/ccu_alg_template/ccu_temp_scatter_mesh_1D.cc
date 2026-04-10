@@ -59,6 +59,9 @@ HcclResult CcuTempScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
 HcclResult CcuTempScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams,
                                            const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempScatterMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     HCCL_INFO("[CcuTempScatterMesh1D] Run.");
     opMode_   = tempFuncs.opMode;
     buffInfo_ = templateDataParams.buffInfo;

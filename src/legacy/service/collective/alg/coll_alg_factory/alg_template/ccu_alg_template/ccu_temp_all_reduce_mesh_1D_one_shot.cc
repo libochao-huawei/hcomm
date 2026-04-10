@@ -74,9 +74,11 @@ HcclResult CcuTempAllReduceMesh1DOneShot::Run(const TempFuncs &tempFuncs, const 
                                           std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[CcuTempAllReduceMesh1DOneShot][Run] start");
+    CHK_PRT_RET(tempInsQues.empty(),
+        HCCL_ERROR("[CcuTempAllReduceMesh1DOneShot] empty queue"), HcclResult::HCCL_E_INTERNAL);
+    CHK_PTR_NULL(tempInsQues[0]);
     opMode_ = tempFuncs.opMode;
     buffInfo_ = buffInfo;
-
     CHK_PRT_RET(myRank_ == INVALID_RANKID,
         HCCL_ERROR("[CcuTempAllReduceMesh1DOneShot][Run]myRank[%d] is invalid", myRank_),
         HcclResult::HCCL_E_INTERNAL);

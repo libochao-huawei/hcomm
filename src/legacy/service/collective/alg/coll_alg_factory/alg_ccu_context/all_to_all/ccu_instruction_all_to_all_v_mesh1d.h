@@ -45,17 +45,17 @@ class CcuTaskArgAllToAllVMesh1D : public CcuTaskArg {
 public:
     explicit CcuTaskArgAllToAllVMesh1D(uint64_t inputAddr, uint64_t outputAddr, std::vector<uint64_t> sliceSize,
         uint64_t token, uint64_t srcOffset, uint64_t dstOffset, const A2ASendRecvInfo& localSendRecvInfo) :
-        inputAddr(inputAddr), outputAddr(outputAddr), sliceSize(sliceSize), token(token), srcOffset(srcOffset),
-        dstOffset(dstOffset),
-        localSendRecvInfo(localSendRecvInfo) {}
+        inputAddr_(inputAddr), outputAddr_(outputAddr), sliceSize_(sliceSize), token_(token), srcOffset_(srcOffset),
+        dstOffset_(dstOffset),
+        localSendRecvInfo_(localSendRecvInfo) {}
 
-    uint64_t inputAddr;
-    uint64_t outputAddr;
-    std::vector<uint64_t> sliceSize;
-    uint64_t token;
-    uint64_t srcOffset;
-    uint64_t dstOffset;
-    A2ASendRecvInfo localSendRecvInfo;
+    uint64_t inputAddr_;
+    uint64_t outputAddr_;
+    std::vector<uint64_t> sliceSize_;
+    uint64_t token_;
+    uint64_t srcOffset_;
+    uint64_t dstOffset_;
+    A2ASendRecvInfo localSendRecvInfo_;
 };
 
 class CcuInstructionAllToAllVMesh1D : public CcuInstruction {

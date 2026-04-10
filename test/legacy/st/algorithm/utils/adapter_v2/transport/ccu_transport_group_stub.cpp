@@ -4,15 +4,18 @@
 
 namespace Hccl {
 
-u32 CcuTransportGroup::GetCntCkeId(u32 index) const
+HcclResult CcuTransportGroup::GetCntCkeId(u32 index, u32 &cntCkeId) const
 {
+    HCCL_INFO("[GetCntCkeId] index[%u].", index);
     if (index >= cntCkesGroup.size()) {
-        THROW<InvalidParamsException>(StringFormat("[CcuTransportGroup::%s] Index[%u] is bigger than cntCkesGroup size[%u], please check.",
-            __func__, index, cntCkesGroup.size()));
+        HCCL_ERROR("[GetCntCkeId] err[%s], index[%u] is bigger than cntCkesGroup size[%u], please check.",
+                __func__, index, cntCkesGroup.size());
+        return HcclResult::HCCL_E_PARA;
     }
-    return cntCkesGroup[index];
-}
 
+    cntCkeId = cntCkesGroup[index];
+    return HcclResult::HCCL_SUCCESS;
+}
 
 bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
 {
@@ -31,13 +34,13 @@ bool CcuTransportGroup::CheckTransports(const vector<CcuTransport*> &transports)
     return true;
 }
 
-bool CcuTransportGroup::CheckTransportCntCke()
+HcclResult CcuTransportGroup::CheckTransportCntCke()
 {
     devLogicId = HrtGetDevice();
     HcclResult allocResHandleReturnValue = CcuDeviceManager::AllocCke(devLogicId, cntCkesGroupDieId, cntCkeNumTransportGroupUse, ckeInfoTransportGroupUse);
     if (allocResHandleReturnValue != HCCL_SUCCESS) {
         HCCL_ERROR("[CcuTransportGroup::%s] Failed to allocate cntCke resource, please check.", __func__);
-        return false;
+        return HcclResult::HCCL_E_INTERNAL;
     }
 
     for (u32 i = 0; i < ckeInfoTransportGroupUse.size(); i++) {
@@ -51,7 +54,7 @@ bool CcuTransportGroup::CheckTransportCntCke()
     for (auto &transport : transportsGrp) {
         transport->SetCntCke(cntCkesGroup);
     }
-    return true;
+    return HcclResult::HCCL_SUCCESS;
 }
 
 CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u32 cntCkeNum):isDestroyed(false)
@@ -66,7 +69,7 @@ CcuTransportGroup::CcuTransportGroup(const vector<CcuTransport*> &transports, u3
     cntCkesGroupDieId = transports[0]->GetDieId();
     cntCkeNumTransportGroupUse = cntCkeNum;
 
-    if (!CheckTransportCntCke()) {
+    if (CheckTransportCntCke() != HcclResult::HCCL_SUCCESS) {
         grpStatus = TransportGrpStatus::FAIL;
         HCCL_ERROR("[CcuTransportGroup::%s] Func CheckTransportCntCke failed, please check.", __func__);
         return;

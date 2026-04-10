@@ -64,6 +64,12 @@ const std::map<HcclCMDType, Hccl::OpType> OP_TYPE_MAP = {
     {HcclCMDType::HCCL_CMD_REDUCE, Hccl::OpType::REDUCE},
     {HcclCMDType::HCCL_CMD_ALLTOALLVC, Hccl::OpType::ALLTOALLVC},
     {HcclCMDType::HCCL_CMD_SCATTER, Hccl::OpType::SCATTER},
+    {HcclCMDType::HCCL_CMD_BATCH_SEND_RECV, Hccl::OpType::BATCHSENDRECV},
+    {HcclCMDType::HCCL_CMD_HALF_ALLTOALLV, Hccl::OpType::HALFALLTOALLV},
+    {HcclCMDType::HCCL_CMD_BARRIER, Hccl::OpType::BARRIER},
+    {HcclCMDType::HCCL_CMD_GATHER, Hccl::OpType::GATHER},
+    {HcclCMDType::HCCL_CMD_BATCH_GET, Hccl::OpType::BATCHGET},
+    {HcclCMDType::HCCL_CMD_BATCH_PUT, Hccl::OpType::BATCHPUT},
 };
 
 const std::unordered_map<std::string, Hccl::OpType> OP_TYPE_STR = {
