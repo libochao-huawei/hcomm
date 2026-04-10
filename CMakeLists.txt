@@ -284,21 +284,16 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
     )
     set(HCCL_PKG_CCU_HEAD
         pkg_inc/hcomm/ccu/ccu_assist_pub.h
-    )
-    install(FILES
-        ${HCCL_PKG_CCU_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
-    )
-    set(HCCL_PKG_CCU_NEW_HEAD
+        # ccu 新版接口
         pkg_inc/hcomm/ccu_new/ccu_address.hpp
         pkg_inc/hcomm/ccu_new/ccu_api.hpp
         pkg_inc/hcomm/ccu_new/ccu_buffer.hpp
         pkg_inc/hcomm/ccu_new/ccu_control_api.h
-        pkg_inc/hcomm/ccu_new/ccu_control_flow_macro.h
         pkg_inc/hcomm/ccu_new/ccu_data_api_impl.h
+        pkg_inc/hcomm/ccu_new/ccu_data_api.h
+        pkg_inc/hcomm/ccu_new/ccu_data_resource.h
         pkg_inc/hcomm/ccu_new/ccu_data_utils.hpp
         pkg_inc/hcomm/ccu_new/ccu_event.hpp
-        pkg_inc/hcomm/ccu_new/ccu_if_label_stack.hpp
         pkg_inc/hcomm/ccu_new/ccu_local_addr.hpp
         pkg_inc/hcomm/ccu_new/ccu_loop_macro.h
         pkg_inc/hcomm/ccu_new/ccu_remote_addr.hpp
@@ -306,8 +301,8 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
         pkg_inc/hcomm/ccu_new/ccu_variable.hpp
     )
     install(FILES
-        ${HCCL_PKG_CCU_NEW_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu_new/ OPTIONAL
+        ${HCCL_PKG_CCU_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
