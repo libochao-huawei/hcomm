@@ -40,7 +40,7 @@ hccl::HcclCommAicpu *FindCommAicpuByName(const std::string &commName)
 }
 }
 
-HcclResult CommKfcAicpuServer::AddOpContext(const OpResCtx *ctx)
+HcclResult CommKfcAicpuServer::AddOpContext(const HcclApi::OpResCtx *ctx)
 {
     CHK_PTR_NULL(ctx);
     CHK_PRT_RET(msgArea_ != nullptr && reinterpret_cast<u64>(msgArea_) != ctx->workspace,
@@ -57,7 +57,7 @@ HcclResult CommKfcAicpuServer::AddOpContext(const OpResCtx *ctx)
     }
 
     for (u32 i = 0U; i < 8U; ++i) {
-        const AlgInfo &algInfo = ctx->algInfo[i];
+        const HcclApi::AlgInfo &algInfo = ctx->algInfo[i];
         const u64 opParamKey = algInfo.opParam;
         if (opParamKey == 0U) {
             continue;

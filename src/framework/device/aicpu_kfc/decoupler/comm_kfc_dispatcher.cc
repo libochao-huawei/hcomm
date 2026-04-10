@@ -37,7 +37,7 @@ HcclResult CreateServerList(void *args[], u32 ctxNum, std::vector<AscCommServerI
     CHK_PRT_RET(ctxNum == 0U, HCCL_ERROR("Invalid context number."), HCCL_E_PARA);
     std::unordered_map<uintptr_t, size_t> workspaceToServerIdx{};
     for (u32 i = 0U; i < ctxNum; ++i) {
-        const OpResCtx *ctx = static_cast<const OpResCtx *>(args[i]);
+        const HcclApi::OpResCtx *ctx = static_cast<const HcclApi::OpResCtx *>(args[i]);
         CHK_PTR_NULL(ctx);
         const uintptr_t workspace = static_cast<uintptr_t>(ctx->workspace);
         auto it = workspaceToServerIdx.find(workspace);
