@@ -3419,7 +3419,7 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
     // 打印当前展开的算子信息
     HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] opUnfoldIdx_[%u] opType[%d] curRank[%u] rankSize[%u] algName[%s]",
         opUnfoldIdx_, param.opType, topoInfo_.userRank, GetRankSize(), algName.c_str());
-    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%u] outputPtr[0x%016llx] outputSize[%u]",
+    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%llu] outputPtr[0x%016llx] outputSize[%llu]",
         param.inputPtr, param.inputSize, param.outputPtr, param.outputSize);
     opUnfoldIdx_ += 1;
 
