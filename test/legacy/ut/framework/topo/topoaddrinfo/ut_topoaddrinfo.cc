@@ -215,6 +215,10 @@ TEST_F(TopoAddrInfoTest, ut_rootinfo_for_pod)
     // 校验PG口EID在地址信息中
     EXPECT_TRUE(strstr(buf, "dfdf14d8") !=  NULL);
     EXPECT_TRUE(strstr(buf, "dfdf10d8") !=  NULL);
+    // 校验mesh层net type正确
+    EXPECT_TRUE(strstr(buf, "TOPO_FILE_DESC") !=  NULL);
+    // 校验clos层net type正确
+    EXPECT_TRUE(strstr(buf, "CLOS") !=  NULL);
     free(buf);
 }
 
