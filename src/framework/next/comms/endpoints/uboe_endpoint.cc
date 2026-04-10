@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "urma_endpoint.h"
+#include "uboe_endpoint.h"
 #include <algorithm>
 #include "endpoint_mgr.h"
 #include "log.h"
@@ -18,17 +18,17 @@
  
 namespace hcomm {
 
-UrmaEndpoint::UrmaEndpoint(const EndpointDesc &endpointDesc)
+UboeEndpoint::UboeEndpoint(const EndpointDesc &endpointDesc)
     : Endpoint(endpointDesc)
 {
 }
 
-HcclResult UrmaEndpoint::Init()
+HcclResult UboeEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
 
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_ERROR("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] only support ENDPOINT_LOC_TYPE_DEVICE", __func__, endpointDesc_.loc.locType);
+        HCCL_ERROR("[UboeEndpoint][%s] endpointDesc.loc.locType[%d] only support ENDPOINT_LOC_TYPE_DEVICE", __func__, endpointDesc_.loc.locType);
         return HCCL_E_PARA;
     }
 
@@ -54,16 +54,19 @@ HcclResult UrmaEndpoint::Init()
     }
 
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
-        HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
+        HCCL_WARNING("[UboeEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
         endpointDesc_.loc.device.devPhyId = devPhyId; // 当前endpointDesc.loc.device.devPhyId不准，暂时由查询的devPhyId赋值
     }
 
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, ipAddr)), return HCCL_E_PARA);
+    Hccl::IpAddress eidAddress{};
+    rdmaHandleMgr.UboeIpv4ToEid(ipAddr, eidAddress);
+    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddress)), return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
-    HCCL_INFO("%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
-        __func__, devPhyId, ipAddr.Describe().c_str(), ctxHandle_);
+    HCCL_INFO("%s success, devId[%u], eidAddress[%s], ctxHandle[%p]",
+        __func__, devPhyId, eidAddress.Describe().c_str(), ctxHandle_);
 
+    // TODO UBOE OK 复用UbRegedMemMgr
     EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
@@ -74,10 +77,10 @@ HcclResult UrmaEndpoint::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::ServerSocketListen(const uint32_t port)
+HcclResult UboeEndpoint::ServerSocketListen(const uint32_t port)
 {
     if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_INFO("[UrmaEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
+        HCCL_INFO("[UboeEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
         return HCCL_SUCCESS;
     }
 
@@ -89,7 +92,7 @@ HcclResult UrmaEndpoint::ServerSocketListen(const uint32_t port)
     Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
     Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
 
-    HCCL_INFO("[UrmaEndpoint][%s] devicePhyId[%u] localPort[%s]", 
+    HCCL_INFO("[UboeEndpoint][%s] devicePhyId[%u] localPort[%s]", 
         __func__, 
         endpointDesc_.loc.device.devPhyId, 
         localPort.Describe().c_str()
@@ -98,7 +101,7 @@ HcclResult UrmaEndpoint::ServerSocketListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::ServerSocketStopListen(const uint32_t port)
+HcclResult UboeEndpoint::ServerSocketStopListen(const uint32_t port)
 {
     Hccl::IpAddress ipAddr{};
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
@@ -109,43 +112,43 @@ HcclResult UrmaEndpoint::ServerSocketStopListen(const uint32_t port)
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+HcclResult UboeEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::UnregisterMemory(void* memHandle)
+HcclResult UboeEndpoint::UnregisterMemory(void* memHandle)
 {
     CHK_RET(this->regedMemMgr_->UnregisterMemory(memHandle));
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult UboeEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryExport(this->endpointDesc_, memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+HcclResult UboeEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
 {
     CHK_RET(this->regedMemMgr_->MemoryImport(memDesc, descLen, outMem));
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
+HcclResult UboeEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
 }
 
-HcclResult UrmaEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
+HcclResult UboeEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
     CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
 
-CcuChannelCtxPool *UrmaEndpoint::GetCcuChannelCtxPool()
+CcuChannelCtxPool *UboeEndpoint::GetCcuChannelCtxPool()
 {
     return ccuChannelCtxPool_.get();
 }
