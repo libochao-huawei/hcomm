@@ -85,16 +85,35 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
         return;
     }
     HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReporttHcclTaskDetails start.");
-    uint32_t                batchId = 0;
+    uint32_t batchId = 0;
     MsprofAicpuHcclTaskInfo taskDetailsInfos[HCCLINFO_REPORT_BATCH_NUM] {};
+    bool isSupportBatchReport = (AdprofReportBatchAdditionalInfo != nullptr || MsprofReportBatchAdditionalInfo != nullptr);
+    constexpr int32_t MAX_BATCH_REPORT_NUM = 512;
+    MsprofAdditionalInfo addInfoVec[MAX_BATCH_REPORT_NUM] {};
+    uint32_t addInfoIndx = 0;
     for (std::vector<Hccl::TaskInfo>::size_type i = 0; i < taskInfo.size(); i++) {
         auto &taskDetailInfo = taskDetailsInfos[batchId++];
         GetTaskDetailInfos(taskInfo[i], taskDetailInfo);
         DumpTaskDetails(taskDetailInfo, taskInfo[i]);
-        // 信息批量上报
         if (batchId == HCCLINFO_REPORT_BATCH_NUM || i == taskInfo.size() - 1) {
-            ReportAdditionInfo(MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO, 0, taskDetailsInfos,
-                               sizeof(MsprofAicpuHcclTaskInfo) * batchId);
+            if (!isSupportBatchReport) {
+                ReportAdditionInfo(MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO, 0, taskDetailsInfos,
+                                   sizeof(MsprofAicpuHcclTaskInfo) * batchId);
+            } else {
+                TaskInfo2Addition(taskDetailsInfos, sizeof(MsprofAicpuHcclTaskInfo) * batchId, addInfoVec[addInfoIndx++]);
+                if (addInfoIndx == MAX_BATCH_REPORT_NUM || i == taskInfo.size() - 1) {
+                    if (MsprofReportBatchAdditionalInfo == nullptr) {
+                        if (AdprofReportBatchAdditionalInfo(aging, addInfoVec, addInfoIndx * sizeof(MsprofAdditionalInfo)) != 0) {
+                            THROW<InternalException>("[ProfilingHandlerLite] AdprofReportBatchAdditionalInfo failed.");
+                        }
+                    } else {
+                        if (MsprofReportBatchAdditionalInfo(aging, addInfoVec, addInfoIndx * sizeof(MsprofAdditionalInfo)) != 0) {
+                            THROW<InternalException>("[ProfilingHandlerLite] MsprofReportBatchAdditionalInfo failed.");
+                        }
+                    }
+                    addInfoIndx = 0;
+                }
+            }
             batchId = 0;
             memset_s(taskDetailsInfos, sizeof(taskDetailsInfos), 0, sizeof(taskDetailsInfos));
         }
@@ -338,6 +357,19 @@ uint64_t ProfilingHandlerLite::GetProfHashId(const char *name, uint32_t len) con
             return INVALID_U64;
         }
         return MsprofStr2Id(name, len);
+    }
+}
+
+void ProfilingHandlerLite::TaskInfo2Addition(const void *data, int len, MsprofAdditionalInfo& reporterData) const
+{
+    reporterData.level = MSPROF_REPORT_AICPU_LEVEL;
+    reporterData.type = MSPROF_REPORT_AICPU_MC2_BATCH_HCCL_INFO;
+    reporterData.threadId = SalGetTid();
+    reporterData.dataLen = len;
+    reporterData.timeStamp = 0;
+    s32 sret = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
+    if (sret != EOK) {
+        THROW<InternalException>("[ProfilingHandlerLite] memcpy failed, errorno[%d], len[%u]", sret, len);
     }
 }
 
