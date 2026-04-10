@@ -50,7 +50,7 @@ protected:
     }
 };
 
-TEST_F(OneSideServiceDeviceUT, CleanStreamFunc_WhenDisabled_ExecutesClean)
+TEST_F(OneSideServiceUT, CleanStreamFunc_WhenDisabled_ExecutesClean)
 {
     auto service = std::make_shared<HcclOneSideServiceAicpu>();
     service->identifier_ = "test_clean";
@@ -82,7 +82,7 @@ TEST_F(OneSideServiceDeviceUT, CleanStreamFunc_WhenDisabled_ExecutesClean)
     EXPECT_TRUE(service->execStreamEnable_);
 }
 
-TEST_F(OneSideServiceDeviceUT, CleanAllStreamFunc_OneServiceFails_ReturnsError)
+TEST_F(OneSideServiceUT, CleanAllStreamFunc_OneServiceFails_ReturnsError)
 {
     auto service = std::make_shared<HcclOneSideServiceAicpu>();
     service->identifier_ = "fail_tag";
