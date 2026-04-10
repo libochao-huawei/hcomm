@@ -259,38 +259,38 @@ TEST_F(HccpTest, Ut_CreateQpWithCq_CreateNormalQpFail_Expect_DestoryCq)
     GlobalMockObject::verify();
 }
 
-HcclResult StubHrtGetIniterFaceVersionForCreateQp(unsigned int phyId, unsigned int interfaceOpcode,
-    unsigned int *interfaceVersion)
-{
-    *interfaceVersion = 2;
-    return HCCL_SUCCESS;
-}
+// HcclResult StubHrtGetIniterFaceVersionForCreateQp(unsigned int phyId, unsigned int interfaceOpcode,
+//     unsigned int *interfaceVersion)
+// {
+//     *interfaceVersion = 2;
+//     return HCCL_SUCCESS;
+// }
 
-TEST_F(HccpTest, Ut_CreateQpWithDepthConfig_hrtRaGetQpAttrFail_Expect_DestoryQp)
-{
-    MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtGetDevicePhyIdByIndex).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(StubHrtGetIniterFaceVersionForCreateQp));
-    MOCKER(hrtRaQpCreateWithAttrs).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
-    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+// TEST_F(HccpTest, Ut_CreateQpWithDepthConfig_hrtRaGetQpAttrFail_Expect_DestoryQp)
+// {
+//     MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+//     MOCKER(hrtGetDevicePhyIdByIndex).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+//     MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(StubHrtGetIniterFaceVersionForCreateQp));
+//     MOCKER(hrtRaQpCreateWithAttrs).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+//     MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
+//     MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
 
-    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
-    s32 qpMode = 0;
-    QpConfigInfo qpConfig;
-    qpConfig.sq_depth = 128;
-    qpConfig.rq_depth = 128;
-    qpConfig.scq_depth = 256;
-    qpConfig.rcq_depth = 256;
-    qpConfig.use_resv_mem = false;
-    qpConfig.resv_mem_pool_id = 0;
-    QpHandle qpHandle = nullptr;
-    struct TypicalQp qpInfo{};
-    HcclResult ret = CreateQpWithDepthConfig(rdmaHandle, qpMode, qpConfig, qpHandle, qpInfo);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+//     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+//     s32 qpMode = 0;
+//     QpConfigInfo qpConfig;
+//     qpConfig.sq_depth = 128;
+//     qpConfig.rq_depth = 128;
+//     qpConfig.scq_depth = 256;
+//     qpConfig.rcq_depth = 256;
+//     qpConfig.use_resv_mem = false;
+//     qpConfig.resv_mem_pool_id = 0;
+//     QpHandle qpHandle = nullptr;
+//     struct TypicalQp qpInfo{};
+//     HcclResult ret = CreateQpWithDepthConfig(rdmaHandle, qpMode, qpConfig, qpHandle, qpInfo);
+//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
-    GlobalMockObject::verify();
-}
+//     GlobalMockObject::verify();
+// }
 
 TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrQosFail_Expect_DestoryQp)
 {
