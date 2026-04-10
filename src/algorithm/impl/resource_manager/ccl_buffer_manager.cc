@@ -10,7 +10,6 @@
 
 #include "ccl_buffer_manager.h"
 #include "log.h"
-#include "config_log.h"
 #include "externalinput_pub.h"
 #include "workflow_pub.h"
 #include "adapter_rts_common.h"
@@ -108,55 +107,34 @@ HcclResult CCLBufferManager::CleanCCLbuffer()
 
 HcclResult CCLBufferManager::CleanAIVbuffer(void *bufferPtr)
 {
-    constexpr u32 MEM_SIZE_1M = 1024 * 1024;
-    bool isAivOpsExc = UNLIKELY(GetDebugConfig() & HCCL_AIV_OPS_EXC);
-    s64 moreMemory = isAivOpsExc ? MEM_SIZE_1M : 0;
     // 将aiv的bufferPtr空间置于0
     if (bufferPtr != nullptr) {
-        CHK_RET(hrtMemSet(bufferPtr, AIV_FLAG_SIZE + moreMemory, AIV_FLAG_SIZE + moreMemory));
-        HCCL_INFO("[CleanAIVbuffer] clean aiv buffer, ptr[%p], size[%llu]", bufferPtr, AIV_FLAG_SIZE + moreMemory);
+        CHK_RET(hrtMemSet(bufferPtr, AIV_FLAG_SIZE, AIV_FLAG_SIZE));
+        HCCL_INFO("[CleanAIVbuffer] clean aiv buffer, ptr[%p], size[%llu]", bufferPtr, AIV_FLAG_SIZE);
     }
     return HCCL_SUCCESS;
 }
 
 HcclResult CCLBufferManager::CreateCommAIVbuffer(bool useOpbaseFlag)
 {
-    bool isAivOpsExc = UNLIKELY(GetDebugConfig() & HCCL_AIV_OPS_EXC);
-    constexpr u32 MEM_SIZE_1M = 1024 * 1024;
-    size_t offset = 2 * MEM_SIZE_1M - sizeof(int32_t);
     if (useOpbaseFlag) {
         if (inAivOpbaseBuffer_.ptr() == nullptr) {
-            CHK_RET(CreateCCLbuffer(AIV_DATA_SIZE + (isAivOpsExc ? 1 * MEM_SIZE_1M : 0), inAivOpbaseBuffer_));
+            CHK_RET(CreateCCLbuffer(AIV_DATA_SIZE, inAivOpbaseBuffer_));
             CHK_RET(CleanAIVbuffer(static_cast<u8 *>(inAivOpbaseBuffer_.ptr()) + (AIV_DATA_SIZE - AIV_FLAG_SIZE)));
         }
         if (outAivOpbaseBuffer_.ptr() == nullptr) {
-            CHK_RET(CreateCCLbuffer(AIV_FLAG_SIZE + (isAivOpsExc ? 1 * MEM_SIZE_1M : 0), outAivOpbaseBuffer_));
+            CHK_RET(CreateCCLbuffer(AIV_FLAG_SIZE, outAivOpbaseBuffer_));
             CHK_RET(CleanAIVbuffer(outAivOpbaseBuffer_.ptr()));
-            // AivOutBuffer的第2m中最后int32位置存放环境变量
-            int32_t *envVarAddr = reinterpret_cast<int32_t *>(reinterpret_cast<uintptr_t>(outAivOpbaseBuffer_.ptr()) + offset);
-            HCCL_INFO("[CreateCommAIVbuffer] outAivOpbaseBuffer addr is [%p]", outAivOpbaseBuffer_.ptr());
-            int envAivOps[1] = {isAivOpsExc ? 1 : 0};
-            CHK_RET(hrtMemSyncCopy(
-                envVarAddr, sizeof(int32_t),
-                envAivOps, sizeof(int32_t),
-                HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
             HCCL_RUN_INFO("[HCCL_TRACE][CreateCommAIVbuffer] OpbaseMode");
         }
     } else {
         if (inAivOffloadbuffer_.ptr() == nullptr) {
-            CHK_RET(CreateCCLbuffer(AIV_DATA_SIZE + (isAivOpsExc ? 1 * MEM_SIZE_1M : 0), inAivOffloadbuffer_));
+            CHK_RET(CreateCCLbuffer(AIV_DATA_SIZE, inAivOffloadbuffer_));
             CHK_RET(CleanAIVbuffer(static_cast<u8 *>(inAivOffloadbuffer_.ptr()) + (AIV_DATA_SIZE - AIV_FLAG_SIZE)));
         }
         if (outAivOffloadbuffer_.ptr() == nullptr) {
-            CHK_RET(CreateCCLbuffer(AIV_FLAG_SIZE + (isAivOpsExc ? 1 * MEM_SIZE_1M : 0), outAivOffloadbuffer_));
+            CHK_RET(CreateCCLbuffer(AIV_FLAG_SIZE, outAivOffloadbuffer_));
             CHK_RET(CleanAIVbuffer(outAivOffloadbuffer_.ptr()));
-            int32_t *envVarAddr = reinterpret_cast<int32_t *>(reinterpret_cast<uintptr_t>(outAivOffloadbuffer_.ptr()) + offset);
-            HCCL_INFO("[CreateCommAIVbuffer] outAivOpbaseBuffer addr is [%p]", outAivOpbaseBuffer_.ptr());
-            int envAivOps[1] = {isAivOpsExc ? 1 : 0};
-            CHK_RET(hrtMemSyncCopy(
-                envVarAddr, sizeof(int32_t),
-                envAivOps, sizeof(int32_t),
-                HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
             HCCL_RUN_INFO("[HCCL_TRACE][CreateCommAIVbuffer] OffloadMode");
         }
     }

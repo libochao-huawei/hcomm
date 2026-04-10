@@ -19,6 +19,7 @@
 #define AIV_BROADCAST_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_broadcast_##type(KERNEL_ARGS_DEF) \
 { \
+    AIV_INFO_HINT; \
     if (len * sizeof(type) <= UB_MAX_DATA_SIZE) { \
         return aiv_broadcast_910b_smalldata<type>(KERNEL_ARGS_CALL); \
     } else { \
