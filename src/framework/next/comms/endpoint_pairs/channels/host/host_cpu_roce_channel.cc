@@ -984,10 +984,11 @@ HcclResult HostCpuRoceChannel::ChannelFence()
             if (wqeNum_ == 0) {
                 break; // 所有的wqe都已经完成，退出循环
             }
+            startTime = std::chrono::steady_clock::now(); // 有进展，重置超时计时
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            HCCL_ERROR("[HostCpuRoceChannel][%s] call ibv_poll_cq timeout.", __func__);
+            HCCL_ERROR("[HostCpuRoceChannel][%s] call ibv_poll_cq timeout, remaining wqeNum[%u].", __func__, wqeNum_);
             return HCCL_E_TIMEOUT;
         }
     }
