@@ -15,6 +15,7 @@
 #include "task_struct_v2.h"
 #include "dlhal_function_v2.h"
 #include "read_write_lock.h"
+#include "exception_handler.h"
 
 namespace hcomm {
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
@@ -53,6 +54,7 @@ void HcclCommTaskExceptionLite::Init(u32 devId)
 
 void HcclCommTaskExceptionLite::Call()
 {
+    EXCEPTION_HANDLE_BEGIN
     if (stopCall_ == true) {
         return;
     }
@@ -62,6 +64,7 @@ void HcclCommTaskExceptionLite::Call()
         stopCall_ = true;
         HCCL_ERROR("[%s]HandleExceptionCqe fail, set stopCall_[%d]", __func__, stopCall_); // 函数调用失败，停止调用避免刷屏
     }
+    EXCEPTION_HANDLE_END
 }
 
 HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
@@ -136,7 +139,9 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo.taskId << 16) | static_cast<uint32_t>(exceptionInfo.streamId);
     HCCL_INFO("[%s]group[%s], sqeId[0x%x], taskId[%u], streamId[%u].",
         __func__, aicpuComm->GetIdentifier().c_str(), sqeId, exceptionInfo.taskId, exceptionInfo.streamId);
-    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(devId_, exceptionInfo.sqId, sqeId);
+    CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite());
+    CHK_PTR_NULL(aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite());
+    const auto curTask = aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetTaskInfo(exceptionInfo.sqId, sqeId);
     if (curTask == nullptr) {
         // 未找到异常对应的TaskInfo
         HCCL_ERROR("[%s]Exception task not found. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
@@ -173,7 +178,7 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     if (curTask->taskParam_.taskType != Hccl::TaskParamType::TASK_NOTIFY_WAIT) { // 非notify场景，仅打印算子信息
         HCCL_ERROR("[TaskException][AICPU]opData information is %s.", GetOpDataInfo(*curTask).c_str());
     } else {
-        CHK_RET(PrintTaskContextInfo(exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
+        CHK_RET(PrintTaskContextInfo(aicpuComm, exceptionInfo.sqId, sqeId)); // notify场景打印算子信息和task序列
     }
     return HCCL_SUCCESS;
 }
@@ -337,9 +342,9 @@ uint16_t HcclCommTaskExceptionLite::SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCo
     }
 }
 
-HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(u32 sqId, u32 taskId)
+HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId)
 {
-    auto queue = Hccl::GlobalMirrorTasks::Instance().GetQueue(devId_, sqId);
+    auto queue = aicpuComm->GetHcclCommDfxLite()->GetMirrorTaskManagerLite()->GetQueue(sqId);
     CHK_PRT_RET(queue == nullptr,
         HCCL_ERROR("[%s]GetQueue nullptr, devId[%u], sqId[%u].", __func__, devId_, sqId), HCCL_E_PARA);
 
