@@ -772,14 +772,9 @@ HcclResult NetworkManager::StopVnicSocketHandle(const HcclIpAddress &localIp)
     ipSock.listenedPort.clear();
 
     // 销毁socket
-    if (ipSock.nicSocketHandle != nullptr) {
-        HCCL_ERROR("[StopVnicSocketHandle] ipSock.nicSocketHandle is nullptr.");
-        HcclResult ret = hrtRaSocketDeInit(ipSock.nicSocketHandle);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[Stop][NicsSocket]VNIC socket deInit not successfully.");
-        }
-        ipSock.nicSocketHandle = nullptr;
-    }
+    CHK_PRT_RET(ipSock.nicSocketHandle != nullptr && hrtRaSocketDeInit(ipSock.nicSocketHandle),	 
+        HCCL_ERROR("[Stop][NicsSocket]VNIC socket deInit not successfully"), HCCL_E_NETWORK);
+    ipSock.nicSocketHandle = nullptr;
     raResourceInfo_.vnicSocketMap.erase(localIp);
 
     HCCL_INFO("[NetworkManager][StopVnicSocketHandle] devid[%u] ip[%s] stop vnic socket success",
