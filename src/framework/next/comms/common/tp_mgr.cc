@@ -26,6 +26,8 @@ namespace {
 constexpr uint32_t kTpAttrSlAvailableBit = 12U;
 // URMA 头文件仅定义 tp_attr bitmap 0–11；bit12 由驱动扩展。为 false 时走 RaGetTpAttrAsync。
 static constexpr bool kSkipRaGetTpAttrStubSlAvailable = true;
+// RS 未稳定回填 bit12 时：jetty priority 直接用 HCCL qos(0–7)。RS 可用后删本开关，改回 mappedSl。
+static constexpr bool kMapHcclQosToJettyPriority1to1 = true;
 
 static uint32_t PopCount16(uint32_t mask)
 {
@@ -408,7 +410,7 @@ HcclResult TpMgr::HandleCompletedRequest(RequestCtx reqCtx, const GetTpInfoParam
 
     TpInfo tmpTpInfo{};
     tmpTpInfo.tpHandle = baseInfoPtr[tpListIndex].tpHandle;
-    tmpTpInfo.mappedJettyPriority = mappedSl & 0xFU;
+    tmpTpInfo.mappedJettyPriority = kMapHcclQosToJettyPriority1to1 ? (param.qos & 7U) : (mappedSl & 0xFU);
     tmpTpInfo.hasMappedJettyPriority = true;
 
     Hccl::IpAddress locAddr{};
