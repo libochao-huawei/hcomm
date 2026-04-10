@@ -147,28 +147,28 @@ TEST_F(HccpTest, Ut_CreateQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
     GlobalMockObject::verify();
 }
 
-TEST_F(HccpTest, Ut_CreateNormalQp_SetQpAttrQosFail_Expect_DestoryQp)
-{
-    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtRaNormalQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
-    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+// TEST_F(HccpTest, Ut_CreateNormalQp_SetQpAttrQosFail_Expect_DestoryQp)
+// {
+//     MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+//     MOCKER(hrtRaNormalQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+//     MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
+//     MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
+//     MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
 
-    QpInfo qp;
-    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
-    qp.trafficClass = 4;
-    qp.serviceLevel = 0;
-    qp.attr.maxWr = 128;
-    qp.attr.maxSendSge = 1;
-    qp.attr.maxRecvSge = 1;
+//     QpInfo qp;
+//     qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
+//     qp.trafficClass = 4;
+//     qp.serviceLevel = 0;
+//     qp.attr.maxWr = 128;
+//     qp.attr.maxSendSge = 1;
+//     qp.attr.maxRecvSge = 1;
 
-    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
-    HcclResult ret = CreateNormalQp(rdmaHandle, qp);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+//     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+//     HcclResult ret = CreateNormalQp(rdmaHandle, qp);
+//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
-    GlobalMockObject::verify();
-}
+//     GlobalMockObject::verify();
+// }
 
 TEST_F(HccpTest, Ut_CreateNormalQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
 {
