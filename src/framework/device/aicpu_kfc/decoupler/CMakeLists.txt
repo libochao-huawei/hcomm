@@ -12,6 +12,10 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/comm_kfc_dispatcher.cc
 )
 
+set(OPEN_HCCL_INCLUDE_ROOT
+    ${CMAKE_CURRENT_SOURCE_DIR}/../open_hccl_include
+)
+
 set(open_src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/comm_kfc_open_kernel_adapter.cc
 )
@@ -32,7 +36,7 @@ target_compile_options(ccl_kernel_decoupler PRIVATE
 )
 
 target_include_directories(ccl_kernel_decoupler PRIVATE
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/inc
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/inc
     $<TARGET_PROPERTY:ccl_kernel,INCLUDE_DIRECTORIES>
 )
 
@@ -48,9 +52,9 @@ target_compile_options(ccl_kernel_decoupler_open PRIVATE
 )
 
 target_include_directories(ccl_kernel_decoupler_open BEFORE PRIVATE
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/inc
-    ${HCCL_BASE_DIR}/../../hccl/src/common
-    ${HCCL_BASE_DIR}/../../hccl/src/common/hcomm_dlsym
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/inc
+    ${OPEN_HCCL_INCLUDE_ROOT}/common
+    ${OPEN_HCCL_INCLUDE_ROOT}/common/hcomm_dlsym
     ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
     $<TARGET_PROPERTY:ccl_kernel,INCLUDE_DIRECTORIES>
 )
@@ -68,15 +72,15 @@ target_compile_options(ccl_kernel_decoupler_open_exec PRIVATE
 
 target_include_directories(ccl_kernel_decoupler_open_exec BEFORE PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/inc
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/topo
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/executor
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/executor/channel
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/executor/registry
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/template
-    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/template/registry
-    ${HCCL_BASE_DIR}/../../hccl/src/common
-    ${HCCL_BASE_DIR}/../../hccl/src/common/hcomm_dlsym
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/inc
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/topo
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/executor
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/executor/channel
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/executor/registry
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/template
+    ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/template/registry
+    ${OPEN_HCCL_INCLUDE_ROOT}/common
+    ${OPEN_HCCL_INCLUDE_ROOT}/common/hcomm_dlsym
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/hccl
