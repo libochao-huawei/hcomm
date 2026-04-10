@@ -14,6 +14,7 @@
 #include "network/hccp.h"
 #include "dlra_function.h"
 #include "adapter_rts_common.h"
+#include "adapter_rts.h"
 
 #define private public
 #define protected public
@@ -95,8 +96,9 @@ TEST_F(HccpTest, Ut_CreateQp_SetQpAttrQosFail_Expect_DestoryQp)
     qp.attr.maxRecvSge = 1;
 
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    int flag = 0;
     s32 qpMode = 0;
-    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    HcclResult ret = CreateQp(rdmaHandle, flag, qpMode, qp);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     GlobalMockObject::verify();
@@ -133,8 +135,9 @@ TEST_F(HccpTest, Ut_CreateQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
     qp.attr.maxRecvSge = 1;
 
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    int flag = 0;
     s32 qpMode = 0;
-    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    HcclResult ret = CreateQp(rdmaHandle, flag, qpMode, qp);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     GlobalMockObject::verify();
@@ -175,8 +178,9 @@ TEST_F(HccpTest, Ut_CreateQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
     qp.attr.maxRecvSge = 1;
 
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
+    int flag = 0;
     s32 qpMode = 0;
-    HcclResult ret = CreateQp(rdmaHandle, 0, qpMode, qp);
+    HcclResult ret = CreateQp(rdmaHandle, flag, qpMode, qp);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 
     GlobalMockObject::verify();
@@ -309,7 +313,9 @@ TEST_F(HccpTest, Ut_CreateCqAndQp_CreateNormalQpFail_Expect_DestoryCq)
 
     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
     string label = "test_label";
-    QpConfig config(HcclIpAddress("1.1.1.1"), HcclIpAddress("2.2.2.2"), 128, 1, 1, 0, 0);
+    HcclIpAddress selfIp("1.1.1.1");
+    HcclIpAddress peerIp("2.2.2.2");
+    QpConfig config(selfIp, peerIp, 128, 1, 1, 0, 0);
     QpInfo info;
     info.srq = nullptr;
     info.srqCq = nullptr;
@@ -629,7 +635,7 @@ TEST_F(HccpTest, Ut_hrtStreamCreateWithFlags_hrtGetStreamIdFail_Expect_DestorySt
 TEST_F(HccpTest, Ut_hrtMemcpy_CountExceedsDestMax_Expect_ParaError)
 {
     void *dst = malloc(100);
-    const void *src = malloc(100);
+    void *src = malloc(100);
     uint64_t destMax = 50;
     uint64_t count = 100;
     HcclRtMemcpyKind kind = HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE;
