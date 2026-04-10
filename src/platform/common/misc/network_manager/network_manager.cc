@@ -543,7 +543,7 @@ HcclResult NetworkManager::GetConfigAndRaDeinit(struct RaInitConfig &config, NIC
         CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionInit());
         bool supportMultiProcHCCP = false;
         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
-        if(supportMultiProcHCCP || hasBackup) {
+        if (supportMultiProcHCCP || hasBackup) {
             isMultiProc = true;
             config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
         }
@@ -591,7 +591,7 @@ HcclResult NetworkManager::DeInit(NICDeployment nicDeploy, bool resetDeviceFlag,
         CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionInit());
         bool supportMultiProcHCCP = false;
         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
-        if(supportMultiProcHCCP || hasBackup) {
+        if (supportMultiProcHCCP || hasBackup) {
             isMultiProc = true;
             config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
         }

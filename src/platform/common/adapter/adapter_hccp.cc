@@ -651,7 +651,7 @@ HcclResult HrtRaGetNotifyMrInfo(u32 phyId, RdmaHandle handle, struct MrInfoT *mr
     auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
     while (true) {
         ret = DlRaFunction::GetInstance().dlRaGetNotifyMrInfo(handle, mrInfo);
-        if(!ret) {
+        if (!ret) {
             break;  // 成功跳出
         } else if (ret == ROCE_EAGAIN) {
             bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
@@ -2122,7 +2122,7 @@ HcclResult CreateCqAndQp(RdmaHandle &rdmaHandle, string &label, QpConfig &config
         QpInfo qp(config, rdmaHandle, nullptr, nullptr, cq.context, cq.sq, cq.rq, info.srq,
             info.srqCq, info.srqContext);
         HcclResult ret = CreateNormalQp(rdmaHandle, qp);
-        if(ret != HCCL_SUCCESS) {
+        if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[CreateCqAndQp] CreateNormalQp fail, ret[%d], destory CQ", ret);
             DestroyCq(rdmaHandle, cq);
             return ret;
@@ -2981,7 +2981,7 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
 
     struct QpAttr attr{};
     HcclResult ret = hrtRaGetQpAttr(qpHandle, &attr);
-    if(ret != HCCL_SUCCESS) {
+    if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[CreateQpWithDepthConfig] hrtRaGetQpAttr failed, ret[%d].", ret);
         HrtRaQpDestroy(qpHandle);
         return ret;
