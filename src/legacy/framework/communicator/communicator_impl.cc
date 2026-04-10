@@ -78,6 +78,7 @@ constexpr u64 INDEPENDENT_OP_BUFFER_SIZE_TIMES = 2; //自定义算子buffer倍�
 constexpr uint8_t DEVICE_SIGNAL_SECOND = 2;
 constexpr uint8_t DEVICE_SIGNAL_THIRD = 3;
 constexpr uint32_t TEMP_DEV_TYPE_DPU = 0; // 临时适配，后续rts接口上库之后使用rts的定义
+static std::atomic<u32> g_commNum(0);     // 一个进程内创建的通信域数量
 
 struct DpuKernelLaunchParam {
     u64         memorySize;
@@ -240,6 +241,9 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitCommonData(commParams);
             InitRankGraph(inputRankGraph);
             HrtSetDevice(devLogicId);
+            if (IsNeedDpu()) {
+                InitHccpPeer();
+            }
             InitHccpHdc();
             AppendLocalDieIdForLinks();
             InitCcuSuperFastLoad();
@@ -261,6 +265,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
+            InitDpuKernel();
             status = CommStatus::COMM_READY;
         } catch (HcclException &e) {
             HCCL_ERROR(e.what());
@@ -301,6 +306,9 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitHDCommunicate();
             notifyTimeoutCfg.Init();
             InitRankGraph(inputRankGraph);
+            if (IsNeedDpu()) {
+                InitHccpPeer();
+            }
             AppendLocalDieIdForLinks();
             InitUbMemoryTransportMgr();
             CollAlgComponentInit();
@@ -311,6 +319,7 @@ HcclResult CommunicatorImpl::Init(const CommParams &commParams, std::unique_ptr<
             InitProfilingReporter();
             InitTaskExceptionHandler();
             RegisterKernel();
+            InitDpuKernel();
             status = CommStatus::COMM_READY;
             SnapShotParser::GetInstance().SerializeSubCommInfo(commParams, subConfig, rankIdsVec, staticBinaryInfo);
         );
@@ -2401,11 +2410,11 @@ MirrorTaskManager &CommunicatorImpl::GetMirrorTaskManager() const
 CommunicatorImpl::~CommunicatorImpl()
 {
     HCCL_INFO("[~CommunicatorImpl] start CommunicatorImpl destroy, commId[%s]", id.c_str());
+    (void)DestroyDpuKernelResource();
+    g_taskServiceMap.erase(id);
     (void)NotifyAicpuDestroyComm();
     ccuDrvHandle = nullptr;
 
-    (void)DestroyDpuKernelResource();
-    g_taskServiceMap.erase(id);
     DeInitPreResource();
     HCCL_RUN_INFO("[~CommunicatorImpl] cclBuffer free, commId[%s] ", id.c_str());
 }
@@ -2426,25 +2435,35 @@ HcclResult CommunicatorImpl::DestroyDpuKernelResource()
     CHK_RET(WaitDpuKernelThreadTerminate());
 
     // 切换回 dpu ctx
-    if (ACL_SUCCESS != aclrtSetCurrentContext(dpuContext)) {
-        HCCL_ERROR("set dpu Ctx Failed");
+    aclError aclRet = aclrtSetCurrentContext(dpuContext);
+    if (ACL_SUCCESS != aclRet) {
+        HCCL_ERROR("set dpu Ctx Failed, aclReturn[%d]", aclRet);
         return HCCL_E_RUNTIME;
     }
     // 销毁局部流
-    HCCL_INFO("Destroy Stream");
-    if (aclrtDestroyStreamForce(dpuStream) != ACL_SUCCESS) {
-        HCCL_ERROR("Destroy Stream Failed");
+    aclRet = aclrtDestroyStreamForce(dpuStream);
+    if (ACL_SUCCESS != aclRet) {
+        HCCL_ERROR("Destroy Stream Failed, aclReturn[%d]", aclRet);
+        aclRet = aclrtSetCurrentContext(npuContext);
+        CHK_PRT_RET(aclRet == ACL_SUCCESS, HCCL_ERROR("set npu Ctx Failed, aclReturn[%d]", aclRet), HCCL_E_RUNTIME);
         return HCCL_E_RUNTIME;
     }
-    // reset DPU kernel 线程
-    HCCL_INFO("Start to reset DPU device");
-    if (HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0) != HCCL_SUCCESS) {
-        HCCL_ERROR("ResetXpuDevice Failed");
-        return HCCL_E_RUNTIME;
+    if (g_commNum > 1) {
+        g_commNum--;
+    } else {
+        // reset DPU kernel 线程
+        HcclResult ret = HrtResetXpuDevice(TEMP_DEV_TYPE_DPU, 0);
+        if (HCCL_SUCCESS != ret) {
+            HCCL_ERROR("ResetXpuDevice Failed, return[%d]", ret);
+            aclRet = aclrtSetCurrentContext(npuContext);
+            CHK_PRT_RET(aclRet == ACL_SUCCESS, HCCL_ERROR("set npu Ctx Failed, aclReturn[%d]", aclRet), HCCL_E_RUNTIME);
+            return HCCL_E_RUNTIME;
+        }
     }
     // 切回 npu ctx
-    if (ACL_SUCCESS != aclrtSetCurrentContext(npuContext)) {
-        HCCL_ERROR("set npu Ctx Failed");
+    aclRet = aclrtSetCurrentContext(npuContext);
+    if (ACL_SUCCESS != aclRet) {
+        HCCL_ERROR("set npu Ctx Failed, aclReturn[%d]", aclRet);
         return HCCL_E_RUNTIME;
     }
 
@@ -2468,14 +2487,7 @@ HcclResult CommunicatorImpl::WaitDpuKernelThreadTerminate()
         HCCL_ERROR("Terminate TaskRun Fail");
         return HCCL_E_RUNTIME;
     }
-    HcclUs        startTime                   = std::chrono::steady_clock::now();
-    constexpr u32 waitTransportReadyTimeoutMs = 200 * 1000; // 定义最大等待200秒
-    auto          timeout                     = std::chrono::milliseconds(waitTransportReadyTimeoutMs);
     do {
-        if (std::chrono::steady_clock::now() - startTime >= timeout) {
-            HCCL_ERROR("Wait Terminate TaskRun TimeOut");
-            return HCCL_E_TIMEOUT;
-        }
         if (aclrtMemcpy(&flag, sizeof(flag), dstPtr, sizeof(flag), aclrtMemcpyKind::ACL_MEMCPY_DEVICE_TO_HOST)
             != ACL_SUCCESS) {
             HCCL_ERROR("Read Terminate TaskRun Signal Fail");
@@ -3264,6 +3276,7 @@ HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
 
     HCCL_INFO("[CommunicatorImpl::%s] Launch Dpu Kernel End", __func__);
     isDpuKernelLaunched = true;
+    g_commNum++;
     return HCCL_SUCCESS;
 }
 
