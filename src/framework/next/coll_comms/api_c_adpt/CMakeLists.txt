@@ -14,6 +14,7 @@ set(src_list
 
 target_include_directories(hcomm PRIVATE
     ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
+    ${HCCL_BASE_DIR}/pkg_inc/hcomm/ccu
 )
 
 target_sources(hcomm PRIVATE
@@ -24,6 +25,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     target_include_directories(ccl_kernel PRIVATE
         ${HCCL_BASE_DIR}/framework/next/coll_comms/api_c_adpt/dev
         ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
+        ${HCCL_BASE_DIR}/pkg_inc/hcomm/ccu
     )
     target_sources(ccl_kernel PRIVATE
         ${src_list}
