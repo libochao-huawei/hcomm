@@ -565,6 +565,12 @@ if [ "${COV}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=ON"
 fi
 
+if [ "${BUILD_TYPE}" == "Debug" ];then
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DASCENDC_DUMP=1"
+else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DASCENDC_DUMP=0"
+fi
+
 if [ -n "${ascend_package_path}" ];then
     ASCEND_CANN_PACKAGE_PATH=${ascend_package_path}
 elif [ -n "${ASCEND_HOME_PATH}" ];then
