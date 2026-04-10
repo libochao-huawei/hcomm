@@ -58,7 +58,7 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuZeroCopyExchanger::PrepareRemoteUserMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges) const {
+HcclResult AicpuZeroCopyExchanger::PrepareRemoteUserMemRanges(const uint64_t inputSize, const uint64_t outputSize, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges) const {
     // 注意: 不能直接使用inAddrs_和outAddrs_, 保存的是remote ranks' user input/output memory在远端的virtual addr
     // 需要使用current_->links中的input/output memory, 才是remote ranks' user input/output memory在本端的virtual addr
 
