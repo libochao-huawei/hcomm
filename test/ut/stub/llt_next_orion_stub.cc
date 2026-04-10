@@ -2181,6 +2181,16 @@ HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
     return HCCL_SUCCESS;
 }
 
+std::string CollOpToString(const BaseCollOperator &collOp)
+{
+    return "collOp";
+}
+
+std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 taskId) const
+{
+    return nullptr;
+}
+
 }  // namespace Hccl
 
 HcclResult HcclCommDestroyV2(HcclComm comm)

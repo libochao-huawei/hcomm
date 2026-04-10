@@ -13,6 +13,8 @@
 #include "local_notify_impl.h"
 #include "aicpu_launch_manager.h"
 #include "llt_hccl_stub_rank_graph.h"
+#include "launch_aicpu.h"
+
 class TestHcclThread : public BaseInit {
 public:
     void SetUp() override {
@@ -1447,4 +1449,29 @@ TEST_F(TestHcclThread, Ut_InitCollComm_When_RdmaTrafficClass_Abnormal_Return_HCC
     config.hcclRdmaServiceLevel = 0xFFFFFFFF; // 不配置RDMA Service Level
     HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraphV2.get(), rank, cclBuffer, commName, &config);
     EXPECT_EQ(ret, 1);
+}
+
+TEST_F(TestHcclThread, Ut_ThreadKernelLaunchDestroy)
+{
+    MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(AicpuAclKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(hcclStreamSynchronize).stubs().will(returnValue(HCCL_SUCCESS));
+
+    constexpr u32 threadHandleNum = 1;
+    vector<ThreadHandle> deviceHandle(threadHandleNum);
+    void* binHandle = nullptr;
+    HcclResult ret = AicpuLaunchMgr::ThreadKernelLaunchDestroy(deviceHandle.data(), deviceHandle.size(), binHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestHcclThread, Ut_LaunchNotifyKernel)
+{
+    MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(AicpuAclKernelLaunch).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(hcclStreamSynchronize).stubs().will(returnValue(HCCL_SUCCESS));
+
+    NotifyMgrAicpuParam opParam;
+    void* binCustomHandle = nullptr;
+    HcclResult ret = AicpuLaunchMgr::LaunchNotifyKernel(opParam, binCustomHandle);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
