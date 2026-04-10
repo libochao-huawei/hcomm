@@ -1,0 +1,1224 @@
+diff --git a/src/platform/comm_primitive/hccl_primitive_remote.cc b/src/platform/comm_primitive/hccl_primitive_remote.cc
+index 61e369649500705865de3b635f194a0ab1e9750a..01c7b024d4cf84bdc025da80a4d6547a387154ec 100644
+--- a/src/platform/comm_primitive/hccl_primitive_remote.cc
++++ b/src/platform/comm_primitive/hccl_primitive_remote.cc
+@@ -172,6 +172,7 @@ HcclResult HcclRemoteBatchRead(
+     CHK_PTR_NULL(streamHandle);
+     CHK_PTR_NULL(memTransport);
+     CHK_PTR_NULL(bufPairs);
++    CHK_PRT_RET(bufPairNum == 0, HCCL_ERROR("[HcclRemoteBatchRead]bufPairsNum is 0."), HCCL_E_PARA);
+     HCCL_DEBUG("[HcclRemoteBatchRead]streamHandle[%p], memTransport[%p], bufPairNum[%u].",
+         streamHandle, memTransport, bufPairNum);
+     Stream *stream = reinterpret_cast<Stream*>(streamHandle);
+diff --git a/src/platform/common/adapter/adapter_hal.cc b/src/platform/common/adapter/adapter_hal.cc
+index 64ccdb1df1926988b292a09471e6ae0c21dab198..f7c9aee6ad1f0628b4739ab1c4380f0f7449621d 100644
+--- a/src/platform/common/adapter/adapter_hal.cc
++++ b/src/platform/common/adapter/adapter_hal.cc
+@@ -280,8 +280,8 @@ HcclResult hrtHalGetChipInfo(uint32_t devId, std::string &chipName)
+     drvError_t ret = DlHalFunction::GetInstance().dlHalGetChipInfo(devId, &chipInfo);
+     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] hrtHalGetChipInfo fail,"
+         "return[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret), HCCL_E_DRV);
+-    chipName = reinterpret_cast<char *>(chipInfo.type);
+-    chipName += reinterpret_cast<char *>(chipInfo.name);
++    chipName = std::string(reinterpret_cast<char *>(chipInfo.type)) +
++               std::string(reinterpret_cast<char *>(chipInfo.name));
+     HCCL_INFO("hrtHalGetChipInfo succ chipName[%s]", chipName.c_str());
+     return HCCL_SUCCESS;
+ }
+diff --git a/src/platform/common/adapter/adapter_hccp.cc b/src/platform/common/adapter/adapter_hccp.cc
+index 6efecd1bdc75a4601c3d81f440f87e9613851edd..7741d8e882925d519d2d7127621350a03bd5fa26 100644
+--- a/src/platform/common/adapter/adapter_hccp.cc
++++ b/src/platform/common/adapter/adapter_hccp.cc
+@@ -651,7 +651,7 @@ HcclResult HrtRaGetNotifyMrInfo(u32 phyId, RdmaHandle handle, struct MrInfoT *mr
+     auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
+     while (true) {
+         ret = DlRaFunction::GetInstance().dlRaGetNotifyMrInfo(handle, mrInfo);
+-        if(!ret) {
++        if (!ret) {
+             break;  // 成功跳出
+         } else if (ret == ROCE_EAGAIN) {
+             bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
+@@ -1362,6 +1362,7 @@ HcclResult hrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, const void *dat
+ 
+ HcclResult hrtRaSocketBlockSend(const FdHandle fdHandle, const void *data, u64 sendSize, std::function<bool()> needStop)
+ {
++    CHK_PTR_NULL(data);
+     if (sendSize > SOCKET_SEND_MAX_SIZE) {
+         HCCL_ERROR("[Send][RaSocket]errNo[0x%016llx] ra socket send size is too large, " \
+             "data[%p], size[%llu Byte]", HCCL_ERROR_CODE(HCCL_E_NETWORK), data, sendSize);
+@@ -2036,11 +2037,26 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
+     }
+ 
+     // Hdc模式下HCCP不支持hrtRaGetQpContext接口
+-    CHK_RET(SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel));
++    HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateQp] SetQpAttrQos fail, ret[%d], destory QP", ret);
++        HrtRaQpDestroy(qp.qpHandle);
++        return ret;
++    }
+     // 配置RDMA Timeout时间
+-    CHK_RET(SetQpAttrTimeOut(qp.qpHandle));
++    ret = SetQpAttrTimeOut(qp.qpHandle);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateQp] SetQpAttrTimeOut fail, ret[%d], destory QP", ret);
++        HrtRaQpDestroy(qp.qpHandle);
++        return ret;
++    }
+     // 配置RDMA Retry Cnt重传次数
+-    CHK_RET(SetQpAttrRetryCnt(qp.qpHandle));
++    ret = SetQpAttrRetryCnt(qp.qpHandle);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
++        HrtRaQpDestroy(qp.qpHandle);
++        return ret;
++    }
+ 
+     return HCCL_SUCCESS;
+ }
+@@ -2060,11 +2076,26 @@ HcclResult CreateNormalQp(RdmaHandle rdmaHandle, QpInfo& qp)
+     ibQpAttr.cap.max_recv_wr = (qp.srq == nullptr ? qp.attr.maxWr : 0);
+     ibQpAttr.cap.max_recv_sge = (qp.srq == nullptr ? qp.attr.maxRecvSge : 0);
+     CHK_RET(hrtRaNormalQpCreate(rdmaHandle, &ibQpAttr, qp.qpHandle, qp.qp));
+-    CHK_RET(SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel));
++    HcclResult ret = SetQpAttrQos(qp.qpHandle, qp.trafficClass, qp.serviceLevel);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateNormalQp] SetQpAttrQos fail, ret[%d], destory QP", ret);
++        HrtRaQpDestroy(qp.qpHandle);
++        return ret;
++    }
+     // 配置RDMA Timeout时间
+-    CHK_RET(SetQpAttrTimeOut(qp.qpHandle));
++    ret = SetQpAttrTimeOut(qp.qpHandle);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateNormalQp] SetQpAttrTimeOut fail, ret[%d], destory QP", ret);
++        HrtRaQpDestroy(qp.qpHandle);
++        return ret;
++    }
+     // 配置RDMA Retry Cnt重传次数
+-    CHK_RET(SetQpAttrRetryCnt(qp.qpHandle));
++    ret = SetQpAttrRetryCnt(qp.qpHandle);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateNormalQp] SetQpAttrRetryCnt fail, ret[%d], destory QP", ret);
++        HrtRaQpDestroy(qp.qpHandle);
++        return ret;
++    }
+ 
+     return HCCL_SUCCESS;
+ }
+@@ -2090,7 +2121,12 @@ HcclResult CreateCqAndQp(RdmaHandle &rdmaHandle, string &label, QpConfig &config
+         CHK_RET(CreateCq(rdmaHandle, cq));
+         QpInfo qp(config, rdmaHandle, nullptr, nullptr, cq.context, cq.sq, cq.rq, info.srq,
+             info.srqCq, info.srqContext);
+-        CHK_RET(CreateNormalQp(rdmaHandle, qp));
++        HcclResult ret = CreateNormalQp(rdmaHandle, qp);
++        if (ret != HCCL_SUCCESS) {
++            HCCL_ERROR("[CreateCqAndQp] CreateNormalQp fail, ret[%d], destory CQ", ret);
++            DestroyCq(rdmaHandle, cq);
++            return ret;
++        }
+ 
+         cq.used += qp.attr.maxWr;
+         cq.qps.push_back(qp);
+@@ -2190,7 +2226,12 @@ HcclResult CreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent,
+         info.sendCq = qp.sendCq;
+         info.recvCq = qp.recvCq;
+     } else {
+-        CHK_RET(CreateNormalQp(rdmaHandle, qp));
++        HcclResult ret = CreateNormalQp(rdmaHandle, qp);
++        if (ret != HCCL_SUCCESS) {
++            HCCL_ERROR("[CreateQpWithCq] CreateNormalQp fail, ret[%d], destory CQ", ret);
++            DestroyCq(rdmaHandle, cq);
++            return ret;
++        }
+         info = qp;
+     }
+     return HCCL_SUCCESS;
+@@ -2230,12 +2271,31 @@ HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &
+ 
+     CHK_RET(hrtRaAiQpCreate(devicePhyId, rdmaHandle, &attrs, &aiQpInfo, info.qpHandle));
+ 
+-    CHK_RET(SetQpAttrQos(info.qpHandle, info.trafficClass, info.serviceLevel));
+-    CHK_RET(SetQpAttrTimeOut(info.qpHandle));
+-    CHK_RET(SetQpAttrRetryCnt(info.qpHandle));
++    HcclResult ret = SetQpAttrQos(info.qpHandle, info.trafficClass, info.serviceLevel);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateAiQp] SetQpAttrQos fail, ret[%d], destory qpHandle", ret);
++        HrtRaQpDestroy(info.qpHandle);
++        return ret;
++    }
++    ret = SetQpAttrTimeOut(info.qpHandle);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateAiQp] SetQpAttrTimeOut fail, ret[%d], destory qpHandle", ret);
++        HrtRaQpDestroy(info.qpHandle);
++        return ret;
++    }
++    ret = SetQpAttrRetryCnt(info.qpHandle);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateAiQp] SetQpAttrRetryCnt fail, ret[%d], destory qpHandle", ret);
++        HrtRaQpDestroy(info.qpHandle);
++        return ret;
++    }
+ 
+     info.qp = reinterpret_cast<struct ibv_qp *>(aiQpInfo.aiQpAddr);
+-    CHK_PTR_NULL(info.qp);
++    if (info.qp == nullptr) {
++        HCCL_ERROR("info.qp is nullptr.");
++        HrtRaQpDestroy(info.qpHandle);
++        return HCCL_E_PARA;
++    }
+ 
+     info.sendCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.aiScqAddr);
+     info.recvCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.aiRcqAddr);
+@@ -2920,7 +2980,12 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
+     CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &ext_attrs, qpHandle));
+ 
+     struct QpAttr attr{};
+-    CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
++    HcclResult ret = hrtRaGetQpAttr(qpHandle, &attr);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[CreateQpWithDepthConfig] hrtRaGetQpAttr failed, ret[%d].", ret);
++        HrtRaQpDestroy(qpHandle);
++        return ret;
++    }
+     qpInfo.qpn = attr.qpn;
+     qpInfo.gidIdx = attr.gidIdx;
+     for (uint32_t i = 0; i < HCCP_GID_RAW_LEN; i++) {
+diff --git a/src/platform/common/adapter/adapter_rts.cc b/src/platform/common/adapter/adapter_rts.cc
+index 2c6bf6be85b334f6116ab2eaff3b87c8336e02bb..31b756545d76fb97b632fc7c1e46525977bf785e 100644
+--- a/src/platform/common/adapter/adapter_rts.cc
++++ b/src/platform/common/adapter/adapter_rts.cc
+@@ -1487,11 +1487,39 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
+     auto creatEventFuncPtr = [](rtNotify_t *notify) -> s32 {
+         CHK_RT_RET(aclrtCreateEvent(notify));
+         aclrtStream stream = nullptr;
+-        CHK_RT_RET(aclrtCreateStream(&stream));
+-        CHK_RT_RET(aclrtRecordEvent(*notify, stream));
+-        CHK_RT_RET(aclrtResetEvent(*notify, stream));
+-        CHK_RT_RET(aclrtSynchronizeStream(stream));
+-        CHK_RT_RET(aclrtDestroyStream(stream));
++        aclError ret = aclrtCreateStream(&stream);
++        if (ret != ACL_SUCCESS) {
++            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destory event.", ret);
++            aclrtDestroyEvent(*notify);
++            return ret;
++        }
++        ret = aclrtRecordEvent(*notify, stream);
++        if (ret != ACL_SUCCESS) {
++            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destory stream and event.", ret);
++            aclrtDestroyStream(stream);
++            aclrtDestroyEvent(*notify);
++            return ret;
++        }
++        ret = aclrtResetEvent(*notify, stream);
++        if (ret != ACL_SUCCESS) {
++            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destory stream and event.", ret);
++            aclrtDestroyStream(stream);
++            aclrtDestroyEvent(*notify);
++            return ret;
++        }
++        ret = aclrtSynchronizeStream(stream);
++        if (ret != ACL_SUCCESS) {
++            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destory stream and event.", ret);
++            aclrtDestroyStream(stream);
++            aclrtDestroyEvent(*notify);
++            return ret;
++        }
++        ret = aclrtDestroyStream(stream);
++        if (ret != ACL_SUCCESS) {
++            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destory event.", ret);
++            aclrtDestroyEvent(*notify);
++            return ret;
++        }
+         return 0;
+     }; // 使用event替换notify后需要获取event id，get event id 前必须先record，因此在创建event时执行一把record
+ 
+@@ -1962,7 +1990,12 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
+         "rtRet[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+ 
+     s32 streamId = 0;
+-    CHK_RET(hrtGetStreamId(stream, streamId));
++    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
++    if (hcclRet != HCCL_SUCCESS) {
++        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destory stream.", ret);
++        aclrtDestroyStream(*stream);
++        return hcclRet;
++    }
+     s32 deviceId = GetDeviceLogicalId();
+     PLF_CONFIG_DEBUG(PLF_RES, "Create Stream para: deviceId[%d] streamId[%d]", deviceId, streamId);
+     return HCCL_SUCCESS;
+@@ -1982,7 +2015,12 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
+         "error, rtRet[%d], flags[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, flags), HCCL_E_RUNTIME);
+ 
+     s32 streamId = 0;
+-    CHK_RET(hrtGetStreamId(stream, streamId));
++    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
++    if (hcclRet != HCCL_SUCCESS) {
++        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destory stream.", ret);
++        aclrtDestroyStream(*stream);
++        return hcclRet;
++    }
+     s32 deviceId = GetDeviceLogicalId();
+     PLF_CONFIG_DEBUG(PLF_RES, "Create Stream para: deviceId[%d] streamId[%d] priority[%d] flags[%u]",
+         deviceId, streamId, priority, flags);
+@@ -2040,6 +2078,8 @@ HcclResult hrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t coun
+ {
+     CHK_PTR_NULL(dst);
+     CHK_PTR_NULL(src);
++    CHK_PRT_RET(count > destMax, HCCL_ERROR("[hrtMemcpy] count[%llu] exceeds destMax[%llu].",
++        count, destMax), HCCL_E_PARA);
+     aclrtMemcpyKind rtKind;
+     CHK_RET(MemcpyKindTranslate(kind, &rtKind));
+ #ifndef HCCD
+diff --git a/src/platform/common/dltrace_function.cc b/src/platform/common/dltrace_function.cc
+index e3e1026ad670b111f245636a7ca47135bda0bc5a..1afbcfbee1d5f56489948fc83ab15d52031cd619 100644
+--- a/src/platform/common/dltrace_function.cc
++++ b/src/platform/common/dltrace_function.cc
+@@ -67,6 +67,7 @@ HcclResult DlTraceFunction::DlATraceFunctionInterInit() {
+ 
+ HcclResult DlTraceFunction::DlTraceFunctionInit()
+ {
++    HcclResult ret;
+     std::lock_guard<std::mutex> lock(handleMutex_);
+     if (handle_ == nullptr) {
+         handle_ = HcclDlopen("libascend_trace.so", RTLD_NOW);
+@@ -80,9 +81,21 @@ HcclResult DlTraceFunction::DlTraceFunctionInit()
+             CHK_PRT_RET(handle_ == nullptr, HCCL_ERROR("dlopen [%s] failed, %s", "libutrace.so",\
+             (errMsg_utrace == nullptr) ? "please check the file exist or permission denied." : errMsg_utrace),\
+             HCCL_E_OPEN_FILE_FAILURE);
+-            CHK_RET(DlUTraceFunctionInterInit());
++            ret = DlUTraceFunctionInterInit();
++            if (ret != HCCL_SUCCESS) {
++                HCCL_ERROR("[DlTraceFunctionInit] DlUTraceFunctionInterInit fail, ret[%d], destory handle.", ret);
++                (void)HcclDlclose(handle_);
++                handle_ = nullptr;
++                return ret;
++            }
+         } else {
+-            CHK_RET(DlATraceFunctionInterInit());
++            ret = DlATraceFunctionInterInit();
++            if (ret != HCCL_SUCCESS) {
++                HCCL_ERROR("[DlTraceFunctionInit] DlATraceFunctionInterInit fail, ret[%d], destory handle.", ret);
++                (void)HcclDlclose(handle_);
++                handle_ = nullptr;
++                return ret;
++            }
+         }
+     }
+     return HCCL_SUCCESS;
+diff --git a/src/platform/common/misc/network_manager/network_manager.cc b/src/platform/common/misc/network_manager/network_manager.cc
+index dccd5d675500f90045d70cd4d477805dff40bc0c..28f64d50ac47895816d322506851ca031f3f0db1 100644
+--- a/src/platform/common/misc/network_manager/network_manager.cc
++++ b/src/platform/common/misc/network_manager/network_manager.cc
+@@ -396,10 +396,12 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
+     nicRdevInfo.localIp.addr6 = ipAddr.GetBinaryAddress().addr6;
+     SocketHandle socketHandle = nullptr;
+     HcclResult ret = hrtRaSocketInit(NETWORK_PEER_ONLINE, nicRdevInfo, socketHandle);
+-    CHK_PRT_RET(ret != HCCL_SUCCESS,
++    if (ret != HCCL_SUCCESS) {
+         HCCL_ERROR("[HeterogInit]errNo[0x%016llx] ra socket init failed, ip[%s], return[%d]",
+-        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret),
+-        HCCL_E_TCP_CONNECT);
++            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret);
++        HrtRaDeInit(&config);
++        return HCCL_E_TCP_CONNECT;
++    }
+     HCCL_INFO("ip[%s] socket init OK", ipAddr.GetReadableAddress());
+ 
+     IpSocket ipSocketInfo;
+@@ -410,10 +412,29 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
+ 
+     /*  device网卡初始化暂不考虑 */
+     if (!GetExternalInputHcclIsTcpMode()) {
+-        CHK_RET(InitRdmaHandle(devId, ipAddr));
++        ret = InitRdmaHandle(devId, ipAddr);
++        if (ret != HCCL_SUCCESS) {
++            HCCL_ERROR("[HeterogInit] InitRdmaHandle fail, ret[%d], destory resource.", ret);
++            hrtRaSocketDeInit(socketHandle);
++            HrtRaDeInit(&config);
++            return ret;
++        }
+     }
+ 
+-    CHK_RET(HeterogStartListen(ipAddr, port));
++    ret = HeterogStartListen(ipAddr, port);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[HeterogInit] HeterogStartListen fail, ret[%d], destory resource.", ret);
++        if (!GetExternalInputHcclIsTcpMode()) {
++            auto& ipSock = raResourceInfo_.nicSocketMap[ipAddr];
++            if (ipSock.nicRdmaHandle != nullptr) {
++                (void)HrtRaRdmaDeInit(ipSock.nicRdmaHandle, NO_USE);
++            }
++        }
++        hrtRaSocketDeInit(socketHandle);
++        HrtRaDeInit(&config);
++        raResourceInfo_.nicSocketMap.erase(ipAddr);
++        return ret;
++    }
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -522,7 +543,7 @@ HcclResult NetworkManager::GetConfigAndRaDeinit(struct RaInitConfig &config, NIC
+         CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionInit());
+         bool supportMultiProcHCCP = false;
+         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
+-        if(supportMultiProcHCCP || hasBackup) {
++        if (supportMultiProcHCCP || hasBackup) {
+             isMultiProc = true;
+             config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
+         }
+@@ -570,7 +591,7 @@ HcclResult NetworkManager::DeInit(NICDeployment nicDeploy, bool resetDeviceFlag,
+         CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionInit());
+         bool supportMultiProcHCCP = false;
+         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
+-        if(supportMultiProcHCCP || hasBackup) {
++        if (supportMultiProcHCCP || hasBackup) {
+             isMultiProc = true;
+             config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
+         }
+@@ -742,16 +763,16 @@ HcclResult NetworkManager::StopVnicSocketHandle(const HcclIpAddress &localIp)
+             HCCL_ERROR("[NetworkManager][StopVnicSocketHandle]errNo[0x%016llx] stop vnic listen failed, "
+                 "devid[%u], ip[%s], port[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
+                 localIp.GetReadableAddress(), port);
+-            return HCCL_E_INTERNAL;
++            break;
+         }
+-        ipSock.listenedPort.erase(port);
+         IPPortListenRefMapVnicDevice_[localIp][port].Clear();
+         HCCL_INFO("[NetworkManager][StopVnicSocketHandle] ip[%s] stop listen port[%u]",
+             localIp.GetReadableAddress(), port);
+     }
++    ipSock.listenedPort.clear();
+ 
+     // 销毁socket
+-    CHK_PRT_RET(ipSock.nicSocketHandle != nullptr && hrtRaSocketDeInit(ipSock.nicSocketHandle),
++    CHK_PRT_RET(ipSock.nicSocketHandle != nullptr && hrtRaSocketDeInit(ipSock.nicSocketHandle),	 
+         HCCL_ERROR("[Stop][NicsSocket]VNIC socket deInit not successfully"), HCCL_E_NETWORK);
+     ipSock.nicSocketHandle = nullptr;
+     raResourceInfo_.vnicSocketMap.erase(localIp);
+@@ -1059,20 +1080,33 @@ HcclResult NetworkManager::StopNic(const HcclIpAddress &ipAddr, u32 port)
+ HcclResult NetworkManager::StopAllDeviceNicSockets()
+ {
+     HcclResult ret;
+-    for (auto itSocket : raResourceInfo_.nicSocketMap) {
+-        for (auto itPort : itSocket.second.listenedPort) {
++    for (auto &itSocket : raResourceInfo_.nicSocketMap) {
++        std::set<u32> listenedPorts = itSocket.second.listenedPort;
++        for (auto itPort : listenedPorts) {
+             ret = StopNicsSocketListen(itSocket.first, itPort);
+-            CHK_PRT_RET(ret != HCCL_SUCCESS,
++            if (ret != HCCL_SUCCESS) {
+                 HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s], "
+                            "port[%u],return[%d]",
+-                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret),
+-                HCCL_E_INTERNAL);
++                    HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret);
++                itSocket.second.listenedPort.erase(itPort);
++                break;
++            }
+         }
+         ret = StopNicsSocket(itSocket.first);
+-        CHK_PRT_RET(ret != HCCL_SUCCESS,
++        if (ret != HCCL_SUCCESS) {
+             HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s],return[%d]",
+-            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret),
+-            HCCL_E_INTERNAL);
++                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret);
++            if (itSocket.second.nicRdmaHandle != nullptr) {
++                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicRdmaHandle is not nullptr.");
++                (void)HrtRaRdmaDeInit(itSocket.second.nicRdmaHandle, notifyType_);
++                itSocket.second.nicRdmaHandle = nullptr;
++            }
++            if (itSocket.second.nicSocketHandle != nullptr) {
++                HCCL_ERROR("[StopVnicSocketHandle] itSocket.second.nicSocketHandle is not nullptr.");
++                (void)HrtRaRdmaDeInit(itSocket.second.nicSocketHandle, notifyType_);
++                itSocket.second.nicSocketHandle = nullptr;
++            }
++        }
+     }
+ 
+     raResourceInfo_.nicSocketMap.clear();
+@@ -1089,17 +1123,19 @@ HcclResult NetworkManager::StopAllDeviceVnicSockets()
+         if (itSocket.second.nicSocketHandle != nullptr) {
+             for (auto itPort : itSocket.second.listenedPort) {
+                 ret = StopListenSocket(itSocket.second.nicSocketHandle, itPort);
+-                CHK_PRT_RET(ret != HCCL_SUCCESS,
++                if (ret != HCCL_SUCCESS) {
+                     HCCL_ERROR("[Stop][AllDeviceVnicSockets]errNo[0x%016llx] stop vnic socket listen failed, "
+-                    "devid[%u], ip[%s], port[%u], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
+-                    itSocket.first.GetReadableAddress(), itPort, ret), HCCL_E_INTERNAL);
++                               "devid[%u], ip[%s], port[%u], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT),
++                                devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret);
++                }
+                 IPPortListenRefMapVnicDevice_[itSocket.first][itPort].Clear();
+             }
+             ret = hrtRaSocketDeInit(itSocket.second.nicSocketHandle);
+-            CHK_PRT_RET(ret != HCCL_SUCCESS,
++            if (ret != HCCL_SUCCESS) {
+                 HCCL_ERROR("[Stop][AllDeviceVnicSockets]errNo[0x%016llx] deinit vnic socket failed, "
+-                "devid[%u], ip[%s], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
+-                itSocket.first.GetReadableAddress(), ret), HCCL_E_INTERNAL);
++                           "devid[%u], ip[%s], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
++                            itSocket.first.GetReadableAddress(), ret);
++            }
+             itSocket.second.nicSocketHandle = nullptr;
+         }
+     }
+@@ -1313,13 +1349,25 @@ HcclResult NetworkManager::StopHostNetAndListen(SocketHandle socketHandle, const
+ }
+ HcclResult NetworkManager::StopAllHostNicSockets()
+ {
++    HcclResult ret;
+     for (auto itSocket : raResourceInfo_.hostNetSocketMap) {
+         for (auto itPort : itSocket.second.listenedPort) {
+-            CHK_RET(StopListenSocket(itSocket.second.nicSocketHandle, itPort));
+-            HCCL_INFO("ip[%s] port[%u] stop success.", itSocket.first.GetReadableAddress(), itPort);
++            ret = (StopListenSocket(itSocket.second.nicSocketHandle, itPort));
++            if (ret != HCCL_SUCCESS) {
++                HCCL_ERROR("[Stop][StopAllHostNicSockets]errNo[0x%016llx] stop listen socket failed,"
++                    "devid[%u], ip[%s], port[%u], return[%d].", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT),
++                    devicePhyId_, itSocket.first.GetReadableAddress(), itPort, ret);
++            } else {
++                HCCL_INFO("ip[%s] port[%u] stop success.", itSocket.first.GetReadableAddress(), itPort);
++            }
++        }
++        ret = hrtRaSocketDeInit(itSocket.second.nicSocketHandle);
++        if (ret != HCCL_SUCCESS) {
++            HCCL_ERROR("[Stop][StopAllHostNicSockets]errNo[0x%016llx] deinit socket failed, devid[%u], ip[%s], return[%d]",
++                HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, itSocket.first.GetReadableAddress(), ret);
++        } else {
++            HCCL_INFO("ip[%s] deinit success.", itSocket.first.GetReadableAddress());
+         }
+-        CHK_RET(hrtRaSocketDeInit(itSocket.second.nicSocketHandle));
+-        HCCL_INFO("ip[%s] deinit success.", itSocket.first.GetReadableAddress());
+         hostNicSocketClientRef_[itSocket.first].Clear();
+     }
+ 
+@@ -1537,7 +1585,15 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
+ 
+     if (!isRaInitRepeated_) {
+         HCCL_INFO("PsWorkerRaInit call HrtRaInit. devicePhyId[%u] isRaInitRepeated_[%u]", devicePhyId_, isRaInitRepeated_);
+-        CHK_RET(HrtRaInit(&config));
++        HcclResult hcclRet = HrtRaInit(&config);
++        if (hcclRet != HCCL_SUCCESS) {
++            HCCL_ERROR("[PsWorkerRaInit] ra init failed, ret[%d].", hcclRet);
++            if (isTsdProcessOpen_) {
++                (void)hrtCloseNetService();
++                isTsdProcessOpen_ = false;
++            }
++            return hcclRet;
++        }
+     }
+ 
+     struct rdev nicRdevInfo = {};
+@@ -1548,10 +1604,18 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
+     SocketHandle socketHandle = nullptr;
+     NetworkMode raSocketInitMode = (isHostUseDevNic_) ? NETWORK_OFFLINE : NETWORK_PEER_ONLINE;
+     HcclResult ret = hrtRaSocketInit(raSocketInitMode, nicRdevInfo, socketHandle);
+-    CHK_PRT_RET(ret != HCCL_SUCCESS,
++    if (ret != HCCL_SUCCESS) {
+         HCCL_ERROR("[Init][HostSocket]errNo[0x%016llx] ra socket init failed, ip[%s], return[%d]",
+-        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret),
+-        HCCL_E_TCP_CONNECT);
++            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ipAddr.GetReadableAddress(), ret);
++        if (!isRaInitRepeated_) {
++            (void)HrtRaDeInit(&config);
++        }
++        if (isTsdProcessOpen_) {
++            (void)hrtCloseNetService();
++            isTsdProcessOpen_ = false;
++        }
++        return HCCL_E_TCP_CONNECT;
++    }
+     HCCL_INFO("ip[%s] socket init OK, devicePhyId_[%u], socketHandle[%llu]", ipAddr.GetReadableAddress(), devicePhyId_,
+         hash<void *>{}(socketHandle));
+ 
+@@ -1561,7 +1625,21 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
+     raResourceInfo_.nicSocketMap.insert(std::make_pair(ipAddr, ipSocketInfo));
+     raResourceInfo_.hostNetSocketMap.insert(std::make_pair(ipAddr, ipSocketInfo));
+ 
+-    CHK_RET(HeterogStartListen(ipAddr, port));
++    ret = HeterogStartListen(ipAddr, port);
++    if (ret != HCCL_SUCCESS) {
++        HCCL_ERROR("[PsWorkerRaInit] HeterogStartListen failed, ret[%d]", ret);
++        (void)hrtRaSocketDeInit(socketHandle);
++        raResourceInfo_.nicSocketMap.erase(ipAddr);
++        raResourceInfo_.hostNetSocketMap.erase(ipAddr);
++        if (!isRaInitRepeated_) {
++            (void)HrtRaDeInit(&config);
++        }
++        if (isTsdProcessOpen_) {
++            (void)hrtCloseNetService();
++            isTsdProcessOpen_ = false;
++        }
++        return ret;
++    }
+ 
+     return HCCL_SUCCESS;
+ }
+@@ -1581,11 +1659,11 @@ HcclResult NetworkManager::CloseHccpSubProc()
+     if (locaLogDevid != deviceLogicId_) {
+         hrtSetDevice(deviceLogicId_);
+     }
+-    CHK_RET(hrtCloseNetService());
+-
++    HcclResult ret = hrtCloseNetService();
+     if (locaLogDevid != deviceLogicId_) {
+         hrtSetDevice(locaLogDevid);
+     }
++    CHK_RET(ret);
+     subPid_ = 0;
+ 
+     return HCCL_SUCCESS;
+diff --git a/test/ut/framework/communicator/impl/independent_op/data_api_cpu/ut_cpu_HcommChannelNotifyWaitOnThread.cc b/test/ut/framework/communicator/impl/independent_op/data_api_cpu/ut_cpu_HcommChannelNotifyWaitOnThread.cc
+index e8f2c0657f21ab2011628aef390e78c9cf56d23c..5a91d15fc7d692ee9576d712f3dd8607edda7b12 100644
+--- a/test/ut/framework/communicator/impl/independent_op/data_api_cpu/ut_cpu_HcommChannelNotifyWaitOnThread.cc
++++ b/test/ut/framework/communicator/impl/independent_op/data_api_cpu/ut_cpu_HcommChannelNotifyWaitOnThread.cc
+@@ -114,3 +114,47 @@ TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_Wh
+     res = HcommChannelNotifyWaitOnThread(thread, channel910C, notifyIdx, timeout);
+     EXPECT_EQ(res, HCCL_E_INTERNAL);
+ }
++
++TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_StreamHandleIs0_Expect_ReturnHCCL_E_PTR)
++{
++    StreamHandle streamHandle = nullptr;
++    HcclMemTransport memtransport = reinterpret_cast<HcclMemTransport>(0x1234);
++    HcclBufPair bufPairs[1] = {{ {nullptr, 0}, {nullptr, 0} }};
++    uint32_t bufPairsNum = 1;
++
++    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
++    EXPECT_EQ(ret, HCCL_E_PTR);
++}
++
++TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_MemtransportIs0_Expect_ReturnHCCL_E_PTR)
++{
++    StreamHandle streamHandle = reinterpret_cast<StreamHandle>(0x1234);
++    HcclMemTransport memtransport = nullptr;
++    HcclBufPair bufPairs[1] = {{ {nullptr, 0}, {nullptr, 0} }};
++    uint32_t bufPairsNum = 1;
++
++    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
++    EXPECT_EQ(ret, HCCL_E_PTR);
++}
++
++TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_BufPairsIs0_Expect_ReturnHCCL_E_PTR)
++{
++    StreamHandle streamHandle = reinterpret_cast<StreamHandle>(0x1234);
++    HcclMemTransport memtransport = reinterpret_cast<HcclMemTransport>(0x1234);
++    HcclBufPair *bufPairs = nullptr;
++    uint32_t bufPairsNum = 1;
++
++    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
++    EXPECT_EQ(ret, HCCL_E_PTR);
++}
++
++TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_BufPairsNumIs0_Expect_ReturnHCCL_E_PTR)
++{
++    StreamHandle streamHandle = reinterpret_cast<StreamHandle>(0x1234);
++    HcclMemTransport memtransport = reinterpret_cast<HcclMemTransport>(0x1234);
++    HcclBufPair bufPairs[1] = {{ {nullptr, 0}, {nullptr, 0} }};
++    uint32_t bufPairsNum = 0;
++
++    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
++    EXPECT_EQ(ret, HCCL_E_PARA);
++}
+diff --git a/test/ut/misc/ut_adapter.cc b/test/ut/misc/ut_adapter.cc
+index 309efc1b2ebbd483ec3a01980673e02cf149b76f..0053cbb47ba557f993be800c1c33a697166e58c8 100644
+--- a/test/ut/misc/ut_adapter.cc
++++ b/test/ut/misc/ut_adapter.cc
+@@ -13,6 +13,8 @@
+ 
+ #include "network/hccp.h"
+ #include "dlra_function.h"
++#include "adapter_rts_common.h"
++#include "adapter_rts.h"
+ 
+ #define private public
+ #define protected public
+@@ -64,5 +66,548 @@ TEST_F(HccpTest, ut_CheckAutoListenVersion)
+ 
+     HcclResult ret = NetworkManager::GetInstance(0).CheckAutoListenVersion(true);
+     EXPECT_EQ(ret, (ret, HCCL_E_NOT_SUPPORT));
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateQp_SetQpAttrQosFail_Expect_DestoryQp)
++{
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    QpInfo qp;
++    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
++    qp.trafficClass = 4;
++    qp.serviceLevel = 0;
++    qp.attr.maxWr = 128;
++    qp.attr.maxSendSge = 1;
++    qp.attr.maxRecvSge = 1;
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    int flag = 0;
++    s32 qpMode = 0;
++    HcclResult ret = CreateQp(rdmaHandle, flag, qpMode, qp);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
++{
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrTimeOut).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    QpInfo qp;
++    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
++    qp.trafficClass = 4;
++    qp.serviceLevel = 0;
++    qp.attr.maxWr = 128;
++    qp.attr.maxSendSge = 1;
++    qp.attr.maxRecvSge = 1;
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    int flag = 0;
++    s32 qpMode = 0;
++    HcclResult ret = CreateQp(rdmaHandle, flag, qpMode, qp);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
++{
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrTimeOut).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrRetryCnt).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    QpInfo qp;
++    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
++    qp.trafficClass = 4;
++    qp.serviceLevel = 0;
++    qp.attr.maxWr = 128;
++    qp.attr.maxSendSge = 1;
++    qp.attr.maxRecvSge = 1;
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    int flag = 0;
++    s32 qpMode = 0;
++    HcclResult ret = CreateQp(rdmaHandle, flag, qpMode, qp);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateNormalQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
++{
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaNormalQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrTimeOut).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    QpInfo qp;
++    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
++    qp.trafficClass = 4;
++    qp.serviceLevel = 0;
++    qp.attr.maxWr = 128;
++    qp.attr.maxSendSge = 1;
++    qp.attr.maxRecvSge = 1;
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    HcclResult ret = CreateNormalQp(rdmaHandle, qp);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateNormalQp_SetQpAttrRetryCntFail_Expect_DestoryQp)
++{
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaNormalQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrTimeOut).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrRetryCnt).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    QpInfo qp;
++    qp.qpHandle = reinterpret_cast<QpHandle>(0x1234);
++    qp.trafficClass = 4;
++    qp.serviceLevel = 0;
++    qp.attr.maxWr = 128;
++    qp.attr.maxSendSge = 1;
++    qp.attr.maxRecvSge = 1;
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    HcclResult ret = CreateNormalQp(rdmaHandle, qp);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateCqAndQp_CreateNormalQpFail_Expect_DestoryCq)
++{
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaNormalQpCreate).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaDestroyCq).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    string label = "test_label";
++    HcclIpAddress selfIp("1.1.1.1");
++    HcclIpAddress peerIp("2.2.2.2");
++    QpConfig config(selfIp, peerIp, 128, 1, 1, 0, 0);
++    QpInfo info;
++    info.srq = nullptr;
++    info.srqCq = nullptr;
++    info.srqContext = nullptr;
++    HcclResult ret = CreateCqAndQp(rdmaHandle, label, config, info);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateQpWithCq_CreateNormalQpFail_Expect_DestoryCq)
++{
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaNormalQpCreate).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaDestroyCq).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    QpInfo info;
++    info.srq = nullptr;
++    info.srqCq = nullptr;
++    info.srqContext = nullptr;
++    info.trafficClass = 4;
++    info.serviceLevel = 0;
++    HcclResult ret = CreateQpWithCq(rdmaHandle, 0, 0, nullptr, nullptr, info, false, false);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrQosFail_Expect_DestoryQp)
++{
++    MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtGetDevicePhyIdByIndex).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaAiQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    struct AiQpInfo aiQpInfo;
++    aiQpInfo.aiQpAddr = 0x1234;
++    aiQpInfo.aiScqAddr = 0x5678;
++    aiQpInfo.aiRcqAddr = 0x9abc;
++    QpInfo info;
++    info.qpHandle = nullptr;
++    info.qpMode = 0;
++    info.trafficClass = 4;
++    info.serviceLevel = 0;
++    u32 devicePhyId = 0;
++    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrTimeOutFail_Expect_DestoryQp)
++{
++    MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtGetDevicePhyIdByIndex).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaAiQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrTimeOut).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    struct AiQpInfo aiQpInfo;
++    aiQpInfo.aiQpAddr = 0x1234;
++    aiQpInfo.aiScqAddr = 0x5678;
++    aiQpInfo.aiRcqAddr = 0x9abc;
++    QpInfo info;
++    info.qpHandle = nullptr;
++    info.qpMode = 0;
++    info.trafficClass = 4;
++    info.serviceLevel = 0;
++    u32 devicePhyId = 0;
++    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrRetoryCntFail_Expect_DestoryQp)
++{
++    MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtGetDevicePhyIdByIndex).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaAiQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrTimeOut).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrRetryCnt).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    struct AiQpInfo aiQpInfo;
++    aiQpInfo.aiQpAddr = 0x1234;
++    aiQpInfo.aiScqAddr = 0x5678;
++    aiQpInfo.aiRcqAddr = 0x9abc;
++    QpInfo info;
++    info.qpHandle = nullptr;
++    info.qpMode = 0;
++    info.trafficClass = 4;
++    info.serviceLevel = 0;
++    u32 devicePhyId = 0;
++    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_CreateAiQp_QpIsNullptr_Expect_DestoryQp)
++{
++    MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtGetDevicePhyIdByIndex).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaAiQpCreate).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrQos).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrTimeOut).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(hrtRaSetQpAttrRetryCnt).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++    MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
++
++    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
++    struct AiQpInfo aiQpInfo;
++    aiQpInfo.aiQpAddr = 0;
++    aiQpInfo.aiScqAddr = 0x5678;
++    aiQpInfo.aiRcqAddr = 0x9abc;
++    QpInfo info;
++    info.qpHandle = nullptr;
++    info.qpMode = 0;
++    info.trafficClass = 4;
++    info.serviceLevel = 0;
++    u32 devicePhyId = 0;
++    HcclResult ret = CreateAiQp(rdmaHandle, aiQpInfo, info, devicePhyId);
++    EXPECT_EQ(ret, HCCL_E_PARA);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_hrtStreamCreate_hrtStreamIdFail_Expect_DestoryStream)
++{
++    MOCKER(aclrtCreateStream).expects(atMost(1)).will(returnValue(ACL_SUCCESS));
++    MOCKER(hrtGetStreamId).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(aclrtDestroyStream).expects(atMost(1)).will(returnValue(ACL_SUCCESS));
++
++    aclrtStream stream = nullptr;
++    HcclResult ret = hrtStreamCreate(&stream);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_hrtStreamCreateWithFlags_hrtGetStreamIdFail_Expect_DestoryStream)
++{
++    MOCKER(aclrtCreateStreamWithConfig).expects(atMost(1)).will(returnValue(ACL_SUCCESS));
++    MOCKER(hrtGetStreamId).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
++    MOCKER(aclrtDestroyStream).expects(atMost(1)).will(returnValue(ACL_SUCCESS));
++
++    aclrtStream stream = nullptr;
++    int32_t priority = 0;
++    uint32_t flags = 0;
++    HcclResult ret = hrtStreamCreateWithFlags(&stream, priority, flags);
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_hrtMemcpy_CountExceedsDestMax_Expect_ParaError)
++{
++    void *dst = malloc(100);
++    void *src = malloc(100);
++    uint64_t destMax = 50;
++    uint64_t count = 100;
++    HcclRtMemcpyKind kind = HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE;
++    
++    HcclResult ret = hrtMemcpy(dst, destMax, src, count, kind);
++    EXPECT_EQ(ret, HCCL_E_PARA);
++
++    free(dst);
++    free(src);
++}
++
++// NetworkManager测试用例
++TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_SocketInitFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_E_TCP_CONNECT));
++
++    HcclIpAddress ipAddr("127.0.0.1");
++    HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
++    EXPECT_NE(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_StopVnicSocketHandle_DeinitFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).StopVnicSocketHandle(HcclIpAddress(device_id));
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceNicSockets_StopListenFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    HcclIpAddress ipAddr("10.21.78.208");
++    ret = NetworkManager::GetInstance(device_id).StartNic(ipAddr, port, false);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    MOCKER_CPP(&hccl::NetworkManager::StopNicsSocketListen).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).StopAllDeviceNicSockets();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceNicSockets_StopSocketFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    HcclIpAddress ipAddr("10.21.78.208");
++    ret = NetworkManager::GetInstance(device_id).StartNic(ipAddr, port, false);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    MOCKER_CPP(&hccl::NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).StopAllDeviceNicSockets();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceVnicSockets_StopSocketFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    MOCKER_CPP(&hccl::NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).StopAllDeviceVnicSockets();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceVnicSockets_DeinitFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    MOCKER(hrtRaSocketDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).StopAllDeviceVnicSockets();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_StopAllHostNicSockets_StopListenFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_HOST);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    HcclIpAddress ipAddr("127.0.0.1");
++    ret = NetworkManager::GetInstance(device_id).StartHostNetAndListen(ipAddr, *(SocketHandle*)&ipAddr, port, false);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    MOCKER_CPP(&hccl::NetworkManager::StopListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).StopAllHostNicSockets();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_StopAllHostNicSockets_DeinitFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_HOST);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    HcclIpAddress ipAddr("127.0.0.1");
++    ret = NetworkManager::GetInstance(device_id).StartHostNetAndListen(ipAddr, *(SocketHandle*)&ipAddr, port, false);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    MOCKER(hrtRaSocketDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).StopAllHostNicSockets();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_PsWorkerRaInit_SocketInitFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_E_TCP_CONNECT));
++
++    HcclIpAddress ipAddr("10.21.78.208");
++    HcclResult ret = NetworkManager::GetInstance(device_id).PsWorkerRaInit(device_id, ipAddr, port, false, false, false);
++    EXPECT_EQ(ret, HCCL_E_TCP_CONNECT);
++
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_Destory_DeviceRaDeinitFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    NetworkManager::GetInstance(device_id).deviceNicInitRef_.Ref();
++    NetworkManager::GetInstance(device_id).deviceNicInitRef_.Ref();
++
++    MOCKER(HrtRaDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    
++    GlobalMockObject::verify();
++}
++
++TEST_F(HccpTest, Ut_NetworkManager_Destory_HostRaDeinitFail)
++{
++    s32 device_id = 0;
++    u32 port = 16666;
++
++    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_HOST);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++
++    NetworkManager::GetInstance(device_id).hostNicInitRef_.Ref();
++    NetworkManager::GetInstance(device_id).hostNicInitRef_.Ref();
++
++    MOCKER(HrtRaDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
++
++    ret = NetworkManager::GetInstance(device_id).Destroy();
++    EXPECT_EQ(ret, HCCL_SUCCESS);
++    
+     GlobalMockObject::verify();
+ }
+\ No newline at end of file
+diff --git a/test/ut/misc/ut_sal.cc b/test/ut/misc/ut_sal.cc
+index 7f5a07b675ff5e23c67dc9e75932cf88b7cd29b0..91bef8474b360e09061519ea8e74e741d75599e6 100644
+--- a/test/ut/misc/ut_sal.cc
++++ b/test/ut/misc/ut_sal.cc
+@@ -109,4 +109,31 @@ TEST_F(SalTest, ut_atrace_error_test)
+     ret = atrace.SaveTraceInfo(log, AtraceOption::Opbasekey);
+     EXPECT_EQ(ret, HCCL_SUCCESS);
+     GlobalMockObject::verify();
++}
++
++// TEST_F(SalTest, ut_DlTraceFunctionInit_UTrace_Failed_Expect_ReturnError)
++// {
++//     DlTraceFunction &dlTrace = DlTraceFunction::GetInstance();
++//     dlTrace.handle_ = nullptr;
++
++//     MOCKER_CPP(&hccl::DlTraceFunction::DlUTraceFunctionInterInit)
++//     .stubs()
++//     .will(returnValue(HCCL_E_INTERNAL));
++
++//     HcclResult ret = dlTrace.DlTraceFunctionInit();
++//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
++//     GlobalMockObject::verify();
++// }
++
++TEST_F(SalTest, ut_DlTraceFunctionInit_ATrace_Failed_Expect_ReturnError)
++{
++    MOCKER_CPP(&hccl::DlTraceFunction::DlATraceFunctionInterInit)
++    .stubs()
++    .will(returnValue(HCCL_E_INTERNAL));
++
++    DlTraceFunction &dlTrace = DlTraceFunction::GetInstance();
++    dlTrace.handle_ = nullptr;
++    HcclResult ret = dlTrace.DlTraceFunctionInit();
++    EXPECT_EQ(ret, HCCL_E_INTERNAL);
++    GlobalMockObject::verify();
+ }
+\ No newline at end of file
