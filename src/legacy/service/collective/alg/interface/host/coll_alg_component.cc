@@ -144,7 +144,9 @@ HcclResult CollAlgComponent::CalcResOffload(const OpType &opType, const u64 &dat
                 HCCL_ERROR("[CollAlgComponent] Unable to Set InsCollAlgExecutor, please check params!"),
                 HcclResult::HCCL_E_PARA);
     CHK_RET(insGenFunc->CalcResOffload(rankGraph_, dataSize, resReq));
-    CHK_RET(TmpStubCalcResOffload(resReq));
+    if(opExecuteConfig.accState == AcceleratorState::CCU_MS || opExecuteConfig.accState == AcceleratorState::CCU_SCHED){
+        CHK_RET(TmpStubCalcResOffload(resReq));
+    }
 
     HCCL_INFO("[CollAlgComponent][CalcResOffload] requiredSubQueNum[%llu], requiredScratchMemSize[%llu]",
                resReq.requiredSubQueNum, resReq.requiredScratchMemSize);
