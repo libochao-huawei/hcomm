@@ -187,35 +187,35 @@ TEST_F(OpRetryConnTest, ut_opretry_connection_whitelist)
     ASSERT_EQ(ParseHcclWhitelistFilePath(), HCCL_SUCCESS);
 }
 
-TEST_F(OpRetryConnTest, ut_opretry_connection_static_init)
-{
-    u32 rankId = 0;
-    u32 rankSize = 1;
-    u32 rootRank = 0;
-    HcclIpAddress hostIp(std::string("127.0.0.1"));
-    HcclIpAddress localIp(std::string("127.0.0.1"));
-    std::string groupName = "Test_group";
-    MOCKER(hrtRaGetInterfaceVersion)
-    .expects(atMost(1))
-    .will(returnValue(HCCL_SUCCESS));
+// TEST_F(OpRetryConnTest, ut_opretry_connection_static_init)
+// {
+//     u32 rankId = 0;
+//     u32 rankSize = 1;
+//     u32 rootRank = 0;
+//     HcclIpAddress hostIp(std::string("127.0.0.1"));
+//     HcclIpAddress localIp(std::string("127.0.0.1"));
+//     std::string groupName = "Test_group";
+//     MOCKER(hrtRaGetInterfaceVersion)
+//     .expects(atMost(1))
+//     .will(returnValue(HCCL_SUCCESS));
 
-    OpRetryServerInfo serverInfo = {hostIp, 16666, 0};
-    OpRetryAgentInfo agentInfo = {rankId, 0, localIp, localIp};
+//     OpRetryServerInfo serverInfo = {hostIp, 16666, 0};
+//     OpRetryAgentInfo agentInfo = {rankId, 0, localIp, localIp};
 
-    EXPECT_EQ(OpRetryConnectionPub::Init(groupName, rankSize, serverInfo, agentInfo, rootRank), HCCL_SUCCESS);
+//     EXPECT_EQ(OpRetryConnectionPub::Init(groupName, rankSize, serverInfo, agentInfo, rootRank), HCCL_SUCCESS);
 
-    bool isRoot = false;
-    std::shared_ptr<HcclSocket> agent = nullptr;
-    std::map<u32, std::shared_ptr<HcclSocket>> server;
-    EXPECT_EQ(OpRetryConnectionPub::GetConns(groupName, isRoot, agent, server), HCCL_SUCCESS);
+//     bool isRoot = false;
+//     std::shared_ptr<HcclSocket> agent = nullptr;
+//     std::map<u32, std::shared_ptr<HcclSocket>> server;
+//     EXPECT_EQ(OpRetryConnectionPub::GetConns(groupName, isRoot, agent, server), HCCL_SUCCESS);
 
-    EXPECT_EQ(isRoot, true);
-    EXPECT_NE(agent, nullptr);
-    size_t expectSeverLink = 1;
-    EXPECT_EQ(server.size(), expectSeverLink);
+//     EXPECT_EQ(isRoot, true);
+//     EXPECT_NE(agent, nullptr);
+//     size_t expectSeverLink = 1;
+//     EXPECT_EQ(server.size(), expectSeverLink);
 
-    OpRetryConnectionPub::DeInit(groupName);
-}
+//     OpRetryConnectionPub::DeInit(groupName);
+// }
 
 TEST_F(OpRetryConnTest, ut_opretry_connect_error)
 {

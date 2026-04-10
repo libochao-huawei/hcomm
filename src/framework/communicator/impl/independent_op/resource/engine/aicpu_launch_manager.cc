@@ -25,14 +25,9 @@ HcclResult AicpuLaunchMgr::KernelLaunch(OpParam &opParam, ApiParam &apiParam, rt
     return HCCL_SUCCESS;
 }
 
-template <typename OpParam>
-HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom(OpParam &opParam, std::string kernelName, rtStream_t aicpuInitStream,
+HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom(uint64_t context, std::string kernelName, rtStream_t aicpuInitStream,
     aclrtBinHandle binCustomHandle)
 {
-    DeviceMem addr = DeviceMem::alloc(sizeof(OpParam));
-    CHK_RET(hrtMemSyncCopy(addr.ptr(), sizeof(OpParam), &opParam, sizeof(OpParam),
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-    uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
     u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME > std::numeric_limits<uint16_t>::max() ? 
                     std::numeric_limits<uint16_t>::max() : NOTIFY_DEFAULT_WAIT_TIME;
     CHK_RET(AicpuAclKernelLaunch(aicpuInitStream, &context,
@@ -148,8 +143,12 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchImpl(
     }
 
     // Step 4. 调用 KernelLaunch
+    DeviceMem addr = DeviceMem::alloc(sizeof(opParam));
+    CHK_RET(hrtMemSyncCopy(addr.ptr(), sizeof(opParam), &opParam, sizeof(opParam),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
     HCCL_INFO("AicpuLaunchMgr::%s, call KernelLaunch", __func__);
-    HcclResult ret = KernelLaunchAicpuCustom(opParam, config.kernelName.c_str(),
+    HcclResult ret = KernelLaunchAicpuCustom(context, config.kernelName.c_str(),
                                              localStream.ptr(), config.binHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuLaunchMgr][%s] KernelLaunch failed, return [%d].", __func__, ret), ret);
@@ -245,7 +244,11 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchDestroy(ThreadHandle *threadHandles
     std::string kernelName = "RunAicpuThreadDestroy";
     HCCL_INFO("[AicpuLaunchMgr][%s] call KernelLaunch, kernelName=%s, stream=%p, binHandle=%p", 
         __func__, kernelName.c_str(), localStream.ptr(), binHandle);
-    HcclResult ret = KernelLaunchAicpuCustom(opParam, kernelName.c_str(), localStream.ptr(), binHandle);
+    DeviceMem addr = DeviceMem::alloc(sizeof(opParam));
+    CHK_RET(hrtMemSyncCopy(addr.ptr(), sizeof(opParam), &opParam, sizeof(opParam),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
+    HcclResult ret = KernelLaunchAicpuCustom(context, kernelName.c_str(), localStream.ptr(), binHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuLaunchMgr][%s] KernelLaunch failed, return [%d].", __func__, ret), ret);
 
@@ -279,7 +282,11 @@ HcclResult AicpuLaunchMgr::LaunchNotifyKernel(NotifyMgrAicpuParam &opParam, aclr
     constexpr u32 aicpuStreamMode = 1;
     CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
 
-    HcclResult ret = KernelLaunchAicpuCustom(opParam, "RunAicpuIndOpNotify", localStream.ptr(), binCustomHandle);
+    DeviceMem addr = DeviceMem::alloc(sizeof(opParam));
+    CHK_RET(hrtMemSyncCopy(addr.ptr(), sizeof(opParam), &opParam, sizeof(opParam),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
+    HcclResult ret = KernelLaunchAicpuCustom(context, "RunAicpuIndOpNotify", localStream.ptr(), binCustomHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuLaunchMgr][LaunchNotifyKernel] KernelLaunch failed, ret[%d]", ret), ret);
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(opParam.hcomId)));
