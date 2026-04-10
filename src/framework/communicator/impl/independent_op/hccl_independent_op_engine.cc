@@ -167,7 +167,7 @@ HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
             CHK_PTR_NULL(threadStream);
             Mc2CommInfo mc2CommInfo;
             mc2CommInfo.FreeStreamId = 0;
-            mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->id()));
+            mc2CommInfo.streamsId.push_back(static_cast<u32>(threadStream->sqId()));
             mc2CommInfo.groupname = commId;
             mc2CommInfo.myRankId = collComm->GetMyRankId();
             mc2CommInfo.rankSize = collComm->GetRankSize();

@@ -287,10 +287,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
-        std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
+        std::vector<MemHandle> commMemHandleVec{};
         if (engine != COMM_ENGINE_CPU) {
-            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
-            hcommDescs[i].memHandles = reinterpret_cast<void**>(commMemHandles.data());
+            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandleVec));
+            hcommDescs[i].memHandles = commMemHandleVec.data();
         }
 
         hcomm::EndpointPair* endpointPair = nullptr;
@@ -317,6 +317,11 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
+        if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
+            Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+            CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+        }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),
