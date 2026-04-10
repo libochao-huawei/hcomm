@@ -16,6 +16,10 @@
 #include "dlhal_function.h"
 #include "hcclCommTaskException.h"
 
+#include "ccu_comp.h"
+#include "env_config/env_config.h"
+#include "hcom_common.h"
+
 namespace hccl {
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
     : comm_(comm), rankId_(rankId), commId_ (commName), callbacks_(callbacks)
@@ -52,7 +56,6 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
         EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
 
-    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get()), return HCCL_E_PTR);
     uint32_t opExpansionMode = 0;
     if (config) {
         opExpansionMode = config->hcclOpExpansionMode;
@@ -69,7 +72,25 @@ HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cc
                 HCCL_ERROR_CODE(HCCL_E_PARA), sl),
             HCCL_E_PARA);
         CHK_RET(config_.SetConfigServiceLevel(sl));
+
+        u32 qos = config->hcclQos;
+        CHK_PRT_RET((qos != 0xFFFFFFFFu) && (qos > 7u),
+            HCCL_ERROR("[InitCollComm]errNo[0x%016llx] invalid hcclQos[%u], must be 0xFFFFFFFF or in [0,7]",
+                HCCL_ERROR_CODE(HCCL_E_PARA), qos),
+            HCCL_E_PARA);
+        CHK_RET(config_.SetConfigHcclQos(qos));
     }
+
+    {
+        const u32 q = config_.GetConfigHcclQos();
+        const u32 loopQos = (q == HCCL_COMM_QOS_CONFIG_NOT_SET) ? static_cast<u32>(EnvConfig::UB_QOS_DEFAULT) : (q & 7U);
+        const s32 devLogicIdForLoop = HcclGetThreadDeviceId();
+        if (devLogicIdForLoop >= 0) {
+            hcomm::CcuComponent::GetInstance(devLogicIdForLoop).SetLoopGetTpInfoQos(loopQos);
+        }
+    }
+
+    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_, callbacks_, rankgraph_.get()), return HCCL_E_PTR);
     CHK_RET(myRank_->Init(cclBuffer, opExpansionMode, rankNum));
     s32 deviceId = 0;
     CHK_RET(hrtGetDevice(&deviceId));
