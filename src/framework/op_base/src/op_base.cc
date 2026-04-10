@@ -510,6 +510,11 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set group topo info error.",
                 HCCL_ERROR_CODE(ret)), errorFlag = true);
+				
+        ret = opBaseHcom.pComm->InitHccpChannel(); 
+        if (ret != HCCL_SUCCESS) { 
+            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret); 
+        }				
     } while (0);
 
     if (errorFlag) {
@@ -1021,6 +1026,11 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s]errNo[0x%016llx] set group topo info error.", __func__, HCCL_ERROR_CODE(ret)),
             errorFlag = true);
+			
+        ret = pComm->InitHccpChannel(); 
+        if (ret != HCCL_SUCCESS) { 
+            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret); 
+        }			
     } while(0);
 
     if (errorFlag) {
@@ -1582,6 +1592,11 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] setGroupTopoInfo error", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
+        ret = pComm->InitHccpChannel(); 
+        if (ret != HCCL_SUCCESS) { 
+            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret); 
+        }
+		
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0) {
             DevType nslb_devType;
             CHK_RET(hrtGetDeviceType(nslb_devType));
