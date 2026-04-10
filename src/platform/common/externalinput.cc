@@ -488,7 +488,7 @@ HcclResult InitEnvVarParam()
     RPT_ENV_ERR(ret != HCCL_SUCCESS,
         "EI0001",
         std::vector<std::string>({"value", "env", "expect"}),
-        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE,AIV_OPS_EXC(optionally prefixed with'^')"}));
+        std::vector<std::string>({envValue, "HCCL_DEBUG_CONFIG", "ALG,TASK,RESOURCE(optionally prefixed with'^')"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, "
                    "parse HCCL_DEBUG_CONFIG failed. errorno[%d]",
@@ -1907,7 +1907,7 @@ HcclResult ParseDebugConfig()
         } else if (strcasecmp(subConfig, "RESOURCE") == 0) {
             mask = PLF_RES;
         } else if (strcasecmp(subConfig, "AIV_OPS_EXC") == 0) {
-            mask = PLF_AIV_OPS_EXC;
+            HCCL_WARNING("HCCL_DEBUG_CONFIG:%s subConfig:%s is deprecated and ignored", env, subConfig);
         } else {
             HCCL_ERROR("HCCL_DEBUG_CONFIG:%s is invalid, subConfig:%s is not supported", env, subConfig);
             free(configDup);
