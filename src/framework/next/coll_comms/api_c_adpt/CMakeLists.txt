@@ -12,6 +12,10 @@ set(src_list
     coll_comm_res_c_adpt.cc
 )
 
+target_include_directories(hcomm PRIVATE
+    ${HCCL_BASE_DIR}/framework/next/comms/api_c_adpt
+)
+
 target_sources(hcomm PRIVATE
     ${src_list}
 )
