@@ -156,5 +156,5 @@ TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_BufPairs
     uint32_t bufPairsNum = 0;
 
     HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
-    EXPECT_EQ(ret, HCCL_E_PTR);
+    EXPECT_EQ(ret, HCCL_E_PARA);
 }
