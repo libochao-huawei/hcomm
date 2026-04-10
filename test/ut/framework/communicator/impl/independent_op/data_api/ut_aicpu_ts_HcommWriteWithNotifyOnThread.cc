@@ -8,40 +8,36 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ut_aicpu_ts_base.h"
+#include "gtest/gtest.h"
+#include "mockcpp/mokc.h"
+#include <mockcpp/mockcpp.hpp>
+
+#define private public
+#include "aicpu_ts_thread.h"
+#include "aicpu_ts_thread_interface.h"
 #include "ub_transport_lite_impl.h"
+#undef private
 
 using namespace hccl;
 
-class UtAicpuTsHcommWriteWithNotifyOnThread : public UtAicpuTsBase
+class UtAicpuTsHcommWriteWithNotifyOnThread : public testing::Test
 {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UtAicpuTsHcommWriteWithNotifyOnThread tests set up." << std::endl;
-    }
-
-    static void TearDownTestCase()
-    {
-        std::cout << "UtAicpuTsHcommWriteWithNotifyOnThread tests tear down." << std::endl;
-    }
-
     virtual void SetUp() override
     {
-        std::cout << "A Test case in UtAicpuTsHcommWriteWithNotifyOnThread SetUp" << std::endl;
-        UtAicpuTsBase::SetUp();
-
-        MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-            .stubs()
-            .will(returnValue(HCCL_SUCCESS));
+        threadOnDevice.devType_ = DevType::DEV_TYPE_950;
+        threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+        threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123456);
+        MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
     {
-        UtAicpuTsBase::TearDown();
-        std::cout << "A Test case in UtAicpuTsHcommWriteWithNotifyOnThread TearDown" << std::endl;
+        GlobalMockObject::verify();
     }
 
+    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
     std::vector<char> uniqueId;
     Hccl::UbTransportLiteImpl transportOnDevice{uniqueId};
     ChannelHandle channel = reinterpret_cast<ChannelHandle>(&transportOnDevice);
@@ -74,23 +70,27 @@ TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_Wh
 
 TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Dst_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
-    res = HcommWriteWithNotifyOnThread(thread, channel, nullptr, src, len, notifyIdx);
+    res = HcommWriteWithNotifyOnThread(thread, channel, 0, src, len, notifyIdx);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
 TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Src_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
-    res = HcommWriteWithNotifyOnThread(thread, channel, dst, nullptr, len, notifyIdx);
+    res = HcommWriteWithNotifyOnThread(thread, channel, dst, 0, len, notifyIdx);
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_StreamLite_NotFound_Expect_ReturnIsHCCL_E_PTR)
+{
+    threadOnDevice.pImpl_->streamLiteVoidPtr_ = nullptr;
+    res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
     EXPECT_EQ(res, HCCL_E_PTR);
 }
 
 TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
 {
     GlobalMockObject::verify();
-    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
-        .stubs()
-        .will(returnValue(HCCL_E_INTERNAL));
-
+    MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite).stubs().will(returnValue(HCCL_E_INTERNAL));
     res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }

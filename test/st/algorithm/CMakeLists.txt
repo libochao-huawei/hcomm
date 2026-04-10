@@ -164,7 +164,6 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/sockets/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/
-    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/reged_mems/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/api_c_adpt/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
@@ -228,10 +227,7 @@ set(HCOMM_LEGACY_INCLUDE_LIST
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/buffer
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel/dpu_notify
     ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel
-    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/task_exception
- 	${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/profiling
-    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/common
-    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu
+    ${HCOMM_CODE_LEGACY}/framework/dfx/aicpu/profiling
     ${HCOMM_CODE_LEGACY}/framework/dfx/task_exception
     ${HCOMM_CODE_LEGACY}/framework/dfx/profiling
     ${HCOMM_CODE_LEGACY}/framework/dfx/common

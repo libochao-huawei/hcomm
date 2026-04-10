@@ -31,11 +31,6 @@ public:
         return HCCL_SUCCESS;
     }
 
-    HcclResult NotifyWait(uint32_t notifyId, uint32_t timeout) const
-    {
-        return HCCL_SUCCESS;
-    }
-
     HcclResult NotifyRecordLoc(uint32_t notifyId) const
     {
         return HCCL_SUCCESS;
@@ -52,18 +47,13 @@ public:
         return HCCL_SUCCESS;
     }
 
-    HcclResult GetStreamLitePtr(void **streamLitePtrPtr) const
+    HcclResult GetStreamLitePtr(void **streamLitePtrPtr)
     {
         *streamLitePtrPtr = streamLiteVoidPtr_;
         return HCCL_SUCCESS;
     }
 
-    void LaunchTask() const {}
-
-    HcclResult GetSqId(uint32_t &sqId) const
-    {
-        return HCCL_SUCCESS;
-    }
+    void LaunchTask() {}
 
 private:
     void *streamLiteVoidPtr_ = nullptr;

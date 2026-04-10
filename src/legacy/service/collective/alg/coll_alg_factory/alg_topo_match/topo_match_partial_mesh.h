@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCLV2_TOPO_MATCH_PARTIAL_MESH
-#define HCCLV2_TOPO_MATCH_PARTIAL_MESH
+#ifndef HCCLV2_TOPO_MATCH_MESH
+#define HCCLV2_TOPO_MATCH_MESH
 #include <string>
 #include <vector>
 #include <map>
@@ -31,7 +31,7 @@ public:
 
     std::string Describe() const override
     {
-        return "Topo Match for Partial Mesh Algorithm (CURRENTLY only 950 is supported).";
+        return "Topo Match for Partial Mesh Algorithm (CURRENTLY only 910_95 is supported).";
     }
     using TopoMatchBase::MatchTopo;
     HcclResult MatchTopo(std::vector<std::vector<RankId>> &vTopo, std::vector<RankId> &virtRanks,
@@ -48,4 +48,4 @@ private:
 };
 } // namespace Hccl
 
-#endif // !HCCLV2_TOPO_MATCH_PARTIAL_MESH
+#endif // !HCCLV2_TOPO_MATCH_MESH

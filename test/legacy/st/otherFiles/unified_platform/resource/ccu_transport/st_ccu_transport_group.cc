@@ -230,7 +230,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_001)
     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -332,7 +332,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_002)
     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -404,7 +404,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     RdmaHandle rdmaHandle = new int(1);
     u32 jettyNum = 1;   // 当前迭代，jettyNum默认为1
     u32 sqSize = 128;   // 当前迭代，默认使用MS，故sqSize固定为128。sqSize就是jetty深度
-    u32 cntCkeId = 0;
+    
     
     MOCKER(CcuDeviceManager::AllocXn).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(CcuDeviceManager::AllocCke).defaults().will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -435,7 +435,7 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     utCcuTransportVec.emplace_back(std::move(utCcuTransport.get()));
 
     // 打桩CcuTransportGroup构造函数中调用的函数
-    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&CcuTransportGroup::CheckTransportCntCke).stubs().will(returnValue(true));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
 
     // 创建utCcuTransportGroup
@@ -444,17 +444,14 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_003)
     utCcuTransportGroup.cntCkesGroup.emplace_back(1);
     utCcuTransportGroup.cntCkesGroup.emplace_back(2);
 
-    HcclResult res1 = utCcuTransportGroup.GetCntCkeId(0, cntCkeId);
-    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res1);
-    EXPECT_EQ(0, cntCkeId);
+    auto res1 = utCcuTransportGroup.GetCntCkeId(0);
+    EXPECT_EQ(0, res1);
 
-    HcclResult res2 = utCcuTransportGroup.GetCntCkeId(1, cntCkeId);
-    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res2);
-    EXPECT_EQ(1, cntCkeId);
+    auto res2 = utCcuTransportGroup.GetCntCkeId(1);
+    EXPECT_EQ(1, res2);
 
-    HcclResult res3 = utCcuTransportGroup.GetCntCkeId(2, cntCkeId);
-    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res3);
-    EXPECT_EQ(2, cntCkeId);
+    auto res3 = utCcuTransportGroup.GetCntCkeId(2);
+    EXPECT_EQ(2, res3);
 
     delete socket;
     delete rdmaHandle;
@@ -744,9 +741,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_006)
 
     // 创建utCcuTransportGroup
     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
-    HcclResult res = utCcuTransportGroup.CheckTransportCntCke();
+    auto res = utCcuTransportGroup.CheckTransportCntCke();
 
-    EXPECT_EQ(HcclResult::HCCL_SUCCESS, res);
+    EXPECT_EQ(true, res);
 
     delete socket;
     delete rdmaHandle;
@@ -841,9 +838,9 @@ TEST_F(CcuTransportGroupTest, Test_CcuTransportGroup_007)
 
     // 创建utCcuTransportGroup
     CcuTransportGroup utCcuTransportGroup(utCcuTransportVec, utCntCke);
-    HcclResult res = utCcuTransportGroup.CheckTransportCntCke();
+    auto res = utCcuTransportGroup.CheckTransportCntCke();
 
-    EXPECT_EQ(HcclResult::HCCL_E_INTERNAL, res);
+    EXPECT_EQ(false, res);
 
     delete socket;
     delete rdmaHandle;

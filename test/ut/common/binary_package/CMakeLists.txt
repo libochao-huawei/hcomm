@@ -34,5 +34,7 @@ target_link_libraries(hccl_ut_binary_package PRIVATE
     -lrt
 )
 
-enable_testing()
-add_test(NAME hccl_ut_binary_package COMMAND hccl_ut_binary_package)
+run_llt_test(
+    TARGET hccl_ut_binary_package
+    TASK_NUM 1
+)

@@ -126,8 +126,6 @@ using QpConfigInfo = struct QpConfigInfoDef {
     uint32_t rq_depth;
     uint32_t scq_depth;
     uint32_t rcq_depth;
-    uint32_t use_resv_mem;
-    uint32_t resv_mem_pool_id;
 };
 
 using CqInfo = struct CqInfoDef {

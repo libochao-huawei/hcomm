@@ -9,7 +9,6 @@
  */
 
 #include "aicpu_ts_thread.h"
-#include "hccl_common.h"
 #include "aicpu/aicpu_hccl_sqcq.h"
 #include "types/dev_type.h"
 
@@ -241,8 +240,21 @@ void AicpuTsThread::LaunchTask() const
 // Local Data Plane Functions
 HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
-    HCCL_ERROR("[AicpuTsThread][%s] without timeout not support", __func__);
-    return HCCL_E_NOT_SUPPORT;
+    u64 beginTime = ProfGetCurCpuTimestamp();
+    CHK_PTR_NULL(pImpl_);
+    void* streamLitePtr = GetStreamLitePtr();
+    CHK_PTR_NULL(streamLitePtr);
+    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
+    CHK_PTR_NULL(streamLite);
+    Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
+    CHK_PTR_NULL(rtsq);
+    u32 taskId = rtsq->GetTaskId();
+    HCCL_INFO("LocalNotifyWait taskId %u", taskId);
+
+    CHK_RET(pImpl_->NotifyWait(notifyId));
+
+    CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
+    return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
@@ -269,23 +281,10 @@ HcclResult AicpuTsThread::LocalNotifyRecord(ThreadHandle dstThread, uint32_t dst
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyId, uint32_t timeout) const
+HcclResult AicpuTsThread::LocalNotifyWait(uint32_t notifyIdx, uint32_t timeOut) const
 {
-    u64 beginTime = ProfGetCurCpuTimestamp();
-    CHK_PTR_NULL(pImpl_);
-    void* streamLitePtr = GetStreamLitePtr();
-    CHK_PTR_NULL(streamLitePtr);
-    Hccl::StreamLite *streamLite = static_cast<Hccl::StreamLite *>(streamLitePtr);
-    CHK_PTR_NULL(streamLite);
-    Hccl::RtsqBase* rtsq = streamLite->GetRtsq();
-    CHK_PTR_NULL(rtsq);
-    u32 taskId = rtsq->GetTaskId();
-    HCCL_INFO("LocalNotifyWait taskId %u, timeout %u", taskId, timeout);
-
-    CHK_RET(pImpl_->NotifyWait(notifyId, timeout));
-
-    CHK_RET(ReportAicpuNotifyWaitTask(notifyId, beginTime, taskId, streamLite->GetSqId()));
-    return HCCL_SUCCESS;
+    HCCL_ERROR("[AicpuTsThread][%s]not support", __func__);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult AicpuTsThread::LocalCopy(void *dst, const void *src, uint64_t sizeByte) const
@@ -474,9 +473,9 @@ HcclResult AicpuTsThread::SupplementNotify(uint32_t notifyNum)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsThread::GetNotifyByUniqueId(u32 &notifyNum, std::string &notifyDesc)
+HcclResult AicpuTsThread::GetStreamIdAndNotifyByUniqueId(s32 &streamId, u32 &notifyNum, std::string &notifyDesc)
 {
-    CHK_PRT_RET(uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][GetNotifyByUniqueId]uniqueIdStr is empty"), HCCL_E_INTERNAL);
+    CHK_PRT_RET(uniqueIdStr_.empty(), HCCL_ERROR("[AicpuTsThread][GetStreamIdAndNotifyByUniqueId]uniqueIdStr is empty"), HCCL_E_INTERNAL);
     std::istringstream iss(uniqueIdStr_);
     StreamType streamType = StreamType::STREAM_TYPE_RESERVED;
     NotifyLoadType notifyLoadType = NotifyLoadType::HOST_NOTIFY;
@@ -487,20 +486,9 @@ HcclResult AicpuTsThread::GetNotifyByUniqueId(u32 &notifyNum, std::string &notif
     iss.read(reinterpret_cast<char_t *>(&hostPhyId), sizeof(hostPhyId));
     iss.read(reinterpret_cast<char_t *>(&notifyNum), sizeof(notifyNum));
     iss.read(reinterpret_cast<char_t *>(&streamParam), sizeof(streamParam));
+    streamId = streamParam.streamInfo.streamIds;
 
-    // 序列化信息
-    std::ostringstream oss;
-    for (uint32_t idx = 0; idx < notifyNum; idx++) {
-        HcclSignalInfo notifyInfo;
-        iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
-        HCCL_INFO("[AicpuTsThread][%s]get local notify data success, resId[%u], tsId:%d, devId[%u]", __func__,
-            notifyInfo.resId,
-            notifyInfo.tsId,
-            notifyInfo.devId);
-        oss.write(reinterpret_cast<const char_t *>(&notifyInfo), sizeof(notifyInfo));
-    }
-
-    notifyDesc = oss.str();
+    notifyDesc = iss.str();
     return HCCL_SUCCESS;
 }
 
@@ -513,38 +501,20 @@ HcclResult AicpuTsThread::SupplementNotify(u32 notifyNum, const std::string &not
     HCCL_INFO("[%s]supplement notifyNum[%u], notifyNum_[%u]", __func__, notifyNum, notifyNum_);
 
     std::istringstream iss(notifyDesc);
-    // A5 aicpu场景thread多申请一个host类型notify，用于host&device同步
-    u32 beginIdx = notifyNum_;
-    u32 endIdx = notifyNum - 1;
-    notifys_.resize(notifyNum);
-    if (devType_ == DevType::DEV_TYPE_950 && notifyNum_ > 0) {
-        beginIdx--;
-        CHK_SMART_PTR_NULL(notifys_[beginIdx]);
-        notifys_[endIdx] = std::move(notifys_[beginIdx]);
-        HCCL_INFO("[AicpuTsThread][SupplementNotify]notifyId[%u] beginIdx[%u], endIdx[%u]",
-            notifys_[endIdx]->notifyId_, beginIdx, endIdx);
-    }
-    for (uint32_t idx = 0; idx < beginIdx; idx++) {
-        HcclSignalInfo notifyInfo;
-        iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
-        HCCL_INFO("[AicpuTsThread][SupplementNotify]skip init, resId[%u], tsId:%d, devId[%u]",
-            notifyInfo.resId,
-            notifyInfo.tsId,
-            notifyInfo.devId);
-    }
-
-    for (uint32_t idx = beginIdx; idx < endIdx; idx++) {
+    notifys_.reserve(notifyNum);
+    for (uint32_t idx = notifyNum_; idx < notifyNum; idx++) {
+        notifys_.emplace_back(nullptr);
         HcclSignalInfo notifyInfo;
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
         if (devType_ == DevType::DEV_TYPE_950) {
             CHK_RET(notifys_[idx]->InitNotifyLite(notifyInfo));
-            HCCL_INFO("[AicpuTsThread][SupplementNotify]local notifyLite init success, resId[%u], devId[%u]",
+            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], devId[%u]",
                 notifyInfo.resId, notifyInfo.devId);
         } else {
             CHK_RET(notifys_[idx]->Init(notifyInfo, notifyLoadType_));
-            HCCL_INFO("[AicpuTsThread][SupplementNotify]local notifyLite init success, resId[%u], tsId:%d, devId[%u]",
+            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], tsId:%d, devId[%u]",
                 notifyInfo.resId,
                 notifyInfo.tsId,
                 notifyInfo.devId);

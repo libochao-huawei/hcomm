@@ -67,7 +67,7 @@ struct dcmi_spod_info {
     unsigned int server_index;
     unsigned int chassis_id;
     unsigned int super_pod_type;
-    unsigned int reserve[6];
+    char reserve[6];
 };
 
 #define MAIN_BOARD_ID_CARD_NOMESH (0x68)
@@ -90,17 +90,13 @@ int hal_get_spod_info(int phyId, struct dcmi_spod_info* spodInfo);
 
 int hal_get_npu_count();
 
+int hal_get_phyid_from_logicid(unsigned int logicId, unsigned int* phyId);
+
 int hal_get_logicid_from_phyid(unsigned int phyId, unsigned int* logicId);
 
 int get_server_id(char* server_id, size_t buf_size);
 
 int hal_get_driver_install_path(char *value_buf, size_t buf_size);
-
-/**
- * 添加一层适配，便于测试
- */
-void *hal_dlopen(const char *filename, int flag);
-void *hal_dlsym(void *handle, const char *symbol);
 
 #ifdef __cplusplus
 }

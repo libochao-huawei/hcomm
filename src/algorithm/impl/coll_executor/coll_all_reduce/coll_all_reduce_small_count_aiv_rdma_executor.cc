@@ -98,7 +98,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalNumBlocks(u32& numBlocks, 
         HCCL_WARNING("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
         numBlocks_, numBlocks), HCCL_E_PARA);
 
-    HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], recommanded[%u]",
+    HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
         numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }

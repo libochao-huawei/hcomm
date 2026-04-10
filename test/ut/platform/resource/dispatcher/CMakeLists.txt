@@ -44,5 +44,7 @@ target_link_libraries(hccl_utest_platform_dispatcher  PRIVATE
 
 add_dependencies(hccl_utest_platform_dispatcher hccl_llt)
 
-enable_testing()
-add_test(NAME hccl_utest_platform_dispatcher COMMAND hccl_utest_platform_dispatcher)
+run_llt_test(
+    TARGET  hccl_utest_platform_dispatcher
+    TASK_NUM 1
+)

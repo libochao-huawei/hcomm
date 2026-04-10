@@ -38,7 +38,7 @@ HcclResult EndpointMgr::Get(EndpointDesc epDesc, EndpointHandle &handle)
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[EndpointMgr::Get] create Endpoint");
-    CHK_RET(static_cast<HcclResult>(HcommEndpointCreate(&epDesc, &handle)));
+    CHK_RET(HcommEndpointCreate(&epDesc, &handle));
 
     endpointMap_.emplace(epDesc, handle);
     return HCCL_SUCCESS;
@@ -51,12 +51,8 @@ HcclResult EndpointMgr::RegisterMemory(EndpointHandle epHandle, const std::vecto
     uint32_t index = 0;
     for (const auto &mem: memVec) {
         MemHandle memHandle = nullptr;
-        CommMem commMem {
-            static_cast<CommMemType>(mem.type),
-            mem.addr,
-            mem.size
-        };
-        HcclResult ret = static_cast<HcclResult>(HcommMemReg(epHandle, memTag[index].c_str(), &commMem, &memHandle));
+        HcommMem hmem { mem.type, mem.addr, mem.size };
+        HcclResult ret = HcommMemReg(epHandle, memTag[index].c_str(), hmem, &memHandle);
         if(ret != HCCL_SUCCESS && ret != HCCL_E_AGAIN) {
             HCCL_ERROR("[%s]call trace: hcclRet -> %d", __FUNCTION__, ret);
             return ret;

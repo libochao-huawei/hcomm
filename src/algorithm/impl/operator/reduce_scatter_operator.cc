@@ -288,7 +288,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
                 } else {
                     algName = "ReduceScatterMeshDmaEliminationExecutor";
                 }
-            } else if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
+            } else if ((topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE ||
+                deviceNumPerAggregation_ == DEVICE_TWO) &&
                 algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
                 IsMultiMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
@@ -406,12 +407,6 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                 && (!retryEnable_)
                 && !multiModuleDiffDeviceNumMode_;
 
-    if (isSupportAivDeter) {
-        algName = "ReduceScatterMeshAivFor91093Executor";
-        HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s]", algName.c_str());
-        return HCCL_SUCCESS;
-    }
-
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
             HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
@@ -422,10 +417,16 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         return HCCL_SUCCESS;
     }
 
+    if (isSupportAivDeter) {
+        algName = "ReduceScatterMeshAivFor91093Executor";
+        HCCL_INFO("[SelectAlgfor91093] reduce_scatter SelectAlgfor91093 algName [%s]", algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
     if (isAivMode) {
         if (isAivCrossNode) {
             algName = "ReduceScatterMeshAivFor91093Executor";
-        } else if ((isOpbase && dataSize <= AIV_REDUCE_SCATTER_SMALL_SIZE)
+        } else if ((isOpbase && dataSize <= AIV_REDUCE_SCATTER_MID_SIZE) 
             || (!isOpbase && dataSize <= std::min(limit.aivCoreLimit / userRankSize_, NUM_BLOCKS_FACTOR_FOUR)
             * AIV_REDUCE_SCATTER_BIG_SIZE)) {
             algName = "ReduceScatterMeshAivSmallCountExecutor";
@@ -480,7 +481,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
         && ((isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB)
         || (!isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_2_MB))));
-    bool smallCountOptimMultiPod = false;
+    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
 
     isHccsPlusSio = false;
     if (isHccsPlusSio && isSupportHccsAndSio_) {

@@ -34,7 +34,7 @@ private:
     bool withMyRank_ = true;  // 发数据是否包含本rank
     std::vector<CcuRep::Variable> input_;
     std::vector<CcuRep::Variable> output_;
-    CcuRep::Variable offset_;
+    CcuRep::Variable offSet_;
     std::vector<CcuRep::Variable> token_;
     GroupOpSize groupOpSize_;
 };

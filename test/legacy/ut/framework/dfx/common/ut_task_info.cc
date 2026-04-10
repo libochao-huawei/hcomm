@@ -59,22 +59,22 @@ TEST_F(TaskInfoTest, test_get_alg_type_name)
 {
     TaskInfo taskInfo = InitTaskInfo();
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType{AlgType::RING}.Describe();
+    taskInfo.dfxOpInfo_->algType_ = AlgType::RING;
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::RING");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType{AlgType::MULTI_RING}.Describe();
+    taskInfo.dfxOpInfo_->algType_ = AlgType::MULTI_RING;
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::MULTI_RING");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType{AlgType::MESH}.Describe();
+    taskInfo.dfxOpInfo_->algType_ = AlgType::MESH;
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::MESH");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType{AlgType::RECURSIVE_HD}.Describe();
+    taskInfo.dfxOpInfo_->algType_ = AlgType::RECURSIVE_HD;
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::RECURSIVE_HD");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType{AlgType::BINARY_HD}.Describe();
+    taskInfo.dfxOpInfo_->algType_ = AlgType::BINARY_HD;
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::BINARY_HD");
 
-    taskInfo.dfxOpInfo_->algType_ = AlgType{AlgType::PAIR_WISE}.Describe();
+    taskInfo.dfxOpInfo_->algType_ = AlgType::PAIR_WISE;
     EXPECT_EQ(taskInfo.GetAlgTypeName(), "AlgType::PAIR_WISE");
 
     taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
@@ -150,7 +150,7 @@ TEST_F(TaskInfoTest, test_get_base_info)
     taskInfo.taskId_ = 7;
     taskInfo.taskParam_.taskType = TaskParamType::TASK_SDMA;
     taskInfo.dfxOpInfo_->tag_ = "tag_name";
-    taskInfo.dfxOpInfo_->algType_ = AlgType{AlgType::MESH}.Describe();
+    taskInfo.dfxOpInfo_->algType_ = AlgType::MESH;
     EXPECT_EQ(taskInfo.GetBaseInfo(), "streamID(sqId):[1], taskID(sqeId):[7], taskType:[TaskParamType::TASK_SDMA], tag:[tag_name], algType:[AlgType::MESH]");
 
     taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
@@ -175,7 +175,7 @@ TEST_F(TaskInfoTest, test_get_para_ccu)
 {
     TaskInfo taskInfo = InitTaskInfo();
     taskInfo.taskParam_.taskType = TaskParamType::TASK_CCU;
-    EXPECT_EQ(taskInfo.GetParaInfo(), "TaskParamType::TASK_CCU");
+    EXPECT_EQ(taskInfo.GetParaInfo(), "unknown task");
 }
 
 TEST_F(TaskInfoTest, test_get_para_dma)

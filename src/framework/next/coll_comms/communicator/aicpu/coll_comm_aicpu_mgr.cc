@@ -39,12 +39,6 @@ HcclResult CollCommAicpuMgr::AllocChannelResource(HcclChannelUrmaRes *commParam)
     return collCommAicpu_->AllocChannelResource(commParam);
 }
 
-HcclResult CollCommAicpuMgr::UpdateChannelResource(HcclChannelUrmaRes *commParam)
-{
-    CHK_PTR_NULL(collCommAicpu_);
-    return collCommAicpu_->Resume(commParam);
-}
-
 HcclResult CollCommAicpuMgr::NotifyFree(NotifyMgrAicpuParam *param)
 {
     CHK_PTR_NULL(collCommAicpu_);

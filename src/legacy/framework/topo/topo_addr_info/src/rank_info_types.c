@@ -80,15 +80,6 @@ void NetLayerAddAddr(NetLayer *layer, const Addr *addr)
     layer->addr_count++;
 }
 
-void NetLayerSetAddrAt(NetLayer *layer, const Addr *addr, int index)
-{
-    if(index < 0 || index >= MAX_ADDR_NUM) {
-        return;
-    }
-    (void)memcpy_s(&layer->rank_addr_list[index], sizeof(Addr), addr, sizeof(Addr));
-    layer->addr_count++;
-}
-
 char* NetLayerToString(const NetLayer *layer)
 {
     const size_t max_buffer_size = 102400;
@@ -251,16 +242,7 @@ char* RankToString(const Rank* rank)
 {
     const size_t max_buf_size = 102400;
     char *buf = (char*)malloc(max_buf_size);
-    if(buf == NULL) {
-        return NULL;
-    }
     char* level_list = (char*)malloc(max_buf_size);
-    if (level_list == NULL) {
-        free(buf);
-        return NULL;
-    }
-    (void)memset_s(buf, max_buf_size, 0, max_buf_size);
-    (void)memset_s(level_list, max_buf_size, 0, max_buf_size);
     for (int i = 0; i < rank->level_count; ++i) {
         char *layer = NetLayerToString(&rank->level_list[i]);
         if (strcat_s(level_list, max_buf_size, layer) != 0) {

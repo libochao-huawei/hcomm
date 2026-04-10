@@ -26,7 +26,6 @@ thread_local CollCommAicpuMgr *g_hcclComm = nullptr; // 记录当前线程通信
 }
 
 HcclResult AicpuIndopProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam) {
-    CHK_PTR_NULL(commAicpuParam);
 
     CollCommAicpuMgr *commAicpuMgr = nullptr;
     HcclResult ret = HCCL_SUCCESS;
@@ -82,8 +81,6 @@ HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, Coll
 
 HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 {
-    CHK_PTR_NULL(param);
-
     std::string group = param->hcomId;
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
     CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
@@ -159,8 +156,6 @@ ReadWriteLockBase& AicpuIndopProcess::AicpuGetCommMutex()
 
 HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam)
 {
-    CHK_PTR_NULL(commParam);
-
     HCCL_INFO("[AicpuIndopProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
         "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
         commParam->uniqueIdSize);
@@ -180,32 +175,8 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commPara
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuIndopProcess::AicpuIndOpChannelUpdate(HcclChannelUrmaRes *commParam)
-{
-    CHK_PTR_NULL(commParam);
-    HCCL_INFO("[AicpuIndopProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
-        "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
-        commParam->uniqueIdSize);
-
-    std::string group = commParam->hcomId;
-    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
-    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
-
-    HcclResult ret = collCommAicpuMgr->UpdateChannelResource(commParam);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[AicpuIndopProcess][UpdateChannelResource]errNo[0x%016llx] Failed to update channels group[%s]",
-        HCCL_ERROR_CODE(ret), group.c_str()), ret);
-
-    AicpuReleaseCommMgrbyGroup(group);
-    HCCL_INFO("[AicpuIndopProcess][%s] aicpuTask End.", __func__);
-
-    return HCCL_SUCCESS;
-}
-
 HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
 {
-    CHK_PTR_NULL(param);
-
     std::string group = param->hcomId;
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
     CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
@@ -251,7 +222,7 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
     }
     CollCommAicpu* aicpuComm = iter->second->GetCollCommAicpu();
     CHK_PTR_NULL(aicpuComm);
-    aicpuComm->SetCommmStatus(HcclCommStatus::HCCL_COMM_STATUS_INVALID);
+    aicpuComm->SetIsReady(false);
     HCCL_INFO("[AicpuIndopProcess][%s]Destroy comm group [%s] success.", __func__, group.c_str());
     return HCCL_SUCCESS;
 }
@@ -260,8 +231,9 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
 {
     CHK_PTR_NULL(aicpuDfxInfo);
     // 获取device侧的通信域
-    CHK_PRT_RET(g_hcclComm == nullptr, HCCL_ERROR("%s g_hcclComm is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
-    CollCommAicpu* collComm = g_hcclComm->GetCollCommAicpu();
+    CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commTag);
+    CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
+    CollCommAicpu* collComm = collCommAicpuMgr->GetCollCommAicpu();
     CHK_PTR_NULL(collComm);
 
     // HcclDfxOpInfo 转为DfxOpInfo
@@ -281,9 +253,10 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collComm->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
-    CHK_PTR_NULL(mirrorTaskMgrLite);
-    mirrorTaskMgrLite->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
+    CHK_PTR_NULL(mirrorTaskMgr);
+    mirrorTaskMgr->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    AicpuReleaseCommMgrbyGroup(commTag);
     return HCCL_SUCCESS;
 }
 
@@ -297,10 +270,10 @@ HcclResult AicpuIndopProcess::ProfilingReportDeviceOp(const std::string &group)
     // 注册
     HcclCommDfxLite* hcclCommDfxLite = collCommAicpu->GetHcclCommDfxLite();
     CHK_PTR_NULL(hcclCommDfxLite);
-    Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
-    CHK_PTR_NULL(mirrorTaskMgrLite);
+    Hccl::MirrorTaskManager* mirrorTaskMgr = hcclCommDfxLite->GetMirrorTaskManager();
+    CHK_PTR_NULL(mirrorTaskMgr);
     CHK_RET(AicpuIndopProcess::ReportAllTasks(group));
-    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgrLite->GetCurrDfxOpInfo()),
+    EXECEPTION_CATCH(Hccl::ProfilingHandlerLite::GetInstance().ReportHcclOpInfo(*mirrorTaskMgr->GetCurrDfxOpInfo()),
         return HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }

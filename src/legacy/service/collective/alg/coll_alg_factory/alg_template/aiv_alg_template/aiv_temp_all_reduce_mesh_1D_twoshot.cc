@@ -39,7 +39,7 @@ u32 AivTempAllReduceMesh1DTwoShot::CalcScratchMultiple(BufferType inBuffType, Bu
 {
     (void) inBuffType;
     (void) outBuffType;
-    u32 multiplier = 4;
+    u32 multiplier = 2;
     return multiplier;
 }
 
@@ -61,9 +61,6 @@ HcclResult AivTempAllReduceMesh1DTwoShot::GenExtIns(const TempFuncs &tempFuncs, 
         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[AivTempAllReduceMesh1DTwoShot] start.");
-    CHK_PRT_RET(tempInsQues.empty(),
-        HCCL_ERROR("[AivTempAllReduceMesh1DTwoShot] empty queue"), HcclResult::HCCL_E_INTERNAL);
-    CHK_PTR_NULL(tempInsQues[0]);
     std::vector<LinkData> allLinks;
     for (auto iter = tempLinks.begin(); iter != tempLinks.end(); ++iter) {
         allLinks.emplace_back(iter->second.at(0));

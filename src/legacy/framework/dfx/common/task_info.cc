@@ -34,7 +34,7 @@ string TaskInfo::GetAlgTypeName() const
         HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
         return "NULL";
     }
-    return this->dfxOpInfo_->algType_;
+    return this->dfxOpInfo_->algType_.Describe();
 }
 
 string TaskInfo::GetBaseInfo() const
@@ -71,7 +71,7 @@ string TaskInfo::GetParaInfo() const
         case TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY:
             return GetParaNotify();
         default:
-            return this->taskParam_.taskType.Describe();
+            return "unknown task";
     }
 }
 

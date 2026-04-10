@@ -26,9 +26,9 @@ public:
     virtual                ~CcuTransportGroup();
     void                    Destroy();
     TransportGrpStatus      GetGrpStatus() const;
-    HcclResult              GetCntCkeId(u32 index, u32 &cntCkeId) const;
+    u32                     GetCntCkeId(u32 index) const;
     bool                    CheckTransports(const vector<CcuTransport*> &transports);
-    HcclResult              CheckTransportCntCke();
+    bool                    CheckTransportCntCke();
     const vector<CcuTransport*> &GetTransports() const;
 
 private:

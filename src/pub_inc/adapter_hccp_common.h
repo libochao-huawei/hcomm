@@ -53,8 +53,7 @@ enum class HcclSaveSnapShotAction {
 enum class HccnCfgKeyT {
     HCCN_UDP_PORT_MODE = 0,
     HCCN_MULTI_QP_COUNT = 1,
-    HCCN_MULTI_QP_UDP_PORTS = 2,
-    HCCN_RESV_MEM_INFO = 3
+    HCCN_MULTI_QP_UDP_PORTS = 2
 };
 
 using QueueDepthAttr = struct QueueDepthAttrDef { // 有效配置 128 - 32K

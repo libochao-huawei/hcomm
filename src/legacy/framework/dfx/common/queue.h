@@ -40,16 +40,14 @@ public:
         {
         }
 
-        Iterator() {}
-
         virtual ~Iterator() = default;
 
-        virtual reference operator*() const
+        reference operator*() const
         {
             return *(this->it_);
         }
 
-        virtual pointer operator->() const
+        pointer operator->() const
         {
             return &*(this->it_);
         }
@@ -84,12 +82,12 @@ public:
             return temp;
         }
 
-        virtual bool operator==(const Iterator &other) const
+        bool operator==(const Iterator &other) const
         {
             return it_ == other.it_;
         }
 
-        virtual bool operator!=(const Iterator &other) const
+        bool operator!=(const Iterator &other) const
         {
             return it_ != other.it_;
         }

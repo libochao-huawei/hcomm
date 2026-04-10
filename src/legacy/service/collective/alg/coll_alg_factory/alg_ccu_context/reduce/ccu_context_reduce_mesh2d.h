@@ -53,7 +53,7 @@ private:
     std::vector<CcuRep::Variable> input_;
     std::vector<CcuRep::Variable> output_;
     std::vector<CcuRep::Variable> token_;
-    CcuRep::Variable offset_;
+    CcuRep::Variable offSet_;
     GroupOpSize xAxisGroupOpSize_;
     GroupOpSize yAxisGroupOpSize_;
 

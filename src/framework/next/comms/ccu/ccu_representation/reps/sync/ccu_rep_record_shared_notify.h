@@ -22,8 +22,6 @@ public:
     CcuRepRecordSharedNotify(const LocalNotify &notify, uint16_t mask);
     bool        Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep) override;
     std::string Describe() override;
-    uint32_t GetMask() { return mask_; }
-    uint16_t GetNotifyId() { return notify_.Id(); }
 
 private:
     LocalNotify notify_{};

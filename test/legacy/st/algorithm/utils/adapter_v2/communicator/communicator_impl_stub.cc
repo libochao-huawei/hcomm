@@ -434,7 +434,6 @@ void CommunicatorImpl::InitCcuInstance()
         HCCL_INFO("CommunicatorImpl[%s] RankSize 1 no need initCcuInstance", __func__);
         return;
     }
-    CcuResSpecifications::GetInstance(devLogicId).Init();
     CcuComponent::GetInstance(devLogicId).Init();
     CcuResBatchAllocator::GetInstance(devLogicId).Init();
     CtxMgrImp::GetInstance(devLogicId).Init();

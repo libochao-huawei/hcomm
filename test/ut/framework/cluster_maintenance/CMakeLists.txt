@@ -10,9 +10,6 @@
 set(src_to_test_list
     main.cc
     aclgraph/ut_aclgraph_callback.cc
-    snapshot/ut_snapshot.cc
-    recovery/operator_retry/ut_opretry_server.cc
-    recovery/operator_retry/ut_opretry_base.cc
 )
 
 add_executable(hccl_utest_framework_cluster_maintenance ${src_to_test_list})
@@ -57,5 +54,7 @@ target_link_libraries(hccl_utest_framework_cluster_maintenance PRIVATE
 )
 add_dependencies(hccl_utest_framework_cluster_maintenance hccl_llt)
 
-enable_testing()
-add_test(NAME hccl_utest_framework_cluster_maintenance COMMAND hccl_utest_framework_cluster_maintenance)
+run_llt_test(
+   TARGET  hccl_utest_framework_cluster_maintenance
+   TASK_NUM 1
+)

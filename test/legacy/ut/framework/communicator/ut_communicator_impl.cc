@@ -77,8 +77,6 @@
 #include "ranktable_stub_clos.h"
 #include "dev_buffer.h"
 #include "rma_buffer.h"
-#include "topo_addr_info.h"
-#include "hal.h"
 #undef private
 #undef protected
 
@@ -137,7 +135,7 @@ protected:
         MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
         MOCKER_CPP(&LocalRmaBufManager::Reg,
                    LocalRmaBuffer *
-                       (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+                       (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
             .stubs()
             .with(any(), any(), any())
             .will(returnValue(rmaBuf));
@@ -805,6 +803,43 @@ TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperat
     EXPECT_NO_THROW(fakeComm.CovertToCurrentCollOperator(tag, opParams, OpMode::OFFLOAD));
 }
 
+TEST_F(CommunicatorImplTest, TraceOpInfo_BATCHSENDRECV)
+{
+    CommunicatorImpl comm;
+    comm.cclBuffer = DevBuffer::Create(0x100, 0x100);
+    comm.status = CommStatus::COMM_READY;
+    comm.devLogicId = 0;
+    comm.InitMirrorTaskManager();
+    comm.InitProfilingReporter();
+    comm.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
+    MirrorTaskManager &mirrorTaskManager = comm.GetMirrorTaskManager();
+    CollServiceAiCpuImpl collService{&comm};
+    comm.collService = &collService;
+    CollOpParams opParams;
+    bool ccuEnable = false;
+    bool isDevUsed = true;
+    std::vector<HcclDataType> datatypeWithoutReduce = {
+        HcclDataType::HCCL_DATA_TYPE_INT8,   HcclDataType::HCCL_DATA_TYPE_INT16,  HcclDataType::HCCL_DATA_TYPE_INT32,
+        HcclDataType::HCCL_DATA_TYPE_INT64,  HcclDataType::HCCL_DATA_TYPE_UINT8,  HcclDataType::HCCL_DATA_TYPE_UINT16,
+        HcclDataType::HCCL_DATA_TYPE_UINT32, HcclDataType::HCCL_DATA_TYPE_UINT64, HcclDataType::HCCL_DATA_TYPE_FP16,
+        HcclDataType::HCCL_DATA_TYPE_FP32,   HcclDataType::HCCL_DATA_TYPE_FP64,   HcclDataType::HCCL_DATA_TYPE_BFP16};
+    opParams.opType = OpType::BATCHSENDRECV;
+    HcclSendRecvItem *sendRecvItemdata = nullptr;
+    sendRecvItemdata = new HcclSendRecvItem[1];
+    opParams.batchSendRecvDataDes.itemNum = 1;
+    comm.trace = std::make_unique<Trace>();
+    for (auto dtype : datatypeWithoutReduce) {
+        sendRecvItemdata->dataType = dtype;
+        sendRecvItemdata->sendRecvType = HcclSendRecvType::HCCL_SEND;
+        sendRecvItemdata->count = 1;
+        sendRecvItemdata->remoteRank = 1;
+        sendRecvItemdata->buf = (void *)0x100;
+        opParams.batchSendRecvDataDes.sendRecvItemsPtr = static_cast<void *>(sendRecvItemdata);
+        comm.TraceOpInfo(opParams);
+    }
+    delete[] sendRecvItemdata;
+}
+
 TEST_F(CommunicatorImplTest, LoadOpbasedCollOp_success_CovertToCurrentCollOperatorA2A)
 {
     CollAlgComponent collAlgComponent(nullptr, DevType::DEV_TYPE_950, 0, 1);
@@ -1223,7 +1258,7 @@ TEST_F(CommunicatorImplTest, should_no_throw_exception_when_only_ccu_enabled)
     MOCKER_CPP(&DataBufManager::Get).stubs().with(any(), any(), any()).will(returnValue(buf));
     MOCKER_CPP(
         &LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(rmaBuf));
@@ -3451,49 +3486,4 @@ TEST_F(CommunicatorImplTest, Ut_GetInfo_When_endpointDecsNull_Return_Hccl_E_PTR)
     EndpointAttrBwCoeff bwCoeff{};
     HcclResult ret = comm.GetEndpointInfo(0, nullptr, ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
     EXPECT_EQ(ret, HCCL_E_PTR);
-}
-
-TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enough)
-{
-    vector<HrtDevEidInfo> eidInfoListStbu;
-    HrtDevEidInfo         eidInfo;
-    eidInfo.name    = "udma0";
-    eidInfo.dieId   = 0;
-    eidInfo.funcId  = 3;
-    eidInfo.chipId  = static_cast<uint32_t>(0);
-    eidInfo.ipAddress = IpAddress("192.168.100.10");
-    eidInfoListStbu.push_back(eidInfo);
-
-    MOCKER(HrtRaGetDevEidInfoList)
-        .stubs()
-        .with(any())
-        .will(returnValue(eidInfoListStbu));
-
-    CommunicatorImpl comm;
-    comm.devLogicId = 0;
-    HcclCommConfig config;
-    CommParams params;
-
-    RankGraphBuilder rankGraphBuilder;
-    string topoFilePath{HCOMM_CODE_ROOT_DIR "/test/legacy/ut/framework/communicator/topo2pclos.json"};
-    comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
-    comm.ranktableInfo = rankGraphBuilder.GetRankTableInfo();
-    EXPECT_NE(comm.rankGraph, nullptr);
-
-    EXPECT_THROW(comm.CheckRankGraphAddrs(), InvalidParamsException);
-}
-
-TEST_F(CommunicatorImplTest, Ut_GetTopoFilePath)
-{
-    CommunicatorImpl comm;
-    comm.devPhyId = 0;
-    unsigned int mainBoardId = 0x3;
-    char topoFileName[32] = "atlas_950_1.json";
-    char drv_path[256] = "/usr/local/Ascend2";
-    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainBoardId)).will(returnValue(0));
-    MOCKER(realpath).stubs().with(any(), any()).will(returnValue(&topoFileName[0]));
-    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
-
-    std::string topoFilePath = comm.GetTopoFilePath();
-    EXPECT_NE(topoFilePath.find(topoFileName), std::string::npos);
 }

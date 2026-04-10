@@ -37,9 +37,8 @@ ServerSocketMgr &ServerSocketMgr::GetInstance(const uint32_t devicePhyId)
     static ServerSocketMgr socketMgr[MAX_MODULE_DEVICE_NUM + 1];
 
     uint32_t devPhyId = devicePhyId;
-    if (devPhyId >= MAX_MODULE_DEVICE_NUM + 1) {
-        HCCL_WARNING("[%s] Invalid devicePhyId: %u, max allowed: %u, using default index: %u", 
-            __func__, devicePhyId, MAX_MODULE_DEVICE_NUM, MAX_MODULE_DEVICE_NUM);
+    if (devPhyId > MAX_MODULE_DEVICE_NUM + 1) {
+        HCCL_WARNING("");
         devPhyId = MAX_MODULE_DEVICE_NUM;
     }
 

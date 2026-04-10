@@ -96,11 +96,7 @@ HcclResult OpRetryBase::IssueResponse(std::shared_ptr<HcclSocket> socket, RetryI
 // 非阻塞接收, 若已经收到部分数据, 则变为阻塞接收, 直到收到完整数据或超时
 HcclResult OpRetryBase::WaitResponse(std::shared_ptr<HcclSocket> socket, RetryInfo &retryInfo)
 {
-    HcclResult ret = Recv(socket, &retryInfo, sizeof(RetryInfo));
-    if (ret == HCCL_SUCCESS) {
-        HCCL_DEBUG("[OpRetry]WaitResponse success, cmd[%u]", retryInfo.cmd);
-    }
-    return ret;
+    return Recv(socket, &retryInfo, sizeof(RetryInfo));
 }
 
 HcclResult OpRetryBase::IssueCommand(std::shared_ptr<HcclSocket> socket, RetryCommand command)
@@ -125,18 +121,16 @@ HcclResult OpRetryBase::IssueCommandWithOpId(std::shared_ptr<HcclSocket> socket,
 {
     HcclResult ret = Send(socket, &commandInfo, sizeof(RetryCommandInfo));
     if (ret == HCCL_SUCCESS) {
-        HCCL_DEBUG("[OpRetry]IssueCommand success, command[%s], cmd[%u]",
-            GetReadableCmd(commandInfo.command), commandInfo.cmd);
+        HCCL_DEBUG("[OpRetry]IssueCommand success, command[%s]", GetReadableCmd(commandInfo.command));
     } 
     return ret;
 }
 
-HcclResult OpRetryBase::WaitCommandWithOpId(std::shared_ptr<HcclSocket> socket, RetryCommandInfo &commandInfo)
+HcclResult OpRetryBase::WaitCommandWithOpId(std::shared_ptr<HcclSocket> socket, RetryCommandInfo  &commandInfo)
 {
     HcclResult ret = Recv(socket, &commandInfo, sizeof(commandInfo));
     if (ret == HCCL_SUCCESS) {
-        HCCL_DEBUG("[OpRetry]WaitCommand success, command[%s], cmd[%u]",
-            GetReadableCmd(commandInfo.command), commandInfo.cmd);
+        HCCL_DEBUG("[OpRetry]WaitCommand success, command[%s]", GetReadableCmd(commandInfo.command));
     }
     return ret;
 }
@@ -154,7 +148,7 @@ HcclResult OpRetryBase::WaitLinkPortCheckResult(std::shared_ptr<HcclSocket> sock
 {
     HcclResult ret = Recv(socket, &linkPortStatus, sizeof(LinkPortStatus));
     if (ret == HCCL_SUCCESS) {
-        HCCL_DEBUG("[OpRetry]WaitLinkPortCheckResult success, cmd[%u]", linkPortStatus.cmd);
+        HCCL_DEBUG("[OpRetry]WaitLinkPortCheckResult success");
     }
     return ret;
 }
@@ -702,8 +696,8 @@ HcclResult OpRetryBase::WaitActiveSwitchInfo(std::shared_ptr<HcclSocket> socket,
 {
     HcclResult ret = Recv(socket, &switchInfo, sizeof(ActiveSwitchInfo));
     if (ret == HCCL_SUCCESS) {
-        HCCL_INFO("[SwitchNic] recv success fin[%u], switchRankNm[%u], remoteRankNum[%u], cmd[%u]",
-            switchInfo.refreshTransportFin, switchInfo.switchRankNum, switchInfo.remoteRankNum, switchInfo.cmd);
+        HCCL_INFO("[SwitchNic] recv success fin[%u], switchRankNm[%u], remoteRankNum[%u]",
+            switchInfo.refreshTransportFin, switchInfo.switchRankNum, switchInfo.remoteRankNum);
     }
     return ret;
 }

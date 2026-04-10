@@ -16,8 +16,6 @@
 
 namespace hccl {
 
-using ChannelTable = std::unordered_map<RankIdPair, hcomm::EpChannelMap>;
-
 class RankPairMgr {
 public:
     RankPairMgr(){};
@@ -25,7 +23,6 @@ public:
     ~RankPairMgr() = default;
 
     HcclResult Get(RankIdPair rankIdPair, RankPair*& out);
-    ChannelTable GetChannelTable();
 
 private:
     std::unordered_map<RankIdPair, std::unique_ptr<RankPair>> rankPairMap_{};

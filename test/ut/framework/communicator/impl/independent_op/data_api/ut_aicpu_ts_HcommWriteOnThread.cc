@@ -8,41 +8,39 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ut_aicpu_ts_base.h"
+#include "gtest/gtest.h"
+#include "mockcpp/mokc.h"
+#include <mockcpp/mockcpp.hpp>
 #include "ub_transport_lite_impl.h"
+
+#define private public
+#include "aicpu_ts_thread.h"
+#include "aicpu_ts_thread_interface.h"
+#undef private
 
 using namespace hccl;
 
-class UtAicpuTsHcommWriteOnThread : public UtAicpuTsBase
-{
+class UtAicpuTsHcommWriteOnThreadTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UtAicpuTsHcommWriteOnThread tests set up." << std::endl;
-    }
-
-    static void TearDownTestCase()
-    {
-        std::cout << "UtAicpuTsHcommWriteOnThread tests tear down." << std::endl;
-    }
-
     virtual void SetUp() override
     {
-        std::cout << "A Test case in UtAicpuTsHcommWriteOnThread SetUp" << std::endl;
-        UtAicpuTsBase::SetUp();
-
         MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
             .stubs()
             .with(any(), any(), any())
             .will(returnValue(HCCL_SUCCESS));
+        threadOnDevice.devType_ = DevType::DEV_TYPE_950;
+        threadOnDevice.pImpl_ = std::make_unique<Hccl::IAicpuTsThread>();
+        threadOnDevice.pImpl_->streamLiteVoidPtr_ = reinterpret_cast<void *>(0x123);
     }
 
     virtual void TearDown() override
     {
-        UtAicpuTsBase::TearDown();
-        std::cout << "A Test case in UtAicpuTsHcommWriteOnThread TearDown" << std::endl;
+        GlobalMockObject::verify();
     }
 
+private:
+    AicpuTsThread threadOnDevice{StreamType::STREAM_TYPE_DEVICE, 0, NotifyLoadType::DEVICE_NOTIFY};
+    ThreadHandle thread = reinterpret_cast<ThreadHandle>(&threadOnDevice);
     uint64_t tempDst[6] = {0};
     uint64_t tempSrc[6] = {1, 1, 4, 5, 1, 4};
     void *dst = reinterpret_cast<void *>(tempDst);
@@ -51,29 +49,38 @@ protected:
     std::vector<char> uniqueId;
     Hccl::UbTransportLiteImpl transportDev{uniqueId};
     ChannelHandle devHandle = reinterpret_cast<ChannelHandle>(&transportDev);
-    int32_t res{HCCL_E_RESERVED};
 };
 
-TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_buffer_not_find_Expect_HCCL_E_INTERNAL)
 {
-    res = HcommWriteOnThread(thread, devHandle, dst, src, len);
-    EXPECT_EQ(res, HCCL_SUCCESS);
-}
-
-TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
-{
-    res = HcommWriteOnThread(0, devHandle, dst, src, len);
-    EXPECT_EQ(res, HCCL_E_PTR);
-}
-
-TEST_F(UtAicpuTsHcommWriteOnThread, Ut_HcommWriteOnThread_When_BuildLocRmaBufferLite_Fail_Expect_ReturnIsHCCL_E_INTERNAL)
-{
+    // 前置条件
     GlobalMockObject::verify();
     MOCKER_CPP(&Hccl::UbTransportLiteImpl::BuildLocRmaBufferLite)
         .stubs()
         .with(any(), any(), any())
         .will(returnValue(HCCL_E_INTERNAL));
 
-    res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+    // 执行步骤
+    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+
+    // 后置验证
     EXPECT_EQ(res, HCCL_E_INTERNAL);
+}
+
+TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_thread_nullptr_Expect_HCCL_E_PTR)
+{
+    // 执行步骤
+    auto res = HcommWriteOnThread(0, devHandle, dst, src, len);
+
+    // 后置验证
+    EXPECT_EQ(res, HCCL_E_PTR);
+}
+
+TEST_F(UtAicpuTsHcommWriteOnThreadTest, Ut_HcommWriteOnThread_When_normal_Expect_HCCL_SUCCESS)
+{
+    // 执行步骤
+    auto res = HcommWriteOnThread(thread, devHandle, dst, src, len);
+
+    // 后置验证
+    EXPECT_EQ(res, HCCL_SUCCESS);
 }

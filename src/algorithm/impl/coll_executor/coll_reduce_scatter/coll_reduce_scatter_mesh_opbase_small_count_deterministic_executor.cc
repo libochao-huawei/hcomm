@@ -80,31 +80,6 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CalcLevel
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CalcLevel1CommInfo(TransportMemType inputType,
-    TransportMemType outputType, std::vector<LevelNSubCommTransport>& opTransport)
-{
-    HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] start", __func__, tag_.c_str());
-    CommParaInfo commParaLevel1(COMM_LEVEL1, CommType::COMM_TAG_MAX);
-    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
-        commParaLevel1.commType = CommType::COMM_TAG_RING_INNER;
-        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc RingCommInfo", __func__, tag_.c_str());
-    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
-        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;
-        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc NHRCommInfo", __func__, tag_.c_str());
-    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
-        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_BRUCK;
-        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc NBCommInfo",  __func__, tag_.c_str());
-    } else {
-        commParaLevel1.commType = CommType::COMM_TAG_HALVING_DOUBLING;
-        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc HDCommInfo", __func__, tag_.c_str());
-    }
-    commParaLevel1.forceRdma = false;
-    CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel1, opTransport[commParaLevel1.commPlane], inputType, outputType));
-    HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc CommInfo Finish", __func__, tag_.c_str());
-
-    return HCCL_SUCCESS;
-}
-
 u64 CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CalcLoopMaxCount(const u32 unitSize)
 {
     // 中转内存单次最多能够接受的output count
@@ -180,37 +155,30 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::RunAlgLev
     // 第一步：节点间
     std::unique_ptr<AlgTemplateBase> level1TempAlg;
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
-        level1TempAlg
-            = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr));
         HCCL_INFO("ReduceScatter smallcount deterministic: using ring algo inter-server.");
         u64 ringSize = execMem.inputMem.size() / level1CommInfo.localRankSize;
         u64 ringCount = ringSize / unitSize;
         CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, ringCount,
-            param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0)));
+                                       param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, 
+                                       std::vector<Slice>(0)));
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
-        level1TempAlg
-            = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
         HCCL_INFO("ReduceScatter smallcount deterministic: using nhr algo inter-server.");
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
         u64 ringSize = execMem.inputMem.size() / level1CommInfo.localRankSize;
         u64 ringCount = ringSize / unitSize;
         CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, ringCount,
-            param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0)));
+                                       param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, 
+                                       std::vector<Slice>(0)));
         level1TempAlg->CloseBarrier();
-    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
-        level1TempAlg
-            = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
-        HCCL_INFO("ReduceScatter smallcount deterministic:  using nonuniform-bruck algo inter-server.");
-        CHK_SMART_PTR_NULL(level1TempAlg);
-        CHK_RET(level1TempAlg->Prepare(reduceAttr));
-        u64 ringSize = execMem.inputMem.size() / level1CommInfo.localRankSize;
-        u64 ringCount = ringSize / unitSize;
-        CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, ringCount,
-            param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0)));
     } else {
+        // RHD
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_RECURSIVE_HD, dispatcher_);
         CHK_SMART_PTR_NULL(level1TempAlg);
@@ -218,11 +186,12 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::RunAlgLev
         HCCL_INFO("ReduceScatter smallcount deterministic: using halving-doubling algo inter-server.");
         u64 inputDataCount = execMem.inputMem.size() / unitSize; // count是output的数据个数
         CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, inputDataCount,
-            param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0)));
+                                       param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, 
+                                       std::vector<Slice>(0)));
     }
     CHK_RET(level1TempAlg->RegisterProfiler(
-        (level1CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level1CommInfo.localRank, PROF_STAGE_0,
-        HCCL_EXEC_STEP_NOT_SET, param.stream));
+        (level1CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level1CommInfo.localRank,
+        PROF_STAGE_0, HCCL_EXEC_STEP_NOT_SET, param.stream));
     CHK_RET(RunTemplate(level1TempAlg, level1CommInfo));
     return HCCL_SUCCESS;
 }

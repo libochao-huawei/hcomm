@@ -183,7 +183,7 @@ const std::string RankTable4p = R"(
 const std::string Topo1Ser8Dev = R"(
     {
         "version": "2.0",
-        "hardware_type" : "950-2D-Fullmsh_64_plus_1",
+        "hardware_type" : "910D-2D-Fullmsh_64_plus_1",
         "peer_count" : 4,
         "peer_list" :[
             { "id" : 0},
@@ -325,7 +325,7 @@ TEST(CollServiceDefaultImplTest, test_base_register_offload_buf)
     LocalIpcRmaBuffer localRmaBuf(devBuf);
     MOCKER_CPP(&HcclOneSidedService::AddOpCounterMems).stubs().will(ignoreReturnValue());
     MOCKER_CPP(&LocalRmaBufManager::Reg,
-        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &, LinkProtocol))
+        LocalRmaBuffer * (LocalRmaBufManager::*)(const string &, BufferType, std::shared_ptr<Buffer>, const PortData &))
         .stubs()
         .will(returnValue(dynamic_cast<LocalRmaBuffer *>(&localRmaBuf)));
 

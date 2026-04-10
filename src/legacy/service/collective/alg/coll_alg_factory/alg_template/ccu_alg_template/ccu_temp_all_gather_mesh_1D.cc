@@ -65,18 +65,17 @@ HcclResult CcuTempAllGatherMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
                                           const BuffInfo &buffInfo, const ResLinks &tempLinks,
                                           std::vector<InsQuePtr> &tempInsQues)
 {
-    CHK_PRT_RET(tempInsQues.empty(),
-        HCCL_ERROR("[CcuTempAllGatherMesh1D] empty queue"), HcclResult::HCCL_E_INTERNAL);
-    CHK_PTR_NULL(tempInsQues[0]);
     opMode_   = tempFuncs.opMode;
     buffInfo_ = buffInfo;
+
     CcuInstructionAllGatherMesh1D ccuInsAllGatherMesh1D;
+
     std::vector<uint64_t> dimSize;
     dimSize.push_back(tempRankSize_);
 
     uint64_t inputAddr;
     uint64_t outputAddr;
-    uint64_t offset;
+    uint64_t offSet;
     if (opMode_ == OpMode::OPBASE) {
         if (tempFuncs.isForepart) {
             inputAddr = BufferTypeToAddr(tempFuncs.usrData.usrInSlices[0].GetType())
@@ -86,26 +85,24 @@ HcclResult CcuTempAllGatherMesh1D::Run(const TempFuncs &tempFuncs, const RankSli
         }
         if (tempFuncs.isBottom) {
             outputAddr = BufferTypeToAddr(tempFuncs.usrData.usrOutSlices[0].GetType());
-            // 需要加上 UserOUt 的偏移，包含了 loop 偏移和 rank 偏移
-            offset = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
+            offSet = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
         } else {
             outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
-            // 从 inBuff 获取数据，只需要加上 rank 偏移
-            offset = sliceInfoVec[myRank_][0].offset;
+            offSet = sliceInfoVec[myRank_][0].offset;
         }
     } else {
         inputAddr = BufferTypeToAddr(buffInfo_.inBuffType) + buffInfo_.inBuffBaseOff + tempFuncs.usrData.usrInSlices[0].GetOffset();
         outputAddr = BufferTypeToAddr(buffInfo_.outBuffType) + buffInfo_.outBuffBaseOff;
-        offset = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
+        offSet = tempFuncs.usrData.usrOutSlices[myRank_].GetOffset();
     }
 
     uint64_t sliceSize = sliceInfoVec[myRank_][0].size;  // 获取本rank需要处理的数据量
     uint64_t token;
     CHK_RET(GetToken(op_, token));
-    ccuInsAllGatherMesh1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, offset, token, op_, tempVTopo_);
+    ccuInsAllGatherMesh1D.Init(static_cast<uint32_t>(myRank_), inputAddr, outputAddr, sliceSize, offSet, token, op_, tempVTopo_);
     HCCL_INFO("[CcuTempAllGatherMesh1D] Run Init: myRank_[%d], dimSize[%llu], inputAddr[%llu],"\
         "outputAddr[%llu], sliceSize[%llu], offset[%llu]",
-        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offset);
+        myRank_, dimSize[0], inputAddr, outputAddr, sliceSize, offSet);
 
     std::vector<LinkData> links;
     for (auto &pair : tempLinks) {

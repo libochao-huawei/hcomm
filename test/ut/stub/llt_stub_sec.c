@@ -56,8 +56,5 @@ int vsnprintf_s(char* strDest, size_t destMax, size_t count, const char* format,
 
 errno_t strcat_s(char *strDest, size_t destMax, const char *strSrc)
 {
-    if (strcat(strDest, strSrc) != strDest) {
-        return -1;
-    }
-    return 0;
+    return strcat(strDest, strSrc);
 }

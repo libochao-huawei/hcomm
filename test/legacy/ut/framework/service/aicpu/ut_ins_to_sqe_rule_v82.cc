@@ -169,9 +169,9 @@ public:
         return rmaBufferLiteVec[type].get();
     }
 
-    MirrorTaskManagerLite *GetMirrorTaskMgrLite() override
+    MirrorTaskManager *GetMirrorTaskMgr() override
     {
-        return mirrorTaskMgrLite.get();
+        return mirrorTaskMgr.get();
     }
 
     HostDeviceSyncNotifyLiteMgr   hostDeviceSyncNotifyLiteMgr;
@@ -180,10 +180,10 @@ public:
     Cnt1tonNotifyLiteMgr          cnt1tonNotifyLiteMgr;
     CntNto1NotifyLiteMgr          cntNto1NotifyLiteMgr;
     ConnectedLinkMgr connectedLinkMgr;
-    std::unique_ptr<MirrorTaskManagerLite>           mirrorTaskMgrLite
-        = std::make_unique<MirrorTaskManagerLite>();
+    std::unique_ptr<MirrorTaskManager>           mirrorTaskMgr
+        = std::make_unique<MirrorTaskManager>(0, &GlobalMirrorTasks::Instance(), true);
 
-    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgrLite.get());
+    std::unique_ptr<MemTransportLiteMgr> transportLiteMgr = std::make_unique<MemTransportLiteMgr>(mirrorTaskMgr.get());
     CollOperator                  currentOp;
     std::vector<std::unique_ptr<RmaBufferLite>> rmaBufferLiteVec;
     std::unordered_map<DataBuffer, SendRecvItemTokenInfo> sendRecvTokenMap;
@@ -226,8 +226,8 @@ protected:
         locCntRes.vec.push_back(&localCntNotify);
         locCntRes.desc.push_back('0');
         locCntRes.desc.push_back(0);
-        bool isRecvFirst = false;
-        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes, isRecvFirst);
+
+        UbMemTransport ubTransport(locRes, attr, link, fakeSocket, rdmaHandle, locCntRes);
         ubTransport.baseStatus = TransportStatus::READY;
         MirrorTaskManager mirrorTaskMgr(0, &GlobalMirrorTasks::Instance(), true);
         auto transportCallback = MemTransportCallback(linkData, mirrorTaskMgr);
@@ -448,8 +448,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_wait_from)
     StreamLite stream(streamLite1);
     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
-    MOCKER_CPP_VIRTUAL(rtsq, static_cast<void (RtsqA5::*)(u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
-    MOCKER_CPP_VIRTUAL(rtsq, static_cast<void (RtsqA5::*)(u32, u32)>(&RtsqA5::NotifyWait)).stubs().with(any());
+    MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::NotifyWait).stubs().with(any());
 
     StubResMgrFetcher mockResMgrFetcher;
 

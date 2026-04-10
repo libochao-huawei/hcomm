@@ -49,9 +49,6 @@ public:
     HcclResult ChannelFence();
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
-    virtual HcclResult Clean() override;
-    virtual HcclResult Resume() override;
-
 private:
     HcclResult ParseInputParam();
     HcclResult StartListen();

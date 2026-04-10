@@ -19,7 +19,6 @@
 
 namespace hcomm {
 
-using EpChannelMap = std::unordered_map<EndpointDescPair, std::unordered_map<CommEngine, std::vector<ChannelHandle>>>;
 class EndpointPairMgr {
 public:
     EndpointPairMgr() {};
@@ -27,7 +26,6 @@ public:
     ~EndpointPairMgr() = default;
 
     HcclResult Get(const EndpointDescPair &endpointDescPair, EndpointPair*& out);
-    EpChannelMap GetEpChannelMap();
 
 private:
     std::unordered_map<EndpointDescPair, std::unique_ptr<EndpointPair>> endpointPairMap_{};
