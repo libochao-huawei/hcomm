@@ -18,14 +18,12 @@
 /**
  * @note 职责：集合通信的通信域CCU管理的C接口的C到C++适配
  */
-
 HcclResult HcclCommQueryCcuIns(HcclComm comm,
     CcuInsHandle *ccuInsHandles, uint32_t *insNum)
 {
     EXCEPTION_HANDLE_BEGIN
 
     HcclUs startut = TIME_NOW();
-    u64 beginTime =  Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
 
     CHK_PTR_NULL(comm);
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
