@@ -429,7 +429,7 @@ HcclResult HcclOneSideServiceAicpu::CleanStreamFunc()
     CHK_RET(ConfigSqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, 1));
     CHK_RET(CleanStream(execStream_));
     execStreamEnable_ = true;
-    HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc reset stream sq buffer success"
+    HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc reset stream sq buffer success, "
         "SetStreamEnable streamid[%d]", streamInfo.actualStreamId);
     return HCCL_SUCCESS;
 }
