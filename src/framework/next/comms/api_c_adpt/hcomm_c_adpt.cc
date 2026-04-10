@@ -327,8 +327,11 @@ HcommResult HcommCollectiveChannelCreate(EndpointHandle endpointHandle, CommEngi
     return ChannelProcess::CreateChannelsLoop(endpointHandle, engine, channelDescFinals.data(), channelNum, channels);
 }
 
-HcommResult HcommChannelUpdateMemInfo(void **memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
+HcommResult HcommChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
 {
+    CHK_PTR_NULL(memHandles);
+    CHK_PRT_RET((memHandleNum == 0), HCCL_ERROR("[%s]Invalid memHandleNum, memHandleNum is 0.", __func__),
+        HCCL_E_PARA);
     return ChannelProcess::ChannelUpdateMemInfo(memHandles, memHandleNum, channelHandle);
 }
 
