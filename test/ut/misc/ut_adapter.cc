@@ -668,7 +668,7 @@ TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_RdmaInitFail)
     u32 port = 16666;
 
     MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(NetworkManager::InitRdmaHandle).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&hccl::NetworkManager::InitRdmaHandle).stubs().will(returnValue(HCCL_E_NETWORK));
 
     HcclIpAddress ipAddr("127.0.0.1");
     HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
@@ -683,7 +683,7 @@ TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_StartListenFail)
     u32 port = 16666;
 
     MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(NetworkManager::StartListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&hccl::NetworkManager::StartListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
 
     HcclIpAddress ipAddr("127.0.0.1");
     HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
@@ -722,11 +722,11 @@ TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceNicSockets_StopListenFail)
     ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    HcclAddress ipAddr("10.21.78.208");
+    HcclAddress ipAddr(std::string("10.21.78.208"));
     ret = NetworkManager::GetInstance(device_id).StartNic(ipAddr, port, false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(NetworkManager::StopNicsSocketListen).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&hccl::NetworkManager::StopNicsSocketListen).stubs().will(returnValue(HCCL_E_NETWORK));
 
     ret = NetworkManager::GetInstance(device_id).StopAllDeviceNicSockets();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -746,11 +746,11 @@ TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceNicSockets_StopSocketFail)
     ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    HcclAddress ipAddr("10.21.78.208");
+    HcclAddress ipAddr(std::string("10.21.78.208"));
     ret = NetworkManager::GetInstance(device_id).StartNic(ipAddr, port, false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&hccl::NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
 
     ret = NetworkManager::GetInstance(device_id).StopAllDeviceNicSockets();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -770,7 +770,7 @@ TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceVnicSockets_StopSocketFail)
     ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&hccl::NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
 
     ret = NetworkManager::GetInstance(device_id).StopAllDeviceVnicSockets();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -811,7 +811,7 @@ TEST_F(HccpTest, Ut_NetworkManager_StopAllHostNicSockets_StopListenFail)
     ret = NetworkManager::GetInstance(device_id).StartHostNetAndListen(ipAddr, *(SocketHandle*)&ipAddr, port, false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(NetworkManager::StopListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&hccl::NetworkManager::StopListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
 
     ret = NetworkManager::GetInstance(device_id).StopAllHostNicSockets();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -849,7 +849,7 @@ TEST_F(HccpTest, Ut_NetworkManager_PsWorkerRaInit_SocketInitFail)
 
     MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_E_TCP_CONNECT));
 
-    HcclIpAddress ipAddr("10.21.78.208");
+    HcclAddress ipAddr(std::string("10.21.78.208"));
     HcclResult ret = NetworkManager::GetInstance(device_id).PsWorkerRaInit(device_id, ipAddr, port, false, false, false);
     EXPECT_EQ(ret, HCCL_E_TCP_CONNECT);
 
@@ -862,9 +862,9 @@ TEST_F(HccpTest, Ut_NetworkManager_PsWorkerRaInit_StartListenFail)
     u32 port = 16666;
 
     MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER(NetworkManager::HeterogStartListen).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&hccl::NetworkManager::HeterogStartListen).stubs().will(returnValue(HCCL_E_NETWORK));
 
-    HcclIpAddress ipAddr("10.21.78.208");
+    HcclAddress ipAddr(std::string("10.21.78.208"));
     HcclResult ret = NetworkManager::GetInstance(device_id).PsWorkerRaInit(device_id, ipAddr, port, false, false, false);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
     
