@@ -646,3 +646,269 @@ TEST_F(HccpTest, Ut_hrtMemcpy_CountExceedsDestMax_Expect_ParaError)
     free(dst);
     free(src);
 }
+
+// NetworkManager测试用例
+TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_SocketInitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_E_TCP_CONNECT));
+
+    HcclIpAddress ipAddr("127.0.0.1");
+    HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_RdmaInitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(NetworkManager::InitRdmaHandle).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    HcclIpAddress ipAddr("127.0.0.1");
+    HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_StartListenFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(NetworkManager::StartListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    HcclIpAddress ipAddr("127.0.0.1");
+    HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_StopVnicSocketHandle_DeinitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).StopVnicSocketHandle(HcclIpAddress(device_id));
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceNicSockets_StopListenFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    HcclAddress ipAddr("10.21.78.208");
+    ret = NetworkManager::GetInstance(device_id).StartNic(ipAddr, port, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER(NetworkManager::StopNicsSocketListen).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).StopAllDeviceNicSockets();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceNicSockets_StopSocketFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    HcclAddress ipAddr("10.21.78.208");
+    ret = NetworkManager::GetInstance(device_id).StartNic(ipAddr, port, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER(NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).StopAllDeviceNicSockets();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceVnicSockets_StopSocketFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER(NetworkManager::StopNicsSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).StopAllDeviceVnicSockets();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_StopAllDeviceVnicSockets_DeinitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER(hrtRaSocketDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).StopAllDeviceVnicSockets();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_StopAllHostNicSockets_StopListenFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_HOST);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    HcclIpAddress ipAddr("127.0.0.1");
+    ret = NetworkManager::GetInstance(device_id).StartHostNetAndListen(ipAddr, *(SocketHandle*)&ipAddr, port, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER(NetworkManager::StopListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).StopAllHostNicSockets();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_StopAllHostNicSockets_DeinitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_HOST);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    HcclIpAddress ipAddr("127.0.0.1");
+    ret = NetworkManager::GetInstance(device_id).StartHostNetAndListen(ipAddr, *(SocketHandle*)&ipAddr, port, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    MOCKER(hrtRaSocketDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).StopAllHostNicSockets();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_PsWorkerRaInit_SocketInitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_E_TCP_CONNECT));
+
+    HcclIpAddress ipAddr("10.21.78.208");
+    HcclResult ret = NetworkManager::GetInstance(device_id).PsWorkerRaInit(device_id, ipAddr, port, false, false, false);
+    EXPECT_EQ(ret, HCCL_E_TCP_CONNECT);
+
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_PsWorkerRaInit_StartListenFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(NetworkManager::HeterogStartListen).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    HcclIpAddress ipAddr("10.21.78.208");
+    HcclResult ret = NetworkManager::GetInstance(device_id).PsWorkerRaInit(device_id, ipAddr, port, false, false, false);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+    
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_Destory_DeviceRaDeinitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    NetworkManager::GetInstance(device_id).deviceNicInitRef_.Ref();
+    NetworkManager::GetInstance(device_id).deviceNicInitRef_.Ref();
+
+    MOCKER(HrtRaDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    GlobalMockObject::verify();
+}
+
+TEST_F(HccpTest, Ut_NetworkManager_Destory_HostRaDeinitFail)
+{
+    s32 device_id = 0;
+    u32 port = 16666;
+
+    HcclResult ret = NetworkManager::GetInstance(device_id).Init(NICDeployment::NIC_DEPLOYMENT_HOST);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = NetworkManager::GetInstance(device_id).StartVnic(HcclIpAddress(device_id), port);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    NetworkManager::GetInstance(device_id).hostNicInitRef_.Ref();
+    NetworkManager::GetInstance(device_id).hostNicInitRef_.Ref();
+
+    MOCKER(HrtRaDeInit).stubs().will(returnValue(HCCL_E_NETWORK));
+
+    ret = NetworkManager::GetInstance(device_id).Destroy();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    GlobalMockObject::verify();
+}

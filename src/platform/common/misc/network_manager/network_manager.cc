@@ -1082,8 +1082,9 @@ HcclResult NetworkManager::StopNic(const HcclIpAddress &ipAddr, u32 port)
 HcclResult NetworkManager::StopAllDeviceNicSockets()
 {
     HcclResult ret;
-    for (auto itSocket : raResourceInfo_.nicSocketMap) {
-        for (auto itPort : itSocket.second.listenedPort) {
+    for (auto &itSocket : raResourceInfo_.nicSocketMap) {
+        std::set<u32> listenedPorts = itSocket.second.listenedPort;
+        for (auto itPort : listenedPorts) {
             ret = StopNicsSocketListen(itSocket.first, itPort);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[Stop][AllDeviceNicSockets]errNo[0x%016llx] stop nic socket failed,devid[%u],ip[%s], "
