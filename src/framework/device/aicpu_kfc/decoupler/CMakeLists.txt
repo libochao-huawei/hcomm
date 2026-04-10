@@ -8,10 +8,88 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    comm_kfc_aicpu_server.cc
-    comm_kfc_dispatcher.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/comm_kfc_aicpu_server.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/comm_kfc_dispatcher.cc
+)
+
+set(open_src_list
+    ${CMAKE_CURRENT_SOURCE_DIR}/comm_kfc_open_kernel_adapter.cc
+)
+
+set(open_exec_src_list
+    ${CMAKE_CURRENT_SOURCE_DIR}/comm_kfc_open_kernel_executor.cc
+)
+
+add_library(ccl_kernel_decoupler OBJECT ${src_list})
+set_target_properties(ccl_kernel_decoupler PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+target_compile_definitions(ccl_kernel_decoupler PRIVATE
+    $<TARGET_PROPERTY:ccl_kernel,COMPILE_DEFINITIONS>
+)
+
+target_compile_options(ccl_kernel_decoupler PRIVATE
+    $<TARGET_PROPERTY:ccl_kernel,COMPILE_OPTIONS>
+)
+
+target_include_directories(ccl_kernel_decoupler PRIVATE
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/inc
+    $<TARGET_PROPERTY:ccl_kernel,INCLUDE_DIRECTORIES>
+)
+
+add_library(ccl_kernel_decoupler_open OBJECT ${open_src_list})
+set_target_properties(ccl_kernel_decoupler_open PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+target_compile_definitions(ccl_kernel_decoupler_open PRIVATE
+    $<TARGET_PROPERTY:ccl_kernel,COMPILE_DEFINITIONS>
+)
+
+target_compile_options(ccl_kernel_decoupler_open PRIVATE
+    $<TARGET_PROPERTY:ccl_kernel,COMPILE_OPTIONS>
+)
+
+target_include_directories(ccl_kernel_decoupler_open BEFORE PRIVATE
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/inc
+    ${HCCL_BASE_DIR}/../../hccl/src/common
+    ${HCCL_BASE_DIR}/../../hccl/src/common/hcomm_dlsym
+    ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
+    $<TARGET_PROPERTY:ccl_kernel,INCLUDE_DIRECTORIES>
+)
+
+add_library(ccl_kernel_decoupler_open_exec OBJECT ${open_exec_src_list})
+set_target_properties(ccl_kernel_decoupler_open_exec PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+target_compile_definitions(ccl_kernel_decoupler_open_exec PRIVATE
+    $<TARGET_PROPERTY:ccl_kernel,COMPILE_DEFINITIONS>
+)
+
+target_compile_options(ccl_kernel_decoupler_open_exec PRIVATE
+    $<TARGET_PROPERTY:ccl_kernel,COMPILE_OPTIONS>
+)
+
+target_include_directories(ccl_kernel_decoupler_open_exec BEFORE PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/inc
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/topo
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/executor
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/executor/channel
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/executor/registry
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/template
+    ${HCCL_BASE_DIR}/../../hccl/src/ops/op_common/template/registry
+    ${HCCL_BASE_DIR}/../../hccl/src/common
+    ${HCCL_BASE_DIR}/../../hccl/src/common/hcomm_dlsym
+    ${ASCEND_CANN_PACKAGE_PATH}/include
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/hccl
+    ${HCCL_BASE_DIR}/../include
+    ${HCCL_BASE_DIR}/../include/hccl
+    ${HCCL_BASE_DIR}/../pkg_inc
+    ${HCCL_BASE_DIR}/../pkg_inc/hccl
+    ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
+    ${HCCL_BASE_DIR}/platform/hccp/external_depends/inc/log
 )
 
 target_sources(ccl_kernel PRIVATE
-    ${src_list}
+    $<TARGET_OBJECTS:ccl_kernel_decoupler>
+    $<TARGET_OBJECTS:ccl_kernel_decoupler_open>
+    $<TARGET_OBJECTS:ccl_kernel_decoupler_open_exec>
 )

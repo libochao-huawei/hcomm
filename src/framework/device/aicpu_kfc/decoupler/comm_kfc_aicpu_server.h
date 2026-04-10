@@ -30,7 +30,7 @@ struct ServerExecCtx {
     u64 offset;
     u64 opParamKey;
     std::string commName;
-    OpenOpParamBuffer baseOpParam;
+    std::vector<uint8_t> baseOpParam;
     hccl::HcclCommAicpu *commAicpu{nullptr};
     HcclDispatcher dispatcher{nullptr};
     hccl::Stream *mainStream{nullptr};
@@ -49,6 +49,12 @@ public:
     HcclResult InterGroupSync(const CommKfcAicpuServer &otherServer, HcclHandle handle);
     HcclResult CheckTimeOut(u32 msgPos);
     HcclResult ErrorDfxProcess(HcclResult errorCode);
+    HcclResult LaunchOpenCcorePost(const ServerExecCtx &execCtx, u64 recordAddr, u32 turnNum, u64 turnNumsAddr);
+    HcclResult LaunchOpenCcoreWait(
+        const ServerExecCtx &execCtx, u64 waitAddr, u32 turnNum, u64 turnNumsAddr, bool isLast);
+    HcclResult LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam);
+    HcclResult FormatOpParamFromMsg(const HcclApi::HcclMsg &msg, HcclApi::HcclMsgExt &extMsg,
+        const ServerExecCtx &execCtx, u32 repeat, std::vector<uint8_t> &runParam);
     const ServerExecCtx *MatchExecCtx(u64 opParamKey) const;
 
 private:

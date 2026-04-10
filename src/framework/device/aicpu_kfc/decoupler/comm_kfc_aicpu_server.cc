@@ -24,45 +24,6 @@ static const std::vector<HcclCMDType> SUPPORT_OP_LIST {
     HCCL_CMD_ALLREDUCE, HCCL_CMD_ALLGATHER, HCCL_CMD_REDUCE_SCATTER, HCCL_CMD_ALLTOALLV, HCCL_CMD_ALLTOALL
 };
 
-void FormatOpData(const HcclMsg &msg, HcclMsgExt &extMsg, u32 rankNum, u32 repeat, HcclOpData &data)
-{
-    if (repeat == 0U) {
-        data.opType = static_cast<HcclCMDType>(msg.commType.prepareType);
-        data.reduceOp = static_cast<HcclReduceOp>(msg.opType);
-        data.dataType = data.outputDataType = static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType);
-        data.dataCount = msg.dataCnt;
-        if (data.opType == HCCL_CMD_ALLTOALLV) {
-            data.all2AllVDataDes.sendType = data.all2AllVDataDes.recvType = data.dataType;
-            data.all2AllVDataDes.sendCounts = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.sendCounts));
-            data.all2AllVDataDes.recvCounts = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.recvCounts));
-            data.all2AllVDataDes.sdispls = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.sendOffset));
-            data.all2AllVDataDes.rdispls = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(extMsg.recvOffset));
-        } else if (data.opType == HCCL_CMD_ALLTOALL) {
-            data.all2AllDataDes.sendType = data.all2AllDataDes.recvType = data.dataType;
-            data.all2AllDataDes.sendCount = data.all2AllDataDes.recvCount = data.dataCount;
-        } else {
-            data.dataDes.dataType = data.dataType;
-            data.dataDes.dataCount = data.dataCount;
-            data.dataDes.strideCount = msg.strideCount;
-        }
-    } else if (data.opType == HCCL_CMD_ALLTOALLV) {
-        for (u32 i = 0U; i < rankNum; ++i) {
-            extMsg.sendOffset[i] += extMsg.sendCounts[i];
-            extMsg.recvOffset[i] += extMsg.recvCounts[i];
-            HCCL_INFO("Formatted alltoallv info: repeat %u, rank id %u, send offset %llu, recv offset %llu.", repeat, i,
-                      static_cast<u64 *>(data.all2AllVDataDes.sdispls)[i],
-                      static_cast<u64 *>(data.all2AllVDataDes.rdispls)[i]);
-        }
-    }
-    const u64 offset = data.dataCount * DataUnitSize(data.dataType);
-    data.input = msg.sendBuffer + offset * repeat;
-    data.output = msg.recvBuffer + offset * repeat;
-    HCCL_INFO("Formatted op info: repeat index %u, op type %u, reduce type %u, data type %u, "
-              "data count %llu, input addr %#llx, output addr %#llx.", static_cast<u32>(repeat),
-              static_cast<u32>(data.opType), static_cast<u32>(data.reduceOp),
-              static_cast<u32>(data.dataType), data.dataCount, data.input, data.output);
-}
-
 hccl::HcclCommAicpu *FindCommAicpuByName(const std::string &commName)
 {
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
@@ -105,9 +66,9 @@ HcclResult CommKfcAicpuServer::AddOpContext(const OpResCtx *ctx)
             continue;
         }
 
-        OpenOpParamBuffer baseOpParam{};
-        CHK_RET(LoadOpenOpParamData(opParamKey, baseOpParam));
-        std::string commName = baseOpParam.CommName();
+        std::vector<uint8_t> baseOpParam{};
+        std::string commName{};
+        CHK_RET(LoadOpenOpParamData(opParamKey, commName, baseOpParam));
         CHK_PRT_RET(commName.empty(),
                     HCCL_ERROR("Group %u: empty comm name for opParamKey %#llx.", groupIdx_, opParamKey),
                     HCCL_E_PARA);
@@ -135,6 +96,11 @@ HcclResult CommKfcAicpuServer::AddOpContext(const OpResCtx *ctx)
     return HCCL_SUCCESS;
 }
 
+bool IsSupportedOp(HcclCMDType opType)
+{
+    return std::find(SUPPORT_OP_LIST.begin(), SUPPORT_OP_LIST.end(), opType) != SUPPORT_OP_LIST.end();
+}
+
 const ServerExecCtx *CommKfcAicpuServer::MatchExecCtx(u64 opParamKey) const
 {
     for (const auto &execCtx : execCtxList_) {
@@ -145,34 +111,93 @@ const ServerExecCtx *CommKfcAicpuServer::MatchExecCtx(u64 opParamKey) const
     return nullptr;
 }
 
+HcclResult CommKfcAicpuServer::LaunchOpenCcoreWait(
+    const ServerExecCtx &execCtx, u64 waitAddr, u32 turnNum, u64 turnNumsAddr, bool isLast)
+{
+    CHK_PTR_NULL(execCtx.mainStream);
+    uint8_t *sqeBuffer = nullptr;
+    uint8_t *sqeTypeAddr = nullptr;
+    uint8_t *sqeDfxInfoAddr = nullptr;
+    uint16_t taskId16 = 0;
+
+    CHK_RET(execCtx.mainStream->GetNextSqeBufferAddr(sqeBuffer, sqeTypeAddr, sqeDfxInfoAddr, taskId16));
+
+    auto *sqeCtx = execCtx.mainStream->GetSqeContextPtr();
+    CHK_PTR_NULL(sqeCtx);
+
+    const u64 valueAddr = turnNumsAddr + static_cast<u64>(turnNum) * sizeof(u32);
+    const u32 a5TaskId = (static_cast<u32>(sqeCtx->buffer.filpNum) << 16) | taskId16;
+
+    Hccl::BuildA5SqeCCoreNotifyWait(0, a5TaskId, waitAddr, valueAddr, isLast, sqeBuffer);
+    *sqeTypeAddr = static_cast<uint8_t>(SqeType::A5_CCORE_NOTIFY_WAIT_SQE);
+    sqeCtx->buffer.addInfo[taskId16 % hccl::HCCL_SQE_MAX_CNT]
+        = (static_cast<u32>(turnNum) << 16) | static_cast<u32>(isLast);
+
+    return LaunchTask(execCtx.dispatcher, *execCtx.mainStream);
+}
+
+HcclResult CommKfcAicpuServer::LaunchOpenCcorePost(
+    const ServerExecCtx &execCtx, u64 recordAddr, u32 turnNum, u64 turnNumsAddr)
+{
+    CHK_PTR_NULL(execCtx.mainStream);
+    uint8_t *sqeBuffer = nullptr;
+    uint8_t *sqeTypeAddr = nullptr;
+    uint8_t *sqeDfxInfoAddr = nullptr;
+    uint16_t taskId16 = 0;
+
+    CHK_RET(execCtx.mainStream->GetNextSqeBufferAddr(sqeBuffer, sqeTypeAddr, sqeDfxInfoAddr, taskId16));
+
+    auto *sqeCtx = execCtx.mainStream->GetSqeContextPtr();
+    CHK_PTR_NULL(sqeCtx);
+
+    const u64 valueAddr = turnNumsAddr + static_cast<u64>(turnNum) * sizeof(u32);
+    const u32 a5TaskId = (static_cast<u32>(sqeCtx->buffer.filpNum) << 16) | taskId16;
+
+    Hccl::BuildA5SqeCCoreNotifyRecord(0, a5TaskId, recordAddr, valueAddr, sqeBuffer);
+    *sqeTypeAddr = static_cast<uint8_t>(SqeType::A5_CCORE_NOTIFY_RECORD_SQE);
+    sqeCtx->buffer.addInfo[taskId16 % hccl::HCCL_SQE_MAX_CNT] = turnNum;
+
+    return LaunchTask(execCtx.dispatcher, *execCtx.mainStream);
+}
+
+HcclResult CommKfcAicpuServer::FormatOpParamFromMsg(
+    const HcclMsg &msg, HcclMsgExt &extMsg, const ServerExecCtx &execCtx, u32 repeatIdx, std::vector<uint8_t> &opParam)
+{
+    CHK_PTR_NULL(execCtx.mainStream);
+    return FormatOpenOpParamDataFromMsg(
+        execCtx.baseOpParam, msg, extMsg, rankNum_, repeatIdx, execCtx.mainStream->ptr(), opParam);
+}
+
+HcclResult CommKfcAicpuServer::LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam)
+{
+    return LaunchOpenOpParamData(opParam);
+}
+
 HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMsg, u32 msgPos)
 {
     KeepAlive();
     CHK_PTR_NULL(msgArea_);
-    auto handleIter = ctxToOpHandle_.find(reinterpret_cast<uintptr_t>(msg.addMsg.v1Msg.ccOpTilingData));
-    CHK_PRT_RET(
-            handleIter == ctxToOpHandle_.end(),
-            HCCL_ERROR("Group %u: op handle %#llx is not added by host.", groupIdx_, msg.addMsg.v1Msg.ccOpTilingData),
-            HCCL_E_PARA);
-    const auto opIter = std::find(SUPPORT_OP_LIST.begin(), SUPPORT_OP_LIST.end(),
-                              static_cast<HcclCMDType>(msg.commType.prepareType));
-    CHK_PRT_RET(opIter == SUPPORT_OP_LIST.end(),
-                HCCL_ERROR("Unsupported comm type %u.", static_cast<u32>(msg.commType.prepareType)),
-                HCCL_E_PARA);
+    const HcclCMDType opType = static_cast<HcclCMDType>(msg.commType.prepareType);
+    CHK_PRT_RET(!IsSupportedOp(opType), HCCL_ERROR("Unsupported comm type %u.", static_cast<u32>(opType)), HCCL_E_PARA);
+
+    const u64 opParamKey = msg.addMsg.v1Msg.ccOpTilingData;
+    const ServerExecCtx *execCtx = MatchExecCtx(opParamKey);
+    CHK_PRT_RET(execCtx == nullptr, HCCL_ERROR("Group %u: exec ctx %#llx is not added by host.", groupIdx_, opParamKey),
+        HCCL_E_PARA);
+
     const HcclHandle handle = msg.addMsg.v1Msg.selfHandleID;
     CHK_PRT_RET(handle < 0, HCCL_ERROR("Group %u: invalid handle id %d.", groupIdx_, handle), HCCL_E_INTERNAL);
     const u32 repeatCnt = static_cast<u32>(msg.addMsg.v1Msg.repeatCnt);
     const u64 waitAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.commitTurnCnt[msgPos].cnt));
     const u64 recordAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.finishedTurnCnt[msgPos].cnt));
 
-    HcclOpData data{};
-    void *opHandle = handleIter->second;
     for (u32 i = 0U; i < repeatCnt; ++i) {
-        FormatOpData(msg, extMsg, rankNum_, i, data);
+        std::vector<uint8_t> runParam{};
+        CHK_RET(FormatOpParamFromMsg(msg, extMsg, *execCtx, i, runParam));
         const u32 turnIdx = i + 1U;
-        CHK_RET(HcclLaunchCcoreWait(opHandle, waitAddr, turnIdx, turnNumsAddr_, turnIdx == repeatCnt));
-        CHK_RET(HcclLaunchOp(opHandle, &data));
-        CHK_RET(HcclLaunchCcorePost(opHandle, recordAddr, turnIdx, turnNumsAddr_));
+        CHK_RET(LaunchOpenCcoreWait(*execCtx, waitAddr, turnIdx, turnNumsAddr_, turnIdx == repeatCnt));
+        CHK_RET(LaunchOpenAicpuKernelServer(runParam));
+        CHK_RET(LaunchOpenCcorePost(*execCtx, recordAddr, turnIdx, turnNumsAddr_));
     }
     SetMsgPosByHandle(handle, msgPos);
     SetRepeatByHandle(handle, repeatCnt);
