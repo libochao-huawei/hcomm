@@ -1450,11 +1450,39 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
     auto creatEventFuncPtr = [](rtNotify_t *notify) -> s32 {
         CHK_RT_RET(aclrtCreateEvent(notify));
         aclrtStream stream = nullptr;
-        CHK_RT_RET(aclrtCreateStream(&stream));
-        CHK_RT_RET(aclrtRecordEvent(*notify, stream));
-        CHK_RT_RET(aclrtResetEvent(*notify, stream));
-        CHK_RT_RET(aclrtSynchronizeStream(stream));
-        CHK_RT_RET(aclrtDestroyStream(stream));
+        aclError ret = aclrtCreateStream(&stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtCreateStream fail, ret[%d], destory event.", ret);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtRecordEvent(*notify, stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtRecordEvent fail, ret[%d], destory stream and event.", ret);
+            aclrtDestroyStream(stream);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtResetEvent(*notify, stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtResetEvent fail, ret[%d], destory stream and event.", ret);
+            aclrtDestroyStream(stream);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtSynchronizeStream(stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtSynchronizeStream fail, ret[%d], destory stream and event.", ret);
+            aclrtDestroyStream(stream);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
+        ret = aclrtDestroyStream(stream);
+        if (ret != ACL_SUCCESS) {
+            HCCL_ERROR("[hrtNotifyCreate] aclrtDestroyStream fail, ret[%d], destory event.", ret);
+            aclrtDestroyEvent(*notify);
+            return ret;
+        }
         return 0;
     }; // 使用event替换notify后需要获取event id，get event id 前必须先record，因此在创建event时执行一把record
 
@@ -1925,7 +1953,12 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
         "rtRet[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    CHK_RET(hrtGetStreamId(stream, streamId));
+    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[hrtStreamCreate] hrtGetStreamId fail, ret[%d], destory stream.", ret);
+        aclrtDestroyStream(*stream);
+        return hcclRet;
+    }
     s32 deviceId = GetDeviceLogicalId();
     PLF_CONFIG_DEBUG(PLF_RES, "Create Stream para: deviceId[%d] streamId[%d]", deviceId, streamId);
     return HCCL_SUCCESS;
@@ -1945,7 +1978,12 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
         "error, rtRet[%d], flags[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, flags), HCCL_E_RUNTIME);
 
     s32 streamId = 0;
-    CHK_RET(hrtGetStreamId(stream, streamId));
+    HcclResult hcclRet = hrtGetStreamId(stream, streamId);
+    if (hcclRet != HCCL_SUCCESS) {
+        HCCL_ERROR("[hrtStreamCreateWithFlags] hrtGetStreamId fail, ret[%d], destory stream.", ret);
+        aclrtDestroyStream(*stream);
+        return hcclRet;
+    }
     s32 deviceId = GetDeviceLogicalId();
     PLF_CONFIG_DEBUG(PLF_RES, "Create Stream para: deviceId[%d] streamId[%d] priority[%d] flags[%u]",
         deviceId, streamId, priority, flags);
@@ -2003,6 +2041,8 @@ HcclResult hrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t coun
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    CHK_PRT_RET(count > destMax, HCCL_ERROR("[hrtMemcpy] count[%llu] exceeds destMax[%llu].",
+        count, destMax), HCCL_E_PARA);
     aclrtMemcpyKind rtKind;
     CHK_RET(MemcpyKindTranslate(kind, &rtKind));
 #ifndef HCCD

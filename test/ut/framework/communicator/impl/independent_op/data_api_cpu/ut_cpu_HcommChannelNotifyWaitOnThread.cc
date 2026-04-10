@@ -114,3 +114,47 @@ TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcommChannelNotifyWaitOnThread_Wh
     res = HcommChannelNotifyWaitOnThread(thread, channel910C, notifyIdx, timeout);
     EXPECT_EQ(res, HCCL_E_INTERNAL);
 }
+
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_StreamHandleIs0_Expect_ReturnHCCL_E_PTR)
+{
+    StreamHandle streamHandle = nullptr;
+    HcclMemTransport memtransport = reinterpret_cast<HcclMemTransport>(0x1234);
+    HcclBufPair bufPairs[1] = {{ {nullptr, 0}, {nullptr, 0} }};
+    uint32_t bufPairsNum = 1;
+
+    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_MemtransportIs0_Expect_ReturnHCCL_E_PTR)
+{
+    StreamHandle streamHandle = reinterpret_cast<StreamHandle>(0x1234);
+    HcclMemTransport memtransport = nullptr;
+    HcclBufPair bufPairs[1] = {{ {nullptr, 0}, {nullptr, 0} }};
+    uint32_t bufPairsNum = 1;
+
+    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_BufPairsIs0_Expect_ReturnHCCL_E_PTR)
+{
+    StreamHandle streamHandle = reinterpret_cast<StreamHandle>(0x1234);
+    HcclMemTransport memtransport = reinterpret_cast<HcclMemTransport>(0x1234);
+    HcclBufPair *bufPairs = nullptr;
+    uint32_t bufPairsNum = 1;
+
+    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(UtCpuHcommChannelNotifyWaitOnThread, Ut_HcclRemoteBatchRead_When_BufPairsNumIs0_Expect_ReturnHCCL_E_PTR)
+{
+    StreamHandle streamHandle = reinterpret_cast<StreamHandle>(0x1234);
+    HcclMemTransport memtransport = reinterpret_cast<HcclMemTransport>(0x1234);
+    HcclBufPair bufPairs[1] = {{ {nullptr, 0}, {nullptr, 0} }};
+    uint32_t bufPairsNum = 0;
+
+    HcclResult ret = HcclRemoteBatchRead(streamHandle, memtransport, bufPairs, bufPairsNum);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
