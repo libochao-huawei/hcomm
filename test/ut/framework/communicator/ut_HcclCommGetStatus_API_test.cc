@@ -9,6 +9,7 @@
  */
 
 #include "hccl_api_base_test.h"
+#include <string>
 
 class HcclCommGetStatusTest : public BaseInit {
 public:
@@ -20,16 +21,21 @@ public:
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
+
+    std::string GetCommId(HcclComm comm) {
+        char commId[256] = {0};
+        HcclResult ret = HcclGetCommName(comm, commId);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        return std::string(commId);
+    }
 };
 
 TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_ReturnIsHCCL_E_PTR) {
     UT_COMM_CREATE_DEFAULT(comm);
 
-    char commId[256] = {0};
-    HcclResult ret = HcclGetCommName(comm, commId);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::string commId = GetCommId(comm);
 
-    ret = HcclCommGetStatus(commId, nullptr);
+    HcclResult ret = HcclCommGetStatus(commId.c_str(), nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     Ut_Comm_Destroy(comm);
@@ -38,12 +44,10 @@ TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_StatusIsNull_Expect_Retu
 TEST_F(HcclCommGetStatusTest, Ut_HcclCommGetStatus_When_CommIsOk_StatusOutIsReady_Expect_ReturnIsHCCL_SUCCESS) {
     UT_COMM_CREATE_DEFAULT(comm);
 
-    char commId[256] = {0};
-    HcclResult ret = HcclGetCommName(comm, commId);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::string commId = GetCommId(comm);
 
     HcclCommStatus status = HCCL_COMM_STATUS_INVALID;
-    ret = HcclCommGetStatus(commId, &status);
+    HcclResult ret = HcclCommGetStatus(commId.c_str(), &status);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     // After successful create, comm status should be READY
     EXPECT_EQ(status, HcclCommStatus::HCCL_COMM_STATUS_READY);

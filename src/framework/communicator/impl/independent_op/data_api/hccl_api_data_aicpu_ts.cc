@@ -26,7 +26,6 @@
 #include "hcomm_diag.h"
 #include "hccl_api_data_aicpu_ts.h"
 #include "hccl_diag.h"
-#include "hccl/hccl_comm.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -790,23 +789,6 @@ int32_t HcommAcquireComm(const char* commId)
     } else {
         CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
         CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommGetStatus(const char* commId, HcclCommStatus *status)
-{
-    CHK_PTR_NULL(commId);
-    CHK_PTR_NULL(status);
-    *status = HcclCommStatus::HCCL_COMM_STATUS_READY;
-    DevType deviceType;
-    CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType == DevType::DEV_TYPE_950) {
-        CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
-        CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-        CollCommAicpu* collCommAicpu = hcclComm->GetCollCommAicpu();
-        CHK_PRT_RET(!collCommAicpu, HCCL_ERROR("%s GetCollCommAicpu is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-        *status = collCommAicpu->GetCommmStatus();
     }
     return HCCL_SUCCESS;
 }

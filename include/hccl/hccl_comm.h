@@ -251,7 +251,7 @@ extern HcclResult HcclCommResume(HcclComm comm) HCOMM_WEAK_SYMBOL;
  * @param status A pointer to store the retrieved communication status.
  * @return HcclResult
 */
-extern HcclResult HcclCommGetStatus(const char* commId, HcclCommStatus *status);
+extern HcclResult HcclCommGetStatus(const char *commId, HcclCommStatus *status);
 
 /**
  * @brief Set the virtual memory range to HCCL communicator

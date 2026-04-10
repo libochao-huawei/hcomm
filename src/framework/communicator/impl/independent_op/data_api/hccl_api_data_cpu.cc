@@ -29,7 +29,6 @@
 #include "exception_handler.h"
 #include "task_info.h"
 #include "task_param.h"
-#include "hccl/hccl_comm.h"
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
@@ -633,16 +632,6 @@ int32_t HcommAcquireComm(const char* commId)
     CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
     CHK_PRT(hcclComm->SetCommDispatcherCtx());// 待优化
     return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommGetStatus(const char* commId, HcclCommStatus *status)
-{
-    CHK_PTR_NULL(commId);
-    CHK_PTR_NULL(status);
-    std::shared_ptr<hccl::hcclComm> hcclComm;
-    CHK_RET(HcclGetCommHandle(commId, hcclComm));
-    CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    return hcclComm->GetCommStatus(*status);
 }
 
 int32_t HcommReleaseComm(const char* commId)

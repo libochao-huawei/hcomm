@@ -21,6 +21,15 @@ extern "C" {
  */
 
 /**
+ * @brief 获取通信域状态
+ * @param commId 通信域ID
+ * @param status 通信域状态
+ * @return HCCL_SUCCESS 成功
+ * @return 其他值 失败
+ */
+HcclResult HcclCommGetStatus(const char* commId, HcclCommStatus *status);
+
+/**
  * @note 非对外接口声明示例
  * @code {.c}
  * HcclResult HcclCommDestroy(HcclComm comm);
