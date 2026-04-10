@@ -10,7 +10,6 @@
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/task_profiling.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/task_exception_handler.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/task_exception_handler_host.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/profiler_base.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin_runner.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin_runner_host.cc
