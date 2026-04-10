@@ -113,12 +113,13 @@ TEST_F(SalTest, ut_atrace_error_test)
 
 TEST_F(SalTest, ut_DlTraceFunctionInit_UTrace_Failed_Expect_ReturnError)
 {
+    DlTraceFunction &dlTrace = DlTraceFunction::GetInstance();
+    dlTrace.handle_ = nullptr;
+
     MOCKER_CPP(&hccl::DlTraceFunction::DlUTraceFunctionInterInit)
     .stubs()
     .will(returnValue(HCCL_E_INTERNAL));
 
-    DlTraceFunction &dlTrace = DlTraceFunction::GetInstance();
-    dlTrace.handle_ = nullptr;
     HcclResult ret = dlTrace.DlTraceFunctionInit();
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
     GlobalMockObject::verify();
