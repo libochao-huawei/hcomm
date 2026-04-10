@@ -197,8 +197,7 @@ extern CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
              uid##_done = 0;                                                \
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
-             uid##_rc = ((int)CcuIfElse(CCU_STRINGIFY(uid)),                \
-                 (int)CcuIfEnd(CCU_STRINGIFY(uid))))
+             uid##_rc = (int)CcuIfEnd(CCU_STRINGIFY(uid)))
 
 /**
  * CCU_DO_WHILE — wraps CcuDoWhileBegin / CcuDoWhileEnd around a brace block.
