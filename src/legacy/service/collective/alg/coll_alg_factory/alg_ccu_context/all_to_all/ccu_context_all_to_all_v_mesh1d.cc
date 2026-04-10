@@ -125,16 +125,15 @@ void CcuContextAllToAllVMesh1D::LoadArgs()
     Load(token_[rankId_]);
     Load(srcOffset_);
     Load(dstOffset_);
+    Load(xnMaxTransportGoSize_);
     if (loadFromMem) {
         Load(a2avXnAddr_);
-    } else {
-        Load(xnMaxTransportGoSize_);
-    }
+    } 
     
     // 恢复当前卡对所有卡的收发信息
     sendRecvInfo_.resize(rankSize_);
     for (uint64_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
-        LoadAll2allSendRecvInfo(sendRecvInfo_[rankIdx]);
+        LoadAll2allSendRecvInfo(sendRecvInfo_[rankIdx], rankIdx);
     }
 }
 
@@ -261,7 +260,6 @@ std::vector<uint64_t> CcuContextAllToAllVMesh1D::GeneArgs(const CcuTaskArg &arg)
     uint64_t inputAddr  = taskArg->inputAddr_;
     uint64_t outputAddr = taskArg->outputAddr_;
     uint64_t tokenInfo  = taskArg->token_;
-
     uint64_t srcOffset = taskArg->srcOffset_;
     uint64_t dstOffset = taskArg->dstOffset_;
 
@@ -270,15 +268,15 @@ std::vector<uint64_t> CcuContextAllToAllVMesh1D::GeneArgs(const CcuTaskArg &arg)
               inputAddr, outputAddr, srcOffset, dstOffset);
     std::vector<uint64_t> processReturn = {inputAddr, outputAddr, tokenInfo, srcOffset, dstOffset};
 
-    if (loadFromMem) {
-        processReturn.push_back(0);  // 空地址占位，保证参数个数与load个数一致
-        return processReturn;
-    }
     uint64_t xnMaxTransportSize   = UB_MAX_TRANS_SIZE;
     HCCL_INFO("[CcuContextAllToAllVMesh1D][GeneArgs] CalGoSize size[%llu]", xnMaxTransportSize);
     auto     xnMaxTransportGoSize = CalGoSize(xnMaxTransportSize);
     for (auto val : xnMaxTransportGoSize) {
         processReturn.push_back(val);
+    }
+    if (loadFromMem) {
+        processReturn.push_back(0);  // 空地址占位，保证参数个数与load个数一致
+        return processReturn;
     }
     uint64_t rankSize = taskArg->sliceSize_.size();
     for (uint64_t i = 0; i < rankSize; i++) {
@@ -292,8 +290,11 @@ std::vector<uint64_t> CcuContextAllToAllVMesh1D::GeneArgs(const CcuTaskArg &arg)
         processReturn.push_back(loopNum);
         processReturn.push_back(sendOffset);
         processReturn.push_back(recvOffset);
-        for (auto val : tailGoSize) {
-            processReturn.push_back(val);
+        if(i == rankId_)
+        {
+            for (auto val : tailGoSize) {
+                processReturn.push_back(val);
+            }
         }
         HCCL_INFO("[AllToAllVAlgo] rankIdx[i] taskArg->sliceSize[%llu]," \
             "taskArg->localSendRecvInfo.sendOffset[%llu]," \
@@ -305,13 +306,13 @@ std::vector<uint64_t> CcuContextAllToAllVMesh1D::GeneArgs(const CcuTaskArg &arg)
     return processReturn;
 }
 
-void CcuContextAllToAllVMesh1D::LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo)
+void CcuContextAllToAllVMesh1D::LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo, const uint64_t rankIdx)
 {
     sendRecvInfo.tailSize   = CreateVariable();
     sendRecvInfo.loopNum    = CreateVariable();
     sendRecvInfo.sendOffset = CreateVariable();
     sendRecvInfo.recvOffset = CreateVariable();
-    sendRecvInfo.tailGoSize = CreateGroupOpSize();
+    
     if (loadFromMem) {
         HCCL_INFO("[CcuContextAllToAllVMesh1D] Load Args from Mem");
         sendRecvInfo.loopNum = UINT64_MAX - 1; // MC2 场景 loop num 默认为 1
@@ -328,16 +329,32 @@ void CcuContextAllToAllVMesh1D::LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &s
 
         LoadVariable(a2avXnAddr_, sendRecvInfo.recvOffset);
         a2avXnAddr_ += xnLength_;
+
+        if(rankIdx == rankId_){
+            sendRecvInfo.tailGoSize = CreateGroupOpSize();
+            LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.addrOffset);
+            a2avXnAddr_ += xnLength_;
+            LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.loopParam);
+            a2avXnAddr_ += xnLength_;
+            LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.parallelParam);
+            a2avXnAddr_ += xnLength_;
+            LoadVariable(a2avXnAddr_, sendRecvInfo.tailGoSize.residual);
+            a2avXnAddr_ += xnLength_;
+        }
     } else {
         Load(sendRecvInfo.tailSize);
         Load(sendRecvInfo.loopNum);
         Load(sendRecvInfo.sendOffset);
         Load(sendRecvInfo.recvOffset);
-        Load(sendRecvInfo.tailGoSize);
+        if(rankIdx == rankId_){
+            sendRecvInfo.tailGoSize = CreateGroupOpSize();
+            Load(sendRecvInfo.tailGoSize);
+        }
     }
 }
 
-void CcuContextAllToAllVMesh1D::RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args) 
+
+void CcuContextAllToAllVMesh1D::RefreshArgs(CollOpParams opParams, u32 rankSize, std::vector<uint64_t> &args, u32 myRank) 
 {
     uint64_t inputAddr;
     uint64_t outputAddr;
@@ -374,23 +391,23 @@ void CcuContextAllToAllVMesh1D::RefreshArgs(CollOpParams opParams, u32 rankSize,
 
         u64 curRecvDispls = *(static_cast<const u64 *>(opParams.all2AllVDataDes.rdispls) + i);
         u64 recvOffset = curRecvDispls * DataTypeSizeGet(opParams.all2AllVDataDes.recvType);
-
+        
         uint64_t tailSize = sendLength % UB_MAX_TRANS_SIZE;
         uint64_t loopNum = UINT64_MAX - 1 - (sendLength / UB_MAX_TRANS_SIZE);
-
-        HCCL_INFO("[CcuContextAllToAllVMesh1D][RefreshArgs] CalGoSizeStatic size [%llu]", tailSize);
-        auto tailGoSize = CcuContext::CalGoSizeStatic(tailSize, moConfig);
-
         args.push_back(tailSize);
         args.push_back(loopNum);
         args.push_back(sendOffset);
         args.push_back(recvOffset);
 
-        for (auto val : tailGoSize) {
-            args.push_back(val);
+        if (i == myRank){
+            HCCL_INFO("[CcuContextAllToAllVMesh1D][RefreshArgs] CalGoSizeStatic size [%llu]", tailSize);
+            auto tailGoSize = CcuContext::CalGoSizeStatic(tailSize, moConfig);
+            for (auto val : tailGoSize) {
+                args.push_back(val);
+            }
         }
     }
-    
+
     for (u32 i = 0; i < args.size(); i++) {
         HCCL_INFO("[CcuContextAllToAllVMesh1D][RefreshArgs] SFL args[%u] is [%llu]", i, args[i]);
     }
