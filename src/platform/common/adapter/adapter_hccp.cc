@@ -1538,6 +1538,7 @@ HcclResult IsSupportHdcAsync(bool &isSupportHdcAsync)
 s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize, void **reqHandle)
 {
     if (DlRaFunction::GetInstance().dlRaSocketSendAsync == nullptr) {
+        HCCL_WARNING("this package does not support hrtRaSocketSendAsync, please change new package");
         return OTHERS_ENOTSUPP;
     }
     return DlRaFunction::GetInstance().dlRaSocketSendAsync(fdHandle, data, size, sentSize, reqHandle);
@@ -1546,6 +1547,7 @@ s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u6
 s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *receivedSize, void **reqHandle)
 {
     if (DlRaFunction::GetInstance().dlRaSocketRecvAsync == nullptr) {
+        HCCL_WARNING("this package does not support hrtRaSocketRecvAsync, please change new package");
         return OTHERS_ENOTSUPP;
     }
     return DlRaFunction::GetInstance().dlRaSocketRecvAsync(fdHandle, data, size, receivedSize, reqHandle);
@@ -1554,6 +1556,7 @@ s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *rec
 s32 hrtRaSocketGetAsyncReqResult(void *reqHandle, s32 *reqResult)
 {
     if (DlRaFunction::GetInstance().dlRaGetAsyncReqResult == nullptr) {
+        HCCL_WARNING("this package does not support hrtRaSocketGetAsyncReqResult, please change new package");
         return OTHERS_ENOTSUPP;
     }
     return DlRaFunction::GetInstance().dlRaGetAsyncReqResult(reqHandle, reqResult);
