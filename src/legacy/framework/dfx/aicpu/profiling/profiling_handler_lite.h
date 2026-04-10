@@ -18,6 +18,7 @@
 #include "profiling_common.h"
 
 extern "C" {
+__attribute__((weak)) int32_t AdprofReportBatchAdditionalInfo(uint32_t nonPersistantFlag, const void *data, uint32_t length);
 __attribute__((weak)) int32_t MsprofReportBatchAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
 __attribute__((weak)) int32_t AdprofReportAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length);
 __attribute__((weak)) int32_t MsprofReportAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
@@ -70,6 +71,7 @@ private:
     uint64_t GetProfHashId(const char *name, uint32_t len) const;
     void DumpTaskDetails(const MsprofAicpuHcclTaskInfo& taskDetailsInfos, const TaskInfo &taskInfo) const;
     void GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const;
+    void TaskInfo2Addition(const void *data, int len, MsprofAdditionalInfo& reporterData) const;
 
 private:
     static ProfilingHandlerLite instance_;

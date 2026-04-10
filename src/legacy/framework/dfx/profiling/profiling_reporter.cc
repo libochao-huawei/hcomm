@@ -85,6 +85,28 @@ void ProfilingReporter::ReportAllTasks(bool cachedReq)
         HCCL_ERROR("[ProfilingReporter][ReportAllTasks] mirrorTaskMgr_[%p] or profilingHandler_[%p] is nullptr", mirrorTaskMgr_, profilingHandler_);
         return;
     }
+    
+    // ========== 优化点：开关前置判断 ==========
+    // 获取开关状态（只获取一次，避免多次调用）
+    bool enableHcclNode = profilingHandler_->GetHcclNodeState();
+    bool enableHcclL1 = profilingHandler_->GetHcclL1State();
+    
+    // 如果 L1 和 Node 开关都关闭，且不是缓存模式，直接跳过遍历
+    // 只更新位置记录，避免下次重复遍历
+    if (!enableHcclNode && !enableHcclL1 && !cachedReq) {
+        HCCL_INFO("[ProfilingReporter][ReportAllTasks] profiling disabled, skip report, update positions only.");
+        for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
+            u32 streamId = it->first;
+            Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
+            if (currQueue != nullptr) {
+                curLastPoses[streamId] = currQueue->Tail();
+            }
+        }
+        HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks end (skip report).");
+        return;
+    }
+    // ===========================================
+    
     for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
         u32  streamId     = it->first;
         Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
