@@ -259,39 +259,6 @@ TEST_F(HccpTest, Ut_CreateQpWithCq_CreateNormalQpFail_Expect_DestoryCq)
     GlobalMockObject::verify();
 }
 
-// HcclResult StubHrtGetIniterFaceVersionForCreateQp(unsigned int phyId, unsigned int interfaceOpcode,
-//     unsigned int *interfaceVersion)
-// {
-//     *interfaceVersion = 2;
-//     return HCCL_SUCCESS;
-// }
-
-// TEST_F(HccpTest, Ut_CreateQpWithDepthConfig_hrtRaGetQpAttrFail_Expect_DestoryQp)
-// {
-//     MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-//     MOCKER(hrtGetDevicePhyIdByIndex).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-//     MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(returnValue(StubHrtGetIniterFaceVersionForCreateQp));
-//     MOCKER(hrtRaQpCreateWithAttrs).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-//     MOCKER(hrtRaGetQpAttr).expects(atMost(1)).will(returnValue(HCCL_E_INTERNAL));
-//     MOCKER(HrtRaQpDestroy).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
-
-//     RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x1234);
-//     s32 qpMode = 0;
-//     QpConfigInfo qpConfig;
-//     qpConfig.sq_depth = 128;
-//     qpConfig.rq_depth = 128;
-//     qpConfig.scq_depth = 256;
-//     qpConfig.rcq_depth = 256;
-//     qpConfig.use_resv_mem = false;
-//     qpConfig.resv_mem_pool_id = 0;
-//     QpHandle qpHandle = nullptr;
-//     struct TypicalQp qpInfo{};
-//     HcclResult ret = CreateQpWithDepthConfig(rdmaHandle, qpMode, qpConfig, qpHandle, qpInfo);
-//     EXPECT_EQ(ret, HCCL_E_INTERNAL);
-
-//     GlobalMockObject::verify();
-// }
-
 TEST_F(HccpTest, Ut_CreateAiQp_SetQpAttrQosFail_Expect_DestoryQp)
 {
     MOCKER(hrtGetDevice).expects(atMost(1)).will(returnValue(HCCL_SUCCESS));
@@ -462,36 +429,6 @@ TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_SocketInitFail)
     GlobalMockObject::verify();
 }
 
-// TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_RdmaInitFail)
-// {
-//     s32 device_id = 0;
-//     u32 port = 16666;
-
-//     MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
-//     MOCKER_CPP(&hccl::NetworkManager::InitRdmaHandle).stubs().will(returnValue(HCCL_E_NETWORK));
-
-//     HcclIpAddress ipAddr("127.0.0.1");
-//     HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
-//     EXPECT_NE(ret, HCCL_SUCCESS);
-
-//     GlobalMockObject::verify();
-// }
-
-// TEST_F(HccpTest, Ut_NetworkManager_HeterogInit_StartListenFail)
-// {
-//     s32 device_id = 0;
-//     u32 port = 16666;
-
-//     MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
-//     MOCKER_CPP(&hccl::NetworkManager::StartListenSocket).stubs().will(returnValue(HCCL_E_NETWORK));
-
-//     HcclIpAddress ipAddr("127.0.0.1");
-//     HcclResult ret = NetworkManager::GetInstance(device_id).HeterogInit(device_id, ipAddr, port);
-//     EXPECT_NE(ret, HCCL_SUCCESS);
-
-//     GlobalMockObject::verify();
-// }
-
 TEST_F(HccpTest, Ut_NetworkManager_StopVnicSocketHandle_DeinitFail)
 {
     s32 device_id = 0;
@@ -655,21 +592,6 @@ TEST_F(HccpTest, Ut_NetworkManager_PsWorkerRaInit_SocketInitFail)
 
     GlobalMockObject::verify();
 }
-
-// TEST_F(HccpTest, Ut_NetworkManager_PsWorkerRaInit_StartListenFail)
-// {
-//     s32 device_id = 0;
-//     u32 port = 16666;
-
-//     MOCKER(hrtRaSocketInit).stubs().will(returnValue(HCCL_SUCCESS));
-//     MOCKER_CPP(&hccl::NetworkManager::HeterogStartListen).stubs().will(returnValue(HCCL_E_NETWORK));
-
-//     HcclIpAddress ipAddr("10.21.78.208");
-//     HcclResult ret = NetworkManager::GetInstance(device_id).PsWorkerRaInit(device_id, ipAddr, port, false, false, false);
-//     EXPECT_EQ(ret, HCCL_E_NETWORK);
-
-//     GlobalMockObject::verify();
-// }
 
 TEST_F(HccpTest, Ut_NetworkManager_Destory_DeviceRaDeinitFail)
 {
