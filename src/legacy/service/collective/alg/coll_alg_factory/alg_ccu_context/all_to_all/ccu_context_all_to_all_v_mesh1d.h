@@ -41,7 +41,7 @@ protected:
         GroupOpSize      tailGoSize;
     };
     void CreateVariables();
-    void LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo);
+    void LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo, const uint64_t rankIdx);
     void LoadArgs();
     void PreSync();
     void PostSync();
