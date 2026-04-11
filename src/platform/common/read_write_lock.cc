@@ -24,7 +24,7 @@ ReadWriteLock::~ReadWriteLock()
 void ReadWriteLock::readLock()
 {
     rwlock_.readLock();
-    readersNum_++;
+    readesNum_++;
 }
 
 void ReadWriteLock::readUnlock()
