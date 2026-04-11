@@ -123,6 +123,23 @@ HcclResult WaitClientSocketLinkEstablished(const std::shared_ptr<hccl::HcclSocke
 }
 } // namespace
 
+HcclResult AicpuTsRoceChannel::BuildSocketTagName(std::string &outTag) const
+{
+    hccl::HcclIpAddress localIp{};
+    hccl::HcclIpAddress remoteIp{};
+    CHK_RET(CommAddrToHcclIp(localEp_.commAddr, localIp));
+    CHK_RET(CommAddrToHcclIp(remoteEp_.commAddr, remoteIp));
+    const std::string clientStr(isLocalIpClient_ ? localIp.GetReadableIP() : remoteIp.GetReadableIP());
+    const std::string serverStr(isLocalIpClient_ ? remoteIp.GetReadableIP() : localIp.GetReadableIP());
+    const uint32_t port = channelDesc_.port != 0 ? channelDesc_.port : kDefaultRocePort;
+    outTag = clientStr + "_" + serverStr + ":" + std::to_string(port) + "_" + std::to_string(channelDesc_.common.index);
+    if (outTag.size() + 1U > SOCK_CONN_TAG_SIZE) {
+        HCCL_ERROR("[AicpuTsRoceChannel] socketTag too long (max %u bytes)", static_cast<unsigned int>(SOCK_CONN_TAG_SIZE - 1U));
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
 AicpuTsRoceChannel::AicpuTsRoceChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc)
     : endpointHandle_(endpointHandle), channelDesc_(channelDesc)
 {}
@@ -147,8 +164,19 @@ HcclResult AicpuTsRoceChannel::ParseInputParam()
     CHK_PTR_NULL(rdmaHandle_);
 
     remoteEp_ = channelDesc_.remoteEndpoint;
-    CHK_RET(DecideLocalIsClientByEndpointIps(localEp_, remoteEp_, isLocalIpClient_));
-    HCCL_INFO("[AicpuTsRoceChannel][%s] ParseInputParam start (role from GetReadableIP lexicographic order)", SocketRoleTag());
+    if (channelDesc_.role == HCOMM_SOCKET_ROLE_CLIENT) {
+        isLocalIpClient_ = true;
+    } else if (channelDesc_.role == HCOMM_SOCKET_ROLE_SERVER) {
+        isLocalIpClient_ = false;
+    } else {
+        if (channelDesc_.role != HCOMM_SOCKET_ROLE_RESERVED) {
+            HCCL_WARNING("[AicpuTsRoceChannel] unexpected channelDesc.role[%d]; "
+                "using inner logic to decide socket role based on endpoint IPs",
+                static_cast<int>(channelDesc_.role));
+        }
+        CHK_RET(DecideLocalIsClientByEndpointIps(localEp_, remoteEp_, isLocalIpClient_));
+    }
+    HCCL_INFO("[AicpuTsRoceChannel][%s] ParseInputParam start", SocketRoleTag());
 
     notifyNum_ = channelDesc_.notifyNum;
     if (notifyNum_ != 0) {
@@ -197,11 +225,8 @@ HcclResult AicpuTsRoceChannel::BuildDataSocket()
     CHK_RET(CommAddrToHcclIp(remoteEp_.commAddr, remoteIp));
 
     uint32_t port = channelDesc_.port != 0 ? channelDesc_.port : kDefaultRocePort;
-    const CommAddr &serverCommAddr = isLocalIpClient_ ? remoteEp_.commAddr : localEp_.commAddr;
-    hccl::HcclIpAddress serverIp{};
-    CHK_RET(CommAddrToHcclIp(serverCommAddr, serverIp));
-    const char *ipReadable = serverIp.GetReadableIP();
-    std::string socketTag = ipReadable + std::string(":") + std::to_string(port);
+    std::string socketTag;
+    CHK_RET(BuildSocketTagName(socketTag));
 
     HCCL_INFO("[AicpuTsRoceChannel][%s] BuildDataSocket localIp[%s] remoteIp[%s] port[%u] socketTag[%s]",
         SocketRoleTag(), machinePara_.localIpAddr.GetReadableIP(), remoteIp.GetReadableIP(), port, socketTag.c_str());

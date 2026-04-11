@@ -41,8 +41,8 @@ private:
     HcclResult ParseInputParam();
     HcclResult BuildDataSocket();
     HcclResult BuildDispatcherAndTransport();
+    HcclResult BuildSocketTagName(std::string &outTag) const;
 
-    /** Smaller HcclIpAddress::GetReadableIP() lexicographic order is client; IP tie: devPhyId. */
     const char *SocketRoleTag() const noexcept
     {
         return isLocalIpClient_ ? "client" : "server";
