@@ -13,6 +13,7 @@
 #include "hccl_types.h"
 #include "stream_pub.h"
 #include "hccl_common.h"
+#include "log.h"
 #include "common/aicpu_hccl_def.h"
 #include "prof_common.h"
 
