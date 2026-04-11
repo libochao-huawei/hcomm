@@ -222,6 +222,7 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             u64 rxInOffset = tempAlgParams_.inputSliceStride * connectedAlgRank + inBaseOff;
             u64 rxOutOffset = tempAlgParams_.outputSliceStride * connectedAlgRank + outBaseOff;
             u64 rxScratchOffset = scratchBase + tempAlgParams_.sliceSize * connectedAlgRank;
+<<<<<<< HEAD
             u64 rxSrcOffset = (opMode_ == OpMode::OPBASE) ? rxScratchOffset : rxInOffset;   
             DataSlice txSrcSlice(tempAlgParams_.buffInfo.inBuffType, txInOffset,txSliceSize);
             DataSlice txDstSlice(writeType, txDstOffset, txSliceSize);
@@ -231,6 +232,14 @@ HcclResult InsTempAllGatherMesh1D::RunMesh(const u32 myAlgRank, const std::vecto
             vector<DataSlice> txDstSlices{ CalcDataSliceForLinks(txDstSlice, dataSplitRate, j, dataType_) };
             vector<DataSlice> rxSrcSlices{ CalcDataSliceForLinks(rxSrcSlice, dataSplitRate, j, dataType_) };
             vector<DataSlice> rxDstSlices{ CalcDataSliceForLinks(rxDstSlice, dataSplitRate, j, dataType_) };
+=======
+            u64 rxSrcOffset = (opMode_ == OpMode::OPBASE) ? rxScratchOffset : rxInOffset;
+
+            vector<DataSlice> txSrcSlices{DataSlice(tempAlgParams_.buffInfo.inBuffType, txInOffset, txSliceSize)};
+            vector<DataSlice> txDstSlices{DataSlice(writeType, txDstOffset, txSliceSize)};
+            vector<DataSlice> rxSrcSlices{DataSlice(writeType, rxSrcOffset, rxSliceSize)};
+            vector<DataSlice> rxDstSlices{DataSlice(tempAlgParams_.buffInfo.outBuffType, rxOutOffset, rxSliceSize)};
+>>>>>>> d4802788 (broadcast performance opt)
 
             TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
             TxRxLinks sendRecvLinks(neighborLinkData, neighborLinkData);
