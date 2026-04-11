@@ -92,6 +92,8 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
     CHK_RET(hcclCommAicpu->GetSuspendingFlag(kfcFlag));
     if (kfcFlag == HcclComSuspendingFlag::isSuspending) {
         HCCL_WARNING("[NsRecovery] the op should not be launched in hcclCommAicpu on the suspending status");
+        sleep(1);
+        
         AicpuHcclProcess::AicpuReleaseCommbyGroup(group);
         return 0;
     }
