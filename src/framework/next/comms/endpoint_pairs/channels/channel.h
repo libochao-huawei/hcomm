@@ -17,8 +17,11 @@
 #include "hccl/hccl_types.h"
 #include "hcomm_res_defs.h"
 #include "hccl_mem_defs.h"
+#include <cstdint>
+#include "mem_device_pub.h"
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "enum_factory.h"
 
 // Orion
@@ -30,6 +33,18 @@
 namespace hcomm {
 
 MAKE_ENUM(ChannelStatus, INIT, SOCKET_OK, SOCKET_TIMEOUT, READY, FAILED)
+
+/**
+ * @brief 通道种类（与 HcommChannelRes.channelTypeList 中 u32 数值一致；由 CommEngine + CommProtocol 推导）。
+ */
+enum class HcommChannelKind : uint32_t {
+    INVALID = 0U,
+    AICPU_TS_URMA = 1U,
+    AICPU_TS_ROCE = 2U,
+    AICPU_TS_HCCS = 3U,
+    CPU_ROCE = 4U,
+    AIV_UB_MEM = 5U,
+};
 
 /**
  * @note 职责：一个EndPointPair上的建立的通信通道的C++抽象接口类声明。
@@ -59,6 +74,15 @@ public:
     virtual HcclResult Clean()        = 0;
     virtual HcclResult Resume()       = 0;
     // ------------------ 数据面接口 ------------------
+
+    /** 与 BindChannelMeta 一致；供 SaveChannels / kernel 下发选择路径 */
+    virtual HcommChannelKind GetChannelKind() const;
+
+    /**
+     * 为 HcommChannelRes 路径分配并填入本 channel 的 device 序列化块（H2D 后由 AICPU kernel 解析）。
+     * 默认不支持；AicpuTsRoceChannel 等按需实现。
+     */
+    virtual HcclResult PrepareAicpuKernelDeviceBlob(std::shared_ptr<hccl::DeviceMem> &out);
 
     // ------------------ 工厂 ------------------
     static HcclResult CreateChannel(EndpointHandle endpointHandle, 

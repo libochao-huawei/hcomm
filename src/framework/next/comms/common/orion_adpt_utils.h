@@ -12,6 +12,7 @@
 
 #include "hccl/hccl_types.h"
 #include "hcomm_res_defs.h"
+#include "hccl_net_dev_defs.h"
 
 // Orion
 #include "ip_address.h"
@@ -22,6 +23,7 @@ namespace hcomm {
 HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr);
 HcclResult IpAddressToCommAddr(const Hccl::IpAddress &ipAddr, CommAddr &commAddr);
 HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProtocol &linkProtocol);
+HcclResult CommAddrTypeToHcclAddressType(CommAddrType commAddrType, HcclAddressType &hcclAddressType);
 Hccl::LinkData BuildDefaultLinkData();
 HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointDesc &rmtEp, Hccl::LinkData &linkData,
     u32 reuseIdx = 0);

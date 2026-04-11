@@ -13,6 +13,10 @@
 
 #include <functional>
 #include <atomic>
+#include <cstdint>
+#include <memory>
+#include "buffer_key.h"
+#include "rma_buffer_mgr.h"
 #include "transport_ibverbs_pub.h"
 
 namespace hccl {
@@ -124,12 +128,19 @@ public:
 
 private:
     bool IsModifyToAtomicWrite();
+    using DeviceMemDetailsRmaMgr = RmaBufferMgr<BufferKey<uintptr_t, u64>, std::shared_ptr<RoceMemDetails>>;
+    HcclResult InitMemDetails();
+    HcclResult BuildMemDetailsRmaMgrs();
+
     TransportDeviceIbverbsData transDevIbverbsData_;
     void *notifyValueAddr_ = nullptr;
     MemDetails localInputMem_;
     MemDetails localOutputMem_;
     static std::atomic<u64> wrIdOffset_;
     u32  multiQpThreshold_{HCCL_MULTI_QP_THRESHOLD_DEFAULT};
+    std::unique_ptr<DeviceMemDetailsRmaMgr> localMemDetailsRmaMgr_;
+    std::unique_ptr<DeviceMemDetailsRmaMgr> remoteMemDetailsRmaMgr_;
+    bool useMemDetailsLookup_{false};
 };
 }  // namespace hccl
 
