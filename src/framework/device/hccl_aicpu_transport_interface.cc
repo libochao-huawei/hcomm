@@ -20,6 +20,7 @@
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args)
 {
+    CHK_PTR_NULL(args);
     PostSendTaskParam *SRInfo = reinterpret_cast<PostSendTaskParam *>(args);
     // Check Local Flag
     uint32_t lfKey = SRInfo->lfKey;
@@ -109,6 +110,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args)
 
 __attribute__((visibility("default"))) uint32_t RunTransportRoceRx(void *args)
 {
+    CHK_PTR_NULL(args);
     PostSendTaskParam *SRInfo = reinterpret_cast<PostSendTaskParam *>(args);
     HcclQpInfoV2 qpInfo = SRInfo->qpInfo;
     uint32_t lfKey = SRInfo->lfKey;
