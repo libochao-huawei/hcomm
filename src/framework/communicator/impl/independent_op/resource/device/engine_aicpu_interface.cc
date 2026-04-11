@@ -35,6 +35,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
     CHK_PTR_NULL(args);
     uint64_t devAddr = *reinterpret_cast<uint64_t*>(args);
     NotifyMgrAicpuParam* param = reinterpret_cast<NotifyMgrAicpuParam*>(devAddr);
+    CHK_PTR_NULL(param);
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_950) {

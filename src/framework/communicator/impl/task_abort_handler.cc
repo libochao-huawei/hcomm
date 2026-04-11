@@ -135,6 +135,7 @@ HcclResult TaskAbortHandler::Init(HcclCommunicator * communicator)
         CHK_RET(hrtTaskAbortHandleCallback(ProcessTaskAbortHandleCallback, static_cast<void *>(&commVector)));
     }
     ref_.Ref();
+    CHK_PTR_NULL(communicator);
     commVector.push_back(communicator);
     
     return HCCL_SUCCESS;
