@@ -9,12 +9,16 @@
  */
 
 #include "channel_process.h"
+#include <cstdint>
+#include <memory>
+#include <vector>
 #include "exception_handler.h"
 #include "channel_param.h"
 #include "aicpu_ts_urma_channel.h"
 #include "launch_aicpu.h"
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
+#include "mem_device_pub.h"
 
 namespace hcomm {
 
@@ -267,23 +271,22 @@ static HcclResult FillChannelParam(HcclChannelUrmaRes &channelParam,
     return HCCL_SUCCESS;
 }
 
-static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
-    aclrtBinHandle binHandle, const std::string &kernelName)
+template<typename T>
+static HcclResult LaunchKernelDeviceParam(const T &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
 {
     hccl::Stream localStream = hccl::Stream(hccl::StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
     CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
 
-    // 拷贝 channelParam 到 device
-    hccl::DeviceMem addr = hccl::DeviceMem::alloc(sizeof(channelParam));
+    hccl::DeviceMem addr = hccl::DeviceMem::alloc(sizeof(T));
     CHK_PTR_NULL(addr.ptr());
 
     CHK_RET(hrtMemSyncCopy(addr.ptr(),
-        sizeof(channelParam),
+        sizeof(T),
         &channelParam,
-        sizeof(channelParam),
+        sizeof(T),
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-    
+
     uint64_t context = reinterpret_cast<uint64_t>(addr.ptr());
 
     CHK_RET(hccl::AicpuAclKernelLaunch(localStream.ptr(),
@@ -298,6 +301,11 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
 
     HCCL_INFO("[%s] kernel[%s] launch success.", __func__, kernelName.c_str());
     return HCCL_SUCCESS;
+}
+
+static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam, aclrtBinHandle binHandle, const std::string &kernelName)
+{
+    return LaunchKernelDeviceParam(channelParam, binHandle, kernelName);
 }
 
 HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
@@ -398,6 +406,90 @@ HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHand
         binHandle, "RunAicpuChannelInitV2", false);
 }
 
+HcclResult ChannelProcess::LaunchCommonChannelKernel(ChannelHandle *channelHandles,
+    ChannelHandle *hostChannelHandles, uint32_t listNum, HcommChannelKind channelKind, aclrtBinHandle binHandle)
+{
+    HCCL_RUN_INFO("[%s] listNum[%u] HcommChannelRes path", __func__, listNum);
+
+    std::vector<std::shared_ptr<hccl::DeviceMem>> perChannelMem(listNum);
+    std::vector<void *> hostPtrTab(listNum);
+    std::vector<u64> hostSizeTab(listNum);
+    std::vector<u32> hostKindTab(listNum);
+    for (uint32_t i = 0; i < listNum; ++i) {
+        auto *channel = reinterpret_cast<Channel *>(hostChannelHandles[i]);
+        CHK_PTR_NULL(channel);
+        CHK_RET(channel->Serialize(perChannelMem[i]));
+        CHK_PTR_NULL(perChannelMem[i]);
+        CHK_PTR_NULL(perChannelMem[i]->ptr());
+        hostPtrTab[i] = perChannelMem[i]->ptr();
+        hostSizeTab[i] = perChannelMem[i]->size();
+        hostKindTab[i] = static_cast<u32>(channelKind);
+    }
+
+    hccl::DeviceMem deviceDataPtrTab = hccl::DeviceMem::alloc(listNum * sizeof(void *));
+    CHK_PTR_NULL(deviceDataPtrTab.ptr());
+    hccl::DeviceMem deviceSizeTab = hccl::DeviceMem::alloc(listNum * sizeof(u64));
+    CHK_PTR_NULL(deviceSizeTab.ptr());
+    hccl::DeviceMem deviceKindTab = hccl::DeviceMem::alloc(listNum * sizeof(u32));
+    CHK_PTR_NULL(deviceKindTab.ptr());
+
+    CHK_RET(hrtMemSyncCopy(deviceDataPtrTab.ptr(),
+        listNum * sizeof(void *),
+        hostPtrTab.data(),
+        listNum * sizeof(void *),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    CHK_RET(hrtMemSyncCopy(deviceSizeTab.ptr(),
+        listNum * sizeof(u64),
+        hostSizeTab.data(),
+        listNum * sizeof(u64),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+    CHK_RET(hrtMemSyncCopy(deviceKindTab.ptr(),
+        listNum * sizeof(u32),
+        hostKindTab.data(),
+        listNum * sizeof(u32),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+
+    hccl::DeviceMem deviceChannelList = hccl::DeviceMem::alloc(listNum * sizeof(ChannelHandle));
+    CHK_PTR_NULL(deviceChannelList.ptr());
+
+    HcommChannelRes channelParam{};
+    channelParam.channelList = static_cast<void *>(deviceChannelList.ptr());
+    channelParam.listNum = listNum;
+    channelParam.channelDataListAddr = static_cast<void *>(deviceDataPtrTab.ptr());
+    channelParam.channelDataSizeListAddr = static_cast<void *>(deviceSizeTab.ptr());
+    channelParam.channelTypeListAddr = static_cast<void *>(deviceKindTab.ptr());
+    CHK_RET(hrtGetDevice(&channelParam.deviceInfo.deviceLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(channelParam.deviceInfo.deviceLogicId), channelParam.deviceInfo.devicePhyId));
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    channelParam.deviceInfo.deviceType = static_cast<u32>(devType);
+
+    CHK_RET(LaunchKernelDeviceParam(channelParam, binHandle, "RunAicpuChannelInitV3"));
+
+    CHK_RET(hrtMemSyncCopy(channelHandles,
+        listNum * sizeof(ChannelHandle),
+        deviceChannelList.ptr(),
+        listNum * sizeof(ChannelHandle),
+        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
+
+    CHK_RET(FillChannelD2HMap(channelHandles, hostChannelHandles, listNum));
+    HCCL_INFO("[%s] channel kernel (HcommChannelRes) launch success.", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ChannelProcess::LaunchChannelKernel(ChannelHandle *channelHandles,
+    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle)
+{
+    HCCL_RUN_INFO("[%s] listNum[%u]", __func__, listNum);
+    CHK_PRT_RET(listNum == 0U, HCCL_ERROR("[%s] listNum is 0", __func__), HCCL_E_PARA);
+    auto *ch = reinterpret_cast<Channel *>(hostChannelHandles[0]);
+    CHK_PTR_NULL(ch);
+    if (ch->GetChannelKind() == HcommChannelKind::AICPU_TS_URMA) {
+        return ChannelKernelLaunchForBase(channelHandles, hostChannelHandles, listNum, binHandle);
+    }
+    return LaunchCommonChannelKernel(channelHandles, hostChannelHandles, listNum, ch->GetChannelKind(), binHandle);
+}
+
 HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
     uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle)
 {
@@ -406,7 +498,10 @@ HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHa
     CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle));
+        if (channelNum == 0U) {
+            return HCCL_SUCCESS;
+        }
+        CHK_RET(LaunchChannelKernel(userChannels, targetChannels, channelNum, binHandle));
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {
