@@ -1,8 +1,10 @@
 #ifndef ASCEND_HAL_STUB_H
 #define ASCEND_HAL_STUB_H
 
-#define DRV_LOG_INFO(fmt, ...) printf("[INFO][" LOG_SIDE "] " fmt "\n", ##__VA_ARGS__)
-#define DRV_LOG_ERROR(fmt, ...) printf("[ERROR][" LOG_SIDE "] " fmt "\n", ##__VA_ARGS__)
+#define DRV_LOG_INFO(fmt, ...)
+#define DRV_LOG_ERROR(fmt, ...)
+// #define DRV_LOG_INFO(fmt, ...) printf("[INFO][" LOG_SIDE "] " fmt "\n", ##__VA_ARGS__)
+// #define DRV_LOG_ERROR(fmt, ...) printf("[ERROR][" LOG_SIDE "] " fmt "\n", ##__VA_ARGS__)
 
 #ifndef container_of
 #define container_of(ptr, type, member) ({          \
@@ -37,7 +39,7 @@ struct hdc_msg_head {
     struct drvHdcMsg msg;
 };
 
-static int GetPortByServiceType(int serviceType)
+static int GetPortByServiceType(int devid)
 {
     return 9999; 
 }

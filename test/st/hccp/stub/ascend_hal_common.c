@@ -296,7 +296,7 @@ hdcError_t drvHdcServerCreate(int devid, int serviceType, HDC_SERVER *pServer)
     setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     // 获取监听端口
-    int listen_port = GetPortByServiceType(serviceType);
+    int listen_port = GetPortByServiceType(devid);
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
