@@ -343,11 +343,10 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
     AddThread(thread);
+    uint64_t len = count * SIZE_TABLE[dataType];
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
-
-    uint64_t len = count * SIZE_TABLE[dataType];
 
     HcclResult ret = HCCL_SUCCESS;
 
@@ -629,7 +628,7 @@ int32_t HcommAcquireComm(const char* commId)
     std::shared_ptr<hccl::hcclComm> hcclComm;
     HcclGetCommHandle(commId, hcclComm);
     CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    CHK_PRT(hcclComm->SetCommDispatcherCtx());// 待优化
+    CHK_RET(hcclComm->SetCommDispatcherCtx());// 待优化
     return HCCL_SUCCESS;
 }
 
