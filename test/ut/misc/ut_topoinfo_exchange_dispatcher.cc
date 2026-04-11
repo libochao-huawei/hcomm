@@ -184,7 +184,7 @@ TEST_F(TopoExchangeDispatcherTest, ut_sendHelper_ISendSuccess)
     TopoInfoExchangeDispather workers(&topoServer);
     // set params
     auto socketPtr = std::make_shared<HcclSocket>(netDevCtx, 5);
-    char *buf;
+    char *buf = reinterpret_cast<char *>(0x1234);
     size_t dataLen = 100;
     size_t sendedLen = 80;
     TopoInfoExchangeDispather::SendState txS;
@@ -213,7 +213,7 @@ TEST_F(TopoExchangeDispatcherTest, ut_sendHelper_networkError)
     TopoInfoExchangeDispather workers(&topoServer);
     // set params
     auto socketPtr = std::make_shared<HcclSocket>(netDevCtx, 5);
-    char *buf;
+    char *buf = reinterpret_cast<char *>(0x1234);
     size_t dataLen = 100;
     size_t sendedLen = 80;
     TopoInfoExchangeDispather::SendState txS;
@@ -242,7 +242,7 @@ TEST_F(TopoExchangeDispatcherTest, ut_sendHelper_internalError)
     TopoInfoExchangeDispather workers(&topoServer);
     // set params
     auto socketPtr = std::make_shared<HcclSocket>(netDevCtx, 5);
-    char *buf;
+    char *buf = reinterpret_cast<char *>(0x1234);
     size_t dataLen = 100;
     size_t sendedLen = 80;
     TopoInfoExchangeDispather::SendState txS;
