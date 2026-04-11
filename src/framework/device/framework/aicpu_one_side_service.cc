@@ -221,7 +221,7 @@ HcclResult HcclOneSideServiceAicpu::FillMemDetails(MemDetails &localMems, MemDet
 
 HcclResult HcclOneSideServiceAicpu::PrepareRdmaLink(u32 remoteRankId, const struct HcclQpInfoV2 &qpInfo)
 {
-    if (rdmaLinks_[remoteRankId] == nullptr) {
+    if (rdmaLinks_.find(remoteRankId) == rdmaLinks_.end()) {
         const int UNIT_CONVERSION = 1000;
         linkTimeout_ = 4096ULL * (1 << qpInfo.retryTime) * (qpInfo.retryCnt + 1) / UNIT_CONVERSION;    // RDMA超时基数是4.096us
         TransportMem::AttrInfo attrInfo{};
