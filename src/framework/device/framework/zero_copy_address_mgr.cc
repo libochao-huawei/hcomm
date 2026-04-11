@@ -299,6 +299,9 @@ bool ZeroCopyAddressMgr::IsInSetAddressRange(u32 devicePhyId, void *startPtr, u6
     auto &addrRange = reserveRanges_[devicePhyId];
 
     // 构造最小的数据块去寻找，如果没找到肯定没有交集
+    if (startPtr == nullptr) {
+        return false;
+    }
     AddressRange range(startPtr, 1);
     auto rangeIt = addrRange.find(range);
     if (rangeIt == addrRange.end()) {
