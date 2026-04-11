@@ -197,11 +197,11 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
     strcpy_s(errMsgInfo.algType, MAX_NAME_LEN, taskInfo.dfxOpInfo_ == nullptr ? "MESH" :
                                                                                 taskInfo.dfxOpInfo_->algType_.c_str());
     errMsgInfo.opIndex = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->opIndex_;
-    errMsgInfo.opType = taskInfo.dfxOpInfo_->op_.opType;
-    errMsgInfo.count = taskInfo.dfxOpInfo_->op_.dataCount;
-    errMsgInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
-    errMsgInfo.srcAddr = static_cast<u64>(taskInfo.dfxOpInfo_->op_.inputMem->GetAddr());
-    errMsgInfo.dstAddr = static_cast<u64>(taskInfo.dfxOpInfo_->op_.outputMem->GetAddr());
+    errMsgInfo.opType = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->op_.opType;
+    errMsgInfo.count = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->op_.dataCount;
+    errMsgInfo.dataType = taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->op_.dataType;
+    errMsgInfo.srcAddr = static_cast<u64>(taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->op_.inputMem->GetAddr());
+    errMsgInfo.dstAddr = static_cast<u64>(taskInfo.dfxOpInfo_ == nullptr ? 0 : taskInfo.dfxOpInfo_->op_.outputMem->GetAddr());
     errMsgInfo.taskType = taskInfo.taskParam_.taskType;
 
     if (taskInfo.taskParam_.taskType == Hccl::TaskParamType::TASK_NOTIFY_WAIT) {
@@ -223,8 +223,10 @@ HcclResult HcclCommTaskExceptionLite::GenerateErrorMessageReport(CollCommAicpu *
         errMsgInfo.reduceType = taskInfo.taskParam_.taskPara.Reduce.reduceOp;
     }
 
-    CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
-        taskInfo.dfxOpInfo_->algTag_.c_str(), taskInfo.dfxOpInfo_->algTag_.size()));
+    if (taskInfo.dfxOpInfo_ != nullptr) {
+        CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.tag, sizeof(errMsgInfo.tag),
+            taskInfo.dfxOpInfo_->algTag_.c_str(), taskInfo.dfxOpInfo_->algTag_.size()));
+    }
     CHK_SAFETY_FUNC_RET(memcpy_s(errMsgInfo.group, sizeof(errMsgInfo.group),
         aicpuComm->GetIdentifier().c_str(), aicpuComm->GetIdentifier().size()));
 
