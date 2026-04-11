@@ -16,12 +16,12 @@
 #include "executor_utils.h"
 namespace Hccl {
 
-class InsTempReduceScatterMesh1D : public InsAlgTemplateBase {
+class InsTempReduceScatterMesh1DOpt : public InsAlgTemplateBase {
 public:
-    explicit InsTempReduceScatterMesh1D(const RankId virtualRank, const u32 tempRankSize,
+    explicit InsTempReduceScatterMesh1DOpt(const RankId virtualRank, const u32 tempRankSize,
                                      const std::vector<std::vector<RankId>> &tempVTopo,
                                      const std::map<RankId, u32>            &tempVirtRankMap);
-    ~InsTempReduceScatterMesh1D() override;
+    ~InsTempReduceScatterMesh1DOpt() override;
 
     std::string Describe() const override
     {
@@ -31,14 +31,13 @@ public:
     HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &tempAlgParams,
                          const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
     HcclResult CalcRes(AlgTempResReq &tempResReq) override;
-    HcclResult PostCopy(const TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues, u32 linkIdx);
+    HcclResult PostCopy(const TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues);
     u64 CalcScratchMultiple(const BufferType &inBuffType, const BufferType &outBuffType) const;
 private:
     HcclResult RunReduceScatter(const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues,
-                                const TemplateDataParams &tempAlgParams, u32 linkIdx);
+                                const TemplateDataParams &tempAlgParams);
     RankId GetRankFromMap(const u32 rankIdx);
-    vector<u64> processSize_{0};
-    vector<u64> linkSliceOffsetVec_{0};
+    u64 processSize_{0};
 };
 
 } // namespace Hccl

@@ -27,23 +27,40 @@ InsTempAllGatherNHR::~InsTempAllGatherNHR()
 
 HcclResult InsTempAllGatherNHR::CalcRes(AlgTempResReq &tempResReq)
 {
-    // NHR 需要的 que Num 为 1 
-    tempResReq.queNum = 1;
-    tempResReq.streamNum = tempResReq.queNum;
-    tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
     CHK_PRT_RET(CalcResLinksNHR(myRank_, tempRankSize_, tempVTopo_, tempResReq) != HcclResult::HCCL_SUCCESS,
                 HCCL_ERROR("[CollAlgFactory] [InsTempAllGatherNHR] Rank [%d], resLinks calculation error!", myRank_),
                 HcclResult::HCCL_E_INTERNAL);
+    auto& linkReq = tempResReq.links;
+    u32 pathNum = 0;
+    for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
+        auto remoteRank = resReqIter->first;
+        if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
+            HCCL_ERROR("[InsTempAllGatherNHR] No path to remoteRank[%u]", remoteRank);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        if (pathNum == 0) {
+            pathNum = rank2PathNumMap_[remoteRank];
+        } else if (rank2PathNumMap_[remoteRank] != pathNum) {
+            HCCL_ERROR("[InsTempAllGatherNHR] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], mismatched "
+                       "remoteRank=[%u], pathNum=[%u]",
+                pathNum,
+                remoteRank,
+                rank2PathNumMap_[remoteRank]);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        resReqIter->second = pathNum;
+    }
+
+    // NHR 需要的 que Num 为 1 
+    tempResReq.queNum = 1 * pathNum;
+    HCCL_INFO("[InsTempAllGatherNHR] tempResReq.queNum = %u",tempResReq.queNum);
+    tempResReq.streamNum = tempResReq.queNum;
+    tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
+    
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-/*
-dataSize / (rankSize) --> chunkSize
-dataSize / (rankSize * queNum) --> sliceSize
-
-SliceInfoVecforNHR: [1st chunk: [1st Slice, 2nd Slice, ...], 2nd chunk: [1st Slice, 2nd Slice, ...], ...]
-*/
 HcclResult InsTempAllGatherNHR::CalcSliceInfo(const AllignInfo &allignInfo, const u64 dataSize,
                                             RankSliceInfo &sliceInfoVec)
 {
@@ -67,12 +84,10 @@ HcclResult InsTempAllGatherNHR::GenExtIns(const TempFuncs &tempFuncs,
     tempAlgParams_ = tempAlgParams;
     tempLinks_ = tempLinks;
 
-    queNum_ = tempVTopo_.size();
-    CHK_PRT_RET(queNum_ != tempInsQues.size(),
-        HCCL_ERROR("[InsTempAllGatherNHR] Rank [%d], requiredQueNum [%u] not equals templateQueNum [%zu].",
-                   myRank_, queNum_, tempInsQues.size()),
-        HcclResult::HCCL_E_INTERNAL);
-
+    uint32_t linkNum = tempLinks.begin()->second.size();
+    // 流的数量不能少于linkNum
+    CHK_PRT_RET(linkNum > tempInsQues.size(), HCCL_ERROR("[CollAlgFactory] [InsTempAllReduceNHR] Rank [%d], requiredQue Error.", myRank_),
+            HcclResult::HCCL_E_INTERNAL);
     CHK_RET(LocalDataCopy(tempInsQues));
     CHK_RET(RunNHR(tempInsQues));
     CHK_RET(PostLocalCopy(tempInsQues));
@@ -107,7 +122,6 @@ HcclResult InsTempAllGatherNHR::GetStepInfo(u32 step, u32 nSteps, AicpuNHRStepIn
     for (u32 i = 0; i < nSlices; i++) {
         stepInfo.txSliceIdxs.push_back(txSliceIdx);
         stepInfo.rxSliceIdxs.push_back(rxSliceIdx);
-
         HCCL_DEBUG("[AllGatherNHR][GetStepInfo] i[%u] txSliceIdx[%u] rxSliceIdx[%u]", i, txSliceIdx, rxSliceIdx);
 
         txSliceIdx = (txSliceIdx + tempRankSize_ - deltaSliceIndex) % tempRankSize_;
@@ -146,7 +160,7 @@ HcclResult InsTempAllGatherNHR::LocalDataCopy(std::vector<InsQuePtr> &tempInsQue
 HcclResult InsTempAllGatherNHR::PostLocalCopy(std::vector<InsQuePtr> &tempInsQues)
 {
     CHK_PRT_RET(tempInsQues.empty(),
-        HCCL_ERROR("[AG-NHR][PostLocalCopy] empty queue"), HcclResult::HCCL_E_INTERNAL);
+        HCCL_ERROR("[AllGatherNHR][PostLocalCopy] empty queue"), HcclResult::HCCL_E_INTERNAL);
     CHK_PTR_NULL(tempInsQues[0]);
     for (u64 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 outBaseOff = tempAlgParams_.buffInfo.outBuffBaseOff + rpt * tempAlgParams_.outputRepeatStride;
@@ -170,24 +184,18 @@ HcclResult InsTempAllGatherNHR::PostLocalCopy(std::vector<InsQuePtr> &tempInsQue
 
 HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
 {
+    u32 mainQueIdx = 0;
+    // 流间前同步，主流通知从流，只有一个流则不做任何事
+    CHK_RET(PreSyncQues(tempInsQues, mainQueIdx));
     const u32 nSteps = GetNHRStepNum(tempRankSize_);
-
     for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
         const u64 scratchRepeatStride = tempAlgParams_.sliceSize * (tempRankSize_ - 1) + tempAlgParams_.tailSize;
         const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
-
         for (u32 step = 0; step < nSteps; ++step) {
             AicpuNHRStepInfo stepInfo;
             CHK_RET(GetStepInfo(step, nSteps, stepInfo));
-
             const std::vector<LinkData> &linkRecv = tempLinks_.at(GetRankFromMap(stepInfo.fromRank));
             const std::vector<LinkData> &linkSend = tempLinks_.at(GetRankFromMap(stepInfo.toRank));
-
-            std::vector<DataSlice> txSrcSlices;
-            std::vector<DataSlice> txDstSlices;
-            std::vector<DataSlice> rxSrcSlices;
-            std::vector<DataSlice> rxDstSlices;
-
             HCCL_DEBUG("[InsTempAllGatherNHR] rank[%d] rankSize[%u] recvFrom[%u] sendTo[%u] step[%u] nSteps[%u] nSlices[%u]",
                 myRank_, tempRankSize_, stepInfo.fromRank, stepInfo.toRank, step, nSteps, stepInfo.nSlices);
 
@@ -204,16 +212,11 @@ HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
                 rxSrcSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, sliceSize);
                 rxDstSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, rxScratchOff, sliceSize);
             }
-
-            TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
-            TxRxLinks sendRecvLinks(linkSend[0], linkRecv[0]);
-            SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
-
-            CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[0], 0, true, dmaMode_),
-                HCCL_ERROR("[InsTempAllGatherNHR] sendrecv failed (step=%u, rpt=%u)", step, rpt),
-                HcclResult::HCCL_E_INTERNAL);
         }
     }
+    // 流间后同步，从流通知主流
+    CHK_RET(PostSyncQues(tempInsQues, mainQueIdx));
     return HcclResult::HCCL_SUCCESS;
 }
+
 } // namespace Hccl
