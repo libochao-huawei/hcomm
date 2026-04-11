@@ -231,6 +231,7 @@ HcclResult HcclCommAicpu::InitTopoMatcher()
 
 HcclResult HcclCommAicpu::InitOpRetry(const HcclOpResParam *commParam)
 {
+    CHK_PTR_NULL(commParam);
     retryEnable_ = (commParam->config.retryEnable == 1) ? true : false;
     retryHoldTime_ = commParam->config.retryHoldTime;
     retryIntervalTime_ = commParam->config.retryIntervalTime;
@@ -254,6 +255,7 @@ HcclResult HcclCommAicpu::InitOpRetry(const HcclOpResParam *commParam)
 
 HcclResult HcclCommAicpu::InitZeroCopyExchanger(const HcclOpResParam *commParam)
 {
+    CHK_PTR_NULL(commParam);
     auto nSecStopFunc = [this] () -> bool {
         // 检查到OP状态不Ok则认为需要终止
         auto ret = this->CheckOpExecStatus();
@@ -2003,6 +2005,7 @@ HcclResult HcclCommAicpu::RefreshAlgResponseTransportRes(const std::string &newT
     std::map<u32, bool> &remoteRankPortMap, bool isChangeLinkFlag, const HcclOpResParam *commParam,
     const OpParam &param)
 {
+    CHK_PTR_NULL(commParam);
     auto iter = resMap_.find(newTag);
     CHK_PRT_RET(iter == resMap_.end(),
         HCCL_ERROR("[%s]Fail to find algResResponse for tag[%s]", __func__, newTag.c_str()), HCCL_E_PARA);
@@ -2950,6 +2953,7 @@ HcclResult HcclCommAicpu::StreamTaskMonitor(void)
         u32 sqHead = 0U, sqTail = 0U;
         (void)QuerySqStatus(devId_, stream.sqId(), sqHead, sqTail);
         HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
+        CHK_PTR_NULL(sqeContext);
         SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
         CHK_PTR_NULL(sqeContextBuffer);
 
@@ -3182,6 +3186,7 @@ HcclResult HcclCommAicpu::ResetSqBuff()
 HcclResult HcclCommAicpu::UpdateSqStatus(Stream &stream)
 {
     HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
+    CHK_PTR_NULL(sqeContext);
     SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
     auto &head = sqeContextBuffer->sqHead;
     auto &tail = sqeContextBuffer->sqTail;
@@ -3971,6 +3976,7 @@ HcclResult HcclCommAicpu::GenTaskExceptionInfo(u8 sqeType, hccl::Stream &stream,
 HcclResult HcclCommAicpu::PrintTaskExceptionByTaskId(u8 sqeType, u16 taskId, hccl::Stream &stream, u32 tail)
 {
     HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
+    CHK_PTR_NULL(sqeContext);
     HCCL_ERROR("[HcclCommAicpu][PrintTaskExceptionByTaskId]streamId:%d tail:%u cqeType:%u", stream.id(), tail,
         sqeType);
     SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
@@ -4161,6 +4167,7 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
 
 std::string HcclCommAicpu::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer)
 {
+    CHK_PTR_NULL(sqeContextBuffer);
     uint8_t *sqeMirrorBufferAddr = sqeContextBuffer->rtsMirrorBuffer + idx * HCCL_SQE_SIZE;
     rtStarsSqeHeader_t * const sqeHeader = (rtStarsSqeHeader_t * const)sqeMirrorBufferAddr;
     uint8_t sqeType = sqeHeader->type;
@@ -5245,7 +5252,8 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 
 HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
 {
-   u32 threadNum = param->threadNum;
+    CHK_PTR_NULL(param);
+    u32 threadNum = param->threadNum;
     std::vector<std::shared_ptr<Thread>> outThreads;
     outThreads.reserve(threadNum);
     std::string hcomId(param->hcomId);
@@ -5310,6 +5318,7 @@ HcclResult HcclCommAicpu::InitProfthreadResource(u32 threadNum) {
 
 HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam)
 {
+    CHK_PTR_NULL(commParam);
     if (commParam->engine != COMM_ENGINE_AICPU &&
         commParam->engine != COMM_ENGINE_AICPU_TS) {
         HCCL_ERROR("[HcclCommAicpu][%s] engine type[%d] is not supported", __func__, commParam->engine);
@@ -5338,6 +5347,9 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
 
 HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex)
 {
+    CHK_PTR_NULL(commParam->channelTag);
+    CHK_PTR_NULL(commParam->engine);
+
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
     std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" +
         std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(CommProtocol::COMM_PROTOCOL_HCCS);
@@ -5387,6 +5399,7 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     linkMap_[channelHandle] = link;
 
     // 恢复出的channelHandle回填到commParam中
+    CHK_PTR_NULL(commParam->channelList);
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     channelList[channelIndex] = channelHandle;
 
