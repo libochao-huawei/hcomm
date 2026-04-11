@@ -53,5 +53,8 @@ target_sources(legacy_alg_testcase
         testcase_reduce.cc
         testcase_reduce_aicpu_mesh1d_nhr.cc
         testcase_broadcast.cc
+        testcase_broadcast_parallel_aicpu.cc
+        testcase_all_reduce_aicpu_1d_mesh_chunk.cc
+        testcase_all_gather_aicpu_mesh2d_nhr.cc
         ${UTILS_DIR}/common/virtual_topo_stub/virtual_topo_stub.cc
 )
