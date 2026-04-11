@@ -58,6 +58,11 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     rankSizeLevel1_ = virtRanks_[1].size();
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllGatherParallelExecutor] CalcResOffload SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
 
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
@@ -97,7 +102,12 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     // instantiate a template
     InsAlgTemplate0 intraTempAlg(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlg(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
-
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsAllGatherParallelExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
+ 
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
@@ -118,9 +128,7 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqIntra.links, algResReq.levelRankPairs));
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqInter.links, algResReq.levelRankPairs));
     algResReq.primQueueNum = resReqIntra.streamNum + resReqInter.streamNum;
-
-    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, algResReq.queueNotifys));
-    
+    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, resReqIntra.queNum, algResReq.queueNotifys));
     HCCL_DEBUG("[InsAllGatherParallelExecutor] algResReq.primQueueNum %u", algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqIntra.links, algResReq.links));
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqInter.links, algResReq.links));
@@ -353,10 +361,9 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
     InsQuePtr insQue)
 {
     HCCL_INFO("[InsAllGatherParallelExecutor] Orchestrate begins.");
-
     // init and check params
     CHK_RET(Init(op, params, insQue));
-
+    dataType_ = op.dataType;
     virtRanks_ = topoInfo.virtRanks;
     vTopo_ = topoInfo.vTopo;
     virtRankMap_ = topoInfo.virtRankMap;
@@ -373,9 +380,17 @@ HcclResult InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
 
     tempAlgIntra.SetDmaMode(dmaMode_);
     tempAlgIntra.SetCollOp(op);  // CCU template需要传递op信息
+    tempAlgIntra.SetDataType(dataType_);
 
     tempAlgInter.SetDmaMode(dmaMode_);
     tempAlgInter.SetCollOp(op);  // CCU template需要传递op信息
+    tempAlgInter.SetDataType(dataType_);
+
+    std::vector<std::map<u32, u32>>rank2PathNumMap;
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInter.setPathNumMap(rank2PathNumMap[1]);
+    
 
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntra, tempAlgInter));
