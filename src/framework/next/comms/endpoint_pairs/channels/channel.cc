@@ -13,6 +13,7 @@
 #include "log.h"
 #include "channel.h"
 #include "./aicpu/aicpu_ts_urma_channel.h"
+#include "./aicpu/aicpu_ts_roce_channel.h"
 #include "./host/host_cpu_roce_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
@@ -42,6 +43,11 @@ HcclResult Channel::CreateChannel(
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<AicpuTsRoceChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
+                break;
+            }
             channelPtr.reset(new (std::nothrow) AicpuTsUrmaChannel(
                 endpointHandle, channelDesc
             ));
@@ -72,5 +78,16 @@ HcclResult Channel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandle
 {
     HCCL_WARNING("[UpdateMemInfo] not support.");
     return HCCL_SUCCESS;
+}
+
+HcommChannelKind Channel::GetChannelKind() const
+{
+    return HcommChannelKind::INVALID;
+}
+
+HcclResult Channel::Serialize(std::shared_ptr<hccl::DeviceMem> &out)
+{
+    out.reset();
+    return HCCL_E_NOT_SUPPORT;
 }
 } // namespace hcomm
