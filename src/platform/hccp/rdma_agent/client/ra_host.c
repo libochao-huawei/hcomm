@@ -1857,8 +1857,8 @@ HCCP_ATTRI_VISI_DEF int RaGetQpContext(void *qpHandle, void** qp, void** sendCq,
     int ret;
     struct RaQpHandle *raQpHandle = (struct RaQpHandle *)qpHandle;
 
-    if (qpHandle == NULL) {
-        hccp_err("[request][ra_get_qp_context]qp_handle is NULL, para error!");
+    if (qpHandle == NULL || qp == NULL || sendCq == NULL || recvCq == NULL) {
+        hccp_err("[request][ra_get_qp_context]qp_handle or qp or sendCq or recvCq is NULL, para error!");
         return ConverReturnCode(RDMA_OP, -EINVAL);
     }
 
