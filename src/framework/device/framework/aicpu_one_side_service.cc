@@ -199,6 +199,7 @@ HcclResult HcclOneSideServiceAicpu::InitStream(Stream &stream, HcclComStreamInfo
 HcclResult HcclOneSideServiceAicpu::FillMemDetails(MemDetails &localMems, MemDetails &remoteMems,
     const HcclOneSideOpDescParam *descPtr, u32 index)
 {
+    CHK_PTR_NULL(descPtr);
     const HcclDataType dataType = static_cast<HcclDataType>(descPtr[index].dataType);
     if (dataType_ == HcclDataType::HCCL_DATA_TYPE_RESERVED) {
         dataType_ = dataType;
@@ -221,7 +222,7 @@ HcclResult HcclOneSideServiceAicpu::FillMemDetails(MemDetails &localMems, MemDet
 
 HcclResult HcclOneSideServiceAicpu::PrepareRdmaLink(u32 remoteRankId, const struct HcclQpInfoV2 &qpInfo)
 {
-    if (rdmaLinks_[remoteRankId] == nullptr) {
+    if (rdmaLinks_.find(remoteRankId) == rdmaLinks_.end()) {
         const int UNIT_CONVERSION = 1000;
         linkTimeout_ = 4096ULL * (1 << qpInfo.retryTime) * (qpInfo.retryCnt + 1) / UNIT_CONVERSION;    // RDMA超时基数是4.096us
         TransportMem::AttrInfo attrInfo{};
@@ -322,6 +323,7 @@ HcclResult HcclOneSideServiceAicpu::DoRdmaProcess(HcclCMDType cmdType, u32 remot
 HcclResult HcclOneSideServiceAicpu::DoSdmaProcess(HcclCMDType cmdType, u32 remoteRankId,
     const OpTilingOneSideCommDataDes *vDataPtr, const HcclOneSideOpDescParam *desc, u32 descNum)
 {
+    CHK_PTR_NULL(desc);
     u32 userDescNum = descNum - 1; // fence signal at last, but sdma needn't fence, so keep reserve
     for (u32 index = 0; index < userDescNum; ++index) {
         HcclDataType dataType = static_cast<HcclDataType>(desc[index].dataType);

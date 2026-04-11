@@ -310,7 +310,7 @@ HcclResult hcclComm::AllGather(const std::string &tag, void *inputPtr, void *out
                                HcclDataType dataType, HcclRtStream stream, HcomCollOpInfo *opInfo)
 {
     /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], count[%llu], data_type[%s]", tag.c_str(), inputPtr,
+    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], count[%llu], data_type[%s]", tag.c_str(), inputCount,
         GetDataTypeEnumStr(dataType).c_str());
 
     /* * 入参检查 */
@@ -629,7 +629,7 @@ HcclResult hcclComm::ReduceScatterV(const std::string &tag, void *inputPtr,
 {
     /* 增加输出日志关键字 */
     HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], " \
-        "input_counts[%llu], input_displs[%llu], output_count[%llu], data_type[%s], op[%s]",
+        "input_counts[%p], input_displs[%p], output_count[%llu], data_type[%s], op[%s]",
         tag.c_str(), inputPtr, outputPtr, inputCounts, inputDispls, outputCount,
         GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str());
 
@@ -1150,7 +1150,7 @@ HcclResult hcclComm::GetDevType(DevType &devType)
 
 HcclResult hcclComm::IsStandardCard(bool &isStandardCard)
 {
-        isStandardCard = communicator_->IsStandardCard();
+    isStandardCard = communicator_->IsStandardCard();
 
     return HCCL_SUCCESS;
 }

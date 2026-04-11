@@ -22,6 +22,8 @@ using namespace hccl;
 HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_t *notifyNum)
 {
     CHK_PTR_NULL(notifyNum);
+    CHK_PTR_NULL(comm);
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = HCCL_SUCCESS;
     if (hcclComm->IsCommunicatorV2()) {
