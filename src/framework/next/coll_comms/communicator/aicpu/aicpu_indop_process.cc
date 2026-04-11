@@ -85,6 +85,8 @@ HcclResult AicpuIndopProcess::AcquireAicpuCommMgr(const std::string &group, Coll
 
 HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(param);
+
     std::string group = param->hcomId;
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
     CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
@@ -155,6 +157,8 @@ void AicpuIndopProcess::AicpuReleaseCommMgrbyGroup(const std::string &group)
 
 HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commParam)
 {
+    CHK_PTR_NULL(commParam);
+
     HCCL_INFO("[AicpuIndopProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
         "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
         commParam->uniqueIdSize);
@@ -176,6 +180,8 @@ HcclResult AicpuIndopProcess::AicpuIndOpChannelInit(HcclChannelUrmaRes *commPara
 
 HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
 {
+    CHK_PTR_NULL(param);
+
     std::string group = param->hcomId;
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
     CHK_PRT_RET(!collCommAicpuMgr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
