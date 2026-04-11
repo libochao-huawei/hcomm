@@ -3233,6 +3233,7 @@ HcclResult GetOpWorkspaceMemSize(bool isOfflineCompilation, HcclCMDType hcclOpTy
 HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType, HcomOpParam *hcomOpParam,
     u64 &opMemSize, u32 dataTypeSize, s32 rankSize, s32 serverNum)
 {
+    CHK_PTR_NULL(hcomOpParam);
     constexpr u8 devType_950 = 6; // 950枚举值为6，需要统一整改
     u64 count = hcomOpParam->count;
     std::string sCollectiveType(hcomOpParam->opType);
@@ -4058,7 +4059,8 @@ HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic)
 }
 
 HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *group, char *sTag)
-{   
+{
+    CHK_PTR_NULL(group);
     std::string groupName(group);
     std::string tag;
     GenerateCclOpTag(opType, hcomComm, groupName, tag);
