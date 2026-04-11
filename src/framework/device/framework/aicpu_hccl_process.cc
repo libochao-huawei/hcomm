@@ -326,7 +326,7 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetComm(const std::string &group)
         return nullptr;
     }
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
-    rwlock.readLock();s
+    rwlock.readLock();
     auto iter = g_commAicpuInfo.commMap.find(group);
     if (iter == g_commAicpuInfo.commMap.end()) {
         HCCL_ERROR("[AicpuHcclProcess] exist group size is [%u]", g_commAicpuInfo.commMap.size());
