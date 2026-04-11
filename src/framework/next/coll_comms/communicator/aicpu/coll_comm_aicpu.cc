@@ -106,12 +106,13 @@ HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
               "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
               __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
               commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    CHK_PRT(InitUrmaChannel(commParam));
+    CHK_RET(InitUrmaChannel(commParam));
     return HCCL_SUCCESS;
 }
 
 HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
 {
+    CHK_PTR_NULL(commParam->uniqueIdAddr);
     HCCL_INFO("[CollCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
 
@@ -136,6 +137,7 @@ HcclResult CollCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
 
         // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
+        CHK_PTR_NULL(channelList);
         channelList[index] = channelHandle;
         HCCL_INFO("[CollCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
             __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
