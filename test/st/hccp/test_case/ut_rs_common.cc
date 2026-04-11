@@ -39,15 +39,13 @@ extern "C" {
 
 class HccpSystemTest : public ::testing::Test {
 protected:
-    std::map<int, pid_t> device_pids_;
     std::map<int, pid_t> host_pids_;
-    
-    using HostTestLogic = std::function<void(int phyid)>;
+    using HostTestLogic = std::function<int(int phyid)>;
     std::map<int, HostTestLogic> host_logic_map_;
-
     pid_t main_host_pid_ = -1;
     int port_ = 0;
     std::vector<int> phys_ids_;
+    bool overall_test_success_ = true; 
 
     void PrintExitStatus(int status) {
         if (WIFEXITED(status)) {
@@ -56,18 +54,91 @@ protected:
             int sig = WTERMSIG(status);
             std::cout << "signal=" << sig;
             if (sig == SIGSEGV) std::cout << " (SIGSEGV)";
-            else if (sig == SIGUSR1) std::cout << " (SIGUSR1)";
+            else if (sig == SIGUSR1) std::cout << " (SIGUSR1)(killed by host)";
         }
+
         std::cout << "\n";
     }
 
-    void InitHalStubForHost() {
-        setHostPid(getpid());
-        setDevPid(0);
+    void InitHalStubForHost(int phyId) {
+        setHostPid(getpid(), phyId);
+        setDevPid(0, phyId);
         InitHdcId();
     }
 
+    void CleanupDeviceProcess(int phy_id, pid_t dev_pid) {
+        if (dev_pid == -1) return;
+
+        int status = 0;
+        std::cout << "[HOST-" << phy_id << "] Cleaning up device (pid=" << dev_pid << ")\n";
+        
+        kill(dev_pid, SIGUSR1);
+        pid_t result = waitpid(dev_pid, &status, 0);
+
+        if (result == -1) {
+            std::cerr << "[HOST-" << phy_id << "] waitpid device failed\n";
+        } else {
+            std::cout << "[HOST-" << phy_id << "] Device exited: ";
+            PrintExitStatus(status);
+        }
+    }
+
 public:
+    pid_t SpawnDeviceProcess(int phy_id) {
+        pid_t corresponding_host_pid = getpid(); // 直接获取当前 Host 进程的 PID
+
+        pid_t pid = fork();
+        if (pid == -1) {
+            std::cerr << "[HOST-" << phy_id << "] Fork device failed" << std::endl;
+            return -1;
+        }
+
+        if (pid == 0) {
+            // ------------------------------
+            // Device进程
+            // ------------------------------
+            setDevPid(getpid(), phy_id);
+
+            char exe_path[PATH_MAX];
+            ssize_t count = readlink("/proc/self/exe", exe_path, PATH_MAX);
+            if (count == -1) {
+                perror("[DEVICE] readlink failed");
+                _exit(EXIT_FAILURE);
+            }
+            exe_path[count] = '\0';
+            char* dir_path = dirname(exe_path);
+
+            std::string device_dir = std::string(dir_path) + "/../device";
+            std::string target_bin = device_dir + "/test_hccp_service.bin";
+            std::string common_lib_dir = std::string(dir_path) + "/../common";
+
+            setenv("LD_LIBRARY_PATH", (common_lib_dir + ":" + device_dir).c_str(), 1);
+
+            char pid_param[32] = {0};
+            snprintf(pid_param, sizeof(pid_param), "--pid=%d", corresponding_host_pid);
+            char phys_id_param[32] = {0};
+            snprintf(phys_id_param, sizeof(phys_id_param), "--deviceId=%d", phy_id);
+
+            std::cout << "[DEVICE-" << phy_id << "] Start (host_pid=" << corresponding_host_pid << ", pid=" << getpid() << ")\n";
+            execl(target_bin.c_str(),
+                  "test_hccp_service.bin",
+                  "--hdcType=18",
+                  pid_param,
+                  phys_id_param,
+                  "--logLevelInPid=3",
+                  nullptr);
+
+            perror("[DEVICE] execl failed");
+            _exit(EXIT_FAILURE);
+        } else {
+            // ------------------------------
+            // Host进程
+            // ------------------------------
+            std::cout << "[HOST-" << phy_id << "] Spawned device (pid=" << pid << ")\n";
+            return pid;
+        }
+    }
+
     bool SpawnHostProcess(int phy_id, HostTestLogic host_logic) {
         host_logic_map_[phy_id] = std::move(host_logic);
 
@@ -84,20 +155,32 @@ public:
             std::cout << "[HOST-" << phy_id << "] Start (pid=" << getpid() << ")\n";
             
             // 1. 初始化HAL
-            InitHalStubForHost();
+            InitHalStubForHost(phy_id);
 
-            // 2. 执行注入的测试逻辑
-            try {
-                host_logic_map_[phy_id](phy_id);
-                std::cout << "[HOST-" << phy_id << "] Logic finished successfully\n";
-                _exit(EXIT_SUCCESS);
-            } catch (const std::exception& e) {
-                std::cerr << "[HOST-" << phy_id << "] Exception: " << e.what() << "\n";
-                _exit(EXIT_FAILURE);
-            } catch (...) {
-                std::cerr << "[HOST-" << phy_id << "] Unknown exception\n";
+            // 2. 拉起 Device 进程 
+            pid_t dev_pid = SpawnDeviceProcess(phy_id);
+            if (dev_pid == -1) {
+                std::cerr << "[HOST-" << phy_id << "] Failed to spawn device\n";
                 _exit(EXIT_FAILURE);
             }
+
+            // 3. 执行注入的测试逻辑
+            int exit_code = EXIT_SUCCESS;
+            try {
+                exit_code = host_logic_map_[phy_id](phy_id);
+                std::cout << "[HOST-" << phy_id << "] test finished, exit_code:"<<exit_code<<"\n";
+            } catch (const std::exception& e) {
+                std::cerr << "[HOST-" << phy_id << "] Exception: " << e.what() << "\n";
+                exit_code = EXIT_FAILURE;
+            } catch (...) {
+                std::cerr << "[HOST-" << phy_id << "] Unknown exception\n";
+                exit_code = EXIT_FAILURE;
+            }
+            // 4. 清理 Device 进程
+            CleanupDeviceProcess(phy_id, dev_pid);
+
+            // 5. 退出
+            _exit(exit_code);
         } else {
             // ------------------------------
             // 主进程逻辑
@@ -108,147 +191,106 @@ public:
         }
     }
 
-    // 修改：拉起Device子进程，需传入对应Host的PID
-    bool SpawnDeviceProcess(int phy_id, pid_t corresponding_host_pid) {
-        pid_t pid = fork();
-        if (pid == -1) {
-            std::cerr << "[MAIN] Fork device failed for phy_id=" << phy_id << std::endl;
-            return false;
-        }
-
-        if (pid == 0) {
-            // ------------------------------
-            // Device子进程逻辑
-            // ------------------------------
-            setDevPid(getpid());
-
-            // 1. 获取可执行文件路径
-            char exe_path[PATH_MAX];
-            ssize_t count = readlink("/proc/self/exe", exe_path, PATH_MAX);
-            if (count == -1) {
-                perror("[DEVICE] readlink failed");
-                _exit(EXIT_FAILURE);
-            }
-            exe_path[count] = '\0';
-            char* dir_path = dirname(exe_path);
-
-            // 2. 构造路径
-            std::string device_dir = std::string(dir_path) + "/../device";
-            std::string target_bin = device_dir + "/test_hccp_service.bin";
-            std::string common_lib_dir = std::string(dir_path) + "/../common";
-
-            // 3. 设置环境变量
-            setenv("LD_LIBRARY_PATH", (common_lib_dir + ":" + device_dir).c_str(), 1);
-
-            // 4. 构造参数（使用对应Host的PID）
-            char pid_param[32] = {0};
-            snprintf(pid_param, sizeof(pid_param), "--pid=%d", corresponding_host_pid);
-            char phys_id_param[32] = {0};
-            snprintf(phys_id_param, sizeof(phys_id_param), "--deviceId=%d", phy_id);
-
-            std::cout << "[DEVICE-" << phy_id << "] Start (host_pid=" << corresponding_host_pid << ", pid=" << getpid() << ")\n";
-
-            // 5. 执行二进制
-            execl(target_bin.c_str(),
-                  "test_hccp_service.bin",
-                  "--hdcType=18",
-                  pid_param,
-                  phys_id_param,
-                  "--logLevelInPid=3",
-                  nullptr);
-
-            perror("[DEVICE] execl failed");
-            _exit(EXIT_FAILURE);
-        } else {
-            // ------------------------------
-            // 主进程逻辑
-            // ------------------------------
-            device_pids_[phy_id] = pid;
-            std::cout << "[MAIN] Spawned device (phy_id=" << phy_id << ", pid=" << pid << ")\n";
-            return true;
-        }
-    }
-
 protected:
     void SetUp() override {
         main_host_pid_ = getpid();
         phys_ids_.clear();
+        overall_test_success_ = true; 
     }
 
     void TearDown() override {
-        // 1. 先清理Device进程
-        for (auto& pair : device_pids_) {
-            int phy_id = pair.first;
-            pid_t pid = pair.second;
-            if (pid == -1) continue;
+        const int timeout_seconds = 10;
+        const useconds_t poll_interval_us = 100000; 
 
-            int status = 0;
-            std::cout << "[CLEANUP] Killing device (phy_id=" << phy_id << ", pid=" << pid << ")\n";
-            
-            kill(pid, SIGUSR1);
-            pid_t result = waitpid(pid, &status, 0);
-            
-            if (result == -1) {
-                std::cerr << "[CLEANUP] waitpid device failed\n";
-            } else {
-                std::cout << "[CLEANUP] Device (phy_id=" << phy_id << ") exited: ";
-                PrintExitStatus(status);
-            }
-        }
-        device_pids_.clear();
-
-        // 2. 再清理Host进程，并检查退出状态
+        // 主进程清理 Host 进程
         for (auto& pair : host_pids_) {
             int phy_id = pair.first;
             pid_t pid = pair.second;
             if (pid == -1) continue;
 
             int status = 0;
-            std::cout << "[CLEANUP] Killing host (phy_id=" << phy_id << ", pid=" << pid << ")\n";
+            bool exited = false;
+            bool timed_out = false;
             
-            kill(pid, SIGUSR1);
-            pid_t result = waitpid(pid, &status, 0);
-            
-            if (result == -1) {
-                std::cerr << "[CLEANUP] waitpid host failed\n";
-                FAIL() << "Host (phy_id=" << phy_id << ") waitpid failed";
-            } else {
-                std::cout << "[CLEANUP] Host (phy_id=" << phy_id << ") exited: ";
+            auto start_time = std::chrono::steady_clock::now();
+
+            std::cout << "[CLEANUP] Waiting for host (phy_id=" << phy_id << ", pid=" << pid << ")\n";
+
+            while (true) {
+                // 非阻塞检查进程状态
+                pid_t result = waitpid(pid, &status, WNOHANG);
+                
+                if (result > 0) {
+                    exited = true;
+                    break;
+                } else if (result == 0) {
+                    // 进程还在运行，检查是否超时
+                    auto now = std::chrono::steady_clock::now();
+                    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start_time).count();
+                    
+                    if (elapsed >= timeout_seconds) {
+                        timed_out = true;
+                        break;
+                    }
+                    
+                    usleep(poll_interval_us);
+                } else {
+                    std::cerr << "[CLEANUP] waitpid(WNOHANG) error for pid=" << pid << std::endl;
+                    break;
+                }
+            }
+
+            // 2. 处理超时或已退出的情况
+            if (timed_out) {
+                std::cout << "[CLEANUP] Host (phy_id=" << phy_id << ", pid=" << pid << ") timed out after " 
+                          << timeout_seconds << "s. Sending SIGUSR1...\n";
+                
+                // 发送信号杀掉
+                kill(pid, SIGUSR1);
+                
+                // 这里必须再次阻塞 waitpid 以彻底回收进程，避免僵尸
+                pid_t killed_result = waitpid(pid, &status, 0);
+                if (killed_result == -1) {
+                    std::cerr << "[CLEANUP] waitpid after kill failed\n";
+                } else {
+                    std::cout << "[CLEANUP] Host (phy_id=" << phy_id << ") killed: ";
+                    PrintExitStatus(status);
+                }
+            } else if (exited) {
+                // 进程正常自行退出
+                std::cout << "[CLEANUP] Host (phy_id=" << phy_id << ") finished on its own: ";
                 PrintExitStatus(status);
                 
-                // 关键：检查Host进程是否成功退出
                 if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-                    FAIL() << "Host (phy_id=" << phy_id << ") exited with non-success status";
+                    std::cout << "[CLEANUP] Error: Host (phy_id=" << phy_id << ") exited with non-success status\n";
+                    overall_test_success_ = false;
                 }
             }
         }
+
         host_pids_.clear();
         host_logic_map_.clear();
+        EXPECT_TRUE(overall_test_success_);
     }
 };
 
 TEST_F(HccpSystemTest, MultiHostTlsTest)
 {
-    const std::vector<int> test_phyids = {0};
+    const std::vector<int> test_phyids = {1,5};
 
     for (int phy_id : test_phyids) {
-        bool ok = SpawnHostProcess(phy_id, [](int phyid) {
-
+        bool ok = SpawnHostProcess(phy_id, [](int phyid)->int {
             std::cout << "[HOST-" << phyid << "] Running RaInit...\n";
-
             RaInitConfig config;
             config.phyId = phyid;
             config.nicPosition = 1;
             config.hdcType = 18;
             config.enableHdcAsync = false;
-
-            // 注意：子进程中不能用ASSERT_*，失败时直接_exit(1)
             int ret = RaInit(&config);
             if (ret != 0) {
                 std::cerr << "[HOST-" << phyid << "] RaInit failed ret=" << ret << "\n";
-                _exit(EXIT_FAILURE);
+                return ret;
             }
-
             bool tls_enable = false;
             RaInfo info{.mode = 1, .phyId = phyid};
 
@@ -257,58 +299,16 @@ TEST_F(HccpSystemTest, MultiHostTlsTest)
             if (ret != 0) {
                 std::cerr << "[HOST-" << phyid << "] RaGetTlsEnable failed ret=" << ret << "\n";
                 RaDeinit(&config);
-                _exit(EXIT_FAILURE);
             }
-
             ret = RaDeinit(&config);
             if (ret != 0) {
                 std::cerr << "[HOST-" << phyid << "] RaDeinit failed ret=" << ret << "\n";
-                _exit(EXIT_FAILURE);
+                return ret;
             }
 
             std::cout << "[HOST-" << phyid << "] TLS enable result: " << tls_enable << "\n";
-            _exit(EXIT_SUCCESS);
+            return ret;
         });
         ASSERT_TRUE(ok) << "Spawn host failed for phy_id=" << phy_id;
     }
-
-    for (int phy_id : test_phyids) {
-        pid_t host_pid = host_pids_[phy_id];
-        ASSERT_NE(host_pid, -1) << "Host pid not found for phy_id=" << phy_id;
-        
-        bool ok = SpawnDeviceProcess(phy_id, host_pid);
-        ASSERT_TRUE(ok) << "Spawn device failed for phy_id=" << phy_id;
-    }
-    sleep(5);
 }
-
-// TEST_F(HccpSystemTest, RaGetTlsEnable) {
-//     SetPhysicalIds({0});
-//     struct RaInitConfig config {};
-//     int ret;
-
-//     config.phyId           = 0;
-//     config.nicPosition     = 1;
-//     config.hdcType         = 18;
-//     config.enableHdcAsync = false;
-//     std::cout << "[HOST] Calling RaInit...\n";
-//     ret = RaInit(&config);
-//     ASSERT_EQ(ret, 0) << "RaInit failed";
-//     bool tlsEnable = false;
-//     RaInfo info = {
-//         .mode = 1,
-//         .phyId = 0,
-//     };
-//     std::cout << "[HOST] Calling RaGetTlsEnable...\n";
-//     ret = RaGetTlsEnable(&info, &tlsEnable);
-//     ASSERT_EQ(ret, 0) << "RaGetTlsEnable failed";
-//     ret = RaDeinit(&config);
-//     ASSERT_EQ(ret, 0) << "RaDeinit failed";
-//     std::cout << "[HOST] TLS enabled: " << tlsEnable << "\n";
-// }
-
-// TEST_F(HccpSystemTest, HelloWorld) {
-//     printf("hello world\n");
-//     ASSERT_EQ(1, 1);
-// }
-

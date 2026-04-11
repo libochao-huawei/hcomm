@@ -39,29 +39,47 @@ HdcSessionT **GetSession()
     return g_hdcMgr;
 }
 
+//device call:host phy Id -> device phy Id yes
 drvError_t drvGetLocalDevIDByHostDevID(unsigned int devId, unsigned int* chipId)
 {
     for(int i = 0; i < MAX_DEV_ID; i++) {
         if (GetH2dInfo()[i].hostPhyId == devId) {
-            *chipId = GetH2dInfo()[i].devLogicId;
+            *chipId = GetH2dInfo()[i].devPhyId;
             return DRV_ERROR_NONE;
         }
     }
     return 0;
 }
 
+//device call:device phy ID -> device logic ID yes
 drvError_t drvDeviceGetIndexByPhyId(uint32_t phyId, uint32_t *devIndex)
 {
+    *devIndex = phyId;
     return DRV_ERROR_NONE;
 }
 
-int drvGetDevIdByLocalDevId(unsigned int localDevId, unsigned int *devId)
+//device call:device phy Id -> host phy ID yes
+drvError_t drvGetDevIDByLocalDevID(unsigned int localDevId, unsigned int *devId)
 {
-    return 0;
+    pid_t pid = getpid();
+    for(int i = 0; i < MAX_DEV_ID; i++) {
+        if (GetH2dInfo()[i].devPid == pid) {
+            *devId = GetH2dInfo()[i].hostPhyId;
+            return DRV_ERROR_NONE;
+        }
+    }
+    return DRV_ERROR_NONE;
 }
 
+//device call:host logic ID -> device phy Id yes
 drvError_t drvDeviceGetPhyIdByIndex(unsigned int devIndex, unsigned int *phyId)
 {
+    for(int i = 0; i < MAX_DEV_ID; i++) {
+        if (GetH2dInfo()[i].hostLogicId == devIndex) {
+            *phyId = GetH2dInfo()[i].devPhyId;
+            return DRV_ERROR_NONE;
+        }
+    }
     return DRV_ERROR_NONE;
 }
 

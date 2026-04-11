@@ -32,8 +32,6 @@ int32_t SendStartUpFinishMsg(const uint32_t deviceId, const TsdWaitType waitType
     sigprocmask(SIG_BLOCK, &mask, NULL);
     int sig;
     sigwait(&mask, &sig);
-    printf("recv father's signal, hccp_service.bin will exit\n");
-    exit(0);
     return 0;
 }
 
