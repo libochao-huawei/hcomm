@@ -65,6 +65,8 @@ int UBEntityGetServerPortGroupIdx(UBEntity *ue);
 
 int UrmaEidGetServerDieId(dcmi_urma_eid_t *eid);
 
+int UrmaEidGetPodDieId(dcmi_urma_eid_t *eid);
+
 int UBGetMaxEntityId(UEList *ueList);
 
 #ifdef __cplusplus

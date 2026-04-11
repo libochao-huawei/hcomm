@@ -41,13 +41,15 @@ HcclResult AicpuChannelProcess::InitUrmaChannel(HcclChannelUrmaRes *commParam)
     HCCL_INFO("[HcclCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
         __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
 
+    u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr);
+    u32* addSize = reinterpret_cast<u32*>(commParam->channelSizeAddr);
     for (u32 index = 0; index < commParam->listNum; index++) {
-        std::vector<char> data(commParam->singleUniqueIdSize);
+        std::vector<char> data(*addSize);
 
         // 计算地址块的偏移
-        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
-        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
-
+        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, *addSize));
+        currentSrcAddr += *addSize;
+        addSize++;
         // 反序列化得到device侧transport对象
         Hccl::AicpuResPackageHelper helper;
         auto dataVec = helper.ParsePackedData(data);
@@ -63,8 +65,8 @@ HcclResult AicpuChannelProcess::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
         channelList[index] = channelHandle;
-        HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
-            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
+        HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], channelSizeAddr[%p], channelHandle[0x%llx]",
+            __func__, index, currentSrcAddr, commParam->channelSizeAddr, channelHandle);
     }
 
     return HCCL_SUCCESS;
