@@ -278,6 +278,10 @@ HcclResult AicpuZeroCopyExchanger::GetRemoteAddr()
 
 HcclResult AicpuZeroCopyExchanger::BatchSetLocalAddrToRemote(void *in, void *out)
 {
+    CHK_PTR_NULL(in);
+    CHK_PTR_NULL(out);
+    CHK_PTR_NULL(current_);
+
     size_t peerCount = current_->remoteRanks.size();
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(timeoutSec_);
