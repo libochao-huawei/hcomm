@@ -81,24 +81,24 @@ __attribute__((constructor(101))) static int ShmInitHostPid(void)
  * @brief 设置共享的HostPid（父进程调用）
  * @param pid 要共享的进程ID
  */
-void setHostPid(pid_t pid)
+void setHostPid(pid_t pid, int phyId)
 {
     DRV_LOG_INFO("Setting Host PID in shared memory: %d", pid);
     if (g_h2dInfo == NULL && ShmInitHostPid() != 0) {
         DRV_LOG_INFO("setHostPid init failed");
         return;
     }
-    g_h2dInfo->hostPid = pid;  // 写入共享内存，所有进程可见
+    g_h2dInfo[phyId].hostPid = pid;
 }
 
-void setDevPid(pid_t pid)
+void setDevPid(pid_t pid, int phyId)
 {
     DRV_LOG_INFO("Setting Dev PID in shared memory: %d", pid);
     if (g_h2dInfo == NULL && ShmInitHostPid() != 0) {
         DRV_LOG_INFO("setDevPid init failed");
         return;
     }
-    g_h2dInfo->devPid = pid;  // 写入共享内存，所有进程可见
+    g_h2dInfo[phyId].devPid = pid;
 }
 
 void InitHdcId()
@@ -122,7 +122,8 @@ drvError_t halQueryDevPid(struct halQueryDevpidInfo info, pid_t *devPid)
         DRV_LOG_INFO("halQueryDevPid init failed");
         return DRV_ERROR_INVALID_VALUE;
     }
-    *devPid = g_h2dInfo->devPid;
+    
+    *devPid = g_h2dInfo[info.devid].devPid;
     return DRV_ERROR_NONE;
 }
 
@@ -139,8 +140,14 @@ drvError_t drvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned int *v
         DRV_LOG_INFO("drvQueryProcessHostPid init failed");
         return DRV_ERROR_INVALID_VALUE;
     }
-    *hostPid = g_h2dInfo->hostPid;
-    return DRV_ERROR_NONE;
+    for(int i = 0; i < MAX_DEV_ID; i++) {
+        if (g_h2dInfo[i].devPid == pid) {
+            *hostPid = g_h2dInfo[i].hostPid;
+            return DRV_ERROR_NONE;
+        }
+    }
+
+    return DRV_ERROR_INVALID_VALUE;
 }
 
 drvError_t halMemGetInfoEx(unsigned int devId, unsigned int type, struct MemInfo *info)
@@ -152,27 +159,6 @@ int halGrpQuery(GroupQueryCmdType cmd, void *inBuff, unsigned int inLen, void *o
 {
     return 0;
 }
-
-// drvError_t halHdcGetSessionAttr(HDC_SESSION session, int attr, int *value)
-// {
-//     HdcSessionT *pSession = (HdcSessionT *)session;
-//     for(int i = 0; i < MAX_DEV_ID; i++) {
-//         if(g_hdcMgr[i] == NULL) {
-//             continue;
-//         }
-//         if (pSession->sessionId == g_hdcMgr[i]->sessionId) {
-//             switch(attr) {
-//                 case HDC_SESSION_ATTR_PEER_CREATE_PID:
-//                     *value = pSession->devPid; 
-//                     break;
-//                 default:
-//                     return DRV_ERROR_INVALID_VALUE;
-//             }
-//             return DRV_ERROR_NONE;
-//         }
-//     }
-//     return DRV_ERROR_INVALID_VALUE;
-// }
 
 hdcError_t drvHdcGetCapacity(struct drvHdcCapacity *capacity)
 {
@@ -229,7 +215,9 @@ hdcError_t halHdcSessionConnectEx(int peerNode, int peerDevid, int peerPid, HDC_
     }
 
     // ==================== 配置服务端地址并发起连接 ====================
-    int listen_port = GetPeerPortByDevid(peerDevid);
+    int host_phy_id;
+    drvGetDevIDByLocalDevID(peerDevid, &host_phy_id);
+    int listen_port = GetPeerPortByDevid(host_phy_id);
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -258,8 +246,9 @@ retry:
     // 3. 返回创建好的会话
     *pSession = pSessionNode;
 
-    DRV_LOG_INFO("conn success sessionId=%d, conn_fd=%d, local PID=%d, remote devID=%d, peerPid=%d, peerNode=%d",
-           pSessionNode->sessionId, sock_fd, getpid(), peerDevid, peerPid, peerNode);
+    DRV_LOG_INFO("conn success sessionId=%d, conn_fd=%d, local PID=%d, remote devID=%d, peerPid=%d, peerNode=%d"
+        "listen port %d", 
+           pSessionNode->sessionId, sock_fd, getpid(), peerDevid, peerPid, peerNode,listen_port);
 
     return DRV_ERROR_NONE;
 }
@@ -296,7 +285,9 @@ hdcError_t drvHdcServerCreate(int devid, int serviceType, HDC_SERVER *pServer)
     setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     // 获取监听端口
-    int listen_port = GetPortByServiceType(devid);
+    int host_phy_id;
+    drvGetDevIDByLocalDevID(devid, &host_phy_id);
+    int listen_port = GetPortByServiceType(host_phy_id);
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
@@ -324,7 +315,7 @@ hdcError_t drvHdcServerCreate(int devid, int serviceType, HDC_SERVER *pServer)
     DRV_LOG_INFO("[SUCCESS] Server is listening on port %d", listen_port);
     // ==================== 填充对外Server句柄 ====================
     server->listen_fd = listen_fd;
-    server->phyId     = devid;
+    server->phyId     = host_phy_id;
 
     *pServer = (void *)server;
     return DRV_ERROR_NONE;
@@ -369,8 +360,8 @@ hdcError_t drvHdcSessionAccept(HDC_SERVER server, HDC_SESSION *session)
     pSession->hostPhyId          = pServer->phyId;       // 所属物理通道
     pSession->lastRecvStatus = 0;                   // 初始状态正常
     pSession->isUsed         = 1;                   // 标记已使用
-    pSession->hostPid         = g_h2dInfo->hostPid;     // 从共享内存获取Host PID
-    pSession->devPid          = g_h2dInfo->devPid;      //
+    pSession->hostPid         = g_h2dInfo[pServer->phyId].hostPid;     // 从共享内存获取Host PID
+    pSession->devPid          = g_h2dInfo[pServer->phyId].devPid;      //
     *session = pSession;
 
     GetSession()[pServer->phyId] = pSession;
@@ -601,7 +592,9 @@ EXIT_RESTORE_TV:
     if (timeout > 0) {
         setsockopt(pSession->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &old_tv, sizeof(old_tv));
     }
-
+    if(ret != DRV_ERROR_NONE) {
+        DRV_LOG_ERROR( " Recv failed with error %d", ret);
+    }
     return ret;
 }
 
@@ -806,6 +799,20 @@ drvError_t drvGetPlatformInfo(uint32_t* info)
 
 drvError_t halGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
 {
+    switch (moduleType) {
+        case MODULE_TYPE_CCPU:
+            *value = 1;
+            break;
+        case MODULE_TYPE_DCPU:
+            *value = 1;
+            break;
+        case MODULE_TYPE_AICPU:
+            *value = 1;
+            break;
+        default:
+            return DRV_ERROR_INVALID_VALUE;
+            *value = 0;
+    }
     return DRV_ERROR_NONE;
 }
 
