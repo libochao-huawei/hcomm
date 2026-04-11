@@ -587,53 +587,53 @@ __attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[
 {
     return Mc2ServerKernel(args);
 
-    // if (args == nullptr) {
-    //     HCCL_ERROR("args is null.");
-    //     return HCCL_E_PARA;
-    // }
-    // constexpr int DESC_POS = 0;
-    // uint64_t desc_value = u64(args[DESC_POS]);
-    // uint64_t *desc_addr = &desc_value;
-    // CommKfcParamDesc *desc = reinterpret_cast<CommKfcParamDesc*>(desc_addr);
-    // AicpuKfcUtils::PrintHcclCommParamDesc(*desc);
-    // if (desc->version == DECOUPLED_CTX_VER) {
-    //     return CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
-    // }
-    // void *tiling = reinterpret_cast<void *>(args[desc->tilingOff]);
-    // if (tiling == nullptr) {
-    //     HCCL_ERROR("tiling is null.");
-    //     return HCCL_E_PARA;
-    // }
-    // KfcState state;
-    // bool profL1Open = dfx::ProfilingManager::IsProfL1On();
-    // bool profL0Open = dfx::ProfilingManager::IsProfL0On();
-    // HCCL_INFO("profL1Open:%d, profL0Open:%d", profL1Open, profL0Open);
-    // const uint32_t ver = MC2TilingGetVer(tiling);
-    // HCCL_INFO("Start RunAicpuKfcSrvLaunch with tiling version %u.", ver);
-    // uint32_t ret;
-    // switch (ver) {
-    //     case TILING_DATA_VER_OLD_FOR_HOST: {
-    //         KFCGroupTilingDataAuto *tilingData = static_cast<KFCGroupTilingDataAuto *>(tiling);
-    //         if (desc->isDyn == GROUP_DYN_FLAG && tilingData->groupTilingMagicNum == GROUP_TILING_MAGIC_NUM) {
-    //             ret = RunAicpuInnerRpcSrvGroupLaunch(args, tilingData, desc);
-    //         } else {
-    //             ret = RunKernelAicpuServerV1(args, desc);
-    //         }
-    //         break;
-    //     }
-    //     case TILING_DATA_VER_OLD_FOR_KERNEL:
-    //         ret = RunKernelAicpuServerV1(args, desc);
-    //         break;
-    //     case TILING_DATA_VER_OLD_FOR_KERNEL_V2:
-    //         ret = RunKernelAicpuServerV2(args, desc, tiling);
-    //         break;
-    //     case TILING_DATA_VER_FOR_TILING_API:
-    //         ret = RunKernelAicpuServerForTilingApi(args, desc);
-    //         break;
-    //     default:
-    //         HCCL_ERROR("Invalid tiling version %u.", ver);
-    //         ret = HCCL_E_PARA;
-    // }
-    // return ret;
+    if (args == nullptr) {
+        HCCL_ERROR("args is null.");
+        return HCCL_E_PARA;
+    }
+    constexpr int DESC_POS = 0;
+    uint64_t desc_value = u64(args[DESC_POS]);
+    uint64_t *desc_addr = &desc_value;
+    CommKfcParamDesc *desc = reinterpret_cast<CommKfcParamDesc*>(desc_addr);
+    AicpuKfcUtils::PrintHcclCommParamDesc(*desc);
+    if (desc->version == DECOUPLED_CTX_VER) {
+        return CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
+    }
+    void *tiling = reinterpret_cast<void *>(args[desc->tilingOff]);
+    if (tiling == nullptr) {
+        HCCL_ERROR("tiling is null.");
+        return HCCL_E_PARA;
+    }
+    KfcState state;
+    bool profL1Open = dfx::ProfilingManager::IsProfL1On();
+    bool profL0Open = dfx::ProfilingManager::IsProfL0On();
+    HCCL_INFO("profL1Open:%d, profL0Open:%d", profL1Open, profL0Open);
+    const uint32_t ver = MC2TilingGetVer(tiling);
+    HCCL_INFO("Start RunAicpuKfcSrvLaunch with tiling version %u.", ver);
+    uint32_t ret;
+    switch (ver) {
+        case TILING_DATA_VER_OLD_FOR_HOST: {
+            KFCGroupTilingDataAuto *tilingData = static_cast<KFCGroupTilingDataAuto *>(tiling);
+            if (desc->isDyn == GROUP_DYN_FLAG && tilingData->groupTilingMagicNum == GROUP_TILING_MAGIC_NUM) {
+                ret = RunAicpuInnerRpcSrvGroupLaunch(args, tilingData, desc);
+            } else {
+                ret = RunKernelAicpuServerV1(args, desc);
+            }
+            break;
+        }
+        case TILING_DATA_VER_OLD_FOR_KERNEL:
+            ret = RunKernelAicpuServerV1(args, desc);
+            break;
+        case TILING_DATA_VER_OLD_FOR_KERNEL_V2:
+            ret = RunKernelAicpuServerV2(args, desc, tiling);
+            break;
+        case TILING_DATA_VER_FOR_TILING_API:
+            ret = RunKernelAicpuServerForTilingApi(args, desc);
+            break;
+        default:
+            HCCL_ERROR("Invalid tiling version %u.", ver);
+            ret = HCCL_E_PARA;
+    }
+    return ret;
 }
 }
