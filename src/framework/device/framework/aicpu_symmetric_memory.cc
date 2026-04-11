@@ -38,6 +38,8 @@ HcclResult HcclSymWinGetPeerPointer(HcclCommSymWindow winHandle, size_t offset, 
     SymmetricWindow *symWin = reinterpret_cast<SymmetricWindow *>(winHandle);
     CHK_PRT_RET(peerRank >= symWin->rankSize,
         HCCL_ERROR("[HcclSymWinGetPeerPointer] Invalid peerRank: %d. rankSize[%u]", peerRank, symWin->rankSize), HCCL_E_PARA);
+    CHK_PRT_RET(offset >= symWin->userSize,
+        HCCL_ERROR("[%s] Invalid offset: %llu. userSize[%llu]", __func__, offset, symWin->userSize), HCCL_E_PARA);
 
     size_t peerOffset = peerRank * symWin->stride + offset;
     *ptr = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(symWin->baseVa) + peerOffset);
