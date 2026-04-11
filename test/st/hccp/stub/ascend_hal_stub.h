@@ -39,15 +39,14 @@ struct hdc_msg_head {
     struct drvHdcMsg msg;
 };
 
-static int GetPortByServiceType(int devid)
+static int GetPortByServiceType(int phyId)
 {
-    return 9999; 
+    return 9999 + phyId; 
 }
 
 static int GetPeerPortByDevid(int peerDevid)
 {
-
-    return 9999;
+    return 9999 + peerDevid;
 }
 
 typedef struct h2d_info {
@@ -63,12 +62,11 @@ typedef struct h2d_info {
 extern "C" {
 #endif // __cplusplus
 
-void setHostPid(pid_t pid);
-void setDevPid(pid_t pid);
+void setHostPid(pid_t pid, int phyId);
+void setDevPid(pid_t pid, int phyId);
 void InitHdcId();
 h2d_info_t *GetH2dInfo();
 int AllocSessionId(void);
-
 HdcSessionT **GetSession();
 #if defined(__cplusplus)
 }

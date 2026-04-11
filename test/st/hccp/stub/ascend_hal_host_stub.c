@@ -39,23 +39,12 @@ HdcSessionT **GetSession()
     return g_hdcMgr;
 }
 
-drvError_t drvGetLocalDevIDByHostDevID(unsigned int devId, unsigned int *chipId)
-{
-    for(int i = 0; i < MAX_DEV_ID; i++) {
-        if (GetH2dInfo()[i].hostPhyId == devId) {
-            *chipId = GetH2dInfo()[i].hostLogicId;
-            return DRV_ERROR_NONE;
-        }
-    }
-
-    return DRV_ERROR_NONE;
-}
-
+//host call : host physical Id -> host logic Id yes
 drvError_t drvDeviceGetIndexByPhyId(uint32_t phyId, uint32_t *devIndex)
 {
     for(int i = 0; i < MAX_DEV_ID; i++) {
         if (GetH2dInfo()[i].hostPhyId == phyId) {
-            *devIndex = GetH2dInfo()[i].devLogicId;
+            *devIndex = GetH2dInfo()[i].hostLogicId;
             return DRV_ERROR_NONE;
         }
     }
@@ -63,24 +52,37 @@ drvError_t drvDeviceGetIndexByPhyId(uint32_t phyId, uint32_t *devIndex)
     return DRV_ERROR_NONE;
 }
 
-drvError_t drvGetDevIdByLocalDevId(unsigned int localDevId, unsigned int *devId)
+//host call:host phy Id -> host phy ID yes
+drvError_t drvGetDevIDByLocalDevID(unsigned int localDevId, unsigned int *devId)
 {
     for(int i = 0; i < MAX_DEV_ID; i++) {
-        if (GetH2dInfo()[i].hostLogicId == localDevId) {
-            *devId = GetH2dInfo()[i].devLogicId;
+        if (GetH2dInfo()[i].hostPhyId == localDevId) {
+            *devId = GetH2dInfo()[i].hostPhyId;
             return DRV_ERROR_NONE;
         }
     }
 
     return DRV_ERROR_NONE;
 }
-
-//host phy to host logic
+//host call:host logic ID -> host phy Id yes
 drvError_t drvDeviceGetPhyIdByIndex(unsigned int devIndex, unsigned int *phyId)
 {
     for(int i = 0; i < MAX_DEV_ID; i++) {
         if (GetH2dInfo()[i].hostLogicId == devIndex) {
             *phyId = GetH2dInfo()[i].hostPhyId;
+            return DRV_ERROR_NONE;
+        }
+    }
+
+    return DRV_ERROR_NONE;
+}
+
+//host call:host phy Id -> host phy Id yes
+drvError_t drvGetLocalDevIDByHostDevID(unsigned int devId, unsigned int *chipId)
+{
+    for(int i = 0; i < MAX_DEV_ID; i++) {
+        if (GetH2dInfo()[i].hostPhyId == devId) {
+            *chipId = GetH2dInfo()[i].hostPhyId;
             return DRV_ERROR_NONE;
         }
     }
