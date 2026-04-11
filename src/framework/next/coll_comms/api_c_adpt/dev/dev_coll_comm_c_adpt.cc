@@ -21,7 +21,7 @@ HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status)
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     if (deviceType == DevType::DEV_TYPE_950) {
-        CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetCommMgrbyGroup(commId);
+        CollCommAicpuMgr *hcclComm = AicpuIndopProcess::AicpuGetComm(commId);
         CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s AicpuGetCommMgrbyGroup is null, commId[%s]", __func__, commId), HCCL_E_PTR);
         CollCommAicpu* collCommAicpu = hcclComm->GetCollCommAicpu();
         CHK_PRT_RET(!collCommAicpu, HCCL_ERROR("%s GetCollCommAicpu is null, commId[%s]", __func__, commId), HCCL_E_PTR);
