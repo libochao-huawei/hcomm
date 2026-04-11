@@ -118,6 +118,7 @@ void ExecutorTracer::HandleBackGround(AicpuComContext *const ctx)
 // stop 背景线程
 void ExecutorTracer::StopBackGround(AicpuComContext *const ctx, bool &isNotStop)
 {
+    CHK_PTR_NULL(ctx);
     if (ctx->commOpenStatus) {
         isNotStop = true;
     } else {
@@ -128,6 +129,7 @@ void ExecutorTracer::StopBackGround(AicpuComContext *const ctx, bool &isNotStop)
         (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
         for (auto &commInfo : aicpuCommInfo) {
             hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
+            CHK_PTR_NULL(hcclAicpu);
             if (hcclAicpu->GetCommInfoStatus() || hcclAicpu->GetIsInitIndOp()) {
                 isNotStop = true;
             }

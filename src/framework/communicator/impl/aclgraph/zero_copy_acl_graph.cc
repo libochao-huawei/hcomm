@@ -63,6 +63,7 @@ bool ZeroCopyAclGraph::SetAclGraphZeroCopyMode(
     bool isInGraphCaputureZeroCopy = false;
     aclmdlRI rtModel = nullptr;
     bool isCapture = false;
+    CHK_PTR_NULL(impl);
 
     if (deviceType != DevType::DEV_TYPE_910_93) {
         HCCL_INFO("[ZeroCopyAclGraph][SetAclGraphZeroCopyMode] Hccl doesn't support graph zero copy mode. current "

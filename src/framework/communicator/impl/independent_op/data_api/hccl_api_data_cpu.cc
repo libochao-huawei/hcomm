@@ -347,12 +347,9 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
 
-    uint64_t len = count * SIZE_TABLE[dataType];
-
     HcclResult ret = HCCL_SUCCESS;
 
     ret = HCCL_E_NOT_SUPPORT;
-    (void)len;
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d], remoteNotifyIdx[%u].",
@@ -427,6 +424,7 @@ int32_t HcommWriteNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *
     (void)thread;
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    CHK_PRT_RET(len == 0, HCCL_ERROR("[%s] len is 0, invalid.", __func__), HCCL_E_PARA);
 
     HcclResult ret = HCCL_SUCCESS;
     DevType devType;
@@ -629,7 +627,7 @@ int32_t HcommAcquireComm(const char* commId)
     std::shared_ptr<hccl::hcclComm> hcclComm;
     HcclGetCommHandle(commId, hcclComm);
     CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    CHK_PRT(hcclComm->SetCommDispatcherCtx());// 待优化
+    CHK_RET(hcclComm->SetCommDispatcherCtx());// 待优化
     return HCCL_SUCCESS;
 }
 
