@@ -25,7 +25,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInitV2(void 
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
     HcclChannelUrmaRes *commParam = reinterpret_cast<HcclChannelUrmaRes *>(ctxArgs->context);
-
+    CHK_PTR_NULL(commParam);
     return AicpuIndopProcess::AicpuIndOpChannelInit(commParam);
 }
 }
