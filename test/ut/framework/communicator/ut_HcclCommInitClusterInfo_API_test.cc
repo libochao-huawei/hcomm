@@ -102,6 +102,8 @@ TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_commIsNull_E
 
     HcclResult ret = HcclCommInitClusterInfo(rankTableFile, rankId, pComm);
     EXPECT_EQ(ret, HCCL_E_PTR);
+
+    Ut_Comm_Destroy(*pComm);
 }
 
 TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_MultiInit_Expect_ReturnIsHCCL_E_UNAVAIL) {
