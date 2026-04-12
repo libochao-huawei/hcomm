@@ -14,3 +14,4 @@ src/framework/device/framework/aicpu_communicator.h
 src/framework/next/coll_comms/communicator/aicpu/coll_comm_aicpu.cc
 src/framework/next/comms/endpoint_pairs/channels/channel_process.cc
 src/framework/next/comms/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.cc
+src/framework/next/coll_comms/api_c_adpt/dev/dev_coll_comm_c_adpt.cc
