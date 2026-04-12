@@ -2980,7 +2980,7 @@ HcclResult HcclOneSidedCommDestroy(HcclComm comm, s32 deviceLogicId, HcclUs star
 static HcclResult ResetDevice(hccl::hcclComm* hcclComm)
 {
     s32 logicDeviceId = 0;
-    hcclComm->GetDeviceId(logicDeviceId);
+    CHK_RET(hcclComm->GetDeviceId(logicDeviceId));
     g_hcclDeviceId = logicDeviceId;
     if (hcclComm->IsNeedResetDevice()) {
         HCCL_RUN_INFO("op_base com destroy, com is not global com");
@@ -3819,8 +3819,10 @@ HcclResult ReduceLoop(const std::string &tag, void *inputPtr, void *outputPtr, c
 
     HcclResult ret;
     CHK_RET(hcclComm->GetInCCLbuffer(commInputPtr, commInputSize));
+    CHK_PTR_NULL(commInputPtr);
 
     CHK_RET(hcclComm->GetOutCCLbuffer(commOutputPtr, commOutputSize));
+    CHK_PTR_NULL(commOutputPtr);
 
     u32 unitSize;
     CHK_RET(SalGetDataTypeSize(dataType, unitSize));
@@ -3977,6 +3979,7 @@ HcclResult RunGather(u64 *sendCounts, u64 *sdispls, void *sendDevBuf, GatherPara
 
     // 多线程拷贝
     HostMem tmpHostMem = HostMem::alloc(memSize);
+    CHK_PTR_NULL(tmpHostMem.ptr());
     std::vector<std::unique_ptr<std::thread>> threads(GATHER_THREAD_NUM);
     for (u32 num = 0; num < GATHER_THREAD_NUM; num++) {
         OpBaseMemPara memPara;
