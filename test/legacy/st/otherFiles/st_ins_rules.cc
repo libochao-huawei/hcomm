@@ -128,9 +128,14 @@ public:
         return *remoteRmaBufManager.get();
     }
 
-    QueueNotifyManager &GetQueueNotifyManager() const override
+    QueueNotifyManager &GetAicpuQueueNotifyManager() const override
     {
-        return *queueNotifyManager.get();
+        return *aicpuQueueNotifyManager.get();
+    }
+
+    QueueNotifyManager &GetCcuQueueNotifyManager() const override
+    {
+        return *ccuQueueNotifyManager.get();
     }
 
     RmaConnManager &GetRmaConnManager() const override
