@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -26,11 +26,9 @@
 #include "ascend_hal_stub.h"
 
 static h2d_info_t *g_h2dInfo = NULL;
-// 共享内存键值（自定义固定值，保证所有进程识别同一块内存）
-#define SHM_KEY 0x1234ABCD
+
 #define SHM_SIZE (sizeof(h2d_info_t) * MAX_DEV_ID)
 
-// 全局共享内存ID（进程内私有，不影响共享数据）
 static int g_shmid = -1;
 h2d_info_t *GetH2dInfo()
 {
