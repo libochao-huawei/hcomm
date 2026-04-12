@@ -10,26 +10,22 @@
 
 set(src_to_test_list
     main.cc
-    hccl_api_base_test.cc
-    ut_CcuComponent_test.cc
-    ut_CcuTransport_API_test.cc
 )
 
-add_executable(hccl_utest_comms_ccu_features ${src_to_test_list})
+add_executable(hccl_utest_comms_common_features ${src_to_test_list})
 
-#头文件搜索路径
-target_include_directories(hccl_utest_comms_ccu_features PRIVATE
+target_include_directories(hccl_utest_comms_common_features PRIVATE
     ${UT_COMMON_INCLUDE_LIST}
 )
 
-target_compile_definitions(hccl_utest_comms_ccu_features PRIVATE
+target_compile_definitions(hccl_utest_comms_common_features PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
     google=ascend_private
     -DOPEN_HCCL_TEST
     OPEN_BUILD_PROJECT
 )
 
-target_compile_options(hccl_utest_comms_ccu_features PRIVATE
+target_compile_options(hccl_utest_comms_common_features PRIVATE
     -U_FORTIFY_SOURCE
     -fno-var-tracking-assignments
     -Os
@@ -37,11 +33,11 @@ target_compile_options(hccl_utest_comms_ccu_features PRIVATE
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-target_link_directories(hccl_utest_comms_ccu_features PRIVATE
+target_link_directories(hccl_utest_comms_common_features PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 
-target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
+target_link_libraries(hccl_utest_comms_common_features PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -pthread
@@ -53,7 +49,7 @@ target_link_libraries(hccl_utest_comms_ccu_features PRIVATE
     -ldl
 )
 
-add_dependencies(hccl_utest_comms_ccu_features hccl_llt)
+add_dependencies(hccl_utest_comms_common_features hccl_llt)
 
 enable_testing()
-add_test(NAME hccl_utest_comms_ccu_features COMMAND hccl_utest_comms_ccu_features)
+add_test(NAME hccl_utest_comms_common_features COMMAND hccl_utest_comms_common_features)
