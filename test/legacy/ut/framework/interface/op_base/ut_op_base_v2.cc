@@ -2606,17 +2606,19 @@ TEST_F(OpbaseTestV2, Ut_HcclSetOpArgs_When_Param_Error_Expect_ReturnIsHCCL_E_PAR
     HcclResult ret3 = HcclSetOpAlgConfigV2(opArgs, algConfig);
     EXPECT_EQ(ret3, HCCL_E_PARA);
 
-    HcclResult HcclResult = HcclFreeOpArgsV2(opArgs);
-    EXPECT_EQ(ret4, HCCL_SUCCESS);
+    HcclResult ret4 = HcclSetOpSrcDataTypeV2(opArgs, 100);
+    EXPECT_EQ(ret4, HCCL_E_PARA);
 
-    HcclResult ret5 = HcclSetOpSrcDataTypeV2(opArgs, 100);
-    EXPECT_EQ(ret5, HCCL_E_PARA);
+    HcclResult ret5 = HcclSetOpDstDataTypeV2(opArgs, 100);
+    EXPECT_EQ(RT_MQ_SCHED_PRIORITY_LEVEL5, HCCL_E_PARA);
 
-    HcclResult ret6 = HcclSetOpDstDataTypeV2(opArgs, 100);
+    HcclResult ret6 = HcclSetOpReduceTypeV2(opArgs, 100);
     EXPECT_EQ(ret6, HCCL_E_PARA);
 
-    HcclResult ret7 = HcclSetOpReduceTypeV2(opArgs, 100);
-    EXPECT_EQ(ret7, HCCL_E_PARA);
+    HcclResult ret7 = HcclFreeOpArgsV2(opArgs);
+    EXPECT_EQ(ret7, HCCL_SUCCESS);
+
+
 }
  
 TEST_F(OpbaseTestV2, Ut_HcclDevMemAcquireV2_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
