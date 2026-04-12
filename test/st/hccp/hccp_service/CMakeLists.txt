@@ -44,6 +44,7 @@ target_link_libraries(test_hccp_service.bin PRIVATE
     test_ra_adp
     test_rs_device
     hccp_stub
+    unified_dlog_stub
     -ldl
 )
 

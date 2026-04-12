@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ target_include_directories(test_ra_peer PRIVATE
     ${HCCP_DIR}/inc/private/network
     ${HCCP_DIR}/common/
     ${HCCP_DIR}/external_depends/host_lite
+    ${HCCP_DIR}/external_depends/nda
     ${HCCP_DIR}/rdma_agent/comm/ctx
     ${HCCP_DIR}/rdma_service/ctx
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
@@ -46,6 +47,7 @@ target_link_options(test_ra_peer PRIVATE
 
 target_link_libraries(test_ra_peer PRIVATE
     test_rs_host
+    unified_dlog_stub
     -ldl
 )
 

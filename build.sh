@@ -136,7 +136,6 @@ function build_hccp_test() {
     cmake --install . --component hccp_test
     LD_LIBRARY_PATH=${BUILD_DIR}/hccp_test/host:${BUILD_DIR}/hccp_test/common:${LD_LIBRARY_PATH} ./hccp_test/host/hccp_test.bin
     unset LD_LIBRARY_PATH
-    ipcrm -M 0x1234abcd
 }
 
 function build_test() {
