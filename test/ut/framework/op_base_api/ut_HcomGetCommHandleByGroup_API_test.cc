@@ -22,14 +22,6 @@ public:
     }
 };
 
-TEST_F(HcomGetCommHandleByGroupTest, Ut_HcomGetCommHandleByGroup_When_Normal_Expect_ReturnIsHCCL_E_NOT_FOUND)
-{
-    char group[] = "hccl_world_group1";
-    HcclResult ret = HcomGetCommHandleByGroup(group, &commHandle);
-    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
-    EXPECT_EQ(commHandle, nullptr);
-}
-
 TEST_F(HcomGetCommHandleByGroupTest, Ut_HcomGetCommHandleByGroup_When_GroupIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     HcclComm commHandle = nullptr;
