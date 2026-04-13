@@ -41,7 +41,7 @@ public:
     void operator+=(const CcuVariable &var) const;
 
     // // addr += addr
-    // void operator+=(const CcuAddress &other) const;
+    void operator+=(const CcuAddress &other) const;
 
     CcuAddressHandle handle{0};
 };
@@ -120,6 +120,12 @@ inline void CcuAddress::operator=(CcuArithmeticOperator<CcuVariable, CcuAddress>
 
 inline void CcuAddress::operator+=(const CcuVariable &var) const {
     auto ret = CcuAddressAddAssignVar(*this, var);
+    if (ret != CcuResult::CCU_SUCCESS) {
+        throw "todo: failed";
+    }
+}
+inline void CcuAddress::operator+=(const CcuAddress &other) const {
+    auto ret = CcuAddressAddAddrToAddr(*this, *this, other);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
