@@ -19,6 +19,10 @@ set(src_to_test_list
     ut_HcclEngineCtxCreate_API_test.cc
     ut_HcclCreateOpResCtx_API_test.cc
     ut_HcclGetRemoteIpcHcclBuf_API_test.cc
+    ut_HcclOpArgs_size_check.cc
+    ut_HcclCombinOpParam_910B_size_check.cc
+    ut_HcclCombinOpParam_950_size_check.cc
+    ut_HcclOpResParam_size_check.cc
 )
 
 add_executable(hccl_utest_framework_resource ${src_to_test_list})
