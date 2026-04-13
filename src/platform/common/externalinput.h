@@ -120,6 +120,7 @@ struct ExternalInput {
     std::string multiQpSrcPortConfigPath;
     s32 increSaveExecTimeOut;
     u64 debugConfig;
+    std::string hcclAlg; // OMNI
     ExternalInput()
     {
         SetDefaultParams();
@@ -182,6 +183,7 @@ struct ExternalInput {
         multiQpSrcPortConfigPath = "";
         increSaveExecTimeOut = NOTIFY_DEFAULT_WAIT_TIME;    // HCCL 默认的Notify wait超时时间设置
         debugConfig = 0;
+        hcclAlg = "";
     }
 };
 
@@ -282,4 +284,8 @@ const s32& GetIncreSaveExecTimeOut();
 const u64& GetProfConfig();
 
 const u64& GetExternalInputDebugConfig();
+
+// HcclResult ParseHcclAlgo(); // OMNI
+// const std::string& GetHcclAlgo(); // OMNI
+
 #endif  //  EXTERNALINPUT_H
