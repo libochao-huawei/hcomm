@@ -52,7 +52,6 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
     drvHandle.reset(new (std::nothrow) CcuDrvHandle(devLogicId));
     CHK_PTR_NULL(drvHandle);
 
-    // ccu驱动重复拉起失败时，记录县城力度
     auto ret = drvHandle->Init();
     if (ret == HcclResult::HCCL_E_AGAIN) {
         HCCL_RUN_WARNING("[%s] failed but passed, ccu driver already be inited, devLogicId[%d].",
