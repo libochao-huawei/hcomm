@@ -17,6 +17,8 @@
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
 #include "channel_process.h"
+#include "ccu_primitives.h"
+#include "ccu_log.h"
 
 using namespace hcomm;
 
@@ -55,7 +57,11 @@ MyRank::~MyRank()
     // 析构有时序要求
     rankPairMgr_ = nullptr; // 内部会销毁channel，可能需要返还endpoint与ccu资源
     endpointMgr_ = nullptr; // 内部会销毁endpoint，可能需要返回ccu资源
-    ccuResContainer_ = nullptr;  // 内部清理CCU资源，关闭CCU通道
+
+    if (ccuInsHandle_ != 0) {  // 内部清理CCU资源，关闭CCU通道
+        (void)HcommCcuInsDestroy(ccuInsHandle_);
+    }
+
     commMems_ = nullptr;
     nsRecoveryProcessor_ = nullptr;
 }
@@ -72,6 +78,23 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
     info.mode = NetworkMode::NETWORK_OFFLINE;
     info.phyId = devicePhyId;
     return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
+}
+
+constexpr uint32_t DEFAULT_MODE = 0;
+constexpr uint32_t CCU_MS_MODE = 5;
+constexpr uint32_t CCU_SCHED_MODE = 6;
+inline CcuInstanceType OpExpansionModeToCcuInstanceType(uint32_t opExpansionMode)
+{
+    if (opExpansionMode == DEFAULT_MODE ||
+        opExpansionMode == CCU_SCHED_MODE) {
+        return CcuInstanceType::CCU_SCHED;
+    }
+
+    if (opExpansionMode == CCU_MS_MODE) {
+        return CcuInstanceType::CCU_MS;
+    }
+    
+    return CcuInstanceType::CCU_INVALID;
 }
 
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
@@ -92,10 +115,13 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
-        ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
-        CHK_PTR_NULL(ccuResContainer_);
-        CHK_RET(ccuResContainer_->Init());
+    if ((indOp != nullptr && strcmp(indOp, "") != 0) && ccuInsHandle_ != 0 && rankNum != 1) {
+        // 以下为ccu新接口流程
+        auto ccuInsType = OpExpansionModeToCcuInstanceType(opExpansionMode_);
+        void *resDesc = static_cast<void *>(&ccuInsType);
+        // todo: 需要处理可能越界转换
+        auto ret = HcommCcuInsCreate(resDesc, &ccuInsHandle_);
+        CHK_RET(static_cast<HcclResult>(ret));
     }
 
     // 创建端点管理器

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "ccu_res_container.h"
+#include "ccu_instance.h"
 
 #include "log.h"
 
@@ -21,24 +21,7 @@
 
 namespace hcomm {
 
-constexpr uint32_t DEFAULT_MODE = 0;
-constexpr uint32_t CCU_MS_MODE = 5;
-constexpr uint32_t CCU_SCHE_MODE = 6;
-inline CcuEngine OpExpansionModeToCcuEngine(const uint32_t opExpansionMode)
-{
-    if (opExpansionMode == DEFAULT_MODE ||
-        opExpansionMode == CCU_SCHE_MODE) {
-        return CcuEngine::CCU_SCHE;
-    }
-
-    if (opExpansionMode == CCU_MS_MODE) {
-        return CcuEngine::CCU_MS;
-    }
-    
-    return CcuEngine::INVALID;
-}
-
-CcuResContainer::~CcuResContainer()
+CcuInstance::~CcuInstance()
 {
     // 主动释放资源保证时序，不得随意调整顺序
     for (auto &kernelHandle : kernelHandles_) {
@@ -51,17 +34,18 @@ CcuResContainer::~CcuResContainer()
 
     resPack_ = nullptr; // 释放通信域持有CCU资源
     if (ccuDrvHandle_) {
-        ccuDrvHandle_ = nullptr;
+        ccuDrvHandle_ = nullptr; // 先减少引用计数，再尝试关闭
         (void)CcuDeinitFeature(devLogicId_);
         // 尝试关闭CCU功能，最后一个通信域调用时会关闭CCU驱动
     }
 }
 
-HcclResult CcuResContainer::Init()
+HcclResult CcuInstance::Init()
 {
-    const auto ccuEngine = OpExpansionModeToCcuEngine(opExpansionMode_);
-    if (ccuEngine == CcuEngine::INVALID) {
-        return HcclResult::HCCL_SUCCESS;
+    if (insType_ == CcuInstanceType::CCU_INVALID) {
+        HCCL_ERROR("[CcuInstance][%s] failed, CcuInstanceType[%d] is invalid.",
+            __func__, insType_);
+        return HcclResult::HCCL_E_PARA;
     }
 
     devLogicId_ = HcclGetThreadDeviceId();
@@ -71,7 +55,7 @@ HcclResult CcuResContainer::Init()
     }
 
     if (!resPack_) {
-        resPack_.reset(new (std::nothrow) CcuResPack(ccuEngine));
+        resPack_.reset(new (std::nothrow) CcuResPack(insType_));
         CHK_PTR_NULL(resPack_);
         CHK_RET(resPack_->Init());
     }
@@ -79,7 +63,7 @@ HcclResult CcuResContainer::Init()
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CcuResContainer::ResetResPack()
+HcclResult CcuInstance::Reset()
 {
     if (!resPack_) {
         return HcclResult::HCCL_SUCCESS;
@@ -90,12 +74,12 @@ HcclResult CcuResContainer::ResetResPack()
     return HcclResult::HCCL_SUCCESS;
 }
 
-CcuResPack *CcuResContainer::GetResPack()
+CcuResPack *CcuInstance::GetResPack()
 {
     return resPack_.get();
 }
 
-HcclResult CcuResContainer::SaveCcuKernel(const CcuKernelHandle kernelHandle)
+HcclResult CcuInstance::SaveKernel(const CcuKernelHandle kernelHandle)
 {
     EXCEPTION_HANDLE_BEGIN
     kernelHandles_.push_back(kernelHandle);
@@ -104,9 +88,9 @@ HcclResult CcuResContainer::SaveCcuKernel(const CcuKernelHandle kernelHandle)
     return HcclResult::HCCL_SUCCESS;
 }
 
-const std::vector<CcuKernelHandle> &CcuResContainer::GetUntranslatedKernels()
+const std::vector<CcuKernelHandle> &CcuInstance::GetUntranslatedKernels()
 {
     return untranslatedKernelHandles_;
 }
 
-}
+} // namespace hcomm
