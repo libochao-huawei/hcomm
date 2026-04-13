@@ -12,6 +12,7 @@
  #include "cpu_roce_endpoint.h"
  #include "urma_endpoint.h"
  #include "ub_mem_endpoint.h"
+ #include "uboe_endpoint.h"
 
  namespace hcomm{
 static bool IsProtocolSupported(CommProtocol protocol)
