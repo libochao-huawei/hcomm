@@ -135,6 +135,41 @@ extern HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size
 extern HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum,
     uint32_t notifyNumPerThread, ThreadHandle *threads);
 
+typedef enum {
+    THREAD_TYPE_INVALID = -1,
+    THREAD_TYPE_TS = 0,
+    THREAD_TYPE_CPU = 1,
+} ThreadType;
+
+typedef enum {
+    NOTIFY_TYPE_INVALID = -1,
+} NotifyType;
+
+typedef struct {
+    uint16_t notifyNumPerThread;
+    uint16_t specifiedNotifyTypeNum;
+    union {
+        struct {
+        };
+        uint8_t reserved[32];
+    };
+    NotifyType specifiedNotifyTypes[0];
+} ThreadCongif;
+
+/**
+ * @brief 获取通信线程资源
+ *
+ * @param[in] comm 通信域句柄
+ * @param[in] engine 通信引擎类型
+ * @param[in] threadNum 线程数量
+ * @param[in] type 线程类型
+ * @param[in] config 每线程的config
+ * @param[out] threads 返回的线程句柄
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclThreadAcquireWithConfig(HcclComm comm, CommEngine engine, uint32_t threadNum,
+    ThreadType type, const ThreadCongif *config, ThreadHandle *threads);
+
 /**
  * @brief 基于已有rts stream获取指定notifyNum的通信线程资源
  * @param[in] comm 通信域句柄
