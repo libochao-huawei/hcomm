@@ -2036,3 +2036,23 @@ void SetExternalInputDebugConfig(u64 value)
 {
     g_externalInput.debugConfig = value;
 }
+    
+//  // OMNI
+// HcclResult ParseHcclAlgo()
+// {
+//     std::string strHcclAlg = GET_ENV(MM_ENV_HCCL_ALGO);
+//     if (strHcclAlg == "EmptyString") {
+//         HCCL_RUN_INFO("HCCL_AGLO is empty");
+//         return HCCL_SUCCESS;
+//     }
+ 
+//     // 校验环境变量长度
+//     g_externalInput.hcclAlg = std::stoul(strHcclAlg);
+//     return HCCL_SUCCESS;
+// }
+
+// const std::string& GetHcclAlgo()
+// {
+//     return g_externalInput.hcclAlg;
+// }
+
