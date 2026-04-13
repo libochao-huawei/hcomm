@@ -27,11 +27,16 @@ struct CcuCondExpr {
 
 struct CcuIfLabelStack {
     static constexpr int MAX_DEPTH = 16;
-    static inline thread_local const char *labels[MAX_DEPTH]{};
-    static inline thread_local int top = 0;
-
-    static void Push(const char *label) { labels[top++] = label; }
-    static const char *Pop() { return labels[--top]; }
+    static const char **Labels() {
+        static thread_local const char *labels[MAX_DEPTH]{};
+        return labels;
+    }
+    static int &Top() {
+        static thread_local int top = 0;
+        return top;
+    }
+    static void Push(const char *label) { Labels()[Top()++] = label; }
+    static const char *Pop() { return Labels()[--Top()]; }
 };
 
 class CcuVariable final {
@@ -51,6 +56,8 @@ public:
     void operator=(uint64_t immediate) const;
 
     void operator=(CcuArithmeticOperator<CcuVariable, CcuVariable> op) const;
+
+    void operator+=(const CcuVariable &other) const; 
 
     CcuArithmeticOperator<CcuVariable, CcuVariable> operator+(const CcuVariable &that) const {
         return CcuArithmeticOperator<CcuVariable, CcuVariable>(*this, that, CcuArithmeticOperatorType::ADDITION);
@@ -96,6 +103,13 @@ inline void CcuVariable::operator=(uint64_t immediate) const {
 
 inline void CcuVariable::operator=(CcuArithmeticOperator<CcuVariable, CcuVariable> op) const {
     auto ret = CcuVariableAddVarToVar(*this, op.lhs, op.rhs);
+    if (ret != CcuResult::CCU_SUCCESS) {
+        throw "todo: failed";
+    }
+}
+
+inline void CcuVariable::operator+=(const CcuVariable &other) const {
+    auto ret = CcuVariableAddVarToVar(*this, *this, other);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
