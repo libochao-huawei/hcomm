@@ -962,7 +962,7 @@ HcclResult HostCpuRoceChannel::ChannelFence()
     auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
     auto startTime = std::chrono::steady_clock::now();
     while (true) {
-        auto actualNum = ibv_poll_cq(qpInfo[0].sendCq, wqeNum_, wc.data());
+        int actualNum = IbvPollCq(qpInfo[0].sendCq, wqeNum_, wc.data());
         if (actualNum < 0) {
             HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq failed. actualNum: %d.", __func__, actualNum);
             return HCCL_E_NETWORK;
