@@ -79,6 +79,7 @@ typedef enum {
     COMM_PROTOCOL_UBC_CTP = 4,    ///< 华为统一总线UBC_CTP
     COMM_PROTOCOL_UBC_TP = 5,     ///< 华为统一总线UBC_TP
     COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
+    COMM_PROTOCOL_SOCKET = 7,     ///< SOCKET通信专用
 } CommProtocol;
 
 /**
@@ -214,6 +215,19 @@ typedef struct {
         } hccsAttr;
     };
 } HcommChannelDesc;
+
+/**
+ * @brief Socket描述参数
+ * @note 结构体末尾扩展需要自增版本号，并补充兼容处理逻辑。
+ */
+typedef struct {
+    CommAbiHeader header;            ///< ABI头部，包含版本等信息
+    EndpointDesc localEndpoint;      ///< 本端网络设备端侧描述
+    EndpointDesc remoteEndpoint;     ///< 远端网络设备端侧描述
+    std::string  tag;                /**< tag used for whitelist must ended by '\0' */
+    HcommSocketRole role;            ///< 本端角色(SERVER或CLIENT)
+    uint16_t port;                   ///< 监听端口或目标端口
+} HcommSocketDesc;
 
 /**
  * @brief 初始化EndpointDesc结构体
