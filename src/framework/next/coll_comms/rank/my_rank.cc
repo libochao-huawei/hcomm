@@ -107,7 +107,7 @@ HcclResult MyRank::TryInitCcuInstance()
     // 预期外返回值属于错误
     if (ccuInitRet != HcclResult::HCCL_SUCCESS) {
         HCCL_ERROR("[%s] failed, ret[%d] is not expected.",
-        __func__, ccuInitRet);
+            __func__, ccuInitRet);
         ccuResContainer_ = nullptr;
         return ccuInitRet;
     }
