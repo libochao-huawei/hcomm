@@ -80,29 +80,27 @@ constexpr uint32_t CCU_MS_MODE = 5;
 constexpr uint32_t CCU_SCHED_MODE = 6;
 HcclResult MyRank::TryInitCcuInstance()
 {
-    ccuResContainer_.reset(new (std::nothrow)CcuResContainer());
-    CHK_PTR_NULL(ccuResContainer_);
     auto ccuInitRet = ccuResContainer_->ChangeMode(opExpansionMode_);
     // ccu驱动拉起失败，直接回退至aicpu ts
     if (ccuInitRet == HcclResult::HCCL_E_AGAIN) {
         opExpansionMode_ = AICPU_TS_MODE;
-        CHK_RET(TryInitCcuInstance()); // 至多递归一次
+        ccuResContainer_ = nullptr;
         return HcclResult::HCCL_SUCCESS;
     }
 
     // ccu通信域数量过多，导致资源不足
     if (ccuInitRet == HcclResult::HCCL_E_UNAVAIL) {
-        ccuResContainer_ = nullptr;
         // 如果是ccu ms模式，回退至ccu调度模式重试
+        // 复用原有的CcuResContainer，回退到ccu sched时不需要重复拉起ccu驱动
         if (opExpansionMode_ == CCU_MS_MODE) {
             opExpansionMode_ = CCU_SCHED_MODE;
-            CHK_RET(TryInitCcuInstance()); // 至多递归两次
+            CHK_RET(TryInitCcuInstance()); // 至多递归一次
             return HcclResult::HCCL_SUCCESS;
         }
 
         // 其余模式资源不足回退至aicpu ts
         opExpansionMode_ = AICPU_TS_MODE;
-        CHK_RET(TryInitCcuInstance()); // 至多递归一次
+        ccuResContainer_ = nullptr;
         return HcclResult::HCCL_SUCCESS;
     }
 
@@ -114,7 +112,7 @@ HcclResult MyRank::TryInitCcuInstance()
         return ccuInitRet;
     }
 
-    // ccu资源申请成功，或非ccu通信域跳过资源申请
+    // ccu资源申请成功
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -143,8 +141,11 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
+    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1 &&
+        (opExpansionMode_ == CCU_MS_MODE || opExpansionMode_ == CCU_SCHED_MODE)) {
         const uint32_t originOpExpansionMode = opExpansionMode_;
+        ccuResContainer_.reset(new (std::nothrow)CcuResContainer());
+        CHK_PTR_NULL(ccuResContainer_);
         auto ret = TryInitCcuInstance();
         if (ret != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("[MyRank][%s] failed to init ccu instance, op expansion mode[%u].",

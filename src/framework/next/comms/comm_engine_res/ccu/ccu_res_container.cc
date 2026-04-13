@@ -71,6 +71,7 @@ HcclResult CcuResContainer::Init()
 {
     const auto ccuEngine = OpExpansionModeToCcuEngine(opExpansionMode_);
     if (ccuEngine == CcuEngine::INVALID) {
+        // 主动销毁资源，有时序要求，需要先释放ccu资源后关闭驱动
         resPack_ = nullptr;
         ccuDrvHandle = nullptr;
         return HcclResult::HCCL_SUCCESS;
@@ -80,22 +81,21 @@ HcclResult CcuResContainer::Init()
 
     if (!ccuDrvHandle_) {
         auto ret = CcuInitFeature(devLogicId_, ccuDrvHandle_);
-        if (ret == HcclResult::HCCL_E_AGAIN) {
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            ccuDrvHandle_ = nullptr;
             return ret;
         }
 
-        CHK_RET(ret);
     }
 
     if (!resPack_) {
         resPack_.reset(new (std::nothrow) CcuResPack(ccuEngine));
         CHK_PTR_NULL(resPack_);
         auto ret = resPack_->Init();
-        if (ret == HcclResult::HCCL_E_UNAVAIL) {
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            resPack_ = nullptr;
             return ret;
         }
-
-        CHK_RET(ret);
     }
 
     return HcclResult::HCCL_SUCCESS;
