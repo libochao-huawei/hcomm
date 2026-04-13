@@ -55,6 +55,27 @@ typedef uint64_t ThreadHandle;
 #endif
 
 /**
+ * @brief 线程类型枚举
+ */
+typedef enum {
+    THREAD_TYPE_INVALID = -1,
+    THREAD_TYPE_TS = 0,
+    THREAD_TYPE_CPU = 1,
+} ThreadType;
+
+/**
+ * @brief 线程配置结构体
+ */
+typedef struct {
+    uint16_t notifyNumPerThread;
+    uint16_t specifiedNotifyTypeNum;
+    union {
+        uint8_t reserved[32];
+    };
+    uint32_t specifiedNotifyTypes[0];
+} ThreadConfig;
+
+/**
  * @brief 通信引擎类型枚举
  */
 typedef enum {
