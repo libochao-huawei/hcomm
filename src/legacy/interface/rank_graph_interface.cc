@@ -361,8 +361,7 @@ namespace Hccl {
         Hccl::TopoType type;
         HcclResult ret = rankGraph->GetTopoType(netLayer, topoInstId, type);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetTopoType] Failed to get topo type at netLayer [%u], topoInstId [%u], ret=%d",
-                       netLayer, topoInstId, ret);
+            HCCL_ERROR("[IRankGraph::GetTopoType] Failed to get topo type at netLayer [%u] topoInstId [%u] ret=%d", netLayer, topoInstId, ret);
             return ret;
         }
         static const std::unordered_map<Hccl::TopoType, CommTopo> topoTypeMap = {
@@ -392,8 +391,7 @@ namespace Hccl {
         u32 num = 0;
         auto ret = rankGraph->GetRanksByTopoInst(netLayer, topoInstId, ranksVec_, num);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetRanksByTopoInst] Failed to get ranks at netLayer [%u], topoInstId [%u], ret=%d",
-                       netLayer, topoInstId, ret);
+            HCCL_ERROR("[IRankGraph::GetRanksByTopoInst] Failed to get topo type at netLayer [%u] topoInstId [%u] ret=%d", ret);
             return ret;
         }
         *ranks = ranksVec_.data();
@@ -413,7 +411,7 @@ namespace Hccl {
         }
         auto ret = rankGraph->GetEndpointNum(netLayer, topoInstId, num);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointNum] Faild to get endpoint num at netLayer [%u] with topoInstId [%u]",
+            HCCL_ERROR("[IRankGraph::GetEndpointNum] Faild to get endpoint num at netLayer [%u] with topoInstId",
                        netLayer, topoInstId);
             return ret;
         }
@@ -433,8 +431,8 @@ namespace Hccl {
         }
         auto ret = rankGraph->GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointDesc] Failed to get endpoint desc at netLayer [%u], topoInstId [%u] with descNum [%u]",
-                       netLayer, topoInstId, descNum);
+            HCCL_ERROR("[IRankGraph::GetEndpointDesc] Failed to get endpoint desc at netLayer [%u] with descNum [%u]",
+                       netLayer, descNum);
             return ret;
         }
         return HCCL_SUCCESS;
@@ -447,7 +445,7 @@ namespace Hccl {
         RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
         HcclResult ret = rankGraph->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[IRankGraph::GetEndpointInfo] Failed to get endpoint info with rank [%u]", rankId);
+            HCCL_ERROR("[IRankGraph::GetEndpointInfo] Faild to get endpoint info with rank [%u]", rankId);
             return ret;
         }
         return HCCL_SUCCESS;
