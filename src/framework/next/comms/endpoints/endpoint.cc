@@ -12,6 +12,7 @@
  #include "cpu_roce_endpoint.h"
  #include "urma_endpoint.h"
  #include "ub_mem_endpoint.h"
+ #include "uboe_endpoint.h"
 
  namespace hcomm{
 static bool IsProtocolSupported(CommProtocol protocol)
@@ -21,6 +22,8 @@ static bool IsProtocolSupported(CommProtocol protocol)
         case COMM_PROTOCOL_UBC_TP:
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
+        case COMM_PROTOCOL_UBOE:
+            // TODO UBOE OK 评审
             return true;
         default:
             return false;
@@ -51,6 +54,8 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UB_MEM && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<UboeEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
         HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 
