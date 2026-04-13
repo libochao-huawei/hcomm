@@ -541,6 +541,7 @@ private:
     //通用的通道
     std::shared_ptr<hccl::HDCommunicate> kfcControlTransferH2D_{nullptr};
     std::shared_ptr<hccl::HDCommunicate> kfcStatusTransferD2H_{nullptr};
+    ReadWriteLockBase threadAicpuMutex_;
     DfxExtendInfo dfxExtendInfo_;
     std::vector<SendRecvInfo> allMeshAggregationSendRecvInfo_;
     std::shared_ptr<AicpuZeroCopyExchanger> ZeroCopyExchanger_{nullptr};
