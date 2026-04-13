@@ -56,6 +56,33 @@ using TransportInfo_t = struct tagTransportInfo {
     TransportType transportType;
 };
 
+/**
+ * @brief OXC ranktable 2.0 中单个地址端点的最小承载结构。
+ *
+ * @note 第一阶段只负责把 parser 读到的信息保存下来，
+ *       不在这里引入下游消费语义。
+ */
+using RankAddrInfoOxc = struct tagRankAddrInfoOxc {
+    std::string addr;
+    std::string addrType;
+    std::string planeId;
+    std::vector<std::string> ports;
+};
+
+/**
+ * @brief OXC ranktable 2.0 中 level_list 的最小承载结构。
+ *
+ * @note 该结构仅表示 parser 输出的层级拓扑信息，
+ *       后续是否映射到更深层拓扑对象由下一阶段决定。
+ */
+using RankLevelInfoOxc = struct tagRankLevelInfoOxc {
+    u32 netLayer = 0;
+    std::string netInstanceId;
+    std::string netType;
+    std::string netAttr;
+    std::vector<RankAddrInfoOxc> rankAddrList;
+};
+
 using RankInfo_t = struct tagRankInfo {
     u32 rankId = 0xFFFFFFFF;            // rank 标识，userRank,cloud时hcom计算填入
     u32 localRank = 0xFFFFFFFF;         // 本server内rank号
@@ -75,6 +102,8 @@ using RankInfo_t = struct tagRankInfo {
     s32 bindDeviceId = INVALID_INT;     // 绑定的device id
     TlsStatus tlsStatus = TlsStatus::UNKNOWN; // TLS开关状态
     std::string originalSuperPodId;     // 划分逻辑超节点前的原超节点ID，来源为用户配置
+    /** OXC ranktable 2.0 新增的层级拓扑信息；当前仓第一阶段只做“解析并保存”。 */
+    std::vector<RankLevelInfoOxc> levelList; // OXC ranktable 2.0 的层级拓扑信息
 };
 
 // 对外的ranktable格式
@@ -92,6 +121,8 @@ using RankTable_t = struct tagRankTable {
     std::string collectiveId;             // 通信域ID
     std::string version;                  // rankTable版本信息
     std::string mode;                     // [DEPRECATED]通讯方式tcp/rdma
+    /** OXC ranktable 2.0 可选任务标识；用于保存 parser 读到的 task_id。 */
+    std::string taskId;                   // OXC ranktable 2.0 任务标识
 };
 
 using RoleTableNodeInfo = struct RoleTableNodeInfoTag {
@@ -157,6 +188,7 @@ const std::string PROP_SERVER_COUNT = "server_count";
 const std::string PROP_DEVICE = "device";
 const std::string PROP_STATUS = "status";
 const std::string PROP_VERSION = "version";
+const std::string PROP_TASK_ID = "task_id";
 
 const std::string PROP_SUPER_POD_LIST = "super_pod_list";
 const std::string PROP_SUPER_POD_ID = "super_pod_id";
@@ -173,6 +205,17 @@ const std::string PROP_NETWORK_PLANEID = "plane_id";
 const std::string PROP_NETWORK_IDENTIFIER = "identifier";
 const std::string PROP_GROUP_LEADER_LIST = "group_leader_list";
 const std::string PROP_GROUP_CLUSTER_LIST = "group_cluster_list";
+const std::string PROP_LEVEL_LIST = "level_list";
+const std::string PROP_NET_LAYER = "net_layer";
+const std::string PROP_NET_INSTANCE_ID = "net_instance_id";
+const std::string PROP_NET_INST_ID = "net_inst_id";
+const std::string PROP_NET_TYPE = "net_type";
+const std::string PROP_NET_ATTR = "net_attr";
+const std::string PROP_RANK_ADDR_LIST = "rank_addr_list";
+const std::string PROP_RANK_ADDRS = "rank_addrs";
+const std::string PROP_ADDR = "addr";
+const std::string PROP_ADDR_TYPE = "addr_type";
+const std::string PROP_PORTS = "ports";
 
 const std::string TOPO_DETECT_TAG = "topo_detect_default_tag";
 }

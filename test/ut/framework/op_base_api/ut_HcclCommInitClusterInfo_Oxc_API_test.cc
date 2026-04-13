@@ -1,0 +1,170 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "hccl_api_base_test.h"
+
+namespace {
+/**
+ * @brief 构造一份覆盖第一阶段 parser 关键路径的 OXC 2.0 ranktable 测试样例。
+ * @param invalidRankCount 是否制造 rank_count 与 rank_list 大小不一致。
+ * @param missingLevelList 是否删除首个 rank 的 level_list。
+ * @param missingRankAddrList 是否删除首个 level 的 rank_addr_list。
+ * @return nlohmann::json 测试输入。
+ *
+ * @note 正向路径覆盖 `task_id / rank_list / level_list / rank_addr_list`；
+ *       负向路径通过参数开关删除关键字段或制造计数不一致。
+ */
+nlohmann::json BuildOxcRankTable(bool invalidRankCount = false, bool missingLevelList = false,
+    bool missingRankAddrList = false)
+{
+    nlohmann::json level0Addr = {
+        {"addr", "000000000000002000100000df000401"},
+        {"addr_type", "EID"},
+        {"plane_id", "0"},
+        {"ports", nlohmann::json::array({"0/0"})}
+    };
+    nlohmann::json level1Addr = {
+        {"addr", "10.10.10.1"},
+        {"addr_type", "IPV4"},
+        {"plane_id", "cluster-a"},
+        {"ports", nlohmann::json::array()}
+    };
+
+    nlohmann::json level0 = {
+        {"net_layer", 0},
+        {"net_instance_id", "server0-l0"},
+        {"net_type", "TOPO_FILE_DESC"},
+        {"net_attr", ""},
+        {"rank_addr_list", nlohmann::json::array({level0Addr})}
+    };
+    nlohmann::json level1 = {
+        {"net_layer", 1},
+        {"net_instance_id", "server0"},
+        {"net_type", "CLOS"},
+        {"net_attr", ""},
+        {"rank_addr_list", nlohmann::json::array({level1Addr})}
+    };
+
+    if (missingRankAddrList) {
+        level0.erase("rank_addr_list");
+    }
+
+    nlohmann::json rank0 = {
+        {"rank_id", 0},
+        {"local_id", 0},
+        {"device_id", 0},
+        {"server_id", "server0"},
+        {"level_list", nlohmann::json::array({level0, level1})}
+    };
+    nlohmann::json rank1 = {
+        {"rank_id", 1},
+        {"local_id", 1},
+        {"device_id", 1},
+        {"server_id", "server0"},
+        {"level_list", nlohmann::json::array({level0, level1})}
+    };
+
+    if (missingLevelList) {
+        rank0.erase("level_list");
+    }
+
+    return {
+        {"status", "completed"},
+        {"version", "2.0"},
+        {"task_id", "oxc_task_ut_001"},
+        {"rank_count", invalidRankCount ? 3 : 2},
+        {"rank_list", nlohmann::json::array({rank0, rank1})}
+    };
+}
+} // namespace
+
+class HcclCommInitClusterInfoOxcTest : public BaseInit {
+public:
+    void SetUp() override
+    {
+        BaseInit::SetUp();
+        Ut_Device_Set(0);
+        // 让 parser 路径稳定落到 910B 语义上，避免设备类型差异影响第一阶段 UT 结论。
+        DevType deviceType = DevType::DEV_TYPE_910B;
+        MOCKER(hrtGetDeviceType).stubs().with(outBound(deviceType)).will(returnValue(HCCL_SUCCESS));
+    }
+
+    void TearDown() override
+    {
+        BaseInit::TearDown();
+        GlobalMockObject::verify();
+    }
+};
+
+TEST_F(HcclCommInitClusterInfoOxcTest, Ut_CfgGetClusterInfo_When_OxcRankTable2_0_Expect_ParseSuccess)
+{
+    HcclCommParams params;
+    RankTable_t rankTable;
+    nlohmann::json rankTableJson = BuildOxcRankTable();
+
+    HcclResult ret = CfgGetClusterInfo(rankTableJson.dump(), "0", params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(rankTable.version, std::string(OXC_CLUSTER_VERSION));
+    EXPECT_EQ(rankTable.taskId, std::string("oxc_task_ut_001"));
+    EXPECT_EQ(rankTable.rankNum, 2);
+    EXPECT_EQ(rankTable.deviceNum, 2);
+    ASSERT_EQ(rankTable.rankList.size(), 2);
+    EXPECT_EQ(params.rank, 0);
+    EXPECT_EQ(params.userRank, 0);
+    EXPECT_EQ(params.totalRanks, 2);
+    EXPECT_EQ(params.serverId, std::string("server0"));
+    // 校验 parser 确实把 OXC 层级信息保存到了第一阶段新增的承载结构中。
+    ASSERT_EQ(rankTable.rankList[0].levelList.size(), 2);
+    EXPECT_EQ(rankTable.rankList[0].levelList[0].netLayer, 0);
+    EXPECT_EQ(rankTable.rankList[0].levelList[0].rankAddrList[0].addrType, std::string("EID"));
+}
+
+TEST_F(HcclCommInitClusterInfoOxcTest, Ut_CfgGetClusterInfoWithoutDev_When_OxcRankTable2_0_Expect_ParseSuccess)
+{
+    HcclCommParams params;
+    RankTable_t rankTable;
+    nlohmann::json rankTableJson = BuildOxcRankTable();
+
+    HcclResult ret = CfgGetClusterInfoWithoutDev(rankTableJson.dump(), "0", params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(rankTable.version, std::string(OXC_CLUSTER_VERSION));
+    EXPECT_EQ(rankTable.taskId, std::string("oxc_task_ut_001"));
+    EXPECT_EQ(params.totalRanks, 2);
+}
+
+TEST_F(HcclCommInitClusterInfoOxcTest, Ut_CfgGetClusterInfo_When_RankCountMismatch_Expect_ReturnIsHCCL_E_PARA)
+{
+    HcclCommParams params;
+    RankTable_t rankTable;
+    nlohmann::json rankTableJson = BuildOxcRankTable(true, false, false);
+
+    HcclResult ret = CfgGetClusterInfo(rankTableJson.dump(), "0", params, rankTable);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+TEST_F(HcclCommInitClusterInfoOxcTest, Ut_CfgGetClusterInfo_When_LevelListMissing_Expect_ReturnIsNotSuccess)
+{
+    HcclCommParams params;
+    RankTable_t rankTable;
+    nlohmann::json rankTableJson = BuildOxcRankTable(false, true, false);
+
+    HcclResult ret = CfgGetClusterInfo(rankTableJson.dump(), "0", params, rankTable);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclCommInitClusterInfoOxcTest, Ut_CfgGetClusterInfo_When_RankAddrListMissing_Expect_ReturnIsNotSuccess)
+{
+    HcclCommParams params;
+    RankTable_t rankTable;
+    nlohmann::json rankTableJson = BuildOxcRankTable(false, false, true);
+
+    HcclResult ret = CfgGetClusterInfo(rankTableJson.dump(), "0", params, rankTable);
+    EXPECT_NE(ret, HCCL_SUCCESS);
+}
