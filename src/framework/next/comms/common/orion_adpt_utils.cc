@@ -79,6 +79,9 @@ HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProto
         case COMM_PROTOCOL_UB_MEM:
             linkProtocol = Hccl::LinkProtocol::UB_MEM;
             break;
+        case COMM_PROTOCOL_UBOE:
+            linkProtocol = Hccl::LinkProtocol::UBOE;
+            break;
         default:
             HCCL_ERROR("[%s] Invaild CommProtocol[%u]", __func__, commProtocol);
             return HCCL_E_PARA;

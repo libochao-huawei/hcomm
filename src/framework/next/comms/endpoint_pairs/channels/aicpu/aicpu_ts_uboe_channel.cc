@@ -93,36 +93,24 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     bool                devUsed  = true;  // aicpu 为 true
     Hccl::LinkProtocol  protocol;
     CHK_RET(CommProtocolToLinkProtocol(localEp_.protocol, protocol));
-    
-    Hccl::IpAddress     locAddr;
-    Hccl::IpAddress     rmtAddr;
+
     // TODO UBOE OK 本端EID去rmaManager里面查询，对端通过Socket交换
-    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locAddr));
-    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtAddr));
+    IpAddress locIpv4Addr;
+    IpAddress rmtIpv4Addr;
+    CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr));
+    CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtIpv4Addr));
+    HCCL_INFO("[AicpuTsUboeChannel][%s] LinkProtocol[%s], locIpv4Addr[%s], rmtIpv4Addr[%s]", 
+        __func__, protocol.Describe().c_str(), locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str());
+    RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locIpv4Addr, locAddr_);
+    HCCL_INFO("[RmaConnManager::%s] locAddr_[%s]", __func__, locAddr_.Describe().c_str());
 
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
     // TODO UBOE OK 新增AicpuTsUboeChannel，里面增加DevUboeConnection，不在此处增加分支
-    std::unique_ptr<Hccl::DevUbConnection> ubConn = nullptr;
-    switch (protocol) {
-        case Hccl::LinkProtocol::UB_TP:
-            EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbTpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
-                return HCCL_E_PTR
-            );
-            break;
-        case Hccl::LinkProtocol::UB_CTP:
-            EXECEPTION_CATCH(
-                ubConn = std::make_unique<Hccl::DevUbCtpConnection>(rdmaHandle_, locAddr, rmtAddr, opMode, devUsed),
-                return HCCL_E_PTR
-            );
-            break;
-        default:
-            HCCL_ERROR("%s No LinkProtocol to match", __func__);
-            break;
-    }
+    std::unique_ptr<Hccl::DevUbConnection> ubConn = 
+        std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle, locAddr_, rmtAddr_, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr);
     CHK_SMART_PTR_NULL(ubConn);
 
     commonRes_.connVec.clear();
@@ -236,7 +224,6 @@ HcclResult AicpuTsUboeChannel::Init()
 {
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
-    CHK_RET(BuildConnection());
     CHK_RET(BuildNotify());
     localRmaBuffers_.clear();
     commonRes_.bufferVec.clear();
@@ -299,6 +286,11 @@ bool AicpuTsUboeChannel::IsResReady()
 
 bool AicpuTsUboeChannel::IsConnsReady() //待修改
 {
+    if (BuildConnection() != HCCL_SUCCESS) {
+        HCCL_ERROR("[AicpuTsUboeChannel::%s] failed to build connections", __func__);
+        return false;
+    }
+
     for (u32 i = 0; i < connNum_; i++) {
         if (commonRes_.connVec[i]->GetStatus() != Hccl::RmaConnStatus::READY) {
             return false;
@@ -306,6 +298,11 @@ bool AicpuTsUboeChannel::IsConnsReady() //待修改
     }
     HCCL_INFO("[AicpuTsUboeChannel::%s] conns are ready.", __func__);
     return true;
+}
+
+void AicpuTsUboeChannel::EidPack(Hccl::BinaryStream &binaryStream)
+{
+    binaryStream << locAddr_.GetUniqueId();
 }
 
 void AicpuTsUboeChannel::NotifyVecPack(Hccl::BinaryStream &binaryStream)
@@ -373,6 +370,7 @@ void AicpuTsUboeChannel::SendDataSize()
     HCCL_INFO("notifyNum=%u, bufferNum=%u, connNum=%u", notifyNum_, bufferNum_, connNum_);
 
     Hccl::BinaryStream binaryStream;
+    EidPack(binaryStream);
     NotifyVecPack(binaryStream);
     BufferVecPack(binaryStream, commonRes_.bufferVec, localUserMemTag_);
     ConnVecPack(binaryStream);
@@ -411,9 +409,17 @@ bool AicpuTsUboeChannel::RecvDataProcess()
     HCCL_INFO("RecvDataProcess: size=%llu, recvDataSize=%u", recvData_.size(), recvDataSize_);
     Hccl::BinaryStream binaryStream(recvData_);
     // TODO UBOE OK 解析对端Eid，存到UboeChannel
+    RmtEidUnpackProc(binaryStream, rmtAddr_);
     RmtBufferVecUnpackProc(notifyNum_, binaryStream, rmtNotifyVec, UboeRmtBufType::NOTIFY);
     RmtBufferVecUnpackProc(bufferNum_, binaryStream, rmtBufferVec, UboeRmtBufType::BUFFER);
     return ConnVecUnpackProc(binaryStream);
+}
+
+void AicpuTsUboeChannel::RmtEidUnpackProc(Hccl::BinaryStream &binaryStream, Hccl::IpAddress& rmtAddr)
+{
+    Hccl::IpAddress rmtEidAddr(binaryStream);
+    rmtAddr = rmtEidAddr;
+    HCCL_INFO("[RmaConnManager::%s] rmtAddr[%s]", __func__, rmtAddr.Describe().c_str());
 }
 
 void AicpuTsUboeChannel::RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream, RemoteBufferVec &bufferVec,
