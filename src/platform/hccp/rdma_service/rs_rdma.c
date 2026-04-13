@@ -2053,7 +2053,7 @@ create_qp_err:
     return ret;
 }
 
-STATIC void RsQpRelease(struct RsQpCb *qpCb)
+void RsQpRelease(struct RsQpCb *qpCb)
 {
     struct RsMrCb *mrTmp2 = NULL;
     struct RsMrCb *mrTmp = NULL;
