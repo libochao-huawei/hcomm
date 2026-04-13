@@ -434,7 +434,6 @@ HcclResult HcclOneSideServiceAicpu::CleanStreamFunc()
     return HCCL_SUCCESS;
 }
 
-
 HcclResult HcclOneSideServiceAicpu::CleanAllStreamFunc()
 {
     HCCL_INFO("Entry HcclOneSideServiceAicpu::CleanAllStreamFunc");
