@@ -30,9 +30,11 @@
 #include "error_message_v2.h"
 #include "kfc.h"
 #include "aicpu_hdc.h"
+#include "aicpu_ts_roce_channel_lite.h"
 #include "hccl/hccl_types.h"
 
 using namespace hccl;
+
 class CollCommAicpu {
 public:
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
@@ -66,7 +68,7 @@ public:
 
 private:
     HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
-    HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
+    HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle, u32 channelType);
     HcclResult RegisterChannelAddDfxTaskInfo(ChannelHandle channel);
     HcclResult RegisterThreadAddDfxTaskInfo(ThreadHandle thread);
     void InitBackGroundThread();
@@ -85,6 +87,7 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::AicpuTsRoceChannelLite>> aicpuTsRoceChannelMap_;
 
     // N秒快恢相关
     hccl::NsRecoveryLitePtr nsRecoveryLitePtr_{nullptr};

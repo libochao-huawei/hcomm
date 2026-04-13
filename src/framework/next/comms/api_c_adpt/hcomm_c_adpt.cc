@@ -22,6 +22,8 @@
 #include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
+#include "aicpu_ts_roce_channel.h"
+#include "aicpu_ts_roce_channel.h"
 #include "mem_device_pub.h"
 #include "channel_param.h"
 #include "launch_aicpu.h"
@@ -575,4 +577,50 @@ HcommResult HcommDfxKernelLaunch(const std::string &commTag, aclrtBinHandle binH
     HCCL_INFO("[%s] channel kernel launch success.", __func__);
 
     return HCCL_SUCCESS;
+}
+
+HcommResult HcommChannelGetEntity(const ChannelHandle *channelList, uint32_t listNum, void **channelEntityList)
+{
+    CHK_PTR_NULL(channelList);
+    CHK_PTR_NULL(channelEntityList);
+ 
+    for (uint32_t i = 0; i < listNum; ++i) {
+        const ChannelHandle inHandle = channelList[i];
+        void *channel;
+        HcommResult hcommRet = HcommChannelGet(inHandle, &channel);
+        CHK_PRT_RET(hcommRet != HCOMM_SUCCESS,
+            HCCL_ERROR("%s HcommChannelGet failed, ret[%d]", __func__, hcommRet),
+            HCCL_E_NOT_FOUND);
+        AicpuTsRoceChannel* aicpuTsRoceChannel = static_cast<AicpuTsRoceChannel*>(channel);
+        ChannelEntity *channelEntity = static_cast<ChannelEntity*>(channelEntityList[i]);
+        // 初始化ABI头信息
+        channelEntity->abiHeader.version     = HCCL_CHANNEL_VERSION;
+        channelEntity->abiHeader.magicWord   = HCCL_CHANNEL_MAGIC_WORD;
+        channelEntity->abiHeader.size        = sizeof(ChannelEntity);
+        channelEntity->abiHeader.reserved    = 0;
+        channelEntity->engine = aicpuTsRoceChannel->GetCommEngine();
+        channelEntity->protocol = aicpuTsRoceChannel->GetCommProtocol();
+        // notify info
+        uint32_t tmpNotifyNum;
+        CHK_RET(aicpuTsRoceChannel->GetNotifyNum(&tmpNotifyNum));
+        channelEntity->localNotifyNum = tmpNotifyNum;
+        CHK_RET(aicpuTsRoceChannel->BuildAndGetLocNotifyInfo(&channelEntity->localNotifyAddr));
+        channelEntity->remoteNotifyNum = tmpNotifyNum;
+        CHK_RET(aicpuTsRoceChannel->BuildAndGetRmtNotifyInfo(&channelEntity->remoteNotifyAddr));
+        // buffer info
+        uint32_t tmpBufferNum;
+        CHK_RET(aicpuTsRoceChannel->GetBufferNum(&tmpBufferNum));
+        channelEntity->localBufferNum = tmpBufferNum;
+        CHK_RET(aicpuTsRoceChannel->BuildAndGetLocBufInfo(&channelEntity->localBufferAddr));
+        channelEntity->remoteBufferNum = tmpBufferNum;
+        CHK_RET(aicpuTsRoceChannel->BuildAndGetRmtBufInfo(&channelEntity->remoteBufferAddr));
+        // qp info
+        uint32_t tmpQpNum;
+        CHK_RET(aicpuTsRoceChannel->GetQpNum(&tmpQpNum));
+        channelEntity->sqNum = tmpQpNum;
+        CHK_RET(aicpuTsRoceChannel->BuildAndGetSqContext(&channelEntity->SqContextAddr));
+        channelEntity->cqNum = tmpQpNum;
+        CHK_RET(aicpuTsRoceChannel->BuildAndGetCqContext(&channelEntity->CqContextAddr));
+    }
+    return HCOMM_SUCCESS;
 }
