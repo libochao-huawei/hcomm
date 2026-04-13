@@ -95,14 +95,14 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     CHK_RET(CommProtocolToLinkProtocol(localEp_.protocol, protocol));
 
     // TODO UBOE OK 本端EID去rmaManager里面查询，对端通过Socket交换
-    IpAddress locIpv4Addr;
-    IpAddress rmtIpv4Addr;
+    Hccl::IpAddress locIpv4Addr;
+    Hccl::IpAddress rmtIpv4Addr;
     CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr));
     CHK_RET(CommAddrToIpAddress(remoteEp_.commAddr, rmtIpv4Addr));
     HCCL_INFO("[AicpuTsUboeChannel][%s] LinkProtocol[%s], locIpv4Addr[%s], rmtIpv4Addr[%s]", 
         __func__, protocol.Describe().c_str(), locIpv4Addr.Describe().c_str(), rmtIpv4Addr.Describe().c_str());
-    RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locIpv4Addr, locAddr_);
-    HCCL_INFO("[RmaConnManager::%s] locAddr_[%s]", __func__, locAddr_.Describe().c_str());
+    HCCL_INFO("[RmaConnManager::%s] locAddr_[%s], rmtAddr_[%s]", 
+        __func__, locAddr_.Describe().c_str(), rmtAddr_.Describe().c_str());
 
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -302,6 +302,9 @@ bool AicpuTsUboeChannel::IsConnsReady() //待修改
 
 void AicpuTsUboeChannel::EidPack(Hccl::BinaryStream &binaryStream)
 {
+    Hccl::IpAddress locIpv4Addr;
+    CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr);
+    RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locIpv4Addr, locAddr_);
     binaryStream << locAddr_.GetUniqueId();
 }
 
