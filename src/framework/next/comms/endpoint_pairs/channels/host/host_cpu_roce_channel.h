@@ -49,6 +49,9 @@ public:
     HcclResult ChannelFence();
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
+    virtual HcclResult Clean() override;
+    virtual HcclResult Resume() override;
+
 private:
     HcclResult ParseInputParam();
     HcclResult StartListen();
@@ -112,6 +115,8 @@ private:
     uint32_t wqeNum_{0};
     std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     bool fenceFlag_{false};
+
+    uint64_t maxMsgSize_{0};
 
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;

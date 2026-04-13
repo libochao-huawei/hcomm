@@ -1038,6 +1038,7 @@ HcclResult HcclCommAicpu::SetTransportMachinePara(MachinePara &machinePara, u32 
     machinePara.localDeviceId = topoInfo_.devicePhyId;
     machinePara.deviceType = topoInfo_.deviceType;
     machinePara.tag = newTag;
+    machinePara.isAicpuModeEn = true;
     if (linkType == TransportLinkType::RESERVED) {
         // 非910_93 2die sio与hccs并发场景，specifyLink设置为RESERVED_LINK_TYPE，平台层将按实际链路类型建链
         machinePara.specifyLink = LinkTypeInServer::RESERVED_LINK_TYPE;
@@ -1050,10 +1051,11 @@ HcclResult HcclCommAicpu::SetTransportMachinePara(MachinePara &machinePara, u32 
     }
 
     HCCL_INFO("%s success, group[%s], rankId[%u], linkAttribute[%x], localUserRank[%u], remoteWorldRank[%u], "
-        "remoteUserrank[%u], deviceLogicId[%d], localDeviceId[%d], deviceType[%d], newTag[%s], specifyLink[%d]",
+        "remoteUserrank[%u], deviceLogicId[%d], localDeviceId[%d], deviceType[%d], newTag[%s], specifyLink[%d], "
+        "isAicpuModeEn[%d]",
         __func__, identifier_.c_str(), rankId, machinePara.linkAttribute, machinePara.localUserrank,
         machinePara.remoteWorldRank, machinePara.remoteUserrank, machinePara.deviceLogicId, machinePara.localDeviceId,
-        machinePara.deviceType, machinePara.tag.c_str(), machinePara.specifyLink);
+        machinePara.deviceType, machinePara.tag.c_str(), machinePara.specifyLink, machinePara.isAicpuModeEn);
     return HCCL_SUCCESS;
 }
 
@@ -3417,7 +3419,7 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
     // 打印当前展开的算子信息
     HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] opUnfoldIdx_[%u] opType[%d] curRank[%u] rankSize[%u] algName[%s]",
         opUnfoldIdx_, param.opType, topoInfo_.userRank, GetRankSize(), algName.c_str());
-    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%u] outputPtr[0x%016llx] outputSize[%u]",
+    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%llu] outputPtr[0x%016llx] outputSize[%llu]",
         param.inputPtr, param.inputSize, param.outputPtr, param.outputSize);
     opUnfoldIdx_ += 1;
 

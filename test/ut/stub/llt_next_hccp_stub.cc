@@ -127,4 +127,14 @@ HcclResult HrtRaGetTlsStatus(struct RaInfo *info, TlsStatus &tlsStatus)
     tlsStatus = TlsStatus::DISABLE;
     return HCCL_SUCCESS;
 }
+
+void HrtRaCustomChannel(const HRaInfo &raInfo, void *customIn, void *customOut)
+{
+    return;
+}
+
+void HrtDeviceAbortRegCallBack(aclrtDeviceTaskAbortCallback callback, void *args, const std::string& name)
+{
+    return;
+}
 } // namespace Hccl

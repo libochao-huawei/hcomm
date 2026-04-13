@@ -3196,6 +3196,7 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
+        CHK_RET(HcclCommDestroyV2(commV2)); // 临时处理，dpustream的销毁要在其他资源销毁前完成。待新方案CpuThread上库后，原dpuStream删除可以恢复顺序
         string group = hcclComm->GetIdentifier();
         HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
         std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
@@ -3206,7 +3207,6 @@ HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
             HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
             return HCCL_E_PARA;
         }
-        CHK_RET(HcclCommDestroyV2(commV2));
         return HCCL_SUCCESS;
     }());
 #endif
@@ -3297,6 +3297,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
             // 先拷贝orion通信域地址，避免coll comm销毁后无法获取
             HcclComm commV2 = hcclComm->GetCommunicatorV2();
+            CHK_RET(HcclCommDestroyV2(commV2)); // 临时处理，dpustream的销毁要在其他资源销毁前完成。待新方案CpuThread上库后，原dpuStream删除可以恢复顺序
             string group = hcclComm->GetIdentifier();
             HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
             std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
@@ -3307,7 +3308,6 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
                 return HCCL_E_PARA;
             }
-            CHK_RET(HcclCommDestroyV2(commV2));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -3690,7 +3690,9 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
                           tag.c_str());
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_ALLTOALL, beginTime, sendCount, sendType,
         tag));
-
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -3822,7 +3824,9 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
         sendCount += *(static_cast<const u64 *>(sendCounts) + i);
     }
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_ALLTOALLV, beginTime, sendCount, sendType, tag));
-
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -3952,6 +3956,9 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     }
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_ALLTOALLVC, beginTime, sendCount, sendType,
         tag));
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -4069,6 +4076,9 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
                               tag.c_str());
 
     CHK_RET(CallMsprofReportHostApi(hcclComm, HcclCMDType::HCCL_CMD_REDUCE, beginTime, count, dataType, tag));
+    if (!isCapture) {
+        HcclResetIfProfile();
+    }
     ProfilingManagerPub::DeleteThreadCaptureStatus(threadID);
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -4879,6 +4889,9 @@ HcclResult HcclCommResume(HcclComm comm)
         HcclComm commV2 = hcclComm->GetCommunicatorV2();
         CHK_PTR_NULL(commV2);
         CHK_RET(HcclCommResumeV2(commV2));
+
+        CHK_RET(hcclComm->Resume());
+
         return HCCL_SUCCESS;
     }());
 #endif

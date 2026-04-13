@@ -143,11 +143,17 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
 {
     HCCL_DEBUG("[InsV2AllGatherSoleExecutor][Orchestrate] Orchestrate AICPU Start");
     CHK_RET(Init(op, params, insQue));
+    dataType_ = op.dataType;
+    
     CHK_RET(InitCommInfo(topoInfo));
 
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
-
+    algTemplate->SetDataType(dataType_);
+    std::map<u32, u32>rank2PathNumMap;
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);
+ 
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(linkMgr, algTemplate, tempResReq));
 
@@ -238,6 +244,11 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2AllGatherSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);  
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
 
@@ -264,6 +275,11 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffl
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2AllGatherSoleExecutor] CalcResOffload SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);  
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
     resReq.requiredScratchMemSize = UB_MAX_DATA_SIZE;

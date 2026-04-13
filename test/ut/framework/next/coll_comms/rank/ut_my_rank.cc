@@ -259,19 +259,21 @@ TEST_F(MyRankTest, ut_SetMemHandles_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
     MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
     myRank.commMems_ = std::make_unique<CommMems>((uint64_t)0x100);
 
-    auto handle1 = std::make_unique<CommMemHandle>();
-    std::vector<CommMemHandle*> mems{};
-    mems.push_back(handle1.get());
+    CommMemInfo memInfo = CommMemInfo{};
+    std::vector<CommMemInfo*> mems{};
+    mems.push_back(&memInfo);
     void **memHandles = reinterpret_cast<void**>(mems.data());
     std::vector<MemHandle> memHandleVec{};
     memHandleVec.emplace_back((void*)0x100);
     memHandleVec.emplace_back((void*)0x101);
 
-    std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
-    HcclResult ret = myRank.commMems_->SetMemHandles(memHandles, memHandleVec, commMemHandles);
+    std::vector<MemHandle> commMemHandleVec{};
+    HcclResult ret = myRank.commMems_->SetMemHandles(memHandles, memHandleVec, commMemHandleVec);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    CommMemHandle** handles = reinterpret_cast<CommMemHandle**>(memHandles);
+    CommMemInfo** handles = reinterpret_cast<CommMemInfo**>(memHandles);
     EXPECT_EQ(handles[0]->bufferHandle, (void*)0x101);
-    EXPECT_EQ(commMemHandles[0]->bufferHandle, (void*)0x100);
-    EXPECT_EQ(commMemHandles[1]->bufferHandle, (void*)0x101);
+    auto memInfo0 = static_cast<CommMemInfo*>(commMemHandleVec[0]);
+    auto memInfo1 = static_cast<CommMemInfo*>(commMemHandleVec[1]);
+    EXPECT_EQ(memInfo0->bufferHandle, (void*)0x100);
+    EXPECT_EQ(memInfo1->bufferHandle, (void*)0x101);
 }

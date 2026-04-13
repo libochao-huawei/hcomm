@@ -97,7 +97,6 @@ typedef enum {
     HCCL_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
     HCCL_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
     HCCL_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
-    HCCL_DATA_TYPE_MXFP8 = 18,    /**< mxfp8 */
     HCCL_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcclDataType;
 
@@ -219,6 +218,14 @@ typedef enum {
     HCCL_CMD_BARRIER,
     HCCL_CMD_MAX
 } HcclCMDType;
+
+typedef enum {
+    HCCL_COMM_STATUS_READY = 0,
+    HCCL_COMM_STATUS_SUSPENDING = 1,
+    HCCL_COMM_STATUS_INVALID = 254,
+    HCCL_COMM_STATUS_RESERVED = 255
+} HcclCommStatus;
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

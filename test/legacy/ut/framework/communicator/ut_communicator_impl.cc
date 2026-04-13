@@ -77,6 +77,8 @@
 #include "ranktable_stub_clos.h"
 #include "dev_buffer.h"
 #include "rma_buffer.h"
+#include "topo_addr_info.h"
+#include "hal.h"
 #undef private
 #undef protected
 
@@ -3479,4 +3481,52 @@ TEST_F(CommunicatorImplTest, Ut_CheckRankGraphAddrs_When_GetDevEidList_Not_Enoug
     EXPECT_NE(comm.rankGraph, nullptr);
 
     EXPECT_THROW(comm.CheckRankGraphAddrs(), InvalidParamsException);
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetTopoFilePath)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    unsigned int mainBoardId = 0x3;
+    char topoFileName[32] = "atlas_950_1.json";
+    char drv_path[256] = "/usr/local/Ascend2";
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainBoardId)).will(returnValue(0));
+    MOCKER(realpath).stubs().with(any(), any()).will(returnValue(&topoFileName[0]));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+
+    std::string topoFilePath = comm.GetTopoFilePath();
+    EXPECT_NE(topoFilePath.find(topoFileName), std::string::npos);
+}
+
+TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_DpuStream_Uninit_Failed)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    comm.isDpuKernelLaunched = true;
+    MOCKER(aclrtSetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().with(any()).will(returnValue(ACL_ERROR_INVALID_PARAM));
+    MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+
+    HcclResult ret = comm.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
+}
+
+TEST_F(CommunicatorImplTest, Ut_When_DestroyDpuKernelResource_Expect_ResetDpuDevice_Failed)
+{
+    CommunicatorImpl comm;
+    comm.devPhyId = 0;
+    comm.isDpuKernelLaunched = true;
+    MOCKER(aclrtGetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtSetCurrentContext).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtDestroyStreamForce).stubs().with(any()).will(returnValue(ACL_SUCCESS));
+    MOCKER(HrtSetXpuDevice).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtResetXpuDevice).stubs().with(any()).will(returnValue(HCCL_E_RUNTIME));
+    MOCKER_CPP(&CommunicatorImpl::WaitDpuKernelThreadTerminate).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::CreateWorkspaceBuf).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::PrepareDpuKernelResource).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommunicatorImpl::LaunchDpuKernel).stubs().will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = comm.InitAndLaunchDpuKernel();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = comm.DestroyDpuKernelResource();
+    EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }

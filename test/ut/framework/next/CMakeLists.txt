@@ -15,6 +15,7 @@ set(src_to_test_list
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
+    comms/ccu/ut_CcuTransport_API_test.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
@@ -38,6 +39,19 @@ set(src_to_test_list
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
+    comms/endpoints/reged_mems/ut_roce_mem_test.cc
+    # Ns recovery相关测试用例
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
+    comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
+    comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
+    comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
+    comms/ccu/ccu_device/ccu_comp/ut_ccu_comp_pub.cc
+    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_func_lite.cc
+    coll_comms/communicator/ns_recovery/aicpu/ut_ns_recovery_lite.cc
+    coll_comms/rank_pairs/ut_rank_pair.cc
+    coll_comms/communicator/ns_recovery/ut_hccl_task_abort_handler.cc
+    coll_comms/communicator/aicpu/ut_coll_comm_aicpu.cc
+    coll_comms/communicator/ns_recovery/ut_ns_recovery.cc
 )
 
 add_executable(hccl_utest_test_next_resource ${src_to_test_list})

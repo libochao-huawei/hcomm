@@ -44,6 +44,7 @@ set(EXCLUDE_FREAMEWORK_DEVICE_REGEX
     "${HCCL_CODE_ROOT}/src/framework/communicator/impl/hccl_communicator_device.cc"
     "${HCCL_CODE_ROOT}/src/framework/common/src/config/env_config_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/framework/communicator/hccl_comm_device.cc"
+    "${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt/dev/dev_coll_comm_c_adpt.cc"
     "${HCCL_CODE_ROOT}/src/framework/device/framework/zero_copy_address_mgr.cc"
     "${HCCL_CODE_ROOT}/src/framework/common/src/launch_aicpu.cc"
     "${HCCL_CODE_ROOT}/src/framework/op_base/src/op_base_device.cc"
@@ -72,7 +73,6 @@ set(EXCLUDE_PLATFORM_DEVICE_REGEX
 list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
 list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/legacy/.*")
-list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/typical/.*")
 
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/coll_comms/rank_graphs/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/engine_ctxs/.*")

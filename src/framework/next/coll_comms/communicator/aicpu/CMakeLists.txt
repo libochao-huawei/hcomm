@@ -12,10 +12,14 @@ set(src_list
     aicpu_indop_process.cc
     coll_comm_aicpu_mgr.cc
     coll_comm_aicpu.cc
+    hccl_aicpu_hdc_handler.cc
     coll_comm_aicpu_destroy_func.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+    target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/framework/next/coll_comms/communicator/ns_recovery/aicpu
+    )
     target_sources(ccl_kernel PRIVATE
         ${src_list}
     )

@@ -145,9 +145,10 @@ protected:
         .with(any())
         .will(invoke(hrtRaGetInterfaceVersionStub));
 
+        void* ptr = (void*)0xabcd;
         MOCKER(hrtRaPingInit)
         .stubs()
-        .with(any())
+        .with(any(), any(), outBoundP(&ptr, sizeof(ptr)))
         .will(returnValue(HCCL_SUCCESS));
 
         MOCKER(hrtRaPingDeinit)
@@ -270,6 +271,42 @@ TEST_F(PingMesh_UT, ut_PingMeshInit)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+HcclResult stub_hrtRaGetDevEidInfoList(RaInfo info, struct HccpDevEidInfo *eid_info, unsigned int* num)
+{
+    memset(eid_info->eid.raw, 0, sizeof(eid_info->eid.raw));
+    *num = 1;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(PingMesh_UT, ut_PingMeshInit_950)
+{
+    const char *fakeA5SocName = "Ascend950PR_958b";
+    MOCKER(aclrtGetSocName).stubs().will(returnValue(fakeA5SocName));
+    u32 num = 1;
+    MOCKER(hrtRaGetDevEidInfoNum).stubs().with(any(), outBoundP(&num, sizeof(&num)))
+        .will(returnValue(HCCL_E_NOT_SUPPORT))
+        .then(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaGetSecRandom).stubs().with(any(), outBoundP(&num, sizeof(&num))).will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtRaGetDevEidInfoList).stubs().will(invoke(stub_hrtRaGetDevEidInfoList));
+    u32 deviceId = 1;
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 port = 13866;
+    u32 nodeNum = 10;
+    u32 bufferSize = 100U;
+    u32 sl = 0;
+    u32 tc = 0;
+
+    // 初始化成功
+    std::shared_ptr<PingMesh> pingMesh;
+    pingMesh.reset(new (std::nothrow) PingMesh());
+    auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+
+    ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

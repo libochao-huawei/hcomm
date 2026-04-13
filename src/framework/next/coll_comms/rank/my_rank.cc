@@ -57,6 +57,7 @@ MyRank::~MyRank()
     endpointMgr_ = nullptr; // 内部会销毁endpoint，可能需要返回ccu资源
     ccuResContainer_ = nullptr;  // 内部清理CCU资源，关闭CCU通道
     commMems_ = nullptr;
+    nsRecoveryProcessor_ = nullptr;
 }
 
 HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
@@ -76,6 +77,9 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
 {
     // EXCEPTION_HANDLE_BEGIN
+     // ns recovery processor初始化
+    EXECEPTION_CATCH(nsRecoveryProcessor_ = std::make_unique<NsRecoveryProcessor>(), return HCCL_E_PTR);
+    
     // 创建通信内存管理器
     EXECEPTION_CATCH(commMems_ = std::make_unique<CommMems>(config_.GetConfigBufferSize()), return HCCL_E_PTR);
 
@@ -99,6 +103,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     // rankPairMgr_初始化
     EXECEPTION_CATCH(rankPairMgr_ = std::make_unique<RankPairMgr>(), return HCCL_E_PTR);
+
     // EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
@@ -282,10 +287,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         hcommDescs[i].memHandles = memHandleVec.data();
         hcommDescs[i].memHandleNum = memHandleVec.size();
 
-        std::vector<std::unique_ptr<CommMemHandle>> commMemHandles{};
+        std::vector<MemHandle> commMemHandleVec{};
         if (engine != COMM_ENGINE_CPU) {
-            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandles));
-            hcommDescs[i].memHandles = reinterpret_cast<void**>(commMemHandles.data());
+            CHK_RET(commMems_->SetMemHandles(channelDescs[i].memHandles, memHandleVec, commMemHandleVec));
+            hcommDescs[i].memHandles = commMemHandleVec.data();
         }
 
         hcomm::EndpointPair* endpointPair = nullptr;
@@ -312,6 +317,11 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
+        if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
+            Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
+            CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
+                HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
+        }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),
@@ -423,6 +433,10 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
 
         CHK_RET(ChannelProcess::ChannelKernelLaunchForComm(channelHandles, hostChannelHandleList, 
             channelNum, commTag, binHandle_));
+
+        // ns recovery
+        nsRecoveryProcessor_->AddNsRecoveryData(engine, channelHandles, hostChannelHandleList, channelNum, commTag);
+
         return HCCL_SUCCESS;
     }
 
@@ -482,4 +496,91 @@ HcclResult MyRank::ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMe
     }
     return HCCL_SUCCESS;
 }
+
+std::vector<ChannelHandle> MyRank::GetAllChannelList()
+{
+    ChannelTable channelTable = rankPairMgr_->GetChannelTable();
+    std::vector<ChannelHandle> channelList;
+    for (const auto& rankPair : channelTable) {
+        for (const auto& endPointPair : rankPair.second) {
+            for (const auto& comEngines : endPointPair.second) {
+                channelList.insert(channelList.end(), comEngines.second.begin(), comEngines.second.end());
+            }
+        }
+    }
+
+    return channelList;
+}
+
+void MyRank::SetKfcControlTransfer(std::shared_ptr<HDCommunicate> kfcControlTransferH2D, 
+        std::shared_ptr<HDCommunicate> kfcStatusTransferD2H)
+{
+    if (nsRecoveryProcessor_ == nullptr) {
+        HCCL_ERROR("[MyRank][SetKfcControlTransfer] nsRecoveryProcessor_ is null, cannot set KFC control transfer.");
+        return;
+    }
+    nsRecoveryProcessor_->SetKfcControlTransfer(kfcControlTransferH2D, kfcStatusTransferD2H);
+}
+
+HcclResult MyRank::StopLaunch()
+{
+    HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch start!");
+    auto ret = nsRecoveryProcessor_->StopLaunch();
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][StopLaunch] MyRank::StopLaunch failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
+    }
+    HCCL_INFO("[NsRecovery][StopLaunch] MyRank::StopLaunch success!");
+    return ret;
+}
+
+HcclResult MyRank::Clean()
+{
+    HCCL_INFO("[NsRecovery][Clean] MyRank::Clean start!");
+    auto channelList = GetAllChannelList();
+    if (channelList.empty()) {
+        HCCL_INFO("[NsRecovery][Clean] Channel list empty, No need to clean!");
+        return HcclResult::HCCL_SUCCESS;
+    }
+    auto ret = ChannelProcess::ChannelClean(channelList.data(), channelList.size());
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+
+    ret = nsRecoveryProcessor_->Clean();
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Clean] MyRank::Clean failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+
+    HCCL_INFO("[NsRecovery][Clean] MyRank::Clean success!");
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult MyRank::Resume()
+{
+    HCCL_INFO("[NsRecovery][Resume] MyRank::Resume start!");
+    auto channelList = GetAllChannelList();
+    if (channelList.empty()) {
+        HCCL_INFO("[NsRecovery][Resume] Resume list empty, No need to resume!");
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    auto ret = ChannelProcess::ChannelResume(channelList.data(), channelList.size());
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+
+    ret = nsRecoveryProcessor_->Resume(binHandle_);
+    if (ret != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[NsRecovery][Resume] MyRank::Resume failed, ret = 0x%016llx", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+
+    HCCL_INFO("[NsRecovery][Resume] MyRank::Resume success!");
+    return HCCL_SUCCESS;
+}
+
 } // namespace hccl
+

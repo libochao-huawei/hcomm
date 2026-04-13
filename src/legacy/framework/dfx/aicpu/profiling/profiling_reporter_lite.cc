@@ -10,21 +10,21 @@
  #include "profiling_reporter_lite.h"
  
 namespace Hccl {
-ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManager    *mirrorTaskMgr,
+ProfilingReporterLite::ProfilingReporterLite(MirrorTaskManagerLite *mirrorTaskMgrLite,
                                              ProfilingHandlerLite *profilingHandlerLite, bool isIndop)
 {
-    if (UNLIKELY(mirrorTaskMgr == nullptr || profilingHandlerLite == nullptr)) {
+    if (UNLIKELY(mirrorTaskMgrLite == nullptr || profilingHandlerLite == nullptr)) {
         THROW<InternalException>("[ProfilingHandler] ProfilingReporterLite is nullptr.");
     }
-    mirrorTaskMgr_        = mirrorTaskMgr;
+    mirrorTaskMgrLite_        = mirrorTaskMgrLite;
     profilingHandlerLite_ = profilingHandlerLite;
     if (isIndop == false) {
-        mirrorTaskMgr_->RegFullyCallBack([this]() {
+        mirrorTaskMgrLite_->RegFullyCallBack([this]() {
             ReportAllTasks();
         });
         return;
     }
-    mirrorTaskMgr_->RegFullyCallBack([this]() {
+    mirrorTaskMgrLite_->RegFullyCallBack([this]() {
         ReportAllTasks();
     });
 }
@@ -50,10 +50,11 @@ void ProfilingReporterLite::Init() const
 void ProfilingReporterLite::ReportAllTasks()
 {
     std::vector<TaskInfo> taskInfo;
-    for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
+    for (auto it = mirrorTaskMgrLite_->Begin(); it != mirrorTaskMgrLite_->End(); ++it) {
         u32                               streamId  = it->first;
-        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
-        if (currQueue == nullptr || currQueue->Begin() == nullptr || (*(*(currQueue->Begin()))) == nullptr) {
+        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second.get();
+        if (currQueue == nullptr || currQueue->Begin() == nullptr || (*(*(currQueue->Begin()))) == nullptr
+            || currQueue->Tail() == nullptr || (*(*(currQueue->Tail()))) == nullptr) {
             HCCL_WARNING("[ProfilingReporterLite][ReportAllTasks] currQueue is nullptr, continue to next task.");
             continue;
         }
@@ -62,9 +63,6 @@ void ProfilingReporterLite::ReportAllTasks()
             TaskInfo task = (*(*(*currQueue->Begin())));
             taskInfo.push_back(task);
             lastPoses_[streamId] = currQueue->Begin();
-        }
-        if (currQueue->Tail() == nullptr) {
-            continue;
         }
         auto endPos = currQueue->Tail();
         auto iter = lastPoses_[streamId];

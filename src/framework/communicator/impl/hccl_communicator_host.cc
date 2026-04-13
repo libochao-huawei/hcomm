@@ -4303,9 +4303,12 @@ namespace hccl
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
         if (opParam.isCapture) {
-            newTag += "_Capture" + std::to_string(captureCnt_);
-            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            captureCnt_++;
+            // aclgraph使用新的Tag，避免影响其他操作
+            newTag += "_Capture";
+            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
+            if (isInGraphCaptureZeroCopy) {
+                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            }
         }
 
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && userRankSize_ > 1) {
@@ -4315,6 +4318,25 @@ namespace hccl
             NslbDp_CollectOperTable(opType, opParam, algOperator->GetAlgType(), algName);
         }
 
+        // 资源创建
+        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
+            auto resTmp = resMap_[newTag];
+            ++captureCnt_;
+            newTag += std::to_string(captureCnt_);
+            resMap_[newTag] = resTmp;
+            AlgResourceRequest resRequest;
+            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
+            if (IsEnableBackupLink()) {
+                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+            }
+            // 记录指令信息用于一致性校验
+            CHK_RET(RecordOpPara(opType, opParam));
+            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+            // 移除tag对应的指令信息
+            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+        }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
         // aiv算法不需要申请host和device侧的从流
@@ -4615,9 +4637,12 @@ namespace hccl
         CHK_RET(PrepareZeroCopy(algName, algDesc, opParam));
 
         if (opParam.isCapture) {
-            newTag += "_Capture" + std::to_string(captureCnt_);
-            CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
-            captureCnt_++;
+            // aclgraph使用新的Tag，避免影响其他操作
+            newTag += "_Capture";
+            // aclgraph零拷贝场景下，每个算子都有单独的tag，需要记录，在graph销毁时清理相关资源
+            if (isInGraphCaptureZeroCopy) {
+                CHK_RET(AclgraphCallback::GetInstance().InsertNewTagToCaptureResMap(this, newTag, opParam));
+            }
         }
 
         auto isSupportAlg = [](const std::string &algName, bool aicpuUnfoldMode) -> bool {
@@ -4630,6 +4655,24 @@ namespace hccl
         }
         // 资源创建
         bool selectAivAlg = algDesc.isAivMode;
+        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture) {
+            auto resTmp = resMap_[newTag];
+            ++captureCnt_;
+            newTag += std::to_string(captureCnt_);
+            resMap_[newTag] = resTmp;
+            AlgResourceRequest resRequest;
+            CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
+            resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
+            CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponse));
+            if (IsEnableBackupLink()) {
+                CHK_RET(CleanTransportLinks(resRequest.opTransport, resMap_[newTag].opTransportResponseBackUp));
+            }
+            // 记录指令信息用于一致性校验
+            CHK_RET(RecordOpPara(opType, opParam));
+            CHK_RET(IncreAllocLink(newTag, opParam, resRequest, resMap_[newTag]));
+            // 移除tag对应的指令信息
+            CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+        }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool aicpuUnfoldModeFor910B =
             deviceType_ == DevType::DEV_TYPE_910B && opParam.aicpuUnfoldMode && algName == "RunAlltoAllVStaged";
@@ -4714,7 +4757,7 @@ namespace hccl
                 aivOffloadTag_ = 1;
             }
             GetAivTag(algDesc.aivTagNum, opParam.isCapture, opParam.aivTag);
-            HCCL_INFO("[HcclCommunicator][ExecOpAlltoAll] tag[%s] userRank[%u] cur aiv tag [%d]",
+            HCCL_INFO("[HcclCommunicator][ExecOpAlltoAll] tag[%s] userRank[%u] cur aiv tag [%d].",
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
@@ -5946,10 +5989,7 @@ namespace hccl
         CHK_RET(hrtGetDeviceSatMode(&floatOverflowMode));
         opResPara_.config.floatOverflowMode = floatOverflowMode;
         opResPara_.config.taskMonitorInterval = GetExternalInputDfsTaskMonitorInterval();
-        bool isSupportAtomicWrite = false;
-        if (userRankSize_ > 1) {
-            CHK_RET(IsSupportAtomicWrite(deviceType_, devicePhyId_, isSupportAtomicWrite));
-        }
+        bool isSupportAtomicWrite = false; // 涉及到任务编排，当前不能只判断本机驱动版本是否支持
         opResPara_.config.isSupportAtomicWrite = static_cast<u8>(isSupportAtomicWrite);
         opResPara_.config.notifyWaitTime =
             (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
@@ -7085,6 +7125,36 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::AicpuInitOpTilingDataAicpuCache(const OpParam &opParam, const HcclCMDType &opType, struct OpTilingData *opTilingData)
+    {
+        opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
+        // 开启aicpu cache, 且原来是图模式建链但强制走单算子模式展开
+        // 开启aicpu cache，isCapture为true，且是图模式，证明选择了aclgraph零拷贝算法，需要强制刷新cache
+        if (opParam.aicpuCacheEnable != 0 &&
+            GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
+            ((IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy) || opParam.isCapture)) {
+            // 环境变量传入的aicpuCacheEnable一定 < 10
+            constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
+            CHK_PRT_RET(opParam.aicpuCacheEnable >= FORCE_OP_BASE_DELTA,
+                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable >= %u",
+                    opParam.aicpuCacheEnable, FORCE_OP_BASE_DELTA),
+                HCCL_E_INTERNAL);
+
+            // 1 -> 11: 开启aicpu cache且存在强制单算子模式转换
+            opTilingData->aicpuCacheEnable += FORCE_OP_BASE_DELTA;
+            HCCL_WARNING("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable[%u]"\
+                "opTilingData->aicpuCacheEnable[%u]", opParam.aicpuCacheEnable, opTilingData->aicpuCacheEnable);
+            
+            // 注意: 开启aicpu cache且存在强制单算子模式转换, 传入device的aicpuCacheEnable一定 > 10
+            CHK_PRT_RET(opTilingData->aicpuCacheEnable <= FORCE_OP_BASE_DELTA,
+                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opTilingData->aicpuCacheEnable[%u] <= %u",
+                    opTilingData->aicpuCacheEnable, FORCE_OP_BASE_DELTA),
+                HCCL_E_INTERNAL);
+        }
+
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType,
                                                           const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize)
     {
@@ -7128,29 +7198,7 @@ namespace hccl
         // 有没有存在对应的Notify
         CHK_RET(InitAndCheckAicpuOrderNotify(opTilingData->orderLaunchMode));
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));
-        opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
-        // 开启aicpu cache, 且原来是图模式建链但强制走单算子模式展开
-        if (opParam.aicpuCacheEnable != 0 &&
-            GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
-            (IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy)) {
-            // 环境变量传入的aicpuCacheEnable一定 < 10
-            constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
-            CHK_PRT_RET(opParam.aicpuCacheEnable >= FORCE_OP_BASE_DELTA,
-                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable >= %u",
-                    opParam.aicpuCacheEnable, FORCE_OP_BASE_DELTA),
-                HCCL_E_INTERNAL);
-
-            // 1 -> 11: 开启aicpu cache且存在强制单算子模式转换
-            opTilingData->aicpuCacheEnable += FORCE_OP_BASE_DELTA;
-            HCCL_WARNING("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable[%u]"\
-                "opTilingData->aicpuCacheEnable[%u]", opParam.aicpuCacheEnable, opTilingData->aicpuCacheEnable);
-            
-            // 注意: 开启aicpu cache且存在强制单算子模式转换, 传入device的aicpuCacheEnable一定 > 10
-            CHK_PRT_RET(opTilingData->aicpuCacheEnable <= FORCE_OP_BASE_DELTA,
-                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opTilingData->aicpuCacheEnable[%u] <= %u",
-                    opTilingData->aicpuCacheEnable, FORCE_OP_BASE_DELTA),
-                HCCL_E_INTERNAL);
-        }
+        CHK_RET(AicpuInitOpTilingDataAicpuCache(opParam, opType, opTilingData));
 
         // 填充动态内容
         HostMem dynamicDataMem = opTilingDataBuf_.range(sizeof(struct OpTilingData), dynamicDataSize);

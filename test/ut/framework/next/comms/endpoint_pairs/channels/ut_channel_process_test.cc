@@ -143,3 +143,33 @@ TEST_F(TestChannelProcess, Ut_TestChannelGetUserRemoteMem_When_MemNumNullptr_Ret
     HcclResult ret = hcomm::ChannelProcess::ChannelGetUserRemoteMem(0, &remoteMem, &memTag, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
+
+TEST_F(TestChannelProcess, Ut_ChannelClean_NullList_Returns_E_PARA) {
+    // Passing null pointer should return parameter error
+    auto ret = hcomm::ChannelProcess::ChannelClean(nullptr, 1);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelResumeConcurrency_ZeroChannels_Returns_SUCCESS) {
+    // Zero channel count should be a no-op and return success
+    ChannelHandle dummyList[1] = {0};
+    auto ret = hcomm::ChannelProcess::ChannelResumeConcurrency(dummyList, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelResume_When_ResumeConcurrencyFails_ReturnsError) {
+    ChannelHandle list[1] = { (ChannelHandle)0x1 };
+    // Mock ChannelResumeConcurrency to return internal error
+    MOCKER_CPP(&hcomm::ChannelProcess::ChannelResumeConcurrency, HcclResult(const ChannelHandle*, uint32_t))
+        .stubs()
+        .with(any(), any())
+        .will(returnValue(HCCL_E_INTERNAL));
+
+    auto ret = hcomm::ChannelProcess::ChannelResume(list, 1);
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(TestChannelProcess, Ut_ChannelResume_NullList_Returns_E_PARA) {
+    auto ret = hcomm::ChannelProcess::ChannelResume(nullptr, 1);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}

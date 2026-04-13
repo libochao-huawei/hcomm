@@ -108,14 +108,8 @@ void CcuContextScatterMesh1D::Algorithm()
     InitResource();
     LoadArgs();
     PreSync();
-    CcuRep::Variable repeatNumAdd = CreateVariable();
-    repeatNumAdd  = 1;
     if (rankId_ == rootId_) {
-        CCU_WHILE(repeatNumVar_ != UINT64_MAX) { // 循环repeatNum_次
-            RunSendScatter();
-            repeatNumVar_ += repeatNumAdd;
-            flag_ = 1;
-        }
+        RunSendScatter();
     } else {
         HCCL_INFO("[CcuContextScatterMesh1D] RunRecvScatter local rank[%u], root rank[%u], do nothing", rankId_, rootId_);
     }
@@ -163,26 +157,32 @@ void CcuContextScatterMesh1D::RunSendScatter()
         }
         dst[curId].addr = output_[curId];
     }
-    CCU_IF(flag_ != 0) {
+    CcuRep::Variable repeatNumAdd = CreateVariable();
+    repeatNumAdd  = 1;
+    CCU_WHILE(repeatNumVar_ != UINT64_MAX) { // 循环repeatNum_次
+        repeatNumVar_ += repeatNumAdd;
+        CCU_IF(flag_ != 0) {
         // 非第一轮执行时，src 和 dst 已经初始化，需要添加偏移量
-        for (auto &s : src) {
-            s.addr += inputRepeatStride_;
-        }
-        for (auto &d : dst) {
+            for (auto &s : src) {
+                s.addr += inputRepeatStride_;
+            }
+            for (auto &d : dst) {
             d.addr += outputRepeatStride_;
+            }
         }
+        flag_ = 1;
+        CcuRep::MaskSignal locSig = CreateMaskSignal();
+        uint16_t transportIdx = 0;
+        for (uint64_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
+            if ( rankIdx == rankId_ ) {
+                LocalCopy(dst[rankIdx], src[rankIdx], normalSliceSize_, locSig, 1 << rankIdx);
+            } else {
+                Write(*transports[transportIdx], dst[rankIdx], src[rankIdx], normalSliceSize_, locSig, 1 << rankIdx);
+                transportIdx++;
+            }
+        }   
+        LocalWait(locSig, fullBit);
     }
-    CcuRep::MaskSignal locSig = CreateMaskSignal();
-    uint16_t transportIdx = 0;
-    for (uint64_t rankIdx = 0; rankIdx < rankSize_; rankIdx++) {
-        if ( rankIdx == rankId_ ) {
-            LocalCopy(dst[rankIdx], src[rankIdx], normalSliceSize_, locSig, 1 << rankIdx);
-        } else {
-            Write(*transports[transportIdx], dst[rankIdx], src[rankIdx], normalSliceSize_, locSig, 1 << rankIdx);
-            transportIdx++;
-        }
-    }
-    LocalWait(locSig, fullBit);
     return;
 }
 

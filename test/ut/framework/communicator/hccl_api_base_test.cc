@@ -197,5 +197,4 @@ void BaseInit::SetUp() {
 }
 void BaseInit::TearDown() {
     rtCloseNetService();
-    remove(rankTableFileName);
 }
