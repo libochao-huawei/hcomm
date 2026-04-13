@@ -27,6 +27,7 @@ public:
     static u32 AicpuRpcResInitV2(HcclOpResParam *commParam, bool isCustom);
     static ReadWriteLockBase& AicpuGetCommMutex();
     static hccl::HcclCommAicpu *AicpuGetCommbyGroup(const std::string &group);
+    static hccl::HcclCommAicpu *AicpuGetComm(const std::string &group);
     static HcclResult AicpuGetCommAll(std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> &aicpuCommInfo);
     static void AicpuDestoryCommbyGroup(const std::string &group);
     static void AicpuReleaseCommbyGroup(const std::string &group);
