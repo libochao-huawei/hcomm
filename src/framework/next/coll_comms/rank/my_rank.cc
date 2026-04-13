@@ -582,5 +582,8 @@ HcclResult MyRank::Resume()
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::RegiterToClusterMonitor(const std::string &commTag)
+{
+}
 } // namespace hccl
 
