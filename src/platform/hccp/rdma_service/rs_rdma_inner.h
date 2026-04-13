@@ -87,5 +87,6 @@ struct RsRdevCb {
         struct rdev rdevInfo;
         struct ibv_context *ibCtx;
     } backupInfo;
+    int directFlag;
 };
 #endif // RS_RDMA_INNER_H
