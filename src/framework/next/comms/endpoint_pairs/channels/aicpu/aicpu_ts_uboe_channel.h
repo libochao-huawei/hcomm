@@ -69,10 +69,12 @@ private:
     void SendFinish();
     void RecvFinish();
 
+    void EidPack(Hccl::BinaryStream &binaryStream);
     void NotifyVecPack(Hccl::BinaryStream &binaryStream);
     void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     void ConnVecPack(Hccl::BinaryStream &binaryStream);
+    void RmtEidUnpackProc(Hccl::BinaryStream &binaryStream, Hccl::IpAddress& rmtAddr);
     void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream, RemoteBufferVec &bufferVec, UboeRmtBufType type);
     bool ConnVecUnpackProc(Hccl::BinaryStream &binaryStream);
 
@@ -121,6 +123,8 @@ private:
     std::vector<char> sendFinishMsg_{};
     bool isRecvFirst_{false};
     
+    Hccl::IpAddress     locAddr_;
+    Hccl::IpAddress     rmtAddr_;
 };
 
 } // namespace hcomm
