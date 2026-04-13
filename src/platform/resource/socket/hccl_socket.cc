@@ -13,6 +13,7 @@
 #include "adapter_hccp.h"
 #include "network_manager_pub.h"
 #include "sal_pub.h"
+#include "hccl_net_dev_defs.h"
 #include "hccl_network.h"
 #include "network/hccp_common.h"
 #include "adapter_error_manager_pub.h"
@@ -103,9 +104,17 @@ HcclResult HcclSocket::Listen()
         RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0020", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     } else {
+        u32 proto = 0;
         SocketHandle hostSocketHandle;
+        bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
+        HcclNetDevGetProtoType(netDevCtx_, proto);
+        if (rdmaFlag && proto == HCCL_PROTO_TYPE_ROCE) {
+            rdmaFlag = true;
+        } else {
+            rdmaFlag = false;
+        }
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
-            localIp_, hostSocketHandle, localPort_, false);
+            localIp_, hostSocketHandle, localPort_, rdmaFlag);
         errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
                                 " and port " + std::to_string(localPort_) + " have already been bound.";
         RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0019", std::vector<std::string>({"reason"}),
@@ -154,9 +163,17 @@ HcclResult HcclSocket::Listen(u32 port)
         RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0020", std::vector<std::string>({"reason"}),
             std::vector<std::string>({errormessage}));
     } else {
+        u32 proto = 0;
         SocketHandle hostSocketHandle;
+        bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
+        HcclNetDevGetProtoType(netDevCtx_, proto);
+        if (rdmaFlag && proto == HCCL_PROTO_TYPE_ROCE) {
+            rdmaFlag = true;
+        } else {
+            rdmaFlag = false;
+        }
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
-            localIp_, hostSocketHandle, port, false);
+            localIp_, hostSocketHandle, port, rdmaFlag);
         errormessage = "The IP address " + std::string(localIp_.GetReadableIP()) +
                                 " and port " + std::to_string(localPort_) + " have already been bound.";
         RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EI0019", std::vector<std::string>({"reason"}),

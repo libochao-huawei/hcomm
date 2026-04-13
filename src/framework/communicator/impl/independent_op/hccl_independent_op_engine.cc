@@ -331,7 +331,6 @@ HcclResult HcclThreadResGetInfo(HcclComm comm, ThreadHandle thread, ThreadResTyp
         CHK_PTR_NULL(engineResMgr);
         ret = engineResMgr->HcclThreadResGetInfo(thread, resType, infoLen, info);
     } else {
-        HCCL_ERROR("[%s] communicatorType is not supported.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] thread resource get info failed. thread[0x%llx], resType[%d], infoLen[%u], info[%p]",

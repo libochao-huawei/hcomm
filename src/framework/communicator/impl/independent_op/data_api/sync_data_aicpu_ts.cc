@@ -48,7 +48,8 @@ int32_t HcommSendRequest(MsgHandle handle, const char *msgTag, const void *src, 
     errno_t ret = EOK;
 
     HCCL_INFO("[%s] Writing %zu bytes data from src to shared mem START.", __func__, sizeByte);
-    ret = memcpy_s(dstDataPtr, sizeByte, src, sizeByte);
+    ret = memcpy_s(dstDataPtr, sizeof(sizeByte), &sizeByte, sizeof(sizeByte));
+    ret = memcpy_s(dstDataPtr + sizeof(sizeByte), sizeByte, src, sizeByte);
     CHK_PRT_RET(ret != EOK, HCCL_ERROR("[%s][memcpy_s] Writing data ERROR[%d].", __func__, ret), HCCL_E_INTERNAL);
     HCCL_INFO("[%s] Writing %zu bytes data from src to shared mem SUCCESS.", __func__, sizeByte);
 
