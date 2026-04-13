@@ -27,6 +27,8 @@ set(SYS_VERSION ${VERSION_NUMBER})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sys_version.py.in ${CMAKE_CURRENT_BINARY_DIR}/hccl/sys_version.py @ONLY)
 
+set(HI_PYTHON                     "python3"                       CACHE   STRING   "python executor")
+
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dist/hccl-0.1.0-py3-none-any.whl
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/setup.py ${CMAKE_CURRENT_BINARY_DIR}
