@@ -5495,7 +5495,37 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
 }
 
 extern "C" {
+HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomGetLocalRankId(const char *group, u32 *localRankId)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *worldRank)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *groupRank)
+{
+    return HCCL_SUCCESS;
+}
+
+extern HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32 *IdxList)
+{
+    return HCCL_SUCCESS;
+}
+
+extern HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const float *sizeList)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfo, s32 *len)
 {
     return HCCL_SUCCESS;
 }
