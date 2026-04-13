@@ -109,7 +109,6 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
-    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/common/global_mirror_tasks.cc
 )
 
 set(hccl_list

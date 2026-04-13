@@ -136,16 +136,13 @@ HcclResult HcclCommTaskExceptionLite::ProcessCqe(CollCommAicpu *aicpuComm, const
     const u32 sqeId = static_cast<uint32_t>(exceptionInfo.taskId << 16) | static_cast<uint32_t>(exceptionInfo.streamId);
     HCCL_INFO("[%s]group[%s], sqeId[0x%x], taskId[%u], streamId[%u].",
         __func__, aicpuComm->GetIdentifier().c_str(), sqeId, exceptionInfo.taskId, exceptionInfo.streamId);
-
-    std::shared_ptr<Hccl::TaskInfo> curTask = nullptr;
-    HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(devId_, exceptionInfo.sqId, sqeId, curTask);
-    CHK_PRT_RET(ret == HCCL_E_NOT_FOUND,
-        HCCL_RUN_WARNING("[%s]FindTaskInfo not found, devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
-            __func__, devId_, exceptionInfo.sqId, sqeId), HCCL_SUCCESS);
-
-    CHK_PRT_RET(curTask == nullptr || ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s]FindTaskInfo fail, curTask[%p], ret[%d], devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",
-            __func__, curTask.get(), ret, devId_, exceptionInfo.sqId, sqeId), HCCL_SUCCESS);
+    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(devId_, exceptionInfo.sqId, sqeId);	 
+    if (curTask == nullptr) {	 
+        // 未找到异常对应的TaskInfo	 
+        HCCL_ERROR("[%s]Exception task not found. devId_[%u], streamId(sqId)[%u], taskId(sqeId)[%u].",	 
+            __func__, devId_, exceptionInfo.sqId, sqeId);	 
+        return HCCL_E_PARA;	 
+    }
 
     // 每个通信域仅首次上报（N秒快恢时重置）
     if (!aicpuComm->IsErrorReported()) {

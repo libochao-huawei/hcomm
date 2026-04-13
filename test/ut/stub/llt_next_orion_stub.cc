@@ -1500,46 +1500,46 @@ std::string TaskInfo::GetConciseBaseInfo() const
     return "";
 }
 
-// GlobalMirrorTasks GlobalMirrorTasks::ins_;
+GlobalMirrorTasks GlobalMirrorTasks::ins_;
 
-// GlobalMirrorTasks::GlobalMirrorTasks()
-// {
+GlobalMirrorTasks::GlobalMirrorTasks()
+{
     
-// }
+}
 
-// GlobalMirrorTasks::~GlobalMirrorTasks()
-// {
+GlobalMirrorTasks::~GlobalMirrorTasks()
+{
     
-// }
+}
 
-// GlobalMirrorTasks &GlobalMirrorTasks::Instance()
-// {
-//     static GlobalMirrorTasks instance;
-//     return instance;
-// }
+GlobalMirrorTasks &GlobalMirrorTasks::Instance()
+{
+    static GlobalMirrorTasks instance;
+    return instance;
+}
 
-// u32 GlobalMirrorTasks::DevSize() const
-// {
-//     return 0;
-// }
+u32 GlobalMirrorTasks::DevSize() const
+{
+    return 0;
+}
 
-// TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
-// {
-//     static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
-//     return &queue;
-// }
+TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
+{
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
+    return &queue;
+}
 
 
-// void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
-// {
+void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
+{
    
-// }
+}
 
-// std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
-// {
+std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
+{
 
-//     return nullptr;
-// }
+    return nullptr;
+}
 
 
 MirrorTaskManager::MirrorTaskManager(u32 devId, GlobalMirrorTasks *globalMirrorTasks, bool devUsed)
@@ -2137,11 +2137,6 @@ HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
 {
     return HCCL_SUCCESS;
 }
-
-// HcclResult GlobalMirrorTasks::FindTaskInfo(u32 devId, u32 streamId, u32 taskId, std::shared_ptr<TaskInfo> &curTask) const
-// {
-//     return HCCL_SUCCESS;
-// }
 
 }  // namespace Hccl
 
