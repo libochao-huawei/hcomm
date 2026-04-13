@@ -2167,4 +2167,3 @@ void SetExternalInputDebugConfig(u64 value)
 {
     g_externalInput.debugConfig = value;
 }
-
