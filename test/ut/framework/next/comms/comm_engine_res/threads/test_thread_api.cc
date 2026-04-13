@@ -500,7 +500,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_Normal_Return_HCCL_Succe
     EXPECT_EQ(ret, 0);
     ThreadHandle thread[2];
     void *comm = static_cast<HcclComm>(hcclCommPtr.get());
-    ret = HcclThreadAcquire(comm, COMM_ENGINE_CPU_TS, 2, 3, thread);
+    ret = HcclThreadAcquire(comm, COMM_ENGINE_CPU, 2, 3, thread);
     EXPECT_EQ(ret, 0);
 
     Thread *threadptr0 = reinterpret_cast<Thread *>(thread[0]);
@@ -508,7 +508,7 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_Normal_Return_HCCL_Succe
     EXPECT_EQ(threadptr0->GetNotifyNum(), 3);
 
     uint32_t notifyNum;
-    ret = HcclGetNotifyNumInThread(comm, thread[0], COMM_ENGINE_CPU_TS, &notifyNum);
+    ret = HcclGetNotifyNumInThread(comm, thread[0], COMM_ENGINE_CPU, &notifyNum);
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(notifyNum, 3);
 }
