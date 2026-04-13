@@ -445,7 +445,6 @@ bool UbMemTransport::IsConnsReady()
     return true;
 }
 
-// TODO UBOE OK 搬到Channel 状态机
 TransportStatus UbMemTransport::GetStatus()
 {
     if (baseStatus == TransportStatus::READY) {
