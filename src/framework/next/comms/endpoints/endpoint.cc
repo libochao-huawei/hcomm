@@ -51,6 +51,8 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UB_MEM && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
+    // else if (endpointDesc.protocol == COMM_PROTOCOL_SOCKET && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+    // else if (endpointDesc.protocol == COMM_PROTOCOL_SOCKET && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
     } else {
         endpointPtr = nullptr;
         HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] and endpointDesc.loc.locType [%d] do not match.", 
