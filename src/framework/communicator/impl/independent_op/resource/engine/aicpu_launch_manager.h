@@ -95,8 +95,7 @@ public:
         const std::string &commId, std::unique_ptr<NotifyHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchFree(std::vector<NotifyHandle> &aicpuNotifys, uint32_t notifyNum,
         const std::string &commId, aclrtBinHandle binCustomHandle);
-    template <typename OpParam>
-    static HcclResult KernelLaunchAicpuCustom(OpParam &opParam, std::string kernelName, rtStream_t aicpuInitStream,
+    static HcclResult KernelLaunchAicpuCustom(uint64_t context, std::string kernelName, rtStream_t aicpuInitStream,
         aclrtBinHandle binCustomHandle);
 private:
     HcclResult AiCpuStreamAllocAndGet(rtStream_t &aiCpuStream);

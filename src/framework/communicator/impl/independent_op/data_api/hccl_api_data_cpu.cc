@@ -702,8 +702,9 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     if (l0State == false || l1State == false) {
         HCCL_INFO("[%s] profiling State is down l0State %d l1State %d", __func__, l0State, l1State);
     }
-    std::shared_ptr<hccl::hcclComm> hcclComm;
-    CHK_RET(HcclGetCommHandle(commId, hcclComm));
+    HcclComm commHandle = nullptr;
+    CHK_RET(HcomGetCommHandleByGroup(commId, &commHandle));
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm*>(commHandle);
     CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
     CHK_PRT_RET(hcclDfxOpInfo == nullptr,  HCCL_ERROR("[%s] hcclDfxOpInfo is null", __func__), HCCL_E_PTR);
     HcclDfxOpInfo *dfxOpInfo = static_cast<HcclDfxOpInfo*>(hcclDfxOpInfo);
@@ -745,6 +746,7 @@ HcclResult HcclDfxRegOpInfoByCommId(char* commId, void* hcclDfxOpInfo)
     Hccl::MirrorTaskManager* mirrorTaskManage = hcclCommDfx->GetMirrorTaskManager();
     CHK_PTR_NULL(mirrorTaskManage);
     mirrorTaskManage->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    HCCL_INFO("[%s]success, DfxOpInfo: %s", __func__, dfxOpInfoOnce->Describe().c_str());
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
