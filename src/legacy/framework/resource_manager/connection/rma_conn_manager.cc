@@ -79,9 +79,8 @@ unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std
     rmtAddr = linkData.GetRemoteAddr();
     IpAddress locIpv4Addr = locAddr;
     IpAddress rmtIpv4Addr = rmtAddr;
-    HCCL_INFO("[RmaConnManager][%s] locAddr[%s], rmtAddr[%s]", __func__, linkData.GetLinkProtocol().Describe().c_str(),
-              locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
-    HCCL_INFO("[RmaConnManager][%s] LinkProtocol[%s]", __func__, linkData.GetLinkProtocol().Describe().c_str());
+    HCCL_INFO("[RmaConnManager][%s] LinkProtocol[%s], locAddr[%s], rmtAddr[%s]", 
+        __func__, linkData.GetLinkProtocol().Describe().c_str(), locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
     if (linkData.GetLinkProtocol() == LinkProtocol::UBOE) {
         // socket建链状态ok，并交换数据
         WaitUboeSocketReady(socket, linkData);
