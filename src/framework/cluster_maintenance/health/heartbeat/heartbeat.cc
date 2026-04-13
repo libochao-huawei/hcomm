@@ -222,7 +222,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
 {
     HCCL_INFO("[%s] group[%s] isUsedRdma[%d], isNeedNic[%d], RegisterRanks Start.", __func__, group.c_str(), isUsedRdma,
         isNeedNic);
-    // 进程锁，防止多线程同时Init
+    // 线程锁，防止多线程同时Init
     std::unique_lock<std::mutex> lock(ProcessLock_);
     auto iter = groupMap_.find(group);
     if (iter != groupMap_.end()) {
