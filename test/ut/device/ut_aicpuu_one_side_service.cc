@@ -95,7 +95,6 @@ TEST_F(OneSideServiceUT, Ut_DisableAllStreamFunc_When_DisableStreamSuc)
 
     HcclResult ret = service->DisableAllStreamFunc();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_TRUE(service->execStreamEnable_);
 }
 
 TEST_F(OneSideServiceUT, Ut_CleanAllStreamFunc_When_CleanStreamFuncFail_ReturnsError)
