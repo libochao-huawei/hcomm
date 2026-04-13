@@ -29,6 +29,7 @@ set(open_exec_src_list
 )
 
 set(open_exec_impl_src_list
+    ${CMAKE_CURRENT_SOURCE_DIR}/comm_kfc_open_env_adapter.cc
     ${OPEN_HCCL_SRC_ROOT}/ops/op_common/executor/channel/channel.cc
     ${OPEN_HCCL_SRC_ROOT}/ops/op_common/executor/channel/channel_request.cc
     ${OPEN_HCCL_SRC_ROOT}/ops/op_common/executor/registry/coll_alg_v2_exec_registry.cc
@@ -158,6 +159,7 @@ target_include_directories(ccl_kernel_decoupler_open_exec BEFORE PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/hccl
     ${HCCL_BASE_DIR}/../include
     ${HCCL_BASE_DIR}/../include/hccl
+    ${HCCL_BASE_DIR}/pub_inc
     ${HCCL_BASE_DIR}/../pkg_inc
     ${HCCL_BASE_DIR}/../pkg_inc/hccl
     ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
@@ -224,6 +226,7 @@ target_include_directories(ccl_kernel_decoupler_open_exec_impl BEFORE PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/hccl
     ${HCCL_BASE_DIR}/../include
     ${HCCL_BASE_DIR}/../include/hccl
+    ${HCCL_BASE_DIR}/pub_inc
     ${HCCL_BASE_DIR}/../pkg_inc
     ${HCCL_BASE_DIR}/../pkg_inc/hccl
     ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
