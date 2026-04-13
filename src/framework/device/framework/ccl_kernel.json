@@ -1,0 +1,289 @@
+{
+    "HcclKernelEntrance": {
+        "opInfo": {
+            "functionName": "HcclKernelEntrance",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "HcclUpdateCommKernelEntrance": {
+        "opInfo": {
+            "functionName": "HcclUpdateCommKernelEntrance",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuChannelDestroyV2": {
+        "opInfo": {
+            "functionName": "RunAicpuChannelDestroyV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuChannelInitV2": {
+        "opInfo": {
+            "functionName": "RunAicpuChannelInitV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuDfxOpInfoInitV2": {
+        "opInfo": {
+            "functionName": "RunAicpuDfxOpInfoInitV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuIndOpChannelInit": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpChannelInit",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuIndOpChannelInitV2": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpChannelInitV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuIndOpChannelUpdateV2": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpChannelUpdateV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuIndOpCommInit": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpCommInit",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuIndOpNotify": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpNotify",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuIndOpThreadInit": {
+        "opInfo": {
+            "functionName": "RunAicpuIndOpThreadInit",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuKfcResInit": {
+        "opInfo": {
+            "functionName": "RunAicpuKfcResInit",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuKfcResInitV2": {
+        "opInfo": {
+            "functionName": "RunAicpuKfcResInitV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunch": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunch",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_allgather": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_allgather_v": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_allreduce": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_alltoall": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_alltoallv": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_alltoallvc": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_barrier": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_get": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_put": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_send_recv": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_batch_write": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_broadcast": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_finalize": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_gather": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_half_alltoallv": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_receive": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_reduce": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_reduce_scatter": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_reduce_scatter_v": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_scatter": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2_send": {
+        "opInfo": {
+            "functionName": "RunAicpuRpcSrvLaunchV2",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "KFCKernel"
+        }
+    },
+    "RunAicpuThreadDestroy": {
+        "opInfo": {
+            "functionName": "RunAicpuThreadDestroy",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuThreadInit": {
+        "opInfo": {
+            "functionName": "RunAicpuThreadInit",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunAicpuThreadSupplementNotify": {
+        "opInfo": {
+            "functionName": "RunAicpuThreadSupplementNotify",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunTransportRoceRx": {
+        "opInfo": {
+            "functionName": "RunTransportRoceRx",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    },
+    "RunTransportRoceTx": {
+        "opInfo": {
+            "functionName": "RunTransportRoceTx",
+            "kernelSo": "libccl_kernel.so",
+            "opKernelLib": "AICPUKernel"
+        }
+    }
+}

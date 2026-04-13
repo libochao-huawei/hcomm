@@ -159,8 +159,6 @@ if (CMAKE_INSTALL_PREFIX STREQUAL /usr/local)
     set(CMAKE_INSTALL_PREFIX     "${CMAKE_CURRENT_SOURCE_DIR}/output"  CACHE STRING "path for install()" FORCE)
 endif ()
 
-set(HI_PYTHON                     "python3"                       CACHE   STRING   "python executor")
-
 message(STATUS "config.cmake KERNEL_MODE=${KERNEL_MODE} BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "config.cmake PRODUCT=${PRODUCT} PRODUCT_SIDE=${PRODUCT_SIDE}")
 

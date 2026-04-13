@@ -32,30 +32,3 @@ mk_custom_path() {
     done < $_custom_path_file
     return 0
 }
-
-py_version_check(){
-    local pyver_set="3.7 3.8 3.9 3.10 3.11"
-    local cur_date="$(date +"%Y-%m-%d %H:%M:%S")"
-    which python3 > /dev/null 2>&1
-    if [ $? -eq 0 ]; then
-        local python_version="$(python3 --version 2>&1 | head -n 1)"
-        local python3_version=$(echo "$python_version" | sed -n 's/.*[^\.0-9]\([0-9]\+\.[0-9]\+\).*/\1/p')
-        if [ "x$python3_version" != "x" ]; then
-            for ver in $pyver_set; do
-                if [ "x$ver" = "x$python3_version" ]; then
-                    return 0
-                fi
-            done
-            
-            echo "[Common] [$cur_date] [WARNING]: $python_version is not in Python3.7.x, Python3.8.x, Python3.9.x, Python3.10.x, Python3.11.x."
-            return 1
-        else
-            echo "[Common] [$cur_date] [WARNING]: $python_version cannot be identified as a standard version, please check manually."
-            return 1
-        fi
-    else
-        echo "[Common] [$cur_date] [WARNING]: python3 is not found."
-        return 1
-    fi
-}
-
