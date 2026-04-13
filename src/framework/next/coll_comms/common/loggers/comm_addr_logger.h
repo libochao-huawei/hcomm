@@ -65,31 +65,17 @@ public:
      */
     static std::string GetTypeString(CommAddrType type);
 
+    
+    /**
+     * @brief 打印 commLink 连接的位置信息
+     */
+    static void EndpointLogger::CommLinkPrint(const CommLink& commlink);
+
 private:
     // 私有构造函数（静态工具类）
     CommAddrLogger() = delete;
     CommAddrLogger(const CommAddrLogger&) = delete;
     CommAddrLogger& operator=(const CommAddrLogger&) = delete;
-
-    /**
-     * @brief IPv4 地址转换辅助函数
-     */
-    static std::string ConvertIPv4(const struct in_addr& addr);
-
-    /**
-     * @brief IPv6 地址转换辅助函数
-     */
-    static std::string ConvertIPv6(const struct in6_addr& addr6);
-
-    /**
-     * @brief ID 类型转换辅助函数
-     */
-    static std::string ConvertID(uint32_t id);
-
-    /**
-     * @brief EID 类型转换辅助函数
-     */
-    static std::string ConvertEID(const uint8_t eid[16]);
 };
 
 } // namespace logger
