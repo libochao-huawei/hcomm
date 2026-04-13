@@ -3164,7 +3164,7 @@ HcclResult HcclOneSidedCommDestroy(HcclComm comm, s32 deviceLogicId, HcclUs star
 static HcclResult ResetDevice(hccl::hcclComm* hcclComm)
 {
     s32 logicDeviceId = 0;
-    CHK_RET(hcclComm->GetDeviceId(logicDeviceId));
+    hcclComm->GetDeviceId(logicDeviceId);
     g_hcclDeviceId = logicDeviceId;
     if (hcclComm->IsNeedResetDevice()) {
         HCCL_RUN_INFO("op_base com destroy, com is not global com");
