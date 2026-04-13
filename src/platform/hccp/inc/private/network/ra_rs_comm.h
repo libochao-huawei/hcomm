@@ -360,6 +360,8 @@ struct TlvRequestMsgHead {
 #define QP_DEFAULT_MAX_ATTR_TIMEOUT       20
 #define QP_DEFAULT_MAX_ATTR_RETRY_CNT     7
 
+#define RA_RS_4K_PAGE_SIZE 4096U
+
 int ConverReturnCode(enum ModuleType module, int erroCode);
 
 static inline void RaRsSetDevInfo(struct RaRsDevInfo *devInfo, unsigned int phyId, unsigned int devIndex)
