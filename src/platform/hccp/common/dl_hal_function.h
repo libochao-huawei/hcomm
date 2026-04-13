@@ -109,6 +109,7 @@ struct DlHalOps {
     DVresult (*dlDrvMemGetAttribute)(DVdeviceptr vptr, struct DVattribute *attr);
     drvError_t (*dlHalHostRegister)(void *srcPtr, uint64_t size, uint32_t flag, uint32_t devId, void **dstPtr);
  	drvError_t (*dlHalHostUnregister)(void *src_ptr, uint32_t devid);
+ 	drvError_t (*dlHalHostUnregisterEx)(void *src_ptr, uint32_t devid, uint32_t flag);
 };
 
 int DlHalInit(void);
@@ -195,5 +196,6 @@ int DlHalMemUnRegUbSegment(uint32_t devId, uint64_t va);
 int DlDrvMemGetAttribute(DVdeviceptr vptr, struct DVattribute *attr);
 int DlHalHostRegister(void *srcPtr, uint64_t size, uint32_t flag, uint32_t devId, void **dstPtr);
 int DlHalHostUnRegister(void *srcPtr, uint32_t devId);
+int DlHalHostUnRegisterEx(void *srcPtr, uint32_t devId, uint32_t flag);
 
 #endif  // __DL_HAL_FUNCTION_H__
