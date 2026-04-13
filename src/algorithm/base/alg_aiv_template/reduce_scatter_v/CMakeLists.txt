@@ -19,7 +19,7 @@ if(BUILD_OPEN_PROJECT)
     add_custom_target(hccl_aiv_reduce_scatter_v_op ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_reduce_scatter_v_op.o)
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_reduce_scatter_v_op.o
-            COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_reduce_scatter_v_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_reduce_scatter_v_op_tmp.o 
+            COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c --cce-aicore-lang -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_reduce_scatter_v_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_reduce_scatter_v_op_tmp.o 
             -DASCNEDC_DUMP --cce-aicore-arch=dav-c220-vec
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
@@ -49,7 +49,7 @@ else()
     set(TILING_GEN_DIR ${CMAKE_BINARY_DIR}/asc/asc-devkit)
 
     add_custom_target(hccl_aiv_reduce_scatter_v_op
-            COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_reduce_scatter_v_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_reduce_scatter_v_op_tmp.o
+            COMMAND ${BISHENG_CCACHE} ${CCE_DIR}/ccec -c --cce-aicore-lang -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_reduce_scatter_v_op.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_reduce_scatter_v_op_tmp.o
             -DASCENDC_DUMP --cce-aicore-arch=dav-c220-vec
             --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-dcci-insert-for-scalar=false
             -mllvm -cce-aicore-stack-size=0x8000
