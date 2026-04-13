@@ -2164,3 +2164,4 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
 {
     return HCCL_SUCCESS;
 }
+
