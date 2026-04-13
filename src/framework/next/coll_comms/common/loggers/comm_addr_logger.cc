@@ -9,6 +9,7 @@
  */
 
 #include "comm_addr_logger.h"
+#include "comm_addr_convert.h"
 #include "hccl_comm_pub.h"
 #include <arpa/inet.h>
 #include <array>
@@ -31,63 +32,6 @@ std::string CommAddrLogger::GetTypeString(CommAddrType type)
         default:
             return "Unknown(" + std::to_string(type) + ")";
     }
-}
-
-std::string CommAddrLogger::ConvertIPv4(const struct in_addr& addr)
-{
-    std::array<char, INET_ADDRSTRLEN> buffer;
-    const char* result = inet_ntop(AF_INET, &addr, buffer.data(), buffer.size());
-    if (result == nullptr) {
-        HCCL_ERROR("[%s] inet_ntop failed for IPv4 address", __func__);
-        return "conversion failed";
-    }
-    return std::string(result);
-}
-
-std::string CommAddrLogger::ConvertIPv6(const struct in6_addr& addr6)
-{
-    std::array<char, INET6_ADDRSTRLEN> buffer;
-    const char* result = inet_ntop(AF_INET6, &addr6, buffer.data(), buffer.size());
-    if (result == nullptr) {
-        HCCL_ERROR("[%s] inet_ntop failed for IPv6 address", __func__);
-        return "conversion failed";
-    }
-    return std::string(result);
-}
-
-std::string CommAddrLogger::ConvertID(uint32_t id)
-{
-    return "id:0x" + std::to_string(id);
-}
-
-std::string CommAddrLogger::ConvertEID(const uint8_t eid[16])
-{
-    // 模仿 Eid::Describe 的格式
-    // 输出：eid[xxxxxxxxxxxxxxxx:xxxxxxxxxxxxxxxx]
-    // 其中前 8 字节是 subnetPrefix，后 8 字节是 interfaceId（网络字节序）
-
-    // 从字节数组中提取两个 64 位整数（网络字节序）
-    uint64_t subnetPrefix = 0;
-    uint64_t interfaceId = 0;
-
-    // 使用 memcpy 避免对齐问题
-    (void)memcpy_s(&subnetPrefix, sizeof(subnetPrefix), eid, sizeof(subnetPrefix));
-    (void)memcpy_s(&interfaceId, sizeof(interfaceId), eid + 8, sizeof(interfaceId));
-
-    // 转换字节序（网络字节序 -> 主机字节序）
-    subnetPrefix = be64toh(subnetPrefix);
-    interfaceId = be64toh(interfaceId);
-
-    char buffer[64];
-    int32_t ret = snprintf_s(buffer, sizeof(buffer), sizeof(buffer) - 1,
-        "eid[%016llx:%016llx]",
-        static_cast<unsigned long long>(subnetPrefix),
-        static_cast<unsigned long long>(interfaceId));
-    if (ret < 0) {
-        HCCL_ERROR("[%s] snprintf_s failed for EID", __func__);
-        return "conversion failed";
-    }
-    return std::string(buffer);
 }
 
 std::string CommAddrLogger::ToString(const CommAddr& commAddr)
@@ -122,6 +66,25 @@ void CommAddrLogger::Print(uint32_t idx, const char* endpointName, const CommAdd
     std::string addrStr = ToString(commAddr);
     HCCL_INFO("[%s] channelDescs[%u] %s commAddr: type[%d], addr[%s]",
         __func__, idx, endpointName, commAddr.type, addrStr.c_str());
+}
+
+void CommAddrLogger::CommLinkPrint(const CommLink& commlink)
+{
+    std::string srcCommAddrStr = ToString(commlink.srcEndpointDesc.commAddr);
+    std::string dstCommAddrStr = ToString(commlink.dstEndpointDesc.commAddr);
+    if (commlink.srcEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        HCCL_INFO("[%s] src devPhyId[%u] %s link to dst devPhyId[%u] %s",
+            __func__, commlink.srcEndpointDesc.loc.device.devPhyId,
+            srcCommAddrStr.c_str(), commlink.dstEndpointDesc.loc.device.devPhyId,
+            dstCommAddrStr.c_str());
+    } else if (commlink.srcEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
+        HCCL_INFO("[%s] src host id[%u] %s link to dst host id[%u] %s",
+            __func__, commlink.srcEndpointDesc.loc.host.id,
+            srcCommAddrStr.c_str(), commlink.dstEndpointDesc.loc.host.id,
+            dstCommAddrStr.c_str());
+    } else {
+        HCCL_INFO("[%s] loc: locType[%d]", __func__, loc.locType);
+    }
 }
 
 } // namespace logger

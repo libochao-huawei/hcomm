@@ -72,6 +72,22 @@ struct HcclDfxOpInfo {
     int8_t              reserve[128]; // 预留扩展字段
 };
 
+/**
+ * @brief 注册给ClusterMonitor模块进行心跳监听
+ * @param[in] comm 通信域句柄
+ * @return HcclResult 执行结果状态码
+ * @note host侧
+ */
+extern HcclResult HcclRegiterToClusterMonitor(HcclComm comm);
+
+/**
+ * @brief ClusterMonitor模块相关资源解注册
+ * @param[in] comm 通信域句柄
+ * @return HcclResult 执行结果状态码
+ * @note host侧
+ */
+extern HcclResult HcclUnRegiterToClusterMonitor(HcclComm comm);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
