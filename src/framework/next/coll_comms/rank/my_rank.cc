@@ -582,5 +582,10 @@ HcclResult MyRank::Resume()
     return HCCL_SUCCESS;
 }
 
+HcclResult MyRank::RegiterToClusterMonitor()
+{
+
+}
+
 } // namespace hccl
 

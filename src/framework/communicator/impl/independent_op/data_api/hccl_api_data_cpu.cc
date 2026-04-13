@@ -832,3 +832,29 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
 } 
+
+HcclResult HcclRegiterToClusterMonitor(HcclComm comm)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    hccl::MyRank* myRank = collComm->GetMyRank();
+    CHK_PTR_NULL(myRank);
+    HcclResult ret = myRank->RegiterToClusterMonitor();
+    if (ret != HCCL_SUCCESS) {
+        // TODO
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclUnRegiterToClusterMonitor(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
