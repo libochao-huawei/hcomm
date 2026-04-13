@@ -45,8 +45,6 @@ target_include_directories(hccl_utest_device PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/communicator/aicpu/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/
-    ${HCCL_CODE_ROOT}/src/framework/device/framework/
-    ${HCCL_CODE_ROOT}/src/framework/device/common/
 )
 target_compile_definitions(hccl_utest_device PRIVATE
     _GLIBCXX_USE_CXX11_ABI=0
