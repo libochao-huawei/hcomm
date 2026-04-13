@@ -9,24 +9,26 @@ __aicore__ inline void AIVRDMAPostSendXSCDV(
     __gm__ ChannelEntity* channelInfo)
 {
     // 获取QP基本信息
-    auto sqContext  = channelInfo->SqContextAddr;
-    auto QP_DEPTH   = sqContext->depth;
+    auto sqContext          = channelInfo->SqContextAddr;
+    auto QP_DEPTH           = sqContext->depth;
+    auto curHardwareHead    = sqContext->headAddr;
+    auto curHardwareTail    = sqContext->tailAddr;
+    auto doorBellAddr       = sqContext->dbVa;
 
-    // 获取PI
-    auto curHardwareHead = sqContext->headAddr;
-    cacheWriteThrough((__gm__ uint8_t*)curHardwareHead, 8);
-    uint64_t curHead = *(__gm__ uint64_t*)(curHardwareHead);
+    // 获取PI、CI
+    uint32_t curHead = ld_dev((__gm__ uint32_t*)curHardwareHead);
+    uint32_t curTail = ld_dev((__gm__ uint32_t*)curHardwareTail);
 
     __gm__ uint8_t* wqeAddr = (__gm__ uint8_t*)((uintptr_t)sqContext->sqVa + ((curHead % QP_DEPTH) << XSCDV_SND_WQE_SHIFT));
-    struct xscdv_wqe_ctrl_seg *ctrl_seg = reinterpret_cast<xscdv_wqe_ctrl_seg*>(wqeAddr);
-    struct xscdv_diamond_data_seg *rdata_seg = reinterpret_cast<xscdv_diamond_data_seg*>(reinterpret_cast<uint_ptr_t>(ctrl_seg) + sizeof(struct xscdv_wqe_ctrl_seg));
-    struct xscdv_diamond_data_seg *ldata_seg = reinterpret_cast<xscdv_diamond_data_seg*>(reinterpret_cast<uint_ptr_t>(rdata_seg) + sizeof(struct xscdv_diamond_data_seg));
+    __gm__ struct xscdv_wqe_ctrl_seg *ctrl_seg = reinterpret_cast<__gm__ xscdv_wqe_ctrl_seg*>(wqeAddr);
+    __gm__ struct xscdv_diamond_data_seg *rdata_seg = reinterpret_cast<__gm__ xscdv_diamond_data_seg*>(reinterpret_cast<uintptr_t>(ctrl_seg) + sizeof(struct xscdv_wqe_ctrl_seg));
+    __gm__ struct xscdv_diamond_data_seg *ldata_seg = reinterpret_cast<__gm__ xscdv_diamond_data_seg*>(reinterpret_cast<uintptr_t>(rdata_seg) + sizeof(struct xscdv_diamond_data_seg));
 
     // PI转成网卡识别的ds_idx
-    uint16_t wqe_ds_idx = curHead << (XSCDV_SND_WQE_SHIFT - XSCDV_BASE_WQE_SHIF);
+    uint16_t wqe_ds_idx = curHead * 8;
 
     // 填充控制字段
-    ctrl_seg = {0};
+    *ctrl_seg = {0};
     ctrl_seg->wqe_id        = wqe_ds_idx;
     ctrl_seg->ce            = 0;                            // 提供poll_cq后, 才需要产生cqe
     ctrl_seg->msg_opcode    = XSCDV_MSG_OPCODE_RDMA_WRITE;
@@ -45,39 +47,73 @@ __aicore__ inline void AIVRDMAPostSendXSCDV(
 
     // wqe cache flush
     cacheWriteThrough(wqeAddr, sizeof(struct xscdv_wqe_ctrl_seg) + 2 * sizeof(struct xscdv_diamond_data_seg));
-    PipeBarrier<PIPE_ALL>();
     curHead++;
 
-    // 填充 DB
+    // Fill Send DB
     union xscdv_diamond_send_doorbell doorBellInfo;
-    uint32_t next_pid = curHead << (XSCDV_SND_WQE_SHIFT - XSCDV_BASE_WQE_SHIF);
+    uint32_t next_pid = curHead * 8;
 
     doorBellInfo.raw        = 0;
     doorBellInfo.qp_id      = sqContext->qpn;
     doorBellInfo.next_pid   = next_pid;
 
-    // 注意dbVa没有偏移
-    __gm__ uint64_t* doorBellAddr = (__gm__ uint64_t* )(sqContext->dbVa);
-    PipeBarrier<PIPE_ALL>();
-
     // Ring DB
-    // TODO 这里用MTE还是st_dev?
-    ubLocal.SetValue(0, doorBellInfo);
-    AscendC::GlobalTensor<uint64_t> DBGlobalTensor;
-    DBGlobalTensor.SetGlobalBuffer(doorBellAddr);
-    AscendC::DataCopyExtParams copyParams{1, 1 * sizeof(uint64_t), 0, 0, 0};
-    PipeBarrier<PIPE_ALL>();
-    AscendC::DataCopyPad(DBGlobalTensor, ubLocal, copyParams);
-    PipeBarrier<PIPE_ALL>();
+    st_dev(doorBellInfo.raw, (__gm__ uint64_t*)doorBellAddr, 0);
 
     // Update Sq PI
-    ubLocalHead.SetValue(0, (uint32_t)curHead);
-    AscendC::GlobalTensor<uint32_t> HeadGlobalTensor;
-    HeadGlobalTensor.SetGlobalBuffer((__gm__ uint32_t*)curHardwareHead);
-    AscendC::DataCopyExtParams copyParamsHead{1, 1 * sizeof(uint32_t), 0, 0, 0};
-    PipeBarrier<PIPE_ALL>();
-    AscendC::DataCopyPad(HeadGlobalTensor, ubLocalHead, copyParamsHead);
-    PipeBarrier<PIPE_ALL>();
+    st_dev(curHead, (__gm__ uint32_t*)curHardwareHead, 0);
+}
+
+__aicore__ inline void AIVRDMAPollCqXSCDV(__gm__ ChannelEntity* channelInfo, uint32_t targetIdx)
+{
+    if (targetIdx == 0) {
+        return;
+    }
+
+    // 获取CP基本信息
+    auto cqContext          = channelInfo->CqContextAddr;
+    auto CQ_DEPTH           = cqContext->cqDepth;
+    auto curHardwareTail    = cqContext->tailAddr;
+    auto cqeSize            = cqContext->cqeSize;
+    auto cqn                = cqContext->cqn;
+
+    auto doorBellAddr       = cqContext->dbVa;
+
+    // 获取CQ CI
+    uint32_t curTail = ld_dev((__gm__ uint32_t*)curHardwareTail);
+
+    // 获取当前cq tail位置
+    const uint32_t maxTimes = 1000000;
+    while (curTail != targetIdx) {
+        __gm__ struct xscdv_cqe64* cqeAddr = (__gm__ struct xscdv_cqe64*)((uintptr_t)cqContext->cqVa + (curTail % CQ_DEPTH) * cqeSize);
+        bool validOwner = (curTail / CQ_DEPTH) & 1;
+        uint32_t times = 0;
+        while ((validOwner ^ cqeAddr->owner) == 0 && times < maxTimes) { // util cqeAddr->owner changed
+            dcci_cachelines((__gm__ uint8_t*)cqeAddr, sizeof(struct xscdv_cqe64));
+            times++;
+        }
+        if (times >= maxTimes) {
+            // Debug
+            return ;
+        }
+        curTail++;
+
+        // Check cqe status
+        // ...
+    }
+
+    // Fill CQ DB
+    union xscdv_diamond_next_cq_doorbell doorBellInfo;
+
+    doorBellInfo.raw            = 0;
+    doorBellInfo.cq_id          = cqn;
+    doorBellInfo.cq_next_cid    = targetIdx;
+
+    // Update CQ tail
+    st_dev(curTail, (__gm__ uint32_t*)(curHardwareTail), 0);
+
+    // Ring CQ DB
+    st_dev(doorBellInfo.raw, (__gm__ uint64_t*)(doorBellAddr), 0);
 }
 
 #endif // AIV_RDMA_POST_SEND_XSCDV_H
