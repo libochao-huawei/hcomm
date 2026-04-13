@@ -76,9 +76,9 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
     pingHandle->pingOps = &gRaHdcPingOps;
     CHK_PRT_RETURN(pingHandle->pingOps->raPingInit == NULL, hccp_err("[init][ra_ping]ra_ping_init is NULL"),
         -EINVAL);
-    CHK_PRT_RETURN(initAttr->bufferSize == 0 || initAttr->bufferSize % RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE != 0,
+    CHK_PRT_RETURN(initAttr->bufferSize == 0 || initAttr->bufferSize % RA_RS_4K_PAGE_SIZE != 0,
         hccp_err("[init][ra_ping]initAttr->buffer_size:0x%x not 0x%xB aligned", initAttr->bufferSize,
-        RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE), -EINVAL);
+        RA_RS_4K_PAGE_SIZE), -EINVAL);
     pingHandle->bufferSize = initAttr->bufferSize;
 
     ret = pthread_mutex_init(&pingHandle->mutex, NULL);
