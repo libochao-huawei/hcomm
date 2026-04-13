@@ -83,7 +83,6 @@ private :
     u64 buffBlockSize_ = 0;
     A2ASendRecvInfo localSendRecvInfo_;
     BuffInfo buffInfo_;
-    u32 maxPathNum = 0;
 };
 
 } // namespace Hccl
