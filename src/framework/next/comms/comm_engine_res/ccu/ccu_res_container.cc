@@ -67,12 +67,16 @@ HcclResult CcuResContainer::Init()
     devLogicId_ = HcclGetThreadDeviceId();
 
     if (!ccuDrvHandle_) {
+        // todo: ccu驱动如果拉起失败，需要缓存，返回特定错误码
+        // 单卡多进程相关
         CHK_RET(CcuInitFeature(devLogicId_, ccuDrvHandle_));
     }
 
     if (!resPack_) {
         resPack_.reset(new (std::nothrow) CcuResPack(ccuEngine));
         CHK_PTR_NULL(resPack_);
+        // todo: 资源申请失败，可能ccu通信域过多，资源不足
+        // ccu通信域管理相关
         CHK_RET(resPack_->Init());
     }
 

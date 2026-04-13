@@ -88,6 +88,8 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     EXECEPTION_CATCH(engineCtxs_ = std::make_unique<EngineCtxs>(), return HCCL_E_PTR);
 
+    // todo: 展开模式需要判断，如果是default，要读取环境环境HCCL_OP_EXPANSION_MODE，根据环境变量配置；否则config配置优先
+    // 复用以前的环境变量处理单例
     opExpansionMode_ = opExpansionMode;
 
     // 仅自定义算子ccu流程初始化资源
@@ -96,6 +98,13 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
         CHK_PTR_NULL(ccuResContainer_);
         CHK_RET(ccuResContainer_->Init());
+        // todo: 处理初始化CCU实例失败时，如果CCU MS拉起因资源不足失败，需要回退成CCU Sched；
+        // 如果是CCU Sched拉起失败，需要回退成AICPU；
+        // 如果是驱动拉起失败，直接回退成AICPU，并且本进程不再尝试拉起ccu驱动；
+        // 回退后需要修改通信与的展开模式，后续查询通信域加速模式直接就是回退后结果
+
+        // 遗留问题：不实现comm manager，通过ccu ms资源不足时，再申请ccu sched；
+        // 当前资源就不足支持2个ms，所以可以直接支持单个ms通信域
     }
 
     // 创建端点管理器
@@ -183,6 +192,9 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         u32& reuseIdx = reuseSocketIdxMap[rankPair][endpointPair];
 
         Hccl::Socket* socket = nullptr;
+        // todo: 需要记录本轮新申请的socket，传递到外部（存疑，aicpu也需要socket）
+        // return channelIndex, reuseIdx
+        // 外部在资源不足申请失败时，主动清理新申请socket
         auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
@@ -238,6 +250,8 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     CHK_RET(commMems_->GetMemoryHandles(memVec));
     std::unordered_map<RankPair*, std::unordered_map<CommEngine,
         std::unordered_map<hcomm::EndpointPair*, u32>>> reuseChannelIdxMap{};
+    
+    // todo: 新增一个vector记录本轮新申请的channel
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         // 参数检查
@@ -316,6 +330,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             reuseChannelIdxMap[rankPair][engine].emplace(endpointPair, 0);
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
+        
+        // todo: 需要记录新申请的channel信息，用于临时资源清理，create channel需要新增一个返回值用于判断（可以使用HCCL_E_AGAIN）
+        // save channelIndex, reuseIdx
+        // todo: 申请channel因资源不足失败时，不能直接返回，要在接口内部清理channel
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
         if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
@@ -331,6 +349,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[%p]",
             __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
     }
+
+    // todo: 如果申请失败
+    // 根据记录的channelIndex找到 channel desc，找到对应的endPoint pair，清理endpoint pair中记录的channel handle
+    // endpoint pair需要新增 DestroyChannel方法
 
     return HCCL_SUCCESS;
 }

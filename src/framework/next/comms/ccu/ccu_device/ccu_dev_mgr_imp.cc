@@ -45,6 +45,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
     std::shared_ptr<CcuDrvHandle> drvHandle = nullptr;
     drvHandle.reset(new (std::nothrow) CcuDrvHandle(devLogicId));
     CHK_PTR_NULL(drvHandle);
+    // todo: 处理ccu驱动拉起失败
     CHK_RET(drvHandle->Init());
     ccuDrvHandleMap[devLogicId] = drvHandle;
     ccuDrvHandle = ccuDrvHandleMap[devLogicId];
@@ -119,6 +120,7 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
         }
     }
 
+    // todo：处理通信域CCU实例预分配资源失败
     CHK_RET(CcuDevMgrImp::AllocResHandle(deviceLogicId, resReq, resHandle));
     HCCL_INFO("[%s] succeed, get res handle[%llx], devLogicId[%d]", __func__, resHandle, deviceLogicId);
     return HcclResult::HCCL_SUCCESS;
