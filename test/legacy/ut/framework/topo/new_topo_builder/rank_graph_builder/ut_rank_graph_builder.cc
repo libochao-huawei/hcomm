@@ -241,3 +241,48 @@ TEST_F(RankGraphBuilderTest, Ut_RankGraphBuilderBuild_When_Empty_Expect_InvalidP
     EXPECT_THROW(rankGraphBuilder.Build(rankTable, topoPath, 0), InvalidParamsException);
     PhyTopo::GetInstance()->initFlag = true;
 }
+
+TEST_F(RankGraphBuilderTest, Ut_AddFabricInfo_When_MyRankOutOfRange_Expect_InvalidParamsException)
+{
+    // when
+    std::shared_ptr<NetInstance> mockNetInstance = std::make_shared<ClosNetInstance>(1, "test-net");
+    // 明确指定要 mock 的函数版本（非 const 版本）
+    using GetNetInstanceByRankIdFunc = NetInstance* (RankGraph::*)(u32, RankId);
+    GetNetInstanceByRankIdFunc func = &RankGraph::GetNetInstanceByRankId;
+    MOCKER_CPP(func).stubs().will(returnValue(mockNetInstance.get()));
+    
+    // then
+    RankGraphBuilder rankGraphBuilder;
+    rankGraphBuilder.rankGraph_ = std::make_unique<RankGraph>(0);
+    rankGraphBuilder.myRank_ = 1;
+    
+    // Create rankTable with ranks.size() = 1, so myRank_ = 1 is out of range
+    auto rankTable = std::make_unique<RankTableInfo>();
+    rankTable->ranks.resize(1);
+    rankGraphBuilder.rankTable_ = std::move(rankTable);
+    
+    EXPECT_THROW(rankGraphBuilder.AddFabricInfo(1), InvalidParamsException);
+}
+
+TEST_F(RankGraphBuilderTest, Ut_AddFabricInfo_When_NetLayerOutOfRange_Expect_InvalidParamsException)
+{
+    // when
+    std::shared_ptr<NetInstance> mockNetInstance = std::make_shared<ClosNetInstance>(1, "test-net");
+    // 明确指定要 mock 的函数版本（非 const 版本）
+    using GetNetInstanceByRankIdFunc = NetInstance* (RankGraph::*)(u32, RankId);
+    GetNetInstanceByRankIdFunc func = &RankGraph::GetNetInstanceByRankId;
+    MOCKER_CPP(func).stubs().will(returnValue(mockNetInstance.get()));
+    
+    // then
+    RankGraphBuilder rankGraphBuilder;
+    rankGraphBuilder.rankGraph_ = std::make_unique<RankGraph>(0);
+    rankGraphBuilder.myRank_ = 0;
+    
+    // Create rankTable with myRankLevelInfos.size() = 1, so netLayer = 1 is out of range
+    auto rankTable = std::make_unique<RankTableInfo>();
+    rankTable->ranks.resize(1);
+    rankTable->ranks[0].rankLevelInfos.resize(1);
+    rankGraphBuilder.rankTable_ = std::move(rankTable);
+    
+    EXPECT_THROW(rankGraphBuilder.AddFabricInfo(1), InvalidParamsException);
+}
