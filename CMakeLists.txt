@@ -280,7 +280,12 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
     )
     set(HCCL_PKG_CCU_HEAD
         pkg_inc/hcomm/ccu/ccu_assist_pub.h
-        # ccu 新版接口
+    )
+    install(FILES
+        ${HCCL_PKG_CCU_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+    )
+    set(HCCL_PKG_CCU_NEW_HEAD
         pkg_inc/hcomm/ccu_new/ccu_address.hpp
         pkg_inc/hcomm/ccu_new/ccu_api.hpp
         pkg_inc/hcomm/ccu_new/ccu_buffer.hpp
@@ -297,8 +302,8 @@ file(CREATE_LINK "../hcomm/hcomm_res_defs.h" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFI
         pkg_inc/hcomm/ccu_new/ccu_variable.hpp
     )
     install(FILES
-        ${HCCL_PKG_CCU_HEAD}
-        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+        ${HCCL_PKG_CCU_NEW_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu_new/ OPTIONAL
     )
     set(HCOMM_PKG_HEAD
         pkg_inc/hcomm/hcomm_primitives_expt.h
