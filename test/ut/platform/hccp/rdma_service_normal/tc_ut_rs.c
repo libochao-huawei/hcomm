@@ -3561,7 +3561,7 @@ void TcRsGetIbCtxAndRdevIndex()
 void TcRsRdevCbInit()
 {
 	struct rdev rdevInfo = {0};
-	struct rs_cb rsCb;
+	struct rs_cb rsCb = {0};
 	struct RsRdevCb rdevCb = {0};
 	int rdevIndex;
 	mocker(RsInetNtop, 20, 0);
