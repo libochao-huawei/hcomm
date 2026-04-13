@@ -22,7 +22,7 @@ namespace hccl {
 class NotifyManager {
 struct NotifyInfo {
     CommEngine commEngine;
-    ::NotifyType notifyType;
+    ::NotifyTypeInner notifyType;
     bool isAicpu;
     NotifyHandle notifyHandle;
 };
@@ -39,7 +39,7 @@ public:
     static std::string GetBinNotifys(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const NotifyLoadType notifyType);
 
-    HcclResult HcclAllocNotify(CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
+    HcclResult HcclAllocNotify(CommEngine commEngine, ::NotifyTypeInner notifyType, uint32_t notifyNum,
         NotifyHandle **notifyHandleList);
     HcclResult HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList);
 
@@ -61,7 +61,7 @@ private:
     static HcclResult InitNotifys(std::istringstream &iss, size_t notifyNum,
         std::vector<std::unique_ptr<LocalNotify>> &newNotifys);
 #ifndef CCL_KERNEL_AICPU
-    HcclResult NotifyTypeToNotifyLoadType(::NotifyType notifyType, NotifyLoadType &notifyLoadType);
+    HcclResult NotifyTypeToNotifyLoadType(::NotifyTypeInner notifyType, NotifyLoadType &notifyLoadType);
     std::string commId_;
     aclrtBinHandle binHandle_;
     std::mutex notifyMutex_;
