@@ -58,6 +58,17 @@ typedef struct {
     };
 } HcclChannelDesc;
 
+/**
+ * @brief soket通道描述参数
+ */
+typedef struct {
+    CommAbiHeader header;
+    uint32_t remoteRank;    ///< 远端rankId
+    CommProtocol channelProtocol; ///< 通信协议
+    EndpointDesc localEndpoint; ///< 本地网络设备端侧描述
+    EndpointDesc remoteEndpoint; ///< 远端网络设备端侧描述
+} HcclSocketChannelDesc;
+
 #ifndef LIKELY
 #define LIKELY(x) (__builtin_expect(!!(x), 1))
 #define UNLIKELY(x) (__builtin_expect(!!(x), 0))

@@ -9,6 +9,7 @@
  */
 #include "coll_comm_mgr.h"
 #include "ns_recovery/task_abort_handler.h"
+#include "cluster_monitor.h"
 
 namespace hccl {
 
@@ -29,6 +30,7 @@ void CollCommMgr::RegisteCollComm(CollComm* collComm)
     allCollComms_[collComm->GetCommId()] = collComm;
     // 注册到需要的地方
     HcclTaskAbortHandler::GetInstance().Register(collComm);
+    ClusterMonitor::GetInstance().Register(collComm);
 }
 
 void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
@@ -37,6 +39,7 @@ void CollCommMgr::UnRegisteCollComm(CollComm* collComm)
     allCollComms_.erase(collComm->GetCommId());
     // 从通信域里面注销
     HcclTaskAbortHandler::GetInstance().UnRegister(collComm);
+    ClusterMonitor::GetInstance().UnRegister(collComm);
 }
 
 std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
@@ -44,4 +47,7 @@ std::unordered_map<std::string, CollComm*> CollCommMgr::GetAllCollComms()
     return allCollComms_;
 }
 
+static ClusterMonitor CollCommMgr::GetClusterMonitor(s32 deviceLogicId);
+    // TODO：异常校验处理deviceLogicId
+    return clusterMonitor_[deviceLogicId];
 }
