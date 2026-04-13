@@ -49,10 +49,9 @@ protected:
         std::cout << "A Test TearDown" << std::endl;
     }
 
-    std::shared_ptr<HcclOneSideServiceAicpu> SetupService(const std::string &identifier, bool execStreamEnable, 
+    void SetupService(std::make_shared<HcclOneSideServiceAicpu> &service, const std::string &identifier, bool execStreamEnable, 
         uint32_t devId, uint32_t sqId, uint32_t actualStreamId)
     {
-        auto service = std::make_shared<HcclOneSideServiceAicpu>();
         service->identifier_ = identifier;
         service->execStreamEnable_ = false;
         service->devId_ = 0;
@@ -61,13 +60,13 @@ protected:
         streamInfo.sqId = 1;
         streamInfo.actualStreamId = 100;
         service->execStream_ = Stream(streamInfo);
-        return service;
     }
 };
 
 TEST_F(OneSideServiceUT, Ut_CleanStreamFunc_When_Disabled_ExecutesClean)
-{
-    auto service = SetupService("test_clean", false, 0, 1, 100);
+{   
+    auto service = std::make_shared<HcclOneSideServiceAicpu>();
+    SetupService(service, "test_clean", false, 0, 1, 100);
 
     SqCqeContext sqCqeContext{};
     service->execStream_.sqeContext_ = &sqCqeContext.sqContext;
@@ -91,7 +90,8 @@ TEST_F(OneSideServiceUT, Ut_CleanStreamFunc_When_Disabled_ExecutesClean)
 
 TEST_F(OneSideServiceUT, Ut_DisableAllStreamFunc_When_DisableStreamSuc)
 {
-    auto service = SetupService("test_DisableStream", false, 0, 1, 100);
+    auto service = std::make_shared<HcclOneSideServiceAicpu>();
+    SetupService(service, "test_DisableStream", false, 0, 1, 100);
 
     HcclResult ret = service->DisableAllStreamFunc();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -99,7 +99,8 @@ TEST_F(OneSideServiceUT, Ut_DisableAllStreamFunc_When_DisableStreamSuc)
 
 TEST_F(OneSideServiceUT, Ut_CleanAllStreamFunc_When_CleanStreamFuncFail_ReturnsError)
 {
-    auto service = SetupService("fail_tag", false, 0, 1, 100);
+    auto service = std::make_shared<HcclOneSideServiceAicpu>();
+    SetupService(service, "fail_tag", false, 0, 1, 100);
     HcclOneSideServiceAicpu::services_["fail_tag"] = service;
 
     MOCKER(ConfigSqStatusByType)
