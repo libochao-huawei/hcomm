@@ -895,6 +895,11 @@ void CcuTaskException::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, con
     PrintCcuErrorLog(errorInfos, taskInfo, deviceId);
     const uint8_t missionStatus = (status >> 8) & 0xFF;
     if (missionStatus >= 0x01 && missionStatus <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
+        // 构建Error cqe心跳帧并广播：
+        // 转换src/dst eid, local deviceId = deviceId
+        // GetRankIdByChannelId(ccuErrorInfo.msg.waitSignal.channelId[0], taskInfo, deviceId) get出rank id
+        // 通过rankId获取remote device id
+        // host ip怎么获取待分析
         PrintCcuUbRegisters(errorInfos, static_cast<s32>(deviceId), taskInfo);
     }
 }

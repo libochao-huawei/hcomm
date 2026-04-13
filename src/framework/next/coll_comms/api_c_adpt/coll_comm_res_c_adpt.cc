@@ -201,6 +201,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             return HcclResult::HCCL_E_PARA;
         }
         
+        CHK_RET(HcclRegiterToClusterMonitor(comm));
         CHK_RET(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
