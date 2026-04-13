@@ -88,7 +88,7 @@ std::string NotifyManager::GetBinNotifys(std::vector<std::unique_ptr<LocalNotify
     return uniqueIdStr;
 }
 
-HcclResult NotifyManager::NotifyTypeToNotifyLoadType(::NotifyType notifyType, NotifyLoadType &notifyLoadType)
+HcclResult NotifyManager::NotifyTypeToNotifyLoadType(::NotifyTypeInner notifyType, NotifyLoadType &notifyLoadType)
 {
     switch (notifyType) {
         case ::NOTIFY_TYPE_RTS_NOTIFY:
@@ -105,7 +105,7 @@ HcclResult NotifyManager::NotifyTypeToNotifyLoadType(::NotifyType notifyType, No
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyManager::HcclAllocNotify(CommEngine commEngine, ::NotifyType notifyType, uint32_t notifyNum,
+HcclResult NotifyManager::HcclAllocNotify(CommEngine commEngine, ::NotifyTypeInner notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
 {
     std::lock_guard<std::mutex> lock(notifyMutex_);
