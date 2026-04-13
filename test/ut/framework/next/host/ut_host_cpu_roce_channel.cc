@@ -114,6 +114,18 @@ protected:
         return impl;
     }
 
+    void SetupOneValidQpInfoMock()
+    {  
+        std::vector<Hccl::QpInfo> qpInfos(1);
+        ibv_cq cq{};
+        ibv_qp qp{};
+        ibv_context context{};
+        qpInfos[0].sendCq = &cq;
+        qpInfos[0].qp = &qp;
+        qpInfos[0].sendCq->context = &context;
+        MOCKER_CPP(&HostCpuRoceChannel::GetQpInfos).stubs().will(returnValue(qpInfos));
+    }
+
     std::shared_ptr<Hccl::Buffer> localBufferPtr;
     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer;
     std::vector<std::shared_ptr<Hccl::Buffer>> bufs{std::make_shared<Hccl::Buffer>((uintptr_t)2, 64)};
@@ -567,6 +579,42 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     impl_->wqeNum_ = 0;
     HcclResult ret = impl_->ChannelFence();
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_PartialCompletion_Expect_HCCL_SUCCESS)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->wqeNum_ = 3;
+    SetupOneValidQpInfoMock();
+    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq)
+        .stubs()
+        .will(returnValue(1))
+        .then(returnValue(2));
+    HcclResult ret = impl_->ChannelFence();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_PollExcessCqe_Expect_HCCL_E_INTERNAL)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->wqeNum_ = 2;
+    SetupOneValidQpInfoMock();
+    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(5));
+    HcclResult ret = impl_->ChannelFence();
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_Timeout_Expect_HCCL_E_TIMEOUT)
+{
+    SetupSuccessfulConnectionMocks();
+    auto impl_ = CreateInitAndConnect();
+    impl_->wqeNum_ = 1;
+    SetupOneValidQpInfoMock();
+    MOCKER_CPP(&HostCpuRoceChannel::IbvPollCq).stubs().will(returnValue(0));
+    HcclResult ret = impl_->ChannelFence();
+    EXPECT_EQ(ret, HCCL_E_TIMEOUT);
 }
 
 TEST_F(HostCpuRoceChannelTest, Ut_Write_When_Normal_Expect_HCCL_SUCCESS)
