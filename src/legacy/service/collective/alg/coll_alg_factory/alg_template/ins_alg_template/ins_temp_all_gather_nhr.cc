@@ -187,34 +187,34 @@ HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
     // 流间前同步，主流通知从流，只有一个流则不做任何事
     CHK_RET(PreSyncQues(tempInsQues, mainQueIdx));
     const u32 nSteps = GetNHRStepNum(tempRankSize_);
-    for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
-        const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
-        const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
-        for (u32 step = 0; step < nSteps; ++step) {
-            AicpuNHRStepInfo stepInfo;
-            CHK_RET(GetStepInfo(step, nSteps, stepInfo));
-            const std::vector<LinkData> &linkRecv = tempLinks_.at(GetRankFromMap(stepInfo.fromRank));
-            const std::vector<LinkData> &linkSend = tempLinks_.at(GetRankFromMap(stepInfo.toRank));
-            HCCL_DEBUG("[InsTempAllGatherNHR] rank[%d] rankSize[%u] recvFrom[%u] sendTo[%u] step[%u] nSteps[%u] nSlices[%u]",
-                myRank_, tempRankSize_, stepInfo.fromRank, stepInfo.toRank, step, nSteps, stepInfo.nSlices);
-            if(linkRecv.size()!=linkSend.size()){
-                HCCL_ERROR("linkRecv.size()!=linkSend.size()");
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            HCCL_INFO("GetRankFromMap(stepInfo.fromRank)=%u",GetRankFromMap(stepInfo.fromRank));
-            u32 linkNum = rank2PathNumMap_.at(GetRankFromMap(stepInfo.fromRank));
-            if(linkNum != linkRecv.size()){
-                HCCL_ERROR("InsTempAllGatherMesh1D::RunMesh linkNum != linkRecv.size()");
-                return HcclResult::HCCL_E_INTERNAL;
-            }
-            std::vector<float> dataSplitRate(linkNum);
-            CHK_RET(CalcDataSplitRateForLinks(linkRecv, dataSplitRate));//todo, 修改CalcDataSplitRateForLinks接口，变为对每个对端分别计算
-            for (u32 j = 0; j < linkNum; j++)
-            {
-                std::vector<DataSlice> txSrcSlices;
-                std::vector<DataSlice> txDstSlices;
-                std::vector<DataSlice> rxSrcSlices;
-                std::vector<DataSlice> rxDstSlices;
+    for (u32 step = 0; step < nSteps; ++step) {
+        AicpuNHRStepInfo stepInfo;
+        CHK_RET(GetStepInfo(step, nSteps, stepInfo));
+        const std::vector<LinkData> &linkRecv = tempLinks_.at(GetRankFromMap(stepInfo.fromRank));
+        const std::vector<LinkData> &linkSend = tempLinks_.at(GetRankFromMap(stepInfo.toRank));
+        HCCL_DEBUG("[InsTempAllGatherNHR] rank[%d] rankSize[%u] recvFrom[%u] sendTo[%u] step[%u] nSteps[%u] nSlices[%u]",
+            myRank_, tempRankSize_, stepInfo.fromRank, stepInfo.toRank, step, nSteps, stepInfo.nSlices);
+        if(linkRecv.size()!=linkSend.size()){
+            HCCL_ERROR("linkRecv.size()!=linkSend.size()");
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        HCCL_INFO("GetRankFromMap(stepInfo.fromRank)=%u",GetRankFromMap(stepInfo.fromRank));
+        u32 linkNum = rank2PathNumMap_.at(GetRankFromMap(stepInfo.fromRank));
+        if(linkNum != linkRecv.size()){
+            HCCL_ERROR("InsTempAllGatherMesh1D::RunMesh linkNum != linkRecv.size()");
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        std::vector<float> dataSplitRate(linkNum);
+        CHK_RET(CalcDataSplitRateForLinks(linkRecv, dataSplitRate));//todo, 修改CalcDataSplitRateForLinks接口，变为对每个对端分别计算
+        for (u32 j = 0; j < linkNum; j++)
+        {
+            std::vector<DataSlice> txSrcSlices;
+            std::vector<DataSlice> txDstSlices;
+            std::vector<DataSlice> rxSrcSlices;
+            std::vector<DataSlice> rxDstSlices;
+            for (u32 rpt = 0; rpt < tempAlgParams_.repeatNum; ++rpt) {
+                const u64 scratchRepeatStride = tempAlgParams_.sliceSize * tempRankSize_;
+                const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff + rpt * scratchRepeatStride;
                 for (u32 i = 0; i < stepInfo.nSlices; ++i) {
                     const u32 txIdx = stepInfo.txSliceIdxs[i];
                     const u32 rxIdx = stepInfo.rxSliceIdxs[i];                
@@ -229,13 +229,13 @@ HcclResult InsTempAllGatherNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues)
                     rxSrcSlices.emplace_back(CalcDataSliceForLinks(rxSrcSliceAllLink, dataSplitRate, j, dataType_));
                     rxDstSlices.emplace_back(CalcDataSliceForLinks(rxDstSliceAllLink, dataSplitRate, j, dataType_));
                 }
-                TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
-                TxRxLinks sendRecvLinks(linkSend[j], linkRecv[j]);
-                SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
-                CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[j], 0, true, dmaMode_),
-                    HCCL_ERROR("[InsTempAllGatherNHR] sendrecv failed (step=%u, rpt=%u)", step, rpt),
-                    HcclResult::HCCL_E_INTERNAL);
             }
+            TxRxSlicesList sendRecvSlicesList({txSrcSlices, txDstSlices}, {rxSrcSlices, rxDstSlices});
+            TxRxLinks sendRecvLinks(linkSend[j], linkRecv[j]);
+            SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
+            CHK_PRT_RET(SendRecv(sendRecvInfo, tempInsQues[j], 0, true, dmaMode_),
+                HCCL_ERROR("[InsTempAllGatherNHR] sendrecv failed (step=%u)", step),
+                HcclResult::HCCL_E_INTERNAL);
         }
     }
     // 流间后同步，从流通知主流
