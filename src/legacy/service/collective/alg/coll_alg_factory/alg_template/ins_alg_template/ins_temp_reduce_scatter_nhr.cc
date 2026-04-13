@@ -335,33 +335,33 @@ HcclResult InsTempReduceScatterNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues, 
     // 预计算步骤列表（算法序）
     std::vector<AicpuNHRStepInfo> steps;
     CHK_RET(GetStepInfoList(steps));
-    for (u64 rpt = 0; rpt < rptNum; ++rpt) {
-        const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff
-                              + rpt * tempAlgParams_.outputRepeatStride;
-        for (u32 s = 0; s < steps.size(); ++s) {
-            const auto &st = steps[s];
+    for (u32 s = 0; s < steps.size(); ++s) {
+        const auto &st = steps[s];
 
-            const RankId recvFromRank = GetRankFromMap(st.fromRank);
-            const RankId sendToRank   = GetRankFromMap(st.toRank);
-            CHK_PRT_RET(recvFromRank == static_cast<RankId>(-1) || sendToRank == static_cast<RankId>(-1),
-                HCCL_ERROR("[RS-NHR][RunNHR] rank map failed: from[%u] to[%u]", st.fromRank, st.toRank),
-                HcclResult::HCCL_E_INTERNAL);
+        const RankId recvFromRank = GetRankFromMap(st.fromRank);
+        const RankId sendToRank   = GetRankFromMap(st.toRank);
+        CHK_PRT_RET(recvFromRank == static_cast<RankId>(-1) || sendToRank == static_cast<RankId>(-1),
+            HCCL_ERROR("[RS-NHR][RunNHR] rank map failed: from[%u] to[%u]", st.fromRank, st.toRank),
+            HcclResult::HCCL_E_INTERNAL);
 
-            auto itRecv = tempLinks_.find(recvFromRank);
-            auto itSend = tempLinks_.find(sendToRank);
-            CHK_PRT_RET(itRecv == tempLinks_.end() || itRecv->second.empty() ||
-                        itSend == tempLinks_.end() || itSend->second.empty(),
-                HCCL_ERROR("[RS-NHR][RunNHR] link missing: recvFrom=%d sendTo=%d", recvFromRank, sendToRank),
-                HcclResult::HCCL_E_INTERNAL);
+        auto itRecv = tempLinks_.find(recvFromRank);
+        auto itSend = tempLinks_.find(sendToRank);
+        CHK_PRT_RET(itRecv == tempLinks_.end() || itRecv->second.empty() ||
+                    itSend == tempLinks_.end() || itSend->second.empty(),
+            HCCL_ERROR("[RS-NHR][RunNHR] link missing: recvFrom=%d sendTo=%d", recvFromRank, sendToRank),
+            HcclResult::HCCL_E_INTERNAL);
 
-            const LinkData &linkRecv = itRecv->second[linkIdx];
-            const LinkData &linkSend = itSend->second[linkIdx];
+        const LinkData &linkRecv = itRecv->second[linkIdx];
+        const LinkData &linkSend = itSend->second[linkIdx];
 
-            std::vector<DataSlice> txSlices;
-            std::vector<DataSlice> rxSlices;
-            txSlices.reserve(st.nSlices);
-            rxSlices.reserve(st.nSlices);
-
+        std::vector<DataSlice> txSlices;
+        std::vector<DataSlice> rxSlices;
+        txSlices.reserve(st.nSlices);
+        rxSlices.reserve(st.nSlices);
+        for (u64 rpt = 0; rpt < rptNum; ++rpt) {
+            const u64 scratchBase = tempAlgParams_.buffInfo.scratchBuffBaseOff
+                                + rpt * tempAlgParams_.outputRepeatStride;
+            
             // RS：在 SCRATCH 上进行规约交换
             for (u32 i = 0; i < st.nSlices; ++i) {
                 const u32 txIdx = st.txSliceIdxs[i]; // 算法序
@@ -371,16 +371,13 @@ HcclResult InsTempReduceScatterNHR::RunNHR(std::vector<InsQuePtr> &tempInsQues, 
                 txSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, txScOff, processSize_[linkIdx]);
                 rxSlices.emplace_back(tempAlgParams_.buffInfo.scratBuffType, rxScOff, processSize_[linkIdx]);
             }
-
-            SendRecvReduceInfo info{
-                { linkSend, linkRecv }, { { txSlices, txSlices }, { rxSlices, rxSlices } }, dataType_, redOp_
-            };
-
-            CHK_PRT_RET(SendRecvReduce(info, tempInsQues[linkIdx], 0, true, dmaMode_),
-                HCCL_ERROR("[RS-NHR][RunNHR] SendRecvReduce failed (step=%u, rpt=%llu)",
-                    st.step, static_cast<unsigned long long>(rpt)),
-                HcclResult::HCCL_E_INTERNAL);
         }
+        SendRecvReduceInfo info{
+            { linkSend, linkRecv }, { { txSlices, txSlices }, { rxSlices, rxSlices } }, dataType_, redOp_
+        };
+
+        CHK_PRT_RET(SendRecvReduce(info, tempInsQues[linkIdx], 0, true, dmaMode_),
+            HCCL_ERROR("[RS-NHR][RunNHR] SendRecvReduce failed (step=%u)", st.step), HcclResult::HCCL_E_INTERNAL);
     }
 
     return HcclResult::HCCL_SUCCESS;
