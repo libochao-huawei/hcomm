@@ -1736,7 +1736,7 @@ TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_Success_Task
     globalMirrorTasks.DestroyQueue(0, 0);
 }
 
-TEST_F(CcuTaskExceptionTest, TaskExceptionHost_Process_FindTaskInfo_Success_TaskType_NotCCU)
+TEST_F(CcuTaskExceptionTest, TaskExceptionHost_PrintTaskContextInfo_Queue_Nullptr)
 {
     EXPECT_NO_THROW(hcomm::TaskExceptionHost::PrintTaskContextInfo(0, 0, 0));
 }
