@@ -714,6 +714,7 @@ HcclResult CcuTransport::UpdateMemInfo(std::vector<CcuTransport::CclBufferInfo> 
     Hccl::BinaryStream recvStream(recvData_);
     CHK_RET(BufferInfoUnpack(recvStream));
     locBufferInfos_.insert(locBufferInfos_.end(), bufferVecTemp.begin(), bufferVecTemp.end());
+    cacheValid_ = false;
     return HcclResult::HCCL_SUCCESS;
 }
 } // namespace hcomm
