@@ -19,7 +19,7 @@
  * @note 职责：集合通信的通信域CCU管理的C接口的C到C++适配
  */
 HcclResult HcclCommQueryCcuIns(HcclComm comm,
-    CcuInsHandle *ccuInsHandles, uint32_t *insNum)
+    CcuInsHandle *insHandles, uint32_t *insNum)
 {
     EXCEPTION_HANDLE_BEGIN
 
@@ -30,7 +30,7 @@ HcclResult HcclCommQueryCcuIns(HcclComm comm,
     const auto &commId = hcclComm->GetIdentifier();
     HCCL_INFO("[%s] CommId[%s] query ccu instance.", __func__, commId.c_str());
 
-    CHK_PTR_NULL(ccuInsHandles);
+    CHK_PTR_NULL(insHandles);
     CHK_PTR_NULL(insNum);
 
      // CCU只支持A5代际
@@ -53,7 +53,7 @@ HcclResult HcclCommQueryCcuIns(HcclComm comm,
         return HcclResult::HCCL_E_UNAVAIL;
     }
 
-    ccuInsHandles[0] = ccuInsHandle;
+    insHandles[0] = ccuInsHandle;
     *insNum = 1;
     HCCL_INFO("[%s] success, take time [%lld]us.",
         __func__, DURATION_US(TIME_NOW() - startut));

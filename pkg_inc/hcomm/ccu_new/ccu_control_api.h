@@ -20,7 +20,7 @@ extern "C" {
 #endif // __cplusplus
 
 extern HcclResult HcclCommQueryCcuIns(HcclComm comm,
-    CcuInsHandle *ccuHandles, uint32_t *insNum);
+    CcuInsHandle *insHandles, uint32_t *insNum);
 
 extern CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
 
