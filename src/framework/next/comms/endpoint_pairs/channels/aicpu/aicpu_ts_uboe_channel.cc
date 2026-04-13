@@ -94,7 +94,6 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     Hccl::LinkProtocol  protocol;
     CHK_RET(CommProtocolToLinkProtocol(localEp_.protocol, protocol));
 
-    // TODO UBOE OK 本端EID去rmaManager里面查询，对端通过Socket交换
     Hccl::IpAddress locIpv4Addr;
     Hccl::IpAddress rmtIpv4Addr;
     CHK_RET(CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr));
@@ -108,9 +107,8 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     CHK_RET(hrtGetDevice(&deviceLogicId));
     Hccl::TpManager::GetInstance(deviceLogicId).Init();
 
-    // TODO UBOE OK 新增AicpuTsUboeChannel，里面增加DevUboeConnection，不在此处增加分支
-    std::unique_ptr<Hccl::DevUbConnection> ubConn = 
-        std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle, locAddr_, rmtAddr_, opMode, devUsed, jfcMode, locIpv4Addr, rmtIpv4Addr);
+    std::unique_ptr<Hccl::DevUbConnection> ubConn = std::make_unique<Hccl::DevUbUboeConnection>(rdmaHandle_, 
+        locAddr_, rmtAddr_, opMode, devUsed, Hccl::HrtUbJfcMode::STARS_POLL, locIpv4Addr, rmtIpv4Addr);
     CHK_SMART_PTR_NULL(ubConn);
 
     commonRes_.connVec.clear();
@@ -285,7 +283,7 @@ bool AicpuTsUboeChannel::IsResReady()
     return true;
 }
 
-bool AicpuTsUboeChannel::IsConnsReady() //待修改
+bool AicpuTsUboeChannel::IsConnsReady()
 {
     if (BuildConnection() != HCCL_SUCCESS) {
         HCCL_ERROR("[AicpuTsUboeChannel::%s] failed to build connections", __func__);
@@ -305,7 +303,7 @@ void AicpuTsUboeChannel::EidPack(Hccl::BinaryStream &binaryStream)
 {
     Hccl::IpAddress locIpv4Addr;
     CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr);
-    RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locIpv4Addr, locAddr_);
+    Hccl::RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locIpv4Addr, locAddr_);
     binaryStream << locAddr_.GetUniqueId();
 }
 
@@ -580,7 +578,7 @@ ChannelStatus AicpuTsUboeChannel::GetStatus()
     return channelStatus;
 }
 
-HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
+HcclResult SetUboeModuleDataName(Hccl::ModuleData &module, const std::string &name)
 {
     int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
     if (ret != 0) {
@@ -669,12 +667,12 @@ std::vector<char> AicpuTsUboeChannel::GetUniqueIdV2()
         MACRO_THROW(Hccl::InternalException, Hccl::StringFormat("channel status[%d] is not ready[%d], please check.",
             channelStatus, ChannelStatus::READY));
     }
-    // u32          type = static_cast<u32>(transportType);
+    u32 type = static_cast<u32>(Hccl::TransportType::UB);
     Hccl::BinaryStream binaryStream;
-    // binaryStream << type;
-    binaryStream << notifyNum;
-    binaryStream << bufferNum;
-    binaryStream << connNum;
+    binaryStream << type;
+    binaryStream << notifyNum_;
+    binaryStream << bufferNum_;
+    binaryStream << connNum_;
  
     auto notifyUniqueIds = GetNotifyUniqueIds();
     binaryStream << notifyUniqueIds;
@@ -706,7 +704,7 @@ HcclResult AicpuTsUboeChannel::H2DResPack(std::vector<char>& buffer)
     dataVec.resize(Hccl::AicpuResMgrType::__COUNT__);
 
     Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM;
-    CHK_RET(SetModuleDataName(dataVec[resType], "AicpuTsUboeChannel"));
+    CHK_RET(SetUboeModuleDataName(dataVec[resType], "AicpuTsUboeChannel"));
 
     std::vector<char> result;
     Hccl::BinaryStream      binaryStream;
