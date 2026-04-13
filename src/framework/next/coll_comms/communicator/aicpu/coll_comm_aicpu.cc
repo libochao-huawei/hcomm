@@ -14,6 +14,7 @@
 #include "aicpu_ts_thread.h"
 #include "aicpu_res_package_helper.h"
 #include "ub_transport_lite_impl.h"
+#include "p2p_transport_lite_impl.h"
 #include "notify_manager.h"
 #include "aicpu_hccl_def.h"
 #include "ns_recovery/aicpu/ns_recovery_func_lite.h"
@@ -204,13 +205,28 @@ HcclResult CollCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &
     std::vector<char> transpUniqueId;
     binaryStream >> transpUniqueId;
 
-    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
-    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
-        return HCCL_E_PTR);
-    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+    Hccl::BinaryStream binaryStreamForType(transpUniqueId);
+    u32 transType;
+    binaryStreamForType >> transType;
 
-    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
-    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+    // TODO TransportType
+    if (transType == Hccl::TransportType::UB) {
+        std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+        EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+
+        handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+        ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+    } else if (transType == Hccl::TransportType::P2P) {
+        std::unique_ptr<Hccl::P2PTransportLiteImpl> p2pTransportLiteImpl;
+        EXECEPTION_CATCH((p2pTransportLiteImpl = std::make_unique<Hccl::P2PTransportLiteImpl>(transpUniqueId)),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(p2pTransportLiteImpl);
+
+        handle = reinterpret_cast<uint64_t>(p2pTransportLiteImpl.get());
+        // TODO 是否需要缓存用于NsRecovery
+    }
 
     return HCCL_SUCCESS;
 }
