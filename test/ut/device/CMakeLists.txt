@@ -14,6 +14,7 @@ set(hccl_utest_device_src_list
     ut_stream_device_utest.cc
     ut_communicator_device_utest.cc
     ut_zero_copy_device_utest.cc
+    ut_aicpu_one_side_service.cc
 
     ${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc
     ${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc
@@ -27,6 +28,7 @@ set(hccl_utest_device_src_list
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_aiv_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/hccl_alg_device.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_executor_aicpu.cc
+    ${HCCL_CODE_ROOT}/src/framework/device/framework/aicpu_one_side_service.cc
 )
 
 add_executable(hccl_utest_device ${hccl_utest_device_src_list})
