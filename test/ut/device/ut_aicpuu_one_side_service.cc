@@ -49,7 +49,7 @@ protected:
         std::cout << "A Test TearDown" << std::endl;
     }
 
-    void SetupService(std::make_shared<HcclOneSideServiceAicpu> &service, const std::string &identifier, bool execStreamEnable, 
+    void SetupService(std::shared_ptr<HcclOneSideServiceAicpu> &service, const std::string &identifier, bool execStreamEnable, 
         uint32_t devId, uint32_t sqId, uint32_t actualStreamId)
     {
         service->identifier_ = identifier;
