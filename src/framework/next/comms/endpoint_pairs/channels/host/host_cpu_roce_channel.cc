@@ -970,7 +970,7 @@ HcclResult HostCpuRoceChannel::ChannelFence()
 
         uint32_t actualNum32 = static_cast<uint32_t>(actualNum);
         if (actualNum32 > wqeNum_) {
-            HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq polled more completions (%d) than expected (%u).",
+            HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq polled more completions (%u) than expected (%u).",
                 __func__, actualNum32, wqeNum_);
             return HCCL_E_INTERNAL;
         } else if (actualNum32 > 0) {
