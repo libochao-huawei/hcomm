@@ -3561,9 +3561,10 @@ void TcRsGetIbCtxAndRdevIndex()
 void TcRsRdevCbInit()
 {
 	struct rdev rdevInfo = {0};
-	struct rs_cb rsCb;
+	struct rs_cb rsCb = {0};
 	struct RsRdevCb rdevCb = {0};
 	int rdevIndex;
+
 	mocker(RsInetNtop, 20, 0);
 	mocker(pthread_mutex_init, 20, 1);
 	int ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
@@ -3610,6 +3611,7 @@ void TcRsRdevCbInit()
 	ret = RsRdevCbInit(rdevInfo, &rdevCb, &rsCb, &rdevIndex);
 	EXPECT_INT_EQ(ret, 1);
 	mocker_clean();
+
 	return;
 }
 
