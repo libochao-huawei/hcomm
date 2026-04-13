@@ -5493,3 +5493,10 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
     return HCCL_SUCCESS;
 }
 }
+
+extern "C" {
+HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *worldRank)
+{
+    return HCCL_SUCCESS;
+}
+}
