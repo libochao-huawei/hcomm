@@ -133,6 +133,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     // 通信域配置config优先级更高，当配置默认展开模式时，读取环境变量配置
     opExpansionMode_ = opExpansionMode;
     if (opExpansionMode_ == DEFAULT_MODE) {
+        // 环境变量模块已处理，当用户未配置时，输出ccu sched模式
         auto accelerator = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetHcclAccelerator();
         HCCL_INFO("[MyRank][%s] set op expansion mode by env[%s].",
             __func__, accelerator.Describe().c_str());
@@ -143,11 +144,11 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1 &&
         (opExpansionMode_ == CCU_MS_MODE || opExpansionMode_ == CCU_SCHED_MODE)) {
-        const uint32_t originOpExpansionMode = opExpansionMode_;
+        const uint32_t originOpExpansionMode = opExpansionMode_; // 记录原始加速模式，避免中间执行修改后丢失
         ccuResContainer_.reset(new (std::nothrow)CcuResContainer());
         CHK_PTR_NULL(ccuResContainer_);
         auto ret = TryInitCcuInstance();
-        if (ret != HcclResult::HCCL_SUCCESS) {
+        if (ret != HcclResult::HCCL_SUCCESS) { // 申请成功与回退成功都属于成功，其他均非预期
             HCCL_ERROR("[MyRank][%s] failed to init ccu instance, op expansion mode[%u].",
                 __func__, originOpExpansionMode);
             return ret;
