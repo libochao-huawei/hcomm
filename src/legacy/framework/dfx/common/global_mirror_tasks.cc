@@ -45,12 +45,12 @@ TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
     auto &devMap         = taskMaps_[devId];
     auto  streamIterator = devMap.find(streamId);
     if (streamIterator == devMap.end()) {
-        HCCL_ERROR("GlobalMirrorTasks::GetQueue devId[%u] streamId(sqId)[%u] do not found", devId, streamId);
+        HCCL_ERROR("GlobalMirrorTasks::GetQueue devId[%u], streamId(sqId)[%u] not found", devId, streamId);
         THROW<InternalException>(
-            StringFormat("GlobalMirrorTasks::GetQueue devId[%u] streamId(sqId)[%u] do not found", devId, streamId));
+            StringFormat("GlobalMirrorTasks::GetQueue devId[%u], streamId(sqId)[%u] not found", devId, streamId));
     }
 
-    HCCL_INFO("[GlobalMirrorTasks][GetQueue]find devId[%u] streamId(sqId)[%u]", devId, streamId);
+    HCCL_INFO("[GlobalMirrorTasks][GetQueue]find devId[%u], streamId(sqId)[%u]", devId, streamId);
 
     return streamIterator->second.get();
 }
@@ -110,7 +110,7 @@ std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId
         return nullptr;
     };
 
-    HCCL_INFO("[GlobalMirrorTasks][GetTaskInfo]find devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u]", devId, streamId, taskId);
+    HCCL_INFO("[GlobalMirrorTasks][GetTaskInfo]find devId[%u], streamId(sqId)[%u] taskId(sqeId)[%u]", devId, streamId, taskId);
 
     return *task;
 }
