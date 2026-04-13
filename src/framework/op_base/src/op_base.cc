@@ -662,6 +662,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
             "device[%d], return[0x%016llx]", opBaseHcom.rankTable.rankNum, rank,
             opBaseHcom.params.serverId.c_str(), opBaseHcom.params.logicDevId, HCCL_ERROR_CODE(ret));
         (void)HcclCommDestroy(opBaseHcom.pComm.get());
+        opBaseHcom.pComm = nullptr;
         *comm = nullptr;
         return ret;
     }
