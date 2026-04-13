@@ -93,6 +93,41 @@ HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type)
     return HCCL_SUCCESS;
 }
 
+std::unordered_map<std::pair<CommEngine, ThreadType>, NotifyLoadType> NOTIFY_TYPE_CONVERT = {
+    {{COMM_ENGINE_CPU, THREAD_TYPE_TS}, NotifyLoadType::HOST_NOTIFY},
+    {{COMM_ENGINE_CCU, THREAD_TYPE_CPU}, NotifyLoadType::HOST_NOTIFY},
+    {{COMM_ENGINE_AICPU, THREAD_TYPE_TS}, NotifyLoadType::DEVICE_NOTIFY},
+}
+
+std::unordered_map<std::pair<CommEngine, ThreadType>, StreamType> STREAM_TYPE_CONVERT = {
+    {{COMM_ENGINE_CPU, THREAD_TYPE_TS}, StreamType::STREAM_TYPE_ONLINE},
+    {{COMM_ENGINE_CCU, THREAD_TYPE_CPU}, StreamType::STREAM_TYPE_ONLINE},
+    {{COMM_ENGINE_AIV, THREAD_TYPE_CPU}, StreamType::STREAM_TYPE_ONLINE},
+    {{COMM_ENGINE_AICPU, THREAD_TYPE_TS}, StreamType::STREAM_TYPE_DEVICE},
+}
+
+HcclResult GetNotifyLoadType(CommEngine engine, ThreadType threadType, NotifyLoadType &type)
+{
+    auto iter = NOTIFY_TYPE_CONVERT.find(std::make_pair(engine, threadType));
+    if (iter == STREAM_TYPE_CONVERT.end()) {
+        HCCL_ERROR("[GetNotifyLoadType]not support comm engine type: %d, thread type: %d", engine, threadType);
+        return HCCL_E_PARA;
+    }
+    type = iter->second;
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetStreamType(CommEngine engine, ThreadType threadType, StreamType &type)
+{
+    auto iter = STREAM_TYPE_CONVERT.find(std::make_pair(engine, threadType));
+    if (iter == STREAM_TYPE_CONVERT.end()) {
+        HCCL_ERROR("[GetStreamType]not support comm engine type: %d, thread type: %d", engine, threadType);
+        return HCCL_E_PARA;
+    }
+    type = iter->second;
+    return HCCL_SUCCESS;
+}
+
 #ifndef CCL_KERNEL_AICPU
 HcclResult ValidateThreadParams(uint32_t threadNum, uint32_t notifyNumPerThread) 
 {
