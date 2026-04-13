@@ -34,12 +34,11 @@ static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
 
     HCCL_INFO("[%s] tlvHandle[%p].", __func__, tlvHandle);
     int32_t ret = RaTlvRequest(tlvHandle, tlvModuleType, &sendMsg, &recvMsg);
-    // todo: 处理ccu驱动拉起失败，参考legacy，底层返回特定标识后，上层需要特定处理
-    // 遗留问题：对通信域都返回unavail，不能区分是ccu驱动拉起失败，还是资源不足，建议更换返回值
-    // if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
-    //     HCCL_WARNING("[HrtRaTlvRequest]ra tlv request UNAVAIL. return: ret[%d]", ret);
-    //     return HCCL_E_UNAVAIL;
-    // }
+    if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
+        HCCL_RUN_WARNING("[%s] ra tlv request UNAVAIL, tlvHandle[%p], tlvModeulType[%u], tlvCcuMsgType[%u], ret[%d].",
+            __func__, tlvHandle, tlvModuleType, tlvCcuMsgType, ret);
+        return HCCL_E_AGAIN; // 代表CCU驱动已被拉起，需要等待其他进程退出
+    }
 
     if (ret != 0) {
         HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. "
@@ -64,7 +63,7 @@ HcclResult CcuDrvHandle::Init()
     tlvHandle_ = tlvHdcMgr.GetHandle();
     CHK_PTR_NULL(tlvHandle_);
 
-    // todo: 拉起ccu驱动
+    // 拉起CCU驱动如果因其他进程占用重复拉起时，返回EAGAIN，日志检查返回值打印warning
     CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
     CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
     CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());

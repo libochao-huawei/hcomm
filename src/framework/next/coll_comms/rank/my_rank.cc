@@ -74,6 +74,48 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
     return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
 }
 
+constexpr uint32_t AICPU_TS_MODE = 2;
+constexpr uint32_t CCU_MS_MODE = 5;
+constexpr uint32_t CCU_SCHED_MODE = 6;
+HcclResult MyRank::TryInitCcuInstance()
+{
+    ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
+    CHK_PTR_NULL(ccuResContainer_);
+    auto ccuInitRet = ccuResContainer_->Init();
+    // ccu驱动拉起失败，直接回退至aicpu ts
+    if (ccuInitRet == HcclResult::HCCL_E_AGAIN) {
+        opExpansionMode_ = AICPU_TS_MODE;
+        CHK_RET(TryInitCcuInstance()); // 至多递归一次
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    // ccu通信域数量过多，导致资源不足
+    if (ccuInitRet == HcclResult::HCCL_E_UNAVAIL) {
+        ccuResContainer_ = nullptr;
+        // 如果是ccu ms模式，回退至ccu调度模式重试
+        if (opExpansionMode_ == CCU_MS_MODE) {
+            opExpansionMode_ = CCU_SCHED_MODE;
+            CHK_RET(TryInitCcuInstance()); // 至多递归两次
+            return HcclResult::HCCL_SUCCESS;
+        }
+
+        // 其余模式资源不足回退至aicpu ts
+        opExpansionMode_ = AICPU_TS_MODE;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    // 预期外返回值属于错误
+    if (ccuInitRet != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] failed, ret[%d] is not expected.",
+        __func__, ccuInitRet);
+        ccuResContainer_ = nullptr;
+        return ccuInitRet;
+    }
+
+    // ccu资源申请成功，或非ccu通信域跳过资源申请
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
 {
     // EXCEPTION_HANDLE_BEGIN
@@ -95,16 +137,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
-        ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
-        CHK_PTR_NULL(ccuResContainer_);
-        CHK_RET(ccuResContainer_->Init());
-        // todo: 处理初始化CCU实例失败时，如果CCU MS拉起因资源不足失败，需要回退成CCU Sched；
-        // 如果是CCU Sched拉起失败，需要回退成AICPU；
-        // 如果是驱动拉起失败，直接回退成AICPU，并且本进程不再尝试拉起ccu驱动；
-        // 回退后需要修改通信与的展开模式，后续查询通信域加速模式直接就是回退后结果
-
-        // 遗留问题：不实现comm manager，通过ccu ms资源不足时，再申请ccu sched；
-        // 当前资源就不足支持2个ms，所以可以直接支持单个ms通信域
+        CHK_RET(TryInitCcuInstance());
     }
 
     // 创建端点管理器
