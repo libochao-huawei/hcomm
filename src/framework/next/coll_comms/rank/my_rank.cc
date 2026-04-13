@@ -80,9 +80,9 @@ constexpr uint32_t CCU_MS_MODE = 5;
 constexpr uint32_t CCU_SCHED_MODE = 6;
 HcclResult MyRank::TryInitCcuInstance()
 {
-    ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
+    ccuResContainer_.reset(new (std::nothrow)CcuResContainer());
     CHK_PTR_NULL(ccuResContainer_);
-    auto ccuInitRet = ccuResContainer_->Init();
+    auto ccuInitRet = ccuResContainer_->ChangeMode(opExpansionMode_);
     // ccu驱动拉起失败，直接回退至aicpu ts
     if (ccuInitRet == HcclResult::HCCL_E_AGAIN) {
         opExpansionMode_ = AICPU_TS_MODE;
@@ -136,7 +136,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     opExpansionMode_ = opExpansionMode;
     if (opExpansionMode_ == DEFAULT_MODE) {
         auto accelerator = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetHcclAccelerator();
-        HCCL_INFO("[MyRank][%s] set op expansion mode by env[%d].",
+        HCCL_INFO("[MyRank][%s] set op expansion mode by env[%s].",
             __func__, accelerator.Describe().c_str());
         opExpansionMode_ = static_cast<uint32_t>(accelerator);
     }

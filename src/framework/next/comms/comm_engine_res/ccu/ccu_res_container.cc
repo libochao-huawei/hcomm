@@ -57,27 +57,45 @@ CcuResContainer::~CcuResContainer()
     }
 }
 
+HcclResult CcuResContainer::ChangeMode(uint32_t opExpansionMode)
+{
+    if (opExpansionMode_ != opExpansionMode) {
+        opExpansionMode_ = opExpansionMode;
+        CHK_RET(Init());
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuResContainer::Init()
 {
     const auto ccuEngine = OpExpansionModeToCcuEngine(opExpansionMode_);
     if (ccuEngine == CcuEngine::INVALID) {
+        resPack_ = nullptr;
+        ccuDrvHandle = nullptr;
         return HcclResult::HCCL_SUCCESS;
     }
 
     devLogicId_ = HcclGetThreadDeviceId();
 
     if (!ccuDrvHandle_) {
-        // todo: ccu驱动如果拉起失败，需要缓存，返回特定错误码
-        // 单卡多进程相关
-        CHK_RET(CcuInitFeature(devLogicId_, ccuDrvHandle_));
+        auto ret = CcuInitFeature(devLogicId_, ccuDrvHandle_);
+        if (ret == HcclResult::HCCL_E_AGAIN) {
+            return ret;
+        }
+
+        CHK_RET(ret);
     }
 
     if (!resPack_) {
         resPack_.reset(new (std::nothrow) CcuResPack(ccuEngine));
         CHK_PTR_NULL(resPack_);
-        // todo: 资源申请失败，可能ccu通信域过多，资源不足
-        // ccu通信域管理相关
-        CHK_RET(resPack_->Init());
+        auto ret = resPack_->Init();
+        if (ret == HcclResult::HCCL_E_UNAVAIL) {
+            return ret;
+        }
+
+        CHK_RET(ret);
     }
 
     return HcclResult::HCCL_SUCCESS;
