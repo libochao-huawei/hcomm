@@ -38,5 +38,6 @@ struct RsQpLenInfo {
 };
 
 int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
+void RsMrRelease(struct RsQpCb *qpCb);
 
 #endif // RS_RDMA_H
