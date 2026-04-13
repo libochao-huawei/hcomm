@@ -207,6 +207,9 @@ static void DlHalApiInit(void)
 
     gHalOps.dlHalHostUnregister = (drvError_t (*)(void *src_ptr, uint32_t devid))
         AscendHalDlsym(gHalApiHandle, "halHostUnregister");
+
+    gHalOps.dlHalHostUnregisterEx = (drvError_t (*)(void *src_ptr, uint32_t devid, uint32_t flag))
+        AscendHalDlsym(gHalApiHandle, "halHostUnregisterEx");
     return;
 }
 
@@ -662,4 +665,11 @@ int DlHalHostUnRegister(void *srcPtr, uint32_t devId)
     DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHostUnregister, "dlHalHostUnregister");
 
     return gHalOps.dlHalHostUnregister(srcPtr, devId);
+}
+
+int DlHalHostUnRegisterEx(void *srcPtr, uint32_t devId, uint32_t flag)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHostUnregisterEx, "dlHalHostUnregisterEx");
+
+    return gHalOps.dlHalHostUnregisterEx(srcPtr, devId, flag);
 }
