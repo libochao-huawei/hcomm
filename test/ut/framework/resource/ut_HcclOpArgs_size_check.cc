@@ -27,12 +27,12 @@ TEST_F(HcclOpArgsStructTest, TestHcclOpArgsSize)
 TEST_F(HcclOpArgsStructTest, TestHcclOpArgsFieldOffsets)
 {
     EXPECT_EQ(offsetof(HcclOpArgs, srcDataType), 0u);
-    EXPECT_EQ(offsetof(HcclOpArgs, dstDataType), 1u);
-    EXPECT_EQ(offsetof(HcclOpArgs, reduceType), 2u);
-    EXPECT_EQ(offsetof(HcclOpArgs, count), 8u);
-    EXPECT_EQ(offsetof(HcclOpArgs, algConfig), 16u);
-    EXPECT_EQ(offsetof(HcclOpArgs, commEngine), 144u);
-    EXPECT_EQ(offsetof(HcclOpArgs, reverse), 152u);
+    EXPECT_EQ(offsetof(HcclOpArgs, dstDataType), offsetof(HcclOpArgs, srcDataType) + 1u);
+    EXPECT_EQ(offsetof(HcclOpArgs, reduceType), offsetof(HcclOpArgs, dstDataType) + 1u);
+    EXPECT_EQ(offsetof(HcclOpArgs, count), offsetof(HcclOpArgs, reduceType) + 1u);
+    EXPECT_EQ(offsetof(HcclOpArgs, algConfig), offsetof(HcclOpArgs, count) + 8u);
+    EXPECT_EQ(offsetof(HcclOpArgs, commEngine), offsetof(HcclOpArgs, algConfig) + 128u);
+    EXPECT_EQ(offsetof(HcclOpArgs, reverse), offsetof(HcclOpArgs, commEngine) + 1u);
 }
 
 TEST_F(HcclOpArgsStructTest, TestHcclOpArgsFieldSizes)

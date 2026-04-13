@@ -25,29 +25,29 @@ TEST_F(HcclCombinOpParam910BStructTest, TestHcclCombinOpParamSize)
 TEST_F(HcclCombinOpParam910BStructTest, TestHcclCombinOpParamFieldOffsets)
 {
     EXPECT_EQ(offsetof(HcclCombinOpParam, mc2WorkSpace), 0u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, rankId), 16u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, rankNum), 20u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, winSize), 24u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsIn), 32u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsOut), 288u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, hcomId), 544u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, streamInfo), 672u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, signalInfo), 1184u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, config), 8448u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, overFlowAddr), 8496u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, onlyRead),8504u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcControlTransferH2DParams), 8512u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcStatusTransferD2HParams), 8552u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, padding), 8592u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, winExpSize), 8608u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsExp), 8616u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, multiServerFlag), 8872u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, ibverbsData), 8880u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, ibverbsDataSize), 8888u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, sizeOfAiRMAInfo), 8896u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, aiRMAInfo), 8904u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, capabilityPtr), 8912u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, capabilitySize), 8920u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, rankId), offsetof(HcclCombinOpParam, mc2WorkSpace) + 16u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, rankNum), offsetof(HcclCombinOpParam, rankId) + 4u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, winSize), offsetof(HcclCombinOpParam, rankNum) + 4u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsIn), offsetof(HcclCombinOpParam, winSize) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsOut), offsetof(HcclCombinOpParam, windowsIn) + 256u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, hcomId), offsetof(HcclCombinOpParam, windowsOut) +256u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, streamInfo), offsetof(HcclCombinOpParam, hcomId) + 128u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, signalInfo), offsetof(HcclCombinOpParam, streamInfo) + 512u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, config), offsetof(HcclCombinOpParam, signalInfo) + 7264u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, overFlowAddr), offsetof(HcclCombinOpParam, config) + 48u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, onlyRead), offsetof(HcclCombinOpParam, overFlowAddr) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcControlTransferH2DParams), offsetof(HcclCombinOpParam, onlyRead) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, kfcStatusTransferD2HParams), offsetof(HcclCombinOpParam, kfcControlTransferH2DParams) + 40u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, padding), offsetof(HcclCombinOpParam, kfcStatusTransferD2HParams) + 40u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, winExpSize), offsetof(HcclCombinOpParam, padding) + 16u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsExp), offsetof(HcclCombinOpParam, winExpSize) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, multiServerFlag), offsetof(HcclCombinOpParam, windowsExp) + 256u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, ibverbsData), offsetof(HcclCombinOpParam, multiServerFlag) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, ibverbsDataSize), offsetof(HcclCombinOpParam, ibverbsData) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, sizeOfAiRMAInfo), offsetof(HcclCombinOpParam, ibverbsDataSize) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, aiRMAInfo), offsetof(HcclCombinOpParam, sizeOfAiRMAInfo) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, capabilityPtr), offsetof(HcclCombinOpParam, aiRMAInfo) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, capabilitySize), offsetof(HcclCombinOpParam, capabilityPtr) + 8u);
 }
 
 TEST_F(HcclCombinOpParam910BStructTest, TestHcclCombinOpParamFieldSizes)

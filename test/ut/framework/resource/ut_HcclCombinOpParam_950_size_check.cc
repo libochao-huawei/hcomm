@@ -26,20 +26,20 @@ TEST_F(HcclCombinOpParam950StructTest, TestHcclCombinOpParamSize)
 TEST_F(HcclCombinOpParam950StructTest, TestHcclCombinOpParamFieldOffsets)
 {
     EXPECT_EQ(offsetof(HcclCombinOpParam, workSpace), 0u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, workSpaceSize), 8u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, rankId), 16u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, rankDim), 20u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, winSize), 24u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsIn), 32u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsOut), 544u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, xnAddr), 1056u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, ckeAddr), 1064u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, msAddr), 1072u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, msSize), 1080u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, opType), 1088u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, algorithmType), 1120u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, wq), 1128u);
-    EXPECT_EQ(offsetof(HcclCombinOpParam, cq), 6248u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, workSpaceSize), offsetof(HcclCombinOpParam, workSpace) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, rankId), offsetof(HcclCombinOpParam, workSpaceSize) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, rankDim), offsetof(HcclCombinOpParam, rankId) + 4u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, winSize), offsetof(HcclCombinOpParam, rankDim) + 4u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsIn), offsetof(HcclCombinOpParam, winSize) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, windowsOut), offsetof(HcclCombinOpParam, windowsIn) + 512u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, xnAddr), offsetof(HcclCombinOpParam, windowsOut) + 512u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, ckeAddr), offsetof(HcclCombinOpParam, xnAddr) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, msAddr), offsetof(HcclCombinOpParam, ckeAddr) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, msSize), offsetof(HcclCombinOpParam, msAddr) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, opType), offsetof(HcclCombinOpParam, msSize) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, algorithmType), offsetof(HcclCombinOpParam, opType) + 32u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, wq), offsetof(HcclCombinOpParam, algorithmType) + 8u);
+    EXPECT_EQ(offsetof(HcclCombinOpParam, cq), offsetof(HcclCombinOpParam, wq) + 5120u);
 }
 
 TEST_F(HcclCombinOpParam950StructTest, TestHcclCombinOpParamFieldSizes)
