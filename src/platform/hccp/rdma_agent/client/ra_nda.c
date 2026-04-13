@@ -54,3 +54,17 @@ HCCP_ATTRI_VISI_DEF int RaNdaCqDestroy(void *rdmaHandle, void *cqHandle)
     ret = RaPeerNdaCqDestroy(rdevHandleTmp, cqHandle);
     return ConverReturnCode(RDMA_OP, ret);
 }
+
+HCCP_ATTRI_VISI_DEF int RaNdaQpCreate(void *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+    void **qpHandle)
+{
+    struct RaRdmaHandle *rdevHandleTmp = (struct RaRdmaHandle *)rdmaHandle;
+    int ret = 0;
+
+    CHK_PRT_RETURN(rdmaHandle == NULL || attr == NULL || info == NULL || qpHandle == NULL,
+        hccp_err("[create][RaNdaQp]rdmaHandle or attr or info or qpHandle is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    ret = RaPeerNdaQpCreate(rdevHandleTmp, attr, info, qpHandle);
+    return ConverReturnCode(RDMA_OP, ret);
+}
