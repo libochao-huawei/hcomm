@@ -74,6 +74,7 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
     return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
 }
 
+constexpr uint32_t DEFAULT_MODE = 0;
 constexpr uint32_t AICPU_TS_MODE = 2;
 constexpr uint32_t CCU_MS_MODE = 5;
 constexpr uint32_t CCU_SCHED_MODE = 6;
@@ -133,6 +134,12 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     // todo: 展开模式需要判断，如果是default，要读取环境环境HCCL_OP_EXPANSION_MODE，根据环境变量配置；否则config配置优先
     // 复用以前的环境变量处理单例
     opExpansionMode_ = opExpansionMode;
+    if (opExpansionMode_ == DEFAULT_MODE) {
+        auto accelerator = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetHcclAccelerator();
+        HCCL_INFO("[MyRank][%s] set op expansion mode by env[%d].",
+            __func__, accelerator.Describe().c_str());
+        opExpansionMode_ = static_cast<uint32_t>(accelerator);
+    }
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
