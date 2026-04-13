@@ -98,8 +98,8 @@ target_include_directories(rdma_agent_utest PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${SRC_DIR}/src/platform/hccp/external_depends/host_lite
     ${RDMA_CORE_INCLUDE_DIR}
-    ${CANN_3RD_LIB_PATH}/json/include/	 
-    ${CANN_3RD_LIB_PATH}/gtest/include/	 
+    ${CANN_3RD_LIB_PATH}/json/include/
+    ${CANN_3RD_LIB_PATH}/gtest/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/
     ${CANN_3RD_LIB_PATH}/mockcpp/include/3rdparty/
     ${CANN_3RD_LIB_PATH}/boost/
@@ -107,12 +107,17 @@ target_include_directories(rdma_agent_utest PRIVATE
 
 target_compile_options(rdma_agent_utest PRIVATE
     -U_FORTIFY_SOURCE -O0 -g
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_compile_definitions(rdma_agent_utest PRIVATE
-    HNS_ROCE_LLT 
-    USE_DISPATCH_EXPECT 
+    HNS_ROCE_LLT
+    USE_DISPATCH_EXPECT
     CONFIG_SSL
+)
+
+target_link_options(rdma_agent_utest PRIVATE
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
 )
 
 target_link_libraries(rdma_agent_utest PRIVATE
