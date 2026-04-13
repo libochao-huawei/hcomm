@@ -28,7 +28,7 @@ using namespace std;
 
 MAKE_ENUM(PortDeploymentType, P2P, DEV_NET, HOST_NET)
 
-MAKE_ENUM(ConnectProtoType, HCCS, PCIE, TCP, RDMA, UB, UBOE)
+MAKE_ENUM(ConnectProtoType, HCCS, PCIE, TCP, RDMA, UB, UBOE, P2P)
 
 MAKE_ENUM(LinkProtoType, HCCS_PCIE, TCP, RDMA, UB)
 
