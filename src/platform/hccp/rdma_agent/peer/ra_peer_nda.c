@@ -78,3 +78,56 @@ int RaPeerNdaCqDestroy(struct RaRdmaHandle *rdmaHandle, void *cqHandle)
 
     return ret;
 }
+
+int RaPeerNdaQpCreate(struct RaRdmaHandle *rdmaHandle, struct NdaQpInitAttr *attr, struct NdaQpInfo *info,
+    void **qpHandle)
+{
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *qpPeer = NULL;
+    struct RsQpResp qpResp = {0};
+    int ret = 0;
+
+    qpPeer = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
+    CHK_PRT_RETURN(qpPeer == NULL, hccp_err("[create][RaNdaQp]qpPeer calloc failed"), -ENOMEM);
+
+    RaPeerMutexLock(phyId);
+    RsSetCtx(phyId);
+    ret = RsNdaQpCreate(phyId, rdmaHandle->rdevIndex, attr, info, &qpResp);
+    RaPeerMutexUnlock(phyId);
+    if (ret != 0) {
+        hccp_err("[create][RaNdaQp]RsNdaQpCreate failed ret:%d", ret);
+        goto free_qp_handle;
+    }
+    qpPeer->phyId = phyId;
+    qpPeer->qpn = qpResp.qpn;
+    qpPeer->psn = qpResp.psn;
+    qpPeer->gidIdx = qpResp.gidIdx;
+    qpPeer->directFlag = qpResp.directFlag;
+    qpPeer->rdevIndex = rdmaHandle->rdevIndex;
+    qpPeer->rdmaHandle = rdmaHandle;
+    qpPeer->rdmaOps = rdmaHandle->rdmaOps;
+
+    *qpHandle = qpPeer;
+    return ret;
+
+free_qp_handle:
+    free(qpPeer);
+    qpPeer = NULL;
+    return ret;
+}
+
+int RaPeerNdaQpDestroy(struct RaQpHandle *qpPeer)
+{
+    int ret = 0;
+
+    RaPeerMutexLock(qpPeer->phyId);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsNdaQpDestroy(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn);
+    RaPeerMutexUnlock(qpPeer->phyId);
+    if (ret != 0) {
+        hccp_err("[destroy][RaNdaQp]RsNdaQpDestroy failed ret:%d", ret);
+    }
+    free(qpPeer);
+    qpPeer = NULL;
+    return ret;
+}
