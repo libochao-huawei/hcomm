@@ -735,7 +735,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterDeviceIP(const RankTable_t &clust
                 std::string errormessage = "The device IP address " + std::string(clusterInfo.rankList[i].deviceInfo.deviceIp[0].GetReadableIP()) +
                                         " of rank " + std::to_string(clusterInfo.rankList[i].rankId) +
                                         " on node " +clusterInfo.rankList[i].serverId +
-                                        " is the same as the device IP address" + std::string(clusterInfo.rankList[j].deviceInfo.deviceIp[0].GetReadableIP()) +
+                                        " is the same as the device IP address " + std::string(clusterInfo.rankList[j].deviceInfo.deviceIp[0].GetReadableIP()) +
                                         " of rank " + std::to_string(clusterInfo.rankList[j].rankId) +
                                         " on node " + clusterInfo.rankList[j].serverId;
                 RPT_INPUT_ERR(true,
@@ -888,9 +888,9 @@ HcclResult TopoInfoExchangeAgent::VerifyServerDevicePhysicID(const std::vector<R
         for (u32 j = (i + 1); j < serverInfo.size(); j++) {
             bool isErr = (serverInfo[i].deviceInfo.devicePhyId == serverInfo[j].deviceInfo.devicePhyId);
             if (isErr) {
-                std::string errormessage = "Rank" + std::to_string(serverInfo[i].rankId) + " of node" +
+                std::string errormessage = "Rank " + std::to_string(serverInfo[i].rankId) + " of node " +
                                         serverInfo[i].serverId +
-                                        " has the same physical device ID" + std::to_string(serverInfo[i].deviceInfo.devicePhyId) + 
+                                        " has the same physical device ID " + std::to_string(serverInfo[i].deviceInfo.devicePhyId) + 
                                         " as the rank" + std::to_string(serverInfo[j].rankId);
                 RPT_INPUT_ERR(true,
                     "EI0015",
@@ -1016,13 +1016,14 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
         }
     }
     // 将不一致的卡信息汇总成一个string
-    std::string tlsInconsistentStr = "";
+    std::string tlsInconsistentEnableStr = "";
+    std::string tlsInconsistentDisableStr = "";
     std::string tlsInconsistentTlsType = "";
     if (!tlsEnableRank.empty() && !tlsDisableRank.empty()) {
         isTlsConsistent = false;
-        const auto& target = (tlsEnableRank.size() >= tlsDisableRank.size()) ? tlsDisableRank : tlsEnableRank;
         tlsInconsistentTlsType = (tlsEnableRank.size() >= tlsDisableRank.size()) ? "Disable" : "Enable";
-        GenerateTlsStatusStr(tlsInconsistentStr, target);
+        GenerateTlsStatusStr(tlsInconsistentEnableStr, tlsEnableRank);
+        GenerateTlsStatusStr(tlsInconsistentDisableStr, tlsDisableRank);
     }
     // 将不支持查询的卡的信息汇总成一个string
     std::string tlsUnknownRankStr = "";
@@ -1035,7 +1036,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
         HCCL_INFO("[Verify][TlsConsistency] All ranks tlsStatus are consistent");
     } else if (!isTlsConsistent && isSupportCheckTlsStatus) {
         // 2.通信域所有卡都支持查询TLS开关状态，但是TLS开关状态存在不一致，报错。
-        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentStr, tlsUnknownRankStr);
+        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentEnableStr, tlsInconsistentDisableStr, "N/A");
         return HCCL_E_PARA;
     } else if (isTlsConsistent && !isSupportCheckTlsStatus) {
     // 3.通信域内的部分卡不支持查询TLS开关状态，目前能查询到的卡的TLS开关状态是一致的，打印warning提醒
@@ -1043,7 +1044,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
             "not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
     } else {
         // 4.通信域内的部分卡不支持查询TLS开关状态，但是目前能查询到的卡的TLS开关状态已经不一致，报错
-        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentStr, tlsUnknownRankStr);
+        ReportTlsConfigurationError(tlsInconsistentTlsType, tlsInconsistentEnableStr, tlsInconsistentDisableStr, tlsUnknownRankStr);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -1080,16 +1081,16 @@ void TopoInfoExchangeAgent::GenerateTlsStatusStr(std::string &tlsStatusStr,
 }
 
 void TopoInfoExchangeAgent::ReportTlsConfigurationError(const std::string& tlsInconsistentTlsType,
-        const std::string& tlsInconsistentStr, const std::string& tlsUnknownRankStr)
+        const std::string& tlsInconsistentEnableStr, const std::string& tlsInconsistentDisableStr, const std::string& tlsUnknownRankStr)
 {
     std::string errormessage = "Value " + tlsInconsistentTlsType + " for config \"tls\" is invalid. Expected: \"All ranks are consistent. Current status: "\
-    "rankList for enabled tls: " + tlsInconsistentStr + "; rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
+    "rankList for enabled tls: " + tlsInconsistentEnableStr + "; rankList for disabled tls:" + tlsInconsistentDisableStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\"";
     RPT_INPUT_ERR(true,
     "EI0016",
     std::vector<std::string>({"value", "variable", "expect"}),
     std::vector<std::string>({tlsInconsistentTlsType, " \"tls\" ",
-        " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentStr + "; "\
-        "rankList for disabled tls:" + tlsInconsistentStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\" "}));
+        " \"All ranks are consistent. Current status: rankList for enabled tls:" + tlsInconsistentEnableStr + "; "\
+        "rankList for disabled tls:" + tlsInconsistentDisableStr + " rankList for query failure tls:" + tlsUnknownRankStr + ".\" "}));
     HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errormessage.c_str());
 }
 }
