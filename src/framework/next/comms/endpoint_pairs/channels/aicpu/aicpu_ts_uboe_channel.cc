@@ -239,7 +239,8 @@ HcclResult AicpuTsUboeChannel::GetNotifyNum(uint32_t *notifyNum) const
 
 HcclResult AicpuTsUboeChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags)
 {
-    return memTransport_->GetRemoteMem(remoteMem, memNum, memTags);
+    // 不支持
+    return HCCL_SUCCESS;
 }
 
 bool AicpuTsUboeChannel::IsSocketReady()
@@ -413,8 +414,8 @@ bool AicpuTsUboeChannel::RecvDataProcess()
     Hccl::BinaryStream binaryStream(recvData_);
     // TODO UBOE OK 解析对端Eid，存到UboeChannel
     RmtEidUnpackProc(binaryStream, rmtAddr_);
-    RmtBufferVecUnpackProc(notifyNum_, binaryStream, rmtNotifyVec, UboeRmtBufType::NOTIFY);
-    RmtBufferVecUnpackProc(bufferNum_, binaryStream, rmtBufferVec, UboeRmtBufType::BUFFER);
+    RmtBufferVecUnpackProc(notifyNum_, binaryStream, rmtNotifyVec_, UboeRmtBufType::NOTIFY);
+    RmtBufferVecUnpackProc(bufferNum_, binaryStream, rmtBufferVec_, UboeRmtBufType::BUFFER);
     return ConnVecUnpackProc(binaryStream);
 }
 
@@ -579,45 +580,146 @@ ChannelStatus AicpuTsUboeChannel::GetStatus()
     return channelStatus;
 }
 
-// HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
-// {
-//     // int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
-//     // if (ret != 0) {
-//     //     HCCL_ERROR("[SetModuleDataName] strcpy_s name %s failed", name.c_str());
-//     //     return HCCL_E_INTERNAL;
-//     // }
-//     // 待适配
-//     return HCCL_SUCCESS;
-// }
-
-HcclResult AicpuTsUboeChannel::PackOpData(std::vector<char> &data)
+HcclResult SetModuleDataName(Hccl::ModuleData &module, const std::string &name)
 {
-    // std::vector<Hccl::ModuleData> dataVec;
-    // dataVec.resize(Hccl::AicpuResMgrType::__COUNT__);
-
-    // Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM;
-    // CHK_RET(SetModuleDataName(dataVec[resType], "AicpuTsUboeChannel"));
-
-    // std::vector<char> result;
-    // Hccl::BinaryStream      binaryStream;
-    // binaryStream << memTransport_->GetUniqueIdV2();
-
-    // binaryStream.Dump(result);
-
-    // dataVec[resType].data = result;
-
-    // Hccl::AicpuResPackageHelper helper;
-    // data = helper.GetPackedData(dataVec);
-    // 待适配
+    int ret = strcpy_s(module.name, sizeof(module.name), name.c_str());
+    if (ret != 0) {
+        HCCL_ERROR("[SetModuleDataName] strcpy_s name %s failed", name.c_str());
+        return HCCL_E_INTERNAL;
+    }
     return HCCL_SUCCESS;
+}
+
+std::vector<char> AicpuTsUboeChannel::GetNotifyUniqueIds()
+{
+    HCCL_INFO("start packing all notify uniqueIds");
+    std::vector<char> result(0);
+    for (auto &it : commonRes_.notifyVec) {
+        HCCL_INFO("AicpuTsUboeChannel Notify %s", it->Describe().c_str());
+        auto uniqueId = it->GetUniqueId();
+        result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+    }
+    return result;
+}
+
+std::vector<char> AicpuTsUboeChannel::GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue) const
+{
+    Hccl::BinaryStream binaryStream;
+    binaryStream << addr;
+    binaryStream << size;
+    binaryStream << tokenId;
+    binaryStream << tokenValue;
+    HCCL_INFO("AicpuTsUboeChannel RmtBuffer[addr=0x%llx, size=0x%llx]", addr, size);
+    std::vector<char> result;
+    binaryStream.Dump(result);
+    return result;
+}
+
+std::vector<char> AicpuTsUboeChannel::GetRmtBufferUniqueIds(RemoteBufferVec &bufferVec, UboeRmtBufType type) const
+{
+    HCCL_INFO("start packing all remote buffer %s uniqueIds", type.Describe().c_str());
+    std::vector<char> result(0);
+    for (auto &it : bufferVec) {
+        std::vector<char> uniqueId;
+        if (it != nullptr) {
+            uniqueId = GetSingleRmtBufferUniqueId(it->GetAddr(), it->GetSize(), it->GetTokenId(), it->GetTokenValue());
+            HCCL_INFO("AicpuTsUboeChannel::GetRmtBufferUniqueIds, %s", it->Describe().c_str());
+        } else {
+            uniqueId = GetSingleRmtBufferUniqueId(0, 0, 0, 0); // 填充一个空的buffer
+            HCCL_INFO("AicpuTsUboeChannel::GetRmtBufferUniqueIds, null buffer");
+        }
+        result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+    }
+    return result;
+}
+
+std::vector<char> AicpuTsUboeChannel::GetLocBufferUniqueIds(LocalBufferVec &bufferVec, UboeRmtBufType type) const
+{
+    HCCL_INFO("start packing all local buffer %s uniqueIds", type.Describe().c_str());
+    std::vector<char> result(0);
+    for (auto &it : bufferVec) {
+        std::vector<char> uniqueId;
+        if (it != nullptr) {
+            uniqueId = GetSingleRmtBufferUniqueId(it->GetAddr(), it->GetSize(), it->GetTokenId(), it->GetTokenValue());
+            HCCL_INFO("UbMemTransport::GetLocBufferUniqueIds, %s", it->Describe().c_str());
+        } else {
+            uniqueId = GetSingleRmtBufferUniqueId(0, 0, 0, 0); // 填充一个空的buffer
+            HCCL_INFO("UbMemTransport::GetLocBufferUniqueIds, null buffer");
+        }
+        result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+    }
+    return result;
+}
+
+std::vector<char> AicpuTsUboeChannel::GetConnUniqueIds()
+{
+    HCCL_INFO("start packing all conn uniqueIds");
+    std::vector<char> result(0);
+    for (auto &it : commonRes_.connVec) {
+        HCCL_INFO("[AicpuTsUboeChannel::%s] conn[%s]", __func__, it->Describe().c_str());
+        auto uniqueId = it->GetUniqueId();
+        result.insert(result.end(), uniqueId.begin(), uniqueId.end());
+    }
+    return result;
+}
+
+std::vector<char> AicpuTsUboeChannel::GetUniqueIdV2()
+{
+    if (channelStatus != ChannelStatus::READY) {
+        MACRO_THROW(Hccl::InternalException, Hccl::StringFormat("channel status[%d] is not ready[%d], please check.",
+            channelStatus, ChannelStatus::READY));
+    }
+    // u32          type = static_cast<u32>(transportType);
+    Hccl::BinaryStream binaryStream;
+    // binaryStream << type;
+    binaryStream << notifyNum;
+    binaryStream << bufferNum;
+    binaryStream << connNum;
+ 
+    auto notifyUniqueIds = GetNotifyUniqueIds();
+    binaryStream << notifyUniqueIds;
+ 
+    auto rmtNotifyUniqueIds = GetRmtBufferUniqueIds(rmtNotifyVec_, UboeRmtBufType::NOTIFY);
+    binaryStream << rmtNotifyUniqueIds;
+ 
+    for (auto &it : commonRes_.bufferVec) {
+        locBufferVec_.emplace_back(reinterpret_cast<Hccl::LocalUbRmaBuffer *>(it));
+    }
+ 
+    auto locBufferUniqueIds = GetLocBufferUniqueIds(locBufferVec_, UboeRmtBufType::BUFFER);
+    binaryStream << locBufferUniqueIds;
+ 
+    auto rmtBufferUniqueIds = GetRmtBufferUniqueIds(rmtBufferVec_, UboeRmtBufType::BUFFER);
+    binaryStream << rmtBufferUniqueIds;
+ 
+    auto connUniqueIds = GetConnUniqueIds();
+    binaryStream << connUniqueIds;
+ 
+    std::vector<char> result;
+    binaryStream.Dump(result);
+    return result;
 }
 
 HcclResult AicpuTsUboeChannel::H2DResPack(std::vector<char>& buffer)
 {
-    // CHK_RET(PackOpData(buffer));
-    // HCCL_INFO("[AicpuTsUboeChannel][%s] Pack Buffer data[%p], Pack Buffer size[%zu].",
-    //     __func__, buffer.data(), buffer.size());
-    // 待适配
+    std::vector<Hccl::ModuleData> dataVec;
+    dataVec.resize(Hccl::AicpuResMgrType::__COUNT__);
+
+    Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM;
+    CHK_RET(SetModuleDataName(dataVec[resType], "AicpuTsUboeChannel"));
+
+    std::vector<char> result;
+    Hccl::BinaryStream      binaryStream;
+    binaryStream << GetUniqueIdV2();
+
+    binaryStream.Dump(result);
+
+    dataVec[resType].data = result;
+
+    Hccl::AicpuResPackageHelper helper;
+    buffer = helper.GetPackedData(dataVec);
+    HCCL_INFO("[AicpuTsUboeChannel][%s] Pack Buffer data[%p], Pack Buffer size[%zu].",
+        __func__, buffer.data(), buffer.size());
     return HCCL_SUCCESS;
 }
 

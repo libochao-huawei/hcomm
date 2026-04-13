@@ -302,7 +302,8 @@ static HcclResult LaunchKernel(const HcclChannelUrmaRes &channelParam,
 }
 
 HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling)
+    uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling, 
+    CommProtocol protocol)
 {
     CHK_PTR_NULL(channelHandles);
     CHK_PTR_NULL(hostChannelHandles);
@@ -317,10 +318,13 @@ HcclResult ChannelProcess::LaunchChannelKernelCommon(ChannelHandle *channelHandl
     std::vector<u32> channelSizeVec{};
     uint32_t totalListNum = 0;
     for (uint32_t index = 0; index < listNum; index++) {
-        auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
-        
-        // TODO UBOE OK 打包资源到device侧
-        CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
+        if (protocol == COMM_PROTOCOL_UBOE) {
+            auto aicpuTsUboeChannel = reinterpret_cast<AicpuTsUboeChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsUboeChannel->H2DResPack(hostPackBuffers[index]));
+        } else {
+            auto aicpuTsUrmaChannel = reinterpret_cast<AicpuTsUrmaChannel *>(hostChannelHandles[index]);
+            CHK_PRT(aicpuTsUrmaChannel->H2DResPack(hostPackBuffers[index]));
+        }
         totalListNum += hostPackBuffers[index].size();
         channelSizeVec.push_back(hostPackBuffers[index].size());
     }
@@ -391,25 +395,26 @@ HcclResult ChannelProcess::ChannelKernelLaunchForComm(ChannelHandle *channelHand
     ChannelHandle *hostChannelHandles, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle) 
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, 
-        commTag, binHandle, "RunAicpuIndOpChannelInitV2", true);
+        commTag, binHandle, "RunAicpuIndOpChannelInitV2", true, COMM_PROTOCOL_UBC_CTP);
 }
 
 HcclResult ChannelProcess::ChannelKernelLaunchForBase(ChannelHandle *channelHandles, 
-    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle) 
+    ChannelHandle *hostChannelHandles, uint32_t listNum, aclrtBinHandle binHandle, CommProtocol protocol) 
 {
     return LaunchChannelKernelCommon(channelHandles, hostChannelHandles, listNum, "", 
-        binHandle, "RunAicpuChannelInitV2", false);
+        binHandle, "RunAicpuChannelInitV2", false, protocol);
 }
 
 HcclResult ChannelProcess::SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels,
-    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle)
+    uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle, HcommChannelDesc *channelDescs)
 {
     CHK_PTR_NULL(targetChannels);
     CHK_PTR_NULL(userChannels);
     CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]", __func__, channelNum), HCCL_E_PARA);
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
-        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle));
+        CommProtocol protocol = channelDescs[0].remoteEndpoint.protocol;
+        CHK_RET(ChannelKernelLaunchForBase(userChannels, targetChannels, channelNum, binHandle, protocol));
     } else {
         HCCL_INFO("[%s] engine[%d] no need to KernelLaunch.", __func__, engine);
         for (uint32_t i = 0; i < channelNum; i++) {
