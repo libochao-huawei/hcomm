@@ -3340,6 +3340,8 @@ HcclResult HcclCommAicpu::PrintTaskExceptionAllStreams()
         u32 sqTail = 0U;
         ret = QuerySqStatus(devId_, stream.sqId(), sqHead, sqTail);
         if (ret != HCCL_SUCCESS || sqHead == sqTail) { // 此流为空时，不打印
+            HCCL_RUN_INFO("[PrintTaskExceptionAllStreams] group[%s] streamid[%d] is empty or QuerySqStatus failed, ret[%d]",
+ 	            identifier_.c_str(), stream.id(), ret);
             continue;
         }
         HcclSqeContext *sqeContext = stream.GetSqeContextPtr();

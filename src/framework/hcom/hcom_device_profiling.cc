@@ -50,12 +50,12 @@ extern HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread
     HCCL_DEBUG("[%s] profL0Open:%d, profL1Open:%d", __func__, profL0Open, profL1Open);
     Stream *stream = GetStream(thread);
     if (stream == nullptr) {
-        HCCL_ERROR("[%s] stream is nulltrp", __func__);
+        HCCL_ERROR("[%s] stream is nullptr", __func__);
         return HCCL_E_PTR;
     }
     HcclSqeContext *sqeContext = stream->GetSqeContextPtr();
     if (sqeContext == nullptr) {
-        HCCL_ERROR("[%s] sqeContext is nulltrp", __func__);
+        HCCL_ERROR("[%s] sqeContext is nullptr", __func__);
         return HCCL_E_PTR;
     }
     const SqeRingBuffer &sqeBuffer = sqeContext->buffer;
