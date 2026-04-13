@@ -2056,8 +2056,7 @@ HcclResult HcomCheckCommValidity(const char* group)
 HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,
     s32 len, void *memPtr, u64 maxSize)
 {
-    CHK_PTR_NULL(stream);
-    if (len <= 0) {
+    if (len < 0) {
         HCCL_ERROR("[HcomSetWorkspaceResource] len is %d", len);
         return HCCL_E_PARA;
     }
@@ -2079,8 +2078,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
 
 HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len)
 {
-    CHK_PTR_NULL(stream);
-    if (len <= 0) {
+    if (len < 0) {
         HCCL_ERROR("[HcomSetAttachedStream] len is %d", len);
         return HCCL_E_PARA;
     }
