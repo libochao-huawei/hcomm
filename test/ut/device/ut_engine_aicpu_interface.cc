@@ -115,5 +115,18 @@ TEST_F(Test_Engine_Aicpu_Interface, test_RunAicpuThreadSupplementNotify) {
     copyLen = std::min(supplementStr.size(), static_cast<size_t>(THREAD_UNIQUE_ID_MAX_SIZE));
     EXPECT_EQ(memcpy_s(para.threadParam[0], THREAD_UNIQUE_ID_MAX_SIZE, supplementStr.c_str(), copyLen), 0);
     EXPECT_EQ(RunAicpuThreadSupplementNotify(args), 0);
+
+    MOCKER_CPP(&AicpuHcclProcess::AicpuIndOpNotifyInit)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuThreadProcess::AicpuThreadInit)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AicpuThreadProcess::AicpuThreadDestroy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    EXPECT_EQ(RunAicpuIndOpNotify(args), 0);
+    EXPECT_EQ(RunAicpuThreadInit(args), 0);
+    EXPECT_EQ(RunAicpuThreadDestroy(args), 0);
     free(para.deviceHandle);
 }

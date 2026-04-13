@@ -530,3 +530,13 @@ TEST_F(Communicator_Device_UT, AicpuGetCommTest) {
     // 清理资源
     AicpuHcclProcess::AicpuDestoryCommbyGroup(groupName);
 }
+
+TEST_F(Communicator_Device_UT, Ut_WaitAsyncFlag_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR) {
+    HcclResult ret = AicpuHcclProcess::WaitAsyncFlag(nullptr, 1, 0);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(Communicator_Device_UT, Ut_AicpuIndOpNotifyInit_When_ParamIsNullptr_Expect_ReturnIsHCCL_E_PTR) {
+    HcclResult ret = AicpuHcclProcess::AicpuIndOpNotifyInit(nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
