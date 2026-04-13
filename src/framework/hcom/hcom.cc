@@ -1865,7 +1865,6 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, H
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *numBlocks)
 {
-    CHK_PTR_NULL(counts);
     CHK_PTR_NULL(numBlocks);
     std::string algNamV2(algName);
     HCCLV2_FUNC_RUN(HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *numBlocks));
@@ -2056,8 +2055,7 @@ HcclResult HcomCheckCommValidity(const char* group)
 HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,
     s32 len, void *memPtr, u64 maxSize)
 {
-    CHK_PTR_NULL(stream);
-    if (len <= 0) {
+    if (len < 0) {
         HCCL_ERROR("[HcomSetWorkspaceResource] len is %d", len);
         return HCCL_E_PARA;
     }
@@ -2079,8 +2077,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
 
 HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len)
 {
-    CHK_PTR_NULL(stream);
-    if (len <= 0) {
+    if (len < 0) {
         HCCL_ERROR("[HcomSetAttachedStream] len is %d", len);
         return HCCL_E_PARA;
     }
@@ -2597,7 +2594,6 @@ HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
 
 HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr, u32 len)
 {
-    CHK_PTR_NULL(globalWorkSpaceAddr);
     std::vector<void *> workspaceAddrVec(globalWorkSpaceAddr, globalWorkSpaceAddr + len);
     HCCLV2_FUNC_RUN(HcomSetGlobalWorkSpaceV2(group, workspaceAddrVec));
     std::shared_ptr<hccl::hcclComm> hcclComm;
@@ -3271,6 +3267,7 @@ HcclResult GetServerAndDevNumFromGroupList(const u32 *groupList, u32 groupListSi
     if (groupListSize == 0) {
         return HCCL_SUCCESS;
     }
+    CHK_PTR_NULL(groupList);
 
     try {
         // 获取并设定stream 数量
@@ -3303,7 +3300,6 @@ HcclResult GetServerAndDevNumFromLogRanktable(const std::string rankTableString,
 HcclResult GetServerAndDevNumFromRanklist(const u32 *groupList, u32 groupListSize, const std::vector<RankInfo_t> &rankList,
     DevType devType, s32 &serverNum, s32 &deviceNum, bool &multiModuleDiffDeviceNumMode)
 {
-    CHK_PTR_NULL(groupList);
     u32 serverId = 0;
     std::map<u32, s32> serverAndDevNum;
     deviceNum = 0;
