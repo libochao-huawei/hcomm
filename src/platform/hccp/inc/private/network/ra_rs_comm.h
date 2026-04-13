@@ -282,6 +282,7 @@ struct RsQpResp {
     unsigned int psn;
     unsigned int gidIdx;
     union ibv_gid gid;
+    int directFlag;
 };
 
 struct RaRsDevInfo {
@@ -325,7 +326,6 @@ struct TlvRequestMsgHead {
 #define MAX_IP_INFO_NUM 128
 #define MAX_IP_INFO_NUM_V1 256
 #define MAX_SGE_NUM 16
-#define RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define HCCN_CFG_MSG_DATA_LEN 2048U
 #define MAX_TLV_MSG_DATA_LEN 2048U
 
@@ -359,6 +359,8 @@ struct TlvRequestMsgHead {
 #define QP_DEFAULT_MIN_CAP_RECV_SGE       1
 #define QP_DEFAULT_MAX_ATTR_TIMEOUT       20
 #define QP_DEFAULT_MAX_ATTR_RETRY_CNT     7
+
+#define RA_RS_4K_PAGE_SIZE 4096U
 
 int ConverReturnCode(enum ModuleType module, int erroCode);
 

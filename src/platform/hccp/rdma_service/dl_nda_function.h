@@ -25,9 +25,9 @@ struct RsNdaOps {
     int (*rsNdaIbvExtendCheckVersion)(uint32_t driverMajor, uint32_t driverMinor, uint32_t driverPatch);
     struct ibv_context_extend *(*rsNdaIbvOpenExtend)(struct ibv_context *context);
     int (*rsNdaIbvCloseExtend)(struct ibv_context_extend *context);
-    struct ibv_qp_extend *(*rsNdaCreateQpExtend)(struct ibv_context_extend *context,
+    struct ibv_qp_extend *(*rsNdaIbvCreateQpExtend)(struct ibv_context_extend *context,
         struct ibv_qp_init_attr_extend *qpInitAttr);
-    struct ibv_cq_extend *(*rsNdaCreateCqExtend)(struct ibv_context_extend *context,
+    struct ibv_cq_extend *(*rsNdaIbvCreateCqExtend)(struct ibv_context_extend *context,
         struct ibv_cq_init_attr_extend *cqInitAttr);
     int (*rsNdaIbvDestroyQpExtend)(struct ibv_context_extend *context, struct ibv_qp_extend *qpExtend);
     int (*rsNdaIbvDestroyCqExtend)(struct ibv_context_extend *context, struct ibv_cq_extend *cqExtend);
@@ -39,9 +39,11 @@ const char *RsNdaIbvExtendGetVersion(uint32_t *major, uint32_t *minor, uint32_t 
 int RsNdaIbvExtendCheckVersion(uint32_t driverMajor, uint32_t driverMinor, uint32_t driverPatch);
 struct ibv_context_extend *RsNdaIbvOpenExtend(struct ibv_context *context);
 int RsNdaIbvCloseExtend(struct ibv_context_extend *context);
-
 struct ibv_cq_extend *RsNdaIbvCreateCqExtend(struct ibv_context_extend *context,
     struct ibv_cq_init_attr_extend *cqInitAttr);
 int RsNdaIbvDestroyCqExtend(struct ibv_context_extend *context, void *ibvCqExt);
+struct ibv_qp_extend *RsNdaIbvCreateQpExtend(struct ibv_context_extend *context,
+    struct ibv_qp_init_attr_extend *qpInitAttr);
+int RsNdaIbvDestroyQpExtend(struct ibv_context_extend *context, struct ibv_qp_extend *qpExtend);
 
 #endif // DL_NDA_FUNCTION_H
