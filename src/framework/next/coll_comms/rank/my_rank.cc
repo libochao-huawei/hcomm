@@ -102,6 +102,7 @@ HcclResult MyRank::TryInitCcuInstance()
 
         // 其余模式资源不足回退至aicpu ts
         opExpansionMode_ = AICPU_TS_MODE;
+        CHK_RET(TryInitCcuInstance()); // 至多递归一次
         return HcclResult::HCCL_SUCCESS;
     }
 
@@ -143,7 +144,13 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
-        CHK_RET(TryInitCcuInstance());
+        const uint32_t originOpExpansionMode = opExpansionMode_;
+        auto ret = TryInitCcuInstance();
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            HCCL_ERROR("[MyRank][%s] failed to init ccu instance, op expansion mode[%u].",
+                __func__, originOpExpansionMode);
+            return ret;
+        }
     }
 
     // 创建端点管理器
