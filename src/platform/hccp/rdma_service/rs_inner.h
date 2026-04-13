@@ -39,7 +39,6 @@
 #include "rs_rdma_inner.h"
 #include "rs_common_inner.h"
 #include "rs_ping_inner.h"
-#include "rs_nda.h"
 #include "rs.h"
 #include "rs_list.h"
 
@@ -372,6 +371,7 @@ struct RsQpCb {
     struct RsRdevCb *rdevCb;
     struct ibv_pd *ibPd;
     struct ibv_qp *ibQp;
+    struct ibv_qp_extend *ibQpEx;
 
     int eqNum;
     struct ibv_comp_channel *channel;
@@ -564,7 +564,8 @@ struct rs_cb {
     pid_t hostPid;
     bool grpSetupFlag;
 
-    struct RsNdaCb *ndaCb;
+    void *ndaCb;
+    int ndaCbRefCnt;
 };
 
 extern __thread struct rs_cb *gRsCb;
