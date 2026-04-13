@@ -832,3 +832,30 @@ extern HcclResult HcclReportAivKernel(HcclComm comm, uint64_t beginTime)
     HCCL_INFO("[HcclReportAivKernel] HcclReportAivKernel sucess");
     return HCCL_SUCCESS;
 } 
+
+HcclResult HcclRegiterToClusterMonitor(HcclComm comm)
+{
+    HCCL_INFO("[%s] START, comm[%p].", __func__, comm);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+    CHK_PTR_NULL(hcclComm);
+    if (!hcclComm->IsCommunicatorV2()) {
+        HCCL_ERROR("[%s] comm is NOT_SUPPORT", __func__);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    hccl::CollComm* collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    const std::string &commTag = hcclComm->GetIdentifier();
+    uint32_t rankSize = collComm->GetRankSize();
+    CHK_PRT_RET(rankSize == 1,
+        HCCL_WARNING("[%s] identifier[%s] rankSize[%u] no need to register to ClusterMonitor",
+            __func__, commTag, rankSize), HCCL_SUCCESS);
+    ClusterMonitor::GetInstance(collComm->deviceLogicId_).RegisterToClusterMonitor(comm);
+    HCCL_RUN_INFO("%s Success", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclUnRegiterToClusterMonitor(HcclComm comm)
+{
+    return HCCL_SUCCESS;
+}
