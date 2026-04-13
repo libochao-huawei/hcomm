@@ -78,7 +78,7 @@ STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestDa
         head, sizeof(struct TlvRequestMsgHead));
 
     ret = RaHdcProcessMsg(RA_RS_TLV_REQUEST, phyId, (char *)tlvData, sizeof(union OpTlvRequestData));
-    CHK_PRT_RETURN(ret == -EUSERS, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret == -EUSERS || ret == -ENOTSUPP, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
         ret, phyId), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
@@ -136,7 +136,7 @@ int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
             ret, phyId, head.sendBytes), -ESAFEFUNC);
 
         ret = RaHdcProcessMsg(RA_RS_TLV_REQUEST, phyId, (char *)&tlvData, sizeof(union OpTlvRequestData));
-        CHK_PRT_RETURN(ret == -EUSERS, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
+        CHK_PRT_RETURN(ret == -EUSERS || ret == -ENOTSUPP, hccp_warn("[request][ra_hdc_tlv]hdc message process unsuccessful ret(%d) phy_id(%u)",
             ret, phyId), ret);
         CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
             ret, phyId), ret);

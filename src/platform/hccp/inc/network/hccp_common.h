@@ -64,7 +64,7 @@ enum WhiteListStatus {
  */
 #define OTHERS_EAGAIN    128301   /* EAGAIN:try again */
 #define OTHERS_ENOTSUPP  528302   /* ENOTSUPP: operation not supported */
-#define OTHERS_EUSERS    128038
+#define OTHERS_EUSERS    128308
 
 /**
  * @ingroup libsocket

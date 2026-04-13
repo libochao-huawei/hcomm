@@ -133,7 +133,7 @@ int RsNslbNetcoRequest(unsigned int phyId, struct RsNslbCb *nslbCb, unsigned int
     switch(type) {
         case NETCO_REQ_TYPE_INIT:
             ret = RsNslbNetcoInit(phyId, nslbCb);
-            CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_warn("netco init unsuccessful ret(%d)", ret), 0);
+            CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_warn("netco init unsuccessful ret(%d)", ret), -ENOTSUPP);
             break;
         case NETCO_REQ_TYPE_DEINIT:
             RsNslbNetcoDeinit(nslbCb);
