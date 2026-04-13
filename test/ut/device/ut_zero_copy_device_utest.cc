@@ -55,3 +55,9 @@ TEST_F(Zero_Copy_Device_UT, ZeroCopyDeviceTest) {
     ZeroCopyRingBufferItem item;
     addressMrg.PushOne(item);
 }
+
+TEST_F(Zero_Copy_Device_UT, Ut_IsInSetAddressRange_ParamIsNullptr_Expect_ReturnIsFalse) {
+    ZeroCopyAddressMgr addressMrg;
+    bool ret = addressMrg.IsInSetAddressRange(0, nullptr, 0);
+    EXPECT_EQ(ret, false);
+}
