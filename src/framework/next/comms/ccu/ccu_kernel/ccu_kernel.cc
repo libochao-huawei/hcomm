@@ -1308,7 +1308,7 @@ CcuResult CcuKernel::LoopCreate(CcuLoopHandle *loop)
     CcuLoopHandle handle = ++loopHandleCounter_;
     std::string label = "loop_" + std::to_string(handle);
 
-    LoopDescriptor desc{};
+    LoopDescriptor desc;
     desc.label = label;
     desc.repLoopBlock = std::make_shared<CcuRep::CcuRepLoopBlock>(label);
 
@@ -1385,7 +1385,7 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroupHandle *group,
 
     CcuLoopGroupHandle handle = ++loopGroupHandleCounter_;
 
-    LoopGroupDescriptor desc{};
+    LoopGroupDescriptor desc;
     desc.config = *config;
     desc.parallelVar = CreateVariable();
     desc.offsetVar = CreateVariable();
@@ -1420,7 +1420,7 @@ CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroupHandle *group,
 
     CcuLoopGroupHandle handle = ++loopGroupHandleCounter_;
 
-    LoopGroupDescriptor desc{};
+    LoopGroupDescriptor desc;
     desc.parallelVar = CcuRep::Variable(*parallelVarPtr);
     desc.offsetVar = CcuRep::Variable(*offsetVarPtr);
     desc.isVarBased = true;
@@ -1504,7 +1504,7 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroupHandle group,
         loopDesc.executorAssigned = true;
     }
 
-    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry{};
+    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.config = *config;
     entry.executorId = static_cast<uint16_t>(loopDesc.executor.Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
@@ -1588,7 +1588,7 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
     }
     grpDesc.totalLoopNum = grpDesc.nonUnrollLoops.size() + grpDesc.unrollLoops.size();
 
-    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry{};
+    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);
     entry.isVarBased = true;
