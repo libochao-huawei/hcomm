@@ -102,7 +102,7 @@ TEST_F(OpRetryConnTest, ut_opretry_connection_default_root)
     OpRetryConnection conn;
     u32 rankId = 0;
     u32 rankSize = 1;
-    u32 serverPort = 16666;
+    u32 serverPort = 50001;
     HcclIpAddress hostIp(std::string("127.0.0.1"));
     HcclIpAddress localIp(std::string("127.0.0.1"));
 
@@ -116,7 +116,7 @@ TEST_F(OpRetryConnTest, ut_opretry_connection)
     u32 rankId = 0;
     u32 rankSize = 1;
     u32 rootRank = 0;
-    u32 serverPort = 16666;
+    u32 serverPort = 50001;
     HcclIpAddress hostIp(std::string("127.0.0.1"));
     HcclIpAddress localIp(std::string("127.0.0.1"));
 
@@ -129,11 +129,11 @@ TEST_F(OpRetryConnTest, ut_invalid_params)
     u32 rankId = 2;
     u32 rankSize = 1;
     u32 rootRank = 0;
-    u32 serverPort = 16666;
+    u32 serverPort = 50001;
     HcclIpAddress hostIp(std::string("0.0.0.0"));
     std::string groupName = "invalidGroup";
 
-    OpRetryServerInfo serverInfo = {hostIp, 16666, 0};
+    OpRetryServerInfo serverInfo = {hostIp, 50001, 0};
     OpRetryAgentInfo agentInfo = {rankId, 0, hostIp, hostIp};
 
     // 关闭特性，所以直接返回OK
@@ -160,7 +160,7 @@ TEST_F(OpRetryConnTest, ut_opretry_connection_whitelist)
     u32 rankId = 0;
     u32 rankSize = 1;
     u32 rootRank = 0;
-    u32 serverPort = 16666;
+    u32 serverPort = 50001;
     HcclIpAddress hostIp(std::string("127.0.0.1"));
     HcclIpAddress localIp(std::string("127.0.0.1"));
 
@@ -199,7 +199,7 @@ TEST_F(OpRetryConnTest, ut_opretry_connection_static_init)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
-    OpRetryServerInfo serverInfo = {hostIp, 16666, 0};
+    OpRetryServerInfo serverInfo = {hostIp, 50001, 0};
     OpRetryAgentInfo agentInfo = {rankId, 0, localIp, localIp};
 
     EXPECT_EQ(OpRetryConnectionPub::Init(groupName, rankSize, serverInfo, agentInfo, rootRank), HCCL_SUCCESS);
@@ -226,7 +226,7 @@ TEST_F(OpRetryConnTest, ut_opretry_connect_error)
     HcclIpAddress localIp(std::string("127.0.0.1"));
     std::string group = "invalidGroup";
 
-    OpRetryServerInfo serverInfo = {hostIp, 16666, 0};
+    OpRetryServerInfo serverInfo = {hostIp, 50001, 0};
     OpRetryAgentInfo agentInfo = {rankId, 0, localIp, localIp};
 
     // Client侧重连两次，第一次是重试，第二次直接失败
