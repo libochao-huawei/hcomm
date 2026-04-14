@@ -126,13 +126,24 @@ public:
     CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
     CcuResult WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
 
+    //本地数据拷贝 相关接口
+    CcuResult LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult LocalCopyBufferToMem(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
 
-
-    //Create 相关接口
+    //运算重载 相关接口
     CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
     CcuResult VariableAssignVar(CcuVariableHandle var, CcuVariableHandle varA);
-    CcuResult VariableAddVarToVar(CcuVariableHandle resVar,
-        CcuVariableHandle varA, CcuVariableHandle varB);
+    CcuResult VariableAddVarToVar(CcuVariableHandle resVar,CcuVariableHandle varA, CcuVariableHandle varB);
+    CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
+    CcuResult AddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+    CcuResult AddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
+    CcuResult AddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
+    CcuResult AddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
+    CcuResult AddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+    CcuResult AddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
+
+
     CcuResult IfBegin(CcuVariableHandle var, uint64_t immediate,
         CcuConditionType condType, const char *label);
     CcuResult IfElse(const char *label);
@@ -160,20 +171,9 @@ public:
     CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
         CcuLoop loop, CcuVariableHandle loopParamVar);
 
-    CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
-    CcuResult AddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
-    CcuResult AddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
-    CcuResult AddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
-    CcuResult AddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
-    CcuResult AddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
-    CcuResult AddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
+   
 
-    CcuResult LocalCopyToBuffer(CcuBufferHandle dstBuffer, CcuLocalAddrHandle src,
-        CcuVariableHandle len, CcuEventHandle event);
-    CcuResult LocalCopyFromBuffer(CcuLocalAddrHandle dst, CcuBufferHandle srcBuffer,
-            CcuVariableHandle len, CcuEventHandle event);
-    CcuResult LocalCopy(CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-        CcuVariableHandle len, CcuEventHandle event);
+
     CcuResult LocalAddrReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
         CcuVariableHandle len, HcclDataType dataType,
         HcclReduceOp opType, CcuEventHandle event);
