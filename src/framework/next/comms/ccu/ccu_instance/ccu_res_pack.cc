@@ -29,31 +29,28 @@ CcuResPack::~CcuResPack()
     resHandle_ = 0;
 }
 
-HcclResult CcuResPack::Init()
+CcuResult CcuResPack::Init()
 {
     devLogicId_ = HcclGetThreadDeviceId();
-    if (insType_ == CcuInstanceType::CCU_INVALID) {
+    if (insType_ == CcuInstanceType::CCU_UNUSED) {
         HCCL_ERROR("[CcuResPack][%s] failed, error ccu instance type[%d].",
             __func__, static_cast<int32_t>(insType_));
-        return HcclResult::HCCL_E_PARA;
+        return CcuResult::CCU_E_PARA;
     }
 
-    auto ret = CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_);
-    // todo: 需要整改
-    CHK_RET(static_cast<HcclResult>(ret));
-
-    CHK_RET(Reset());
-    return HcclResult::HCCL_SUCCESS;
+    CCU_CHK_RET(CcuAllocResHandleByInsType(devLogicId_, insType_, resHandle_));
+    CCU_CHK_RET(Reset());
+    return CcuResult::CCU_SUCCESS;
 }
 
-HcclResult CcuResPack::Reset()
+CcuResult CcuResPack::Reset()
 {
     if (!resHandle_) {
-        return HcclResult::HCCL_SUCCESS;
+        return CcuResult::CCU_SUCCESS;
     }
 
-    CHK_RET(CcuCheckResource(devLogicId_, resHandle_, resRepo_));
-    return HcclResult::HCCL_SUCCESS;
+    CCU_CHK_RET(CcuCheckResource(devLogicId_, resHandle_, resRepo_));
+    return CcuResult::CCU_SUCCESS;
 }
 
 CcuResRepository &CcuResPack::GetCcuResRepo()
