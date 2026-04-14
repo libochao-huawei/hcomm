@@ -573,6 +573,136 @@ CcuResult CcuKernel::LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAdd
     auto ret = LocalCopyNb(*dst, *src, *len, *event);
     return HCCL_TO_CCU_RET(ret);
 }
+//本地reduce 相关实现
+CcuResult CcuKernel::LocalMemReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
+    CcuVariableHandle lenHandle, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *dst{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
+    CcuRep::LocalAddr *src{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalReduceNb(*dst, *src, *len, dataType, opType, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count,
+    HcclDataType dataType, HcclDataType outputDataType,
+    HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    std::vector<CcuRep::CcuBuf> bufs(count);
+    for (uint32_t i = 0; i < count; i++) {
+        CcuRep::CcuBuf *buf{nullptr};
+        CCU_CHK_RET(GetBufferByHandle(bufHandles[i], &buf));
+        bufs[i] = *buf;
+    }
+    auto ret = LocalReduceNb(bufs.data(), count, dataType, outputDataType, opType, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+/*========== 远端数据传输操作 ==========*/
+
+CcuResult CcuKernel::ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = ReadNb(channel, *local, *remote, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+} 
+
+CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::CcuBuf *local{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = ReadNb(channel, *local, *remote, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+CcuResult CcuKernel::ReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle lenHandle, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = ReadReduceNb(channel, *local, *remote, *len, dataType, opType, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::WriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = WriteNb(channel, *remote, *local, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::CcuBuf *local{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = WriteNb(channel, *remote, *local, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
+    CcuVariableHandle lenHandle, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle eventHandle)
+{
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+
 
 
 
@@ -1004,20 +1134,6 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::ReadBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadNb(channel, *local, *remote, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 /*Write新接口*/
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::CcuBuf &loc,
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
@@ -1027,21 +1143,7 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::WriteBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
 
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteNb(channel, *remote, *local, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 
 static bool isLowPrecisionIn(Hccl::DataType dataType)
 {
@@ -1141,21 +1243,6 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAdd
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::Read(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadNb(channel, *local, *remote, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-} 
-
 /*ReadReduce新接口*/
 HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
                             const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
@@ -1170,21 +1257,6 @@ HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::Lo
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::ReadReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadReduceNb(channel, *local, *remote, *len, dataType, opType, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
@@ -1192,22 +1264,6 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     channels_.insert(channel);
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, event.mask));
     return HCCL_SUCCESS;
-}
-
-CcuResult CcuKernel::Write(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteNb(channel, *remote, *local, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
 }
 
 HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
@@ -1221,22 +1277,6 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, CcuRep::GetUBDataType(dataType_),
                                                  CcuRep::GetUBReduceType(opType_), event, event.mask));
     return HCCL_SUCCESS;
-}
-
-CcuResult CcuKernel::WriteReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
-    CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
-{
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event);
-    return HCCL_TO_CCU_RET(ret);
 }
 
 
@@ -1277,40 +1317,6 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::
     Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_),
                                                   event, event.mask));
     return HCCL_SUCCESS;
-}
-
-CcuResult CcuKernel::LocalAddrReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *dst{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
-    CcuRep::LocalAddr *src{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalReduceNb(*dst, *src, *len, dataType, opType, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
-
-CcuResult CcuKernel::LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count,
-    HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    std::vector<CcuRep::CcuBuf> bufs(count);
-    for (uint32_t i = 0; i < count; i++) {
-        CcuRep::CcuBuf *buf{nullptr};
-        CCU_CHK_RET(GetBufferByHandle(bufHandles[i], &buf));
-        bufs[i] = *buf;
-    }
-    auto ret = LocalReduceNb(bufs.data(), count, dataType, outputDataType, opType, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
 }
 
 CcuRep::FuncCall CcuKernel::Func(const std::string &label)
