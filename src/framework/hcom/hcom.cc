@@ -2957,6 +2957,13 @@ HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname)
     return HCCL_SUCCESS;
 }
 
+HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname) 
+{   
+    hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
+    *groupname = const_cast<char *>(hcclComm->GetIdentifier().c_str());
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpbaseMode,
     void** commContext, bool isMC2)
 {
