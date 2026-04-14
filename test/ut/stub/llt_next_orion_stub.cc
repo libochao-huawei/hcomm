@@ -1523,7 +1523,7 @@ u32 GlobalMirrorTasks::DevSize() const
     return 0;
 }
 
-TaskInfoQueue *GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
+TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
 {
     static TaskInfoQueue queue(type);
     return queue;
