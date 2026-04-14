@@ -382,10 +382,15 @@ STATIC int RsTcpRecvTagInHandle(struct RsListenInfo *listenInfo, int connfd, str
 STATIC void RsEpollEventTcpListenInHandle(struct rs_cb *rsCb, struct RsListenInfo *listenInfo, int connfd,
     struct RsIpAddrInfo *remoteIp)
 {
+    struct RsListenInfo listenInfoTmp = {0};
     struct RsConnInfo connTmp = {0};
     int ret;
 
-    ret = RsTcpRecvTagInHandle(listenInfo, connfd, &connTmp, remoteIp);
+    (void)memcpy_s(&listenInfoTmp, sizeof(struct RsListenInfo), listenInfo, sizeof(struct RsListenInfo));
+    // unlock mutex to prevent RsTcpRecvTagInHandle from blocking
+    RS_PTHREAD_MUTEX_ULOCK(&rsCb->mutex);
+    ret = RsTcpRecvTagInHandle(&listenInfoTmp, connfd, &connTmp, remoteIp);
+    RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
     if (ret != 0) {
         hccp_warn("rs_tcp_recv_tag_in_handle unsuccessful, ret:%d", ret);
         RS_CLOSE_RETRY_FOR_EINTR(ret, connfd);
