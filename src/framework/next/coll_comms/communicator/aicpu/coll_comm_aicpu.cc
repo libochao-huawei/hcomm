@@ -106,7 +106,7 @@ HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
               "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
               __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
               commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    CHK_PRT(InitUrmaChannel(commParam));
+    CHK_RET(InitUrmaChannel(commParam));
     return HCCL_SUCCESS;
 }
 

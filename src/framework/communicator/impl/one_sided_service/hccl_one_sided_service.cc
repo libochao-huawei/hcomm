@@ -657,6 +657,12 @@ HcclResult HcclOneSidedService::Prepare(const std::string &commIdentifier, const
         if (ret != HCCL_SUCCESS) {
             u32 rankSize = (rankTable_->rankList).size();
             for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
+                if (remoteRankId >= oneSidedConns_.size()) {
+                    // remoteRankId超出oneSidedConns_的范围，直接退出
+                    HCCL_ERROR("[HcclOneSidedService][Prepare] remoteRankId[%u] "
+                        "is out of range, size[%u].", remoteRankId, oneSidedConns_.size());
+                    break;
+                }
                 if (remoteRankId == localRankInfo_.userRank || oneSidedConns_[remoteRankId] == nullptr) {
                     HCCL_INFO("[HcclOneSidedService][CleanSocketResource] remoteRank[%u] skip.", remoteRankId);
                     continue;

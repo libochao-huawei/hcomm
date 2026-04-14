@@ -359,6 +359,8 @@ HcclResult TopoInfoExchangeDispather::SendState::SendIdentify(std::shared_ptr<Hc
 HcclResult TopoInfoExchangeDispather::SendState::SendHelper(std::shared_ptr<HcclSocket> socket,
     char *buf, size_t dataLen, size_t &sendedLen)
 {
+    CHK_SMART_PTR_NULL(socket);
+    CHK_PTR_NULL(buf);
     u64 needSend = dataLen - sendedLen;
     u64 sentSize = 0;
     HcclResult ret = socket->ISend(buf + sendedLen, needSend, sentSize);

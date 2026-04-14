@@ -650,7 +650,7 @@ int32_t HcommAcquireComm(const char* commId)
     std::shared_ptr<hccl::hcclComm> hcclComm;
     HcclGetCommHandle(commId, hcclComm);
     CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    CHK_PRT(hcclComm->SetCommDispatcherCtx());// 待优化
+    CHK_RET(hcclComm->SetCommDispatcherCtx());
     return HCCL_SUCCESS;
 }
 
