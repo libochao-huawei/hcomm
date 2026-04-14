@@ -11,6 +11,7 @@
 #ifndef NOTIFY_POOL_IMPL_H
 #define NOTIFY_POOL_IMPL_H
 
+#include <array>
 #include <mutex>
 #include <map>
 #include "hccl/base.h"

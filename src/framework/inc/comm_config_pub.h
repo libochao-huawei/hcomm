@@ -100,6 +100,28 @@ public:
     u32 GetConfigRetryIntervalTime() const;
     HcclResult SetConfigExecTimeOut(s32 execTimeOut);
     const std::string& GetConfigBufferName() const;
+    /**
+     * @brief 注入当前通信域的并行平面信息。
+     * @param netPlaneId 当前 rank 所属的并行平面 ID。
+     * @param netPlaneNum 当前通信域的并行平面总数。
+     */
+    void SetConfigNetPlane(u32 netPlaneId, u32 netPlaneNum);
+    /**
+     * @brief 获取配置中缓存的并行平面 ID。
+     * @return u32
+     */
+    u32 GetConfigNetPlaneId() const;
+    /**
+     * @brief 获取配置中缓存的并行平面总数。
+     * @return u32
+     */
+    u32 GetConfigNetPlaneNum() const;
+    /**
+     * @brief 判断配置是否已显式写入并行平面信息。
+     * @return true 配置中存在有效 netplane 信息。
+     * @return false 配置仍处于默认未设置状态。
+     */
+    bool GetConfigNetPlaneInfoSet() const;
 
 private:
     void InitAlgoConfig();
@@ -141,6 +163,9 @@ private:
     u32 retryHoldTime_;
     u32 retryIntervalTime_;    // 重执行间隔时间，配置范围[0,3600000]，默认值1000
     std::string bufferName_;    // CCL buffer名称
+    u32 netPlaneId_{0};         // 内部运行时使用的并行平面 ID
+    u32 netPlaneNum_{1};        // 内部运行时使用的并行平面总数量
+    bool netPlaneInfoSet_{false}; // 是否已显式注入并行平面信息
 };
 }
 #endif /* HCCL_COMM_CONFIG_PUB_H */

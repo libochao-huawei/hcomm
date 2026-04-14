@@ -90,6 +90,11 @@ namespace hccl
           isAllRankSamePlane_(false), serverNum_(0), moduleNum_(0)
     {
          commConfig_ = commConfig;
+         if (commConfig_.GetConfigNetPlaneInfoSet()) {
+             netPlaneId_ = commConfig_.GetConfigNetPlaneId();
+             netPlaneNum_ = commConfig_.GetConfigNetPlaneNum();
+             netPlaneInfoValid_ = true;
+         }
     }
 
     HcclCommunicator::~HcclCommunicator()
@@ -272,6 +277,24 @@ namespace hccl
     HcclResult HcclCommunicator::GetCommRankTable(RankTable_t &rankTable)
     {
         return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::GetNetPlaneId(u32 &netPlaneId) const
+    {
+        CHK_PRT_RET(!netPlaneInfoValid_,
+            HCCL_ERROR("[OXC_HCOMM][HcclCommunicator][GetNetPlaneId] netplane info not initialized."),
+            HCCL_E_NOT_SUPPORT);
+        netPlaneId = netPlaneId_;
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetNetPlaneNum(u32 &netPlaneNum) const
+    {
+        CHK_PRT_RET(!netPlaneInfoValid_,
+            HCCL_ERROR("[OXC_HCOMM][HcclCommunicator][GetNetPlaneNum] netplane info not initialized."),
+            HCCL_E_NOT_SUPPORT);
+        netPlaneNum = netPlaneNum_;
+        return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::InitPara()

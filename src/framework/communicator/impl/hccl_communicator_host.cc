@@ -161,6 +161,11 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
+        if (commConfig_.GetConfigNetPlaneInfoSet()) {
+            netPlaneId_ = commConfig_.GetConfigNetPlaneId();
+            netPlaneNum_ = commConfig_.GetConfigNetPlaneNum();
+            netPlaneInfoValid_ = true;
+        }
     }
 
     HcclCommunicator::~HcclCommunicator()
@@ -1044,6 +1049,25 @@ namespace hccl
         rankTable.serverNum = serverNum_;
         rankTable.superPodNum = superPodNum_;
         rankTable.nicDeploy = nicDeployment_;
+        rankTable.rankNum = static_cast<u32>(rankTable.rankList.size());
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetNetPlaneId(u32 &netPlaneId) const
+    {
+        CHK_PRT_RET(!netPlaneInfoValid_,
+            HCCL_ERROR("[OXC_HCOMM][HcclCommunicator][GetNetPlaneId] netplane info not initialized."),
+            HCCL_E_NOT_SUPPORT);
+        netPlaneId = netPlaneId_;
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetNetPlaneNum(u32 &netPlaneNum) const
+    {
+        CHK_PRT_RET(!netPlaneInfoValid_,
+            HCCL_ERROR("[OXC_HCOMM][HcclCommunicator][GetNetPlaneNum] netplane info not initialized."),
+            HCCL_E_NOT_SUPPORT);
+        netPlaneNum = netPlaneNum_;
         return HCCL_SUCCESS;
     }
 

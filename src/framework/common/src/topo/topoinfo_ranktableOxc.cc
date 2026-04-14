@@ -50,7 +50,7 @@ HcclResult ParseU32FromJsonValue(const nlohmann::json &value, const char *propNa
     if (value.is_number_unsigned()) {
         u64 tmp = value.get<u64>();
         CHK_PRT_RET(tmp > std::numeric_limits<u32>::max(),
-            HCCL_ERROR("[Parse][%s] value[%llu] exceeds u32 range.", propName, tmp), HCCL_E_PARA);
+            HCCL_ERROR("[OXC_HCOMM][Parse][%s] value[%llu] exceeds u32 range.", propName, tmp), HCCL_E_PARA);
         result = static_cast<u32>(tmp);
         return HCCL_SUCCESS;
     }
@@ -58,7 +58,7 @@ HcclResult ParseU32FromJsonValue(const nlohmann::json &value, const char *propNa
     if (value.is_number_integer()) {
         s64 tmp = value.get<s64>();
         CHK_PRT_RET(tmp < 0 || tmp > static_cast<s64>(std::numeric_limits<u32>::max()),
-            HCCL_ERROR("[Parse][%s] value[%lld] exceeds u32 range.", propName, tmp), HCCL_E_PARA);
+            HCCL_ERROR("[OXC_HCOMM][Parse][%s] value[%lld] exceeds u32 range.", propName, tmp), HCCL_E_PARA);
         result = static_cast<u32>(tmp);
         return HCCL_SUCCESS;
     }
@@ -67,7 +67,7 @@ HcclResult ParseU32FromJsonValue(const nlohmann::json &value, const char *propNa
         return SalStrToULong(value.get<std::string>(), HCCL_BASE_DECIMAL, result);
     }
 
-    HCCL_ERROR("[Parse][%s] value type is invalid.", propName);
+    HCCL_ERROR("[OXC_HCOMM][Parse][%s] value type is invalid.", propName);
     return HCCL_E_PARA;
 }
 
@@ -75,7 +75,7 @@ HcclResult ParseU32FromJsonValue(const nlohmann::json &value, const char *propNa
 HcclResult GetRequiredU32Field(const nlohmann::json &obj, const char *propName, u32 &value)
 {
     auto iter = obj.find(propName);
-    CHK_PRT_RET(iter == obj.end(), HCCL_ERROR("[Parse][%s] field is missing.", propName), HCCL_E_NOT_FOUND);
+    CHK_PRT_RET(iter == obj.end(), HCCL_ERROR("[OXC_HCOMM][Parse][%s] field is missing.", propName), HCCL_E_NOT_FOUND);
     return ParseU32FromJsonValue(*iter, propName, value);
 }
 
@@ -83,8 +83,10 @@ HcclResult GetRequiredU32Field(const nlohmann::json &obj, const char *propName, 
 HcclResult GetRequiredStringField(const nlohmann::json &obj, const char *propName, std::string &value)
 {
     auto iter = obj.find(propName);
-    CHK_PRT_RET(iter == obj.end(), HCCL_ERROR("[Parse][%s] field is missing.", propName), HCCL_E_NOT_FOUND);
-    CHK_PRT_RET(!iter->is_string(), HCCL_ERROR("[Parse][%s] field is not string.", propName), HCCL_E_PARA);
+    CHK_PRT_RET(iter == obj.end(), HCCL_ERROR("[OXC_HCOMM][Parse][%s] field is missing.", propName),
+        HCCL_E_NOT_FOUND);
+    CHK_PRT_RET(!iter->is_string(), HCCL_ERROR("[OXC_HCOMM][Parse][%s] field is not string.", propName),
+        HCCL_E_PARA);
     value = *iter;
     return HCCL_SUCCESS;
 }
@@ -169,16 +171,17 @@ HcclResult TopoinfoRanktableOxc::ParserClusterInfo(HcclCommParams &params, RankT
     u32 rankId = INVALID_VALUE_RANKID;
     CHK_PRT_RET(IsAllDigit(identify_.c_str()) != HCCL_SUCCESS ||
         SalStrToULong(identify_, HCCL_BASE_DECIMAL, rankId) != HCCL_SUCCESS,
-        HCCL_ERROR("[ParserClusterInfo] rank_id[%s] is invalid.", identify_.c_str()), HCCL_E_PARA);
+        HCCL_ERROR("[OXC_HCOMM][ParserClusterInfo] rank_id[%s] is invalid.", identify_.c_str()), HCCL_E_PARA);
     CHK_PRT_RET(rankId >= rankTable.rankList.size(),
-        HCCL_ERROR("[ParserClusterInfo] rank_id[%u] exceeds rank size[%zu].", rankId, rankTable.rankList.size()),
+        HCCL_ERROR("[OXC_HCOMM][ParserClusterInfo] rank_id[%u] exceeds rank size[%zu].",
+            rankId, rankTable.rankList.size()),
         HCCL_E_PARA);
 
     CHK_RET(hrtGetDevice(&params.logicDevId));
     u32 devicePhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(params.logicDevId), devicePhyId));
     CHK_PRT_RET(devicePhyId != static_cast<u32>(rankTable.rankList[rankId].deviceInfo.devicePhyId),
-        HCCL_ERROR("[ParserClusterInfo] ranktable devId[%d] mismatch local devId[%u].",
+        HCCL_ERROR("[OXC_HCOMM][ParserClusterInfo] ranktable devId[%d] mismatch local devId[%u].",
             rankTable.rankList[rankId].deviceInfo.devicePhyId, devicePhyId), HCCL_E_UNAVAIL);
 
     params.rank = rankId;
@@ -196,7 +199,7 @@ HcclResult TopoinfoRanktableOxc::ParseTaskId(RankTable_t &rankTable)
         rankTable.taskId.clear();
         return HCCL_SUCCESS;
     }
-    CHK_PRT_RET(!iter->is_string(), HCCL_ERROR("[Parse][task_id] field is not string."), HCCL_E_PARA);
+    CHK_PRT_RET(!iter->is_string(), HCCL_ERROR("[OXC_HCOMM][Parse][task_id] field is not string."), HCCL_E_PARA);
     rankTable.taskId = *iter;
     return HCCL_SUCCESS;
 }
@@ -207,16 +210,18 @@ HcclResult TopoinfoRanktableOxc::ParseRankList(RankTable_t &rankTable)
     CHK_RET(GetRequiredU32Field(fileContent_, "rank_count", rankCount));
 
     auto rankListIter = fileContent_.find(PROP_RANK_LIST);
-    CHK_PRT_RET(rankListIter == fileContent_.end(), HCCL_ERROR("[Parse][rank_list] field is missing."),
+    CHK_PRT_RET(rankListIter == fileContent_.end(), HCCL_ERROR("[OXC_HCOMM][Parse][rank_list] field is missing."),
         HCCL_E_NOT_FOUND);
-    CHK_PRT_RET(!rankListIter->is_array(), HCCL_ERROR("[Parse][rank_list] field is not array."), HCCL_E_PARA);
+    CHK_PRT_RET(!rankListIter->is_array(), HCCL_ERROR("[OXC_HCOMM][Parse][rank_list] field is not array."),
+        HCCL_E_PARA);
 
     rankTable.rankList.clear();
     rankTable.rankList.reserve(rankListIter->size());
     std::set<std::string> serverIds;
 
     for (const auto &rankObj : *rankListIter) {
-        CHK_PRT_RET(!rankObj.is_object(), HCCL_ERROR("[Parse][rank_list] rank item is not object."), HCCL_E_PARA);
+        CHK_PRT_RET(!rankObj.is_object(), HCCL_ERROR("[OXC_HCOMM][Parse][rank_list] rank item is not object."),
+            HCCL_E_PARA);
         RankInfo_t rankInfo;
         rankInfo.deviceInfo.deviceIp.push_back(HcclIpAddress());
         CHK_RET(ParseSingleRank(rankObj, rankInfo));
@@ -230,7 +235,8 @@ HcclResult TopoinfoRanktableOxc::ParseRankList(RankTable_t &rankTable)
 
     // rank_count 与 rank_list 大小必须一致；这是 OXC 2.0 parser 的关键一致性校验。
     CHK_PRT_RET(rankTable.rankList.size() != rankCount,
-        HCCL_ERROR("[Parse][rank_count] expect[%u] actual[%zu] mismatch.", rankCount, rankTable.rankList.size()),
+        HCCL_ERROR("[OXC_HCOMM][Parse][rank_count] expect[%u] actual[%zu] mismatch.",
+            rankCount, rankTable.rankList.size()),
         HCCL_E_PARA);
 
     rankTable.rankNum = static_cast<u32>(rankTable.rankList.size());
@@ -269,8 +275,9 @@ HcclResult TopoinfoRanktableOxc::ParseSingleRank(const nlohmann::json &rankObj, 
 HcclResult TopoinfoRanktableOxc::ParseLevelList(const nlohmann::json &rankObj, RankInfo_t &rankInfo)
 {
     auto iter = rankObj.find(PROP_LEVEL_LIST);
-    CHK_PRT_RET(iter == rankObj.end(), HCCL_ERROR("[Parse][level_list] field is missing."), HCCL_E_NOT_FOUND);
-    CHK_PRT_RET(!iter->is_array() || iter->empty(), HCCL_ERROR("[Parse][level_list] field is invalid."),
+    CHK_PRT_RET(iter == rankObj.end(), HCCL_ERROR("[OXC_HCOMM][Parse][level_list] field is missing."),
+        HCCL_E_NOT_FOUND);
+    CHK_PRT_RET(!iter->is_array() || iter->empty(), HCCL_ERROR("[OXC_HCOMM][Parse][level_list] field is invalid."),
         HCCL_E_PARA);
 
     // level_list 是 OXC 2.0 与 legacy ranktable 的主要差异之一；
@@ -278,7 +285,8 @@ HcclResult TopoinfoRanktableOxc::ParseLevelList(const nlohmann::json &rankObj, R
     rankInfo.levelList.clear();
     rankInfo.levelList.reserve(iter->size());
     for (const auto &levelObj : *iter) {
-        CHK_PRT_RET(!levelObj.is_object(), HCCL_ERROR("[Parse][level_list] level item is not object."), HCCL_E_PARA);
+        CHK_PRT_RET(!levelObj.is_object(), HCCL_ERROR("[OXC_HCOMM][Parse][level_list] level item is not object."),
+            HCCL_E_PARA);
         RankLevelInfoOxc levelInfo;
         if (GetOptionalU32Field(levelObj, PROP_NET_LAYER.c_str(), levelInfo.netLayer) != HCCL_SUCCESS) {
             CHK_RET(GetRequiredU32Field(levelObj, PROP_LEVEL, levelInfo.netLayer));
@@ -287,26 +295,26 @@ HcclResult TopoinfoRanktableOxc::ParseLevelList(const nlohmann::json &rankObj, R
         if (!GetStringField(levelObj, PROP_NET_INSTANCE_ID.c_str(), levelInfo.netInstanceId, true) &&
             !GetStringField(levelObj, PROP_NET_INST_ID.c_str(), levelInfo.netInstanceId, true) &&
             !GetStringField(levelObj, PROP_ID, levelInfo.netInstanceId, true)) {
-            HCCL_ERROR("[Parse][net_instance_id] field is missing.");
+            HCCL_ERROR("[OXC_HCOMM][Parse][net_instance_id] field is missing.");
             return HCCL_E_NOT_FOUND;
         }
 
         if (!GetStringField(levelObj, PROP_NET_TYPE.c_str(), levelInfo.netType, true) &&
             !GetStringField(levelObj, PROP_FABRIC_TYPE, levelInfo.netType, true)) {
-            HCCL_ERROR("[Parse][net_type] field is missing.");
+            HCCL_ERROR("[OXC_HCOMM][Parse][net_type] field is missing.");
             return HCCL_E_NOT_FOUND;
         }
 
         if (!GetStringField(levelObj, PROP_NET_ATTR.c_str(), levelInfo.netAttr, true) &&
             levelObj.find(PROP_NET_ATTR) != levelObj.end()) {
-            HCCL_ERROR("[Parse][net_attr] field is invalid.");
+            HCCL_ERROR("[OXC_HCOMM][Parse][net_attr] field is invalid.");
             return HCCL_E_PARA;
         }
 
         std::string defaultAddrType;
         if (!GetStringField(levelObj, PROP_RANK_ADDR_TYPE, defaultAddrType, true) &&
             levelObj.find(PROP_RANK_ADDR_TYPE) != levelObj.end()) {
-            HCCL_ERROR("[Parse][rank_addr_type] field is invalid.");
+            HCCL_ERROR("[OXC_HCOMM][Parse][rank_addr_type] field is invalid.");
             return HCCL_E_PARA;
         }
 
@@ -325,29 +333,34 @@ HcclResult TopoinfoRanktableOxc::ParseRankAddrList(const nlohmann::json &levelOb
     if (addrIter == levelObj.end()) {
         addrIter = levelObj.find(PROP_RANK_ADDRS);
     }
-    CHK_PRT_RET(addrIter == levelObj.end(), HCCL_ERROR("[Parse][rank_addr_list] field is missing."),
+    CHK_PRT_RET(addrIter == levelObj.end(), HCCL_ERROR("[OXC_HCOMM][Parse][rank_addr_list] field is missing."),
         HCCL_E_NOT_FOUND);
-    CHK_PRT_RET(!addrIter->is_array(), HCCL_ERROR("[Parse][rank_addr_list] field is not array."), HCCL_E_PARA);
+    CHK_PRT_RET(!addrIter->is_array(), HCCL_ERROR("[OXC_HCOMM][Parse][rank_addr_list] field is not array."),
+        HCCL_E_PARA);
 
     levelInfo.rankAddrList.clear();
     levelInfo.rankAddrList.reserve(addrIter->size());
     for (const auto &addrObj : *addrIter) {
-        CHK_PRT_RET(!addrObj.is_object(), HCCL_ERROR("[Parse][rank_addr_list] addr item is not object."),
+        CHK_PRT_RET(!addrObj.is_object(), HCCL_ERROR("[OXC_HCOMM][Parse][rank_addr_list] addr item is not object."),
             HCCL_E_PARA);
         RankAddrInfoOxc addrInfo;
         CHK_RET(GetRequiredStringField(addrObj, PROP_ADDR.c_str(), addrInfo.addr));
         if (!GetStringField(addrObj, PROP_ADDR_TYPE.c_str(), addrInfo.addrType, true)) {
-            CHK_PRT_RET(defaultAddrType.empty(), HCCL_ERROR("[Parse][addr_type] field is missing."), HCCL_E_NOT_FOUND);
+            CHK_PRT_RET(defaultAddrType.empty(), HCCL_ERROR("[OXC_HCOMM][Parse][addr_type] field is missing."),
+                HCCL_E_NOT_FOUND);
             addrInfo.addrType = defaultAddrType;
         }
         // plane_id 是后续 netplane/CommPlane 计算的重要输入，因此在 parser 阶段必须完整保留。
         CHK_RET(GetRequiredStringField(addrObj, PROP_NETWORK_PLANEID.c_str(), addrInfo.planeId));
 
         auto portsIter = addrObj.find(PROP_PORTS);
-        CHK_PRT_RET(portsIter == addrObj.end(), HCCL_ERROR("[Parse][ports] field is missing."), HCCL_E_NOT_FOUND);
-        CHK_PRT_RET(!portsIter->is_array(), HCCL_ERROR("[Parse][ports] field is not array."), HCCL_E_PARA);
+        CHK_PRT_RET(portsIter == addrObj.end(), HCCL_ERROR("[OXC_HCOMM][Parse][ports] field is missing."),
+            HCCL_E_NOT_FOUND);
+        CHK_PRT_RET(!portsIter->is_array(), HCCL_ERROR("[OXC_HCOMM][Parse][ports] field is not array."),
+            HCCL_E_PARA);
         for (const auto &portItem : *portsIter) {
-            CHK_PRT_RET(!portItem.is_string(), HCCL_ERROR("[Parse][ports] port item is not string."), HCCL_E_PARA);
+            CHK_PRT_RET(!portItem.is_string(), HCCL_ERROR("[OXC_HCOMM][Parse][ports] port item is not string."),
+                HCCL_E_PARA);
             addrInfo.ports.push_back(portItem.get<std::string>());
         }
         levelInfo.rankAddrList.push_back(std::move(addrInfo));

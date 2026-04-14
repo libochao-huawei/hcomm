@@ -181,6 +181,46 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
     return HCCL_SUCCESS;
 }
 
+/**
+ * @brief 查询通信域当前 rank 的并行平面 ID。
+ * @param comm 通信域句柄。
+ * @param netPlaneId 输出：并行平面 ID。
+ * @return HcclResult
+ */
+HcclResult HcclGetNetPlaneId(HcclComm comm, uint32_t *netPlaneId)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(netPlaneId);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    u32 tmpNetPlaneId = 0;
+    CHK_RET(hcclComm->GetNetPlaneId(tmpNetPlaneId));
+    *netPlaneId = tmpNetPlaneId;
+    HCCL_INFO("[OXC_HCOMM] HcclGetNetPlaneId success, netPlaneIdPtr[%p], netPlaneId[%u]",
+        netPlaneId, tmpNetPlaneId);
+    return HCCL_SUCCESS;
+}
+
+/**
+ * @brief 查询通信域的并行平面总数。
+ * @param comm 通信域句柄。
+ * @param netPlaneNum 输出：并行平面总数。
+ * @return HcclResult
+ */
+HcclResult HcclGetNetPlaneNum(HcclComm comm, uint32_t *netPlaneNum)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(netPlaneNum);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    u32 tmpNetPlaneNum = 0;
+    CHK_RET(hcclComm->GetNetPlaneNum(tmpNetPlaneNum));
+    *netPlaneNum = tmpNetPlaneNum;
+    HCCL_INFO("[OXC_HCOMM] HcclGetNetPlaneNum success, netPlaneNumPtr[%p], netPlaneNum[%u]",
+        netPlaneNum, tmpNetPlaneNum);
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

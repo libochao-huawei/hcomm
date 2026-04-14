@@ -25,6 +25,7 @@
 #include "env_config.h"
 #include "detect_connect_anomalies.h"
 #include "../common/src/topo/topoinfo_detect.h"
+#include "../common/src/topo/topoinfo_plane_transformer.h"
 #include "../common/src/topo/topoinfo_ranktable_partition.h"
 #include "../common/src/state_guard.h"
 #include "../common/src/h2d_tlv/hccl_h2dtlv.h"
@@ -680,6 +681,19 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
         CHK_SMART_PTR_NULL(pTopoPartition);
         CHK_RET(pTopoPartition->GenerateSubRankTable(rankNum, rankIds, subRankTable));
         CHK_RET(pTopoPartition->GenerateSubParams(subRankTable, subCommRankId, subParams));
+
+        /**
+         * @brief 在 subcomm 初始化阶段补齐并行平面信息。
+         *
+         * @note 当前阶段只要求把 OXC ranktable 中的平面语义解析为
+         *       CommConfig 可传递的 `netPlaneId/netPlaneNum`，后续更深的
+         *       CommPlane / RankGraph / HCCL 消费链路暂不在本阶段展开。
+         */
+        u32 netPlaneId = 0;
+        u32 netPlaneNum = 1;
+        CHK_RET(TopoinfoPlaneTransformer::ParsePlane(globalRankTable, subRankTable, subCommRankId,
+            netPlaneId, netPlaneNum));
+        commConfig.SetConfigNetPlane(netPlaneId, netPlaneNum);
 
         std::string rankTableM = "";
         CHK_RET(pTopoPartition->GetRankTableStr(subRankTable, rankTableM));

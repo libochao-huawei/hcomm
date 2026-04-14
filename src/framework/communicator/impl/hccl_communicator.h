@@ -449,6 +449,18 @@ public:
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
     HcclResult GetHeterogMode(HcclHeterogMode *mode);
+    /**
+     * @brief 获取 communicator 当前持有的并行平面 ID。
+     * @param netPlaneId 输出：并行平面 ID。
+     * @return HcclResult
+     */
+    HcclResult GetNetPlaneId(u32 &netPlaneId) const;
+    /**
+     * @brief 获取 communicator 当前持有的并行平面总数。
+     * @param netPlaneNum 输出：并行平面总数。
+     * @return HcclResult
+     */
+    HcclResult GetNetPlaneNum(u32 &netPlaneNum) const;
     HcclTopoAttr GetTopoAttr();
     void ForceProf(bool isForce);
     void SetReleaseChannel(std::function<HcclResult()> releaseChannel);
@@ -1055,6 +1067,9 @@ private:
     std::map<u32, TransportType> remoteTransportMap_;
     uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};
     RankGraph rankGraph_;    
+    u32 netPlaneId_{0};
+    u32 netPlaneNum_{1};
+    bool netPlaneInfoValid_{false};
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;

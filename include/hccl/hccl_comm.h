@@ -135,6 +135,23 @@ extern HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize) HCOMM_WEAK_
  */
 extern HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank) HCOMM_WEAK_SYMBOL;
 /**
+ * @brief Get the net plane id of this comm.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param netPlaneId A pointer identifying the net plane id.
+ * @return HcclResult
+ */
+extern HcclResult HcclGetNetPlaneId(HcclComm comm, uint32_t *netPlaneId) HCOMM_WEAK_SYMBOL;
+
+/**
+ * @brief Get the total number of net planes of this comm.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param netPlaneNum A pointer identifying the net plane count.
+ * @return HcclResult
+ */
+extern HcclResult HcclGetNetPlaneNum(HcclComm comm, uint32_t *netPlaneNum) HCOMM_WEAK_SYMBOL;
+/**
  * @brief Barrier operator.
  *
  * @param comm A pointer identifying the communication resource based on.

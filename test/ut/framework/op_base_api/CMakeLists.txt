@@ -10,6 +10,7 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
+    ut_HcclCreateSubCommConfig_NetPlane_API_test.cc
     ut_HcclAllGatherV_API_test.cc
     ut_HcclBatchSendRecv_API_test.cc
     ut_HcclCommInitClusterInfo_Oxc_API_test.cc

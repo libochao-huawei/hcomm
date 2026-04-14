@@ -229,6 +229,18 @@ public:
     HcclResult GetUserRank(u32 &userRank);
     HcclResult GetGroupRank(u32 &userRank);
     HcclResult GetRankSize(u32 &rankSize);
+    /**
+     * @brief 获取当前通信域缓存的并行平面 ID。
+     * @param netPlaneId 输出：并行平面 ID。
+     * @return HcclResult
+     */
+    HcclResult GetNetPlaneId(u32 &netPlaneId);
+    /**
+     * @brief 获取当前通信域缓存的并行平面总数。
+     * @param netPlaneNum 输出：并行平面总数。
+     * @return HcclResult
+     */
+    HcclResult GetNetPlaneNum(u32 &netPlaneNum);
     void ReleaseCommCCLbuffer() const;
     void RealeaseBarrierMemory();
     HcclResult RealeaseShareCCLbuffer();

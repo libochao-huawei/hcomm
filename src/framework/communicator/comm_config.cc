@@ -294,7 +294,7 @@ HcclResult CommConfig::SetConfigDeterministic(const CommConfigHandle &config)
 
 HcclResult CommConfig::SetConfigCommName(const CommConfigHandle &config)
 {
-    if (config.commName != nullptr && config.commName[0] != '\0') {
+    if (config.commName[0] != '\0') {
         auto commNameLength = strlen(config.commName);
         commNameLength = commNameLength < COMM_NAME_MAX_LENGTH ? commNameLength : COMM_NAME_MAX_LENGTH;
         commName_ = std::string(config.commName, commNameLength);
@@ -304,21 +304,19 @@ HcclResult CommConfig::SetConfigCommName(const CommConfigHandle &config)
 
 HcclResult CommConfig::SetConfigUdi(const CommConfigHandle &config)
 {
-    if (config.udi != nullptr) {
-        if (config.udi[0] == '\0') {
-            udi_ = "Unspecified";
-            return HCCL_SUCCESS;
-        }
-        auto udiLength = strlen(config.udi);
-        udiLength = udiLength < COMM_NAME_MAX_LENGTH ? udiLength : COMM_NAME_MAX_LENGTH;
-        udi_ = std::string(config.udi, udiLength);
+    if (config.udi[0] == '\0') {
+        udi_ = "Unspecified";
+        return HCCL_SUCCESS;
     }
+    auto udiLength = strlen(config.udi);
+    udiLength = udiLength < COMM_NAME_MAX_LENGTH ? udiLength : COMM_NAME_MAX_LENGTH;
+    udi_ = std::string(config.udi, udiLength);
     return HCCL_SUCCESS;
 }
 
 HcclResult CommConfig::SetConfigBufferName(const CommConfigHandle &config)
 {
-    if (config.bufferName != nullptr && config.bufferName[0] != '\0') {
+    if (config.bufferName[0] != '\0') {
         auto bufferNameLength = strlen(config.bufferName);
         bufferNameLength = bufferNameLength < BUFFER_NAME_MAX_LENGTH ? bufferNameLength : BUFFER_NAME_MAX_LENGTH;
         bufferName_ = std::string(config.bufferName, bufferNameLength);
@@ -400,7 +398,7 @@ HcclResult CommConfig::SetConfigExecTimeout(const CommConfigHandle &config)
  
 HcclResult CommConfig::SetConfigHcclAlgo(const CommConfigHandle &config)
 {
-    if (config.hcclAlgo == nullptr || config.hcclAlgo[0] == '\0') {
+    if (config.hcclAlgo[0] == '\0') {
         return HCCL_SUCCESS;
     }
  
@@ -434,7 +432,7 @@ HcclResult CommConfig::SetConfigHcclAlgo(const CommConfigHandle &config)
  
 HcclResult CommConfig::SetConfigHcclRetryEnable(const CommConfigHandle &config)
 {
-    if (config.hcclRetryEnable == nullptr || config.hcclRetryEnable[0] == '\0') {
+    if (config.hcclRetryEnable[0] == '\0') {
         return HCCL_SUCCESS;
     }
     auto retryEnableLength = strlen(config.hcclRetryEnable);
@@ -540,7 +538,7 @@ HcclResult CommConfig::SetConfigRetryEnable(const std::vector<std::string> &retr
  
 HcclResult CommConfig::SetConfigHcclRetryParams(const CommConfigHandle &config)
 {
-    if (config.hcclRetryParams == nullptr || config.hcclRetryParams[0] == '\0') {
+    if (config.hcclRetryParams[0] == '\0') {
         return HCCL_SUCCESS;
     }
     auto retryParamsLength = strlen(config.hcclRetryParams);
@@ -743,5 +741,27 @@ u32 CommConfig::GetConfigRetryIntervalTime() const
 const std::string& CommConfig::GetConfigBufferName() const
 {
     return bufferName_;
+}
+
+void CommConfig::SetConfigNetPlane(u32 netPlaneId, u32 netPlaneNum)
+{
+    netPlaneId_ = netPlaneId;
+    netPlaneNum_ = netPlaneNum;
+    netPlaneInfoSet_ = true;
+}
+
+u32 CommConfig::GetConfigNetPlaneId() const
+{
+    return netPlaneId_;
+}
+
+u32 CommConfig::GetConfigNetPlaneNum() const
+{
+    return netPlaneNum_;
+}
+
+bool CommConfig::GetConfigNetPlaneInfoSet() const
+{
+    return netPlaneInfoSet_;
 }
 }

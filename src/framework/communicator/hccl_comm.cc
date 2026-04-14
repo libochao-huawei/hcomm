@@ -1004,6 +1004,30 @@ HcclResult hcclComm::GetRankSize(u32 &rankSize)
     return HCCL_SUCCESS;
 }
 
+/**
+ * @brief 获取当前通信域缓存的并行平面 ID。
+ * @param netPlaneId 输出：并行平面 ID。
+ * @return HcclResult
+ */
+HcclResult hcclComm::GetNetPlaneId(u32 &netPlaneId)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GetNetPlaneId(netPlaneId));
+    return HCCL_SUCCESS;
+}
+
+/**
+ * @brief 获取当前通信域缓存的并行平面总数。
+ * @param netPlaneNum 输出：并行平面总数。
+ * @return HcclResult
+ */
+HcclResult hcclComm::GetNetPlaneNum(u32 &netPlaneNum)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GetNetPlaneNum(netPlaneNum));
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
     HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
 {
