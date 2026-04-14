@@ -528,6 +528,181 @@ CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
+//本地数据拷贝 相关实现
+CcuResult CcuKernel::LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::CcuBuf *dst{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(dstHandle, &dst));
+    CcuRep::LocalAddr *src{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalCopyNb(*dst, *src, *len, *event);  // 复用 protected
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::LocalCopyBufferToMem(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *dst{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
+    CcuRep::CcuBuf *src{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalCopyNb(*dst, *src, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *dst{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
+    CcuRep::LocalAddr *src{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalCopyNb(*dst, *src, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+//本地reduce 相关实现
+CcuResult CcuKernel::LocalMemReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
+    CcuVariableHandle lenHandle, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *dst{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
+    CcuRep::LocalAddr *src{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalReduceNb(*dst, *src, *len, dataType, opType, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count,
+    HcclDataType dataType, HcclDataType outputDataType,
+    HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    std::vector<CcuRep::CcuBuf> bufs(count);
+    for (uint32_t i = 0; i < count; i++) {
+        CcuRep::CcuBuf *buf{nullptr};
+        CCU_CHK_RET(GetBufferByHandle(bufHandles[i], &buf));
+        bufs[i] = *buf;
+    }
+    auto ret = LocalReduceNb(bufs.data(), count, dataType, outputDataType, opType, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+/*========== 远端数据传输操作 ==========*/
+
+CcuResult CcuKernel::ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = ReadNb(channel, *local, *remote, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+} 
+
+CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::CcuBuf *local{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = ReadNb(channel, *local, *remote, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+CcuResult CcuKernel::ReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle lenHandle, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = ReadReduceNb(channel, *local, *remote, *len, dataType, opType, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::WriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = WriteNb(channel, *remote, *local, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::CcuBuf *local{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = WriteNb(channel, *remote, *local, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
+    CcuVariableHandle lenHandle, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle eventHandle)
+{
+    CcuRep::RemoteAddr *remote{nullptr};
+    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
+    CcuRep::LocalAddr *local{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+
 
 
 
@@ -959,20 +1134,6 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::CcuBuf &
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::ReadBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadNb(channel, *local, *remote, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 /*Write新接口*/
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::CcuBuf &loc,
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
@@ -982,21 +1143,7 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::WriteBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::CcuBuf *local{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
 
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteNb(channel, *remote, *local, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 
 static bool isLowPrecisionIn(Hccl::DataType dataType)
 {
@@ -1096,21 +1243,6 @@ HcclResult CcuKernel::ReadNb(const ChannelHandle channel, const CcuRep::LocalAdd
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::Read(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadNb(channel, *local, *remote, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-} 
-
 /*ReadReduce新接口*/
 HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::LocalAddr &loc, const CcuRep::RemoteAddr &rem,
                             const CcuRep::Variable &len, HcclDataType dataType, HcclReduceOp opType,
@@ -1125,21 +1257,6 @@ HcclResult CcuKernel::ReadReduceNb(const ChannelHandle channel, const CcuRep::Lo
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::ReadReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = ReadReduceNb(channel, *local, *remote, *len, dataType, opType, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 
 HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
                        const CcuRep::Variable &len, CcuRep::CompletedEvent event)
@@ -1147,22 +1264,6 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     channels_.insert(channel);
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, event, event.mask));
     return HCCL_SUCCESS;
-}
-
-CcuResult CcuKernel::Write(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteNb(channel, *remote, *local, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
 }
 
 HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
@@ -1176,22 +1277,6 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
     Append(std::make_shared<CcuRep::CcuRepWrite>(channel, rem, loc, len, CcuRep::GetUBDataType(dataType_),
                                                  CcuRep::GetUBReduceType(opType_), event, event.mask));
     return HCCL_SUCCESS;
-}
-
-CcuResult CcuKernel::WriteReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
-    CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
-{
-    CcuRep::RemoteAddr *remote{nullptr};
-    CCU_CHK_RET(GetRemoteAddrByHandle(remoteHandle, &remote));
-    CcuRep::LocalAddr *local{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(localHandle, &local));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event);
-    return HCCL_TO_CCU_RET(ret);
 }
 
 
@@ -1221,50 +1306,7 @@ HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::Cc
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::LocalCopyToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::CcuBuf *dst{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(dstHandle, &dst));
-    CcuRep::LocalAddr *src{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);  // 复用 protected
-    return HCCL_TO_CCU_RET(ret);
-}
 
-CcuResult CcuKernel::LocalCopyFromBuffer(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *dst{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
-    CcuRep::CcuBuf *src{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
-
-CcuResult CcuKernel::LocalCopy(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *dst{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
-    CcuRep::LocalAddr *src{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 
 HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
                              HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event)
@@ -1275,40 +1317,6 @@ HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::
     Append(std::make_shared<CcuRep::CcuRepLocCpy>(dst, src, len, CcuRep::GetUBDataType(dataType_), CcuRep::GetUBReduceType(opType_),
                                                   event, event.mask));
     return HCCL_SUCCESS;
-}
-
-CcuResult CcuKernel::LocalAddrReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *dst{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
-    CcuRep::LocalAddr *src{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalReduceNb(*dst, *src, *len, dataType, opType, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
-
-CcuResult CcuKernel::LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count,
-    HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    std::vector<CcuRep::CcuBuf> bufs(count);
-    for (uint32_t i = 0; i < count; i++) {
-        CcuRep::CcuBuf *buf{nullptr};
-        CCU_CHK_RET(GetBufferByHandle(bufHandles[i], &buf));
-        bufs[i] = *buf;
-    }
-    auto ret = LocalReduceNb(bufs.data(), count, dataType, outputDataType, opType, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
 }
 
 CcuRep::FuncCall CcuKernel::Func(const std::string &label)
@@ -1326,7 +1334,7 @@ CcuRep::LoopCall CcuKernel::Loop(const std::string &label)
     return CcuRep::LoopCall(this, label);
 }
 
-CcuResult CcuKernel::LoopCreate(CcuLoopHandle *loop)
+CcuResult CcuKernel::LoopCreate(CcuLoop *loop)
 {
     if (loop == nullptr) {
         HCCL_ERROR("[CcuKernel::LoopCreate] null pointer");
@@ -1337,7 +1345,7 @@ CcuResult CcuKernel::LoopCreate(CcuLoopHandle *loop)
         return CcuResult::CCU_E_INTERNAL;
     }
 
-    CcuLoopHandle handle = ++loopHandleCounter_;
+    CcuLoop handle = ++loopHandleCounter_;
     std::string label = "loop_" + std::to_string(handle);
 
     LoopDescriptor desc;
@@ -1349,7 +1357,7 @@ CcuResult CcuKernel::LoopCreate(CcuLoopHandle *loop)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopBodyEnter(CcuLoopHandle loop)
+CcuResult CcuKernel::LoopBodyEnter(CcuLoop loop)
 {
     auto it = loopMap_.find(loop);
     if (it == loopMap_.end()) {
@@ -1366,7 +1374,7 @@ CcuResult CcuKernel::LoopBodyEnter(CcuLoopHandle loop)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopBodyExit(CcuLoopHandle loop)
+CcuResult CcuKernel::LoopBodyExit(CcuLoop loop)
 {
     auto it = loopMap_.find(loop);
     if (it == loopMap_.end()) {
@@ -1382,7 +1390,7 @@ CcuResult CcuKernel::LoopBodyExit(CcuLoopHandle loop)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopSetParam(CcuLoopHandle loop,
+CcuResult CcuKernel::LoopSetParam(CcuLoop loop,
     CcuVariableHandle formalHandle, CcuVariableHandle actualHandle)
 {
     auto it = loopMap_.find(loop);
@@ -1403,8 +1411,26 @@ CcuResult CcuKernel::LoopSetParam(CcuLoopHandle loop,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroupHandle *group,
-    const CcuLoopGroupConfig *config)
+CcuResult CcuKernel::LoopEnginePoolCreate(CcuLoopExecutors *pool, uint32_t count)
+{
+    if (pool == nullptr) {
+        HCCL_ERROR("[CcuKernel::LoopEnginePoolCreate] null pointer");
+        return CcuResult::CCU_E_PTR;
+    }
+    if (count == 0) {
+        HCCL_ERROR("[CcuKernel::LoopEnginePoolCreate] count must be > 0");
+        return CcuResult::CCU_E_PARA;
+    }
+
+    *pool = ++loopEnginePoolCounter_;
+    auto &engines = loopEnginePools_[*pool];
+    engines.resize(count, CcuRep::Executor(this));
+    CreateBlockExecutor(count, engines.data());
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroup *group,
+    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool)
 {
     if (group == nullptr || config == nullptr) {
         HCCL_ERROR("[CcuKernel::LoopGroupCreate] null pointer");
@@ -1414,14 +1440,19 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroupHandle *group,
         HCCL_ERROR("[CcuKernel::LoopGroupCreate] cannot create loop group inside a loop body");
         return CcuResult::CCU_E_INTERNAL;
     }
+    if (loopEnginePools_.find(enginePool) == loopEnginePools_.end()) {
+        HCCL_ERROR("[CcuKernel::LoopGroupCreate] invalid engine pool handle %lu", enginePool);
+        return CcuResult::CCU_E_PARA;
+    }
 
-    CcuLoopGroupHandle handle = ++loopGroupHandleCounter_;
+    CcuLoopGroup handle = ++loopGroupHandleCounter_;
 
     LoopGroupDescriptor desc;
     desc.config = *config;
     desc.parallelVar = CreateVariable();
     desc.offsetVar = CreateVariable();
     desc.isVarBased = false;
+    desc.enginePoolHandle = enginePool;
 
     auto bundle = std::make_shared<CcuRep::CcuRepLoopGroupBundle>(
         *config, desc.parallelVar, desc.offsetVar);
@@ -1433,8 +1464,9 @@ CcuResult CcuKernel::LoopGroupCreate(CcuLoopGroupHandle *group,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroupHandle *group,
-    CcuVariableHandle parallelVarHandle, CcuVariableHandle offsetVarHandle)
+CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroup *group,
+    CcuVariableHandle parallelVarHandle, CcuVariableHandle offsetVarHandle,
+    CcuLoopExecutors enginePool)
 {
     if (group == nullptr) {
         HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] null pointer for group");
@@ -1444,18 +1476,23 @@ CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroupHandle *group,
         HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] cannot create loop group inside a loop body");
         return CcuResult::CCU_E_INTERNAL;
     }
+    if (loopEnginePools_.find(enginePool) == loopEnginePools_.end()) {
+        HCCL_ERROR("[CcuKernel::LoopGroupCreateFromVar] invalid engine pool handle %lu", enginePool);
+        return CcuResult::CCU_E_PARA;
+    }
 
     CcuRep::Variable *parallelVarPtr = nullptr;
     CcuRep::Variable *offsetVarPtr = nullptr;
     CCU_CHK_RET(GetVariableByHandle(parallelVarHandle, &parallelVarPtr));
     CCU_CHK_RET(GetVariableByHandle(offsetVarHandle, &offsetVarPtr));
 
-    CcuLoopGroupHandle handle = ++loopGroupHandleCounter_;
+    CcuLoopGroup handle = ++loopGroupHandleCounter_;
 
     LoopGroupDescriptor desc;
     desc.parallelVar = CcuRep::Variable(*parallelVarPtr);
     desc.offsetVar = CcuRep::Variable(*offsetVarPtr);
     desc.isVarBased = true;
+    desc.enginePoolHandle = enginePool;
 
     auto bundle = std::make_shared<CcuRep::CcuRepLoopGroupBundle>(
         desc.parallelVar, desc.offsetVar);
@@ -1467,8 +1504,8 @@ CcuResult CcuKernel::LoopGroupCreateFromVar(CcuLoopGroupHandle *group,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll)
+CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroup group,
+    CcuLoop loop, const CcuLoopConfig *config)
 {
     if (config == nullptr) {
         HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] null pointer for config");
@@ -1494,51 +1531,26 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroupHandle group,
         return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
     }
 
-    for (const auto &h : grpDesc.nonUnrollLoops) {
-        if (h == loop) {
-            HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] loop %lu already added to group %lu", loop, group);
-            return CcuResult::CCU_E_PARA;
-        }
-    }
-    for (const auto &h : grpDesc.unrollLoops) {
-        if (h == loop) {
-            HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] loop %lu already added to group %lu", loop, group);
-            return CcuResult::CCU_E_PARA;
-        }
-    }
-
-    constexpr uint64_t MAX_LOOPS_PER_GROUP = 128;
-    uint64_t currentLoopCount = grpDesc.nonUnrollLoops.size() + grpDesc.unrollLoops.size();
-    if (currentLoopCount >= MAX_LOOPS_PER_GROUP) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] group %lu already has %lu loops (max %lu)",
-                   group, currentLoopCount, MAX_LOOPS_PER_GROUP);
+    if (grpDesc.addedLoops.count(loop)) {
+        HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] loop %lu already added to group %lu", loop, group);
         return CcuResult::CCU_E_PARA;
     }
 
-    if (isUnroll && !grpDesc.nonUnrollLoops.empty() && grpDesc.unrollLoops.empty()) {
-        grpDesc.repeatLoopIdx = grpDesc.nonUnrollLoops.size();
-    }
-    if (!isUnroll && !grpDesc.unrollLoops.empty()) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] non-unroll loop must be added before unroll loops in group %lu",
-                   group);
+    auto &pool = loopEnginePools_[grpDesc.enginePoolHandle];
+    uint32_t loopIdx = grpDesc.loopCount;
+    if (loopIdx >= pool.size()) {
+        HCCL_ERROR("[CcuKernel::LoopGroupAddLoop] group %lu engine pool exhausted (pool size %lu, loopIdx %u)",
+                   group, pool.size(), loopIdx);
         return CcuResult::CCU_E_PARA;
     }
 
-    if (!isUnroll) {
-        grpDesc.nonUnrollLoops.push_back(loop);
-    } else {
-        grpDesc.unrollLoops.push_back(loop);
-    }
-    grpDesc.totalLoopNum = grpDesc.nonUnrollLoops.size() + grpDesc.unrollLoops.size();
-
-    if (!loopDesc.executorAssigned) {
-        CreateBlockExecutor(1, &loopDesc.executor);
-        loopDesc.executorAssigned = true;
-    }
+    grpDesc.addedLoops.insert(loop);
+    grpDesc.loopCount++;
+    grpDesc.totalLoopNum = grpDesc.loopCount;
 
     CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.config = *config;
-    entry.executorId = static_cast<uint16_t>(loopDesc.executor.Id());
+    entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CreateVariable();
     entry.isVarBased = false;
@@ -1551,15 +1563,15 @@ CcuResult CcuKernel::LoopGroupAddLoop(CcuLoopGroupHandle group,
     bundle->AddLoop(entry);
 
     if (!grpDesc.isVarBased) {
-        bundle->SetRepeatLoopIdx(grpDesc.repeatLoopIdx);
+        bundle->SetRepeatLoopIdx(grpDesc.config.repeatLoopIdx);
         bundle->SetTotalLoopNum(grpDesc.totalLoopNum);
     }
 
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, CcuVariableHandle loopParamVarHandle, bool isUnroll)
+CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
+    CcuLoop loop, CcuVariableHandle loopParamVarHandle)
 {
     auto grpIt = loopGroupMap_.find(group);
     if (grpIt == loopGroupMap_.end()) {
@@ -1580,47 +1592,27 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
         return CcuResult::CCU_E_LOOP_BODY_UNDEFINED;
     }
 
-    for (const auto &h : grpDesc.nonUnrollLoops) {
-        if (h == loop) {
-            HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] loop %lu already added to group %lu", loop, group);
-            return CcuResult::CCU_E_PARA;
-        }
-    }
-    for (const auto &h : grpDesc.unrollLoops) {
-        if (h == loop) {
-            HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] loop %lu already added to group %lu", loop, group);
-            return CcuResult::CCU_E_PARA;
-        }
-    }
-
-    constexpr uint64_t MAX_LOOPS_PER_GROUP = 128;
-    uint64_t currentLoopCount = grpDesc.nonUnrollLoops.size() + grpDesc.unrollLoops.size();
-    if (currentLoopCount >= MAX_LOOPS_PER_GROUP) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] group %lu already has %lu loops (max %lu)",
-                   group, currentLoopCount, MAX_LOOPS_PER_GROUP);
+    if (grpDesc.addedLoops.count(loop)) {
+        HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] loop %lu already added to group %lu", loop, group);
         return CcuResult::CCU_E_PARA;
     }
 
-    if (isUnroll && !grpDesc.nonUnrollLoops.empty() && grpDesc.unrollLoops.empty()) {
-        grpDesc.repeatLoopIdx = grpDesc.nonUnrollLoops.size();
-    }
-    if (!isUnroll && !grpDesc.unrollLoops.empty()) {
-        HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] non-unroll loop must be added before unroll loops in group %lu",
-                   group);
+    auto &pool = loopEnginePools_[grpDesc.enginePoolHandle];
+    uint32_t loopIdx = grpDesc.loopCount;
+    if (loopIdx >= pool.size()) {
+        HCCL_ERROR("[CcuKernel::LoopGroupAddLoopFromVar] group %lu engine pool exhausted (pool size %lu, loopIdx %u)",
+                   group, pool.size(), loopIdx);
         return CcuResult::CCU_E_PARA;
     }
 
     CcuRep::Variable *loopParamVarPtr = nullptr;
     CCU_CHK_RET(GetVariableByHandle(loopParamVarHandle, &loopParamVarPtr));
 
-    if (!isUnroll) {
-        grpDesc.nonUnrollLoops.push_back(loop);
-    } else {
-        grpDesc.unrollLoops.push_back(loop);
-    }
-    grpDesc.totalLoopNum = grpDesc.nonUnrollLoops.size() + grpDesc.unrollLoops.size();
+    grpDesc.addedLoops.insert(loop);
+    grpDesc.loopCount++;
 
-    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
+    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry{};
+    entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);
     entry.isVarBased = true;
@@ -1631,11 +1623,6 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
 
     auto bundle = std::static_pointer_cast<CcuRep::CcuRepLoopGroupBundle>(grpDesc.bundleRep);
     bundle->AddLoop(entry);
-
-    if (!grpDesc.isVarBased) {
-        bundle->SetRepeatLoopIdx(grpDesc.repeatLoopIdx);
-        bundle->SetTotalLoopNum(grpDesc.totalLoopNum);
-    }
 
     return CcuResult::CCU_SUCCESS;
 }
