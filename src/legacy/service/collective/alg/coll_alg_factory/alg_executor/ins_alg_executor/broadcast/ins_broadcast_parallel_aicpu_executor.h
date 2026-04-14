@@ -301,21 +301,21 @@ private:
     {
         // 以此输入第1个阶段的part0 GenExtIns, scratchOffset, links,que以及 part1部分对应信息
         stageProcAlgParaVec = {
-            {[&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, interLinks_,
+            {[&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, scatterInterLinks_,
              interQue_, // stage0 part0
-             [&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, intraLinks_,
+             [&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, scatterIntraLinks_,
              intraQue_}, // stage0 part1
-            {[&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, intraLinks_,
+            {[&](auto&... args) { return intraScatterTempAlg.GenExtIns(args...); }, scatterIntraLinks_,
              intraQue_, // stage1 part0
-             [&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, interLinks_,
+             [&](auto&... args) { return interScatterTempAlg.GenExtIns(args...); }, scatterInterLinks_,
              interQue_}, // stage1 part1
-            {[&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, intraLinks_,
+            {[&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, allGatherIntraLinks_,
              intraQue_, // stage2 part0
-             [&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, interLinks_,
+             [&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, allGatherInterLinks_,
              interQue_}, // stage2 part1
-            {[&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, interLinks_,
+            {[&](auto&... args) { return interAllGatherTempAlg.GenExtIns(args...); }, allGatherInterLinks_,
              interQue_, // stage3 part0
-             [&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, intraLinks_,
+             [&](auto&... args) { return intraAllGatherTempAlg.GenExtIns(args...); }, allGatherIntraLinks_,
              intraQue_}, // stage3 part1
         };
     }
@@ -342,8 +342,10 @@ private:
     std::vector<InsQuePtr> intraQue_;
     std::vector<InsQuePtr> interQue_;
     std::vector<InsQuePtr> syncQueues_;
-    ResLinks intraLinks_;
-    ResLinks interLinks_;
+    ResLinks scatterIntraLinks_;
+    ResLinks scatterInterLinks_;
+    ResLinks allGatherIntraLinks_;
+    ResLinks allGatherInterLinks_;
 
     const RankGraph* rankGraphPtr_ = nullptr;
 };

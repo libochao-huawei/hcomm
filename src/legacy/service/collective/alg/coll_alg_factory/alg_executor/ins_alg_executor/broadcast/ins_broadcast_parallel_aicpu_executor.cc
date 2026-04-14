@@ -46,6 +46,8 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
     intraAllGatherTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interAllGatherTempAlg.setPathNumMap(rank2PathNumMap[1]);
+    //intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    //interScatterTempAlg.setPathNumMap(rank2PathNumMap[1]);
     CHK_RET(CalcSingleAlgRes(
         intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg, rankGraph,
         resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
@@ -182,6 +184,8 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
     intraAllGatherTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interAllGatherTempAlg.setPathNumMap(rank2PathNumMap[1]);
+    //intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interScatterTempAlg.setPathNumMap(rank2PathNumMap[1]);
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(
         rankGraph, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg));
@@ -229,6 +233,8 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
     intraAllGatherTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interAllGatherTempAlg.setPathNumMap(rank2PathNumMap[1]);
+    //intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interScatterTempAlg.setPathNumMap(rank2PathNumMap[1]);
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(
         linkMgr, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg));
