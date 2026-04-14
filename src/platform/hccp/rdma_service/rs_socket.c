@@ -392,14 +392,13 @@ STATIC void RsEpollEventTcpListenInHandle(struct rs_cb *rsCb, struct RsListenInf
     // unlock mutex to prevent RsTcpRecvTagInHandle from blocking
     RS_PTHREAD_MUTEX_ULOCK(&rsCb->mutex);
     ret = RsTcpRecvTagInHandle(&listenInfoTmp, connfd, &connTmp, remoteIp);
+    RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
     if (ret != 0) {
         hccp_warn("rs_tcp_recv_tag_in_handle unsuccessful, ret:%d", ret);
         RS_CLOSE_RETRY_FOR_EINTR(ret, connfd);
-        RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
         return;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
     ret = RsWlistCheckConnAdd(rsCb, &connTmp);
     if (ret != 0) {
         hccp_warn("rs_wlist_check_conn_add unsuccessful, ret %d", ret);
