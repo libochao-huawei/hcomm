@@ -126,7 +126,8 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     cclBuffer.addr = (void*)0xab;
     cclBuffer.size = 1024;
     cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
-    EXPECT_EQ(myRank.Init(cclBuffer, 0, 2), HCCL_SUCCESS);
+    constexpr uint32_t aicpu_mode = 2;
+    EXPECT_EQ(myRank.Init(cclBuffer, aicpu_mode, 2), HCCL_SUCCESS);
     EndpointDesc localEp;
     localEp.protocol = COMM_PROTOCOL_UB_MEM;
     localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
