@@ -2000,8 +2000,6 @@ HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
-
-    HCCLV2_FUNC_RUN(HcomSetAttachedStreamV2());
     std::shared_ptr<hccl::hcclComm> hcclComm = nullptr;
     std::vector<rtStream_t> rtStream(stream, stream + len);
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
