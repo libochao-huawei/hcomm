@@ -93,6 +93,9 @@ HcclResult CcuResContainer::Init()
         CHK_PTR_NULL(resPack_);
         auto ret = resPack_->Init();
         if (ret != HcclResult::HCCL_SUCCESS) {
+            // 避免重复拉起ccu驱动，此时ccuDrvHandle不置空
+            // ccu驱动生命周期仍跟随ccuResContainer
+            // 等外部销毁ccuResContainer再释放
             resPack_ = nullptr;
             return ret;
         }
