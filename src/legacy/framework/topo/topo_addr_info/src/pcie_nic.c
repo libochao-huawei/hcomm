@@ -18,33 +18,12 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <dlfcn.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <ifaddrs.h>
-#include <net/if.h>
 #include "hal.h"
 #include "securec.h"
 
-#define MAX_NIC_PATH (256 + 32)
-#define MAX_NIC_COUNT (32)
-#define PCIE_ROOT_MIN_LEN (23)
-#define MAX_PCIE_BUS_ID_LEN (32)
 
-typedef struct {
-    char path[MAX_NIC_PATH];
-    char pcie_path[MAX_NIC_PATH];
-    size_t comon_prefix_len;
-}nic;
 
-typedef struct _stNPU{
-    int id;
-    char bus_id[MAX_PCIE_BUS_ID_LEN];
-    char path[MAX_NIC_PATH];
-    char nic_path[MAX_NIC_PATH];
-    char nic_name[MAX_NIC_PATH];
-}NPU;
-
-static size_t GetCommonPrefixLen(const char* a, const char* b)
+static size_t getCommonPrefixLen(const char* a, const char* b)
 {
     size_t len = 0;
     while (a[len] == b[len] && a[len] != '\0' && b[len] != '\0') {
@@ -53,7 +32,7 @@ static size_t GetCommonPrefixLen(const char* a, const char* b)
     return len;
 }
 
-static int get_abs_path(const char* path, char* abs_path, size_t abs_path_len)
+static int getAbsPath(const char* path, char* abs_path, size_t abs_path_len)
 {
     char resolved_path[PATH_MAX] = {0};
     char *p = realpath(path, resolved_path);
@@ -64,11 +43,49 @@ static int get_abs_path(const char* path, char* abs_path, size_t abs_path_len)
 }
 
 /**
- * 获取本机所有网卡信息
- */
-int get_nics(nic *nics, size_t *nic_len)
+  * @brief 检查NPU和网卡是否在同一个PCIe交换机下
+  * @note * 判断原理，比较两个两个pcie路径, 同一个PCIe交换机下的两个设备的的父节点的bdf号相同Function id不同,
+  * 因此判断路径是否相同，减去自身bdf号长度和function id长度即可
+  * 则判断结果为1，因为它们的父节点的bdf号相同Function id不同，减去自身bdf号长度和function id长度后，路径相同
+  * 例如两个设备的pcie路径分别为
+  * ../0000:01:01.0/0000:02:00.0
+  * ../0000:01:02.0/0000:03:00.0
+  * 则说明02和03在同一个PCIe switch 01下, 他们之间的最大不同的字符数为18
+  * 另需排除掉pcie host bridge， 例如:
+  * /sys/bus/pci/devices/0000:01:01.0/0000:02:00.0
+  * /sys/bus/pci/devices/0000:01:01.0/0000:03:00.0
+  * 这类型直接挂载在CPU host bridge的情况,这类行路径长度较短，最短为33
+  * @param npu NPU指针
+  * @param npu NPU指针
+  * @param nic 网卡指针
+  * @return int 1表示在同一个PCIe交换机下，0表示不在同一个PCIe交换机下
+*/
+int isSamePcieSwitch(NPU *npu, HCA *nic)
 {
-    DIR *dir = opendir("/sys/class/net");
+#define SAME_PCIE_SW_BDF_DIFF_LEN (18)
+#define PCIE_HOST_BRIDGE_PATH_LEN (33)
+    char dev_path[MAX_NIC_PCIE_PATH] = {0};
+    char abs_path[MAX_NIC_PCIE_PATH] = {0};
+    size_t abs_path_len = sizeof(abs_path);
+    int ret = sprintf_s(dev_path, sizeof(dev_path), "/sys/bus/pci/devices/%s", npu->bus_id);
+    if (ret < 0) {
+        return -1;
+    }
+    getAbsPath(dev_path, abs_path, abs_path_len);
+    if (strlen(abs_path) < PCIE_HOST_BRIDGE_PATH_LEN) {
+        return 0;
+    }
+    size_t common_prefix_len = getCommonPrefixLen(abs_path, nic->pciePath);
+    if (common_prefix_len >= strlen(abs_path) - SAME_PCIE_SW_BDF_DIFF_LEN
+     && common_prefix_len >= PCIE_HOST_BRIDGE_PATH_LEN) {
+        return 1;
+    }
+    return 0;
+}
+
+int getFileNameInDir(const char* path, char *name, size_t nameSize) 
+{
+    DIR *dir = opendir(path);
     if (dir == NULL) {
         return -1;
     }
@@ -81,117 +98,100 @@ int get_nics(nic *nics, size_t *nic_len)
         if (entry->d_name[0] == '.') {
             continue;
         }
-        if (strcmp(entry->d_name, "lo") == 0) {
-            continue;
-        }
-        int ret = sprintf_s(nics[loop].path, MAX_NIC_PATH, "/sys/class/net/%s", entry->d_name);
-        if (ret < 0) {
+        int ret = strcpy_s(name, nameSize, entry->d_name);
+        if (ret == 0) {
             break;
         }
-        get_abs_path(nics[loop].path, nics[loop].pcie_path, MAX_NIC_PATH);
         loop++;
     }
-    (*nic_len) = loop;
-    closedir(dir);
     return 0;
 }
 
-static int GetPcieNics(NPU* npu, size_t pos, size_t npu_count)
+int GetHcaEth(HCA *hca) 
 {
-    char dev_path[MAX_NIC_PATH] = {0};
-    char abs_path[MAX_NIC_PATH] = {0};
-    size_t abs_path_len = sizeof(abs_path);
-    int ret = sprintf_s(dev_path, sizeof(dev_path), "/sys/bus/pci/devices/%s", npu[pos].bus_id);
+    char netPath[MAX_NIC_PCIE_PATH] = {0};
+    int ret = sprintf_s(netPath, MAX_NIC_PCIE_PATH, "%s/net", hca->pciePath);
     if (ret < 0) {
         return -1;
     }
-    get_abs_path(dev_path, abs_path, abs_path_len);
+    return getFileNameInDir(netPath, hca->ethName, MAX_NIC_PCIE_PATH) ;
+}
 
-    nic nics[MAX_NIC_COUNT] = {0};
-    size_t nic_len = MAX_NIC_COUNT;
-    int max_pos = -1;
-    size_t maxlen = PCIE_ROOT_MIN_LEN;
-    for (size_t i = 0; i < nic_len; ++i) {
-        size_t common_prefix_len = GetCommonPrefixLen(abs_path, nics[i].pcie_path);
-        if (common_prefix_len > maxlen) {
-            int skip = 0;
-            for (size_t j = 0; j < npu_count; ++j) {
-                if (strcmp(nics[i].pcie_path, npu[j].nic_path) == 0) {
-                    skip = 1;
-                    break;
-                }
-            }
-            if (skip) {
-                continue;
-            }
-            max_pos = i;
-            maxlen = common_prefix_len;
-        }
-    }
-    if (max_pos < 0) {
+int GetHcaVerbs(HCA *hca) 
+{
+    char netPath[MAX_NIC_PCIE_PATH] = {0};
+    int ret = sprintf_s(netPath, MAX_NIC_PCIE_PATH, "%s/infiniband_verbs", hca->pciePath);
+    if (ret < 0) {
         return -1;
     }
-    (void)strcpy_s(npu[pos].nic_path, sizeof(npu[pos].nic_path), nics[max_pos].pcie_path);
-    (void)strcpy_s(npu[pos].nic_name, sizeof(npu[pos].nic_name), basename(nics[max_pos].pcie_path));
+    ret = getFileNameInDir(netPath, hca->verbsName, MAX_NIC_PCIE_PATH) ;
+    if (ret != 0) {
+        return -1;
+    }
+    // 检查verbs可见性，不存在说明没有挂载到容器内
+    char verbsPath[MAX_NIC_PCIE_PATH] = {0};
+    ret = sprintf_s(verbsPath, MAX_NIC_PCIE_PATH, "/dev/infiniband/%s", hca->verbsName);
+    if (ret < 0) {
+        return -1;
+    }   
+    if (access(verbsPath, F_OK) != 0) {
+        return -1;
+    }
     return 0;
 }
 
-static void InitNpus(NPU *npu, size_t npu_count)
+int InitHcaByName(const char* hcaName, HCA* hca)
 {
-    for (size_t i = 0; i < npu_count; ++i) {
-        npu[i].id = i;
-        struct dcmi_pcie_info_all pcie_info;
-        hal_get_device_pcie_info(i, &pcie_info);
-        int ret = sprintf_s(npu[i].bus_id, MAX_PCIE_BUS_ID_LEN, "%04x:%02x:%02x.%x", 
-                                pcie_info.domain, pcie_info.bdf_busid, pcie_info.bdf_deviceid, pcie_info.bdf_funcid);
-        if (ret < 0) {
+    if (hca == NULL) {
+        return -1;
+    }
+    strcpy_s(hca->hcaName, MAX_NIC_PCIE_PATH, hcaName);
+    char devPath[MAX_NIC_PCIE_PATH] = {0};
+    int ret = sprintf_s(devPath, MAX_NIC_PCIE_PATH, "/sys/class/infiniband/%s/device", hcaName);
+    if (ret < 0) {
+        return -1;
+    }
+    getAbsPath(devPath, hca->pciePath, MAX_NIC_PCIE_PATH);
+    strcpy_s(hca->pcieBusId, MAX_NIC_PCIE_PATH, basename(hca->pciePath));
+    ret = GetHcaEth(hca);
+    if (ret != 0) {
+        return -1;
+    }
+    ret = GetHcaVerbs(hca);
+    if (ret != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+/**
+ * 获取本机所有网卡信息
+ */
+int scanHca(HCA *nics, int *nic_len)
+{
+    DIR *dir = opendir("/sys/class/infiniband");
+    if (dir == NULL) {
+        return -1;
+    }
+    const static int maxLoop = 100;  // 循环保护
+    int loop = 0;  // 循环保护
+    int pos = 0;
+    struct dirent *entry = NULL;
+    while ((entry=readdir(dir)) != NULL) {
+        if (loop >= maxLoop || pos >= MAX_NIC_COUNT) {
             break;
         }
-    }
-}
-
-int GetIpByIfName(const char* ifname, char* ip, size_t addrLen)
-{
-    struct ifaddrs *ifaddr = NULL;
-    if (getifaddrs(&ifaddr) == -1) {
-        return -1;
-    }
-    int found_interface = 0;
-    for (struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-        if (!ifa->ifa_addr || !ifa->ifa_name) {
+        loop++;
+        if (entry->d_name[0] == '.') {
             continue;
         }
-        if (strcmp(ifname, ifa->ifa_name) != 0) {
+        int ret = InitHcaByName(entry->d_name, &nics[pos]);
+        if (ret != 0) {
             continue;
         }
-        found_interface = 1;
-        if (ifa->ifa_addr->sa_family == AF_INET) {
-            struct sockaddr_in *sin = (struct sockaddr_in *)ifa->ifa_addr;
-            if (inet_ntop(AF_INET, &sin->sin_addr, ip, addrLen)!= NULL) {
-                freeifaddrs(ifaddr);
-                return 0;
-            }
-            freeifaddrs(ifaddr);
-            return -1;
-        }
+        pos++;
     }
-    freeifaddrs(ifaddr);
-    errno = found_interface ? ENOENT : ENODEV;
-    return 0;
-}
-
-int GetNpuRoceIp(int npu_id, char* ip_addr, size_t ip_addr_len)
-{
-    int npu_count = hal_get_npu_count();
-    NPU npus[MAX_NPU_COUNT] = {0};
-    InitNpus(npus, npu_count);
-    for (size_t i = 0; i < (size_t)npu_count; ++i) {
-        GetPcieNics(npus, i, npu_count);
-    }
-    for (size_t i = 0; i < (size_t)npu_count; ++i) {
-        if (npus[i].id == npu_id) {
-            GetIpByIfName(npus[i].nic_name, ip_addr, ip_addr_len);
-        }
-    }
+    (*nic_len) = loop;
+    closedir(dir);
     return 0;
 }
