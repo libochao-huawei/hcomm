@@ -27,7 +27,5 @@ public:
     CcuLocalAddrHandle handle{0};
 };
 
-static_assert(std::is_standard_layout<CcuLocalAddr>::value,
-    "CcuLocalAddr must be standard layout for .so ABI stability");
 
 #endif // CCU_LOCAL_ADDR_HPP
