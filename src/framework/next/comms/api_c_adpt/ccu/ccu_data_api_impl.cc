@@ -397,9 +397,9 @@ CcuResult CcuWriteMemToMemReduce(
 
 
 
+/*========== 控制流操作 ==========*/
 
-
-CcuResult CcuIfBeginImpl(CcuVariableHandle var, uint64_t immediate,
+CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -410,7 +410,7 @@ CcuResult CcuIfBeginImpl(CcuVariableHandle var, uint64_t immediate,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuIfElseImpl(const char *label)
+CcuResult CcuIfElse(const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
@@ -420,7 +420,7 @@ CcuResult CcuIfElseImpl(const char *label)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuIfEndImpl(const char *label)
+CcuResult CcuIfEnd(const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
@@ -430,7 +430,7 @@ CcuResult CcuIfEndImpl(const char *label)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuWhileBeginImpl(CcuVariableHandle var, uint64_t immediate,
+CcuResult CcuWhileBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -441,7 +441,7 @@ CcuResult CcuWhileBeginImpl(CcuVariableHandle var, uint64_t immediate,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuWhileEndImpl(const char *label)
+CcuResult CcuWhileEnd(const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
@@ -451,7 +451,7 @@ CcuResult CcuWhileEndImpl(const char *label)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuDoWhileBeginImpl(const char *label)
+CcuResult CcuDoWhileBegin(const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
@@ -461,7 +461,7 @@ CcuResult CcuDoWhileBeginImpl(const char *label)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuDoWhileEndImpl(CcuVariableHandle var, uint64_t immediate,
+CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -471,7 +471,7 @@ CcuResult CcuDoWhileEndImpl(CcuVariableHandle var, uint64_t immediate,
 
     return CcuResult::CCU_SUCCESS;
 }
-
+/*========== 循环操作 ==========*/  
 CcuResult CcuLoopCreate(CcuLoop *loop)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();

@@ -80,24 +80,25 @@ extern CcuResult CcuWriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle rem
 extern CcuResult CcuWriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle, CcuVariableHandle len, CcuEventHandle event);
 extern CcuResult CcuWriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
 
-
-extern CcuResult CcuIfBeginImpl(CcuVariableHandle var, uint64_t immediate,
+/*========== 控制流操作 ==========*/
+extern CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
-extern CcuResult CcuIfElseImpl(const char *label);
+extern CcuResult CcuIfElse(const char *label);
 
-extern CcuResult CcuIfEndImpl(const char *label);
+extern CcuResult CcuIfEnd(const char *label);
 
-extern CcuResult CcuWhileBeginImpl(CcuVariableHandle var, uint64_t immediate,
+extern CcuResult CcuWhileBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
-extern CcuResult CcuWhileEndImpl(const char *label);
+extern CcuResult CcuWhileEnd(const char *label);
 
-extern CcuResult CcuDoWhileBeginImpl(const char *label);
+extern CcuResult CcuDoWhileBegin(const char *label);
 
-extern CcuResult CcuDoWhileEndImpl(CcuVariableHandle var, uint64_t immediate,
+extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
+/*========== 循环操作 ==========*/
 extern CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count);
 
 extern CcuResult CcuLoopCreate(CcuLoop *loop);
