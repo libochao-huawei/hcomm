@@ -170,7 +170,6 @@ HcclResult CommMems::CommUnregMem(const std::string& memTag, const void* memHand
 HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNum, std::vector<HcclMem> &memVec, 
     std::vector<std::string> &memTag)
 {
-    CHK_PTR_NULL(memHandles);
     HcclMem memTemp;
     memTemp.size = size_;
     memTemp.type = memType_;

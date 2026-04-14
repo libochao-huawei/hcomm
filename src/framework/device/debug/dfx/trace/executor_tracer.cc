@@ -118,9 +118,6 @@ void ExecutorTracer::HandleBackGround(AicpuComContext *const ctx)
 // stop 背景线程
 void ExecutorTracer::StopBackGround(AicpuComContext *const ctx, bool &isNotStop)
 {
-    if (ctx == nullptr) {
-        return;
-    }
     if (ctx->commOpenStatus) {
         isNotStop = true;
     } else {
