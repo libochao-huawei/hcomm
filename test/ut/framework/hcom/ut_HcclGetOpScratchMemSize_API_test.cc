@@ -179,7 +179,7 @@ TEST_F(GetOpScratchMemSizeTest, Ut_HcomGetGroupNameByOpBase_When_Normal_Expect_S
     s64 opBaseHcom = (s64)comm.get();
     char *groupname = nullptr;
     HcclResult ret = HcomGetGroupNameByOpBase(opBaseHcom, &groupname);
-    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_STREQ(groupname, "test_group_name");
 }
 
@@ -188,5 +188,5 @@ TEST_F(GetOpScratchMemSizeTest, Ut_HcomGetGroupNameByOpBase_When_GroupNamePtrNul
     comm.reset(new hccl::hcclComm(1, 1, "another_group"));
     s64 opBaseHcom = (s64)comm.get();
     HcclResult ret = HcomGetGroupNameByOpBase(opBaseHcom, nullptr);
-    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
