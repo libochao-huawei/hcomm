@@ -82,21 +82,21 @@ extern CcuResult CcuDoWhileBeginImpl(const char *label);
 extern CcuResult CcuDoWhileEndImpl(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
-extern CcuResult CcuCreateBlockExecutorImpl(CcuLoopExecutors *pool, uint32_t count);
+extern CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count);
 
-    extern CcuResult CcuLoopCreateImpl(CcuLoop *loop);
-extern CcuResult _CcuLoopBodyEnterImpl(CcuLoop loop);
-extern CcuResult _CcuLoopBodyExitImpl(CcuLoop loop);
-extern CcuResult CcuLoopSetParamImpl(CcuLoop loop,
+extern CcuResult CcuLoopCreate(CcuLoop *loop);
+extern CcuResult _CcuLoopBodyEnter(CcuLoop loop);
+extern CcuResult _CcuLoopBodyExit(CcuLoop loop);
+extern CcuResult CcuLoopSetParam(CcuLoop loop,
     CcuVariableHandle formalParam, CcuVariableHandle actualParam);
-extern CcuResult CcuLoopGroupCreateImpl(CcuLoopGroup *group,
+extern CcuResult CcuLoopGroupCreate(CcuLoopGroup *group,
     const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool);
-extern CcuResult CcuLoopGroupCreateFromVarImpl(CcuLoopGroup *group,
+extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group,
     CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
     CcuLoopExecutors enginePool);
-extern CcuResult CcuLoopGroupAddLoopImpl(CcuLoopGroup group,
+extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroup group,
     CcuLoop loop, const CcuLoopConfig *config);
-extern CcuResult CcuLoopGroupAddLoopFromVarImpl(CcuLoopGroup group,
+extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
     CcuLoop loop, CcuVariableHandle loopParamVar);
 
 
