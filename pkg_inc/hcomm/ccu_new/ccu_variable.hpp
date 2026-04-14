@@ -16,6 +16,7 @@
 
 #include "ccu_types.h"
 #include "ccu_data_utils.hpp"
+#include "ccu_if_label_stack.hpp"
 
 class CcuVariable;
 
@@ -23,20 +24,6 @@ struct CcuCondExpr {
     CcuVariable *var;
     uint64_t imm;
     CcuConditionType cond;
-};
-
-struct CcuIfLabelStack {
-    static constexpr int MAX_DEPTH = 16;
-    static const char **Labels() {
-        static thread_local const char *labels[MAX_DEPTH]{};
-        return labels;
-    }
-    static int &Top() {
-        static thread_local int top = 0;
-        return top;
-    }
-    static void Push(const char *label) { Labels()[Top()++] = label; }
-    static const char *Pop() { return Labels()[--Top()]; }
 };
 
 class CcuVariable final {
