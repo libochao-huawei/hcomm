@@ -91,7 +91,7 @@ HcclResult MyRank::TryInitCcuInstance()
     // ccu通信域数量过多，导致资源不足
     if (ccuInitRet == HcclResult::HCCL_E_UNAVAIL) {
         // 如果是ccu ms模式，回退至ccu调度模式重试
-        // 复用原有的CcuResContainer，回退到ccu sched时不需要重复拉起ccu驱动
+        // 复用原有的ccuResContainer，回退到ccu sched时不需要重复拉起ccu驱动
         if (opExpansionMode_ == CCU_MS_MODE) {
             opExpansionMode_ = CCU_SCHED_MODE;
             CHK_RET(TryInitCcuInstance()); // 至多递归一次
