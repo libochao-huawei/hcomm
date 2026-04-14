@@ -30,14 +30,14 @@ class CcuInstance {
 public:
     CcuInstance(CcuInstanceType insType) : insType_(insType) {};
     ~CcuInstance();
-    HcclResult Init();
-    HcclResult Reset();
+    CcuResult Init();
+    CcuResult Reset();
     CcuResPack *GetResPack();
-    HcclResult SaveKernel(CcuKernelHandle kernelHandle);
+    CcuResult SaveKernel(CcuKernelHandle kernelHandle);
     const std::vector<CcuKernelHandle> &GetUntranslatedKernels();
 
 private:
-    CcuInstanceType insType_{CcuInstanceType::CCU_INVALID};
+    CcuInstanceType insType_{CcuInstanceType::CCU_UNUSED};
     int32_t devLogicId_{INT32_MAX};
     std::shared_ptr<hcomm::CcuDrvHandle> ccuDrvHandle_{};
     std::unique_ptr<CcuResPack> resPack_{};
