@@ -119,7 +119,7 @@ set(include_list
     ${TOP_DIR}/llt/ace/comop/hccl/orion/common/acl_stub
     ${TOP_DIR}/llt/ace/comop/hccl/orion/common/virtual_topo_stub
     ${TOP_DIR}/ace/comop/hccl/orion/framework/aiv/aiv_ins
-    ${TOP_DIR}/abl/adump/inc/adump
+    ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
     ${TOP_DIR}/metadef/inc/external/
     ${TOP_DIR}/metadef/pkg_inc
 )
