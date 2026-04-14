@@ -5314,6 +5314,12 @@ TEST_F(HcomTest, ut_HcclCommGraphAllGather)
     .will(returnValue(HCCL_SUCCESS));
 
     int ret = HCCL_SUCCESS;
+
+    char *groupname = nullptr;
+    ret = HcomGetGroupNameByOpBase(opBaseHcom, &groupname);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_STREQ(groupname, "123");
+
     ret = HcclCommGraphAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
