@@ -64,6 +64,22 @@ extern CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
 extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
 
+//本地数据拷贝 相关接口
+extern CcuResult CcuLocalCopyMemToMem(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuLocalCopyMemToBuffer(CcuBufferHandle dst, CcuLocalAddrHandle src,CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuLocalCopyBufferToMem(CcuLocalAddrHandle dst, CcuBufferHandle src, CcuVariableHandle len, CcuEventHandle event);
+//本地reduce 相关接口
+extern CcuResult CcuLocalMemReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
+extern CcuResult CcuLocalBufferReduce(CcuBufferHandle* buffers, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, CcuVariableHandle len, CcuEventHandle event);
+
+/*========== 远端数据传输操作 ==========*/
+extern CcuResult CcuReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
+extern CcuResult CcuWriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuWriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuWriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
+
 
 extern CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
@@ -82,71 +98,22 @@ extern CcuResult CcuDoWhileBegin(const char *label);
 extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
-    extern CcuResult CcuLoopCreateImpl(CcuLoopHandle *loop);
-extern CcuResult _CcuLoopBodyEnterImpl(CcuLoopHandle loop);
-extern CcuResult _CcuLoopBodyExitImpl(CcuLoopHandle loop);
-extern CcuResult CcuLoopSetParamImpl(CcuLoopHandle loop,
+extern CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count);
+
+extern CcuResult CcuLoopCreate(CcuLoop *loop);
+extern CcuResult _CcuLoopBodyEnter(CcuLoop loop);
+extern CcuResult _CcuLoopBodyExit(CcuLoop loop);
+extern CcuResult CcuLoopSetParam(CcuLoop loop,
     CcuVariableHandle formalParam, CcuVariableHandle actualParam);
-extern CcuResult CcuLoopGroupCreateImpl(CcuLoopGroupHandle *group,
-    const CcuLoopGroupConfig *config);
-extern CcuResult CcuLoopGroupCreateFromVarImpl(CcuLoopGroupHandle *group,
-    CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
-extern CcuResult CcuLoopGroupAddLoopImpl(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll);
-extern CcuResult CcuLoopGroupAddLoopFromVarImpl(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, CcuVariableHandle loopParamVar, bool isUnroll);
-
-
-
-
-
-/*
-Buffer 相关接口
-*/
-extern CcuResult CcuLocalCopyHBMToBufferImpl(
-    CcuBufferHandle dstBuffer, CcuLocalAddrHandle src,
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuLocalCopyBufferToHBMImpl(
-        CcuLocalAddrHandle dst, CcuBufferHandle srcBuffer,
-        CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuLocalCopyHBMToHBMImpl(
-    CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-    CcuVariableHandle len, CcuEventHandle event);
-
-/*========== 本地 Reduce ==========*/
-extern CcuResult CcuLocalHBMReduceImpl(
-    CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event);
-
-extern CcuResult CcuLocalBufferReduceImpl(
-    CcuBufferHandle* buffers, uint32_t count,
-    HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType,
-    CcuVariableHandle len, CcuEventHandle event);
-
-/*========== 远端数据传输操作 ==========*/
-extern CcuResult CcuReadHBMToHBMImpl(
-    ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuReadHBMToBufferImpl(
-    ChannelHandle channel, CcuBufferHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuWriteHBMToHBMImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local, 
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuWriteBufferToHBMImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuBufferHandle local, 
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuReadHBMToHBMReduceImpl(
-    ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event);
-extern CcuResult CcuWriteHBMToHBMReduceImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event);
-
+extern CcuResult CcuLoopGroupCreate(CcuLoopGroup *group,
+    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool);
+extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group,
+    CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
+    CcuLoopExecutors enginePool);
+extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroup group,
+    CcuLoop loop, const CcuLoopConfig *config);
+extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
+    CcuLoop loop, CcuVariableHandle loopParamVar);
 
 #ifdef __cplusplus
 }

@@ -35,59 +35,6 @@ extern "C" {
 
 
 
-// LocalAddr / RemoteAddr 创建
-extern CcuResult CcuLocalAddrCreate(CcuLocalAddr* localAddr);
-extern CcuResult CcuRemoteAddrCreate(CcuRemoteAddr* remoteAddr);
-
-// LocalAddr → Buffer（读入 Buffer）
-extern CcuResult CcuLocalCopyHBMToBuffer(
-    CcuBuffer dstBuffer, CcuLocalAddr src,
-    CcuVariable len, CcuEvent event);
-// Buffer → LocalAddr
-extern CcuResult CcuLocalCopyBufferToHBM(
-    CcuLocalAddr dst, CcuBuffer srcBuffer,
-    CcuVariable len, CcuEvent event);
-// LocalAddr → LocalAddr
-extern CcuResult CcuLocalCopyHBMToHBM(
-    CcuLocalAddr dst, CcuLocalAddr src,
-    CcuVariable len, CcuEvent event);
-/*========== 本地 Reduce ==========*/
-
-// LocalAddr → LocalAddr Reduce
-extern CcuResult CcuLocalHBMReduce(
-    CcuLocalAddr dst, CcuLocalAddr src,
-    CcuVariable len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEvent event);
-
-// 多 Buffer Reduce
-extern CcuResult CcuLocalBufferReduce(
-    CcuBuffer* buffers, uint32_t count,
-    HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType,
-    CcuVariable len, CcuEvent event);
-
-/*========== 远端数据传输操作 ==========*/
-extern CcuResult CcuReadHBMToHBM(
-    ChannelHandle channel, CcuLocalAddr local, CcuRemoteAddr remote,
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuReadHBMToBuffer(
-    ChannelHandle channel, CcuBuffer local, CcuRemoteAddr remote,
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuReadHBMToHBMReduce(
-    ChannelHandle channel, CcuLocalAddr local, CcuRemoteAddr remote,
-    CcuVariable len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEvent event);
-extern CcuResult CcuWriteHBMToHBM(
-    ChannelHandle channel, CcuRemoteAddr remote,CcuLocalAddr local, 
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuWriteBufferToHBM(
-    ChannelHandle channel, CcuRemoteAddr remote, CcuBuffer local,
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuWriteHBMToHBMReduce(
-    ChannelHandle channel, CcuRemoteAddr remote, CcuLocalAddr local,
-    CcuVariable len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEvent event);
-
 
 /**
  * @brief 远端同步操作
@@ -109,21 +56,6 @@ extern CcuResult CcuWriteHBMToHBMReduce(
  */
 // extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
-
-// Loop
-extern CcuResult CcuLoopCreate(CcuLoopHandle *loop);
-extern CcuResult _CcuLoopBodyEnter(CcuLoopHandle loop);
-extern CcuResult _CcuLoopBodyExit(CcuLoopHandle loop);
-extern CcuResult CcuLoopSetParam(CcuLoopHandle loop,
-    CcuVariable *formalParam, CcuVariable *actualParam);
-extern CcuResult CcuLoopGroupCreate(CcuLoopGroupHandle *group,
-    const CcuLoopGroupConfig *config);
-extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroupHandle *group,
-    CcuVariable *parallelVar, CcuVariable *offsetVar);
-extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll);
-extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, CcuVariable *loopParamVar, bool isUnroll);
 
 #ifdef __cplusplus
 }
