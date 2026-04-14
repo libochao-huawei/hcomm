@@ -18,6 +18,7 @@ namespace Hccl {
 constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 REDUCE_CCU_1D_MAX_DATA_SIZE = 64 * 1024 *1024;
 constexpr u64 REDUCE_CCU_1D_MAX_DATA_SIZE_INT8 = 16 * 1024 *1024;
+constexpr u64 REDUCE_AIV_1D_TWOSHOT_THRESHOLD = 16 * 1024;
 constexpr double DEFAULT_RANK_SIZE = 8.0;
 
 SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
@@ -320,8 +321,11 @@ SelectorStatus ReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
         return SelectorStatus::NOT_MATCH;
     }
 
-    // aiv 直接走打平 mesh
-    primQueueGenName = "AivReduceMesh1D";
+    if (dataSize_ <= REDUCE_AIV_1D_TWOSHOT_THRESHOLD) {
+        primQueueGenName = "AivReduceMesh1D";
+    } else {
+        primQueueGenName = "AivReduceMesh1DTwoShot";
+    }
 
     HCCL_INFO("[Algo][ReduceAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
