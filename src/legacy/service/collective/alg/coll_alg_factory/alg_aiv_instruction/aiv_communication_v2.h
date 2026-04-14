@@ -20,6 +20,7 @@
 #include "aiv_all_to_all_mesh_1D.h"
 #include "aiv_all_to_all_v_mesh_1D.h"
 #include "aiv_reduce_mesh_1d.h"
+#include "aiv_reduce_mesh_1d_twoshot.h"
 #include "aiv_reduce_scatter_mesh_1d.h"
 #include "aiv_reduce_scatter_mesh_1d_corectrl.h"
 #include "aiv_reduce_scatter_mesh_1d_bigdata.h"
@@ -76,6 +77,12 @@ extern "C" __global__ __aicore__ void aiv_reduce_##type(EXTERN_KERNEL_ARGS_DEF_V
          return AivReduceV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
 } \
 EXPORT_AIV_META_INFO(aiv_reduce_##type)
+
+#define AIV_REDUCE_MESH1D_TWOSHOT_KERNEL_BATCH_DEF(type) \
+extern "C" __global__ __aicore__ void aiv_reduce_mesh1d_twoshot_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
+         return AivReduceV2Mesh1DTwoShot<type>(EXTERN_KERNEL_ARGS_CALL); \
+} \
+EXPORT_AIV_META_INFO(aiv_reduce_mesh1d_twoshot_##type)
  
 #define AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_reduce_scatter_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
@@ -150,6 +157,7 @@ AIV_ATOMIC_DATA_TYPE_DEF(AIV_ALL_REDUCE_ONESHOT_KERNEL_BATCH_DEF);
 AIV_COPY_DATA_TYPE_DEF(AIV_BROADCAST_KERNEL_BATCH_DEF);
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_ALLREDUCE_MESH1D_TWOSHOT_KERNEL_BATCH_DEF);
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_KERNEL_BATCH_DEF);
+AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_MESH1D_TWOSHOT_KERNEL_BATCH_DEF);
 AIV_ATOMIC_DATA_TYPE_DEF(AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF);
 AIV_COPY_DATA_TYPE_DEF(AIV_SEND_KERNEL_BATCH_DEF);
 AIV_COPY_DATA_TYPE_DEF(AIV_RECV_KERNEL_BATCH_DEF);

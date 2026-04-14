@@ -22,6 +22,7 @@
 #include "ins_v2_reduce_sole_executor.h"
 #ifndef CCL_KERNEL_AICPU
 #include "aiv_temp_reduce_mesh_1D.h"
+#include "aiv_temp_reduce_mesh_1D_twoshot.h"
 #include "ccu_temp_reduce_mesh_1D.h"
 #include "ccu_temp_reduce_nhr_1D_mem2mem.h"
 #include "ccu_temp_reduce_mesh_1D_mem2mem.h"
@@ -273,6 +274,8 @@ INS_REGISTER_IMPL_BY_TEMP(
     OpType::REDUCE, CcuReduceMeshMem2Mem1D, InsV2ReduceSoleExecutor, TopoMatchMesh, CcuTempReduceMeshMem2Mem1D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, AivReduceMesh1D, InsV2ReduceSoleExecutor,
     TopoMatchMesh, AivTempReduceMesh1D);
+INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, AivReduceMesh1DTwoShot, InsV2ReduceSoleExecutor,
+    TopoMatchMesh, AivTempReduceMesh1DTwoShot);
 INS_REGISTER_IMPL_BY_TEMP(
     OpType::REDUCE, CcuReduceMeshMem2Mem2D, InsV2ReduceSoleExecutor, TopoMatchConcurrMesh, CcuTempReduceMeshMem2Mem2D);
 INS_REGISTER_IMPL_BY_TEMP(OpType::REDUCE, CcuReduceMeshTwoShotMem2Mem1D, InsV2ReduceSoleExecutor,
