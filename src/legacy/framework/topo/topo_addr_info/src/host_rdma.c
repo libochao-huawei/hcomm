@@ -8,9 +8,94 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "host_rdma.h"
+#include "securec.h"
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include "hal.h"
 #include "pcie_nic.h"
+
+int GetIpByIfName(const char* ifname, char* ip, size_t addrLen)
+{
+    struct ifaddrs *ifaddr = NULL;
+    if (getifaddrs(&ifaddr) == -1) {
+        return -1;
+    }
+    int found_interface = 0;
+    for (struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr || !ifa->ifa_name) {
+            continue;
+        }
+        if (strcmp(ifname, ifa->ifa_name) != 0) {
+            continue;
+        }
+        found_interface = 1;
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            struct sockaddr_in *sin = (struct sockaddr_in *)ifa->ifa_addr;
+            if (inet_ntop(AF_INET, &sin->sin_addr, ip, addrLen)!= NULL) {
+                freeifaddrs(ifaddr);
+                return 0;
+            }
+            freeifaddrs(ifaddr);
+            return -1;
+        }
+    }
+    freeifaddrs(ifaddr);
+    errno = found_interface ? ENOENT : ENODEV;
+    return 0;
+}
+
+
+
+static int matchNpuAndHca(NPU* npus, HCA* nics, int npu_count, int nic_count)
+{
+    int cur = 0;
+    for (size_t i = 0; i < npu_count; ++i) {
+        for (size_t j = 0; j < nic_count + cur; ++j) {
+            size_t pos = j % nic_count;
+            if (isSamePcieSwitch(&npus[i], &nics[pos])) {
+                (void)strcpy_s(npus[i].nicPciePath, sizeof(npus[i].nicPciePath), nics[pos].pciePath);
+                (void)strcpy_s(npus[i].ethName, sizeof(npus[i].ethName), nics[pos].ethName);
+                cur = j + 1;
+            }
+        }
+    }
+    return 0;
+}
+
+static void InitNpus(NPU *npu, size_t npu_count)
+{
+    for (size_t i = 0; i < npu_count; ++i) {
+        npu[i].id = i;
+        struct dcmi_pcie_info_all pcie_info;
+        hal_get_device_pcie_info(i, &pcie_info);
+        int ret = sprintf_s(npu[i].bus_id, MAX_PCIE_BUS_ID_LEN, "%04x:%02x:%02x.%x", 
+                                pcie_info.domain, pcie_info.bdf_busid, pcie_info.bdf_deviceid, pcie_info.bdf_funcid);
+        if (ret < 0) {
+            break;
+        }
+    }
+}
 
 int GetNpuHostRdmaIp(int npu_id, char* ip_addr, size_t ip_addr_len)
 {
-    return GetNpuRoceIp(npu_id, ip_addr, ip_addr_len);
+    // 获取所有NPU和HCA信息
+    NPU npus[MAX_NPU_COUNT] = {0};
+    HCA nics[MAX_NIC_COUNT] = {0};
+    int npuNum = hal_get_npu_count();
+    int nicNum = MAX_NIC_COUNT;
+    InitNpus(npus, npuNum);
+    if (scanHca(nics, &nicNum) != 0) {
+        return -1;
+    }
+    // 匹配NPU和HCA
+    matchNpuAndHca(npus, nics, npuNum, nicNum);
+    // 找到对于NPU的HCA IP
+    for (int i = 0; i < npuNum; ++i) {
+        if (npus[i].id == npu_id) {
+            GetIpByIfName(npus[i].ethName, ip_addr, ip_addr_len);
+        }
+    }
+    return 0;
 }
