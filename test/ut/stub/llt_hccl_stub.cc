@@ -5493,6 +5493,3 @@ HcclResult GetCustomKernelFilePath(std::string &binaryPath)
     return HCCL_SUCCESS;
 }
 }
-
-extern "C" {
-}
