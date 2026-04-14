@@ -931,10 +931,6 @@ HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
-            u32 rankNum = 0;
-            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(commV2, commName));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
@@ -1019,10 +1015,6 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
-            u32 rankNum = 0;
-            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(commV2, commName));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
@@ -1267,8 +1259,6 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;
             CHK_RET(HcclCreateSubCommConfigV2(&commV2, rankNum, rankIds, subCommId, subCommRankId, config, &subCommV2));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(subCommV2, commName));
             HcclResult ret = HcclCommInitCollComm(subCommRankId, &subCommV2, config, subComm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed. Destroy subCommV2");
