@@ -344,10 +344,11 @@ int32_t HcommWriteReduceWithNotifyOnThread(ThreadHandle thread, ChannelHandle ch
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
     AddThread(thread);
-    uint64_t len = count * SIZE_TABLE[dataType];
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
+
+    uint64_t len = count * SIZE_TABLE[dataType];
 
     HcclResult ret = HCCL_SUCCESS;
 
