@@ -1,3 +1,7 @@
 build/
 build_device/
 third_party/
+build_hccd/
+openssl-device-src/
+openssl-host-src/
+scripts/sign/__pycache__/
