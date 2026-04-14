@@ -70,6 +70,34 @@ struct dcmi_spod_info {
     unsigned int reserve[6];
 };
 
+
+#define MAX_NIC_PCIE_PATH (256 + 32)
+#define MAX_NIC_COUNT (32)
+#define PCIE_ROOT_MIN_LEN (23)
+#define MAX_PCIE_BUS_ID_LEN (32)
+
+/**
+ * HCA Host Channel Adapter
+ */
+typedef struct {
+    char hcaName[MAX_NIC_PCIE_PATH];
+    char ethName[MAX_NIC_PCIE_PATH];
+    char verbsName[MAX_NIC_PCIE_PATH];
+    char pcieBusId[MAX_NIC_PCIE_PATH];
+    char pciePath[MAX_NIC_PCIE_PATH];
+    int numa;
+}HCA;
+
+typedef struct _stNPU{
+    int id;
+    char bus_id[MAX_PCIE_BUS_ID_LEN];
+    char path[MAX_NIC_PCIE_PATH];
+    char nicPciePath[MAX_NIC_PCIE_PATH];
+    char ethName[MAX_NIC_PCIE_PATH];
+    int numa;
+}NPU;
+
+
 #define MAIN_BOARD_ID_CARD_NOMESH (0x68)
 #define MAIN_BOARD_ID_CARD_2PMESH (0x6a)
 #define MAIN_BOARD_ID_CARD_4PMESH (0x6c)
