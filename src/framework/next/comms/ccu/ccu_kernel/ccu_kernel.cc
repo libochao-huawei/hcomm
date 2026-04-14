@@ -528,6 +528,51 @@ CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
+//本地数据拷贝 相关实现
+CcuResult CcuKernel::LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::CcuBuf *dst{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(dstHandle, &dst));
+    CcuRep::LocalAddr *src{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalCopyNb(*dst, *src, *len, *event);  // 复用 protected
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::LocalCopyBufferToMem(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *dst{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
+    CcuRep::CcuBuf *src{nullptr};
+    CCU_CHK_RET(GetBufferByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalCopyNb(*dst, *src, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
+
+CcuResult CcuKernel::LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
+    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
+{
+    CcuRep::LocalAddr *dst{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
+    CcuRep::LocalAddr *src{nullptr};
+    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
+    CcuRep::Variable *len{nullptr};
+    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
+    CcuRep::CompletedEvent *event{nullptr};
+    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
+    auto ret = LocalCopyNb(*dst, *src, *len, *event);
+    return HCCL_TO_CCU_RET(ret);
+}
 
 
 
@@ -1221,50 +1266,7 @@ HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::Cc
     return HCCL_SUCCESS;
 }
 
-CcuResult CcuKernel::LocalCopyToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::CcuBuf *dst{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(dstHandle, &dst));
-    CcuRep::LocalAddr *src{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);  // 复用 protected
-    return HCCL_TO_CCU_RET(ret);
-}
 
-CcuResult CcuKernel::LocalCopyFromBuffer(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *dst{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
-    CcuRep::CcuBuf *src{nullptr};
-    CCU_CHK_RET(GetBufferByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
-
-CcuResult CcuKernel::LocalCopy(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,
-    CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
-{
-    CcuRep::LocalAddr *dst{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(dstHandle, &dst));
-    CcuRep::LocalAddr *src{nullptr};
-    CCU_CHK_RET(GetLocalAddrByHandle(srcHandle, &src));
-    CcuRep::Variable *len{nullptr};
-    CCU_CHK_RET(GetVariableByHandle(lenHandle, &len));
-    CcuRep::CompletedEvent *event{nullptr};
-    CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
-    auto ret = LocalCopyNb(*dst, *src, *len, *event);
-    return HCCL_TO_CCU_RET(ret);
-}
 
 HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
                              HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event)

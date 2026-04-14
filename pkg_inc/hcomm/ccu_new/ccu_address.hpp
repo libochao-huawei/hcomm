@@ -90,6 +90,12 @@ public:
 
     CcuAddressHandle handle{0};
 };
+
+// variable + addr（交换律）
+inline CcuArithmeticOperator<CcuVariable, CcuAddress> operator+(const CcuVariable &var, const CcuAddress &addr) {
+    return CcuArithmeticOperator<CcuVariable, CcuAddress>(var, addr, CcuArithmeticOperatorType::ADDITION);
+}
+
 template <> inline void CcuArithmeticOperator<CcuAddress, CcuAddress>::Check() const {}
 template <> inline void CcuArithmeticOperator<CcuAddress, CcuVariable>::Check() const {}
 template <> inline void CcuArithmeticOperator<CcuVariable, CcuAddress>::Check() const {}
