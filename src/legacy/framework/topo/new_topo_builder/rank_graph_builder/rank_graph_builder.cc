@@ -19,20 +19,6 @@
 
 namespace Hccl {
 
-const RankLevelInfo &RankGraphBuilder::GetRankLevelInfoByNetLayer(const NewRankInfo &rankInfo, u32 netLayer) const
-{
-    auto it = std::find_if(rankInfo.rankLevelInfos.begin(), rankInfo.rankLevelInfos.end(),
-        [netLayer](const RankLevelInfo &levelInfo) {
-            return levelInfo.netLayer == netLayer;
-        });
-    if (it == rankInfo.rankLevelInfos.end()) {
-        THROW<InvalidParamsException>(StringFormat(
-            "[RankGraphBuilder][GetRankLevelInfoByNetLayer] rankId[%u] netLayer[%u] does not exist in ranktable.",
-            rankInfo.rankId, netLayer));
-    }
-    return *it;
-}
-
 unique_ptr<RankGraph> RankGraphBuilder::Build(const string &ranktableM, const string &topoPath, RankId myRank)
 {
     PhyTopoBuilder::GetInstance().Build(topoPath);
@@ -64,6 +50,21 @@ unique_ptr<RankGraph> RankGraphBuilder::Build(const RankTableInfo &ranktable, co
     rankGraph_->Dump();
     return std::move(rankGraph_);
 }
+
+const RankLevelInfo &RankGraphBuilder::GetRankLevelInfoByNetLayer(const NewRankInfo &rankInfo, u32 netLayer) const
+{
+    auto it = std::find_if(rankInfo.rankLevelInfos.begin(), rankInfo.rankLevelInfos.end(),
+        [netLayer](const RankLevelInfo &levelInfo) {
+            return levelInfo.netLayer == netLayer;
+        });
+    if (it == rankInfo.rankLevelInfos.end()) {
+        THROW<InvalidParamsException>(StringFormat(
+            "[RankGraphBuilder][GetRankLevelInfoByNetLayer] rankId[%u] netLayer[%u] does not exist in ranktable.",
+            rankInfo.rankId, netLayer));
+    }
+    return *it;
+}
+
 
 std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId localId)
 {
