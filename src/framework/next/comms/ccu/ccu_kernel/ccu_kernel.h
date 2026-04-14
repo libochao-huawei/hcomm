@@ -131,6 +131,11 @@ public:
     CcuResult LocalCopyBufferToMem(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
     CcuResult LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
 
+    //本地reduce 相关接口
+    CcuResult LocalMemReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle, CcuVariableHandle lenHandle, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle eventHandle);
+    CcuResult LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+
+
     //运算重载 相关接口
     CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
     CcuResult VariableAssignVar(CcuVariableHandle var, CcuVariableHandle varA);
@@ -142,6 +147,15 @@ public:
     CcuResult AddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
     CcuResult AddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
     CcuResult AddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
+
+    // 远端数据传输操作
+        
+    CcuResult ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);   
+    CcuResult ReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle lenHandle, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle eventHandle);
+    CcuResult WriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle lenHandle, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle eventHandle);
 
 
     CcuResult IfBegin(CcuVariableHandle var, uint64_t immediate,
@@ -170,31 +184,6 @@ public:
         CcuLoop loop, const CcuLoopConfig *config);
     CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
         CcuLoop loop, CcuVariableHandle loopParamVar);
-
-   
-
-
-    CcuResult LocalAddrReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-        CcuVariableHandle len, HcclDataType dataType,
-        HcclReduceOp opType, CcuEventHandle event);
-    CcuResult LocalBufferReduce(CcuBufferHandle* buffers, uint32_t count,
-        HcclDataType dataType, HcclDataType outputDataType,
-        HcclReduceOp opType, CcuVariableHandle len, CcuEventHandle event);
-    
-    CcuResult Read(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult ReadBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult Write(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult WriteBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult ReadReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, HcclDataType dataType,
-        HcclReduceOp opType, CcuEventHandle eventHandle);
-    CcuResult WriteReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
-        CcuVariableHandle lenHandle, HcclDataType dataType,
-        HcclReduceOp opType, CcuEventHandle eventHandle);
 
    
 private:

@@ -35,48 +35,6 @@ extern "C" {
 
 
 
-// LocalAddr / RemoteAddr 创建
-extern CcuResult CcuLocalAddrCreate(CcuLocalAddr* localAddr);
-extern CcuResult CcuRemoteAddrCreate(CcuRemoteAddr* remoteAddr);
-
-
-/*========== 本地 Reduce ==========*/
-
-// LocalAddr → LocalAddr Reduce
-extern CcuResult CcuLocalHBMReduce(
-    CcuLocalAddr dst, CcuLocalAddr src,
-    CcuVariable len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEvent event);
-
-// 多 Buffer Reduce
-extern CcuResult CcuLocalBufferReduce(
-    CcuBuffer* buffers, uint32_t count,
-    HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType,
-    CcuVariable len, CcuEvent event);
-
-/*========== 远端数据传输操作 ==========*/
-extern CcuResult CcuReadHBMToHBM(
-    ChannelHandle channel, CcuLocalAddr local, CcuRemoteAddr remote,
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuReadHBMToBuffer(
-    ChannelHandle channel, CcuBuffer local, CcuRemoteAddr remote,
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuReadHBMToHBMReduce(
-    ChannelHandle channel, CcuLocalAddr local, CcuRemoteAddr remote,
-    CcuVariable len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEvent event);
-extern CcuResult CcuWriteHBMToHBM(
-    ChannelHandle channel, CcuRemoteAddr remote,CcuLocalAddr local, 
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuWriteBufferToHBM(
-    ChannelHandle channel, CcuRemoteAddr remote, CcuBuffer local,
-    CcuVariable len, CcuEvent event);
-extern CcuResult CcuWriteHBMToHBMReduce(
-    ChannelHandle channel, CcuRemoteAddr remote, CcuLocalAddr local,
-    CcuVariable len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEvent event);
-
 
 /**
  * @brief 远端同步操作
