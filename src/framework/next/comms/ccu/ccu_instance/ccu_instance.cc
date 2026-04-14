@@ -11,6 +11,7 @@
 #include "ccu_instance.h"
 
 #include "log.h"
+#include "ccu_log.h"
 
 #include "hcom_common.h"
 #include "exception_handler.h"
@@ -40,38 +41,38 @@ CcuInstance::~CcuInstance()
     }
 }
 
-HcclResult CcuInstance::Init()
+CcuResult CcuInstance::Init()
 {
-    if (insType_ == CcuInstanceType::CCU_INVALID) {
+    if (insType_ >= CcuInstanceType::CCU_UNUSED) {
         HCCL_ERROR("[CcuInstance][%s] failed, CcuInstanceType[%d] is invalid.",
             __func__, insType_);
-        return HcclResult::HCCL_E_PARA;
+        return CcuResult::CCU_E_PARA;
     }
 
     devLogicId_ = HcclGetThreadDeviceId();
 
     if (!ccuDrvHandle_) {
-        CHK_RET(CcuInitFeature(devLogicId_, ccuDrvHandle_));
+        CCU_CHK_RET(CcuInitFeature(devLogicId_, ccuDrvHandle_));
     }
 
     if (!resPack_) {
         resPack_.reset(new (std::nothrow) CcuResPack(insType_));
-        CHK_PTR_NULL(resPack_);
-        CHK_RET(resPack_->Init());
+        CCU_CHK_PTR_NULL(resPack_);
+        CCU_CHK_RET(resPack_->Init());
     }
 
-    return HcclResult::HCCL_SUCCESS;
+    return CcuResult::CCU_SUCCESS;
 }
 
-HcclResult CcuInstance::Reset()
+CcuResult CcuInstance::Reset()
 {
     if (!resPack_) {
-        return HcclResult::HCCL_SUCCESS;
+        return CcuResult::CCU_SUCCESS;
     }
 
     untranslatedKernelHandles_.clear();
-    CHK_RET(resPack_->Reset());
-    return HcclResult::HCCL_SUCCESS;
+    CCU_CHK_RET(resPack_->Reset());
+    return CcuResult::CCU_SUCCESS;
 }
 
 CcuResPack *CcuInstance::GetResPack()
@@ -79,13 +80,11 @@ CcuResPack *CcuInstance::GetResPack()
     return resPack_.get();
 }
 
-HcclResult CcuInstance::SaveKernel(const CcuKernelHandle kernelHandle)
+CcuResult CcuInstance::SaveKernel(const CcuKernelHandle kernelHandle)
 {
-    EXCEPTION_HANDLE_BEGIN
     kernelHandles_.push_back(kernelHandle);
     untranslatedKernelHandles_.push_back(kernelHandle);
-    EXCEPTION_HANDLE_END
-    return HcclResult::HCCL_SUCCESS;
+    return CcuResult::CCU_SUCCESS;
 }
 
 const std::vector<CcuKernelHandle> &CcuInstance::GetUntranslatedKernels()

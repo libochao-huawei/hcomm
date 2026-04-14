@@ -80,8 +80,8 @@ static std::pair<EndpointHandle, ChannelHandle> MockCcuChannelConnect(
     const auto &socket = MockHcclSocket(srcAddr, dstAddr);
     HcommSocket socketPtr = static_cast<HcommSocket>(socket.get());
     const auto &rmaBuffer = MockUbRmaBuffer();
-    auto commMemHandle = MockCommMemHandle(rmaBuffer.get());
-    void *memHandle = static_cast<void *>(&commMemHandle);
+    auto commMemInfo = MockCommMemInfo(rmaBuffer.get());
+    void *memHandle = static_cast<void *>(&commMemInfo);
     auto channelDesc = MockHcommChannelDesc(dstEpDesc, socketPtr, memHandle);
     constexpr uint32_t channelNum = 1;
     ChannelHandle channelHandle{0};
