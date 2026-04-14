@@ -60,30 +60,6 @@ CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLocalCopyHBMToBuffer(
-    CcuBuffer dstBuffer, CcuLocalAddr src,
-    CcuVariable len, CcuEvent event)
-{
-    CCU_CHK_RET(CcuLocalCopyHBMToBufferImpl(
-        dstBuffer.handle, src.handle, len.handle, event.handle));
-    return CcuResult::CCU_SUCCESS;
-}
-CcuResult CcuLocalCopyBufferToHBM(
-    CcuLocalAddr dst, CcuBuffer srcBuffer,
-    CcuVariable len, CcuEvent event)
-{
-    CCU_CHK_RET(CcuLocalCopyBufferToHBMImpl(
-        dst.handle, srcBuffer.handle, len.handle, event.handle));
-    return CcuResult::CCU_SUCCESS;
-}
-CcuResult CcuLocalCopyHBMToHBM(
-    CcuLocalAddr dst, CcuLocalAddr src,
-    CcuVariable len, CcuEvent event)
-{
-    CCU_CHK_RET(CcuLocalCopyHBMToHBMImpl(
-        dst.handle, src.handle, len.handle, event.handle));
-    return CcuResult::CCU_SUCCESS;
-}
 /*========== 本地 Reduce ==========*/
 
 CcuResult CcuLocalHBMReduce(

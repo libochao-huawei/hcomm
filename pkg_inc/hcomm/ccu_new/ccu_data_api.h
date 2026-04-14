@@ -39,18 +39,7 @@ extern "C" {
 extern CcuResult CcuLocalAddrCreate(CcuLocalAddr* localAddr);
 extern CcuResult CcuRemoteAddrCreate(CcuRemoteAddr* remoteAddr);
 
-// LocalAddr → Buffer（读入 Buffer）
-extern CcuResult CcuLocalCopyHBMToBuffer(
-    CcuBuffer dstBuffer, CcuLocalAddr src,
-    CcuVariable len, CcuEvent event);
-// Buffer → LocalAddr
-extern CcuResult CcuLocalCopyBufferToHBM(
-    CcuLocalAddr dst, CcuBuffer srcBuffer,
-    CcuVariable len, CcuEvent event);
-// LocalAddr → LocalAddr
-extern CcuResult CcuLocalCopyHBMToHBM(
-    CcuLocalAddr dst, CcuLocalAddr src,
-    CcuVariable len, CcuEvent event);
+
 /*========== 本地 Reduce ==========*/
 
 // LocalAddr → LocalAddr Reduce
