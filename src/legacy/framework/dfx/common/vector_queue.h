@@ -90,6 +90,7 @@ public:
         // 当前==方法的使用场景为同一队列中，是否为同一个索引的地方。而不是元素值是否相等，也不用于不同队列的比较。
         bool operator==(const typename Queue<T>::Iterator &other) const override
         {
+            HCCL_ERROR("Vector_Queue==, this->idex is %d, other.index is %d.", this->index_, static_cast<const Iterator&>(other).index_);
             return this->index_ == static_cast<const Iterator&>(other).index_;
         }
         // 当前!=方法的使用场景为同一队列中，是否为同一个索引的地方。而不是元素值是否相等，也不用于不同队列的比较。

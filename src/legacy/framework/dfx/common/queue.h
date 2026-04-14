@@ -86,6 +86,7 @@ public:
 
         virtual bool operator==(const Iterator &other) const
         {
+            HCCL_ERROR("Queue==");
             return it_ == other.it_;
         }
 
