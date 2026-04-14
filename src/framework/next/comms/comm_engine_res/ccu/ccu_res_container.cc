@@ -57,23 +57,48 @@ CcuResContainer::~CcuResContainer()
     }
 }
 
+HcclResult CcuResContainer::ChangeMode(uint32_t opExpansionMode)
+{
+    if (opExpansionMode_ != opExpansionMode) {
+        opExpansionMode_ = opExpansionMode;
+        CHK_RET(Init());
+    }
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CcuResContainer::Init()
 {
     const auto ccuEngine = OpExpansionModeToCcuEngine(opExpansionMode_);
     if (ccuEngine == CcuEngine::INVALID) {
+        // 主动销毁资源，有时序要求，需要先释放ccu资源后关闭驱动
+        resPack_ = nullptr;
+        ccuDrvHandle = nullptr;
         return HcclResult::HCCL_SUCCESS;
     }
 
     devLogicId_ = HcclGetThreadDeviceId();
 
     if (!ccuDrvHandle_) {
-        CHK_RET(CcuInitFeature(devLogicId_, ccuDrvHandle_));
+        auto ret = CcuInitFeature(devLogicId_, ccuDrvHandle_);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            ccuDrvHandle_ = nullptr;
+            return ret;
+        }
+
     }
 
     if (!resPack_) {
         resPack_.reset(new (std::nothrow) CcuResPack(ccuEngine));
         CHK_PTR_NULL(resPack_);
-        CHK_RET(resPack_->Init());
+        auto ret = resPack_->Init();
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            // 避免重复拉起ccu驱动，此时ccuDrvHandle不置空
+            // ccu驱动生命周期仍跟随ccuResContainer
+            // 等外部销毁ccuResContainer再释放
+            resPack_ = nullptr;
+            return ret;
+        }
     }
 
     return HcclResult::HCCL_SUCCESS;
