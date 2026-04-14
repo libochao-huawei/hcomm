@@ -2864,11 +2864,15 @@ void TcRsTcpRecvTagInHandle()
     mocker_clean();
     mocker(RsTcpRecvTagInHandle, 1, 1);
     mocker(close, 1, 1);
+    mocker(pthread_mutex_lock, 1, 0);
+    mocker(pthread_mutex_unlock, 1, 0);
     RsEpollEventTcpListenInHandle(rsCb, &listenInfo, 1, &remoteIp);
 
     mocker_clean();
     mocker(RsTcpRecvTagInHandle, 1, 0);
     mocker(RsWlistCheckConnAdd, 1, 1);
+    mocker(pthread_mutex_lock, 1, 0);
+    mocker(pthread_mutex_unlock, 1, 0);
     RsEpollEventTcpListenInHandle(rsCb, &listenInfo, 1, &remoteIp);
     mocker_clean();
 
