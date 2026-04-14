@@ -84,36 +84,36 @@ inline CcuResult LoadVar(uint64_t addr, CcuVariable* v, uint32_t num) {
 // ==================== 本地拷贝（3 种重载） ====================
 
 // LocalAddr → LocalAddr
-inline CcuResult Copy(CcuLocalAddr dst, CcuLocalAddr src,
+inline CcuResult LocalCopyNb(CcuLocalAddr dst, CcuLocalAddr src,
     CcuVariable len, CcuEvent event)
 {
-    return CcuLocalCopyHBMToHBM(dst, src, len, event);
+    return CcuLocalCopyMemToMem(dst, src, len, event);
 }
 
 // LocalAddr → Buffer
-inline CcuResult Copy(CcuBuffer dst, CcuLocalAddr src,
+inline CcuResult LocalCopyNb(CcuBuffer dst, CcuLocalAddr src,
     CcuVariable len, CcuEvent event)
 {
-    return CcuLocalCopyHBMToBuffer(dst, src, len, event);
+    return CcuLocalCopyMemToBuffer(dst, src, len, event);
 }
 
 // Buffer → LocalAddr
-inline CcuResult Copy(CcuLocalAddr dst, CcuBuffer src,
+inline CcuResult LocalCopyNb(CcuLocalAddr dst, CcuBuffer src,
     CcuVariable len, CcuEvent event)
 {
-    return CcuLocalCopyBufferToHBM(dst, src, len, event);
+    return CcuLocalCopyBufferToMem(dst, src, len, event);
 }
 
 // ==================== 本地 Reduce ====================
 
-inline CcuResult Reduce(CcuLocalAddr dst, CcuLocalAddr src,
+inline CcuResult LocalReduceNb(CcuLocalAddr dst, CcuLocalAddr src,
     CcuVariable len, HcclDataType dataType,
     HcclReduceOp opType, CcuEvent event)
 {
     return CcuLocalHBMReduce(dst, src, len, dataType, opType, event);
 }
 
-inline CcuResult Reduce(CcuBuffer* bufs, uint32_t count,
+inline CcuResult LocalReduceNb(CcuBuffer* bufs, uint32_t count,
     HcclDataType dataType, HcclDataType outputDataType,
     HcclReduceOp opType, CcuVariable len, CcuEvent event)
 {
