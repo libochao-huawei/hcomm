@@ -75,8 +75,10 @@ const std::vector<std::shared_ptr<CcuRep::CcuRepBase>> &CcuRepContext::GetRepSeq
 std::shared_ptr<CcuRep::CcuRepBase> CcuRepContext::GetRepByInstrId(uint16_t instrId)
 {
     for (const auto& rep : GetRepSequence()) {
+        CHK_PRT_RET(rep == nullptr, HCCL_ERROR("[%s]fail, rep is nullptr", __func__), nullptr);
         const uint16_t startId = rep->StartInstrId();
         const uint16_t endId = startId + rep->InstrCount() - 1;
+        HCCL_INFO("[%s]startId[%u], endId[%u], instrId[%u]", __func__, startId, endId, instrId);
         if (instrId >= startId && instrId <= endId) {
             return rep;
         }
@@ -142,7 +144,6 @@ LoopGroupProfilingInfo &CcuRepContext::GetLGProfilingInfo()
 
 void CcuRepContext::AddSqeProfiling()
 {
-    profilingInfo.clear();
     // 生成SQE粒度profiling信息
     ccuProfilingInfoCache.type      = (uint8_t)CcuProfilinType::CCU_TASK_PROFILING;
     ccuProfilingInfoCache.name      = "CCU_KERNEL";
