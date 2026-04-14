@@ -19,16 +19,50 @@
 extern "C" {
 #endif // __cplusplus
 
-extern CcuResult CcuVariableCreateImpl(CcuVariableHandle *var);
+//Alloc 相关接口
+extern CcuResult CcuVariableAlloc(CcuVariableHandle *varHandle);
+extern CcuResult CcuAddressAlloc(CcuAddressHandle *addrHandle);
+extern CcuResult CcuEventAlloc(CcuEventHandle *eventHandle);
+extern CcuResult CcuBufferAlloc(CcuBufferHandle *bufHandle);
+extern CcuResult CcuLocalAddrAlloc(CcuLocalAddrHandle *localAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
+extern CcuResult CcuRemoteAddrAlloc(CcuRemoteAddrHandle *remoteAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
 
-extern CcuResult CcuVariableCreateFromChannelImpl(ChannelHandle channel,
+//BlockAlloc 相关接口
+extern CcuResult CcuBlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count);
+// extern CcuResult CcuBlockAddressAlloc(CcuAddressHandle *addrHandles, uint32_t count);
+extern CcuResult CcuBlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count);
+extern CcuResult CcuBlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count);
+
+extern CcuResult CcuVariableCreateByChannel(ChannelHandle channel,
     uint32_t varIndex, CcuVariableHandle *varHandle);
 
-extern CcuResult CcuVariableAssignImpl(CcuVariableHandle resVar, uint64_t immediate);
+    
+//Variable操作类 相关接口
+extern CcuResult CcuVariableAssign(CcuVariableHandle resVar, uint64_t immediate);
+extern CcuResult CcuVariableAssignVar(CcuVariableHandle dstVarHandle, CcuVariableHandle srcVarHandle);
+extern CcuResult CcuVariableAddVarToVar(CcuVariableHandle resVar, CcuVariableHandle varA, CcuVariableHandle varB);
 
-extern CcuResult CcuVariableAssignVarImpl(CcuVariableHandle dstVarHandle, CcuVariableHandle srcVarHandle);
+//Address操作类 相关接口
+extern CcuResult CcuAddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
+extern CcuResult CcuAddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
+extern CcuResult CcuAddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+extern CcuResult CcuAddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
+extern CcuResult CcuAddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
+extern CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+// extern CcuResult CcuAddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
 
-extern CcuResult CcuVariableAddVarToVarImpl(CcuVariableHandle resVar, CcuVariableHandle varA, CcuVariableHandle varB);
+
+//参数加载类 相关接口
+extern CcuResult CcuLoadArg(CcuVariableHandle varHandle);
+extern CcuResult CcuLoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
+
+//Event信号同步类 相关接口
+extern CcuResult CcuRecordEvent(CcuEventHandle eventHandle);
+extern CcuResult CcuWaitEvent(CcuEventHandle eventHandle);
+extern CcuResult CcuSetMask(CcuEventHandle eventHandle, uint32_t mask);
+extern CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
+extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
+extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
 
 
 extern CcuResult CcuIfBeginImpl(CcuVariableHandle var, uint64_t immediate,
@@ -62,60 +96,13 @@ extern CcuResult CcuLoopGroupAddLoopImpl(CcuLoopGroupHandle group,
 extern CcuResult CcuLoopGroupAddLoopFromVarImpl(CcuLoopGroupHandle group,
     CcuLoopHandle loop, CcuVariableHandle loopParamVar, bool isUnroll);
 
-extern CcuResult CcuContinuousVariableCreateImpl(CcuVariableHandle* var);
-
-extern CcuResult CcuAddressCreateImpl(CcuAddressHandle *addrHandle);
-
-extern CcuResult CcuAddressAssignImmImpl(CcuAddressHandle addr, uint64_t immediate);
-
-extern CcuResult CcuAddressAssignAddrImpl(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
-
-extern CcuResult CcuAddressAssignVarImpl(CcuAddressHandle addr, CcuVariableHandle var);
-
-extern CcuResult CcuAddressAddVarToAddrImpl(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
-
-extern CcuResult CcuAddressAddAddrToAddrImpl(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
-
-extern CcuResult CcuAddressAddAssignVarImpl(CcuAddressHandle addr, CcuVariableHandle var);
-
-// extern CcuResult CcuAddressAddAssignAddrImpl(CcuAddressHandle addr, CcuAddressHandle otherAddr);
 
 
-extern CcuResult CcuLoadArgImpl(CcuVariableHandle varHandle);
 
-extern CcuResult CcuLoadImpl(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
-
-extern CcuResult CcuSetEventMaskImpl(CcuEventHandle eventHandle, uint32_t mask);
-
-/*
-CompletedEvent 相关接口
-*/
-extern CcuResult CcuCompletedEventCreateImpl(CcuEventHandle *eventHandle);
-
-extern CcuResult CcuBlockCompletedEventCreateImpl(CcuEventHandle *eventHandle, uint32_t num);
-
-extern CcuResult CcuSetEventMaskImpl(CcuEventHandle eventHandle, uint32_t mask);
-
-extern CcuResult CcuRecordEventImpl(CcuEventHandle eventHandle);
-
-extern CcuResult CcuWaitEventImpl(CcuEventHandle eventHandle);
-
-/*
-LocalAddr / RemoteAddr 相关接口
-*/
-extern CcuResult CcuLocalAddrCreateImpl(
-    CcuLocalAddrHandle *handle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
-
-extern CcuResult CcuRemoteAddrCreateImpl(
-    CcuRemoteAddrHandle *handle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
 
 /*
 Buffer 相关接口
 */
-extern CcuResult CcuBufferCreateImpl(CcuBufferHandle *bufHandle);
-
-extern CcuResult CcuBlockBufferCreateImpl(CcuBufferHandle *bufferHandles, uint32_t count);
-
 extern CcuResult CcuLocalCopyHBMToBufferImpl(
     CcuBufferHandle dstBuffer, CcuLocalAddrHandle src,
     CcuVariableHandle len, CcuEventHandle event);
@@ -160,10 +147,7 @@ extern CcuResult CcuWriteHBMToHBMReduceImpl(
     CcuVariableHandle len, HcclDataType dataType,
     HcclReduceOp opType, CcuEventHandle event);
 
-/*========== 远端同步操作 ==========*/
-extern CcuResult CcuWriteVariableWithNotifyImpl(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
-extern CcuResult CcuWriteNotifyImpl(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
-extern CcuResult CcuNotifyWaitImpl(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
