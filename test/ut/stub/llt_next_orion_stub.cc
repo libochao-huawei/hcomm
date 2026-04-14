@@ -1523,6 +1523,12 @@ u32 GlobalMirrorTasks::DevSize() const
     return 0;
 }
 
+TaskInfoQueue *GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
+{
+    static TaskInfoQueue queue(type);
+    return queue;
+}
+
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
     static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
@@ -1533,6 +1539,18 @@ TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
 {
    
+}
+
+TaskInfoQueueMap::iterator GlobalMirrorTasks::Begin(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.begin();
+}
+
+TaskInfoQueueMap::iterator GlobalMirrorTasks::End(u32 devId)
+{
+    static TaskInfoQueueMap map;
+    return map.end();
 }
 
 std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId, u32 taskId) const
