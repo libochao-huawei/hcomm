@@ -1,10 +1,12 @@
 #ifndef ASCEND_HAL_STUB_H
 #define ASCEND_HAL_STUB_H
 
+#include <sys/syscall.h>
+
 #define SHM_KEY 0x1234ABCD
 #define DRV_LOG_INFO(fmt, ...)
 // #define DRV_LOG_INFO(fmt, ...) printf("[INFO][" LOG_SIDE "] " fmt "\n", ##__VA_ARGS__)
-#define DRV_LOG_ERROR(fmt, ...) printf("[ERROR][" LOG_SIDE "] " fmt "\n", ##__VA_ARGS__)
+#define DRV_LOG_ERROR(fmt, ...) printf("[ERROR][" LOG_SIDE "][%s:%d]pid:%d,tid:%ld,%s :" fmt "\n", __FILE__, __LINE__, getpid(), syscall(SYS_gettid), __func__, ##__VA_ARGS__)
 
 #ifndef container_of
 #define container_of(ptr, type, member) ({          \

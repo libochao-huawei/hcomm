@@ -117,7 +117,7 @@ drvError_t drvGetDevNum(unsigned int *numDev)
 drvError_t halQueryDevPid(struct halQueryDevpidInfo info, pid_t *devPid)
 {
     if (g_h2dInfo == NULL && ShmInitHostPid() != 0) {
-        DRV_LOG_INFO("halQueryDevPid init failed");
+        DRV_LOG_ERROR("halQueryDevPid init failed");
         return DRV_ERROR_INVALID_VALUE;
     }
     
@@ -135,7 +135,7 @@ drvError_t drvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned int *v
     unsigned int *cpType)
 {
     if (g_h2dInfo == NULL && ShmInitHostPid() != 0) {
-        DRV_LOG_INFO("drvQueryProcessHostPid init failed");
+        DRV_LOG_ERROR("drvQueryProcessHostPid init failed");
         return DRV_ERROR_INVALID_VALUE;
     }
     for(int i = 0; i < MAX_DEV_ID; i++) {
@@ -144,7 +144,7 @@ drvError_t drvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned int *v
             return DRV_ERROR_NONE;
         }
     }
-
+    DRV_LOG_ERROR("hal err");
     return DRV_ERROR_INVALID_VALUE;
 }
 
@@ -188,18 +188,18 @@ hdcError_t halHdcSessionConnectEx(int peerNode, int peerDevid, int peerPid, HDC_
 {
     // 1. 入参合法性检查
     if (pSession == NULL) {
-        DRV_LOG_INFO("[ERR][ConnectEx] 输出会话指针为空");
+        DRV_LOG_ERROR("[ERR][ConnectEx] 输出会话指针为空");
         return DRV_ERROR_INVALID_VALUE;
     }
     if (peerDevid < 0) {
-        DRV_LOG_INFO("[ERR][ConnectEx] 对端设备ID非法");
+        DRV_LOG_ERROR("[ERR][ConnectEx] 对端设备ID非法");
         return DRV_ERROR_INVALID_VALUE;
     }
 
     // 2. 分配会话内存
     HdcSessionT *pSessionNode = (HdcSessionT *)calloc(1, sizeof(HdcSessionT));
     if (pSessionNode == NULL) {
-        DRV_LOG_INFO("[ERR][ConnectEx] 会话内存分配失败");
+        DRV_LOG_ERROR("[ERR][ConnectEx] 会话内存分配失败");
         return DRV_ERROR_INVALID_VALUE;
     }
 
@@ -256,16 +256,17 @@ hdcError_t drvHdcServerCreate(int devid, int serviceType, HDC_SERVER *pServer)
     ServerInfoT *server = NULL;
     // 1. 入参合法性检查
     if (devid < 0 || devid >= MAX_DEV_ID) {
-        DRV_LOG_INFO("[ERR] devid(%d) invalid 0~%d", devid, MAX_DEV_ID-1);
+        DRV_LOG_ERROR("[ERR] devid(%d) invalid 0~%d", devid, MAX_DEV_ID-1);
         return DRV_ERROR_INVALID_VALUE;
     }
     if (pServer == NULL) {
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
     // 4. 分配对外Server句柄
     server = (ServerInfoT *)calloc(1, sizeof(ServerInfoT));
     if (server == NULL) {
-        DRV_LOG_INFO("[ERR] ServerInfo 内存分配失败");
+        DRV_LOG_ERROR("[ERR] ServerInfo 内存分配失败");
         return DRV_ERROR_INVALID_VALUE;
     }
 
@@ -290,7 +291,7 @@ hdcError_t drvHdcServerCreate(int devid, int serviceType, HDC_SERVER *pServer)
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(listen_port);
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);  // 监听所有网卡
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // 绑定端口
     if (bind(listen_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
@@ -330,14 +331,14 @@ hdcError_t drvHdcSessionAccept(HDC_SERVER server, HDC_SESSION *session)
     ServerInfoT *pServer = (ServerInfoT *)server;
     // 1. 入参合法性检查
     if (pServer == NULL || session == NULL) {
-        DRV_LOG_INFO("[ERR] 空指针");
+        DRV_LOG_ERROR("[ERR] 空指针");
         return DRV_ERROR_INVALID_VALUE;
     }
 
     // 2. 分配会话内存
     HdcSessionT *pSession = (HdcSessionT *)calloc(1, sizeof(HdcSessionT));
     if (pSession == NULL) {
-        DRV_LOG_INFO("[ERR] 会话内存分配失败");
+        DRV_LOG_ERROR("[ERR] 会话内存分配失败");
         return DRV_ERROR_INVALID_VALUE;
     }
 
@@ -378,14 +379,13 @@ hdcError_t drvHdcSessionClose(HDC_SESSION session)
 hdcError_t drvHdcFreeMsg(struct drvHdcMsg *msg)
 {
     if (msg == NULL) {
-        DRV_LOG_INFO(" ReuseMsg error: msg is NULL");
+        DRV_LOG_ERROR(" ReuseMsg error: msg is NULL");
         return DRV_ERROR_INVALID_VALUE;
     }
 
     struct hdc_msg_head *pHead = container_of(msg, struct hdc_msg_head, msg);
 
     if(!pHead->freeBuf) {
-        DRV_LOG_INFO(" FreeMsg skip free buf, freeBuf flag is false");
         free(pHead);
         return DRV_ERROR_NONE;
     }
@@ -401,17 +401,17 @@ hdcError_t drvHdcFreeMsg(struct drvHdcMsg *msg)
 hdcError_t drvHdcReuseMsg(struct drvHdcMsg *msg)
 {
     if (msg == NULL) {
-        DRV_LOG_INFO(" ReuseMsg error: msg is NULL");
+        DRV_LOG_ERROR(" ReuseMsg error: msg is NULL");
         return DRV_ERROR_INVALID_VALUE;
     }
 
     if (msg->bufList == NULL) {
-        DRV_LOG_INFO(" ReuseMsg error: bufList is NULL");
+        DRV_LOG_ERROR(" ReuseMsg error: bufList is NULL");
         return DRV_ERROR_INVALID_VALUE;
     }
 
     if (msg->count < 0) {
-        DRV_LOG_INFO(" ReuseMsg error: invalid count=%d", msg->count);
+        DRV_LOG_ERROR(" ReuseMsg error: invalid count=%d", msg->count);
         return DRV_ERROR_INVALID_VALUE;
     }
 
@@ -439,13 +439,14 @@ hdcError_t drvHdcAddMsgBuffer(struct drvHdcMsg *msg, char *pBuf, int len)
             return DRV_ERROR_NONE;
         }
     }
-
-    return DRV_ERROR_NONE;
+    DRV_LOG_ERROR("hal err");
+    return DRV_ERROR_INVALID_VALUE;
 }
 
 hdcError_t drvHdcGetMsgBuffer(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen)
 {
     if (index < 0 || index >= msg->count) {
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
     DRV_LOG_INFO(" GetMsgBuffer count=%d, index=%d, buf=%p, len=%d", msg->count, index, msg->bufList[index].pBuf, msg->bufList[index].len);
@@ -459,12 +460,15 @@ static hdcError_t safe_read(int fd, void *buf, size_t len) {
     while (has_read < len) {
         ssize_t r = read(fd, (char*)buf + has_read, len - has_read);
         if (r == 0) {
+            DRV_LOG_ERROR("hal err");
             return DRV_ERROR_INVALID_VALUE;
         }
         if (r < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                DRV_LOG_ERROR("hal err");
                 return DRV_ERROR_INVALID_VALUE;
             }
+            DRV_LOG_ERROR("hal err");
             return DRV_ERROR_INVALID_VALUE;
         }
         has_read += r;
@@ -487,16 +491,18 @@ hdcError_t halHdcRecv(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, U
 
     // ===================== 1. 基础入参校验 =====================
     if (pMsg == NULL || recvBufCount == NULL || pSession == NULL) {
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
     if (pSession->conn_fd < 0) {
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
 
     // 要求4：校验上层传入的 count（先保存期望值）
     expected_count = pMsg->count;
     if (expected_count <= 0 || expected_count > 128) {
-        DRV_LOG_INFO( " Invalid expected count=%d from caller", expected_count);
+        DRV_LOG_ERROR( " Invalid expected count=%d from caller", expected_count);
         return DRV_ERROR_INVALID_VALUE;
     }
 
@@ -520,7 +526,7 @@ hdcError_t halHdcRecv(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, U
 
     // 【核心校验】期望 vs 实际
     if (received_count != expected_count) {
-        DRV_LOG_INFO( " Count Mismatch! Expected=%d, Received=%d", 
+        DRV_LOG_ERROR( " Count Mismatch! Expected=%d, Received=%d", 
                 expected_count, received_count);
         ret = DRV_ERROR_INVALID_VALUE;
         goto EXIT_RESTORE_TV;
@@ -529,6 +535,7 @@ hdcError_t halHdcRecv(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, U
     // ===================== 4. 接收分段长度列表 =====================
     tmp_lens = (int*)malloc(sizeof(int) * received_count);
     if (tmp_lens == NULL) {
+        DRV_LOG_ERROR("hal err");
         ret = DRV_ERROR_INVALID_VALUE;
         goto EXIT_RESTORE_TV;
     }
@@ -542,6 +549,7 @@ hdcError_t halHdcRecv(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, U
     for (int i = 0; i < received_count; i++) {
         // 5.1 校验长度合法性
         if (tmp_lens[i] <= 0) {
+            DRV_LOG_ERROR("hal err");
             ret = DRV_ERROR_INVALID_VALUE;
             goto EXIT_FREE_ALLOCATED;
         }
@@ -550,6 +558,7 @@ hdcError_t halHdcRecv(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, U
         pMsg->bufList[i].len = tmp_lens[i];
         pMsg->bufList[i].pBuf = (char*)malloc(tmp_lens[i]);
         if (pMsg->bufList[i].pBuf == NULL) {
+            DRV_LOG_ERROR("hal err");
             ret = DRV_ERROR_INVALID_VALUE;
             goto EXIT_FREE_ALLOCATED;
         }
@@ -611,16 +620,16 @@ hdcError_t halHdcSend(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag, 
 
     // ===================== 1. 基础入参校验 =====================
     if (session == NULL || pMsg == NULL) {
-        DRV_LOG_INFO( " Null pointer");
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
     HdcSessionT *pSession = (HdcSessionT *)session;
     if (pSession->conn_fd < 0 || !pSession->isUsed) {
-        DRV_LOG_INFO( " Invalid session");
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
     if (pMsg->count <= 0 || pMsg->count > 128) {
-        DRV_LOG_INFO( " Invalid count=%d", pMsg->count);
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
 
@@ -638,12 +647,13 @@ hdcError_t halHdcSend(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag, 
     // 3.1 准备长度列表
     tmp_lens = (int*)malloc(sizeof(int) * pMsg->count);
     if (tmp_lens == NULL) {
+        DRV_LOG_ERROR("hal err");
         ret = DRV_ERROR_INVALID_VALUE;
         goto EXIT_RESTORE_TV;
     }
     for (int i = 0; i < pMsg->count; i++) {
         if (pMsg->bufList[i].pBuf == NULL || pMsg->bufList[i].len <= 0) {
-            DRV_LOG_INFO( " Invalid buffer %d", i);
+            DRV_LOG_ERROR("hal err");
             ret = DRV_ERROR_INVALID_VALUE;
             goto EXIT_FREE_TMP;
         }
@@ -654,6 +664,7 @@ hdcError_t halHdcSend(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag, 
     iov_cnt = 1 + 1 + pMsg->count; // 1个count + 1个lens数组 + N个payload
     iov = (struct iovec*)malloc(sizeof(struct iovec) * iov_cnt);
     if (iov == NULL) {
+        DRV_LOG_ERROR("hal err");
         ret = DRV_ERROR_INVALID_VALUE;
         goto EXIT_FREE_TMP;
     }
@@ -687,7 +698,7 @@ hdcError_t halHdcSend(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag, 
         ssize_t w_ret = writev(pSession->conn_fd, cur_iov, iov_cnt - iov_idx);
         if (w_ret < 0) {
             if (errno == EINTR) continue; // 被信号中断，重试
-            DRV_LOG_INFO( "Send failed, errno=%d", errno);
+            DRV_LOG_ERROR("hal err");
             ret = DRV_ERROR_INVALID_VALUE;
             goto EXIT_FREE_IOV;
         }
@@ -727,7 +738,7 @@ hdcError_t drvHdcAllocMsg(HDC_SESSION session, struct drvHdcMsg **ppMsg, int cou
     pHead->freeBuf = false;
     *ppMsg = &(pHead->msg);
     if (*ppMsg == NULL) {
-        DRV_LOG_INFO("[ERR] drvHdcAllocMsg 内存分配失败");
+        DRV_LOG_ERROR("hal err");
         return DRV_ERROR_INVALID_VALUE;
     }
     (*ppMsg)->count = count;
@@ -808,6 +819,7 @@ drvError_t halGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType
             *value = 1;
             break;
         default:
+            DRV_LOG_ERROR("hal err");
             return DRV_ERROR_INVALID_VALUE;
             *value = 0;
     }
