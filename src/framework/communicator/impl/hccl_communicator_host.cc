@@ -4413,6 +4413,11 @@ namespace hccl
                 opParam.BatchSendRecvDataDes.itemNum = aicpuSendRecvInfo.size();
             }
         }
+        // A2 Group SendRecv 将isDirectRemoteRank全部置为false
+        if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
+            isDirectRemoteRank.resize(userRankSize_, 0);
+            opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+        }
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
         // 头计数
@@ -7211,14 +7216,11 @@ namespace hccl
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
-            if (deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
-                // 如果是A2的GroupSendRecv则跳过下面这段
-            } else {
-                u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
-                for (u32 i = 0; i < userRankSize_; i++) {
-                    CHK_PTR_NULL(isDirectRemoteRankPtr + i);
-                    isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
-                }
+
+            u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
+            for (u32 i = 0; i < userRankSize_; i++) {
+                CHK_PTR_NULL(isDirectRemoteRankPtr + i);
+                isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
             }
         } else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             CHK_RET(SetDynamicTilingDataAlltoall(opParam, dynamicDataMem));
