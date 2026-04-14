@@ -282,24 +282,18 @@ void hcclNslbDp::SetGlobalCommRankTable_RootInfo(const RankTable_t &rankTable, c
         HCCL_ERROR("memset_s commDesc fail sRet[%u]", sRet);
         return;
     }
-    int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
-    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
-        /* 此时认为通信域描述信息中包含时间戳 */
-        size_t lastUnderScoreIndex = identifier.rfind('_');
-        std::string nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
-        sRet = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,  nslbIdentifier.c_str(), nslbIdentifier.size());
-        if (sRet != EOK) {  return; }
-        for (size_t operSize = 0; operSize < hcclNslbDpCommConfig_.size(); operSize++) {
-            if (strcmp(globalCommInfo.commDesc, hcclNslbDpCommConfig_[operSize].commDesc) == 0) {
-                return;
-            }
-        }
-    } else {
-        /* 获取通信域唯一标识 */
-        sRet = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,
-            identifier.c_str(), identifier.size());
-        if (sRet != EOK) {  return; }
-    }
+
+	/* 获取通信域唯一标识 */
+	sRet = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,
+		identifier.c_str(), identifier.size());
+	if (sRet != EOK) {  return; }
+
+	for (size_t operSize = 0; operSize < hcclNslbDpCommConfig_.size(); operSize++) {
+		if (strcmp(globalCommInfo.commDesc, hcclNslbDpCommConfig_[operSize].commDesc) == 0) {
+			return;
+		}
+	}
+		
     globalCommInfo.commDesc[COMM_DESC_MAX_LENGTH - 1] = '\0';
 
     u64 utime = std::chrono::duration_cast<std::chrono::milliseconds>
@@ -863,11 +857,7 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
             u8 algType, std::string identifier, AdjInfo nslbAdjInfo)
 {
     std::string nslbIdentifier = identifier;
-    int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
-    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
-        size_t lastUnderScoreIndex = identifier.rfind('_');
-        nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
-    }
+
     HCCL_DEBUG("[NSLB-DP] check table NSLBDP_TYPE_TBL_ADJ size:[%zu].", hcclNslbDpAlgorithmInfo_.size());
     if (CheckAhcSupport(algType, nslbIdentifier) == false) {
         HCCL_RUN_INFO("[NSLB-DP-ADJ] Check AHC commoninfo is not support.");
@@ -983,18 +973,10 @@ bool hcclNslbDp::CheckCommDescExit(NslbDpOperatorInfo &OperatorInfo)
 
 void hcclNslbDp::fullcommDescInitTime(std::string identifier, NslbDpOperatorInfo &OperatorInfo)
 {
-    int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
-    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
-        /* 此时认为通信域描述信息中包含时间戳 */
-        size_t lastUnderScoreIndex = identifier.rfind('_');
-        std::string nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
-        (void)strncpy_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH,
-            nslbIdentifier.c_str(), nslbIdentifier.size());
-    } else {
-        /* 获取通信域唯一标识 */
-        (void)strncpy_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH,
-            identifier.c_str(), identifier.size()); 
-    }
+	/* 获取通信域唯一标识 */
+	(void)strncpy_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH,
+		identifier.c_str(), identifier.size()); 
+
     HCCL_DEBUG("[NSLB-DP-OPER] fullcommDescInitTime commDesc[%s] .", identifier.c_str());
 
     OperatorInfo.commDesc[COMM_DESC_MAX_LENGTH - 1] = '\0';
