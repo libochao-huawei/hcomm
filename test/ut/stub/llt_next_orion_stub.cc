@@ -1525,7 +1525,7 @@ u32 GlobalMirrorTasks::DevSize() const
 
 TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType type)
 {
-    static TaskInfoQueue queue(type);
+    static CircularQueue<std::shared_ptr<TaskInfo>> queue(MAX_CIRCULAR_QUEUE_LENGTH);
     return queue;
 }
 
