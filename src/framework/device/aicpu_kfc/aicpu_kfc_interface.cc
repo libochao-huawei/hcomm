@@ -567,6 +567,37 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvGroupLaunch(void *
     return 0;
 }
 
+bool IsDecoupledCtxDesc(const CommKfcParamDesc &desc)
+{
+    return desc.version == DECOUPLED_CTX_VER && desc.itemNum > 0U && desc.itemNum <= MAX_COMM_CTX_NUM;
+}
+
+bool HasValidAlgInfo(const HcclApi::OpResCtx *ctx)
+{
+    for (u32 i = 0U; i < HCCL_ALG_MAX_NUM; ++i) {
+        if (ctx->algInfo[i].opParam != 0U) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsSingleOpResCtxFallbackArgs(void *args[], const CommKfcParamDesc &desc)
+{
+    if (desc.version != 0U || desc.itemNum != 0U || args == nullptr || args[0] == nullptr) {
+        return false;
+    }
+
+    constexpr u64 MIN_DEVICE_ADDR_FOR_OP_RES_CTX_FALLBACK = 0x100000000ULL;
+    const u64 ctxAddr = u64(args[0]);
+    if (ctxAddr < MIN_DEVICE_ADDR_FOR_OP_RES_CTX_FALLBACK || (ctxAddr % alignof(HcclApi::OpResCtx)) != 0U) {
+        return false;
+    }
+
+    const auto *ctx = reinterpret_cast<const HcclApi::OpResCtx *>(args[0]);
+    return ctx->workspace != 0U && ctx->workspaceSize != 0U && ctx->rankSize != 0U && HasValidAlgInfo(ctx);
+}
+
 __attribute__((visibility("default"))) uint32_t Mc2ServerKernel(void *args[])
 {
     if (args == nullptr) {
@@ -578,7 +609,15 @@ __attribute__((visibility("default"))) uint32_t Mc2ServerKernel(void *args[])
     uint64_t *desc_addr = &desc_value;
     CommKfcParamDesc *desc = reinterpret_cast<CommKfcParamDesc*>(desc_addr);
     AicpuKfcUtils::PrintHcclCommParamDesc(*desc);
-    return CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
+    if (IsDecoupledCtxDesc(*desc)) {
+        return CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
+    }
+    if (IsSingleOpResCtxFallbackArgs(args, *desc)) {
+        HCCL_INFO("Use single OpResCtx fallback for 950 fusion AICPU server.");
+        return CommKfcDispatcher::Run(args, 1U);
+    }
+    HCCL_ERROR("Invalid Mc2ServerKernel desc, version %lu, itemNum %lu.", desc->version, desc->itemNum);
+    return HCCL_E_PARA;
 }
 
 constexpr u32 GROUP_DYN_FLAG = 23U;
