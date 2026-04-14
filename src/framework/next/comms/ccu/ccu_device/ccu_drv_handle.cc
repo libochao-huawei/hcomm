@@ -34,6 +34,12 @@ static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
 
     HCCL_INFO("[%s] tlvHandle[%p].", __func__, tlvHandle);
     int32_t ret = RaTlvRequest(tlvHandle, tlvModuleType, &sendMsg, &recvMsg);
+    if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
+        HCCL_RUN_WARNING("[%s] ra tlv request UNAVAIL, tlvHandle[%p], tlvModeulType[%u], tlvCcuMsgType[%u], ret[%d].",
+            __func__, tlvHandle, tlvModuleType, tlvCcuMsgType, ret);
+        return HCCL_E_AGAIN; // 代表CCU驱动已被拉起，需要等待其他进程退出
+    }
+
     if (ret != 0) {
         HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. "
             "return: ret[%d], module type[%u], message type[%u]",
@@ -57,6 +63,7 @@ HcclResult CcuDrvHandle::Init()
     tlvHandle_ = tlvHdcMgr.GetHandle();
     CHK_PTR_NULL(tlvHandle_);
 
+    // 拉起CCU驱动如果因其他进程占用重复拉起时，返回EAGAIN，日志检查返回值打印warning
     CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
     CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
     CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
