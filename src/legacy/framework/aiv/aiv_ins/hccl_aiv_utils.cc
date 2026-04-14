@@ -158,6 +158,13 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_reduce_int8_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT8},
     {"aiv_reduce_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::BFP16},
     {"aiv_reduce_int64_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT64},
+    {"aiv_reduce_mesh1d_twoshot_half", HcclCMDType::HCCL_CMD_REDUCE, DataType::FP16, KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_reduce_mesh1d_twoshot_int16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT16, KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_reduce_mesh1d_twoshot_float", HcclCMDType::HCCL_CMD_REDUCE, DataType::FP32, KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_reduce_mesh1d_twoshot_int32_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT32, KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_reduce_mesh1d_twoshot_int8_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT8, KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_reduce_mesh1d_twoshot_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::BFP16, KernelArgsType::ARGS_TYPE_TWO_SHOT},
+    {"aiv_reduce_mesh1d_twoshot_int64_t", HcclCMDType::HCCL_CMD_REDUCE, DataType::INT64, KernelArgsType::ARGS_TYPE_TWO_SHOT},
     //reducescatter
     {"aiv_reduce_scatter_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::FP16},
     {"aiv_reduce_scatter_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, DataType::INT16},
