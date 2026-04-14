@@ -860,7 +860,7 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/impl
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
-        ${TOP_DIR}/abl/adump/inc/adump
+        ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/runtime/include/external
  	    ${TOP_DIR}/runtime/include/external/acl
