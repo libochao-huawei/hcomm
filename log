@@ -1,0 +1,47 @@
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.848 [npu_driver_mem.cc:1069] 2357452 DevMemAllocOnline:memory policy=0x400.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.850 [npu_driver_mem.cc:1080] 2357452 DevMemAllocOnline:device_id=0, type=2, size=1504, chip type=15, policy=0x400.
+[DEBUG] DRV(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.858 [svm_alloc.c:314][ascend][curpid:2357452,2357452][drv][devmm][halMemAllocInner]Alloc. (ptr=0x1200000a5000; size=1504; flag=0x300000000904400)
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.863 [npu_driver_mem.cc:1059] 2357452 DevMemAllocManaged:device_id=0, type=2, size=1504(bytes), chip type=15, moduleId=3, tillFlag=0
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.866 [npu_driver_mem.cc:1134] 2357452 DevMemAllocOnline:Success, memory policy=0x400, device_id=0, size=1504(bytes), type=2.
+[INFO] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.868 [api_error.cc:5880] 2357452 DevMalloc: device malloc, size=1496(bytes),  start ptr=0x1200000a5000, end ptr=0x1200000a55d8
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.871 [adapter_rts.cc:660] [2357452]Malloc DevMem para: deviceId[0] devPtr[0x1200000a5000] size[1496 Byte] level2Address[0]
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.875 [engine_ctxs.cc:39] [2357452][CreateCommEngineCtx]create context success, tag[hccl_comm_test_6_AllGather=level0:doublering_2_0], engine[2]
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.881 [hccl_mc2.cc:174] [2357452]HcclAllocOpResCtx the 0th opParam: opParamAddr[675840], opParamSize[1496]
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.886 [api_impl.cc:2675] 2357452 MemCopySync:memcpy sync, cnt=1496, kind=1.
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.924 [engine_ctxs.cc:49] [2357452][GetCommEngineCtx] not exist a context with tag[hccl_comm_test_6_AllGather=level0:doublering_2_workSpace]
+[WARNING] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.928 [hccl_independent_op_ctx.cc:98] [2357452][operator()] Failed to get CommEngineCtx with ctxTag[hccl_comm_test_6_AllGather=level0:doublering_2_workSpace], engine[2], ret[6]
+[DEBUG] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.934 [adapter_rts.cc:502] [2357452][hrtGetDeviceType]g_deviceType = 6.
+[DEBUG] ASCENDCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.937 [memory.cpp:334]2357452 aclrtMallocWithCfgImpl: start to execute aclrtMallocWithCfg, size = 20971520
+[DEBUG] ASCENDCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.939 [memory.cpp:252]2357452 aclrtMallocInnerWithCfg: start to execute aclrtMallocInnerWithCfg, size = 20971520
+[INFO] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.943 [api_impl.cc:8067] 2357452 DevMalloc: size=20971520, advise=0,type=0x402,moduleId=3.
+[INFO] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.946 [api_impl.cc:8077] 2357452 DevMalloc: type=0x402.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.949 [npu_driver_mem.cc:1309] 2357452 DevMemAlloc:device_id=0, type=1026, size=20971520, mode=1.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.951 [npu_driver_mem.cc:1069] 2357452 DevMemAllocOnline:memory policy=0x400.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.260.954 [npu_driver_mem.cc:1080] 2357452 DevMemAllocOnline:device_id=0, type=2, size=20971520, chip type=15, policy=0x400.[DEBUG] DRV(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.336 [event_sched.c:367][ascend][curpid:2357452,2357452][drv][event-sche][esched_finish_call_back]Called the finish func.(dev_id=0; gid=50; tid=0; event_id=27; subevent_id=134).
+[DEBUG] DRV(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.513 [event_sched.c:367][ascend][curpid:2357452,2357452][drv][event-sche][esched_finish_call_back]Called the finish func.(dev_id=0; gid=50; tid=0; event_id=27; subevent_id=130).
+[DEBUG] DRV(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.526 [svm_alloc.c:314][ascend][curpid:2357452,2357452][drv][devmm][halMemAllocInner]Alloc. (ptr=0x12009a000000; size=20971520; flag=0x300000000924400)
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.531 [npu_driver_mem.cc:937] 2357452 DevMemAllocHugePageManaged:device_id=0,type=2,size=20971520(bytes), chip type=15, moduleId=3.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.535 [npu_driver_mem.cc:1134] 2357452 DevMemAllocOnline:Success, memory policy=0x400, device_id=0, size=20971520(bytes), type=2.
+[INFO] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.537 [api_error.cc:5880] 2357452 DevMalloc: device malloc, size=20971520(bytes),  start ptr=0x12009a000000, end ptr=0x12009b400000
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.540 [adapter_rts.cc:660] [2357452]Malloc DevMem para: deviceId[0] devPtr[0x12009a000000] size[20971520 Byte] level2Address[0]
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.545 [engine_ctxs.cc:39] [2357452][CreateCommEngineCtx]create context success, tag[hccl_comm_test_6_AllGather=level0:doublering_2_workSpace], engine[2]
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.551 [hccl_mc2.cc:199] [2357452]HcclAllocOpResCtx the workSpace: workSpaceAddr[2583691264], workSpaceSize[20971520]
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.559 [engine_ctxs.cc:49] [2357452][GetCommEngineCtx] not exist a context with tag[hccl_comm_test_6_AllGather=level0:doublering_2_opResCtx]
+[WARNING] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.562 [hccl_independent_op_ctx.cc:98] [2357452][operator()] Failed to get CommEngineCtx with ctxTag[hccl_comm_test_6_AllGather=level0:doublering_2_opResCtx], engine[2], ret[6]
+[DEBUG] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.568 [adapter_rts.cc:502] [2357452][hrtGetDeviceType]g_deviceType = 6.
+[DEBUG] ASCENDCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.571 [memory.cpp:334]2357452 aclrtMallocWithCfgImpl: start to execute aclrtMallocWithCfg, size = 152
+[DEBUG] ASCENDCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.573 [memory.cpp:252]2357452 aclrtMallocInnerWithCfg: start to execute aclrtMallocInnerWithCfg, size = 152
+[INFO] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.577 [api_impl.cc:8067] 2357452 DevMalloc: size=152, advise=0,type=0x402,moduleId=3.
+[INFO] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.579 [api_impl.cc:8077] 2357452 DevMalloc: type=0x402.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.582 [npu_driver_mem.cc:1309] 2357452 DevMemAlloc:device_id=0, type=1026, size=160, mode=1.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.585 [npu_driver_mem.cc:1069] 2357452 DevMemAllocOnline:memory policy=0x400.
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.587 [npu_driver_mem.cc:1080] 2357452 DevMemAllocOnline:device_id=0, type=2, size=160, chip type=15, policy=0x400.
+[DEBUG] DRV(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.594 [svm_alloc.c:314][ascend][curpid:2357452,2357452][drv][devmm][halMemAllocInner]Alloc. (ptr=0x1200000a6000; size=160; flag=0x300000000904400)
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.598 [npu_driver_mem.cc:1059] 2357452 DevMemAllocManaged:device_id=0, type=2, size=160(bytes), chip type=15, moduleId=3, tillFlag=0
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.601 [npu_driver_mem.cc:1134] 2357452 DevMemAllocOnline:Success, memory policy=0x400, device_id=0, size=160(bytes), type=2.
+[INFO] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.603 [api_error.cc:5880] 2357452 DevMalloc: device malloc, size=152(bytes),  start ptr=0x1200000a6000, end ptr=0x1200000a6098
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.606 [adapter_rts.cc:660] [2357452]Malloc DevMem para: deviceId[0] devPtr[0x1200000a6000] size[152 Byte] level2Address[0]
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.610 [engine_ctxs.cc:39] [2357452][CreateCommEngineCtx]create context success, tag[hccl_comm_test_6_AllGather=level0:doublering_2_opResCtx], engine[2]
+[INFO] HCCL(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.616 [hccl_mc2.cc:214] [2357452]HcclAllocOpResCtx the opResCtx: opResCtxAddr[3794295792], opResCtxSize[152]
+[DEBUG] RUNTIME(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.619 [api_impl.cc:2675] 2357452 MemCopySync:memcpy sync, cnt=152, kind=1.
+[INFO] OP(2357452,allgather_custom_aarch64):2026-04-13-16:31:02.261.640 [indv_mc2_aicpu.cpp:59][NNOP][NnopbaseGetHcomResource][2357452] OpName:[AllGatherCustomV3_0] Executor is 0xaaaacca291b0, stream is 0xaaaac9c78660, commHandle is 0xaaaac9d68e80, get contextAddr is 0x12009a000000, get aicpuStream is (nil), notify[0] is (nil), notify[1] is (nil).
