@@ -44,6 +44,7 @@
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
 #include "aicpu_cache_manager.h"
+#include "aicpu_blocklist_manager.h"
 
 namespace hccl {
 
@@ -326,6 +327,8 @@ private:
     HcclResult QueryBatchSendRecvPairEndPos();
     HcclResult UpdateOpExecStatus(HcclOpExecFSM &fsmState, HcclOpIdentifier &opId, KfcStatus state,
         KfcError &errorCode, uint32_t retryCnt);
+    HcclResult UpdateOpExecStatus(HcclOpExecFSM &fsmState, KfcStatus state, KfcError &errorCode, uint32_t retryCnt,
+        bool isEnablePartialOpRetry); // 只有UpdateSuspendStatus会调用, 用于A3 AICPU局部重执行
     u32 HcclUpdateBatchSendRecvOpIndex(std::map<u32, u32> &bsrIndexMap, u32 peerRank);
     u32 HcclUpdateBatchSendRecvOpIndex(HcclSendRecvType opType, u32 srcRank, u32 dstRank);
     HcclResult InitBatchSendRecvOpId(const OpParam &param, const HcclSendRecvItem* sendrecvPair,
@@ -602,6 +605,9 @@ private:
 
     // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
     size_t opUnfoldIdx_ = 0;
+
+    // 维护task blocklist用于A3局部重执行
+    AicpuBlocklistManager aicpuBlocklistManager_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__
