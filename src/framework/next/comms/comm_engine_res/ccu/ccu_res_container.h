@@ -27,16 +27,19 @@ namespace hcomm {
  */
 class CcuResContainer {
 public:
-    CcuResContainer(const uint32_t opExpansionMode) : opExpansionMode_(opExpansionMode) {};
+    CcuResContainer() {};
     ~CcuResContainer();
-    HcclResult Init();
+    
+    HcclResult ChangeMode(uint32_t opExpansionMode);
     HcclResult ResetResPack();
     CcuResPack *GetResPack();
     HcclResult SaveCcuKernel(const CcuKernelHandle kernelHandle);
     const std::vector<CcuKernelHandle> &GetUntranslatedKernels();
 
 private:
-    uint32_t opExpansionMode_{0};
+    HcclResult Init();
+
+    uint32_t opExpansionMode_{0xffff} // 提供非法值，触发首次初始化;
     int32_t devLogicId_{INT32_MAX};
     std::shared_ptr<hcomm::CcuDrvHandle> ccuDrvHandle_{};
     std::unique_ptr<CcuResPack> resPack_{};

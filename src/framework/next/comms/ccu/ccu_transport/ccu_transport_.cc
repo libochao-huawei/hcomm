@@ -67,6 +67,8 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     ccuTransport.reset(new (std::nothrow)
         CcuTransport(socket, std::move(ccuConnection), bufferInfos));
     CHK_PTR_NULL(ccuTransport);
+    // todo：可能申请xn cke失败，需要回退
+    // 不能用chk ret，因为默认unavailable是error日志
     CHK_RET(ccuTransport->Init());
 
     return HcclResult::HCCL_SUCCESS;

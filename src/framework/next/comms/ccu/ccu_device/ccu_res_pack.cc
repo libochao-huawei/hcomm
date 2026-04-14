@@ -37,6 +37,8 @@ HcclResult CcuResPack::Init()
         return HcclResult::HCCL_E_PARA;
     }
 
+    // todo: 根据通信域算子展开模式申请资源
+    // 如果资源不足需要回退
     CHK_RET(CcuAllocEngineResHandle(devLogicId_, ccuEngine_, resHandle_));
     CHK_RET(Reset());
     return HcclResult::HCCL_SUCCESS;

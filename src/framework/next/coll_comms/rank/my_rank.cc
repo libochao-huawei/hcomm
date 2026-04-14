@@ -74,6 +74,48 @@ HcclResult MyRank::GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const
     return Hccl::HrtRaGetTlsStatus(&info, tlsStatus);
 }
 
+constexpr uint32_t DEFAULT_MODE = 0;
+constexpr uint32_t AICPU_TS_MODE = 2;
+constexpr uint32_t CCU_MS_MODE = 5;
+constexpr uint32_t CCU_SCHED_MODE = 6;
+HcclResult MyRank::TryInitCcuInstance()
+{
+    auto ccuInitRet = ccuResContainer_->ChangeMode(opExpansionMode_);
+    // ccu驱动拉起失败，直接回退至aicpu ts
+    if (ccuInitRet == HcclResult::HCCL_E_AGAIN) {
+        opExpansionMode_ = AICPU_TS_MODE;
+        ccuResContainer_ = nullptr;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    // ccu通信域数量过多，导致资源不足
+    if (ccuInitRet == HcclResult::HCCL_E_UNAVAIL) {
+        // 如果是ccu ms模式，回退至ccu调度模式重试
+        // 复用原有的ccuResContainer，回退到ccu sched时不需要重复拉起ccu驱动
+        if (opExpansionMode_ == CCU_MS_MODE) {
+            opExpansionMode_ = CCU_SCHED_MODE;
+            CHK_RET(TryInitCcuInstance()); // 至多递归一次
+            return HcclResult::HCCL_SUCCESS;
+        }
+
+        // 其余模式资源不足回退至aicpu ts
+        opExpansionMode_ = AICPU_TS_MODE;
+        ccuResContainer_ = nullptr;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    // 预期外返回值属于错误
+    if (ccuInitRet != HcclResult::HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] failed, ret[%d] is not expected.",
+            __func__, ccuInitRet);
+        ccuResContainer_ = nullptr;
+        return ccuInitRet;
+    }
+
+    // ccu资源申请成功
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint32_t rankNum)
 {
     // EXCEPTION_HANDLE_BEGIN
@@ -88,14 +130,29 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     EXECEPTION_CATCH(engineCtxs_ = std::make_unique<EngineCtxs>(), return HCCL_E_PTR);
 
+    // 通信域配置config优先级更高，当配置默认展开模式时，读取环境变量配置
     opExpansionMode_ = opExpansionMode;
+    if (opExpansionMode_ == DEFAULT_MODE) {
+        // 环境变量模块已处理，当用户未配置时，输出ccu sched模式
+        auto accelerator = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetHcclAccelerator();
+        HCCL_INFO("[MyRank][%s] set op expansion mode by env[%s].",
+            __func__, accelerator.Describe().c_str());
+        opExpansionMode_ = static_cast<uint32_t>(accelerator);
+    }
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1) {
-        ccuResContainer_.reset(new (std::nothrow)CcuResContainer(opExpansionMode_));
+    if ((indOp != nullptr && strcmp(indOp, "") != 0) && !ccuResContainer_ && rankNum != 1 &&
+        (opExpansionMode_ == CCU_MS_MODE || opExpansionMode_ == CCU_SCHED_MODE)) {
+        const uint32_t originOpExpansionMode = opExpansionMode_; // 记录原始加速模式，避免中间执行修改后丢失
+        ccuResContainer_.reset(new (std::nothrow)CcuResContainer());
         CHK_PTR_NULL(ccuResContainer_);
-        CHK_RET(ccuResContainer_->Init());
+        auto ret = TryInitCcuInstance();
+        if (ret != HcclResult::HCCL_SUCCESS) { // 申请成功与回退成功都属于成功，其他均非预期
+            HCCL_ERROR("[MyRank][%s] failed to init ccu instance, op expansion mode[%u].",
+                __func__, originOpExpansionMode);
+            return ret;
+        }
     }
 
     // 创建端点管理器
@@ -183,6 +240,9 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         u32& reuseIdx = reuseSocketIdxMap[rankPair][endpointPair];
 
         Hccl::Socket* socket = nullptr;
+        // todo: 需要记录本轮新申请的socket，传递到外部（存疑，aicpu也需要socket）
+        // return channelIndex, reuseIdx
+        // 外部在资源不足申请失败时，主动清理新申请socket
         auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
@@ -238,6 +298,8 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     CHK_RET(commMems_->GetMemoryHandles(memVec));
     std::unordered_map<RankPair*, std::unordered_map<CommEngine,
         std::unordered_map<hcomm::EndpointPair*, u32>>> reuseChannelIdxMap{};
+    
+    // todo: 新增一个vector记录本轮新申请的channel
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         // 参数检查
@@ -316,6 +378,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             reuseChannelIdxMap[rankPair][engine].emplace(endpointPair, 0);
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
+        
+        // todo: 需要记录新申请的channel信息，用于临时资源清理，create channel需要新增一个返回值用于判断（可以使用HCCL_E_AGAIN）
+        // save channelIndex, reuseIdx
+        // todo: 申请channel因资源不足失败时，不能直接返回，要在接口内部清理channel
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
         if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
@@ -331,6 +397,10 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         HCCL_INFO("[%s][%u/%u] channel created successfully, remoteRank[%u], channelHandle[%p]",
             __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
     }
+
+    // todo: 如果申请失败
+    // 根据记录的channelIndex找到 channel desc，找到对应的endPoint pair，清理endpoint pair中记录的channel handle
+    // endpoint pair需要新增 DestroyChannel方法
 
     return HCCL_SUCCESS;
 }
