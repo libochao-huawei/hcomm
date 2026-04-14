@@ -27,7 +27,6 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
     ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
-    CHK_PTR_NULL(param);
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_950) {
@@ -51,7 +50,6 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
     NotifyMgrAicpuParam* param = reinterpret_cast<NotifyMgrAicpuParam*>(ctxArgs->context);
-    CHK_PTR_NULL(param);
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_950) {
