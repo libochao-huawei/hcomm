@@ -64,10 +64,10 @@ struct CcuChannelInfo {
  *
  * @param deviceLogicId 设备逻辑ID
  * @param ccuDrvHandle CCU驱动句柄
- * @return HcclResult 返回HcclResult类型的结果
- * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
+ * @return CcuResult 返回CcuResult类型的结果
+ * @note todo: 时返回，其余非CCU_SUCCESS结果属于错误
  */
-HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle);
+CcuResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle);
 
 /**
  * @brief 关闭CCU特性，解初始化CCU平台层
@@ -76,7 +76,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
  * @return HcclResult 返回HcclResult类型的结果
  * @note 资源不足时返回HCCL_E_UNAVIL，其余非HCCL_SUCCESS结果属于错误
  */
-HcclResult CcuDeinitFeature(const int32_t devLogicId);
+CcuResult CcuDeinitFeature(const int32_t devLogicId);
 
 /**
  * @brief todo
@@ -107,10 +107,10 @@ CcuResult CcuAllocResHandleByInsType(int32_t deviceLogicId,
  * @param deviceLogicId 设备逻辑ID
  * @param resHandle 查询的CCU批量资源句柄
  * @param resRepo 返回的CCU批量资源信息
- * @return HcclResult 返回HcclResult类型的结果
- * @note 资源句柄无法查找到时返回HCCL_E_NOT_FOUND，其余非HCCL_SUCCESS结果属于错误
+ * @return CcuResult 返回CcuResult类型的结果
+ * @note todo:
  */
-HcclResult CcuCheckResource(const int32_t deviceLogicId,
+CcuResult CcuCheckResource(const int32_t deviceLogicId,
     const CcuResHandle resHandle, CcuResRepository &resRepo);
 
 /**

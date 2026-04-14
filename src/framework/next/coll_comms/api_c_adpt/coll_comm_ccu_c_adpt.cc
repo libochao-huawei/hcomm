@@ -33,7 +33,7 @@ HcclResult HcclCommQueryCcuIns(HcclComm comm,
     CHK_PTR_NULL(insHandles);
     CHK_PTR_NULL(insNum);
 
-     // CCU只支持A5代际
+    // CCU不支持A5之前代际
     if (!hcclComm->IsCommunicatorV2()) {
         HCCL_WARNING("[%s] is not supported.", __func__);
         return HcclResult::HCCL_E_NOT_SUPPORT;
