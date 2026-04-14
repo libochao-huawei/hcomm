@@ -20,14 +20,11 @@
 
 namespace Hccl {
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    PreCalcRes(
-        const RankGraph* rankGraph, AlgTempResReq& resReqIntraScatter, AlgTempResReq& resReqInterScatter,
-        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::PreCalcRes(const RankGraph *rankGraph, AlgTempResReq &resReqIntraScatter,
+    AlgTempResReq &resReqInterScatter, AlgTempResReq &resReqIntraAllGather, AlgTempResReq &resReqInterAllGather)
 {
     // Topo Match
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
@@ -46,23 +43,19 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
     intraAllGatherTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interAllGatherTempAlg.setPathNumMap(rank2PathNumMap[1]);
-    //intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
-    //interScatterTempAlg.setPathNumMap(rank2PathNumMap[1]);
-    CHK_RET(CalcSingleAlgRes(
-        intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg, rankGraph,
-        resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
+    intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interScatterTempAlg.setPathNumMap(rank2PathNumMap[1]);
+    CHK_RET(CalcSingleAlgRes(intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg,
+        rankGraph, resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
     return HcclResult::HCCL_SUCCESS;
 }
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
 template <typename T>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    CalcSingleAlgRes(
-        InsAlgTemplate0& intraScatter, InsAlgTemplate1& interScatter, InsAlgTemplate2& intraAllGather,
-        InsAlgTemplate3& interAllGather, T* type, AlgTempResReq& resReqIntraScatter, AlgTempResReq& resReqInterScatter,
-        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::CalcSingleAlgRes(InsAlgTemplate0 &intraScatter, InsAlgTemplate1 &interScatter,
+    InsAlgTemplate2 &intraAllGather, InsAlgTemplate3 &interAllGather, T *type, AlgTempResReq &resReqIntraScatter,
+    AlgTempResReq &resReqInterScatter, AlgTempResReq &resReqIntraAllGather, AlgTempResReq &resReqInterAllGather)
 {
     if (enableDetour_) {
         HCCL_DEBUG("[%s] Rank[%d], CalcRes with detouring enabled.", __func__, myRank_);
@@ -78,12 +71,10 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     return HcclResult::HCCL_SUCCESS;
 }
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult InsBroadcastParallelAiCpuExecutor<
-    AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
-    InsAlgTemplate3>::CalcRes(const RankGraph* rankGraph, CollAlgResReq& algResReq)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq)
 {
     HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] CalcRes start, rank[%d]", myRank_);
 
@@ -107,7 +98,7 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
 
     std::vector<std::tuple<QId, QId, u32>> notifyRequests;
 
-    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, resReqIntraAllGather.queNum, algResReq.queueNotifys));    
+    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, resReqIntraAllGather.queNum, algResReq.queueNotifys));
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqIntraScatter.links, algResReq.links));
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqInterScatter.links, algResReq.links));
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqIntraAllGather.links, algResReq.links));
@@ -120,12 +111,10 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
     return HcclResult::HCCL_SUCCESS;
 }
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult InsBroadcastParallelAiCpuExecutor<
-    AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
-    InsAlgTemplate3>::CalcResOffload(const RankGraph* rankGraph, const u64& dataSize, CollOffloadOpResReq& resReq)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize, CollOffloadOpResReq &resReq)
 {
     HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] CalcResOffload start, rank[%d]", myRank_);
 
@@ -140,23 +129,21 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
     AlgTempResReq resReqInterAllGather;
 
     CHK_RET(PreCalcRes(rankGraph, resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
-    resReq.requiredSubQueNum = resReqIntraScatter.streamNum + resReqInterScatter.streamNum +
-                               resReqIntraAllGather.streamNum + resReqInterAllGather.streamNum - 1;
+    resReq.requiredSubQueNum = resReqIntraScatter.streamNum + resReqInterScatter.streamNum
+                               + resReqIntraAllGather.streamNum + resReqInterAllGather.streamNum - 1;
 
-    HCCL_INFO(
-        "[InsBroadcastParallelAiCpuExecutor] CalcResOffload end, rank[%d], required sub que num is [%u]", myRank_,
+    HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] CalcResOffload end, rank[%d], required sub que num is [%u]", myRank_,
         resReq.requiredSubQueNum);
 
     return HcclResult::HCCL_SUCCESS;
 }
 
 // Host展开
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    Orchestrate(const RankGraph* rankGraph, const CollAlgOperator& op, const CollAlgParams& params, InsQuePtr insQue)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::Orchestrate(const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params,
+    InsQuePtr insQue)
 {
     HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Host orchestrate begins.");
 
@@ -184,8 +171,9 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
     intraAllGatherTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interAllGatherTempAlg.setPathNumMap(rank2PathNumMap[1]);
-    //intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interScatterTempAlg.setPathNumMap(rank2PathNumMap[1]);
+
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(
         rankGraph, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg));
@@ -198,14 +186,11 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
 }
 
 // Aicpu展开
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    Orchestrate(
-        const AlgTopoInfo& topoInfo, const CollAlgOperator& op, const CollAlgParams& params, ConnectedLinkMgr* linkMgr,
-        InsQuePtr insQue)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params,
+    ConnectedLinkMgr *linkMgr, InsQuePtr insQue)
 {
     HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] Aicpu orchestrate begins.");
 
@@ -229,11 +214,11 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
 
     // 传入Template参数
     AlgTemplateInitPara(op, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg);
-    std::vector<std::map<u32, u32>>rank2PathNumMap;
+    std::vector<std::map<u32, u32>> rank2PathNumMap;
     CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
     intraAllGatherTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interAllGatherTempAlg.setPathNumMap(rank2PathNumMap[1]);
-    //intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    intraScatterTempAlg.setPathNumMap(rank2PathNumMap[0]);
     interScatterTempAlg.setPathNumMap(rank2PathNumMap[1]);
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(
@@ -246,19 +231,16 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     return HcclResult::HCCL_SUCCESS;
 }
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
 template <typename T>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    PrepareRes(
-        T* type, AlgTempResReq& resReqIntraScatter, AlgTempResReq& resReqInterScatter,
-        AlgTempResReq& resReqIntraAllGather, AlgTempResReq& resReqInterAllGather)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::PrepareRes(T *type, AlgTempResReq &resReqIntraScatter, AlgTempResReq &resReqInterScatter,
+    AlgTempResReq &resReqIntraAllGather, AlgTempResReq &resReqInterAllGather)
 {
     // 申请算法模板所需资源
-    if (resReqIntraScatter.queNum == 0 || resReqInterScatter.queNum == 0 || resReqIntraAllGather.queNum == 0 ||
-        resReqInterAllGather.queNum == 0) {
+    if (resReqIntraScatter.queNum == 0 || resReqInterScatter.queNum == 0 || resReqIntraAllGather.queNum == 0
+        || resReqInterAllGather.queNum == 0) {
         HCCL_ERROR("queNum  must larger than 0.");
         return HcclResult::HCCL_E_INTERNAL;
     }
@@ -279,81 +261,74 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     syncQueues_.emplace_back(intraQue_.at(0));
     syncQueues_.emplace_back(interQue_.at(0));
 
-    CHK_RET(WrapPrepResLinks(type, resReqIntraScatter.links, intraLinks_));
-    CHK_RET(WrapPrepResLinks(type, resReqInterScatter.links, interLinks_));
-    CHK_RET(WrapPrepResLinks(type, resReqIntraAllGather.links, intraLinks_));
-    CHK_RET(WrapPrepResLinks(type, resReqInterAllGather.links, interLinks_));
-    HCCL_INFO(
-        "[InsBroadcastParallelAiCpuExecutor] intraLinks size[%zu], interLinks size[%zu]", intraLinks_.size(),
-        interLinks_.size());
+    CHK_RET(WrapPrepResLinks(type, resReqIntraScatter.links, scatterIntraLinks_));
+    CHK_RET(WrapPrepResLinks(type, resReqInterScatter.links, scatterInterLinks_));
+    CHK_RET(WrapPrepResLinks(type, resReqIntraAllGather.links, allGatherIntraLinks_));
+    CHK_RET(WrapPrepResLinks(type, resReqInterAllGather.links, allGatherInterLinks_));
+
+    HCCL_INFO("[InsBroadcastParallelAiCpuExecutor] scatterIntraLinks size[%zu], scatterInterLinks size[%zu], "
+              "allGatherIntraLinks size[%zu], allGatherInterLinks size[%zu]",
+        scatterIntraLinks_.size(), scatterInterLinks_.size(), allGatherIntraLinks_.size(), allGatherInterLinks_.size());
     return HcclResult::HCCL_SUCCESS;
 }
 
 // Host
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    PrepareResForTemplate(
-        const RankGraph* rankGraph, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &intraScatterTempAlg,
+    InsAlgTemplate1 &interScatterTempAlg, InsAlgTemplate2 &intraAllGatherTempAlg,
+    InsAlgTemplate3 &interAllGatherTempAlg)
 {
     AlgTempResReq resReqIntraScatter;
     AlgTempResReq resReqInterScatter;
     AlgTempResReq resReqIntraAllGather;
     AlgTempResReq resReqInterAllGather;
-    CHK_RET(CalcSingleAlgRes(
-        intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg, rankGraph,
-        resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
+    CHK_RET(CalcSingleAlgRes(intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg,
+        rankGraph, resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
     CHK_RET(PrepareRes(rankGraph, resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
 
     return HcclResult::HCCL_SUCCESS;
 }
 
 // Aicpu
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    PrepareResForTemplate(
-        ConnectedLinkMgr* linkMgr, InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::PrepareResForTemplate(ConnectedLinkMgr *linkMgr, InsAlgTemplate0 &intraScatterTempAlg,
+    InsAlgTemplate1 &interScatterTempAlg, InsAlgTemplate2 &intraAllGatherTempAlg,
+    InsAlgTemplate3 &interAllGatherTempAlg)
 {
     AlgTempResReq resReqIntraScatter;
     AlgTempResReq resReqInterScatter;
     AlgTempResReq resReqIntraAllGather;
     AlgTempResReq resReqInterAllGather;
-    CHK_RET(CalcSingleAlgRes(
-        intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg, linkMgr,
-        resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
+    CHK_RET(CalcSingleAlgRes(intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg,
+        linkMgr, resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
     CHK_RET(PrepareRes(linkMgr, resReqIntraScatter, resReqInterScatter, resReqIntraAllGather, resReqInterAllGather));
 
     return HcclResult::HCCL_SUCCESS;
 }
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-void InsBroadcastParallelAiCpuExecutor<
-    AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
-    InsAlgTemplate3>::CalcSlice(std::vector<float>& splitDataSize, float scratchMaxMultiple, SliceConfig& slice)
+void InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::CalcSlice(std::vector<float> &splitDataSize, float scratchMaxMultiple, SliceConfig &slice)
 {
     // 数据切分
     u64 sliceCount = std::min(static_cast<u64>(UB_MAX_DATA_SIZE) / dataTypeSize_, dataCount_);
     if (scratchMaxMultiple > 0 && maxTmpMemSize_ > 0) {
         u64 scratchCount = maxTmpMemSize_ / dataTypeSize_; // 按照count来切分
-        sliceCount =
-            min(sliceCount, static_cast<u64>(float(scratchCount) / scratchMaxMultiple)); // 向下取整，防止Scratch溢出
+        sliceCount
+            = min(sliceCount, static_cast<u64>(float(scratchCount) / scratchMaxMultiple)); // 向下取整，防止Scratch溢出
     }
     /* 刷新slicecout0 和slicecout1确保是interLocalRankSize_ * intraLocalRankSize_整倍数 */
     u64 sliceCountPart0 = static_cast<u64>(float(sliceCount) * splitDataSize.at(0));
-    sliceCountPart0 =
-        (sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
+    sliceCountPart0
+        = (sliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
     u64 sliceCountPart1 = static_cast<u64>(float(sliceCount) * splitDataSize.at(1));
-    sliceCountPart1 =
-        (sliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
+    sliceCountPart1
+        = (sliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
     sliceCount = sliceCountPart0 + sliceCountPart1;
     // 计算循环次数, 如果sliceCountPart0和liceCountPart1为0说明只有一块数据都是尾块
     u32 loopTimes = sliceCount == 0 ? 1 : (dataCount_ + sliceCount - 1) / sliceCount;
@@ -361,11 +336,11 @@ void InsBroadcastParallelAiCpuExecutor<
     u64 finalSliceCount = dataCount_ - (loopTimes - 1) * sliceCount;
     u64 finalSliceCountPart0 = static_cast<u64>(float(finalSliceCount) * splitDataSize.at(0));
     //  刷新slicecout0 和slicecout1确保是interLocalRankSize_ * intraLocalRankSize_整倍数
-    finalSliceCountPart0 =
-        (finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
+    finalSliceCountPart0 = (finalSliceCountPart0 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_
+                           * intraLocalRankSize_;
     u64 finalSliceCountPart1 = static_cast<u64>(float(finalSliceCount) * splitDataSize.at(1));
-    finalSliceCountPart1 =
-        (finalSliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_ * intraLocalRankSize_;
+    finalSliceCountPart1 = (finalSliceCountPart1 / interLocalRankSize_ / intraLocalRankSize_) * interLocalRankSize_
+                           * intraLocalRankSize_;
     u64 finalTailCount = finalSliceCount - finalSliceCountPart0 - finalSliceCountPart1;
     slice.loopTimes = loopTimes;
     slice.sliceCount = sliceCount;
@@ -379,12 +354,10 @@ void InsBroadcastParallelAiCpuExecutor<
     return;
 }
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult InsBroadcastParallelAiCpuExecutor<
-    AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
-    InsAlgTemplate3>::StageProcess(DataParameters& dataParameters, std::vector<StageProcAlgPara>& algParaVec)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::StageProcess(DataParameters &dataParameters, std::vector<StageProcAlgPara> &algParaVec)
 {
     TemplateDataParams tempAlgParams;
     TempFuncs tempFuncs;
@@ -401,10 +374,7 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
             CHK_RET(algParaVec.at(step).part0FuncPtr(
                 tempFuncs, tempAlgParams, algParaVec.at(step).part0links, algParaVec.at(step).part0Que));
         }
-        CHK_RET(PostSyncQues(syncQueues_, 0));
-        // 再处理part1数据
-        CHK_RET(PreSyncQues(syncQueues_, 0));
-        // 第一步的时候server内topo包含root_的rank进行展开，其它rank不展开
+        // 再处理part1数据, 第一步的时候server内topo包含root_的rank进行展开，其它rank不展开
         u64 sliceSizePart1 = max(dataParameters.sliceSize.at(1).at(step), dataParameters.tailSize.at(1).at(step));
         if ((!isFirst || intraLocalRoot_ == root_) && sliceSizePart1 > 0) {
             // 数据1的server内的scatter算法
@@ -417,22 +387,18 @@ HcclResult InsBroadcastParallelAiCpuExecutor<
     return HcclResult::HCCL_SUCCESS;
 }
 
-template <
-    typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1, typename InsAlgTemplate2,
     typename InsAlgTemplate3>
-HcclResult
-InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::
-    GenInsQues(
-        InsAlgTemplate0& intraScatterTempAlg, InsAlgTemplate1& interScatterTempAlg,
-        InsAlgTemplate2& intraAllGatherTempAlg, InsAlgTemplate3& interAllGatherTempAlg)
+HcclResult InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2,
+    InsAlgTemplate3>::GenInsQues(InsAlgTemplate0 &intraScatterTempAlg, InsAlgTemplate1 &interScatterTempAlg,
+    InsAlgTemplate2 &intraAllGatherTempAlg, InsAlgTemplate3 &interAllGatherTempAlg)
 {
     LogAlgInfo(intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg, interAllGatherTempAlg);
 
     std::vector<float> dataSplitSize;
     GetParallelDataSplit(dataSplitSize);
     ScratchMultiple scratchMultiple;
-    CalcScratchMultiple(
-        dataSplitSize, scratchMultiple, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg,
+    CalcScratchMultiple(dataSplitSize, scratchMultiple, intraScatterTempAlg, interScatterTempAlg, intraAllGatherTempAlg,
         interAllGatherTempAlg);
     SliceConfig slice;
     CalcSlice(dataSplitSize, scratchMultiple.maxMultiple, slice);
@@ -455,7 +421,7 @@ InsBroadcastParallelAiCpuExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
 }
 
 // 算法注册
-INS_REGISTER_IMPL_BY_FOUR_TEMPS(
-    OpType::BROADCAST, AiCpuInsBroadcastParallelMesh1DNHR, InsBroadcastParallelAiCpuExecutor, TopoMatchMeshNHR,
-    InsTempScatterMesh1D, InsTempScatterNHR, InsTempAllGatherMesh1D, InsTempAllGatherNHR);
+INS_REGISTER_IMPL_BY_FOUR_TEMPS(OpType::BROADCAST, AiCpuInsBroadcastParallelMesh1DNHR,
+    InsBroadcastParallelAiCpuExecutor, TopoMatchMeshNHR, InsTempScatterMesh1D, InsTempScatterNHR,
+    InsTempAllGatherMesh1D, InsTempAllGatherNHR);
 } // namespace Hccl
