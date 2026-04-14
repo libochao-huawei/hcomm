@@ -35,22 +35,22 @@ static constexpr u32 MAX_RETRY_CNT = 10U;
 HcclResult CreateServerList(void *args[], u32 ctxNum, std::vector<AscCommServerInfo> &serverList)
 {
     CHK_PRT_RET(ctxNum == 0U, HCCL_ERROR("Invalid context number."), HCCL_E_PARA);
+    std::unordered_map<uintptr_t, size_t> workspaceToServerIdx{};
     for (u32 i = 0U; i < ctxNum; ++i) {
-        const CommKfcContext *ctx = static_cast<const CommKfcContext *>(args[i]);
+        const HcclApi::OpResCtx *ctx = static_cast<const HcclApi::OpResCtx *>(args[i]);
         CHK_PTR_NULL(ctx);
-        auto it = std::find_if(serverList.begin(), serverList.end(),
-                               [ctx](const AscCommServerInfo &server) {
-            return reinterpret_cast<u64>(server.serverIns.GetMsgAreaAddr()) == ctx->apiCtx.workSpace;
-        });
-        const u32 serverIdx = it - serverList.begin();
-        if (serverIdx == serverList.size()) {
+        const uintptr_t workspace = static_cast<uintptr_t>(ctx->workspace);
+        auto it = workspaceToServerIdx.find(workspace);
+        if (it == workspaceToServerIdx.end()) {
+            const u32 serverIdx = static_cast<u32>(serverList.size());
             AscCommServerInfo server(serverIdx);
             CHK_SMART_PTR_NULL(server.extMsg);
             HCCL_INFO("Server for group %u is created.", serverIdx);
             serverList.emplace_back(server);
+            it = workspaceToServerIdx.emplace(workspace, serverList.size() - 1U).first;
         }
-        CHK_PRT_RET(serverList[serverIdx].serverIns.AddOpContext(ctx) != HCCL_SUCCESS,
-                    HCCL_ERROR("Failed to add op for group %u.", serverIdx), HCCL_E_INTERNAL);
+        CHK_PRT_RET(serverList[it->second].serverIns.AddOpContext(ctx) != HCCL_SUCCESS,
+                    HCCL_ERROR("Failed to add op for group %zu.", it->second), HCCL_E_INTERNAL);
     }
     return HCCL_SUCCESS;
 }
