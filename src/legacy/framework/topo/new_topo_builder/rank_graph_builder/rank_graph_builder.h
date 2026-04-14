@@ -53,6 +53,7 @@ private:
                         const shared_ptr<NetInstance::Fabric> &fabNode, const vector<shared_ptr<PhyTopo::Link>> &links);
     void AddTopoDescFabricInfo();
     void UpdateTopoInstForMyRankOnly();
+    const RankLevelInfo &GetRankLevelInfoByNetLayer(const NewRankInfo &rankInfo, u32 netLayer) const;
     // 新增创建NetInstance
     std::shared_ptr<NetInstance> GetNetInstance(const RankLevelInfo &levelInfo);
     std::shared_ptr<NetInstance> CreateNetInstance(const RankLevelInfo &levelInfo);
