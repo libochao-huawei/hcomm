@@ -97,6 +97,32 @@ CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
     ccu::NotifyWait(args->channelHandle, 0, 0x12);
     return CcuResult::CCU_SUCCESS;
 }
+CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    ccu::LocalAddr src, dst;
+    ccu::Alloc(&src);
+    ccu::Alloc(&dst);
+    src.addr = 0x10000000;
+    src.token = 0x20000000;
+    dst.addr = 0x30000000;
+    dst.token = 0x40000000;
+    ccu::Event evt;
+    ccu::Alloc(&evt);
+    ccu::Buffer buf;
+    ccu::BlockAlloc(&buf, 1);
+    ccu::Variable len;
+    ccu::Alloc(&len);
+    len = 1024;
+    ccu::LocalCopyNb(buf, src, len, evt);
+    ccu::WaitEvent(evt);
+    ccu::LocalCopyNb(dst, buf, len, evt);
+    ccu::WaitEvent(evt);
+    ccu::LocalCopyNb(dst, src, len, evt);
+    ccu::WaitEvent(evt);
+    return CcuResult::CCU_SUCCESS;
+}
+
 // CcuResult CcuAddrDemoKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
