@@ -203,15 +203,6 @@ CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var)
     return CcuResult::CCU_SUCCESS;
 }
 
-// CcuResult CcuAddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr)
-// {
-//     const uint32_t devLogicId = HcclGetThreadDeviceId();
-//     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-//     CCU_CHK_PTR_NULL(kernel);
-//     CCU_CHK_RET(kernel->AddressAddAssignAddr(addr, otherAddr));
-//     return CcuResult::CCU_SUCCESS;
-// }
-
 //参数加载类 相关接口
 CcuResult CcuLoadArg(CcuVariableHandle varHandle)
 {
@@ -281,6 +272,40 @@ CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle va
     return CcuResult::CCU_SUCCESS;
 }
 
+//本地数据拷贝 相关接口
+
+CcuResult CcuLocalCopyMemToMem(
+    CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
+    CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LocalCopyMemToMem(dst, src, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuLocalCopyMemToBuffer(
+    CcuBufferHandle dst, CcuLocalAddrHandle src,
+    CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LocalCopyMemToBuffer(dst, src, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuLocalCopyBufferToMem(
+    CcuLocalAddrHandle dst, CcuBufferHandle src,
+    CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LocalCopyBufferToMem(dst, src, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
 
 
 
@@ -451,39 +476,6 @@ CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
 /*
 Buffer 相关接口
 */
-
-CcuResult CcuLocalCopyHBMToBufferImpl(
-    CcuBufferHandle dstBuffer, CcuLocalAddrHandle src,
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LocalCopyToBuffer(dstBuffer, src, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuLocalCopyBufferToHBMImpl(
-    CcuLocalAddrHandle dst, CcuBufferHandle srcBuffer,
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LocalCopyFromBuffer(dst, srcBuffer, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuLocalCopyHBMToHBMImpl(
-    CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LocalCopy(dst, src, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
 
 /*========== 本地 Reduce ==========*/
 CcuResult CcuLocalHBMReduceImpl(
