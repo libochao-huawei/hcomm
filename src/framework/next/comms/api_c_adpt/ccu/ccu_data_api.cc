@@ -15,51 +15,6 @@
 #include "ccu_data_api_impl.h"
 
 
-CcuResult CcuIfBegin(CcuVariable *var, uint64_t immediate,
-    CcuConditionType condType, const char *label)
-{
-    CCU_CHK_RET(CcuIfBeginImpl(var->handle, immediate, condType, label));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuIfElse(const char *label)
-{
-    CCU_CHK_RET(CcuIfElseImpl(label));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuIfEnd(const char *label)
-{
-    CCU_CHK_RET(CcuIfEndImpl(label));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuWhileBegin(CcuVariable *var, uint64_t immediate,
-    CcuConditionType condType, const char *label)
-{
-    CCU_CHK_RET(CcuWhileBeginImpl(var->handle, immediate, condType, label));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuWhileEnd(const char *label)
-{
-    CCU_CHK_RET(CcuWhileEndImpl(label));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuDoWhileBegin(const char *label)
-{
-    CCU_CHK_RET(CcuDoWhileBeginImpl(label));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
-    CcuConditionType condType, const char *label)
-{
-    CCU_CHK_RET(CcuDoWhileEndImpl(var->handle, immediate, condType, label));
-    return CcuResult::CCU_SUCCESS;
-}
-
 CcuResult CcuLoopCreate(CcuLoopHandle *loop)
 {
     return CcuLoopCreateImpl(loop);
