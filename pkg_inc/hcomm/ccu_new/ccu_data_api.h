@@ -41,14 +41,8 @@ extern "C" {
  * @warning
  */
 
-extern CcuResult CcuVariableCreate(CcuVariable* variable);
 
-extern CcuResult CcuVariableCreateFromChannel(ChannelHandle channel, uint32_t varIndex, CcuVariable *var);
-
-extern CcuResult CcuAddressCreate(CcuAddress* address);
 //支持从SQE加载参数
-extern CcuResult CcuLoadArg(CcuVariable variable);
-
 
 extern CcuResult CcuIfBegin(CcuVariable *var, uint64_t immediate,
     CcuConditionType condType, const char *label);
@@ -197,8 +191,7 @@ extern CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
              uid##_done = 0;                                                \
          uid##_rc == (int)CCU_SUCCESS && !uid##_done;                       \
          uid##_done = 1,                                                    \
-             uid##_rc = ((int)CcuIfElse(CCU_STRINGIFY(uid)),                \
-                 (int)CcuIfEnd(CCU_STRINGIFY(uid))))
+             uid##_rc = (int)CcuIfEnd(CCU_STRINGIFY(uid)))
 
 /**
  * CCU_DO_WHILE — wraps CcuDoWhileBegin / CcuDoWhileEnd around a brace block.
@@ -224,21 +217,7 @@ extern CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
              uid##_rc = (int)CcuDoWhileEnd(uid##_ce.var, uid##_ce.imm,      \
                  uid##_ce.cond, CCU_STRINGIFY(uid)))
 
-//支持从外部存储器中加载num个数据至寄存器中
-extern CcuResult CcuContinuousVariableCreate(CcuVariable* variables, uint32_t num);
-extern CcuResult CcuLoad(uint64_t addr, CcuVariable variable, uint32_t num);
 
-//支持Event的创建，记录和等待
-extern CcuResult CcuCompletedEventCreate(CcuEvent* event);
-extern CcuResult CcuBlockCompletedEventCreate(CcuEvent* events, uint32_t num);
-extern CcuResult CcuRecordEvent(CcuEvent event);
-extern CcuResult CcuWaitEvent(CcuEvent event);
-
-// CcuBuf 创建
-extern CcuResult CcuBufferCreate(CcuBuffer* buffer);
-
-// 批量创建（block 模式）
-extern CcuResult CcuBlockBufferCreate(CcuBuffer* buffers, uint32_t count);
 
 // LocalAddr / RemoteAddr 创建
 extern CcuResult CcuLocalAddrCreate(CcuLocalAddr* localAddr);
@@ -293,11 +272,6 @@ extern CcuResult CcuWriteHBMToHBMReduce(
     CcuVariable len, HcclDataType dataType,
     HcclReduceOp opType, CcuEvent event);
 
-/*========== 远端同步操作 ==========*/
-
-extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
-extern CcuResult CcuWriteNotify(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask);
-extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
 /**
  * @brief 远端同步操作
@@ -319,21 +293,6 @@ extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
  */
 // extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
-// Variable 赋值与运算
-extern CcuResult CcuVariableAssign(CcuVariable var, uint64_t immediate);
-extern CcuResult CcuVariableAssignVar(CcuVariable dst, CcuVariable src);
-extern CcuResult CcuVariableAddVarToVar(CcuVariable result, CcuVariable a, CcuVariable b);
-
-// Event mask
-extern CcuResult CcuSetEventMask(CcuEvent event, uint32_t mask);
-
-// Address 赋值与运算
-extern CcuResult CcuAddressAssignImm(CcuAddress addr, uint64_t immediate);
-extern CcuResult CcuAddressAssignVar(CcuAddress addr, CcuVariable var);
-extern CcuResult CcuAddressAssignAddr(CcuAddress dst, CcuAddress src);
-extern CcuResult CcuAddressAddAddrToAddr(CcuAddress result, CcuAddress a, CcuAddress b);
-extern CcuResult CcuAddressAddVarToAddr(CcuAddress result, CcuAddress addr, CcuVariable var);
-extern CcuResult CcuAddressAddAssignVar(CcuAddress addr, CcuVariable var);
 
 // LoopEngine
 extern CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count);

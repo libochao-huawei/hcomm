@@ -41,7 +41,7 @@ public:
     void operator+=(const CcuVariable &var) const;
 
     // // addr += addr
-    // void operator+=(const CcuAddress &other) const;
+    void operator+=(const CcuAddress &other) const;
 
     CcuAddressHandle handle{0};
 };
@@ -69,57 +69,63 @@ static_assert(std::is_standard_layout<CcuAddress>::value,
 static_assert(sizeof(CcuAddress) == sizeof(CcuAddressHandle),
     "CcuAddress layout changed - will break .so ABI!");
 
-extern "C" CcuResult CcuAddressAssignImm(CcuAddress addr, uint64_t immediate);
-extern "C" CcuResult CcuAddressAssignVar(CcuAddress addr, CcuVariable var);
-extern "C" CcuResult CcuAddressAssignAddr(CcuAddress dst, CcuAddress src);
-extern "C" CcuResult CcuAddressAddAddrToAddr(CcuAddress result, CcuAddress a, CcuAddress b);
-extern "C" CcuResult CcuAddressAddVarToAddr(CcuAddress result, CcuAddress addr, CcuVariable var);
-extern "C" CcuResult CcuAddressAddAssignVar(CcuAddress addr, CcuVariable var);
+extern "C" CcuResult CcuAddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
+extern "C" CcuResult CcuAddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+extern "C" CcuResult CcuAddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
+extern "C" CcuResult CcuAddressAddAddrToAddr(CcuAddressHandle result, CcuAddressHandle a, CcuAddressHandle b);
+extern "C" CcuResult CcuAddressAddVarToAddr(CcuAddressHandle result, CcuAddressHandle addr, CcuVariableHandle var);
+extern "C" CcuResult CcuAddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
 
 inline void CcuAddress::operator=(const CcuAddress& other) const {
-    auto ret = CcuAddressAssignAddr(*this, other);
+    auto ret = CcuAddressAssignAddr(this->handle, other.handle);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
 }
 
 inline void CcuAddress::operator=(uint64_t immediate) const {
-    auto ret = CcuAddressAssignImm(*this, immediate);
+    auto ret = CcuAddressAssignImm(this->handle, immediate);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
 }
 
 inline void CcuAddress::operator=(const CcuVariable &var) const {
-    auto ret = CcuAddressAssignVar(*this, var);
+    auto ret = CcuAddressAssignVar(this->handle, var.handle);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
 }
 
 inline void CcuAddress::operator=(CcuArithmeticOperator<CcuAddress, CcuAddress> op) const {
-    auto ret = CcuAddressAddAddrToAddr(*this, op.lhs, op.rhs);
+    auto ret = CcuAddressAddAddrToAddr(this->handle, op.lhs.handle, op.rhs.handle);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
 }
 
 inline void CcuAddress::operator=(CcuArithmeticOperator<CcuAddress, CcuVariable> op) const {
-    auto ret = CcuAddressAddVarToAddr(*this, op.lhs, op.rhs);
+    auto ret = CcuAddressAddVarToAddr(this->handle, op.lhs.handle, op.rhs.handle);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
 }
 
 inline void CcuAddress::operator=(CcuArithmeticOperator<CcuVariable, CcuAddress> op) const {
-    auto ret = CcuAddressAddVarToAddr(*this, op.rhs, op.lhs);
+    auto ret = CcuAddressAddVarToAddr(this->handle, op.rhs.handle, op.lhs.handle);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
 }
 
 inline void CcuAddress::operator+=(const CcuVariable &var) const {
-    auto ret = CcuAddressAddAssignVar(*this, var);
+    auto ret = CcuAddressAddAssignVar(this->handle, var.handle);
+    if (ret != CcuResult::CCU_SUCCESS) {
+        throw "todo: failed";
+    }
+}
+inline void CcuAddress::operator+=(const CcuAddress &other) const {
+    auto ret = CcuAddressAddAddrToAddr(this->handle, this->handle, other.handle);
     if (ret != CcuResult::CCU_SUCCESS) {
         throw "todo: failed";
     }
