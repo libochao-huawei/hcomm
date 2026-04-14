@@ -198,6 +198,7 @@ extern HcclResult HcomDestroy(void);
 extern HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle);
 
 HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname);
+HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname);
 
 HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpbaseMode,
     void** commContext, bool isMC2 = false);
