@@ -109,6 +109,8 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
     return HCCL_SUCCESS;
 }
 
+// todo：实现ChannelDestroy，在外部提供入参后，找到对应的channelhandle，调用hcomm channel destroy销毁平台层对象
+
 const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& EndpointPair::GetChannelHandles()
 {
     return channelHandles_;

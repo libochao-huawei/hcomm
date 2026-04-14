@@ -82,6 +82,8 @@ public:
 
     HcclResult CreateChannel(EndpointHandle endpointHandle, CommEngine engine, u32 reuseIdx,
         HcommChannelDesc *channelDescs, ChannelHandle *channels);
+    
+    // todo: 新增DestroyChannel
 
     const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& GetChannelHandles();
 
