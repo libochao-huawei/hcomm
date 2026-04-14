@@ -65,21 +65,21 @@ extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
 extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
 
 
-extern CcuResult CcuIfBeginImpl(CcuVariableHandle var, uint64_t immediate,
+extern CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
-extern CcuResult CcuIfElseImpl(const char *label);
+extern CcuResult CcuIfElse(const char *label);
 
-extern CcuResult CcuIfEndImpl(const char *label);
+extern CcuResult CcuIfEnd(const char *label);
 
-extern CcuResult CcuWhileBeginImpl(CcuVariableHandle var, uint64_t immediate,
+extern CcuResult CcuWhileBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
-extern CcuResult CcuWhileEndImpl(const char *label);
+extern CcuResult CcuWhileEnd(const char *label);
 
-extern CcuResult CcuDoWhileBeginImpl(const char *label);
+extern CcuResult CcuDoWhileBegin(const char *label);
 
-extern CcuResult CcuDoWhileEndImpl(CcuVariableHandle var, uint64_t immediate,
+extern CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
 
     extern CcuResult CcuLoopCreateImpl(CcuLoopHandle *loop);
