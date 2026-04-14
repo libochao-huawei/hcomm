@@ -397,7 +397,7 @@ CcuResult CcuWriteMemToMemReduce(
 
 
 
-
+/*========== 控制流操作 ==========*/
 
 CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label)
@@ -471,7 +471,7 @@ CcuResult CcuDoWhileEnd(CcuVariableHandle var, uint64_t immediate,
 
     return CcuResult::CCU_SUCCESS;
 }
-
+/*========== 循环操作 ==========*/  
 CcuResult CcuLoopCreate(CcuLoop *loop)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
