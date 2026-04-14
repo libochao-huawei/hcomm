@@ -76,12 +76,12 @@ CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopCreate(CcuLoopHandle *loop)
+CcuResult CcuLoopCreate(CcuLoop *loop)
 {
     return CcuLoopCreateImpl(loop);
 }
 
-CcuResult CcuLoopSetParam(CcuLoopHandle loop,
+CcuResult CcuLoopSetParam(CcuLoop loop,
     CcuVariable *formalParam, CcuVariable *actualParam)
 {
     if (formalParam == nullptr || actualParam == nullptr) {
@@ -90,34 +90,40 @@ CcuResult CcuLoopSetParam(CcuLoopHandle loop,
     return CcuLoopSetParamImpl(loop, formalParam->handle, actualParam->handle);
 }
 
-CcuResult CcuLoopGroupCreate(CcuLoopGroupHandle *group,
-    const CcuLoopGroupConfig *config)
+CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count)
 {
-    return CcuLoopGroupCreateImpl(group, config);
+    return CcuCreateBlockExecutorImpl(pool, count);
 }
 
-CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroupHandle *group,
-    CcuVariable *parallelVar, CcuVariable *offsetVar)
+CcuResult CcuLoopGroupCreate(CcuLoopGroup *group,
+    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool)
+{
+    return CcuLoopGroupCreateImpl(group, config, enginePool);
+}
+
+CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group,
+    CcuVariable *parallelVar, CcuVariable *offsetVar,
+    CcuLoopExecutors enginePool)
 {
     if (parallelVar == nullptr || offsetVar == nullptr) {
         return CcuResult::CCU_E_PTR;
     }
-    return CcuLoopGroupCreateFromVarImpl(group, parallelVar->handle, offsetVar->handle);
+    return CcuLoopGroupCreateFromVarImpl(group, parallelVar->handle, offsetVar->handle, enginePool);
 }
 
-CcuResult CcuLoopGroupAddLoop(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll)
+CcuResult CcuLoopGroupAddLoop(CcuLoopGroup group,
+    CcuLoop loop, const CcuLoopConfig *config)
 {
-    return CcuLoopGroupAddLoopImpl(group, loop, config, isUnroll);
+    return CcuLoopGroupAddLoopImpl(group, loop, config);
 }
 
-CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, CcuVariable *loopParamVar, bool isUnroll)
+CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
+    CcuLoop loop, CcuVariable *loopParamVar)
 {
     if (loopParamVar == nullptr) {
         return CcuResult::CCU_E_PTR;
     }
-    return CcuLoopGroupAddLoopFromVarImpl(group, loop, loopParamVar->handle, isUnroll);
+    return CcuLoopGroupAddLoopFromVarImpl(group, loop, loopParamVar->handle);
 }
 
 CcuResult CcuContinuousVariableCreate(CcuVariable* variables, uint32_t num)
@@ -437,13 +443,13 @@ CcuResult CcuAddressAddAssignVar(CcuAddress addr, CcuVariable var)
 /*
 Loop body scope
 */
-CcuResult _CcuLoopBodyEnter(CcuLoopHandle loop)
+CcuResult _CcuLoopBodyEnter(CcuLoop loop)
 {
     CCU_CHK_RET(_CcuLoopBodyEnterImpl(loop));
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult _CcuLoopBodyExit(CcuLoopHandle loop)
+CcuResult _CcuLoopBodyExit(CcuLoop loop)
 {
     CCU_CHK_RET(_CcuLoopBodyExitImpl(loop));
     return CcuResult::CCU_SUCCESS;

@@ -118,19 +118,21 @@ public:
     CcuResult DoWhileEnd(CcuVariableHandle var, uint64_t immediate,
         CcuConditionType condType, const char *label);
 
-    CcuResult LoopCreate(CcuLoopHandle *loop);
-    CcuResult LoopBodyEnter(CcuLoopHandle loop);
-    CcuResult LoopBodyExit(CcuLoopHandle loop);
-    CcuResult LoopSetParam(CcuLoopHandle loop,
+    CcuResult LoopCreate(CcuLoop *loop);
+    CcuResult LoopBodyEnter(CcuLoop loop);
+    CcuResult LoopBodyExit(CcuLoop loop);
+    CcuResult LoopSetParam(CcuLoop loop,
         CcuVariableHandle formalParam, CcuVariableHandle actualParam);
-    CcuResult LoopGroupCreate(CcuLoopGroupHandle *group,
-        const CcuLoopGroupConfig *config);
-    CcuResult LoopGroupCreateFromVar(CcuLoopGroupHandle *group,
-        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
-    CcuResult LoopGroupAddLoop(CcuLoopGroupHandle group,
-        CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll);
-    CcuResult LoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
-        CcuLoopHandle loop, CcuVariableHandle loopParamVar, bool isUnroll);
+    CcuResult LoopEnginePoolCreate(CcuLoopExecutors *pool, uint32_t count);
+    CcuResult LoopGroupCreate(CcuLoopGroup *group,
+        const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool);
+    CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
+        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
+        CcuLoopExecutors enginePool);
+    CcuResult LoopGroupAddLoop(CcuLoopGroup group,
+        CcuLoop loop, const CcuLoopConfig *config);
+    CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
+        CcuLoop loop, CcuVariableHandle loopParamVar);
 
     CcuResult AddressCreate(CcuAddressHandle *addrHandle);
     CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
@@ -342,27 +344,27 @@ private:
         std::shared_ptr<CcuRep::CcuRepBlock> prevActiveBlock;
         std::vector<ParamBinding> paramBindings;
         bool bodyDefined{false};
-        CcuRep::Executor executor;
-        bool executorAssigned{false};
     };
 
     struct LoopGroupDescriptor {
         CcuLoopGroupConfig config;
-        uint64_t repeatLoopIdx{0};
         uint64_t totalLoopNum{0};
-        std::vector<CcuLoopHandle> nonUnrollLoops;
-        std::vector<CcuLoopHandle> unrollLoops;
+        uint32_t loopCount{0};
+        std::unordered_set<CcuLoop> addedLoops;
         CcuRep::Variable parallelVar;
         CcuRep::Variable offsetVar;
         std::shared_ptr<CcuRep::CcuRepBase> bundleRep;
         bool isVarBased{false};
+        CcuLoopExecutors enginePoolHandle{0};
     };
 
-    std::unordered_map<CcuLoopHandle, LoopDescriptor> loopMap_;
-    std::unordered_map<CcuLoopGroupHandle, LoopGroupDescriptor> loopGroupMap_;
+    std::unordered_map<CcuLoop, LoopDescriptor> loopMap_;
+    std::unordered_map<CcuLoopGroup, LoopGroupDescriptor> loopGroupMap_;
     uint32_t loopHandleCounter_{0};
     uint32_t loopGroupHandleCounter_{0};
     uint32_t loopBodyDepth_{0};
+    std::unordered_map<CcuLoopExecutors, std::vector<CcuRep::Executor>> loopEnginePools_;
+    uint32_t loopEnginePoolCounter_{0};
 };
 
 } // namespace hcomm
