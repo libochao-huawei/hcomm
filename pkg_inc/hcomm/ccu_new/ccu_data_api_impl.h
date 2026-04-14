@@ -68,6 +68,18 @@ extern CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHa
 extern CcuResult CcuLocalCopyMemToMem(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuVariableHandle len, CcuEventHandle event);
 extern CcuResult CcuLocalCopyMemToBuffer(CcuBufferHandle dst, CcuLocalAddrHandle src,CcuVariableHandle len, CcuEventHandle event);
 extern CcuResult CcuLocalCopyBufferToMem(CcuLocalAddrHandle dst, CcuBufferHandle src, CcuVariableHandle len, CcuEventHandle event);
+//本地reduce 相关接口
+extern CcuResult CcuLocalMemReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
+extern CcuResult CcuLocalBufferReduce(CcuBufferHandle* buffers, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, CcuVariableHandle len, CcuEventHandle event);
+
+/*========== 远端数据传输操作 ==========*/
+extern CcuResult CcuReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
+extern CcuResult CcuWriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuWriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle, CcuVariableHandle len, CcuEventHandle event);
+extern CcuResult CcuWriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event);
+
 
 extern CcuResult CcuIfBeginImpl(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label);
@@ -102,58 +114,6 @@ extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroup group,
     CcuLoop loop, const CcuLoopConfig *config);
 extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
     CcuLoop loop, CcuVariableHandle loopParamVar);
-
-
-
-
-
-/*
-Buffer 相关接口
-*/
-extern CcuResult CcuLocalCopyHBMToBufferImpl(
-    CcuBufferHandle dstBuffer, CcuLocalAddrHandle src,
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuLocalCopyBufferToHBMImpl(
-        CcuLocalAddrHandle dst, CcuBufferHandle srcBuffer,
-        CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuLocalCopyHBMToHBMImpl(
-    CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-    CcuVariableHandle len, CcuEventHandle event);
-
-/*========== 本地 Reduce ==========*/
-extern CcuResult CcuLocalHBMReduceImpl(
-    CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event);
-
-extern CcuResult CcuLocalBufferReduceImpl(
-    CcuBufferHandle* buffers, uint32_t count,
-    HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType,
-    CcuVariableHandle len, CcuEventHandle event);
-
-/*========== 远端数据传输操作 ==========*/
-extern CcuResult CcuReadHBMToHBMImpl(
-    ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuReadHBMToBufferImpl(
-    ChannelHandle channel, CcuBufferHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuWriteHBMToHBMImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local, 
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuWriteBufferToHBMImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuBufferHandle local, 
-    CcuVariableHandle len, CcuEventHandle event);
-extern CcuResult CcuReadHBMToHBMReduceImpl(
-    ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event);
-extern CcuResult CcuWriteHBMToHBMReduceImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event);
-
 
 #ifdef __cplusplus
 }
