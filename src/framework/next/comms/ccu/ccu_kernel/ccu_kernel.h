@@ -99,10 +99,36 @@ public:
     const std::vector<CcuProfilingInfo> &GetAllCcuProfilingInfo() { return allCcuProfilingInfos_; };
 
 public:
-    CcuResult VariableCreate(CcuVariableHandle *var);
-    CcuResult VariableCreate(const ChannelHandle channel,
-        uint32_t varIndex, CcuVariableHandle *varHandle);
 
+    //Alloc 相关接口
+    CcuResult VariableAlloc(CcuVariableHandle *varHandle);
+    CcuResult AddressAlloc(CcuAddressHandle *addrHandle);
+    CcuResult EventAlloc(CcuEventHandle *eventHandle);
+    CcuResult BufferAlloc(CcuBufferHandle *bufHandle);
+    CcuResult LocalAddrAlloc(CcuLocalAddrHandle *localAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
+    CcuResult RemoteAddrAlloc(CcuRemoteAddrHandle *remoteAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
+    CcuResult BlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count);
+    // CcuResult BlockAddressAlloc(CcuAddressHandle *addrHandles, uint32_t count);
+    CcuResult BlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count);
+    CcuResult BlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count);
+    CcuResult VariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle);
+
+    //参数加载类 相关接口
+    CcuResult LoadArg(CcuVariableHandle varHandle);
+    CcuResult LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
+
+
+    //Event信号同步类 相关接口
+    CcuResult RecordEvent(CcuEventHandle eventHandle);
+    CcuResult WaitEvent(CcuEventHandle eventHandle);
+    CcuResult SetEventMask(CcuEventHandle eventHandle, uint32_t mask);
+    CcuResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx,  uint32_t mask);
+    CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
+    CcuResult WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
+
+
+
+    //Create 相关接口
     CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
     CcuResult VariableAssignVar(CcuVariableHandle var, CcuVariableHandle varA);
     CcuResult VariableAddVarToVar(CcuVariableHandle resVar,
@@ -132,7 +158,6 @@ public:
     CcuResult LoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
         CcuLoopHandle loop, CcuVariableHandle loopParamVar, bool isUnroll);
 
-    CcuResult AddressCreate(CcuAddressHandle *addrHandle);
     CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
     CcuResult AddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
     CcuResult AddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
@@ -141,17 +166,6 @@ public:
     CcuResult AddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
     CcuResult AddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
 
-    CcuResult LoadArg(CcuVariableHandle varHandle);
-    CcuResult ContinuousVariableCreate(CcuVariableHandle* varHandle);
-    CcuResult LoadVariable(uint64_t addr, CcuVariableHandle varHandle, uint32_t num);
-    CcuResult LoadVariable(uint64_t addr, CcuVariableHandle varHandle);
-    CcuResult CompletedEventCreate(CcuEventHandle *eventHandle);
-    CcuResult ContinuousEventCreate(CcuEventHandle *eventHandle, uint32_t num);
-    CcuResult SetEventMask(CcuEventHandle eventHandle, uint32_t mask);
-    CcuResult CompletedEventRecord(CcuEventHandle eventHandle);
-    CcuResult CompletedEventWait(CcuEventHandle eventHandle);
-    CcuResult BufferCreate(CcuBufferHandle *bufHandle);
-    CcuResult BlockBufferCreate(CcuBufferHandle *bufferHandles, uint32_t count);
     CcuResult LocalCopyToBuffer(CcuBufferHandle dstBuffer, CcuLocalAddrHandle src,
         CcuVariableHandle len, CcuEventHandle event);
     CcuResult LocalCopyFromBuffer(CcuLocalAddrHandle dst, CcuBufferHandle srcBuffer,
@@ -164,11 +178,6 @@ public:
     CcuResult LocalBufferReduce(CcuBufferHandle* buffers, uint32_t count,
         HcclDataType dataType, HcclDataType outputDataType,
         HcclReduceOp opType, CcuVariableHandle len, CcuEventHandle event);
-        
-    CcuResult LocalAddrCreate(CcuLocalAddrHandle *handle,
-        CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
-    CcuResult RemoteAddrCreate(CcuRemoteAddrHandle *handle,
-        CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle);
     
     CcuResult Read(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
         CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
@@ -184,14 +193,11 @@ public:
     CcuResult WriteReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
         CcuVariableHandle lenHandle, HcclDataType dataType,
         HcclReduceOp opType, CcuEventHandle eventHandle);
-    /*========== 远端同步操作 ==========*/
-    CcuResult WriteNotify(const ChannelHandle channel, uint32_t remoteNotifyIdx,  uint32_t mask);
-    CcuResult WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
-    CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
+   
 private:
     CcuResult GetVariableByHandle(CcuVariableHandle varHandle, CcuRep::Variable **variable);
-    CcuResult GetCompletedEventByHandle(CcuEventHandle eventHandle, CcuRep::CompletedEvent **event);
+    CcuResult GetEventByHandle(CcuEventHandle eventHandle, CcuRep::CompletedEvent **event);
 
     struct PendingIfContext {
         std::shared_ptr<CcuRep::CcuRepJumpLabel> elseLabel;
@@ -257,8 +263,6 @@ protected:
 
     HcclResult LocalNotifyRecord(const uint32_t coreId, const uint32_t dstNotifyIdx, const uint32_t mask);
     HcclResult LocalNotifyWait(const uint32_t coreId, const uint32_t notifyIdx, const uint32_t mask);
-
-    CcuResult NotifyRecord(const ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1);
 
     // 数据操作
     HcclResult WriteNb(const ChannelHandle channel, const CcuRep::RemoteAddr &rem, const CcuRep::LocalAddr &loc,
