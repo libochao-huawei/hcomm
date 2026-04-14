@@ -2,6 +2,8 @@
 #define CCU_API_HPP
 
 #include "ccu_data_api.h"
+#include "ccu_data_api_impl.h"
+#include "ccu_loop_macro.h"
 
 namespace ccu {
 
@@ -136,6 +138,49 @@ inline CcuResult NotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint
 {
     return CcuNotifyWait(channel, localNotifyIdx, mask);
 }
+// ==================== Loop ====================
+
+inline CcuResult CreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count) {
+    return CcuCreateBlockExecutorImpl(pool, count);
+}
+
+inline CcuResult LoopSetParam(CcuLoop loop, CcuVariable *formalParam, CcuVariable *actualParam) {
+    if (formalParam == nullptr || actualParam == nullptr) {
+        return CcuResult::CCU_E_PTR;
+    }
+    return CcuLoopSetParamImpl(loop, formalParam->handle, actualParam->handle);
+}
+
+inline CcuResult LoopGroupCreate(CcuLoopGroup *group,
+    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool)
+{
+    return CcuLoopGroupCreateImpl(group, config, enginePool);
+}
+
+inline CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
+    CcuVariable *parallelVar, CcuVariable *offsetVar, CcuLoopExecutors enginePool)
+{
+    if (parallelVar == nullptr || offsetVar == nullptr) {
+        return CcuResult::CCU_E_PTR;
+    }
+    return CcuLoopGroupCreateFromVarImpl(group, parallelVar->handle, offsetVar->handle, enginePool);
+}
+
+inline CcuResult LoopGroupAddLoop(CcuLoopGroup group,
+    CcuLoop loop, const CcuLoopConfig *config)
+{
+    return CcuLoopGroupAddLoopImpl(group, loop, config);
+}
+
+inline CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
+    CcuLoop loop, CcuVariable *loopParamVar)
+{
+    if (loopParamVar == nullptr) {
+        return CcuResult::CCU_E_PTR;
+    }
+    return CcuLoopGroupAddLoopFromVarImpl(group, loop, loopParamVar->handle);
+}
+
 } // namespace ccu
 
 #endif // CCU_API_HPP
