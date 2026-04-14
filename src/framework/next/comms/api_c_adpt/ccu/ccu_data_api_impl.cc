@@ -306,6 +306,95 @@ CcuResult CcuLocalCopyBufferToMem(
     CCU_CHK_RET(kernel->LocalCopyBufferToMem(dst, src, len, event));
     return CcuResult::CCU_SUCCESS;
 }
+//本地reduce 相关接口
+CcuResult CcuLocalMemReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LocalMemReduce(dst, src, len, dataType, opType, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuLocalBufferReduce(CcuBufferHandle* buffers, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LocalBufferReduce(buffers, count, dataType, outputDataType, opType, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+/*========== 远端数据传输操作 ==========*/
+
+CcuResult CcuReadMemToMem(
+    ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->ReadMemToMem(channel, localHandle, remoteHandle, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuReadMemToBuffer(
+    ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->ReadMemToBuffer(channel, localHandle, remoteHandle, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuReadMemToMemReduce(
+    ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
+    CcuVariableHandle len, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->ReadMemToMemReduce(channel, localHandle, remoteHandle, len, dataType, opType, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuWriteMemToMem(
+    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local, 
+    CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->WriteMemToMem(channel, remote, local, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuWriteBufferToMem(
+    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuBufferHandle local, 
+    CcuVariableHandle len, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->WriteBufferToMem(channel, remote, local, len, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuWriteMemToMemReduce(
+    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local,
+    CcuVariableHandle len, HcclDataType dataType,
+    HcclReduceOp opType, CcuEventHandle event)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->WriteMemToMemReduce(channel, remote, local, len, dataType, opType, event));
+    return CcuResult::CCU_SUCCESS;
+}
+
 
 
 
@@ -470,105 +559,3 @@ CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
     return CcuResult::CCU_SUCCESS;
 }
 
-
-
-
-/*
-Buffer 相关接口
-*/
-
-/*========== 本地 Reduce ==========*/
-CcuResult CcuLocalHBMReduceImpl(
-    CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LocalAddrReduce(dst, src, len, dataType, opType, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuLocalBufferReduceImpl(
-    CcuBufferHandle* buffers, uint32_t count,
-    HcclDataType dataType, HcclDataType outputDataType,
-    HcclReduceOp opType,
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LocalBufferReduce(
-        buffers, count, dataType, outputDataType, opType, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-/*========== 远端数据传输操作 ==========*/
-CcuResult CcuReadHBMToHBMImpl(
-    ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->Read(channel, local, remote, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuReadHBMToBufferImpl(
-    ChannelHandle channel, CcuBufferHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->ReadBuffer(channel, local, remote, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuWriteHBMToHBMImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local, 
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->Write(channel, local, remote, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuWriteBufferToHBMImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuBufferHandle local, 
-    CcuVariableHandle len, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->WriteBuffer(channel, local, remote, len, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuReadHBMToHBMReduceImpl(
-    ChannelHandle channel, CcuLocalAddrHandle local, CcuRemoteAddrHandle remote,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->ReadReduce(channel, local, remote, len, dataType, opType, event));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult CcuWriteHBMToHBMReduceImpl(
-    ChannelHandle channel, CcuRemoteAddrHandle remote, CcuLocalAddrHandle local,
-    CcuVariableHandle len, HcclDataType dataType,
-    HcclReduceOp opType, CcuEventHandle event)
-{
-    const uint32_t devLogicId = HcclGetThreadDeviceId();
-    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
-    CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->WriteReduce(channel, remote, local, len, dataType, opType, event));
-    return CcuResult::CCU_SUCCESS;
-}
