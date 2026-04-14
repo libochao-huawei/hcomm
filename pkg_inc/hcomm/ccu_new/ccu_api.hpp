@@ -1,11 +1,17 @@
 #ifndef CCU_API_HPP
 #define CCU_API_HPP
 
-#include "ccu_data_api.h"
 #include "ccu_data_api_impl.h"
 #include "ccu_loop_macro.h"
 #include "ccu_log.h"
 #include "hcom_common.h"
+
+#include "ccu_variable.hpp"
+#include "ccu_address.hpp"
+#include "ccu_event.hpp"
+#include "ccu_buffer.hpp"
+#include "ccu_local_addr.hpp"
+#include "ccu_remote_addr.hpp"
 
 namespace ccu {
 
