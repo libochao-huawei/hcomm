@@ -60,52 +60,6 @@ CcuResult CcuDoWhileEnd(CcuVariable *var, uint64_t immediate,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopCreate(CcuLoopHandle *loop)
-{
-    return CcuLoopCreateImpl(loop);
-}
-
-CcuResult CcuLoopSetParam(CcuLoopHandle loop,
-    CcuVariable *formalParam, CcuVariable *actualParam)
-{
-    if (formalParam == nullptr || actualParam == nullptr) {
-        return CcuResult::CCU_E_PTR;
-    }
-    return CcuLoopSetParamImpl(loop, formalParam->handle, actualParam->handle);
-}
-
-CcuResult CcuLoopGroupCreate(CcuLoopGroupHandle *group,
-    const CcuLoopGroupConfig *config)
-{
-    return CcuLoopGroupCreateImpl(group, config);
-}
-
-CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroupHandle *group,
-    CcuVariable *parallelVar, CcuVariable *offsetVar)
-{
-    if (parallelVar == nullptr || offsetVar == nullptr) {
-        return CcuResult::CCU_E_PTR;
-    }
-    return CcuLoopGroupCreateFromVarImpl(group, parallelVar->handle, offsetVar->handle);
-}
-
-CcuResult CcuLoopGroupAddLoop(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll)
-{
-    return CcuLoopGroupAddLoopImpl(group, loop, config, isUnroll);
-}
-
-CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, CcuVariable *loopParamVar, bool isUnroll)
-{
-    if (loopParamVar == nullptr) {
-        return CcuResult::CCU_E_PTR;
-    }
-    return CcuLoopGroupAddLoopFromVarImpl(group, loop, loopParamVar->handle, isUnroll);
-}
-
-
-
 CcuResult CcuLocalCopyHBMToBuffer(
     CcuBuffer dstBuffer, CcuLocalAddr src,
     CcuVariable len, CcuEvent event)
@@ -215,17 +169,3 @@ CcuResult CcuWriteHBMToHBMReduce(
     return CcuResult::CCU_SUCCESS;
 }
 
-/*
-Loop body scope
-*/
-CcuResult _CcuLoopBodyEnter(CcuLoopHandle loop)
-{
-    CCU_CHK_RET(_CcuLoopBodyEnterImpl(loop));
-    return CcuResult::CCU_SUCCESS;
-}
-
-CcuResult _CcuLoopBodyExit(CcuLoopHandle loop)
-{
-    CCU_CHK_RET(_CcuLoopBodyExitImpl(loop));
-    return CcuResult::CCU_SUCCESS;
-}

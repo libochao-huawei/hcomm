@@ -294,21 +294,6 @@ extern CcuResult CcuWriteHBMToHBMReduce(
 // extern CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
 
 
-// Loop
-extern CcuResult CcuLoopCreate(CcuLoopHandle *loop);
-extern CcuResult _CcuLoopBodyEnter(CcuLoopHandle loop);
-extern CcuResult _CcuLoopBodyExit(CcuLoopHandle loop);
-extern CcuResult CcuLoopSetParam(CcuLoopHandle loop,
-    CcuVariable *formalParam, CcuVariable *actualParam);
-extern CcuResult CcuLoopGroupCreate(CcuLoopGroupHandle *group,
-    const CcuLoopGroupConfig *config);
-extern CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroupHandle *group,
-    CcuVariable *parallelVar, CcuVariable *offsetVar);
-extern CcuResult CcuLoopGroupAddLoop(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll);
-extern CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, CcuVariable *loopParamVar, bool isUnroll);
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus

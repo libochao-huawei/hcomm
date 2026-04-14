@@ -358,7 +358,7 @@ CcuResult CcuDoWhileEndImpl(CcuVariableHandle var, uint64_t immediate,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopCreateImpl(CcuLoopHandle *loop)
+CcuResult CcuLoopCreate(CcuLoop *loop)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
@@ -367,7 +367,7 @@ CcuResult CcuLoopCreateImpl(CcuLoopHandle *loop)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult _CcuLoopBodyEnterImpl(CcuLoopHandle loop)
+CcuResult _CcuLoopBodyEnter(CcuLoop loop)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
@@ -376,7 +376,7 @@ CcuResult _CcuLoopBodyEnterImpl(CcuLoopHandle loop)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult _CcuLoopBodyExitImpl(CcuLoopHandle loop)
+CcuResult _CcuLoopBodyExit(CcuLoop loop)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
@@ -385,7 +385,7 @@ CcuResult _CcuLoopBodyExitImpl(CcuLoopHandle loop)
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopSetParamImpl(CcuLoopHandle loop,
+CcuResult CcuLoopSetParam(CcuLoop loop,
     CcuVariableHandle formalParam, CcuVariableHandle actualParam)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -395,43 +395,53 @@ CcuResult CcuLoopSetParamImpl(CcuLoopHandle loop,
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopGroupCreateImpl(CcuLoopGroupHandle *group,
-    const CcuLoopGroupConfig *config)
+CcuResult CcuCreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LoopGroupCreate(group, config));
+    CCU_CHK_RET(kernel->LoopEnginePoolCreate(pool, count));
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopGroupCreateFromVarImpl(CcuLoopGroupHandle *group,
-    CcuVariableHandle parallelVar, CcuVariableHandle offsetVar)
+CcuResult CcuLoopGroupCreate(CcuLoopGroup *group,
+    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LoopGroupCreateFromVar(group, parallelVar, offsetVar));
+    CCU_CHK_RET(kernel->LoopGroupCreate(group, config, enginePool));
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopGroupAddLoopImpl(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll)
+CcuResult CcuLoopGroupCreateFromVar(CcuLoopGroup *group,
+    CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
+    CcuLoopExecutors enginePool)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LoopGroupAddLoop(group, loop, config, isUnroll));
+    CCU_CHK_RET(kernel->LoopGroupCreateFromVar(group, parallelVar, offsetVar, enginePool));
     return CcuResult::CCU_SUCCESS;
 }
 
-CcuResult CcuLoopGroupAddLoopFromVarImpl(CcuLoopGroupHandle group,
-    CcuLoopHandle loop, CcuVariableHandle loopParamVar, bool isUnroll)
+CcuResult CcuLoopGroupAddLoop(CcuLoopGroup group,
+    CcuLoop loop, const CcuLoopConfig *config)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->LoopGroupAddLoopFromVar(group, loop, loopParamVar, isUnroll));
+    CCU_CHK_RET(kernel->LoopGroupAddLoop(group, loop, config));
+    return CcuResult::CCU_SUCCESS;
+}
+
+CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
+    CcuLoop loop, CcuVariableHandle loopParamVar)
+{
+    const uint32_t devLogicId = HcclGetThreadDeviceId();
+    auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
+    CCU_CHK_PTR_NULL(kernel);
+    CCU_CHK_RET(kernel->LoopGroupAddLoopFromVar(group, loop, loopParamVar));
     return CcuResult::CCU_SUCCESS;
 }
 
