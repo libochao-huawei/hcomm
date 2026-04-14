@@ -3,82 +3,43 @@
 
 #include "ccu_data_api.h"
 #include "ccu_data_api_impl.h"
-#include "ccu_control_flow_macro.h"
-#include "ccu_log.h"
-#include "hcom_common.h"
+#include "ccu_loop_macro.h"
 
 namespace ccu {
 
-// ==================== 类型别名 ====================
-using Variable  = ::CcuVariable;
-using Address   = ::CcuAddress;
-using Event     = ::CcuEvent;
-using Buffer    = ::CcuBuffer;
-using LocalAddr = ::CcuLocalAddr;
-using RemoteAddr = ::CcuRemoteAddr;
-using CondExpr  = ::CcuCondExpr;
-
-
 // ==================== 资源创建 ====================
 
-inline CcuResult Alloc(CcuVariable* v)       { return CcuVariableAlloc(&(v->handle)); }
-inline CcuResult Alloc(CcuAddress* a)         { return CcuAddressAlloc(&(a->handle)); }
-inline CcuResult Alloc(CcuEvent* e)           { return CcuEventAlloc(&(e->handle)); }
-inline CcuResult Alloc(CcuBuffer* b)          { return CcuBufferAlloc(&(b->handle)); }
-inline CcuResult Alloc(CcuLocalAddr* la)      { return CcuLocalAddrAlloc(&(la->handle),&(la->addr.handle),&(la->token.handle)); }
-inline CcuResult Alloc(CcuRemoteAddr* ra)     { return CcuRemoteAddrAlloc(&(ra->handle),&(ra->addr.handle),&(ra->token.handle)); }
+inline CcuResult Create(CcuVariable* v)       { return CcuVariableCreate(v); }
+inline CcuResult Create(CcuAddress* a)         { return CcuAddressCreate(a); }
+inline CcuResult Create(CcuEvent* e)           { return CcuCompletedEventCreate(e); }
+inline CcuResult Create(CcuBuffer* b)          { return CcuBufferCreate(b); }
+inline CcuResult Create(CcuLocalAddr* la)      { return CcuLocalAddrCreate(la); }
+inline CcuResult Create(CcuRemoteAddr* ra)     { return CcuRemoteAddrCreate(ra); }
 
-inline CcuResult BlockAlloc(CcuBuffer* bufs, uint32_t count) {
-    // return CcuBlockBufferAlloc(bufs, count);
-    if (bufs == nullptr || count == 0) {
-        return CcuResult::CCU_E_PARA;
-    }
-    CcuBufferHandle bufHandles[count];
-    CCU_CHK_RET(CcuBlockBufferAlloc(bufHandles, count));
-    for (uint32_t i = 0; i < count; i++) {
-        bufs[i].handle = bufHandles[i];
-    }
-    return CcuResult::CCU_SUCCESS;
+inline CcuResult CreateFromChannel(ChannelHandle channel, uint32_t varIndex, CcuVariable *var) {
+    return CcuVariableCreateFromChannel(channel, varIndex, var);
 }
-inline CcuResult BlockAlloc(CcuVariable* vars, uint32_t count) {
-    if (vars == nullptr || count == 0) {
-        return CcuResult::CCU_E_PARA;
-    }
-    CcuVariableHandle varHandles[count]; 
-    CCU_CHK_RET(CcuBlockVariableAlloc(varHandles, count));
-    for (uint32_t i = 0; i < count; i++) {
-        vars[i].handle = varHandles[i];
-    }
-    return CcuResult::CCU_SUCCESS;
-}
-inline CcuResult BlockAlloc(CcuEvent* events, uint32_t count) {
-    if (events == nullptr || count == 0) {
-        return CcuResult::CCU_E_PARA;
-    }
-    CcuEventHandle eventHandles[count];
-    CCU_CHK_RET(CcuBlockEventAlloc(eventHandles, count));
-    for (uint32_t i = 0; i < count; i++) {
-        events[i].handle = eventHandles[i];
-    }
-    return CcuResult::CCU_SUCCESS;
-}
-inline CcuResult CreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariable* var) { return CcuVariableCreateByChannel(channel, varIndex, &(var->handle)); }
 
-
+inline CcuResult BlockCreate(CcuBuffer* bufs, uint32_t count) {
+    return CcuBlockBufferCreate(bufs, count);
+}
+inline CcuResult BlockCreate(CcuVariable* vars, uint32_t count) {
+    return CcuContinuousVariableCreate(vars, count);
+}
+inline CcuResult BlockCreate(CcuEvent* events, uint32_t count) {
+    return CcuBlockCompletedEventCreate(events, count);
+}
 // ==================== 事件 ====================
-inline CcuResult RecordEvent(CcuEvent e)  { return CcuRecordEvent(e.handle); }
-inline CcuResult WaitEvent(CcuEvent e)    { return CcuWaitEvent(e.handle); }
-inline CcuResult SetMask(CcuEvent e, uint32_t mask=1) { return CcuSetMask(e.handle, mask); }
-inline CcuResult NotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask=1){ return CcuNotifyRecord(channel, remoteNotifyIdx, mask); }
-inline CcuResult NotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask=1){ return CcuNotifyWait(channel, localNotifyIdx, mask); }
-inline CcuResult WriteVariableWithNotify(ChannelHandle channel, CcuVariable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask=1){ return CcuWriteVariableWithNotify(channel, var.handle, remoteVarIdx, remoteNotifyIdx, mask); }
+
+inline CcuResult Record(CcuEvent e)  { return CcuRecordEvent(e); }
+inline CcuResult Wait(CcuEvent e)    { return CcuWaitEvent(e); }
 
 // ==================== 加载 ====================
 inline CcuResult LoadArg(CcuVariable v) {
-    return CcuLoadArg(v.handle);
+    return CcuLoadArg(v);
 }
-inline CcuResult LoadVar(uint64_t addr, CcuVariable* v, uint32_t num) {
-    return CcuLoadVar(addr, v[0].handle, num);
+inline CcuResult Load(uint64_t addr, CcuVariable v, uint32_t num) {
+    return CcuLoad(addr, v, num);
 }
 
 // ==================== 本地拷贝（3 种重载） ====================
@@ -164,6 +125,60 @@ inline CcuResult WriteReduce(ChannelHandle ch, CcuRemoteAddr remote, CcuLocalAdd
     HcclReduceOp opType, CcuEvent event)
 {
     return CcuWriteHBMToHBMReduce(ch, remote, local, len, dataType, opType, event);
+}
+inline CcuResult WriteVariableWithNotify(ChannelHandle channel, CcuVariable var,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
+{
+    return CcuWriteVariableWithNotify(channel, var, remoteVarIdx, remoteNotifyIdx, mask);
+}
+inline CcuResult WriteNotify(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
+{
+    return CcuWriteNotify(channel, remoteNotifyIdx, mask);
+}
+inline CcuResult NotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)
+{
+    return CcuNotifyWait(channel, localNotifyIdx, mask);
+}
+// ==================== Loop ====================
+
+inline CcuResult CreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count) {
+    return CcuCreateBlockExecutorImpl(pool, count);
+}
+
+inline CcuResult LoopSetParam(CcuLoop loop, CcuVariable *formalParam, CcuVariable *actualParam) {
+    if (formalParam == nullptr || actualParam == nullptr) {
+        return CcuResult::CCU_E_PTR;
+    }
+    return CcuLoopSetParamImpl(loop, formalParam->handle, actualParam->handle);
+}
+
+inline CcuResult LoopGroupCreate(CcuLoopGroup *group,
+    const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool)
+{
+    return CcuLoopGroupCreateImpl(group, config, enginePool);
+}
+
+inline CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
+    CcuVariable *parallelVar, CcuVariable *offsetVar, CcuLoopExecutors enginePool)
+{
+    if (parallelVar == nullptr || offsetVar == nullptr) {
+        return CcuResult::CCU_E_PTR;
+    }
+    return CcuLoopGroupCreateFromVarImpl(group, parallelVar->handle, offsetVar->handle, enginePool);
+}
+
+inline CcuResult LoopGroupAddLoop(CcuLoopGroup group,
+    CcuLoop loop, const CcuLoopConfig *config)
+{
+    return CcuLoopGroupAddLoopImpl(group, loop, config);
+}
+
+inline CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
+    CcuLoop loop, CcuVariable *loopParamVar)
+{
+    if (loopParamVar == nullptr) {
+        return CcuResult::CCU_E_PTR;
+    }
+    return CcuLoopGroupAddLoopFromVarImpl(group, loop, loopParamVar->handle);
 }
 
 } // namespace ccu
