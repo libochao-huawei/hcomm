@@ -22,15 +22,15 @@
 using namespace std;
 using namespace hccl;
 
-class Utils_Device_UT : public testing::Test {
+class UT_Hccl_Aicpu_Utils : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "Utils_Device_UT SetUP" << std::endl;
+        std::cout << "UT_Hccl_Aicpu_Utils SetUP" << std::endl;
     }
     static void TearDownTestCase()
     {
-        std::cout << "Utils_Device_UT TearDown" << std::endl;
+        std::cout << "UT_Hccl_Aicpu_Utils TearDown" << std::endl;
     }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
@@ -44,11 +44,13 @@ protected:
     }
 };
 
-TEST_F(Utils_Device_UT, ut_PrintHcclOpResParam_When_resParamNull_Expect_NoCore) {
+TEST_F(UT_Hccl_Aicpu_Utils, ut_PrintHcclOpResParam_When_resParamNull_Expect_NoCore)
+{
     HcclAicpuUtils::PrintHcclOpResParam(nullptr);
 }
 
-TEST_F(Utils_Device_UT, ut_Getkey_When_userAddrNull_Expect_HCCL_E_PTR) {
+TEST_F(UT_Hccl_Aicpu_Utils, ut_Getkey_When_userAddrNull_Expect_HCCL_E_PTR)
+{
     AicpuComContext ctx;
     u32 remoteRankId;
     void *userAddr = nullptr;

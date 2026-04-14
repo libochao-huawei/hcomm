@@ -62,7 +62,7 @@ extern HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread
     uint16_t HEAD_TASK = 0;
     u16 taskId = sqeBuffer.tailSqeTaskId;
     HCCL_DEBUG("[%s] thread id = [%u] task id = [%u]", __func__, stream->id(), taskId);
-    return dfx::ProfilingManager::ReportMainStreamTask(*stream, taskId, HEAD_TASK); 
+    return dfx::ProfilingManager::ReportMainStreamTask(*stream, taskId, HEAD_TASK);
 #else
     HCCL_INFO("[%s] not support, do nothing", __func__);
 #endif

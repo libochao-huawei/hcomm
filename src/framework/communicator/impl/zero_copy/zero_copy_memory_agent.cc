@@ -231,7 +231,8 @@ void ZeroCopyMemoryAgent::RequestBatchSendAsync()
         }
 
         if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
-            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchSendAsync] remote[%u] not found in mapDevPhyIdconnectedSockets_", kv.first);
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchSendAsync] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
             continue;
         }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
@@ -277,7 +278,8 @@ void ZeroCopyMemoryAgent::CheckBatchSendAsyncResult()
         }
 
         if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
-            HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchSendAsyncResult] remote[%u] not found in mapDevPhyIdconnectedSockets_", kv.first);
+            HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchSendAsyncResult] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
             continue;
         }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
@@ -319,7 +321,8 @@ void ZeroCopyMemoryAgent::RequestBatchRecvAsync()
         }
 
         if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
-            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvAsync] remote[%u] not found in mapDevPhyIdconnectedSockets_", kv.first);
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvAsync] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
             continue;
         }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
@@ -344,7 +347,8 @@ void ZeroCopyMemoryAgent::CheckBatchRecvAsyncResult()
         }
 
         if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
-            HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchRecvAsyncResult] remote[%u] not found in mapDevPhyIdconnectedSockets_", kv.first);
+            HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchRecvAsyncResult] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
             continue;
         }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
@@ -429,7 +433,8 @@ void ZeroCopyMemoryAgent::RequestBatchRecvSync()
         }
 
         if (mapDevPhyIdconnectedSockets_.find(kv.first) == mapDevPhyIdconnectedSockets_.end()) {
-            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvSync] remote[%u] not found in mapDevPhyIdconnectedSockets_", kv.first);
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvSync] remote[%u] not found in"
+                "mapDevPhyIdconnectedSockets_", kv.first);
             continue;
         }
         auto &socket = mapDevPhyIdconnectedSockets_[kv.first];

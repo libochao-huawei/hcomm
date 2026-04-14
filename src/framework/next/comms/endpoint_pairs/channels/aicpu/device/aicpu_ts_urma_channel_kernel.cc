@@ -55,5 +55,4 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelUpdateV2(voi
     CHK_PTR_NULL(commParam);
     return AicpuIndopProcess::AicpuIndOpChannelUpdate(commParam);
 }
-
 }

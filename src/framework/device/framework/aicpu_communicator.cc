@@ -1807,10 +1807,9 @@ HcclResult HcclCommAicpu::AllocScratchMemResource(const std::string &newTag, con
         }
 
         if (tagScratchMem_.find(newTag) == tagScratchMem_.end()) {
-            HCCL_ERROR("[HcclCommAicpu][AllocScratchMemResource]alloc scratch memory failed. requesting for [%llu] bytes,"
-                       " tag[%s].",
-                scratchMemSize,
-                newTag.c_str());
+            HCCL_ERROR("[HcclCommAicpu][AllocScratchMemResource]alloc scratch memory failed."
+                "requesting for [%llu] bytes, tag[%s].",
+                scratchMemSize, newTag.c_str());
             return HCCL_E_NOT_FOUND;
         }
 
@@ -1829,7 +1828,8 @@ HcclResult HcclCommAicpu::AllocScratchMemResource(const std::string &newTag, con
         if (scratchMemSize - tagScratchMem_[newTag]->size() > (CCE_REDUCE_ALIGN_SIZE + CCE_REDUCE_ALIGN_SIZE)) {
             HCCL_ERROR(
                 "[HcclCommAicpu][AllocScratchMemResource]alloc tag[%s] scratch memory failed."
-                "requesting [%llu] bytes actual [%llu] bytes", newTag.c_str(), scratchMemSize, tagScratchMem_[newTag]->size());
+                "requesting [%llu] bytes actual [%llu] bytes", newTag.c_str(),
+                scratchMemSize, tagScratchMem_[newTag]->size());
             return HCCL_E_PARA;
         }
         scratchMem = DeviceMem::create(tagScratchMem_[newTag]->ptr(), tagScratchMem_[newTag]->size());
@@ -3340,8 +3340,8 @@ HcclResult HcclCommAicpu::PrintTaskExceptionAllStreams()
         u32 sqTail = 0U;
         ret = QuerySqStatus(devId_, stream.sqId(), sqHead, sqTail);
         if (ret != HCCL_SUCCESS || sqHead == sqTail) { // 此流为空时，不打印
-            HCCL_RUN_INFO("[PrintTaskExceptionAllStreams] group[%s] streamid[%d] is empty or QuerySqStatus failed, ret[%d]",
- 	            identifier_.c_str(), stream.id(), ret);
+            HCCL_RUN_INFO("[PrintTaskExceptionAllStreams] group[%s] streamid[%d] is empty"
+                "or QuerySqStatus failed, ret[%d]", identifier_.c_str(), stream.id(), ret);
             continue;
         }
         HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
@@ -3356,12 +3356,14 @@ HcclResult HcclCommAicpu::PrintTaskExceptionAllStreams()
             } else {
                 // 根据主流卡在host notify上，则说明未被执行到不打印
                 if (sqeInfo.type == RT_STARS_SQE_TYPE_NOTIFY_WAIT && sqeInfo.notifyId == opNotifies_[0]->notifyId_) {
-                    HCCL_RUN_INFO("[PrintTaskExceptionAllStreams] group[%s] op is not activated, do nothing", identifier_.c_str());
+                    HCCL_RUN_INFO("[PrintTaskExceptionAllStreams] group[%s] op is not activated, do nothing",
+                        identifier_.c_str());
                     return HCCL_SUCCESS;
                 }
                 // 根据主流当前位置，判断该算子是否已经打印过taskException
                 if (IsRepeatedOpTaskException(sqHead, sqeContextBuffer)) {
-                    HCCL_INFO("[PrintTaskExceptionAllStreams] group[%s] op has been printed, do nothing", identifier_.c_str());
+                    HCCL_INFO("[PrintTaskExceptionAllStreams] group[%s] op has been printed, do nothing",
+                        identifier_.c_str());
                     return HCCL_SUCCESS;
                 }
             }
