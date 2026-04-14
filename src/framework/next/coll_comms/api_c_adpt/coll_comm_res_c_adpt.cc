@@ -301,7 +301,7 @@ HcclResult HcclCcuKernelRegisterFinish(HcclComm comm)
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params, const aclrtStream stream, Hccl::TaskParam &taskParam)
 {
     taskParam.beginTime = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
-    constexpr uint32_t execTimeOutSec = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
+    const uint32_t execTimeOutSec = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
         taskInfo.dieId       = it->dieId;
