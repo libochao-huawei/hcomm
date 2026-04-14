@@ -12,7 +12,21 @@
 #include <stdint.h>
 #include <syslog.h>
 #include <stdio.h>
-int g_UT_LOG_LEVEL = DLOG_DEBUG;
+#include <cstdlib>
+
+static int GetLogLevelFromEnv()
+{
+    const char* env = getenv("HCCL_UT_LOG_LEVEL");
+    if (env != nullptr) {
+        int val = atoi(env);
+        if (val >= 0 && val <= 3) {
+            return val;
+        }
+    }
+    
+    return DLOG_ERROR;
+}
+static int g_UT_LOG_LEVEL = GetLogLevelFromEnv();
 
 int CheckLogLevel(int moduleId, int logLevel)
 {
