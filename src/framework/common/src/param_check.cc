@@ -420,7 +420,8 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
 {
     HcclResult ret = HcomCheckTag(tag);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "value", "parameter", "expect"}),\
-        std::vector<std::string>({"HcomCheckTag", tag, "tag", "supported operation name (e.g., \"AllReduce\", \"AllGather\")"}));
+        std::vector<std::string>({"HcomCheckTag", tag == nullptr ? "nullptr" : tag, "tag",
+            "supported operation name (e.g., \"AllReduce\", \"AllGather\")"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] tag is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
