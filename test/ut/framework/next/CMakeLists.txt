@@ -14,6 +14,7 @@ set(src_to_test_list
     hccl_api_base_test.cc
     ut_HcclRankGraph_API.cc
     ut_HcomInitCollComm.cc
+    comms/common/ut_orion_adpt_utils.cc
     comms/comm_engine_res/threads/test_aicpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_cpu_ts_thread_class.cc
     comms/comm_engine_res/threads/test_iaicpu_ts_thread_interface.cc
@@ -31,6 +32,7 @@ set(src_to_test_list
     comms/api_c_adpt/ut_hcomm_dfx_test.cc
     coll_comms/communicator/ut_coll_comm_test.cc
     comms/endpoint_pairs/channels/ut_channel_process_test.cc
+    comms/endpoint_pairs/channels/ut_channel_roce_factory.cc
     coll_comms/communicator/aicpu/ut_aicpu_indop_process_test.cc
     host/ut_cpu_roce_endpoint.cc
     host/ut_host_cpu_roce_channel.cc
@@ -41,8 +43,14 @@ set(src_to_test_list
     coll_comms/api_c_adpt/ut_coll_comm_res_c_adpt.cc
     comms/aiv/ut_AivUbMemTransport_API_test.cc
     comms/ccu/ut_CcuTransport_API_test.cc
+    comms/endpoints/reged_mems/ut_aicpu_ts_roce_mem.cc
     # Ns recovery相关测试用例
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_channel.cc
+    comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_roce_res_handler.cc
+    comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_channel_res_registry.cc
+    comms/endpoint_pairs/channels/aicpu/device/ut_aicpu_channel_process.cc
+    comms/endpoints/ut_aicpu_ts_roce_endpoint.cc
     comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
     comms/endpoint_pairs/channels/aiv/ut_aiv_ub_mem_channel.cc
     comms/endpoint_pairs/ut_endpoint_pair_mgr.cc
