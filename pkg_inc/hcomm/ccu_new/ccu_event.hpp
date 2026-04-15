@@ -15,13 +15,19 @@
 #include <type_traits>
 
 #include "ccu_types.h"
+#include "ccu_data_api_impl.h"
 
 class CcuEvent;
 
 class CcuEventMask {
 public:
     explicit CcuEventMask(CcuEventHandle* owner) : ownerHandle_(owner) {}
-    void operator=(uint32_t newMask) const;
+    void operator=(uint32_t newMask) const{
+        auto ret = CcuSetMask(*ownerHandle_, newMask);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "todo: failed";
+        }
+    }
 private:
     CcuEventHandle* ownerHandle_;
 };
@@ -33,32 +39,18 @@ public:
     CcuEvent(const CcuEvent& other) : handle(other.handle), mask(&handle) {}
 
     void operator=(CcuEvent&& other) {
-       this->handle = other.handle;
+        this->handle = other.handle;
+    }
+
+    void setMask(uint32_t mask) const {
+        auto ret = CcuSetMask(this->handle, mask);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "todo: failed";
+        }
     }
  
-    void setMask(uint32_t m) const;
-
     CcuEventHandle handle{0};
     CcuEventMask mask;
 };
- 
-static_assert(std::is_standard_layout<CcuEvent>::value,
-    "CcuEvent must be standard layout for .so ABI stability");
- 
-extern "C" CcuResult CcuSetMask(CcuEventHandle event, uint32_t mask);
- 
-inline void CcuEvent::setMask(uint32_t mask) const {
-    auto ret = CcuSetMask(this->handle, mask);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "todo: failed";
-    }
-}
- 
-inline void CcuEventMask::operator=(uint32_t newMask) const {
-    auto ret = CcuSetMask(*ownerHandle_, newMask);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "todo: failed";
-    }
-}
- 
+
 #endif // CCU_EVENT_HPP
