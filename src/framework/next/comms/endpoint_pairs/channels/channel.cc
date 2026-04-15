@@ -14,6 +14,7 @@
 #include "channel.h"
 #include "./aicpu/aicpu_ts_urma_channel.h"
 #include "./host/host_cpu_roce_channel.h"
+#include "./host/host_cpu_urma_channel.h"
 #include "./ccu/ccu_urma_channel.h"
 #include "./aiv/aiv_ub_mem_channel.h"
 
@@ -34,7 +35,13 @@ HcclResult Channel::CreateChannel(
                     return HCCL_E_PARA);
                 break;
             }
-            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] not support Protocol[%d] except COMM_PROTOCOL_ROCE", 
+            if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_CTP || 
+                channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBC_TP) {
+                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuUrmaChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
+                break;
+            }
+            HCCL_ERROR("[Channel][%s] Engine[COMM_ENGINE_CPU] not support Protocol[%d]", 	 
                         __func__, channelDesc.remoteEndpoint.protocol);
             return HCCL_E_NOT_SUPPORT;
         case COMM_ENGINE_CPU_TS:

@@ -776,9 +776,9 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
     return HCCL_SUCCESS;
 }
 
-void HostCpuRoceChannel::BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr,
-                                      const void *remoteAddr, uint64_t len, size_t localIdx, size_t rmtIdx,
-                                      struct ibv_send_wr &wr, struct ibv_sge &sg) const
+void HostCpuRoceChannel::BuildRdmaWr(const char *caller, ibv_wr_opcode opcode, void *localAddr,	 
+                                       const void *remoteAddr, uint64_t len, size_t localIdx, size_t rmtIdx, 
+                                       struct ibv_send_wr &wr, struct ibv_sge &sg) const
 {
     wr.sg_list             = &sg;
     wr.sg_list->addr       = reinterpret_cast<uint64_t>(localAddr);
@@ -960,7 +960,7 @@ HcclResult HostCpuRoceChannel::ChannelFence()
     auto timeout = std::chrono::milliseconds(FENCE_TIMEOUT_MS);
     auto startTime = std::chrono::steady_clock::now();
     while (true) {
-        auto actualNum = ibv_poll_cq(qpInfo[0].sendCq, wqeNum_, wc.data());
+        int actualNum = IbvPollCq(qpInfo[0].sendCq, wqeNum_, wc.data());
         if (actualNum < 0) {
             HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq failed. actualNum: %d.", __func__, actualNum);
             return HCCL_E_NETWORK;
@@ -968,7 +968,7 @@ HcclResult HostCpuRoceChannel::ChannelFence()
 
         uint32_t actualNum32 = static_cast<uint32_t>(actualNum);
         if (actualNum32 > wqeNum_) {
-            HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq polled more completions (%d) than expected (%u).",
+            HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq polled more completions (%u) than expected (%u).",
                 __func__, actualNum32, wqeNum_);
             return HCCL_E_INTERNAL;
         } else if (actualNum32 > 0) {
@@ -982,10 +982,11 @@ HcclResult HostCpuRoceChannel::ChannelFence()
             if (wqeNum_ == 0) {
                 break; // 所有的wqe都已经完成，退出循环
             }
+            startTime = std::chrono::steady_clock::now(); // 有进展，重置超时计时
         }
 
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            HCCL_ERROR("[HostCpuRoceChannel][%s] call ibv_poll_cq timeout.", __func__);
+            HCCL_ERROR("[HostCpuRoceChannel][%s] call ibv_poll_cq timeout, remaining wqeNum[%u].", __func__, wqeNum_);
             return HCCL_E_TIMEOUT;
         }
     }

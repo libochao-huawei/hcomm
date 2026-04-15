@@ -16,6 +16,7 @@
 #include "enum_factory.h"
 #include "hccl_common.h"
 #include "../../sockets/socket_mgr.h"
+#include "infiniband/verbs.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
@@ -41,12 +42,12 @@ public:
     std::string Describe() const;
 
     // 数据面调用verbs接口
-    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx);
-    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
-    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx);
-    HcclResult Write(void *dst, const void *src, uint64_t len);
-    HcclResult Read(void *dst, const void *src, uint64_t len);
-    HcclResult ChannelFence();
+    HcclResult NotifyRecord(const uint32_t remoteNotifyIdx) override;
+    HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout) override;
+    HcclResult WriteWithNotify(void *dst, const void *src, const uint64_t len, uint32_t remoteNotifyIdx) override;
+    HcclResult Write(void *dst, const void *src, uint64_t len) override;
+    HcclResult Read(void *dst, const void *src, uint64_t len) override;
+    HcclResult ChannelFence() override;
     HcclResult GetHcclBuffer(void*& addr, uint64_t& size);
 
     virtual HcclResult Clean() override;
@@ -88,6 +89,12 @@ private:
     HcclResult PostAndCheckSend(const char *caller, struct ibv_send_wr &wr);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
+
+    // Wrapper for stub
+    int IbvPollCq(ibv_cq *sendCq, uint32_t numEntries, ibv_wc *wc) const
+    {
+        return ibv_poll_cq(sendCq, numEntries, wc);
+    }
 
     // 入参
     EndpointHandle endpointHandle_;
