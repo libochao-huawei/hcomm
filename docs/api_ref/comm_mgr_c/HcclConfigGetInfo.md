@@ -1,0 +1,46 @@
+# HcclConfigGetInfo
+
+## 产品支持情况
+
+- Ascend 950PR/Ascend 950DT：支持
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+- Atlas 推理系列产品：不支持
+- Atlas 训练系列产品：不支持
+
+## 功能说明
+
+获取指定通信域的HCCL配置信息。
+
+根据配置项类型查询对应的配置信息，并写入调用者提供的缓冲区中，当前仅支持查询通信算子的展开模式。
+
+## 函数原型
+
+```c
+HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType, uint32_t infoLen, void *info);
+```
+
+## 参数说明
+
+| 参数名 | 输入/输出 | 描述 |
+| --- | --- | --- |
+| comm | 输入 | 通信域句柄。 |
+| cfgType | 输入 | 需要查询的配置项类型，HcclConfigType的定义可参见[HcclConfigType](./data_type_definition/HcclConfigType.md)。 |
+| infoLen | 输入 | 目标配置类型的大小（字节），必须等于待查询配置类型的实际大小。 |
+| info | 输入/输出 | 配置信息输出缓冲区，必须按目标配置类型对齐且可写。 |
+
+## 返回值
+
+[HcclResult](./data_type_definition/HcclResult.md)：接口成功返回HCCL_SUCCESS，其他失败。
+
+## 约束说明
+
+无
+
+## 调用示例
+
+```c
+HcclConfigTypeOpExpansionMode mode;
+uint32_t size = sizeof(HcclConfigTypeOpExpansionMode); // 必须等于目标类型大小
+HcclResult ret = HcclConfigGetInfo(comm, HCCL_CONFIG_TYPE_OP_EXPANSION_MODE, size, &mode);
+```
