@@ -42,7 +42,9 @@ constexpr u32 MAX_INLINE_DATA = 128;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
 constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
+ constexpr u32 GET_TP_ATTR_OPCODE = 106;
 constexpr u32 GET_TLS_ENABLE_VERSION = 1;
+constexpr u32 GET_TP_ATTR_VERSION = 2;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -2659,4 +2661,20 @@ HcclResult HrtRaGetTpAttrAsync(RdmaHandle handle, uint64_t tpHandle, uint32_t& a
     return HCCL_SUCCESS;
 }
 
+HcclResult HrtRaCtxGetTpAttr(u32 phyId, RdmaHandle handle, uint64_t tpHandle, uint32_t& attrBitmap, TpAttr& attr)
+{
+    HCCL_INFO("[HrtRaCtxGetTpAttr] begain, phyId[%u] tpHandle[%llu]", phyId, tpHandle);
+    u32 tpAttrVersion = 0;
+    s32 ret = RaGetInterfaceVersion(phyId, GET_TP_ATTR_OPCODE, &tpAttrVersion);
+    if (ret != 0 || tpAttrVersion < GET_TP_ATTR_VERSION) {
+        HCCL_WARNING("this package does not support RaCtxGetTpAttr for device, please change new package");
+        return HCCL_E_NOT_SUPPORT;
+    }
+    ret = RaCtxGetTpAttr(handle, tpHandle, &attrBitmap, &attr);
+    if (ret != 0) {
+        HCCL_ERROR("RaCtxGetTpAttr fail. phyId[%u] tpHandle[%llu]", phyId, tpHandle);
+        return HCCL_E_NETWORK;
+    }
+    return HCCL_SUCCESS;
+}
 } // namespace Hccl

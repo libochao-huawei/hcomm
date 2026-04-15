@@ -32,7 +32,7 @@ public:
     std::string Describe() const override;
 
     TransportStatus GetStatus() override;
-
+    HcclResult Describe(std::string &dfxMsg);
     std::vector<char> GetUniqueId() override;
 
     std::vector<char> GetUniqueIdV2();

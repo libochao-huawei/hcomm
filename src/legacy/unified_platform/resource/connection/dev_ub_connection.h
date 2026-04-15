@@ -73,7 +73,8 @@ public:
     ~DevUbConnection() override;
 
     string Describe() const override;
-
+    HcclResult Describe(std::string &dfxMsg);
+    
     HrtUbJfcMode GetUbJfcMode() const;
     JettyHandle& GetJettyHandle();
     JettyHandle& GetRemoteJettyHandle();
