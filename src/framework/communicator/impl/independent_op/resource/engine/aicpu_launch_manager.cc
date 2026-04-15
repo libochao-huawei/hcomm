@@ -120,9 +120,9 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunchImpl(
     const ThreadKernelLaunchConfig &config)
 {
     // 参数检查
-    CHK_PRT_RET(newThreads.size() > LOCAL_STREAM_MAX_NUM,
-        HCCL_ERROR("[AicpuLaunchMgr][%s] streamNum[%zu] > LOCAL_STREAM_MAX_NUM[%u]", __func__,
-        newThreads.size(), LOCAL_STREAM_MAX_NUM), HCCL_E_PARA);
+    CHK_PRT_RET(newThreads.size() > SIGNAL_DEV_STREAM_MAX_NUM,
+        HCCL_ERROR("[AicpuLaunchMgr][%s] streamNum[%zu] > SIGNAL_DEV_STREAM_MAX_NUM[%u]", __func__,
+        newThreads.size(), SIGNAL_DEV_STREAM_MAX_NUM), HCCL_E_PARA);
 
     uint64_t beginTime = (config.needProfiling ? hrtMsprofSysCycleTime() : 0);
 
