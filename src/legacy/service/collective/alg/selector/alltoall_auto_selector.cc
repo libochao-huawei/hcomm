@@ -27,6 +27,32 @@ SelectorStatus AlltoAllAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
     return SelectorStatus::NOT_MATCH;
 }
 
+SelectorStatus AlltoAllAutoSelector::SelectCcuScheduleAlgoLevel1(const TopoInfo &topoInfo,
+                                                           const CollAlgOperator &op,
+                                                           std::string &primQueueGenName) const
+{
+    if (isMc2_) {
+        HCCL_WARNING("[Algo][AlltoAllAutoSelector] levelNum > 1 is not supported yet for ccu_schedule mode.");
+        return SelectorStatus::NOT_MATCH;
+    }
+    if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+        if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+            primQueueGenName = "CcuAlltoAllMesh1D";
+        } else {
+            if (op.dataType == DataType::INT8) {
+                HCCL_WARNING("[Algo][AlltoAllAutoSelector] int8 is not supported yet for ccu_schedule mode.");
+                return SelectorStatus::NOT_MATCH;
+            }
+            primQueueGenName = "CcuAllToAllMesh1D2Die";
+        }
+    } else {
+        HCCL_WARNING("[Algo][AlltoAllAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+            topoInfo.level0Shape);
+        return SelectorStatus::NOT_MATCH;
+    }
+    return SelectorStatus::MATCH;
+}
+
 SelectorStatus AlltoAllAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
@@ -37,8 +63,8 @@ SelectorStatus AlltoAllAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoI
     HCCL_DEBUG("[AlltoAllAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     if (topoInfo.levelNum > 1) {
-        HCCL_WARNING("[Algo][AlltoAllAutoSelector] levelNum > 1 is not supported yet for ccu_schedule mode.");
-        return SelectorStatus::NOT_MATCH;
+        SelectorStatus ret = SelectCcuScheduleAlgoLevel1(topoInfo, op, primQueueGenName);
+        return ret;
     } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (Is2DieFullMesh()) {
