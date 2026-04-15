@@ -122,8 +122,8 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     }
 
     CcuLoopGroup group3;
-    CCU_CHK_RET(LoopGroupCreateFromVar(&group3, &varParallel, &varOffset, enginePool));
-    CCU_CHK_RET(LoopGroupAddLoopFromVar(group3, loop4, &varLoopParam));
+    CCU_CHK_RET(LoopGroupCreate(&group3, &varParallel, &varOffset, enginePool));
+    CCU_CHK_RET(LoopGroupAddLoop(group3, loop4, &varLoopParam));
 
     return CcuResult::CCU_SUCCESS;
 }
