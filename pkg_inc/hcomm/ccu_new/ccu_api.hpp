@@ -146,7 +146,7 @@ inline CcuResult LoopGroupCreate(CcuLoopGroup *group,
     return CcuLoopGroupCreate(group, config, enginePool);
 }
 
-inline CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
+inline CcuResult LoopGroupCreate(CcuLoopGroup *group,
     CcuVariable *parallelVar, CcuVariable *offsetVar, CcuLoopExecutors enginePool)
 {
     if (parallelVar == nullptr || offsetVar == nullptr) {
@@ -161,7 +161,7 @@ inline CcuResult LoopGroupAddLoop(CcuLoopGroup group,
     return CcuLoopGroupAddLoop(group, loop, config);
 }
 
-inline CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
+inline CcuResult LoopGroupAddLoop(CcuLoopGroup group,
     CcuLoop loop, CcuVariable *loopParamVar)
 {
     if (loopParamVar == nullptr) {
