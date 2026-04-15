@@ -73,6 +73,7 @@ CcuResult CcuAllocDemoKernel(CcuKernelArg arg)
 
     return CcuResult::CCU_SUCCESS;
 }
+
 CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
