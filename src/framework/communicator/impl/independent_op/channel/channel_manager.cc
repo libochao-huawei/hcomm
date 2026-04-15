@@ -635,27 +635,6 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     return HCCL_SUCCESS;
 }
 
-const std::map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP = {
- 	     {CommProtocol::COMM_PROTOCOL_RESERVED, "RESERVED"},
- 	     {CommProtocol::COMM_PROTOCOL_HCCS, "HCCS"},
- 	     {CommProtocol::COMM_PROTOCOL_ROCE, "ROCE"},
- 	     {CommProtocol::COMM_PROTOCOL_PCIE, "PCIE"},
- 	     {CommProtocol::COMM_PROTOCOL_SIO, "SIO"},
- 	     {CommProtocol::COMM_PROTOCOL_UBC_CTP, "UBC_CTP"},
- 	     {CommProtocol::COMM_PROTOCOL_UBC_TP, "UBC_TP"},
- 	     {CommProtocol::COMM_PROTOCOL_UB_MEM, "UB_MEM"}
- 	 };
- 	 
-inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
-{
-    auto iter = HCOM_COMM_PROTOCOL_STR_MAP.find(protocol);
-    if (iter == HCOM_COMM_PROTOCOL_STR_MAP.end()) {
-        return "CommProtocol(" + std::to_string(protocol) + ")";
-    } else {
-        return iter->second;
-    }
-}
-
 const std::map<CommEngine, std::string> COMM_ENGINE_TYPE_STR_MAP {
     {CommEngine::COMM_ENGINE_CPU, "host_cpu"},
     {CommEngine::COMM_ENGINE_CPU_TS, "host_cpu_ts"},
