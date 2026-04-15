@@ -24,6 +24,7 @@
 #include "adapter_rts.h"
 
 namespace hcomm {
+constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 
 static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
     const u32 tlvModuleType, const u32 tlvCcuMsgType)
@@ -64,7 +65,12 @@ HcclResult CcuDrvHandle::Init()
     CHK_PTR_NULL(tlvHandle_);
 
     // 拉起CCU驱动如果因其他进程占用重复拉起时，返回EAGAIN，日志检查返回值打印warning
-    CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
+    auto ret = HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT);
+    if (ret == HcclResult::HCCL_E_AGAIN) {
+        HCCL_WARNING("[%s] HccpRaTlvRequest ret[%d], repeat init ccu, deviceLogicId[%d].", __func__, ret, devLogicId_);
+        return ret;
+    }
+    CHK_RET(ret);
     CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
     CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
     CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());

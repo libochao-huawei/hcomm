@@ -61,7 +61,12 @@ HcclResult CcuResContainer::ChangeMode(uint32_t opExpansionMode)
 {
     if (opExpansionMode_ != opExpansionMode) {
         opExpansionMode_ = opExpansionMode;
-        CHK_RET(Init());
+        auto ret = Init();
+        if (ret == HcclResult::HCCL_E_AGAIN || ret == HcclResult::HCCL_E_UNAVAIL) {
+            HCCL_WARNING("[%s] init ret[%d] need fallback, opExpansionMode[%d].", __func__, ret, opExpansionMode_);
+            return ret;
+        }
+        CHK_RET(ret);
     }
 
     return HcclResult::HCCL_SUCCESS;
@@ -73,14 +78,14 @@ HcclResult CcuResContainer::Init()
     if (ccuEngine == CcuEngine::INVALID) {
         // 主动销毁资源，有时序要求，需要先释放ccu资源后关闭驱动
         resPack_ = nullptr;
-        ccuDrvHandle = nullptr;
+        ccuDrvHandle_ = nullptr;
         return HcclResult::HCCL_SUCCESS;
     }
 
     devLogicId_ = HcclGetThreadDeviceId();
 
     if (!ccuDrvHandle_) {
-        auto ret = CcuInitFeature(devLogicId_, ccuDrvHandle_);
+        auto ret = CcuInitFeature(devLogicId_, ccuDrvHandle_); // 重复拉起会返回HCCL_E_AGAIN
         if (ret != HcclResult::HCCL_SUCCESS) {
             ccuDrvHandle_ = nullptr;
             return ret;
@@ -91,7 +96,7 @@ HcclResult CcuResContainer::Init()
     if (!resPack_) {
         resPack_.reset(new (std::nothrow) CcuResPack(ccuEngine));
         CHK_PTR_NULL(resPack_);
-        auto ret = resPack_->Init();
+        auto ret = resPack_->Init(); // 资源不足会返回HCCL_E_UNAVAIL
         if (ret != HcclResult::HCCL_SUCCESS) {
             // 避免重复拉起ccu驱动，此时ccuDrvHandle不置空
             // ccu驱动生命周期仍跟随ccuResContainer

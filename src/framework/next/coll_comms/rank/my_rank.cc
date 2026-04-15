@@ -414,20 +414,20 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     // endpoint pair需要新增 DestroyChannel方法
     if (!isAllSuccess) {
         HCCL_WARNING("[%s] create channel failed, destroy channels num[%u], engine[%d]", __func__, channelNum, engine);
-        DestroyNewChannels(engine);
+        DestroyNewChannels(engine, channelDescs);
         return HCCL_E_UNAVAIL;
     }
 
     return HCCL_SUCCESS;
 }
 
-HcclResult MyRank::DestroyNewChannels(CommEngine engine)
+HcclResult MyRank::DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs)
 {
     uint32_t localRank = rankId_;
     for (auto idxPair = std::rbegin(newChannels_); idxPair != std::rend(newChannels_); ++idxPair) { // 要从后往前销毁
-        const EndpointDesc &localEndpointDesc = channelDescs[idxPair.first].localEndpoint;
-        const EndpointDesc &remoteEndpointDesc = channelDescs[idxPair.first].remoteEndpoint;
-        uint32_t remoteRank = channelDescs[idxPair.first].remoteRank;
+        const EndpointDesc &localEndpointDesc = channelDescs[(*idxPair).first].localEndpoint;
+        const EndpointDesc &remoteEndpointDesc = channelDescs[(*idxPair).first].remoteEndpoint;
+        uint32_t remoteRank = channelDescs[(*idxPair).first].remoteRank;
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
         EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
@@ -436,7 +436,7 @@ HcclResult MyRank::DestroyNewChannels(CommEngine engine)
         CHK_PTR_NULL(rankPair);
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
-        CHK_RET(endpointPair->DestroyChannel(engine, idxPair.second));
+        CHK_RET(endpointPair->DestroyChannel(engine, (*idxPair).second));
     }
     newChannels_.clear();
     return HCCL_SUCCESS;
