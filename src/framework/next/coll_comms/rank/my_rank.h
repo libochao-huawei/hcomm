@@ -76,7 +76,7 @@ private:
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
 
     HcclResult TryInitCcuInstance();
-    HcclResult DestroyNewChannels(CommEngine engine);
+    HcclResult DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};

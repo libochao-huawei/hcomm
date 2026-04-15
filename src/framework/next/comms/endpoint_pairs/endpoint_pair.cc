@@ -120,7 +120,7 @@ HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
     HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u], channelHandle size[%u],"
               "start destroy channel", engine, reuseIdx, channelHandles_[engine].size());
     ChannelHandle channelHandle = channelHandles_[engine][reuseIdx];
-    CHK_RET(HcommChannelDestroy(channelHandle, 1));
+    CHK_RET(static_cast<HcclResult>(HcommChannelDestroy(&channelHandle, 1)));
     // 去掉channelHandles_中reuseIdx位置的channelHandle
     channelHandles_[engine].erase(channelHandles_[engine].begin() + reuseIdx);
     HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u] destroy channel success,"
