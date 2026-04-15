@@ -8,14 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- #ifndef CCU_EVENT_HPP
- #define CCU_EVENT_HPP
+#ifndef CCU_EVENT_HPP
+#define CCU_EVENT_HPP
  
- #include <cstdint>
- #include <type_traits>
+#include <cstdint>
+#include <type_traits>
  
- #include "ccu_types.h"
- #include "ccu_data_api_impl.h"
+#include "ccu_types.h"
+#include "ccu_data_api_impl.h"
 
  class CcuEvent;
  
