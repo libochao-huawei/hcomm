@@ -110,6 +110,23 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
 }
 
 // todo：实现ChannelDestroy，在外部提供入参后，找到对应的channelhandle，调用hcomm channel destroy销毁平台层对象
+HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
+{
+    if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx) {
+        HCCL_WARNING("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u], channelHandle size[%u],"
+                     "channel not found, skip destroy channel", engine, reuseIdx, channelHandles_[engine].size());
+        return HCCL_SUCCESS;
+    }
+    HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u], channelHandle size[%u],"
+              "start destroy channel", engine, reuseIdx, channelHandles_[engine].size());
+    ChannelHandle channelHandle = channelHandles_[engine][reuseIdx];
+    CHK_RET(HcommChannelDestroy(channelHandle, 1));
+    // 去掉channelHandles_中reuseIdx位置的channelHandle
+    channelHandles_[engine].erase(channelHandles_[engine].begin() + reuseIdx);
+    HCCL_INFO("EndpointPair::DestroyChannel: engine[%d] reuseIdx[%u] destroy channel success,"
+              "channelHandle size[%u]", engine, reuseIdx, channelHandles_[engine].size());
+    return HCCL_SUCCESS;
+}
 
 const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& EndpointPair::GetChannelHandles()
 {

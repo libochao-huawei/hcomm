@@ -300,6 +300,8 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         std::unordered_map<hcomm::EndpointPair*, u32>>> reuseChannelIdxMap{};
     
     // todo: 新增一个vector记录本轮新申请的channel
+    newChannels_.clear();
+    bool isAllSuccess = true;
 
     for (uint32_t i = 0; i < channelNum; ++i) {
         // 参数检查
@@ -379,7 +381,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         
-        // todo: 需要记录新申请的channel信息，用于临时资源清理，create channel需要新增一个返回值用于判断（可以使用HCCL_E_AGAIN）
+        // todo: 需要记录新申请的channel信息，用于临时资源清理，create channel需要新增一个返回值用于判断（可以使用HCCL_E_UNAVAIL）
         // save channelIndex, reuseIdx
         // todo: 申请channel因资源不足失败时，不能直接返回，要在接口内部清理channel
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
@@ -388,6 +390,15 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             CHK_PRT_CONT(GetLocalTlsStatus(tlsStatus),
                 HCCL_WARNING("[GetLocalTlsStatus] Can not get TlsStatus"));
         }
+        if (ret == HCCL_E_UNAVAIL) {
+            // 申请channel因资源不足失败，清理已申请的channel
+            HCCL_WARNING("[%s] create channel failed, channelIndex[%u], remoteRank[%u], engine[%d], reuseIdx[%u]",
+                __func__, i + 1, remoteRank, engine, reuseIdx);
+            isAllSuccess = false;
+            break;
+        }
+        newChannels_.emplace_back(std::make_pair(i, reuseIdx));
+
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
                 __func__, i + 1, remoteRank, engine, reuseIdx),
@@ -401,7 +412,33 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     // todo: 如果申请失败
     // 根据记录的channelIndex找到 channel desc，找到对应的endPoint pair，清理endpoint pair中记录的channel handle
     // endpoint pair需要新增 DestroyChannel方法
+    if (!isAllSuccess) {
+        HCCL_WARNING("[%s] create channel failed, destroy channels num[%u], engine[%d]", __func__, channelNum, engine);
+        DestroyNewChannels(engine);
+        return HCCL_E_UNAVAIL;
+    }
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult MyRank::DestroyNewChannels(CommEngine engine)
+{
+    uint32_t localRank = rankId_;
+    for (auto idxPair = std::rbegin(newChannels_); idxPair != std::rend(newChannels_); ++idxPair) { // 要从后往前销毁
+        const EndpointDesc &localEndpointDesc = channelDescs[idxPair.first].localEndpoint;
+        const EndpointDesc &remoteEndpointDesc = channelDescs[idxPair.first].remoteEndpoint;
+        uint32_t remoteRank = channelDescs[idxPair.first].remoteRank;
+        hcomm::EndpointPair* endpointPair = nullptr;
+        RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
+        EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
+        RankPair* rankPair = nullptr;
+        CHK_RET(rankPairMgr_->Get(rankIdPair, rankPair));
+        CHK_PTR_NULL(rankPair);
+        CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
+        CHK_PTR_NULL(endpointPair);
+        CHK_RET(endpointPair->DestroyChannel(engine, idxPair.second));
+    }
+    newChannels_.clear();
     return HCCL_SUCCESS;
 }
 
