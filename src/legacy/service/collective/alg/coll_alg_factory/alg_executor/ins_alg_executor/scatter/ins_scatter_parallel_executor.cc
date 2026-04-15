@@ -122,7 +122,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsIntra0.buffInfo.outBuffBaseOff = scratchOffset;
     tempAlgParamsIntra0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsIntra0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsIntra0.inputSliceStride = dataSize_;
     tempAlgParamsIntra0.outputSliceStride = 0;
     tempAlgParamsIntra0.repeatNum = rankSizeLevel1_;
@@ -144,7 +144,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsInter0.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsInter0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsInter0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsInter0.inputSliceStride = tempAlgParamsInter0.sliceSize;
     tempAlgParamsInter0.outputSliceStride = 0;
     tempAlgParamsInter0.repeatNum = 1;
@@ -166,7 +166,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsInter1.buffInfo.outBuffBaseOff = scratchOffset; 
     tempAlgParamsInter1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsInter1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsInter1.inputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter1.outputSliceStride = 0;
     tempAlgParamsInter1.repeatNum = rankSizeLevel0_;
@@ -188,7 +188,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsIntra1.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsIntra1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsIntra1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsIntra1.inputSliceStride = tempAlgParamsIntra1.sliceSize;
     tempAlgParamsIntra1.outputSliceStride = 0;
     tempAlgParamsIntra1.repeatNum = 1;

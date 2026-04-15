@@ -150,7 +150,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsIntra0.buffInfo.outBuffBaseOff = rankIdxLevel1_ * rankSizeLevel0_ * dataSize_ + dataOffset;
     tempAlgParamsIntra0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsIntra0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsIntra0.inputSliceStride = 0;
     tempAlgParamsIntra0.outputSliceStride = dataSize_;
     tempAlgParamsIntra0.repeatNum = 1;
@@ -186,7 +186,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsInter0.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsInter0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsInter0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsInter0.inputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter0.outputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter0.repeatNum = rankSizeLevel0_;
@@ -217,7 +217,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsInter1.buffInfo.outBuffBaseOff = rankIdxLevel0_ * dataSize_ + dataOffset;  // for example 0 2 4 | 1 3 5
     tempAlgParamsInter1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsInter1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsInter1.inputSliceStride = 0;
     tempAlgParamsInter1.outputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter1.repeatNum = 1;
@@ -246,7 +246,7 @@ void InsAllGatherParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
     tempAlgParamsIntra1.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsIntra1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsIntra1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsIntra1.inputSliceStride = dataSize_;
     tempAlgParamsIntra1.outputSliceStride = dataSize_;
     tempAlgParamsIntra1.repeatNum = rankSizeLevel1_;
