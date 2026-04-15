@@ -2580,8 +2580,8 @@ HcclResult HrtRaGetEidByIp(RdmaHandle handle, const vector<IpAddress>& ipV4AddrL
     union HccpEid eidList[num] = {};
     s32 ret = RaGetEidByIp(handle, ipInfoList, eidList, &num);
     if (ret != 0) {
-        string msg = StringFormat("call RaGetEidByIp failed, error code =%d.", ret);
-        THROW<NetworkApiException>(msg);
+        HCCL_WARNING("call RaGetEidByIp failed, error code =%d.", ret);
+        return HCCL_E_INTERNAL;
     }
 
     if (num != ipV4AddrList.size()) {
