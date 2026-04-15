@@ -1,0 +1,49 @@
+# HcclEngineCtxGet
+
+## 产品支持情况
+
+- Ascend 950PR/Ascend 950DT：支持
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+
+> [!CAUTION]注意
+> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
+
+## 功能说明
+
+指定通信域和通信引擎，通过通信引擎上下文标签获取对应的通信引擎上下文。
+
+## 函数原型
+
+```c
+HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine, void **ctx, uint64_t *size)
+```
+
+## 参数说明
+
+| 参数名 | 输入/输出 | 描述 |
+| --- | --- | --- |
+| comm | 输入 | 通信域句柄。<br>HcclComm类型的定义如下：<br>typedef void *HcclComm; |
+| ctxTag | 输入 | 通信引擎上下文标签，最大字符长度为HCCL_OP_TAG_LEN_MAX。<br>const uint32_t HCCL_OP_TAG_LEN_MAX = 255; |
+| engine | 输入 | 通信引擎类型。 |
+| ctx | 输出 | 通信引擎上下文句柄。 |
+| size | 输出 | 通信引擎上下文对应内存大小。 |
+
+## 返回值
+
+[HcclResult](../../../comm_mgr_c/data_type_definition/HcclResult.md)：接口成功返回HCCL_SUCCESS，其他失败。
+
+## 约束说明
+
+无
+
+## 调用示例
+
+```c
+HcclComm comm;
+uint64_t size = 0;
+void *ctx = nullptr;
+string ctxTag = "ctxTag";
+CommEngine engine = CommEngine::COMM_ENGINE_CPU_TS;
+ret = HcclEngineCtxGet(comm, ctxTag, engine, &ctx, &size);
+```
