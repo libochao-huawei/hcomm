@@ -320,6 +320,27 @@ void P2PTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 
+void P2PTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
+    auto taskId   = stream.GetRtsq()->GetTaskId();
+    auto notifyId = locNotifyVec[index]->GetId();
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
+
+    HCCL_INFO("P2PTransportLiteImpl::WaitWithTimeout notifyId[%u], taskId[%u], timeout[%u]", notifyId, taskId, timeout);
+    if (callback_ == nullptr)
+    {
+        HCCL_WARNING("[P2PTransportLiteImpl] callback_ is nullptr.");
+        return;
+    }
+
+    TaskParam taskParam{};
+    taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
+    taskParam.beginTime                = ProfGetCurCpuTimestamp();
+    taskParam.taskPara.Notify.notifyID = notifyId;
+    taskParam.taskPara.Notify.value    = 1;
+    callback_(stream.GetSqId(), taskId, taskParam);
+}
+
 void P2PTransportLiteImpl::Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)
 {
     BuildP2PRead(stream, loc, rmt);

@@ -411,6 +411,32 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
     }
 }
 
+void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
+    auto taskId   = stream.GetRtsq()->GetTaskId();
+    auto notifyId = locNotifyVec[index]->GetId();
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
+
+    if (callback_ == nullptr && newCallback_ == nullptr)
+    {
+        HCCL_WARNING("[UbTransportLiteImpl] callback_ is nullptr.");
+        return;
+    }
+
+    TaskParam taskParam{};
+    taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
+    taskParam.beginTime                = ProfGetCurCpuTimestamp();
+    taskParam.taskPara.Notify.notifyID = notifyId;
+    taskParam.taskPara.Notify.value    = 1;
+    if (callback_ != nullptr) {
+        callback_(stream.GetSqId(), taskId, taskParam);
+    }
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
+}
+
 void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
