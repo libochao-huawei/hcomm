@@ -237,9 +237,9 @@ void UbTransportLiteImpl::BuildUbDbSendTask(const StreamLite &stream, const UbJe
     stream.GetRtsq()->UbDbSend(jettyLiteId, pi);
 }
 
-void UbTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId)
+void UbTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId, u32 timeout)
 {
-    stream.GetRtsq()->NotifyWait(notifyId);
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
 }
 
 Buffer UbTransportLiteImpl::GetRmtBuffer(u32 index)
@@ -385,11 +385,11 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     
 }
 
-void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
+void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream, u32 timeout)
 {
     auto taskId   = stream.GetRtsq()->GetTaskId();
     auto notifyId = locNotifyVec[index]->GetId();
-    BuildNotifyWaitTask(stream, notifyId);
+    BuildNotifyWaitTask(stream, notifyId, timeout);
 
     if (callback_ == nullptr && newCallback_ == nullptr)
     {

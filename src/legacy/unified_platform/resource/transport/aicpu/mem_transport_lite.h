@@ -41,9 +41,9 @@ public:
         impl->Post(index, stream);
     }
 
-    void Wait(u32 index, const StreamLite &stream)
+    void Wait(u32 index, const StreamLite &stream, u32 timeout = 0)
     {
-        impl->Wait(index, stream);
+        impl->Wait(index, stream, timeout);
     }
 
     void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream)

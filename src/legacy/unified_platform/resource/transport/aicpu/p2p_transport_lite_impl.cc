@@ -150,9 +150,9 @@ void P2PTransportLiteImpl::BuildNotifyRecordTask(const StreamLite &stream, u64 r
     stream.GetRtsq()->P2PWriteValue(rmtNotifyAddr, NOTIFY_RECORD_WRITE_VALUE);
 }
 
-void P2PTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId)
+void P2PTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId, u32 timeout)
 {
-    stream.GetRtsq()->NotifyWait(notifyId);
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
 }
 
 void P2PTransportLiteImpl::BuildP2PRead(const StreamLite &stream, const RmaBufferLite &loc, const Buffer &rmt)
@@ -299,11 +299,11 @@ void P2PTransportLiteImpl::Post(u32 index, const StreamLite &stream)
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 
-void P2PTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
+void P2PTransportLiteImpl::Wait(u32 index, const StreamLite &stream, u32 timeout)
 {
     auto taskId   = stream.GetRtsq()->GetTaskId();
     auto notifyId = locNotifyVec[index]->GetId();
-    BuildNotifyWaitTask(stream, notifyId);
+    BuildNotifyWaitTask(stream, notifyId, timeout);
 
     HCCL_INFO("P2PTransportLiteImpl::Wait notifyId[%u], taskId[%u]", notifyId, taskId);
     if (callback_ == nullptr)
