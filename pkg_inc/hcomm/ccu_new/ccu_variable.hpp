@@ -16,6 +16,8 @@
 
 #include "ccu_types.h"
 #include "ccu_data_utils.hpp"
+#include "ccu_data_api_impl.h"
+#include "ccu_if_label_stack.hpp"
 
 class CcuVariable;
 
@@ -23,20 +25,6 @@ struct CcuCondExpr {
     CcuVariable *var;
     uint64_t imm;
     CcuConditionType cond;
-};
-
-struct CcuIfLabelStack {
-    static constexpr int MAX_DEPTH = 16;
-    static const char **Labels() {
-        static thread_local const char *labels[MAX_DEPTH]{};
-        return labels;
-    }
-    static int &Top() {
-        static thread_local int top = 0;
-        return top;
-    }
-    static void Push(const char *label) { Labels()[Top()++] = label; }
-    static const char *Pop() { return Labels()[--Top()]; }
 };
 
 class CcuVariable final {
@@ -47,17 +35,38 @@ public:
         this->handle = other.handle;
     }
 
-    void operator=(const CcuVariable& other) const;
+    void operator=(const CcuVariable& other) const{
+        auto ret = CcuVariableAssignVar(this->handle, other.handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "todo: failed";
+        }
+    }
+    
 
     void operator=(CcuVariable&& other) {
         this->handle = other.handle;
     }
 
-    void operator=(uint64_t immediate) const;
+    void operator=(uint64_t immediate) const{
+        auto ret = CcuVariableAssign(this->handle, immediate);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "todo: failed";
+        }
+    }
 
-    void operator=(CcuArithmeticOperator<CcuVariable, CcuVariable> op) const;
+    void operator=(CcuArithmeticOperator<CcuVariable, CcuVariable> op) const{
+        auto ret = CcuVariableAddVarToVar(this->handle, op.lhs.handle, op.rhs.handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "todo: failed";
+        }
+    }
 
-    void operator+=(const CcuVariable &other) const; 
+    void operator+=(const CcuVariable &other) const{
+        auto ret = CcuVariableAddVarToVar(this->handle, this->handle, other.handle);
+        if (ret != CcuResult::CCU_SUCCESS) {
+            throw "todo: failed";
+        }
+    }
 
     CcuArithmeticOperator<CcuVariable, CcuVariable> operator+(const CcuVariable &that) const {
         return CcuArithmeticOperator<CcuVariable, CcuVariable>(*this, that, CcuArithmeticOperatorType::ADDITION);
@@ -76,43 +85,6 @@ public:
 
 template <> void CcuArithmeticOperator<CcuVariable, CcuVariable>::Check() const
 {
-}
-
-static_assert(std::is_standard_layout<CcuVariable>::value,
-    "CcuVariable must be standard layout for .so ABI stability");
-static_assert(sizeof(CcuVariable) == sizeof(CcuVariableHandle),
-    "CcuVariable layout changed - will break .so ABI!");
-
-extern "C" CcuResult CcuVariableAssign(CcuVariableHandle var, uint64_t immediate);
-extern "C" CcuResult CcuVariableAssignVar(CcuVariableHandle dst, CcuVariableHandle src);
-extern "C" CcuResult CcuVariableAddVarToVar(CcuVariableHandle result, CcuVariableHandle a, CcuVariableHandle b);
-
-inline void CcuVariable::operator=(const CcuVariable& other) const {
-    auto ret = CcuVariableAssignVar(this->handle, other.handle);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "todo: failed";
-    }
-}
-
-inline void CcuVariable::operator=(uint64_t immediate) const {
-    auto ret = CcuVariableAssign(this->handle, immediate);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "todo: failed";
-    }
-}
-
-inline void CcuVariable::operator=(CcuArithmeticOperator<CcuVariable, CcuVariable> op) const {
-    auto ret = CcuVariableAddVarToVar(this->handle, op.lhs.handle, op.rhs.handle);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "todo: failed";
-    }
-}
-
-inline void CcuVariable::operator+=(const CcuVariable &other) const {
-    auto ret = CcuVariableAddVarToVar(this->handle, this->handle, other.handle);
-    if (ret != CcuResult::CCU_SUCCESS) {
-        throw "todo: failed";
-    }
 }
 
 #endif // CCU_VARIABLE_HPP

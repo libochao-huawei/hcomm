@@ -126,13 +126,37 @@ public:
     CcuResult NotifyWait(const ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask);
     CcuResult WriteVariableWithNotify(const ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask);
 
+    //本地数据拷贝 相关接口
+    CcuResult LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult LocalCopyBufferToMem(CcuLocalAddrHandle dstHandle, CcuBufferHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult LocalCopyMemToMem(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle,CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
 
+    //本地reduce 相关接口
+    CcuResult LocalMemReduce(CcuLocalAddrHandle dstHandle, CcuLocalAddrHandle srcHandle, CcuVariableHandle lenHandle, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle eventHandle);
+    CcuResult LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
 
-    //Create 相关接口
+    //运算重载 相关接口
     CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
     CcuResult VariableAssignVar(CcuVariableHandle var, CcuVariableHandle varA);
-    CcuResult VariableAddVarToVar(CcuVariableHandle resVar,
-        CcuVariableHandle varA, CcuVariableHandle varB);
+    CcuResult VariableAddVarToVar(CcuVariableHandle resVar,CcuVariableHandle varA, CcuVariableHandle varB);
+    CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
+    CcuResult AddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+    CcuResult AddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
+    CcuResult AddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
+    CcuResult AddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
+    CcuResult AddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
+    CcuResult AddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
+
+    // 远端数据传输操作
+        
+    CcuResult ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);   
+    CcuResult ReadMemToMemReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle, CcuVariableHandle lenHandle, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle eventHandle);
+    CcuResult WriteMemToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult WriteBufferToMem(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuBufferHandle localHandle, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
+    CcuResult WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle, CcuVariableHandle lenHandle, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle eventHandle);
+
+
     CcuResult IfBegin(CcuVariableHandle var, uint64_t immediate,
         CcuConditionType condType, const char *label);
     CcuResult IfElse(const char *label);
@@ -144,55 +168,21 @@ public:
     CcuResult DoWhileEnd(CcuVariableHandle var, uint64_t immediate,
         CcuConditionType condType, const char *label);
 
-    CcuResult LoopCreate(CcuLoopHandle *loop);
-    CcuResult LoopBodyEnter(CcuLoopHandle loop);
-    CcuResult LoopBodyExit(CcuLoopHandle loop);
-    CcuResult LoopSetParam(CcuLoopHandle loop,
+    CcuResult LoopCreate(CcuLoop *loop);
+    CcuResult LoopBodyEnter(CcuLoop loop);
+    CcuResult LoopBodyExit(CcuLoop loop);
+    CcuResult LoopSetParam(CcuLoop loop,
         CcuVariableHandle formalParam, CcuVariableHandle actualParam);
-    CcuResult LoopGroupCreate(CcuLoopGroupHandle *group,
-        const CcuLoopGroupConfig *config);
-    CcuResult LoopGroupCreateFromVar(CcuLoopGroupHandle *group,
-        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar);
-    CcuResult LoopGroupAddLoop(CcuLoopGroupHandle group,
-        CcuLoopHandle loop, const CcuLoopConfig *config, bool isUnroll);
-    CcuResult LoopGroupAddLoopFromVar(CcuLoopGroupHandle group,
-        CcuLoopHandle loop, CcuVariableHandle loopParamVar, bool isUnroll);
-
-    CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
-    CcuResult AddressAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
-    CcuResult AddressAssignAddr(CcuAddressHandle dstAddrHandle, CcuAddressHandle srcAddrHandle);
-    CcuResult AddressAddVarToAddr(CcuAddressHandle resAddr, CcuAddressHandle lhsAddr, CcuVariableHandle rhsVar);
-    CcuResult AddressAddAddrToAddr(CcuAddressHandle resAddr, CcuAddressHandle addrA, CcuAddressHandle addrB);
-    CcuResult AddressAddAssignVar(CcuAddressHandle addr, CcuVariableHandle var);
-    CcuResult AddressAddAssignAddr(CcuAddressHandle addr, CcuAddressHandle otherAddr);
-
-    CcuResult LocalCopyToBuffer(CcuBufferHandle dstBuffer, CcuLocalAddrHandle src,
-        CcuVariableHandle len, CcuEventHandle event);
-    CcuResult LocalCopyFromBuffer(CcuLocalAddrHandle dst, CcuBufferHandle srcBuffer,
-            CcuVariableHandle len, CcuEventHandle event);
-    CcuResult LocalCopy(CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-        CcuVariableHandle len, CcuEventHandle event);
-    CcuResult LocalAddrReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
-        CcuVariableHandle len, HcclDataType dataType,
-        HcclReduceOp opType, CcuEventHandle event);
-    CcuResult LocalBufferReduce(CcuBufferHandle* buffers, uint32_t count,
-        HcclDataType dataType, HcclDataType outputDataType,
-        HcclReduceOp opType, CcuVariableHandle len, CcuEventHandle event);
-    
-    CcuResult Read(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult ReadBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult Write(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult WriteBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
-    CcuResult ReadReduce(ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
-        CcuVariableHandle lenHandle, HcclDataType dataType,
-        HcclReduceOp opType, CcuEventHandle eventHandle);
-    CcuResult WriteReduce(ChannelHandle channel, CcuRemoteAddrHandle remoteHandle, CcuLocalAddrHandle localHandle,
-        CcuVariableHandle lenHandle, HcclDataType dataType,
-        HcclReduceOp opType, CcuEventHandle eventHandle);
+    CcuResult LoopEnginePoolCreate(CcuLoopExecutors *pool, uint32_t count);
+    CcuResult LoopGroupCreate(CcuLoopGroup *group,
+        const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool);
+    CcuResult LoopGroupCreateFromVar(CcuLoopGroup *group,
+        CcuVariableHandle parallelVar, CcuVariableHandle offsetVar,
+        CcuLoopExecutors enginePool);
+    CcuResult LoopGroupAddLoop(CcuLoopGroup group,
+        CcuLoop loop, const CcuLoopConfig *config);
+    CcuResult LoopGroupAddLoopFromVar(CcuLoopGroup group,
+        CcuLoop loop, CcuVariableHandle loopParamVar);
 
    
 private:
@@ -346,27 +336,27 @@ private:
         std::shared_ptr<CcuRep::CcuRepBlock> prevActiveBlock;
         std::vector<ParamBinding> paramBindings;
         bool bodyDefined{false};
-        CcuRep::Executor executor;
-        bool executorAssigned{false};
     };
 
     struct LoopGroupDescriptor {
         CcuLoopGroupConfig config;
-        uint64_t repeatLoopIdx{0};
         uint64_t totalLoopNum{0};
-        std::vector<CcuLoopHandle> nonUnrollLoops;
-        std::vector<CcuLoopHandle> unrollLoops;
+        uint32_t loopCount{0};
+        std::unordered_set<CcuLoop> addedLoops;
         CcuRep::Variable parallelVar;
         CcuRep::Variable offsetVar;
         std::shared_ptr<CcuRep::CcuRepBase> bundleRep;
         bool isVarBased{false};
+        CcuLoopExecutors enginePoolHandle{0};
     };
 
-    std::unordered_map<CcuLoopHandle, LoopDescriptor> loopMap_;
-    std::unordered_map<CcuLoopGroupHandle, LoopGroupDescriptor> loopGroupMap_;
+    std::unordered_map<CcuLoop, LoopDescriptor> loopMap_;
+    std::unordered_map<CcuLoopGroup, LoopGroupDescriptor> loopGroupMap_;
     uint32_t loopHandleCounter_{0};
     uint32_t loopGroupHandleCounter_{0};
     uint32_t loopBodyDepth_{0};
+    std::unordered_map<CcuLoopExecutors, std::vector<CcuRep::Executor>> loopEnginePools_;
+    uint32_t loopEnginePoolCounter_{0};
 };
 
 } // namespace hcomm
