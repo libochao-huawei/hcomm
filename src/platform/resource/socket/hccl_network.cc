@@ -88,6 +88,8 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
         switch (protoType_) {
             case HCCL_PROTO_TYPE_ROCE:
             {
+                nicType_ = NicType::DEVICE_NIC_TYPE;
+                nicDeployment_ = NICDeployment::NIC_DEPLOYMENT_DEVICE;
                 bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
                 if (!rdmaFlag) {
                     HCCL_ERROR("[NetDevContext][InitV2]rdmaFlag and protoType are not equal, please check the configuration.");
@@ -106,6 +108,8 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
             }
             case HCCL_PROTO_TYPE_BUS:
             {
+                nicType_ = NicType::VNIC_TYPE;
+                nicDeployment_ = NICDeployment::NIC_DEPLOYMENT_DEVICE;
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateVnicSocketHandle(localIp_));
                 RaResourceInfo raResourceInfo;
                 NetworkManager::GetInstance(deviceLogicId_).GetRaResourceInfo(raResourceInfo);
@@ -118,6 +122,8 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
 
             case HCCL_PROTO_TYPE_TCP:
             {
+                nicType_ = NicType::DEVICE_NIC_TYPE;
+                nicDeployment_ = NICDeployment::NIC_DEPLOYMENT_DEVICE;
                 bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
                 if (rdmaFlag) {
                     HCCL_ERROR("[NetDevContext][InitV2]rdmaFlag is ERROR, please check the configuration.");
@@ -139,6 +145,8 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
         switch (protoType_) {
             case HCCL_PROTO_TYPE_TCP:
             {
+                nicType_ = NicType::HOST_NIC_TYPE;
+                nicDeployment_ = NICDeployment::NIC_DEPLOYMENT_HOST;
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateHostSocketHandle(localIp_, handle_));
                 RaResourceInfo raResourceInfo;
                 NetworkManager::GetInstance(deviceLogicId_).GetRaResourceInfo(raResourceInfo);
@@ -150,6 +158,8 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
             }
             case HCCL_PROTO_TYPE_ROCE:
             {
+                nicType_ = NicType::HOST_NIC_TYPE;
+                nicDeployment_ = NICDeployment::NIC_DEPLOYMENT_HOST;
                 NetworkMode netMode = NETWORK_PEER_ONLINE;
                 NotifyTypeT notifyType = NOTIFY;
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateRdmaHandle(localIp_, isBackup_, netMode, notifyType, netDevDeployment_));

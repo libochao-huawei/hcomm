@@ -201,7 +201,7 @@ typedef struct {
     HcommSocketRole role;            ///< 本端角色(SERVER或CLIENT)
     uint16_t port;                   ///< 监听端口或目标端口
     union {
-        uint8_t raws[128];           ///< 通用缓存
+        uint8_t raws[128];           ///< 通用缓存；末4字节可作扩展索引（如 AICPU TS RoCE socketTag）
         struct {
             uint32_t queueNum;       ///< QP数量
             uint32_t retryCnt;       ///< 最大重传次数
