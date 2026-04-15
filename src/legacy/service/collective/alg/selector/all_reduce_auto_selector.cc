@@ -12,7 +12,7 @@
 #include "selector_registry.h"
 #include "coll_operator.h"
 #include "coll_alg_params.h"
-
+// a
 namespace Hccl {
 constexpr u64 AR_M2M_1D_MAX_DATA_SIZE = 8 * 1024 * 1024;
 constexpr u64 AR_AICPU_1D_SMALL_DATA_SIZE = 8 * 1024 * 1024;
