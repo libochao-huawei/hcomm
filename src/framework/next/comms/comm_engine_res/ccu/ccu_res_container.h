@@ -39,7 +39,7 @@ public:
 private:
     HcclResult Init();
 
-    uint32_t opExpansionMode_{0xffff} // 提供非法值，触发首次初始化;
+    uint32_t opExpansionMode_{0xffff}; // 提供非法值，触发首次初始化
     int32_t devLogicId_{INT32_MAX};
     std::shared_ptr<hcomm::CcuDrvHandle> ccuDrvHandle_{};
     std::unique_ptr<CcuResPack> resPack_{};
