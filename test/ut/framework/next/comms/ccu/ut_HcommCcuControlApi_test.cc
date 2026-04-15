@@ -173,7 +173,7 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     const auto &handlePair = MockCcuChannelConnect(srcDevPhyId, dstDevPhyId, srcIp, dstIp, commEngine);
 
     // 构造CcuKernel实现
-    CcuKernelFunc demoFunc = CcuEventKernel;
+    CcuKernelFunc demoFunc = CcuAllocDemoKernel;
     CcuVarAddKernelArg demoArg{};
     demoArg.numA = 1;
     demoArg.numB = 2;
@@ -200,9 +200,10 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
     auto fakeThreadHandle = MockThreadAllocWithStream(commEngine);
 
     // kernel下发
-    // todo: 当前未适配LoadArgs，暂时使用空args
-    void *fakeTaskArgs = nullptr;
-    uint32_t fakeArgSize = 0;
+    // 需要与样例需要的load args对应
+    std::vector<uint64_t> taskArgs{1, 2};
+    void *fakeTaskArgs = static_cast<void *>(taskArgs.data());
+    uint32_t fakeArgSize = taskArgs.size();
     EXPECT_EQ(HcommCcuKernelLaunch(fakeThreadHandle, kernelHandle,
         fakeTaskArgs, fakeArgSize), CcuResult::CCU_SUCCESS);
 
