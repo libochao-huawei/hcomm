@@ -48,13 +48,23 @@ extern HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread
     bool profL0Open = dfx::ProfilingManager::IsProfL0On();
     bool profL1Open = dfx::ProfilingManager::IsProfL1On();
     HCCL_DEBUG("[%s] profL0Open:%d, profL1Open:%d", __func__, profL0Open, profL1Open);
-    const SqeRingBuffer &sqeBuffer = GetStream(thread)->GetSqeContextPtr()->buffer;
+    Stream *stream = GetStream(thread);
+    if (stream == nullptr) {
+        HCCL_ERROR("[%s] stream is nullptr", __func__);
+        return HCCL_E_PTR;
+    }
+    HcclSqeContext *sqeContext = stream->GetSqeContextPtr();
+    if (sqeContext == nullptr) {
+        HCCL_ERROR("[%s] sqeContext is nullptr", __func__);
+        return HCCL_E_PTR;
+    }
+    const SqeRingBuffer &sqeBuffer = sqeContext->buffer;
     uint16_t HEAD_TASK = 0;
     u16 taskId = sqeBuffer.tailSqeTaskId;
-    HCCL_DEBUG("[%s] thread id = [%u] task id = [%u]", __func__, GetStream(thread)->id(), taskId);
-    return dfx::ProfilingManager::ReportMainStreamTask(*GetStream(thread), taskId, HEAD_TASK); 
+    HCCL_DEBUG("[%s] thread id = [%u] task id = [%u]", __func__, stream->id(), taskId);
+    return dfx::ProfilingManager::ReportMainStreamTask(*stream, taskId, HEAD_TASK);
 #else
-        HCCL_INFO("[%s] not support, do nothing", __func__);
+    HCCL_INFO("[%s] not support, do nothing", __func__);
 #endif
     return HCCL_SUCCESS;
 }
