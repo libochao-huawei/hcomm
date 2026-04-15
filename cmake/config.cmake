@@ -164,8 +164,6 @@ set(HI_PYTHON                     "python3"                       CACHE   STRING
 message(STATUS "config.cmake KERNEL_MODE=${KERNEL_MODE} BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "config.cmake PRODUCT=${PRODUCT} PRODUCT_SIDE=${PRODUCT_SIDE}")
 
-set(INSTALL_LIBRARY_DIR hcomm/lib64)
-set(INSTALL_INCLUDE_DIR hcomm/include)
 set(INSTALL_PKG_INCLUDE_DIR hcomm/pkg_inc)
 set(INSTALL_CCL_KERNEL_JSON_DIR hcomm/built-in/data/op/aicpu)
 set(INSTALL_DPU_KERNEL_JSON_DIR hcomm/built-in/data/op/dpu)
