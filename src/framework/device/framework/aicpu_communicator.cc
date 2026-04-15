@@ -4899,8 +4899,12 @@ HcclResult HcclCommAicpu::SendTaskExceptionByMBox(const uint16_t &rsErrorCode)
 void HcclCommAicpu::HandleIndOpCqe()
 {
     std::unique_lock<std::mutex> lock(queryCqeMutex_);
-
+    ReadWriteLock rwLock(threadAicpuMutex_);
+    rwLock.readLock();
     for (auto &thread : threads_) {
+        if (thread == nullptr) {
+            continue;
+        }
         Stream stream = *thread->GetStream();
         // 流上已有异常信息，不再重复读取
         if (GetStreamCqeExceptionStatus(stream) != CqeExceptionStatus::kNone) {
@@ -4957,6 +4961,7 @@ void HcclCommAicpu::HandleIndOpCqe()
             "head %u, tail %u", identifier_.c_str(), stream.id(), streamInfo.sqId, cqeStatus, cqeException.sqeType,
             cqeException.errorCode, head, tail);
     }
+    rwLock.readUnlock();
 }
 
 HcclResult HcclCommAicpu::RefreshLinkForSwitchNic(const std::string &newTag, const TransportRequest &transportRequest,
@@ -5306,8 +5311,11 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
         HCCL_INFO("[HcclCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
     }
+    ReadWriteLock rwLock(threadAicpuMutex_);
+    rwLock.writeLock();
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
+    rwLock.writeUnlock();
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     return HCCL_SUCCESS;
