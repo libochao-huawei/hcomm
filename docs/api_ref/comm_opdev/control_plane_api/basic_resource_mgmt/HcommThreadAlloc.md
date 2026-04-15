@@ -1,0 +1,42 @@
+# HcommThreadAlloc
+
+## 产品支持情况
+
+- Ascend 950PR/Ascend 950DT：支持
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+
+## 功能说明
+
+申请通信线程，当前支持AI CPU+TS、HOST CPU+TS、CCU通信引擎。注意如果通信引擎是AI CPU+TS，需要额外下发一次kernel，AI CPU侧才能使用此通信线程。
+
+## 函数原型
+
+```c
+HcommResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle* threads)
+```
+
+## 参数说明
+
+| 参数名 | 输入/输出 | 说明 |
+| --- | --- | --- |
+| engine | 输入 | 通信引擎类型。<br>CommEngine类型的定义可参见[CommEngine](../../datatype_definition/CommEngine.md)。 |
+| threadNum | 输入 | 通信线程数量，每次调用该接口申请的最大线程数量为1000。 |
+| notifyNumPerThread | 输入 | 每个通信线程中的同步资源（Notify）数量，每个通信线程调用该接口每次申请的notify数量最大为64。 |
+| threads | 输出 | 返回的通信线程句柄。需传入threadNum大小的ThreadHandle类型数组。<br>ThreadHandle类型的定义可参见[ThreadHandle](../../datatype_definition/ThreadHandle.md)。 |
+
+## 返回值
+
+HcommResult：接口成功返回0，其他失败。
+
+## 约束说明
+
+调用此接口申请的thread，后续需要调用[HcommThreadFree](HcommThreadFree.md)接口释放，调用HcommThreadAlloc接口申请AICPU_TS或CPU_TS等通信引擎的线程前，必须先在同一线程上调用aclrtSetdevice接口指定deviceId。
+
+## 调用示例
+
+```c
+ThreadHandle thread[3];
+//申请两条流，每条流Notify数量为3
+HcommResult ret =  HcommThreadAlloc(COMM_ENGINE_AICPU_TS, 2, 3, thread);
+```
