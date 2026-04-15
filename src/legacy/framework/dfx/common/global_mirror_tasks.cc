@@ -37,20 +37,20 @@ u32 GlobalMirrorTasks::DevSize() const
 TaskInfoQueue *GlobalMirrorTasks::GetQueue(u32 devId, u32 streamId) const
 {
     if (devId >= DEVICE_MAX_NUM) {
-        HCCL_ERROR("GloablMirrorTasks::GetQueue devId[%u] out of range", devId);
+        HCCL_ERROR("GlobalMirrorTasks::GetQueue devId[%u] out of range", devId);
         THROW<InternalException>(
-            StringFormat("GloablMirrorTasks::GetQueue devId[%u] out of range", devId));
+            StringFormat("GlobalMirrorTasks::GetQueue devId[%u] out of range", devId));
     }
 
     auto &devMap         = taskMaps_[devId];
     auto  streamIterator = devMap.find(streamId);
     if (streamIterator == devMap.end()) {
-        HCCL_ERROR("GloablMirrorTasks::GetQueue devId[%u] streamId(sqId)[%u] do not found", devId, streamId);
+        HCCL_ERROR("GlobalMirrorTasks::GetQueue devId[%u], streamId(sqId)[%u] not found", devId, streamId);
         THROW<InternalException>(
-            StringFormat("GloablMirrorTasks::GetQueue devId[%u] streamId(sqId)[%u] do not found", devId, streamId));
+            StringFormat("GlobalMirrorTasks::GetQueue devId[%u], streamId(sqId)[%u] not found", devId, streamId));
     }
 
-    HCCL_INFO("[GlobalMirrorTasks][GetQueue]find devId[%u] streamId(sqId)[%u]", devId, streamId);
+    HCCL_INFO("[GlobalMirrorTasks][GetQueue]find devId[%u], streamId(sqId)[%u]", devId, streamId);
 
     return streamIterator->second.get();
 }
@@ -59,7 +59,7 @@ TaskInfoQueue &GlobalMirrorTasks::CreateQueue(u32 devId, u32 streamId, QueueType
 {
     if (devId >= DEVICE_MAX_NUM) {
         THROW<InternalException>(
-            StringFormat("GloablMirrorTasks::CreateQueue devId[%u] out of range, streamId(sqId)[%u] ", devId, streamId));
+            StringFormat("GlobalMirrorTasks::CreateQueue devId[%u] out of range, streamId(sqId)[%u] ", devId, streamId));
     }
 
     auto &devMap         = taskMaps_[devId];
@@ -86,7 +86,7 @@ void GlobalMirrorTasks::DestroyQueue(u32 devId, u32 streamId)
 {
     if (devId >= DEVICE_MAX_NUM) {
         THROW<InternalException>(
-            StringFormat("GloablMirrorTasks::GetQueue devId[%u] out of range, streamId(sqId)[%u]", devId, streamId));
+            StringFormat("GlobalMirrorTasks::DestroyQueue devId[%u] out of range, streamId(sqId)[%u]", devId, streamId));
         return;
     }
     taskMaps_[devId].erase(streamId);
@@ -110,7 +110,7 @@ std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId
         return nullptr;
     };
 
-    HCCL_INFO("[GlobalMirrorTasks][GetTaskInfo]find devId[%u] streamId(sqId)[%u] taskId(sqeId)[%u]", devId, streamId, taskId);
+    HCCL_INFO("[GlobalMirrorTasks][GetTaskInfo]find devId[%u], streamId(sqId)[%u] taskId(sqeId)[%u]", devId, streamId, taskId);
 
     return *task;
 }
@@ -118,7 +118,7 @@ std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId
 std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::Begin(u32 devId)
 {
     if (devId >= DEVICE_MAX_NUM) {
-        THROW<InternalException>(StringFormat("GloablMirrorTasks::Begin devId[%u] out of range", devId));
+        THROW<InternalException>(StringFormat("GlobalMirrorTasks::Begin devId[%u] out of range", devId));
     }
     auto &devMap = taskMaps_[devId];
     return devMap.begin();
@@ -127,7 +127,7 @@ std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::Begin
 std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::End(u32 devId)
 {
     if (devId >= DEVICE_MAX_NUM) {
-        THROW<InternalException>(StringFormat("GloablMirrorTasks::End devId[%u] out of range", devId));
+        THROW<InternalException>(StringFormat("GlobalMirrorTasks::End devId[%u] out of range", devId));
     }
     auto &devMap = taskMaps_[devId];
     return devMap.end();
