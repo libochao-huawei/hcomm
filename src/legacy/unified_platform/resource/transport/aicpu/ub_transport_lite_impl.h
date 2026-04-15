@@ -41,7 +41,7 @@ public:
 
     void Post(u32 index, const StreamLite &stream) override;
 
-    void Wait(u32 index, const StreamLite &stream) override;
+    void Wait(u32 index, const StreamLite &stream, u32 timeout) override;
 
     void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
 
@@ -147,7 +147,7 @@ private:
 
     void BuildUbDbSendTask(const StreamLite &stream, const UbJettyLiteId &jettyLiteId, u32 pi);
 
-    void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId);
+    void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId, u32 timeout);
 
     void CheckConnVec(const std::string &desc);
 
