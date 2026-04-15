@@ -62,7 +62,7 @@ struct ThreadCreateParams {
 
 constexpr u32 HCOMM_NOTIFY_MAX_NUM = 64;
 constexpr u32 HCOMM_THREADNUM_MAX_NUM = 1000;
-constexpr u32 HCCL_THREAD_NOTIFY_MAX_NUM = 640;
+constexpr u32 HCCL_THREAD_NOTIFY_MAX_NUM = 65536;
 /**
  * @note 职责：通信引擎的Thread的C++抽象接口类，表达并行资源，内部包含thread间的同步Notify。
  */
