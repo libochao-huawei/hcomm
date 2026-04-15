@@ -94,6 +94,15 @@ std::string UbMemTransport::Describe() const
     return msg;
 }
 
+HcclResult UbMemTransport::Describe(std::string &dfxMsg)
+{
+    HCCL_INFO("UbMemTransport Describe connNum[%u]", connNum);
+    for (u32 i = 0; i < connNum; i++) {
+        CHK_RET(commonLocRes.connVec[i]->Describe(dfxMsg));
+    }
+    return HCCL_SUCCESS;
+}
+
 MemoryBuffer UbMemTransport::GetLocMemBuffer(const RmaBufferSlice &locSlice) const
 {
     return MemoryBuffer(locSlice.addr, locSlice.size, locSlice.buf->GetMemHandle());

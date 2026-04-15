@@ -419,6 +419,13 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         CHK_RET(CheckChannelParam(engine,channelDescs[i],i));
         u32 remoteRank = channelDescs[i].remoteRank;
         HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);
+        // 打印UB通道建链信息
+        HCCL_RUN_INFO("create channel info:channel handle[0x%llx] comm tag[%s] protocol[%s]"
+        " local rank[%u] local dev phyid[%u] remote rank[%u] remote dev phyid[%u] engine[%s]",
+        hostChannelHandleList[i], commTag.c_str(),
+        GetCommProtocolEnumStr(channelDescs[i].localEndpoint.protocol).c_str(),
+        rankId_, channelDescs[i].localEndpoint.loc.device.devPhyId,
+        remoteRank, channelDescs[i].remoteEndpoint.loc.device.devPhyId, GetCommEngineEnumStr(engine).c_str());
     }
 
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {

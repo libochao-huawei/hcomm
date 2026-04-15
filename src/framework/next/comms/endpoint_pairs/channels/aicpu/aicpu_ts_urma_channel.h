@@ -53,6 +53,7 @@ private:
     HcclResult PackOpData(std::vector<char> &data);
 
 private:
+    std::atomic<bool> isFirstPrintChannelInfo_{true}; // 用于控制是否打印建链信息，建链成功后置为false，避免重复打印
     // --------------------- 入参 ---------------------
     EndpointHandle                                              endpointHandle_;
     HcommChannelDesc                                            channelDesc_;

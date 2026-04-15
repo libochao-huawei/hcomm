@@ -11,8 +11,8 @@
 #ifndef HCCLV2_ENUM_FACTORY_H
 #define HCCLV2_ENUM_FACTORY_H
 
+#include "hcomm_res_defs.h"
 #include "vector"
-
 #include <string>
 #include <sstream>
 
@@ -110,4 +110,45 @@ struct EnumClassHash {
 };
 } // namespace std
 
+/* 公共模块函数返回值定义，跟业务层同步 */
+const std::map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP = {
+    {CommProtocol::COMM_PROTOCOL_RESERVED, "RESERVED"},
+    {CommProtocol::COMM_PROTOCOL_HCCS, "HCCS"},
+    {CommProtocol::COMM_PROTOCOL_ROCE, "ROCE"},
+    {CommProtocol::COMM_PROTOCOL_PCIE, "PCIE"},
+    {CommProtocol::COMM_PROTOCOL_SIO, "SIO"},
+    {CommProtocol::COMM_PROTOCOL_UBC_CTP, "UBC_CTP"},
+    {CommProtocol::COMM_PROTOCOL_UBC_TP, "UBC_TP"},
+    {CommProtocol::COMM_PROTOCOL_UB_MEM, "UB_MEM"}
+};
+
+inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
+{
+    auto iter = HCOM_COMM_PROTOCOL_STR_MAP.find(protocol);
+    if (iter == HCOM_COMM_PROTOCOL_STR_MAP.end()) {
+        return "CommProtocol(" + std::to_string(protocol) + ")";
+    } else {
+        return iter->second;
+    }
+}
+
+const std::map<CommEngine, std::string> HCOM_COMM_ENGINE_STR_MAP = {
+    {CommEngine::COMM_ENGINE_RESERVED, "RESERVED"},
+    {CommEngine::COMM_ENGINE_CPU, "CPU"},
+    {CommEngine::COMM_ENGINE_CPU_TS, "CPU_TS"},
+    {CommEngine::COMM_ENGINE_AICPU, "AICPU"},
+    {CommEngine::COMM_ENGINE_AICPU_TS, "AICPU_TS"},
+    {CommEngine::COMM_ENGINE_AIV, "AIV"},
+    {CommEngine::COMM_ENGINE_CCU, "CCU"}
+};
+
+inline std::string GetCommEngineEnumStr(CommEngine engine)
+{
+    auto iter = HCOM_COMM_ENGINE_STR_MAP.find(engine);
+    if (iter == HCOM_COMM_ENGINE_STR_MAP.end()) {
+        return "CommEngine(" + std::to_string(engine) + ")";
+    } else {
+        return iter->second;
+    }
+}
 #endif // HCCLV2_ENUM_FACTORY_H
