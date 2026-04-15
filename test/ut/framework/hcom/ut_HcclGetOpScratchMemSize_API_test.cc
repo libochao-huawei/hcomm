@@ -180,8 +180,8 @@ TEST_F(GetOpScratchMemSizeTest, Ut_HcomGetGroupNameByOpBase_When_Normal_Expect_S
     char *groupname = nullptr;
     HcclResult ret = HcomGetGroupNameByOpBase(opBaseHcom, &groupname);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ASSERT(groupname, nullptr);
-    EXPECT_STREQ(groupname, nullptr);
+    EXPECT_NE(groupname, nullptr);
+    EXPECT_STREQ(groupname, "test_group_name");
 }
 
 // 测试 HcomGetGroupNameByOpBase 场景
