@@ -176,8 +176,8 @@ u32 InsTempScatterNHR::CalcScratchMultiple(BufferType inBuffType, BufferType out
 HcclResult InsTempScatterNHR::BatchSend(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks,
     std::vector<InsQuePtr> &tempInsQues, TemplateDataParams &templateDataParams, u32 repeat) const
 {
-    const std::vector<LinkData> &linkSend = tempLinks.at(tempVTopo_[0].at(stepInfo.toRank / tempRankSize_));
-    u32 linkNum = rank2PathNumMap_.at(tempVTopo_[0].at(stepInfo.toRank / tempRankSize_));
+    const std::vector<LinkData> &linkSend = tempLinks.at(stepInfo.toRank);
+    u32 linkNum = rank2PathNumMap_.at(stepInfo.toRank);
     std::vector<float> dataSplitRate(linkNum);
 
     for (u32 j = 0; j < linkNum; j++) {
@@ -206,8 +206,8 @@ HcclResult InsTempScatterNHR::BatchRecv(AicpuNHRStepInfo &stepInfo, const ResLin
 {
     u64 sliceSize = templateDataParams.sliceSize;
     UpdateRxSliceSize(templateDataParams, sliceSize);
-    const std::vector<LinkData> &linkRecv = tempLinks.at(tempVTopo_[0].at(stepInfo.fromRank / tempRankSize_));
-    u32 linkNum = rank2PathNumMap_.at(tempVTopo_[0].at(stepInfo.fromRank / tempRankSize_));
+    const std::vector<LinkData> &linkRecv = tempLinks.at(stepInfo.fromRank);
+    u32 linkNum = rank2PathNumMap_.at(stepInfo.fromRank);
     std::vector<float> dataSplitRate(linkNum);
 
     for (u32 j = 0; j < linkNum; j++) {
@@ -232,11 +232,11 @@ HcclResult InsTempScatterNHR::BatchRecv(AicpuNHRStepInfo &stepInfo, const ResLin
 HcclResult InsTempScatterNHR::BatchSR(AicpuNHRStepInfo &stepInfo, const ResLinks &tempLinks,
     std::vector<InsQuePtr> &tempInsQues, TemplateDataParams &templateDataParams, u32 repeat) const
 {
-    const std::vector<LinkData> &linkRecv = tempLinks.at(tempVTopo_[0].at(stepInfo.fromRank / tempRankSize_));
-    const std::vector<LinkData> &linkSend = tempLinks.at(tempVTopo_[0].at(stepInfo.toRank / tempRankSize_));
+    const std::vector<LinkData> &linkRecv = tempLinks.at(stepInfo.fromRank);
+    const std::vector<LinkData> &linkSend = tempLinks.at(stepInfo.toRank);
 
-    HCCL_INFO("BatchSR(stepInfo.fromRank)=%u", tempVTopo_[0].at(stepInfo.fromRank / tempRankSize_));
-    u32 linkNum = rank2PathNumMap_.at(tempVTopo_[0].at(stepInfo.fromRank / tempRankSize_));
+    HCCL_INFO("BatchSR(stepInfo.fromRank)=%u", stepInfo.fromRank);
+    u32 linkNum = rank2PathNumMap_.at(stepInfo.fromRank);
     if (linkNum > linkRecv.size()) {
         HCCL_ERROR("InsTempScatterNHR::RunMesh linkNum > linkRecv.size()");
         return HcclResult::HCCL_E_INTERNAL;
