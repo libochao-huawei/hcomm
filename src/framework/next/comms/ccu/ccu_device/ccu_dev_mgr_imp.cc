@@ -55,7 +55,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
     auto ret = drvHandle->Init();
     if (ret == HcclResult::HCCL_E_AGAIN) {
         HCCL_RUN_WARNING("[%s] failed but passed, ccu driver already be inited, devLogicId[%d].",
-            __func__, deviceLogicId);
+            __func__, devLogicId);
         ccuDriverInitAaginFlag = true; // 记录该进程ccu驱动已拉起失败
         drvHandle = nullptr; // 主动置空触发资源销毁，控制释放时序
         return ret;
