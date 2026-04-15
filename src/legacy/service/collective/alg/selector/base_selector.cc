@@ -58,6 +58,12 @@ BaseSelector &BaseSelector::SetServerNum(u32 serverNum)
     return *this;
 }
 
+BaseSelector &BaseSelector::SetIsMc2(bool isMc2)
+{
+    isMc2_ = isMc2;
+    return *this;
+}
+
 BaseSelector &BaseSelector::SetOpConfig(OpExecuteConfig opConfig)
 {
     opConfig_ = opConfig;
