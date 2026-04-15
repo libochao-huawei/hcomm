@@ -237,6 +237,7 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     // 打印算子flag 区域, flag区域比较大，需要通过LOG_TMPBUF_SIZE控制打印的长度
     void *flag_buff_temp = nullptr;
     aclError aclRet = 0;
+
     aclRet = aclrtMallocHost(&flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize);
     if (aclRet != ACL_SUCCESS) {
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
@@ -245,6 +246,7 @@ void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo,
     aclRet = aclrtMemcpy(flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, taskInfo.taskParam_.taskPara.Aiv.flagMem, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, ACL_MEMCPY_DEVICE_TO_HOST);
     if (aclRet != ACL_SUCCESS) {
         HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
+        aclrtFreeHost(flag_buff_temp);
         return;
     }
 
