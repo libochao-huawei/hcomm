@@ -56,6 +56,11 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsScatterParallelExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
     if (enableDetour_) {
         HCCL_DEBUG("[InsReduceScatterParallelExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(intraTempAlg.CalcResDetour(rankGraph, resReqIntra));
@@ -86,6 +91,12 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     // calculate required insQues and prepare queue
     AlgTempResReq resReqIntra;
     AlgTempResReq resReqInter;
+    std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsScatterParallelExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    intraTempAlg.setPathNumMap(rank2PathNumMap[0]);
+    interTempAlg.setPathNumMap(rank2PathNumMap[1]);
+
     if (enableDetour_) {
         HCCL_DEBUG("[InsScatterParallelExecutor] Rank[%d], CalcRes with detouring enabled.", myRank_);
         CHK_RET(intraTempAlg.CalcResDetour(rankGraph, resReqIntra));
@@ -122,7 +133,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsIntra0.buffInfo.outBuffBaseOff = scratchOffset;
     tempAlgParamsIntra0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsIntra0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsIntra0.inputSliceStride = dataSize_;
     tempAlgParamsIntra0.outputSliceStride = 0;
     tempAlgParamsIntra0.repeatNum = rankSizeLevel1_;
@@ -144,7 +155,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsInter0.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsInter0.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter0.sliceSize = dataCountPerLoopAixs0 * dataTypeSize_;
-
+    tempAlgParamsInter0.tailSize = dataCountPerLoopAixs0 * dataTypeSize_;
     tempAlgParamsInter0.inputSliceStride = tempAlgParamsInter0.sliceSize;
     tempAlgParamsInter0.outputSliceStride = 0;
     tempAlgParamsInter0.repeatNum = 1;
@@ -166,7 +177,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsInter1.buffInfo.outBuffBaseOff = scratchOffset; 
     tempAlgParamsInter1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsInter1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsInter1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsInter1.inputSliceStride = dataSize_ * rankSizeLevel0_;
     tempAlgParamsInter1.outputSliceStride = 0;
     tempAlgParamsInter1.repeatNum = rankSizeLevel0_;
@@ -188,7 +199,7 @@ void InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>:
     tempAlgParamsIntra1.buffInfo.outBuffBaseOff = dataOffset;
     tempAlgParamsIntra1.buffInfo.scratchBuffBaseOff = scratchOffset;
     tempAlgParamsIntra1.sliceSize = dataCountPerLoopAixs1 * dataTypeSize_;
-
+    tempAlgParamsIntra1.tailSize = dataCountPerLoopAixs1 * dataTypeSize_;
     tempAlgParamsIntra1.inputSliceStride = tempAlgParamsIntra1.sliceSize;
     tempAlgParamsIntra1.outputSliceStride = 0;
     tempAlgParamsIntra1.repeatNum = 1;
@@ -296,6 +307,7 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     virtRanks_ = topoInfo.virtRanks;
     vTopo_ = topoInfo.vTopo;
     virtRankMap_ = topoInfo.virtRankMap;
+    dataType_ = op.dataType;
     CHK_RET(CalcLocalRankSize(myRank_, virtRanks_, rankSizeLevel0_, rankSizeLevel1_));
     rankIdxLevel0_ = myRank_ % vTopo_[0][0].size();
     rankIdxLevel1_ = myRank_ / vTopo_[0][0].size();
@@ -305,13 +317,17 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     InsAlgTemplate1 tempAlgInter(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);  //server间算法，比如nhr
  
     // 实例化算法模板类
- 
+     std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsScatterParallelExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInter.setPathNumMap(rank2PathNumMap[1]);
     tempAlgIntra.SetDmaMode(dmaMode_);
     tempAlgIntra.SetCollOp(op);  // CCU template需要传递op信息
- 
+    tempAlgIntra.SetDataType(dataType_);
     tempAlgInter.SetDmaMode(dmaMode_);
     tempAlgInter.SetCollOp(op);  // CCU template需要传递op信息
- 
+    tempAlgInter.SetDataType(dataType_);
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(linkMgr, tempAlgIntra, tempAlgInter));
     
@@ -328,7 +344,7 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     HCCL_INFO("[InsScatterParallelExecutor] Host Orchestrate begins.");
     // init and check params
     CHK_RET(Init(op, params, insQue));
-
+    dataType_ = op.dataType;
     // Topo Match
     AlgTopoMatch topoMatch(myRank_, rankSize_, rankGraph, devType_);
     CHK_RET(topoMatch.MatchTopo(vTopo_, virtRanks_, virtRankMap_));
@@ -341,13 +357,17 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     InsAlgTemplate1 tempAlgInter(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);  //server间算法，比如nhr
 
     // 实例化算法模板类
-
+     std::vector<map<u32, u32>> rank2PathNumMap;
+    HCCL_INFO("[InsScatterParallelExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    tempAlgIntra.setPathNumMap(rank2PathNumMap[0]);
+    tempAlgInter.setPathNumMap(rank2PathNumMap[1]);
     tempAlgIntra.SetDmaMode(dmaMode_);
     tempAlgIntra.SetCollOp(op);  // CCU template需要传递op信息
-
+    tempAlgIntra.SetDataType(dataType_);
     tempAlgInter.SetDmaMode(dmaMode_);
     tempAlgInter.SetCollOp(op);  // CCU template需要传递op信息
-
+    tempAlgInter.SetDataType(dataType_);
     // 计算算法模板所需资源
     CHK_RET(PrepareResForTemplate(rankGraph, tempAlgIntra, tempAlgInter));
     
