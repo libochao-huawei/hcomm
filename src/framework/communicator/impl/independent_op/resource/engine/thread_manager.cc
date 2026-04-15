@@ -28,7 +28,7 @@ uint64_t ThreadMgr::GetMaxNotifyTotal()
     if (threadNum_ == HCCL_COMM_THREADNUM_CONFIG_NOT_SET &&
         notifyNumPerThread_ == HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET) {
         maxNotifyTotal = HCCL_THREAD_NOTIFY_MAX_NUM;
-        threadNum_ = LOCAL_STREAM_MAX_NUM;
+        threadNum_ = SIGNAL_DEV_STREAM_MAX_NUM;
         notifyNumPerThread_ = HCCL_THREAD_NOTIFY_MAX_NUM;
     } else {
         maxNotifyTotal = static_cast<uint64_t>(threadNum_) * static_cast<uint64_t>(notifyNumPerThread_);
