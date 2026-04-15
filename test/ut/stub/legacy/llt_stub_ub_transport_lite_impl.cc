@@ -55,7 +55,7 @@ void UbTransportLiteImpl::BuildUbDbSendTask(const StreamLite &stream, const UbJe
 {
 }
 
-void UbTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId)
+void UbTransportLiteImpl::BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId, u32 timeout)
 {
 }
 
@@ -105,7 +105,7 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 {
 }
 
-void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
+void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream, u32 timeout)
 {
 }
 

@@ -37,7 +37,7 @@ public:
 
     void Post(u32 index, const StreamLite &stream) override;
 
-    void Wait(u32 index, const StreamLite &stream) override;
+    void Wait(u32 index, const StreamLite &stream, u32 timeout) override;
 
     void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
 
@@ -85,7 +85,7 @@ private:
 
     void BuildNotifyRecordTask(const StreamLite &stream, u64 rmtNotifyAddr);
 
-    void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId);
+    void BuildNotifyWaitTask(const StreamLite &stream, u32 notifyId, u32 timeout);
 
     void BuildP2PRead(const StreamLite &stream, const RmaBufferLite &loc, const Buffer &rmt);
 

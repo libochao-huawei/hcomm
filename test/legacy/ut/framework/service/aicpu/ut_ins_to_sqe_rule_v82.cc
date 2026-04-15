@@ -37,7 +37,7 @@ public:
     {
     }
 
-    void Wait(u32 index, const StreamLite &stream) override
+    void Wait(u32 index, const StreamLite &stream, u32 timeout) override
     {
     }
 
