@@ -20,6 +20,7 @@ constexpr u64 AR_AICPU_1D_MAX_DATA_SIZE = 16 * 1024 * 1024;
 constexpr u64 AR_ONESHOT_1D_MAX_DATA_SIZE = 16 * 1024;
 constexpr double DEFAULT_RANK_SIZE = 8.0;
 // b
+// c
 SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
