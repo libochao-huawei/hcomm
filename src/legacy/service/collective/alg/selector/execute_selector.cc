@@ -88,7 +88,8 @@ HcclResult ExecuteSelector::Run(const CollAlgOperator &op, CollAlgParams &params
             .SetRankSize(rankSize_)
             .SetSeverId(severId_)
             .SetDeviceNumPerSever(deviceNumPerSever_)
-            .SetServerNum(serverNum_);
+            .SetServerNum(serverNum_)
+            .SetIsMc2(params.isMc2);
         if(iter->second->Select(op, params, primQueueGenName) == SelectorStatus::MATCH) {
             HCCL_INFO("[Algo][Selector] The ccu selector[priority of %u] is matched, the selected algo type is %s",
                 iter->first, primQueueGenName.c_str());
