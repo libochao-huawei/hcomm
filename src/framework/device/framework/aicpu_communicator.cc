@@ -4858,8 +4858,12 @@ HcclResult HcclCommAicpu::SendTaskExceptionByMBox(const uint16_t &rsErrorCode)
 void HcclCommAicpu::HandleIndOpCqe()
 {
     std::unique_lock<std::mutex> lock(queryCqeMutex_);
-
+    ReadWriteLock rwLock(threadAicpuMutex_);
+    rwLock.readLock();
     for (auto &thread : threads_) {
+        if (thread == nullptr) {
+            continue;
+        }
         Stream stream = *thread->GetStream();
         // 流上已有异常信息，不再重复读取
         if (GetStreamCqeExceptionStatus(stream) != CqeExceptionStatus::kNone) {
@@ -4878,44 +4882,49 @@ void HcclCommAicpu::HandleIndOpCqe()
         if (cqeStatus == dfx::CqeStatus::kDefault) {
             continue;
         }
-
-        const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
-        u32 head = 0;
-        u32 tail = 0;
-        QuerySqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_HEAD, head);
-        QuerySqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_TAIL, tail);
-
-        // 打印taskException信息
-        if (cqeStatus == dfx::CqeStatus::kCqeException) {
-            if (cqeException.sqeType == RT_STARS_SQE_TYPE_PLACE_HOLDER) {
-                PrintTaskExceptionAllComm(); // 超时场景打印所有通信域的taskException
-                PrintAicpuCommExecStatus();
-            } else {
-                taskExecption_.PrintTaskExceptionByTaskId(cqeException.sqeType, cqeException.taskId, stream, tail);
-            }
-        }
-
-        // 打印重执行提示信息
-        bool isSdmaTypeErr = cqeStatus == dfx::CqeStatus::kCqeException &&
-                             cqeException.sqeType == RT_STARS_SQE_TYPE_SDMA;
-        bool isCompDataErr = cqeException.errorCode == RT_SDMA_COMPDATAERR ||
-                             cqeException.errorCode == RT_SDMA_COMPERR;
-        bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
-        if (retryEnable_ && isSdmaCompDataErr) {
-            uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
- 	        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
-            HCCL_RUN_INFO("[OpRetry][AICPU]group[%s] can not retry, IndOp does not support opRetry", identifier_.c_str());
-        }
-
-        // 标记发生ErrCqe的流
-        hccl::CqeExceptionStatus cqeExceptionStatus =
-            isSdmaCompDataErr ? hccl::CqeExceptionStatus::kSdmaErr : hccl::CqeExceptionStatus::kOther;
-        SetStreamCqeExceptionStatus(stream, cqeExceptionStatus);
-
-        HCCL_ERROR("Exception happened, group %s, streamId %u, sqid %d, cqeStatus %d, sqetype %u, errorCode %u, "
-            "head %u, tail %u", identifier_.c_str(), stream.id(), streamInfo.sqId, cqeStatus, cqeException.sqeType,
-            cqeException.errorCode, head, tail);
+        ReportIndOpCqe(stream, cqeException, cqeStatus);
     }
+    rwLock.readUnlock();
+}
+
+void HcclCommAicpu::ReportIndOpCqe(hccl::Stream &stream, const rtLogicCqReport_t &cqeException, CqeStatus cqeStatus)
+{
+    const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
+    u32 head = 0;
+    u32 tail = 0;
+    QuerySqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_HEAD, head);
+    QuerySqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_TAIL, tail);
+
+    // 打印taskException信息
+    if (cqeStatus == dfx::CqeStatus::kCqeException) {
+        if (cqeException.sqeType == RT_STARS_SQE_TYPE_PLACE_HOLDER) {
+            PrintTaskExceptionAllComm(); // 超时场景打印所有通信域的taskException
+            PrintAicpuCommExecStatus();
+        } else {
+            taskExecption_.PrintTaskExceptionByTaskId(cqeException.sqeType, cqeException.taskId, stream, tail);
+        }
+    }
+
+    // 打印重执行提示信息
+    bool isSdmaTypeErr = cqeStatus == dfx::CqeStatus::kCqeException &&
+                            cqeException.sqeType == RT_STARS_SQE_TYPE_SDMA;
+    bool isCompDataErr = cqeException.errorCode == RT_SDMA_COMPDATAERR ||
+                            cqeException.errorCode == RT_SDMA_COMPERR;
+    bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
+    if (retryEnable_ && isSdmaCompDataErr) {
+        uint16_t rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
+        CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
+        HCCL_RUN_INFO("[OpRetry][AICPU]group[%s] can not retry, IndOp does not support opRetry", identifier_.c_str());
+    }
+
+    // 标记发生ErrCqe的流
+    hccl::CqeExceptionStatus cqeExceptionStatus =
+        isSdmaCompDataErr ? hccl::CqeExceptionStatus::kSdmaErr : hccl::CqeExceptionStatus::kOther;
+    SetStreamCqeExceptionStatus(stream, cqeExceptionStatus);
+
+    HCCL_ERROR("Exception happened, group %s, streamId %u, sqid %d, cqeStatus %d, sqetype %u, errorCode %u, "
+        "head %u, tail %u", identifier_.c_str(), stream.id(), streamInfo.sqId, cqeStatus, cqeException.sqeType,
+        cqeException.errorCode, head, tail);
 }
 
 HcclResult HcclCommAicpu::RefreshLinkForSwitchNic(const std::string &newTag, const TransportRequest &transportRequest,
@@ -5278,8 +5287,11 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         threadArray[i] = reinterpret_cast<ThreadHandle>(outThreads[i].get());  // 拷贝裸指针
         HCCL_INFO("[HcclCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
     }
+    ReadWriteLock rwLock(threadAicpuMutex_);
+    rwLock.writeLock();
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
+    rwLock.writeUnlock();
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     // 为上报翻转初始化资源
