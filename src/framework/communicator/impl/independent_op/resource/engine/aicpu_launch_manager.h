@@ -19,7 +19,7 @@
 #include "local_notify.h"
 #include "aicpu_init_param.h"
 
-constexpr uint32_t THREAD_UNIQUE_ID_MAX_SIZE = 1024;
+constexpr uint32_t THREAD_UNIQUE_ID_MAX_SIZE = 6000;
 constexpr uint32_t NOTIFY_UNIQUE_ID_MAX_SIZE = THREAD_UNIQUE_ID_MAX_SIZE * hccl::HCCL_THREAD_NOTIFY_MAX_NUM;
 constexpr uint32_t NOTIFY_DEVICE_ID_MAX_SIZE = 21  * hccl::HCCL_THREAD_NOTIFY_MAX_NUM;
 constexpr uint32_t NAME_SIZE = 64;
