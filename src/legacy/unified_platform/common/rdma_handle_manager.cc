@@ -297,7 +297,7 @@ void RdmaHandleManager::DestroyAll()
     netWorkModeMap.clear();
 }
 
-HcclResult GetEidByAnyEidInfo(const HrtDevEidInfo& eidInfo, const IpAddress& ipV4Address, IpAddress& eidAddress)
+HcclResult GetEidByAnyEidInfo(s32 deviceLogicId, const HrtDevEidInfo& eidInfo, const IpAddress& ipV4Address, IpAddress& eidAddress)
 {
     // 根据eidInfo初始化rdmaHandle
     HrtRaUbCtxInitParam in(HrtNetworkMode::HDC, HrtGetDevicePhyIdByIndex(deviceLogicId), eidInfo.ipAddress);
@@ -340,7 +340,7 @@ void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& e
         __func__, deviceLogicId, eidInfoList.size());
 
     for (const auto& eidInfo : eidInfoList) {
-        if (GetEidByAnyEidInfo(eidInfo, ipV4Address, eidAddress) == HCCL_SUCCESS) {
+        if (GetEidByAnyEidInfo(deviceLogicId, eidInfo, ipV4Address, eidAddress) == HCCL_SUCCESS) {
             // 存储eid到AddressInfo
             HCCL_INFO("[UboeIpv4ToEid] success, eidAddress[%s]", eidAddress.Describe().c_str());
             uboeIpv4EidMap.insert(std::make_pair(ipV4Address, eidAddress));
