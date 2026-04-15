@@ -39,7 +39,14 @@ HcclResult CcuResPack::Init()
 
     // todo: 根据通信域算子展开模式申请资源
     // 如果资源不足需要回退
-    CHK_RET(CcuAllocEngineResHandle(devLogicId_, ccuEngine_, resHandle_));
+    auto ret = CcuAllocEngineResHandle(devLogicId_, ccuEngine_, resHandle_);
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
+        HCCL_RUN_WARNING("[%s] failed but passed, resource is not enough, "
+            "devLogicId[%d], ccuType[%s].", __func__, devLogicId_,
+            ccuEngine_.Describe().c_str());
+        return ret;
+    }
+    CHK_RET(ret);
     CHK_RET(Reset());
     return HcclResult::HCCL_SUCCESS;
 }

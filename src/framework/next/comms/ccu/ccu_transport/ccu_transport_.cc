@@ -69,7 +69,12 @@ HcclResult CcuCreateTransport(Hccl::Socket *socket, const CcuTransport::CcuConne
     CHK_PTR_NULL(ccuTransport);
     // todo：可能申请xn cke失败，需要回退
     // 不能用chk ret，因为默认unavailable是error日志
-    CHK_RET(ccuTransport->Init());
+    auto ret = ccuTransport->Init();
+    if (ret == HcclResult::HCCL_E_UNAVAIL) {
+        HCCL_WARNING("[%s] ccuTransport init failed, ccu transport resources unavailable.", __func__);
+        return ret;
+    }
+    CHK_RET(ret);
 
     return HcclResult::HCCL_SUCCESS;
 }
