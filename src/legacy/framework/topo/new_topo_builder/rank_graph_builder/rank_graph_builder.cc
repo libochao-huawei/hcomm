@@ -19,6 +19,8 @@
 
 namespace Hccl {
 
+using namespace std;
+
 unique_ptr<RankGraph> RankGraphBuilder::Build(const string &ranktableM, const string &topoPath, RankId myRank)
 {
     PhyTopoBuilder::GetInstance().Build(topoPath);
