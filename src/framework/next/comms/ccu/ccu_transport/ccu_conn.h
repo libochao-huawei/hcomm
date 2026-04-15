@@ -77,6 +77,7 @@ private:
     HcclResult    ReleaseConnRes();
     HcclResult    ReturnErrorStatus(const std::string &funcName);
     std::string   Describe();
+    HcclResult    Describe(std::string &dfxMsg);
 
 private:
     CcuConnStatus status_{CcuConnStatus::CONN_INVALID};

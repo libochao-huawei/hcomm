@@ -181,22 +181,39 @@ ChannelStatus CcuUrmaChannel::GetStatus()
     }
 
     CcuTransport::TransStatus status = impl_->GetStatus();
+    ChannelStatus out = ChannelStatus::INIT;
     switch (status) {
         case CcuTransport::TransStatus::READY:
-            return ChannelStatus::READY;
-         case CcuTransport::TransStatus::SOCKET_TIMEOUT:
+            out = ChannelStatus::READY;
+            break;
+        case CcuTransport::TransStatus::SOCKET_TIMEOUT:
             HCCL_ERROR("[CcuUrmaChannel][%s] error status[%s].",
                 __func__, status.Describe().c_str());
-            return ChannelStatus::SOCKET_TIMEOUT;
+            out = ChannelStatus::SOCKET_TIMEOUT;
+            break;
         case CcuTransport::TransStatus::CONNECT_FAILED:
             HCCL_ERROR("[CcuUrmaChannel][%s] error status[%s].",
                 __func__, status.Describe().c_str());
-            return ChannelStatus::FAILED;
+            out = ChannelStatus::FAILED;
+            break;
         default:
             break;
     }
-    
-    return ChannelStatus::INIT; // todo: AICPU 重新定义基类的状态后，需要修改为CONNECTING
+
+    if (isFirstPrintChannelInfo_ && out == ChannelStatus::READY) {
+ 	         std::string channelInfo = "create channel info:channel handle[";
+ 	         channelInfo.append(std::to_string(reinterpret_cast<uint64_t>(this)));
+ 	         channelInfo.append("] ");
+ 	         HcclResult ret = impl_->Describe(channelInfo);
+ 	         if (ret != HCCL_SUCCESS) {
+ 	             HCCL_ERROR("[CcuUrmaChannel][%s] Describe channel info failed", __func__);
+ 	             out = ChannelStatus::FAILED;
+ 	         } else {
+ 	             HCCL_RUN_INFO("%s", channelInfo.c_str());
+ 	         }
+ 	         isFirstPrintChannelInfo_ = false;
+    }
+    return out; // todo: AICPU 重新定义基类的状态后，需要修改为CONNECTING
 }
 
 uint32_t CcuUrmaChannel::GetDieId() const

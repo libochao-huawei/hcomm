@@ -505,6 +505,11 @@ std::string CcuConnection::Describe()
         jettyNum_);
 }
 
+HcclResult CcuConnection::Describe(std::string &dfxMsg)
+{
+
+}
+
 uint32_t CcuConnection::GetDieId() const
 {
     return dieId_;
