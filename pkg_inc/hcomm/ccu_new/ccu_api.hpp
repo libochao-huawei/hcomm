@@ -24,6 +24,11 @@ using LocalAddr = ::CcuLocalAddr;
 using RemoteAddr = ::CcuRemoteAddr;
 using CondExpr  = ::CcuCondExpr;
 
+using Loop           = ::CcuLoop;
+using LoopGroup      = ::CcuLoopGroup;
+using LoopExecutors  = ::CcuLoopExecutors;
+using LoopConfig     = ::CcuLoopConfig;
+using LoopGroupConfig = ::CcuLoopGroupConfig;
 
 // ==================== 资源创建 ====================
 
