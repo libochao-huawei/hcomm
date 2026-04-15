@@ -1,0 +1,33 @@
+# 通信算子开发指南
+
+- [简介](简介.md)
+- [环境准备](环境准备.md)
+- [快速上手](快速上手.md)
+- [编程模型与概念](./prog_models_concepts/README.md)
+  - [通信引擎](./prog_models_concepts/通信引擎.md)
+  - [通信模型](./prog_models_concepts/通信模型.md)
+  - [并发模型](./prog_models_concepts/并发模型.md)
+  - [拓扑模型](./prog_models_concepts/拓扑模型.md)
+
+- [通信算子开发](通信算子开发.md)
+  - [AI CPU算子开发](./aicpu_comm_op_dev/README.md)
+    - [总体流程](./aicpu_comm_op_dev/总体流程.md)
+    - [定义算子接口](./aicpu_comm_op_dev/定义算子接口.md)
+    - [查询拓扑信息](./aicpu_comm_op_dev/查询拓扑信息.md)
+    - [算法选择](./aicpu_comm_op_dev/算法选择.md)
+    - [创建资源](./aicpu_comm_op_dev/创建资源.md)
+    - [任务编排](./aicpu_comm_op_dev/任务编排.md)
+    - [算子下发](./aicpu_comm_op_dev/算子下发.md)
+    - [编译部署](./aicpu_comm_op_dev/编译部署.md)
+
+  - [AIV算子开发](./aiv_comm_op_dev/README.md)
+    - [总体流程](./aiv_comm_op_dev/总体流程.md)
+    - [定义算子接口](./aiv_comm_op_dev/定义算子接口.md)
+    - [查询拓扑信息](./aiv_comm_op_dev/查询拓扑信息.md)
+    - [算法选择](./aiv_comm_op_dev/算法选择.md)
+    - [创建资源](./aiv_comm_op_dev/创建资源.md)
+    - [任务编排](./aiv_comm_op_dev/任务编排.md)
+    - [算子下发](./aiv_comm_op_dev/算子下发.md)
+
+- [基于NPU环境测试](基于NPU环境测试.md)
+- [通信算子开发API<a name=”sub_menu”></a>](../api_ref/comm_opdev/README.md)
