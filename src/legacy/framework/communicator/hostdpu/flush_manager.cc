@@ -11,6 +11,7 @@
 #include "hccp.h"
 #include "orion_adapter_rts.h"
 #include "sal.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
