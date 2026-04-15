@@ -111,7 +111,8 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
         {"level0", HCCL_ALGO_LEVEL_0},
         {"level1", HCCL_ALGO_LEVEL_1},
         {"level2", HCCL_ALGO_LEVEL_2},
-        {"level3", HCCL_ALGO_LEVEL_3}
+        {"level3", HCCL_ALGO_LEVEL_3},
+        {"level", HCCL_ALGO_LEVEL},
     };
 
     const std::map<std::string, HcclAlgoType> hcclAlgoTypeMap = {
@@ -127,6 +128,7 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
         {"AHC_BROKE", HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE},
         {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
         {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
+        {"OMNI", HcclAlgoType::HCCL_ALGO_TYPE_OMNI},
     };
 
     auto iterAlgoLevel = hcclAlgoLevelMap.find(orginalLevel);

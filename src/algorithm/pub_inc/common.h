@@ -42,6 +42,7 @@ enum class HcclAlgoType {
     HCCL_ALGO_TYPE_NA,
     HCCL_ALGO_TYPE_AHC,
     HCCL_ALGO_TYPE_AHC_BROKE,
+    HCCL_ALGO_TYPE_OMNI,
 };
 
 // 对内拓扑算法枚举
