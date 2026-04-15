@@ -572,10 +572,6 @@ static std::string ParseLoadImdToXnInstr(const CcuInstr *instr)
     uint16_t xnId      = instr->v1.loadImdToXn.xnId;
     uint64_t immediate = instr->v1.loadImdToXn.immediate;
 
-    if (instr->v1.loadImdToXn.secFlag == CCU_LOAD_TO_XN_SEC_INFO) {
-        return Hccl::StringFormat("Load immediate[tokenInfo] to Xn[%u]", xnId);
-    }
-
     return Hccl::StringFormat("Load immediate[%llu] to Xn[%u]", immediate, xnId);
 }
 

@@ -332,9 +332,9 @@ std::vector<uint64_t> CcuContextAllGatherMesh2D::GeneArgs(const CcuTaskArg &arg)
 
     HCCL_INFO("[CcuContextAllGatherMesh2D][GeneArgs] RankId[%u]--AxisId[%u], inputAddr[%llu], outputAddr[%llu], \
             aSize[%llu], bSize[%llu], offset[%llu], sliceSize[%llu], firstInOffset[%llu], firstOutOffset[%llu], \
-            secondInOutBaseOffset[%llu], secondInOutStepOffset[%llu]",
-            rankId_, axisId_, inputAddr, outputAddr, xAxisSize, yAxisSize, offset, sliceSize, firstInOffset,
-            firstOutOffset, secondInOutBaseOffset, secondInOutStepOffset);
+            secondInOutBaseOffset[%llu], secondInOutStepOffset[%llu] value: %u",
+            rankId_, axisId_, inputAddr, outputAddr, xAxisSize, yAxisSize, offset, sliceSize, firstInOffset, firstOutOffset,
+        secondInOutBaseOffset, secondInOutStepOffset, tokenValue);
 
     return {inputAddr, outputAddr, tokenValue, xAxisSize, yAxisSize, offset, sliceSize, firstInOffset, firstOutOffset,
         secondInOutBaseOffset, secondInOutStepOffset, goSizeAxis[0], goSizeAxis[1], goSizeAxis[2], goSizeAxis[3],
