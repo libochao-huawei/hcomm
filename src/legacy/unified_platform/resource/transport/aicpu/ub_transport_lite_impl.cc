@@ -15,6 +15,7 @@
 #include "exception_util.h"
 #include "internal_exception.h"
 #include "sal.h"
+#include "communicator_impl_lite_manager.h"
 
 namespace Hccl {
 constexpr u32 UB_WQE_BB_SIZE       = 64;  // 一个WQE BB是64Byte
@@ -387,9 +388,14 @@ void UbTransportLiteImpl::Post(u32 index, const StreamLite &stream)
 
 void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
 {
+    WaitWithTimeout(index, stream, CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout);
+}
+
+void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
     auto taskId   = stream.GetRtsq()->GetTaskId();
     auto notifyId = locNotifyVec[index]->GetId();
-    BuildNotifyWaitTask(stream, notifyId);
+    stream.GetRtsq()->NotifyWait(notifyId, timeout);
 
     if (callback_ == nullptr && newCallback_ == nullptr)
     {
