@@ -82,8 +82,9 @@ typedef enum {
     CCU_CONDITION_NE = 1,
 } CcuConditionType;
 
-typedef uint64_t CcuLoopHandle;
-typedef uint64_t CcuLoopGroupHandle;
+typedef uint64_t CcuLoop;
+typedef uint64_t CcuLoopGroup;
+typedef uint64_t CcuLoopExecutors;
 
 typedef struct {
     uint64_t addrOffset;
@@ -95,6 +96,7 @@ typedef struct {
     uint64_t bufferOffset;
     uint64_t eventOffset;
     uint64_t repeatNum;
+    uint64_t repeatLoopIdx;
 } CcuLoopGroupConfig;
 
 

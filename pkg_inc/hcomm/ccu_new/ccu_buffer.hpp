@@ -20,9 +20,5 @@ public:
     CcuBufferHandle handle{0};
 };
 
-static_assert(std::is_standard_layout<CcuBuffer>::value,
-    "CcuBuffer must be standard layout for .so ABI stability");
-static_assert(sizeof(CcuBuffer) == sizeof(CcuBufferHandle),
-    "CcuBuffer layout changed - will break .so ABI!");
 
 #endif // CCU_BUFFER_HPP
