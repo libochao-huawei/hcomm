@@ -48,9 +48,6 @@ typedef enum {
     CCU_E_OOM = 24,                /**< out of memory */
     CCU_E_IN_STATUS = 1041,        /**< The error information is in the status. */
 
-<<<<<<< HEAD
-    // todo: 需要调整 赋值，预留扩展字段
-=======
     // todo: 需要评审 调整 赋值，预留扩展字段
     CCU_E_DRV_INIT_FAILED,
     CCU_E_DRV_BUSY,
@@ -58,7 +55,6 @@ typedef enum {
     // 各类资源不足
     CCU_E_RES_UNAVAIL_START,
 
->>>>>>> origin/ccu_c
     CCU_E_CHANNEL_CTX_UNAVAIL,
     CCU_E_JETTY_CTX_UNAVAIL,
     CCU_E_WQEBB_UNAVAIL,
@@ -68,11 +64,8 @@ typedef enum {
     CCU_E_XN_UNAVAIL,
     CCU_E_GSA_UNAVAIL,
 
-<<<<<<< HEAD
-=======
     CCU_E_RES_UNAVAIL_END,
 
->>>>>>> origin/ccu_c
     CCU_E_TRANSLATE_FAILED,
     CCU_E_ALREADY_BOUND,
     CCU_E_LOOP_BODY_UNDEFINED,
