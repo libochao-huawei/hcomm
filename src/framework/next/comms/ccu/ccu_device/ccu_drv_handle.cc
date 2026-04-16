@@ -36,26 +36,26 @@
 
 namespace hcomm {
 
-static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
-    const u32 tlvModuleType, const u32 tlvCcuMsgType)
-{
-    struct TlvMsg sendMsg {};
-    struct TlvMsg recvMsg {};
-    sendMsg.type = tlvCcuMsgType;
+// static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
+//     const u32 tlvModuleType, const u32 tlvCcuMsgType)
+// {
+//     struct TlvMsg sendMsg {};
+//     struct TlvMsg recvMsg {};
+//     sendMsg.type = tlvCcuMsgType;
 
-    HCCL_INFO("[%s] tlvHandle[%p].", __func__, tlvHandle);
-    int32_t ret = RaTlvRequest(tlvHandle, tlvModuleType, &sendMsg, &recvMsg);
-    if (ret != 0) {
-        HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. "
-            "return: ret[%d], module type[%u], message type[%u]",
-             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlvModuleType, tlvCcuMsgType);
-        return HcclResult::HCCL_E_NETWORK;
-    }
+//     HCCL_INFO("[%s] tlvHandle[%p].", __func__, tlvHandle);
+//     int32_t ret = RaTlvRequest(tlvHandle, tlvModuleType, &sendMsg, &recvMsg);
+//     if (ret != 0) {
+//         HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. "
+//             "return: ret[%d], module type[%u], message type[%u]",
+//              HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlvModuleType, tlvCcuMsgType);
+//         return HcclResult::HCCL_E_NETWORK;
+//     }
 
-    HCCL_INFO("tlv request success, tlv module type[%u], "
-        "message type[%u]", tlvModuleType, tlvCcuMsgType);
-    return HcclResult::HCCL_SUCCESS;
-}
+//     HCCL_INFO("tlv request success, tlv module type[%u], "
+//         "message type[%u]", tlvModuleType, tlvCcuMsgType);
+//     return HcclResult::HCCL_SUCCESS;
+// }
 
 HcclResult CcuDrvHandle::Init()
 {
