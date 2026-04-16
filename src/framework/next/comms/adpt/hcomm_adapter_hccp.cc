@@ -46,7 +46,7 @@ HcclResult IpAddressToReverseHccpEid(const Hccl::IpAddress &ipAddr, Eid &eid)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult IpAddressToReverseHccpEid(const Hccl::IpAddress &ipAddr, Hccl::Eid &eid)
+HcclResult IpAddressToReverseHcclEid(const Hccl::IpAddress &ipAddr, Hccl::Eid &eid)
 {
     HCCL_INFO("EID ipAddr[%s]", ipAddr.Describe().c_str());
     int32_t sRet = memcpy_s(eid.raw, sizeof(eid.raw),
