@@ -35,6 +35,8 @@ target_sources(hccl_v2_native_alg_repo PRIVATE
         ins_temp_all_reduce_aicpu_reduce_mesh_2D.cc
         ins_temp_reduce_aicpu_reduce_mesh_2D.cc
         ins_temp_reduce_nhr.cc
+        ins_temp_all_gather_mesh_opt.cc
+        ins_temp_reduce_scatter_mesh_1D_opt.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
@@ -75,5 +77,7 @@ target_sources(ccl_kernel PRIVATE
         ins_temp_all_reduce_aicpu_reduce_mesh_2D.cc
         ins_temp_reduce_aicpu_reduce_mesh_2D.cc
         ins_temp_reduce_nhr.cc
+        ins_temp_all_gather_mesh_opt.cc
+        ins_temp_reduce_scatter_mesh_1D_opt.cc
 )
 endif()

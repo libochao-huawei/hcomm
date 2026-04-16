@@ -425,7 +425,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     if (isAivMode) {
         if (isAivCrossNode) {
             algName = "ReduceScatterMeshAivFor91093Executor";
-        } else if ((isOpbase && dataSize <= AIV_REDUCE_SCATTER_MID_SIZE) 
+        } else if ((isOpbase && dataSize <= AIV_REDUCE_SCATTER_SMALL_SIZE)
             || (!isOpbase && dataSize <= std::min(limit.aivCoreLimit / userRankSize_, NUM_BLOCKS_FACTOR_FOUR)
             * AIV_REDUCE_SCATTER_BIG_SIZE)) {
             algName = "ReduceScatterMeshAivSmallCountExecutor";
@@ -480,9 +480,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
         && ((isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB)
         || (!isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_2_MB))));
-    bool isSupportAtomicWrite = topoMatcher_->GetAlgoInfo().isSupportAtomicWrite;
-    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && isSupportAtomicWrite && !retryEnable_; // 涉及ROCE平面
+    bool smallCountOptimMultiPod = false;
 
     isHccsPlusSio = false;
     if (isHccsPlusSio && isSupportHccsAndSio_) {
