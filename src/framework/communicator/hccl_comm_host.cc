@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <hccl/hccl_types.h>
 #include "device_capacity.h"
+#include "../../legacy/common/types/types.h"
 #include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
 #include "task_abort_handler_pub.h"
@@ -26,7 +27,6 @@
 #include "launch_aicpu.h"
 #include "launch_device.h"
 #include "sal_pub.h"
-#include "../../legacy/common/types/types.h"
 
 namespace hccl
 {
