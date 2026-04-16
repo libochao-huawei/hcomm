@@ -9,7 +9,10 @@
  */
 
 #include "comm_kfc_aicpu_server.h"
+#include <algorithm>
 #include <numeric>
+#include "adapter_rts_common.h"
+#include "alg_param.h"
 #include "log.h"
 #include "common/aicpu_kfc_utils.h"
 #include "hccl_mc2_ex.h"
@@ -17,6 +20,11 @@
 #include "framework/aicpu_hccl_process.h"
 #include "hccl_common.h"
 #include "sqe_build_a5.h"
+#include "aicpu_indop_process.h"
+#include "coll_comm_aicpu.h"
+#include "coll_comm_aicpu_mgr.h"
+#include "stream_lite.h"
+#include "thread.h"
 
 using namespace HcclApi;
 namespace {
@@ -37,6 +45,65 @@ hccl::HcclCommAicpu *FindCommAicpuByName(const std::string &commName)
         }
     }
     return nullptr;
+}
+
+CollCommAicpuMgr *FindNextCommMgrByName(const std::string &commName)
+{
+    std::vector<std::pair<std::string, CollCommAicpuMgr *>> aicpuCommInfo;
+    if (AicpuIndopProcess::AicpuGetCommAll(aicpuCommInfo) != HCCL_SUCCESS) {
+        return nullptr;
+    }
+    for (auto &commInfo : aicpuCommInfo) {
+        if (commInfo.second != nullptr && commInfo.first == commName) {
+            return commInfo.second;
+        }
+    }
+    return nullptr;
+}
+
+HcclResult IsDevice950(bool &isDevice950)
+{
+    DevType deviceType = DevType::DEV_TYPE_COUNT;
+    CHK_RET(hrtGetDeviceType(deviceType));
+    isDevice950 = (deviceType == DevType::DEV_TYPE_950);
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetMainThreadFromOpParam(const std::vector<uint8_t> &baseOpParam, ThreadHandle &mainThread)
+{
+    CHK_PRT_RET(baseOpParam.size() < sizeof(ops_hccl::OpParam),
+                HCCL_ERROR("Base op param size %zu is smaller than OpParam size %zu.",
+                           baseOpParam.size(), sizeof(ops_hccl::OpParam)),
+                HCCL_E_PARA);
+    const auto *param = reinterpret_cast<const ops_hccl::OpParam *>(baseOpParam.data());
+    CHK_PTR_NULL(param);
+    CHK_PRT_RET(param->resCtx == nullptr || param->ctxSize == 0U,
+                HCCL_ERROR("Invalid open op res ctx, resCtx[%p], ctxSize[%llu].", param->resCtx, param->ctxSize),
+                HCCL_E_PARA);
+
+    auto *ctx = static_cast<char *>(param->resCtx);
+    std::vector<char> seq(ctx, ctx + param->ctxSize);
+    ops_hccl::AlgResourceCtxSerializable resCtx;
+    resCtx.DeSerialize(seq);
+    CHK_PRT_RET(resCtx.threads.empty() || resCtx.threads[0] == 0U,
+                HCCL_ERROR("Invalid open op resource ctx threads, thread num %zu.", resCtx.threads.size()),
+                HCCL_E_PARA);
+    mainThread = resCtx.threads[0];
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetNextThreadAndStream(const ServerExecCtx &execCtx, hccl::Thread *&thread, Hccl::StreamLite *&streamLite)
+{
+    CHK_PRT_RET(execCtx.mainThread == 0U,
+                HCCL_ERROR("Invalid main thread for commName[%s], opParamKey %#llx.",
+                           execCtx.commName.c_str(), execCtx.opParamKey),
+                HCCL_E_PARA);
+    thread = reinterpret_cast<hccl::Thread *>(execCtx.mainThread);
+    CHK_PTR_NULL(thread);
+    streamLite = static_cast<Hccl::StreamLite *>(thread->GetStreamLitePtr());
+    CHK_PTR_NULL(streamLite);
+    CHK_PTR_NULL(streamLite->GetRtsq());
+    return HCCL_SUCCESS;
 }
 }
 
@@ -73,23 +140,44 @@ HcclResult CommKfcAicpuServer::AddOpContext(const HcclApi::OpResCtx *ctx)
         CHK_PRT_RET(commName.empty(),
                     HCCL_ERROR("Group %u: empty comm name for opParamKey %#llx.", groupIdx_, opParamKey),
                     HCCL_E_PARA);
-        hccl::HcclCommAicpu *commAicpu = FindCommAicpuByName(commName);
-        CHK_PRT_RET(commAicpu == nullptr,
-                    HCCL_ERROR("Group %u: failed to find commAicpu for commName[%s], opParamKey %#llx.",
-                               groupIdx_, commName.c_str(), opParamKey),
-                    HCCL_E_PARA);
 
         ServerExecCtx execCtx{};
         execCtx.offset = algInfo.offset;
         execCtx.opParamKey = opParamKey;
         execCtx.commName = commName;
         execCtx.baseOpParam = std::move(baseOpParam);
-        execCtx.commAicpu = commAicpu;
-        execCtx.dispatcher = commAicpu->GetDispatcher();
-        execCtx.mainStream = &commAicpu->GetMainStream();
+
+        bool isDevice950 = false;
+        CHK_RET(IsDevice950(isDevice950));
+        if (isDevice950) {
+            CollCommAicpuMgr *commMgr = FindNextCommMgrByName(commName);
+            CHK_PRT_RET(commMgr == nullptr,
+                        HCCL_ERROR("Group %u: failed to find next comm manager for commName[%s], opParamKey %#llx.",
+                                   groupIdx_, commName.c_str(), opParamKey),
+                        HCCL_E_PARA);
+            CollCommAicpu *collCommAicpu = commMgr->GetCollCommAicpu();
+            CHK_PTR_NULL(collCommAicpu);
+            ThreadHandle mainThread = 0U;
+            CHK_RET(GetMainThreadFromOpParam(execCtx.baseOpParam, mainThread));
+            execCtx.resourceType = ServerExecResourceType::NEXT_AICPU;
+            execCtx.commMgr = commMgr;
+            execCtx.collCommAicpu = collCommAicpu;
+            execCtx.mainThread = mainThread;
+        } else {
+            hccl::HcclCommAicpu *commAicpu = FindCommAicpuByName(commName);
+            CHK_PRT_RET(commAicpu == nullptr,
+                        HCCL_ERROR("Group %u: failed to find commAicpu for commName[%s], opParamKey %#llx.",
+                                   groupIdx_, commName.c_str(), opParamKey),
+                        HCCL_E_PARA);
+            execCtx.commAicpu = commAicpu;
+            execCtx.dispatcher = commAicpu->GetDispatcher();
+            execCtx.mainStream = &commAicpu->GetMainStream();
+        }
         execCtxList_.push_back(execCtx);
-        HCCL_INFO("Group %u: add exec ctx for opParamKey %#llx, commName[%s], message area address %#llx.",
-                  groupIdx_, opParamKey, commName.c_str(), msgArea_);
+        HCCL_INFO("Group %u: add exec ctx for opParamKey %#llx, commName[%s], resource type %u, "
+                  "mainThread %#llx, message area address %#llx.",
+                  groupIdx_, opParamKey, commName.c_str(), static_cast<u32>(execCtx.resourceType),
+                  execCtx.mainThread, msgArea_);
     }
 
     CHK_PRT_RET(execCtxList_.empty(), HCCL_ERROR("Group %u: no exec ctx is added.", groupIdx_), HCCL_E_PARA);
@@ -115,6 +203,17 @@ const ServerExecCtx *CommKfcAicpuServer::MatchExecCtx(u64 opParamKey) const
 HcclResult CommKfcAicpuServer::LaunchOpenCcoreWait(
     const ServerExecCtx &execCtx, u64 waitAddr, u32 turnNum, u64 turnNumsAddr, bool isLast)
 {
+    const u64 valueAddr = turnNumsAddr + static_cast<u64>(turnNum) * sizeof(u32);
+    if (execCtx.resourceType == ServerExecResourceType::NEXT_AICPU) {
+        hccl::Thread *thread = nullptr;
+        Hccl::StreamLite *streamLite = nullptr;
+        CHK_RET(GetNextThreadAndStream(execCtx, thread, streamLite));
+        EXECEPTION_CATCH(streamLite->GetRtsq()->CCoreNotifyWait(waitAddr, valueAddr, isLast),
+                         return HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(thread->LaunchTask(), return HCCL_E_INTERNAL);
+        return HCCL_SUCCESS;
+    }
+
     CHK_PTR_NULL(execCtx.mainStream);
     uint8_t *sqeBuffer = nullptr;
     uint8_t *sqeTypeAddr = nullptr;
@@ -126,7 +225,6 @@ HcclResult CommKfcAicpuServer::LaunchOpenCcoreWait(
     auto *sqeCtx = execCtx.mainStream->GetSqeContextPtr();
     CHK_PTR_NULL(sqeCtx);
 
-    const u64 valueAddr = turnNumsAddr + static_cast<u64>(turnNum) * sizeof(u32);
     const u32 a5TaskId = (static_cast<u32>(sqeCtx->buffer.filpNum) << 16) | taskId16;
 
     Hccl::BuildA5SqeCCoreNotifyWait(0, a5TaskId, waitAddr, valueAddr, isLast, sqeBuffer);
@@ -140,6 +238,16 @@ HcclResult CommKfcAicpuServer::LaunchOpenCcoreWait(
 HcclResult CommKfcAicpuServer::LaunchOpenCcorePost(
     const ServerExecCtx &execCtx, u64 recordAddr, u32 turnNum, u64 turnNumsAddr)
 {
+    const u64 valueAddr = turnNumsAddr + static_cast<u64>(turnNum) * sizeof(u32);
+    if (execCtx.resourceType == ServerExecResourceType::NEXT_AICPU) {
+        hccl::Thread *thread = nullptr;
+        Hccl::StreamLite *streamLite = nullptr;
+        CHK_RET(GetNextThreadAndStream(execCtx, thread, streamLite));
+        EXECEPTION_CATCH(streamLite->GetRtsq()->CCoreNotifyRecord(recordAddr, valueAddr), return HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(thread->LaunchTask(), return HCCL_E_INTERNAL);
+        return HCCL_SUCCESS;
+    }
+
     CHK_PTR_NULL(execCtx.mainStream);
     uint8_t *sqeBuffer = nullptr;
     uint8_t *sqeTypeAddr = nullptr;
@@ -151,7 +259,6 @@ HcclResult CommKfcAicpuServer::LaunchOpenCcorePost(
     auto *sqeCtx = execCtx.mainStream->GetSqeContextPtr();
     CHK_PTR_NULL(sqeCtx);
 
-    const u64 valueAddr = turnNumsAddr + static_cast<u64>(turnNum) * sizeof(u32);
     const u32 a5TaskId = (static_cast<u32>(sqeCtx->buffer.filpNum) << 16) | taskId16;
 
     Hccl::BuildA5SqeCCoreNotifyRecord(0, a5TaskId, recordAddr, valueAddr, sqeBuffer);
@@ -164,9 +271,21 @@ HcclResult CommKfcAicpuServer::LaunchOpenCcorePost(
 HcclResult CommKfcAicpuServer::FormatOpParamFromMsg(
     const HcclMsg &msg, HcclMsgExt &extMsg, const ServerExecCtx &execCtx, u32 repeatIdx, std::vector<uint8_t> &opParam)
 {
-    CHK_PTR_NULL(execCtx.mainStream);
+    void *stream = nullptr;
+    if (execCtx.resourceType == ServerExecResourceType::LEGACY) {
+        CHK_PTR_NULL(execCtx.mainStream);
+        stream = execCtx.mainStream->ptr();
+    } else {
+        CHK_PRT_RET(execCtx.baseOpParam.size() < sizeof(ops_hccl::OpParam),
+                    HCCL_ERROR("Base op param size %zu is smaller than OpParam size %zu.",
+                               execCtx.baseOpParam.size(), sizeof(ops_hccl::OpParam)),
+                    HCCL_E_PARA);
+        const auto *baseParam = reinterpret_cast<const ops_hccl::OpParam *>(execCtx.baseOpParam.data());
+        CHK_PTR_NULL(baseParam);
+        stream = baseParam->stream;
+    }
     return FormatOpenOpParamDataFromMsg(
-        execCtx.baseOpParam, msg, extMsg, rankNum_, repeatIdx, execCtx.mainStream->ptr(), opParam);
+        execCtx.baseOpParam, msg, extMsg, rankNum_, repeatIdx, stream, opParam);
 }
 
 HcclResult CommKfcAicpuServer::LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam)
@@ -216,7 +335,19 @@ HcclResult CommKfcAicpuServer::IsAllTaskFinished(u32 msgPos, bool &isFinish)
     CHK_PTR_NULL(msgArea_);
 
     isFinish = false;
+    if (syncExecCtx_ != nullptr && syncExecCtx_->resourceType == ServerExecResourceType::NEXT_AICPU) {
+        msgArea_->commMsg.singleMsg.finishedTurnCnt[msgPos].cnt = FINALIZE_FINISH_CNT;
+#ifdef __aarch64__
+        __asm__ __volatile__("dsb st" : : : "memory");
+#endif
+        isFinish = true;
+        HCCL_INFO("Group %u: next aicpu tasks are treated as finished at message pos %u.", groupIdx_, msgPos);
+        return HCCL_SUCCESS;
+    }
+
     // opHandles_能保证不为空，同一个通信域检查任何一个ophandle即可
+    CHK_PRT_RET(ctxToOpHandle_.empty(), HCCL_ERROR("Group %u: legacy op handle is empty.", groupIdx_),
+                HCCL_E_INTERNAL);
     void *firstHandle = ctxToOpHandle_.begin()->second;
     if (HcclCheckFinishByStream(firstHandle) != HCCL_SUCCESS) {
         return HCCL_SUCCESS;
@@ -258,6 +389,12 @@ HcclResult CommKfcAicpuServer::InterGroupSync(const CommKfcAicpuServer &otherSer
     const u64 waitAddr = reinterpret_cast<u64>(&(msgArea->commMsg.singleMsg.finishedTurnCnt[msgPos].cnt));
     HCCL_INFO("Group %u: group sync for handle %d: message index %u, finish count %u.",
               groupIdx_, handle, msgPos, repeat);
+    CHK_PTR_NULL(syncExecCtx_);
+    if (syncExecCtx_->resourceType == ServerExecResourceType::NEXT_AICPU) {
+        return LaunchOpenCcoreWait(*syncExecCtx_, waitAddr, repeat, turnNumsAddr_, false);
+    }
+    CHK_PRT_RET(ctxToOpHandle_.empty(), HCCL_ERROR("Group %u: legacy op handle is empty.", groupIdx_),
+                HCCL_E_INTERNAL);
     return HcclLaunchCcoreWait(ctxToOpHandle_.begin()->second, waitAddr, repeat, turnNumsAddr_, false);
 }
 
@@ -299,10 +436,28 @@ HcclResult CommKfcAicpuServer::GetServerInfoForSync(HcclHandle handle, u32 &msgP
 
 HcclResult CommKfcAicpuServer::ErrorDfxProcess(HcclResult errorCode)
 {
-    void *firstHandle = ctxToOpHandle_.begin()->second;
     if (errorCode == HCCL_SUCCESS) {
         return errorCode;
-    } else if (errorCode == HCCL_E_AGAIN) {
+    }
+
+    if (syncExecCtx_ != nullptr && syncExecCtx_->resourceType == ServerExecResourceType::NEXT_AICPU) {
+        AicpuKfcUtils::PrintAllHcclMsgArea(msgArea_, rankNum_, errorCode != HCCL_E_AGAIN);
+        HCCL_ERROR("Group %u: next aicpu server error process, commName[%s], errorCode[%u].",
+                   groupIdx_, syncExecCtx_->commName.c_str(), static_cast<u32>(errorCode));
+        return (errorCode == HCCL_E_AGAIN) ? HCCL_SUCCESS : errorCode;
+    }
+
+    if (syncExecCtx_ == nullptr && ctxToOpHandle_.empty()) {
+        AicpuKfcUtils::PrintAllHcclMsgArea(msgArea_, rankNum_, errorCode != HCCL_E_AGAIN);
+        HCCL_ERROR("Group %u: server error before exec ctx is ready, errorCode[%u].",
+                   groupIdx_, static_cast<u32>(errorCode));
+        return (errorCode == HCCL_E_AGAIN) ? HCCL_SUCCESS : errorCode;
+    }
+
+    CHK_PRT_RET(ctxToOpHandle_.empty(), HCCL_ERROR("Group %u: legacy op handle is empty.", groupIdx_),
+                HCCL_E_INTERNAL);
+    void *firstHandle = ctxToOpHandle_.begin()->second;
+    if (errorCode == HCCL_E_AGAIN) {
         AicpuKfcUtils::PrintAllHcclMsgArea(msgArea_, rankNum_);
         HcclPrintTaskExceptionAllComm(firstHandle);
         errorCode = HCCL_SUCCESS;

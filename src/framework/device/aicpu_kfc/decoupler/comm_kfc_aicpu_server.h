@@ -20,20 +20,32 @@
 #include "common/aicpu_kfc_def.h"
 #include "comm_kfc_open_kernel_adapter.h"
 #include "dispatcher.h"
+#include "hcomm_primitives.h"
 
 namespace hccl {
 class HcclCommAicpu;
 class Stream;
 }
+class CollCommAicpuMgr;
+class CollCommAicpu;
+
+enum class ServerExecResourceType {
+    LEGACY,
+    NEXT_AICPU
+};
 
 struct ServerExecCtx {
     u64 offset;
     u64 opParamKey;
     std::string commName;
     std::vector<uint8_t> baseOpParam;
+    ServerExecResourceType resourceType{ServerExecResourceType::LEGACY};
     hccl::HcclCommAicpu *commAicpu{nullptr};
     HcclDispatcher dispatcher{nullptr};
     hccl::Stream *mainStream{nullptr};
+    CollCommAicpuMgr *commMgr{nullptr};
+    CollCommAicpu *collCommAicpu{nullptr};
+    ThreadHandle mainThread{0};
 };
 
 class CommKfcAicpuServer {
