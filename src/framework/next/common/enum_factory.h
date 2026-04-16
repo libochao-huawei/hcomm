@@ -123,7 +123,7 @@ const std::unordered_map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP =
     {COMM_PROTOCOL_UB_MEM, "UB_MEM"}
 };
 
-inlinestd::string GetCommProtocolEnumStr(CommProtocol protocol)
+inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
 {
     auto iter = HCOM_COMM_PROTOCOL_STR_MAP.find(protocol);
     if (iter == HCOM_COMM_PROTOCOL_STR_MAP.end()) {
