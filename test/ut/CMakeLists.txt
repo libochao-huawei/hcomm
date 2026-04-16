@@ -181,8 +181,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/common/utils/
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/
     ${HCCL_CODE_ROOT}/src/legacy/common/types/
-    ${HCCL_CODE_ROOT}/src/legacy/framework/env_config
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
+    ${HCCL_CODE_ROOT}/src/legacy/framework/
     ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
@@ -261,6 +261,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/common/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/reged_mems/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host/
@@ -334,7 +335,7 @@ add_subdirectory(platform/common/unfold_cache)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/cluster_maintenance)
 add_subdirectory(framework/op_base_api)
-# add_subdirectory(framework/hcom) // 单个ut测试文件已经编译通过，但是耦合编译会出现段错误问题，暂不开启
+add_subdirectory(framework/hcom)
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
 add_subdirectory(framework/communicator/impl/independent_op/data_api)

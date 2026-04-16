@@ -27,16 +27,16 @@ namespace hcomm {
 AicpuTsUrmaChannel::AicpuTsUrmaChannel(EndpointHandle endpointHandle, const HcommChannelDesc &channelDesc):
     endpointHandle_(endpointHandle), channelDesc_(channelDesc) {}
 
-HcclResult AicpuTsUrmaChannel::Makebufs(void **memHandles, uint32_t memHandleNum,
+HcclResult AicpuTsUrmaChannel::Makebufs(HcommMemHandle *memHandles, uint32_t memHandleNum,
     std::vector<std::shared_ptr<Hccl::Buffer>> &bufs)
 {
     bufs.clear();
     for (uint32_t i = 0; i < memHandleNum; ++i) {
-        auto locMemInfo = reinterpret_cast<hccl::CommMemHandle *>(memHandles[i]);
-        HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag.c_str());
+        auto locMemInfo = reinterpret_cast<CommMemInfo *>(memHandles[i]);
+        HCCL_INFO("[AicpuTsUrmaChannel][%s] tag[%s]", __func__, locMemInfo->memTag);
         bufs.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(locMemInfo->addr), locMemInfo->size,
-            hccl::ConvertCommToHcclMemType(locMemInfo->memType), locMemInfo->memTag.c_str())
+            reinterpret_cast<uintptr_t>(locMemInfo->mem.addr), locMemInfo->mem.size,
+            hccl::ConvertCommToHcclMemType(locMemInfo->mem.type), locMemInfo->memTag)
         ));
     }
     return HCCL_SUCCESS;
@@ -334,7 +334,7 @@ HcclResult AicpuTsUrmaChannel::GetUserRemoteMem(CommMem **remoteMem, char ***mem
     return memTransport_->GetUserRemoteMem(remoteMem, memTag, memNum);
 }
 
-HcclResult AicpuTsUrmaChannel::UpdateMemInfo(void **memHandles, uint32_t memHandleNum)
+HcclResult AicpuTsUrmaChannel::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum)
 {
     CHK_RET(Makebufs(memHandles, memHandleNum, bufsTemp));
     CHK_RET(BuildBuffer(bufsTemp));

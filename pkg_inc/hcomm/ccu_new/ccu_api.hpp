@@ -28,7 +28,7 @@ using CondExpr  = ::CcuCondExpr;
 using Loop           = ::CcuLoop;
 using LoopGroup      = ::CcuLoopGroup;
 using LoopExecutors  = ::CcuLoopExecutors;
-using LoopConfig     = ::CcuLoopConfig;
+using LoopConfig     = ::CcuLoopConfig; 
 using LoopGroupConfig = ::CcuLoopGroupConfig;
 
 // ==================== 资源创建 ====================
@@ -174,7 +174,6 @@ inline CcuResult LoopGroupAddLoop(CcuLoopGroup group,
     }
     return CcuLoopGroupAddLoopFromVar(group, loop, loopParamVar->handle);
 }
-
 
 } // namespace ccu
 

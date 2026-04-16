@@ -82,6 +82,7 @@ int AddrAddPort(Addr* addr, const char* port);
 void NetLayerInit(NetLayer *net_layer, int level, const char *layer_id);
 void NetLayerSetNetInstanceId(NetLayer* net_layer, const char *net_instance_id);
 void NetLayerAddAddr(NetLayer *net_layer, const Addr *addr);
+void NetLayerSetAddrAt(NetLayer *net_layer, const Addr *addr, int index);
 void NetLayerSetNetType(NetLayer *layer, const char* net_type);
 char* NetLayerToString(const NetLayer* net_layer);
 

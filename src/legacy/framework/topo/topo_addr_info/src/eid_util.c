@@ -113,6 +113,14 @@ int UrmaEidGetServerDieId(dcmi_urma_eid_t *eid)
     return dieId;
 }
 
+int UrmaEidGetPodDieId(dcmi_urma_eid_t *eid)
+{
+    const int dieIdMask = 4;
+    unsigned char bit = eid->raw[DCMI_URMA_EID_SIZE - 2];
+    int dieId = (bit & dieIdMask) > 0 ? 1 : 0;
+    return dieId;
+}
+
 int UBEntityGetId(UBEntity *ue)
 {
     if (ue->eidNum == 0) {

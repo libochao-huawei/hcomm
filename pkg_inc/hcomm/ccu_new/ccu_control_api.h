@@ -11,12 +11,16 @@
 #ifndef CCU_CONTROL_API_H
 #define CCU_CONTROL_API_H
 
+#include "hccl_types.h"
 #include "ccu_types.h"
 #include "hccl_res.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
+
+extern HcclResult HcclCommQueryCcuIns(HcclComm comm,
+    CcuInsHandle *insHandles, uint32_t *insNum);
 
 extern CcuResult HcommCcuKernelRegisterStart(CcuInsHandle insHandle);
 

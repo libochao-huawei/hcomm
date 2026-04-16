@@ -11,6 +11,8 @@
 #define CCU_RES_PACK_H
 
 #include "hccl_res.h"
+
+#include "ccu_types.h"
 #include "ccu_device_pub.h"
 
 namespace hcomm {
@@ -20,8 +22,8 @@ public:
     explicit CcuResPack(CcuInstanceType insType) : insType_(insType) {};
     ~CcuResPack();
 
-    HcclResult Init();
-    HcclResult Reset();
+    CcuResult Init();
+    CcuResult Reset();
 
     CcuResRepository &GetCcuResRepo();
 
@@ -32,7 +34,7 @@ private:
     CcuResPack &operator=(CcuResPack &&that) = delete;
 
     int32_t devLogicId_{0};
-    CcuInstanceType insType_{CcuInstanceType::CCU_INVALID};
+    CcuInstanceType insType_{CcuInstanceType::CCU_UNUSED};
     CcuResHandle resHandle_{nullptr};
     CcuResRepository resRepo_{};
 };

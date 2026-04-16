@@ -116,6 +116,8 @@ private:
     std::unique_ptr<SocketMgr> socketMgr_{nullptr};
     bool fenceFlag_{false};
 
+    uint64_t maxMsgSize_{0};
+
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;
 };

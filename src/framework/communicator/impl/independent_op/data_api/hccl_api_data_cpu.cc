@@ -29,6 +29,7 @@
 #include "exception_handler.h"
 #include "task_info.h"
 #include "task_param.h"
+
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
