@@ -809,7 +809,7 @@ string DevUbConnection::Describe() const
                         funcId, jettyId, sqBuffVa, sqDepth, tpn, dbAddr);
 }
 
-HcclResult DevUbConnection::Describe(std::string &dfxMsg)
+HcclResult DevUbConnection::Describe(std::string &dfxMsg) const
 {
     uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
     // if (tpProtocol == TpProtocol::TP) {
