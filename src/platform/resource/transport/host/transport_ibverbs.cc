@@ -1910,9 +1910,8 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
                 CHK_RET(HrtRaMrReg(multiCombineQpHandles_[i].qpHandle, &mrInfo));
             }
         }
+        memMsg_[static_cast<u32>(memType)].mrRegFlag = REG_VALID;
     }
-
-    memMsg_[static_cast<u32>(memType)].mrRegFlag = REG_VALID;
     memMsg_[static_cast<u32>(memType)].addr = memPtr;
     memMsg_[static_cast<u32>(memType)].len = memSize;
     memMsg_[static_cast<u32>(memType)].memType = memType;
