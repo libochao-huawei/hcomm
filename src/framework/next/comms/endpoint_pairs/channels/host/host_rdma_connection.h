@@ -58,6 +58,8 @@ public:
     ~HostRdmaConnection();
 
     std::string Describe() const ;
+    void Describe(std::string &dfxMsg);
+
     Hccl::QpInfo& GetQpInfo()
     {
         return qpInfo_;
