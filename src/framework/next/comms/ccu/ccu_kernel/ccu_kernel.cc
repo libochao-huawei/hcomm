@@ -1275,10 +1275,6 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
     return HCCL_SUCCESS;
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/ccu_c
 CcuResult CcuKernel::GetBufferByHandle(CcuBufferHandle bufferHandle, CcuRep::CcuBuf **buffer)
 {
     return GetResourceByHandle(ccuBufferMap_, bufferHandle, buffer, "buffer");
