@@ -426,11 +426,10 @@ HcclResult HcclOneSideServiceAicpu::CleanStreamFunc()
     HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc tag[%s]", identifier_.c_str());
     const HcclComStreamInfo &streamInfo = execStream_.GetHcclStreamInfo();
     CHK_RET(ConfigSqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, 1));
-    execStreamEnable_ = true;
-
     CHK_RET(CleanStream(execStream_));
-    HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc reset stream sq buffer success"
-        "SetStreanEnable streamid[%d]", streamInfo.actualStreamId);
+    execStreamEnable_ = true;
+    HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc reset stream sq buffer success, "
+        "SetStreamEnable streamid[%d]", streamInfo.actualStreamId);
     return HCCL_SUCCESS;
 }
 
@@ -459,13 +458,13 @@ HcclResult HcclOneSideServiceAicpu::DisableStreamFunc()
 
 HcclResult HcclOneSideServiceAicpu::DisableAllStreamFunc()
 {
-    HCCL_INFO("Entry HcclOneSideServiceAicpu::DisabalAllStreamFunc");
+    HCCL_INFO("Entry HcclOneSideServiceAicpu::DisableAllStreamFunc");
     ReadWriteLock rwlock(serviceMapMutex_);
     rwlock.readLock();
     for (auto &serviceIter : services_) {
         HcclResult ret = serviceIter.second->DisableStreamFunc();
         if (ret != HCCL_SUCCESS) {
-            rwlock.readLock();
+            rwlock.readUnlock();
             return ret;
         }
     }
