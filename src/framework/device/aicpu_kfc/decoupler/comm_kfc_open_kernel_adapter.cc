@@ -37,6 +37,15 @@ HcclResult LoadOpenOpParamData(uint64_t opParamKey, std::string &commName, std::
     const auto *begin = reinterpret_cast<const uint8_t *>(param);
     opParam.assign(begin, begin + opParamSize);
     commName.assign(param->commName);
+    HCCL_INFO("[MC2_OPEN_DIAG][Load] key %#llx, opParamSize %zu, commName[%s], opType %u, algName[%s], "
+              "inputSize %llu, outputSize %llu, varMemSize %llu, count %llu, dataType %u, outputType %u, "
+              "strideCount %llu, resCtx %p, ctxSize %llu.",
+              static_cast<unsigned long long>(opParamKey), opParamSize, commName.c_str(),
+              static_cast<u32>(param->opType), param->algName, static_cast<unsigned long long>(param->inputSize),
+              static_cast<unsigned long long>(param->outputSize), static_cast<unsigned long long>(param->varMemSize),
+              static_cast<unsigned long long>(param->DataDes.count), static_cast<u32>(param->DataDes.dataType),
+              static_cast<u32>(param->DataDes.outputType), static_cast<unsigned long long>(param->DataDes.strideCount),
+              param->resCtx, static_cast<unsigned long long>(param->ctxSize));
     return HCCL_SUCCESS;
 }
 
@@ -87,6 +96,7 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
         HCCL_ERROR("Base op param is empty.");
         return HCCL_E_PARA;
     }
+    const auto *baseParam = reinterpret_cast<const ops_hccl::OpParam *>(baseOpParam.data());
     if (repeatIdx == 0U) {
         CreateOpParamByBaseOpParam(baseOpParam, msg, extMsg, rankNum, stream, runOpParam);
     }
@@ -108,6 +118,30 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
     param->outputPtr = reinterpret_cast<void *>(msg.recvBuffer + offset);
     const HcclCMDType opType = static_cast<HcclCMDType>(msg.commType.prepareType);
 
+    HCCL_INFO("[MC2_OPEN_DIAG][FormatMsg] repeatIdx %u, rankNum %u, msgOpType %u, msgReduceType %u, "
+              "msgSendBuffer %#llx, msgRecvBuffer %#llx, msgDataCnt %llu, msgDataType %u, msgRepeatCnt %u, "
+              "msgStrideCount %llu, ccOpTilingData %#llx.",
+              repeatIdx, rankNum, static_cast<u32>(opType), static_cast<u32>(msg.opType),
+              static_cast<unsigned long long>(msg.sendBuffer), static_cast<unsigned long long>(msg.recvBuffer),
+              static_cast<unsigned long long>(msg.dataCnt), static_cast<u32>(msg.addMsg.v1Msg.hcclDataType),
+              static_cast<u32>(msg.addMsg.v1Msg.repeatCnt), static_cast<unsigned long long>(msg.strideCount),
+              static_cast<unsigned long long>(msg.addMsg.v1Msg.ccOpTilingData));
+    HCCL_INFO("[MC2_OPEN_DIAG][FormatBase] baseOpType %u, baseAlgName[%s], baseInputSize %llu, "
+              "baseOutputSize %llu, baseCount %llu, baseDataType %u, baseOutputType %u, baseStrideCount %llu, "
+              "baseInputPtr %p, baseOutputPtr %p.",
+              static_cast<u32>(baseParam->opType), baseParam->algName,
+              static_cast<unsigned long long>(baseParam->inputSize),
+              static_cast<unsigned long long>(baseParam->outputSize),
+              static_cast<unsigned long long>(baseParam->DataDes.count), static_cast<u32>(baseParam->DataDes.dataType),
+              static_cast<u32>(baseParam->DataDes.outputType),
+              static_cast<unsigned long long>(baseParam->DataDes.strideCount), baseParam->inputPtr,
+              baseParam->outputPtr);
+    HCCL_INFO("[MC2_OPEN_DIAG][FormatRun] runOpType %u, runAlgName[%s], offset %llu, runInputPtr %p, "
+              "runOutputPtr %p, runCount %llu, runDataType %u, runOutputType %u, runStrideCount %llu, stream %p.",
+              static_cast<u32>(param->opType), param->algName, static_cast<unsigned long long>(offset),
+              param->inputPtr, param->outputPtr, static_cast<unsigned long long>(param->DataDes.count),
+              static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
+              static_cast<unsigned long long>(param->DataDes.strideCount), param->stream);
     HCCL_INFO("Formatted open op param: repeat index %u, op type %u, input addr %#llx, output addr %#llx.", repeatIdx,
         static_cast<u32>(opType), param->inputPtr, param->outputPtr);
 

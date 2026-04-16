@@ -310,6 +310,11 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMs
     const u32 repeatCnt = static_cast<u32>(msg.addMsg.v1Msg.repeatCnt);
     const u64 waitAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.commitTurnCnt[msgPos].cnt));
     const u64 recordAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.finishedTurnCnt[msgPos].cnt));
+    HCCL_INFO("[MC2_OPEN_DIAG][ServerMsg] msgPos %u, repeatCnt %u, opParamKey %#llx, waitAddr %#llx, "
+              "recordAddr %#llx, resourceType %u.",
+              msgPos, repeatCnt, static_cast<unsigned long long>(opParamKey),
+              static_cast<unsigned long long>(waitAddr), static_cast<unsigned long long>(recordAddr),
+              static_cast<u32>(execCtx->resourceType));
 
     for (u32 i = 0U; i < repeatCnt; ++i) {
         std::vector<uint8_t> runParam{};

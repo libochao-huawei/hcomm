@@ -134,6 +134,16 @@ HcclResult LaunchOpenOpParamDataImpl(std::vector<uint8_t> &opParam)
     char *ctx = static_cast<char *>(param->resCtx);
     std::vector<char> seq(ctx, ctx + param->ctxSize);
     resCtx.DeSerialize(seq);
+    HCCL_INFO("[MC2_OPEN_DIAG][Launch] opType %u, algName[%s], inputPtr %p, outputPtr %p, count %llu, "
+              "dataType %u, outputType %u, strideCount %llu, resCtx %p, ctxSize %llu, stream %p.",
+              static_cast<u32>(param->opType), param->algName, param->inputPtr, param->outputPtr,
+              static_cast<unsigned long long>(param->DataDes.count), static_cast<u32>(param->DataDes.dataType),
+              static_cast<u32>(param->DataDes.outputType), static_cast<unsigned long long>(param->DataDes.strideCount),
+              param->resCtx, static_cast<unsigned long long>(param->ctxSize), param->stream);
+    HCCL_INFO("[MC2_OPEN_DIAG][LaunchResCtx] userRank %u, userRankSize %u, threadNum %zu, cclMemAddr %p, "
+              "cclMemSize %llu.",
+              resCtx.topoInfo.userRank, resCtx.topoInfo.userRankSize, resCtx.threads.size(), resCtx.cclMem.addr,
+              static_cast<unsigned long long>(resCtx.cclMem.size));
 
     CHK_RET(RestoreVarDataIfNeeded(*param, resCtx));
 
