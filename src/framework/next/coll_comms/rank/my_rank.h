@@ -24,6 +24,7 @@
 #include "hdc_pub.h"
 #include "rank_graph.h"
 #include "orion_adapter_hccp.h"
+#include "enum_factory"
 
 #include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
 

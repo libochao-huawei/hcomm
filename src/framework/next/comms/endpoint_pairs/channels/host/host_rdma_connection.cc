@@ -68,7 +68,7 @@ std::string HostRdmaConnection::Describe() const
 
 void HostRdmaConnection::Describe(std::string &dfxMsg)
 {
-    std::string dfxStr = StringFormat("local qpn[%u] local psn[%u], remote qpn[%u] remote psn[%u] "
+    std::string dfxStr = Hccl::StringFormat("local qpn[%u] local psn[%u], remote qpn[%u] remote psn[%u] "
         "retry cnt[%u] retry interval[%u] tc[%u] sl[%u]",
         locQpAttr_.qpn, locQpAttr_.psn, rmtQpAttr_.qpn, rmtQpAttr_.psn, roceAttr_.retryCnt,
         roceAttr_.retryInterval, roceAttr_.tc, roceAttr_.sl);
