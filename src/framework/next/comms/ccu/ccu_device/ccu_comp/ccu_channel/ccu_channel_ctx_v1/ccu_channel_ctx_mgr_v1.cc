@@ -154,8 +154,8 @@ static HcclResult ConfigChannelCtxDataV1(const uint32_t devPhyId, const uint8_t 
     const uint32_t channelId, const ChannelCtxDataV1 &channelCtxData)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     constexpr uint32_t dataArraySize   = 1; // 每次配置1个Channel
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_CHANNEL;

@@ -15,13 +15,22 @@
 #include "hccp_tlv.h"
 #include "hccp_tlv_hdc_mgr.h"
 
-#include "ccu_res_specs.h"
-#include "ccu_pfe_cfg_mgr.h"
-#include "ccu_comp.h"
-#include "ccu_res_batch_allocator.h"
+// #include "ccu_res_specs.h"
+// #include "ccu_pfe_cfg_mgr.h"
+// #include "ccu_comp.h"
+// #include "ccu_res_batch_allocator.h"
+
 #include "ccu_kernel_mgr.h"
 
 #include "adapter_rts.h"
+
+// 支持ccu新老通信域混跑临时添加
+#include "unified_platform/ccu/ccu_device/ccu_res_specs.h"
+#include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
+#include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
+#include "unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
+
+#include "exception_handler.h"
 
 namespace hcomm {
 
@@ -58,11 +67,33 @@ HcclResult CcuDrvHandle::Init()
     CHK_PTR_NULL(tlvHandle_);
 
     CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
-    CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
-    CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
-    CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
-    CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
-    // CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
+
+    // 支持ccu新老通信域混跑
+    EXCEPTION_HANDLE_BEGIN
+    Hccl::CcuResSpecifications::GetInstance(devLogicId_).Init();
+    Hccl::CcuComponent::GetInstance(devLogicId_).Init();
+    Hccl::CcuResBatchAllocator::GetInstance(devLogicId_).Init();
+    Hccl::CtxMgrImp::GetInstance(devLogicId_).Init();
+    EXCEPTION_HANDLE_END
+
+    // CHK_RET(CcuResSpecifications::GetInstance(devLogicId_).Init());
+    // CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
+    // CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
+    // CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
+    CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
+
+
+    return HcclResult::HCCL_SUCCESS;
+}
+
+static HcclResult CcuLegacyMgrDeinit(int32_t devLogicId)
+{
+    EXCEPTION_HANDLE_BEGIN
+    Hccl::CtxMgrImp::GetInstance(devLogicId).Deinit();
+    Hccl::CcuResBatchAllocator::GetInstance(devLogicId).Deinit();
+    Hccl::CcuComponent::GetInstance(devLogicId).Deinit();
+    Hccl::CcuResSpecifications::GetInstance(devLogicId).Deinit();
+    EXCEPTION_HANDLE_END
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -72,11 +103,12 @@ HcclResult CcuDrvHandle::Deinit()
     // 释放流程不打断，不抛异常，尽量尝试释放所有资源
     HCCL_RUN_INFO("[CcuDrvHandle] start to deinit ccu driver, deviceLogicId[%d].", devLogicId_);
     (void)CcuKernelMgr::GetInstance(devLogicId_).Deinit();
-    (void)CcuResBatchAllocator::GetInstance(devLogicId_).Deinit();
-    (void)CcuComponent::GetInstance(devLogicId_).Deinit();
-    (void)CcuPfeCfgMgr::GetInstance(devLogicId_).Deinit();
-    (void)CcuResSpecifications::GetInstance(devLogicId_).Deinit();
+    // (void)CcuResBatchAllocator::GetInstance(devLogicId_).Deinit();
+    // (void)CcuComponent::GetInstance(devLogicId_).Deinit();
+    // (void)CcuPfeCfgMgr::GetInstance(devLogicId_).Deinit();
+    // (void)CcuResSpecifications::GetInstance(devLogicId_).Deinit();
 
+    (void)CcuLegacyMgrDeinit(devLogicId_);
     (void)HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_UNINIT);
     return HcclResult::HCCL_SUCCESS;
 }
