@@ -185,11 +185,6 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
     memVec.push_back(memTemp);
     memTag.push_back("HcclBuffer");
  
-    if (memHandleNum == 0) {
-        return HCCL_SUCCESS;
-    }
-    CHK_PRT_RET(memHandles == nullptr, HCCL_ERROR("[CommMems] memHandles is nullptr"), HCCL_E_PTR);
-
     std::lock_guard<std::mutex> lock(memMutex_);
     CommMemInfo** handles = reinterpret_cast<CommMemInfo**>(memHandles);
     for (uint32_t i = 0; i < memHandleNum; i++) {
@@ -218,10 +213,6 @@ HcclResult CommMems::SetMemHandles(HcommMemHandle *memHandles, const std::vector
     CHK_PTR_NULL(memHandleVec[0]);
     cclMemInfo_.bufferHandle = memHandleVec[0];
     commMemHandleVec.push_back(static_cast<void*>(&cclMemInfo_));
-    if (memHandleVec.size() == 1) {
-        return HCCL_SUCCESS;
-    }
-    CHK_PRT_RET(memHandles == nullptr, HCCL_ERROR("[CommMems][SetMemHandles] memHandles is nullptr"), HCCL_E_PTR);
 
     CommMemInfo **handles = reinterpret_cast<CommMemInfo**>(memHandles);
     for (uint32_t i = 1; i < memHandleVec.size(); ++i) {
