@@ -48,7 +48,7 @@ public:
     }
 
     void operator=(uint64_t immediate) const{
-        auto ret = CcuVariableAssign(this->handle, immediate);
+        auto ret = CcuVariableAssignImm(this->handle, immediate);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }

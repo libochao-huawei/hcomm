@@ -38,7 +38,7 @@ extern CcuResult CcuVariableCreateByChannel(ChannelHandle channel,
 
     
 //Variable操作类 相关接口
-extern CcuResult CcuVariableAssign(CcuVariableHandle resVar, uint64_t immediate);
+extern CcuResult CcuVariableAssignImm(CcuVariableHandle resVar, uint64_t immediate);
 extern CcuResult CcuVariableAssignVar(CcuVariableHandle dstVarHandle, CcuVariableHandle srcVarHandle);
 extern CcuResult CcuVariableAddVarToVar(CcuVariableHandle resVar, CcuVariableHandle varA, CcuVariableHandle varB);
 
