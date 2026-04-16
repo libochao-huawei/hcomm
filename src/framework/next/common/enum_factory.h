@@ -11,7 +11,6 @@
 #ifndef HCCLV2_ENUM_FACTORY_H
 #define HCCLV2_ENUM_FACTORY_H
 
-
 #include "vector"
 
 #include <string>
