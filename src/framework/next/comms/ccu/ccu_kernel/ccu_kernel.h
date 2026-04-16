@@ -136,7 +136,7 @@ public:
     CcuResult LocalBufferReduce(CcuBufferHandle* bufHandles, uint32_t count, HcclDataType dataType, HcclDataType outputDataType, HcclReduceOp opType, CcuVariableHandle lenHandle, CcuEventHandle eventHandle);
 
     //运算重载 相关接口
-    CcuResult VariableAssign(CcuVariableHandle var, uint64_t immediate);
+    CcuResult VariableAssignImm(CcuVariableHandle var, uint64_t immediate);
     CcuResult VariableAssignVar(CcuVariableHandle var, CcuVariableHandle varA);
     CcuResult VariableAddVarToVar(CcuVariableHandle resVar,CcuVariableHandle varA, CcuVariableHandle varB);
     CcuResult AddressAssignImm(CcuAddressHandle addr, uint64_t immediate);
