@@ -80,6 +80,17 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
 HcclResult CcuDeinitFeature(const int32_t devLogicId);
 
 /**
+ * @brief 申请批量ccu channel资源
+ *
+ * @param deviceLogicId device逻辑ID
+ * @param todo
+ * @param todo
+ * @return HcclResult 返回HcclResult类型的结果
+ * @note todo:
+ */
+HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag);
+
+/**
  * @brief 按加速引擎模式申请批量资源
  *
  * @param deviceLogicId 设备逻辑ID

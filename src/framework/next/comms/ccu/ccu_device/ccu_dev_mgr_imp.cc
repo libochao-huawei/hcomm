@@ -25,6 +25,7 @@ namespace hcomm {
 static std::unordered_map<int32_t, std::shared_ptr<CcuDrvHandle>> ccuDrvHandleMap;
 static std::mutex ccuDrvHandleMutex;
 static bool ccuDriverInitAaginFlag = false; // 记录每个进程CCU驱动是否重复拉起
+static thread_local HcclMainboardId mainBoardType = HcclMainboardId::MAINBOARD_OTHERS; // 记录本卡的主板类型
 
 HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle)
 {
@@ -39,7 +40,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
     if (ccuDriverInitAaginFlag) {
         return HcclResult::HCCL_E_AGAIN;
     }
-    
+
     auto iter = ccuDrvHandleMap.find(devLogicId);
     if (iter != ccuDrvHandleMap.end()) {
         ccuDrvHandle = iter->second;
@@ -91,6 +92,15 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId)
     return HcclResult::HCCL_SUCCESS;
 }
 
+HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag)
+{
+    CHK_RET(CheckDieValid(__func__, devLogicId_, dieId, dieEnableFlags_));
+
+    const auto &dieEnableFlags = CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
+    enableFlag = dieEnableFlags[dieId];
+    return HcclResult::HCCL_SUCCESS;
+}
+
 // CCU设备管理对集合通信提供的接口
 HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
     const CcuEngine ccuEngine, CcuResHandle &resHandle)
@@ -133,6 +143,16 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
             resReq.missionReq.reqType = MissionReqType::FUSION_MULTIPLE_DIE;
             resReq.missionReq.req[dieId] = 2;
         }
+    }
+
+    if (mainBoardType == HcclMainboardId::MAINBOARD_OTHERS) {
+        CHK_RET(CcuGetMainboardId(deviceLogicId, mainBoardType));
+    }
+
+    if (mainBoardType == HcclMainboardId::MAINBOARD_PCIE_STD &&
+        ccuEngine == CcuEngine::CCU_MS) {
+        HCCL_ERROR("todo:");
+        return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 
     auto ret = CcuDevMgrImp::AllocResHandle(deviceLogicId, resReq, resHandle);

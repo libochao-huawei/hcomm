@@ -818,7 +818,7 @@ HcclResult CcuComponent::ReleaseXn(const uint8_t dieId, const std::vector<ResInf
     return HcclResult::HCCL_SUCCESS;
 }
 
-std::array<bool, CCU_MAX_IODIE_NUM> CcuComponent::GetDieEnableFlags() const
+const std::array<bool, CCU_MAX_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
     return dieEnableFlags_;
 }

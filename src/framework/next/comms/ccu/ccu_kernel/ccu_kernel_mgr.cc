@@ -20,10 +20,6 @@ namespace hcomm {
 
 CcuKernelMgr::~CcuKernelMgr()
 {
-    if (!initializedFlag_) {
-        return;
-    }
-
     if (instructionLoadDevMem_) {
         HCCL_RUN_INFO("[CcuKernelMgr][~CcuKernelMgr]: deviceLogicId[%d], free addr[%p]",
             devLogicId_, instructionLoadDevMem_);
@@ -56,6 +52,16 @@ HcclResult CcuKernelMgr::Init()
         return HcclResult::HCCL_SUCCESS;
     }
 
+    for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
+        bool enableFlag = false;
+        CHK_RET(CcuGetDieEnableInfo(devLogicId_, dieId, enableFlag));
+        if (!enableFlag) {
+            continue;
+        }
+
+        CHK_RET(InstantiationTranslator(dieId));
+    }
+
     initializedFlag_ = true;
     kernelMap_.clear();
     return HcclResult::HCCL_SUCCESS;
@@ -68,8 +74,8 @@ HcclResult CcuKernelMgr::Deinit()
     translatorResPack.handles.clear();
     initializedFlag_ = false;
     kernelMap_.clear();
-    translators.clear();
-    referenceMgrs.clear();
+    translators.clear(); // 包括清理ccu资源
+    referenceMgrs.clear(); // 包括清理ccu资源
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -248,7 +254,6 @@ static HcclResult AllocInstrRes(std::unique_ptr<CcuKernel> &kernel, const int32_
 HcclResult CcuKernelMgr::AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack)
 {
     CHK_RET(kernel->Init());
-    CHK_RET(InstantiationTranslator(kernel->GetDieId()));
 
     CcuResReq leftRes{};
     GetResNumFromResPack(resPack, leftRes);
