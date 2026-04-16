@@ -962,7 +962,7 @@ STATIC int RsPongJettyPostSend(struct RsPingCtxCb *pingCb, urma_cr_t *cr, struct
 
     // handle detect packet & send response packet
     recvSgeIdx = (uint32_t)cr->user_ctx;
-    if (recvSgeIdx > pingCb->pingJetty.recvSegCb.sgeNum) {
+    if (recvSgeIdx >= pingCb->pingJetty.recvSegCb.sgeNum) {
         hccp_err("param err recv_sge_idx:%u > sge_num:%u", recvSgeIdx, pingCb->pingJetty.recvSegCb.sgeNum);
         return -EIO;
     }
