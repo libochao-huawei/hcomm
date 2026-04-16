@@ -95,10 +95,11 @@ target_compile_options(ccl_kernel_decoupler PRIVATE
 target_include_directories(ccl_kernel_decoupler PRIVATE
     ${OPEN_HCCL_INCLUDE_ROOT}/asc_devkit
     ${OPEN_HCCL_INCLUDE_ROOT}/ops/op_common/inc
-    ${OPEN_HCCL_INCLUDE_ROOT}/common
-    ${OPEN_HCCL_INCLUDE_ROOT}/common/hcomm_dlsym
     ${HCCL_BASE_DIR}/legacy/unified_platform/resource/stream/aicpu
     $<TARGET_PROPERTY:ccl_kernel,INCLUDE_DIRECTORIES>
+    ${OPEN_HCCL_INCLUDE_ROOT}/common
+    ${OPEN_HCCL_INCLUDE_ROOT}/common/hcomm_dlsym
+    ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
 )
 
 add_library(ccl_kernel_decoupler_open OBJECT ${open_src_list})
