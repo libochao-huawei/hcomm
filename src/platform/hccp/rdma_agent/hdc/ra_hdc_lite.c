@@ -796,6 +796,7 @@ STATIC void RaHdcLitePeriodPollCqe(struct RaRdmaHandle *rdmaHandle)
                 RaHdcLiteSaveCqeErrInfo(qpHdcTmp, liteWc[i].status);
                 RaHdcLiteSaveQpCqeErrInfo(qpHdcTmp, liteWc[i].status);
                 RaRetryTimeoutExceptionCheck(rdmaHandle, &liteWc[i]);
+                qpHdcTmp->liteQpState = LITE_QP_STATE_ERR;
             }
         }
 
@@ -996,6 +997,9 @@ int RaHdcLiteTypicalSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, stru
     int ret;
     int i;
 
+    CHK_PRT_RETURN(qpHdc->liteQpState == LITE_QP_STATE_ERR, hccp_err("invalid liteQpState:%u qpn:%u phyId:%u",
+        qpHdc->liteQpState, qpHdc->qpn, qpHdc->phyId), -EINVAL);
+
     ret = RaHdcLiteHandleBp(qpHdc);
     if (ret != 0) {
         return ret;
@@ -1060,6 +1064,9 @@ int RaHdcLiteSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct Send
         CHK_PRT_RETURN(ret, hccp_err("[send][ra_hdc_wr]ra hdc get rem_mr failed ret(%d) phy_id(%u)",
             ret, qpHdc->phyId), ret);
     }
+
+    CHK_PRT_RETURN(qpHdc->liteQpState == LITE_QP_STATE_ERR, hccp_err("invalid liteQpState:%u qpn:%u phyId:%u",
+        qpHdc->liteQpState, qpHdc->qpn, qpHdc->phyId), -EINVAL);
 
     ret = RaHdcLiteHandleBp(qpHdc);
     if (ret != 0) {

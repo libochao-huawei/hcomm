@@ -29,6 +29,11 @@
 
 #define HDC_LITE_DEFAULT_WR_ID 0
 
+enum {
+    LITE_QP_STATE_RESET = 0,
+    LITE_QP_STATE_ERR = 6, // refer to IBV_QPS_ERR
+};
+
 struct LiteSendWr {
     struct SendWr wr;
     union {
