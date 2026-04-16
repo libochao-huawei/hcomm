@@ -94,9 +94,8 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId)
 
 HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag)
 {
-    CHK_RET(CheckDieValid(__func__, devLogicId_, dieId, dieEnableFlags_));
-
     const auto &dieEnableFlags = CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
+    CHK_RET(CheckDieValid(__func__, deviceLogicId, dieId, dieEnableFlags));
     enableFlag = dieEnableFlags[dieId];
     return HcclResult::HCCL_SUCCESS;
 }
@@ -151,7 +150,7 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
 
     if (mainBoardType == HcclMainboardId::MAINBOARD_PCIE_STD &&
         ccuEngine == CcuEngine::CCU_MS) {
-        HCCL_ERROR("todo:");
+        HCCL_ERROR("todo: ");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 

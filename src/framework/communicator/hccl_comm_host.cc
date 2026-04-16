@@ -26,7 +26,7 @@
 #include "launch_aicpu.h"
 #include "launch_device.h"
 #include "sal_pub.h"
-#include "types/types.h"
+#include "common/types/types.h"
 
 namespace hccl
 {
