@@ -1137,6 +1137,10 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
     currentCollOperator->staticAddr  = opParams.staticAddr;
     currentCollOperator->staticShape = opParams.staticShape;
     currentCollOperator->myRank      = GetMyRank();
+
+    // 从环境变量获取切分比例
+    currentCollOperator->fullMeshSplitRatio = EnvConfig::GetInstance().GetAlgoConfig().GetFullMeshSplitRatio();
+    HCCL_RUN_INFO("[HCCL_ENV][FULL MESH SPLIT RATIO] set to %lf.", currentCollOperator->fullMeshSplitRatio);
     if (opMode == OpMode::OPBASE) { // 单算子Scratch buffer为CCL Buffer
         currentCollOperator->scratchMem = DevBuffer::Create(GetCclBuffer()->GetAddr(), GetCclBuffer()->GetSize());
     } else if (opMode == OpMode::OFFLOAD) {

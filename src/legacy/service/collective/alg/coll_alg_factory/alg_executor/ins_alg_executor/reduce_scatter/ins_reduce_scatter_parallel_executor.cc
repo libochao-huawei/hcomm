@@ -210,9 +210,9 @@ void InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     std::vector<float> &splitDataSize) const
 {
     // to do 先做等分，后续根据性能做调整
-    double splitData = 0.5;
+    double splitData = fullMeshSplitRatio_;
     splitDataSize.push_back(splitData);
-    splitDataSize.push_back(splitData);
+    splitDataSize.push_back(1 - splitData);
     return;
 }
 
@@ -303,6 +303,9 @@ HcclResult InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAl
     const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params, ConnectedLinkMgr *linkMgr,
     InsQuePtr insQue)
 {
+    fullMeshSplitRatio_ = op.fullMeshSplitRatio;
+    HCCL_INFO("[InsReduceScatterParallelExecutor] fullMeshSplitRatio[%lf]", fullMeshSplitRatio_);
+    HCCL_INFO("[InsReduceScatterParallelExecutor] Orchestrate begins");
     // init and check params
     CHK_RET(Init(op, params, insQue));
 
@@ -355,7 +358,9 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 HcclResult InsReduceScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::Orchestrate(
     const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr insQue)
 {
-    HCCL_INFO("[InsReduceScatterParallelExecutor] Host Orchestrate begins.");
+    fullMeshSplitRatio_ = op.fullMeshSplitRatio;
+    HCCL_INFO("[InsReduceScatterParallelExecutor] fullMeshSplitRatio[%lf]", fullMeshSplitRatio_);
+    HCCL_INFO("[InsReduceScatterParallelExecutor] Orchestrate begins");
     // init and check params
     CHK_RET(Init(op, params, insQue));
 

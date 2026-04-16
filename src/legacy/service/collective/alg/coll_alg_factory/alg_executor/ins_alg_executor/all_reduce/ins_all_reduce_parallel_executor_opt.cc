@@ -136,9 +136,9 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 void InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::GetParallelDataSplitRate(
     std::vector<float> &splitDataSize) const
 {
-    double splitData = 0.5;
+    double splitData = fullMeshSplitRatio_;
     splitDataSize.push_back(splitData);
-    splitDataSize.push_back(splitData);
+    splitDataSize.push_back(1 - splitData);
     return;
 }
 
@@ -436,7 +436,9 @@ template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTempla
 HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1, InsAlgTemplate2, InsAlgTemplate3>::Orchestrate(
     const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr insQue)
 {
-    HCCL_INFO("[InsAllReduceParallelExecutorV2] Host Orchestrate begins.");
+    fullMeshSplitRatio_ = op.fullMeshSplitRatio;
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] fullMeshSplitRatio[%lf]", fullMeshSplitRatio_);
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] Host Orchestrate begins");
 
     // init and check params
     CHK_RET(Init(op, params, insQue));
@@ -471,7 +473,9 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params, ConnectedLinkMgr *linkMgr,
     InsQuePtr insQue)
 {
-    HCCL_INFO("[InsAllReduceParallelExecutorV2] AICPU Orchestrate begins.");
+    fullMeshSplitRatio_ = op.fullMeshSplitRatio;
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] fullMeshSplitRatio[%lf]", fullMeshSplitRatio_);
+    HCCL_INFO("[InsAllReduceParallelExecutorV2] AICPU Orchestrate begins");
     // init and check params
     CHK_RET(Init(op, params, insQue));
     // 获取当前通信域的信息

@@ -117,9 +117,13 @@ template <class T> inline T Str2T(const std::string &s)
     if (s.size() > MAX_LEN_OF_DIGIT_ENV) {
         THROW<InvalidParamsException>(StringFormat("Invalid env len, len[%zu] should not be bigger than %u.", s.size(), MAX_LEN_OF_DIGIT_ENV));
     }
-    // 检查是否为全数字
-    if (!std::all_of(s.begin(), s.end(), ::isdigit)) {
-        THROW<InvalidParamsException>(StringFormat("[Init][EnvVarParam]Invalid env config, [%s] contains non-digit char.", s.c_str()));
+    // 内联正则校验：匹配整型或者double类型字符串
+    static const std::regex numberRegex(
+        "^([0-9]+\\.?[0-9]*|[0-9]*\\.?[0-9]+)([eE][+]?[0-9]+)?$");
+    
+    if (!std::regex_match(s, numberRegex)) {
+        THROW<InvalidParamsException>(
+            StringFormat("[Init][EnvVarParam]Env config \"%s\" is not valid.", s.c_str()));
     }
     return String2T<T>(s);
 }
