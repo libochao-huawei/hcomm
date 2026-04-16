@@ -707,11 +707,22 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
                 exceptionTaskInfo.GetBaseInfo().c_str(), (exceptionTaskInfo.GetParaInfo()).c_str(),
                 ""})
         );
+    } else if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_SDMA) {
+        HCCL_ERROR("[] ET0012.");
+        RPT_INPUT_ERR(true,
+            "EI0002",
+            std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+            std::vector<std::string>({
+                std::to_string(exceptionTaskInfo.remoteRank_),
+                exceptionTaskInfo.GetBaseInfo().c_str(), (exceptionTaskInfo.GetParaInfo()).c_str(),
+                ""})
+        );
     } else if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_REDUCE_WITH_NOTIFY 
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_WRITE_WITH_NOTIFY
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_INLINE_WRITE
         || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB_REDUCE_INLINE
-        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB) {
+        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_UB
+        || exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_CCU) {
         HCCL_ERROR("[ReportErrorMsg] EI0018");
         RPT_INPUT_ERR(true,
             "EI0018",
