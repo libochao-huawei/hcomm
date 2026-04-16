@@ -134,7 +134,7 @@ inline CcuResult WriteReduceNb(ChannelHandle ch, CcuRemoteAddr remote, CcuLocalA
 
 // ==================== Loop ====================
 
-inline CcuResult CreateBlockExecutor(CcuLoopExecutors *pool, uint32_t count) {
+inline CcuResult CreateLoopExecutor(CcuLoopExecutors *pool, uint32_t count) {
     return CcuCreateBlockExecutor(pool, count);
 }
 
@@ -145,13 +145,13 @@ inline CcuResult LoopSetParam(CcuLoop loop, CcuVariable *formalParam, CcuVariabl
     return CcuLoopSetParam(loop, formalParam->handle, actualParam->handle);
 }
 
-inline CcuResult LoopGroupCreate(CcuLoopGroup *group,
+inline CcuResult CreateLoopGroup(CcuLoopGroup *group,
     const CcuLoopGroupConfig *config, CcuLoopExecutors enginePool)
 {
     return CcuLoopGroupCreate(group, config, enginePool);
 }
 
-inline CcuResult LoopGroupCreate(CcuLoopGroup *group,
+inline CcuResult CreateLoopGroup(CcuLoopGroup *group,
     CcuVariable *parallelVar, CcuVariable *offsetVar, CcuLoopExecutors enginePool)
 {
     if (parallelVar == nullptr || offsetVar == nullptr) {
@@ -160,13 +160,13 @@ inline CcuResult LoopGroupCreate(CcuLoopGroup *group,
     return CcuLoopGroupCreateFromVar(group, parallelVar->handle, offsetVar->handle, enginePool);
 }
 
-inline CcuResult LoopGroupAddLoop(CcuLoopGroup group,
+inline CcuResult AddLoop(CcuLoopGroup group,
     CcuLoop loop, const CcuLoopConfig *config)
 {
     return CcuLoopGroupAddLoop(group, loop, config);
 }
 
-inline CcuResult LoopGroupAddLoop(CcuLoopGroup group,
+inline CcuResult AddLoop(CcuLoopGroup group,
     CcuLoop loop, CcuVariable *loopParamVar)
 {
     if (loopParamVar == nullptr) {

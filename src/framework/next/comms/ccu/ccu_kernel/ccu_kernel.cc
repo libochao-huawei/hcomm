@@ -409,7 +409,7 @@ CcuResult CcuKernel::VariableCreateByChannel(ChannelHandle channel, uint32_t var
 }
 
 
-CcuResult CcuKernel::VariableAssign(CcuVariableHandle varHandle, uint64_t immediate)
+CcuResult CcuKernel::VariableAssignImm(CcuVariableHandle varHandle, uint64_t immediate)
 {
     CcuRep::Variable *variable{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
