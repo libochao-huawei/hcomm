@@ -105,14 +105,14 @@ std::shared_ptr<TaskInfo> GlobalMirrorTasks::GetTaskInfo(u32 devId, u32 streamId
         return taskInfo->taskId_ == taskId;
     };
 
-    auto task = *queue->Find(FindTask);
-    if (task == *queue->End()) {
+    auto task = queue->Find(FindTask);
+    if (*task == *queue->End()) {
         return nullptr;
     };
 
     HCCL_INFO("[GlobalMirrorTasks][GetTaskInfo]find devId[%u], streamId(sqId)[%u] taskId(sqeId)[%u]", devId, streamId, taskId);
 
-    return *task;
+    return *(*task);
 }
 
 std::map<u32, std::unique_ptr<TaskInfoQueue>>::iterator GlobalMirrorTasks::Begin(u32 devId)
