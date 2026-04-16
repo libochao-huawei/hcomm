@@ -546,8 +546,8 @@ HcclResult CcuComponent::ConfigMsIdToken()
 {
     const bool armX86Flag = CcuResSpecifications::GetInstance(devLogicId_).GetArmX86Flag();
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId_};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     for (uint8_t dieId = 0; dieId < CCU_MAX_IODIE_NUM; dieId++) {
         const auto &dieIter = ccuRmaBufferMap_.find(dieId);
         if (dieIter == ccuRmaBufferMap_.end()) {
@@ -902,8 +902,8 @@ HcclResult CcuComponent::DestroyAllJettys()
 
 HcclResult CcuComponent::SetProcess(CcuOpcodeType opCode) const
 {
-    struct CustomChannelInfoIn  inBuff;
-    struct CustomChannelInfoOut outBuff;
+    CustomChannelInfoIn  inBuff;
+    CustomChannelInfoOut outBuff;
 
     inBuff.op = opCode;
     for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {

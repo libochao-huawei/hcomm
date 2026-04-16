@@ -632,8 +632,8 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
 
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     // 设置操作码和通道数据
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_INSTRUCTION;

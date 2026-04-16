@@ -41,8 +41,8 @@ static CcuVersion CheckCcuVersion()
 static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_DIE_WORKING;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;
@@ -108,8 +108,8 @@ static HcclResult CheckResSpecifications(const uint32_t devPhyId, const uint8_t 
     const CcuVersion ccuVersion, CcuResSpecInfo &resSpecs)
 {
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
     inBuff.op                    = CcuOpcodeType::CCU_U_OP_GET_BASIC_INFO;
     inBuff.offsetStartIdx        = 0;
     inBuff.data.dataInfo.udieIdx = dieId;

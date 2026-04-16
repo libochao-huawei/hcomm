@@ -101,8 +101,8 @@ HcclResult ConfigJettyCtxData(const uint8_t dieId, const uint32_t devPhyId,
 {
     const uint32_t jettyNum = jettyCtxData.size(); // 分配与配置前校验已保证不为0
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     inBuff.op = CcuOpcodeType::CCU_U_OP_SET_JETTY_CTX;
     (void)memset_s(inBuff.data.raw, sizeof(inBuff.data.raw), 0, sizeof(inBuff.data.raw));
