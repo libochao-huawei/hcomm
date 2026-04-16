@@ -287,16 +287,12 @@ HcclResult InsTempBroadcastNHR::BatchTxRx(AicpuNHRStepInfo &stepInfo, const ResL
     BufferType memType = (opMode_ == OpMode::OPBASE) ? BufferType::SCRATCH : BufferType::INPUT;
     u64 memOffset = (opMode_ == OpMode::OPBASE) ? buffInfo_.scratchBuffBaseOff : buffInfo_.inBuffBaseOff;
     // 只有Tx,使用send指令
-    if (stepInfo.txSliceIdxs.size() > 0 && stepInfo.rxSliceIdxs.size() == 0) {
+    if (myRank_ == root_ && stepInfo.txSliceIdxs.size() > 0) {
         CHK_RET(BatchSend(stepInfo, tempLinks, queue, sliceInfoVec, memType, memOffset));
     }
     // 只有Rx，使用recv指令
-    else if (stepInfo.txSliceIdxs.size() == 0 && stepInfo.rxSliceIdxs.size() > 0) {
+    else if (myRank_ != root_ && stepInfo.rxSliceIdxs.size() > 0) {
         CHK_RET(BatchRecv(stepInfo, tempLinks, queue, sliceInfoVec, memType, memOffset));
-    }
-    // 既有Tx又有Rx，使用SendRecv指令
-    else if (stepInfo.txSliceIdxs.size() > 0 && stepInfo.rxSliceIdxs.size() > 0) {
-        CHK_RET(BatchSR(stepInfo, tempLinks, queue, sliceInfoVec, memType, memOffset));
     }
     return HcclResult::HCCL_SUCCESS;
 }

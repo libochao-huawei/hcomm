@@ -39,6 +39,7 @@ public:
 
 private:
     HcclResult PostCopy(const TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues) const;
+    HcclResult PreCopy(const TemplateDataParams &tempAlgParams, std::vector<InsQuePtr> &tempInsQues) const;
     HcclResult CalcCommRankSetforScatter(const u32 groupRankSize, std::vector<u32> &commRanks) const;
     HcclResult CalcCommRankSetforAllGather(const u32 groupRankSize, std::vector<u32> &commRanks) const;
     HcclResult RunScatter(const std::vector<u32> &commRanks, const TemplateDataParams &tempAlgParams,
