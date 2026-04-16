@@ -66,22 +66,21 @@ public:
     void SetDmaMode(const DmaMode dmaMode);
 
     // rmaDataBufferMgr
-    virtual void SetRmaDataBufferMgr(const RmtDataBufferMgr* rmaDataBufferMgr);
+    virtual void SetRmaDataBufferMgr(const RmtDataBufferMgr *rmaDataBufferMgr);
 
     virtual std::string Describe() const = 0;
 
     // host
-    virtual HcclResult Orchestrate(const RankGraph *rankGraph, const CollAlgOperator &op,
-                                  const CollAlgParams &params, InsQuePtr insQue)
+    virtual HcclResult Orchestrate(
+        const RankGraph *rankGraph, const CollAlgOperator &op, const CollAlgParams &params, InsQuePtr insQue)
         = 0;
-    virtual HcclResult CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize,
-        CollOffloadOpResReq &resReq) = 0;
+    virtual HcclResult CalcResOffload(const RankGraph *rankGraph, const u64 &dataSize, CollOffloadOpResReq &resReq) = 0;
     virtual HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) = 0;
-    virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
+    virtual HcclResult CalNumBlocks(u32 &numBlocks, u64 dataSize, u32 numBlocksLimit);
 
     // device
-    virtual HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op,
-                                     const CollAlgParams &params, ConnectedLinkMgr *linkMgr, InsQuePtr insQue)
+    virtual HcclResult Orchestrate(const AlgTopoInfo &topoInfo, const CollAlgOperator &op, const CollAlgParams &params,
+        ConnectedLinkMgr *linkMgr, InsQuePtr insQue)
         = 0;
 
     // load params
@@ -101,34 +100,33 @@ protected:
 
     // link prepare
     HcclResult SetLinkPrty(const std::vector<BasePortType> &linkPriority);
-    
-    HcclResult CalcParallelNotifyReq(const u32 primQueueNum, 
-                                    std::vector<std::tuple<QId, QId, u32>> &queueNotifys) const;
-    HcclResult CalcLocalRankSize(const RankId myRank,
-                                const std::vector<std::vector<RankId>> &virtRanks, 
-                                u32 &rankSizeLevel0, u32 &rankSizeLevel1) const;
+
+    HcclResult CalcParallelNotifyReq(
+        const u32 primQueueNum, const u32 IntraqueNum, std::vector<std::tuple<QId, QId, u32>> &queueNotifys) const;
+    HcclResult CalcLocalRankSize(const RankId myRank, const std::vector<std::vector<RankId>> &virtRanks,
+        u32 &rankSizeLevel0, u32 &rankSizeLevel1) const;
     LinkReq GetSeqLinksUnion(const LinkReq &linkReq0, const LinkReq &linkReq1) const;
 
-    CollAlgOperator                  op_;
+    CollAlgOperator op_;
     // CollAlg base params
-    RankId  myRank_   = INVALID_RANKID;
-    u32     rankSize_ = 0;
-    DevType devType_  = DevType::DEV_TYPE_NOSOC;
-    RankId  sendRecvRemoteRank_ = INVALID_RANKID;
+    RankId myRank_ = INVALID_RANKID;
+    u32 rankSize_ = 0;
+    DevType devType_ = DevType::DEV_TYPE_NOSOC;
+    RankId sendRecvRemoteRank_ = INVALID_RANKID;
 
     // CollAlgOperator
     OpType opType_;
     // opInfo
     ReduceOp redOp_;
-    u32      root_ = INVALID_U32;
+    u32 root_ = INVALID_U32;
     // dataInfo
     DataType dataType_;
     DataType outputDataType_;
-    u64      dataCount_ = 0;
+    u64 dataCount_ = 0;
 
     // CollAlgParams
     OpMode opMode_;
-    u64    maxTmpMemSize_ = 0;
+    u64 maxTmpMemSize_ = 0;
 
     // dataSize
     u64 dataSize_ = 0;
@@ -136,7 +134,7 @@ protected:
 
     // data allignment
     bool enableAllign_ = false;
-    u64  allignSize_   = 0;
+    u64 allignSize_ = 0;
 
     // detour requirements
     bool enableDetour_ = false;
@@ -151,7 +149,7 @@ protected:
     std::vector<BasePortType> linkPriority_ = DEFAULT_LINK_PRIORITY;
 
     // 管理远端地址
-    RmtDataBufferMgr *rmaDataBufferMgr_{ nullptr };
+    RmtDataBufferMgr *rmaDataBufferMgr_{nullptr};
 };
 
 } // namespace Hccl

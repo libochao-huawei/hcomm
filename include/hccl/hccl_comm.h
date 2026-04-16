@@ -247,11 +247,11 @@ extern HcclResult HcclCommResume(HcclComm comm) HCOMM_WEAK_SYMBOL;
 
 /**
  * @brief Get the current status of the communication.
- * @param comm A pointer identifying the communication resource to query
+ * @param commId A pointer identifying the communication resource to query
  * @param status A pointer to store the retrieved communication status.
  * @return HcclResult
 */
-extern HcclResult HcclCommGetStatus(HcclComm comm, HcclCommStatus *status) HCOMM_WEAK_SYMBOL;
+extern HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status);
 
 /**
  * @brief Set the virtual memory range to HCCL communicator

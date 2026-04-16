@@ -563,3 +563,49 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_AddStreamToModel)
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
     GlobalMockObject::verify();
 }
+
+TEST_F(HcclImplCommonNewTest, ut_AicpuInitOpTilingDataAicpuCache_When_AclgraphCacheDisable_Expect_NoIncrement)
+{
+    HcclCommunicator communicator;
+    OpParam opParam;
+    opParam.aicpuCacheEnable = 0;
+    opParam.isCapture = true;
+    struct OpTilingData opTilingData;
+    memset_s(&opTilingData, sizeof(OpTilingData), 0, sizeof(OpTilingData));
+
+    HcclResult ret = communicator.AicpuInitOpTilingDataAicpuCache(opParam, HcclCMDType::HCCL_CMD_ALLREDUCE, &opTilingData);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(opTilingData.aicpuCacheEnable, 0);
+}
+
+TEST_F(HcclImplCommonNewTest, ut_AicpuInitOpTilingDataAicpuCache_When_AclgraphCacheEnable_Expect_NoIncrement)
+{
+    HcclCommunicator communicator;
+    SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+
+    OpParam opParam;
+    opParam.aicpuCacheEnable = 1;
+    opParam.isCapture = true;
+    struct OpTilingData opTilingData;
+    memset_s(&opTilingData, sizeof(OpTilingData), 0, sizeof(OpTilingData));
+
+    HcclResult ret = communicator.AicpuInitOpTilingDataAicpuCache(opParam, HcclCMDType::HCCL_CMD_ALLREDUCE, &opTilingData);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(opTilingData.aicpuCacheEnable, 1);
+}
+
+TEST_F(HcclImplCommonNewTest, ut_AicpuInitOpTilingDataAicpuCache_When_AclgraphZerocopyCacheEnable_Expect_IncrementBy10)
+{
+    HcclCommunicator communicator;
+    SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
+
+    OpParam opParam;
+    opParam.aicpuCacheEnable = 1;
+    opParam.isCapture = true;
+    struct OpTilingData opTilingData;
+    memset_s(&opTilingData, sizeof(OpTilingData), 0, sizeof(OpTilingData));
+
+    HcclResult ret = communicator.AicpuInitOpTilingDataAicpuCache(opParam, HcclCMDType::HCCL_CMD_ALLREDUCE, &opTilingData);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(opTilingData.aicpuCacheEnable, 11);
+}
