@@ -43,6 +43,7 @@ public:
     uint32_t GetChannelId() const;
     uint32_t GetDieId() const;
     int32_t  GetDevLogicId() const;
+    HcclResult    Describe(std::string &dfxMsg);
 
 protected:
     TpProtocol tpProtocol_{TpProtocol::INVALID};
@@ -77,7 +78,6 @@ private:
     HcclResult    ReleaseConnRes();
     HcclResult    ReturnErrorStatus(const std::string &funcName);
     std::string   Describe();
-    HcclResult    Describe(std::string &dfxMsg);
 
 private:
     CcuConnStatus status_{CcuConnStatus::CONN_INVALID};

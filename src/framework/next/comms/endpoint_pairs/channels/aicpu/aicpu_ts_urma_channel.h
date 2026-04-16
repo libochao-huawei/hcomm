@@ -10,6 +10,7 @@
 #ifndef AICPU_TS_URMA_CHANNEL_H
 #define AICPU_TS_URMA_CHANNEL_H
 
+#include <atomic>
 #include "../channel.h"
 #include "../../sockets/socket_mgr.h"
 

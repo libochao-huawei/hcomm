@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <vector>
+#include <atomic>
 
 #include "../channel.h"
 

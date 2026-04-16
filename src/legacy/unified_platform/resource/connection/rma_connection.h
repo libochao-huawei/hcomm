@@ -70,8 +70,6 @@ public:
 
     virtual string Describe() const = 0;
 
-    virtual HcclResult Describe(std::string &dfxMsg) const;
-
     virtual void Bind(RemoteRmaBuffer *remoteRmaBuf, BufferType bufType);
 
     virtual RemoteRmaBuffer *GetRemoteRmaBuffer(const BufferType &bufType);
@@ -126,6 +124,10 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not support."));
     }
 
+    virtual HcclResult Describe(std::string &dfxMsg) const
+    {
+        MACRO_THROW(NotSupportException, StringFormat("not support."));
+    }
 protected:
     RmaConnStatus status;
     Socket       *socket{nullptr};
