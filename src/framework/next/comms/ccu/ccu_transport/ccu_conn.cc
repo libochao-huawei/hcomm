@@ -507,7 +507,25 @@ std::string CcuConnection::Describe()
 
 HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
+    std::string jettyIds;
+    for (size_t i = 0; i < ccuJettys_.size(); i++) {
+        uint16_t jettyId = ccuJettys_[i]->GetJettyedOutParam().id;
+        jettyIds += (i == 0 ? "" : ", ") + std::to_string(jettyId);
+    }
 
+    Hccl::IpAddress locAddr{}, rmtAddr{};
+    (void)CommAddrToIpAddress(locAddr_, locAddr);
+    (void)CommAddrToIpAddress(rmtAddr_, rmtAddr);
+    Hccl::Eid locEid = locAddr.GetReverseEid();
+    Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
+
+    std::string dfxStr = StringFormat("chip id[%u] die id[%u], func_id[%u], jetty ids[%s], "
+        "local eid[%s] remote eid[%s]",
+        devLogicId_, dieId_, funcId_, jettyIds.c_str(), 
+        locEid.Describe().c_str(), rmtEid.Describe().c_str());
+    dfxMsg += dfxStr;
+    HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
+    return HcclResult::HCCL_SUCCESS;
 }
 
 uint32_t CcuConnection::GetDieId() const
