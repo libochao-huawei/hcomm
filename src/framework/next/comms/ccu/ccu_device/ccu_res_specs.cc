@@ -58,7 +58,7 @@ static bool CheckDieEnable(const uint32_t devPhyId, const uint8_t dieId)
     }
 
     const uint32_t enableFlag = outBuff.data.dataInfo.dataArray[0].dieinfo.enableFlag;
-    return enableFlag == CCU_ENABLE_FLAG;
+    return enableFlag == Hccl::CCU_ENABLE_FLAG;
 }
 
 static CcuBaseInfoData ParseOutBuffToBaseInfoData(const CustomChannelInfoOut &outBuff)
