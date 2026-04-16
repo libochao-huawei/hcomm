@@ -4861,9 +4861,6 @@ void HcclCommAicpu::HandleIndOpCqe()
     ReadWriteLock rwLock(threadAicpuMutex_);
     rwLock.readLock();
     for (auto &thread : threads_) {
-        if (thread == nullptr) {
-            continue;
-        }
         Stream stream = *thread->GetStream();
         // 流上已有异常信息，不再重复读取
         if (GetStreamCqeExceptionStatus(stream) != CqeExceptionStatus::kNone) {
