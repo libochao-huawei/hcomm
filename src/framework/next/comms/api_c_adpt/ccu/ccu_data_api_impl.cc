@@ -113,12 +113,12 @@ CcuResult CcuVariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, C
 }
 
 //Variable操作类 相关接口
-CcuResult CcuVariableAssign(CcuVariableHandle resVar, uint64_t immediate)
+CcuResult CcuVariableAssignImm(CcuVariableHandle resVar, uint64_t immediate)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->VariableAssign(resVar, immediate));
+    CCU_CHK_RET(kernel->VariableAssignImm(resVar, immediate));
     
     return CcuResult::CCU_SUCCESS;
 }
