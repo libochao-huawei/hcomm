@@ -75,7 +75,7 @@ HcclResult CcuDrvHandle::Init()
     CHK_RET(CcuPfeCfgMgr::GetInstance(devLogicId_).Init());
     CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
     CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
-    // CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
+    CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
 
     return HcclResult::HCCL_SUCCESS;
 }
