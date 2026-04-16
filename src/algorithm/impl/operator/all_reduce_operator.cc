@@ -372,7 +372,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
         }
     }
 
-    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT &&
+    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT && deviceNumPerAggregation_ >= DEVICE_TWO &&
         (!isMeshTopo || multiModuleDiffDeviceNumMode_)) {
         // 保序规约场景（多batch一致），当前不支持A2标卡（ring拓扑场景）/ 非对称场景
         HCCL_ERROR("[SelectAlgfor910B] reduce order preservation only support MeshTopo(isMeshTopo:[%d]) and Symmetry("
