@@ -8,11 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-# add_subdirectory(ccu_comp)
+add_subdirectory(ccu_comp)
 
 set(src_list
-    # ccu_res_specs.cc
-    # ccu_res_batch_allocator.cc
+    ccu_res_specs.cc
+    ccu_res_batch_allocator.cc
     ccu_dev_mgr_imp.cc
     ccu_drv_handle.cc
     ccu_res_pack.cc

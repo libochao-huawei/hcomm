@@ -521,7 +521,7 @@ HcclResult CcuComponent::ConfigLoopChannel(const uint8_t dieId, const CommAddr &
 
     ChannelCfg cfg{};
     cfg.channelId = channelInfo.channelId;
-    CHK_RET(IpAddressToReverseHccpEid(ipAddr, cfg.remoteEid));
+    CHK_RET(IpAddressToReverseHcclEid(ipAddr, cfg.remoteEid));
     cfg.tpn       = importedOutParamMap_[dieId][0].second.tpn; // 环回仅1个对端
     cfg.remoteCcuVa   = ccuRmaBuffer->GetBuf()->GetAddr();
     cfg.memTokenId    = ccuRmaBuffer->GetTokenId();
