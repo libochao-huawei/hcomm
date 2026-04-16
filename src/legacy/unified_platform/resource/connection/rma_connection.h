@@ -70,6 +70,8 @@ public:
 
     virtual string Describe() const = 0;
 
+    virtual HcclResult Describe(std::string &dfxMsg) const = 0;
+
     virtual void Bind(RemoteRmaBuffer *remoteRmaBuf, BufferType bufType);
 
     virtual RemoteRmaBuffer *GetRemoteRmaBuffer(const BufferType &bufType);
