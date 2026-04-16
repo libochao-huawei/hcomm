@@ -73,7 +73,6 @@ CcuResult CcuAllocDemoKernel(CcuKernelArg arg)
 
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -98,7 +97,6 @@ CcuResult CcuNotifyDemoKernel(CcuKernelArg arg)
     ccu::NotifyWait(args->channelHandle, 0, 0x12);
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -124,7 +122,6 @@ CcuResult CcuLocalCopyKernel(CcuKernelArg arg)
     ccu::WaitEvent(evt);
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuLocalReduceKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
@@ -203,7 +200,6 @@ CcuResult CcuRemoteWriteKernel(CcuKernelArg arg)
     ccu::WaitEvent(evt);
     return CcuResult::CCU_SUCCESS;
 }
-
 // CcuResult CcuAddrDemoKernel(CcuKernelArg arg)
 // {
 //     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
