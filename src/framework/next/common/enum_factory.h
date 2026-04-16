@@ -113,14 +113,14 @@ struct EnumClassHash {
 
  /* 公共模块函数返回值定义，跟业务层同步 */
 const std::map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP = {
-    {CommProtocol::COMM_PROTOCOL_RESERVED, "RESERVED"},
-    {CommProtocol::COMM_PROTOCOL_HCCS, "HCCS"},
-    {CommProtocol::COMM_PROTOCOL_ROCE, "ROCE"},
-    {CommProtocol::COMM_PROTOCOL_PCIE, "PCIE"},
-    {CommProtocol::COMM_PROTOCOL_SIO, "SIO"},
-    {CommProtocol::COMM_PROTOCOL_UBC_CTP, "UBC_CTP"},
-    {CommProtocol::COMM_PROTOCOL_UBC_TP, "UBC_TP"},
-    {CommProtocol::COMM_PROTOCOL_UB_MEM, "UB_MEM"}
+    {COMM_PROTOCOL_RESERVED, "RESERVED"},
+    {COMM_PROTOCOL_HCCS, "HCCS"},
+    {COMM_PROTOCOL_ROCE, "ROCE"},
+    {COMM_PROTOCOL_PCIE, "PCIE"},
+    {COMM_PROTOCOL_SIO, "SIO"},
+    {COMM_PROTOCOL_UBC_CTP, "UBC_CTP"},
+    {COMM_PROTOCOL_UBC_TP, "UBC_TP"},
+    {COMM_PROTOCOL_UB_MEM, "UB_MEM"}
 };
 
 inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
@@ -134,13 +134,13 @@ inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
 }
 
 const std::map<CommEngine, std::string> HCOM_COMM_ENGINE_STR_MAP = {
-    {CommEngine::COMM_ENGINE_RESERVED, "RESERVED"},
-    {CommEngine::COMM_ENGINE_CPU, "CPU"},
-    {CommEngine::COMM_ENGINE_CPU_TS, "CPU_TS"},
-    {CommEngine::COMM_ENGINE_AICPU, "AICPU"},
-    {CommEngine::COMM_ENGINE_AICPU_TS, "AICPU_TS"},
-    {CommEngine::COMM_ENGINE_AIV, "AIV"},
-    {CommEngine::COMM_ENGINE_CCU, "CCU"}
+    {COMM_ENGINE_RESERVED, "RESERVED"},
+    {COMM_ENGINE_CPU, "CPU"},
+    {COMM_ENGINE_CPU_TS, "CPU_TS"},
+    {COMM_ENGINE_AICPU, "AICPU"},
+    {COMM_ENGINE_AICPU_TS, "AICPU_TS"},
+    {COMM_ENGINE_AIV, "AIV"},
+    {COMM_ENGINE_CCU, "CCU"}
 };
 
 inline std::string GetCommEngineEnumStr(CommEngine engine)
