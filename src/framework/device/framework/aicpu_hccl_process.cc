@@ -319,6 +319,24 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetCommbyGroup(const std::string &gr
     return nullptr;
 }
 
+hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetComm(const std::string &group)
+{
+    if (group.empty()) {
+        HCCL_ERROR("[AicpuHcclProcess] group is empty");
+        return nullptr;
+    }
+    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
+    rwlock.readLock();
+    auto iter = g_commAicpuInfo.commMap.find(group);
+    if (iter == g_commAicpuInfo.commMap.end()) {
+        HCCL_ERROR("[AicpuHcclProcess] exist group size is [%u]", g_commAicpuInfo.commMap.size());
+        rwlock.readUnlock();
+        return nullptr;
+    }
+    rwlock.readUnlock();
+    return iter->second.first.get();
+}
+
 bool AicpuHcclProcess::GetCommExecStatus(const std::string &group)
 {
     auto iter = g_commAicpuInfo.commMap.find(group);

@@ -29,7 +29,7 @@ public:
 
     std::string Describe() const override
     {
-        return "Topo Match for NHR Algorithm (CURRENTLY only 910_95 is supported).";
+        return "Topo Match for NHR Algorithm (CURRENTLY only 950 is supported).";
     }
     using TopoMatchBase::MatchTopo;
     HcclResult MatchTopo(std::vector<std::vector<RankId>> &vTopo, std::vector<RankId> &virtRanks,

@@ -518,7 +518,7 @@ void CommRemoteAccess::PrintErrorConnection(const u32 role, const u32 num)
     HCCL_ERROR("1. the connection between this device and the target device is abnormal.");
     HCCL_ERROR("2. an exception occurred at the target devices.");
     HCCL_ERROR("3. the time difference between the execution of hcom on this device and the target device exceeds the "\
-        "timeout threshold, make sure this by keyworld [Entry-].");
+        "timeout threshold, make sure this by keyword [Entry-].");
     HCCL_ERROR("4. the behavior of executing the calculation graph on this device and the target device is " \
         "inconsistent. ");
     HCCL_ERROR("5. Now you can freely specify a port for listening and connecting. If an invalid port is chosen, "

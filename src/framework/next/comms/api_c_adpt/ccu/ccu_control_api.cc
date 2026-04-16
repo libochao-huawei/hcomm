@@ -25,6 +25,8 @@
 #include "thread.h"
 #include "rt_external.h"
 
+#include "env_config/env_config.h" // 暂时引用orion的环境变量处理模块
+
 CcuResult HcommCcuInsCreate(void *resDesc, CcuInsHandle *insHandle)
 {
     CCU_CHK_PTR_NULL(resDesc);
@@ -122,7 +124,7 @@ CcuResult HcommCcuKernelRegisterEnd(CcuInsHandle insHandle)
 static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
     const aclrtStream stream)
 {
-    constexpr uint32_t defaultTimeOutSec = 120; // 当前未支持从环境变量配置
+    const uint32_t execTimeOutSec = Hccl::EnvConfig::GetInstance().GetRtsConfig().GetExecTimeOut();
     for (auto it = params.begin(); it != params.end(); ++it) {
         rtCcuTaskInfo_t taskInfo{};
         taskInfo.dieId       = it->dieId;
@@ -131,7 +133,7 @@ static HcclResult LaunchCcuTasks(const std::vector<hcomm::CcuTaskParam> &params,
         taskInfo.instCnt     = it->instCnt;
         taskInfo.key         = it->key;
         taskInfo.argSize     = it->argSize;
-        taskInfo.timeout     = defaultTimeOutSec;
+        taskInfo.timeout     = execTimeOutSec;
         std::copy(std::begin(it->args), std::end(it->args), std::begin(taskInfo.args));
         
         HCCL_INFO("[%s] start ccu task, dieId[%u] missionId[%u] instStartId[%u] instCnt[%u], "
@@ -182,6 +184,7 @@ CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
     // todo: 处理异常宏
     // EXCEPTION_HANDLE_BEGIN
     std::vector<hcomm::CcuTaskParam> taskParams{};
+    // todo: 需要处理dfx功能
     auto ret = kernel->GeneTaskParams(static_cast<uint64_t *>(taskArgs),
         argSize, taskParams);
     CHK_PRT_RET(ret != CcuResult::CCU_SUCCESS,
