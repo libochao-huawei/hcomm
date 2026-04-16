@@ -63,7 +63,7 @@ HcclResult CollCommAicpuDestroyFunc::Process()
 
     rwlock.writeLock();
     for (std::string& groupName : destroyComm) {
-        CHK_RET(AicpuIndopProcess::AicpuDestroyCommbyGroup(groupName));
+        (void)(AicpuIndopProcess::AicpuDestroyCommbyGroup(groupName));
     }
     rwlock.writeUnlock();
     return HCCL_SUCCESS;

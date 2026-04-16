@@ -80,6 +80,9 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
             continue;
         }
 
+        ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
+        ReadWriteLock threadRwlock(commThreadMutex);
+        threadRwlock.readLock();
         const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
         for (auto thread : threads) {
             rtLogicCqReport_t cqeException;
@@ -97,6 +100,7 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
                     "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
             }
         }
+        threadRwlock.readUnlock();
     }
     rwlock.readUnlock();
     return HCCL_SUCCESS;
