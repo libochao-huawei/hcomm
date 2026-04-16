@@ -34,7 +34,7 @@ public:
     __aicore__ inline uint64_t RoundUp(uint64_t dividend, uint64_t divisor)
     {
         if (divisor == 0) {
-            return dividend
+            return dividend；
         }
         return dividend / divisor + ((dividend % divisor != 0) ? 1 : 0);
     }
