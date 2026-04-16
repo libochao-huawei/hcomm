@@ -167,12 +167,12 @@ HcclResult ProfilingManager::ReportTaskInfo(s32 streamId, void* ctxPtr)
     u32 startSqeIdx = GetStartReportSqeIdx(streamId);
     HCCL_INFO("[ReportTaskInfo] Rank:%u, stream:%u, sqeNum:%u, startSqeIdx:%u, curSqeTailIdx: %u", profInfo.rankId, streamId,
         sqeContextBuffer->tailSqeIdx - startSqeIdx, startSqeIdx, sqeContextBuffer->tailSqeIdx);
-    MsprofAicpuHcclTaskInfo taskInfos[HCCLINFO_REPORT_BATCH_NUM] = {0};
+    MsprofAicpuHcclTaskInfo taskInfos[HCCLINFO_REPORT_BATCH_NUM] = {};
     auto endIdx = static_cast<uint32_t>(sqeContextBuffer->tailSqeIdx);
     bool isSupportBatchReport = (AdprofReportBatchAdditionalInfo != nullptr || MsprofReportBatchAdditionalInfo != nullptr);
     HCCL_INFO("AdprofReportBatchAdditionalInfo != nullptr || MsprofReportBatchAdditionalInfo != nullptr: %s", isSupportBatchReport ? "true" : "false");
     constexpr int32_t MAX_BATCH_REPORT_NUM = 512; // 最大支持批量上报的MsprofAdditionalInfo个数, 需要与接口实现侧保持一致
-    MsprofAdditionalInfo addInfoVec[MAX_BATCH_REPORT_NUM];
+    MsprofAdditionalInfo addInfoVec[MAX_BATCH_REPORT_NUM] = {};
     uint32_t addInfoIndx = 0;
     for (uint32_t idx = startSqeIdx, batchId = 0; idx < endIdx; ++idx) {
         // 获取SqeInfo
