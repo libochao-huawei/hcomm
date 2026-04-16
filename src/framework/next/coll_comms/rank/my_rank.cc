@@ -135,7 +135,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
     if (opExpansionMode_ == DEFAULT_MODE) {
         // 环境变量模块已处理，当用户未配置时，输出ccu sched模式
         auto accelerator = Hccl::EnvConfig::GetInstance().GetAlgoConfig().GetHcclAccelerator();
-        HCCL_INFO("[MyRank][%s] set op expansion mode by env[%s].",
+        HCCL_RUN_INFO("[MyRank][%s] set op expansion mode by env[%s].",
             __func__, accelerator.Describe().c_str());
         opExpansionMode_ = static_cast<uint32_t>(accelerator);
     }
@@ -299,7 +299,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     std::unordered_map<RankPair*, std::unordered_map<CommEngine,
         std::unordered_map<hcomm::EndpointPair*, u32>>> reuseChannelIdxMap{};
     
-    // todo: 新增一个vector记录本轮新申请的channel
+    // vector记录本轮新申请的channel
     newChannels_.clear();
     bool isAllSuccess = true;
 
@@ -381,9 +381,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         
-        // todo: 需要记录新申请的channel信息，用于临时资源清理，create channel需要新增一个返回值用于判断（可以使用HCCL_E_UNAVAIL）
-        // save channelIndex, reuseIdx
-        // todo: 申请channel因资源不足失败时，不能直接返回，要在接口内部清理channel
+        // CreateChannel 返回 HCCL_E_UNAVAIL 表示资源不足创建失败
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
         if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
             Hccl::TlsStatus tlsStatus = Hccl::TlsStatus::UNKNOWN;
@@ -397,6 +395,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             isAllSuccess = false;
             break;
         }
+        // 记录新申请的channel信息，用于清理临时资源
         newChannels_.emplace_back(std::make_pair(i, reuseIdx));
 
         CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -409,11 +408,9 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             __func__, i + 1, channelNum, remoteRank, channelHandles[i]);
     }
 
-    // todo: 如果申请失败
-    // 根据记录的channelIndex找到 channel desc，找到对应的endPoint pair，清理endpoint pair中记录的channel handle
-    // endpoint pair需要新增 DestroyChannel方法
+    // 如果申请失败，根据记录的channelIndex找到 channel desc，找到对应的endPoint pair，清理endpoint pair中记录的channel handle
     if (!isAllSuccess) {
-        HCCL_WARNING("[%s] create channel failed, destroy channels num[%u], engine[%d]", __func__, channelNum, engine);
+        HCCL_WARNING("[%s] create channel failed, destroy channels num[%u], engine[%d]", __func__, newChannels_.size(), engine);
         DestroyNewChannels(engine, channelDescs);
         return HCCL_E_UNAVAIL;
     }
@@ -424,10 +421,11 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
 HcclResult MyRank::DestroyNewChannels(CommEngine engine, const HcclChannelDesc* channelDescs)
 {
     uint32_t localRank = rankId_;
-    for (auto idxPair = std::rbegin(newChannels_); idxPair != std::rend(newChannels_); ++idxPair) { // 要从后往前销毁
-        const EndpointDesc &localEndpointDesc = channelDescs[(*idxPair).first].localEndpoint;
-        const EndpointDesc &remoteEndpointDesc = channelDescs[(*idxPair).first].remoteEndpoint;
-        uint32_t remoteRank = channelDescs[(*idxPair).first].remoteRank;
+    for (auto idxPairIter = std::rbegin(newChannels_); idxPairIter != std::rend(newChannels_); ++idxPairIter) { // 要从后往前销毁
+        auto idxPair = *idxPairIter;
+        const EndpointDesc &localEndpointDesc = channelDescs[idxPair.first].localEndpoint;
+        const EndpointDesc &remoteEndpointDesc = channelDescs[idxPair.first].remoteEndpoint;
+        uint32_t remoteRank = channelDescs[idxPair.first].remoteRank;
         hcomm::EndpointPair* endpointPair = nullptr;
         RankIdPair rankIdPair = std::make_pair(localRank, remoteRank);
         EndpointDescPair endpointDescPair = std::make_pair(localEndpointDesc, remoteEndpointDesc);
@@ -436,7 +434,7 @@ HcclResult MyRank::DestroyNewChannels(CommEngine engine, const HcclChannelDesc* 
         CHK_PTR_NULL(rankPair);
         CHK_RET(rankPair->GetEndpointPair(endpointDescPair, endpointPair));
         CHK_PTR_NULL(endpointPair);
-        CHK_RET(endpointPair->DestroyChannel(engine, (*idxPair).second));
+        CHK_RET(endpointPair->DestroyChannel(engine, idxPair.second));
     }
     newChannels_.clear();
     return HCCL_SUCCESS;

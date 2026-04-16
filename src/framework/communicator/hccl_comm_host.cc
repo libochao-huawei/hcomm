@@ -26,6 +26,7 @@
 #include "launch_aicpu.h"
 #include "launch_device.h"
 #include "sal_pub.h"
+#include "types/types.h"
 
 namespace hccl
 {
@@ -340,7 +341,7 @@ namespace hccl
             const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
             auto *commImplV2 = static_cast<Hccl::HcclCommunicator *>(commV2);
             constexpr bool isCcuMsAvailable = false; // 禁止legacy通信域使用ms模式，避免抢占过多coll comm ccu可用资源
-            CHK_RET(commImplV2->SetAccelerator(opExpansionMode, false));
+            CHK_RET(commImplV2->SetAccelerator(static_cast<HcclAccelerator::Value>(opExpansionMode), isCcuMsAvailable));
         }
 
         return HCCL_SUCCESS;
