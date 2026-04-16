@@ -69,6 +69,7 @@ using BaseCollOperator = struct BaseCollOperatorDef {
             u32 itemNum;
         } batchSendRecvDataDes;
     };
+    double fullMeshSplitRatio{0.5};
     // 使用初始化列表
     BaseCollOperatorDef() : opMode(), opType(), reduceOp(), dataType(), dataCount(0), root(0), sendRecvRemoteRank() {
     // 显式初始化 union 的默认成员

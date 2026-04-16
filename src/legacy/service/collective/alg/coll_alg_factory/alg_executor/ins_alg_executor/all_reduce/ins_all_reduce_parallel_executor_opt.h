@@ -137,6 +137,7 @@ private:
     ResLinks               interRSLinks_;
     ResLinks               intraAGLinks_;
     ResLinks               interAGLinks_;
+    double fullMeshSplitRatio_{0.5};
 };
 
 } // namespace Hccl

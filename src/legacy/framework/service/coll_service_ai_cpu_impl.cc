@@ -301,6 +301,8 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
         SetOffloadBufferParam(param, comm, op);
     }
 
+    param.kernel.op.algOperator.fullMeshSplitRatio = op.fullMeshSplitRatio;
+    
     param.kernel.op.algOperator.opMode    = op.opMode;
     param.kernel.op.algOperator.opType    = op.opType;
     param.kernel.op.algOperator.reduceOp  = op.reduceOp;

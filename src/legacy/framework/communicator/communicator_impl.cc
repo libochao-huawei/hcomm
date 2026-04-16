@@ -1137,13 +1137,15 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
     currentCollOperator->staticAddr  = opParams.staticAddr;
     currentCollOperator->staticShape = opParams.staticShape;
     currentCollOperator->myRank      = GetMyRank();
+
+    // 从环境变量获取切分比例
+    currentCollOperator->fullMeshSplitRatio = EnvConfig::GetInstance().GetAlgoConfig().GetFullMeshSplitRatio();
     if (opMode == OpMode::OPBASE) { // 单算子Scratch buffer为CCL Buffer
         currentCollOperator->scratchMem = DevBuffer::Create(GetCclBuffer()->GetAddr(), GetCclBuffer()->GetSize());
     } else if (opMode == OpMode::OFFLOAD) {
         if (offloadScrachBufferMap.find(opTag) != offloadScrachBufferMap.end()) {
             auto scratchMem = offloadScrachBufferMap[opTag];
-            HCCL_INFO("[CommunicatorImpl::CovertToCurrentCollOperator] offloadScrachBufferMap[%s] is [%s]",
-                      opTag.c_str(), scratchMem->Describe().c_str());
+            HCCL_INFO("[CommunicatorImpl::CovertToCurrentCollOperator] offloadScrachBufferMap[%s] is [%s]", opTag.c_str(), scratchMem->Describe().c_str());
             currentCollOperator->scratchMem = scratchMem;
         }
     }

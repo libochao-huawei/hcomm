@@ -158,6 +158,7 @@ void EnvAlgoConfig::Parse()
     hcclAlgoConfig.Parse();
     bufferSize.Parse();
     hcclAccelerator_.Parse();
+    fullMeshSplitRatio_.Parse();
     std::ostringstream hcclAlgoConfigOss;
     for (auto algoConfig : GetAlgoConfig()) {
         OpType opType = algoConfig.first;
@@ -186,6 +187,12 @@ u64 EnvAlgoConfig::GetBuffSize() const
 {
     return bufferSize.Get();
 }
+
+double EnvAlgoConfig::GetFullMeshSplitRatio() const
+{
+    return fullMeshSplitRatio_.Get();
+}
+
 
 HcclAccelerator EnvAlgoConfig::GetHcclAccelerator() const
 {

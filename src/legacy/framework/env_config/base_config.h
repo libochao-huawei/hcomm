@@ -154,6 +154,7 @@ public:
     u64                              GetBuffSize() const;
     HcclAccelerator                  GetHcclAccelerator() const;
     bool                             GetDeterministic() const;
+    double                           GetFullMeshSplitRatio() const;
 
 private:
     static constexpr u32 HCCL_CCL_COMM_DEFAULT_BUFFER_SIZE    = 200;
@@ -171,6 +172,8 @@ private:
                              }};
     CfgField<HcclAccelerator> hcclAccelerator_{"HCCL_OP_EXPANSION_MODE", HcclAccelerator::CCU_SCHED,
                                               CastHcclAccelerator};
+    CfgField<double> fullMeshSplitRatio_{"HCCL_ALG_MULTIPLE_DIMENSION_SPLIT_RATIO", 0.5,
+                                         Str2T<double>, CHK_RANGE_CLOSED<double>(0.0, 1.0)};
 };
 
 // 日志/DFX配置

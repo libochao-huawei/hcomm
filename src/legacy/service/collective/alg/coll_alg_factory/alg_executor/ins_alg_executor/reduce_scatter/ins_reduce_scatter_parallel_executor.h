@@ -66,6 +66,7 @@ private:
     std::vector<InsQuePtr> syncQueues_;
 
     const RankGraph *rankGraphPtr_ = nullptr;
+    double fullMeshSplitRatio_{0.5};
 };
 
 } // namespace Hccl
