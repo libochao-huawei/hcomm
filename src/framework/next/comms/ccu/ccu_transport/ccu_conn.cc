@@ -59,6 +59,7 @@ HcclResult CcuConnection::Init()
     DevEidInfo eidInfo{};
     CHK_RET(EidInfoMgr::GetInstance(devPhyId_).GetEidInfoByAddr(locAddr_, eidInfo));
     dieId_ = static_cast<uint8_t>(eidInfo.dieId);
+    funcId_ = eidInfo.funcId;
 
     EXCEPTION_HANDLE_END
 
