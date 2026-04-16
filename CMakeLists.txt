@@ -7,11 +7,15 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
+include(cmake/fetch_cann_cmake.cmake)
 cmake_minimum_required(VERSION 3.16.0)
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
+
+init_cann_project()
 
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
@@ -86,18 +90,29 @@ if(ENABLE_TEST)
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)
-    include(cmake/third_party/json.cmake)
-    include(cmake/third_party/gtest.cmake)
-    include(cmake/third_party/mockcpp.cmake)
-    include(cmake/third_party/rdma-core.cmake)
+    #include(cmake/third_party/json.cmake)
+    #include(cmake/third_party/gtest.cmake)
+    #include(cmake/third_party/mockcpp.cmake)
+    #include(cmake/third_party/rdma-core.cmake)
+
+    add_cann_third_party(json)
+    add_cann_third_party(gtest)
+    add_cann_third_party(mockcpp)
+    add_cann_third_party(rdma-core)
+
     add_subdirectory(test)
     return()
 
 elseif(BUILD_OPEN_PROJECT)
-    include(cmake/third_party/openssl.cmake)
-    include(cmake/third_party/ubengine.cmake)
-    include(cmake/third_party/rdma-core.cmake)
-    include(cmake/third_party/json.cmake)
+    #include(cmake/third_party/openssl.cmake)
+    #include(cmake/third_party/ubengine.cmake)
+    #include(cmake/third_party/rdma-core.cmake)
+    #include(cmake/third_party/json.cmake)
+
+    add_cann_third_party(openssl)
+    add_cann_third_party(rdma-core)
+    add_cann_third_party(json)
+
     include(cmake/hcomm_utils.cmake)
     include(cmake/config.cmake)
     include(cmake/package.cmake)
