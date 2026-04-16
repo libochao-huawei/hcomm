@@ -29,6 +29,8 @@
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 #include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
 #include "unified_platform/ccu/ccu_context/ccu_context_mgr_imp.h"
+#include "hccp_tlv_hdc_manager.h"
+#include "orion_adapter_hccp.h"
 
 #include "exception_handler.h"
 
@@ -60,16 +62,21 @@ HcclResult CcuDrvHandle::Init()
     HCCL_RUN_INFO("[CcuDrvHandle][%s], deviceLogicId: %d", __func__, devLogicId_);
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId_));
     // 初始化CCU平台层能力，有时序要求
-    // 当前走进A5通信域，暂时不需要主动拉起
-    auto &tlvHdcMgr = HccpTlvHdcMgr::GetInstance(devPhyId_);
-    CHK_RET(tlvHdcMgr.Init());
-    tlvHandle_ = tlvHdcMgr.GetHandle();
-    CHK_PTR_NULL(tlvHandle_);
+    // 当前走进A5通信域，暂时不需要主动拉起HDC通道
+    // 为了支持ccu新老通信域混跑，暂时复用原有的tlv mgr，避免重复申请资源
+    // auto &tlvHdcMgr = HccpTlvHdcMgr::GetInstance(devPhyId_);
+    // CHK_RET(tlvHdcMgr.Init());
+    // tlvHandle_ = tlvHdcMgr.GetHandle();
+    // CHK_PTR_NULL(tlvHandle_);
 
-    CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
+    // CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
 
     // 支持ccu新老通信域混跑
     EXCEPTION_HANDLE_BEGIN
+    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
+    if (Hccl::HrtRaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT) == HCCL_E_UNAVAIL) {
+        return HCCL_E_UNAVAIL;
+    }
     Hccl::CcuResSpecifications::GetInstance(devLogicId_).Init();
     Hccl::CcuComponent::GetInstance(devLogicId_).Init();
     Hccl::CcuResBatchAllocator::GetInstance(devLogicId_).Init();
