@@ -13,7 +13,7 @@
 #include "channel.h"
 #include "endpoint_pair.h"
 #include "hccl_res.h"
-#include "../../common/enum_factory.h"
+#include "comm_enum_utils.h"
 #include "../common/loggers/channel_logger.h"  // 日志记录器
 #include "hcclCommDfx.h"
 #include "env_config/env_config.h"
