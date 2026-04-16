@@ -38,7 +38,7 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
 
     // group2 需要最多引擎: 1(非展开) + 1+3(展开3次) = 5
     CcuLoopExecutors enginePool;
-    CCU_CHK_RET(CreateBlockExecutor(&enginePool, 5));
+    CCU_CHK_RET(CreateLoopExecutor(&enginePool, 5));
 
     // ========== Loop 1: param bindings ==========
     CcuLoop loop1;
@@ -67,13 +67,13 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         .addrOffset = 0, .bufferOffset = 0, .eventOffset = 0,
         .repeatNum = 0, .repeatLoopIdx = 0
     };
-    CCU_CHK_RET(LoopGroupCreate(&group1, &grpCfg1, enginePool));
+    CCU_CHK_RET(CreateLoopGroup(&group1, &grpCfg1, enginePool));
 
     CcuLoopConfig cfg1 = {.addrOffset = 0, .loopIterNum = 2};
-    CCU_CHK_RET(LoopGroupAddLoop(group1, loop1, &cfg1));
+    CCU_CHK_RET(AddLoop(group1, loop1, &cfg1));
 
     CcuLoopConfig cfg2 = {.addrOffset = 0, .loopIterNum = 2};
-    CCU_CHK_RET(LoopGroupAddLoop(group1, loop2, &cfg2));
+    CCU_CHK_RET(AddLoop(group1, loop2, &cfg2));
 
     r4 = numA + numB;
 
@@ -98,13 +98,13 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
         .addrOffset = 4096, .bufferOffset = 1, .eventOffset = 1,
         .repeatNum = 3, .repeatLoopIdx = 1
     };
-    CCU_CHK_RET(LoopGroupCreate(&group2, &grpCfg2, enginePool));
+    CCU_CHK_RET(CreateLoopGroup(&group2, &grpCfg2, enginePool));
 
     CcuLoopConfig cfg2_reuse = {.addrOffset = 0, .loopIterNum = 2};
-    CCU_CHK_RET(LoopGroupAddLoop(group2, loop2, &cfg2_reuse));
+    CCU_CHK_RET(AddLoop(group2, loop2, &cfg2_reuse));
 
     CcuLoopConfig cfg3 = {.addrOffset = 4096, .loopIterNum = 4};
-    CCU_CHK_RET(LoopGroupAddLoop(group2, loop3, &cfg3));
+    CCU_CHK_RET(AddLoop(group2, loop3, &cfg3));
 
     // ========== LoopGroup 3 (var-based): CcuVariable-based group & loop ==========
     CcuVariable varLoopParam{}, varParallel{}, varOffset{};
@@ -122,8 +122,8 @@ CcuResult CcuLoopAddDemoKernel(CcuKernelArg arg)
     }
 
     CcuLoopGroup group3;
-    CCU_CHK_RET(LoopGroupCreate(&group3, &varParallel, &varOffset, enginePool));
-    CCU_CHK_RET(LoopGroupAddLoop(group3, loop4, &varLoopParam));
+    CCU_CHK_RET(CreateLoopGroup(&group3, &varParallel, &varOffset, enginePool));
+    CCU_CHK_RET(AddLoop(group3, loop4, &varLoopParam));
 
     return CcuResult::CCU_SUCCESS;
 }
