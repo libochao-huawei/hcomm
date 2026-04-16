@@ -437,7 +437,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Write(void *dst, const void *src, uint64_t
     return HCCL_SUCCESS;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t len)
+HcclResult HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[HostCpuUrmaChannel::%s] START. dst[%p], src[%p], len[%llu].", __func__, dst, src, len);
 
@@ -492,7 +492,7 @@ HcclResult hcomm::HostCpuUrmaChannel::Read(void *dst, const void *src, uint64_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::ChannelFence()
+HcclResult HostCpuUrmaChannel::ChannelFence()
 {
     std::lock_guard<std::mutex> lock(fenceMutex_);
     HCCL_INFO("[HostCpuUrmaChannel::%s] start, wqeNum_ = %u", __func__, wqeNum_);
@@ -538,7 +538,7 @@ HcclResult hcomm::HostCpuUrmaChannel::ChannelFence()
     return HCCL_SUCCESS;
 }
 
-HcclResult hcomm::HostCpuUrmaChannel::UrmaPostJfr()
+HcclResult HostCpuUrmaChannel::UrmaPostJfr()
 {
     // 1. 准备jfr_wr
     urma_jfr_wr_t jfrWr{};

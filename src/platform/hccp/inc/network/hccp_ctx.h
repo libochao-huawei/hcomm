@@ -579,13 +579,6 @@ struct AsyncEvent {
     uint32_t eventType;
 };
 
-struct GetTpCfg {
-    union GetTpCfgFlag flag;
-    enum TransportModeT transMode;
-    union HccpEid localEid;
-    union HccpEid peerEid;
-};
-
 #define ASYNC_EVENT_MAX_NUM 128U
 
 /**
@@ -941,8 +934,6 @@ HCCP_ATTRI_VISI_DEF int RaCtxGetAuxInfo(void *ctxHandle, struct HccpAuxInfoIn *i
 HCCP_ATTRI_VISI_DEF int RaCtxGetCrErrInfoList(void *ctxHandle, struct CrErrInfo *infoList,
     unsigned int *num);
 
-HCCP_ATTRI_VISI_DEF int RaCtxGetTpInfoList(void *ctxHandle, struct GetTpCfg *cfg, struct HccpTpInfo infoList[],
-    unsigned int *num);
 #ifdef __cplusplus
 }
 #endif
