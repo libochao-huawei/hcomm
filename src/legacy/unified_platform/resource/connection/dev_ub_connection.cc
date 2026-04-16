@@ -819,6 +819,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg) const
     //     CHK_RET(HrtRaCtxGetTpAttr(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr));
     //     udpSport = tpAttr.dataUdpSrcport;
     // }
+    udpSport = udpSport & 0xFF;
     std::string dfxStr = StringFormat("chip id[%u] die id[%u], func id[%u] jetty id[%u] "
         "local eid[%s] remote eid[%s] udp sport[%u]",
         devLogicId, dieId, funcId, jettyId, locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport);

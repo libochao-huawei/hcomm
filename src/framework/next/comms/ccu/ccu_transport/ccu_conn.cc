@@ -516,6 +516,7 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     //     CHK_RET(HrtRaCtxGetTpAttr(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr));
     //     udpSport = tpAttr.dataUdpSrcport;
     // }
+    udpSport = udpSport & 0xFF;
 
     std::string jettyIds;
     for (size_t i = 0; i < ccuJettys_.size(); i++) {
