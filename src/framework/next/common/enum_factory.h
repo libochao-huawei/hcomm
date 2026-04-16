@@ -123,7 +123,7 @@ const std::map<CommProtocol, std::string> HCOM_COMM_PROTOCOL_STR_MAP = {
     {COMM_PROTOCOL_UB_MEM, "UB_MEM"}
 };
 
-inline std::string GetCommProtocolEnumStr(CommProtocol protocol)
+std::string GetCommProtocolEnumStr(CommProtocol protocol)
 {
     auto iter = HCOM_COMM_PROTOCOL_STR_MAP.find(protocol);
     if (iter == HCOM_COMM_PROTOCOL_STR_MAP.end()) {
@@ -143,7 +143,7 @@ const std::map<CommEngine, std::string> HCOM_COMM_ENGINE_STR_MAP = {
     {COMM_ENGINE_CCU, "CCU"}
 };
 
-inline std::string GetCommEngineEnumStr(CommEngine engine)
+std::string GetCommEngineEnumStr(CommEngine engine)
 {
     auto iter = HCOM_COMM_ENGINE_STR_MAP.find(engine);
     if (iter == HCOM_COMM_ENGINE_STR_MAP.end()) {
