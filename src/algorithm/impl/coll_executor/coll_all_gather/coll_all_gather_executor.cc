@@ -229,6 +229,11 @@ HcclResult CollAllGatherExecutor::RunLoop(OpParam &param, AlgResourceResponse &a
     CHK_PTR_NULL(commOutputPtr);
 
     u64 maxCountPerLoop = CalcLoopMaxCount(algRes.cclInputMem.size(), unitSize);
+    
+    //适配远端写allgather 对于 CCLbuffer的占用；
+    maxCountPerLoop = maxCountPerLoop / topoAttr_.userRankSize;
+    HCCL_DEBUG("[CollAllGatherExecutor][RunLoop]maxCountPerLoop[%llu], rankSize", maxCountPerLoop, topoAttr_.userRankSize);
+
     CHK_PRT_RET(maxCountPerLoop == 0,
         HCCL_ERROR("[CollAllGatherExecutor][RunLoop]tag[%s], userRankSize is [%u], maxCountPerLoop is [%llu].",
             param.tag.c_str(), topoAttr_.userRankSize, maxCountPerLoop),
@@ -239,6 +244,7 @@ HcclResult CollAllGatherExecutor::RunLoop(OpParam &param, AlgResourceResponse &a
             countLeft > 0; countLeft -= curCount) {
         curInputPtr += inputOffset;
         curOutputPtr += outputOffset;
+        
         // 判断剩余数据量对应的output size是否大于中转output size
         curCount = (countLeft > maxCountPerLoop) ? maxCountPerLoop : countLeft;
         u64 curSize = curCount * unitSize; // 单位：字节
