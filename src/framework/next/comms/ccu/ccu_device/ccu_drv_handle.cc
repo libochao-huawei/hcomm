@@ -36,47 +36,44 @@
 
 namespace hcomm {
 
-// static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
-//     const u32 tlvModuleType, const u32 tlvCcuMsgType)
-// {
-//     struct TlvMsg sendMsg {};
-//     struct TlvMsg recvMsg {};
-//     sendMsg.type = tlvCcuMsgType;
+static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
+    const u32 tlvModuleType, const u32 tlvCcuMsgType)
+{
+    struct TlvMsg sendMsg {};
+    struct TlvMsg recvMsg {};
+    sendMsg.type = tlvCcuMsgType;
 
-//     HCCL_INFO("[%s] tlvHandle[%p].", __func__, tlvHandle);
-//     int32_t ret = RaTlvRequest(tlvHandle, tlvModuleType, &sendMsg, &recvMsg);
-//     if (ret != 0) {
-//         HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. "
-//             "return: ret[%d], module type[%u], message type[%u]",
-//              HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlvModuleType, tlvCcuMsgType);
-//         return HcclResult::HCCL_E_NETWORK;
-//     }
+    HCCL_INFO("[%s] tlvHandle[%p].", __func__, tlvHandle);
+    int32_t ret = RaTlvRequest(tlvHandle, tlvModuleType, &sendMsg, &recvMsg);
+    if (ret != 0) {
+        HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. "
+            "return: ret[%d], module type[%u], message type[%u]",
+             HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), tlvModuleType, tlvCcuMsgType);
+        return HcclResult::HCCL_E_NETWORK;
+    }
 
-//     HCCL_INFO("tlv request success, tlv module type[%u], "
-//         "message type[%u]", tlvModuleType, tlvCcuMsgType);
-//     return HcclResult::HCCL_SUCCESS;
-// }
+    HCCL_INFO("tlv request success, tlv module type[%u], "
+        "message type[%u]", tlvModuleType, tlvCcuMsgType);
+    return HcclResult::HCCL_SUCCESS;
+}
 
 HcclResult CcuDrvHandle::Init()
 {
     HCCL_RUN_INFO("[CcuDrvHandle][%s], deviceLogicId: %d", __func__, devLogicId_);
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId_));
+    // 支持ccu新老通信域混跑
+    EXCEPTION_HANDLE_BEGIN
     // 初始化CCU平台层能力，有时序要求
     // 当前走进A5通信域，暂时不需要主动拉起HDC通道
     // 为了支持ccu新老通信域混跑，暂时复用原有的tlv mgr，避免重复申请资源
     // auto &tlvHdcMgr = HccpTlvHdcMgr::GetInstance(devPhyId_);
     // CHK_RET(tlvHdcMgr.Init());
     // tlvHandle_ = tlvHdcMgr.GetHandle();
-    // CHK_PTR_NULL(tlvHandle_);
 
-    // CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
+    tlvHandle_ = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
+    CHK_PTR_NULL(tlvHandle_);
+    CHK_RET(HccpRaTlvRequest(tlvHandle_, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT));
 
-    // 支持ccu新老通信域混跑
-    EXCEPTION_HANDLE_BEGIN
-    auto tlvHandle = Hccl::HccpTlvHdcManager::GetInstance().GetTlvHandle(devLogicId_);
-    if (Hccl::HrtRaTlvRequest(tlvHandle, TLV_MODULE_TYPE_CCU, MSG_TYPE_CCU_INIT) == HCCL_E_UNAVAIL) {
-        return HCCL_E_UNAVAIL;
-    }
     Hccl::CcuResSpecifications::GetInstance(devLogicId_).Init();
     Hccl::CcuComponent::GetInstance(devLogicId_).Init();
     Hccl::CcuResBatchAllocator::GetInstance(devLogicId_).Init();
@@ -88,7 +85,6 @@ HcclResult CcuDrvHandle::Init()
     // CHK_RET(CcuComponent::GetInstance(devLogicId_).Init());
     // CHK_RET(CcuResBatchAllocator::GetInstance(devLogicId_).Init());
     CHK_RET(CcuKernelMgr::GetInstance(devLogicId_).Init());
-
 
     return HcclResult::HCCL_SUCCESS;
 }
