@@ -33,7 +33,7 @@ public:
     HcclResult Describe(std::string &dfxMsg);
 
     TransportStatus GetStatus() override;
-    
+
     std::vector<char> GetUniqueId() override;
 
     std::vector<char> GetUniqueIdV2();

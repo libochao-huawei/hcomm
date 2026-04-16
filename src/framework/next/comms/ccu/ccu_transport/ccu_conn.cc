@@ -508,6 +508,15 @@ std::string CcuConnection::Describe()
 
 HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
+    uint16_t udpSport = 0xFFFF;
+    if (tpProtocol == TpProtocol::RTP) {
+        uint32_t attrBitmap = 0;
+        struct TpAttr tpAttr {0};
+        u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
+        CHK_RET(HrtRaCtxGetTpAttr(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr));
+        udpSport = tpAttr.dataUdpSrcport;
+    }
+
     std::string jettyIds;
     for (size_t i = 0; i < ccuJettys_.size(); i++) {
         uint16_t jettyId = ccuJettys_[i]->GetJettyedOutParam().id;
@@ -521,9 +530,9 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
 
     std::string dfxStr = StringFormat("chip id[%u] die id[%u], func_id[%u], jetty ids[%s], "
-        "local eid[%s] remote eid[%s]",
-        devLogicId_, dieId_, funcId_, jettyIds.c_str(), 
-        locEid.Describe().c_str(), rmtEid.Describe().c_str());
+        "local eid[%s] remote eid[%s], udp sport[%u]",
+        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEid.Describe().c_str(),
+        rmtEid.Describe().c_str(), udpSport);
     dfxMsg += dfxStr;
     HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
     return HcclResult::HCCL_SUCCESS;
