@@ -400,10 +400,10 @@ CcuResult CcuKernel::BlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t coun
 }
 CcuResult CcuKernel::VariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle)
 {
-    CcuRep::Variable *variable{nullptr};
-    CCU_CHK_RET(CreateVariable(channel, varIndex, variable));
+    CcuRep::Variable var(this);
+    CCU_CHK_RET(CreateVariable(channel, varIndex, &var));
     CcuVariableHandle handle = ccuVarMap_.size();
-    ccuVarMap_.emplace(handle, *variable);
+    ccuVarMap_.emplace(handle, var);
     *varHandle = handle;
     return CcuResult::CCU_SUCCESS;
 }
@@ -1603,7 +1603,7 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     grpDesc.addedLoops.insert(loop);
     grpDesc.loopCount++;
 
-    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry{};
+    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);
