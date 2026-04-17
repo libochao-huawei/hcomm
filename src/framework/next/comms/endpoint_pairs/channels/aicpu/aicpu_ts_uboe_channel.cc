@@ -304,7 +304,10 @@ void AicpuTsUboeChannel::EidPack(Hccl::BinaryStream &binaryStream)
     Hccl::IpAddress locIpv4Addr;
     CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr);
     Hccl::RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locIpv4Addr, locAddr_);
+    HCCL_INFO("[AicpuTsUboeChannel::%s] locAddr_ %s", __func__, locAddr_.Describe().c_str());
     binaryStream << locAddr_.GetUniqueId();
+    HCCL_INFO("[AicpuTsUboeChannel::%s] Send locAddr_ size[%u] of data success.",
+        __func__, locAddr_.GetUniqueId().size());
 }
 
 void AicpuTsUboeChannel::NotifyVecPack(Hccl::BinaryStream &binaryStream)
