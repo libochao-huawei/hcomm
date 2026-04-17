@@ -150,6 +150,11 @@ public:
         binaryStream << eid_.raw; // 保存eid.raw
         std::vector<char> result;
         binaryStream.Dump(result);
+
+        // 打印family_、scopeID_、dst、eid_.raw
+        HCCL_INFO("[IpAddress::GetUniqueId] family_[%d], scopeID_[%d], dst_[%s], eid_[%016llx:%016llx]",
+            family_, scopeID_, dst, static_cast<unsigned long long>(be64toh(eid_.in6.subnetPrefix)),
+            static_cast<unsigned long long>(be64toh(eid_.in6.interfaceId)));
         return result;
     }
 
@@ -337,9 +342,14 @@ public:
     explicit IpAddress(BinaryStream &binaryStream) // 基于序列化数据得到IpAddress
     {
         binaryStream >> family_ >> scopeID_;
+        // 打印family_、scopeID_
+        HCCL_INFO("[IpAddress::%s] family_[%d], scopeID_[%d]",
+            __func__, family_, scopeID_);
         char        dst[INET6_ADDRSTRLEN]{0};
         binaryStream >> dst;
         std::string ip = dst; 
+        // 打印ip
+        HCCL_INFO("[IpAddress::%s] ip_[%s]", __func__, ip.c_str());
         InitBinaryAddr(ip);
         binaryStream >> eid_.raw; // 恢复eid.raw，覆盖eid
     }
@@ -378,6 +388,8 @@ private:
             family_ = AF_INET;
             dst = &binaryAddr_.addr;
         }
+        // 打印family_、取dst的值打印
+        HCCL_INFO("[IpAddress::%s] family_[%d], dst_[%s]", __func__, family_, static_cast<char*>(dst));
         int res = inet_pton(family_, ip.c_str(), dst);
         if (res == -1) {
             THROW<NotSupportException>(StringFormat("Unsupported Address Family: %d", family_));
