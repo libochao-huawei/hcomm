@@ -658,7 +658,7 @@ cd ${BUILD_DIR}
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
     make_ut_gov
-if [ "${ENABLE_ST}" == "on" ]; then
+elif [ "${ENABLE_ST}" == "on" ]; then
     build_st 
 elif [ "${KERNEL}" == "true" ]; then
     build_kernel
