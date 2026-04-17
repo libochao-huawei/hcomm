@@ -445,65 +445,78 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     -s|--st)
+        ENABLE_ST="on"
         TEST="all"
         shift
         ;;
     --open_hccl_test)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="open_hccl_test"
         shift
         ;;
     --executor_hccl_test)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="executor_hccl_test"
         shift
         ;;
     --executor_reduce_hccl_test)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="executor_reduce_hccl_test"
         shift
         ;;
     --executor_pipeline_hccl_test)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="executor_pipeline_hccl_test"
         shift
         ;;
     --legacy_all_testcase)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_all_testcase"
         shift
         ;;
     --legacy_aicpu_2d_testcase)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_aicpu_2d_testcase"
         shift
         ;;
     --legacy_ccu_1d_hf16p_testcase)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_ccu_1d_hf16p_testcase"
         shift
         ;;
     --legacy_ccu_1d_testcase_part1)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_ccu_1d_testcase_part1"
         shift
         ;;
     --legacy_ccu_1d_testcase_part2)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_ccu_1d_testcase_part2"
         shift
         ;;
     --legacy_alg_ccu_reduce)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_alg_ccu_reduce"
         shift
         ;;
     --legacy_function_ut_testcase)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_function_ut_testcase"
         shift
         ;;
     --legacy_alg_testcase)
+        ENABLE_ST="on"
         TEST="partial"
         TEST_TASK_NAME="legacy_alg_testcase"
         shift
