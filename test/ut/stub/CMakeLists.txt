@@ -102,6 +102,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
     ${HCCL_CODE_ROOT}/src/legacy/interface/rank_graph_interface.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/dfx/aicpu/task_exception/task_exception_handler_lite.cpp
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/virtual_topo.cc
