@@ -243,3 +243,158 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
 }
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_HrtMallocAndMemSyncCopySuccess_Expect_ReturnHCCL_SUCCESS) {
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::SelectAlg)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::GetAivExecParam)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalNumBlocks)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::AllocAlgResource)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalcResRequest)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::PrepareCommInfoToDevice)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    hcclCommunicator->userRankSize_ = 2;
+
+    std::string tag = "test_tag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+    void* inputPtr = nullptr;
+    void* outputPtr = nullptr;
+    bool clearEnable = false;
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    HcclReduceOp op = HcclReduceOp::HCCL_REDUCE_SUM;
+    void* commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 0;
+
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(tag, opType, count, inputPtr, outputPtr,
+        clearEnable, dataType, op, commContext, len, aivCoreLimit);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(commContext, nullptr);
+    EXPECT_EQ(len, sizeof(AivSuperKernelArgs));
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_HrtMemSyncCopyFails_Expect_HrtFreeCalledAndReturnError) {
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_E_INTERNAL));
+    MOCKER_CPP(hrtFree)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::SelectAlg)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::GetAivExecParam)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalNumBlocks)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::AllocAlgResource)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalcResRequest)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::PrepareCommInfoToDevice)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    hcclCommunicator->userRankSize_ = 2;
+
+    std::string tag = "test_tag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+    void* inputPtr = nullptr;
+    void* outputPtr = nullptr;
+    bool clearEnable = false;
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    HcclReduceOp op = HcclReduceOp::HCCL_REDUCE_SUM;
+    void* commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 0;
+
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(tag, opType, count, inputPtr, outputPtr,
+        clearEnable, dataType, op, commContext, len, aivCoreLimit);
+
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_HrtMallocFails_Expect_ReturnError) {
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_E_OOM));
+    MOCKER_CPP(&CollAlgOperator::SelectAlg)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::GetAivExecParam)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalNumBlocks)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::AllocAlgResource)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalcResRequest)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::PrepareCommInfoToDevice)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->realUserRank_ = 0;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+    hcclCommunicator->userRankSize_ = 2;
+
+    std::string tag = "test_tag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+    void* inputPtr = nullptr;
+    void* outputPtr = nullptr;
+    bool clearEnable = false;
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_FP32;
+    HcclReduceOp op = HcclReduceOp::HCCL_REDUCE_SUM;
+    void* commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 0;
+
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(tag, opType, count, inputPtr, outputPtr,
+        clearEnable, dataType, op, commContext, len, aivCoreLimit);
+
+    EXPECT_EQ(ret, HCCL_E_OOM);
+    GlobalMockObject::verify();
+}
