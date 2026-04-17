@@ -185,7 +185,6 @@ HcclResult CommMems::GetTagMemoryHandles(void** memHandles, uint32_t memHandleNu
     memVec.push_back(memTemp);
     memTag.push_back("HcclBuffer");
  
-    // 增加入参检查
     std::lock_guard<std::mutex> lock(memMutex_);
     CommMemInfo** handles = reinterpret_cast<CommMemInfo**>(memHandles);
     for (uint32_t i = 0; i < memHandleNum; i++) {
