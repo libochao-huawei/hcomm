@@ -34,9 +34,9 @@ constexpr uint32_t CCUA_NUM = 4;
 
 CcuResBatchAllocator &CcuResBatchAllocator::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuResBatchAllocator ccuResBatchAllocator[MAX_MODULE_DEVICE_NUM];
+    static CcuResBatchAllocator ccuResBatchAllocator[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (deviceLogicId < 0 || static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>("[CcuResBatchAllocator][%s] failed, "
             "devLogicId[%d] should be less than %u.",
             __func__, deviceLogicId, MAX_MODULE_DEVICE_NUM);
