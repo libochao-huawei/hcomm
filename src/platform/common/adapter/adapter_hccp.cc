@@ -2966,7 +2966,8 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
     ext_attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
     ext_attrs.qpAttr.qp_type = IBV_QPT_RC;
     ext_attrs.udpSport = 0x0;
-
+    ext_attrs.cstmFlag.bs.useResvMem = qpConfig.use_resv_mem;
+ 	ext_attrs.resvMemPoolId = qpConfig.resv_mem_pool_id;
     s32 deviceLogicID = -1;
     u32 devicePhyId = 0;
     CHK_RET(hrtGetDevice(&deviceLogicID));
@@ -3054,6 +3055,13 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         }
         return HCCL_SUCCESS;
     }
+
+    if ((key == HccnCfgKeyT::HCCN_RESV_MEM_INFO) && (raGetHccnCfg <= GET_HCCH_CFG_VERSION)) {
+        HCCL_WARNING("[HrtRaGetHccnCfg] this package does not support resvMem for device, "
+            "please change new package ret[%d], version[%lu]",
+            static_cast<int>(vRet), raGetHccnCfg);
+        return HCCL_SUCCESS;
+ 	}
     struct RaInfo raInfo;
     raInfo.mode = networkMode;
     raInfo.phyId = devicePhyId;
@@ -3068,6 +3076,9 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
             break;
         case HccnCfgKeyT::HCCN_MULTI_QP_UDP_PORTS:
             hccnKey = HccnCfgKey::HCCN_CFG_MULTI_QP_UDP_PORTS;
+            break;
+        case HccnCfgKeyT::HCCN_RESV_MEM_INFO:
+            hccnKey = HccnCfgKey::HCCN_CFG_RESV_MEM_INFO;
             break;
         default:
             HCCL_ERROR("[HrtRaGetHccnCfg]not support key[%d]", key);
