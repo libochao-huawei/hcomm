@@ -84,7 +84,7 @@ SocketStatus Socket::GetStatus()
     }
 
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    RaSocketFdHandleParam result;
+    RaSocketFdHandleParam result(nullptr, 0);
     TRY_CATCH_PROCESS_THROW(
         NetworkApiException,
         result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param),
