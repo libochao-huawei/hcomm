@@ -60,6 +60,7 @@ struct TpAttr {
     uint8_t sprayEn : 1; // corresponding bitmap bit: 15
     uint8_t udpGlobalEn : 1; // corresponding bitmap bit: 16
     uint8_t reserve0 : 2;
+    uint8_t reserved[73];
 };
 #pragma pack()
 
