@@ -83,7 +83,7 @@ public:
     CcuVariableHandle handle{0};
 };
 
-template <> void CcuArithmeticOperator<CcuVariable, CcuVariable>::Check() const
+template <> inline void CcuArithmeticOperator<CcuVariable, CcuVariable>::Check() const
 {
 }
 
