@@ -354,6 +354,7 @@ HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress&
 {
     auto it = uboeIpv4EidMap.find(addr);
     if (it == uboeIpv4EidMap.end()) {
+        HCCL_WARNING("[RdmaHandleManager::%s] Find Eid failed, addr[%s]", __func__, addr.Describe().c_str());
         return HCCL_E_PARA;
     }
     eidAddr = it->second;
