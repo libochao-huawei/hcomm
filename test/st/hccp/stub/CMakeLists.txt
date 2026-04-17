@@ -122,3 +122,79 @@ install(
     LIBRARY DESTINATION ${HCCP_TEST_DIR}/device
     COMPONENT hccp_test
 )
+
+add_library(ibverbs SHARED
+    ibverbs_stub.c
+)
+
+target_include_directories(ibverbs PRIVATE
+    ${RDMA_CORE_INCLUDE_DIR}
+)
+
+install(
+    TARGETS ibverbs
+    LIBRARY DESTINATION ${HCCP_TEST_DIR}/device
+    COMPONENT hccp_test
+)
+
+add_library(ccu-user-drv SHARED
+    ccu_u_stub.c
+)
+
+target_include_directories(ccu-user-drv PRIVATE
+    ${HCCP_DIR}/external_depends/ccu
+)
+
+install(
+    TARGETS ccu-user-drv
+    LIBRARY DESTINATION ${HCCP_TEST_DIR}/device
+    COMPONENT hccp_test
+)
+
+
+add_library(hns-rdmav17 SHARED
+    hns-rdmav17_stub.c
+)
+
+target_include_directories(hns-rdmav17 PRIVATE
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${HCCP_DIR}/external_depends/rdma-core/providers/hns
+    ${HCCP_DIR}/inc/private/network
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+)
+
+install(
+    TARGETS hns-rdmav17
+    LIBRARY DESTINATION ${HCCP_TEST_DIR}/device
+    COMPONENT hccp_test
+)
+
+add_library(hrn3-rdmav34 SHARED
+    hrn3-rdmav34_stub.c
+)
+
+target_include_directories(hrn3-rdmav34 PRIVATE
+    ${RDMA_CORE_INCLUDE_DIR}
+)
+
+install(
+    TARGETS hrn3-rdmav34
+    LIBRARY DESTINATION ${HCCP_TEST_DIR}/device
+    COMPONENT hccp_test
+)
+
+add_library(ascend_rdma_lite SHARED
+    ascend_rdma_lite_stub.c
+)
+
+target_include_directories(ascend_rdma_lite PRIVATE
+    ${RDMA_CORE_INCLUDE_DIR}
+    ${HCCP_DIR}/external_depends/host_lite
+     ${HCCP_DIR}/inc/private/network
+)
+
+install(
+    TARGETS ascend_rdma_lite
+    LIBRARY DESTINATION ${HCCP_TEST_DIR}/device
+    COMPONENT hccp_test
+)

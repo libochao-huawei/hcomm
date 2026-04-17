@@ -7,56 +7,29 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(hccp_test_list
-    main.cc
-    ut_rs_common.cc
-)
 
-add_executable(hccp_test.bin ${hccp_test_list})
+#二进制劫持库
+add_library(mock SHARED
+    mock.c
+    )
 
-target_include_directories(hccp_test.bin PRIVATE
-    ${HCCP_DIR}/inc
+target_include_directories(mock PRIVATE
+    ${HCCP_DIR}/rdma_agent/inc
+    ${HCCP_DIR}/rdma_agent/hdc
+    ${HCCP_DIR}/rdma_agent/hdc/async
     ${HCCP_DIR}/inc/network
     ${HCCP_DIR}/inc/private/network
+    ${HCCP_DIR}/rdma_agent/comm
+    ${HCCP_DIR}/rdma_agent/peer
+    ${HCCP_DIR}/rdma_agent/client/
+    ${HCCP_DIR}/common/
+    ${HCCP_DIR}/external_depends/host_lite
+    ${HCCP_DIR}/rdma_agent/client/async
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
+    ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-    ${TEST_DIR}/st/hccp/stub
     ${RDMA_CORE_INCLUDE_DIR}
 )
-
-target_compile_options(hccp_test.bin PRIVATE
-    -U_FORTIFY_SOURCE
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
-    -Wall
-    -Wextra
-    -Werror
-    -pedantic
-    -Wshadow
-)
-
-target_link_options(hccp_test.bin PRIVATE
-    -Wl,--no-undefined
-)
-
-target_link_libraries(hccp_test.bin PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    test_ra
-    ascend_hal_host_stub
-    -lpthread
-    -lgcov
-    -lrt
-)
-
-target_compile_definitions(hccp_test.bin PRIVATE
-    MOCK_LIB_PATH="$<TARGET_FILE:mock>"
-)
-
-install(
-    TARGETS hccp_test.bin
-    RUNTIME DESTINATION ${HCCP_TEST_DIR}/host
-    COMPONENT hccp_test
-)
-# run_llt_test(
-#     TARGET hccp_test 
-#     TASK_NUM 1
-# )

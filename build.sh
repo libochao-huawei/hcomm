@@ -132,7 +132,7 @@ function build_cb_test_verify(){
 function build_hccp_test() {
     ENABLE_ST="on"
     cmake_config "-DENABLE_ST=${ENABLE_ST} -DPRODUCT_SIDE=device -DHCCP_TEST_DIR=${BUILD_DIR}/hccp_test"
-    cmake --build . --target hccp_test.bin test_hccp_service.bin ascend_hal_host_stub ascend_hal_device_stub urma -j
+    cmake --build . --target hccp_test.bin test_hccp_service.bin ascend_hal_host_stub ascend_hal_device_stub urma mock ibverbs ccu-user-drv ascend_rdma_lite hrn3-rdmav34 hns-rdmav17 -j
     cmake --install . --component hccp_test
     LD_LIBRARY_PATH=${BUILD_DIR}/hccp_test/host:${BUILD_DIR}/hccp_test/common:${LD_LIBRARY_PATH} ./hccp_test/host/hccp_test.bin
     unset LD_LIBRARY_PATH

@@ -44,7 +44,7 @@ target_include_directories(test_ra_adp PRIVATE
 
 
 target_compile_options(test_ra_adp PRIVATE
-    -Werror -fvisibility=hidden -fsigned-char -fno-common -fno-strict-aliasing -std=gnu11
+    -Werror -fsigned-char -fno-common -fno-strict-aliasing -std=gnu11
     -fstack-protector-strong
     -g -O0
 )

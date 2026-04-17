@@ -7,7 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
+#ifndef HCCP_SYSTEM_TEST_BASE_H
+#define HCCP_SYSTEM_TEST_BASE_H
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 #include <stdio.h>
@@ -28,15 +29,10 @@
 #include <sys/prctl.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include "hccp_sys_test_common.h"
 #include "ascend_hal.h"
 #include "ascend_hal_stub.h"
 using namespace std;
-
-#define TEST_LOG_INFO(phy_id, fmt, ...) \
-    printf("[INFO][HOST-%d] " fmt "\n", phy_id, ##__VA_ARGS__)
-
-#define TEST_LOG_ERROR(phy_id, fmt, ...) \
-    printf("[ERROR][HOST-%d] " fmt "\n", phy_id, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,8 +47,14 @@ class HccpSystemTestBase : public ::testing::Test {
 
         std::map<int, pid_t> host_pids_;
         std::map<int, HostTestLogic> host_logic_map_;
+        std::map<int, function<int(int phyid)>> hostMock;
+        std::map<int, function<int(int phyid)>> deviceMock;
         pid_t main_host_pid_ = -1;
         bool overall_test_success_ = true; 
+
+        void MockHost(int phyId, function<int(int phyid)> func) {
+            hostMock[phyId] = func;
+        }
 
         void PrintExitStatus(int status) {
             if (WIFEXITED(status)) {
@@ -60,8 +62,11 @@ class HccpSystemTestBase : public ::testing::Test {
             } else if (WIFSIGNALED(status)) {
                 int sig = WTERMSIG(status);
                 printf("signal=%d", sig);
-                if (sig == SIGSEGV) printf(" (SIGSEGV)");
-                else if (sig == SIGUSR1) printf(" (SIGUSR1)(killed by host)");
+                if (sig == SIGSEGV) printf("\033[31m (SIGSEGV)\033[0m");
+                else if (sig == SIGUSR1) printf("\033[1;33m (SIGUSR1)(killed by host)\033[0m");
+                else if (sig == SIGABRT) {
+                    printf("\033[31m (SIGABRT)\033[0m\n", sig);
+                }
             }
             printf("\n");
         }
@@ -81,7 +86,7 @@ class HccpSystemTestBase : public ::testing::Test {
             if (result == -1) {
                 TEST_LOG_ERROR(phy_id, "waitpid device failed");
             } else {
-                printf("[HOST-%d] Device exited: ", phy_id);
+                printf("\033[94m[INFO]\033[0m[HOST-%d] Device exited: ", phy_id);
                 PrintExitStatus(status);
             }
         }
@@ -114,7 +119,7 @@ class HccpSystemTestBase : public ::testing::Test {
                 std::string device_dir = std::string(dir_path) + "/../device";
                 std::string target_bin = device_dir + "/test_hccp_service.bin";
                 std::string common_lib_dir = std::string(dir_path) + "/../common";
-    
+                setenv("LD_PRELOAD", MOCK_LIB_PATH, 1);
                 setenv("LD_LIBRARY_PATH", (common_lib_dir + ":" + device_dir).c_str(), 1);
     
                 char pid_param[32] = {0};
@@ -147,7 +152,7 @@ class HccpSystemTestBase : public ::testing::Test {
 
             pid_t pid = fork();
             if (pid == -1) {
-                printf("[MAIN] Fork host failed for phy_id=%d\n", phy_id);
+                printf(COLOR_MAIN"[MAIN]"COLOR_RESET" Fork host failed for phy_id=%d\n", phy_id);
                 return false;
             }
 
@@ -213,7 +218,7 @@ class HccpSystemTestBase : public ::testing::Test {
                 bool exited = false;
                 bool timed_out = false;
                 auto start_time = std::chrono::steady_clock::now();
-                printf("[CLEANUP] Waiting for host (phy_id=%d, pid=%d)\n", phy_id, pid);
+                printf(COLOR_CLEANUP"[CLEANUP]"COLOR_RESET" Waiting for host (phy_id=%d, pid=%d)\n", phy_id, pid);
 
                 while (true) {
                     pid_t result = waitpid(pid, &status, WNOHANG);
@@ -223,27 +228,27 @@ class HccpSystemTestBase : public ::testing::Test {
                         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start_time).count();
                         if (elapsed >= timeout_seconds) { timed_out = true; break; }
                         usleep(poll_interval_us);
-                    } else { printf("[CLEANUP] waitpid(WNOHANG) error\n"); break; }
+                    } else { printf(COLOR_CLEANUP"[CLEANUP]"COLOR_RESET" waitpid(WNOHANG) error\n"); break; }
                 }
 
                 if (timed_out) {
-                    printf("[CLEANUP] Host-%d timed out. Sending SIGUSR1...\n", phy_id);
+                    printf(COLOR_CLEANUP"[CLEANUP]"COLOR_RESET" Host-%d timed out. Sending SIGUSR1...\n", phy_id);
                     kill(pid, SIGUSR1);
                     //阻塞回收进程
                     pid_t killed_result = waitpid(pid, &status, 0);
                     if (killed_result == -1) {
-                        printf("[CLEANUP] waitpid after kill failed\n");
+                        printf(COLOR_CLEANUP"[CLEANUP]"COLOR_RESET" waitpid after kill failed\n");
                     } else {
-                        printf("[CLEANUP] Host (phy_id=%d) killed by TEST: ", phy_id);
+                        printf(COLOR_CLEANUP"[CLEANUP]"COLOR_RESET" Host (phy_id=%d) killed by TEST: ", phy_id);
                         PrintExitStatus(status);
                     }
 
                     overall_test_success_ = false;
                 } else if (exited) {
-                    printf("[CLEANUP] Host-%d finished: ", phy_id);
+                    printf(COLOR_CLEANUP"[CLEANUP]"COLOR_RESET" Host-%d finished: ", phy_id);
                     PrintExitStatus(status);
                     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-                        printf("[CLEANUP] Error: Host-%d exited with non-success status\n", phy_id);
+                        printf(COLOR_CLEANUP"[CLEANUP]"COLOR_RESET COLOR_ERROR" Error:"COLOR_RESET" Host-%d exited with non-success status\n", phy_id);
                         overall_test_success_ = false;
                     }
                 }
@@ -273,3 +278,5 @@ class HccpSystemTestBase : public ::testing::Test {
             }
         }
 };
+
+#endif

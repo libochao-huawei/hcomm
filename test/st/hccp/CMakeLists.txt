@@ -27,6 +27,7 @@ list(FILTER RDMA_SERVICE_SRC_LIST EXCLUDE REGEX "^${HCCP_DIR}/rdma_service/ctx/p
 include(${HCCL_CODE_ROOT}/cmake/hcomm_utils.cmake)
 include(${HCCL_CODE_ROOT}/cmake/third_party/openssl.cmake)
 include(${HCCL_CODE_ROOT}/cmake/third_party/ubengine.cmake)
+add_subdirectory(mock)
 add_subdirectory(stub)
 add_subdirectory(rdma_service)
 add_subdirectory(rdma_agent)

@@ -763,16 +763,19 @@ pid_t drvDeviceGetBareTgid(void)
 
 drvError_t halNotifyGetInfo(uint32_t devId, uint32_t tsId, uint32_t type, uint32_t *val)
 {
+    *val = 1048576;
     return DRV_ERROR_NONE;
 }
 
 drvError_t halMemAlloc(void **pp, unsigned long long size, unsigned long long flag)
 {
+    *pp = malloc(size);
     return DRV_ERROR_NONE;
 }
 
 drvError_t halMemFree(void *pp)
 {
+    free(pp);
     return DRV_ERROR_NONE;
 }
 
@@ -818,10 +821,17 @@ drvError_t halGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType
         case MODULE_TYPE_AICPU:
             *value = 1;
             break;
+        case MODULE_TYPE_SYSTEM:
+            if(infoType == INFO_TYPE_BOARD_ID) {
+                *value = 0x10;
+            } else if(infoType == INFO_TYPE_VERSION){
+                *value = 0;
+            }
+            break;
         default:
             DRV_LOG_ERROR("hal err");
-            return DRV_ERROR_INVALID_VALUE;
             *value = 0;
+            return DRV_ERROR_INVALID_VALUE;
     }
     return DRV_ERROR_NONE;
 }

@@ -47,7 +47,7 @@ function(create_rs_library PRODUCT_SIDE)
     )
 
     target_compile_options(${TARGET_NAME} PRIVATE
-        -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
+        -Werror -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
         -Wextra -Wno-unused-parameter -std=gnu11
         -fstack-protector-strong
         -g -O0
@@ -60,7 +60,7 @@ function(create_rs_library PRODUCT_SIDE)
 
     target_compile_definitions(${TARGET_NAME} PRIVATE
         $<$<STREQUAL:${PRODUCT_SIDE},host>:LOG_HOST>
-        $<$<AND:$<STREQUAL:${USE_ALOG},0>,$<STREQUAL:${PRODUCT_SIDE},device>>:CUSTOM_INTERFACE>
+        $<$<STREQUAL:${PRODUCT_SIDE},device>:CUSTOM_INTERFACE>
         $<$<STREQUAL:${PRODUCT_SIDE},device>:google=ascend_private>
         $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
         CONFIG_V121
