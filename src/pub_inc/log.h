@@ -201,7 +201,7 @@ const u64 HCCL_MODULE_ID = 5;
 /* 检查函数返回值，HCCL_E_UNAVAIL时给Warning, 并返回指定错误码 */
 #define CHK_RET_UNAVAIL(call)                                      \
     do {                                                             \
-        HcclResult hcclRet = (call);                                   \
+        HcclResult hcclRet = call;                                   \
         if (UNLIKELY(hcclRet != HCCL_SUCCESS)) {                         \
             if (hcclRet == HCCL_E_AGAIN || hcclRet == HCCL_E_UNAVAIL) {           \
                 HCCL_WARNING("[%s]call trace: hcclRet -> %d", __func__, hcclRet);    \
