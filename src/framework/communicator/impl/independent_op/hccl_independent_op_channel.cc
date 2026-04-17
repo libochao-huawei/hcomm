@@ -94,8 +94,13 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
         }());
 #endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::MyRank *myRank = static_cast<hccl::MyRank *>(hcclComm->GetMyRank());
+    if (hcclComm->GetConnectMode() && myRank != nullptr) {
+        CHK_RET(myRank->ChannelGetHcclBuffer(channel, buffer, size));
+        return HCCL_SUCCESS;
+    }
+    
     CommBuffer commBuffer;
-    HcclResult ret = HCCL_SUCCESS;
     auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
     ret = channelMgr.ChannelCommGetHcclBuffer(channel, &commBuffer);
     if (ret != HCCL_SUCCESS) {

@@ -24,11 +24,14 @@
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
 
+#include "hybrid_mode_types.h"
+#include "private_types.h"
+
 namespace hcomm {
 
 class HostCpuRoceChannel final : public Channel {
 public:
-    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED,  DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
+    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, CAP_EXCHANGED, QP_CREATED, DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
 
     HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc);
     ~HostCpuRoceChannel();
@@ -52,6 +55,23 @@ public:
 
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
+    HcclResult ExchangeCapability();
+    HcclResult ExchangeDataHybird();
+    HcclResult GetRemoteAddrHybird(hccl::MemType memType, u8 *&data, u64 &size);
+    HcclResult ParseRecvExchangeDataHybird();
+    HcclResult BuildExchangeDataHybird();
+    HcclResult BuildExchangeDataLengthHybird();
+
+    HcclResult RegisterUserMemHybird();
+    HcclResult BuildNotifyWrHybird(const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifRecordWr);
+    HcclResult WriteWithNotifyHybrid(void *dst, const void *src, uint64_t len, uint32_t remoteNotifyIdx);
+    HcclResult NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_t timeout);
+
+    HcclResult CreateNotifyHybird(hccl::MemType notifyType, uint32_t notifyId);
+    HcclResult CreateNotifyValueBufferHybird();
+    HcclResult CreateNotifyBufferHybird(hccl::MemType notifyType, uint32_t notifyId, u8 *&data, u64 &size);
+    hccl::MemType NotifyIdToMemtypeHybird(uint32_t remoteNotifyIdx);
+    HcclResult ConnectSingleQpHybrid(std::function<bool()> needStop);
 
 private:
     HcclResult ParseInputParam();
@@ -127,6 +147,20 @@ private:
 
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;
+
+    // ========== 混合模式（RoCE Cross-Mode）成员变量 ==========
+    // 1. 能力协商结果
+    RoCECapability remoteCap_;            // 对端能力
+    bool isHybridMode_ = false;           // 是否为混合模式
+    
+    uint32_t localNotifySize_;
+    uint32_t localNotifyAccess_;
+
+    std::array<hccl::MemMsg, static_cast<u32>(hccl::MemType::MEM_TYPE_RESERVED)> localMemMsg_;
+    std::array<hccl::MemMsg, static_cast<u32>(hccl::MemType::MEM_TYPE_RESERVED)> remoteMemMsg_;
+    uint64_t exchangeDataTotalSize_;
+    std::vector<uint8_t> exchangeDataForSend_;
+    std::vector<uint8_t> exchangeDataForRecv_;
 };
 
 } // namespace hcomm
