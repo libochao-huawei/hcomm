@@ -323,8 +323,12 @@ uint32_t devType = args->devType; GM_ADDR headCountMem = args->headCountMem; GM_
 GM_ADDR addOneMem = args->addOneMem; uint32_t counterMemSize = args->counterMemSize; bool isEnableCounter = args->isEnableCounter; \
 uint32_t deterministic = args->deterministic; uint64_t rmaInfo = args->rmaInfo
 
-// sk 绑定函数
-#define SuperKernelBind(kernel_name) \
+// sk 绑定函数 A2
+#define SuperKernelBindA2(kernel_name) \
+extern "C" __sk__ void kernel_name##_1(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_2(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_3(SK_BIND_FUNC_ARGS); \
+extern "C" __sk__ void kernel_name##_4(SK_BIND_FUNC_ARGS); \
 SK_BIND(kernel_name, 0, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
 
 // A2 sk 导出函数
