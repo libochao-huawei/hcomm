@@ -70,7 +70,10 @@ void Socket::Connect()
 
 void Socket::PrintErrorSocketInfo()
 {
-    HCCL_ERROR("Socket info: %s", Describe().c_str());
+    HCCL_ERROR("Socket::GetStatus failed.");
+    HCCL_ERROR("Please check if env HCCL_SOCKET_IFNAME is set correctly, "
+               "which can be verified by checking localIp and remoteIp in socket info:");
+    HCCL_ERROR("%s", Describe().c_str());
 }
 
 SocketStatus Socket::GetStatus()
@@ -86,11 +89,7 @@ SocketStatus Socket::GetStatus()
         NetworkApiException,
         result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param),
         "Socket::GetStatus failed",
-        {
-            HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
-            HCCL_ERROR("Please check if env HCCL_SOCKET_IFNAME is correctly set by checking localIp and remoteIp in socket info.");
-            PrintErrorSocketInfo();
-        }
+        PrintErrorSocketInfo()
     );
 
     // try {
