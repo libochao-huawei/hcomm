@@ -313,16 +313,9 @@ namespace hccl {
             return HCCL_SUCCESS;
         }
 
-        // 屏蔽aicpu cache + zero copy + 确定性计算场景下的确定性问题
-        const HcclCMDType opType = param.opType;
-        if (param.isZeroCopy && opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER) {
-            HCCL_INFO("[AicpuCacheManager][%s] zcopy[%d] + opType[%d] is not supported for unfolding cache",
-                __func__, param.isZeroCopy, opType);
-            return HCCL_SUCCESS;
-        }
-
         // 目前V类算子、batch类型算子、以及send/recv不考虑动态缓存 (使用白名单而非黑名单管理, 避免非预期算子进入cache机制)
         // 注意: 如果想要通过比较缓存刷新后的SQE与正常算子展开的SQE来debug, 可以将想要比较的算子从以下的cache白名单中移除, 重新打包运行
+        const HcclCMDType opType = param.opType;
         if (opType == HcclCMDType::HCCL_CMD_BROADCAST ||
             opType == HcclCMDType::HCCL_CMD_REDUCE ||
             opType == HcclCMDType::HCCL_CMD_ALLGATHER ||
@@ -847,7 +840,7 @@ namespace hccl {
             CHK_PTR_NULL(zeroCopyExchangerPtr.get());
             CHK_RET(zeroCopyExchangerPtr->PrepareRemoteUserMemRanges(inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
         } else if (workflowMode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB || // 图模式
-            param.aicpuCacheEnable > FORCE_OP_BASE_DELTA || param.isCapture) { // 存在强制单算子模式转换 (即图模式建链+单算子模式展开)
+            param.aicpuCacheEnable > FORCE_OP_BASE_DELTA) { // 存在强制单算子模式转换 (即图模式建链+单算子模式展开)
             HCCL_INFO("[AicpuCacheManager][PrepareUserMemRanges] check transport resource for potential user memory of remote ranks");
 
             // 遍历所有transport信息, 更新remote ranks' user input/output memory ranges

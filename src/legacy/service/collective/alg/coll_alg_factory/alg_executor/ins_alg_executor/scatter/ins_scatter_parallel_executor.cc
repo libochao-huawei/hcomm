@@ -98,7 +98,7 @@ HcclResult InsScatterParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTempl
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqIntra.links, algResReq.levelRankPairs));
     CHK_RET(CalcLinkInfo(myRank_, rankGraph, resReqInter.links, algResReq.levelRankPairs));
     algResReq.primQueueNum = resReqIntra.streamNum + resReqInter.streamNum;
-    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, algResReq.queueNotifys));
+    CHK_RET(CalcParallelNotifyReq(algResReq.primQueueNum, resReqIntra.queNum, algResReq.queueNotifys));
     
     HCCL_DEBUG("[InsScatterParallelExecutor] algResReq.primQueueNum %u", algResReq.primQueueNum);
     CHK_RET(CalcResLinks(myRank_, rankGraph, linkPriority_, resReqIntra.links, algResReq.links));

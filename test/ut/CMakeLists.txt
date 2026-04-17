@@ -301,6 +301,7 @@ set(UT_COMMON_INCLUDE_LIST
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
+
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/
@@ -329,6 +330,7 @@ add_subdirectory(platform/resource/notify)
 add_subdirectory(platform/resource/transport)
 add_subdirectory(platform/ping_mesh)
 add_subdirectory(platform/common/unfold_cache)
+add_subdirectory(platform/task)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/cluster_maintenance)
 add_subdirectory(framework/op_base_api)

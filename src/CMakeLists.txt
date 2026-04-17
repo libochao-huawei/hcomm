@@ -409,7 +409,7 @@ else()
         ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/abl/msprof/inc
-        ${TOP_DIR}/abl/adump/inc/adump
+        ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
         ${TOP_DIR}/inc/aicpu/common
         ${TOP_DIR}/ace/csruntime/inc/tsch
         ${TOP_DIR}/metadef

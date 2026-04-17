@@ -139,7 +139,7 @@ HcclResult CollCommAicpu::AllocChannelResource(HcclChannelUrmaRes *commParam)
               "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
               __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
               commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
-    CHK_PRT(InitUrmaChannel(commParam));
+    CHK_RET(InitUrmaChannel(commParam));
     return HCCL_SUCCESS;
 }
 
@@ -150,6 +150,10 @@ HcclResult CollCommAicpu::ProcessUrmaRes(HcclChannelUrmaRes *commParam, bool isI
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr);
     u32* addSize = reinterpret_cast<u32*>(commParam->channelSizeAddr);
+    CHK_PTR_NULL(channelList);
+    CHK_PTR_NULL(currentSrcAddr);
+    CHK_PTR_NULL(addSize);
+
     for (u32 index = 0; index < commParam->listNum; index++) {
         std::vector<char> data(*addSize);
 

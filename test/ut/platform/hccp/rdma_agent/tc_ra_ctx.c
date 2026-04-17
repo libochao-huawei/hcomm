@@ -402,7 +402,7 @@ void TcRaCtxQpBind()
 void TcRaBatchSendWr()
 {
     struct RaCtxRemQpHandle remQpHandle = {0};
-    struct RaLmemHandle rmemHandle = {0};
+    struct RaRmemHandle rmemHandle = {0};
     struct RaCtxQpHandle qpHandle = {0};
     struct RaCtxHandle ctxHandle = {0};
     struct SendWrData wrList[1] = {0};

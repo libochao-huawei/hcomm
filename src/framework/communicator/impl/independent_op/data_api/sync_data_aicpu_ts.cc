@@ -81,6 +81,7 @@ int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t
     if (sizeByte > 0) {
         CHK_PTR_NULL(dst);
     }
+    CHK_PTR_NULL(msgId);
 
     HCCL_INFO("[%s] START. msgHandle[0x%llx], dst[0x%llx], sizeByte[%zu].", __func__, handle, dst, sizeByte);
 

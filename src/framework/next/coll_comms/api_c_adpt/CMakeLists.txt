@@ -10,6 +10,7 @@
  
 set(src_list
     coll_comm_res_c_adpt.cc
+    coll_comm_c_adpt.cc
 )
 
 target_sources(hcomm PRIVATE

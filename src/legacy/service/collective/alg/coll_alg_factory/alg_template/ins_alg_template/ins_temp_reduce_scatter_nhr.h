@@ -56,11 +56,13 @@ private:
         std::vector<InsQuePtr> &tempInsQues);
     HcclResult GetStepInfoList(std::vector<AicpuNHRStepInfo> &stepInfoList);
     RankId GetRankFromMap(const u32 rankIdx);
-    HcclResult LocalDataCopy(std::vector<InsQuePtr> &tempInsQues, const TempFuncs &tempFuncs);
-    HcclResult RunNHR(std::vector<InsQuePtr> &tempInsQues);
-    HcclResult PostLocalCopy(std::vector<InsQuePtr> &tempInsQues);
+    HcclResult LocalDataCopy(std::vector<InsQuePtr> &tempInsQues, const TempFuncs &tempFuncs, u32 linkIdx);
+    HcclResult RunNHR(std::vector<InsQuePtr> &tempInsQues, u32 linkIdx);
+    HcclResult PostLocalCopy(std::vector<InsQuePtr> &tempInsQues, u32 linkIdx);
     TemplateDataParams tempAlgParams_;
     ResLinks           tempLinks_;
+    vector<u64> processSize_{0};
+    vector<u64> linkSliceOffsetVec_{0};
 };
 
 } // namespace Hccl

@@ -662,6 +662,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
             "device[%d], return[0x%016llx]", opBaseHcom.rankTable.rankNum, rank,
             opBaseHcom.params.serverId.c_str(), opBaseHcom.params.logicDevId, HCCL_ERROR_CODE(ret));
         (void)HcclCommDestroy(opBaseHcom.pComm.get());
+        opBaseHcom.pComm = nullptr;
         *comm = nullptr;
         return ret;
     }
@@ -931,10 +932,6 @@ HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
-            u32 rankNum = 0;
-            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(commV2, commName));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed.Destroy comv2");
@@ -1019,10 +1016,6 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
-            u32 rankNum = 0;
-            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(commV2, commName));
             HcclResult ret = HcclCommInitCollComm(rank, &commV2, config, comm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm faild.Destroy comv2");
@@ -1267,8 +1260,6 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
             CHK_PTR_NULL(commV2);
             void* subCommV2 = nullptr;
             CHK_RET(HcclCreateSubCommConfigV2(&commV2, rankNum, rankIds, subCommId, subCommRankId, config, &subCommV2));
-            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-            CHK_RET(HcclGetCommNameV2(subCommV2, commName));
             HcclResult ret = HcclCommInitCollComm(subCommRankId, &subCommV2, config, subComm);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[HcclCommInitCollComm]HcclCommInitCollComm failed. Destroy subCommV2");
@@ -2463,7 +2454,7 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
             "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], sendDispls[%p], recvCount[%llu], dataType[%s], op[%s], "
             "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, sendDispls, recvCount,
-            GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, deviceLogicId);
+            GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclReduceScatterVInner:" + std::string(stackLogBuffer) +
@@ -3164,7 +3155,7 @@ HcclResult HcclOneSidedCommDestroy(HcclComm comm, s32 deviceLogicId, HcclUs star
 static HcclResult ResetDevice(hccl::hcclComm* hcclComm)
 {
     s32 logicDeviceId = 0;
-    hcclComm->GetDeviceId(logicDeviceId);
+    CHK_RET(hcclComm->GetDeviceId(logicDeviceId));
     g_hcclDeviceId = logicDeviceId;
     if (hcclComm->IsNeedResetDevice()) {
         HCCL_RUN_INFO("op_base com destroy, com is not global com");
@@ -4116,8 +4107,10 @@ HcclResult ReduceLoop(const std::string &tag, void *inputPtr, void *outputPtr, c
 
     HcclResult ret;
     CHK_RET(hcclComm->GetInCCLbuffer(commInputPtr, commInputSize));
+    CHK_PTR_NULL(commInputPtr);
 
     CHK_RET(hcclComm->GetOutCCLbuffer(commOutputPtr, commOutputSize));
+    CHK_PTR_NULL(commOutputPtr);
 
     u32 unitSize;
     CHK_RET(SalGetDataTypeSize(dataType, unitSize));
@@ -4274,6 +4267,7 @@ HcclResult RunGather(u64 *sendCounts, u64 *sdispls, void *sendDevBuf, GatherPara
 
     // 多线程拷贝
     HostMem tmpHostMem = HostMem::alloc(memSize);
+    CHK_PTR_NULL(tmpHostMem.ptr());
     std::vector<std::unique_ptr<std::thread>> threads(GATHER_THREAD_NUM);
     for (u32 num = 0; num < GATHER_THREAD_NUM; num++) {
         OpBaseMemPara memPara;
@@ -4902,14 +4896,6 @@ HcclResult HcclCommResume(HcclComm comm)
     HCCL_RUN_INFO("HcclCommResume:success, take time:[%lld]us, comm[%s]",
         DURATION_US(endut - startut).count(), hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommGetStatus(HcclComm comm, HcclCommStatus *status)
-{
-    CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(status);
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return hcclComm->GetCommStatus(*status);
 }
 
 uint32_t HcclGetCommConfigCapability()

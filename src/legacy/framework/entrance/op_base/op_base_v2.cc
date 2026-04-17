@@ -1643,26 +1643,6 @@ HcclResult RootInfoDetect(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, c
     return HCCL_SUCCESS;
 }
 
-HcclResult RootInfoUpdate(std::shared_ptr<RankInfoDetect> rankInfoDetectAgent, const u32 devicePort, 
-    const HcclRootHandleV2 &rootHandle, RankTableInfo &rankTable)
-{
-    bool hasException = false;
-    EXECEPTION_CATCH(rankInfoDetectAgent->UpdateAgent(devicePort), hasException = true);
-
-    // 等server端执行结束
-    EXECEPTION_CATCH(rankInfoDetectAgent->WaitComplete(rootHandle.listenPort, RANKINFO_DETECT_SERVER_STATUS_UPDATE), hasException = true);
-
-    // 若探测流程异常返回错误信息
-    CHK_PRT_RET(hasException, HCCL_ERROR("[%s] RankInfoDetect SetupAgent fail.", __func__), HCCL_E_INTERNAL);
-
-    // 获取ranktable
-    rankInfoDetectAgent->GetRankTable(rankTable);
-    SocketManager::SetDeviceServerListenPortMap(rankTable.GetRankDeviceListenPortMap());
-
-    HCCL_RUN_INFO("[%s] end.", __func__);
-    return HCCL_SUCCESS;
-}
-
 HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHandle,
     const string &identifier, HcclComm *comm)
 {
@@ -1713,17 +1693,6 @@ HcclResult CommInitRootInfo(u32 nRanks, u32 rank, const HcclRootHandleV2 &rootHa
  	    CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
  	        HCCL_ERROR("[%s]SetCommAcceleratorV2 failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
  	        errorFlag = true);
-        u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
-        ret = opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort);
-        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
-            HCCL_ERROR("[%s]InitDeviceListenPort failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
-            errorFlag = true);
-            
-        ret = RootInfoUpdate(rankInfoDetectAgent, deviceListenPort, rootHandle, rankTable);
-        CHK_PRT_BREAK(ret != HcclResult::HCCL_SUCCESS,
-            HCCL_ERROR("[%s]RootInfoUpdate failed, errNo[0x%016llx]", __func__, HCCL_ERROR_CODE(ret)),
-            errorFlag = true);
-        
  	    // 保存通信域
  	    HcclGroupParamsV2 params{};
  	    params.pComm = opbasedCommInfoV2.pComm;
@@ -1833,12 +1802,7 @@ HcclResult HcclCommInitRootInfoConfigV2(uint32_t nRanks, const HcclRootInfo *roo
     ret = CreateCommConfigRootInfo(rank, config, identifier, rankTable, comm);
     CHK_PRT_RET(ret, HCCL_ERROR("[%s]errNo[0x%016llx] and create comm failed.", __func__,
         HCCL_ERROR_CODE(ret)), static_cast<HcclResult>(ret));
-    
-    // 配置了抢占端口则提前建链并发生新的ranktable
-    u32 deviceListenPort = DEFAULT_VALUE_DEVICEPORT;
-    CHK_RET(opbasedCommInfoV2.pComm->InitDeviceListenPort(deviceListenPort));
-    CHK_RET(RootInfoUpdate(rankInfoDetectAgent, deviceListenPort, rootHandle, rankTable));
-    
+
     /* 关键状态记录 */
     HCCL_RUN_INFO("HcclCommInitRootInfoConfigV2 success, take time [%lld]us, rankNum[%u], rank[%u]",
         DURATION_US(TIME_NOW() - startut), nRanks, rank);

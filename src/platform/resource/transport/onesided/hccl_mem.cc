@@ -162,7 +162,7 @@ static HcclResult HcclMemRempRoce(NetDevContext *netDevCtx, const HcclMem *memAr
     }
     HCCL_RUN_INFO("[HcclMemRempRoce] arraySize[%u]", arraySize);
     std::unordered_map<void*, bool> remapAddr;
-    for (u32 i = 0; i < arraySize; i++) {
+    for (u64 i = 0; i < arraySize; i++) {
         const HcclMem &memInfo = memArray[i];
 
         // 检查地址和大小是否有效

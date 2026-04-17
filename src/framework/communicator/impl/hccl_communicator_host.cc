@@ -4413,6 +4413,11 @@ namespace hccl
                 opParam.BatchSendRecvDataDes.itemNum = aicpuSendRecvInfo.size();
             }
         }
+        // A2 Group SendRecv 将isDirectRemoteRank全部置为false
+        if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
+            isDirectRemoteRank.resize(userRankSize_, 0);
+            opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+        }
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
         // 头计数
@@ -7125,6 +7130,36 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::AicpuInitOpTilingDataAicpuCache(const OpParam &opParam, const HcclCMDType &opType, struct OpTilingData *opTilingData)
+    {
+        opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
+        // 开启aicpu cache, 且原来是图模式建链但强制走单算子模式展开
+        // 开启aicpu cache，isCapture为true，且是图模式，证明选择了aclgraph零拷贝算法，需要强制刷新cache
+        if (opParam.aicpuCacheEnable != 0 &&
+            GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
+            ((IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy) || opParam.isCapture)) {
+            // 环境变量传入的aicpuCacheEnable一定 < 10
+            constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
+            CHK_PRT_RET(opParam.aicpuCacheEnable >= FORCE_OP_BASE_DELTA,
+                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable >= %u",
+                    opParam.aicpuCacheEnable, FORCE_OP_BASE_DELTA),
+                HCCL_E_INTERNAL);
+
+            // 1 -> 11: 开启aicpu cache且存在强制单算子模式转换
+            opTilingData->aicpuCacheEnable += FORCE_OP_BASE_DELTA;
+            HCCL_WARNING("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable[%u]"\
+                "opTilingData->aicpuCacheEnable[%u]", opParam.aicpuCacheEnable, opTilingData->aicpuCacheEnable);
+            
+            // 注意: 开启aicpu cache且存在强制单算子模式转换, 传入device的aicpuCacheEnable一定 > 10
+            CHK_PRT_RET(opTilingData->aicpuCacheEnable <= FORCE_OP_BASE_DELTA,
+                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opTilingData->aicpuCacheEnable[%u] <= %u",
+                    opTilingData->aicpuCacheEnable, FORCE_OP_BASE_DELTA),
+                HCCL_E_INTERNAL);
+        }
+
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::AicpuInitOpTilingDataBuf(const OpParam &opParam, const HcclCMDType &opType,
                                                           const std::string &kernelName, const AicpuOpTiling opTilingInfo, u64 dynamicDataSize)
     {
@@ -7168,29 +7203,7 @@ namespace hccl
         // 有没有存在对应的Notify
         CHK_RET(InitAndCheckAicpuOrderNotify(opTilingData->orderLaunchMode));
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));
-        opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
-        // 开启aicpu cache, 且原来是图模式建链但强制走单算子模式展开
-        if (opParam.aicpuCacheEnable != 0 &&
-            GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
-            (IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy)) {
-            // 环境变量传入的aicpuCacheEnable一定 < 10
-            constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
-            CHK_PRT_RET(opParam.aicpuCacheEnable >= FORCE_OP_BASE_DELTA,
-                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable >= %u",
-                    opParam.aicpuCacheEnable, FORCE_OP_BASE_DELTA),
-                HCCL_E_INTERNAL);
-
-            // 1 -> 11: 开启aicpu cache且存在强制单算子模式转换
-            opTilingData->aicpuCacheEnable += FORCE_OP_BASE_DELTA;
-            HCCL_WARNING("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable[%u]"\
-                "opTilingData->aicpuCacheEnable[%u]", opParam.aicpuCacheEnable, opTilingData->aicpuCacheEnable);
-            
-            // 注意: 开启aicpu cache且存在强制单算子模式转换, 传入device的aicpuCacheEnable一定 > 10
-            CHK_PRT_RET(opTilingData->aicpuCacheEnable <= FORCE_OP_BASE_DELTA,
-                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opTilingData->aicpuCacheEnable[%u] <= %u",
-                    opTilingData->aicpuCacheEnable, FORCE_OP_BASE_DELTA),
-                HCCL_E_INTERNAL);
-        }
+        CHK_RET(AicpuInitOpTilingDataAicpuCache(opParam, opType, opTilingData));
 
         // 填充动态内容
         HostMem dynamicDataMem = opTilingDataBuf_.range(sizeof(struct OpTilingData), dynamicDataSize);
@@ -7203,14 +7216,11 @@ namespace hccl
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
-            if (deviceType_ == DevType::DEV_TYPE_910B && isGroupMode_) {
-                // 如果是A2的GroupSendRecv则跳过下面这段
-            } else {
-                u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
-                for (u32 i = 0; i < userRankSize_; i++) {
-                    CHK_PTR_NULL(isDirectRemoteRankPtr + i);
-                    isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
-                }
+
+            u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
+            for (u32 i = 0; i < userRankSize_; i++) {
+                CHK_PTR_NULL(isDirectRemoteRankPtr + i);
+                isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
             }
         } else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             CHK_RET(SetDynamicTilingDataAlltoall(opParam, dynamicDataMem));
@@ -8715,12 +8725,12 @@ namespace hccl
             HcclCMDType::HCCL_CMD_INVALID, false, isIndOp);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed to alloc transport, tag[%s], isAicpuModeEn[%d], ret[%d]",
-                __func__, tag, isAicpuModeEn, ret);
+                __func__, tag.c_str(), isAicpuModeEn, ret);
             return ret;
         }
 
         HCCL_RUN_INFO("[%s] Alloc transport success, tag[%s], isAicpuModeEn[%d], ret[%d]",
-            __func__, tag, isAicpuModeEn, ret);
+            __func__, tag.c_str(), isAicpuModeEn, ret);
         return HCCL_SUCCESS;
     }
 

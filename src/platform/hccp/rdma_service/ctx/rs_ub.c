@@ -1107,7 +1107,7 @@ int RsUbCtxDeinit(struct RsUbDevCb *devCb)
     hccp_run_info("[deinit][rs_ctx]deinit success, phyId:%u, devIndex:0x%x", devCb->phyId, devCb->index);
     free(devCb);
     devCb = NULL;
-    return 0;
+    return ret;
 }
 
 STATIC int RsUbQuerySegCb(struct RsUbDevCb *devCb, uint64_t addr, struct RsSegCb **segCb,
@@ -1482,10 +1482,8 @@ STATIC int RsUbJettyCbBuffAlloc(struct RsUbDevCb *devCb, struct RsCtxJettyCb *je
     int ret = 0;
 
     ret = rsGetLocalDevIDByHostDevID(devCb->phyId, &logicDevid);
-    if (ret != 0) {
-        hccp_err("rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)", devCb->phyId, ret);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)",
+        devCb->phyId, ret), ret);
 
     flag = ((unsigned long)logicDevid << BUFF_FLAGS_DEVID_OFFSET) | BUFF_SP_SVM;
     ret = DlHalBuffAllocAlignEx(sizeof(struct CtxQpShareInfo), CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE, flag,
@@ -1600,10 +1598,7 @@ int RsUbCtxRegJettyDb(struct RsCtxJettyCb *jettyCb, struct udma_u_jetty_info *je
     }
     memAttr.ub.tokenValue = jettyCb->tokenValue;
     ret = RsUbCtxLmemReg(jettyCb->devCb, &memAttr, &memInfo);
-    if (ret != 0) {
-        hccp_err("rs_ub_ctx_lmem_reg failed, ret=%d", ret);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_ub_ctx_lmem_reg failed, ret=%d", ret), ret);
 
     jettyCb->dbTokenId = memInfo.ub.tokenId;
     jettyCb->dbSegHandle = memInfo.ub.targetSegHandle;
@@ -1921,7 +1916,7 @@ STATIC int RsUbCtxDrvJettyImport(struct RsCtxRemJettyCb *rjettyCb)
 
     if (rjettyCb->mode == JETTY_IMPORT_MODE_NORMAL) {
         rjettyCb->tjetty = RsUrmaImportJetty(rjettyCb->devCb->urmaCtx, &rjetty, &tokenValue);
-    }  else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
+    } else { // rjetty_cb->mode == JETTY_IMPORT_MODE_EXP
         RsUbCtxExpJettyImport(rjettyCb, &rjetty, &tokenValue);
     }
     CHK_PRT_RETURN(rjettyCb->tjetty == NULL, hccp_err("import_jetty failed, mode:%d errno:%d", rjettyCb->mode, errno),
@@ -2012,14 +2007,18 @@ int RsUbCtxJettyUnimport(struct RsUbDevCb *devCb, unsigned int remJettyId)
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
 
     ret = RsUrmaUnimportJetty(rjettyCb->tjetty);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_unimport_jetty failed, ret:%d, remJettyId %u", ret, remJettyId),
-        -EOPENSRC);
+    if (ret != 0) {
+        hccp_err("rs_urma_unimport_jetty failed, ret:%d, remJettyId %u", ret, remJettyId);
+        ret = -EOPENSRC;
+        goto out;
+    }
 
     hccp_run_info("[deinit][rs_qp]unimport jetty_id:%u success, rjettyCnt:%u, devIndex:0x%x",
         remJettyId, rjettyCnt, devCb->index);
+out:
     free(rjettyCb);
     rjettyCb = NULL;
-    return 0;
+    return ret;
 }
 
 int RsUbCtxJettyBind(struct RsUbDevCb *devCb, struct RsCtxQpInfo *jettyInfo,
@@ -2088,10 +2087,8 @@ STATIC int RsUbCtxFillLsge(struct RsUbDevCb *devCb, urma_sge_t *lsge, struct Bat
             lsge[i].len = wrData->sges[i].len;
             totalLenTmp += lsge[i].len;
             ret = RsUbQuerySegCb(devCb, wrData->sges[i].devLmemHandle, &segCb, &devCb->lsegList);
-            if (ret != 0) {
-                hccp_err("[send][rs_ub_ctx]can not find lmem seg cb for addr:0x%llx", lsge[i].addr);
-                return ret;
-            }
+            CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]can not find lmem seg cb for addr:0x%llx",
+                lsge[i].addr), ret);
             lsge[i].tseg = segCb->segment;
         }
     } else {
@@ -2113,20 +2110,16 @@ STATIC int RsUbCtxFillRsge(struct RsUbDevCb *devCb, urma_sge_t *rsge, struct Bat
     rsge[0].addr = wrData->remoteAddr;
     rsge[0].len = totalLen;
     ret = RsUbQuerySegCb(devCb, wrData->devRmemHandle, &segCb, &devCb->rsegList);
-    if (ret != 0) {
-        hccp_err("[send][rs_ub_ctx]can not find rmem seg cb for addr:0x%llx", rsge[0].addr);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]can not find rmem seg cb for addr:0x%llx",
+        rsge[0].addr), ret);
     rsge[0].tseg = segCb->segment;
 
     if (opcode == URMA_OPC_WRITE_NOTIFY) {
         rsge[1].addr = wrData->ub.notifyInfo.notifyAddr;
         rsge[1].len = 8; /* notify data is fixed 8 bytes */
         ret = RsUbQuerySegCb(devCb, wrData->ub.notifyInfo.notifyHandle, &segCb, &devCb->rsegList);
-        if (ret != 0) {
-            hccp_err("[send][rs_ub_ctx]can not find rmem seg cb for addr:0x%llx", rsge[1].addr);
-            return ret;
-        }
+        CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]can not find rmem seg cb for addr:0x%llx",
+            rsge[1].addr), ret);
         rsge[1].tseg = segCb->segment;
     }
 
@@ -2142,18 +2135,12 @@ STATIC int RsUbCtxInitRwWr(struct RsUbDevCb *devCb, urma_jfs_wr_t *ubWr, struct 
 
     lsgeNum = (ubWr->flag.bs.inline_flag == 0) ? wrData->numSge : 1;
     ret = RsUbCtxFillLsge(devCb, lsge, wrData, &totalLen, ubWr->flag.bs.inline_flag);
-    if (ret != 0) {
-        hccp_err("[send][rs_ub_ctx]fill lsge failed, ret:%d", ret);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]fill lsge failed, ret:%d", ret), ret);
 
     /* write with norify have 2 dst sge, sge[0] is data sge, sge[1] is notify sge */
     rsgeNum = (ubWr->opcode == URMA_OPC_WRITE_NOTIFY) ? 2 : 1;
     ret = RsUbCtxFillRsge(devCb, rsge, wrData, totalLen, ubWr->opcode);
-    if (ret != 0) {
-        hccp_err("[send][rs_ub_ctx]fill rsge failed, ret:%d", ret);
-        return ret;
-    }
+    CHK_PRT_RETURN(ret != 0, hccp_err("[send][rs_ub_ctx]fill rsge failed, ret:%d", ret), ret);
 
     if (ubWr->opcode == URMA_OPC_READ) {
         ubWr->rw.src.sge = rsge;
