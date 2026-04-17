@@ -95,7 +95,10 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId)
 HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag)
 {
     const auto &dieEnableFlags = CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
-    CHK_RET(CheckDieValid(__func__, deviceLogicId, dieId, dieEnableFlags));
+    CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
+        HCCL_ERROR("[%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+            __func__, dieId, CCU_MAX_IODIE_NUM, deviceLogicId),
+        HcclResult::HCCL_E_PARA);
     enableFlag = dieEnableFlags[dieId];
     return HcclResult::HCCL_SUCCESS;
 }
@@ -149,8 +152,9 @@ HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
     }
 
     if (mainBoardType == HcclMainboardId::MAINBOARD_PCIE_STD &&
-        ccuEngine == CcuEngine::CCU_MS) {
-        HCCL_ERROR("todo: ");
+        ccuEngine == CcuEngine::CCU_MS) { // 标卡环境下配置CCU_MS拦截报错
+        HCCL_ERROR("[%s] ccuEngine[%s] not support in %s", __func__,
+            ccuEngine.Describe().c_str(), mainBoardType.Describe().c_str());
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
 

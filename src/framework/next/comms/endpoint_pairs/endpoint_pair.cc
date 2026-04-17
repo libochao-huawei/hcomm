@@ -96,7 +96,7 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
         HcommChannelDesc *channelDescs, ChannelHandle *channels)
 {
     if (channelHandles_.find(engine) == channelHandles_.end() || channelHandles_.size() <= reuseIdx) {
-        CHK_RET(static_cast<HcclResult>(
+        CHK_RET_UNAVAIL(static_cast<HcclResult>(
             HcommCollectiveChannelCreate(endpointHandle, engine, channelDescs, 1, channels)));
         channelHandles_[engine].push_back(channels[0]);
         return HCCL_SUCCESS;
