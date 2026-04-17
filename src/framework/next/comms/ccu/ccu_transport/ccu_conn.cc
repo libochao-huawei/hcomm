@@ -22,6 +22,8 @@
 #include "buffer.h"
 #include "local_ub_rma_buffer.h"
 #include "rdma_handle_manager.h"
+#include "orion_adapter_rts.h"
+#include "orion_adapter_hccp.h"
 
 namespace hcomm {
 
