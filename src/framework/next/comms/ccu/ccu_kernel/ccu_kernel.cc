@@ -120,12 +120,12 @@ static HcclResult GetDieIdByChannels(const std::unordered_set<ChannelHandle> &ch
 static void MoveResourcesToDie(CcuRepResource &res, uint32_t targetDieId)
 {
     if (targetDieId == 0) return; // 初始资源位于die0，不用设置
-    
+
     auto moveAndSet = [&](auto &arr) {
         arr[targetDieId] = std::move(arr[0]);
         for (auto &item : arr[targetDieId]) item.SetDieId(targetDieId);
     };
-    
+
     moveAndSet(res.ccubufs);
     moveAndSet(res.blockCcubufs);
     moveAndSet(res.executor);
@@ -148,7 +148,7 @@ HcclResult CcuKernel::SelectDie()
         HcclResult::HCCL_E_PARA);
     SetDieId(dieId);
     MoveResourcesToDie(res_, dieId);
-    
+
     // todo: 生成SQE粒度profiling信息
     // AddSqeProfiling();
     return HcclResult::HCCL_SUCCESS;
@@ -195,16 +195,16 @@ CcuResult CcuKernel::GeneTaskParams(uint64_t *taskArgs, uint32_t argsNum,
         taskParams[index].argSize     = CCU_SQE_ARGS_LEN;
 
         const uint32_t preMissionInsCnt = index * CCU_SQE_ARGS_LEN;
-    
+
         if (index == seqNum - 1) {
             taskParams[index].instCnt = instrInfo_.missionInstrCount - preMissionInsCnt;
         } else {
             taskParams[index].instCnt = CCU_SQE_ARGS_LEN;
         }
-        
+
         // 统一处理参数拷贝
         if (argsNum > preMissionInsCnt) {
-            const uint32_t argsToCopy = (index == seqNum - 1) 
+            const uint32_t argsToCopy = (index == seqNum - 1)
                 ? std::min(argsNum - preMissionInsCnt, CCU_SQE_ARGS_LEN)
                 : CCU_SQE_ARGS_LEN;
             std::copy(taskArgs + preMissionInsCnt, taskArgs + preMissionInsCnt + argsToCopy,
@@ -278,7 +278,7 @@ CcuResReq CcuKernel::GetResourceRequest()
 
 template<typename HandleType, typename ResourceType>
 static CcuResult GetResourceByHandle(
-    std::unordered_map<HandleType, ResourceType> &resourceMap, 
+    std::unordered_map<HandleType, ResourceType> &resourceMap,
     HandleType handle, ResourceType **resource, const char *resourceType)
 {
     auto iter = resourceMap.find(handle);
@@ -333,7 +333,7 @@ CcuResult CcuKernel::BufferAlloc(CcuBufferHandle *bufHandle)
 CcuResult CcuKernel::LocalAddrAlloc(CcuLocalAddrHandle *localAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle)
 {
     auto localAddr = CreateLocalAddr();
-    
+
     CcuAddressHandle aHandle = ccuAddrMap_.size();
     ccuAddrMap_.emplace(aHandle, localAddr.addr);
 
@@ -347,7 +347,7 @@ CcuResult CcuKernel::LocalAddrAlloc(CcuLocalAddrHandle *localAddrHandle, CcuAddr
     *addrHandle = aHandle;
     *tokenHandle = tHandle;
     return CcuResult::CCU_SUCCESS;
-    
+
 }
 CcuResult CcuKernel::RemoteAddrAlloc(CcuRemoteAddrHandle *remoteAddrHandle, CcuAddressHandle *addrHandle, CcuVariableHandle *tokenHandle)
 {
@@ -371,8 +371,8 @@ CcuResult CcuKernel::RemoteAddrAlloc(CcuRemoteAddrHandle *remoteAddrHandle, CcuA
 CcuResult CcuKernel::BlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count)
 {
     const auto& var = CreateBlockResAssist(count, res_.continuousVariable);
-    for (uint32_t i = 0; i < count; i++) {  
-        CcuVariableHandle handle = ccuVarMap_.size();   
+    for (uint32_t i = 0; i < count; i++) {
+        CcuVariableHandle handle = ccuVarMap_.size();
         ccuVarMap_.emplace(handle, var[i]);
         varHandles[i] = handle;
     }
@@ -381,7 +381,7 @@ CcuResult CcuKernel::BlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t 
 CcuResult CcuKernel::BlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count)
 {
     const auto& event = CreateBlockResAssist(count, res_.blockCompletedEvent);
-    for (uint32_t i = 0; i < count; i++) {  
+    for (uint32_t i = 0; i < count; i++) {
         CcuEventHandle handle = ccuEventMap_.size();
         ccuEventMap_.emplace(handle, event[i]);
         eventHandles[i] = handle;
@@ -391,7 +391,7 @@ CcuResult CcuKernel::BlockEventAlloc(CcuEventHandle *eventHandles, uint32_t coun
 CcuResult CcuKernel::BlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count)
 {
     const auto& buffer = CreateBlockResAssist(count, res_.blockCcubufs);
-    for (uint32_t i = 0; i < count; i++) {  
+    for (uint32_t i = 0; i < count; i++) {
         CcuBufferHandle handle = ccuBufferMap_.size();
         ccuBufferMap_.emplace(handle, buffer[i]);
         bufHandles[i] = handle;
@@ -623,7 +623,7 @@ CcuResult CcuKernel::ReadMemToMem(ChannelHandle channel, CcuLocalAddrHandle loca
     CCU_CHK_RET(GetEventByHandle(eventHandle, &event));
     auto ret = ReadNb(channel, *local, *remote, *len, *event);
     return HCCL_TO_CCU_RET(ret);
-} 
+}
 
 CcuResult CcuKernel::ReadMemToBuffer(ChannelHandle channel, CcuBufferHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
@@ -1841,7 +1841,7 @@ HcclResult CcuKernel::GetCcuProfilingInfo(const CcuTaskArg &arg, std::vector<Ccu
  	auto &ccuProfilingCache = GetProfilingInfo();
  	 
  	// auto taskArgs = GeneArgs(arg);
-    std::vector<uint64_t> taskArgs{}; // todo: 
+    std::vector<uint64_t> taskArgs{}; // todo:
  	uint32_t count {0};
  	HCCL_INFO("[GetCcuProfilingInfo] Process sqe&waitcke profiling info start.");
     for (auto &profInfo : ccuProfilingCache) {

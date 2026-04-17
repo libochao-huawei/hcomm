@@ -532,9 +532,10 @@ void TcRaHdcSocketWhiteListAdd()
 
 void TcRaHdcSocketWhiteListDel()
 {
-    struct rdev rdevInfo;
-    struct SocketWlistInfoT whiteList[1];
+    struct rdev rdevInfo = {0};
+    struct SocketWlistInfoT whiteList[1] = {{0}};
     int ret;
+    
     mocker(HdcSendRecvPkt, 20, 1);
     ret = RaHdcSocketWhiteListDel(rdevInfo, whiteList, 1);
     EXPECT_INT_EQ(1, ret);
@@ -550,6 +551,9 @@ void TcRaHdcSocketWhiteListDel()
 void TcRaHdcSocketAcceptCreditAdd()
 {
     struct SocketListenInfoT conn[1];
+    struct RaSocketHandle socketHandle = {0};
+    conn[0].socketHandle = &socketHandle;
+
     int ret;
     mocker(RaGetSocketListenInfo, 1, -1);
     ret = RaHdcSocketAcceptCreditAdd(1, conn, 1, 1);

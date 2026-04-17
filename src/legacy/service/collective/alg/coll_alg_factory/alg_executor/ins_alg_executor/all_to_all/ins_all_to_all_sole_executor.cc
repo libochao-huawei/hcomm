@@ -92,10 +92,10 @@ HcclResult InsAlltoAllSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffload
     // calculate required insQueues and prepare queue
     AlgTempResReq tempResReq;
     if (enableDetour_) {
-        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor], CalcRes with detouring enabled.");
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor], CalcResOffload with detouring enabled.");
         CHK_RET(tempAlg.CalcResDetour(rankGraph, tempResReq));
     } else {
-        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor], CalcRes with detouring disabled.");
+        HCCL_DEBUG("[InsCollAlgFactory] [InsAlltoAllSoleExecutor], CalcResOffload with detouring disabled.");
         CHK_RET(tempAlg.CalcRes(tempResReq));
     }
 

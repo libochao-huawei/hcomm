@@ -24,6 +24,7 @@ set(src_to_test_list
     ut_HcclAllGather_API_test.cc
     ut_HcclBarrier_API_test.cc
     ut_HcclReduceScatter_API_test.cc
+    ut_HcomGetCommHandleByGroup_API_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})

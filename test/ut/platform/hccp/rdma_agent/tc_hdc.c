@@ -286,7 +286,10 @@ void TcHdcSocketBatchClose()
 void TcHdcSocketListenStart()
 {
     int ret;
-    struct SocketListenInfoT conn[1];
+    struct RaSocketHandle socketHandle = {0};
+    struct SocketConnectInfoT conn[1] = {0};
+    conn[0].socketHandle = &socketHandle;
+
     mocker_clean();
     TcHdcTestEnvInit();
     mocker((stub_fn_t)RaHdcProcessMsg, 5, 0);
@@ -321,7 +324,9 @@ void TcHdcSocketListenStart()
 
 void TcHdcSocketBatchAbort()
 {
-    struct SocketListenInfoT conn[1];
+    struct SocketConnectInfoT conn[1] = {0};
+    struct RaSocketHandle socketHandle = {0};
+    conn[0].socketHandle = &socketHandle;
 
     mocker_clean();
     TcHdcTestEnvInit();
@@ -347,6 +352,9 @@ void TcHdcSocketBatchAbort()
 void TcHdcSocketListenStop()
 {
     struct SocketListenInfoT conn[1];
+    struct RaSocketHandle socketHandle = {0};
+    conn[0].socketHandle = &socketHandle;
+
     mocker_clean();
     TcHdcTestEnvInit();
     int ret = RaHdcSocketListenStop(gDevid, conn, 1);
@@ -376,6 +384,7 @@ void TcHdcGetSockets()
     struct SocketInfoT conn[1];
     conn[0].fdHandle = NULL;
     conn[0].socketHandle = calloc(sizeof(struct RaSocketHandle), 1);
+
     mocker_clean();
     TcHdcTestEnvInit();
     int ret = RaHdcGetSockets(gDevid, 0, conn, 1);
