@@ -121,16 +121,15 @@ void TaskExceptionHost::Process(rtExceptionInfo_t* exceptionInfo)
         return;
     }
 
-    //Task Exception 入口，使用宏捕获执行间异常
-    const auto curTask = Hccl::GlobalMirrorTasks::Instance().GetTaskInfo(
-        exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+    std::shared_ptr<Hccl::TaskInfo> curTask = nullptr;
+    HcclResult ret = Hccl::GlobalMirrorTasks::Instance().FindTaskInfo(exceptionInfo->deviceid, exceptionInfo->streamid,
+        exceptionInfo->taskid, curTask);
+    CHK_PRT_RET(ret == HCCL_E_NOT_FOUND, HCCL_RUN_WARNING("[%s]FindTaskInfo not found, deviceid[%u] streamid[%u] taskid[%u].",
+        __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
-    if (curTask == nullptr) {
-        // 未找到异常对应的TaskInfo
-        HCCL_ERROR("[%s]Exception task not found, deviceid:[%u], streamid:[%u], taskid:[%u]",
-            __func__, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-        return;
-    }
+    CHK_PRT_RET(curTask == nullptr || ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]FindTaskInfo fail, curTask[%p], ret[%d], deviceid[%u], streamid[%u], taskid[%u].",
+            __func__, curTask.get(), ret, exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid),);
 
     if (curTask->dfxOpInfo_ == nullptr) {
         HCCL_ERROR("[%s]fail, dfxOpInfo is nullptr", __func__);
@@ -200,8 +199,8 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
     }
 
     auto func = [taskId] (const shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
-    auto taskItorPtr = queue->Find(func);
-    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
+    auto taskIterPtr = queue->Find(func);
+    if (taskIterPtr == nullptr || *taskIterPtr == *queue->End()) {
         // 在队列中未找到异常对应的TaskInfo
         HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", deviceId, streamId, taskId);
         return;
@@ -209,15 +208,13 @@ void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamI
 
     // 找到当前异常task的前50个task(至多)
     vector<shared_ptr<Hccl::TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
-        if ((**taskItorPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskIterPtr != *queue->Begin(); ++i, --(*taskIterPtr)) {
+        if ((**taskIterPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u]is bigger than err taskId[%u], traversal end.",
-                __func__, (**taskItorPtr)->taskId_, taskId);
+                __func__, (**taskIterPtr)->taskId_, taskId);
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
-        }
+        taskContext.emplace_back(**taskIterPtr);
     }
 
     HCCL_ERROR("[TaskExceptionHost]Task run failed, context sequence before error task is "
