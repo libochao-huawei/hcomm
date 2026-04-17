@@ -82,9 +82,8 @@ function rmdir()
 
 function cmake_config()
 {
-    local extra_option="$1"
-    log "Info: cmake config ${CUSTOM_OPTION} ${extra_option} ."
-    cmake ..  ${CUSTOM_OPTION} ${extra_option}
+    log "Info: cmake config ${CUSTOM_OPTION} $*"
+    cmake .. ${CUSTOM_OPTION} "$@"
 }
 
 function build()
@@ -659,7 +658,7 @@ cd ${BUILD_DIR}
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
     make_ut_gov
-elif [ -n "${TEST}" ];then
+if [ "${ENABLE_ST}" == "on" ]; then
     build_st 
 elif [ "${KERNEL}" == "true" ]; then
     build_kernel
