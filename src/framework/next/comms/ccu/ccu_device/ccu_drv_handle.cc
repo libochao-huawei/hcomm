@@ -36,7 +36,7 @@ static HcclResult HccpRaTlvRequest(const TlvHandle tlvHandle,
     HCCL_INFO("[%s] tlvHandle[%p].", __func__, tlvHandle);
     int32_t ret = RaTlvRequest(tlvHandle, tlvModuleType, &sendMsg, &recvMsg);
     if (ret == RA_TLV_REQUEST_UNAVAIL || ret == OTHERS_ENOTSUPP) {
-        HCCL_RUN_WARNING("[%s] ra tlv request UNAVAIL, tlvHandle[%p], tlvModeulType[%u], tlvCcuMsgType[%u], ret[%d].",
+        HCCL_WARNING("[%s] ra tlv request UNAVAIL, tlvHandle[%p], tlvModeulType[%u], tlvCcuMsgType[%u], ret[%d].",
             __func__, tlvHandle, tlvModuleType, tlvCcuMsgType, ret);
         return HCCL_E_AGAIN; // 代表CCU驱动已被拉起，需要等待其他进程退出
     }

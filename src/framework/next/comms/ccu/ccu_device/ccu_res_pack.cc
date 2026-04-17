@@ -41,7 +41,7 @@ HcclResult CcuResPack::Init()
     // 如果资源不足需要回退
     auto ret = CcuAllocEngineResHandle(devLogicId_, ccuEngine_, resHandle_);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
-        HCCL_RUN_WARNING("[%s] failed but passed, resource is not enough, "
+        HCCL_WARNING("[%s] failed but passed, resource is not enough, "
             "devLogicId[%d], ccuType[%s].", __func__, devLogicId_,
             ccuEngine_.Describe().c_str());
         return ret;
