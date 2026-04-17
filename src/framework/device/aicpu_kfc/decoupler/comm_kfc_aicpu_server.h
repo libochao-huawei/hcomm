@@ -11,12 +11,42 @@
 #ifndef HCCL_COMM_KFC_AICPU_SERVER_H
 #define HCCL_COMM_KFC_AICPU_SERVER_H
 
-#include <unordered_set>
+#include <string>
+#include <vector>
 #include <unordered_map>
 #include "hccl_msg.h"
 #include <hccl/hccl_types.h>
 #include "aicpu_hccl_common.h"
 #include "common/aicpu_kfc_def.h"
+#include "comm_kfc_open_kernel_adapter.h"
+#include "dispatcher.h"
+#include "hcomm_primitives.h"
+
+namespace hccl {
+class HcclCommAicpu;
+class Stream;
+}
+class CollCommAicpuMgr;
+class CollCommAicpu;
+
+enum class ServerExecResourceType {
+    LEGACY,
+    NEXT_AICPU
+};
+
+struct ServerExecCtx {
+    u64 offset;
+    u64 opParamKey;
+    std::string commName;
+    std::vector<uint8_t> baseOpParam;
+    ServerExecResourceType resourceType{ServerExecResourceType::LEGACY};
+    hccl::HcclCommAicpu *commAicpu{nullptr};
+    HcclDispatcher dispatcher{nullptr};
+    hccl::Stream *mainStream{nullptr};
+    CollCommAicpuMgr *commMgr{nullptr};
+    CollCommAicpu *collCommAicpu{nullptr};
+    ThreadHandle mainThread{0};
+};
 
 class CommKfcAicpuServer {
 public:
@@ -24,13 +54,20 @@ public:
     ~CommKfcAicpuServer() = default;
     HcclApi::HcclMsgArea *GetMsgAreaAddr() const { return msgArea_; }
     u32 GetRankNum() const { return rankNum_; }
-    HcclResult AddOpContext(const HcclApi::CommKfcContext *ctx);
+    HcclResult AddOpContext(const HcclApi::OpResCtx *ctx);
     HcclResult Orchestrate(const HcclApi::HcclMsg &msg, HcclApi::HcclMsgExt &extMsg, u32 msgPos);
     HcclResult Finalize(u32 msgPos);
     HcclResult IsAllTaskFinished(u32 msgPos, bool &isFinish);
     HcclResult InterGroupSync(const CommKfcAicpuServer &otherServer, HcclHandle handle);
     HcclResult CheckTimeOut(u32 msgPos);
     HcclResult ErrorDfxProcess(HcclResult errorCode);
+    HcclResult LaunchOpenCcorePost(const ServerExecCtx &execCtx, u64 recordAddr, u32 turnNum, u64 turnNumsAddr);
+    HcclResult LaunchOpenCcoreWait(
+        const ServerExecCtx &execCtx, u64 waitAddr, u32 turnNum, u64 turnNumsAddr, bool isLast);
+    HcclResult LaunchOpenAicpuKernelServer(std::vector<uint8_t> &opParam);
+    HcclResult FormatOpParamFromMsg(const HcclApi::HcclMsg &msg, HcclApi::HcclMsgExt &extMsg,
+        const ServerExecCtx &execCtx, u32 repeat, std::vector<uint8_t> &runParam);
+    const ServerExecCtx *MatchExecCtx(u64 opParamKey) const;
 
 private:
 #ifdef CCL_LLT
@@ -48,6 +85,8 @@ private:
     std::unordered_map<uintptr_t, void *> ctxToOpHandle_{};
     std::unordered_map<HcclHandle, u32> handleIdToMsgPos_{};
     std::unordered_map<HcclHandle, u32> handleIdToRepeat_{};
+    std::vector<ServerExecCtx> execCtxList_{};
+    const ServerExecCtx *syncExecCtx_{nullptr};
     HcclApi::HcclMsgArea *msgArea_{nullptr};
     u64 lastMsgTimestamp_{0UL};
     u64 timeout_{30UL};

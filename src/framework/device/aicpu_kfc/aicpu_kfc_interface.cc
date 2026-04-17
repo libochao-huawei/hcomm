@@ -567,10 +567,26 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvGroupLaunch(void *
     return 0;
 }
 
+__attribute__((visibility("default"))) uint32_t Mc2ServerKernel(void *args[])
+{
+    if (args == nullptr) {
+        HCCL_ERROR("args is null.");
+        return HCCL_E_PARA;
+    }
+    constexpr int DESC_POS = 0;
+    uint64_t desc_value = u64(args[DESC_POS]);
+    uint64_t *desc_addr = &desc_value;
+    CommKfcParamDesc *desc = reinterpret_cast<CommKfcParamDesc*>(desc_addr);
+    AicpuKfcUtils::PrintHcclCommParamDesc(*desc);
+    return CommKfcDispatcher::Run(&(args[1]), desc->itemNum);
+}
+
 constexpr u32 GROUP_DYN_FLAG = 23U;
 constexpr u32 GROUP_TILING_MAGIC_NUM = 99U;
 __attribute__((visibility("default"))) uint32_t RunAicpuKfcSrvLaunch(void *args[])
 {
+    return Mc2ServerKernel(args);
+
     if (args == nullptr) {
         HCCL_ERROR("args is null.");
         return HCCL_E_PARA;
