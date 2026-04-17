@@ -161,6 +161,7 @@ struct RaLoopbackInfo {
     struct ibv_cq *ibSendCq;
     struct ibv_cq *ibRecvCq;
     void *cqContext;
+    struct ibv_comp_channel *compChannel;
 };
 
 struct RaCqHandleExt {
