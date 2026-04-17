@@ -58,3 +58,6 @@ target_sources(legacy_alg_aicpu_2d_testcase
     testcase_reduce_aicpu_2d.cc
     testcase_reduce_scatter_aicpu_2d.cc
 )
+
+enable_testing()
+add_test(NAME legacy_alg_aicpu_2d_testcase COMMAND legacy_alg_aicpu_2d_testcase)

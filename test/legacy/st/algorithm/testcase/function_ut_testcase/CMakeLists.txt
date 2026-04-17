@@ -58,3 +58,6 @@ target_sources(legacy_alg_function_ut_testcase
     testcase_ccu_revamp_bilateral.cc
     testcase_selector.cc
 )
+
+enable_testing()
+add_test(NAME legacy_alg_function_ut_testcase COMMAND legacy_alg_function_ut_testcase)

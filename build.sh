@@ -140,7 +140,7 @@ function build_st() {
                  -DENABLE_TEST=${ENABLE_TEST} \
                  -DENABLE_ST=${ENABLE_ST}
 
-    build 
+    cmake --build . ${JOB_NUM}
 
     local ctest_log="${log_dir}/ctest_output.log"
     local ctest_summary="${log_dir}/ctest_summary.log"
