@@ -91,7 +91,11 @@ SelectorStatus ScatterAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, co
 
     if (topoInfo.levelNum > 1) {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "InsScatterParallelMesh1DNHR";
+            if (topoInfo.netLayerDetails.localNetInsSizeOfLayer[0] == 1) {
+                primQueueGenName = "InsScatterNHR";
+            } else {
+                primQueueGenName = "InsScatterParallelMesh1DNHR";
+            }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             HCCL_WARNING("[Algo][ScatterAutoSelector] level0Shape[%d] is not supported yet for aicpu levelNum > 1.",
                 topoInfo.level0Shape);

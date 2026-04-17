@@ -48,6 +48,10 @@ public:
         return opExpansionMode_;
     }
 
+    CcuInsHandle GetCcuInstance() {
+        return ccuInsHandle_;
+    }
+
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
@@ -72,6 +76,8 @@ private:
     HcclResult QueryListenPort(uint32_t localRank, uint32_t remoteRank, const EndpointDesc &localEndpointDesc, 
         const EndpointDesc &remoteEndpointDesc, uint32_t &listenPort, HcommChannelDesc &hcommDesc);
     HcclResult GetLocalTlsStatus(Hccl::TlsStatus &tlsStatus) const;
+
+    HcclResult TryInitCcuInstance();
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};

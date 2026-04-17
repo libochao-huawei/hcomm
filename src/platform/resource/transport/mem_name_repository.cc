@@ -131,7 +131,7 @@ HcclResult MemNameRepository::FindIpcMem(IpcMemInfo &ipcMemInfo, u8 *name, u32 n
         SecIpcName_t memName;
         sret = memcpy_s(memName.ipcName, HCCL_IPC_MEM_NAME_LEN, name, nameLen);
         if (sret != EOK) {
-            HCCL_ERROR("[Set][IpcMem]errNo[0x%016llx] In SecIpcName, memset_s failed. errorno[%d], params:" \
+            HCCL_ERROR("[Set][IpcMem]errNo[0x%016llx] In SecIpcName, memcpy_s failed. errorno[%d], params:" \
                 "dest len[%u], src len[%u]", HCCL_ERROR_CODE(HCCL_E_SYSCALL),
                 sret, HCCL_IPC_MEM_NAME_LEN, nameLen);
             return HCCL_E_SYSCALL;
@@ -141,7 +141,7 @@ HcclResult MemNameRepository::FindIpcMem(IpcMemInfo &ipcMemInfo, u8 *name, u32 n
         SecIpcName_t memName = iter->second;
         sret = memcpy_s(name, HCCL_IPC_MEM_NAME_LEN, memName.ipcName, nameLen);
         if (sret != EOK) {
-            HCCL_ERROR("[Set][IpcMem]errNo[0x%016llx] In SecIpcName, memset_s failed. errorno[%d], params:" \
+            HCCL_ERROR("[Set][IpcMem]errNo[0x%016llx] In SecIpcName, memcpy_s failed. errorno[%d], params:" \
                 "dest len[%u], src len[%u]", HCCL_ERROR_CODE(HCCL_E_SYSCALL),
                 sret, HCCL_IPC_MEM_NAME_LEN, nameLen);
             return HCCL_E_SYSCALL;
@@ -236,7 +236,7 @@ void MemNameRepository::CloseIpcMem(const u8* name)
             if (openedNameMapRef_[iter->first].Unref() == 0) {
                 // 找到相同ipc 名字, 并且引用计数减为0再close
                 ret = hrtIpcDestroyMemoryName(memName.ipcName);
-                if (ret > HCCL_SUCCESS) {
+                if (ret != HCCL_SUCCESS) {
                     HCCL_WARNING("In mem repository, ipc close memory ret[%d] ", ret);
                 }
                 openedNameMapRef_.erase(iter->first);
@@ -290,7 +290,7 @@ void MemNameRepository::DestroyIpcMem(void *ptr, u64 size, bool isSioToHccs)
             // 找到相同ipc 名字, 并且引用计数减为0再detroy
             SecIpcName_t memName = iter->second;
             ret = hrtIpcDestroyMemoryName(memName.ipcName);
-            if (ret > HCCL_SUCCESS) {
+            if (ret != HCCL_SUCCESS) {
                 HCCL_WARNING("In mem repository, sal destroy ipc memory name ret[%d]", ret);
             }
             setNameMapRef_.erase(ipcMemInfo);

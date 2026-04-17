@@ -110,6 +110,11 @@ HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcRes(
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+    // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2AllReduceSoleExecutor] CalcRes SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);  
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
 
@@ -137,6 +142,11 @@ HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::CalcResOffl
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+        // 通过判断哪层通信域能有到所有remoteRank的path，判断当前算法跑在哪一层    
+    std::map<u32, u32>rank2PathNumMap;
+    HCCL_INFO("[InsV2AllReduceSoleExecutor] CalcResOffload SetPathNumMap");
+    CHK_RET(SetPathNumMapByRankGraphMultiLevel(rankGraph, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);  
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(rankGraph, algTemplate, tempResReq));
     u64 transportBoundDataSize = UB_MAX_DATA_SIZE;
@@ -190,6 +200,10 @@ HcclResult InsV2AllReduceSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
     std::shared_ptr<InsAlgTemplate> algTemplate = nullptr;
     CHK_RET(CreateTemplates(algTemplate));
 
+    std::map<u32, u32>rank2PathNumMap;
+    CHK_RET(SetPathNumMapByLinkMgrMultiLevel(linkMgr, virtRanks_, myRank_, rank2PathNumMap));
+    algTemplate->setPathNumMap(rank2PathNumMap);
+    
     AlgTempResReq tempResReq;
     CHK_RET(GetTemplateResRequest(linkMgr, algTemplate, tempResReq));
 

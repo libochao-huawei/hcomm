@@ -38,6 +38,14 @@ public:
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
+    struct Capabilities {
+        uint64_t maxMsgSize{0};
+        // 按需扩展
+    };
+    HcclResult GetCapabilities(Capabilities &caps);
+private:
+    Capabilities capabilities_{};
+    bool isCapabilitiesAvailable_{false};
 };
 }
 #endif // ROCE_ENDPOINT_H

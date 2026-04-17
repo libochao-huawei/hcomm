@@ -203,8 +203,7 @@ struct ErrcodeInfo gErrcodeInfoList[] = {
 
 int RaInetPton(int family, union HccpIpAddr ip, char netAddr[], unsigned int len)
 {
-    const char *str = NULL;
-    str = inet_ntop(family, &(ip.addr), netAddr, len);
+    const char *str = inet_ntop(family, &(ip.addr), netAddr, len);
     CHK_PRT_RETURN(str == NULL, hccp_err("[ntop_convert][ra_inet]the ip failed err(%d)", errno), -EINVAL);
     return 0;
 }
@@ -227,7 +226,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketInit(int mode, struct rdev rdevInfo, void **sock
 
     socketHandleTmp = calloc(1, sizeof(struct RaSocketHandle));
     CHK_PRT_RETURN(socketHandleTmp == NULL,
-        hccp_err("[init][ra_socket]ra_inet_pton for local_ip failed, ret(%d)", ret),
+        hccp_err("[init][ra_socket]calloc socketHandleTmp failed, ret(%d)", ret),
         ConverReturnCode(HCCP_INIT, -ENOMEM));
 
     if (mode == NETWORK_OFFLINE) {
@@ -1165,13 +1164,13 @@ HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct QpExtAttrs 
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     hccp_run_info("Input parameters: phyId[%u] qp_mode[%d] cq_attr{%d,%d,%d,%d} qpAttr.cap{%u,%u,%u,%u,%u}"\
-        " qp_type[%u] sqSigAll[%d], cnt[%u]", phyId, extAttrs->qpMode,
+        " qp_type[%u] sqSigAll[%d], cnt[%u], useResvMem[%u], resvMemPoolId[%u]", phyId, extAttrs->qpMode,
         extAttrs->cqAttr.sendCqDepth, extAttrs->cqAttr.sendCqCompVector,
         extAttrs->cqAttr.recvCqDepth, extAttrs->cqAttr.recvCqCompVector,
         extAttrs->qpAttr.cap.max_send_wr, extAttrs->qpAttr.cap.max_recv_wr,
         extAttrs->qpAttr.cap.max_send_sge, extAttrs->qpAttr.cap.max_recv_sge,
         extAttrs->qpAttr.cap.max_inline_data, extAttrs->qpAttr.qp_type, extAttrs->qpAttr.sq_sig_all,
-        rdmaHandleTmp->qpCnt);
+        rdmaHandleTmp->qpCnt, extAttrs->cstmFlag.bs.useResvMem, extAttrs->resvMemPoolId);
 
     rdmaHandleTmp->qpCnt++;
     ret = rdmaHandleTmp->rdmaOps->raQpCreateWithAttrs(rdmaHandleTmp, extAttrs, qpHandle);
@@ -1858,8 +1857,8 @@ HCCP_ATTRI_VISI_DEF int RaGetQpContext(void *qpHandle, void** qp, void** sendCq,
     int ret;
     struct RaQpHandle *raQpHandle = (struct RaQpHandle *)qpHandle;
 
-    if (qpHandle == NULL) {
-        hccp_err("[request][ra_get_qp_context]qp_handle is NULL, para error!");
+    if (qpHandle == NULL || qp == NULL || sendCq == NULL || recvCq == NULL) {
+        hccp_err("[request][ra_get_qp_context]qp_handle or qp or sendCq or recvCq is NULL, para error!");
         return ConverReturnCode(RDMA_OP, -EINVAL);
     }
 
@@ -1867,6 +1866,9 @@ HCCP_ATTRI_VISI_DEF int RaGetQpContext(void *qpHandle, void** qp, void** sendCq,
         hccp_err("[get][ra_get_qp_context]rdma_ops is NULL or ra_get_qp_context is NULL, invalid");
         return ConverReturnCode(RDMA_OP, -EINVAL);
     }
+    CHK_PRT_RETURN(raQpHandle->phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[get][rs_get_qp_context]qpPeer->phyId[%u] >= max_dev_num[%u], input is invalid", raQpHandle->phyId,
+        RA_MAX_PHY_ID_NUM), -EINVAL);
 
     ret = raQpHandle->rdmaOps->raGetQpContext(raQpHandle, qp, sendCq, recvCq);
     return ConverReturnCode(RDMA_OP, ret);
