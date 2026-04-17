@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "hcclCommTaskExceptionLite.h"
+#include "task_exception_handler_lite.h"
 #include "aicpu_indop_process.h"
 #include "stream_lite.h"
 #include "global_mirror_tasks.h"
@@ -17,12 +18,6 @@
 #include "read_write_lock.h"
 
 namespace hcomm {
-constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
-constexpr u32 RT_SDMA_COMPDATAERR = 0xa; // A3 sdma error类型为0xa时，表示读拷贝发生超时代答，或者读HBM返回ERROR
-constexpr u32 RT_SDMA_DATAERR = 0x8; // A3 sdma error类型为0x8时，表示读HBM返回ERROR
-constexpr u32 RT_UB_LOCAL_OPERATIOINERR = 0x2; // A5 ub error类型为0x2时，表示UB本端返回ERROR
-constexpr u32 RT_UB_REMOTE_OPERATIOINERR = 0x3; // A5 ub error类型为0x3时，表示UB远端返回ERROR
-
 constexpr uint32_t TASK_CONTEXT_SIZE = 50; // task 执行失败时打印谦虚task信息的数量
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 constexpr u32 MAX_NAME_LEN = 64;
@@ -320,28 +315,12 @@ HcclResult HcclCommTaskExceptionLite::SendTaskExceptionByMBox(const u32 notifyId
 
 // 把UB类错误码转换成Ts对应的错误码
 uint16_t HcclCommTaskExceptionLite::SwitchUBCqeErrCodeToTsErrCode(u32 cqeErrCode) {
-    switch (cqeErrCode) {
-        case RT_UB_LOCAL_OPERATIOINERR:
-            return TS_ERROR_LOCAL_MEM_ERROR;
-        case RT_UB_REMOTE_OPERATIOINERR:
-            return TS_ERROR_REMOTE_MEM_ERROR;
-        default:
-            return TS_ERROR_HCCL_OTHER_ERROR;
-    }
+    return Hccl::SwitchUBCqeErrCodeToTsErrCode(cqeErrCode);
 }
 
 // 把SDMA类错误码转换成Ts对应的错误码
 uint16_t HcclCommTaskExceptionLite::SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode) {
-    switch (cqeErrCode) {
-        case RT_SDMA_COMPERR:
-            return TS_ERROR_SDMA_LINK_ERROR;
-        case RT_SDMA_COMPDATAERR:
-            return TS_ERROR_SDMA_POISON_ERROR;
-        case RT_SDMA_DATAERR:
-            return TS_ERROR_SDMA_DDRC_ERROR;
-        default:
-            return TS_ERROR_HCCL_OTHER_ERROR;
-    }
+    return Hccl::SwitchSdmaCqeErrCodeToTsErrCode(cqeErrCode);
 }
 
 HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuComm, u32 sqId, u32 taskId)
