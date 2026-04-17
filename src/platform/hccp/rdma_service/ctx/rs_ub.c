@@ -411,6 +411,11 @@ int RsUbGetEidByIp(struct RsUbDevCb *devCb, struct IpInfo ip[], union HccpEid ei
         } else {
             netAddr.in6 = ip[i].ip.addr6;
         }
+        hccp_run_info("RsUbGetEidByIp debug dev_name %s", devCb->urmaCtx->dev->name);
+        hccp_run_info("RsUbGetEidByIp debug dev_fd %d", devCb->urmaCtx->dev_fd);
+        hccp_run_info("RsUbGetEidByIp debug eid:%016llx:%016llx", 
+            (unsigned long long)be64toh(devCb->urmaCtx->eid.in6.subnet_prefix), 
+            (unsigned long long)be64toh(devCb->urmaCtx->eid.in6.interface_id));
         ret = RsUrmaGetEidByIp(devCb->urmaCtx, &netAddr, &urmaEid);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_get_eid_by_ip failed, ret:%d devIndex:0x%x", ret, devCb->index),
             -EOPENSRC);
