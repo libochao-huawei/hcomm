@@ -11,6 +11,7 @@ add_library(topoaddrinfo SHARED
     src/topo_addr_info.c
     src/product_card.c
     src/product_server.c
+    src/product_pod.c
 )
 
 target_compile_options(topoaddrinfo PRIVATE

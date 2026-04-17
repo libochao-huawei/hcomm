@@ -15,7 +15,10 @@
 
 // todo: 需要适配资源不足
 
-#define HCCL_TO_CCU_RET(ret) static_cast<CcuResult>(ret)
+#define HCCL_TO_CCU_RET(hcclRet) static_cast<CcuResult>(hcclRet)
+
+#define CCU_CHK_RES_UNAVAIL(ccuRet) \
+    (ccuRet == CCU_E_UNAVAIL || ((ccuRet > CCU_E_RES_UNAVAIL_START && ccuRet < CCU_E_RES_UNAVAIL_END)))
 
 /* 检查函数返回值, 并返回指定错误码 */
 #define CCU_CHK_RET(call)                                 \
@@ -24,6 +27,12 @@
         if (UNLIKELY(ccuRet != CCU_SUCCESS)) {                    \
             if (ccuRet == CCU_E_AGAIN) {                \
                 HCCL_WARNING("[%s]call trace: ccuRet -> %d", __func__, ccuRet); \
+            } else if (ccuRet == CCU_E_UNAVAIL) { \
+                HCCL_WARNING("[%s]call trace: ccuRet resources are not unavailable -> %d", \
+                    __func__, ccuRet); \
+            } else if (ccuRet > CCU_E_RES_UNAVAIL_START && ccuRet < CCU_E_RES_UNAVAIL_END) { \
+                HCCL_WARNING("[%s]call trace: ccuRet resources are not unavailable -> %d", \
+                    __func__, ccuRet); \
             } else {                                  \
                 HCCL_ERROR("[%s]call trace: ccuRet -> %d", __func__, ccuRet); \
             }                                         \

@@ -131,4 +131,18 @@ HcclResult CpuRoceEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHan
     CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
 }
+
+HcclResult CpuRoceEndpoint::GetCapabilities(Capabilities &caps)
+{
+    HCCL_INFO("[CpuRoceEndpoint::%s] START.", __func__);
+    static constexpr uint64_t RDMA_MAX_WR_LENGTH = 1ULL * 1024 * 1024 * 1024; // 单次RDMA操作最大长度1GB
+    if (!isCapabilitiesAvailable_) {
+        // 待 HCCP 提供查询设备支持的最大发送消息的接口后，查询设备实际值。
+        capabilities_.maxMsgSize = RDMA_MAX_WR_LENGTH;
+        isCapabilitiesAvailable_ = true;
+    }
+    caps = capabilities_;
+    HCCL_INFO("[CpuRoceEndpoint::%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
+}
 }

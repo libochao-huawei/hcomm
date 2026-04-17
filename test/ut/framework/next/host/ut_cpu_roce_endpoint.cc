@@ -286,3 +286,33 @@ TEST_F(CpuRoceEndpointTest, ut_HcommMemExport_When_EndpointIsNull_Expect_ReturnH
     HcommResult ret = HcommMemExport(nullptr, reinterpret_cast<HcommMemHandle>(0x12345678), &memDesc, &memDescLen);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
+
+// GetCapabilities 正常调用，返回成功且maxMsgSize为1GB
+TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_Normal_Expect_ReturnSuccess_And_MaxMsgSz1GB)
+{
+    EndpointDesc endpointDesc{};
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    hcomm::CpuRoceEndpoint endpoint(endpointDesc);
+    hcomm::CpuRoceEndpoint::Capabilities caps;
+    HcommResult ret = endpoint.GetCapabilities(caps);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    static constexpr uint64_t EXPECTED_MAX_MSG_SZ = 1ULL * 1024 * 1024 * 1024;
+    EXPECT_EQ(caps.maxMsgSize, EXPECTED_MAX_MSG_SZ);
+}
+
+// GetCapabilities 多次调用，验证缓存一致性
+TEST_F(CpuRoceEndpointTest, ut_GetCapabilities_When_CalledTwice_Expect_SameResult)
+{
+    EndpointDesc endpointDesc{};
+    endpointDesc.protocol = COMM_PROTOCOL_ROCE;
+    endpointDesc.loc.locType = ENDPOINT_LOC_TYPE_HOST;
+    hcomm::CpuRoceEndpoint endpoint(endpointDesc);
+    hcomm::CpuRoceEndpoint::Capabilities caps1;
+    hcomm::CpuRoceEndpoint::Capabilities caps2;
+    HcommResult ret = endpoint.GetCapabilities(caps1);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = endpoint.GetCapabilities(caps2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(caps1.maxMsgSize, caps2.maxMsgSize);
+}

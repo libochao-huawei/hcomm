@@ -459,7 +459,8 @@ RS_ATTRI_VISI_DEF int RsPingGetResults(struct RaRsDevInfo *rdev, struct PingTarg
     unsigned int i;
     int ret;
 
-    CHK_PRT_RETURN(rdev == NULL || num == NULL, hccp_err("param error, rdev is NULL or num is NULL"), -EINVAL);
+    CHK_PRT_RETURN(rdev == NULL || num == NULL || target == NULL || result == NULL,
+        hccp_err("param error, rdev is NULL or num is NULL or result/target is NULL"), -EINVAL);
     expectedNum = *num;
     *num = 0;
     ret = RsGetPingCb(rdev, &pingCb);

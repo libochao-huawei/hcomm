@@ -16,7 +16,7 @@
 
 #include "ccu_types.h"
 #include "ccu_data_utils.hpp"
- #include "ccu_data_api_impl.h"
+#include "ccu_data_api_impl.h"
 #include "ccu_if_label_stack.hpp"
 
 class CcuVariable;
@@ -48,7 +48,7 @@ public:
     }
 
     void operator=(uint64_t immediate) const{
-        auto ret = CcuVariableAssign(this->handle, immediate);
+        auto ret = CcuVariableAssignImm(this->handle, immediate);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }

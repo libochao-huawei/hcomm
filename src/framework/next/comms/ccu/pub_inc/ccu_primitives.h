@@ -21,7 +21,7 @@ typedef enum {
     CCU_DEFAULT = 0,   /**< default, now is scheduler mode */
     CCU_SCHED   = 1,   /**< scheduler mode, with less loop resource */
     CCU_MS      = 2,   /**< memory slices mode, with more loop resouce */
-    CCU_INVALID = 254,
+    CCU_UNUSED  = 254,
     CCU_RESERVED = 255 /**< reserved */
 } CcuInstanceType;
 

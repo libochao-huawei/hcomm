@@ -79,6 +79,12 @@ HcclResult stub_HrtRaGetNotifyBaseAddr_3(RdmaHandle handle, u64 *va, u64 *size)
     return HCCL_SUCCESS;
 }
 
+HcclResult stub_HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT key, std::string &value)
+{
+    value = "0_1_128_4";
+    return HCCL_SUCCESS;
+}
+
 struct StubQpInfo {
     u32 qpn = 0;
 };
@@ -558,7 +564,7 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndOneProcess)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-
+    MOCKER(HrtRaGetHccnCfg).stubs().will(invoke(stub_HrtRaGetHccnCfg));
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -725,6 +731,7 @@ void* OneSideThreadHandleTypIcalQP(void* args)
     AscendQPInfo localQPInfo;
     EXPECT_EQ(hcclCreateAscendQP(&localQPInfo), HCCL_SUCCESS);
     AscendQPInfo remoteQpInfo;
+    EXPECT_EQ(hcclCreateAscendQP(&remoteQpInfo), HCCL_SUCCESS);
     AscendQPQos qpQos;
     qpQos.sl = 4;
     qpQos.tc = 4;

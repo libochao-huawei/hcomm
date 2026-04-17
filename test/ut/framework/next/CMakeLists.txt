@@ -38,6 +38,7 @@ set(src_to_test_list
     host/ut_host_rdma_connection.cc
     host/ut_server_socket_manager.cc
     comms/endpoints/ut_ub_mem_endpoint.cc
+    comms/endpoints/reged_mems/ut_roce_mem_test.cc
     # Ns recovery相关测试用例
     comms/endpoint_pairs/channels/aicpu/ut_aicpu_ts_urma_channel.cc
     comms/endpoint_pairs/channels/ccu/ut_ccu_urma_channel.cc
