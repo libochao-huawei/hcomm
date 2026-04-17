@@ -55,7 +55,6 @@ public:
     virtual HcclResult Clean() override;
     virtual HcclResult Resume() override;
     HcclResult ExchangeCapability();
-    HcclResult NegotiateMode();
     HcclResult ExchangeDataHybird();
     HcclResult GetRemoteAddrHybird(hccl::MemType memType, u8 *&data, u64 &size);
     HcclResult ParseRecvExchangeDataHybird();
@@ -144,7 +143,6 @@ private:
     // 1. 能力协商结果
     RoCECapability remoteCap_;            // 对端能力
     bool isHybridMode_ = false;           // 是否为混合模式
-    SyncMode negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
     
     uint32_t localNotifySize_;
     uint32_t localNotifyAccess_;

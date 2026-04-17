@@ -56,7 +56,6 @@
 #include "aclgraph_callback.h"
 #include "adapter_hal.h"
 #include "dlhal_function.h"
-#include "hostdpu/dpu_kernel_entrance.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -149,6 +148,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = CommConfig();
+        dpuManager_.reset(new (std::nothrow) DpuManager());
+        if (dpuManager_ == nullptr) {
+            HCCL_ERROR("new DpuManager failed!");
+        }
     }
 
     HcclCommunicator::HcclCommunicator(const CommConfig &commConfig)
@@ -182,6 +185,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
+        dpuManager_.reset(new (std::nothrow) DpuManager());
+        if (dpuManager_ == nullptr) {
+            HCCL_ERROR("new DpuManager failed!");
+        }
     }
 
     HcclCommunicator::~HcclCommunicator()
@@ -198,8 +205,10 @@ namespace hccl
                 identifier_.c_str(), userRank_, deviceLogicId_);
         }
 
-        (void)DestroyDpuKernelResource();
-        g_taskServiceMap.erase(identifier_);
+        if (dpuManager_ != nullptr) {
+            (void)dpuManager_->DeInitDpuKernel();
+            dpuManager_ = nullptr;
+        }
 
         UnRegisterToHeartBeat();
         DeleteOpInfoToHeartBeat();
@@ -401,7 +410,9 @@ namespace hccl
         CHK_RET(SaveTopoDesc(params.identifier));
         CHK_RET(RegisterToSnapshot());
         CHK_RET(InitSymmetricMemory());
-        InitDpuKernel();
+        if (dpuManager_ != nullptr) {
+            CHK_RET(dpuManager_->Init(identifier_, deviceLogicId_));
+        }
         return HCCL_SUCCESS;
     }
 

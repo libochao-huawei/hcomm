@@ -58,6 +58,7 @@
 #include "rank_graph.h"
 #include "symmetric_memory/symmetric_memory.h"
 #include "my_rank.h"
+#include "hccl_dpu_manager.h"
 #include "../../../legacy/unified_platform/resource/buffer/dev_buffer.h"
 
 namespace hccl {
@@ -154,6 +155,9 @@ public:
             return nullptr;
         }
         return myRank_.get();
+    }
+    HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated) {
+        return dpuManager_->GetDevMemWorkSpace(memTag, size, addr, newCreated);
     }
 
     HcclResult GetCommParams(HcclCommParams &params); // 逆向解析获取HcclCommParams参数
@@ -456,25 +460,10 @@ public:
     HcclResult SnapshotCheckPreProcess();
     HcclResult SnapshotCheckPostProcess();
 
-    HcclResult LaunchDpuKernel(aclrtFuncHandle &funcHandle);
-    HcclResult PrepareDpuKernelResource(aclrtFuncHandle &funcHandle);
-    HcclResult InitAndLaunchDpuKernel();
-    void InitDpuKernel();
-    HcclResult DestroyDpuKernelResource();
-    HcclResult WaitDpuKernelThreadTerminate();
-
     //decouple for MC2
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
-
-    HcclResult GetDevMemWorkSpace(const std::string &memTag, uint64_t *size, void **addr, bool *newCreated);
-    HcclResult CreateWorkspaceBuf(const char *memTag, uint64_t *size, bool *newCreated);
-    const std::shared_ptr<Hccl::DevBuffer> GetKFCWorkSpace(const char *memTag) const {
-        std::string tag = memTag != nullptr ? std::string(memTag) : "";
-        auto it = tagWorkspaceMap_.find(tag);
-        return it != tagWorkspaceMap_.end() ? it->second : nullptr;
-    }
 
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
@@ -1156,12 +1145,7 @@ private:
     std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
     std::unique_ptr<SymmetricMemory> symmetricMemory_;
 
-    std::unordered_map<std::string, std::shared_ptr<Hccl::DevBuffer>> tagWorkspaceMap_;
-    void *hostShareBuf_{nullptr};
-    aclrtStream dpuStream_;
-    aclrtContext dpuContext_;
-    aclrtContext npuContext_;
-    bool isDpuKernelLaunched_ = false;
+    std::unique_ptr<DpuManager> dpuManager_;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H

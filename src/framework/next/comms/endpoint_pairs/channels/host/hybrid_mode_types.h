@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ struct RoCECapability {
     uint8_t nodeType;            // 节点类型（参考 HcclDeviceType）
     CommStackType commStack;     // 通信协议栈类型
     SyncMode syncMode;           // 支持的同步模式
-    uint8_t pading;
+    uint8_t padding;
 
     NICDeployment nicDeploy;     // NIC 部署位置
 
@@ -103,7 +103,7 @@ struct RoCECapability {
             return false;
         }
         // 校验枚举值范围
-        if (static_cast<uint8_t>(nicDeploy) > 1) {
+        if (nicDeploy >= NICDeployment::NIC_DEPLOYMENT_RESERVED) {
             return false;
         }
         if (static_cast<uint8_t>(commStack) > 1) {

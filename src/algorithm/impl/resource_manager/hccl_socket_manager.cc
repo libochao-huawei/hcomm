@@ -474,7 +474,7 @@ HcclResult HcclSocketManager::CreateSingleLinkSocket(const std::string &commTag,
     }
  
     HcclSocketRole role;
-    if (connectMode) {
+    if (connectMode) { /* HostNic(CpuRoceChannel) -- Device(TransportIbv)对接模式下，兼容next架构，使用ip判断role */
         role = localIp < remoteRankInfo.ip ? HcclSocketRole::SOCKET_ROLE_SERVER : HcclSocketRole::SOCKET_ROLE_CLIENT;
     } else {
         role = userRank_ < remoteRankInfo.userRank ? HcclSocketRole::SOCKET_ROLE_SERVER : HcclSocketRole::SOCKET_ROLE_CLIENT;

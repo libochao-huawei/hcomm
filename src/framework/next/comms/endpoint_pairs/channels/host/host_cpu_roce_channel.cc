@@ -39,7 +39,7 @@ HostCpuRoceChannel::HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChann
 HostCpuRoceChannel::~HostCpuRoceChannel() {
     HcclResult ret;
     
-    if (isHybridMode_) {
+    if (isHybridMode_ && connections_.size() != 0) {
         auto qpInfo = connections_[0]->GetQpInfo();
         struct MrInfoT mrInfo = {nullptr};
 
@@ -222,7 +222,6 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
         case RdmaStatus::CAP_EXCHANGED:
             // 准备资源
             CHK_RET(CreateQp());
-            CHK_RET(NegotiateMode());
             rdmaStatus_ = RdmaStatus::QP_CREATED;
             break;
         case RdmaStatus::QP_CREATED:
@@ -237,8 +236,9 @@ HcclResult HostCpuRoceChannel::GetStatus(ChannelStatus &status) {
         case RdmaStatus::DATA_EXCHANGE:
             if (isHybridMode_) {
                 CHK_RET(ConnectSingleQpHybrid([]() -> bool {return 0;}));
+            } else {
+                CHK_RET(ModifyQp());
             }
-            CHK_RET(ModifyQp());
             rdmaStatus_ = RdmaStatus::QP_MODIFIED;
             // modify完就不需要再轮询状态了，直接向下走准备Rqe的流程。
         case RdmaStatus::QP_MODIFIED:
@@ -1073,14 +1073,22 @@ HcclResult HostCpuRoceChannel::CreateNotifyHybird(hccl::MemType notifyType, uint
     int8_t *ptr = new (std::nothrow) int8_t[localNotifySize_];
     CHK_PTR_NULL(ptr);
 
-    memset_s(ptr, localNotifySize_, 0, localNotifySize_);
+    if (memset_s(ptr, localNotifySize_, 0, localNotifySize_) < 0) {
+        HCCL_ERROR("[HostCpuRoceChannel::CreateNotifyHybird] memset_s failed");
+        delete[] ptr;
+        return HCCL_E_MEMORY;
+    }
 
     struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = ptr;
     mrInfo.size = localNotifySize_;
     mrInfo.access = localNotifyAccess_;
     auto qpInfo = connections_[0]->GetQpInfo();
-    CHK_RET(HrtRaMrReg(qpInfo.qpHandle, &mrInfo));
+    if (HrtRaMrReg(qpInfo.qpHandle, &mrInfo) != HCCL_SUCCESS) {
+        HCCL_ERROR("[HostCpuRoceChannel::CreateNotifyHybird] MrReg failed");
+        delete[] ptr;
+        return HCCL_E_MEMORY;
+    }
 
     localMemMsg_[notifyType].addr = ptr;
     localMemMsg_[notifyType].lkey = mrInfo.lkey;
@@ -1093,14 +1101,21 @@ HcclResult HostCpuRoceChannel::CreateNotifyHybird(hccl::MemType notifyType, uint
 
 HcclResult HostCpuRoceChannel::CreateNotifyValueBufferHybird()
 {
-    CreateNotifyHybird(hccl::MemType::NOTIFY_SRC_MEM, hccl::MemType::NOTIFY_SRC_MEM);
+    if (CreateNotifyHybird(hccl::MemType::NOTIFY_SRC_MEM, hccl::MemType::NOTIFY_SRC_MEM) != HCCL_SUCCESS) {
+        HCCL_ERROR("[HostCpuRoceChannel::CreateNotifyValueBufferHybird]Create host notify fail, type=%d",
+            hccl::MemType::NOTIFY_SRC_MEM);
+        return HCCL_E_MEMORY;
+    }
     *reinterpret_cast<uint32_t *>(localMemMsg_[hccl::MemType::NOTIFY_SRC_MEM].addr) = 1;
     return HCCL_SUCCESS;
 }
 
 HcclResult HostCpuRoceChannel::CreateNotifyBufferHybird(hccl::MemType notifyType, uint32_t notifyId, u8 *&data, u64 &size)
 {
-    CreateNotifyHybird(notifyType, notifyId);
+    if (CreateNotifyHybird(notifyType, notifyId) != HCCL_SUCCESS) {
+        HCCL_ERROR("[HostCpuRoceChannel::CreateNotifyBufferHybird]Create host notify buffer fail, type=%d", notifyType);
+        return HCCL_E_MEMORY;
+    }
 
     CHK_SAFETY_FUNC_RET(memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[notifyType]), sizeof(hccl::MemMsg)));
 
@@ -1113,57 +1128,47 @@ HcclResult HostCpuRoceChannel::CreateNotifyBufferHybird(hccl::MemType notifyType
 HcclResult HostCpuRoceChannel::ExchangeCapability()
 {
     HCCL_INFO("[Hybrid][HostCpuRoceChannel] Starting capability exchange");
-    
+
     // 1. 构造本地能力信息（使用公共头文件中的默认值）
     RoCECapability localCap;
     localCap.InitDefaults();
     localCap.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
     localCap.commStack = CommStackType::COMM_STACK_HOST_CPU_ROCE;
-    
-    // 2. 发送本地能力（4字节大小前缀 + 原始结构体数据）
-    uint32_t sendSize = sizeof(localCap);
-    socket_->Send(&sendSize, sizeof(sendSize));
-    socket_->Send(&localCap, sendSize);
+
+    // 2. 发送本地能力（合并为单次发送：totalLength已包含结构体大小）
+    CHK_PRT_RET(!socket_->Send(&localCap, sizeof(localCap)),
+        HCCL_ERROR("[HostCpuRoceChannel::%s] Send exchange localCap failed", __func__), HCCL_E_NETWORK);
     HCCL_INFO("[Hybrid][HostCpuRoceChannel] Sent capability, version=%u", localCap.version);
-    
-    // 3. 接收对端能力（先读4字节大小，再读数据）
-    uint32_t recvSize = 0;
-    socket_->Recv(&recvSize, sizeof(recvSize));
-    
-    // 检查大小是否在合理范围内（必须 >= sizeof(RoCECapability) 且 <= 1024）
-    if (recvSize < sizeof(RoCECapability) || recvSize > 1024) {
-        HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Invalid capability size: %u, expected [%zu, 1024]",
-            recvSize, sizeof(RoCECapability));
-        return HCCL_E_PARA;
-    }
-    
-    std::vector<char> recvData(recvSize);
-    socket_->Recv(recvData.data(), recvSize);
-    
-    // 4. 先检查魔数（前4字节），如果不对可能是旧版本，需要回退
-    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+
+    // 3. 接收对端能力（单次接收）
+    RoCECapability recvCap;
+    CHK_PRT_RET(!socket_->Recv(&recvCap, sizeof(recvCap)),
+        HCCL_ERROR("[HostCpuRoceChannel::%s] Recv recvCap failed", __func__), HCCL_E_NETWORK);
+    HCCL_INFO("[Hybrid][HostCpuRoceChannel] recvCap success");
+
+    // 4. 先检查魔数，如果不对可能是旧版本，需要回退
+    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
         HCCL_WARNING("[Hybrid][HostCpuRoceChannel] Magic mismatch, peer may be old version. "
                      "Falling back to native mode.");
         // 回退到原生模式
         isHybridMode_ = false;
-        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
         // 标记为"跳过混合模式协商"，后续流程继续使用原生模式
         remoteCap_.magic = 0;  // 标记为无效
         return HCCL_SUCCESS;
     }
-    
+
     // 5. 魔数正确，解析对端能力
-    if (!remoteCap_.Deserialize(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+    if (!remoteCap_.Deserialize(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
         HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Failed to deserialize capability");
         return HCCL_E_PARA;
     }
-    
+
     // 6. 校验字段有效性
     if (!remoteCap_.Validate()) {
         HCCL_ERROR("[Hybrid][HostCpuRoceChannel] Capability validation failed");
         return HCCL_E_INTERNAL;
     }
-    
+
     // 7. 版本兼容性处理（高版本兼容低版本）
     if (remoteCap_.version > ROCE_CAPABILITY_VERSION) {
         // 对端版本更高，使用本地版本的功能集（最小公分母）
@@ -1174,35 +1179,12 @@ HcclResult HostCpuRoceChannel::ExchangeCapability()
         HCCL_INFO("[Hybrid][HostCpuRoceChannel] Remote version %u < local %u, using remote version features",
             remoteCap_.version, ROCE_CAPABILITY_VERSION);
     }
-    
+
+    isHybridMode_ = (remoteCap_.commStack == CommStackType::COMM_STACK_TRANSPORT_IBVERBS) ? true : false;
+
     HCCL_INFO("[Hybrid][HostCpuRoceChannel] Capability exchange success, "
-              "remote commStack=%u, version=%u",
-              static_cast<uint8_t>(remoteCap_.commStack), remoteCap_.version);
-    return HCCL_SUCCESS;
-}
-
-HcclResult HostCpuRoceChannel::NegotiateMode()
-{
-    // 检查是否是回退到原生模式的情况（magic == 0 表示旧版本回退）
-    if (remoteCap_.magic == 0) {
-        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Skipping mode negotiation, using native mode (fallback)");
-        // isHybridMode_ 已经在 ExchangeCapability 中设置为 false
-        return HCCL_SUCCESS;
-    }
-    
-    if (remoteCap_.commStack == CommStackType::COMM_STACK_TRANSPORT_IBVERBS) {
-        // 对端是 TransportIbverbs，切换到混合模式
-        isHybridMode_ = true;
-        // TransportIbverbs 不支持 Write With Immediate，切换到 Write + Notify
-        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_NOTIFY;
-
-        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Negotiated to hybrid mode (Write + Notify)");
-    } else {
-        // 对端也是 HostCpuRoceChannel，使用原生模式
-        isHybridMode_ = false;
-        negotiatedSyncMode_ = SyncMode::SYNC_MODE_WRITE_IMM;
-        HCCL_INFO("[Hybrid][HostCpuRoceChannel] Using native mode (Write With Immediate)");
-    }
+              "remote commStack=%u, version=%u, mode=%s",
+              static_cast<uint8_t>(remoteCap_.commStack), remoteCap_.version, isHybridMode_ ? "hybrid" : "normal");
     return HCCL_SUCCESS;
 }
 
@@ -1231,9 +1213,7 @@ HcclResult HostCpuRoceChannel::BuildExchangeDataLengthHybird()
     exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * 2; // output、input buffer
     exchangeDataTotalSize_ += sizeof(hccl::MemMsg) * 3; // 3个Notify
     exchangeDataTotalSize_ += sizeof(u8); // atomic value
-    if (isHybridMode_) {
-        exchangeDataTotalSize_ += sizeof(HybridExchangeData);
-    }
+    HCCL_INFO("[BuildExchangeDataLengthHybird]ExchangeDataSize:%ld", exchangeDataTotalSize_);
     return HCCL_SUCCESS;
 }
 
@@ -1247,14 +1227,14 @@ HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
     u64 size = exchangeDataTotalSize_;
 
     u32 qpNum = 1;
-    memcpy_s(data, size, reinterpret_cast<void *>(&qpNum), sizeof(u32));
+    CHK_SAFETY_FUNC_RET(memcpy_s(data, size, reinterpret_cast<void *>(&qpNum), sizeof(u32)));
     data += sizeof(u32);
     size -= sizeof (u32);
 
-    memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[hccl::USER_OUTPUT_MEM]), sizeof(hccl::MemMsg));
+    CHK_SAFETY_FUNC_RET(memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[hccl::USER_OUTPUT_MEM]), sizeof(hccl::MemMsg)));
     data += sizeof(hccl::MemMsg);
     size -= sizeof (hccl::MemMsg);
-    memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[hccl::USER_OUTPUT_MEM]), sizeof(hccl::MemMsg));
+    CHK_SAFETY_FUNC_RET(memcpy_s(data, size, reinterpret_cast<void *>(&localMemMsg_[hccl::USER_OUTPUT_MEM]), sizeof(hccl::MemMsg)));
     data += sizeof(hccl::MemMsg);
     size -= sizeof (hccl::MemMsg);
 
@@ -1264,16 +1244,9 @@ HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
     CHK_RET(CreateNotifyBufferHybird(hccl::DATA_ACK_NOTIFY_MEM, 2, data, size));
 
     u8 atomicWrite = 1;
-    memcpy_s(data, size, reinterpret_cast<void *>(&atomicWrite), sizeof(u8));
+    CHK_SAFETY_FUNC_RET(memcpy_s(data, size, reinterpret_cast<void *>(&atomicWrite), sizeof(u8)));
     data += sizeof(u8);
     size -= sizeof (u8);
-
-    if (isHybridMode_) {
-        HybridExchangeData localData;
-        memcpy_s(data, size, reinterpret_cast<void *>(&localData), sizeof(HybridExchangeData));
-        data += sizeof(HybridExchangeData);
-        size -= sizeof (HybridExchangeData);
-    }
 
     if (size != 0) {
         HCCL_ERROR("HostCpuRoceChannel::BuildExchangeDataHybird, failed to construct exchange data, size=%llu", size);
@@ -1285,7 +1258,7 @@ HcclResult HostCpuRoceChannel::BuildExchangeDataHybird()
 
 HcclResult HostCpuRoceChannel::GetRemoteAddrHybird(hccl::MemType memType, u8 *&data, u64 &size)
 {
-    memcpy_s(&remoteMemMsg_[static_cast<u32>(memType)], sizeof(hccl::MemMsg), data, sizeof(hccl::MemMsg));
+    CHK_SAFETY_FUNC_RET(memcpy_s(&remoteMemMsg_[static_cast<u32>(memType)], sizeof(hccl::MemMsg), data, sizeof(hccl::MemMsg)));
     data += sizeof(hccl::MemMsg);
     size -= sizeof(hccl::MemMsg);
     return HCCL_SUCCESS;
@@ -1297,7 +1270,7 @@ HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
     u64 size = exchangeDataTotalSize_;
 
     u32 remoteQpNum = 0;
-    memcpy_s(reinterpret_cast<void *>(&remoteQpNum), sizeof(u32), data, sizeof(u32));
+    CHK_SAFETY_FUNC_RET(memcpy_s(reinterpret_cast<void *>(&remoteQpNum), sizeof(u32), data, sizeof(u32)));
     data += sizeof(u32);
     size -= sizeof(u32);
 
@@ -1309,18 +1282,6 @@ HcclResult HostCpuRoceChannel::ParseRecvExchangeDataHybird()
 
     data += sizeof(u8);
     size -= sizeof(u8);
-
-    if (isHybridMode_) {
-        HybridExchangeData remoteData;
-        (void)memcpy_s(&remoteData, sizeof(HybridExchangeData), data, sizeof(HybridExchangeData));
-        rmtConnDto_.qpn_ = remoteData.qpn;
-        rmtConnDto_.psn_ = remoteData.psn;
-        rmtConnDto_.gid_idx_ = remoteData.gidIdx;
-        (void)memcpy_s(rmtConnDto_.gid_, HCCP_GID_RAW_LEN, remoteData.gid, HCCP_GID_RAW_LEN);
-
-        data += sizeof(HybridExchangeData);
-        size -= sizeof(HybridExchangeData);
-    }
 
     if (size != 0) {
         HCCL_ERROR("HostCpuRoceChannel::ParseRecvExchangeDataHybird: failed to parse exchange data, size=%lld", size);
@@ -1455,6 +1416,8 @@ HcclResult HostCpuRoceChannel::WriteWithNotifyHybrid(
         HCCL_ERROR("[Hybrid] ibv_post_send failed, ret=%d", ret),
         HCCL_E_NETWORK);
 
+    wqeNum_ += 2;
+
     HCCL_INFO("[Hybrid] WriteWithNotifyHybrid success");
     return HCCL_SUCCESS;
 }
@@ -1468,7 +1431,7 @@ HcclResult HostCpuRoceChannel::NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_
     // 使用配置的超时时间和轮询间隔
     uint32_t pollTimeout = (timeout == 0) ? 
         HybridModeConfig::GetInstance().GetPollTimeoutMs() : timeout;
-    // uint32_t pollInterval = HybridModeConfig::GetInstance().GetPollIntervalMs();
+    uint32_t pollInterval = HybridModeConfig::GetInstance().GetPollIntervalMs();
     
     // 使用原子操作读取 Notify 内存
     std::atomic<uint32_t>* notifyAddr =
@@ -1493,7 +1456,7 @@ HcclResult HostCpuRoceChannel::NotifyWaitHybrid(uint32_t localNotifyIdx, uint32_
             return HCCL_E_TIMEOUT;
         }
 
-        // SaluSleep(pollInterval);
+        SaluSleep(pollInterval);
     }
 }
 

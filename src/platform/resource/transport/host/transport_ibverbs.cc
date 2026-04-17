@@ -312,9 +312,7 @@ HcclResult TransportIbverbs::FillExchangeDataTotalSize()
         exchangeDataTotalSize_ += sizeof(u32);
         exchangeDataTotalSize_ += sizeof(MemMsg)*machinePara_.userHostMem.size();
     }
-    if (isHybridMode_) {
-        exchangeDataTotalSize_ += sizeof(struct hcomm::HybridExchangeData);
-    }
+
     HCCL_DEBUG("[TransportIbverbs][FillExchangeDataTotalSize] exchangeDataTotalSize[%llu]", exchangeDataTotalSize_);
     return HCCL_SUCCESS;
 }
@@ -399,20 +397,6 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
 
     if (machinePara_.isIndOp) {
         CHK_RET(RegCustomUserMem(exchangeDataPtr, exchangeDataBlankSize));
-    }
-
-    if (isHybridMode_) {
-        struct QpAttr qpAttr;
-        CHK_RET(hrtRaGetQpAttr(combineQpHandles_[0].qpHandle, &qpAttr));
-        struct hcomm::HybridExchangeData localData;
-        localData.qpn = qpAttr.qpn;
-        localData.psn = qpAttr.psn;
-        localData.gidIdx = qpAttr.gidIdx;
-        (void)memcpy_s(localData.gid, HCCP_GID_RAW_LEN, qpAttr.gid, HCCP_GID_RAW_LEN);
-        (void)memcpy_s(exchangeDataPtr, sizeof(struct hcomm::HybridExchangeData), &localData,
-            sizeof(struct hcomm::HybridExchangeData));
-        exchangeDataPtr += sizeof(struct hcomm::HybridExchangeData);
-        exchangeDataBlankSize -= sizeof(struct hcomm::HybridExchangeData);
     }
 
     if (exchangeDataBlankSize != 0) {
@@ -2741,56 +2725,44 @@ HcclResult TransportIbverbs::GetTransportId(u32 &id)
 HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
 {
     HCCL_INFO("[Hybrid][TransportIbverbs] Starting capability exchange");
-    
+
     // 1. 构造本地能力信息（使用公共头文件中的默认值）
     using namespace hcomm;
     RoCECapability localCap;
     localCap.InitDefaults();
     localCap.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
     localCap.commStack = CommStackType::COMM_STACK_TRANSPORT_IBVERBS;
-    
-    // 2. 发送本地能力（4字节大小前缀 + 原始结构体数据）
-    uint32_t sendSize = sizeof(localCap);
-    CHK_RET(defaultSocket_->Send(&sendSize, sizeof(sendSize)));
-    CHK_RET(defaultSocket_->Send(&localCap, sendSize));
+
+    // 2. 发送本地能力（合并为单次发送：totalLength已包含结构体大小）
+    CHK_RET(defaultSocket_->Send(&localCap, sizeof(localCap)));
     HCCL_INFO("[Hybrid][TransportIbverbs] Sent capability, version=%u", localCap.version);
-    
-    // 3. 接收对端能力（先读4字节大小，再读数据）
-    uint32_t recvSize = 0;
-    CHK_RET(defaultSocket_->Recv(&recvSize, sizeof(recvSize)));
-    
-    // 检查大小是否在合理范围内（必须 >= sizeof(RoCECapability) 且 <= 1024）
-    if (recvSize < sizeof(RoCECapability) || recvSize > 1024) {
-        HCCL_ERROR("[Hybrid][TransportIbverbs] Invalid capability size: %u, expected [%zu, 1024]",
-            recvSize, sizeof(RoCECapability));
-        return HCCL_E_PARA;
-    }
-    
-    std::vector<char> recvData(recvSize);
-    CHK_RET(defaultSocket_->Recv(recvData.data(), recvSize));
-    
-    // 4. 先检查魔数（前4字节），如果不对可能是旧版本，需要回退
-    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+
+    // 3. 接收对端能力（单次接收）
+    RoCECapability recvCap;
+    CHK_RET(defaultSocket_->Recv(&recvCap, sizeof(recvCap)));
+
+    // 4. 先检查魔数，如果不对可能是旧版本，需要回退
+    if (!RoCECapability::CheckMagic(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
         HCCL_WARNING("[Hybrid][TransportIbverbs] Magic mismatch, peer may be old version. "
                      "Falling back to native mode.");
         // 回退到原生模式
         isHybridMode_ = false;
         return HCCL_SUCCESS;
     }
-    
+
     // 5. 魔数正确，解析对端能力
     RoCECapability remoteCap;
-    if (!remoteCap.Deserialize(reinterpret_cast<uint8_t*>(recvData.data()), recvSize)) {
+    if (!remoteCap.Deserialize(reinterpret_cast<uint8_t*>(&recvCap), sizeof(recvCap))) {
         HCCL_ERROR("[Hybrid][TransportIbverbs] Failed to deserialize capability");
         return HCCL_E_PARA;
     }
-    
+
     // 6. 校验字段有效性
     if (!remoteCap.Validate()) {
         HCCL_ERROR("[Hybrid][TransportIbverbs] Capability validation failed");
         return HCCL_E_INTERNAL;
     }
-    
+
     // 7. 版本兼容性处理（高版本兼容低版本）
     if (remoteCap.version > ROCE_CAPABILITY_VERSION) {
         // 对端版本更高，使用本地版本的功能集（最小公分母）
@@ -2801,16 +2773,11 @@ HcclResult TransportIbverbs::ExchangeCapabilityHybrid()
         HCCL_INFO("[Hybrid][TransportIbverbs] Remote version %u < local %u, using remote version features",
             remoteCap.version, ROCE_CAPABILITY_VERSION);
     }
-    
-    // 8. 判断是否进入混合模式
-    if (remoteCap.commStack == CommStackType::COMM_STACK_HOST_CPU_ROCE) {
-        isHybridMode_ = true;
-        HCCL_INFO("[Hybrid][TransportIbverbs] Remote is HostCpuRoceChannel, entering hybrid mode");
-    } else {
-        isHybridMode_ = false;
-        HCCL_INFO("[Hybrid][TransportIbverbs] Remote is TransportIbverbs, using native mode");
-    }
-    
+
+    isHybridMode_ = (remoteCap.commStack == CommStackType::COMM_STACK_HOST_CPU_ROCE) ? true : false;
+    HCCL_INFO("[Hybrid][TransportIbverbs]Exchange mode success, Remote is %s", isHybridMode_ ? "HostCpuRoceChannel" :
+        "TransportIbverbs");
+
     return HCCL_SUCCESS;
 }
 

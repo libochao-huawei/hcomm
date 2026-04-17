@@ -365,8 +365,10 @@ HcclResult TopoinfoRanktableConcise::GetSingleNicInfo(const nlohmann::json &serv
         HCCL_ERROR("[Get][GetSingleNicInfo]get net position error"), ret);
     HCCL_DEBUG("[%s.json] -> net_position: [%s]. ret[%u]", fileName_.c_str(), netPosition.c_str(), ret);
     if (ret != HCCL_E_NOT_FOUND) {
-        if (netPosition == "host") {
+        if (netPosition == "host") { // 默认值为Device模式
             rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_HOST;
+        } else {
+            rankinfo.deviceInfo.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
         }
     }
 
@@ -376,7 +378,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleNicInfo(const nlohmann::json &serv
         HCCL_ERROR("[Get][GetSingleNicInfo]get net protocol error"), ret);
     HCCL_DEBUG("[%s.json] -> net_protocol: [%s]. ret[%u]", fileName_.c_str(), netProto.c_str(), ret);
     if (ret != HCCL_E_NOT_FOUND) {
-        if (netProto == "rdma") {
+        if (netProto == "rdma") { // 未配置则使用默认值，不处理，使用原有逻辑
             SetExternalInputProtocolType(ProtocolType::RDMA);
             rankinfo.deviceInfo.proto = u32(ProtocolType::RDMA);
         } else if (netProto == "tcp") {
