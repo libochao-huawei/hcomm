@@ -112,17 +112,13 @@ CcuResult CcuVariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, C
     return CcuResult::CCU_SUCCESS;
 }
 
-
-
-
-
 //Variable操作类 相关接口
-CcuResult CcuVariableAssign(CcuVariableHandle resVar, uint64_t immediate)
+CcuResult CcuVariableAssignImm(CcuVariableHandle resVar, uint64_t immediate)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
     auto kernel = hcomm::CcuKernelMgr::GetInstance(devLogicId).GetCurrentKernel();
     CCU_CHK_PTR_NULL(kernel);
-    CCU_CHK_RET(kernel->VariableAssign(resVar, immediate));
+    CCU_CHK_RET(kernel->VariableAssignImm(resVar, immediate));
     
     return CcuResult::CCU_SUCCESS;
 }
@@ -273,7 +269,6 @@ CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle va
 }
 
 //本地数据拷贝 相关接口
-
 CcuResult CcuLocalCopyMemToMem(
     CcuLocalAddrHandle dst, CcuLocalAddrHandle src,
     CcuVariableHandle len, CcuEventHandle event)
@@ -326,7 +321,6 @@ CcuResult CcuLocalBufferReduce(CcuBufferHandle* buffers, uint32_t count, HcclDat
 }
 
 /*========== 远端数据传输操作 ==========*/
-
 CcuResult CcuReadMemToMem(
     ChannelHandle channel, CcuLocalAddrHandle localHandle, CcuRemoteAddrHandle remoteHandle,
     CcuVariableHandle len, CcuEventHandle event)
@@ -395,10 +389,7 @@ CcuResult CcuWriteMemToMemReduce(
     return CcuResult::CCU_SUCCESS;
 }
 
-
-
 /*========== 控制流操作 ==========*/
-
 CcuResult CcuIfBegin(CcuVariableHandle var, uint64_t immediate,
     CcuConditionType condType, const char *label)
 {
@@ -558,4 +549,3 @@ CcuResult CcuLoopGroupAddLoopFromVar(CcuLoopGroup group,
     CCU_CHK_RET(kernel->LoopGroupAddLoopFromVar(group, loop, loopParamVar));
     return CcuResult::CCU_SUCCESS;
 }
-

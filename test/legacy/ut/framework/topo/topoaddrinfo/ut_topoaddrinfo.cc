@@ -1,10 +1,12 @@
 #include "gtest/gtest.h"
+#include <time.h>
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
 #include <cstdlib>
 #include <string>
 #include <stdint.h>
 #include <ctype.h>
+#include <dlfcn.h>
 #include "securec.h"
 #include "topo_addr_info.h"
 #include "hal.h"
@@ -151,4 +153,124 @@ TEST_F(TopoAddrInfoTest, Ut_Card_4P)
     // 4P使用直连口
     EXPECT_TRUE(strstr(buf, "dfdf0051") ==  NULL);
     free(buf);
+}
+
+TEST_F(TopoAddrInfoTest, ut_get_pod_rootinfo_size)
+{
+    unsigned int mainboardId = 0x07;
+    const size_t exceptedSize = 2048;
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainboardId)).will(returnValue(0));
+    size_t size = 0;
+    int ret = TopoAddrInfoGetSize(0, &size);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(size, exceptedSize);
+}
+
+TEST_F(TopoAddrInfoTest, ut_get_unknow_rootinfo_size)
+{
+    unsigned int mainboardId = 0x100;
+    const size_t exceptedSize = 4096;
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainboardId)).will(returnValue(0));
+    size_t size = 0;
+    int ret = TopoAddrInfoGetSize(0, &size);
+    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(size, exceptedSize);
+}
+
+/**
+ * 构造一个PoD中的NPU的地址信息， 并检查是否正确
+ */
+TEST_F(TopoAddrInfoTest, ut_rootinfo_for_pod)
+{
+    // mock data
+    unsigned int mainboard_id = 0x07;
+    char drv_path[256] = "/usr/local/Ascend2";
+    UEList ueList;
+    memset_s(&ueList, sizeof(UEList), 0x00, sizeof(UEList));
+    hex32_to_bin16("000000000000008000100000dfdf1088", ueList.ueList[0].eidList[0].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf1051", ueList.ueList[0].eidList[1].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10b8", ueList.ueList[0].eidList[2].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10b0", ueList.ueList[0].eidList[3].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10a8", ueList.ueList[0].eidList[4].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf10a0", ueList.ueList[0].eidList[5].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf1098", ueList.ueList[0].eidList[6].eid.raw);
+    hex32_to_bin16("000000000000008000100000dfdf1090", ueList.ueList[0].eidList[7].eid.raw);
+    ueList.ueList[0].eidNum = 8;
+    hex32_to_bin16("000000000000004000100000dfdf14d8", ueList.ueList[1].eidList[0].eid.raw);
+    ueList.ueList[1].eidNum = 1;
+    hex32_to_bin16("000000000000004000100000dfdf10d8", ueList.ueList[2].eidList[0].eid.raw);
+    ueList.ueList[2].eidNum = 1;
+    ueList.ueNum = 3;
+
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainboard_id)).will(returnValue(0));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+    MOCKER(HalGetUBEntityList).stubs().with(any(), outBoundP(&ueList)).will(returnValue(0));
+
+    size_t bufSize = 4096;
+    char* buf = (char*)malloc(bufSize);
+    memset_s(buf, bufSize, 0x00, bufSize);
+    int ret = TopoAddrInfoGet(0, buf, &bufSize);
+    EXPECT_EQ(ret, 0);
+    printf("[%s]\n", buf);
+    // 校验PG口EID在地址信息中
+    EXPECT_TRUE(strstr(buf, "dfdf14d8") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "dfdf10d8") !=  NULL);
+    // 校验mesh层net type正确
+    EXPECT_TRUE(strstr(buf, "TOPO_FILE_DESC") !=  NULL);
+    // 校验clos层net type正确
+    EXPECT_TRUE(strstr(buf, "CLOS") !=  NULL);
+    free(buf);
+}
+
+int mock_dcmi_init()
+{
+    // 模拟初始化耗时
+    sleep(1);
+    return 0;
+}
+
+int mock_dcmiv2_get_mainboard_id(int npu_id, unsigned int* mainboard_id)
+{
+    *mainboard_id = 0x07;
+    return 0;
+}
+
+int mock_get_logicid_from_chipphy_id(unsigned int phyId, unsigned int* logicId)
+{
+   *logicId = phyId;
+   return 0;
+}
+
+void *mock_dlsym(void *handle, const char *symbol)
+{
+    if (strcmp(symbol, "dcmiv2_init") == 0) {
+        return (void*)mock_dcmi_init;
+    }
+    if (strcmp(symbol, "dcmiv2_get_mainboard_id") == 0) {
+        return (void*)mock_dcmiv2_get_mainboard_id;
+    }
+    if (strcmp(symbol, "dcmiv2_get_dev_id_from_chip_phyid") == 0) {
+        return (void*)mock_get_logicid_from_chipphy_id;
+    }
+    return (void*)0x1;
+}
+
+void *mock_dlopen(const char *filename, int flag)
+{
+    return (void*)0x1;
+}
+
+TEST_F(TopoAddrInfoTest, ut_multi_init)
+{
+    // mock data
+    unsigned int mainBoardId1 = 0;
+    unsigned int mainBoardId2 = 0;
+    unsigned int expectedMainboardId = 0x07;
+    MOCKER(hal_dlopen).stubs().with(any(), any()).will(invoke(mock_dlopen));
+    MOCKER(hal_dlsym).stubs().with(any(), any()).will(invoke(mock_dlsym));
+    hal_get_mainboard_id(0, &mainBoardId1);
+    EXPECT_EQ(mainBoardId1, expectedMainboardId);
+    // 连续初始化两次，模拟多线程初始化，第二次进入等待状态
+    hal_get_mainboard_id(0, &mainBoardId2);
+    EXPECT_EQ(mainBoardId2, expectedMainboardId);
 }

@@ -77,6 +77,12 @@ public:
             localDieId_ = srcConnIface->GetLocalDieId();
             hop = path.links[0].GetHop();
             portGroupSize = static_cast<u8>(srcConnIface->GetPorts().size());
+            auto tgtPortGroupSize = static_cast<u8>(targetConnIface->GetPorts().size());
+            if (portGroupSize != tgtPortGroupSize) {
+                HCCL_ERROR("[LinkData][Constructor]srcConnIface.portGroupSize[%u] \
+                is not euqal to targetConnIface.portGroupSize[%u]",static_cast<u32>(portGroupSize), 
+                static_cast<u32>(tgtPortGroupSize));
+            }
             fullmesh = false;  // 多链路场景，非fullmesh
         } else {
             HCCL_ERROR("[LinkData][Constructor]path.links.size()[%u] is invalid", path.links.size());

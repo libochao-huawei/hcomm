@@ -164,6 +164,7 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/sockets/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/reged_mems/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/api_c_adpt/
     ${HCOMM_CODE_FRAMEWORK}/next/comms/common/

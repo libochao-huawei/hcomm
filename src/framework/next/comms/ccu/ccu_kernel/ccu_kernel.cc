@@ -409,7 +409,7 @@ CcuResult CcuKernel::VariableCreateByChannel(ChannelHandle channel, uint32_t var
 }
 
 
-CcuResult CcuKernel::VariableAssign(CcuVariableHandle varHandle, uint64_t immediate)
+CcuResult CcuKernel::VariableAssignImm(CcuVariableHandle varHandle, uint64_t immediate)
 {
     CcuRep::Variable *variable{nullptr};
     CCU_CHK_RET(GetVariableByHandle(varHandle, &variable));
@@ -701,10 +701,6 @@ CcuResult CcuKernel::WriteMemToMemReduce(ChannelHandle channel, CcuRemoteAddrHan
     auto ret = WriteReduceNb(channel, *remote, *local, *len, dataType, opType, *event);
     return HCCL_TO_CCU_RET(ret);
 }
-
-
-
-
 
 CcuResult CcuKernel::IfBegin(CcuVariableHandle varHandle, uint64_t immediate,
     CcuConditionType condType, const char *label)
@@ -1279,7 +1275,6 @@ HcclResult CcuKernel::WriteReduceNb(const ChannelHandle channel, const CcuRep::R
     return HCCL_SUCCESS;
 }
 
-
 CcuResult CcuKernel::GetBufferByHandle(CcuBufferHandle bufferHandle, CcuRep::CcuBuf **buffer)
 {
     return GetResourceByHandle(ccuBufferMap_, bufferHandle, buffer, "buffer");
@@ -1305,8 +1300,6 @@ HcclResult CcuKernel::LocalCopyNb(const CcuRep::LocalAddr &dst, const CcuRep::Cc
     Append(std::make_shared<CcuRep::CcuRepBufLocWrite>(src, dst, len, event, event.mask));
     return HCCL_SUCCESS;
 }
-
-
 
 HcclResult CcuKernel::LocalReduceNb(const CcuRep::LocalAddr &dst, const CcuRep::LocalAddr &src, const CcuRep::Variable &len,
                              HcclDataType dataType, HcclReduceOp opType, CcuRep::CompletedEvent event)

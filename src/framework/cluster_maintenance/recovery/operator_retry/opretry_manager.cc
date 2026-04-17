@@ -245,7 +245,9 @@ HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool is
             HCCL_ERROR("[OpRetryManager][ExitWaitResumeState]group[%s], state[%d], server exit wait resume state timeout", group.c_str(), serverOpRetry[group].retryCtx->GetRetryState());
             return HCCL_E_TIMEOUT;
         }
-        isChangedLink = true;
+        if (haveCommEnableBackupLink) {
+            isChangedLink = true;
+        }
     }
     while (agentOpRetry_.find(group) != agentOpRetry_.end() && agentOpRetry_[group].retryCtx->GetRetryState() != RETRY_STATE_AGENT_RUNNING) {
         std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();

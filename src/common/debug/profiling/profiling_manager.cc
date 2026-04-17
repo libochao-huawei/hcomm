@@ -149,7 +149,7 @@ HcclResult ProfilingManager::CallMsprofReportNodeInfo(uint64_t beginTime, uint64
     }
     // additionInfo开关 1) 开启: 单算子、静态图模式均上报; 关闭: 静态图或者acl graph场景模式缓存, 单算子不上报
     if (isAddtionInfoSubscribe_ == HCCL_SUCCESS || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB || GetThreadCaptureStatus()) {
-        CHK_RET(CallMsprofReportHostNodeBasicInfo(endTime, itemId, threadId, threadId));
+        CHK_RET(CallMsprofReportHostNodeBasicInfo(endTime, itemId, threadId));
     }
     return HCCL_SUCCESS;
 }
