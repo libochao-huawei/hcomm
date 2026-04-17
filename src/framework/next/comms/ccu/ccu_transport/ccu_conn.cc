@@ -509,7 +509,7 @@ std::string CcuConnection::Describe()
 HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
     uint16_t udpSport = 0xFFFF;
-    if (tpProtocol == TpProtocol::RTP) {
+    if (tpProtocol_ == TpProtocol::RTP) {
         uint32_t attrBitmap = 0;
         struct TpAttr tpAttr {0};
         u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId_);
