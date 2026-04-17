@@ -128,6 +128,36 @@ function build_cb_test_verify(){
     bash build.sh
 }
 
+function build_st() {
+    log "Info: build_st"
+    local log_dir="${OUTPUT_PATH}/logs/st" && mk_dir "${log_dir}"
+    mk_dir "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
+
+    # 编译 ST 用例代码
+    cmake_config -DPRODUCT_SIDE=host \
+                 -DENABLE_GCOV=${ENABLE_GCOV} \
+                 -DENABLE_TEST=${ENABLE_TEST} \
+                 -DENABLE_ST=${ENABLE_ST}
+
+    build 
+
+    local ctest_log="${log_dir}/ctest_output.log"
+    local ctest_summary="${log_dir}/ctest_summary.log"
+
+    ctest -j ${CPU_NUM} \
+          --build-nocmake \
+          --timeout 200 \
+          --output-on-failure \
+          --stop-on-failure \
+          --test-output-size-failed 10000000 \
+          -O "${ctest_log}" \
+          2>&1 | tee "${ctest_summary}"
+
+    log "Info: Build and tests completed successfully!"
+    log "Info: Test logs saved in: ${log_dir}"
+}
+
 function build_test() {
     ENABLE_ST="on"
     cmake_config -DENABLE_ST=${ENABLE_ST}
@@ -242,7 +272,7 @@ function build_ut() {
   mk_dir ${OUTPUT_PATH}
   mk_dir "${BUILD_DIR}"
   local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
-  local log_dir="${OUTPUT_PATH}/ut_logs" && mk_dir "${log_dir}"
+  local log_dir="${OUTPUT_PATH}/logs/ut" && mk_dir "${log_dir}"
   cd "${BUILD_DIR}"
   unset LD_LIBRARY_PATH
 
@@ -604,7 +634,7 @@ if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
     make_ut_gov
 elif [ -n "${TEST}" ];then
-    build_test
+    build_st 
 elif [ "${KERNEL}" == "true" ]; then
     build_kernel
 elif [ "${BUILD_FWK_HLT}" == "true" ]; then
