@@ -12,6 +12,7 @@
 
 #include "sal.h"
 #include "socket_exception.h"
+#include "network_api_exception.h"
 
 namespace Hccl {
 
@@ -67,6 +68,11 @@ void Socket::Connect()
     socketStatus = SocketStatus::CONNECTING;
 }
 
+void Socket::PrintErrorSocketInfo()
+{
+    HCCL_ERROR("Socket info: %s", Describe().c_str());
+}
+
 SocketStatus Socket::GetStatus()
 {
     if (socketStatus == SocketStatus::OK) {
@@ -75,7 +81,37 @@ SocketStatus Socket::GetStatus()
     }
 
     RaSocketGetParam param(socketHandle, remoteIp, tag, fdHandle);
-    auto result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param);
+    RaSocketFdHandleParam result;
+    TRY_CATCH_PROCESS_THROW(
+        NetworkApiException,
+        result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param),
+        "Socket::GetStatus failed",
+        {
+            HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
+            HCCL_ERROR("Please check if env HCCL_SOCKET_IFNAME is correctly set by checking localIp and remoteIp in socket info.");
+            PrintErrorSocketInfo();
+        }
+    );
+
+    // try {
+    //     result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param);
+    // } catch (NetworkApiException &e) {
+    //     HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
+    //     HCCL_ERROR("Please check if env HCCL_SOCKET_IFNAME is correctly set by checking localIp and remoteIp in socket info.");
+    //     HCCL_ERROR("Socket info: %s", Describe().c_str());
+    //     PrintBackTrace(e);
+    //     throw e;
+    // } catch (HcclException &e) {
+    //     HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
+    //     PrintBackTrace(e);
+    //     throw e;
+    // } catch (std::exception &e) {
+    //     HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
+    //     throw e;
+    // } catch (...) {
+    //     HCCL_ERROR("Unknown error occurs!");
+    //     throw;
+    // }
 
     fdHandle = result.fdHandle;
 

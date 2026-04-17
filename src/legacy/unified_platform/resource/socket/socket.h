@@ -128,6 +128,7 @@ private:
     bool CheckStartRequestResult();
     bool CheckSendRequestResult();
     bool CheckRecvRequestResult();
+    void PrintErrorSocketInfo();
 };
 
 } // namespace Hccl

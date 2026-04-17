@@ -439,7 +439,7 @@ void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部
     auto timeout       = std::chrono::seconds(EnvLinkTimeoutGet());
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], goten[%u], timeout[%lld]s, the HCCL_CONNECT_TIMEOUT may be insufficient",
+            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], gotSocketsCnt[%u], timeout[%lld]s",
                 role, num, gotSocketsCnt, timeout));
         }
         u32 connectedNum = 0;
