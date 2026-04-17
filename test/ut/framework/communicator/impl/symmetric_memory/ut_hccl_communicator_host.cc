@@ -243,3 +243,29 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
 }
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_ReturnIsHCCL_SUCCESS) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->userRankSize_ = 2;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+
+    MOCKER_CPP(&HcclCommunicator::InsertNewTagToTagMap).stubs().will(returnValue(HCCL_SUCCESS));
+
+    void *commContext = nullptr;
+    u64 len = 0;
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(
+        "test_tag", HcclCMDType::HCCL_CMD_ALLREDUCE, 1024,
+        reinterpret_cast<void*>(0x1000), reinterpret_cast<void*>(0x2000),
+        true, HcclDataType::HCCL_DATA_TYPE_FP32, HcclReduceOp::HCCL_REDUCE_SUM,
+        commContext, len, 0);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(commContext, nullptr);
+    EXPECT_EQ(len, sizeof(AivSuperKernelArgs));
+
+    if (commContext != nullptr) {
+        HcclResult freeRet = hrtFree(commContext);
+        EXPECT_EQ(freeRet, HCCL_SUCCESS);
+    }
+    GlobalMockObject::verify();
+}
