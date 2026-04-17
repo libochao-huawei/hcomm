@@ -19,9 +19,30 @@
 #undef private
 #undef protected
 #include "llt_hccl_stub_pub.h"
+#include "algorithm/pub_inc/hccl_aiv.h"
+#include "algorithm/pub_inc/coll_alg_operator.h"
+#include "algorithm/pub_inc/hccl_alg.h"
 
 using namespace std;
 using namespace hccl;
+
+// Mock class for CollAlgOperator
+class MockCollAlgOperator : public CollAlgOperator {
+public:
+    MOCK_METHOD5(SelectAlg, HcclResult(const std::string&, const OpParam&, const ResourceLimit&, std::string&, AlgDesc&, std::string&));
+    MOCK_METHOD3(CalcResRequest, HcclResult(const std::string&, const OpParam&, AlgResourceRequest&));
+    MOCK_METHOD2(PrepareCommInfoToDevice, HcclResult(const std::string&, const AlgResource&));
+    MOCK_METHOD4(GetAivExecParam, HcclResult(const std::string&, const OpParam&, const AlgResource&, AivSuperKernelArgs&));
+    MOCK_METHOD4(CalNumBlocks, HcclResult(const std::string&, const OpParam&, u32&, u32));
+};
+
+// Mock class for HcclAlg
+class MockHcclAlg : public HcclAlg {
+public:
+    MockHcclAlg(CCLBufferManager &cclBufferManager, HcclDispatcher dispatcher, HcclDispatcher vDispatcher)
+        : HcclAlg(cclBufferManager, dispatcher, vDispatcher) {}
+    MOCK_METHOD1(GetAlgOperator, std::unique_ptr<CollAlgOperator>(HcclCMDType));
+};
 
 class HcclCommunicatorHostTest : public testing::Test {
 protected:
@@ -242,4 +263,172 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->deviceType_, DevType::DEV_TYPE_910B);
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_NormalAllReduce_Expect_ReturnIsHCCL_SUCCESS) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->userRank_ = 0;
+    hcclCommunicator->userRankSize_ = 2;
+    
+    // Mock required dependencies
+    auto mockAlgOperator = std::make_shared<MockCollAlgOperator>();
+    CCLBufferManager cclBufferManager;
+    HcclDispatcher dispatcher;
+    HcclDispatcher vDispatcher;
+    auto mockImplAlg = std::make_shared<MockHcclAlg>(cclBufferManager, dispatcher, vDispatcher);
+    MOCKER_CPP(&MockHcclAlg::GetAlgOperator).stubs().will(returnValue(std::unique_ptr<CollAlgOperator>(mockAlgOperator.get())));
+    hcclCommunicator->implAlg_ = mockImplAlg;
+    MOCKER_CPP(&CollAlgOperator::SelectAlg).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalcResRequest).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::PrepareCommInfoToDevice).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::GetAivExecParam).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
+    
+    MOCKER_CPP(&hrtMalloc).stubs().will(doAnswer([](void **ptr, size_t size) {
+        *ptr = malloc(size);
+        return HCCL_SUCCESS;
+    }));
+    MOCKER_CPP(&hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hrtFree).stubs().will(doAnswer([](void *ptr) {
+        free(ptr);
+        return HCCL_SUCCESS;
+    }));
+    
+    std::string tag = "test_tag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+    void *inputPtr = malloc(count * sizeof(float));
+    void *outputPtr = malloc(count * sizeof(float));
+    bool clearEnable = false;
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_FLOAT32;
+    HcclReduceOp op = HcclReduceOp::HCCL_REDUCE_SUM;
+    void *commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 4;
+    
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(tag, opType, count, inputPtr, outputPtr, 
+                                                         clearEnable, dataType, op, commContext, len, aivCoreLimit);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(commContext, nullptr);
+    EXPECT_EQ(len, sizeof(AivSuperKernelArgs));
+    
+    free(inputPtr);
+    free(outputPtr);
+    if (commContext) {
+        hrtFree(commContext);
+    }
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_AllToAll_Expect_ReturnIsHCCL_SUCCESS) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->userRank_ = 0;
+    hcclCommunicator->userRankSize_ = 2;
+    
+    // Mock required dependencies
+    auto mockAlgOperator = std::make_shared<MockCollAlgOperator>();
+    CCLBufferManager cclBufferManager;
+    HcclDispatcher dispatcher;
+    HcclDispatcher vDispatcher;
+    auto mockImplAlg = std::make_shared<MockHcclAlg>(cclBufferManager, dispatcher, vDispatcher);
+    MOCKER_CPP(&MockHcclAlg::GetAlgOperator).stubs().will(returnValue(std::unique_ptr<CollAlgOperator>(mockAlgOperator.get())));
+    hcclCommunicator->implAlg_ = mockImplAlg;
+    MOCKER_CPP(&CollAlgOperator::SelectAlg).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalcResRequest).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::PrepareCommInfoToDevice).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::GetAivExecParam).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
+    
+    MOCKER_CPP(&hrtMalloc).stubs().will(doAnswer([](void **ptr, size_t size) {
+        *ptr = malloc(size);
+        return HCCL_SUCCESS;
+    }));
+    MOCKER_CPP(&hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hrtFree).stubs().will(doAnswer([](void *ptr) {
+        free(ptr);
+        return HCCL_SUCCESS;
+    }));
+    
+    std::string tag = "test_tag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLTOALL;
+    u64 count = 1024;
+    void *inputPtr = malloc(count * sizeof(float) * 2); // Alltoall需要更多内存
+    void *outputPtr = malloc(count * sizeof(float) * 2);
+    bool clearEnable = false;
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_FLOAT32;
+    HcclReduceOp op = HcclReduceOp::HCCL_REDUCE_SUM;
+    void *commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 4;
+    
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(tag, opType, count, inputPtr, outputPtr, 
+                                                         clearEnable, dataType, op, commContext, len, aivCoreLimit);
+    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_NE(commContext, nullptr);
+    EXPECT_EQ(len, sizeof(AivSuperKernelArgs));
+    
+    free(inputPtr);
+    free(outputPtr);
+    if (commContext) {
+        hrtFree(commContext);
+    }
+    GlobalMockObject::verify();
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_MemcpyFails_Expect_ReturnError) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->rankInfoList_.resize(2);
+    hcclCommunicator->userRank_ = 0;
+    hcclCommunicator->userRankSize_ = 2;
+    
+    // Mock required dependencies
+    auto mockAlgOperator = std::make_shared<MockCollAlgOperator>();
+    CCLBufferManager cclBufferManager;
+    HcclDispatcher dispatcher;
+    HcclDispatcher vDispatcher;
+    auto mockImplAlg = std::make_shared<MockHcclAlg>(cclBufferManager, dispatcher, vDispatcher);
+    MOCKER_CPP(&MockHcclAlg::GetAlgOperator).stubs().will(returnValue(std::unique_ptr<CollAlgOperator>(mockAlgOperator.get())));
+    hcclCommunicator->implAlg_ = mockImplAlg;
+    MOCKER_CPP(&CollAlgOperator::SelectAlg).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalcResRequest).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::PrepareCommInfoToDevice).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::GetAivExecParam).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CollAlgOperator::CalNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
+    
+    MOCKER_CPP(&hrtMalloc).stubs().will(doAnswer([](void **ptr, size_t size) {
+        *ptr = malloc(size);
+        return HCCL_SUCCESS;
+    }));
+    MOCKER_CPP(&hrtMemSyncCopy).stubs().will(returnValue(HCCL_E_INTERNAL)); // 模拟内存拷贝失败
+    MOCKER_CPP(&hrtFree).stubs().will(doAnswer([](void *ptr) {
+        free(ptr);
+        return HCCL_SUCCESS;
+    }));
+    
+    std::string tag = "test_tag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+    void *inputPtr = malloc(count * sizeof(float));
+    void *outputPtr = malloc(count * sizeof(float));
+    bool clearEnable = false;
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_FLOAT32;
+    HcclReduceOp op = HcclReduceOp::HCCL_REDUCE_SUM;
+    void *commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 4;
+    
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(tag, opType, count, inputPtr, outputPtr, 
+                                                         clearEnable, dataType, op, commContext, len, aivCoreLimit);
+    
+    EXPECT_EQ(ret, HCCL_E_INTERNAL);
+    EXPECT_EQ(commContext, nullptr);
+    EXPECT_EQ(len, 0);
+    
+    free(inputPtr);
+    free(outputPtr);
+    GlobalMockObject::verify();
 }
