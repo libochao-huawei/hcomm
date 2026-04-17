@@ -33,7 +33,8 @@ STATIC int RsResAddrMunmap(struct RsCtxJettyCb *jettyCb, struct UdmaVaInfo *vaIn
     struct res_map_info_in resInfoIn = {0};
     int ret = 0;
 
-    resInfoIn.res_id = jettyCb->jetty->jetty_id.id;
+    resInfoIn.res_id = RsGenerateMmapResId(jettyCb->jetty->jetty_id.id, jettyCb->devCb->devAttr.ub.dieId,
+        jettyCb->devCb->devAttr.ub.funcId);
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = vaInfo->resType;
     resInfoIn.priv_len = sizeof(struct UdmaVaInfo);
@@ -51,7 +52,8 @@ STATIC int RsResAddrMmap(struct RsCtxJettyCb *jettyCb, struct UdmaVaInfo *vaInfo
     struct res_map_info_in resInfoIn = {0};
     int ret = 0;
 
-    resInfoIn.res_id = jettyCb->jetty->jetty_id.id;
+    resInfoIn.res_id = RsGenerateMmapResId(jettyCb->jetty->jetty_id.id, jettyCb->devCb->devAttr.ub.dieId,
+        jettyCb->devCb->devAttr.ub.funcId);
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = vaInfo->resType;
     resInfoIn.priv_len = sizeof(struct UdmaVaInfo);
