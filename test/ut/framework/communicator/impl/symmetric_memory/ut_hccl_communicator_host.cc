@@ -243,3 +243,31 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
 }
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_ReturnIsHCCL_SUCCESS) {
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+    hcclCommunicator->userRankSize_ = 2;
+    hcclCommunicator->deviceType_ = DevType::DEV_TYPE_910_93;
+
+    u64 count = 1024;
+    s8 *inputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    s8 *outputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    sal_memset(inputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+    sal_memset(outputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+
+    MOCKER_CPP(&HcclCommunicator::InsertNewTagToTagMap).stubs().will(returnValue(HCCL_SUCCESS));
+
+    void *commContext = nullptr;
+    u64 len = 0;
+    HcclResult ret = hcclCommunicator->HcclGetAlgExecParam(
+        "test_tag", HcclCMDType::HCCL_CMD_ALLREDUCE, count,
+        inputPtr, outputPtr,
+        true, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM,
+        commContext, len, 2);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    sal_free(inputPtr);
+    sal_free(outputPtr);
+    GlobalMockObject::verify();
+}
