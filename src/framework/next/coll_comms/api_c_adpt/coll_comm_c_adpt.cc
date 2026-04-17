@@ -23,9 +23,10 @@ HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status)
 {
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(status);
-    std::shared_ptr<hccl::hcclComm> hcclComm;
-    CHK_RET(HcclGetCommHandle(commId, hcclComm));
-    CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+    HcclComm comm = nullptr;
+    CHK_RET(HcomGetCommHandleByGroup(commId, &comm));
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("%s hcclComm is nullptr, commId[%s]", __func__, commId), HCCL_E_PTR);
+    hcclComm* hcclComm = static_cast<hcclComm*>(comm);
     return hcclComm->GetCommStatus(*status);
 }
 
