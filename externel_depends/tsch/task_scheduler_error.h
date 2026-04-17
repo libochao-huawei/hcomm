@@ -200,6 +200,11 @@ typedef enum tag_ts_error {
  	TS_ERROR_LOCAL_MEM_ERROR = 0x225,                 /*local mem error*/
  	TS_ERROR_REMOTE_MEM_ERROR = 0x226,                /*remote mem error*/
     TS_ERROR_GET_PAGES_WRONG = 0x300,                 /* get pages wrong */
+    TS_ERROR_HCCL_OP_RETRY_FAILED = 0x3e8,            /**< hccl op retry failed */
+    TS_ERROR_HCCL_OP_SDMA_LINK_FAILED = 0x3e9,        /**< hccl op sdma link failed */
+    TS_ERROR_HCCL_OP_UB_DDRC_FAILED = 0x3ea,          /**< hccl op ub ddrc failed */
+    TS_ERROR_HCCL_OP_UB_POISON_FAILED = 0x3eb,        /**< hccl op ub poison failed */
+    TS_ERROR_HCCL_OP_UB_LINK_FAILED = 0x3ec,          /**< hccl op ub link failed */
     // the following error codes are ts inner codes, no need return to runtime
     TS_EXEC_AGAIN = 0x900,                           /**< task exec again */
     TS_PROFILE_CMD_COMPLETED = 0x901,                /**< profiling config completed */
