@@ -106,9 +106,11 @@
 #include "../../../legacy/framework/dfx/profiling/dlprof_function.h"
 #include "../../../legacy/framework/communicator/aicpu/daemon/aicpu_daemon_service.h"
 #include "../../../legacy/framework/dfx/task_exception/task_exception_handler.h"
+#include "../../../legacy/framework/dfx/aicpu/task_exception/task_exception_func.h"
 #include "../../../legacy/unified_platform/external_system/orion_adapter_hccp.h"
 #include "../../../legacy/include/hccl_communicator.h"
 #include "../../../legacy/unified_platform/ccu/ccu_microcode/ccu_assist.h"
+#include "../../../legacy/framework/resource_manager/notify/aicpu/host_device_sync_notify_lite_mgr.h"
 #include "acl/acl_rt.h"
 
 
@@ -2148,6 +2150,15 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t *expectionInfo)
 void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *expectionInfo)
 {}
 
+TaskExceptionFunc &TaskExceptionFunc::GetInstance()
+{
+    static TaskExceptionFunc instance;
+    return instance;
+}
+
+void TaskExceptionFunc::RegisterCallback(const Callback &callback)
+{}
+
 std::array<TaskExceptionHandler *, 65> TaskExceptionHandlerManager::handlers_;
 
 HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
@@ -2213,16 +2224,23 @@ std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 
     return nullptr;
 }
 
+NotifyLite *HostDeviceSyncNotifyLiteMgr::GetHostWaitNotify()
+{
+    std::vector<char> uniqueId;
+    static NotifyLite notify(uniqueId);
+    return &notify;
+}
+
 }  // namespace Hccl
 
 namespace Hccl {
-class CommunicatorImplLite {
-public:
-    CommunicatorImplLite(u32 commId) : commId_(commId) {}
-    ~CommunicatorImplLite() {}
-private:
-    u32 commId_;
-};
+CommunicatorImplLite::CommunicatorImplLite(u32 idIndex) : idIndex_(idIndex)
+{}
+
+HcclResult CommunicatorImplLite::SendErrorMessageReportToHost(ErrorMessageReport & errMsgInfo)
+{
+    return HCCL_SUCCESS;
+}
 
 class CommunicatorImplLiteMgr {
 public:
