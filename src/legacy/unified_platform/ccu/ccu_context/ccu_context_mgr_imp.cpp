@@ -43,9 +43,9 @@ CtxMgrImp::~CtxMgrImp()
 
 CtxMgrImp &CtxMgrImp::GetInstance(s32 deviceLogicId)
 {
-    static CtxMgrImp contextManager[MAX_MODULE_DEVICE_NUM];
+    static CtxMgrImp contextManager[MAX_MODULE_DEVICE_NUM + 1];
 
-    if (deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+    if (deviceLogicId < 0 || static_cast<u32>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<CcuApiException>("ProcessSharedResources failed deviceLogicId[%d]", deviceLogicId);
     }
 
