@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+* This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+* CANN Open Software License Agreement Version 2.0 (the "License").
+* Please refer to the License for details. You may not use this file except in compliance with the License.
+* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+* INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+* See LICENSE in the root of the software repository for the full text of the License.
+*/
 #ifndef HCCL_TASK_EXCEPTION_HANDLER_H
 #define HCCL_TASK_EXCEPTION_HANDLER_H
 
@@ -23,6 +23,41 @@
 #include "rdma_handle_manager.h"
 
 namespace Hccl {
+
+    struct ccum_dfx_info{
+        unsigned intquery_result: 1;// 0:success, 1:fail
+        union {
+            struct {
+                            unsigned int sqe_recv_cnt: 1;
+                            unsigned int sqe_send_cnt: 1;
+                unsigned int mission_dfx: 1;
+                            unsigned int sqe_drop_cnt: 1;
+                            unsigned int sqe_err_drop_cnt: 1;
+                unsigned int sec_reg0: 1;
+                            unsigned int tif_sqe_cnt: 1;
+                            unsigned int tif_cqe_cnt: 1;
+                unsigned cif_sqe_cnt:1;
+                unsigned cif_cqe_cnt:1;
+                            unsigned mcm_dfx:1;
+                            unsigned int resv: 20;
+                    }bs;
+               unsigned intvalid_bits: 31;
+           };
+        unsigned intccum_sqe_recv_cnt;
+        unsigned intccum_sqe_send_cnt;
+        unsigned intccum_mission_dfx;
+        unsigned intccum_sqe_drop_cnt;
+        unsigned intccum_sqe_addr_len_err_drop_cnt;
+        unsigned int lqc_ccu_sec_reg0;
+        unsigned intccum_tif_sqe_cnt;
+        unsigned intccum_tif_cqe_cnt;
+        unsigned intccum_cif_sqe_cnt;
+        unsigned intccum_cif_cqe_cnt;
+        unsigned intccum_mcm_dfx;
+        unsigned intresv[20];
+    };
+
+
 using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>; 
 class TaskExceptionHandler {
 public:
