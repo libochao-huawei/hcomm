@@ -19,12 +19,10 @@ InsTempAllReduceMesh1DTwoShot::InsTempAllReduceMesh1DTwoShot(const RankId virtua
     const std::vector<std::vector<RankId>> &tempVTopo, const std::map<RankId, u32> &tempVirtRankMap)
     : InsAlgTemplateBase(virtualRank, tempRankSize, tempVTopo, tempVirtRankMap)
 {
-    HCCL_INFO("[InsTempAllReduceMesh1DTwoShot] Init.");
 }
 
 InsTempAllReduceMesh1DTwoShot::~InsTempAllReduceMesh1DTwoShot()
 {
-    HCCL_INFO("[InsTempAllReduceMesh1DTwoShot] exit.");
 }
 
 /*
@@ -34,18 +32,39 @@ InsTempAllReduceMesh1DTwoShot::~InsTempAllReduceMesh1DTwoShot()
  */
 HcclResult InsTempAllReduceMesh1DTwoShot::CalcRes(AlgTempResReq &tempResReq)
 {
+        CHK_PRT_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq) != HcclResult::HCCL_SUCCESS,
+        HCCL_ERROR("[CollAlgFactory] [InsTempAllReduceMesh1DTwoShot] Rank [%d], resLinks calculation error!", myRank_),
+        HcclResult::HCCL_E_INTERNAL);
+    auto& linkReq = tempResReq.links;
+    u32 pathNum = 0;
+    for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
+        auto remoteRank = resReqIter->first;
+        if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
+            HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] No path to remoteRank[%u]", remoteRank);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        if (pathNum == 0) {
+            pathNum = rank2PathNumMap_[remoteRank];
+        } else if (rank2PathNumMap_[remoteRank] != pathNum) {
+            HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], mismatched "
+                       "remoteRank=[%u], pathNum=[%u]",
+                pathNum,
+                remoteRank,
+                rank2PathNumMap_[remoteRank]);
+            return HcclResult::HCCL_E_INTERNAL;
+        }
+        resReqIter->second = pathNum;
+    }
+ 
     // 1D Mesh 需要的 que Num 为 ranksize
-    tempResReq.queNum = tempVTopo_[0].size();
+    tempResReq.queNum = tempVTopo_[0].size() * pathNum;
+    HCCL_INFO("[InsTempAllReduceMesh1DTwoShot] tempResReq.queNum = %u", tempResReq.queNum);
     tempResReq.streamNum = tempResReq.queNum;
     tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
 
     QId centerQ = 0;
     tempResReq.localWaitGroupCntNotify.emplace_back(centerQ, 0);
     tempResReq.localBcastPostCntNotify.emplace_back(centerQ, 0);
-
-    CHK_PRT_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq) != HcclResult::HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlgFactory] [InsTempAllReduceMesh1DTwoShot] Rank [%d], resLinks calculation error!", myRank_),
-        HcclResult::HCCL_E_INTERNAL);
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -56,7 +75,7 @@ HcclResult InsTempAllReduceMesh1DTwoShot::CalcRes(AlgTempResReq &tempResReq)
  * return: sliceInfoVec: 存储数据切分结果
  * return: HcclResult
  */
-HcclResult InsTempAllReduceMesh1DTwoShot::CalcSlice(const u64 dataSize, RankSliceInfo &sliceInfoVec)
+HcclResult InsTempAllReduceMesh1DTwoShot::CalcSlice(const u64 dataSize, const u64 baseOff, RankSliceInfo &sliceInfoVec)
 {
     std::vector<SliceInfo> tmp(tempVTopo_.size());
     sliceInfoVec.resize(tempRankSize_, tmp);
@@ -67,12 +86,12 @@ HcclResult InsTempAllReduceMesh1DTwoShot::CalcSlice(const u64 dataSize, RankSlic
     u64 accumOff = 0;
     for (u32 rankIdx = 0; rankIdx < tempRankSize_; rankIdx++) {
         u64 currChunkSize = ((dataSize - accumOff) > chunkSize) ? chunkSize : (dataSize - accumOff);
-        SliceInfo slice = {accumOff, currChunkSize};
+        SliceInfo slice = {accumOff + baseOff, currChunkSize};
         sliceInfoVec[rankIdx][0]=slice;
         accumOff += currChunkSize;
     }
 
-    CHK_PRT_RET((sliceInfoVec[tempRankSize_ - 1][0].offset + sliceInfoVec[tempRankSize_ - 1][0].size != dataSize),
+    CHK_PRT_RET((sliceInfoVec[tempRankSize_ - 1][0].offset + sliceInfoVec[tempRankSize_ - 1][0].size != baseOff + dataSize),
         HCCL_ERROR("[InsAllReduceCombExecutor] chunkSize:[%llu], Rank:[%d], SliceInfo calculation error!", chunkSize, myRank_),
         HcclResult::HCCL_E_INTERNAL);
     return HcclResult::HCCL_SUCCESS;
@@ -103,15 +122,14 @@ HcclResult InsTempAllReduceMesh1DTwoShot::GenExtIns(const TempFuncs &tempFuncs, 
     const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
 {
     HCCL_INFO("[InsTempAllReduceMesh1DTwoShot] start.");
-
     opMode_ = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
 
-    queNum_ = tempVTopo_[0].size();
-    CHK_PRT_RET(queNum_ != tempInsQues.size(),
-        HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] Rank [%d], queNum_:[%u], tempInsQues size:[%zu],requiredQue Error.",
-            myRank_,
-            queNum_,
+    uint32_t linkNum = tempLinks.begin()->second.size();
+    CHK_PRT_RET( tempInsQues.size() != tempVTopo_[0].size() * linkNum,
+        HCCL_ERROR("[InsTempAllReduceMesh1DTwoShot] RankSize [%d], linkNum_:[%u], tempInsQues size:[%zu],requiredQue Error.",
+            tempVTopo_[0].size(),
+            linkNum,
             tempInsQues.size()),
         HcclResult::HCCL_E_INTERNAL);
 
@@ -123,13 +141,44 @@ HcclResult InsTempAllReduceMesh1DTwoShot::GenExtIns(const TempFuncs &tempFuncs, 
             tempAlgParams.buffInfo.scratchBuffSize),
         HcclResult::HCCL_E_INTERNAL);
 
-    RankSliceInfo sliceInfoVec;
-    CHK_RET(CalcSlice(tempAlgParams.sliceSize, sliceInfoVec));
+    u64 inBuffSize = tempAlgParams.sliceSize;
+    std::vector<RankSliceInfo> sliceInfoVecForAllLinks(linkNum);
+    std::vector<float> dataSplitRate(linkNum);
+    CHK_RET(CalcDataSplitRateForLinks(tempLinks.begin()->second, dataSplitRate));
+    u64 typeSize = DataTypeSizeGet(dataType_);
+    u64 dataCnt = inBuffSize / typeSize;
+    std::vector<u64> inBuffSizeForLinks(linkNum);
+    std::vector<u64> baseOff(linkNum);
+    u64 offset = 0;
+    for (u32 linkIdx = 0; linkIdx < linkNum; linkIdx++) {
+        if (linkIdx != linkNum - 1) {
+            inBuffSizeForLinks[linkIdx] =
+                static_cast<u64>(static_cast<float>(dataCnt) * dataSplitRate[linkIdx]) * typeSize;
+        } else {
+            inBuffSizeForLinks[linkIdx] = inBuffSize - offset;
+        }
+        //对每块输入都CalcSlice
+        CHK_RET(CalcSlice(inBuffSizeForLinks[linkIdx], offset, sliceInfoVecForAllLinks[linkIdx]));
+        offset += inBuffSizeForLinks[linkIdx];
+    }
 
+    std::vector<std::vector<InsQuePtr>> tempInsQuesVec;
+    u32 queNumPerlink = tempInsQues.size() / linkNum;
+    HCCL_INFO("tempInsQues.size()=%u,queNumPerlink=%u",tempInsQues.size(),queNumPerlink);
+    for (uint32_t linkIdx = 0; linkIdx < linkNum; linkIdx++) {
+        tempInsQuesVec.emplace_back(tempInsQues.begin() + linkIdx * queNumPerlink, tempInsQues.begin() + (linkIdx+1) * queNumPerlink);
+    }
+    u32 mainQueIdx = 0;
+    CHK_RET(PreSyncQues(tempInsQues, mainQueIdx));
     HCCL_INFO("[InsTempAllReduce1DMeshTwoShot][PreCopy] Rank [%d].", myRank_);
-    CHK_RET(RunAllReduceScatter(sliceInfoVec, tempLinks, tempInsQues, tempAlgParams));
-    CHK_RET(RunAllReduceAllgather(sliceInfoVec, tempLinks, tempInsQues, tempAlgParams));
+    for (uint32_t linkIdx = 0; linkIdx < linkNum; linkIdx++) {
+        CHK_RET(RunAllReduceScatter(sliceInfoVecForAllLinks[linkIdx], tempLinks, tempInsQuesVec[linkIdx], tempAlgParams, linkIdx));
+        CHK_RET(RunAllReduceAllgather(sliceInfoVecForAllLinks[linkIdx], tempLinks, tempInsQuesVec[linkIdx], tempAlgParams, linkIdx));
+    }
     HCCL_INFO("[InsTempAllReduce1DMeshTwoShot][PostCopy] Rank [%d].", myRank_);
+    // 流间后同步，从流通知主流
+    CHK_RET(PostSyncQues(tempInsQues, mainQueIdx));
+ 
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -142,10 +191,9 @@ HcclResult InsTempAllReduceMesh1DTwoShot::GenExtIns(const TempFuncs &tempFuncs, 
  * return: HcclResult
  */
 HcclResult InsTempAllReduceMesh1DTwoShot::RunAllReduceScatter(const RankSliceInfo &sliceInfoVec, const ResLinks &tempLinks,
-    std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams)
+    std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams, u32 linkIdx)
 {
     u64 inBuffBaseOff = tempAlgParams.buffInfo.inBuffBaseOff;
-    PreSyncInterQueues(tempInsQues);
     u32 MyAlgRank = tempVirtRankMap_[myRank_];
     // scatter
     for (u32 rankId = 0; rankId < tempRankSize_; rankId++) {
@@ -174,7 +222,7 @@ HcclResult InsTempAllReduceMesh1DTwoShot::RunAllReduceScatter(const RankSliceInf
             std::vector<DataSlice> recvSrcSlices{rsrcSlice};
             std::vector<DataSlice> recvDestSlices{rdestSlice};
 
-            TxRxLinks sendRecvLinks(linkSendRecv[0], linkSendRecv[0]);
+            TxRxLinks sendRecvLinks(linkSendRecv[linkIdx], linkSendRecv[linkIdx]);
             TxRxSlicesList sendRecvSlicesList({sendSrcSlices, sendDestSlices}, {recvSrcSlices, recvDestSlices});
 
             SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
@@ -211,7 +259,7 @@ HcclResult InsTempAllReduceMesh1DTwoShot::RunAllReduceScatter(const RankSliceInf
  * return: HcclResult
  */
 HcclResult InsTempAllReduceMesh1DTwoShot::RunAllReduceAllgather(const RankSliceInfo &sliceInfoVec, const ResLinks &tempLinks,
-    std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams)
+    std::vector<InsQuePtr> &tempInsQues, const TemplateDataParams &tempAlgParams, u32 linkIdx)
 {
     u64 outBuffBaseOff = tempAlgParams.buffInfo.outBuffBaseOff; 
     // sync:前同步
@@ -240,7 +288,7 @@ HcclResult InsTempAllReduceMesh1DTwoShot::RunAllReduceAllgather(const RankSliceI
             std::vector<DataSlice> sendSrcSlices{ssrcSlice};
             std::vector<DataSlice> sendDestSlices{sdestSlice};
 
-            TxRxLinks sendRecvLinks(linkSendRecv[0], linkSendRecv[0]);
+            TxRxLinks sendRecvLinks(linkSendRecv[linkIdx], linkSendRecv[linkIdx]);
             TxRxSlicesList sendRecvSlicesList({sendSrcSlices, sendDestSlices}, {recvSrcSlices, recvDestSlices});
 
             SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlicesList);
@@ -249,13 +297,14 @@ HcclResult InsTempAllReduceMesh1DTwoShot::RunAllReduceAllgather(const RankSliceI
                 HcclResult::HCCL_E_INTERNAL);
         }
     }
-    PostSyncInterQueues(tempInsQues);
     return HcclResult::HCCL_SUCCESS;
 }
 
 RankId InsTempAllReduceMesh1DTwoShot::GetRankFromMap(const u32 rankIdx)
 {
+    
     RankId rank = -1;
+    HCCL_INFO("[InsTempAllReduceMesh1DTwoShot] GetRankFromMap");
     for (auto &pair : tempVirtRankMap_) {
         if (pair.second == rankIdx) {
             rank = pair.first;
@@ -264,5 +313,4 @@ RankId InsTempAllReduceMesh1DTwoShot::GetRankFromMap(const u32 rankIdx)
     }
     return rank;
 }
-
 }  // namespace Hccl

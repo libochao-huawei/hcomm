@@ -94,16 +94,16 @@ std::unique_ptr<Hccl::LocalUbRmaBuffer> MockUbRmaBuffer()
     return make_unique<Hccl::LocalUbRmaBuffer>(localBuffer);
 }
 
-CommMemHandle MockCommMemHandle(Hccl::LocalUbRmaBuffer *bufferPtr)
+CommMemInfo MockCommMemInfo(Hccl::LocalUbRmaBuffer *bufferPtr)
 {
-    CommMemHandle memHandle{};
-    memHandle.addr = reinterpret_cast<void*>(bufferPtr->GetAddr());
-    memHandle.size = bufferPtr->GetSize();
-    memHandle.memType = CommMemType::COMM_MEM_TYPE_DEVICE;
-    memHandle.bufferHandle = static_cast<void *>(bufferPtr);
-    memHandle.memTag = "FakeCommBuffer";
+    CommMemInfo memInfo{};
+    auto &mem = memInfo.mem;
+    mem.type = CommMemType::COMM_MEM_TYPE_DEVICE;
+    mem.addr = reinterpret_cast<void*>(bufferPtr->GetAddr());
+    mem.size = bufferPtr->GetSize();
 
-    return memHandle;
+    memInfo.bufferHandle = static_cast<void *>(bufferPtr);
+    return memInfo;
 }
 
 HcclResult MockCcuConnectionImportJettys(hcomm::CcuConnection *This)
@@ -136,6 +136,9 @@ HcclResult MockCcuTransportGetRmtXn(hcomm::CcuTransport *This, const uint32_t in
 void MockCcuChannelGetRes()
 {
     MOCKER_CPP(&hcomm::CcuConnection::ImportJetty).stubs().will(invoke(MockCcuConnectionImportJettys));
+    MOCKER_CPP(&hcomm::CcuTransport::RecvDataSize).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::CcuTransport::RecvConnAndTransInfo).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
+    MOCKER_CPP(&hcomm::CcuTransport::RecvDataProcess).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuTransport::CheckFinish).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&hcomm::CcuTransport::GetRmtCkeByIndex).stubs().will(invoke(MockCcuTransportGetRmtCke));
     MOCKER_CPP(&hcomm::CcuTransport::GetRmtXnByIndex).stubs().will(invoke(MockCcuTransportGetRmtXn));

@@ -172,6 +172,7 @@ HcclResult HcclRemoteBatchRead(
     CHK_PTR_NULL(streamHandle);
     CHK_PTR_NULL(memTransport);
     CHK_PTR_NULL(bufPairs);
+    CHK_PRT_RET(bufPairNum == 0, HCCL_ERROR("[HcclRemoteBatchRead]bufPairsNum is 0."), HCCL_E_PARA);
     HCCL_DEBUG("[HcclRemoteBatchRead]streamHandle[%p], memTransport[%p], bufPairNum[%u].",
         streamHandle, memTransport, bufPairNum);
     Stream *stream = reinterpret_cast<Stream*>(streamHandle);
