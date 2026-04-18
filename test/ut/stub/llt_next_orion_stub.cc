@@ -152,7 +152,20 @@ bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
 {
     return true;
 }
- 
+
+HcclResult GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddr = ip;
+    return HCCL_SUCCESS;
+}
+
+void UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress)
+{
+    Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
+    eidAddress = ip;
+}
+
 SocketStatus Socket::GetAsyncStatus()
 {
     return SocketStatus::OK;
@@ -958,6 +971,18 @@ RtsNotify::RtsNotify(bool devUsed)
 {}
 RtsNotify::~RtsNotify()
 {}
+
+std::vector<char> RtsNotify::GetUniqueId() const
+{
+    u32        devPhyId{0};
+    u32        id{0};
+    BinaryStream binaryStream;
+    binaryStream << id;
+    binaryStream << devPhyId;
+    std::vector<char> result;
+    binaryStream.Dump(result);
+    return result;
+}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
     const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
