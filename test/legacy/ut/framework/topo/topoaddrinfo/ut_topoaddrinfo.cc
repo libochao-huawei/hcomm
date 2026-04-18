@@ -275,3 +275,122 @@ TEST_F(TopoAddrInfoTest, ut_multi_init)
     hal_get_mainboard_id(0, &mainBoardId2);
     EXPECT_EQ(mainBoardId2, expectedMainboardId);
 }
+
+TEST_F(TopoAddrInfoTest, ut_rootinfo_for_server)
+{
+    // mock data for UBX
+    unsigned int mainboard_id = 0x25;
+    char drv_path[256] = "/usr/local/Ascend2";
+    UEList ueList;
+    memset_s(&ueList, sizeof(UEList), 0x00, sizeof(UEList));
+    hex32_to_bin16("000000000000004000100000dfdf0008", ueList.ueList[0].eidList[0].eid.raw);
+    ueList.ueList[0].eidNum = 1;
+    hex32_to_bin16("000000000000006000100000dfdf0010", ueList.ueList[1].eidList[0].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0058", ueList.ueList[1].eidList[1].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0048", ueList.ueList[1].eidList[2].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0040", ueList.ueList[1].eidList[3].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0038", ueList.ueList[1].eidList[4].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0030", ueList.ueList[1].eidList[5].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0028", ueList.ueList[1].eidList[6].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0020", ueList.ueList[1].eidList[7].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0018", ueList.ueList[1].eidList[8].eid.raw);
+    ueList.ueList[1].eidNum = 9;
+    hex32_to_bin16("000000000000004000100000dfdf0088", ueList.ueList[2].eidList[0].eid.raw);
+    ueList.ueList[2].eidNum = 1;
+    hex32_to_bin16("00000000000000a000100000dfdf0090", ueList.ueList[3].eidList[0].eid.raw);
+    hex32_to_bin16("00000000000000a000100000dfdf00d8", ueList.ueList[3].eidList[1].eid.raw);
+    hex32_to_bin16("00000000000000a000100000dfdf00c0", ueList.ueList[3].eidList[2].eid.raw);
+    hex32_to_bin16("00000000000000a000100000dfdf00b8", ueList.ueList[3].eidList[3].eid.raw);
+    hex32_to_bin16("00000000000000a000100000dfdf00b0", ueList.ueList[3].eidList[4].eid.raw);
+    hex32_to_bin16("00000000000000a000100000dfdf00a8", ueList.ueList[3].eidList[5].eid.raw);
+    hex32_to_bin16("00000000000000a000100000dfdf00a0", ueList.ueList[3].eidList[6].eid.raw);
+    hex32_to_bin16("00000000000000a000100000dfdf0098", ueList.ueList[3].eidList[7].eid.raw);
+    ueList.ueList[3].eidNum = 8;
+    ueList.ueNum = 4;
+
+    struct dcmi_spod_info spinfo;
+    spinfo.sdid = 0x00000000;
+    spinfo.super_pod_size = 128;
+    spinfo.super_pod_id = 1;
+    spinfo.server_index = 1;
+    spinfo.chassis_id = 0x00000000;
+    spinfo.super_pod_type = 0x00000000;
+
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainboard_id)).will(returnValue(0));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+    MOCKER(HalGetUBEntityList).stubs().with(any(), outBoundP(&ueList)).will(returnValue(0));
+    MOCKER(hal_get_spod_info).stubs().with(any(), outBoundP(&spinfo)).will(returnValue(0));
+
+    size_t bufSize = 4096;
+    char* buf = (char*)malloc(bufSize);
+    memset_s(buf, bufSize, 0x00, bufSize);
+    int ret = TopoAddrInfoGet(0, buf, &bufSize);
+    EXPECT_EQ(ret, 0);
+    printf("[%s]\n", buf);
+    // 校验MESH
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf0090") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf00c0") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf00b8") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf00b0") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf00a8") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf00a0") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf0090") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "00000000000000a000100000dfdf00d8") ==  NULL); // mesh中的PG不在其中
+
+    // 校验CLOS
+    EXPECT_TRUE(strstr(buf, "000000000000006000100000dfdf0058") !=  NULL); // mesh中的PG不在其中
+    // 校验mesh层net type正确
+    EXPECT_TRUE(strstr(buf, "TOPO_FILE_DESC") !=  NULL);
+    // 校验clos层net type正确
+    free(buf);
+}
+
+TEST_F(TopoAddrInfoTest, ut_rootinfo_for_ubx)
+{
+    // mock data for UBX
+    unsigned int mainboard_id = 0x44;
+    char drv_path[256] = "/usr/local/Ascend2";
+    UEList ueList;
+    memset_s(&ueList, sizeof(UEList), 0x00, sizeof(UEList));
+    hex32_to_bin16("000000000000004000100000dfdf00a8", ueList.ueList[0].eidList[0].eid.raw);
+    hex32_to_bin16("000000000000004000100000dfdf00d9", ueList.ueList[0].eidList[1].eid.raw);
+    hex32_to_bin16("000000000000004000100000dfdf00c0", ueList.ueList[0].eidList[2].eid.raw);
+    hex32_to_bin16("000000000000004000100000dfdf00b8", ueList.ueList[0].eidList[3].eid.raw);
+    hex32_to_bin16("000000000000004000100000dfdf00b0", ueList.ueList[0].eidList[4].eid.raw);
+    ueList.ueList[0].eidNum = 5;
+    hex32_to_bin16("000000000000006000100000dfdf0088", ueList.ueList[1].eidList[0].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf00d8", ueList.ueList[1].eidList[1].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0098", ueList.ueList[1].eidList[2].eid.raw);
+    hex32_to_bin16("000000000000006000100000dfdf0090", ueList.ueList[1].eidList[3].eid.raw);
+    ueList.ueList[1].eidNum = 4;
+    ueList.ueNum = 2;
+
+    struct dcmi_spod_info spinfo;
+    spinfo.sdid = 0x00000000;
+    spinfo.super_pod_size = 128;
+    spinfo.super_pod_id = 1;
+    spinfo.server_index = 1;
+    spinfo.chassis_id = 0x00000000;
+    spinfo.super_pod_type = 0x00000000;
+
+    MOCKER(hal_get_mainboard_id).stubs().with(any(), outBoundP(&mainboard_id)).will(returnValue(0));
+    MOCKER(hal_get_driver_install_path).stubs().with(outBoundP(drv_path, strlen(drv_path)), any()).will(returnValue(0));
+    MOCKER(HalGetUBEntityList).stubs().with(any(), outBoundP(&ueList)).will(returnValue(0));
+    MOCKER(hal_get_spod_info).stubs().with(any(), outBoundP(&spinfo)).will(returnValue(0));
+
+    size_t bufSize = 4096;
+    char* buf = (char*)malloc(bufSize);
+    memset_s(buf, bufSize, 0x00, bufSize);
+    int ret = TopoAddrInfoGet(0, buf, &bufSize);
+    EXPECT_EQ(ret, 0);
+    printf("[%s]\n", buf);
+    // 校验PG口EID在地址信息中
+    EXPECT_TRUE(strstr(buf, "000000000000004000100000dfdf00d9") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "000000000000006000100000dfdf0098") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "000000000000006000100000dfdf0088") !=  NULL);
+    EXPECT_TRUE(strstr(buf, "000000000000006000100000dfdf0090") !=  NULL);
+    // 校验mesh层net type正确
+    EXPECT_TRUE(strstr(buf, "TOPO_FILE_DESC") !=  NULL);
+    // 校验clos层net type正确
+    free(buf);
+}
