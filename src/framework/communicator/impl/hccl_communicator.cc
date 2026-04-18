@@ -2536,6 +2536,8 @@ namespace hccl
             else
             {
                 LinkInfo linkinfo;
+                linkinfo.localDevicePhyId = -1;
+                linkinfo.remoteDevicePhyId = -1;
                 infos.push_back(ErrCqeInfo(info.second, linkinfo, qpn));
                 HCCL_RUN_WARNING("[GetTransportCqeErrors]MC2 did not save linkInfo, some info was not printed");
             }
