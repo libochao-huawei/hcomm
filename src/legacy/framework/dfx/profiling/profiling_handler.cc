@@ -170,21 +170,20 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
     GetHCCLReportData(taskInfo, hcclReportData);
 
     // 调用additionInfo接口上报数据
-    CallAddtionInfo(hcclReportData);
+    CallAddtionInfo(hcclReportData, &hcclReportData.profInfo, sizeof(hcclReportData.profInfo));
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails end.");
 }
 
-void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData) const
+void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len) const
 {
     HCCL_INFO("[ProfilingHandler]ReportHcclTaskDetails start.");
     MsprofAdditionalInfo reporterData{};
     reporterData.level     = MSPROF_REPORT_HCCL_NODE_LEVEL;
     reporterData.type      = static_cast<uint32_t>(ProfTaskType::TASK_HCCL_INFO);
     reporterData.threadId  = SalGetTid();
-    reporterData.dataLen   = sizeof(hcclReportData.profInfo);
+    reporterData.dataLen   = len;
     reporterData.timeStamp = hcclReportData.ts;
-    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), &hcclReportData.profInfo,
-                                      sizeof(hcclReportData.profInfo));
+    s32 sret               = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
     if (sret != EOK) {
         THROW<InternalException>("Call memcpy_s failed, errorno[%d]", sret);
     }
@@ -862,7 +861,7 @@ void ProfilingHandler::ReportStoragedAdditionInfo()
         HCCLReportData hcclReportData{};
         GetHCCLReportData(taskInfo, hcclReportData);
         // 调用additionInfo接口上报数据
-        CallAddtionInfo(hcclReportData);
+        CallAddtionInfo(hcclReportData, &hcclReportData.profInfo, sizeof(hcclReportData.profInfo));
     }
 }
 

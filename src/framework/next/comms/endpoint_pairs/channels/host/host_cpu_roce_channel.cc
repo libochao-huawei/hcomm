@@ -15,6 +15,8 @@
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
 #include "cpu_roce_endpoint.h"
+#include <sstream>
+#include <iomanip>
 
 // Orion
 #include "orion_adapter_hccp.h"
@@ -532,6 +534,58 @@ std::string HostCpuRoceChannel::Describe() const
     msg += ", ";
     // msg += attr_.Describe();
     return msg;
+}
+
+std::string HostCpuRoceChannel::GetCommAddrString() const
+{
+    std::string result;
+    const CommAddr &commAddr = remoteEp_.commAddr;
+
+    switch (commAddr.type) {
+        case COMM_ADDR_TYPE_IP_V4: {
+            char ipStr[INET_ADDRSTRLEN] = {0};
+            const char *ret = inet_ntop(AF_INET, &commAddr.addr, ipStr, INET_ADDRSTRLEN);
+            if (ret != nullptr) {
+                result = std::string(ipStr);
+            } else {
+                result = "Invalid IPv4";
+            }
+            break;
+        }
+        case COMM_ADDR_TYPE_IP_V6: {
+            char ipStr[INET6_ADDRSTRLEN] = {0};
+            const char *ret = inet_ntop(AF_INET6, &commAddr.addr6, ipStr, INET6_ADDRSTRLEN);
+            if (ret != nullptr) {
+                result = std::string(ipStr);
+            } else {
+                result = "Invalid IPv6";
+            }
+            break;
+        }
+        case COMM_ADDR_TYPE_ID: {
+            result = std::to_string(commAddr.id);
+            break;
+        }
+        case COMM_ADDR_TYPE_EID: {
+            std::ostringstream oss;
+            oss << std::hex << std::setfill('0');
+            for (uint32_t i = 0; i < COMM_ADDR_EID_LEN; ++i) {
+                oss << std::setw(2) << static_cast<uint32_t>(commAddr.eid[i]);
+                if (i < COMM_ADDR_EID_LEN - 1) {
+                    oss << ":";
+                }
+            }
+            result = oss.str();
+            break;
+        }
+        case COMM_ADDR_TYPE_RESERVED:
+        default: {
+            result = "Reserved/Unknown";
+            break;
+        }
+    }
+
+    return result;
 }
 
 HcclResult HostCpuRoceChannel::IbvPostRecv() const {

@@ -40,6 +40,7 @@ public:
     HcclResult GetStatus(ChannelStatus &status);
 
     std::string Describe() const;
+    std::string GetCommAddrString() const;
 
     // 数据面调用verbs接口
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx);

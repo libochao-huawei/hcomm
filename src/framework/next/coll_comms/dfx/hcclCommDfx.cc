@@ -14,6 +14,7 @@ namespace hccl {
 ReadWriteLockBase HcclCommDfx::baseLock_;
 ReadWriteLock HcclCommDfx::rwLock_(HcclCommDfx::baseLock_);
 std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfx::channelRemoteRankId_;
+std::unordered_map<u32, u32> HcclCommDfx::streamIdToTaskId_;
 HcclCommDfx::HcclCommDfx() {
 }
 
@@ -114,6 +115,24 @@ HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& comm
     CHK_PTR_NULL(profiling_);
     CHK_RET(profiling_->ReportKernel(beginTime, commTag, kernelName, threadId));
     return HCCL_SUCCESS; 
+}
+
+u32 HcclCommDfx::GetRankId(u32 streamId) {
+    rwLock_.writeLock();
+    auto it = streamIdToTaskId_.find(streamId);
+    if (it == streamIdToTaskId_.end()) {
+        streamIdToTaskId_[streamId] = 0;
+        rwLock_.writeUnlock();
+        return 0;
+    }
+    u32 taskId = it->second;
+    taskId++;
+    if (taskId > 65535) {
+        taskId = 0;
+    }
+    streamIdToTaskId_[streamId] = taskId;
+    rwLock_.writeUnlock();
+    return taskId;
 }
 
 }

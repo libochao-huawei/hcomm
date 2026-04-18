@@ -1726,7 +1726,7 @@ void ProfilingHandler::ReportHcclTaskDetails(const TaskInfo &taskInfo, bool cach
     
 }
 
-void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData) const
+void ProfilingHandler::CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len) const
 {
     
 }

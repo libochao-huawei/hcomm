@@ -92,6 +92,7 @@ struct HCCLReportData {
     uint64_t ts;
     uint32_t type;
     MsprofHcclInfo profInfo;
+    MsprofDpuHcclInfo dpuProfInfo;
     std::string tag;
     std::string groupName;
 };
@@ -185,7 +186,7 @@ private:
     void ReportStoragedAdditionInfo();
 
     void GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportData &hcclReportData) const;
-    void CallAddtionInfo( HCCLReportData& hcclReportData) const;
+    void CallAddtionInfo(HCCLReportData &hcclReportData, void *data, u32 len) const;
 
     void ReportCcuInfo(const TaskInfo &taskInfo) const;
     void GetCcuTaskInfo(const TaskInfo &taskInfo, const CcuProfilingInfo &info) const;

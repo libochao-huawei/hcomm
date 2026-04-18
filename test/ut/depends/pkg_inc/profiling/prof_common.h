@@ -611,6 +611,38 @@ struct MsprofHcclInfo {
 #endif
 };
 
+struct MsprofDpuHcclInfo {
+    uint64_t itemId;
+    uint64_t cclTag;
+    uint64_t groupName;
+    uint32_t localRank;
+    uint32_t remoteRank;
+    uint32_t rankSize;
+    uint32_t workFlowMode;
+    uint32_t planeID;
+    uint32_t ctxId;
+    uint64_t notifyID;
+    uint32_t stage;
+    uint32_t role; // role {0: dst, 1:src}
+    double durationEstimated;
+    uint64_t srcAddr;
+    uint64_t dstAddr;
+    uint64_t dataSize; // bytes
+    uint32_t opType; // {0: sum, 1: mul, 2: max, 3: min}
+    uint32_t dataType; // data type {0: INT8, 1: INT16, 2: INT32, 3: FP16, 4:FP32, 5:INT64, 6:UINT64}
+    uint32_t linkType; // link type {0: 'OnChip', 1: 'HCCS', 2: 'PCIe', 3: 'RoCE'}
+    uint32_t transportType; // transport type {0: SDMA, 1: RDMA, 2:LOCAL}
+    uint32_t rdmaType; // RDMA type {0: RDMASendNotify, 1:RDMASendPayload}
+    uint32_t reserve2;
+#ifdef __cplusplus
+    MsprofDpuHcclInfo() : role(MSPROF_HCCL_INVALID_UINT), opType(MSPROF_HCCL_INVALID_UINT),
+        dataType(MSPROF_HCCL_INVALID_UINT), linkType(MSPROF_HCCL_INVALID_UINT),
+        transportType(MSPROF_HCCL_INVALID_UINT), rdmaType(MSPROF_HCCL_INVALID_UINT)
+    {
+    }
+#endif
+};
+
 struct MsprofAicpuMC2HcclInfo {
     uint64_t itemId;
     uint64_t cclTag;
