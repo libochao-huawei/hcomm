@@ -66,7 +66,6 @@ HcclResult UboeEndpoint::Init()
     HCCL_INFO("%s success, devId[%u], eidAddress[%s], ctxHandle[%p]",
         __func__, devPhyId, eidAddress.Describe().c_str(), ctxHandle_);
 
-    // TODO UBOE OK 复用UbRegedMemMgr
     EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
