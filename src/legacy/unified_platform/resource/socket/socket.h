@@ -90,7 +90,7 @@ public:
 
     string Describe()
     {
-        return StringFormat("Socket[role=%s, localIp=%s, listenPort=0x%x, remoteIp=%s, tag=%s, nicType=%s]",
+        return StringFormat("Socket[role=%s, localIp=%s, listenPort=%u, remoteIp=%s, tag=%s, nicType=%s]",
                             role.Describe().c_str(), localIp.Describe().c_str(), listenPort,
                             remoteIp.Describe().c_str(), tag.c_str(), nicType.Describe().c_str());
     }
