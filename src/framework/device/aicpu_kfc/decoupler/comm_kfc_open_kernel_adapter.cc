@@ -94,11 +94,13 @@ void CreateOpParamByBaseOpParam(const std::vector<uint8_t> &baseOpParam, const H
     if (baseParam->varMemSize > 0) {
         memcpy_s(param->varData, baseParam->varMemSize, baseParam->varData, baseParam->varMemSize);
     }
+    bool convertAllToAllToV = false;
     if (param->opType == HcclCMDType::HCCL_CMD_ALLTOALL && msg.strideCount > 0UL) {
         for (uint32_t i = 0U; i < rankNum; ++i) {
             extMsg.sendCounts[i] = extMsg.recvCounts[i] = msg.dataCnt;
             extMsg.sendOffset[i] = extMsg.recvOffset[i] = msg.strideCount * i;
         }
+        convertAllToAllToV = true;
         param->opType = static_cast<HcclCMDType>(HcclCMDType::HCCL_CMD_ALLTOALLV);
     }
     if (param->opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
@@ -116,7 +118,8 @@ void CreateOpParamByBaseOpParam(const std::vector<uint8_t> &baseOpParam, const H
         param->DataDes.strideCount = msg.strideCount;
     }
 
-    param->opType = static_cast<HcclCMDType>(msg.commType.prepareType);
+    param->opType = convertAllToAllToV ? HcclCMDType::HCCL_CMD_ALLTOALLV :
+        static_cast<HcclCMDType>(msg.commType.prepareType);
     param->reduceType = static_cast<HcclReduceOp>(msg.opType);
     param->stream = stream;
 }
@@ -144,8 +147,8 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
         }
     }
 
-    // offset 的计算方法？( baseParam->inputSize * repeatIdx ) or ( msg.dataCnt * DataUnitSize(msg.addMsg.v1Msg.hcclDataType) * repeatIdx ) ?
-    const u64 offset = param->inputSize * repeatIdx;
+    const u64 repeatDataTypeSize = GetDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
+    const u64 offset = msg.dataCnt * repeatDataTypeSize * repeatIdx;
     param->inputPtr = reinterpret_cast<void *>(msg.sendBuffer + offset);
     param->outputPtr = reinterpret_cast<void *>(msg.recvBuffer + offset);
     const HcclCMDType opType = static_cast<HcclCMDType>(msg.commType.prepareType);
