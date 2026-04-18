@@ -26,7 +26,6 @@ UbRegedMemMgr::UbRegedMemMgr()
     localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
 }
 
-// TODO UBOE OK 复用UbRegedMemMgr
 HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
