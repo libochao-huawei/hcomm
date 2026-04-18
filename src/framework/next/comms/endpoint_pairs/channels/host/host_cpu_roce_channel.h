@@ -23,6 +23,7 @@
 #include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
+#include "../../../../../../legacy/unified_platform/pub_inc/task_param.h"
 
 namespace hcomm {
 

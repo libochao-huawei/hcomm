@@ -92,7 +92,7 @@ struct HCCLReportData {
     uint64_t ts;
     uint32_t type;
     MsprofHcclInfo profInfo;
-    MsprofDpuHcclInfo dpuProfInfo;
+    MsprofDpuHcclTrack dpuProfInfo;
     std::string tag;
     std::string groupName;
 };

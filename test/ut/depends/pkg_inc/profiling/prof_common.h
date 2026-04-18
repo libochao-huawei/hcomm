@@ -611,7 +611,7 @@ struct MsprofHcclInfo {
 #endif
 };
 
-struct MsprofDpuHcclInfo {
+struct MsprofDpuHcclTrack {
     uint64_t itemId;
     uint64_t cclTag;
     uint64_t groupName;
@@ -634,10 +634,14 @@ struct MsprofDpuHcclInfo {
     uint32_t transportType; // transport type {0: SDMA, 1: RDMA, 2:LOCAL}
     uint32_t rdmaType; // RDMA type {0: RDMASendNotify, 1:RDMASendPayload}
     uint32_t reserve2;
+    uint32_t aicpu_task_id; // device侧展开aicpukernel对应的task_id
+    uint16_t npuDevId;
+    uint16_t dpuDevId; // high 4 bits, devtype: dpu:1, low 12 bits device id
 #ifdef __cplusplus
-    MsprofDpuHcclInfo() : role(MSPROF_HCCL_INVALID_UINT), opType(MSPROF_HCCL_INVALID_UINT),
+    MsprofDpuHcclTrack() : role(MSPROF_HCCL_INVALID_UINT), opType(MSPROF_HCCL_INVALID_UINT),
         dataType(MSPROF_HCCL_INVALID_UINT), linkType(MSPROF_HCCL_INVALID_UINT),
-        transportType(MSPROF_HCCL_INVALID_UINT), rdmaType(MSPROF_HCCL_INVALID_UINT)
+        transportType(MSPROF_HCCL_INVALID_UINT), rdmaType(MSPROF_HCCL_INVALID_UINT),
+        aicpu_task_id(0), npuDevId(0), dpuDevId(0)
     {
     }
 #endif
