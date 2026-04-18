@@ -53,6 +53,13 @@ HcclResult TaskService::TaskUnRegister(std::string taskType)
     return HCCL_SUCCESS;
 }
 
+HcclResult TaskService::TaskProfRegister(ProfCallbackTemplate profCallback)
+{
+    HCCL_INFO("[TaskService::%s] register prof callback", __func__);
+    profCallback_ = profCallback;
+    return HCCL_SUCCESS;
+}
+
 HcclResult TaskService::WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const
 {
     aclError ret = aclrtMemcpy(flagPtr, sizeof(newFlag), &newFlag, sizeof(newFlag), aclrtMemcpyKind::ACL_MEMCPY_HOST_TO_DEVICE);

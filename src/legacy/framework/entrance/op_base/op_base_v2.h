@@ -176,6 +176,7 @@ HcclResult HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_
 HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
 typedef int32_t(Callback)(uint64_t, int32_t);
 HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
+HcclResult HcclTaskRegisterProfV2(HcclComm comm);
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
 
 HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);

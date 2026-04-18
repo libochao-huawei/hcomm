@@ -15,9 +15,11 @@
 #include <unordered_map>
 #include <string>
 #include "hccl_types.h"
+#include "../../../unified_platform/pub_inc/task_param.h"
 
 namespace Hccl {
 using CallbackTemplate = std::function<int32_t(uint64_t, int32_t)>;
+using ProfCallbackTemplate = std::function<HcclResult(u32, u32, const TaskParam&, u64)>;
 /**
  * 1. 使用共享 HBM 内存传递任务信息和数据
  * 2. 内存布局(shmemPtr_)分为两块等长区域：
@@ -41,6 +43,7 @@ public:
     HcclResult TaskRun();
     HcclResult TaskRegister(std::string taskType, CallbackTemplate callback);
     HcclResult TaskUnRegister(std::string taskType);
+    HcclResult TaskProfRegister(ProfCallbackTemplate profCallback);
 private:
     HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag) const;
     HcclResult ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag) const;
@@ -49,6 +52,7 @@ private:
     HcclResult SynchronizeControlInfo();
 private:
     std::unordered_map<std::string, CallbackTemplate> callbacks_;
+    ProfCallbackTemplate profCallback_{nullptr};
     void       *npu2dpuMem_{nullptr};
     void       *dpu2npuMem_{nullptr};
     int32_t shmemSize_{0};

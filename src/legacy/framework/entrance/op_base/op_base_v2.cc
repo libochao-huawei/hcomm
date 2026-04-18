@@ -37,6 +37,7 @@
 
 #include "hostdpu/dpu_kernel_entrance.h"
 #include "hostdpu/flush_manager.h"
+#include "../../../../framework/inc/hccl_comm_pub.h"
 
 using namespace std;
 using namespace Hccl;
@@ -455,11 +456,36 @@ HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb)
     CHK_PTR_NULL(comm);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);
     std::string commId = communicator->GetId();
+    HCCL_INFO("[HcclTaskRegisterV2] commId[%s]", commId.c_str());
     if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
         HCCL_ERROR("[HcclTaskRegisterV2] TaskService of CommId[%s] Not Found, g_taskServiceMap size[%zu]", commId.c_str(), g_taskServiceMap.size());
         return HCCL_E_NOT_FOUND;
     }
     return g_taskServiceMap[commId]->TaskRegister(msgTag, cb);
+}
+
+HcclResult HcclTaskRegisterProfV2(HcclComm comm)
+{
+    HCCL_INFO("[HcclTaskRegisterProfV2] start to register prof callback");
+    CHK_PTR_NULL(comm);
+    auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    hccl::CollComm *collComm = hcclComm->GetCollComm();
+    CHK_PTR_NULL(collComm);
+    
+    std::string commId = collComm->GetCommId();
+    HCCL_INFO("[HcclTaskRegisterProfV2] commId[%s]", commId.c_str());
+    if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
+        HCCL_ERROR("[HcclTaskRegisterProfV2] TaskService of CommId[%s] Not Found, g_taskServiceMap size[%zu]", commId.c_str(), g_taskServiceMap.size());
+        return HCCL_E_NOT_FOUND;
+    }
+    
+    auto profCallback = collComm->GetDfxCallback();
+    if (profCallback == nullptr) {
+        HCCL_ERROR("[HcclTaskRegisterProfV2] GetDfxCallback failed");
+        return HCCL_E_PTR;
+    }
+    
+    return g_taskServiceMap[commId]->TaskProfRegister(profCallback);
 }
 
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag)

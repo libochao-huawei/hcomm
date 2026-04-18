@@ -4813,6 +4813,11 @@ int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclComm commV2 = hcclComm->GetCommunicatorV2();
     CHK_PTR_NULL(commV2);
+    HcclResult ret = HcclTaskRegisterProfV2(comm);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclTaskRegister] HcclTaskRegisterProfV2 failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
     return HcclTaskRegisterV2(commV2, msgTag, cb);
 #endif
     return HCCL_E_NOT_SUPPORT;
