@@ -30,6 +30,12 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rank_graph.cc
+    # Stub implementations for missing symbols
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_orion_adapter.cc
+    # Legacy sources for TaskService and Socket (方案一)
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu/task_service.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu/dpu_kernel_entrance.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/socket.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
