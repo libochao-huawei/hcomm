@@ -42,6 +42,9 @@ public:
     std::string Describe() const;
     std::string GetCommAddrString() const;
 
+    HcclResult SetDfxCallback(std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback);
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetDfxCallback() const;
+
     // 数据面调用verbs接口
     HcclResult NotifyRecord(const uint32_t remoteNotifyIdx);
     HcclResult NotifyWait(const uint32_t localNotifyIdx, const uint32_t timeout);
@@ -125,6 +128,8 @@ private:
     bool fenceFlag_{false};
 
     uint64_t maxMsgSize_{0};
+
+    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> dfxCallback_;
 
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;

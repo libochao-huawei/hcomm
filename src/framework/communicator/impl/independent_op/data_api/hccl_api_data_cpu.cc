@@ -624,6 +624,16 @@ int32_t HcommThreadRegisterDfx(ThreadHandle thread, std::function<HcclResult(u32
     return HCCL_SUCCESS;
 }
 
+int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
+{
+    HCCL_INFO("[HcommChannelRegisterDfx] Init begin");
+    auto *const hostCpuRoceChannelPtr = reinterpret_cast<hcomm::HostCpuRoceChannel *>(channel);
+    CHK_PTR_NULL(hostCpuRoceChannelPtr);
+    CHK_RET(hostCpuRoceChannelPtr->SetDfxCallback(callback));
+    HCCL_INFO("[HcommChannelRegisterDfx] Init success");
+    return HCCL_SUCCESS;
+}
+
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);

@@ -20,6 +20,7 @@
 #include "../comms/ccu/ccu_kernel/ccu_kernel_mgr.h"
 #include "rt_external.h"
 #include "hccl_ccu_res.h"
+#include "../dfx/hcclCommOp.h"
 
 using namespace hccl;
 /**
@@ -261,6 +262,19 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
         }
         
         CHK_RET(myRank->CreateChannels(engine, commTag, channelDescFinals.data(), channelNum, channels));
+        if (engine == COMM_ENGINE_CPU) {
+            HCCL_INFO("[HcclChannelAcquire] Register DFX callback for CPU channels");
+            HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
+            CHK_PTR_NULL(hcclCommDfx);
+            auto callback = hcclCommDfx->GetCallback();
+            for (uint32_t idx = 0; idx < channelNum; idx++) {
+                int32_t ret = HcommChannelRegisterDfx(channels[idx], callback);
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[HcclChannelAcquire] Failed to register DFX callback for channel[%u], ret[%d]", idx, ret),
+                    static_cast<HcclResult>(ret));
+            }
+            HCCL_INFO("[HcclChannelAcquire] Register DFX callback for CPU channels success");
+        }
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             HCCL_INFO("[HcclChannelAcquire] ReportChannelAicpuKernel start");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();

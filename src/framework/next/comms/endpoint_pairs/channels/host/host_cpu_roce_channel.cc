@@ -588,6 +588,17 @@ std::string HostCpuRoceChannel::GetCommAddrString() const
     return result;
 }
 
+HcclResult HostCpuRoceChannel::SetDfxCallback(std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
+{
+    dfxCallback_ = callback;
+    return HCCL_SUCCESS;
+}
+
+std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> HostCpuRoceChannel::GetDfxCallback() const
+{
+    return dfxCallback_;
+}
+
 HcclResult HostCpuRoceChannel::IbvPostRecv() const {
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
