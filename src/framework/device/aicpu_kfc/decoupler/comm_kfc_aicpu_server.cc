@@ -30,6 +30,7 @@
 using namespace HcclApi;
 namespace {
 static constexpr u64 TIMEOUT_ERROR_THRESHOLD = 120UL;
+static constexpr u32 LOGICAL_STRIDE_LOOKAHEAD_RETRY = 128U;
 static const std::vector<HcclCMDType> SUPPORT_OP_LIST {
     HCCL_CMD_ALLREDUCE, HCCL_CMD_ALLGATHER, HCCL_CMD_REDUCE_SCATTER, HCCL_CMD_ALLTOALLV, HCCL_CMD_ALLTOALL
 };
@@ -77,6 +78,63 @@ HcclResult IsDevice950(bool &isDevice950)
     CHK_RET(hrtGetDeviceType(deviceType));
     isDevice950 = (deviceType == DevType::DEV_TYPE_950);
     return HCCL_SUCCESS;
+}
+
+u64 GetHcclDataTypeSize(HcclDataType dataType)
+{
+    switch (dataType) {
+        case HCCL_DATA_TYPE_INT8:
+        case HCCL_DATA_TYPE_UINT8:
+        case HCCL_DATA_TYPE_HIF8:
+        case HCCL_DATA_TYPE_FP8E5M2:
+        case HCCL_DATA_TYPE_FP8E4M3:
+        case HCCL_DATA_TYPE_FP8E8M0:
+            return 1U;
+        case HCCL_DATA_TYPE_INT16:
+        case HCCL_DATA_TYPE_UINT16:
+        case HCCL_DATA_TYPE_FP16:
+        case HCCL_DATA_TYPE_BFP16:
+            return 2U;
+        case HCCL_DATA_TYPE_INT32:
+        case HCCL_DATA_TYPE_UINT32:
+        case HCCL_DATA_TYPE_FP32:
+            return 4U;
+        case HCCL_DATA_TYPE_INT64:
+        case HCCL_DATA_TYPE_UINT64:
+        case HCCL_DATA_TYPE_FP64:
+            return 8U;
+        case HCCL_DATA_TYPE_INT128:
+            return 16U;
+        default:
+            return 0U;
+    }
+}
+
+u32 GetMsgRepeatCnt(const HcclMsg &msg)
+{
+    const u32 repeatCnt = static_cast<u32>(msg.addMsg.v1Msg.repeatCnt);
+    return repeatCnt == 0U ? 1U : repeatCnt;
+}
+
+bool NeedLogicalStride(HcclCMDType opType)
+{
+    return opType == HCCL_CMD_ALLGATHER || opType == HCCL_CMD_REDUCE_SCATTER || opType == HCCL_CMD_ALLTOALL;
+}
+
+bool IsSameSplitMsg(const HcclMsg &baseMsg, const HcclMsg &nextMsg, HcclCMDType opType,
+    u64 accumulatedCount, u64 dataTypeSize)
+{
+    if (static_cast<HcclCMDType>(nextMsg.commType.prepareType) != opType ||
+        nextMsg.strideCount != 0U || nextMsg.dataCnt == 0U ||
+        nextMsg.addMsg.v1Msg.ccOpTilingData != baseMsg.addMsg.v1Msg.ccOpTilingData ||
+        nextMsg.addMsg.v1Msg.hcclDataType != baseMsg.addMsg.v1Msg.hcclDataType ||
+        nextMsg.opType != baseMsg.opType) {
+        return false;
+    }
+
+    const u64 expectedOffset = accumulatedCount * dataTypeSize;
+    return nextMsg.sendBuffer == baseMsg.sendBuffer + expectedOffset &&
+        nextMsg.recvBuffer == baseMsg.recvBuffer + expectedOffset;
 }
 
 HcclResult GetMainThreadFromOpParam(const std::vector<uint8_t> &baseOpParam, ThreadHandle &mainThread)
@@ -226,6 +284,85 @@ const ServerExecCtx *CommKfcAicpuServer::MatchExecCtx(u64 opParamKey) const
         }
     }
     return nullptr;
+}
+
+bool CommKfcAicpuServer::TryReadMsg(u32 msgPos, HcclMsg &msg) const
+{
+    if (msgArea_ == nullptr || msgPos >= HCCL_MSG_CNT) {
+        return false;
+    }
+#ifdef __aarch64__
+    __asm__ __volatile__("dsb ld" : : : "memory");
+#endif
+#ifdef __amd64__
+    __asm__ __volatile__("" : : : "memory");
+#endif
+    HcclMsg *src = msgArea_->commMsg.singleMsg.sendMsgs + msgPos;
+    if (src->addMsg.v0Msg.valid != HCCL_MSG_VALID_MASK) {
+        return false;
+    }
+    msg = *src;
+    return AicpuKfcUtils::GenXor(&msg) == src->addMsg.v0Msg.xorCheck;
+}
+
+u64 CommKfcAicpuServer::ResolveLogicalStrideCount(const HcclMsg &msg, u32 msgPos)
+{
+    const auto cached = logicalStrideByMsgPos_.find(msgPos);
+    if (cached != logicalStrideByMsgPos_.end()) {
+        return cached->second;
+    }
+    const HcclCMDType opType = static_cast<HcclCMDType>(msg.commType.prepareType);
+    if (msg.strideCount != 0U || msg.dataCnt == 0U || rankNum_ <= 1U || !NeedLogicalStride(opType)) {
+        HCCL_INFO("[MC2_OPEN_DIAG][LogicalStride] group %u, msgPos %u, opType %u, dataCnt %llu, "
+                  "repeatCnt %u, splitMsgNum %u, logicalStrideCount %llu, rankNum %u, reason[%s].",
+                  groupIdx_, msgPos, static_cast<u32>(opType), static_cast<unsigned long long>(msg.dataCnt),
+                  GetMsgRepeatCnt(msg), 1U, static_cast<unsigned long long>(msg.strideCount), rankNum_,
+                  msg.strideCount != 0U ? "explicit" : "ignored");
+        return msg.strideCount;
+    }
+
+    const u64 dataTypeSize = GetHcclDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
+    if (dataTypeSize == 0U) {
+        HCCL_INFO("[MC2_OPEN_DIAG][LogicalStride] group %u, msgPos %u, opType %u, dataCnt %llu, "
+                  "repeatCnt %u, splitMsgNum %u, logicalStrideCount %u, rankNum %u, reason[unsupported_dtype].",
+                  groupIdx_, msgPos, static_cast<u32>(opType), static_cast<unsigned long long>(msg.dataCnt),
+                  GetMsgRepeatCnt(msg), 1U, 0U, rankNum_);
+        return 0U;
+    }
+
+    std::vector<u32> splitMsgPos{msgPos};
+    u64 accumulatedCount = msg.dataCnt * GetMsgRepeatCnt(msg);
+    for (u32 scan = 1U; scan < HCCL_MSG_CNT; ++scan) {
+        const u32 nextMsgPos = (msgPos + scan) % HCCL_MSG_CNT;
+        HcclMsg nextMsg{};
+        bool nextReady = TryReadMsg(nextMsgPos, nextMsg);
+        for (u32 retry = 0U; !nextReady && scan == 1U && retry < LOGICAL_STRIDE_LOOKAHEAD_RETRY; ++retry) {
+            nextReady = TryReadMsg(nextMsgPos, nextMsg);
+        }
+        if (!nextReady || !IsSameSplitMsg(msg, nextMsg, opType, accumulatedCount, dataTypeSize)) {
+            break;
+        }
+        splitMsgPos.push_back(nextMsgPos);
+        accumulatedCount += nextMsg.dataCnt * GetMsgRepeatCnt(nextMsg);
+    }
+
+    if (accumulatedCount <= msg.dataCnt) {
+        HCCL_INFO("[MC2_OPEN_DIAG][LogicalStride] group %u, msgPos %u, opType %u, dataCnt %llu, "
+                  "repeatCnt %u, splitMsgNum %zu, logicalStrideCount %u, rankNum %u, reason[none].",
+                  groupIdx_, msgPos, static_cast<u32>(opType), static_cast<unsigned long long>(msg.dataCnt),
+                  GetMsgRepeatCnt(msg), splitMsgPos.size(), 0U, rankNum_);
+        return 0U;
+    }
+
+    for (u32 splitPos : splitMsgPos) {
+        logicalStrideByMsgPos_[splitPos] = accumulatedCount;
+    }
+    HCCL_INFO("[MC2_OPEN_DIAG][LogicalStride] group %u, msgPos %u, opType %u, dataCnt %llu, repeatCnt %u, "
+              "splitMsgNum %zu, logicalStrideCount %llu, rankNum %u, reason[%s].",
+              groupIdx_, msgPos, static_cast<u32>(opType), static_cast<unsigned long long>(msg.dataCnt),
+              GetMsgRepeatCnt(msg), splitMsgPos.size(), static_cast<unsigned long long>(accumulatedCount),
+              rankNum_, splitMsgPos.size() > 1U ? "split" : "repeat");
+    return accumulatedCount;
 }
 
 HcclResult CommKfcAicpuServer::LaunchOpenCcoreWait(
@@ -382,14 +519,21 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMs
     const u32 repeatCnt = static_cast<u32>(msg.addMsg.v1Msg.repeatCnt);
     const u64 waitAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.commitTurnCnt[msgPos].cnt));
     const u64 recordAddr = reinterpret_cast<u64>(&(msgArea_->commMsg.singleMsg.finishedTurnCnt[msgPos].cnt));
+    HcclMsg formatMsg = msg;
+    const u64 logicalStrideCount = ResolveLogicalStrideCount(msg, msgPos);
+    if (msg.strideCount == 0U && logicalStrideCount > msg.dataCnt) {
+        formatMsg.strideCount = logicalStrideCount;
+    }
     HCCL_INFO("[MC2_OPEN_DIAG][ServerMsg] msgPos %u, handle %d, seqNum %u, repeatCnt %u, opParamKey %#llx, "
               "msgOpType %u, msgReduceType %u, sendBuffer %#llx, recvBuffer %#llx, dataCnt %llu, "
-              "dataType %u, strideCount %llu, waitAddr %#llx, recordAddr %#llx, resourceType %u.",
+              "dataType %u, strideCount %llu, logicalStrideCount %llu, waitAddr %#llx, recordAddr %#llx, "
+              "resourceType %u.",
               msgPos, handle, msg.addMsg.v1Msg.seqNum, repeatCnt, static_cast<unsigned long long>(opParamKey),
               static_cast<u32>(opType), static_cast<u32>(msg.opType),
               static_cast<unsigned long long>(msg.sendBuffer), static_cast<unsigned long long>(msg.recvBuffer),
               static_cast<unsigned long long>(msg.dataCnt), static_cast<u32>(msg.addMsg.v1Msg.hcclDataType),
               static_cast<unsigned long long>(msg.strideCount),
+              static_cast<unsigned long long>(formatMsg.strideCount),
               static_cast<unsigned long long>(waitAddr), static_cast<unsigned long long>(recordAddr),
               static_cast<u32>(execCtx->resourceType));
 
@@ -403,7 +547,7 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMs
                   static_cast<u32>(execCtx->resourceType));
 
         UpdateProgress("BeforeFormat", msgPos, i, turnIdx, opParamKey, waitAddr, recordAddr);
-        HcclResult ret = FormatOpParamFromMsg(msg, extMsg, *execCtx, i, runParam);
+        HcclResult ret = FormatOpParamFromMsg(formatMsg, extMsg, *execCtx, i, runParam);
         UpdateProgress("AfterFormat", msgPos, i, turnIdx, opParamKey, waitAddr, recordAddr);
         HCCL_INFO("[MC2_OPEN_DIAG][LoopAfterFormat] group %u, msgPos %u, repeatIdx %u, ret %u, runParamSize %zu.",
                   groupIdx_, msgPos, i, ret, runParam.size());
