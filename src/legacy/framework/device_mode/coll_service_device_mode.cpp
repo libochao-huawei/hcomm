@@ -206,14 +206,20 @@ void CollServiceDeviceMode::LoadWithOffloadMode(CollOperator &op, std::unique_pt
 shared_ptr<InsQueue> CollServiceDeviceMode::Orchestrate(const CollAlgOperator &op) const
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
-
-    u64           tmpMemSize = comm->GetBufferSize();
+    u64 tmpMemSize = 0;
+    if (op.opMode == OpMode::OPBASE) {
+        tmpMemSize = comm->GetBufferSize();
+    } else if (op.scratchMem != nullptr) {
+        tmpMemSize = op.scratchMem->GetSize();
+    } else {
+        HCCL_WARNING("[CollServiceDeviceMode::%s] no need scratchMem.", __func__);
+    }
     CollAlgParams params;
     auto          insQueue = make_shared<InsQueue>();
 
     params.opMode        = op.opMode;
     params.maxTmpMemSize = tmpMemSize;
-    HCCL_INFO("[CollServiceDeviceMode::%s] orchestrate with Ins start", __func__);
+    HCCL_INFO("[CollServiceDeviceMode::%s] opMode[%d], tmpMemSize[%llu]", __func__, op.opMode, tmpMemSize);
     HcclResult errCode = comm->GetCollAlgComponent()->Orchestrate(op, params,comm->GetCurAlgName(), insQueue);
     HCCL_INFO("[CollServiceDeviceMode::%s] orchestrate with Ins end", __func__);
 
