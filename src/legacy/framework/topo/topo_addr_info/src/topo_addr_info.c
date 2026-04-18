@@ -44,6 +44,7 @@ static GetSizeFuncTable g_get_size_func_table[] = {
     {MAIN_BOARD_ID_CARD_4PMESH, GetCardRankInfoLen},
     {MAIN_BOARD_ID_SERVER_8PMESH, ServerGetRootinfoLen},
     {MAIN_BOARD_ID_SERVER_TYPE1, ServerGetRootinfoLen},
+    {MAIN_BOARD_ID_SERVER_UBX, ServerGetRootinfoLen},
     {MAIN_BOARD_ID_POD, PodGetRootinfoLen},
     {MAIN_BOARD_ID_POD_2D, PodGetRootinfoLen},
 };
@@ -54,6 +55,7 @@ static GetRootinfoFuncTable g_get_rootinfo_func_table[] = {
     {MAIN_BOARD_ID_CARD_4PMESH, GetCardRankInfo},
     {MAIN_BOARD_ID_SERVER_8PMESH, ServerGetRootinfo},
     {MAIN_BOARD_ID_SERVER_TYPE1, ServerGetRootinfo},
+    {MAIN_BOARD_ID_SERVER_UBX, ServerGetRootinfo},
     {MAIN_BOARD_ID_POD, PodGetRootinfo},
     {MAIN_BOARD_ID_POD_2D, PodGetRootinfo},
 };
