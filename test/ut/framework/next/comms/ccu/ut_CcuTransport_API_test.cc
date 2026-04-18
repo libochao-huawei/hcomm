@@ -25,68 +25,70 @@
 #undef protected
 #undef private
 
-using namespace Hccl;
-
 class CcuTransportTest : public BaseInit {
-public:
+protected:
     void SetUp() override {
         BaseInit::SetUp();
-        // 将enableEntryLog默认返回为true
-        MOCKER(GetExternalInputHcclEnableEntryLog)
-            .stubs()
-            .with(any())
-            .will(returnValue(true));
-        IpAddress localIp("1.0.0.0");
-        IpAddress remoteIp("2.0.0.0");
-        fakeSocket = new Hccl::Socket(nullptr, localIp, 100, remoteIp, "test", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        Hccl::IpAddress localIp("1.0.0.0");
+        Hccl::IpAddress remoteIp("2.0.0.0");
+        fakeSocket_ = new Hccl::Socket(nullptr, localIp, 100, remoteIp, "test", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+        setenv("HCCL_DFS_CONFIG", "task_exception:on", 1);
+        MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
     }
+
     void TearDown() override {
-        BaseInit::TearDown();
+        delete fakeSocket_;
+        unsetenv("HCCL_DFS_CONFIG");
         GlobalMockObject::verify();
-        delete fakeSocket;
+        BaseInit::TearDown();
     }
-    Hccl::Socket *fakeSocket;
-protected:
+
+    HcclResult CreateCcuTransportWithBuffer(std::vector<hcomm::CcuTransport::CclBufferInfo> &bufferInfos,
+        std::unique_ptr<hcomm::CcuTransport> &ccuTransport)
+    {
+        hcomm::CcuTransport::CcuConnectionInfo connInfo{};
+        MOCKER_CPP(&hcomm::CcuConnection::Init).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&hcomm::CcuTransport::Init).stubs().will(returnValue(HCCL_SUCCESS));
+        return hcomm::CcuCreateTransport(fakeSocket_, connInfo, bufferInfos, ccuTransport);
+    }
+
+    CommMemInfo BuildMemInfo(u64 addr, u64 size, const std::string &tag = "",
+        CommMemType type = CommMemType{})
+    {
+        auto buffer = std::make_shared<Hccl::Buffer>(addr, size);
+        auto locBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer, rdmaHandle_);
+        locBuffers_.push_back(locBuffer);
+        CommMemInfo memInfo{};
+        memInfo.mem.addr = (void*)addr;
+        memInfo.mem.size = (uint64_t)size;
+        memInfo.bufferHandle = static_cast<void*>(locBuffer.get());
+        if (!tag.empty()) {
+            strncpy_s(memInfo.memTag, sizeof(memInfo.memTag), tag.c_str(), tag.size());
+        }
+        memInfo.mem.type = type;
+        return memInfo;
+    }
+
+    Hccl::Socket *fakeSocket_;
+    RdmaHandle rdmaHandle_ = (void*)0x100;
+    std::vector<std::shared_ptr<Hccl::LocalUbRmaBuffer>> locBuffers_;
 };
 
 TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    RdmaHandle rdmaHandle = (void*)0x100;
-    auto buffer0 = std::make_shared<Buffer>(0x100, 0x100);
-    auto locBuffer0 = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
-    CommMemInfo memInfo0{};
-    memInfo0.mem.addr = (void*)0x100;
-    memInfo0.mem.size = (uint64_t)0x100;
-    memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
-
-    auto buffer1 = std::make_shared<Buffer>(0x101, 0x101);
-    auto locBuffer1 = make_shared<Hccl::LocalUbRmaBuffer>(buffer1, rdmaHandle);
-    CommMemInfo memInfo1{};
-    memInfo1.mem.addr = (void*)0x101;
-    memInfo1.mem.size = (uint64_t)0x101;
-    std::string tag = "buffer1";
-    strncpy_s(memInfo1.memTag, sizeof(memInfo1.memTag), tag.c_str(), tag.size());
-    memInfo1.mem.type = CommMemType::COMM_MEM_TYPE_DEVICE;
-    memInfo1.bufferHandle = static_cast<void*>(locBuffer1.get());
-
-    std::vector<CommMemInfo*> memInfos{};
-    memInfos.push_back(&memInfo0);
-    memInfos.push_back(&memInfo1);
-
+    auto memInfo0 = BuildMemInfo(0x100, 0x100);
+    auto memInfo1 = BuildMemInfo(0x101, 0x101, "buffer1", CommMemType::COMM_MEM_TYPE_DEVICE);
+    std::vector<CommMemInfo*> memInfos{&memInfo0, &memInfo1};
     void **memHandles = reinterpret_cast<void**>(memInfos.data());
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
-
     HcclResult ret = hcomm::BuildBufferInfos(memHandles, 2, bufferInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     std::unique_ptr<hcomm::CcuTransport> ccuTransport{};
-    hcomm::CcuTransport::CcuConnectionInfo connInfo{};
-    MOCKER_CPP(&hcomm::CcuConnection::Init).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::CcuTransport::Init).stubs().will(returnValue(HCCL_SUCCESS));
-    ret = hcomm::CcuCreateTransport(fakeSocket, connInfo, bufferInfos, ccuTransport);
+    ret = CreateCcuTransportWithBuffer(bufferInfos, ccuTransport);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    BinaryStream binaryStream;
+    Hccl::BinaryStream binaryStream;
     ret = ccuTransport->BufferInfoPack(binaryStream, ccuTransport->locBufferInfos_);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = ccuTransport->BufferInfoUnpack(binaryStream);
@@ -97,8 +99,7 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
     u32 memNum;
     ret = ccuTransport->GetUserRemoteMem(&remoteMems, &memTags, &memNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    std::string memTag = memTags[0];
-    EXPECT_EQ(memTag, "buffer1");
+    EXPECT_EQ(std::string(memTags[0]), "buffer1");
     EXPECT_EQ(remoteMems[0].type, CommMemType::COMM_MEM_TYPE_DEVICE);
     EXPECT_EQ(remoteMems[0].addr, (void *)0x101);
     EXPECT_EQ(remoteMems[0].size, (uint64_t)0x101);
@@ -107,57 +108,36 @@ TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_Normal_Expect_Ret
 TEST_F(CcuTransportTest, ut_CcuTransport_GetUserRemoteMem_When_bufferNumIs0_Expect_ReturnIsHCCL_E_PARA)
 {
     std::unique_ptr<hcomm::CcuTransport> ccuTransport{};
-    hcomm::CcuTransport::CcuConnectionInfo connInfo{};
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
-    MOCKER_CPP(&hcomm::CcuConnection::Init).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::CcuTransport::Init).stubs().will(returnValue(HCCL_SUCCESS));
-    HcclResult ret = hcomm::CcuCreateTransport(fakeSocket, connInfo, bufferInfos, ccuTransport);
+    HcclResult ret = CreateCcuTransportWithBuffer(bufferInfos, ccuTransport);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
 TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
 {
-    RdmaHandle rdmaHandle = (void*)0x100;
-    auto buffer0 = std::make_shared<Buffer>(0x100, 0x100);
-    auto locBuffer0 = std::make_shared<Hccl::LocalUbRmaBuffer>(buffer0, rdmaHandle);
-    CommMemInfo memInfo0{};
-    memInfo0.mem.addr = (void*)0x100;
-    memInfo0.mem.size = (uint64_t)0x100;
-    memInfo0.bufferHandle = static_cast<void*>(locBuffer0.get());
-    std::vector<CommMemInfo*> memInfos{};
-    memInfos.push_back(&memInfo0);
-
+    auto memInfo0 = BuildMemInfo(0x100, 0x100);
+    std::vector<CommMemInfo*> memInfos{&memInfo0};
     void **memHandles = reinterpret_cast<void**>(memInfos.data());
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
     HcclResult ret = hcomm::BuildBufferInfos(memHandles, 1, bufferInfos);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     std::unique_ptr<hcomm::CcuTransport> ccuTransport{};
-    hcomm::CcuTransport::CcuConnectionInfo connInfo{};
-    MOCKER_CPP(&hcomm::CcuConnection::Init).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcomm::CcuTransport::Init).stubs().will(returnValue(HCCL_SUCCESS));
-    ret = hcomm::CcuCreateTransport(fakeSocket, connInfo, bufferInfos, ccuTransport);
+    ret = CreateCcuTransportWithBuffer(bufferInfos, ccuTransport);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    auto buffer1 = std::make_shared<Buffer>(0x101, 0x101);
     hcomm::CcuTransport::CclBufferInfo bufInfo1{};
     bufInfo1.addr = (uint64_t)0x101;
     bufInfo1.size = (uint32_t)0x101;
-    std::string tag = "buffer1";
-    memcpy_s(bufInfo1.memTag.data(), bufInfo1.memTag.size(), tag.c_str(), tag.size());
+    memcpy_s(bufInfo1.memTag.data(), bufInfo1.memTag.size(), "buffer1", strlen("buffer1"));
     bufInfo1.type = CommMemType::COMM_MEM_TYPE_DEVICE;
-    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
-    bufferVecTemp.push_back(bufInfo1);
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{bufInfo1};
 
-    BinaryStream binaryStream;
+    Hccl::BinaryStream binaryStream;
     ret = ccuTransport->BufferInfoPack(binaryStream, bufferVecTemp);
     binaryStream.Dump(ccuTransport->sendData_);
     ccuTransport->recvData_ = ccuTransport->sendData_;
 
-    MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
-    Hccl::EnvSocketConfig fakeSocketConfig{};
-    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeSocketConfig));
-    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
     ret = ccuTransport->UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcomm::CcuTransport::CclBufferInfo &bufInfo = ccuTransport->locBufferInfos_[1];
@@ -172,15 +152,9 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Normal_Expect_Return
 TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Timeout_Expect_ReturnIsHCCL_E_TIMEOUT)
 {
     std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
-    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
-    bufferInfos.emplace_back();
-    hcomm::CcuTransport ccuTransport{fakeSocket, std::move(ccuConnection), bufferInfos};
-    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
-    bufferVecTemp.emplace_back();
-    MOCKER(&Hccl::EnvConfig::Parse).stubs().will(ignoreReturnValue());
-    Hccl::EnvSocketConfig fakeSocketConfig{};
-    MOCKER(&Hccl::EnvConfig::GetSocketConfig).stubs().will(returnValue(fakeSocketConfig));
-    MOCKER(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().will(returnValue(100));
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+    hcomm::CcuTransport ccuTransport{fakeSocket_, std::move(ccuConnection), bufferInfos};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{hcomm::CcuTransport::CclBufferInfo{}};
     Hccl::SocketStatus fakeSocketStatus = Hccl::SocketStatus::TIMEOUT;
     MOCKER(&Hccl::Socket::GetAsyncStatus).stubs().will(returnValue(fakeSocketStatus));
     HcclResult ret = ccuTransport.UpdateMemInfo(bufferVecTemp);
@@ -190,9 +164,8 @@ TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_Timeout_Expect_Retur
 TEST_F(CcuTransportTest, ut_CcuTransport_UpdateMemInfo_When_bufferNumIs0_Expect_ReturnIsHCCL_SUCCESS)
 {
     std::unique_ptr<hcomm::CcuConnection> ccuConnection{nullptr};
-    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{};
-    bufferInfos.emplace_back();
-    hcomm::CcuTransport ccuTransport{fakeSocket, std::move(ccuConnection), bufferInfos};
+    std::vector<hcomm::CcuTransport::CclBufferInfo> bufferInfos{hcomm::CcuTransport::CclBufferInfo{}};
+    hcomm::CcuTransport ccuTransport{fakeSocket_, std::move(ccuConnection), bufferInfos};
     std::vector<hcomm::CcuTransport::CclBufferInfo> bufferVecTemp{};
     HcclResult ret = ccuTransport.UpdateMemInfo(bufferVecTemp);
     EXPECT_EQ(ret, HCCL_SUCCESS);
