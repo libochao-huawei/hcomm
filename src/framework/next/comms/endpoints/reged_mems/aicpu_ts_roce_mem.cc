@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu_ts_roce_mem.h"
-#include <algorithm>
 #include "securec.h"
 #include "adapter_hccp.h"
 #include "endpoint_pair.h"
@@ -74,19 +73,12 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
             HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
             return ret;
         }
-        allRegisteredBuffers_.push_back(localBuffer);
-        HcclBuf rec{};
-        rec.addr = localBuffer->GetAddr();
-        rec.len = localBuffer->GetSize();
-        auto *rma = dynamic_cast<hccl::RmaBuffer *>(localBuffer.get());
-        CHK_PTR_NULL(rma);
-        rec.handle = static_cast<void *>(rma);
-        hcclBufRecords_.push_back(rec);
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] success, key {%p, %llu}", mem.addr, mem.size);
         return HCCL_SUCCESS;
     }
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] already registered, ref++, key {%p, %llu}", mem.addr, mem.size);
-    return HCCL_E_AGAIN;
+    /* 全局 ref++（如同一 NetDev 上其他 Endpoint 已登记同一 key） */
+    HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] shared mgr ref++, key {%p, %llu}", mem.addr, mem.size);
+    return HCCL_SUCCESS;
 }
 
 HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
@@ -101,21 +93,12 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
 
     bool delOk = false;
     EXECEPTION_CATCH(delOk = localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+
     if (!delOk) {
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] ref count > 0");
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] ref count > 0, memHandle[%p]", memHandle);
         return HCCL_E_AGAIN;
     }
-
     exportDescByBuffer_.erase(buffer);
-    allRegisteredBuffers_.erase(std::remove_if(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
-        [memHandle](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == memHandle; }),
-        allRegisteredBuffers_.end());
-
-    auto hit = std::find_if(hcclBufRecords_.begin(), hcclBufRecords_.end(),
-        [memHandle](const HcclBuf &b) { return b.handle == memHandle; });
-    if (hit != hcclBufRecords_.end()) {
-        hcclBufRecords_.erase(hit);
-    }
     HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] success, memHandle[%p] key {%p, %llu}", memHandle,
         buffer->GetAddr(), static_cast<unsigned long long>(buffer->GetSize()));
     return HCCL_SUCCESS;
@@ -246,30 +229,28 @@ HcclResult AicpuTsRoceRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t 
 
 HcclResult AicpuTsRoceRegedMemMgr::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
-    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    HCCL_INFO("[%s] not supported", __FUNCTION__);
+    CHK_PTR_NULL(memHandles);
     CHK_PTR_NULL(memHandleNum);
-
-    *memHandleNum = static_cast<uint32_t>(hcclBufRecords_.size());
-    if (*memHandleNum == 0U) {
-        *memHandles = nullptr;
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemHandles] no records, memHandleNum[0]");
-        return HCCL_SUCCESS;
-    }
-    *memHandles = static_cast<void *>(hcclBufRecords_.data());
-    HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemHandles] memHandleNum[%u] hcclBufRecords[%p]", *memHandleNum,
-        static_cast<void *>(hcclBufRecords_.data()));
-    return HCCL_SUCCESS;
+    *memHandles = nullptr;
+    *memHandleNum = 0U;
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult AicpuTsRoceRegedMemMgr::GatherLocalMemDetails(std::vector<RoceMemDetails> &localOut) const
 {
-    localOut.reserve(allRegisteredBuffers_.size());
-    for (const auto &buf : allRegisteredBuffers_) {
+    if (localRdmaRmaBufferMgr_ == nullptr) {
+        return HCCL_SUCCESS;
+    }
+    localRdmaRmaBufferMgr_->ForEach([&localOut](const hccl::BufferKey<uintptr_t, u64> &,
+                                        const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &buf) {
         if (buf == nullptr) {
-            continue;
+            return;
         }
         auto *rma = static_cast<hccl::RmaBuffer *>(buf.get());
-        CHK_PTR_NULL(rma->GetDevAddr());
+        if (rma->GetDevAddr() == nullptr) {
+            return;
+        }
         RoceMemDetails r{};
         r.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(rma->GetAddr()));
         r.devAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(rma->GetDevAddr()));
@@ -279,7 +260,7 @@ HcclResult AicpuTsRoceRegedMemMgr::GatherLocalMemDetails(std::vector<RoceMemDeta
         HCCL_INFO("[AicpuTsRoceRegedMemMgr][GetAllMemDetails][local][%zu] addr[0x%llx] devAddr[0x%llx] size[%llu] key[%u]",
             localOut.size() - 1U, static_cast<unsigned long long>(r.addr), static_cast<unsigned long long>(r.devAddr),
             static_cast<unsigned long long>(r.size), r.key);
-    }
+    });
     return HCCL_SUCCESS;
 }
 

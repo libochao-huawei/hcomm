@@ -25,7 +25,8 @@
 
 namespace hcomm {
 /**
- * @note 职责：AICPU_TS+RoCE协议的注册内存管理，复用hccl_mem中的LocalRdmaRmaBufferMgr和LocalRdmaRmaBuffer
+ * @note 职责：AICPU_TS+RoCE协议的注册内存管理，复用 hccl_mem 中的 LocalRdmaRmaBufferMgr 和 LocalRdmaRmaBuffer。
+ * GetAllMemHandles 暂不支持（返回 HCCL_E_NOT_SUPPORT）。列举本地 MR 详情见 GetAllMemDetails / GatherLocalMemDetails（ForEach）。
  */
 class AicpuTsRoceRegedMemMgr : public RegedMemMgr {
 public:
@@ -60,9 +61,7 @@ private:
 
     HcclNetDev netDev_{nullptr};
     std::shared_ptr<hccl::NetDevContext::LocalRdmaRmaBufferMgr> localRdmaRmaBufferMgr_{nullptr};
-    std::vector<std::shared_ptr<hccl::LocalRdmaRmaBuffer>> allRegisteredBuffers_;
-    std::vector<HcclBuf> hcclBufRecords_;
-    std::unordered_map<hccl::LocalRdmaRmaBuffer *, std::vector<char>> exportDescByBuffer_;
+    std::unordered_map<hccl::LocalRdmaRmaBuffer *, std::vector<char>> exportDescByBuffer_{};
     std::map<EndpointDesc, std::unique_ptr<RemoteRdmaRmaBufferMgr>, EndpointDescLess> remoteRdmaRmaBufferMgrs_;
 };
 
