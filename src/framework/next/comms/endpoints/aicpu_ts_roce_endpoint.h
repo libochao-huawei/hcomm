@@ -14,8 +14,10 @@
 #include <mutex>
 #include <vector>
 #include <string>
+#include <cstdint>
 #include <unordered_map>
 #include "hccl_mem_defs.h"
+#include "hccl_net_dev.h"
 #include "endpoint.h"
 #include "hccl_socket.h"
 
@@ -27,9 +29,18 @@ struct AicpuTsListenSocketSlot {
 };
 
 /**
+ * 同一进程内相同 devPhyId 共用一条 HcclNetDev；首个成功 HcclNetDevOpen 的 HcclNetDevInfos（含地址）决定
+ * NetDevContext，后续 endpoint 仅递增 refCount。若需按地址区分，应扩展 map 键。
+ */
+struct AicpuTsNetDevSlot {
+    HcclNetDev netDev{nullptr};
+    uint32_t refCount{0U};
+};
+
+/**
  * @note 职责：AICPU_TS通信引擎+RoCE协议的通信设备EndPoint，管理通信设备上下文，以及设备上的注册内存。
- * 调用HcclNetDevOpen保存HcclNetDev，传给AicpuTsRoceRegedMemMgr进行注册注销；
- * 初始化时调用hccl::HcclSocket进行监听。
+ * HcclNetDev 按 devPhyId 进程内共享引用计数；传给 AicpuTsRoceRegedMemMgr 进行注册注销；
+ * 初始化时调用 hccl::HcclSocket 进行监听。
  */
 class AicpuTsRoceEndpoint : public Endpoint {
 public:
@@ -57,11 +68,20 @@ public:
     static HcclResult AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo> &wlistInfos);
 
 private:
+    static constexpr uint32_t kInvalidNetDevPhyId = 0xFFFFFFFFu;
+
     static std::unordered_map<uint32_t, AicpuTsListenSocketSlot> &GetServerSocketMap();
     static std::mutex &ListenSocketMapMutex();
+    static std::unordered_map<uint32_t, AicpuTsNetDevSlot> &GetNetDevPhyIdMap();
+    /** 与 ListenSocketMapMutex 分离，避免 Init 中持锁后进入 ServerSocketListen 同线程死锁 */
+    static std::mutex &NetDevPhyIdMapMutex();
+    HcclResult AcquireNetDev(uint32_t devPhyId, const HcclNetDevInfos &info, HcclNetDev *outNetDev);
+    void ReleaseNetDev(uint32_t devPhyId);
     void ReleaseListenSocketRefs();
 
     HcclNetDev netDev_{nullptr};
+    /** 参与共享表时的物理设备 ID；未持引用时为 kInvalidNetDevPhyId */
+    uint32_t netDevPhyId_{kInvalidNetDevPhyId};
     std::shared_ptr<hccl::HcclSocket> serverSocket_{nullptr};
     /** 仅本对象成功 Listen 的端口；析构时只对这些端口减 ref / 可能销毁 socket，与其它 endpoint 的端口无关 */
     std::vector<uint32_t> listenRefPorts_{};
