@@ -72,7 +72,7 @@ TEST_F(TestChannelProcess, Ut_TestLaunchChannelKernelCommon_When_ChannelHandlesN
 {
     ChannelHandle hostHandles[1] = {};
     HcclResult ret = hcomm::ChannelProcess::LaunchChannelKernelCommon(
-        nullptr, hostHandles, 1, "test_tag", nullptr, "test_kernel", false);
+        nullptr, hostHandles, 1, "test_tag", nullptr, "test_kernel", false, COMM_PROTOCOL_UBC_CTP);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -80,7 +80,7 @@ TEST_F(TestChannelProcess, Ut_TestLaunchChannelKernelCommon_When_HostChannelHand
 {
     ChannelHandle deviceHandles[1] = {};
     HcclResult ret = hcomm::ChannelProcess::LaunchChannelKernelCommon(
-        deviceHandles, nullptr, 1, "test_tag", nullptr, "test_kernel", false);
+        deviceHandles, nullptr, 1, "test_tag", nullptr, "test_kernel", false, COMM_PROTOCOL_UBC_CTP);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -89,7 +89,7 @@ TEST_F(TestChannelProcess, Ut_TestLaunchChannelKernelCommon_When_ListNumZero_Ret
     ChannelHandle deviceHandles[1] = {};
     ChannelHandle hostHandles[1] = {};
     HcclResult ret = hcomm::ChannelProcess::LaunchChannelKernelCommon(
-        deviceHandles, hostHandles, 0, "test_tag", nullptr, "test_kernel", false);
+        deviceHandles, hostHandles, 0, "test_tag", nullptr, "test_kernel", false, COMM_PROTOCOL_UBC_CTP);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -98,7 +98,7 @@ TEST_F(TestChannelProcess, Ut_TestSaveChannels_When_TargetChannelsNullptr_Return
 {
     ChannelHandle userChannels[1] = {};
     HcclResult ret = hcomm::ChannelProcess::SaveChannels(
-        nullptr, userChannels, 1, COMM_ENGINE_AICPU, nullptr);
+        nullptr, userChannels, 1, COMM_ENGINE_AICPU, nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -106,7 +106,7 @@ TEST_F(TestChannelProcess, Ut_TestSaveChannels_When_UserChannelsNullptr_Return_H
 {
     ChannelHandle targetChannels[1] = {};
     HcclResult ret = hcomm::ChannelProcess::SaveChannels(
-        targetChannels, nullptr, 1, COMM_ENGINE_AICPU, nullptr);
+        targetChannels, nullptr, 1, COMM_ENGINE_AICPU, nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 
@@ -115,7 +115,7 @@ TEST_F(TestChannelProcess, Ut_TestSaveChannels_When_ChannelNumZero_Return_HCCL_E
     ChannelHandle targetChannels[1] = {};
     ChannelHandle userChannels[1] = {};
     HcclResult ret = hcomm::ChannelProcess::SaveChannels(
-        targetChannels, userChannels, 0, COMM_ENGINE_AICPU, nullptr);
+        targetChannels, userChannels, 0, COMM_ENGINE_AICPU, nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
