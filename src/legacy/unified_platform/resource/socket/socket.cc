@@ -92,26 +92,6 @@ SocketStatus Socket::GetStatus()
         PrintErrorSocketInfo()
     );
 
-    // try {
-    //     result = HrtRaBlockGetOneSocket(static_cast<u32>(role), param);
-    // } catch (NetworkApiException &e) {
-    //     HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
-    //     HCCL_ERROR("Please check if env HCCL_SOCKET_IFNAME is correctly set by checking localIp and remoteIp in socket info.");
-    //     HCCL_ERROR("Socket info: %s", Describe().c_str());
-    //     PrintBackTrace(e);
-    //     throw e;
-    // } catch (HcclException &e) {
-    //     HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
-    //     PrintBackTrace(e);
-    //     throw e;
-    // } catch (std::exception &e) {
-    //     HCCL_ERROR("Socket::GetStatus failed due to %s", e.what());
-    //     throw e;
-    // } catch (...) {
-    //     HCCL_ERROR("Unknown error occurs!");
-    //     throw;
-    // }
-
     fdHandle = result.fdHandle;
 
     // socket status:0 not connected 1:connected 2:connect timeout 3:connecting
