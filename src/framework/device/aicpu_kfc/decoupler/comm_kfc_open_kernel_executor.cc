@@ -22,6 +22,36 @@ ops_hccl::OpParam *AsOpenOpParam(std::vector<uint8_t> &opParam)
     return reinterpret_cast<ops_hccl::OpParam *>(opParam.data());
 }
 
+u64 GetDataTypeSize(HcclDataType dataType)
+{
+    switch (dataType) {
+        case HCCL_DATA_TYPE_INT8:
+        case HCCL_DATA_TYPE_UINT8:
+        case HCCL_DATA_TYPE_HIF8:
+        case HCCL_DATA_TYPE_FP8E5M2:
+        case HCCL_DATA_TYPE_FP8E4M3:
+        case HCCL_DATA_TYPE_FP8E8M0:
+            return 1U;
+        case HCCL_DATA_TYPE_INT16:
+        case HCCL_DATA_TYPE_UINT16:
+        case HCCL_DATA_TYPE_FP16:
+        case HCCL_DATA_TYPE_BFP16:
+            return 2U;
+        case HCCL_DATA_TYPE_INT32:
+        case HCCL_DATA_TYPE_UINT32:
+        case HCCL_DATA_TYPE_FP32:
+            return 4U;
+        case HCCL_DATA_TYPE_INT64:
+        case HCCL_DATA_TYPE_UINT64:
+        case HCCL_DATA_TYPE_FP64:
+            return 8U;
+        case HCCL_DATA_TYPE_INT128:
+            return 16U;
+        default:
+            return 0U;
+    }
+}
+
 HcclResult RestoreVarDataBatchSendRecv(ops_hccl::OpParam &param)
 {
     u64 sendRecvItemSize = static_cast<u64>(sizeof(HcclSendRecvItem));
@@ -144,6 +174,28 @@ HcclResult LaunchOpenOpParamDataImpl(std::vector<uint8_t> &opParam)
               "cclMemSize %llu.",
               resCtx.topoInfo.userRank, resCtx.topoInfo.userRankSize, resCtx.threads.size(), resCtx.cclMem.addr,
               static_cast<unsigned long long>(resCtx.cclMem.size));
+    const u64 dataTypeSize = GetDataTypeSize(param->DataDes.dataType);
+    const u64 inputBytes = param->DataDes.count * dataTypeSize;
+    const bool isAllGather = (param->opType == HCCL_CMD_ALLGATHER);
+    const u64 rankStrideCount = (param->DataDes.strideCount == 0U) ?
+        param->DataDes.count : param->DataDes.strideCount;
+    const u64 outputSpanCount = isAllGather ?
+        (rankStrideCount * (resCtx.topoInfo.userRankSize == 0U ? 0U : resCtx.topoInfo.userRankSize - 1U) +
+            param->DataDes.count) : param->DataDes.count;
+    const u64 outputBytes = outputSpanCount * dataTypeSize;
+    const u64 rankStrideBytes = isAllGather ? rankStrideCount * dataTypeSize : 0U;
+    const u64 inputBegin = reinterpret_cast<u64>(param->inputPtr);
+    const u64 outputBegin = reinterpret_cast<u64>(param->outputPtr);
+    HCCL_INFO("[MC2_OPEN_DIAG][LaunchRange] userRank %u, userRankSize %u, dataTypeSize %llu, inputBytes %llu, "
+              "rankStrideCount %llu, rankStrideBytes %llu, outputSpanCount %llu, outputBytes %llu, "
+              "inputRange [%#llx, %#llx), outputSpan [%#llx, %#llx), outputSpanRankScaled %u.",
+              resCtx.topoInfo.userRank, resCtx.topoInfo.userRankSize,
+              static_cast<unsigned long long>(dataTypeSize), static_cast<unsigned long long>(inputBytes),
+              static_cast<unsigned long long>(rankStrideCount), static_cast<unsigned long long>(rankStrideBytes),
+              static_cast<unsigned long long>(outputSpanCount), static_cast<unsigned long long>(outputBytes),
+              static_cast<unsigned long long>(inputBegin),
+              static_cast<unsigned long long>(inputBegin + inputBytes), static_cast<unsigned long long>(outputBegin),
+              static_cast<unsigned long long>(outputBegin + outputBytes), isAllGather);
 
     CHK_RET(RestoreVarDataIfNeeded(*param, resCtx));
 

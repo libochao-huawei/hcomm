@@ -20,6 +20,38 @@
 
 extern HcclResult LaunchOpenOpParamDataImpl(std::vector<uint8_t> &opParam);
 
+namespace {
+u64 GetDataTypeSize(HcclDataType dataType)
+{
+    switch (dataType) {
+        case HCCL_DATA_TYPE_INT8:
+        case HCCL_DATA_TYPE_UINT8:
+        case HCCL_DATA_TYPE_HIF8:
+        case HCCL_DATA_TYPE_FP8E5M2:
+        case HCCL_DATA_TYPE_FP8E4M3:
+        case HCCL_DATA_TYPE_FP8E8M0:
+            return 1U;
+        case HCCL_DATA_TYPE_INT16:
+        case HCCL_DATA_TYPE_UINT16:
+        case HCCL_DATA_TYPE_FP16:
+        case HCCL_DATA_TYPE_BFP16:
+            return 2U;
+        case HCCL_DATA_TYPE_INT32:
+        case HCCL_DATA_TYPE_UINT32:
+        case HCCL_DATA_TYPE_FP32:
+            return 4U;
+        case HCCL_DATA_TYPE_INT64:
+        case HCCL_DATA_TYPE_UINT64:
+        case HCCL_DATA_TYPE_FP64:
+            return 8U;
+        case HCCL_DATA_TYPE_INT128:
+            return 16U;
+        default:
+            return 0U;
+    }
+}
+}
+
 HcclResult LoadOpenOpParamData(uint64_t opParamKey, std::string &commName, std::vector<uint8_t> &opParam)
 {
     if (opParamKey == 0U) {
@@ -136,12 +168,33 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
               static_cast<u32>(baseParam->DataDes.outputType),
               static_cast<unsigned long long>(baseParam->DataDes.strideCount), baseParam->inputPtr,
               baseParam->outputPtr);
+    const u64 dataTypeSize = GetDataTypeSize(param->DataDes.dataType);
+    const u64 inputBytes = param->DataDes.count * dataTypeSize;
+    const bool isAllGather = (param->opType == HCCL_CMD_ALLGATHER);
+    const u64 rankStrideCount = (param->DataDes.strideCount == 0U) ?
+        param->DataDes.count : param->DataDes.strideCount;
+    const u64 outputSpanCount = isAllGather ?
+        (rankStrideCount * (rankNum == 0U ? 0U : rankNum - 1U) + param->DataDes.count) : param->DataDes.count;
+    const u64 outputBytes = outputSpanCount * dataTypeSize;
+    const u64 rankStrideBytes = isAllGather ? rankStrideCount * dataTypeSize : 0U;
+    const u64 inputBegin = reinterpret_cast<u64>(param->inputPtr);
+    const u64 outputBegin = reinterpret_cast<u64>(param->outputPtr);
     HCCL_INFO("[MC2_OPEN_DIAG][FormatRun] runOpType %u, runAlgName[%s], offset %llu, runInputPtr %p, "
-              "runOutputPtr %p, runCount %llu, runDataType %u, runOutputType %u, runStrideCount %llu, stream %p.",
+              "runOutputPtr %p, runCount %llu, runDataType %u, outputType %u, runStrideCount %llu, stream %p.",
               static_cast<u32>(param->opType), param->algName, static_cast<unsigned long long>(offset),
               param->inputPtr, param->outputPtr, static_cast<unsigned long long>(param->DataDes.count),
               static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
               static_cast<unsigned long long>(param->DataDes.strideCount), param->stream);
+    HCCL_INFO("[MC2_OPEN_DIAG][FormatRange] repeatIdx %u, rankNum %u, dataTypeSize %llu, inputBytes %llu, "
+              "rankStrideCount %llu, rankStrideBytes %llu, outputSpanCount %llu, outputBytes %llu, "
+              "inputRange [%#llx, %#llx), outputSpan [%#llx, %#llx), outputSpanRankScaled %u.",
+              repeatIdx, rankNum, static_cast<unsigned long long>(dataTypeSize),
+              static_cast<unsigned long long>(inputBytes), static_cast<unsigned long long>(rankStrideCount),
+              static_cast<unsigned long long>(rankStrideBytes), static_cast<unsigned long long>(outputSpanCount),
+              static_cast<unsigned long long>(outputBytes),
+              static_cast<unsigned long long>(inputBegin), static_cast<unsigned long long>(inputBegin + inputBytes),
+              static_cast<unsigned long long>(outputBegin), static_cast<unsigned long long>(outputBegin + outputBytes),
+              isAllGather);
     HCCL_INFO("Formatted open op param: repeat index %u, op type %u, input addr %#llx, output addr %#llx.", repeatIdx,
         static_cast<u32>(opType), param->inputPtr, param->outputPtr);
 
