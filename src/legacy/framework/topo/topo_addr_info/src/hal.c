@@ -112,6 +112,9 @@ int load_dcmi()
     dcmiv2_get_device_pcie_info = dlsym(dcmi, "dcmiv2_get_device_pcie_info");
     dcmiv2_get_device_info = dlsym(dcmi, "dcmiv2_get_device_info");
     get_logicid_from_phyid = dlsym(dcmi, "dcmiv2_get_dev_id_from_chip_phyid");
+    if (get_logicid_from_phyid == NULL) {
+        get_logicid_from_phyid = dlsym(dcmi, "dcmiv2_get_dev_id_by_chip_phy_id");
+    }
 
     if ((dcmi_init == NULL)
      || (dcmiv2_get_urma_device_cnt == NULL)
