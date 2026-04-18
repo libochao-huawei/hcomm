@@ -119,6 +119,13 @@ HcclResult AicpuTsUboeChannel::BuildConnection()
     return HCCL_SUCCESS;
 }
 
+void AicpuTsUboeChannel::BuildConn()
+{
+    if (BuildConnection() != HCCL_SUCCESS) {
+        HCCL_ERROR("[AicpuTsUboeChannel::%s] BuildConnection failed", __func__);
+    }
+}
+
 HcclResult AicpuTsUboeChannel::BuildNotify()
 {
     localNotifies_.clear();
@@ -285,11 +292,6 @@ bool AicpuTsUboeChannel::IsResReady()
 
 bool AicpuTsUboeChannel::IsConnsReady()
 {
-    if (BuildConnection() != HCCL_SUCCESS) {
-        HCCL_ERROR("[AicpuTsUboeChannel::%s] failed to build connections", __func__);
-        return false;
-    }
-
     for (u32 i = 0; i < connNum_; i++) {
         if (commonRes_.connVec[i]->GetStatus() != Hccl::RmaConnStatus::READY) {
             return false;
@@ -299,16 +301,14 @@ bool AicpuTsUboeChannel::IsConnsReady()
     return true;
 }
 
-void AicpuTsUboeChannel::EidPack(Hccl::BinaryStream &binaryStream)
+void AicpuTsUboeChannel::EidPack()
 {
     Hccl::IpAddress locIpv4Addr;
     CommAddrToIpAddress(localEp_.commAddr, locIpv4Addr);
     Hccl::RdmaHandleManager::GetInstance().GetEidByIpv4Addr(locIpv4Addr, locAddr_);
-    HCCL_INFO("[AicpuTsUboeChannel::%s] locIpv4Addr[%s] ,locAddr_[%s]", 
-        __func__, locIpv4Addr.Describe().c_str(), locAddr_.Describe().c_str());
-    binaryStream << locAddr_.GetUniqueId();
-    HCCL_INFO("[AicpuTsUboeChannel::%s] Send locAddr_ size[%u] of data success.",
-        __func__, locAddr_.GetUniqueId().size());
+    sendEidData_ = locAddr_.GetUniqueId();
+    HCCL_INFO("[AicpuTsUboeChannel::%s] locIpv4Addr[%s], locAddr_[%s], sendEidData_ size[%u]",
+        __func__, locIpv4Addr.Describe().c_str(), locAddr_.Describe().c_str(), sendEidData_.size());
 }
 
 void AicpuTsUboeChannel::NotifyVecPack(Hccl::BinaryStream &binaryStream)
@@ -380,7 +380,6 @@ void AicpuTsUboeChannel::SendDataSize()
     HCCL_INFO("notifyNum=%u, bufferNum=%u, connNum=%u", notifyNum_, bufferNum_, connNum_);
 
     Hccl::BinaryStream binaryStream;
-    EidPack(binaryStream);
     NotifyVecPack(binaryStream);
     BufferVecPack(binaryStream, commonRes_.bufferVec, localUserMemTag_);
     ConnVecPack(binaryStream);
@@ -407,6 +406,13 @@ void AicpuTsUboeChannel::SendExchangeData()
     HCCL_INFO("[AicpuTsUboeChannel::%s] send data, size=%llu", __func__, sendData_.size());
 }
 
+void AicpuTsUboeChannel::SendEidData()
+{
+    EidPack();
+    socket_->SendAsync(reinterpret_cast<u8 *>(sendEidData_.data()), sendEidData_.size());
+    HCCL_INFO("[AicpuTsUboeChannel::%s] send eid data, size=%llu", __func__, sendEidData_.size());
+}
+
 void AicpuTsUboeChannel::RecvExchangeData()
 {
     recvData_.resize(recvDataSize_);
@@ -414,22 +420,31 @@ void AicpuTsUboeChannel::RecvExchangeData()
     HCCL_INFO("[AicpuTsUboeChannel::%s] recv data", __func__);
 }
 
+void AicpuTsUboeChannel::RecvEidData()
+{
+    socket_->RecvAsync(reinterpret_cast<u8 *>(recvEidData_.data()), recvEidData_.size());
+    HCCL_INFO("[AicpuTsUboeChannel::%s] recv eid data, size=%llu", __func__, recvEidData_.size());
+}
+
 bool AicpuTsUboeChannel::RecvDataProcess()
 {
     HCCL_INFO("RecvDataProcess: size=%llu, recvDataSize=%u", recvData_.size(), recvDataSize_);
     Hccl::BinaryStream binaryStream(recvData_);
-    // TODO UBOE OK 解析对端Eid，存到UboeChannel
-    RmtEidUnpackProc(binaryStream, rmtAddr_);
     RmtBufferVecUnpackProc(notifyNum_, binaryStream, rmtNotifyVec_, UboeRmtBufType::NOTIFY);
     RmtBufferVecUnpackProc(bufferNum_, binaryStream, rmtBufferVec_, UboeRmtBufType::BUFFER);
     return ConnVecUnpackProc(binaryStream);
 }
 
-void AicpuTsUboeChannel::RmtEidUnpackProc(Hccl::BinaryStream &binaryStream, Hccl::IpAddress& rmtAddr)
+void AicpuTsUboeChannel::RecvEidDataProcess()
 {
-    Hccl::IpAddress rmtEidAddr(binaryStream);
+    RmtEidUnpackProc(rmtAddr_);
+}
+
+void AicpuTsUboeChannel::RmtEidUnpackProc(Hccl::IpAddress& rmtAddr)
+{
+    Hccl::IpAddress rmtEidAddr(recvEidData_);
     rmtAddr = rmtEidAddr;
-    HCCL_INFO("[RmaConnManager::%s] rmtAddr[%s]", __func__, rmtAddr.Describe().c_str());
+    HCCL_INFO("[AicpuTsUboeChannel::%s] rmtAddr[%s]", __func__, rmtAddr.Describe().c_str());
 }
 
 void AicpuTsUboeChannel::RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream, RemoteBufferVec &bufferVec,
@@ -537,8 +552,24 @@ ChannelStatus AicpuTsUboeChannel::GetStatus()
 
     switch (uboeStatus) {
         case UboeStatus::INIT:
-            uboeStatus = UboeStatus::SEND_SIZE;
+            uboeStatus = UboeStatus::SEND_EID;
             channelStatus = ChannelStatus::SOCKET_OK;
+            break;
+        case UboeStatus::SEND_EID:
+            SendEidData();
+            uboeStatus = UboeStatus::RECV_EID;
+            break;
+        case UboeStatus::RECV_EID:
+            RecvEidData();
+            uboeStatus = UboeStatus::PROCESS_EID_DATA;
+            break;
+        case UboeStatus::PROCESS_EID_DATA:
+            RecvEidDataProcess();
+            uboeStatus = UboeStatus::BUILD_CONN;
+            break;
+        case UboeStatus::BUILD_CONN:
+            BuildConn();
+            uboeStatus = UboeStatus::SEND_SIZE;
             break;
         case UboeStatus::SEND_SIZE:
             if (IsResReady()) {
