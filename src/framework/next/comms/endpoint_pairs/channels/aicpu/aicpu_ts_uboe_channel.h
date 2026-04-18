@@ -64,21 +64,25 @@ private:
     bool IsResReady();
     bool IsConnsReady();
     bool RecvDataProcess();
+    void RecvEidDataProcess();
     void SendDataSize();
     void RecvDataSize();
+    void SendEidData();
     void SendExchangeData();
     void RecvExchangeData();
+    void RecvEidData();
     void SendFinish();
     void RecvFinish();
 
-    void EidPack(Hccl::BinaryStream &binaryStream);
+    void EidPack();
     void NotifyVecPack(Hccl::BinaryStream &binaryStream);
     void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
         std::vector<std::array<char, HCCL_RES_TAG_MAX_LEN>> &tagVec);
     void ConnVecPack(Hccl::BinaryStream &binaryStream);
-    void RmtEidUnpackProc(Hccl::BinaryStream &binaryStream, Hccl::IpAddress& rmtAddr);
+    void RmtEidUnpackProc(Hccl::IpAddress& rmtAddr);
     void RmtBufferVecUnpackProc(u32 locNum, Hccl::BinaryStream &binaryStream, RemoteBufferVec &bufferVec, UboeRmtBufType type);
     bool ConnVecUnpackProc(Hccl::BinaryStream &binaryStream);
+    void BuildConn();
 
     std::vector<char> GetNotifyUniqueIds();
     std::vector<char> GetRmtBufferUniqueIds(RemoteBufferVec &bufferVec, UboeRmtBufType type) const;
@@ -113,7 +117,7 @@ private:
     std::unique_ptr<SocketMgr>                                  socketMgr_{nullptr};
 
     ChannelStatus                                               channelStatus{ChannelStatus::INIT};
-    MAKE_ENUM(UboeStatus, INIT, SEND_SIZE, RECV_SIZE, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, SET_READY, READY)
+    MAKE_ENUM(UboeStatus, INIT, SEND_EID, RECV_EID, BUILD_CONN, SEND_SIZE, RECV_SIZE, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, SET_READY, READY)
     UboeStatus uboeStatus{UboeStatus::INIT};
 
     u32 bufferNum_{0};
@@ -128,8 +132,10 @@ private:
     LocalBufferVec  locBufferVec_;     // 本端 buffer
     std::vector<char> recvData_{};
     std::vector<char> recvFinishMsg_{};
+    std::vector<char> recvEidData_{};
     std::vector<char> sendData_{};
     std::vector<char> sendFinishMsg_{};
+    std::vector<char> sendEidData_{};
     bool isRecvFirst_{false};
     
     Hccl::IpAddress     locAddr_;
