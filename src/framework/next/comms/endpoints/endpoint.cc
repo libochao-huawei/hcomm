@@ -23,7 +23,6 @@ static bool IsProtocolSupported(CommProtocol protocol)
         case COMM_PROTOCOL_UBC_CTP:
         case COMM_PROTOCOL_UB_MEM:
         case COMM_PROTOCOL_UBOE:
-            // TODO UBOE OK 评审
             return true;
         default:
             return false;
