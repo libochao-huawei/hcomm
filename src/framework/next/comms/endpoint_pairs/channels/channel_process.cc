@@ -132,7 +132,6 @@ HcclResult ChannelProcess::ChannelGetStatus(const ChannelHandle *channelList, ui
 
         // 单锁：D2H 映射 + 查 map + 锁内调用 GetStatus()
         HcclResult ret = WithChannelByHandleLocked(inHandle, [&](Channel &channel) -> HcclResult {
-            // TODO UBOE OK copy一个新的channel
             status = channel.GetStatus();  // 锁内调用，防止 destroy 并发释放
             return HcclResult::HCCL_SUCCESS;
         });
