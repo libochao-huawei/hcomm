@@ -437,6 +437,26 @@ HcclResult AicpuTsThread::GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuTsThread::GetSqStatus(
+    uint32_t &sqId, uint32_t &sqHead, uint32_t &sqTail, uint32_t &sqDepth, uint32_t &cqeStatus)
+{
+    sqId = INVALID_UINT;
+    sqHead = INVALID_UINT;
+    sqTail = INVALID_UINT;
+    sqDepth = INVALID_UINT;
+    cqeStatus = INVALID_UINT;
+#ifdef CCL_KERNEL_AICPU
+    CHK_PTR_NULL(pImpl_);
+
+    CHK_RET(pImpl_->GetSqId(sqId));
+    CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_TAIL, sqTail));
+    CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
+    CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_DEPTH, sqDepth));
+    CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_CQE_STATUS, cqeStatus));
+#endif
+    return HCCL_SUCCESS;
+}
+
 bool AicpuTsThread::GetMaster() const {
     return isMaster_;
 }

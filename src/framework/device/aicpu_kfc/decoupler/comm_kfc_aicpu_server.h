@@ -48,6 +48,16 @@ struct ServerExecCtx {
     ThreadHandle mainThread{0};
 };
 
+struct ServerProgress {
+    const char *stage{"INIT"};
+    u32 msgPos{0U};
+    u32 repeatIdx{0U};
+    u32 turnIdx{0U};
+    u64 opParamKey{0U};
+    u64 waitAddr{0U};
+    u64 recordAddr{0U};
+};
+
 class CommKfcAicpuServer {
 public:
     CommKfcAicpuServer(u32 groupIdx): groupIdx_(groupIdx) {}
@@ -76,6 +86,9 @@ private:
     static constexpr u64 KFC_NSEC_PER_SEC = 1000000000UL;
 #endif
     HcclResult GetServerInfoForSync(HcclHandle handle, u32 &msgPos, u32 &repeat) const;
+    void DumpTimeoutDfx(u32 msgPos, bool isHardTimeout) const;
+    void UpdateProgress(const char *stage, u32 msgPos, u32 repeatIdx, u32 turnIdx, u64 opParamKey, u64 waitAddr,
+        u64 recordAddr);
     void KeepAlive() { lastMsgTimestamp_ = GetCurCpuTimestamp(); }
     bool IsTimeout() const { return GetCurCpuTimestamp() - lastMsgTimestamp_ >= timeout_ * KFC_NSEC_PER_SEC; }
     void SetMsgPosByHandle(HcclHandle handle, u32 msgPos) { handleIdToMsgPos_[handle] = msgPos; }
@@ -93,6 +106,7 @@ private:
     u64 turnNumsAddr_{0UL};
     u32 groupIdx_;
     u32 rankNum_{0U};
+    ServerProgress lastProgress_{};
 };
 
 #endif //HCCL_COMM_KFC_AICPU_SERVER_H

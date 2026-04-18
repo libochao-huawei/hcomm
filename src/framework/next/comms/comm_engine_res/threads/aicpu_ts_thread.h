@@ -50,6 +50,8 @@ public:
 
     // Non-override functions
     HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
+    HcclResult GetSqStatus(
+        uint32_t &sqId, uint32_t &sqHead, uint32_t &sqTail, uint32_t &sqDepth, uint32_t &cqeStatus);
     bool GetMaster() const override;
     void SetIsMaster(bool isMaster) override;
 private:
