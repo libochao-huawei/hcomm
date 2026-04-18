@@ -49,6 +49,8 @@ using DeviceInfo_t = struct tagDeviceInfo {
     u32 port { HCCL_INVALID_PORT };
     u32 vnicPort { HCCL_INVALID_PORT };
     u32 backupPort { HCCL_INVALID_PORT };
+    NICDeployment nicDeploy{NICDeployment::NIC_DEPLOYMENT_DEVICE};
+    u32 proto;
 };
 
 using TransportInfo_t = struct tagTransportInfo {
