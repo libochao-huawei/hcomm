@@ -521,7 +521,6 @@ void UbMemTransport::SendDataSize()
               notifyNum, bufferNum, connNum, cntNotifyNum, cntNotifyDescSize);
 
     BinaryStream binaryStream;
-    // TODO UBOE OK 增加EID Pack，搬到UBOE Channel
     HandshakeMsgPack(binaryStream);
     NotifyVecPack(binaryStream);
     BufferVecPack(binaryStream, commonLocRes.bufferVec, localUserMemTag_);
@@ -565,7 +564,6 @@ bool UbMemTransport::RecvDataProcess()
     HCCL_INFO("RecvDataProcess: link=%s, size=%llu, exchangeDataSize=%u", GetLinkDescInfo().c_str(), recvData.size(),
                exchangeDataSize);
     BinaryStream binaryStream(recvData);
-    // TODO UBOE OK 解析对端Eid，存到UboeChannel
     HandshakeMsgUnpack(binaryStream);
     RmtBufferVecUnpackProc(notifyNum, binaryStream, rmtNotifyVec, UbRmtBufType::NOTIFY);
     RmtBufferVecUnpackProc(bufferNum, binaryStream, rmtBufferVec, UbRmtBufType::BUFFER);
