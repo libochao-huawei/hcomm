@@ -41,6 +41,7 @@ const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{{"Ascend310P1", D
                                                                {"Ascend910B2", DevType::DEV_TYPE_910A2},
                                                                {"Ascend910B3", DevType::DEV_TYPE_910A2},
                                                                {"Ascend910B4", DevType::DEV_TYPE_910A2},
+                                                               {"Ascend910B4-1", DevType::DEV_TYPE_910A2},
                                                                {"Ascend910_939", DevType::DEV_TYPE_910A3},
                                                                {"Ascend910_938", DevType::DEV_TYPE_910A3},
                                                                {"Ascend910_937", DevType::DEV_TYPE_910A3},
