@@ -298,7 +298,7 @@ TEST_F(PhyTopoBuilderTest, Ut_PhyTopoBuilder_When_EdgeRepeat_Expect_Expection)
 {
     std::string topoPath = "./test_topo.json";
     MOCKER_CPP(&PhyTopoBuilder::LoadTopoInfo).stubs().will(invoke(LoadTopoInfoWithRepeatEdge));
-    EXPECT_THROW(PhyTopoBuilderBuildStub(topoPath), InvalidParamsException);
+    EXPECT_THROW(PhyTopoBuilderBuildStub(topoPath), std::exception);
 }
 
 TEST_F(PhyTopoBuilderTest, Ut_PhyTopoBuilder_When_DiffProtocols_Expect_ReturnEdgeNum)

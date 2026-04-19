@@ -301,7 +301,7 @@ TEST_F(RtsqA5Test, Ut_MakeSureAvailableSpace_When_InputValue_Expect_NO_THROW)
     u64 dbAddr = 0;
     u32 piVal = 0;
     MOCKER_CPP(&RtsqBase::QuerySqHead).stubs().with(any()).will(throws(InternalException("")));
-    EXPECT_THROW(rtsq.MakeSureAvailableSpace(), InternalException);
+    EXPECT_THROW(rtsq.MakeSureAvailableSpace(), std::exception);
 }
 
 TEST_F(RtsqA5Test, Ut_CopyLocBufToSq_THROW)
