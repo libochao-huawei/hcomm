@@ -50,6 +50,7 @@
 #include "hccl_group_utils.h"
 #include "snapshot_control.h"
 #include "comm_topo_desc.h"
+#include "hccl_net_dev_defs.h"
 #include "rt_external.h"
 #include "externalinput.h"
 #include "aclgraph_callback.h"
@@ -147,6 +148,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = CommConfig();
+        dpuManager_.reset(new (std::nothrow) DpuManager());
+        if (dpuManager_ == nullptr) {
+            HCCL_ERROR("new DpuManager failed!");
+        }
     }
 
     HcclCommunicator::HcclCommunicator(const CommConfig &commConfig)
@@ -180,6 +185,10 @@ namespace hccl
             HCCL_ERROR("new ZeroCopyAclGraph failed!");
         }
         commConfig_ = commConfig;
+        dpuManager_.reset(new (std::nothrow) DpuManager());
+        if (dpuManager_ == nullptr) {
+            HCCL_ERROR("new DpuManager failed!");
+        }
     }
 
     HcclCommunicator::~HcclCommunicator()
@@ -194,6 +203,11 @@ namespace hccl
             HCCL_WARNING("The comm[%s] is invalid in snapshot, rank[%u]. deviceLogicId[%u]. "
                 "There is no aicpu comm in device, skip aicpu comm destroy in destructor.",
                 identifier_.c_str(), userRank_, deviceLogicId_);
+        }
+
+        if (dpuManager_ != nullptr) {
+            (void)dpuManager_->DeInitDpuKernel();
+            dpuManager_ = nullptr;
         }
 
         UnRegisterToHeartBeat();
@@ -392,9 +406,13 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(rankTable, topoAttr));
+        CHK_RET(CreateMyRank(params, rankTable, topoAttr));
         CHK_RET(SaveTopoDesc(params.identifier));
         CHK_RET(RegisterToSnapshot());
         CHK_RET(InitSymmetricMemory());
+        if (dpuManager_ != nullptr) {
+            CHK_RET(dpuManager_->Init(identifier_, deviceLogicId_));
+        }
         return HCCL_SUCCESS;
     }
 
@@ -1373,6 +1391,72 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::InitMyRankConnectMode(HcclCommParams &params, const RankTable_t &rankTable)
+    {
+        uint32_t localRank = params.rank;
+        if (rankTable.nicDeploy != NICDeployment::NIC_DEPLOYMENT_HOST) {
+            myRankConnectMode_ = 0;
+            return HCCL_SUCCESS;
+        }
+        for (auto it : rankTable.rankList) {
+            if (it.rankId == localRank) {
+                continue;
+            }
+            if (it.deviceInfo.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
+                myRankConnectMode_ = 1;
+                return HCCL_SUCCESS;
+            }
+        }
+        myRankConnectMode_ = 0;
+        return HCCL_SUCCESS;
+    }
+
+    uint32_t HcclCommunicator::GetConnectMode()
+    {
+        return myRankConnectMode_;
+    }
+
+    HcclResult HcclCommunicator::CreateMyRank(HcclCommParams &params, const RankTable_t &rankTable, HcclTopoAttr &topoAttr)
+    {
+        InitMyRankConnectMode(params, rankTable);
+
+        if (!myRankConnectMode_) {
+            return HCCL_SUCCESS;
+        }
+
+        CHK_PRT_RET(myRank_ != nullptr,
+            HCCL_ERROR("[HcclCommunicator][CreateMyRank]myRank already initialized"), HCCL_E_INTERNAL);
+
+        CommConfig commConfig = commConfig_;
+        aclrtBinHandle binHandle = binHandle_;
+        uint32_t rankId = params.rank;
+
+        ManagerCallbacks callbacks;
+        callbacks.getAicpuCommState = [this](){return 1;};
+        callbacks.setAicpuCommState = [this](bool state){};
+        callbacks.kernelLaunchAicpuCommInit = [this](){return HCCL_SUCCESS;};
+    
+        EXECEPTION_CATCH((myRank_ = std::make_unique<MyRank>(binHandle, rankId, commConfig, callbacks, &rankGraph_)),
+            return HCCL_E_PTR);
+    
+        HCCL_INFO("[HcclCommunicator][CreateMyRank]Create myRank successfully for rank[%u]", rankId);
+    
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InitMyRank()
+    {
+        if (!myRankConnectMode_) {
+            return HCCL_SUCCESS;
+        }
+        CHK_RET(CreateCommCCLbuffer());
+        HcclMem cclBuffer = {HCCL_MEM_TYPE_DEVICE, cclBufferManager_.GetInCCLbuffer().ptr(),
+            cclBufferManager_.GetInCCLbuffer().size()};
+        CHK_RET(myRank_->Init(cclBuffer, 2, userRankSize_)); // 2: AICPU TS
+        HCCL_INFO("[HcclCommunicator][CreateMyRank]Init myRank successfully");
+        return HCCL_SUCCESS;
+    }
+
     bool HcclCommunicator::IsEnableBackupLink()
     {
         return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetAicpuUnfoldConfig() && retryEnable_ &&
@@ -1380,14 +1464,8 @@ namespace hccl
                !isDiffDeviceType_;
     }
 
-    HcclResult HcclCommunicator::InitRaResource()
+    HcclResult HcclCommunicator::InitRaNetResource()
     {
-        /* 本通信域内只有1个device时，不需要初始化ra资源 */
-        if (userRankSize_ <= 1) {
-            HCCL_INFO("user rank size <= 1, ra is not needed for single device.");
-            return HCCL_SUCCESS;
-        }
-
         CHK_RET(IsHostUseDevNic(isHostUseDevNic_));
 
         if (static_cast<s32>(devicePhyId_) != HOST_DEVICE_ID ||
@@ -1419,9 +1497,14 @@ namespace hccl
             (IsEnableRoce() && nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST) ||
             (Is310PDevice() && nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST)) {
             u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
-            CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_HOST, devicePhyID, deviceLogicId_, false));
+            u32 whiteListEn = (GetExternalInputHcclEnableWhitelist() == HCCL_WHITELIST_ON ? 1 : 0);
+            CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_HOST, devicePhyID, deviceLogicId_, whiteListEn));
         }
+        return HCCL_SUCCESS;
+    }
 
+    HcclResult HcclCommunicator::InitRaNic()
+    {
         CHK_RET(InitSocketManager());
 
         if (Is310PDevice()) {
@@ -1460,9 +1543,22 @@ namespace hccl
             }
 
             if (IsEnableRoce()) {
-                CHK_RET(InitNic()); // isUsedRdmaLevel0_默认为false，若初始化网卡时，网卡IP有效才根据环境变量配置
+                CHK_RET(InitNic());
             }
         }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InitRaResource()
+    {
+        /* 本通信域内只有1个device时，不需要初始化ra资源 */
+        if (userRankSize_ <= 1) {
+            HCCL_INFO("user rank size <= 1, ra is not needed for single device.");
+            return HCCL_SUCCESS;
+        }
+
+        CHK_RET(InitRaNetResource());
+        CHK_RET(InitRaVnicResource());
 
         HCCL_INFO("isUsedRdmaLevel0_[%u] nicNum[%u] hostIP[%s], nicDeployment[%d].",
                   isUsedRdmaLevel0_, devIpAddr_.size(), hostIp_.GetReadableAddress(), nicDeployment_);
@@ -2230,6 +2326,113 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::InitNicDeviceDeploy(bool isMC2ReInit, u32 backupDevPhyId, u32 backupDevLogicId,
+        const vector<HcclIpAddress> &localIpList, bool isOneSidedTaskAndBackupInitA3)
+    {
+        std::shared_ptr<HcclSocket> &devNicSocket = commPortConfig_.devNicListen.first;
+        if (devNicSocket && !isOneSidedTaskAndBackupInitA3) {
+            HcclNetDevCtx &devNicCtx = commPortConfig_.devNicListen.second;
+            CHK_PTR_NULL(devNicCtx);
+            netDevCtxMap_.insert(std::make_pair(devNicSocket->GetLocalIp(), devNicCtx));
+            CHK_RET(socketManager_->ServerInit(devNicCtx, devNicSocket->GetLocalPort()));
+            commPortConfig_.devNicListen.second = nullptr;
+            HCCL_INFO("[HcclCommunicator][InitNic] init nic with listened socket success, "
+                      "listened ip[%s] port[%u]",
+                      devNicSocket->GetLocalIp().GetReadableAddress(), devNicSocket->GetLocalPort());
+        } else if (!isOneSidedTaskAndBackupInitA3) {
+            u32 port = GetLocalNicPort(NicType::DEVICE_NIC_TYPE);
+            u32 nicNum = devIpAddr_.size();
+            for (u32 i = 0; i < nicNum; i++) {
+                if (devIpAddr_[i].IsInvalid()) {
+                    HCCL_INFO("[Init][Nic]nic num[%u] deviceip is invalid, total nicNum[%u]", i, nicNum);
+                    continue;
+                }
+                HcclNetDevCtx nicPortCtx;
+                CHK_RET(HcclNetOpenDev(&nicPortCtx, NicType::DEVICE_NIC_TYPE, devicePhyId_, deviceLogicId_, devIpAddr_[i]));
+                CHK_PTR_NULL(nicPortCtx);
+                netDevCtxMap_.insert(std::make_pair(devIpAddr_[i], nicPortCtx));
+                CHK_RET(socketManager_->ServerInit(nicPortCtx, port));
+                HCCL_INFO("[HcclCommunicator][InitNic] init nic with ip[%s] port[%u] success",
+                          devIpAddr_[i].GetReadableAddress(), port);
+            }
+        }
+        attrCollector_.GenUsedRdmaLevel0();
+        isUsedRdmaLevel0_ = attrCollector_.GetUsedRdmaLevel0();
+        if (IsEnableBackupLink() || isOneSidedTaskAndBackupInitA3) {
+            std::shared_ptr<HcclSocket> &backupNicSocket = commPortConfig_.backupDevNicListen.first;
+            if (backupNicSocket) {
+                HcclNetDevCtx &backupNicCtx = commPortConfig_.backupDevNicListen.second;
+                CHK_PTR_NULL(backupNicCtx);
+                netDevCtxMap_.insert(std::make_pair(backupNicSocket->GetLocalIp(), backupNicCtx));
+                CHK_RET(socketManager_->ServerInit(backupNicCtx, backupNicSocket->GetLocalPort()));
+                commPortConfig_.backupDevNicListen.second = nullptr;
+                HCCL_INFO("[HcclCommunicator][InitNic] init backup nic with listened socket success, "
+                          "listened ip[%s] port[%u]",
+                          backupNicSocket->GetLocalIp().GetReadableAddress(), backupNicSocket->GetLocalPort());
+            } else {
+                HcclNetDevCtx nicPortBackUpCtx;
+                if (isOneSidedTaskAndBackupInitA3) {
+                    CHK_RET(OneSidedBackupInitNetResource(nicPortBackUpCtx, backupDevPhyId, backupDevLogicId, localIpList));
+                } else {
+                    CHK_RET(HcclNetOpenDev(&nicPortBackUpCtx, NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_,
+                                        deviceBackUpLogicId_, devBackupIpAddr_[0], devIpAddr_[0]));
+                }
+                CHK_PTR_NULL(nicPortBackUpCtx);
+                netDevCtxMap_.insert(std::make_pair(devBackupIpAddr_[0], nicPortBackUpCtx));
+                if (isOneSidedTaskAndBackupInitA3) {
+                    CHK_RET(OneSidedBackupServerInit(nicPortBackUpCtx));
+                } else {
+                    CHK_RET(socketManager_->ServerInit(nicPortBackUpCtx, devBackupPort_));
+                }
+                HCCL_DEBUG("[%s]finish backup ServerInit, deviceBackUpPhyId_[%u], deviceBackUpLogicId_[%u], "
+                           "devBackupIpAddr_[%s], devBackupPort_[%u], nicDeployment_[%d], IsEnableBackupLink[%d], "
+                           "netDevCtxMap_.size[%d]",
+                           __func__, deviceBackUpPhyId_, deviceBackUpLogicId_, devBackupIpAddr_[0].GetReadableAddress(),
+                           devBackupPort_, nicDeployment_, IsEnableBackupLink(), netDevCtxMap_.size());
+                HCCL_INFO("[HcclCommunicator][InitNic] init backup nic with ip[%s] port[%u] success",
+                          devBackupIpAddr_[0].GetReadableAddress(), devBackupPort_);
+            }
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::InitNicHostDeploy()
+    {
+        u32 port = GetLocalNicPort(NicType::HOST_NIC_TYPE);
+        CHK_PRT_RET((hostIp_.IsInvalid()), HCCL_ERROR("[Init][Nic] host ip is invalid when NIC "
+                                                      "deployment is host. "),
+                    HCCL_E_PARA);
+        attrCollector_.GenUsedRdmaLevel0();
+        isUsedRdmaLevel0_ = attrCollector_.GetUsedRdmaLevel0();
+        u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
+
+        u32 i = 0;
+        HcclNetDevCtx nicPortCtx;
+        for (i = 0; i < devIpAddr_.size(); i++) {
+            if (devIpAddr_[i].IsInvalid()) {
+                HCCL_INFO("[Init][Nic]nic num[%u] deviceip is invalid, total nicNum[%u]", i, devIpAddr_.size());
+                continue;
+            }
+            std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+            port = GetNicPort(devicePhyId_, ranksPorts, userRank_, isUseRankPort_);
+            CHK_RET(HcclNetOpenDev(&nicPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, devIpAddr_[i]));
+            CHK_PTR_NULL(nicPortCtx);
+            netDevCtxMap_.insert(std::make_pair(devIpAddr_[i], nicPortCtx));
+            HcclNetDevSetProtoType(nicPortCtx, HCCL_PROTO_TYPE_ROCE);
+            break;
+        }
+
+        if (i == devIpAddr_.size()) {
+            port = GetLocalNicPort(NicType::HOST_NIC_TYPE);
+            CHK_RET(HcclNetOpenDev(&nicPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, hostIp_));
+            CHK_PTR_NULL(nicPortCtx);
+            netDevCtxMap_.insert(std::make_pair(hostIp_, nicPortCtx));
+        }
+        HCCL_INFO("[Init][Nic], hostPort[%u], devicePhyID[%u]", port, devicePhyID);
+        CHK_RET(socketManager_->ServerInit(nicPortCtx, port));
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::InitNic(bool isMC2ReInit)
     {
         if (!GetExternalInputIntraRoceSwitch() && servRankInfo_.size() == 1 && isDiffDeviceModule_ && !isMC2ReInit) {
@@ -2242,85 +2445,9 @@ namespace hccl
         CHK_RET(CheckOneSidedBackupAndSetDevId(backupDevPhyId, backupDevLogicId, localIpList, isOneSidedTaskAndBackupInitA3));
 
         if (nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
-            std::shared_ptr<HcclSocket> &devNicSocket = commPortConfig_.devNicListen.first;
-            if (devNicSocket && !isOneSidedTaskAndBackupInitA3) {
-                HcclNetDevCtx &devNicCtx = commPortConfig_.devNicListen.second;
-                CHK_PTR_NULL(devNicCtx);
-                netDevCtxMap_.insert(std::make_pair(devNicSocket->GetLocalIp(), devNicCtx));
-                CHK_RET(socketManager_->ServerInit(devNicCtx, devNicSocket->GetLocalPort()));
-                commPortConfig_.devNicListen.second = nullptr;
-                HCCL_INFO("[HcclCommunicator][InitNic] init nic with listened socket success, "
-                          "listened ip[%s] port[%u]",
-                          devNicSocket->GetLocalIp().GetReadableAddress(), devNicSocket->GetLocalPort());
-            } else if (!isOneSidedTaskAndBackupInitA3) {
-                u32 port = GetLocalNicPort(NicType::DEVICE_NIC_TYPE);
-                u32 nicNum = devIpAddr_.size();
-                for (u32 i = 0; i < nicNum; i++) {
-                    if (devIpAddr_[i].IsInvalid()) {
-                        HCCL_INFO("[Init][Nic]nic num[%u] deviceip is invalid, total nicNum[%u]", i, nicNum);
-                        continue;
-                    }
-                    HcclNetDevCtx nicPortCtx;
-                    CHK_RET(HcclNetOpenDev(&nicPortCtx, NicType::DEVICE_NIC_TYPE, devicePhyId_, deviceLogicId_, devIpAddr_[i]));
-                    CHK_PTR_NULL(nicPortCtx);
-                    netDevCtxMap_.insert(std::make_pair(devIpAddr_[i], nicPortCtx));
-                    CHK_RET(socketManager_->ServerInit(nicPortCtx, port));
-                    HCCL_INFO("[HcclCommunicator][InitNic] init nic with ip[%s] port[%u] success",
-                              devIpAddr_[i].GetReadableAddress(), port);
-                }
-            }
-            attrCollector_.GenUsedRdmaLevel0();
-            isUsedRdmaLevel0_ = attrCollector_.GetUsedRdmaLevel0();
-            if (IsEnableBackupLink() || isOneSidedTaskAndBackupInitA3) {
-                std::shared_ptr<HcclSocket> &backupNicSocket = commPortConfig_.backupDevNicListen.first;
-                if (backupNicSocket) {
-                    HcclNetDevCtx &backupNicCtx = commPortConfig_.backupDevNicListen.second;
-                    CHK_PTR_NULL(backupNicCtx);
-                    netDevCtxMap_.insert(std::make_pair(backupNicSocket->GetLocalIp(), backupNicCtx));
-                    CHK_RET(socketManager_->ServerInit(backupNicCtx, backupNicSocket->GetLocalPort()));
-                    commPortConfig_.backupDevNicListen.second = nullptr;
-                    HCCL_INFO("[HcclCommunicator][InitNic] init backup nic with listened socket success, "
-                              "listened ip[%s] port[%u]",
-                              backupNicSocket->GetLocalIp().GetReadableAddress(), backupNicSocket->GetLocalPort());
-                } else {
-                    // 超节点 && level2支持重执行 && Aicpu -> 备用网卡 initRdma
-                    HcclNetDevCtx nicPortBackUpCtx;
-                    if (isOneSidedTaskAndBackupInitA3) {
-                        CHK_RET(OneSidedBackupInitNetResource(nicPortBackUpCtx, backupDevPhyId, backupDevLogicId, localIpList));
-                    } else {
-                        CHK_RET(HcclNetOpenDev(&nicPortBackUpCtx, NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_,
-                                            deviceBackUpLogicId_, devBackupIpAddr_[0], devIpAddr_[0]));
-                    }
-                    CHK_PTR_NULL(nicPortBackUpCtx);
-                    netDevCtxMap_.insert(std::make_pair(devBackupIpAddr_[0], nicPortBackUpCtx));
-                    if (isOneSidedTaskAndBackupInitA3) {
-                        CHK_RET(OneSidedBackupServerInit(nicPortBackUpCtx));
-                    } else {
-                        CHK_RET(socketManager_->ServerInit(nicPortBackUpCtx, devBackupPort_));
-                    }
-                    HCCL_DEBUG("[%s]finish backup ServerInit, deviceBackUpPhyId_[%u], deviceBackUpLogicId_[%u], "
-                               "devBackupIpAddr_[%s], devBackupPort_[%u], nicDeployment_[%d], IsEnableBackupLink[%d], "
-                               "netDevCtxMap_.size[%d]",
-                               __func__, deviceBackUpPhyId_, deviceBackUpLogicId_, devBackupIpAddr_[0].GetReadableAddress(),
-                               devBackupPort_, nicDeployment_, IsEnableBackupLink(), netDevCtxMap_.size());
-                    HCCL_INFO("[HcclCommunicator][InitNic] init backup nic with ip[%s] port[%u] success",
-                              devBackupIpAddr_[0].GetReadableAddress(), devBackupPort_);
-                }
-            }
+            CHK_RET(InitNicDeviceDeploy(isMC2ReInit, backupDevPhyId, backupDevLogicId, localIpList, isOneSidedTaskAndBackupInitA3));
         } else if (nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST) {
-            u32 port = GetLocalNicPort(NicType::HOST_NIC_TYPE);
-            CHK_PRT_RET((hostIp_.IsInvalid()), HCCL_ERROR("[Init][Nic] host ip is invalid when NIC "
-                                                          "deployment is host. "),
-                        HCCL_E_PARA);
-            attrCollector_.GenUsedRdmaLevel0();
-            isUsedRdmaLevel0_ = attrCollector_.GetUsedRdmaLevel0();
-            u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
-            HCCL_INFO("[Init][Nic], hostPort[%u], devicePhyID[%u]", port, devicePhyID);
-            HcclNetDevCtx hostnicPortCtx;
-            CHK_RET(HcclNetOpenDev(&hostnicPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, hostIp_));
-            CHK_PTR_NULL(hostnicPortCtx);
-            netDevCtxMap_.insert(std::make_pair(hostIp_, hostnicPortCtx));
-            CHK_RET(socketManager_->ServerInit(hostnicPortCtx, port));
+            CHK_RET(InitNicHostDeploy());
         } else {
             HCCL_ERROR("[Init][Nic]nic deployment[%d] is not supported", nicDeployment_);
             return HCCL_E_PARA;
@@ -2367,9 +2494,28 @@ namespace hccl
             CHK_PRT_RET((hostIp_.IsInvalid()), HCCL_ERROR("[DeInit][Nic] host ip is invalid when NIC "
                                                           "deployment is host. "),
                         HCCL_E_PARA);
-            CHK_RET(socketManager_->ServerDeInit(netDevCtxMap_[hostIp_], port));
-            HcclNetCloseDev(netDevCtxMap_[hostIp_]);
-            netDevCtxMap_.erase(hostIp_);
+
+            u32 i = 0;
+            for (i = 0; i < devIpAddr_.size(); i++) {
+                if (devIpAddr_[i].IsInvalid()) {
+                    HCCL_INFO("[Init][Nic]nic num[%u] deviceip is invalid, total nicNum[%u]", i, devIpAddr_.size());
+                    continue;
+                }
+                std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+                port = GetNicPort(devicePhyId_, ranksPorts, userRank_, isUseRankPort_);
+
+                CHK_RET(socketManager_->ServerDeInit(netDevCtxMap_[devIpAddr_[i]], port));
+                HcclNetCloseDev(netDevCtxMap_[devIpAddr_[i]]);
+                netDevCtxMap_.erase(devIpAddr_[i]);
+
+                break;
+            }
+
+            if (i == devIpAddr_.size()) {
+                CHK_RET(socketManager_->ServerDeInit(netDevCtxMap_[hostIp_], port));
+                HcclNetCloseDev(netDevCtxMap_[hostIp_]);
+                netDevCtxMap_.erase(hostIp_);
+            }
         } else {
             HCCL_ERROR("[Deinit][Nic]nic deployment[%d] is not supported", nicDeployment_);
             return HCCL_E_PARA;
@@ -8829,6 +8975,31 @@ namespace hccl
     HcclResult HcclCommunicator::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
     {
         return rankGraph_.GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
+    }
+
+    HcclResult HcclCommunicator::GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum)
+    {
+        return rankGraph_.GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
+    }
+
+    HcclResult HcclCommunicator::GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType)
+    {
+        return rankGraph_.GetTopoType(netLayer, topoInstId, topoType);
+    }
+
+    HcclResult HcclCommunicator::GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum)
+    {
+        return rankGraph_.GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
+    }
+
+    HcclResult HcclCommunicator::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
+    {
+        return rankGraph_.GetEndpointNum(netLayer, topoInstId, num);
+    }
+
+    HcclResult HcclCommunicator::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
+    {
+        return rankGraph_.GetEndpointDesc(netLayer, topoInstId, descNum, endpointDesc);
     }
 
     HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)
