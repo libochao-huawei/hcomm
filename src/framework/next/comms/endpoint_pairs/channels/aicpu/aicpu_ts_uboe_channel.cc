@@ -539,13 +539,8 @@ void AicpuTsUboeChannel::RecvFinish()
     HCCL_INFO("end recv Finish Msg [%s]", FINISH_MSG);
 }
 
-ChannelStatus AicpuTsUboeChannel::GetStatus() {
-    if (channelStatus == ChannelStatus::READY) return channelStatus;
-    if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
-
-    if (!IsSocketReady()) return channelStatus;
-
-    // SetState no longer uses a default arg that referenced a non-static member
+void AicpuTsUboeChannel::ProcessUboeState()
+{
     auto SetState = [&](UboeStatus next, ChannelStatus ch) { uboeStatus = next; channelStatus = ch; };
 
     switch (uboeStatus) {
@@ -592,6 +587,16 @@ ChannelStatus AicpuTsUboeChannel::GetStatus() {
         default:
             break;
     }
+}
+
+ChannelStatus AicpuTsUboeChannel::GetStatus()
+{
+    if (channelStatus == ChannelStatus::READY) return channelStatus;
+    if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
+
+    if (!IsSocketReady()) return channelStatus;
+
+    ProcessUboeState();
 
     return channelStatus;
 }
