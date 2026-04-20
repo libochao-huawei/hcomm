@@ -74,6 +74,8 @@ private:
     void SendFinish();
     void RecvFinish();
 
+    void ProcessUboeState();
+
     void EidPack();
     void NotifyVecPack(Hccl::BinaryStream &binaryStream);
     void BufferVecPack(Hccl::BinaryStream &binaryStream, std::vector<Hccl::LocalRmaBuffer *> &bufferVec,
