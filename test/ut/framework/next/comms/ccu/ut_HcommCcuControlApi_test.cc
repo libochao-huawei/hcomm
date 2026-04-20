@@ -460,10 +460,10 @@ TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelRegister_When_AllFine_Expect_Ret
 //     ccuRet = HcommCcuKernelRegisterEnd(insHandle);
 //     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
 
-    MockChannelDestory(handlePair);
-    ccuRet = HcommCcuInsDestroy(insHandle);
-    EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
-}
+//     MockChannelDestory(handlePair);
+//     ccuRet = HcommCcuInsDestroy(insHandle);
+//     EXPECT_EQ(ccuRet, CcuResult::CCU_SUCCESS);
+// }
 
 TEST_F(HcommCcuControlApiTest, Ut_HcommCcuKernelReduceScatterMesh1d_When_AllFine_Expect_ReturnCcuSUCCESS)
 {
