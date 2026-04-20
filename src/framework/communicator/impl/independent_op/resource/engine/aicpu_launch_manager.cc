@@ -101,7 +101,7 @@ static HcclResult PrepareThreadMgrParam(const std::vector<std::shared_ptr<Thread
     // 分配设备内存
     size_t handleLen = sizeof(ThreadHandle) * newThreads.size();
     deviceHandle = DeviceMem::alloc(handleLen);
-    CHK_PTR_NULL(deviceHandle.ptr());
+    CHK_SMART_PTR_NULL(deviceHandle);
     opParam.deviceHandle = deviceHandle.ptr();
 
     // 基础通信需要设备信息

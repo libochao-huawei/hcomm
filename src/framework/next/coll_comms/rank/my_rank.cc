@@ -411,7 +411,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
     // 如果申请失败，根据记录的channelIndex找到 channel desc，找到对应的endPoint pair，清理endpoint pair中记录的channel handle
     if (!isAllSuccess) {
         HCCL_WARNING("[%s] create channel failed, destroy channels num[%u], engine[%d]", __func__, newChannels_.size(), engine);
-        DestroyNewChannels(engine, channelDescs);
+        CHK_RET(DestroyNewChannels(engine, channelDescs));
         return HCCL_E_UNAVAIL;
     }
 
@@ -517,7 +517,7 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     std::vector<HcommChannelDesc> hcommDescs(channelNum);
 
     CHK_RET(BatchCreateSockets(channelDescs, channelNum, commTag, hcommDescs));
-    CHK_RET(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
+    CHK_RET_UNAVAIL(BatchCreateChannels(engine, channelDescs, channelNum, hcommDescs, hostChannelHandleList));
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
