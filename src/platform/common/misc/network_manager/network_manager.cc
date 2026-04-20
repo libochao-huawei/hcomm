@@ -1067,7 +1067,7 @@ HcclResult NetworkManager::StopNic(const HcclIpAddress &ipAddr, u32 port)
         ipSock.listenedPort.erase(port);
     }
 
-    if (ipSock.listenedPort.size() == 0 && ipSock.nicSocketHandle == nullptr) {
+    if (ipSock.listenedPort.size() == 0 && ipSock.nicSocketHandle == nullptr && ipSock.nicRdmaHandle == nullptr) {
         ret = StopNicsSocket(ipAddr);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Stop][Nic]errNo[0x%016llx] stop nic socket failed,devid[%u], ip[%s], return[%d]",
