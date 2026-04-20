@@ -16,6 +16,7 @@
 #include "exception_handler.h"
 #include "cpu_roce_endpoint.h"
 #include "adapter_error_manager_pub.h"
+#include "hccp.h"
 
 // Orion
 #include "orion_adapter_hccp.h"
@@ -172,20 +173,32 @@ HcclResult HostCpuRoceChannel::BuildSocket()
 
 HcclResult HostCpuRoceChannel::BuildConnection()
 {
-    std::unique_ptr<HostRdmaConnection> conn;
-    EXECEPTION_CATCH(
-        conn = std::make_unique<HostRdmaConnection>(socket_, rdmaHandle_),
-        return HCCL_E_INTERNAL);
-    CHK_PTR_NULL(conn);
-    CHK_RET(conn->Init());
-    Hccl::QpInfo& qpInfo = conn->GetQpInfo();
-    qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
-    qpInfo.trafficClass = channelDesc_.roceAttr.tc;
-    qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
-    qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
-    HCCL_INFO("[HostCpuRoceChannel::BuildConnection] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
-        qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
-    connections_.emplace_back(std::move(conn));
+    int lbMax = 0;
+    uint32_t ret = RaGetLbMax(rdmaHandle_, &lbMax);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[HostCpuRoceChannel::BuildConnection][GetLbMax]errNo[0x%016llx] RaGetLbMax fail. "
+        "return[%d], params: rdmaHandle[%p], lbMax[%p]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle_, lbMax),
+        HCCL_E_NETWORK);
+
+    for (u32 i = 0; i < channelDesc_.roceAttr.queueNum; i++) {
+        std::unique_ptr<HostRdmaConnection> conn;
+        EXECEPTION_CATCH(
+            conn = std::make_unique<HostRdmaConnection>(socket_, rdmaHandle_),
+            return HCCL_E_INTERNAL);
+        CHK_PTR_NULL(conn);
+        CHK_RET(conn->Init());
+        Hccl::QpInfo& qpInfo = conn->GetQpInfo();
+        qpInfo.lbMax = lbMax;
+        qpInfo.qpThreshold = channelDesc_.roceAttr.qpThreshold;
+        qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
+        qpInfo.trafficClass = channelDesc_.roceAttr.tc;
+        qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
+        qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
+        HCCL_INFO("[HostCpuRoceChannel::BuildConnection] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
+            qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
+        connections_.emplace_back(std::move(conn));
+    }
     connNum_ = connections_.size();
     return HCCL_SUCCESS;
 }
@@ -418,6 +431,7 @@ HcclResult HostCpuRoceChannel::ConnVecPack(Hccl::BinaryStream &binaryStream)
         binaryStream << channelDesc_.roceAttr.retryInterval;
         binaryStream << channelDesc_.roceAttr.sl;
         binaryStream << channelDesc_.roceAttr.tc;
+        binaryStream << channelDesc_.roceAttr.queueNum;
 
         std::unique_ptr<Hccl::Serializable> dto = nullptr;
         CHK_RET(it->GetExchangeDto(dto));
@@ -485,7 +499,7 @@ HcclResult HostCpuRoceChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStrea
         HCCL_ERROR("connNum=%u is not equal to rmtConnNum=%u", connNum_, rmtConnNum);
         return HCCL_E_ROCE_CONNECT;
     }
-
+    uint32_t qpNum = channelDesc_.roceAttr.queueNum;
     for (u32 i = 0; i < rmtConnNum; i++) {
         u32 pos;
         binaryStream >> pos;
@@ -493,8 +507,15 @@ HcclResult HostCpuRoceChannel::ConnVecUnpackProc(Hccl::BinaryStream &binaryStrea
         binaryStream >> channelDesc_.roceAttr.retryInterval;
         binaryStream >> channelDesc_.roceAttr.sl;
         binaryStream >> channelDesc_.roceAttr.tc;
+        binaryStream >> channelDesc_.roceAttr.queueNum;
         rmtConnDto_.Deserialize(binaryStream);
     }
+
+    if (qpNum != channelDesc_.roceAttr.queueNum) {
+        HCCL_ERROR("qpNum=%u is not equal to rmtQpNum=%u", qpNum, channelDesc_.roceAttr.queueNum);
+        return HCCL_E_ROCE_CONNECT;
+    }
+
     return HCCL_SUCCESS;
 }
 
@@ -610,19 +631,21 @@ HcclResult HostCpuRoceChannel::IbvPostRecv() const {
     recvWr.num_sge    = 1;
 
     HCCL_INFO("[HostCpuRoceChannel::%s] call ibv_post_recv", __func__);
-    HCCL_INFO("qp_state = [%u]", qpInfo[0].qp->state);
-    int32_t ret = ibv_post_recv(qpInfo[0].qp, &recvWr, &recvbadWr);
-    CHK_PRT_RET(ret == ENOMEM,
-                HCCL_WARNING("[HostCpuRoceChannel][%s] post recv wqe overflow. ret:%d, "
-                             "badWr->wr_id[%llu], badWr->sg_list->addr[%llu]",
-                             __func__, ret, recvbadWr->wr_id, recvbadWr->sg_list->addr),
-                HCCL_E_AGAIN);
+    for (uint32_t i = 0; i < qpInfo.size(); i++) {
+        HCCL_INFO("qp_state = [%u]", qpInfo[i].qp->state);
+        int32_t ret = ibv_post_recv(qpInfo[i].qp, &recvWr, &recvbadWr);
+        CHK_PRT_RET(ret == ENOMEM,
+                    HCCL_WARNING("[HostCpuRoceChannel][%s] post recv wqe overflow. ret:%d, "
+                                "badWr->wr_id[%llu], badWr->sg_list->addr[%llu]",
+                                __func__, ret, recvbadWr->wr_id, recvbadWr->sg_list->addr),
+                    HCCL_E_AGAIN);
 
-    CHK_PRT_RET(ret != 0,
-                HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_post_recv failed. ret:%d, "
-                           "badWr->wr_id[%llu], badWr->sg_list->addr[%llu]",
-                           __func__, ret, recvbadWr->wr_id, recvbadWr->sg_list->addr),
-                HCCL_E_NETWORK);
+        CHK_PRT_RET(ret != 0,
+                    HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_post_recv failed. ret:%d, "
+                            "badWr->wr_id[%llu], badWr->sg_list->addr[%llu]",
+                            __func__, ret, recvbadWr->wr_id, recvbadWr->sg_list->addr),
+                    HCCL_E_NETWORK);
+    }
 
     return HCCL_SUCCESS;
 }

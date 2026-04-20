@@ -50,6 +50,7 @@ constexpr uint32_t SL_DEFAULT = 0xFFFFFFFFu;   // SL的默认值（不区分芯�
 static void FillChannelDescFinal(hccl::CommConfig commConfig, const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal, bool isCommunicatorV2)
 {
     channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
+    channelDescFinal.roceAttr.qpThreshold = (channelDesc.roceAttr.qpThreshold == INVALID_UINT) ? GetExternalInputMultiQpThreshold() : channelDesc.roceAttr.qpThreshold;
     if (isCommunicatorV2) { // A5
         auto& rdmaConfig = Hccl::EnvConfig::GetInstance().GetRdmaConfig();
         channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? rdmaConfig.GetRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
