@@ -153,14 +153,14 @@ bool RdmaHandleManager::GetRtpEnable(RdmaHandle rdmaHandle)
     return true;
 }
 
-HcclResult GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
+HcclResult RdmaHandleManager::GetEidByIpv4Addr(const IpAddress& addr, IpAddress& eidAddr)
 {
     Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
     eidAddr = ip;
     return HCCL_SUCCESS;
 }
 
-void UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress)
+void RdmaHandleManager::UboeIpv4ToEid(const IpAddress& ipV4Address, IpAddress& eidAddress)
 {
     Hccl::IpAddress ip("0000:0000:0000:0000:0000:0000:c0a8:0367", AF_INET6);
     eidAddress = ip;
