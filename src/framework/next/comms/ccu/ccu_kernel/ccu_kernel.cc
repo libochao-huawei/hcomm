@@ -528,7 +528,10 @@ CcuResult CcuKernel::LoadVar(uint64_t addr, CcuVariableHandle varHandle, uint32_
     Append(std::make_shared<CcuRep::CcuRepLoad>(addr, *var, num));
     return CcuResult::CCU_SUCCESS;
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> xkp_ccu_c
 //本地数据拷贝 相关实现
 CcuResult CcuKernel::LocalCopyMemToBuffer(CcuBufferHandle dstHandle, CcuLocalAddrHandle srcHandle,
     CcuVariableHandle lenHandle, CcuEventHandle eventHandle)
@@ -1140,6 +1143,8 @@ HcclResult CcuKernel::WriteNb(const ChannelHandle channel, const CcuRep::RemoteA
     return HCCL_SUCCESS;
 }
 
+
+
 static bool isLowPrecisionIn(Hccl::DataType dataType)
 {
     return dataType == Hccl::DataType::INT8 || dataType == Hccl::DataType::HIF8 || dataType == Hccl::DataType::FP8E4M3
@@ -1603,7 +1608,7 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     grpDesc.addedLoops.insert(loop);
     grpDesc.loopCount++;
 
-    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry{};
+    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);

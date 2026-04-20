@@ -6,7 +6,7 @@
 
 #include "ccu_types.h"
 #include "ccu_data_utils.hpp"
- #include "ccu_data_api_impl.h"
+#include "ccu_data_api_impl.h"
 
 class CcuVariable;
 

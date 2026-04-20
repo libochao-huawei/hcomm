@@ -87,7 +87,6 @@ CcuResult CcuBlockVariableAlloc(CcuVariableHandle *varHandles, uint32_t count)
 //     CCU_CHK_RET(kernel->BlockAddressAlloc(addrHandles, count));
 //     return CcuResult::CCU_SUCCESS;
 // }
-
 CcuResult CcuBlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -96,7 +95,6 @@ CcuResult CcuBlockEventAlloc(CcuEventHandle *eventHandles, uint32_t count)
     CCU_CHK_RET(kernel->BlockEventAlloc(eventHandles, count));
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuBlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -105,7 +103,6 @@ CcuResult CcuBlockBufferAlloc(CcuBufferHandle *bufHandles, uint32_t count)
     CCU_CHK_RET(kernel->BlockBufferAlloc(bufHandles, count));
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuVariableCreateByChannel(ChannelHandle channel, uint32_t varIndex, CcuVariableHandle *varHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -230,7 +227,6 @@ CcuResult CcuRecordEvent(CcuEventHandle eventHandle)
     CCU_CHK_RET(kernel->RecordEvent(eventHandle));
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuWaitEvent(CcuEventHandle eventHandle)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -239,7 +235,6 @@ CcuResult CcuWaitEvent(CcuEventHandle eventHandle)
     CCU_CHK_RET(kernel->WaitEvent(eventHandle));
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuSetMask(CcuEventHandle eventHandle, uint32_t mask)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -248,7 +243,6 @@ CcuResult CcuSetMask(CcuEventHandle eventHandle, uint32_t mask)
     CCU_CHK_RET(kernel->SetEventMask(eventHandle, mask));
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint32_t mask)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -257,7 +251,6 @@ CcuResult CcuNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx, uint3
     CCU_CHK_RET(kernel->NotifyRecord(channel, remoteNotifyIdx, mask));
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t mask)  
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -266,7 +259,6 @@ CcuResult CcuNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t
     CCU_CHK_RET(kernel->NotifyWait(channel, localNotifyIdx, mask));
     return CcuResult::CCU_SUCCESS;
 }
-
 CcuResult CcuWriteVariableWithNotify(ChannelHandle channel, CcuVariableHandle varHandle,uint32_t remoteVarIdx, uint32_t remoteNotifyIdx, uint32_t mask)
 {
     const uint32_t devLogicId = HcclGetThreadDeviceId();
@@ -309,7 +301,6 @@ CcuResult CcuLocalCopyBufferToMem(
     CCU_CHK_RET(kernel->LocalCopyBufferToMem(dst, src, len, event));
     return CcuResult::CCU_SUCCESS;
 }
-
 //本地reduce 相关接口
 CcuResult CcuLocalMemReduce(CcuLocalAddrHandle dst, CcuLocalAddrHandle src, CcuVariableHandle len, HcclDataType dataType, HcclReduceOp opType, CcuEventHandle event)
 {
