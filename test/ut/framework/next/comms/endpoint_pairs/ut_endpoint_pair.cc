@@ -44,8 +44,8 @@ TEST_F(TestEndpointPair, Ut_EndpointPair_Construct_Expect_HCCL_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     Hccl::Socket* socket = nullptr;
-    ret = endpointPair.GetSocket(0, 1, "Hccl_Test_Group", 60001, 0, socket);
+    ret = endpointPair.GetSocket(0, 1, "Hccl_Test_Group", 60001, 0, socket, 0, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = endpointPair.GetSocket(1, 0, "Hccl_Test_Group", 60001, 0, socket);
+    ret = endpointPair.GetSocket(1, 0, "Hccl_Test_Group", 60001, 0, socket, 0, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

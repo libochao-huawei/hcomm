@@ -36,7 +36,7 @@ string LocalIpcRmaBuffer::Describe() const
 std::unique_ptr<Serializable> LocalIpcRmaBuffer::GetExchangeDto()
 {
     std::unique_ptr<ExchangeIpcBufferDto> dto
-        = make_unique<ExchangeIpcBufferDto>(buf->GetAddr(), buf->GetSize(), ipcOffset, HrtDeviceGetBareTgid());
+        = make_unique<ExchangeIpcBufferDto>(buf->GetAddr(), buf->GetSize(), ipcOffset, HrtDeviceGetBareTgid(), buf->GetMemTag().c_str());
     (void)memcpy_s(dto->name, RTS_IPC_MEM_NAME_LEN, name, RTS_IPC_MEM_NAME_LEN);
     return std::unique_ptr<Serializable>(dto.release());
 }

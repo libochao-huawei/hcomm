@@ -12,6 +12,9 @@
 
 #include "base_mem_transport.h"
 #include "virtual_topo.h"
+#include "ipc_remote_notify.h"
+#include "local_ipc_rma_buffer.h"
+#include "remote_rma_buffer.h"
 
 namespace Hccl {
 class P2PTransport : public BaseMemTransport {
@@ -26,6 +29,8 @@ public:
 
     std::vector<char> GetUniqueId() override;
 
+    std::vector<char> GetUniqueIdV2();
+
     void Post(u32 index, const Stream &stream) override;
 
     void Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream) override;
@@ -37,6 +42,8 @@ public:
 
     void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
                      const Stream &stream) override;
+
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
 
 private:
     MemoryBuffer GetLocMemBuffer(const RmaBufferSlice &locSlice) const;
@@ -67,10 +74,14 @@ private:
     void RmtBufferVecUnpackProc(BinaryStream &binaryStream);
 
     std::vector<char> GetSingleRmtNotifyUniqueId(u64 addr, u64 size, u32 notifyId) const;
-    std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size) const;
+    std::vector<char> GetSingleBufferUniqueId(u64 addr, u64 size) const;
     std::vector<char> GetNotifyUniqueIds();
     std::vector<char> GetRmtNotifyUniqueIds() const;
+    std::vector<char> GetLocBufferUniqueIds() const;
     std::vector<char> GetRmtBufferUniqueIds() const;
+
+    std::mutex      remoteMemsMutex_; // 远端内存列表互斥锁
+    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
 };
 
 } // namespace Hccl
