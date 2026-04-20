@@ -36,9 +36,9 @@ public:
         : type(portType.GetType()), linkProtocol_(ConnProto2LinkProtocol(portType.GetProto())), localRankId_(localRankId),
           remoteRankId_(remoteRankId), localPortId_(localPortId), remotePortId_(remotePortId){};
     LinkData(PortDeploymentType portDeploymentType, LinkProtocol linkProtocol, RankId localRankId,
-        RankId remoteRankId, IpAddress localAddr, IpAddress remoteAddr, u32 reuseIdx = 0)
+        RankId remoteRankId, IpAddress localAddr, IpAddress remoteAddr, u32 devicePhyId = 0, u32 remoteDevicePhyId = 0, u32 reuseIdx = 0)
     : type(portDeploymentType), linkProtocol_(linkProtocol), localRankId_(localRankId), remoteRankId_(remoteRankId),
-        localAddr_(localAddr), remoteAddr_(remoteAddr), reuseIdx_(reuseIdx) {};
+        localAddr_(localAddr), remoteAddr_(remoteAddr), localDeviceId_(devicePhyId), remoteDeviceId_(remoteDevicePhyId), reuseIdx_(reuseIdx) {};
     
     explicit LinkData(const NetInstance::Path &path)
     {
