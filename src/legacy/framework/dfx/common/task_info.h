@@ -67,6 +67,7 @@ public:
     std::string GetConciseBaseInfo() const;
     std::string GetParaInfo() const;
     std::string GetOpInfo() const;
+    std::string GetIndopInfo() const;
 
 private:
     std::string GetParaDMA() const;

@@ -128,6 +128,29 @@ string TaskInfo::GetOpInfo() const
         opInfo->op_.dataType.Describe().c_str());
 }
 
+string TaskInfo::GetIndopInfo() const
+{
+    if (this->dfxOpInfo_ == nullptr) {
+        HCCL_ERROR("[TaskInfo][%s]TaskInfo dfxOpInfo is nullptr.", __func__);
+        return "";
+    }
+
+    const auto &opInfo = this->dfxOpInfo_;
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s], "\
+        "input: ptr[0x%llx] size[%llu], ouput: ptr[0x%llx] size[%llu], cclbuffer: ptr[0x%llx] size[%llu]",
+        opInfo->opIndex_,
+        opInfo->algTag_.c_str(),
+        opInfo->op_.dataCount,
+        opInfo->op_.reduceOp.Describe().c_str(),
+        opInfo->op_.dataType.Describe().c_str(),
+        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
+        opInfo->op_.inputMem == nullptr ? 0 : opInfo->op_.inputMem->GetSize(),
+        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
+        opInfo->op_.outputMem == nullptr ? 0 : opInfo->op_.outputMem->GetSize(),
+        opInfo->op_.scratchMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.scratchMem->GetAddr()),
+        opInfo->op_.scratchMem == nullptr ? 0 : opInfo->op_.scratchMem->GetSize());
+}
+
 string TaskInfo::GetRemoteRankInfo(bool needConcise) const
 {
     string invRank = needConcise ? "/" : "local";
