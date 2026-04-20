@@ -57,7 +57,7 @@ HcclResult HcclSocketManager::ServerInit(const HcclNetDevCtx netDevCtx, u32 port
 
     Referenced ref;
     ref.Ref();
-    serverSocketRefMap_.insert(std::make_pair(portInfo, ref));
+    serverSocketRefMap_.insert(std::make_pair(portInfo, std::move(ref)));
 
     return HCCL_SUCCESS;
 }

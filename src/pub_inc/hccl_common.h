@@ -14,6 +14,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <atomic>
 #include <climits>
 #include <queue>
 #include <string>
@@ -362,7 +363,7 @@ public:
     }
     ~Referenced() {}
 private:
-    int refCount; // 引用计数，表示有多少个变量引用这块内存
+    std::atomic<int> refCount; // 引用计数，表示有多少个变量引用这块内存
 };
 
 using RemoteRankInfo = struct TagRemoteRankInfo {
