@@ -954,10 +954,10 @@ void UbLocalNotify::ReleaseResource() const
 UbLocalNotify::~UbLocalNotify()
 {}
 
-RtsNotify::RtsNotify(bool devUsed)
-{}
-RtsNotify::~RtsNotify()
-{}
+// RtsNotify::RtsNotify(bool devUsed)
+// {}
+// RtsNotify::~RtsNotify()
+// {}
 
 UbMemTransport::UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData,
     const Socket &socket, RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1, bool isRecvFirst)
@@ -2288,3 +2288,84 @@ HcclResult HcclGetRankGraphV2(HcclComm *comm, void **rankGraph)
     return HCCL_SUCCESS;
 }
 
+RtNotify_t HrtIpcOpenNotifyWithFlag(const char_t *name, uint32_t flags)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetCqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyDestroy(RtNotify_t ptr)
+{
+    return ;
+}
+
+s32 HrtGetStreamId(aclrtStream ptr)
+{
+    return 0;
+}
+
+aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
+{
+    static aclrtStream stream;
+    return stream;
+}
+
+u32 HrtNotifyGetOffset(RtNotify_t ptr)
+{
+    return 0;
+}
+
+u32 HrtGetNotifyID(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+s32 HrtDeviceGetBareTgid()
+{
+    return 0;
+}
+
+void HrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid)
+{
+    return ;
+}
+
+void HrtStreamDestroy(aclrtStream ptr)
+{
+    return ;
+}
+
+void HrtIpcSetNotifyName(RtNotify_t ptr, char_t *name, uint32_t len)
+{
+    return ;
+}
+
+aclrtNotify HrtNotifyCreateWithFlag(u32 devId, u32 flag)
+{
+    static aclrtNotify notify;
+    return notify;
+}
+
+u64 HrtNotifyGetAddr(RtNotify_t notifyHandle)
+{
+    return 0;
+}
+
+RtNotify_t HrtIpcOpenNotify(const char_t *name)
+{
+    return nullptr;
+}
+
+u32 HrtStreamGetSqId(const aclrtStream ptr)
+{
+    return 0;
+}
+
+void HrtNotifyRecord(RtNotify_t notifyPtr, aclrtStream streamPtr)
+{
+    return ;
+}

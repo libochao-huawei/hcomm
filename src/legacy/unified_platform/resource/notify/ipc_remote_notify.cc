@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#include "remote_notify.h"
+#include "ipc_remote_notify.h"
 #include "not_support_exception.h"
 #include "invalid_params_exception.h"
 #include "exception_util.h"
