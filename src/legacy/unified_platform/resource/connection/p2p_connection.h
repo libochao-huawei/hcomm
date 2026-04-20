@@ -23,6 +23,7 @@ namespace Hccl {
 class P2PConnection : public RmaConnection {
 public:
     P2PConnection(Socket *socket, const string &tag);
+    ~P2PConnection() = default;
 
     void          Connect() override;
     RmaConnStatus GetStatus() override;

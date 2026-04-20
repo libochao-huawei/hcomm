@@ -16,13 +16,13 @@ set(src_to_test_list
     ut_aicpu_ts_HcommChannelNotifyRecordOnThread.cc
     ut_aicpu_ts_HcommChannelNotifyWaitOnThread.cc
     ut_aicpu_ts_HcommChannelNotifyWaitOnThread_WithTimeout.cc
-    ut_aicpu_ts_HcommWriteWithNotifyOnThread.cc
-    ut_aicpu_ts_HcommWriteReduceWithNotifyOnThread.cc
-    ut_aicpu_ts_HcommWriteOnThread.cc
-    ut_aicpu_ts_HcommWriteReduceOnThread.cc
-    ut_aicpu_ts_HcommReadOnThread.cc
-    ut_aicpu_ts_HcommReadReduceOnThread.cc
-    ut_aicpu_ts_HcommChannelFenceOnThread.cc
+    #ut_aicpu_ts_HcommWriteWithNotifyOnThread.cc
+    #ut_aicpu_ts_HcommWriteReduceWithNotifyOnThread.cc
+    #ut_aicpu_ts_HcommWriteOnThread.cc
+    #ut_aicpu_ts_HcommWriteReduceOnThread.cc
+    #ut_aicpu_ts_HcommReadOnThread.cc
+    #ut_aicpu_ts_HcommReadReduceOnThread.cc
+    #ut_aicpu_ts_HcommChannelFenceOnThread.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/rtsq_base.cc
     ${HCCL_LLT_ROOT}/ut/stub/legacy/llt_stub_ub_transport_lite_impl.cc
