@@ -545,45 +545,46 @@ ChannelStatus AicpuTsUboeChannel::GetStatus() {
 
     if (!IsSocketReady()) return channelStatus;
 
-    auto SetState = [&](UboeStatus next, ChannelStatus ch = channelStatus) { uboeStatus = next; channelStatus = ch; };
+    // SetState no longer uses a default arg that referenced a non-static member
+    auto SetState = [&](UboeStatus next, ChannelStatus ch) { uboeStatus = next; channelStatus = ch; };
 
     switch (uboeStatus) {
         case UboeStatus::INIT:
             SetState(UboeStatus::SEND_EID, ChannelStatus::SOCKET_OK);
             break;
         case UboeStatus::SEND_EID:
-            SendEidData(); SetState(UboeStatus::RECV_EID);
+            SendEidData(); SetState(UboeStatus::RECV_EID, channelStatus);
             break;
         case UboeStatus::RECV_EID:
-            RecvEidData(); SetState(UboeStatus::PROCESS_EID_DATA);
+            RecvEidData(); SetState(UboeStatus::PROCESS_EID_DATA, channelStatus);
             break;
         case UboeStatus::PROCESS_EID_DATA:
-            RecvEidDataProcess(); SetState(UboeStatus::BUILD_CONN);
+            RecvEidDataProcess(); SetState(UboeStatus::BUILD_CONN, channelStatus);
             break;
         case UboeStatus::BUILD_CONN:
-            BuildConn(); SetState(UboeStatus::SEND_SIZE);
+            BuildConn(); SetState(UboeStatus::SEND_SIZE, channelStatus);
             break;
         case UboeStatus::SEND_SIZE:
-            if (IsResReady()) { SendDataSize(); SetState(UboeStatus::RECV_SIZE); }
+            if (IsResReady()) { SendDataSize(); SetState(UboeStatus::RECV_SIZE, channelStatus); }
             break;
         case UboeStatus::RECV_SIZE:
-            RecvDataSize(); SetState(isRecvFirst_ ? UboeStatus::RECV_DATA : UboeStatus::SEND_DATA);
+            RecvDataSize(); SetState(isRecvFirst_ ? UboeStatus::RECV_DATA : UboeStatus::SEND_DATA, channelStatus);
             break;
         case UboeStatus::SEND_DATA:
-            SendExchangeData(); SetState(isRecvFirst_ ? UboeStatus::PROCESS_DATA : UboeStatus::RECV_DATA);
+            SendExchangeData(); SetState(isRecvFirst_ ? UboeStatus::PROCESS_DATA : UboeStatus::RECV_DATA, channelStatus);
             break;
         case UboeStatus::RECV_DATA:
-            RecvExchangeData(); SetState(isRecvFirst_ ? UboeStatus::SEND_DATA : UboeStatus::PROCESS_DATA);
+            RecvExchangeData(); SetState(isRecvFirst_ ? UboeStatus::SEND_DATA : UboeStatus::PROCESS_DATA, channelStatus);
             break;
         case UboeStatus::PROCESS_DATA:
-            if (RecvDataProcess()) SetState(UboeStatus::SEND_FIN);
+            if (RecvDataProcess()) SetState(UboeStatus::SEND_FIN, channelStatus);
             else { channelStatus = ChannelStatus::READY; SetState(UboeStatus::READY, ChannelStatus::READY); }
             break;
         case UboeStatus::SEND_FIN:
-            if (IsConnsReady()) { SendFinish(); SetState(UboeStatus::RECV_FIN); }
+            if (IsConnsReady()) { SendFinish(); SetState(UboeStatus::RECV_FIN, channelStatus); }
             break;
         case UboeStatus::RECV_FIN:
-            RecvFinish(); SetState(UboeStatus::SET_READY);
+            RecvFinish(); SetState(UboeStatus::SET_READY, channelStatus);
             break;
         case UboeStatus::SET_READY:
             channelStatus = ChannelStatus::READY; SetState(UboeStatus::READY, ChannelStatus::READY);
