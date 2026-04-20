@@ -544,19 +544,19 @@ int32_t HcommReadOnThread(ThreadHandle thread, ChannelHandle channel, void *dst,
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
-        ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
+        ret = transportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].",
             __func__, thread, channel, dst, src, len), ret);
         const Hccl::Buffer rmtBuf{reinterpret_cast<uintptr_t>(src), len};
 
-        EXECEPTION_CATCH(ubTransportLitePtr->Read(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->Read(locRmaBuf, rmtBuf, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
         HcclBuf locBuf{dst, len, nullptr};
         HcclBuf rmtBuf{const_cast<void *>(src), len, nullptr};
@@ -590,13 +590,13 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
         Hccl::RmaBufferLite locRmaBuf;
-        ret = ubTransportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
+        ret = transportLitePtr->BuildLocRmaBufferLite(reinterpret_cast<uintptr_t>(dst), len, locRmaBuf);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] FAIL at BuildLocRmaBufferLite. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d].",
             __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
@@ -608,7 +608,7 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
             __func__, thread, channel, dst, src, count, dataType, reduceOp), ret);
         Hccl::ReduceIn reduceIn{mapHcommDataTypeToA5.at(dataType), mapHcommReduceOpToA5.at(reduceOp)};
 
-        EXECEPTION_CATCH(ubTransportLitePtr->ReadReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->ReadReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
         CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
             "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
@@ -692,13 +692,13 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
         HCCL_DEBUG("[%s] Running on A5.", __func__);
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
         HCCL_INFO("channel streamlite ptr %p.", streamLitePtr);
 
-        EXECEPTION_CATCH(ubTransportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->Post(remoteNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -728,12 +728,12 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
         HCCL_DEBUG("[%s] Running on A5.", __func__);
-        auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-        CHK_PTR_NULL(ubTransportLitePtr);
+        auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+        CHK_PTR_NULL(transportLitePtr);
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
-        EXECEPTION_CATCH(ubTransportLitePtr->WaitWithTimeout(localNotifyIdx, *streamLitePtr, timeOut), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(transportLitePtr->WaitWithTimeout(localNotifyIdx, *streamLitePtr, timeOut), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -795,9 +795,9 @@ int32_t HcommAcquireComm(const char* commId)
 
 int32_t HcommChannelRegisterDfx(ChannelHandle channel, std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback) {
     HCCL_INFO("[HcommChannelRegisterDfx] Init begin");
-    auto *const ubTransportLitePtr = reinterpret_cast<Hccl::UbTransportLiteImpl *>(channel);
-    CHK_PTR_NULL(ubTransportLitePtr);
-    CHK_RET(ubTransportLitePtr->SetAddTaskInfoCallback(callback));
+    auto *const transportLitePtr = reinterpret_cast<Hccl::BaseTransportLiteImpl *>(channel);
+    CHK_PTR_NULL(transportLitePtr);
+    CHK_RET(transportLitePtr->SetAddTaskInfoCallback(callback));
     HCCL_INFO("[HcommChannelRegisterDfx] Init success");
     return HCCL_SUCCESS;
 }
