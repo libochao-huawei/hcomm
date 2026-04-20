@@ -139,9 +139,13 @@ STATIC int RsUbFillInfoByEidList(urma_device_t *currDev, unsigned int *index, st
     unsigned int totalNum)
 {
     urma_eid_info_t *eidList = NULL;
+    urma_device_attr_t attr = {0};
     unsigned int eidNum = 0;
     unsigned int j;
     int ret = 0;
+
+    ret = RsUrmaQueryDevice(currDev, &attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaQueryDevice failed, ret:%d, errno:%d", ret, errno), -EOPENSRC);
 
     eidList = RsUrmaGetEidList(currDev, &eidNum);
     // normal case, should continue to get eid_list from the rest of device
@@ -161,6 +165,7 @@ STATIC int RsUbFillInfoByEidList(urma_device_t *currDev, unsigned int *index, st
             hccp_err("rs_ub_fill_dev_eid_info_list failed, index:%u, ret:%d", *index, ret);
             goto free_eid_list;
         }
+        totalList[*index].devFeature = attr.dev_cap.feature.value;
         *index += 1;
     }
 
