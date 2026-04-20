@@ -31,8 +31,8 @@ AicpuTsRoceEndpoint::~AicpuTsRoceEndpoint()
 {
     regedMemMgr_.reset();
     ctxHandle_ = nullptr;
-    ReleaseSharedNetDev();
     ReleaseListenSocketRefs();
+    ReleaseSharedNetDev();
 }
 
 void AicpuTsRoceEndpoint::ReleaseListenSocketRefs()

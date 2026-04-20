@@ -27,10 +27,6 @@ struct AicpuTsListenSocketSlot {
     uint32_t refCount{0U};
 };
 
-/**
- * 每 devicePhyId 一条：进程内多 endpoint 共享同一 HcclNetDev 句柄，refCount 归零时 HcclNetDevClose。
- * 复用键仅为 devicePhyId；若同卡需按不同 commAddr 区分打开语义，应扩展 map key。
- */
 struct AicpuTsNetDevSlot {
     HcclNetDev netDev{nullptr};
     uint32_t refCount{0U};
@@ -77,10 +73,8 @@ private:
     void ReleaseSharedNetDev();
 
     HcclNetDev netDev_{nullptr};
-    /** 本对象在进程级 netDev 表上占用的 devicePhyId；UINT32_MAX 表示未占用 */
     uint32_t netDevRefPhyId_{UINT32_MAX};
     std::shared_ptr<hccl::HcclSocket> serverSocket_{nullptr};
-    /** 仅本对象成功 Listen 的端口；析构时只对这些端口减 ref / 可能销毁 socket，与其它 endpoint 的端口无关 */
     std::vector<uint32_t> listenRefPorts_{};
 };
 }
