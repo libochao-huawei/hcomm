@@ -36,7 +36,7 @@ HcclResult OpExeCounter::InitCounter()
     if (refCount_ <= 0) {
         refCount_ = 0;
         int32_t defCount = 0;
-        FreeCounterMem();
+        ReleaseMemHandles();
         memSize_ = sizeof(int32_t);
         CHK_RET(hrtMalloc(&headCountMem_, memSize_));
         CHK_PTR_NULL(headCountMem_);
@@ -69,7 +69,7 @@ HcclResult OpExeCounter::DeInitCounter()
 {
     if (!isNeedOpCounter_) {
         HCCL_DEBUG("do not need add counter");
-        FreeCounterMem();
+        ReleaseMemHandles();
         return HCCL_SUCCESS;
     }
     refCount_--;
@@ -78,7 +78,7 @@ HcclResult OpExeCounter::DeInitCounter()
         CHK_RET(GetCounter(counter));
         HCCL_RUN_INFO("[OpExeCounter][DeInitCounter] head counter[%d], tail counter[%d]",
             counter.first, counter.second);
-        FreeCounterMem();
+        ReleaseMemHandles();
         isNeedOpCounter_= false;
         HCCL_RUN_INFO("free counter mem resource");
     }
@@ -156,7 +156,7 @@ HcclResult OpExeCounter::ClearOpCounterMem()
     return HCCL_SUCCESS;
 }
 
-HcclResult OpExeCounter::FreeCounterMem()
+void OpExeCounter::ReleaseMemHandles()
 {
     if (headCountMem_ != nullptr) {
         CHK_PRT(hrtFree(headCountMem_));
@@ -170,7 +170,6 @@ HcclResult OpExeCounter::FreeCounterMem()
         CHK_PRT(hrtFree(addOneMem_));
         addOneMem_ = nullptr;
     }
-    return HCCL_SUCCESS;
 }
 
 HcclResult FftsHeadCounter(const HcclDispatcher &dispatcher, Stream &stream)
