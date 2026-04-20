@@ -138,7 +138,7 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/ipc_local_notify.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/rdma_local_notify.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/ub_local_notify.cc
-        ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/remote_notify.cc
+        ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/ipc_remote_notify.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/local_cnt_notify.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/rts_notify.cc
         ${HCCL_V2_CODE_ROOT}/unified_platform/resource/notify/rts_cnt_notify.cc
