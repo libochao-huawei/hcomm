@@ -26,9 +26,9 @@ std::shared_ptr<Hccl::DfxOpInfo> ConvertToDfxOpInfo(const HcclDfxOpInfo& dfxOpIn
     collOp.root = dfxOpInfo.root;
     collOp.staticAddr = false;
     collOp.staticShape = false;
-    collOp.inputMem = std::make_shared<Hccl::Buffer>(0, 0);
-    collOp.outputMem = std::make_shared<Hccl::Buffer>(0, 0);
-    collOp.scratchMem = std::make_shared<Hccl::Buffer>(0, 0);
+    collOp.inputMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.inputMemAddr, dfxOpInfo.inputMemSize);
+    collOp.outputMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.outputMemAddr, dfxOpInfo.outputMemSize);
+    collOp.scratchMem = std::make_shared<Hccl::Buffer>(dfxOpInfo.cclMemAddr, dfxOpInfo.cclMemSize);
 
     dfxOpInfoOnce->op_= std::move(collOp);
     dfxOpInfoOnce->algTag_ = dfxOpInfo.algTag;
