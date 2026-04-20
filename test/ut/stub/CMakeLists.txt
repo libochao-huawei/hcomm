@@ -96,11 +96,15 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/rts_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/stream.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/task/task.cc
     ${HCCL_CODE_ROOT}/src/legacy/interface/rank_graph_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
@@ -108,6 +112,7 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/base_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_config.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/env_func.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/orion_adapter_rts.cc
 )
 
 set(hccl_list
