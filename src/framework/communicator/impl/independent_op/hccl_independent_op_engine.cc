@@ -286,7 +286,7 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
                 HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(dstCommEngine)), HCCL_E_PARA);
     if (threadNum == 0 || threadNum > MAX_EXPORT_THREAD_NUM) {
-        HCCL_ERROR("[%s] threadNum is 0 or greater than %u", __func__, MAX_EXPORT_THREAD_NUM);
+        HCCL_ERROR("[%s] threadNum[%u] is 0 or greater than %u", __func__, threadNum, MAX_EXPORT_THREAD_NUM);
         return HCCL_E_PARA;
     }
 
