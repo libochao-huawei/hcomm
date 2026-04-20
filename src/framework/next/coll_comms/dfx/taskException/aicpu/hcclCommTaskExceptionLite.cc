@@ -80,6 +80,9 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
             continue;
         }
 
+        ReadWriteLockBase &commThreadMutex = aicpuComm->GetThreadMutex();
+        ReadWriteLock threadRwlock(commThreadMutex);
+        threadRwlock.readLock();
         const std::vector<std::shared_ptr<hccl::Thread>> threads = aicpuComm->GetAllThread();
         for (auto thread : threads) {
             rtLogicCqReport_t cqeException;
@@ -97,6 +100,7 @@ HcclResult HcclCommTaskExceptionLite::HandleExceptionCqe()
                     "cqeStatus[%d]", __func__, aicpuComm->GetIdentifier().c_str(), streamLite->GetId(), cqeStatus), ret);
             }
         }
+        threadRwlock.readUnlock();
     }
     rwlock.readUnlock();
     return HCCL_SUCCESS;
@@ -415,12 +419,19 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
     }
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
-    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s]",
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s], "\
+        "input: ptr[0x%llx] size[%llu], ouput: ptr[0x%llx] size[%llu], cclbuffer: ptr[0x%llx] size[%llu]",
         opInfo->opIndex_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
-        opInfo->op_.dataType.Describe().c_str());
+        opInfo->op_.dataType.Describe().c_str(),
+        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
+        opInfo->op_.inputMem == nullptr ? 0 : opInfo->op_.inputMem->GetSize(),
+        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
+        opInfo->op_.outputMem == nullptr ? 0 : opInfo->op_.outputMem->GetSize(),
+        opInfo->op_.scratchMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.scratchMem->GetAddr()),
+        opInfo->op_.scratchMem == nullptr ? 0 : opInfo->op_.scratchMem->GetSize());
 }
 
 void HcclCommTaskExceptionLite::PrintEid(const Hccl::TaskInfo& taskInfo)
