@@ -106,6 +106,7 @@ STATIC int RsUbFillDevEidInfoList(struct HccpDevEidInfo *totalList, unsigned int
 {
     struct DevBaseAttr devAttr = {0};
     urma_context_t *urmaCtx = NULL;
+    urma_device_attr_t attr = {0};
     int ret = 0;
 
     totalList[index].eidIndex = eidInfo->eid_index;
@@ -116,6 +117,10 @@ STATIC int RsUbFillDevEidInfoList(struct HccpDevEidInfo *totalList, unsigned int
 
     ret = strcpy_s(totalList[index].name, DEV_EID_INFO_MAX_NAME, device->name);
     CHK_PRT_RETURN(ret != 0, hccp_err("strcpy device name failed, ret:%d", ret), -ESAFEFUNC);
+
+    ret = RsUrmaQueryDevice(device, &attr);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsUrmaQueryDevice failed, ret:%d, eidIndex:%u", ret, eidInfo->eid_index), ret);
+    totalList[index].devFeature = attr.dev_cap.feature.value;
 
     ret = RsUbCreateCtx(device, eidInfo->eid_index, &urmaCtx);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_ub_create_ctx failed, ret:%d, eidIndex:%u", ret, eidInfo->eid_index), ret);

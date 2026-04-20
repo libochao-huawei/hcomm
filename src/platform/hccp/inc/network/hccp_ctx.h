@@ -30,7 +30,7 @@ struct HccpDevEidInfo {
     uint32_t dieId;
     uint32_t chipId;
     uint32_t funcId;
-    uint32_t resv;
+    uint32_t devFeature;
 };
 
 struct CtxInitCfg {
