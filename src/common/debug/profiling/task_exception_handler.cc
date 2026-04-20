@@ -16,7 +16,6 @@
 #include "rt_external.h"
 #include "adapter_rts_common.h"
 #include "externalinput_pub.h"
-#include "config_log.h"
 #include "sal_pub.h"
 #include "../../../algorithm/pub_inc/common.h"
 #include "acl/error_codes/rt_error_codes.h"
@@ -1187,7 +1186,6 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
     if (exceptionTaskInfo.isAlgInfo){
         PrintTaskAivBuffer(queIt);
         PrintTaskAivInfo(queIt);
-        DumpAivPrintWorkSpace(queIt);
     }else if(exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) { 
         queIt->pop_back();
         // 只在出错task为NotifyWait时打印前序task序列

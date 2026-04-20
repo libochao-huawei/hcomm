@@ -322,7 +322,7 @@ __aicore__ inline void AivCrossNode91093Base::CalCountAndBlockOffset(uint64_t le
 
     count = CalActualCount(blockIdxInGroup, sliceCount, avgLengthPerSlice, tailLength);
     blockOffset = blockIdxInGroup * avgLengthPerSlice;
-    AIV_INFO("count %llu, blockOffset %llu", count, blockOffset);
+    AIV_INFO("count %llu, blockOffset %llu\n", count, blockOffset);
 }
 
 __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanks()
@@ -384,8 +384,6 @@ __aicore__ inline void AivCrossNode91093Base::InitSetCheckClearArgsTensor()
 {
     logLevel_ = GetLogLevel();
     uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
-    AscendC::InitDump(false, flagAddrSelf_ + offset, ONE_CORE_DUMP_SIZE);
-    AIV_INFO("[Init]initdumpaddr is [%p], tag is [%d]", flagAddrSelf_ + offset, tag_);
     pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE * FLAG_BUF_NUM);
     localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, 0);
     localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE);
@@ -616,7 +614,7 @@ template<typename T>
 __aicore__ inline void AivCrossNode91093Base::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, bool atomic,
     uint32_t atomicOp)
 {
-    AIV_INFO("[CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu] ", outputGM, inputGM, count);
+    AIV_INFO("[CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu]\n", outputGM, inputGM, count);
     GlobalTensor<T> inputGT;
     inputGT.SetGlobalBuffer(inputGM, count);
     GlobalTensor<T> outputGT;
@@ -814,7 +812,7 @@ __aicore__ inline void AivCrossNode91093Base::WaitNv1(uint32_t tag, GM_ADDR reco
 
 __aicore__ inline void AivCrossNode91093Base::Wait1vN(uint32_t tag, CommPattern pattern, bool ifClear, AivNotifyType notifyType)
 {
-    AIV_INFO("[Wait1vN]tag is [%u], pattern is [%d], ifClear is [%d], notifyType is [%d] \n",
+    AIV_INFO("[Wait1vN]tag is [%u], pattern is [%d], ifClear is [%d], notifyType is [%d]\n",
         tag, pattern, ifClear, notifyType);
     int32_t waitOffset = multiOffset + 2 * 2 * blockNumPerGroup * ATOMIC_FLAG_SIZE +
         (int32_t(pattern) * blockNumPerGroup * 2 +
@@ -830,7 +828,7 @@ __aicore__ inline void AivCrossNode91093Base::Wait1vN(uint32_t tag, CommPattern 
 // 卡内全Aiv同步
 __aicore__ inline void AivCrossNode91093Base::IntraSync(int32_t tag, int32_t offset, int32_t blockIdx, bool ifPingpong)
 {
-    AIV_INFO("[IntraSync]tag is [%d], offset is [%d], blockIdx is [%d], ifPingpong is [%d]",
+    AIV_INFO("[IntraSync]tag is [%d], offset is [%d], blockIdx is [%d], ifPingpong is [%d]\n",
         tag, offset, blockIdx, ifPingpong);
     SetSyncRecord(tag, flagAddrSelf_, offset, blockIdx, ifPingpong);
     for (uint32_t i = 0; i < usedBlockNum_; i++) {
@@ -855,7 +853,7 @@ __aicore__ inline void AivCrossNode91093Base::SetSyncRecord(int32_t value, GM_AD
     int32_t highOrderOff, int32_t lowOrderOff, bool ifPingpong)
 {
     AIV_INFO("[SetSyncRecord]value is [%d], setAddr is [%p], highOrderOff is [%d], "
-        "lowOrderOff is [%d], ifPingpong is [%d]",
+        "lowOrderOff is [%d], ifPingpong is [%d]\n",
         value, setAddr, highOrderOff, lowOrderOff, ifPingpong);
     int32_t ppOffset = ifPingpong ? pingpongOffset : 0;
 
@@ -869,7 +867,7 @@ __aicore__ inline void AivCrossNode91093Base::WaitSyncFlag(int32_t value, GM_ADD
     int32_t highOrderOff, int32_t lowOrderOff, bool ifPingpong)
 {
     AIV_INFO("[WaitSyncFlag]value is [%d], waitAddr is [%p], highOrderOff is [%d], "
-        "lowOrderOff is [%d], ifPingpong is [%d]",
+        "lowOrderOff is [%d], ifPingpong is [%d]\n",
         value, waitAddr, highOrderOff, lowOrderOff, ifPingpong);
     int32_t ppOffset = ifPingpong ? pingpongOffset : 0;
 
