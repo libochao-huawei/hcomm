@@ -207,3 +207,30 @@ TEST_F(TaskInfoTest, test_get_para_notify)
     taskInfo.taskParam_.taskPara.Notify.value = 0xa;
     EXPECT_EQ(taskInfo.GetParaInfo(), "notify id:[0x0000aaaabbbbcccc], value:[10], remote rank:[3]");
 }
+
+TEST_F(TaskInfoTest, test_GetIndopBaseInfo)
+{
+    TaskInfo taskInfo = InitTaskInfo();
+    taskInfo.streamId_ = 1;
+    taskInfo.taskId_ = 7;
+    taskInfo.taskParam_.taskType = TaskParamType::TASK_SDMA;
+    EXPECT_EQ(taskInfo.GetIndopBaseInfo(), "streamID(sqId):[1], taskID(sqeId):[7], taskType:[TaskParamType::TASK_SDMA]");
+}
+
+TEST_F(TaskInfoTest, test_GetIndopDataInfo)
+{
+    TaskInfo taskInfo = InitTaskInfo();
+    taskInfo.dfxOpInfo_->opIndex_ = 1;
+    taskInfo.dfxOpInfo_->algTag_ = "allreduce_test";
+    taskInfo.dfxOpInfo_->op_.dataCount = 1024;
+    taskInfo.dfxOpInfo_->op_.reduceOp = ReduceOp::SUM;
+    taskInfo.dfxOpInfo_->op_.dataType = DataType::INT32;
+    taskInfo.dfxOpInfo_->op_.inputMem = std::make_shared<Hccl::Buffer>(0x1, 11);
+    taskInfo.dfxOpInfo_->op_.outputMem = std::make_shared<Hccl::Buffer>(0x2, 22);
+    taskInfo.dfxOpInfo_->op_.scratchMem = std::make_shared<Hccl::Buffer>(0x3, 33);
+    EXPECT_EQ(taskInfo.GetIndopDataInfo(), "opIndex[1], algTag[allreduce_test], count[1024], reduceType[ReduceOp::SUM], dataType[DataType::INT32], "\
+        "input: ptr[0x1] size[11], ouput: ptr[0x2] size[22], cclbuffer: ptr[0x3] size[33]");
+
+    taskInfo.dfxOpInfo_ = nullptr;
+    EXPECT_EQ(taskInfo.GetIndopDataInfo(), "");
+}
