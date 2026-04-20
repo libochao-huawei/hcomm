@@ -89,7 +89,18 @@ constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
  * 宏定义                                       *
  *----------------------------------------------*/
 
-static s32 stub_log_level = DLOG_ERROR;
+static s32 GetLogLevelFromEnv()
+{
+    const char* env = getenv("HCCL_UT_LOG_LEVEL");
+    if (env != nullptr) {
+        int val = atoi(env);
+        if (val >= 0 && val <= 3) {
+            return val;
+        }
+    }
+    return DLOG_ERROR;
+}
+static s32 stub_log_level = GetLogLevelFromEnv();
 static u32 FailureDeviceId = 0xFFFFFFFF;
 static tasktype_e FailureTaskType = TASK_TYPE_RESERVED;
 static std::mutex taskFailCallbackMapMutex;

@@ -26,7 +26,9 @@ extern int64_t block_idx;
 extern int64_t block_num;
 
 using half = int16_t;
+#ifndef __ARM_NEON
 using bfloat16_t = int16_t;
+#endif
 
 const uint8_t DEFAULT_DATA_COPY_NBURST = 1;
 const uint8_t DEFAULT_DATA_COPY_STRIDE = 0;

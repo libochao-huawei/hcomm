@@ -85,6 +85,7 @@ HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
     CHK_PTR_NULL(param);
 
     std::string group = param->hcomId;
+    HCCL_INFO("[%s]group[%s]", __func__, group.c_str());
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
     CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
     HcclResult ret = collCommAicpuMgr->InitThreads(param);
@@ -97,9 +98,10 @@ HcclResult AicpuIndopProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 
 CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &group)
 {
+    HCCL_INFO("[AicpuIndopProcess][%s]start, group[%s]", __func__, group.c_str());
     auto startTime = std::chrono::steady_clock::now();
     constexpr u32 pollIntervalUs = 10; // 轮询间隔10us
-    constexpr u32 pollTimeoutMs = 10000; // 轮询超时时间10ms //临时规避host侧在临时流下发kernel获取锁超时的问题
+    constexpr u32 pollTimeoutMs = 10000; //临时规避host侧在临时流下发kernel获取锁超时的问题
     auto waitPollTimeOutMs = std::chrono::milliseconds(pollTimeoutMs);
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMgrMapMutex);
 
@@ -119,19 +121,17 @@ CollCommAicpuMgr *AicpuIndopProcess::AicpuGetCommMgrbyGroup(const std::string &g
         }
         if (iter->second->IsUsed()) {
             if ((std::chrono::steady_clock::now() - startTime) >= waitPollTimeOutMs) {
-                HCCL_ERROR("[AicpuGetCommbyGroup][%s]poll timeout, comm group [%s] has been used", __func__, group.c_str());
+                HCCL_ERROR("[AicpuIndopProcess][%s]poll timeout, comm group [%s] has been used", __func__, group.c_str());
                 rwlock.readUnlock();
                 return nullptr;
             }
-
-            HCCL_WARNING("[AicpuGetCommbyGroup][%s]comm group [%s] has been used", __func__, group.c_str());
             rwlock.readUnlock();
-
             usleep(pollIntervalUs);
             continue;
         }
         g_hcclComm = iter->second.get();
         iter->second->SetUsed(true);
+        HCCL_INFO("[AicpuIndopProcess][%s]success, group[%s]", __func__, group.c_str());
         rwlock.readUnlock();
         return iter->second.get();
     }
@@ -207,6 +207,7 @@ HcclResult AicpuIndopProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
     CHK_PTR_NULL(param);
 
     std::string group = param->hcomId;
+    HCCL_INFO("[%s]group[%s]", __func__, group.c_str());
     CollCommAicpuMgr *collCommAicpuMgr = AicpuIndopProcess::AicpuGetCommMgrbyGroup(group);
     CHK_PRT_RET(collCommAicpuMgr == nullptr, HCCL_ERROR("%s collCommAicpuMgr is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
 
@@ -259,6 +260,7 @@ HcclResult AicpuIndopProcess::AicpuDestroyCommbyGroup(const std::string &group)
 HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, const std::string& commTag)
 {
     CHK_PTR_NULL(aicpuDfxInfo);
+    HCCL_INFO("[%s]group[%s]", __func__, commTag.c_str());
     // 获取device侧的通信域
     CHK_PRT_RET(g_hcclComm == nullptr, HCCL_ERROR("%s g_hcclComm is null, commTag[%s]", __func__, commTag.c_str()), HCCL_E_PTR);
     CollCommAicpu* collComm = g_hcclComm->GetCollCommAicpu();

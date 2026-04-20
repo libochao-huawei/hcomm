@@ -13,6 +13,7 @@ namespace Hccl {
 
 MirrorTaskManagerLite::MirrorTaskManagerLite()
 {
+    currDfxOpInfo_ = std::make_shared<Hccl::DfxOpInfo>();
 }
 
 void MirrorTaskManagerLite::RegFullyCallBack(std::function<void(const std::string&, u32)> callBack)
@@ -84,7 +85,8 @@ std::shared_ptr<DfxOpInfo> MirrorTaskManagerLite::GetCurrDfxOpInfo() const
 TaskInfoQueue *MirrorTaskManagerLite::GetQueue(u32 streamId) const
 {
     if (queueMap_.find(streamId) == queueMap_.end()) {
-        THROW<InternalException>(StringFormat("MirrorTaskManagerLite::GetQueue streamId(sqId)[%u] out of range", streamId));
+        HCCL_ERROR("MirrorTaskManagerLite::GetQueue streamId(sqId)[%u] out of range", streamId);
+        return nullptr;
     }
     return queueMap_.find(streamId)->second.get();
 }

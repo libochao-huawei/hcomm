@@ -747,9 +747,23 @@ STATIC void RaPeerLoopbackSingleQpDestroy(struct RaQpHandle *qpHandle)
 
     (void)RaPeerNormalQpDestroy(qpHandle);
     (void)RaPeerCqDestroy(rdmaHandle, &attr);
+    (void)RaPeerDestroyCompChannel((void *)loopbackInfo->compChannel);
 
     free(loopbackInfo);
     loopbackInfo = NULL;
+}
+
+STATIC void RaPeerLoopbackQpCreatePrepare(struct CqAttr *cqAttr, struct ibv_qp_init_attr *qpInitAttr)
+{
+    qpInitAttr->qp_context = *(cqAttr->qpContext);
+    qpInitAttr->send_cq = *(cqAttr->ibSendCq);
+    qpInitAttr->recv_cq = *(cqAttr->ibRecvCq);
+    qpInitAttr->qp_type = IBV_QPT_RC;
+    qpInitAttr->cap.max_send_wr = QP_DEFAULT_MIN_CAP_SEND_WR;
+    qpInitAttr->cap.max_recv_wr = QP_DEFAULT_MIN_CAP_RECV_WR;
+    qpInitAttr->cap.max_send_sge = QP_DEFAULT_MIN_CAP_SEND_SGE;
+    qpInitAttr->cap.max_recv_sge = QP_DEFAULT_MIN_CAP_RECV_SGE;
+    qpInitAttr->cap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
 }
 
 STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle **qpHandle,
@@ -757,17 +771,23 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct 
 {
     struct RaLoopbackInfo *loopbackInfo = NULL;
     struct ibv_qp_init_attr qpInitAttr = {0};
-    struct ibv_qp_cap qpCap = {0};
     struct CqAttr cqAttr = {0};
     int ret = 0;
 
     loopbackInfo = (struct RaLoopbackInfo *)calloc(1, sizeof(struct RaLoopbackInfo));
-    CHK_PRT_RETURN(loopbackInfo == NULL, hccp_err("loopback_info calloc failed"),
-        -ENOMEM);
+    CHK_PRT_RETURN(loopbackInfo == NULL, hccp_err("loopback_info calloc failed"), -ENOMEM);
+
+    ret = RaPeerCreateCompChannel(rdmaHandle, (void **)&loopbackInfo->compChannel);
+    if (ret != 0) {
+        hccp_err("RaPeerCreateCompChannel failed, ret:%d", ret);
+        goto channel_create_err;
+    }
 
     cqAttr.qpContext = &(loopbackInfo->cqContext);
     cqAttr.ibSendCq = &(loopbackInfo->ibSendCq);
     cqAttr.ibRecvCq = &(loopbackInfo->ibRecvCq);
+    cqAttr.sendChannel = loopbackInfo->compChannel;
+    cqAttr.recvChannel = loopbackInfo->compChannel;
     cqAttr.sendCqDepth = CQ_DEFAULT_MIN_SEND_DEPTH;
     cqAttr.recvCqDepth = CQ_DEFAULT_MIN_RECV_DEPTH;
     ret = RaPeerCqCreate(rdmaHandle, &cqAttr);
@@ -776,16 +796,7 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct 
         goto cq_create_err;
     }
 
-    qpCap.max_send_wr = QP_DEFAULT_MIN_CAP_SEND_WR;
-    qpCap.max_recv_wr = QP_DEFAULT_MIN_CAP_RECV_WR;
-    qpCap.max_send_sge = QP_DEFAULT_MIN_CAP_SEND_SGE;
-    qpCap.max_recv_sge = QP_DEFAULT_MIN_CAP_RECV_SGE;
-    qpCap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
-    qpInitAttr.qp_context = *(cqAttr.qpContext);
-    qpInitAttr.send_cq = *(cqAttr.ibSendCq);
-    qpInitAttr.recv_cq = *(cqAttr.ibRecvCq);
-    qpInitAttr.qp_type = IBV_QPT_RC;
-    qpInitAttr.cap = qpCap;
+    RaPeerLoopbackQpCreatePrepare(&cqAttr, &qpInitAttr);
     ret = RaPeerNormalQpCreate(rdmaHandle, &qpInitAttr, (void **)qpHandle, (void **)qp);
     if (ret != 0) {
         hccp_err("ra_peer_normal_qp_create failed, ret:%d", ret);
@@ -797,6 +808,8 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct 
 qp_create_err:
     (void)RaPeerCqDestroy(rdmaHandle, &cqAttr);
 cq_create_err:
+    (void)RsDestroyCompChannel((void *)loopbackInfo->compChannel);
+channel_create_err:
     free(loopbackInfo);
     loopbackInfo = NULL;
     return ret;

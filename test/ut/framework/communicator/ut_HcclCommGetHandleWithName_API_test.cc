@@ -39,3 +39,11 @@ TEST_F(HcclCommGetHandleWithNameTest, Ut_HcclCommGetHandleWithName_When_CommName
     HcclResult ret = HcclCommGetHandleWithName(commName, &comm);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+TEST_F(HcclCommGetHandleWithNameTest, Ut_HcclCommGetHandleWithName_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
+{
+    const char commName[128] = "test";
+
+    HcclResult ret = HcclCommGetHandleWithName(commName, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}

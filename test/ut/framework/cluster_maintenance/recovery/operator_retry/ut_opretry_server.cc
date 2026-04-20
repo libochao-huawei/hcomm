@@ -101,3 +101,22 @@ TEST_F(RetryTest, ut_retry_ServerHandleError_NotSendRecv_DirectRetry)
     
     GlobalMockObject::verify();
 }
+
+TEST_F(RetryTest, ut_retry_ServerCheckOp_When_CheckFail_Expect_RetryErrTrue)
+{
+    std::map<u32, std::shared_ptr<HcclSocket>> ServerSockets;
+    HcclIpAddress ip = HcclIpAddress("10.21.78.208");
+    s32 deviceLogicId = 0;
+    OpRetryAgentInfo agentInfo = {0, deviceLogicId, ip, ip};
+    std::shared_ptr<OpRetryServerCheckOp> retryServerCheckOp = std::make_shared<OpRetryServerCheckOp>();
+    RetryContext context(ServerSockets, retryServerCheckOp, agentInfo);
+    context.isNeedReportOpRetryErr = false;
+
+    MOCKER_CPP(&OpRetryBase::CheckRetryInfo).stubs().with(any()).will(returnValue(HCCL_E_OPRETRY_FAIL));
+    HcclResult ret = retryServerCheckOp->ProcessEvent(&context);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(context.isNeedReportOpRetryErr, true);
+
+    GlobalMockObject::verify();
+}
