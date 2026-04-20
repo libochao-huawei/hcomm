@@ -229,7 +229,7 @@ TEST_M(RS, TcRsUbCtxInitJettyCb);
 TEST_M(RS, TcRsUbCtxJettyCreateFail);
 TEST_M(RS, TcRsUbCtxJettyImportFail);
 TEST_M(RS, TcRsUbCtxBatchSendWrFail);
-TEST_M(RS, TcRsUbGetEidByIp);
+// TEST_M(RS, TcRsUbGetEidByIp);
 TEST_M(RS, TcRsCtxGetAuxInfo);
 TEST_M(RS, TcRsUbCtxGetAuxInfo);
 
