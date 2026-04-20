@@ -16,7 +16,7 @@
 #include <iomanip>
 #include <vector>
 #include "securec.h"
-#include "log.h"
+#include "../log.h"
 
 namespace Hccl {
 
