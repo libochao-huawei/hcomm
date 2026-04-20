@@ -114,7 +114,7 @@ private:
         for (uint32_t idx = 0; idx < rankNumPerCore; ++idx) {
             uint32_t dstRank = coreIdx_ * rankNumPerCore + idx;
             if (dstRank >= rankSize_) {
-                return;
+                break;
             }
 
             // PutRemote阶段
@@ -130,7 +130,7 @@ private:
         for (uint32_t idx = 0; idx < rankNumPerCore; ++idx) {
             uint32_t dstRank = coreIdx_ * rankNumPerCore + idx;
             if (dstRank >= rankSize_) {
-                return;
+                break;
             }
 
             // PostCopy阶段
