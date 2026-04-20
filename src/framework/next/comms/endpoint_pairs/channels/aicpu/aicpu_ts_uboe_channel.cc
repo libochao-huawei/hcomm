@@ -539,6 +539,16 @@ void AicpuTsUboeChannel::RecvFinish()
     HCCL_INFO("end recv Finish Msg [%s]", FINISH_MSG);
 }
 
+void AicpuTsUboeChannel::HandleProcessData()
+{
+    if (RecvDataProcess()) {
+        uboeStatus = UboeStatus::SEND_FIN;
+    } else {
+        channelStatus = ChannelStatus::READY;
+        uboeStatus = UboeStatus::READY;
+    }
+}
+
 void AicpuTsUboeChannel::ProcessUboeState()
 {
     auto SetState = [&](UboeStatus next, ChannelStatus ch) { uboeStatus = next; channelStatus = ch; };
@@ -572,8 +582,7 @@ void AicpuTsUboeChannel::ProcessUboeState()
             RecvExchangeData(); SetState(isRecvFirst_ ? UboeStatus::SEND_DATA : UboeStatus::PROCESS_DATA, channelStatus);
             break;
         case UboeStatus::PROCESS_DATA:
-            if (RecvDataProcess()) SetState(UboeStatus::SEND_FIN, channelStatus);
-            else { channelStatus = ChannelStatus::READY; SetState(UboeStatus::READY, ChannelStatus::READY); }
+            HandleProcessData();
             break;
         case UboeStatus::SEND_FIN:
             if (IsConnsReady()) { SendFinish(); SetState(UboeStatus::RECV_FIN, channelStatus); }
