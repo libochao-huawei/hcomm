@@ -168,7 +168,7 @@ HCCP_ATTRI_VISI_DEF int RaCtxInit(struct CtxInitCfg *cfg, struct CtxInitAttr *at
         goto err;
     }
 
-    hccp_run_info("Input parameters: phy_id[%u], nic_position:[%d]", attr->phyId, cfg->mode);
+    hccp_run_info("[xzdebug]Input parameters: phy_id[%u], nic_position:[%d]", attr->phyId, cfg->mode);
     ret = ctxHandleTmp->ctxOps->raCtxInit(ctxHandleTmp, attr, &(ctxHandleTmp->devIndex),
         &(ctxHandleTmp->devAttr));
     if (ret != 0) {
