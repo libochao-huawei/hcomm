@@ -11,22 +11,11 @@
 
 ## 核心接口
 
-| 接口 | 说明 |
-|------|------|
-| `Communicator::Init` | 初始化通信器 |
-| `Communicator::CreateOp` | 创建集合操作 |
-| `Communicator::Destroy` | 销毁通信器 |
+
 
 ## 数据流
 
-```mermaid
-flowchart TB
-    A[Init] --> B[Create Communicator]
-    B --> C[Get Group]
-    C --> D[Create Op]
-    D --> E[Execute Op]
-    E --> F[Wait Complete]
-```
+
 
 ## 代码路径
 

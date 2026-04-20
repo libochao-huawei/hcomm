@@ -2,7 +2,7 @@
 
 ## 架构分层图
 
-
+![](diagrams/arch.excalidraw.svg)
 
 ## 核心模块
 
