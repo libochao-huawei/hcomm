@@ -9,6 +9,8 @@
  */
 #include "aicpu_ts_roce_mem.h"
 #include <algorithm>
+#include <mutex>
+#include <unordered_map>
 #include "securec.h"
 #include "adapter_hccp.h"
 #include "endpoint_pair.h"
@@ -18,15 +20,44 @@
 #include "log.h"
 #include "rma_buffer.h"
 
-namespace hcomm {
+namespace {
+using LocalRdmaRmaBufferMgr = hccl::NetDevContext::LocalRdmaRmaBufferMgr;
+struct LocalBufferMgrCtx {
+    std::shared_ptr<std::mutex> mu;
+    std::shared_ptr<LocalRdmaRmaBufferMgr> mgr;
+};
 
+std::mutex g_phyLocalRdmaBundleMapMu;
+std::unordered_map<s32, std::shared_ptr<LocalBufferMgrCtx>> g_phyIdToLocalBufferMgrCtx;
+
+std::shared_ptr<LocalBufferMgrCtx> GetOrCreateLocalBufferMgr(s32 devicePhyId)
+{
+    std::lock_guard<std::mutex> mapLock(g_phyLocalRdmaBundleMapMu);
+    std::shared_ptr<LocalBufferMgrCtx> &slot = g_phyIdToLocalBufferMgrCtx[devicePhyId];
+    if (slot == nullptr) {
+        std::shared_ptr<LocalRdmaRmaBufferMgr> mgr;
+        EXECEPTION_CATCH((mgr = std::make_shared<LocalRdmaRmaBufferMgr>()), return nullptr);
+        slot = std::make_shared<LocalBufferMgrCtx>();
+        slot->mu = std::make_shared<std::mutex>();
+        slot->mgr = std::move(mgr);
+    }
+    return slot;
+}
+}  // namespace
+
+namespace hcomm {
 AicpuTsRoceRegedMemMgr::AicpuTsRoceRegedMemMgr(HcclNetDev netDev) : netDev_(netDev)
 {
     if (netDev_ != nullptr) {
         auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
-        localRdmaRmaBufferMgr_ = netDevCtx->GetlocalRdmaRmaBufferMgr();
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr] ctor netDev[%p] localRdmaRmaBufferMgr[%p]", static_cast<void *>(netDev_),
-            static_cast<void *>(localRdmaRmaBufferMgr_.get()));
+        const s32 phyId = netDevCtx->GetPhyId();
+        std::shared_ptr<LocalBufferMgrCtx> ctx = GetOrCreateLocalBufferMgr(phyId);
+        if (ctx != nullptr) {
+            localRdmaRmaBufferMgr_ = ctx->mgr;
+        }
+        HCCL_INFO(
+            "[AicpuTsRoceRegedMemMgr] ctor netDev[%p] phyId[%d] process-local localRdmaRmaBufferMgr[%p] (not NetDev embed)",
+            static_cast<void *>(netDev_), static_cast<int>(phyId), static_cast<void *>(localRdmaRmaBufferMgr_.get()));
     } else {
         HCCL_INFO("[AicpuTsRoceRegedMemMgr] ctor netDev is null, local mgr unset");
     }
@@ -44,6 +75,10 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
     u64 size = static_cast<u64>(mem.size);
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), size);
     auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
+
+    std::shared_ptr<LocalBufferMgrCtx> ctx = GetOrCreateLocalBufferMgr(netDevCtx->GetPhyId());
+    CHK_PTR_NULL(ctx);
+    std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
     std::shared_ptr<hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer = nullptr;
     auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
@@ -74,6 +109,13 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
             HCCL_ERROR("[AicpuTsRoceRegedMemMgr][RegisterMemory] Init failed, ret[%d]", ret);
             return ret;
         }
+        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] success, key {%p, %llu}", mem.addr, mem.size);
+    }
+
+    void *const handlePtr = static_cast<void *>(localBuffer.get());
+    const bool alreadyListed = std::any_of(allRegisteredBuffers_.begin(), allRegisteredBuffers_.end(),
+        [handlePtr](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return static_cast<void *>(p.get()) == handlePtr; });
+    if (!alreadyListed) {
         allRegisteredBuffers_.push_back(localBuffer);
         HcclBuf rec{};
         rec.addr = localBuffer->GetAddr();
@@ -82,7 +124,9 @@ HcclResult AicpuTsRoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memT
         CHK_PTR_NULL(rma);
         rec.handle = static_cast<void *>(rma);
         hcclBufRecords_.push_back(rec);
-        HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] success, key {%p, %llu}", mem.addr, mem.size);
+    }
+
+    if (resultPair.second) {
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[AicpuTsRoceRegedMemMgr][RegisterMemory] already registered, ref++, key {%p, %llu}", mem.addr, mem.size);
@@ -95,6 +139,11 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
     CHK_PTR_NULL(netDev_);
     CHK_PTR_NULL(memHandle);
     CHK_PTR_NULL(localRdmaRmaBufferMgr_);
+
+    auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
+    std::shared_ptr<LocalBufferMgrCtx> ctx = GetOrCreateLocalBufferMgr(netDevCtx->GetPhyId());
+    CHK_PTR_NULL(ctx);
+    std::lock_guard<std::mutex> phyLocalLock(*ctx->mu);
 
     auto *buffer = static_cast<hccl::LocalRdmaRmaBuffer *>(memHandle);
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(buffer->GetAddr()), buffer->GetSize());
@@ -111,11 +160,9 @@ HcclResult AicpuTsRoceRegedMemMgr::UnregisterMemory(void *memHandle)
         [memHandle](const std::shared_ptr<hccl::LocalRdmaRmaBuffer> &p) { return p.get() == memHandle; }),
         allRegisteredBuffers_.end());
 
-    auto hit = std::find_if(hcclBufRecords_.begin(), hcclBufRecords_.end(),
-        [memHandle](const HcclBuf &b) { return b.handle == memHandle; });
-    if (hit != hcclBufRecords_.end()) {
-        hcclBufRecords_.erase(hit);
-    }
+    hcclBufRecords_.erase(std::remove_if(hcclBufRecords_.begin(), hcclBufRecords_.end(),
+        [memHandle](const HcclBuf &b) { return b.handle == memHandle; }),
+        hcclBufRecords_.end());
     HCCL_INFO("[AicpuTsRoceRegedMemMgr][UnregisterMemory] success, memHandle[%p] key {%p, %llu}", memHandle,
         buffer->GetAddr(), static_cast<unsigned long long>(buffer->GetSize()));
     return HCCL_SUCCESS;

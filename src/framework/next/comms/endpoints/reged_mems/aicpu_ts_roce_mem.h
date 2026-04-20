@@ -24,9 +24,6 @@
 #include "remote_rdma_rma_buffer.h"
 
 namespace hcomm {
-/**
- * @note 职责：AICPU_TS+RoCE协议的注册内存管理，复用hccl_mem中的LocalRdmaRmaBufferMgr和LocalRdmaRmaBuffer
- */
 class AicpuTsRoceRegedMemMgr : public RegedMemMgr {
 public:
     explicit AicpuTsRoceRegedMemMgr(HcclNetDev netDev);
