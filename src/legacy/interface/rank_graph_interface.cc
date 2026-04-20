@@ -52,6 +52,18 @@ namespace Hccl {
         return HCCL_SUCCESS;
     }
 
+    HcclResult IRankGraph::GetDeviceId(uint32_t rankId, uint32_t *deviceId)
+    {
+        CHK_PTR_NULL(rankGraphPtr_);
+        RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
+        if (rankGraph->GetPeer(rankId) == nullptr) {
+            HCCL_ERROR("[GetPeer] rankGraph peer is null!");
+            return HCCL_E_PTR;
+        }
+        *deviceId = rankGraph->GetPeer(rankId)->GetDeviceId();
+        return HCCL_SUCCESS;
+    }
+
     HcclResult IRankGraph::GetNetLayers(uint32_t** netLayers, uint32_t* netLayerNum)
     {
         CHK_PTR_NULL(rankGraphPtr_);
