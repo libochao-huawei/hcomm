@@ -117,7 +117,7 @@ HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& comm
     return HCCL_SUCCESS; 
 }
 
-u32 HcclCommDfx::GetRankId(u32 streamId) {
+u32 HcclCommDfx::GetTaskId(u32 streamId) {
     rwLock_.writeLock();
     auto it = streamIdToTaskId_.find(streamId);
     if (it == streamIdToTaskId_.end()) {
@@ -133,6 +133,14 @@ u32 HcclCommDfx::GetRankId(u32 streamId) {
     streamIdToTaskId_[streamId] = taskId;
     rwLock_.writeUnlock();
     return taskId;
+}
+
+u32 HcclCommDfx::GetNpuStreamId() const {
+    return npuStreamId_;
+}
+
+void HcclCommDfx::SetNpuStreamId(u32 npuStreamId) {
+    npuStreamId_ = npuStreamId;
 }
 
 }

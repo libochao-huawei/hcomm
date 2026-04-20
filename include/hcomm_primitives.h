@@ -274,13 +274,12 @@ extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, 
  * @param[in] streamId stream ID
  * @param[in] myRankId myRank ID
  * @param[in] npuDevId npu device ID
- * @param[in] dpuDevId dpu device ID
  * @param[in] aicpuTaskId aicpu task ID
  * @return int32_t 执行结果状态码
  * @note 当前在A5上主要支持
  */
 extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t len, uint32_t remoteNotifyIdx, s32 streamId, u32 myRankId, u32 npuDevId, u32 dpuDevId, u64 aicpuTaskId);
+    uint64_t len, uint32_t remoteNotifyIdx, s32 streamId, u32 myRankId, u32 npuDevId, u64 aicpuTaskId);
 
 /**
  * @brief 带通知的单边写操作
@@ -335,12 +334,11 @@ extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, u
  * @param[in] streamId stream ID
  * @param[in] myRankId myRank ID
  * @param[in] npuDevId npu device ID
- * @param[in] dpuDevId dpu device ID
  * @param[in] aicpuTaskId aicpu task ID
  * @return int32_t 执行结果状态码
  */
 extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx, s32 streamId,
-    u32 myRankId, u32 npuDevId, u32 dpuDevId, u64 aicpuTaskId);
+    u32 myRankId, u32 npuDevId, u64 aicpuTaskId);
 
 /**
  * @brief 记录通知事件
@@ -361,12 +359,11 @@ extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNo
  * @param[in] streamId stream ID
  * @param[in] myRankId myRank ID
  * @param[in] npuDevId npu device ID
- * @param[in] dpuDevId dpu device ID
  * @param[in] aicpuTaskId aicpu task ID
  * @return int32_t 执行结果状态码
  */
 extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut, s32 streamId,
-    u32 myRankId, u32 npuDevId, u32 dpuDevId, u64 aicpuTaskId);
+    u32 myRankId, u32 npuDevId, u64 aicpuTaskId);
 
 /**
  * @brief 等待通知事件

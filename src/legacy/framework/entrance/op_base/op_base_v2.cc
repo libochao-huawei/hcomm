@@ -471,13 +471,24 @@ HcclResult HcclTaskRegisterProfV2(HcclComm comm)
     auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
     hccl::CollComm *collComm = hcclComm->GetCollComm();
     CHK_PTR_NULL(collComm);
-    
+    HcclComm commV2 = hcclComm->GetCommunicatorV2();
+    CHK_PTR_NULL(commV2);
+    Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(commV2);
     std::string commId = collComm->GetCommId();
     HCCL_INFO("[HcclTaskRegisterProfV2] commId[%s]", commId.c_str());
     if (g_taskServiceMap.find(commId) == g_taskServiceMap.end()) {
         HCCL_ERROR("[HcclTaskRegisterProfV2] TaskService of CommId[%s] Not Found, g_taskServiceMap size[%zu]", commId.c_str(), g_taskServiceMap.size());
         return HCCL_E_NOT_FOUND;
     }
+
+    u32 dpuStreamId;
+    auto ret = communicator->GetStreamId(dpuStreamId);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[HcclTaskRegisterProfV2] GetStreamId failed, ret[0x%016llx]", HCCL_ERROR_CODE(ret));
+        return ret;
+    }
+    collComm->GetHcclCommDfx()->SetNpuStreamId(dpuStreamId);
+    HCCL_INFO("[HcclTaskRegisterProfV2] SetNpuStreamId success, dpuStreamId[%u]", dpuStreamId);
     
     auto profCallback = collComm->GetDfxCallback();
     if (profCallback == nullptr) {
