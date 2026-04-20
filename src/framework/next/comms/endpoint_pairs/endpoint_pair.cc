@@ -48,7 +48,7 @@ HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t 
 }
 
 HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank,
-    const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket)
+    const std::string &socketTag, u32 reuseIdx, const uint32_t listenPort, Hccl::Socket*& socket, uint32_t devicePhyId, uint32_t remoteDevicePhyId)
 {
     // 临时方案：支持混跑新增，非Roce场景走orion socketMgr实现server socket复用
     if (localEndpointDesc_.loc.locType == EndpointLocType::ENDPOINT_LOC_TYPE_HOST) {
@@ -64,7 +64,7 @@ HcclResult EndpointPair::GetSocket(const uint32_t myRank, const uint32_t rmtRank
 
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkDataWithRankIds(myRank, rmtRank,
-        localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
+        localEndpointDesc_, remoteEndpointDesc_, linkData, devicePhyId, remoteDevicePhyId, reuseIdx));
 
     // 复用orion流程可能抛异常
     EXCEPTION_HANDLE_BEGIN
