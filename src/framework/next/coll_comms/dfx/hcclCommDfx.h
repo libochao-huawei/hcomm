@@ -53,6 +53,9 @@ public:
         return setAddTaskCallback_;
     }
     HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId);
+    
+    bool IsOpRegistered() const { return isOpRegistered_; }
+    void SetOpRegistered(bool registered) { isOpRegistered_ = registered; }
 private:
     std::unique_ptr<Hccl::MirrorTaskManager> mirrorTaskManager_;
     std::unique_ptr<HcclCommProfiling> profiling_;
@@ -62,6 +65,7 @@ private:
     std::string commTag_;
     u32 deviceId_{0};
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
+    bool isOpRegistered_{false};
 };
 
 } // namesapce hccl

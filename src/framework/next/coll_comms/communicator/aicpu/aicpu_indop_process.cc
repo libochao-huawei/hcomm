@@ -286,6 +286,7 @@ HcclResult AicpuIndopProcess::AicpuDfxOpInfoInit(HcclDfxOpInfo *aicpuDfxInfo, co
     Hccl::MirrorTaskManagerLite* mirrorTaskMgrLite = hcclCommDfxLite->GetMirrorTaskManagerLite();
     CHK_PTR_NULL(mirrorTaskMgrLite);
     mirrorTaskMgrLite->SetCurrDfxOpInfo(dfxOpInfoOnce);
+    hcclCommDfxLite->SetOpRegistered(true);
     return HCCL_SUCCESS;
 }
 

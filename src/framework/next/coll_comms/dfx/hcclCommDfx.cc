@@ -39,6 +39,10 @@ HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag) {
 
 // 回调注册实现
 HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle) {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", __func__);
+        return HCCL_SUCCESS;
+    }
     CHK_SMART_PTR_NULL(mirrorTaskManager_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
@@ -54,14 +58,22 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
 
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", __func__);
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(profiling_);
     EXECEPTION_CATCH(profiling_->ReportAllTasks(cachedReq), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfx::ReportOp(u64 beginTime, bool cachedReq, bool opbased) {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", __func__);
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(profiling_);
-    EXECEPTION_CATCH(profiling_->ReportOp(beginTime, cachedReq, opbased), return HCCL_E_PTR);
+    EXEPTION_CATCH(profiling_->ReportOp(beginTime, cachedReq, opbased), return HCCL_E_PTR);
     return HCCL_SUCCESS;
 }
 
@@ -73,6 +85,10 @@ void HcclCommDfx::ReportMc2CommInfo(const Mc2CommInfo& mc2CommInfo) {
 }
 
 HcclResult HcclCommDfx::UpdateProfStat() {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", __func__);
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(profiling_);
     profiling_->UpdateProfStat();
     return HCCL_SUCCESS;
@@ -111,6 +127,10 @@ HcclResult HcclCommDfx::GetChannelRemoteRankId(const std::string& commTag, u64 h
 }
 
 HcclResult HcclCommDfx::ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId) {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", __func__);
+        return HCCL_SUCCESS;
+    }
     CHK_PTR_NULL(profiling_);
     CHK_RET(profiling_->ReportKernel(beginTime, commTag, kernelName, threadId));
     return HCCL_SUCCESS; 

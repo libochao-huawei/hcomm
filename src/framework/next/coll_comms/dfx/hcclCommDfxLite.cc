@@ -41,6 +41,10 @@ HcclResult HcclCommDfxLite::Init(u32 deviceId, const std::string& commTag) {
 
 HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle)
 {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", __func__);
+        return HCCL_SUCCESS;
+    }
     CHK_SMART_PTR_NULL(mirrorTaskManagerLite_);
     u32 remoteRankId = INVALID_UINT;
     if (handle != INVALID_U64) {
@@ -56,12 +60,20 @@ HcclResult HcclCommDfxLite::AddTaskInfoCallback(u32 streamId, u32 taskId, const 
 
 // HcclCommDfxLite接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfxLite::ReportAllTasks() {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", __func__);
+        return HCCL_SUCCESS;
+    }
     CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->ReportAllTasks();
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommDfxLite::UpdateProfStat() {
+    if (!isOpRegistered_) {
+        HCCL_INFO("[%s] op not registered, skip profiling", (char*)__func__);
+        return HCCL_SUCCESS;
+    }
     CHK_SMART_PTR_NULL(profilingImpl_);
     profilingImpl_->UpdateProfStat();
     return HCCL_SUCCESS;
