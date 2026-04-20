@@ -539,82 +539,59 @@ void AicpuTsUboeChannel::RecvFinish()
     HCCL_INFO("end recv Finish Msg [%s]", FINISH_MSG);
 }
 
-ChannelStatus AicpuTsUboeChannel::GetStatus()
-{
-    if (channelStatus == ChannelStatus::READY) {
-        return channelStatus;
-    } else if (channelStatus == ChannelStatus::INIT) {
-        uboeStatus = UboeStatus::INIT;
-    }
+ChannelStatus AicpuTsUboeChannel::GetStatus() {
+    if (channelStatus == ChannelStatus::READY) return channelStatus;
+    if (channelStatus == ChannelStatus::INIT) uboeStatus = UboeStatus::INIT;
 
-    if (!IsSocketReady()) {
-        return channelStatus;
-    }
+    if (!IsSocketReady()) return channelStatus;
+
+    auto SetState = [&](UboeStatus next, ChannelStatus ch = channelStatus) { uboeStatus = next; channelStatus = ch; };
 
     switch (uboeStatus) {
         case UboeStatus::INIT:
-            uboeStatus = UboeStatus::SEND_EID;
-            channelStatus = ChannelStatus::SOCKET_OK;
+            SetState(UboeStatus::SEND_EID, ChannelStatus::SOCKET_OK);
             break;
         case UboeStatus::SEND_EID:
-            SendEidData();
-            uboeStatus = UboeStatus::RECV_EID;
+            SendEidData(); SetState(UboeStatus::RECV_EID);
             break;
         case UboeStatus::RECV_EID:
-            RecvEidData();
-            uboeStatus = UboeStatus::PROCESS_EID_DATA;
+            RecvEidData(); SetState(UboeStatus::PROCESS_EID_DATA);
             break;
         case UboeStatus::PROCESS_EID_DATA:
-            RecvEidDataProcess();
-            uboeStatus = UboeStatus::BUILD_CONN;
+            RecvEidDataProcess(); SetState(UboeStatus::BUILD_CONN);
             break;
         case UboeStatus::BUILD_CONN:
-            BuildConn();
-            uboeStatus = UboeStatus::SEND_SIZE;
+            BuildConn(); SetState(UboeStatus::SEND_SIZE);
             break;
         case UboeStatus::SEND_SIZE:
-            if (IsResReady()) {
-                SendDataSize();
-                uboeStatus = UboeStatus::RECV_SIZE;
-            }
+            if (IsResReady()) { SendDataSize(); SetState(UboeStatus::RECV_SIZE); }
             break;
         case UboeStatus::RECV_SIZE:
-            RecvDataSize();
-            uboeStatus = isRecvFirst_ ? UboeStatus::RECV_DATA : UboeStatus::SEND_DATA;
+            RecvDataSize(); SetState(isRecvFirst_ ? UboeStatus::RECV_DATA : UboeStatus::SEND_DATA);
             break;
         case UboeStatus::SEND_DATA:
-            SendExchangeData();
-            uboeStatus = isRecvFirst_ ? UboeStatus::PROCESS_DATA : UboeStatus::RECV_DATA;
+            SendExchangeData(); SetState(isRecvFirst_ ? UboeStatus::PROCESS_DATA : UboeStatus::RECV_DATA);
             break;
         case UboeStatus::RECV_DATA:
-            RecvExchangeData();
-            uboeStatus = isRecvFirst_ ? UboeStatus::SEND_DATA : UboeStatus::PROCESS_DATA;
+            RecvExchangeData(); SetState(isRecvFirst_ ? UboeStatus::SEND_DATA : UboeStatus::PROCESS_DATA);
             break;
         case UboeStatus::PROCESS_DATA:
-            if (RecvDataProcess()) { // 收消息中，如果设置到connection的建链，则需要发送 finish
-                uboeStatus = UboeStatus::SEND_FIN;
-            } else { // 不需要发送finish，则将transport状态调整为 ready
-                channelStatus = ChannelStatus::READY;
-                uboeStatus = UboeStatus::READY;
-            }
+            if (RecvDataProcess()) SetState(UboeStatus::SEND_FIN);
+            else { channelStatus = ChannelStatus::READY; SetState(UboeStatus::READY, ChannelStatus::READY); }
             break;
         case UboeStatus::SEND_FIN:
-            if (IsConnsReady()) {
-                SendFinish();
-                uboeStatus = UboeStatus::RECV_FIN;
-            }
+            if (IsConnsReady()) { SendFinish(); SetState(UboeStatus::RECV_FIN); }
             break;
         case UboeStatus::RECV_FIN:
-            RecvFinish();
-            uboeStatus = UboeStatus::SET_READY;
+            RecvFinish(); SetState(UboeStatus::SET_READY);
             break;
         case UboeStatus::SET_READY:
-            channelStatus = ChannelStatus::READY;
-            uboeStatus = UboeStatus::READY;
+            channelStatus = ChannelStatus::READY; SetState(UboeStatus::READY, ChannelStatus::READY);
             break;
         default:
             break;
     }
+
     return channelStatus;
 }
 
