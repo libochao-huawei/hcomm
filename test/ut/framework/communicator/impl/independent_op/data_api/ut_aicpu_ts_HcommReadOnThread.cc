@@ -35,6 +35,10 @@ protected:
             .stubs()
             .with(any(), any(), any())
             .will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&Hccl::BaseTransportLiteImpl::BuildLocRmaBufferLite)
+            .stubs()
+            .with(any(), any(), any())
+            .will(returnValue(HCCL_SUCCESS));
     }
 
     virtual void TearDown() override
