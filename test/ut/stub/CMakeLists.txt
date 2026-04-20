@@ -91,16 +91,25 @@ set(orion_list
 
     ${HCCL_CODE_ROOT}/src/legacy/interface/aicpu_ts_thread_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/dev_capability.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/p2p_transport.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/p2p_transport_lite_impl.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/rts_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/rts_cnt_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/rts_1ton_cnt_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/ipc_remote_notify.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/ipc_local_notify.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/stream.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/task/task.cc
     ${HCCL_CODE_ROOT}/src/legacy/interface/rank_graph_interface.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
     ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
@@ -330,6 +339,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
