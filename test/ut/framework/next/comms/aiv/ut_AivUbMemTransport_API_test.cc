@@ -25,6 +25,37 @@
 #undef protected
 #undef private
 
+class AivUbMemTransportTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "AivUbMemTransportTest tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "AivUbMemTransportTest tests tear down." << std::endl;
+    }
+
+    virtual void SetUp()
+    {
+        std::cout << "A Test case in AivUbMemTransportTest SetUP" << std::endl;
+        Hccl::IpAddress   localIp("1.0.0.0");
+        Hccl::IpAddress   remoteIp("2.0.0.0");
+        fakeSocket = new Hccl::Socket(nullptr, localIp, 100, remoteIp, "test", Hccl::SocketRole::SERVER, Hccl::NicType::HOST_NIC_TYPE);
+    }
+
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        delete fakeSocket;
+        std::cout << "A Test case in AivUbMemTransportTest TearDown" << std::endl;
+    }
+
+    Hccl::Socket *fakeSocket;
+    Hccl::RdmaHandle rdmaHandle = (void *)0x1000000;
+};
+
 class LocalRmaBufferStub : public Hccl::LocalRmaBuffer {
 public:
     LocalRmaBufferStub(std::shared_ptr<Hccl::Buffer> buf, u64 mockAddr, u64 mockSize, u64 mockOffset, u32 mockPid)
@@ -38,7 +69,8 @@ public:
     }
 
     std::unique_ptr<Hccl::Serializable> GetExchangeDto() override {
-        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_);
+        std::string memTag = "HcclBuff";
+        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_, memTag.c_str());
     }
 
     u64 mockAddr_{0};
