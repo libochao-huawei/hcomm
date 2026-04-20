@@ -1118,7 +1118,6 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
     raResourceInfo_.nicSocketMap.clear();
     return HCCL_SUCCESS;
 }
-}
 
 HcclResult NetworkManager::StopAllDeviceVnicSockets()
 {
