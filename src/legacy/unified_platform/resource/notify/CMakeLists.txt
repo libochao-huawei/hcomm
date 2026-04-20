@@ -12,7 +12,7 @@ target_sources(hccl_v2
         ipc_local_notify.cc
         rdma_local_notify.cc
         ub_local_notify.cc
-        remote_notify.cc
+        ipc_remote_notify.cc
         local_cnt_notify.cc
         rts_notify.cc
         rts_cnt_notify.cc
