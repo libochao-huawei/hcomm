@@ -19,6 +19,7 @@
 #include "network_manager_pub.h"
 #include "hccl_socket.h"
 #include "exception_handler.h"
+#include <exception>
 
 namespace hcomm {
 AicpuTsRoceEndpoint::AicpuTsRoceEndpoint(const EndpointDesc &endpointDesc)
@@ -31,13 +32,7 @@ AicpuTsRoceEndpoint::~AicpuTsRoceEndpoint()
     ReleaseListenSocketRefs();
     regedMemMgr_.reset();
     ctxHandle_ = nullptr;
-    if (netDev_ != nullptr) {
-        const HcclResult ret = HcclNetDevClose(netDev_);
-        if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[AicpuTsRoceEndpoint][~AicpuTsRoceEndpoint] HcclNetDevClose failed, ret[%d]", ret);
-        }
-        netDev_ = nullptr;
-    }
+    ReleaseSharedNetDev();
 }
 
 void AicpuTsRoceEndpoint::ReleaseListenSocketRefs()
@@ -58,6 +53,77 @@ void AicpuTsRoceEndpoint::ReleaseListenSocketRefs()
         }
     }
     serverSocket_.reset();
+}
+
+std::mutex &AicpuTsRoceEndpoint::NetDevMapMutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
+std::unordered_map<uint32_t, AicpuTsNetDevSlot> &AicpuTsRoceEndpoint::GetNetDevMap()
+{
+    static std::unordered_map<uint32_t, AicpuTsNetDevSlot> netDevMap;
+    return netDevMap;
+}
+
+HcclResult AicpuTsRoceEndpoint::AcquireSharedNetDev(uint32_t devicePhyId, const HcclNetDevInfos &info)
+{
+    std::lock_guard<std::mutex> lk(NetDevMapMutex());
+    auto &netDevMap = GetNetDevMap();
+    const auto it = netDevMap.find(devicePhyId);
+    if (it != netDevMap.end()) {
+        it->second.refCount++;
+        netDev_ = it->second.netDev;
+        netDevRefPhyId_ = devicePhyId;
+        HCCL_INFO("[AicpuTsRoceEndpoint][%s] reuse HcclNetDev for devicePhyId[%u], ref[%u]", __func__, devicePhyId,
+            it->second.refCount);
+        return HCCL_SUCCESS;
+    }
+
+    HcclNetDev netDev = nullptr;
+    const HcclResult ret = HcclNetDevOpen(&info, &netDev);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] HcclNetDevOpen failed, ret[%d]", __func__, ret);
+        return ret;
+    }
+    netDevMap[devicePhyId] = AicpuTsNetDevSlot{ netDev, 1U };
+    netDev_ = netDev;
+    netDevRefPhyId_ = devicePhyId;
+    return HCCL_SUCCESS;
+}
+
+void AicpuTsRoceEndpoint::ReleaseSharedNetDev()
+{
+    if (netDevRefPhyId_ == UINT32_MAX) {
+        return;
+    }
+    const uint32_t key = netDevRefPhyId_;
+    netDevRefPhyId_ = UINT32_MAX;
+    HcclNetDev toClose = nullptr;
+    {
+        std::lock_guard<std::mutex> lk(NetDevMapMutex());
+        auto &netDevMap = GetNetDevMap();
+        const auto it = netDevMap.find(key);
+        if (it == netDevMap.end()) {
+            HCCL_ERROR("[AicpuTsRoceEndpoint][ReleaseSharedNetDev] missing slot for devicePhyId[%u]", key);
+        } else {
+            if (it->second.refCount > 0U) {
+                it->second.refCount--;
+            }
+            if (it->second.refCount == 0U) {
+                toClose = it->second.netDev;
+                (void)netDevMap.erase(it);
+            }
+        }
+    }
+    netDev_ = nullptr;
+    if (toClose != nullptr) {
+        const HcclResult ret = HcclNetDevClose(toClose);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuTsRoceEndpoint][ReleaseSharedNetDev] HcclNetDevClose failed, ret[%d]", ret);
+        }
+    }
 }
 
 HcclResult AicpuTsRoceEndpoint::Init()
@@ -83,30 +149,54 @@ HcclResult AicpuTsRoceEndpoint::Init()
         info.addr.addr6 = endpointDesc_.commAddr.addr6;
     }
     info.netdevDeployment = HCCL_NETDEV_DEPLOYMENT_DEVICE;
-    info.devicePhyId = devPhyId;
-    HcclNetDev netDev = nullptr;
-    HcclResult ret = HcclNetDevOpen(&info, &netDev);
+    info.devicePhyId = static_cast<int32_t>(devPhyId);
+    HcclResult ret = AcquireSharedNetDev(devPhyId, info);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] HcclNetDevOpen failed, ret[%d]", __func__, ret);
         return ret;
     }
-    netDev_ = netDev;
 
     auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
-    CHK_PTR_NULL(netDevCtx);
+    if (netDevCtx == nullptr) {
+        ReleaseSharedNetDev();
+        return HCCL_E_PTR;
+    }
     const hccl::HcclIpAddress ipAddr = netDevCtx->GetLocalIp();
     RdmaHandle rdmaHandle = nullptr;
-    CHK_RET(hccl::NetworkManager::GetInstance(netDevCtx->GetLogicId()).GetRdmaHandleByIpAddr(ipAddr, rdmaHandle));
+    ret = hccl::NetworkManager::GetInstance(netDevCtx->GetLogicId()).GetRdmaHandleByIpAddr(ipAddr, rdmaHandle);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]call trace: hcclRet -> %d", __func__, ret);
+        ReleaseSharedNetDev();
+        return ret;
+    }
     ctxHandle_ = rdmaHandle;
-    CHK_PTR_NULL(ctxHandle_);
+    if (ctxHandle_ == nullptr) {
+        HCCL_ERROR("[%s]errNo[0x%016llx]ptr [ctxHandle_] is nullptr, return HCCL_E_PTR", __func__,
+            HCCL_ERROR_CODE(HCCL_E_PTR));
+        ReleaseSharedNetDev();
+        return HCCL_E_PTR;
+    }
     HCCL_INFO("AicpuTsRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__, devPhyId, ipAddr.GetReadableAddress(), ctxHandle_);
 
-    EXECEPTION_CATCH(regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(netDev_), return HCCL_E_PTR);
+    try {
+        regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(netDev_);
+    } catch (std::exception &e) {
+        HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
+        ctxHandle_ = nullptr;
+        ReleaseSharedNetDev();
+        return HCCL_E_PTR;
+    }
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
     constexpr uint32_t defaultPort = 16666;
-    CHK_RET(ServerSocketListen(defaultPort));
+    ret = ServerSocketListen(defaultPort);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s]call trace: hcclRet -> %d", __func__, ret);
+        regedMemMgr_.reset();
+        ctxHandle_ = nullptr;
+        ReleaseSharedNetDev();
+        return ret;
+    }
     return HCCL_SUCCESS;
 }
 

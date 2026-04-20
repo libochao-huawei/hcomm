@@ -10,6 +10,7 @@
 #ifndef AICPUTS_ROCE_ENDPOINT_H
 #define AICPUTS_ROCE_ENDPOINT_H
 
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -27,9 +28,18 @@ struct AicpuTsListenSocketSlot {
 };
 
 /**
+ * 每 devicePhyId 一条：进程内多 endpoint 共享同一 HcclNetDev 句柄，refCount 归零时 HcclNetDevClose。
+ * 复用键仅为 devicePhyId；若同卡需按不同 commAddr 区分打开语义，应扩展 map key。
+ */
+struct AicpuTsNetDevSlot {
+    HcclNetDev netDev{nullptr};
+    uint32_t refCount{0U};
+};
+
+/**
  * @note 职责：AICPU_TS通信引擎+RoCE协议的通信设备EndPoint，管理通信设备上下文，以及设备上的注册内存。
- * 调用HcclNetDevOpen保存HcclNetDev，传给AicpuTsRoceRegedMemMgr进行注册注销；
- * 初始化时调用hccl::HcclSocket进行监听。
+ * 通过进程级表按 devicePhyId 引用计数共享 HcclNetDev，传给 AicpuTsRoceRegedMemMgr；
+ * 初始化时调用 hccl::HcclSocket 进行监听。
  */
 class AicpuTsRoceEndpoint : public Endpoint {
 public:
@@ -61,7 +71,14 @@ private:
     static std::mutex &ListenSocketMapMutex();
     void ReleaseListenSocketRefs();
 
+    static std::unordered_map<uint32_t, AicpuTsNetDevSlot> &GetNetDevMap();
+    static std::mutex &NetDevMapMutex();
+    HcclResult AcquireSharedNetDev(uint32_t devicePhyId, const HcclNetDevInfos &info);
+    void ReleaseSharedNetDev();
+
     HcclNetDev netDev_{nullptr};
+    /** 本对象在进程级 netDev 表上占用的 devicePhyId；UINT32_MAX 表示未占用 */
+    uint32_t netDevRefPhyId_{UINT32_MAX};
     std::shared_ptr<hccl::HcclSocket> serverSocket_{nullptr};
     /** 仅本对象成功 Listen 的端口；析构时只对这些端口减 ref / 可能销毁 socket，与其它 endpoint 的端口无关 */
     std::vector<uint32_t> listenRefPorts_{};

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "adapter_rts_common.h"
+#include "hccl_net_dev.h"
 #include "hccl_network.h"
 #include "hccl_socket.h"
 #include "network_manager_pub.h"
@@ -91,6 +92,13 @@ protected:
         GlobalMockObject::verify();
         auto &m = AicpuTsRoceEndpoint::GetServerSocketMap();
         m.clear();
+        auto &nd = AicpuTsRoceEndpoint::GetNetDevMap();
+        for (auto &kv : nd) {
+            if (kv.second.netDev != nullptr) {
+                (void)HcclNetDevClose(kv.second.netDev);
+            }
+        }
+        nd.clear();
     }
 };
 
@@ -256,6 +264,34 @@ TEST_F(AicpuTsRoceEndpointTest, Ut_UnregisterMemory_Delegates_Returns_SUCCESS) {
     AicpuTsRoceEndpoint ep(desc);
     ep.regedMemMgr_ = std::make_shared<FakeRegedMemMgrForEndpointUt>();
     ASSERT_EQ(ep.UnregisterMemory(reinterpret_cast<void *>(0x99ULL)), HCCL_SUCCESS);
+}
+
+TEST_F(AicpuTsRoceEndpointTest, Ut_TwoInitsSameDevicePhyId_ShareOneNetDevSlot) {
+    MOCKER(hrtGetDevice).stubs().with(any()).will(invoke(StubHrtGetDeviceWriteZeroEp));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().with(any(), outBound(0U)).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hccl::NetworkManager::CreateRdmaHandle).stubs().will(invoke(StubCreateRdmaHandleEp));
+    MOCKER_CPP(&hccl::NetworkManager::GetRdmaHandleByIpAddr).stubs().will(invoke(StubGetRdmaHandleByIpAddrEp));
+    auto &sockMap = AicpuTsRoceEndpoint::GetServerSocketMap();
+    sockMap[16666U] = AicpuTsListenSocketSlot{ std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(nullptr), 16666U),
+        1U };
+
+    EndpointDesc desc{};
+    desc.protocol = COMM_PROTOCOL_ROCE;
+    desc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    desc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    ASSERT_EQ(inet_pton(AF_INET, "10.10.10.50", &desc.commAddr.addr), 1);
+
+    {
+        AicpuTsRoceEndpoint ep1(desc);
+        ASSERT_EQ(ep1.Init(), HCCL_SUCCESS);
+        AicpuTsRoceEndpoint ep2(desc);
+        ASSERT_EQ(ep2.Init(), HCCL_SUCCESS);
+        auto &nd = AicpuTsRoceEndpoint::GetNetDevMap();
+        ASSERT_EQ(nd.size(), 1U);
+        ASSERT_EQ(nd.at(0U).refCount, 2U);
+        ASSERT_EQ(ep1.GetNetDev(), ep2.GetNetDev());
+    }
+    ASSERT_TRUE(AicpuTsRoceEndpoint::GetNetDevMap().empty());
 }
 
 TEST_F(AicpuTsRoceEndpointTest, Ut_Init_DeviceRoce_WhenDepsMocked_Returns_SUCCESS) {
