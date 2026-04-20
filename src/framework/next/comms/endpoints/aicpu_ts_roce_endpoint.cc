@@ -29,10 +29,10 @@ AicpuTsRoceEndpoint::AicpuTsRoceEndpoint(const EndpointDesc &endpointDesc)
 
 AicpuTsRoceEndpoint::~AicpuTsRoceEndpoint()
 {
-    ReleaseListenSocketRefs();
     regedMemMgr_.reset();
     ctxHandle_ = nullptr;
     ReleaseSharedNetDev();
+    ReleaseListenSocketRefs();
 }
 
 void AicpuTsRoceEndpoint::ReleaseListenSocketRefs()
