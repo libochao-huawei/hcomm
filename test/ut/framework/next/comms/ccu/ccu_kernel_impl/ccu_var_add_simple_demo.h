@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "adapter_hccp.h"
 #include "ccu_api.hpp"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
 
@@ -50,6 +51,10 @@ CcuResult CcuAllocDemoKernel(CcuKernelArg arg)
     ccu::LoadArg(varA);
     ccu::LoadArg(varB);
     result=varA + varB;
+
+    ccu::Variable varC;
+    ccu::CreateByChannel(args->channelHandle, 0, &varC);
+    varA = varC;
 
     ccu::Address addrA, addrB, addrResult;
     ccu::Alloc(&addrA);
