@@ -38,7 +38,8 @@ public:
     }
 
     std::unique_ptr<Hccl::Serializable> GetExchangeDto() override {
-        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_);
+        std::string memTag = "HcclBuff";
+        return std::make_unique<Hccl::ExchangeIpcBufferDto>(mockAddr_, mockSize_, mockOffset_, mockPid_, memTag.c_str());
     }
 
     u64 mockAddr_{0};

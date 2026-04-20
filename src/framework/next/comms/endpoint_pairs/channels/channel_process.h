@@ -27,10 +27,10 @@ public:
     static HcclResult ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle);
     static HcclResult ConnectChannels(ChannelHandle* targetChannels, uint32_t channelNum, CommEngine engine);
     static HcclResult SaveChannels(ChannelHandle* targetChannels, ChannelHandle* userChannels, 
-        uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle);
+        HcommChannelDesc *channelDescs, uint32_t channelNum, CommEngine engine, aclrtBinHandle binHandle);
     static HcclResult ChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
     static HcclResult ChannelKernelLaunchForComm(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
-        uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
+        HcommChannelDesc* hcommDesc, uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle);
     static HcclResult ChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
     static HcclResult ChannelGetRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, uint32_t *memNum, char **memTags);
     static HcclResult ChannelGetUserRemoteMem(ChannelHandle channelHandle, CommMem **remoteMem, char ***memTag, uint32_t *memNum);
@@ -51,9 +51,9 @@ private:
         hccl::HostMem &hostPackBuf);
     static HcclResult FillChannelD2HMap(ChannelHandle *deviceChannelHandles, ChannelHandle *hostChannelHandles, 
         uint32_t listNum);
-    static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles,
+    static HcclResult LaunchChannelKernelCommon(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc,
         uint32_t listNum, const std::string &commTag, aclrtBinHandle binHandle, const std::string &kernelName, bool needProfiling);
-    static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, 
+    static HcclResult ChannelKernelLaunchForBase(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, HcommChannelDesc* hcommDesc,
         uint32_t listNum, aclrtBinHandle binHandle);
 
     static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
