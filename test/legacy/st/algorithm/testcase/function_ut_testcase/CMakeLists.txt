@@ -60,4 +60,7 @@ target_sources(legacy_alg_function_ut_testcase
 )
 
 enable_testing()
-add_test(NAME legacy_alg_function_ut_testcase COMMAND legacy_alg_function_ut_testcase)
+add_test(NAME legacy_alg_function_ut_testcase
+         COMMAND legacy_alg_function_ut_testcase
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
