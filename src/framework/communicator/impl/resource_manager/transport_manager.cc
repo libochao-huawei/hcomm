@@ -1058,7 +1058,8 @@ u32 TransportManager::GetHostPort(s32 devicePhyId)
 
 u32 TransportManager::GetRemoteNicPort(s32 devicePhyId, u32 dstUserRank, bool isInterRdma)
 {
-    if (nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST) {
+    if ((nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST) &&
+        !(dstUserRank < nicRanksPort_.size() && nicRanksPort_[dstUserRank] != HCCL_INVALID_PORT)) {
         return GetHostPort(devicePhyId);
     }
     // isUseRankPort_在ranksPort初始化时一同配置：1. 异构场景 2. 开启device侧端口配置
@@ -1066,6 +1067,40 @@ u32 TransportManager::GetRemoteNicPort(s32 devicePhyId, u32 dstUserRank, bool is
     bool useVnicPort = devPortSwitchOn_ && !isInterRdma && !Is310PDevice();
     const std::vector<u32> &ranksPorts = useVnicPort ? vnicRanksPort_ : nicRanksPort_;
     return GetNicPort(devicePhyId, ranksPorts, dstUserRank, isUseRankPort_);
+}
+
+uint32_t TransportManager::GetConnectMode(RankId remoteRank)
+{
+    NICDeployment localNicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    NICDeployment remoteNicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+    for (auto it : rankInfoList_) {
+        if (it.userRank == remoteRank) {
+            remoteNicDeploy = it.nicDeploy;
+        }
+        if (it.userRank == userRank_) {
+            localNicDeploy = it.nicDeploy;
+        }
+    }
+    return static_cast<uint32_t>(localNicDeploy != remoteNicDeploy);
+}
+
+HcclResult TransportManager::GetTransNewTag(const std::string &tag, std::string &newTag, RankId remoteRank,
+    bool &isInterRdma, u32 subCommIndex, TransportLinkType linkType, HcclRankLinkInfo remoteLink, uint32_t mode)
+{
+    if (mode) {
+        if (devIpAddr_[0] < remoteLink.ip) {
+            newTag = identifier_ + "_" + std::to_string(userRank_) + "_" + std::to_string(remoteRank) + "_" +
+                devIpAddr_[0].GetReadableIP() + "_" + remoteLink.ip.GetReadableIP();
+        } else {
+            newTag = identifier_ + "_" + std::to_string(remoteRank) + "_" + std::to_string(userRank_) + "_" +
+                remoteLink.ip.GetReadableIP() + "_" + devIpAddr_[0].GetReadableIP();
+        }
+    } else {
+        bool isHccs = isInterRdma ? false : IsHccsTransport(remoteRank, linkType);
+        CHK_RET(ConstructTransTag(tag, newTag, isInterRdma, subCommIndex, isHccs));
+    }
+
+    return HCCL_SUCCESS;
 }
 
 HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId remoteRank, u64 taskNum,
@@ -1101,20 +1136,22 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
         __func__, userRank_, remoteRank, isBackup, remoteLinkInfo.port, remoteLinkInfo.ip.GetReadableIP());
 
     std::string newTag;
-    bool isHccs = isInterRdma ? false : IsHccsTransport(remoteRank, linkType);
-    CHK_RET(ConstructTransTag(tag, newTag, isInterRdma, subCommIndex, isHccs));
+    uint32_t mode = GetConnectMode(remoteRank);
+    GetTransNewTag(tag, newTag, remoteRank, isInterRdma, subCommIndex, linkType, remoteLinkInfo, mode);
 
     HcclResult ret = HCCL_SUCCESS;
     if (isInterRdma || Is310PDevice()) {
-        netDevCtx = nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE ?
-            netDevCtxMap_[devIpAddr_[0]]: netDevCtxMap_[hostIp_];
+        netDevCtx = ((nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) ||
+                    (nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST && !devIpAddr_[0].IsInvalid())) ?
+                    netDevCtxMap_[devIpAddr_[0]] : netDevCtxMap_[hostIp_];
         if (isBackup && nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
             netDevCtx = netDevCtxMap_[rankInfoList_[userRank_].backupNicIp[0]];
             HCCL_DEBUG("[%s]refresh netDevCtx info. local rank[%u], remote rank[%u], isBackup[%d], port[%u], ip[%s]",
                 __func__, userRank_, remoteRank, isBackup, remoteLinkInfo.port, 
                 (rankInfoList_[userRank_].backupNicIp[0]).GetReadableIP());
         }
-        ret = socketManager_->CreateSingleLinkSocket(newTag, netDevCtx, remoteLinkInfo, connectSockets, false, false);
+        ret = socketManager_->CreateSingleLinkSocket(newTag, netDevCtx, remoteLinkInfo, connectSockets, false,
+            false, 0, mode);
         if (!GetExternalInputHcclIsTcpMode()) {
             std::vector<std::string>::iterator iter = std::find(socketTagVec_.begin(), socketTagVec_.end(), newTag);
             if (iter == socketTagVec_.end()) {
