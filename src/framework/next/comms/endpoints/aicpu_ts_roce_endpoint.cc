@@ -38,20 +38,30 @@ AicpuTsRoceEndpoint::~AicpuTsRoceEndpoint()
 void AicpuTsRoceEndpoint::ReleaseListenSocketRefs()
 {
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
+    HCCL_INFO("[ReleaseListenSocketRefs] netDevRefPhyId_[%u], listenRefPorts_.size[%zu]",
+        netDevRefPhyId_, listenRefPorts_.size());
+
     std::vector<uint32_t> ports = std::move(listenRefPorts_);
     auto &sockMap = GetServerSocketMap();
     for (uint32_t port : ports) {
         auto it = sockMap.find(port);
         if (it == sockMap.end()) {
+            HCCL_WARNING("[ReleaseListenSocketRefs] port[%u] not found in sockMap", port);
             continue;
         }
+        HCCL_INFO("[ReleaseListenSocketRefs] port[%u] refCount[%u] before decrement", port, it->second.refCount);
         if (it->second.refCount > 0U) {
             it->second.refCount--;
         }
+        HCCL_INFO("[ReleaseListenSocketRefs] port[%u] refCount[%u] after decrement, socket shared_ptr use_count[%ld]",
+            port, it->second.refCount, it->second.socket.use_count());
         if (it->second.refCount == 0U) {
+            HCCL_INFO("[ReleaseListenSocketRefs] erasing port[%u] from sockMap", port);
             (void)sockMap.erase(it);
         }
     }
+    HCCL_INFO("[ReleaseListenSocketRefs] serverSocket_ use_count[%ld] before reset",
+        serverSocket_.use_count());
     serverSocket_.reset();
 }
 
