@@ -42,7 +42,7 @@ public:
 private:
     OpExeCounter() = default;
     ~OpExeCounter();
-    HcclResult FreeCounterMem();
+    void ReleaseMemHandles();
     
     void* headCountMem_{};
     void* tailCountMem_{};
