@@ -182,8 +182,15 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
         }
         u32& reuseIdx = reuseSocketIdxMap[rankPair][endpointPair];
 
+        uint32_t devicePhyId;
+        uint32_t remoteDevicePhyId;
+        rankGraph_->GetDeviceId(rankId_, &devicePhyId);
+        rankGraph_->GetDeviceId(remoteRank, &remoteDevicePhyId);
+        HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", rankId_, devicePhyId);
+        HCCL_INFO("[MyRank][BatchCreateSockets] rankId_[%u] devicePhyId[%u]", remoteRank, remoteDevicePhyId);
+
         Hccl::Socket* socket = nullptr;
-        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket);
+        auto ret = endpointPair->GetSocket(rankId_, remoteRank, commTag, reuseIdx, listenPort, socket, devicePhyId, remoteDevicePhyId);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to get socket, channelIndex[%u], remoteRank[%u], protocol[%d] reuseIdx[%u]",
                 __func__, i, remoteRank, localEndpointDesc.protocol, reuseIdx),
@@ -430,8 +437,8 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
                 HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
             callbacks_.setAicpuCommState(true);
         }
-
-        CHK_RET(ChannelProcess::ChannelKernelLaunchForComm(channelHandles, hostChannelHandleList, 
+        HcommChannelDesc* hcommDesc = hcommDescs.data();
+        CHK_RET(ChannelProcess::ChannelKernelLaunchForComm(channelHandles, hostChannelHandleList, hcommDesc,
             channelNum, commTag, binHandle_));
 
         // ns recovery

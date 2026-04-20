@@ -18,7 +18,7 @@
 #include "remote_rma_buffer.h"
 #include "../../resource/connection/rma_connection.h"
 #include "local_notify.h"
-#include "remote_notify.h"
+#include "ipc_remote_notify.h"
 #include "local_cnt_notify.h"
 #include "op_mode.h"
 #include "mem_transport_common.h"
