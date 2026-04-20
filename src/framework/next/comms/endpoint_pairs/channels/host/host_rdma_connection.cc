@@ -105,6 +105,12 @@ HcclResult HostRdmaConnection::CreateQp()
     roceAttr_.retryCnt = qpInfo_.retryCnt;
     roceAttr_.retryInterval = qpInfo_.retryInterval;
 
+    ret = RaSetQpLbValue(qpInfo_.qpHandle, qpInfo_.lbMax);
+    CHK_PRT_RET(ret != 0,
+        HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpLbValue]errNo[0x%016llx] RaSetQpLbValue fail. "
+        "return[%d], params: qpHandle[%p], lbMax[%u]",
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.qpHandle, qpInfo_.lbMax),
+        HCCL_E_NETWORK);
     ret = RaSetQpAttrQos(qpInfo_.qpHandle, &qosAttr);
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[HostRdmaConnection::CreateQp][SetQpAttrQos]errNo[0x%016llx] RaSetQpAttrQos fail. "
