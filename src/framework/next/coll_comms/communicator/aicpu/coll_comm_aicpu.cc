@@ -116,8 +116,11 @@ HcclResult CollCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
         HCCL_INFO("[CollCommAicpu][%s] threadArray[%u] = [%lu]", __func__, i, threadArray[i]);
         CHK_RET(RegisterThreadAddDfxTaskInfo(threadArray[i]));
     }
+    ReadWriteLock rwLock(threadMutex_);
+    rwLock.writeLock();
     threads_.insert(threads_.end(), std::make_move_iterator(outThreads.begin()),
         std::make_move_iterator(outThreads.end()));
+    rwLock.writeUnlock();
     HCCL_INFO("[CollCommAicpu][%s] comm identifier[%s], init threads num[%u] success",
         __func__, hcomId.c_str(), threadNum);
     return HCCL_SUCCESS;
