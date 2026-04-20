@@ -280,6 +280,150 @@ struct CcuLoopContext {
     }
 };
 
+struct CcuLoopContextV2 {
+    union {
+        uint16_t value;
+        uint16_t xnOffset;
+    } part0;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t ckeOffset : 12;
+            uint16_t msOffset : 4;
+        };
+    } part1;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t msOffset : 7;
+            uint16_t addrOffset : 9;
+        };
+    } part2;
+
+    union {
+        uint16_t value;
+        uint16_t addrOffset;
+    } part3;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t addrOffset : 7;
+            uint16_t currentIns : 9;
+        };
+    } part4;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t currentIns : 7;
+            uint16_t addrStride : 9;
+        };
+    } part5;
+
+    union {
+        uint16_t value;
+        uint16_t addrStride;
+    } part6;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t addrStride : 7;
+            uint16_t loopWishCheckBit : 9;
+        };
+    } part7;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t loopWishCheckBit : 7;
+            uint16_t waitLoopCheckBit : 9;
+        };
+    } part8;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t waitLoopCheckBit : 7;
+            uint16_t waitLoopCheckBitVld : 1;
+            uint16_t LoopMode : 1;
+            uint16_t denyCnt : 7;
+        };
+    } part9;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t denyCnt : 3;
+            uint16_t currentCnt : 13;
+        };
+    } part10;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t totalCnt : 13;
+            uint16_t endIns : 3;
+        };
+    } part11;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t endIns : 13;
+            uint16_t startIns : 3;
+        };
+    } part12;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t startIns : 13;
+            uint16_t missionId : 3;
+        };
+    } part13;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t missionId : 1;
+            uint16_t loopVld : 1;
+            uint16_t mprofileen : 1;
+            uint16_t reserved : 13;
+
+        };
+    } part14;
+    uint16_t reserved[17]; // part 15-31
+
+    uint16_t GetCurrentIns() const
+    {
+        HCCL_INFO("[error handler] GetCurrentIns part5.currentIns:%u, part4.currentIns:%u", part5.currentIns,
+                  part4.currentIns);
+        return (part5.currentIns << 9) | (part4.currentIns); // part5.currentIns为[15:9]位
+    }
+
+    uint16_t GetCurrentCnt() const
+    {
+        HCCL_INFO("[error handler] GetCurrentCnt part10.currentCnt:%u", part10.currentCnt);
+        return part10.currentCnt; //13位
+    }
+
+    uint32_t GetAddrStride() const
+    {
+        const uint32_t low = static_cast<uint32_t>(part5.addrStride);
+        const uint32_t mid = static_cast<uint32_t>(part6.addrStride) << 9;     // part11.addrStride为[24:9]位
+        const uint32_t high = static_cast<uint32_t>(part7.addrStride) << 25;   // part12.addrStride为[31:25]位
+        HCCL_INFO("[error handler] GetAddrStride part7.addrStride:%u,part6.addrStride:%u,part5.addrStride:%u",
+            part7.addrStride,
+            part6.addrStride,
+            part5.addrStride);
+        return high | mid | low;
+    }
+};
+
 struct CcuMissionContext {
     union {
         uint16_t value;
@@ -363,6 +507,128 @@ struct CcuMissionContext {
     uint16_t GetEndIns() const
     {
         return (part6.endIns << 11) | (part5.endIns);     // part6.endIns[15:11]位
+    }
+};
+
+struct CcuMissionContextV2 {
+    union {
+        uint16_t value;
+        uint16_t taskId;
+    } part0;
+
+    union {
+        uint16_t value;
+        uint16_t streamId;
+    } part1;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t taskKill : 1;
+            uint16_t dieId : 2;
+            uint16_t status : 13; // Status [12:0]
+        };
+    } part2;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t status : 3; // Status [15:13]
+            uint16_t counter : 10;
+            uint16_t denyCnt : 3;
+        };
+    } part3;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t denyCnt : 7;
+            uint16_t currentIns : 9; // Current Ins [8:0]
+        };
+    } part4;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t currentIns : 7; // Current Ins [15:9]
+            uint16_t endIns : 9;
+        };
+    } part5;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t endIns : 7;
+            uint16_t startIns : 9;
+        };
+    } part6;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t startIns : 7;
+            uint16_t profileEn : 1;
+            uint16_t missionVld : 1;
+            uint16_t cqeInfoPart1 : 7;
+        };
+    } part7;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart2;
+        };
+    } part8;
+
+     union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart3;
+        };
+    } part9;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart4;
+        };
+    } part10;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart5;
+        };
+    } part11;
+
+     union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart6;
+        };
+    } part12;
+
+    union {
+        uint16_t value;
+        struct {
+            uint16_t cqeInfoPart7 : 9;// [95:87]
+            uint16_t reserved : 7;
+        };
+    } part13;
+
+    uint16_t reserved[18]; // 14~31
+
+    uint16_t GetStatus() const
+    {
+        HCCL_INFO("[error handler] GetStatus part3.status:%u, part2.status:%u", part3.status, part2.status);
+        return (part3.status << 13) | (part2.status); // part3.status为[15:13]位
+    }
+
+    uint16_t GetCurrentIns() const
+    {
+        HCCL_INFO("[error handler] GetCurrentIns part5.currentIns:%u, part4.currentIns:%u", part5.currentIns,
+                  part4.currentIns);
+        return (part5.currentIns << 9) | (part4.currentIns); // part5.currentIns为[15:11]位
     }
 };
 

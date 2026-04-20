@@ -31,6 +31,13 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
       {0x02, "Local Access Error(0x02)"},
       {0x03, "Remote Response Length Error(0x03)"},
       {0x04, "Local Data Poison(0x04)"}}},
+    {0x07,
+    {{0x01, "Overflow(0x01)"},
+    {0x02, "Underflow(0x02)"},
+    {0x04, "NaN(0x04)"},
+    {0x08, "Inf(0x08)"},
+    {0x09, "Inf Overflow(0x09)"}}
+        },
     {0x03,
      {{0x01, "Remote Unsupported Request(0x01)"},
       {0x02, "Remote Access Abort(0x02)"},
@@ -61,11 +68,50 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
       {0x1b, "Page Fault(0x1B)"},
       {0x0c, "Read Local Mem Poison(0x0C)"}}},
 };
-
+    std::string printBinary(uint16_t value) {
+        std::string binaryStr;
+        binaryStr.reserve(16);
+        for (int i = 15; i >= 0; i--) {
+            binaryStr.push_back(((value >> i) & 1) ? '1' : '0');
+        }
+        return binaryStr;
+    }
 void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
                                      std::vector<CcuErrorInfo> &errorInfo)
 {
-    const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
+    // 检查mission status
+    const auto missionContextBase = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
+    uint16_t missionStatus = 0;
+    uint16_t currIns = 0;
+    if (GetCcuVersion() == CcuVersion::CCU_V1) {
+        auto missionContext = missionContextBase.contextV1;
+        missionStatus = missionContext.GetStatus();
+        currIns = missionContext.GetCurrentIns();
+    }
+    else if(GetCcuVersion() == CcuVersion::CCU_V2) {
+        auto missionContext = missionContextBase.contextV2;
+        HCCL_INFO("CcuMissionContextV2:[%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s]"
+            ,printBinary(missionContext.part0.value).c_str()
+            ,printBinary(missionContext.part1.value).c_str()
+            ,printBinary(missionContext.part2.value).c_str()
+            ,printBinary(missionContext.part3.value).c_str()
+            ,printBinary(missionContext.part4.value).c_str()
+            ,printBinary(missionContext.part5.value).c_str()
+            ,printBinary(missionContext.part6.value).c_str()
+            ,printBinary(missionContext.part7.value).c_str()
+            ,printBinary(missionContext.part8.value).c_str()
+            ,printBinary(missionContext.part9.value).c_str()
+            ,printBinary(missionContext.part10.value).c_str()
+            ,printBinary(missionContext.part11.value).c_str()
+            ,printBinary(missionContext.part12.value).c_str()
+            ,printBinary(missionContext.part13.value).c_str()
+        );
+        missionStatus = missionContext.GetStatus();
+        currIns = missionContext.GetCurrentIns();
+    }
+    else {
+        THROW<CcuApiException>("Unsupport ccu version");
+    }
     if (missionStatus == 0) {
         HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
@@ -79,8 +125,6 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, c
                                deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
                                ccuTaskParam.executeId);
     }
-
-    const uint16_t currIns = missionContext.GetCurrentIns();
 
     auto rep = ctx->GetRepByInstrId(currIns);
     auto prevRep = ctx->GetRepByInstrId(currIns - 1);
@@ -255,18 +299,50 @@ void CcuErrorHandler::GenErrorInfoLoop(const ErrorInfoBase &baseInfo, CcuRepCont
 
     LoopXm loopXm{};
     loopXm.value                     = GetCcuXnValue(baseInfo.deviceId, baseInfo.dieId, rep->loopParam.Id());
-    const auto ccuLoopContext        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
+        const auto ccuLoopContextBase        = GetCcuLoopContext(baseInfo.deviceId, baseInfo.dieId, loopXm.loopCtxId);
+
+        uint16_t loopCurrentIns = 0;
+        if (GetCcuVersion() == CcuVersion::CCU_V1) {
+            auto ccuLoopContext = ccuLoopContextBase.contextV1;
+            errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
+            errorMsg.msg.loop.addrStride     = ccuLoopContext.GetAddrStride();
+            loopCurrentIns = ccuLoopContext.GetCurrentIns();
+        }
+        else if(GetCcuVersion() == CcuVersion::CCU_V2) {
+            auto ccuLoopContext = ccuLoopContextBase.contextV2;
+            HCCL_INFO("CcuLoopContextV2:[%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s][%s]"
+                ,printBinary(ccuLoopContext.part0.value).c_str()
+                ,printBinary(ccuLoopContext.part1.value).c_str()
+                ,printBinary(ccuLoopContext.part2.value).c_str()
+                ,printBinary(ccuLoopContext.part3.value).c_str()
+                ,printBinary(ccuLoopContext.part4.value).c_str()
+                ,printBinary(ccuLoopContext.part5.value).c_str()
+                ,printBinary(ccuLoopContext.part6.value).c_str()
+                ,printBinary(ccuLoopContext.part7.value).c_str()
+                ,printBinary(ccuLoopContext.part8.value).c_str()
+                ,printBinary(ccuLoopContext.part9.value).c_str()
+                ,printBinary(ccuLoopContext.part10.value).c_str()
+                ,printBinary(ccuLoopContext.part11.value).c_str()
+                ,printBinary(ccuLoopContext.part12.value).c_str()
+                ,printBinary(ccuLoopContext.part13.value).c_str()
+                ,printBinary(ccuLoopContext.part14.value).c_str()
+            );
+            errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
+            errorMsg.msg.loop.addrStride     = ccuLoopContext.GetAddrStride();
+            loopCurrentIns = ccuLoopContext.GetCurrentIns();
+        }
+        else{
+            THROW<CcuApiException>("Unsupport ccu version");
+        }
     errorMsg.msg.loop.startInstrId   = rep->loopBlock->StartInstrId();
     errorMsg.msg.loop.endInstrId     = rep->loopBlock->StartInstrId() + rep->loopBlock->InstrCount() - 1;
     errorMsg.msg.loop.loopEngineId   = loopXm.loopCtxId;
     errorMsg.msg.loop.loopCnt        = static_cast<uint16_t>(loopXm.loopCnt);
-    errorMsg.msg.loop.loopCurrentCnt = ccuLoopContext.GetCurrentCnt();
-    errorMsg.msg.loop.addrStride     = ccuLoopContext.GetAddrStride();
 
     errorInfo.push_back(errorMsg);
 
     // 解析Loop内的异常Rep
-    for (uint16_t loopCurrentIns = errorMsg.msg.loop.startInstrId; loopCurrentIns <= errorMsg.msg.loop.endInstrId;
+    for (; loopCurrentIns <= errorMsg.msg.loop.endInstrId;
          loopCurrentIns++) {
         auto inLoopExRep = rep->loopBlock->GetRepByInstrId(loopCurrentIns);
         if (inLoopExRep == nullptr) {
