@@ -51,21 +51,9 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
 
     InsAlgTemplate0 intraTempAlgRS(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate1 interTempAlgRS(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
-
-    AlgTempResReq resReqIntraRS;
-    AlgTempResReq resReqInterRS;
-
-    CHK_RET(intraTempAlgRS.CalcRes(resReqIntraRS));
-    CHK_RET(interTempAlgRS.CalcRes(resReqInterRS));
-
     InsAlgTemplate2 intraTempAlgAG(myRank_, rankSizeLevel0_, vTopo_[0], virtRankMap_[0]);
     InsAlgTemplate3 interTempAlgAG(myRank_, rankSizeLevel1_, vTopo_[1], virtRankMap_[1]);
 
-    AlgTempResReq resReqIntraAG;
-    AlgTempResReq resReqInterAG;
-
-    CHK_RET(intraTempAlgAG.CalcRes(resReqIntraAG));
-    CHK_RET(interTempAlgAG.CalcRes(resReqInterAG));
     // 设置链路信息
     std::vector<map<u32, u32>> rank2PathNumMap;
     HCCL_INFO("[InsAllReduceParallelExecutorV2] CalcResOffload SetPathNumMap");
@@ -74,6 +62,18 @@ HcclResult InsAllReduceParallelExecutorV2<AlgTopoMatch, InsAlgTemplate0, InsAlgT
     interTempAlgRS.setPathNumMap(rank2PathNumMap[1]);
     intraTempAlgAG.setPathNumMap(rank2PathNumMap[0]);
     interTempAlgAG.setPathNumMap(rank2PathNumMap[1]);
+
+    AlgTempResReq resReqIntraRS;
+    AlgTempResReq resReqInterRS;
+
+    CHK_RET(intraTempAlgRS.CalcRes(resReqIntraRS));
+    CHK_RET(interTempAlgRS.CalcRes(resReqInterRS));
+
+    AlgTempResReq resReqIntraAG;
+    AlgTempResReq resReqInterAG;
+
+    CHK_RET(intraTempAlgAG.CalcRes(resReqIntraAG));
+    CHK_RET(interTempAlgAG.CalcRes(resReqInterAG));
 
     // 算法从流数量 = Σ(temp的que数量 + temp的从流数量 * temp调用次数) - 算法主流数量
     resReq.requiredSubQueNum = std::max((resReqIntraAG.queNum + resReqInterAG.queNum), (resReqIntraRS.queNum + resReqInterRS.queNum)) - 1;
