@@ -126,10 +126,10 @@ void CcuTaskException::ProcessCcuException(const rtExceptionInfo_t* exceptionInf
     auto deviceId = exceptionInfo->deviceid;
     HCCL_ERROR("[CcuTaskException][%s]Task from HCCL run failed.", __func__);
     HCCL_ERROR("[CcuTaskException]Task run failed, base information is deviceID:[%u], %s.",
-        deviceId, taskInfo.GetBaseInfo().c_str());
+        deviceId, taskInfo.GetIndopBaseInfo().c_str());
     HCCL_ERROR("[CcuTaskException]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
-    HCCL_ERROR("[CcuTaskException]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
+    HCCL_ERROR("[CcuTaskException]Task run failed, opData information is %s.", taskInfo.GetIndopDataInfo().c_str());
     CHK_PRT(InitChannelMap(deviceId, taskInfo.taskParam_.taskPara.Ccu.ccuKernelHandle));
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
@@ -198,9 +198,9 @@ void CcuTaskException::PrintPanicLogInfo(const uint8_t *panicLog)
     if (info->queryResult != 0) {
         HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
     }
-    HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u]"
-                "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u]"
-                "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u]",
+    HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u] "
+                "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u] "
+                "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u] ",
                 info->ccumSqeRecvCnt, info->ccumSqeSendCnt, info->ccumMissionDfx,
                 info->ccumTifSqeCnt, info->ccumTifCqeCnt, info->ccumCifSqeCnt, info->ccumCifCqeCnt,
                 info->ccumSqeDropCnt, info->ccumSqeAddrLenErrDropCnt, ccumIsEnable);
