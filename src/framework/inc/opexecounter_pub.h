@@ -42,6 +42,7 @@ public:
 private:
     OpExeCounter() = default;
     ~OpExeCounter();
+    HcclResult FreeCounterMem();
     
     void* headCountMem_{};
     void* tailCountMem_{};
@@ -49,7 +50,6 @@ private:
     int refCount_ = 0;
     uint32_t memSize_ = 0;
     bool isNeedOpCounter_ = false;
-    HcclResult FreeCounterMem();
 };
 } // namespace hccl
 
