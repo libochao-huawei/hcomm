@@ -179,7 +179,7 @@ void TaskExceptionHost::ProcessException(rtExceptionInfo_t* exceptionInfo, const
     HCCL_ERROR("[TaskExceptionHost]Task run failed, para information is %s.", taskInfo.GetParaInfo().c_str());
     HCCL_ERROR("[TaskExceptionHost]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
-    HCCL_ERROR("[TaskExceptionHost]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
+    HCCL_ERROR("[TaskExceptionHost]Task run failed, opData information is %s.", taskInfo.GetIndopInfo().c_str());
 }
 
 void TaskExceptionHost::PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId)

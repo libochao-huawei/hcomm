@@ -1683,6 +1683,11 @@ std::string TaskInfo::GetOpInfo() const
     return "";
 }
 
+std::string TaskInfo::GetIndopInfo() const
+{
+    return "";
+}
+
 ProfilingHandler &ProfilingHandler::GetInstance()
 {
     static ProfilingHandler instance;
