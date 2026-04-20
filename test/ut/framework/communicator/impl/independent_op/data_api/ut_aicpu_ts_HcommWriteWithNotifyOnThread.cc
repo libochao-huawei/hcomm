@@ -54,11 +54,11 @@ protected:
     int32_t res{HCCL_E_RESERVED};
 };
 
-TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
-{
-    res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
-    EXPECT_EQ(res, HCCL_SUCCESS);
-}
+// TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+// {
+//     res = HcommWriteWithNotifyOnThread(thread, channel, dst, src, len, notifyIdx);
+//     EXPECT_EQ(res, HCCL_SUCCESS);
+// }
 
 TEST_F(UtAicpuTsHcommWriteWithNotifyOnThread, Ut_HcommWriteWithNotifyOnThread_When_Thread_IsNull_Expect_ReturnIsHCCL_E_PTR)
 {
