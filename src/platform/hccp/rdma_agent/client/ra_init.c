@@ -162,7 +162,7 @@ HCCP_ATTRI_VISI_DEF int RaInit(struct RaInitConfig *config)
         config->hdcType = HDC_SERVICE_TYPE_RDMA;
     }
 
-    hccp_run_info("Input parameters: phyId[%u], nicPosition:[%u] hdcType:[%d] enableHdcAsync[%d]",
+    hccp_run_info("[xzdebug]Input parameters: phyId[%u], nicPosition:[%u] hdcType:[%d] enableHdcAsync[%d]",
         phyId, config->nicPosition, config->hdcType, config->enableHdcAsync);
     ret = DlHalInit();
     CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra]dl_hal_init failed, ret(%d) phyId(%u)", ret, phyId), ret);
