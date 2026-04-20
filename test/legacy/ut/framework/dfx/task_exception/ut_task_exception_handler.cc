@@ -835,7 +835,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_mc2)
     TaskExceptionHandler::Process(&exceptionInfo);
 }
 
-TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivExceptionWhenNormalExpectPrintInfo)
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_Normal_Expect_PrintInfo)
 {
     // 初始化AIV任务信息
     shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
@@ -886,7 +886,7 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivExceptionWhenNormalExpectPrintInfo
     }
 }
 
-TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivExceptionWhenMallocFailureExpectReturnEarly)
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MallocFailure_Expect_ReturnEarly)
 {
     // 初始化AIV任务信息
     shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
@@ -916,7 +916,7 @@ TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivExceptionWhenMallocFailureExpectRe
     globalMirrorTasks.DestroyQueue(0, 0);
 }
 
-TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivExceptionWhenMemcpyFailureExpectReturnEarly)
+TEST_F(TaskExceptionHandlerTest, Ut_ProcessAivException_When_MemcpyFailure_Expect_ReturnEarly)
 {
     // 初始化AIV任务信息
     shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
