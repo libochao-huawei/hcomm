@@ -10,7 +10,7 @@
 
 #include "task.h"
 #include "local_notify.h"
-#include "remote_notify.h"
+#include "ipc_remote_notify.h"
 namespace Hccl {
 
 std::string TaskLocalCopy::Describe() const
