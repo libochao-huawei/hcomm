@@ -71,7 +71,8 @@ void DetectConnectionAnomalies::AddIpQueue(RankInfo &localRankInfo, RankInfo &re
 
     // 检查是否需要进行连接异常检测
     HcclIpAddress localIp = (nicType == NicType::VNIC_TYPE) ? localRankInfo.deviceVnicIp : localRankInfo.nicIp[0];
-    HcclIpAddress remoteIp = (nicType == NicType::DEVICE_NIC_TYPE) ? remoteRankInfo.nicIp[0] : remoteRankInfo.deviceVnicIp;
+    HcclIpAddress remoteIp = (nicType == NicType::DEVICE_NIC_TYPE || nicType == NicType::HOST_NIC_TYPE) ?
+        remoteRankInfo.nicIp[0] : remoteRankInfo.deviceVnicIp;
     if (localIp.IsInvalid() || remoteIp.IsInvalid()) {
         return;
     }
