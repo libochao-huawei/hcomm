@@ -145,6 +145,7 @@ AicpuTsRoceChannel::~AicpuTsRoceChannel()
         ownsDispatcherCtx_ = false;
     }
     dataSocket_.reset();
+    HCCL_ERROR("[AicpuTsRoceChannel][%s] destroyed", SocketRoleTag());
 }
 
 HcclResult AicpuTsRoceChannel::ParseInputParam()
