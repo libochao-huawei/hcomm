@@ -68,6 +68,9 @@ public:
     std::string GetParaInfo() const;
     std::string GetOpInfo() const;
 
+    std::string GetIndopInfo() const;
+    std::string GetIndopBaseInfo() const;
+
 private:
     std::string GetParaDMA() const;
     std::string GetParaReduce() const;
