@@ -1603,7 +1603,7 @@ CcuResult CcuKernel::LoopGroupAddLoopFromVar(CcuLoopGroup group,
     grpDesc.addedLoops.insert(loop);
     grpDesc.loopCount++;
 
-    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry{};
+    CcuRep::CcuRepLoopGroupBundle::LoopEntry entry;
     entry.executorId = static_cast<uint16_t>(pool[loopIdx].Id());
     entry.repLoopBlock = loopDesc.repLoopBlock;
     entry.loopParamVar = CcuRep::Variable(*loopParamVarPtr);
