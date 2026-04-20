@@ -14,6 +14,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <atomic>
 #include <climits>
 #include <queue>
 #include <string>
@@ -333,6 +334,8 @@ public:
     // 初始化这个类，引用计数设为1，并且将p指向传入的地址
     Referenced(): refCount(0) {}
 
+    Referenced(const Referenced& other): refCount(other.refCount.load()) {}
+
     // 引用计数加1
     int Ref()
     {
@@ -362,7 +365,7 @@ public:
     }
     ~Referenced() {}
 private:
-    int refCount; // 引用计数，表示有多少个变量引用这块内存
+    std::atomic<int> refCount; // 引用计数，表示有多少个变量引用这块内存
 };
 
 using RemoteRankInfo = struct TagRemoteRankInfo {
