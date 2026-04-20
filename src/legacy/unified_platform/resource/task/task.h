@@ -18,11 +18,13 @@
 #include "orion_adapter_rts.h"
 #include "rts_cnt_notify.h"
 #include "rts_1ton_cnt_notify.h"
+#include "local_notify.h"
+#include "ipc_remote_notify.h"
 
 namespace Hccl {
 using namespace std;
-class BaseLocalNotify;
-class IpcRemoteNotify;
+Class BaseLocalNotify;
+Class IpcRemoteNotify;
 
 MAKE_ENUM(MemcpyKind, D2D, H2D, D2H, H2H, ADDR_D2D)
 
