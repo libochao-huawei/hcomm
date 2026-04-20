@@ -505,6 +505,15 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
 
     if (params.insType == CcuInstType::CCU_ALLTOALLV_MESH_1D_DIRECT) {
         FillAllToAllVArgs(opParams, ccuParams);
+    } else if (params.insType == CcuInstType::CCU_ALLTOALL_MESH_1D_2DIE ||
+               params.insType == CcuInstType::CCU_ALLGATHER_MESH_1D_2DIE ||
+               params.insType == CcuInstType::CCU_REDUCE_SCATTER_MESH_1D_2DIE) {
+        for (std::size_t i = 0; i < params.totalCounts; ++i) {
+            (void)memcpy_s(&ccuParams[i].args[0], sizeof(ccuParams[i].args[0]), &opParams.sendBuf,
+                    sizeof(ccuParams[i].args[0]));
+            (void)memcpy_s(&ccuParams[i].args[1], sizeof(ccuParams[i].args[1]), &opParams.recvBuf,
+                    sizeof(ccuParams[i].args[1]));
+        }
     } else {
         (void)memcpy_s(&ccuParams[0].args[0], sizeof(ccuParams[0].args[0]), &opParams.sendBuf,
                     sizeof(ccuParams[0].args[0]));
