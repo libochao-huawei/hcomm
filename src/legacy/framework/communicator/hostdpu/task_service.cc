@@ -23,8 +23,8 @@ constexpr uint8_t  TASK_TERMINATE          = 2;
 constexpr uint8_t  TASK_TERMINATE_RESPONSE = 3;
 constexpr uint8_t  MEMORY_DEVIDE           = 2;
 
-TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize)
-    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize)
+TaskService::TaskService(void *deviceMem, int32_t deviceMemSize, void *hostMem, int32_t hostMemSize, s32 streamId)
+    : npu2dpuMem_(deviceMem), shmemSize_(deviceMemSize / MEMORY_DEVIDE), hostMem_(hostMem), hostMemSize_(hostMemSize), streamId_(streamId)
 {
     int32_t controlSize = sizeof(uint8_t) + sizeof(char) * TASKTYPE_ADDR_LENGTH + sizeof(uint32_t);
     if (shmemSize_ < controlSize) {
@@ -138,7 +138,7 @@ HcclResult TaskService::ExecuteTask(uint8_t *srcPtr, std::string taskTypeStr)
         return HCCL_E_RUNTIME;
     }
 
-    if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataSize_) != 0) {
+    if (itFunc->second(reinterpret_cast<uint64_t>(hostMem_), dataSize_, streamId_) != 0) {
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;

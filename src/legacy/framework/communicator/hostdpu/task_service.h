@@ -18,7 +18,7 @@
 #include "../../../unified_platform/pub_inc/task_param.h"
 
 namespace Hccl {
-using CallbackTemplate = std::function<int32_t(uint64_t, int32_t)>;
+using CallbackTemplate = std::function<int32_t(uint64_t, int32_t, s32)>;
 using ProfCallbackTemplate = std::function<HcclResult(u32, u32, const TaskParam&, u64)>;
 /**
  * 1. 使用共享 HBM 内存传递任务信息和数据
@@ -39,7 +39,7 @@ using ProfCallbackTemplate = std::function<HcclResult(u32, u32, const TaskParam&
 class TaskService {
 public:
     TaskService() = default;
-    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize);
+    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize, s32 streamId);
     HcclResult TaskRun();
     HcclResult TaskRegister(std::string taskType, CallbackTemplate callback);
     HcclResult TaskUnRegister(std::string taskType);
@@ -59,6 +59,7 @@ private:
     int32_t dataSize_{0};
     void       *hostMem_{nullptr};
     int32_t hostMemSize_{0};
+    s32        streamId_{0};
 };
 } // namespace Hccl
 

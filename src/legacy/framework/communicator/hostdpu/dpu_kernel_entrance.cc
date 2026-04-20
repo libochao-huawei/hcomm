@@ -24,6 +24,7 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
         void*       hostMem;
         int32_t    deviceId;
         std::string commId;
+        s32         streamId;
     };
 
     HCCL_INFO("[%s] Launch Dpu Kernel: 0x%lx", __func__, args);
@@ -53,7 +54,7 @@ __attribute__((visibility("default"))) uint32_t RunDpuRpcSrvLaunch(const uint64_
 
     // 实例化TaskService
     std::unique_ptr<Hccl::TaskService> taskService = std::make_unique<Hccl::TaskService>(params->deviceMem, params->memorySize,
-                            params->hostMem, params->memorySize);
+                            params->hostMem, params->memorySize, params->streamId);
 
     aclError ret = aclrtSetDevice(params->deviceId);
     if (ret != ACL_SUCCESS) {
