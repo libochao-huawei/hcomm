@@ -291,6 +291,11 @@ void CcuTransport::SendConnAndTransInfo()
     binaryStream.Dump(sendData);
     socket->SendAsync(reinterpret_cast<u8 *>(sendData.data()), sendData.size());
     exchangeDataSize = sendData.size();
+    HCCL_INFO("[SendConnAndTransInfo] sendData.size[%zu], first 8 bytes: "
+            "[%02x][%02x][%02x][%02x][%02x][%02x][%02x][%02x]", 
+            sendData.size(),
+            sendData[0], sendData[1], sendData[2], sendData[3],
+            sendData[4], sendData[5], sendData[6], sendData[7]);
 }
 
 void CcuTransport::RecvConnAndTransInfo()
@@ -301,6 +306,11 @@ void CcuTransport::RecvConnAndTransInfo()
  
 void CcuTransport::RecvDataProcess()
 {
+    HCCL_INFO("[RecvDataProcess] recvData.size[%zu], first 8 bytes: "
+            "[%02x][%02x][%02x][%02x][%02x][%02x][%02x][%02x]", 
+            recvData.size(),
+            recvData[0], recvData[1], recvData[2], recvData[3],
+            recvData[4], recvData[5], recvData[6], recvData[7]);
     BinaryStream binaryStream(recvData);
     HandshakeMsgUnpack(binaryStream);
     ConnInfoUnpackProc(binaryStream);
