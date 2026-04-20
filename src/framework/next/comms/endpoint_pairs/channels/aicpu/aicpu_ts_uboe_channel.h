@@ -74,6 +74,7 @@ private:
     void SendFinish();
     void RecvFinish();
 
+    void HandleProcessData();
     void ProcessUboeState();
 
     void EidPack();
