@@ -45,9 +45,9 @@ Stream::~Stream()
             HrtStreamDestroy(ptr);
         }
     } catch (HcclException &e) {
-        HCCL_ERROR(e.what());
+        HCCL_ERROR("%s", e.what());
     } catch (std::exception &e) {
-        HCCL_ERROR(e.what());
+        HCCL_ERROR("%s", e.what());
     } catch (...) {
         HCCL_ERROR("Unknow Error occurs when destruct stream %d", id);
     }
