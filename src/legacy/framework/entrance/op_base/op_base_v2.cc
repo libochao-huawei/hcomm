@@ -974,7 +974,6 @@ HcclResult HcclGetCommNameV2(HcclComm commHandle, char *commName)
 
 HcclResult HcclGetRankSizeV2(HcclComm comm, uint32_t *rankSize)
 {
-    HCCL_RUN_INFO("Entry-HcclGetRankSize V950");
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankSize);
     Hccl::HcclCommunicator *communicator = static_cast<Hccl::HcclCommunicator *>(comm);

@@ -302,9 +302,9 @@ public:
         string desc = StringFormat("IpAddress[%s, ", eid_.Describe().c_str());
         
         if (family_ == AF_INET) {
-            desc += StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
+            desc += StringFormat("AF=IPv4, addr=%s]", GetIpStr().c_str());
         } else {
-            desc += StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID_);
+            desc += StringFormat("AF=IPv6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID_);
         }
         return desc;
     }

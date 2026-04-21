@@ -330,6 +330,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem

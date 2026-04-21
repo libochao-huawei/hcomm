@@ -109,6 +109,10 @@ void UbTransportLiteImpl::Wait(u32 index, const StreamLite &stream)
 {
 }
 
+void UbTransportLiteImpl::WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout)
+{
+}
+
 void UbTransportLiteImpl::ProfilingProcess(void *src, void *dst, u64 size, const StreamLite &stream,
                                            DmaOp dmaOp, u32 taskId)
 {
