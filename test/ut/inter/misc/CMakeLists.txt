@@ -92,7 +92,7 @@ if(BUILD_OPEN_PROJECT) # 蓝区构建
     target_link_directories(hccl_utest_inter_misc PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/lib64
     )
-    find_library(LIBRARY_ASCEND_HAL libascend_hal.so ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/lib/stub)
+    
     target_link_libraries(hccl_utest_inter_misc PRIVATE
         framework_stub
         mmpa
