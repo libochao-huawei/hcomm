@@ -81,7 +81,6 @@ Stream::Stream(const StreamType streamType, bool isMainStream)
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret);
     }
     bool isSupportV2 = false;
-    hrtGetHcclV2Support(&isSupportV2);
     CHK_PRT_CONT(hrtGetHcclV2Support(&isSupportV2), HCCL_WARNING("[Stream] Can not check hccl version"));
     if (isSupportV2) {
         constexpr u32 streamMode = 1; // 配置流失败模式为遇错即停
