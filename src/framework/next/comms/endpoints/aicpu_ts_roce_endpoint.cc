@@ -38,25 +38,28 @@ AicpuTsRoceEndpoint::~AicpuTsRoceEndpoint()
 void AicpuTsRoceEndpoint::ReleaseListenSocketRefs()
 {
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
-    HCCL_INFO("[ReleaseListenSocketRefs] netDevRefPhyId_[%u], listenRefPorts_.size[%zu]",
-        netDevRefPhyId_, listenRefPorts_.size());
+    HCCL_INFO("[ReleaseListenSocketRefs] netDevRefPhyId_[%u], listenRefKeys_.size[%zu]",
+        netDevRefPhyId_, listenRefKeys_.size());
 
-    std::vector<uint32_t> ports = std::move(listenRefPorts_);
+    std::vector<SocketMapKey> keys = std::move(listenRefKeys_);
     auto &sockMap = GetServerSocketMap();
-    for (uint32_t port : ports) {
-        auto it = sockMap.find(port);
+    for (const auto &key : keys) {
+        auto it = sockMap.find(key);
         if (it == sockMap.end()) {
-            HCCL_INFO("[ReleaseListenSocketRefs] port[%u] not found in sockMap", port);
+            HCCL_INFO("[ReleaseListenSocketRefs] key[dev=%u,port=%u] not found in sockMap",
+                key.devicePhyId, key.port);
             continue;
         }
-        HCCL_INFO("[ReleaseListenSocketRefs] port[%u] refCount[%u] before decrement", port, it->second.refCount);
+        HCCL_INFO("[ReleaseListenSocketRefs] key[dev=%u,port=%u] refCount[%u] before decrement",
+            key.devicePhyId, key.port, it->second.refCount);
         if (it->second.refCount > 0U) {
             it->second.refCount--;
         }
-        HCCL_INFO("[ReleaseListenSocketRefs] port[%u] refCount[%u] after decrement, socket shared_ptr use_count[%ld]",
-            port, it->second.refCount, it->second.socket.use_count());
+        HCCL_INFO("[ReleaseListenSocketRefs] key[dev=%u,port=%u] refCount[%u] after decrement, socket shared_ptr use_count[%ld]",
+            key.devicePhyId, key.port, it->second.refCount, it->second.socket.use_count());
         if (it->second.refCount == 0U) {
-            HCCL_INFO("[ReleaseListenSocketRefs] erasing port[%u] from sockMap", port);
+            HCCL_INFO("[ReleaseListenSocketRefs] erasing key[dev=%u,port=%u] from sockMap",
+                key.devicePhyId, key.port);
             (void)sockMap.erase(it);
         }
     }
@@ -214,19 +217,59 @@ HcclResult AicpuTsRoceEndpoint::Init()
 HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
 {
     const uint32_t listenPort = (port != 0U) ? port : 60001U;
+    const SocketMapKey key{netDevRefPhyId_, listenPort};
 
     {
         std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
         auto &serverSocketMap = GetServerSocketMap();
-        auto it = serverSocketMap.find(listenPort);
+        auto it = serverSocketMap.find(key);
         if (it != serverSocketMap.end() && it->second.socket != nullptr) {
             it->second.refCount++;
-            listenRefPorts_.push_back(listenPort);
+            listenRefKeys_.push_back(key);
             serverSocket_ = it->second.socket;
-            HCCL_INFO("[AicpuTsRoceEndpoint::%s] reuse serverSocket for port[%u], ref[%u]", __func__, listenPort,
-                it->second.refCount);
+            HCCL_INFO("[AicpuTsRoceEndpoint::%s] reuse serverSocket for key[dev=%u,port=%u], ref[%u]",
+                __func__, key.devicePhyId, key.port, it->second.refCount);
             return HCCL_SUCCESS;
         }
+    }
+
+    EXECEPTION_CATCH(
+        serverSocket_ = std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(netDev_), listenPort),
+        return HCCL_E_PTR);
+    CHK_PTR_NULL(serverSocket_);
+
+    HcclResult ret = serverSocket_->Init();
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] HcclSocket Init failed, ret[%d]", __func__, ret);
+        serverSocket_.reset();
+        return ret;
+    }
+
+    ret = serverSocket_->Listen();
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] HcclSocket Listen failed, ret[%d]", __func__, ret);
+        serverSocket_.reset();
+        return ret;
+    }
+
+    std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
+    auto &serverSocketMap = GetServerSocketMap();
+    auto it = serverSocketMap.find(key);
+    if (it != serverSocketMap.end() && it->second.socket != nullptr) {
+        it->second.refCount++;
+        listenRefKeys_.push_back(key);
+        serverSocket_ = it->second.socket;
+        HCCL_INFO("[AicpuTsRoceEndpoint::%s] concurrent reuse key[dev=%u,port=%u], ref[%u]",
+            __func__, key.devicePhyId, key.port, it->second.refCount);
+        return HCCL_SUCCESS;
+    }
+
+    serverSocketMap[key] = AicpuTsListenSocketSlot{serverSocket_, 1U};
+    listenRefKeys_.push_back(key);
+    HCCL_INFO("[AicpuTsRoceEndpoint][%s] listen on key[dev=%u,port=%u] success",
+        __func__, key.devicePhyId, key.port);
+    return HCCL_SUCCESS;
+}
     }
 
     EXECEPTION_CATCH(
@@ -272,9 +315,9 @@ std::mutex &AicpuTsRoceEndpoint::ListenSocketMapMutex()
     return mutex;
 }
 
-std::unordered_map<uint32_t, AicpuTsListenSocketSlot> &AicpuTsRoceEndpoint::GetServerSocketMap()
+std::unordered_map<SocketMapKey, AicpuTsListenSocketSlot, SocketMapKeyHash> &AicpuTsRoceEndpoint::GetServerSocketMap()
 {
-    static std::unordered_map<uint32_t, AicpuTsListenSocketSlot> serverSocketMap;
+    static std::unordered_map<SocketMapKey, AicpuTsListenSocketSlot, SocketMapKeyHash> serverSocketMap;
     return serverSocketMap;
 }
 
@@ -287,9 +330,11 @@ HcclResult AicpuTsRoceEndpoint::AddListenSocketWhiteList(uint32_t port, const st
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
     auto &sockMap = GetServerSocketMap();
     const uint32_t listenPort = (port != 0U) ? port : 60001U;
-    auto it = sockMap.find(listenPort);
+    const SocketMapKey key{netDevRefPhyId_, listenPort};
+    auto it = sockMap.find(key);
     if (it == sockMap.end() || it->second.socket == nullptr) {
-        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] no listen socket for port[%u]", __func__, listenPort);
+        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] no listen socket for key[dev=%u,port=%u]",
+            __func__, key.devicePhyId, key.port);
         return HCCL_E_NOT_FOUND;
     }
     std::vector<SocketWlistInfo> mutableCopy = wlistInfos;
@@ -302,9 +347,11 @@ HcclResult AicpuTsRoceEndpoint::AcceptDataSocket(uint32_t port, const std::strin
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
     auto &sockMap = GetServerSocketMap();
     const uint32_t listenPort = (port != 0U) ? port : 60001U;
-    auto it = sockMap.find(listenPort);
+    const SocketMapKey key{netDevRefPhyId_, listenPort};
+    auto it = sockMap.find(key);
     if (it == sockMap.end() || it->second.socket == nullptr) {
-        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] no listen socket for port[%u]", __func__, listenPort);
+        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] no listen socket for key[dev=%u,port=%u]",
+            __func__, key.devicePhyId, key.port);
         return HCCL_E_NOT_FOUND;
     }
     return it->second.socket->Accept(tag, outConnected, acceptTimeoutMs);

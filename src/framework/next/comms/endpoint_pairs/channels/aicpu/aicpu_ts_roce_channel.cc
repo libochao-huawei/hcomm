@@ -247,9 +247,9 @@ HcclResult AicpuTsRoceChannel::BuildServerDataSocket(const hccl::HcclIpAddress &
     s32 mw = memcpy_s(wlistEntry.tag, sizeof(wlistEntry.tag), socketTag.c_str(), socketTag.size() + 1U);
     CHK_PRT_RET(mw != EOK, HCCL_ERROR("[AicpuTsRoceChannel][%s] memcpy_s whitelist tag failed", SocketRoleTag()),
         HCCL_E_MEMORY);
-    const std::vector<SocketWlistInfo> wlistVec = { wlistEntry };
-    CHK_RET(AicpuTsRoceEndpoint::AddListenSocketWhiteList(port, wlistVec));
-    CHK_RET(AicpuTsRoceEndpoint::AcceptDataSocket(port, socketTag, dataSocket_, 0));
+    const std::vector<SocketWlistInfo> wlistVec = {wlistEntry};
+    CHK_RET(roceEp->AddListenSocketWhiteList(port, wlistVec));
+    CHK_RET(roceEp->AcceptDataSocket(port, socketTag, dataSocket_, 0));
     CHK_SMART_PTR_NULL(dataSocket_);
     HCCL_INFO("[AicpuTsRoceChannel][server] BuildDataSocket accepted client connection");
     return HCCL_SUCCESS;

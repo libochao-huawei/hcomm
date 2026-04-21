@@ -26,6 +26,23 @@ struct AicpuTsListenSocketSlot {
     uint32_t refCount{0U};
 };
 
+struct SocketMapKey {
+    uint32_t devicePhyId;
+    uint32_t port;
+
+    bool operator==(const SocketMapKey &other) const
+    {
+        return devicePhyId == other.devicePhyId && port == other.port;
+    }
+};
+
+struct SocketMapKeyHash {
+    size_t operator()(const SocketMapKey &k) const
+    {
+        return std::hash<uint32_t>()(k.devicePhyId) ^ (std::hash<uint32_t>()(k.port) << 1);
+    }
+};
+
 struct AicpuTsNetDevSlot {
     HcclNetDev netDev{nullptr};
     uint32_t refCount{0U};
@@ -49,13 +66,13 @@ public:
 
     HcclNetDev GetNetDev() const { return netDev_; }
 
-    static HcclResult AcceptDataSocket(uint32_t port, const std::string &tag,
+    HcclResult AcceptDataSocket(uint32_t port, const std::string &tag,
         std::shared_ptr<hccl::HcclSocket> &outConnected, uint32_t acceptTimeoutMs = 0);
 
-    static HcclResult AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo> &wlistInfos);
+    HcclResult AddListenSocketWhiteList(uint32_t port, const std::vector<SocketWlistInfo> &wlistInfos);
 
 private:
-    static std::unordered_map<uint32_t, AicpuTsListenSocketSlot> &GetServerSocketMap();
+    static std::unordered_map<SocketMapKey, AicpuTsListenSocketSlot, SocketMapKeyHash> &GetServerSocketMap();
     static std::mutex &ListenSocketMapMutex();
     void ReleaseListenSocketRefs();
 
@@ -67,7 +84,7 @@ private:
     HcclNetDev netDev_{nullptr};
     uint32_t netDevRefPhyId_{UINT32_MAX};
     std::shared_ptr<hccl::HcclSocket> serverSocket_{nullptr};
-    std::vector<uint32_t> listenRefPorts_{};
+    std::vector<SocketMapKey> listenRefKeys_{};
 };
 }
 #endif // AICPUTS_ROCE_ENDPOINT_H
