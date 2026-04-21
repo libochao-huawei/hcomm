@@ -86,6 +86,8 @@ public:
     // todo: 新增DestroyChannel
     HcclResult DestroyChannel(CommEngine engine, u32 reuseIdx);
 
+    bool IsChannelNotExist(CommEngine engine, u32 reuseIdx);
+
     const std::unordered_map<CommEngine, std::vector<ChannelHandle>>& GetChannelHandles();
 
 private:

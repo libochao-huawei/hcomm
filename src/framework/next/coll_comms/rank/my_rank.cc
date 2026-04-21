@@ -381,6 +381,7 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         }
         u32& reuseIdx = reuseChannelIdxMap[rankPair][engine][endpointPair];
         
+        bool isNewChannel = endpointPair->IsChannelNotExist(engine, reuseIdx);
         // CreateChannel 返回 HCCL_E_UNAVAIL 表示资源不足创建失败
         ret = endpointPair->CreateChannel(epHandle, engine, reuseIdx, &hcommDescs[i], channelHandles + i);
         if (ret == HCCL_E_TIMEOUT || ret == HCCL_E_INTERNAL) {
@@ -396,7 +397,9 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
             break;
         }
         // 记录新申请的channel信息，用于清理临时资源
-        newChannels_.emplace_back(std::make_pair(i, reuseIdx));
+        if (isNewChannel) {
+            newChannels_.emplace_back(std::make_pair(i, reuseIdx));
+        }
 
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s] failed to create channel, channelIndex[%u], remoteRank[%u], engine[%d], reuseIndex[%u]",
