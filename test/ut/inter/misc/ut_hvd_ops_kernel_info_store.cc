@@ -53,7 +53,7 @@
 #include "comm.h"
 #include "workspace_mem.h"
 #include "hvd_adapter.h"
-#include "runtime/kernel.h"
+#include "rt_external_kernel.h"
 
 using namespace std;
 using namespace hccl;

@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <runtime/rt.h>
+#include "rt_external.h"
 #include <assert.h>
 #include <semaphore.h>
 #include <signal.h>
@@ -30,7 +30,6 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <driver/ascend_hal.h>
-#include <runtime/rt.h>
 
 
 #include "hccl/base.h"

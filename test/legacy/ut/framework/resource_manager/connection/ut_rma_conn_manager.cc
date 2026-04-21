@@ -20,7 +20,6 @@
 #include "p2p_connection.h"
 #include "types.h"
 #include "socket.h"
-#include "context.h"
 #include "communicator_impl.h"
 #include "virtual_topo.h"
 #include "op_mode.h"
