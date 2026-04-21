@@ -17,6 +17,8 @@
 #include "acl/acl_base.h"
 #include "stream_pub.h"
 #include "hccl/base.h"
+#include "hccl_types.h"
+#include <cstdint>
 
 #define GID_LENGTH 16
 
@@ -235,6 +237,263 @@ typedef struct AscendSendLinkInfoDef {
 
 HcclResult HcclOneSideBatchPutByAscendQP(unsigned int num, AscendMrInfo* putMRList, AscendMrInfo* remoteMRList,
     AscendSendLinkInfo* sendlinkInfo, aclrtStream stream);
+
+/*zj RDMA P2P需求*/
+typedef struct AscendCQInfoDef {
+    uint32_t cqn; // out: cq number
+    uint32_t cqDepth; // in & out: cq depth
+    uint64_t reserved[32];
+} AscendCQInfo;
+
+typedef struct AscendMrAttrDef {
+    uint64_t addr;  // in: starting address of mr
+    uint64_t size;  // in: size of mr
+    uint32_t lkey;   // out: local addr access key
+    uint32_t rkey;   // out: remote addr access key
+} AscendMrAttr;
+
+struct AscendQPCap {
+    uint32_t maxSendWr;
+    uint32_t maxRecvWr;
+    uint32_t maxSendSge;
+    uint32_t maxRecvSge;
+    uint32_t maxInlineData;
+};
+
+enum AscendQpType {
+    IBV_QPT_RC = 2,
+    IBV_QPT_UC,
+    IBV_QPT_UD,
+    IBV_QPT_XRC,
+    IBV_QPT_RAW_PACKET = 8,
+    IBV_QPT_RAW_ETH = 8
+};
+
+typedef struct AscendVerbsQPInfoDef {
+    uint32_t qpn; // out
+    uint32_t gidIdx; // out
+    uint8_t gid[GID_LENGTH]; // out
+    uint32_t psn; //out
+    uint32_t sCqn; // in
+    uint32_t rCqn; // in
+    struct AscendQPCap cap; // in
+    enum AscendQpType qp_type; // in
+    int sqSigAll; // in
+    uint64_t reserved[32];
+} AscendVerbsQPInfo;
+
+struct AscendSge {
+    uint64_t addr; /**< address of buf */
+    uint32_t len; /**< len of buf */
+    uint32_t lkey; /**< local addr access key */
+};
+
+enum AscendWrOpcode {
+    IBV_WR_RDMA_WRITE = 0,
+    IBV_WR_RDMA_WRITE_WITH_IMM = 1,
+    IBV_WR_SEND = 2,
+    IBV_WR_SEND_WITH_IMM = 3,
+    IBV_WR_RDMA_READ = 4
+};
+
+enum AscendSendFlags {
+    IBV_SEND_FENCE = 1 << 0,
+    IBV_SEND_SIGNALED = 1 << 1,
+    IBV_SEND_SOLICITED = 1 << 2,
+    IBV_SEND_INLINE = 1 << 3,
+    IBV_SEND_IP_CSUM = 1 << 4
+};
+
+struct AscendSendWr {
+    uint64_t wrId; // user assigned work request ID
+    struct AscendSendWr *next; // next work request
+    struct AscendSge *sgList; // list of sg
+    int numSge; // num of Sge
+    enum AscendWrOpcode opcode; // operation type
+    enum AscendSendFlags sendFlags; // flags of send wr
+    uint32_t immData; // immediate data (network byte order)
+    union {
+        struct {
+            uint64_t remoteAddr; // remote virtual address
+            uint32_t rkey; // remote key
+        } rdma;
+        struct {
+            uint64_t remoteAddr; // remote virtual address
+            uint64_t compareAdd; // compare value (atomic) / add value (fetch add)
+            uint64_t swap; // swap value (atomic)
+            uint32_t rkey; // remote key
+        } atomic;
+        struct {
+            struct AscendAh *ah; // address handle
+            uint32_t remoteQpn; // remote QP number
+            uint32_t remoteQkey; // remote QP key
+        } ud;
+    } wr;
+    uint32_t xrcRemoteSrqNum;
+};
+
+struct AscendRecvWr {
+    uint64_t wrId; // user assigned work request ID
+    struct AscendRecvWr *next; // next work request
+    struct AscendSge *sgList; // list of sg
+    int numSge; // num of Sge
+};
+
+enum AscendWcStatus {
+    IBV_WC_SUCCESS = 0,
+    IBV_WC_LOC_LEN_ERR,
+    IBV_WC_LOC_QP_OP_ERR,
+    IBV_WC_LOC_EEC_OP_ERR,
+    IBV_WC_LOC_PROT_ERR,
+    IBV_WC_WR_FLUSH_ERR,
+    IBV_WC_MW_BIND_ERR,
+    IBV_WC_BAD_RESP_ERR,
+    IBV_WC_LOC_ACCESS_ERR,
+    IBV_WC_REM_INV_REQ_ERR,
+    IBV_WC_REM_ACCESS_ERR,
+    IBV_WC_REM_OP_ERR,
+    IBV_WC_RETRY_EXC_ERR,
+    IBV_WC_RNR_RETRY_EXC_ERR,
+    IBV_WC_LOC_RDD_VIOL_ERR,
+    IBV_WC_REM_INV_RD_REQ_ERR,
+    IBV_WC_REM_ABORT_ERR,
+    IBV_WC_INV_EECN_ERR,
+    IBV_WC_INV_EEC_STATE_ERR,
+    IBV_WC_FATAL_ERR,
+    IBV_WC_RESP_TIMEOUT_ERR,
+    IBV_WC_GENERAL_ERR = 251
+};
+
+enum AscendWcOpcode {
+    IBV_WC_SEND = 0,
+    IBV_WC_RDMA_WRITE = 1,
+    IBV_WC_RDMA_READ = 2,
+    IBV_WC_COMP_SWAP = 3,
+    IBV_WC_FETCH_ADD = 4,
+    IBV_WC_BIND_MW = 5,
+    IBV_WC_LOCAL_INV = 6,
+    IBV_WC_TSO = 7,
+    IBV_WC_RECV = 128,
+    IBV_WC_RECV_RDMA_WITH_IMM = 129
+};
+
+enum AscendWcFlags {
+    IBV_WC_GRH = 1 << 0,
+    IBV_WC_WITH_IMM = 1 << 1
+};
+
+struct AscendWc {
+    uint64_t wrId; // work request ID
+    enum AscendWcStatus status; // completion status
+    enum AscendWcOpcode opcode; // operation type
+    uint32_t vendorErr; // vendor error syndrome
+    uint32_t byteLen; // number of bytes transferred
+    uint32_t immData; // immediate data (network byte order)
+    uint32_t qpNum; // QP number
+    uint32_t srcQp; // remote QP number
+    enum AscendWcFlags wcFlags; // completion flags
+    uint16_t pkeyIndex; // P_Key index (for GSI QPs)
+    uint16_t slid; // source local identifier
+    uint8_t sl; // service level
+    uint8_t dlidPathBits; // destination LID path bits
+};
+
+/**
+* @brief 异构场景内存（数据内存和同步内存）注册
+* @param memInfo (in\out): 注册内存信息
+*/
+HcclResult hcclRdmaMemRegister(AscendMrAttr* memInfo);
+
+/**
+* @brief 异构场景内存（数据内存和同步内存）解注册
+* @param memInfo (in): 注册内存信息
+*/
+HcclResult hcclRdmaMemDeRegister(AscendMrAttr* memInfo);
+
+/**
+* @brief 异构场景CQ创建接口
+* @param ascendCQInfo (out): 本地CQ信息。
+*/
+HcclResult hcclCreateAscendCQ(AscendCQInfo* ascendCQInfo);
+
+/**
+* @brief 异构场景CQ创建接口，支持用户参数配置cqDepth
+* @param ascendCQInfo (in & out): 本地CQ信息。
+*/
+HcclResult hcclCreateAscendCQWithAttr(AscendCQInfo* ascendCQInfo);
+
+/**
+* @brief 异构场景指定CQ创建QP
+* @param ascendSendCQInfo (in): 本地send CQ信息。
+* @param ascendRecvCQInfo (in): 本地recv CQ信息。
+* @param ascendQPInfo (out): 本地QP信息
+*/
+HcclResult hcclCreateAscendQPWithCQ(AscendCQInfo* ascendSendCQInfo, AscendCQInfo* ascendRecvCQInfo,
+    AscendVerbsQPInfo* ascendQPInfo);
+
+/**
+* @brief 异构场景指定CQ指定参数创建QP
+* @param ascendSendCQInfo (in): 本地send CQ信息。
+* @param ascendRecvCQInfo (in): 本地recv CQ信息。
+* @param ascendQPInfo (in & out): 本地QP信息。
+*/
+HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, AscendCQInfo* ascendRecvCQInfo,
+    AscendVerbsQPInfo* ascendQPInfo);
+
+
+/**
+* @brief 异构场景QP状态迁移（Verbs版）
+* @param localQPInfo (in): 本地QP信息。
+* @param remoteQPInfo (in): 远端QP信息。
+*/
+HcclResult hcclModifyAscendVerbsQP(AscendVerbsQPInfo* localQPInfo, AscendVerbsQPInfo* remoteQPInfo);
+
+/**
+* @brief 异构场景QP状态迁移扩展（Verbs版），支持用户参数配置qpQos，如tc、sl
+* @param localQPInfo (in): 本端QP信息。
+* @param remoteQPInfo (in): 远端QP信息。
+* @param qpQos (in): QP qos信息。
+*/
+HcclResult hcclModifyAscendVerbsQPEx(AscendVerbsQPInfo* localQPInfo, AscendVerbsQPInfo* remoteQPInfo,
+    AscendQPQos* qpQos);
+
+/**
+* @brief 异构场景PollCq
+* @param cqInfo (in): 本地CQ信息。
+* @param num (in): 要poll的cqe数量。
+* @param polledNum (out): poll成功的cqe数量。
+* @param wc (out): 要poll的cqe数组指针。
+*/
+HcclResult hcclPollAscendCQ(AscendCQInfo* cqInfo, uint32_t num, uint32_t *polledNum, struct AscendWc *wc);
+
+/**
+* @brief 异构场景PostSend
+* @param qpInfo (in): 本地QP信息。
+* @param sendWr (in): 发送WR链表头指针。
+* @param badWr (out): 失败的WR头指针。
+*/
+HcclResult hcclAscendPostSend(AscendVerbsQPInfo* qpInfo, struct AscendSendWr *sendWr, struct AscendSendWr **badWr);
+
+/**
+* @brief 异构场景PostRecv
+* @param qpInfo (in): 本地QP信息。
+* @param recvWr (in): 接收WR链表头指针。
+* @param badWr (out): 失败的WR头指针。
+*/
+HcclResult hcclAscendPostRecv(AscendVerbsQPInfo* qpInfo, struct AscendRecvWr *recvWr, struct AscendRecvWr **badWr);
+
+/**
+* @brief 异构场景QP销毁接口（Verbs版）
+* @param ascendQPInfo (in): 本端待销毁QP信息。
+*/
+HcclResult hcclDestroyAscendVerbsQP(AscendVerbsQPInfo* ascendQPInfo);
+
+/**
+* @brief 异构场景CQ销毁接口
+* @param ascendCQInfo (in): 待销毁的CQ信息。
+*/
+HcclResult hcclDestroyAscendCQ(AscendCQInfo* ascendCQInfo);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
