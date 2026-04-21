@@ -100,6 +100,7 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
                 NotifyTypeT notifyType;
                 NetworkManager::GetInstance(deviceLogicId_).GetNotifyType(notifyType);
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateRdmaHandle(localIp_, isBackup_, netMode, notifyType, netDevDeployment_));
+                CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateNicSocketHandle(localIp_));
                 NetworkManager::GetInstance(deviceLogicId_).GetRdmaHandleByIpAddr(localIp_, handle_);
 
                 CHK_PTR_NULL(handle_);
