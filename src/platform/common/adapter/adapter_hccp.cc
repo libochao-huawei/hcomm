@@ -179,6 +179,60 @@ HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     return HCCL_SUCCESS;
 }
 
+HcclResult hrtRaTypicalCqCreate(RdmaHandle rdmaHandle, unsigned int cqDepth, unsigned int &cqn)
+{
+    std::string cqInfoStr = std::string("rdmaHandle:") + std::to_string(reinterpret_cast<intptr_t>(rdmaHandle)) +
+        std::string("cqDepth:") + std::to_string(cqDepth);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalCqCreate(rdmaHandle, cqDepth, &cqn);
+
+    CHK_OOM_RET(ret, cqInfoStr.c_str());
+
+    RPT_ENV_ERR(ret != 0, "EI0007",
+        std::vector<std::string>({"resource_type", "resource_info"}), std::vector<std::string>({"cq", cqInfoStr}));
+
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("[%s][%s]errNo[0x%016llx] ra cq create fail. "\
+        "params: cqDepth[%u]. return: ret[%d]", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(),
+        HCCL_ERROR_CODE(HCCL_E_NETWORK), cqDepth, ret), HCCL_E_NETWORK);
+
+    s32 deviceId = 0;
+    if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+        deviceId = -1;
+    }
+    PLF_CONFIG_DEBUG(PLF_RES, "Create Cq para: deviceId[%d] cqn[%u] cqDepth[%u]", deviceId, cqn, cqDepth);
+    return HCCL_SUCCESS;
+}
+
+HcclResult hrtRaTypicalQpCreateWithCq(RdmaHandle rdmaHandle, int flag, int qpMode,
+    unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
+    struct TypicalQp* qpInfo, QpHandle &qpHandle)
+{
+    std::string qpInfoStr = std::string("rdmaHandle:") + std::to_string(reinterpret_cast<intptr_t>(rdmaHandle)) +
+        std::string("flag:") + std::to_string(flag) + std::string("qpMode:") + std::to_string(qpMode) +
+        std::string("sendCqn:") + std::to_string(sendCqn) + std::string("recvCqn:") + std::to_string(recvCqn);
+
+    s32 ret = DlRaFunction::GetInstance().dlRaTypicalQpCreateWithCq(rdmaHandle, flag, qpMode,
+        sendCqn, recvCqn, cap, qpType, sqSigAll, qpInfo, &qpHandle);
+
+    CHK_OOM_RET(ret, qpInfoStr.c_str());
+
+    RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007",
+        std::vector<std::string>({"resource_type", "resource_info"}), std::vector<std::string>({"qp", qpInfoStr}));
+
+    CHK_PRT_RET(ret != 0 || (qpHandle == nullptr), HCCL_ERROR("[%s][%s]errNo[0x%016llx] ra qp with cq create fail. "\
+        "params: flag[%d], qpMode[%d], sendCqn[%u], recvCqn[%u]. return: ret[%d]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+        LOG_KEYWORDS_RESOURCE.c_str(), HCCL_ERROR_CODE(HCCL_E_NETWORK), flag, qpMode, sendCqn, recvCqn, ret),
+        HCCL_E_NETWORK);
+
+    s32 deviceId = 0;
+    if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+        deviceId = -1;
+    }
+    PLF_CONFIG_DEBUG(PLF_RES, "Create QpWithCq para: deviceId[%d] qpn[%u] qpInfo[%s]", deviceId, qpInfo->qpn,
+        qpInfoStr.c_str());
+    return HCCL_SUCCESS;
+}
+
 HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo)
 {
     std::string qpInfo = std::string("qpHandle:") + std::to_string(reinterpret_cast<intptr_t>(qpHandle)) + \

@@ -89,5 +89,12 @@ struct RsRdevCb {
         struct rdev rdevInfo;
         struct ibv_context *ibCtx;
     } backupInfo;
+
+#define RS_MAX_TYPICAL_CQ_NUM 64
+    struct {
+        unsigned int cqn;
+        struct ibv_cq *ibCq;
+    } typicalCqTable[RS_MAX_TYPICAL_CQ_NUM];
+    unsigned int typicalCqCnt;
 };
 #endif // RS_RDMA_INNER_H

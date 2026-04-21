@@ -355,6 +355,101 @@ int RaHdcTypicalQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, 
     return 0;
 }
 
+int RaHdcTypicalCqCreate(struct RaRdmaHandle *rdmaHandle, unsigned int cqDepth, unsigned int *cqn)
+{
+    union OpTypicalCqCreateData cqCreateData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    int ret;
+
+    cqCreateData.txData.phyId = phyId;
+    cqCreateData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    cqCreateData.txData.cqDepth = cqDepth;
+
+    ret = RaHdcProcessMsg(RA_RS_TYPICAL_CQ_CREATE, phyId, (char *)&cqCreateData,
+        sizeof(union OpTypicalCqCreateData));
+    if (ret) {
+        hccp_err("[create][ra_hdc_typical_cq]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
+        return ret;
+    }
+
+    *cqn = cqCreateData.rxData.cqn;
+    return 0;
+}
+
+int RaHdcTypicalQpCreateWithCq(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode,
+    unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
+    struct TypicalQp *qpInfo, void **qpHandle)
+{
+    union OpTypicalQpCreateWithCqData qpCreateData = {0};
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *qpHdc = NULL;
+    struct rdma_lite_qp_cap liteCap;
+    int ret;
+
+    qpHdc = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
+    CHK_PRT_RETURN(qpHdc == NULL, hccp_err("[create][ra_hdc_typical_qp_with_cq]qp_hdc calloc failed phyId(%u)", phyId),
+        -ENOMEM);
+
+    qpCreateData.txData.phyId = phyId;
+    qpCreateData.txData.rdevIndex = rdmaHandle->rdevIndex;
+    qpCreateData.txData.flag = flag;
+    qpCreateData.txData.qpMode = qpMode;
+    qpCreateData.txData.memAlign = rdmaHandle->supportLite;
+    qpCreateData.txData.sendCqn = sendCqn;
+    qpCreateData.txData.recvCqn = recvCqn;
+    qpCreateData.txData.qpType = qpType;
+    qpCreateData.txData.sqSigAll = sqSigAll;
+    if (cap != NULL) {
+        (void)memcpy_s(&qpCreateData.txData.cap, sizeof(struct ibv_qp_cap), cap, sizeof(struct ibv_qp_cap));
+    }
+
+    ret = RaHdcProcessMsg(RA_RS_TYPICAL_QP_CREATE_WITH_CQ, phyId, (char *)&qpCreateData,
+        sizeof(union OpTypicalQpCreateWithCqData));
+    if (ret) {
+        hccp_err("[create][ra_hdc_typical_qp_with_cq]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
+        free(qpHdc);
+        qpHdc = NULL;
+        return ret;
+    }
+
+    qpInfo->gidIdx = qpCreateData.rxData.gidIdx;
+    qpInfo->psn = qpCreateData.rxData.psn;
+    qpInfo->qpn = qpCreateData.rxData.qpn;
+    (void)memcpy_s(qpInfo->gid, HCCP_GID_RAW_LEN, qpCreateData.rxData.gid.raw, HCCP_GID_RAW_LEN);
+
+    RaHdcGetQpHdc(rdmaHandle, flag, qpMode, qpInfo->qpn, qpHdc);
+    qpHdc->psn = qpCreateData.rxData.psn;
+    qpHdc->gidIdx = qpCreateData.rxData.gidIdx;
+    qpHdc->sqSigAll = sqSigAll;
+
+    if (cap != NULL) {
+        liteCap.max_inline_data = cap->max_inline_data;
+        liteCap.max_send_sge = cap->max_send_sge;
+        liteCap.max_recv_sge = cap->max_recv_sge;
+        liteCap.max_send_wr = cap->max_send_wr;
+        liteCap.max_recv_wr = cap->max_recv_wr;
+    } else {
+        liteCap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
+        liteCap.max_send_sge = QP_DEFAULT_MIN_CAP_SEND_SGE;
+        liteCap.max_recv_sge = QP_DEFAULT_MIN_CAP_RECV_SGE;
+        liteCap.max_send_wr = RA_QP_32K_DEPTH;
+        liteCap.max_recv_wr = RA_QP_128_DEPTH;
+    }
+    ret = RaHdcLiteQpCreate(rdmaHandle, qpHdc, &liteCap);
+    if (ret) {
+        (void)RaHdcCmdQpDestroy(qpHdc);
+        hccp_err("[create][ra_hdc_typical_qp_with_cq]ra_hdc_lite_qp_create failed ret(%d) phyId(%u)", ret, phyId);
+        free(qpHdc);
+        qpHdc = NULL;
+        return ret;
+    }
+
+    qpHdc->sqDepth = liteCap.max_send_wr;
+    *qpHandle = qpHdc;
+
+    return 0;
+}
+
 int RaHdcQpDestroy(struct RaQpHandle *qpHdc)
 {
     int ret;

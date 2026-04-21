@@ -144,6 +144,13 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     dlRaTypicalQpCreate =
         (int(*)(RdmaHandle, int, int, struct TypicalQp*, QpHandle*))HcclDlsym(handle_, "RaTypicalQpCreate");
     CHK_SMART_PTR_NULL(dlRaTypicalQpCreate);
+    dlRaTypicalCqCreate =
+        (int(*)(RdmaHandle, unsigned int, unsigned int*))HcclDlsym(handle_, "RaTypicalCqCreate");
+    CHK_SMART_PTR_NULL(dlRaTypicalCqCreate);
+    dlRaTypicalQpCreateWithCq =
+        (int(*)(RdmaHandle, int, int, unsigned int, unsigned int, struct ibv_qp_cap*, int, int,
+        struct TypicalQp*, QpHandle*))HcclDlsym(handle_, "RaTypicalQpCreateWithCQ");
+    CHK_SMART_PTR_NULL(dlRaTypicalQpCreateWithCq);
     dlRaTypicalQpModify =
         (int(*)(QpHandle, struct TypicalQp*, struct TypicalQp*))HcclDlsym(handle_, "RaTypicalQpModify");
     CHK_SMART_PTR_NULL(dlRaTypicalQpModify);
