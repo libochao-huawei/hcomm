@@ -380,7 +380,7 @@ void RankInfoDetectClient::VerifyRankTable()
     // TLS开关一致性校验
     HcclResult ret = VerifyTlsConsistency();
     if (ret != HCCL_SUCCESS) {
-        RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+        RPT_INPUT_ERR(true, "EI0016", std::vector<std::string>({"error_reason"}),
             std::vector<std::string>({"tls consistency verify failed"}));
     }
     CHK_PRT_THROW(ret != HCCL_SUCCESS,
