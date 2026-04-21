@@ -43,7 +43,11 @@ public:
     uint32_t GetChannelId() const;
     uint32_t GetDieId() const;
     int32_t  GetDevLogicId() const;
+<<<<<<< HEAD
     HcclResult Describe(std::string &dfxMsg);
+=======
+    HcclResult    Describe(std::string &dfxMsg);
+>>>>>>> support ub comm log
 
 protected:
     TpProtocol tpProtocol_{TpProtocol::INVALID};
