@@ -188,7 +188,7 @@ public:
         auto gmIn = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank_]) + block_idx * count * sizeof(T));
         CpGM2GM(gmIn, input, count);
         PipeBarrier<PIPE_ALL>();
-        Record(rank, rank_, tag);
+        Record(block_idx, rank_, tag);
         auto gmOthers = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[block_idx]) + block_idx * count * sizeof(T));
         auto output = reinterpret_cast<__gm__ T *>(output_ + block_idx * stride);
         WaitFlag(rank_, block_idx, tag);
