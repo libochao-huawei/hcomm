@@ -326,6 +326,10 @@ HcclResult hrtRaIsLastUsed(s32 insId, bool &used);
 HcclResult hrtRaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsigned int num, int expectStatus);
 HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     int qpMode, struct TypicalQp* qpInfo, QpHandle &qpHandle);
+HcclResult hrtRaTypicalCqCreate(RdmaHandle rdmaHandle, unsigned int cqDepth, unsigned int &cqn);
+HcclResult hrtRaTypicalQpCreateWithCq(RdmaHandle rdmaHandle, int flag, int qpMode,
+    unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
+    struct TypicalQp* qpInfo, QpHandle &qpHandle);
 HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo);
 HcclResult hrtRaTypicalSendWr(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp);
 HcclResult hrtRaRdevGetPortStatus(RdmaHandle rdmaHandle, enum PortStatus *status);
