@@ -986,7 +986,7 @@ HcclResult DevUbConnection::SetTpAttrAsync()
 HcclResult DevUbConnection::GetTpAttrAsync()
 {
     TpHandle tpHandle = tpInfo.tpHandle;
-    uint32_t attrBitmap = 0;
+    uint32_t attrBitmap = 4096;
     struct TpAttr tpAttr = {0};
 
     CHK_RET(HrtRaGetTpAttrAsync(rdmaHandle, tpHandle, attrBitmap, tpAttr, reqHandle));

@@ -206,10 +206,11 @@ ChannelStatus CcuUrmaChannel::GetStatus()
  	         channelInfo.append("] ");
  	         HcclResult ret = impl_->Describe(channelInfo);
  	         if (ret != HCCL_SUCCESS) {
- 	             HCCL_ERROR("[CcuUrmaChannel][%s] Describe channel info failed", __func__);
- 	             out = ChannelStatus::FAILED;
+                HCCL_ERROR("[CcuUrmaChannel][%s] Describe channel info failed", __func__);
+                out = ChannelStatus::FAILED;
  	         } else {
- 	             HCCL_RUN_INFO("%s", channelInfo.c_str());
+                channelInfo.append(" TA[RM]");
+                HCCL_RUN_INFO("%s", channelInfo.c_str());
  	         }
  	         isFirstPrintChannelInfo_ = false;
     }
