@@ -14,6 +14,7 @@ set(hccl_utest_platform_hcom_list
     ut_comm_config.cc
     ut_hccl_error_manager.cc
     ut_detect_connect_anomalies.cc
+    ut_error_code_test.cc
 )
 
 add_executable(hccl_utest_platform_hcom ${hccl_utest_platform_hcom_list})
