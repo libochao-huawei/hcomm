@@ -175,7 +175,7 @@ void CommunicatorImpl::InitDpuKernel() {
         return;
     }
     for (auto ip: hostIps) {
-        FlushManager::GetInstance().initFlushHandle(ip, devPhyId);
+        CHK_RET_THROW(FlushManager::GetInstance().initFlushHandle(ip, devPhyId));
     }
     HCCL_INFO("[InitDpuKernel]all FlushHandle init success.");
     /* kernel Launch */
