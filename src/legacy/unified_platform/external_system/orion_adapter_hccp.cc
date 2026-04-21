@@ -41,8 +41,10 @@ constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 64;
 constexpr u32 RA_TLV_REQUEST_UNAVAIL = 128308;
 constexpr u32 ROCE_ENOMEM_RET = 328100;
+constexpr u32 GET_TP_ATTR_OPCODE = 106;
 constexpr u32 GET_TLS_ENABLE_OPCODE = 95;
 constexpr u32 GET_TLS_ENABLE_VERSION = 1;
+constexpr u32 GET_TP_ATTR_VERSION = 2;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
