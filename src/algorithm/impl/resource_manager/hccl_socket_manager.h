@@ -117,7 +117,7 @@ public:
         std::vector<std::shared_ptr<HcclSocket> > &connectSockets,
         bool isWaitEstablished = true,
         bool isSupportReuse = false,
-        s32 timeout = 0);
+        s32 timeout = 0, uint32_t connectMode = 0);
 
     HcclResult WaitLinksEstablishCompleted(HcclSocketRole localRole,
         std::map <u32, std::vector<std::shared_ptr<HcclSocket> > > &socketsMap, std::map<u32, u32> &dstRankToUserRank,
@@ -134,17 +134,17 @@ public:
     HcclResult ServerDeInit(const HcclIpAddress& localIp, u32 port);
 private:
     HcclResult AddWhiteList(const std::string &commTag, bool isInterLink, NicType socketType,
-        const HcclIpAddress &localIp, const std::map<u32, HcclRankLinkInfo> &whiteListMap);
+        const HcclIpAddress &localIp, const std::map<u32, HcclRankLinkInfo> &whiteListMap, uint32_t connectMode = 0);
     HcclResult DelWhiteList(const std::string &commTag);
     HcclResult CreateSockets(const std::string &commTag, bool isInterLink, const HcclNetDevCtx netDevCtx,
         NicType socketType, HcclSocketRole localRole, const HcclIpAddress &localIp,
         const HcclRankLinkInfo &remoteLinkInfo, std::vector<std::shared_ptr<HcclSocket> > &ipSockets,
-        bool isSupportReuse);
+        bool isSupportReuse, uint32_t connectMode = 0);
     HcclResult CreateSockets(const std::string &commTag, bool isInterLink, const HcclNetDevCtx netDevCtx,
         NicType socketType, HcclSocketRole localRole, const HcclIpAddress &localIp,
         const std::map<u32, HcclRankLinkInfo> &remoteInfos,
         std::map<u32, std::vector<std::shared_ptr<HcclSocket> > > &socketsMap,
-        std::map<u32, u32> &dstRankToUserRank, bool isSupportReuse);
+        std::map<u32, u32> &dstRankToUserRank, bool isSupportReuse, uint32_t connectMode = 0);
     void DestroySockets(std::vector<std::shared_ptr<HcclSocket> > rankSockets);
     void TransformSocketStatus(HcclSocketStatus status, std::string &stringStatus) const;
     void PrintSocketsInfo(const std::string &localRole,
@@ -159,12 +159,13 @@ private:
     std::string MakeUniqueConnTag(const std::string &commTag, bool isInterLink, u32 rank, u32 indexForLink);
     HcclResult ConstructWhiteList(const std::string &commTag,
         bool isInterLink, NicType socketType,
-        const HcclRankLinkInfo &dstRankLinkInfo, std::vector<SocketWlistInfo> &wlistInfosVec);
+        const HcclRankLinkInfo &dstRankLinkInfo, std::vector<SocketWlistInfo> &wlistInfosVec, uint32_t connectMode = 0);
     void SaveWhiteListInfo(const std::string &commTag, std::shared_ptr<HcclSocket> &socket,
         const std::vector<SocketWlistInfo> wlistInfos);
     HcclResult ConstructSockets(const std::string &commTag, bool isInterLink, const HcclNetDevCtx netDevCtx,
         u32 socketsPerLink, NicType socketType, u32 dstRank, const HcclIpAddress &remoteIp, u32 remotePort,
-        const HcclIpAddress &localIp, HcclSocketRole localRole, std::vector<std::shared_ptr<HcclSocket>> &socketList);
+        const HcclIpAddress &localIp, HcclSocketRole localRole, std::vector<std::shared_ptr<HcclSocket>> &socketList,
+        uint32_t connectMode = 0);
     void SaveSockets(const std::string &commTag, u32 remoteRank, const HcclIpAddress &remoteIp,
         std::vector<std::shared_ptr<HcclSocket> > &ipSockets);
 
