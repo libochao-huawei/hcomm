@@ -240,6 +240,7 @@ public:
     HcclResult GetTransportId(u32 &id) override;
 
     HcclResult Fence() override;
+    HcclResult ExchangeCapabilityHybrid();
 protected:
     HcclResult GetRemoteAddr(MemType memType, u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     HcclResult GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
@@ -330,6 +331,7 @@ protected:
     const u64 notifyValueSize_{LARGE_PAGE_MEMORY_MIN_SIZE}; // 避免申请小页内存。最小2*1024*1024
     static std::array<Referenced, MAX_MODULE_DEVICE_NUM> instanceRef_; // 实例计数，用于释放静态资源
 
+    bool isHybridMode_ = false;           // 是否为混合模式:hostNic -- DeviceNic
     std::vector<CombineQpHandle> combineQpHandles_;
     std::vector<CombineQpHandle> multiCombineQpHandles_;
 
