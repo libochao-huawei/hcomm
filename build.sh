@@ -128,27 +128,17 @@ function build_cb_test_verify(){
     bash build.sh
 }
 
-function build_st() {
-    log "Info: build_st"
-    local log_dir="${OUTPUT_PATH}/logs/st" && mk_dir "${log_dir}"
-    mk_dir "${BUILD_DIR}"
-    cd "${BUILD_DIR}"
-
-    # 编译 ST 用例代码
-    local st_tasks=$(printf '%s;' "${ST_TASKS[@]}" | sed 's/;$//')
-    log "Info: build_st: ST_TASKS=${st_tasks}"
-    cmake_config -DPRODUCT_SIDE=host \
-                 -DENABLE_GCOV=${ENABLE_GCOV} \
-                 -DENABLE_TEST=${ENABLE_TEST} \
-                 -DENABLE_ST=${ENABLE_ST} \
-                 -DST_TASKS=${st_tasks}
-
-    cmake --build . ${JOB_NUM}
-
+function run_ctest() {
+    local suite_name="$1"   # "ut" or "st"
+    local log_dir="${OUTPUT_PATH}/logs/${suite_name}"
     local ctest_log="${log_dir}/ctest_output.log"
     local ctest_summary="${log_dir}/ctest_summary.log"
 
-    ctest -j ${CPU_NUM} \
+    # 创建日志目录
+    mk_dir "${log_dir}"
+
+    # CTest 执行用例
+    ctest ${JOB_NUM} \
           --build-nocmake \
           --timeout 200 \
           --output-on-failure \
@@ -157,8 +147,49 @@ function build_st() {
           -O "${ctest_log}" \
           2>&1 | tee "${ctest_summary}"
 
+    # 超时时间：200s
+    local ctest_ret=${PIPESTATUS[0]}
+    if [ "${ctest_ret}" -eq 137 ]; then
+        log "Error: ctest timeout: execute more than 200s killed"
+        exit 1
+    fi
+
+    return ${ctest_ret}
+}
+
+function build_st() {
+    log "Info: build_st"
+    mk_dir "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
+
+    # 配置 ST 用例代码
+    local st_tasks=$(printf '%s;' "${ST_TASKS[@]}" | sed 's/;$//')
+    log "Info: build_st: ST_TASKS=${st_tasks}"
+    cmake_config -DPRODUCT_SIDE=host \
+                 -DENABLE_GCOV=${ENABLE_GCOV} \
+                 -DENABLE_TEST=${ENABLE_TEST} \
+                 -DENABLE_ST=${ENABLE_ST} \
+                 -DST_TASKS=${st_tasks}
+    if [ $? -ne 0 ]; then
+        log "Error: build_st: cmake config failed"
+        exit 1
+    fi
+
+    # 编译 ST 用例代码
+    cmake --build . ${JOB_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: build_st: cmake build failed"
+        exit 1
+    fi
+
+    # CTest 运行用例
+    run_ctest "st"
+    if [ $? -ne 0 ]; then
+        log "Error: build_st: ctest execution failed"
+        exit 1
+    fi
+
     log "Info: Build and tests completed successfully!"
-    log "Info: Test logs saved in: ${log_dir}"
 }
 
 function build_kernel() {
@@ -173,85 +204,36 @@ function mk_dir() {
   echo "created ${create_dir}"
 }
 
-# create build path
 function build_ut() {
-  echo "create build directory and build";
-  mk_dir ${OUTPUT_PATH}
-  mk_dir "${BUILD_DIR}"
-  local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
-  local log_dir="${OUTPUT_PATH}/logs/ut" && mk_dir "${log_dir}"
-  cd "${BUILD_DIR}"
-  unset LD_LIBRARY_PATH
+    log "Info: build_ut"
+    mk_dir "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
 
-  local BUILD_JOBS
-  if [ "${CPU_NUM}" -ge 8 ]; then
-    BUILD_JOBS=$((CPU_NUM-1))
-  else
-    BUILD_JOBS=8
-  fi
+    # 配置 UT 用例代码
+    cmake_config -DPRODUCT_SIDE=host \
+                 -DENABLE_TEST=${ENABLE_TEST} \
+                 -DENABLE_UT=${ENABLE_UT} \
+                 -DENABLE_GCOV=${ENABLE_GCOV}
+    if [ $? -ne 0 ]; then
+        log "Error: build_ut: cmake config failed"
+        exit 1
+    fi
 
-  local LLT_KILL_TIME=200
-  CMAKE_ARGS="-DPRODUCT_SIDE=host \
-              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-              -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
-              -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
-              -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} \
-              -DENABLE_GCOV=${ENABLE_GCOV} \
-              -DENABLE_TEST=${ENABLE_TEST} \
-              -DENABLE_UT=${ENABLE_UT} \
-              -DOUTPUT_PATH=${OUTPUT_PATH} \
-              -DLLT_KILL_TIME=${LLT_KILL_TIME}"
+    # 编译 UT 用例代码
+    cmake --build . ${JOB_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: build_ut: cmake build failed"
+        exit 1
+    fi
 
-  echo "CMAKE_ARGS=${CMAKE_ARGS}"
-  cmake ${CMAKE_ARGS} ..
-  if [ $? -ne 0 ]; then
-    echo "execute command: cmake ${CMAKE_ARGS} .. failed."
-    return 1
-  fi
+    # CTest 运行用例
+    run_ctest "ut"
+    if [ $? -ne 0 ]; then
+        log "Error: build_ut: ctest execution failed"
+        exit 1
+    fi
 
-  echo "Building all test targets..."
-  cmake --build . -j${BUILD_JOBS}
-  run_ret=${PIPESTATUS[0]}
-  echo "exit code: ${run_ret}"
-  if [ "${run_ret}" -eq 137 ]
-  then
-      echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
-      exit 1
-  fi
-  if [ "${run_ret}" -ne 0 ]; then
-    echo "execute command: cmake --build . -j${BUILD_JOBS} failed."
-    return 1
-  fi
-  echo "build success!"
-
-  echo "Running tests with CTest (parallel jobs: ${BUILD_JOBS})..."
-
-  local ctest_log="${log_dir}/ctest_output.log"
-  local ctest_summary="${log_dir}/ctest_summary.log"
-
-  ctest -j ${BUILD_JOBS} \
-        --build-nocmake \
-        --timeout ${LLT_KILL_TIME} \
-        --output-on-failure \
-        --stop-on-failure \
-        --test-output-size-failed 10000000 \
-        -O "${ctest_log}" \
-        2>&1 | tee "${ctest_summary}"
-  
-  local ctest_ret=${PIPESTATUS[0]}
-  
-  if [ "${ctest_ret}" -eq 137 ]; then
-      echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
-      exit 1
-  fi
-  
-  if [ "${ctest_ret}" -ne 0 ]; then
-    echo "CTest execution failed. See logs in ${log_dir}"
-    return 1
-  fi
-  
-  echo "Build and tests completed successfully!"
-  echo "Test logs saved in: ${log_dir}"
+    log "Info: Build and tests completed successfully!"
 }
 
 function make_ut_gov() {
@@ -269,20 +251,6 @@ function make_ut_gov() {
   fi
 }
 
-function run_ut() {
-  if [[ "X$ENABLE_UT" = "Xon" ]]; then
-    local ut_dir="${BUILD_DIR}/test"
-    echo "ut_dir = ${ut_dir}"
-    find "$ut_dir" -type f -executable | while read -r ut_exec; do
-        filename=$(basename "$ut_exec")
-        echo "Executing: $filename"
-        ${ut_exec}
-    done
-  else
-    echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
-  fi
-}
-
 # print usage message
 function usage() {
   echo "Usage:"
@@ -294,12 +262,12 @@ function usage() {
   echo "Options:"
   echo "    -h, --help     Print usage"
   echo "    --asan         Enable AddressSanitizer"
-  echo "    -build-type=<TYPE>"
+  echo "    --build-type=<TYPE>"
   echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
   echo "    -j<N>          Set the number of threads used for building, default is 8"
   echo "    --cann_3rd_lib_path=<PATH>"
   echo "                   Set ascend third_party package install path, default ./output/third_party"
-  echo "    -p|--package-path <PATH>"
+  echo "    -p, --package-path <PATH>"
   echo "                   Set ascend package install path, default /usr/local/Ascend/cann"
   echo "    --sign-script <PATH>"
   echo "                   Set sign-script's path to <PATH>"
@@ -307,6 +275,8 @@ function usage() {
   echo "                   Enable to sign"
   echo "    --version <VERSION>"
   echo "                   Set sign version to <VERSION>"
+  echo "    -u, --ut       Run all unit tests (UT)"
+  echo "    -s, --st       Run all system tests (ST)"
   echo ""
 }
 
