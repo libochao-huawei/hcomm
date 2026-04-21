@@ -686,7 +686,7 @@ int32_t HcommFlush()
 }
 #endif  // __cplusplus
 
-int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
+int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel, u64 aicpuTaskId)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
 

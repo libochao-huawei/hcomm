@@ -276,7 +276,7 @@ extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, 
  * @note 当前在A5上主要支持
  */
 extern int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t len, uint32_t remoteNotifyIdx, u64 aicpuTaskId);
+    uint64_t len, uint32_t remoteNotifyIdx, uint64_t aicpuTaskId);
 
 /**
  * @brief 带通知的单边写操作
@@ -332,7 +332,7 @@ extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, u
  * @return int32_t 执行结果状态码
  */
 extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx,
-    u64 aicpuTaskId);
+    uint64_t aicpuTaskId);
 
 /**
  * @brief 记录通知事件
@@ -354,7 +354,7 @@ extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNo
  * @return int32_t 执行结果状态码
  */
 extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut,
-    u64 aicpuTaskId);
+    uint64_t aicpuTaskId);
 
 /**
  * @brief 等待通知事件
@@ -417,8 +417,7 @@ extern int32_t HcommReleaseComm(const char* commId);
  * @param[in] streamId stream ID
  * @return int32_t 执行结果状态码
  */
- */
-extern int32_t HcommFenceOnThread(ThreadHandle thread, s32 streamId);
+extern int32_t HcommFenceOnThread(ThreadHandle thread, int32_t streamId);
 
 /**
  * @brief 通信通道级内存屏障操作
@@ -427,11 +426,12 @@ extern int32_t HcommFenceOnThread(ThreadHandle thread, s32 streamId);
  * @param[in] streamId stream ID
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel);
+extern int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel, uint64_t aicpuTaskId);
 
 /**
  * @brief 通信通道级内存屏障操作
  * @param[in] channel 通道句柄
+ * @param[in] aicpuTaskId aicpu task ID
  * @return int32_t 执行结果状态码
  *
  * WARNING: experimental API, No compatibility is currently guaranteed for this API

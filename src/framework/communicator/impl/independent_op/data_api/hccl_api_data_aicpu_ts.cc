@@ -849,9 +849,9 @@ int32_t HcommFlush()
     return HCCL_E_NOT_SUPPORT;
 }
 
-int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel)
+int32_t HcommChannelFenceOnThread(ThreadHandle thread, ChannelHandle channel, uint64_t aicpuTaskId)
 {
-    HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx].", __func__, thread, channel);
+    HCCL_DEBUG("[%s] thread[0x%llx], channel[0x%llx], aicpuTaskId[0x%llx].", __func__, thread, channel, aicpuTaskId);
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
     CHK_PTR_NULL(threadPtr);
     if (threadPtr->IsDeviceA5()) {
