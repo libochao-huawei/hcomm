@@ -60,6 +60,68 @@ HcclResult hcclCreateAscendQP(AscendQPInfo* ascendQPInfo)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclCreateAscendCQWithAttr(AscendCQInfo* ascendCQInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(ascendCQInfo);
+
+    unsigned int cqDepth = ascendCQInfo->cqDepth;
+    unsigned int cqn = 0;
+
+    CHK_RET(TypicalQpManager::GetInstance().CreateCq(cqDepth, cqn));
+
+    ascendCQInfo->cqn = cqn;
+    ascendCQInfo->cqDepth = cqDepth;
+
+    HCCL_INFO("hcclCreateAscendCQ success! cqn[%u], cqDepth[%u]", ascendCQInfo->cqn, ascendCQInfo->cqDepth);
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclCreateAscendQPWithCQWithAttr(AscendCQInfo* ascendSendCQInfo, AscendCQInfo* ascendRecvCQInfo,
+    AscendVerbsQPInfo* ascendQPInfo)
+{
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
+    CHK_PTR_NULL(ascendSendCQInfo);
+    CHK_PTR_NULL(ascendRecvCQInfo);
+    CHK_PTR_NULL(ascendQPInfo);
+
+    struct TypicalQp qpInfo;
+    struct ibv_qp_cap cap;
+    int qpType;
+    int sqSigAll;
+
+    if (ascendQPInfo->cap.maxSendWr != 0) {
+        cap.max_send_wr = ascendQPInfo->cap.maxSendWr;
+        cap.max_recv_wr = ascendQPInfo->cap.maxRecvWr;
+        cap.max_send_sge = ascendQPInfo->cap.maxSendSge;
+        cap.max_recv_sge = ascendQPInfo->cap.maxRecvSge;
+        cap.max_inline_data = ascendQPInfo->cap.maxInlineData;
+    } else {
+        (void)memset_s(&cap, sizeof(cap), 0, sizeof(cap));
+    }
+
+    qpType = (int)ascendQPInfo->qp_type;
+    sqSigAll = ascendQPInfo->sqSigAll;
+
+    CHK_RET(TypicalQpManager::GetInstance().CreateQpWithCq(ascendSendCQInfo->cqn, ascendRecvCQInfo->cqn,
+        &cap, qpType, sqSigAll, qpInfo));
+
+    ascendQPInfo->qpn = qpInfo.qpn;
+    ascendQPInfo->gidIdx = qpInfo.gidIdx;
+    for (uint32_t i = 0; i < GID_LENGTH; i++) {
+        ascendQPInfo->gid[i] = qpInfo.gid[i];
+    }
+    ascendQPInfo->psn = qpInfo.psn;
+
+    HCCL_INFO("hcclCreateAscendQPWithCQ success! qpn[%u], gid index[%u], psn[%u], sendCqn[%u], recvCqn[%u]",
+        ascendQPInfo->qpn, ascendQPInfo->gidIdx, ascendQPInfo->psn,
+        ascendSendCQInfo->cqn, ascendRecvCQInfo->cqn);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult CheckDepth(uint32_t depth)
 {
     if (depth >= QP_QUEUE_DEPTH_MIN && ((depth & (depth - 1)) == 0) && depth <= QP_QUEUE_DEPTH_MAX) {
