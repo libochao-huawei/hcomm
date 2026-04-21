@@ -452,7 +452,7 @@ CollServiceStub *CommunicatorImpl::GetCollService() const
 
 CommunicatorImpl::~CommunicatorImpl()
 {
-    HCCL_DEBUG("[~CommunicatorImpl]start CommunicatorImpl destory");
+    HCCL_DEBUG("[~CommunicatorImpl]start CommunicatorImpl destroy");
 }
 
 bool CommunicatorImpl::IsOpUsingCcuMs() const
