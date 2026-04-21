@@ -432,6 +432,7 @@ __aicore__ inline void AivCommBase::BarrierForFirstOP()
             uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
             WaitFlag(i, flag_offset / UB_ALIGN_SIZE, DOUBLE);
         }
+        pipe_barrier(PIPE_ALL);
     }
 }
 
@@ -471,18 +472,19 @@ __aicore__ inline void AivCommBase::SyncCoreAll(int32_t curTag)
 
 __aicore__ inline void AivCommBase::BarrierAll()
 {
+    pipe_barrier(PIPE_ALL);
     SyncAll<true>();
     int targetRank_ = GetBlockIdx();
     while (targetRank_ < rankSize_) {
-            uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
+        uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
         Record(targetRank_, flag_offset / UB_ALIGN_SIZE, 1);
         targetRank_ += block_num;
     }
     targetRank_ = GetBlockIdx();
     while (targetRank_ < rankSize_) {
         uint64_t flag_offset = BASE_FLAG_OFFSET + targetRank_ * FLAG_SIZE;
-            WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
-            Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
+        WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, 1);
+        Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
         targetRank_ += block_num;
     }
     SyncAll<true>();
