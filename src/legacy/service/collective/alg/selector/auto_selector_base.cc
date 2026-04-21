@@ -107,14 +107,10 @@ bool AutoSelectorBase::IsLargeData(const u64 dataSize) const
 
 bool AutoSelectorBase::IsSmallDataCCU(const u64 dataSize, const u64 rankSize) const
 {
-    double ratio; // 以8卡为基线确定ratio，用来表示不同卡数对下发的影响系数
     if (rankSize == 0) {
         HCCL_WARNING("the selector is not set RankSize");
-        ratio = 1;
-    } else {
-        ratio = DEFAULT_RANK_SIZE / rankSize;
-    }
-    return (dataSize * ratio <= CCU_PARALLEL_MAX_DATA_SIZE) ? true : false;
+    } 
+    return (dataSize <= CCU_PARALLEL_MAX_DATA_SIZE) ? true : false;
 }
 
 SelectorStatus AutoSelectorBase::SelectCcuMsAlgo(const TopoInfo &topoInfo,

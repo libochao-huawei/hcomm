@@ -439,7 +439,7 @@ void RaBlockGetSockets(u32 role, SocketInfoT conn[], u32 num) // 修改为内部
     auto timeout       = std::chrono::seconds(EnvLinkTimeoutGet());
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], goten[%u], timeout[%lld]s, the HCCL_CONNECT_TIMEOUT may be insufficient",
+            MACRO_THROW(NetworkApiException, StringFormat("[HrtRaBlockGetSockets] get rasocket timeout role[%u], num[%u], gotSocketsCnt[%u], timeout[%lld]s",
                 role, num, gotSocketsCnt, timeout));
         }
         u32 connectedNum = 0;
@@ -567,10 +567,16 @@ void HrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u32 size)
     HCCL_INFO("before ra socket recv, para: fdHandle[%p], data[%p], size[%u]", fdHandle, data, size);
     while (true) {
         if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
-            MACRO_THROW(NetworkApiException, StringFormat("[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
-                       "size[%u], recvSize[%u], The most common cause is that the firewall is incorrectly "
-                       "configured. Check the firewall configuration or try to disable the firewall fdHandle[%p] ret[%d]",
-                       HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet));
+            std::string errMsg = StringFormat(
+                "[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "
+                "size[%u], recvSize[%u], fdHandle[%p], ret[%d]",
+                HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), data, size, recvSize, fdHandle, rtRet
+            );
+            HCCL_ERROR("%s", errMsg.c_str());
+            HCCL_ERROR("Please check the following reasons:");
+            HCCL_ERROR("1. check the firewall configuration or try to disable the firewall.");
+            HCCL_ERROR("2. check error log on the other process or thread.");
+            MACRO_THROW(NetworkApiException, errMsg);
         }
         rtRet = RaSocketRecv(fdHandle, reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(data) + getedLen),
                                size - getedLen, &recvSize);
