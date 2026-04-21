@@ -205,7 +205,7 @@ HcclResult AicpuTsRoceChannel::BuildDataSocket()
     if (isLocalIpClient_) {
         CHK_RET(BuildClientDataSocket(netDevCtx, remoteIp, port, socketTag));
     } else {
-        CHK_RET(BuildServerDataSocket(remoteIp, port, socketTag));
+        CHK_RET(BuildServerDataSocket(roceEp, remoteIp, port, socketTag));
     }
 
     machinePara_.remoteIpAddr = remoteIp;
@@ -235,8 +235,8 @@ HcclResult AicpuTsRoceChannel::BuildClientDataSocket(HcclNetDevCtx netDevCtx, co
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuTsRoceChannel::BuildServerDataSocket(const hccl::HcclIpAddress &remoteIp, uint32_t port,
-    const std::string &socketTag)
+HcclResult AicpuTsRoceChannel::BuildServerDataSocket(AicpuTsRoceEndpoint *roceEp, const hccl::HcclIpAddress &remoteIp,
+    uint32_t port, const std::string &socketTag)
 {
     HCCL_INFO("[AicpuTsRoceChannel][server] BuildDataSocket listen and accept");
     SocketWlistInfo wlistEntry{};

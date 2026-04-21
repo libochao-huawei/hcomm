@@ -23,6 +23,7 @@
 struct HcommRoceChannelRes;
 
 namespace hcomm {
+class AicpuTsRoceEndpoint;
 
 class AicpuTsRoceChannel : public Channel {
 public:
@@ -51,7 +52,8 @@ private:
     HcclResult BuildDataSocket();
     HcclResult BuildClientDataSocket(HcclNetDevCtx netDevCtx, const hccl::HcclIpAddress &remoteIp, uint32_t port,
         const std::string &socketTag);
-    HcclResult BuildServerDataSocket(const hccl::HcclIpAddress &remoteIp, uint32_t port, const std::string &socketTag);
+    HcclResult BuildServerDataSocket(AicpuTsRoceEndpoint *roceEp, const hccl::HcclIpAddress &remoteIp, uint32_t port,
+        const std::string &socketTag);
     HcclResult BuildDispatcherAndTransport();
     HcclResult AssignDispatcherCommId();
     HcclResult EnsureDispatcherCtx(u32 devPhyId);
