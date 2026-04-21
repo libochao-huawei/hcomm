@@ -194,8 +194,8 @@ public:
         dataSize_ = len_ * sizeof(T);
         // 小数据量情况下，缩减实际使用核数
         useBlocks_ = (dataSize_ + DATA_SLICE_NUM - 1) / DATA_SLICE_NUM;
-        if (useBlocks_ > numBlocks_) {
-            useBlocks_ = numBlocks_;
+        if (useBlocks_ > rankSize_) {
+            useBlocks_ = rankSize_;
         }
         if (block_idx >= useBlocks_) {
             return;
