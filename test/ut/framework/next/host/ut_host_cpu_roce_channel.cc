@@ -95,6 +95,8 @@ protected:
         MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
         MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(
             returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+        MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     }
 
     std::unique_ptr<hcomm::HostCpuRoceChannel> CreateInitAndConnect(uint32_t notifyNum = 4)
@@ -107,6 +109,7 @@ protected:
         EXPECT_EQ(impl->Init(), HCCL_SUCCESS);
         hcomm::ChannelStatus status = impl->GetStatus();
         EXPECT_EQ(impl->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+        status = impl->GetStatus();
         status = impl->GetStatus();
         status = impl->GetStatus();
         status = impl->GetStatus();
@@ -167,6 +170,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Normal_Expect_HCCL_SUCCESS)
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -178,6 +183,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Normal_Expect_HCCL_SUCCESS)
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -205,6 +213,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_Init_When_ExchangeAllMemsIsTrue_And_SocketIsNu
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     uint32_t memHandleNum = 1;
     MOCKER(HcommMemGetAllMemHandles).stubs().with(any(), outBound(&memHandle), outBound(&memHandleNum)).will(
@@ -223,6 +233,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_Init_When_ExchangeAllMemsIsTrue_And_SocketIsNu
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -288,6 +301,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_CreateQp_Failed_Expect_FAILED)
     MOCKER(hrtGetDeviceType).stubs().with(outBound(devType)).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_E_NETWORK));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -300,10 +314,13 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_CreateQp_Failed_Expect_FAILED)
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::FAILED);
     status = impl_->GetStatus();
-    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::FAILED);
 }
 
@@ -320,6 +337,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ExchangeData_Failed_Expect_FAILED)
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_E_ROCE_CONNECT));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -330,6 +348,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ExchangeData_Failed_Expect_FAILED)
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -352,6 +373,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -362,6 +385,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_ModifyQp_Failed_Expect_FAILED)
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -410,6 +436,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -421,6 +449,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_Rdma_Conn_Failed_Expect_ERROR)
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -463,6 +494,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_PrepareWriteWrResource_Expect_SUCCESS)
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::FindLocalBuffer).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::FindRemoteBuffer).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -474,6 +507,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_PrepareWriteWrResource_Expect_SUCCESS)
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -505,6 +541,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     MOCKER_CPP(&Hccl::Socket::GetStatus).stubs().will(returnValue((Hccl::SocketStatus)Hccl::SocketStatus::OK));
     MOCKER_CPP(&HostRdmaConnection::CreateQp).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostRdmaConnection::ModifyQp).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -518,6 +555,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     struct QpAttr localQpAttr;
@@ -526,7 +566,7 @@ TEST_F(HostCpuRoceChannelTest, Ut_When_HostCpuRoceChannel_Pack_And_Unpack_Expect
     localQpAttr.psn = 2;
     localQpAttr.gidIdx = 3;
     MOCKER(RaGetQpAttr).stubs().with(any(), outBoundP(&localQpAttr)).will(returnValue(0));
-    
+
     Hccl::BinaryStream binaryStream;
     impl_->NotifyVecPack(binaryStream);
     // impl_->BufferVecPack(binaryStream);
@@ -554,6 +594,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -565,6 +607,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_ChannelFence_When_WqeNumIsZero_Expect_HCCL_SUC
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -631,6 +676,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_Write_When_Normal_Expect_HCCL_SUCCESS)
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -642,6 +689,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_Write_When_Normal_Expect_HCCL_SUCCESS)
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
@@ -680,6 +730,8 @@ TEST_F(HostCpuRoceChannelTest, Ut_Read_When_Normal_Expect_HCCL_SUCCESS)
     MOCKER_CPP(&HostCpuRoceChannel::NotifyVecUnpack).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::ConnVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostCpuRoceChannel::RmtBufferVecUnpackProc).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeCapability).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HostCpuRoceChannel::ExchangeData).stubs().will(returnValue(HCCL_SUCCESS));
     // construct
     void* memHandle = static_cast<void*>(localRdmaRmaBuffer.get());
     channelDesc.memHandles = &memHandle;
@@ -691,6 +743,9 @@ TEST_F(HostCpuRoceChannelTest, Ut_Read_When_Normal_Expect_HCCL_SUCCESS)
     // connect
     hcomm::ChannelStatus status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::SOCKET_OK);
+    EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
+    status = impl_->GetStatus();
+    EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::CAP_EXCHANGED);
     EXPECT_EQ(status, ChannelStatus::SOCKET_OK);
     status = impl_->GetStatus();
     EXPECT_EQ(impl_->rdmaStatus_, HostCpuRoceChannel::RdmaStatus::QP_CREATED);
