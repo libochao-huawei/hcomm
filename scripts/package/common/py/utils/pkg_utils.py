@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
@@ -8,25 +8,24 @@
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
 
 """基础构件。"""
 
-import os 
+import os
 from functools import partial
 from itertools import chain, tee
 from operator import methodcaller
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional, TypeVar, Set
 
-TOP_DIR = str(Path(__file__).resolve().parents[5])
+TOP_DIR = str(Path(__file__).resolve().parents[6])
 TOP_SOURCE_DIR = TOP_DIR + '/scripts/'
 DELIVERY_PATH = "build/_CPack_Packages/makeself_staging"
 CONFIG_SCRIPT_PATH = 'package'
 BLOCK_CONFIG_PATH = 'package/module'
-BUILD_DIR_NAME = "build"
 
-SUCCESS = 0
+SUCC = 0
 FAIL = -1
 
 
@@ -43,6 +42,14 @@ class PackageConfigError(PackageError):
 
 class BlockConfigError(PackageError):
     """块配置错误异常。"""
+
+
+class MultiPkgModError(PackageError):
+    """多个pkg_mod元素报错。"""
+
+
+class MultiPkgSoftlinkError(PackageError):
+    """多个pkg_softlink元素报错。"""
 
 
 class ParseOsArchError(PackageError):
@@ -63,6 +70,10 @@ class ContainAsteriskError(PackageError):
 
 class FilelistError(PackageError):
     """文件列表异常。"""
+
+
+class PkgInnerSoftlinkNotAllowed(PackageError):
+    """不允许使用pkg_inner_softlink。"""
 
 
 class UnknownOperateTypeError(PackageError):
@@ -103,19 +114,6 @@ class InstallScriptFormatError(PackageError):
 
 class VersionInfoNotExist(PackageError):
     """version.info文件不存在。"""
-
-
-def get_build_dir() -> str:
-    """返回当前打包流程使用的构建目录。"""
-    current_dir = os.getcwd()
-    if os.path.isfile(os.path.join(current_dir, "CMakeCache.txt")):
-        return current_dir
-    return os.path.join(TOP_DIR, BUILD_DIR_NAME)
-
-
-def get_delivery_dir() -> str:
-    """返回当前打包流程使用的staging目录。"""
-    return os.path.join(get_build_dir(), "_CPack_Packages", "makeself_staging")
 
 
 def flatten(list_of_lists):
