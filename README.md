@@ -6,6 +6,7 @@
 
 ## 🚀 概述
 
+
 HCOMM（Huawei Communication）是HCCL的通信基础库，提供通信域以及通信资源的管理能力。
 
 HCOMM提供了标准化通信编程接口，具备以下关键特性：
