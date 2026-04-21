@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <unordered_map>
 
-#include "base.h"
+#include "rt_external_base.h"
 #include "dev.h"
 
 #if defined(__cplusplus)
