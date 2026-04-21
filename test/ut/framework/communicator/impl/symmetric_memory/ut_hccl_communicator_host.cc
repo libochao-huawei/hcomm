@@ -243,3 +243,35 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
 }
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_ReturnHCCL_SUCCESS)
+{
+    char group[256] = "hccl_world_group";
+    std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
+
+    std::string tag = "aivTag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+
+    s8 *inputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    s8 *outputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    sal_memset(inputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+    sal_memset(outputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+
+    bool clearEnable = true;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    void *commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 2;
+
+    ret = hcclComm->HcclGetAlgExecParam(
+        tag, opType, count, inputPtr, outputPtr, clearEnable, dataType, op, commContext, len, aivCoreLimit);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    sal_free(inputPtr);
+    sal_free(outputPtr);
+}
