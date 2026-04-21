@@ -260,6 +260,7 @@ bool AicpuTsUboeChannel::IsSocketReady()
     }
 
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
+    HCCL_ERROR("[AicpuTsUboeChannel::%s] 11111111111111 4 socket status: %s", __func__, socketStatus.Describe().c_str());
     if (socketStatus == Hccl::SocketStatus::OK) {
         channelStatus = ChannelStatus::SOCKET_OK;
         return true;
