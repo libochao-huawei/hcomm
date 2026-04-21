@@ -537,8 +537,8 @@ HcclResult CommKfcAicpuServer::Orchestrate(const HcclMsg &msg, HcclMsgExt &extMs
               static_cast<unsigned long long>(waitAddr), static_cast<unsigned long long>(recordAddr),
               static_cast<u32>(execCtx->resourceType));
 
+    std::vector<uint8_t> runParam{};
     for (u32 i = 0U; i < repeatCnt; ++i) {
-        std::vector<uint8_t> runParam{};
         const u32 turnIdx = i + 1U;
         UpdateProgress("LoopBegin", msgPos, i, turnIdx, opParamKey, waitAddr, recordAddr);
         HCCL_INFO("[MC2_OPEN_DIAG][LoopBegin] group %u, msgPos %u, repeatIdx %u, turnIdx %u, repeatCnt %u, "
