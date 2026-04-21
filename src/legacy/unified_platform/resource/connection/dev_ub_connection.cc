@@ -823,7 +823,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg) const
 
     std::string dfxStr = StringFormat("chip id[%u] die id[%u], func id[%u] jetty id[%u] "
         "local [%s] remote [%s] udp sport[%u]",
-        devLogicId, dieId, funcId, jettyId, locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), udpSport);
+        devLogicId, dieId, funcId, jettyId, locEid.Describe().c_str(), rmtEid.Describe().c_str(), udpSport);
     dfxMsg += dfxStr;
     HCCL_INFO("[DevUbConnection::%s] %s", __func__, dfxStr.c_str());
     return HCCL_SUCCESS;
