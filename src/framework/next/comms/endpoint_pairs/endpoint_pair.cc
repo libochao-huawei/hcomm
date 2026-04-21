@@ -22,6 +22,9 @@ namespace hcomm {
 EndpointPair::~EndpointPair() 
 {
     for (auto &channels : channelHandles_) {
+        if (channels.second.empty()) {
+            continue;
+        }
         (void)ChannelProcess::ChannelDestroy(channels.second.data(), channels.second.size());
     }
 }
