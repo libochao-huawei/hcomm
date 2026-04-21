@@ -29,7 +29,7 @@ public:
     explicit HcclCommDfx();
 
     // 初始化DFX系统
-    HcclResult Init(u32 deviceId, const std::string& comTag);
+    HcclResult Init(u32 deviceId, const std::string& comTag, u32 myRankId);
 
     // 注册回调函数
     HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
@@ -73,6 +73,7 @@ private:
     static ReadWriteLock rwLock_; // 读写锁
     std::string commTag_;
     u32 deviceId_{0};
+    u32 myRankId_{0};
     u32 npuStreamId_{0};
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> setAddTaskCallback_;
 };

@@ -18,10 +18,11 @@ std::unordered_map<u32, u32> HcclCommDfx::streamIdToTaskId_;
 HcclCommDfx::HcclCommDfx() {
 }
 
-HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag) {
-    HCCL_INFO("[%s]deviceId[%u], comTag[%s]", __func__, deviceId, comTag.c_str());
+HcclResult HcclCommDfx::Init(u32 deviceId, const std::string& comTag, u32 myRankIdParam) {
+    HCCL_INFO("[%s]deviceId[%u], comTag[%s], myRankId[%u]", __func__, deviceId, comTag.c_str(), myRankIdParam);
     deviceId_ = deviceId;
     commTag_ = comTag;
+    myRankId_ = myRankIdParam;
     // 1. 如果mirrorTaskManager_为空，则创建新的MirrorTaskManager
     if (!mirrorTaskManager_) {
         mirrorTaskManager_ = std::make_unique<Hccl::MirrorTaskManager>(deviceId_, &Hccl::GlobalMirrorTasks::Instance(), false);
