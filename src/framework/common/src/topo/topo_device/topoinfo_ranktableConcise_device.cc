@@ -7,16 +7,14 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
-#include "topoinfo_ranktableConcise.h"
+#include <unistd.h>
 #include <map>
-#include <vector>
 #include <string>
 #include <fstream>
 #include <algorithm>
-#include <unistd.h>
 #include <chrono>
 #include <iostream>
+#include <vector>
 #include <arpa/inet.h>
 
 #include "log.h"
@@ -26,6 +24,8 @@
 #include "common/src/config.h"
 #include "workflow_pub.h"
 #include "device_capacity.h"
+
+#include "topoinfo_ranktableConcise.h"
 
 using namespace std;
 using namespace hccl;
@@ -66,7 +66,7 @@ HcclResult TopoinfoRanktableConcise::SetIsInterSuperPodRetryEnable(bool isRetryE
     return HCCL_E_NOT_SUPPORT;
 }
 
-void TopoinfoRanktableConcise::DetectNicDepoly(RankTable_t &rankTable)
+void TopoinfoRanktableConcise::DetectNicDepoly(RankTable_t &rankTable, u32 rankId)
 {
     return;
 }

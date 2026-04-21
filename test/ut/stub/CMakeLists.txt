@@ -30,6 +30,9 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rank_graph.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_orion_adapter.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu/task_service.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/hostdpu/dpu_kernel_entrance.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
@@ -81,9 +84,14 @@ list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/com
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comms/comm_engine_res/comm_engine_res_mgr.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/comm_primitives/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/communicator/impl/independent_op/data_api/sync_data_aicpu_ts.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/common/src/topo/topo_device/topoinfo_ranktableParser_device.cc")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc")
-list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "src/framework/common/src/topo/topo_device/.*")
+LIST(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "SRC/FRAMEWORK/COMMON/SRC/TOPO/topo_device/topoinfo_detect_device.cc")
+LIST(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "SRC/FRAMEWORK/COMMON/SRC/TOPO/topo_device/topoinfo_ranktable_partition_device.cc")
+LIST(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "SRC/FRAMEWORK/COMMON/SRC/TOPO/topo_device/topoinfo_ranktableParser_device.cc")
+LIST(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "SRC/FRAMEWORK/COMMON/SRC/TOPO/topo_device/topoinfo_parse_device.cc")
+LIST(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "SRC/FRAMEWORK/COMMON/SRC/TOPO/topo_device/topoinfo_ranktableHeterog_device.cc")
+LIST(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "SRC/FRAMEWORK/COMMON/SRC/TOPO/topo_device/topoinfo_ranktableStandard_device.cc")
+LIST(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX "SRC/FRAMEWORK/COMMON/SRC/TOPO/topo_device/topoinfo_roletableParser_device.cc")
 
 set(orion_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/aicpu_ts_thread.cc
