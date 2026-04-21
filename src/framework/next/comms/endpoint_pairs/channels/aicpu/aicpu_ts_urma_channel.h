@@ -10,6 +10,7 @@
 #ifndef AICPU_TS_URMA_CHANNEL_H
 #define AICPU_TS_URMA_CHANNEL_H
 
+#include <atomic>
 #include "../channel.h"
 #include "../../sockets/socket_mgr.h"
 
@@ -53,6 +54,7 @@ private:
     HcclResult PackOpData(std::vector<char> &data);
 
 private:
+    std::atomic<bool> isFirstPrintChannelInfo_{true}; // 是否第一次打印通道建链信息，避免重复打印日志刷屏
     // --------------------- 入参 ---------------------
     EndpointHandle                                              endpointHandle_;
     HcommChannelDesc                                            channelDesc_;
