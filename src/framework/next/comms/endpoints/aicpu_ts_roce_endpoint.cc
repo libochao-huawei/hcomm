@@ -270,44 +270,6 @@ HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
         __func__, key.devicePhyId, key.port);
     return HCCL_SUCCESS;
 }
-    }
-
-    EXECEPTION_CATCH(
-        serverSocket_ = std::make_shared<hccl::HcclSocket>(static_cast<HcclNetDevCtx>(netDev_), listenPort),
-        return HCCL_E_PTR);
-    CHK_PTR_NULL(serverSocket_);
-
-    HcclResult ret = serverSocket_->Init();
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] HcclSocket Init failed, ret[%d]", __func__, ret);
-        serverSocket_.reset();
-        return ret;
-    }
-
-    ret = serverSocket_->Listen();
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AicpuTsRoceEndpoint][%s] HcclSocket Listen failed, ret[%d]", __func__, ret);
-        serverSocket_.reset();
-        return ret;
-    }
-
-    std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
-    auto &serverSocketMap = GetServerSocketMap();
-    auto it = serverSocketMap.find(listenPort);
-    if (it != serverSocketMap.end() && it->second.socket != nullptr) {
-        it->second.refCount++;
-        listenRefPorts_.push_back(listenPort);
-        serverSocket_ = it->second.socket;
-        HCCL_INFO("[AicpuTsRoceEndpoint::%s] concurrent reuse port[%u], ref[%u]", __func__, listenPort,
-            it->second.refCount);
-        return HCCL_SUCCESS;
-    }
-
-    serverSocketMap[listenPort] = AicpuTsListenSocketSlot{ serverSocket_, 1U };
-    listenRefPorts_.push_back(listenPort);
-    HCCL_INFO("[AicpuTsRoceEndpoint][%s] listen on port[%u] success", __func__, listenPort);
-    return HCCL_SUCCESS;
-}
 
 std::mutex &AicpuTsRoceEndpoint::ListenSocketMapMutex()
 {
