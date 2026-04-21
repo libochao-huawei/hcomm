@@ -13,12 +13,6 @@ message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
 
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-endif()
-
 if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
     # need to switch
     set(CMAKE_SYSTEM_NAME Linux)
@@ -44,17 +38,19 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
+
+# 引入CANN/cmake库
+include(cmake/fetch_cann_cmake.cmake)
+
 project(hcomm)
 
+# 引入CANN/cmake库，初始化
+init_cann_project()
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
-
-set(CMAKE_CXX_COMPILE_OBJECT
-    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-)
-set(CMAKE_C_COMPILE_OBJECT
-    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
-)
 
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
@@ -104,7 +100,7 @@ elseif(BUILD_OPEN_PROJECT)
     include(cmake/func.cmake)
     include(version.cmake)
     if(ENABLE_OPEN_SRC)
- 	    check_pkg_build_deps("hcomm")
+        check_pkg_build_deps("hcomm")
     endif()
     add_version_info_targets()
     pack_built_in()
