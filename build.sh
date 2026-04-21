@@ -37,6 +37,7 @@ BUILD_CB_TEST="false"
 
 ENABLE_UT="off"
 ENABLE_ST="off"
+ST_TASKS=()
 ENABLE_GCOV="off"
 CMAKE_BUILD_TYPE="Debug"
 
@@ -134,10 +135,12 @@ function build_st() {
     cd "${BUILD_DIR}"
 
     # 编译 ST 用例代码
+    local st_tasks=$(printf '%s;' "${ST_TASKS[@]}" | sed 's/;$//')
     cmake_config -DPRODUCT_SIDE=host \
                  -DENABLE_GCOV=${ENABLE_GCOV} \
                  -DENABLE_TEST=${ENABLE_TEST} \
-                 -DENABLE_ST=${ENABLE_ST}
+                 -DENABLE_ST=${ENABLE_ST} \
+                 -DST_TARGETS=${st_tasks}
 
     cmake --build . ${JOB_NUM}
 
@@ -155,102 +158,6 @@ function build_st() {
 
     log "Info: Build and tests completed successfully!"
     log "Info: Test logs saved in: ${log_dir}"
-}
-
-function build_test() {
-    ENABLE_ST="on"
-    cmake_config -DENABLE_ST=${ENABLE_ST}
-
-    LIBRARY_DIR="${BUILD_DIR}/test:${ASCEND_HOME_PATH}/lib64:"
-    # 每日构建sdk包安装路径
-    if [ -d "${ASCEND_HOME_PATH}/opensdk" ];then
-        LIBRARY_DIR="${LIBRARY_DIR}${ASCEND_HOME_PATH}/opensdk/opensdk/gtest_shared/lib64:"
-    fi
-
-    # 社区sdk包安装路径
-    if [ -d "${ASCEND_HOME_PATH}/../../latest/opensdk" ];then
-        LIBRARY_DIR="${LIBRARY_DIR}${ASCEND_HOME_PATH}/../../latest/opensdk/opensdk/gtest_shared/lib64:"
-    fi
-
-    GCC_MAJOR=`gcc -dumpversion | cut -d. -f1`
-    if [ "${ASAN}" == "true" ];then
-        ARCH=$(uname -m)
-        if [[ $ARCH == "x86_64" || $ARCH == "i386" || $ARCH == "i686" ]]; then
-            PRELOAD="/usr/lib/gcc/x86_64-linux-gnu/${GCC_MAJOR}/libasan.so:/usr/lib/gcc/x86_64-linux-gnu/${GCC_MAJOR}/libstdc++.so"
-        elif [[ $ARCH == "aarch64" || $ARCH == "armv8l" || $ARCH == "armv7l" ]]; then
-            PRELOAD="/usr/lib/gcc/aarch64-linux-gnu/${GCC_MAJOR}/libasan.so:/usr/lib/gcc/aarch64-linux-gnu/${GCC_MAJOR}/libstdc++.so"
-        else
-            echo "未知架构: $ARCH"
-        fi
-        echo "PRELOAD is ${PRELOAD}"
-        ASAN_OPT="detect_leaks=0"
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "open_hccl_test" ] || [ "$TEST" = "all" ];then
-        build open_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/testcase/open_hccl_test
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "executor_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_testcase_generalization/executor_hccl_test
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "executor_reduce_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_reduce_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_reduce_testcase_generalization/executor_reduce_hccl_test
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "executor_pipeline_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_pipeline_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_aicpu_2d_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_aicpu_2d_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/aicpu_2d_testcase/legacy_alg_aicpu_2d_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_hf16p_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_1d_hf16p_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_hf16p_testcase/legacy_alg_ccu_1d_hf16p_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part1" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_1d_testcase_part1
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part1/legacy_alg_ccu_1d_testcase_part1
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_ccu_1d_testcase_part2" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_1d_testcase_part2
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_1d_testcase_part2/legacy_alg_ccu_1d_testcase_part2
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_alg_ccu_reduce" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_ccu_reduce
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/ccu_reduce_testcase/legacy_alg_ccu_reduce
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_function_ut_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_function_ut_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/function_ut_testcase/legacy_alg_function_ut_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "legacy_alg_testcase" ] || [ "${TEST_TASK_NAME}" == "legacy_all_testcase" ] || [ "$TEST" = "all" ];then
-        build legacy_alg_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/legacy/st/algorithm/testcase/legacy_alg_testcase/legacy_alg_testcase
-    fi
 }
 
 function build_kernel() {
@@ -446,91 +353,79 @@ while [[ $# -gt 0 ]]; do
     -s|--st)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="all"
+        ST_TASKS+=("all")
         shift
         ;;
     --open_hccl_test)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="open_hccl_test"
+        ST_TASKS+=("open_hccl_test")
         shift
         ;;
     --executor_hccl_test)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="executor_hccl_test"
+        ST_TASKS+=("executor_hccl_test")
         shift
         ;;
     --executor_reduce_hccl_test)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="executor_reduce_hccl_test"
+        ST_TASKS+=("executor_reduce_hccl_test")
         shift
         ;;
     --executor_pipeline_hccl_test)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="executor_pipeline_hccl_test"
+        ST_TASKS+=("executor_pipeline_hccl_test")
         shift
         ;;
     --legacy_all_testcase)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_all_testcase"
+        ST_TASKS+=("legacy_all_testcase")
         shift
         ;;
     --legacy_aicpu_2d_testcase)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_aicpu_2d_testcase"
+        ST_TASKS+=("legacy_aicpu_2d_testcase")
         shift
         ;;
     --legacy_ccu_1d_hf16p_testcase)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_ccu_1d_hf16p_testcase"
+        ST_TASKS+=("legacy_ccu_1d_hf16p_testcase")
         shift
         ;;
     --legacy_ccu_1d_testcase_part1)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_ccu_1d_testcase_part1"
+        ST_TASKS+=("legacy_ccu_1d_testcase_part1")
         shift
         ;;
     --legacy_ccu_1d_testcase_part2)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_ccu_1d_testcase_part2"
+        ST_TASKS+=("legacy_ccu_1d_testcase_part2")
         shift
         ;;
     --legacy_alg_ccu_reduce)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_alg_ccu_reduce"
+        ST_TASKS+=("legacy_alg_ccu_reduce")
         shift
         ;;
     --legacy_function_ut_testcase)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_function_ut_testcase"
+        ST_TASKS+=("legacy_function_ut_testcase")
         shift
         ;;
     --legacy_alg_testcase)
         ENABLE_TEST="on"
         ENABLE_ST="on"
-        TEST="partial"
-        TEST_TASK_NAME="legacy_alg_testcase"
+        ST_TASKS+=("legacy_alg_testcase")
         shift
         ;;
     --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
@@ -591,10 +486,6 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
-
-if [ -n "${TEST}" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_TEST=ON"
-fi
 
 if [ "${KERNEL}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device"

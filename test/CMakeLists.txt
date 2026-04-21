@@ -18,6 +18,10 @@ endif()
 
 # ST
 if(ENABLE_ST)
+    foreach(item IN LISTS ST_TASKS)
+        message("========= item: ${item}")
+    endforeach()
+
     include(${PROJECT_SOURCE_DIR}/cmake/third_party/protobuf.cmake)
     enable_testing()
     add_subdirectory(st/algorithm)
