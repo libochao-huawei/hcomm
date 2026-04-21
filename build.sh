@@ -140,7 +140,7 @@ function build_st() {
                  -DENABLE_GCOV=${ENABLE_GCOV} \
                  -DENABLE_TEST=${ENABLE_TEST} \
                  -DENABLE_ST=${ENABLE_ST} \
-                 -DST_TARGETS=${st_tasks}
+                 -DST_TASKS=${st_tasks}
 
     cmake --build . ${JOB_NUM}
 
@@ -390,6 +390,12 @@ while [[ $# -gt 0 ]]; do
         ENABLE_TEST="on"
         ENABLE_ST="on"
         ST_TASKS+=("legacy_aicpu_2d_testcase")
+        shift
+        ;;
+    --legacy_ccu_2d_testcase)
+        ENABLE_TEST="on"
+        ENABLE_ST="on"
+        ST_TASKS+=("legacy_ccu_2d_testcase")
         shift
         ;;
     --legacy_ccu_1d_hf16p_testcase)
