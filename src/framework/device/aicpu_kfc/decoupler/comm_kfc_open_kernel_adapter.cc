@@ -84,6 +84,7 @@ HcclResult LoadOpenOpParamData(uint64_t opParamKey, std::string &commName, std::
 void CreateOpParamByBaseOpParam(const std::vector<uint8_t> &baseOpParam, const HcclApi::HcclMsg &msg,
     HcclApi::HcclMsgExt &extMsg, uint32_t rankNum, void *stream, std::vector<uint8_t> &runOpParam)
 {
+    const HcclCMDType msgOpType = static_cast<HcclCMDType>(msg.commType.prepareType);
     const auto *baseParam = reinterpret_cast<const ops_hccl::OpParam *>(baseOpParam.data());
     const size_t opParamSize = sizeof(ops_hccl::OpParam) + baseParam->varMemSize;
     runOpParam.resize(opParamSize);
@@ -117,7 +118,17 @@ void CreateOpParamByBaseOpParam(const std::vector<uint8_t> &baseOpParam, const H
     } else {
         param->DataDes.dataType = param->DataDes.outputType = static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType);
         param->DataDes.count = msg.dataCnt;
-        param->DataDes.strideCount = msg.strideCount;
+        u64 effectiveStrideCount = msg.strideCount;
+        const u32 repeatCnt = (msg.addMsg.v1Msg.repeatCnt == 0U) ? 1U : static_cast<u32>(msg.addMsg.v1Msg.repeatCnt);
+        if (effectiveStrideCount == 0U && repeatCnt > 1U &&
+            (msgOpType == HCCL_CMD_ALLGATHER || msgOpType == HCCL_CMD_REDUCE_SCATTER)) {
+            effectiveStrideCount = msg.dataCnt * static_cast<u64>(repeatCnt);
+            HCCL_INFO("[MC2_OPEN_DIAG][FormatStrideFallback] opType %u, dataCnt %llu, repeatCnt %u, "
+                      "effectiveStrideCount %llu.",
+                      static_cast<u32>(msgOpType), static_cast<unsigned long long>(msg.dataCnt), repeatCnt,
+                      static_cast<unsigned long long>(effectiveStrideCount));
+        }
+        param->DataDes.strideCount = effectiveStrideCount;
     }
 
     param->opType = convertAllToAllToV ? HcclCMDType::HCCL_CMD_ALLTOALLV :
@@ -139,6 +150,10 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
         CreateOpParamByBaseOpParam(baseOpParam, msg, extMsg, rankNum, stream, runOpParam);
         param = reinterpret_cast<ops_hccl::OpParam *>(runOpParam.data());
     } else {
+        if (runOpParam.empty()) {
+            HCCL_ERROR("Run op param is empty at repeat %u.", repeatIdx);
+            return HCCL_E_PARA;
+        }
         if (param->opType == HCCL_CMD_ALLTOALLV) {
             for (u32 i = 0U; i < rankNum; ++i) {
                 extMsg.sendOffset[i] += extMsg.sendCounts[i];
@@ -148,7 +163,7 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
                         static_cast<u64 *>(param->all2AllVDataDes.rdispls)[i]);
             }
         } else  {
-            const u64 dataLen = GetDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
+            const u64 dataLen = msg.dataCnt * GetDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
             param->inputPtr = reinterpret_cast<void *>(reinterpret_cast<int8_t *>(param->inputPtr) + dataLen);
             param->outputPtr = reinterpret_cast<void *>(reinterpret_cast<int8_t *>(param->outputPtr) + dataLen);
         }
