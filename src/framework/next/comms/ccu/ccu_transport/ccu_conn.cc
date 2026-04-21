@@ -511,13 +511,13 @@ std::string CcuConnection::Describe()
 HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
     uint16_t udpSport = 0xFFFF;
-    // if (tpProtocol_ == TpProtocol::RTP) {
-    //     uint32_t attrBitmap = 8192;
-    //     struct TpAttr tpAttr {0};
-    //     u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
-    //     CHK_RET(Hccl::HrtRaCtxGetTpAttr(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr));
-    //     udpSport = tpAttr.dataUdpSrcport;
-    // }
+    if (tpProtocol_ == TpProtocol::RTP) {
+        uint32_t attrBitmap = 8192;
+        struct TpAttr tpAttr {0};
+        u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
+        CHK_RET(Hccl::HrtRaCtxGetTpAttr(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr));
+        udpSport = tpAttr.dataUdpSrcport;
+    }
     udpSport = udpSport & 0xFF;
 
     std::string jettyIds;
