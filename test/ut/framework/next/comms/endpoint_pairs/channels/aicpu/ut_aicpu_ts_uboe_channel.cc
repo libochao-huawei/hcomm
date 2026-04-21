@@ -17,10 +17,10 @@ protected:
 
 // Lightweight fakes for external dependencies used by AicpuTsUboeChannel
 struct FakeEndpoint { // will be used as EndpointHandle (void*)
-    hcomm::EndpointDesc desc;
+    EndpointDesc desc;
     void* rdmaHandle{reinterpret_cast<void*>(0xDEADBEEF)};
-    FakeEndpoint() { memset(&desc, 0, sizeof(desc)); desc.protocol = 0; }
-    hcomm::EndpointDesc GetEndpointDesc() { return desc; }
+    FakeEndpoint() { memset(&desc, 0, sizeof(desc)); desc.protocol = COMM_PROTOCOL_RESERVED; }
+    EndpointDesc GetEndpointDesc() { return desc; }
     void* GetRdmaHandle() { return rdmaHandle; }
 };
 
@@ -29,13 +29,13 @@ public:
     FakeSocket(Hccl::SocketStatus status = Hccl::SocketStatus::OK) :
         Hccl::Socket(nullptr, Hccl::IpAddress(), 0, Hccl::IpAddress(), "fake", Hccl::SocketRole::SERVER, Hccl::NicType::DEVICE_NIC_TYPE),
         status_(status) {}
-    void SendAsync(const u8 *sendBuf, u32 size) override { sent_.insert(sent_.end(), sendBuf, sendBuf + size); }
-    void RecvAsync(u8 *recvBuf, u32 size) override {
+    void SendAsync(const u8 *sendBuf, u32 size) { sent_.insert(sent_.end(), sendBuf, sendBuf + size); }
+    void RecvAsync(u8 *recvBuf, u32 size) {
         // provide zeros if nothing
         if (recvBuf && size) std::memset(recvBuf, 0, size);
     }
-    Hccl::SocketStatus GetAsyncStatus() override { return status_; }
-    Hccl::SocketRole GetRole() const override { return Hccl::SocketRole::SERVER; }
+    Hccl::SocketStatus GetAsyncStatus() { return status_; }
+    Hccl::SocketRole GetRole() const { return Hccl::SocketRole::SERVER; }
 
     // allow tests to change reported status
     Hccl::SocketStatus status_;
@@ -133,9 +133,9 @@ TEST_F(AicpuTsUboeChannelTest, Ut_ProcessUboeState_AllStates_Transitions) {
 
     // Minimal configuration so state handlers can run with fakes
     ch.notifyNum_ = 1;
-    ch.exchangeAllMems = false;
+    ch.channelDesc_.exchangeAllMems = false;
     ch.channelStatus = ChannelStatus::INIT;
-    ch.uboeStatus = UboeStatus::INIT;
+    ch.uboeStatus = AicpuTsUboeChannel::UboeStatus::INIT;
 
     // Drive through the state machine by repeatedly calling GetStatus.
     // Rely on FakeSocket/FakeEndpoint/Fake buffer/notify to allow real methods to execute.
