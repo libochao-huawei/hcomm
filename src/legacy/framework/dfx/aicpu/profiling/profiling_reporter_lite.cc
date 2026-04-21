@@ -61,14 +61,21 @@ void ProfilingReporterLite::ReportAllTasks()
         // 不论首次是否打印，都手动将首个task打印一遍
         if (lastPoses_.find(streamId) == lastPoses_.end()) {
             TaskInfo task = (*(*(*currQueue->Begin())));
+            HCCL_INFO("[ProfilingReporterLite][ReportAllTasks] streamId = %u, taskId = %u", task.streamId_, task.taskId_);
+            HCCL_INFO("taskParam_task.type %s", task.taskParam_.Describe().c_str());
             taskInfo.push_back(task);
             lastPoses_[streamId] = currQueue->Begin();
+        }
+        if (currQueue->Tail() == nullptr) {
+            HCCL_WARNING("[ProfilingReporterLite][ReportAllTasks] currQueue->Tail() is nullptr, continue to next task.");
+            continue;
         }
         auto endPos = currQueue->Tail();
         auto iter = lastPoses_[streamId];
         ++(*iter);
         for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {
             TaskInfo task = (*(*(*iter)));
+            HCCL_INFO("[ProfilingReporterLite][ReportAllTasks] streamId = %u, taskId = %u", task.streamId_, task.taskId_);
             HCCL_INFO("taskParam_task.type %s", task.taskParam_.Describe().c_str());
             taskInfo.push_back(task);
         }

@@ -23,10 +23,11 @@ HcclResult HcclCommGetStatus(const char * commId, HcclCommStatus *status)
 {
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(status);
-    std::shared_ptr<hccl::hcclComm> hcclComm;
-    CHK_RET(HcclGetCommHandle(commId, hcclComm));
-    CHK_PRT_RET(hcclComm == nullptr, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    return hcclComm->GetCommStatus(*status);
+    HcclComm comm = nullptr;
+    // 公共流程, 需要同时获取单算子和图模式的通信域
+    CHK_RET(HcomGetCommHandleByGroup(commId, &comm));
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("%s hcclComm is nullptr, commId[%s]", __func__, commId), HCCL_E_PTR);
+    return static_cast<hccl::hcclComm*>(comm)->GetCommStatus(*status);
 }
 
 /**

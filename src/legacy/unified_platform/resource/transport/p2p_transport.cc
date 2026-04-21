@@ -12,7 +12,6 @@
 
 #include "ipc_local_notify.h"
 #include "orion_adapter_rts.h"
-#include "local_ipc_rma_buffer.h"
 #include "exchange_ipc_notify_dto.h"
 #include "exchange_ipc_buffer_dto.h"
 

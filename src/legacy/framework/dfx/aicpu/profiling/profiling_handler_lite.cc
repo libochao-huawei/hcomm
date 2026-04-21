@@ -99,6 +99,7 @@ void ProfilingHandlerLite::ReportHcclTaskDetails(const std::vector<TaskInfo> &ta
             memset_s(taskDetailsInfos, sizeof(taskDetailsInfos), 0, sizeof(taskDetailsInfos));
         }
     }
+    HCCL_INFO("[ProfilingHandlerLite][ReportHcclOpInfo] ReportHcclTaskDetails end.");
 }
 
 void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcclTaskInfo &taskDetailsInfos) const 
@@ -160,11 +161,11 @@ void ProfilingHandlerLite::DumpTaskDetails(const MsprofAicpuHcclTaskInfo &taskDe
 {
     HCCL_INFO("ProfilingHandlerLite::DumpTaskDetails %s", taskInfo.taskParam_.Describe().c_str());
     HCCL_INFO("[ProfilingHandlerLite]ReporttHcclTaskDetails data is: itemId[%llu], cclTag[%llu], groupName[%llu], "
-              " remoteRank[%u], rankSize[%u], stage[%u], taskType[%d], srcAddr[%llu], dstAddr[%llu], "
-              " dataSize[%u], notifyID[%llu], dataType[%s],linkType[%u], timeStamp[%llu], durationEstimated[%f], "
-              " taskId[%llu], streamId[%u], planeID[%llu], opType[%s], transportType[%d], role[%u], workFlowMode[%u] ",
+              " remoteRank[%u], rankSize[%u], stage[%u], taskType[%s], srcAddr[%llu], dstAddr[%llu], "
+              " dataSize[%llu], notifyID[%llu], dataType[%s],linkType[%u], timeStamp[%llu], durationEstimated[%f], "
+              " taskId[%u], streamId[%u], planeID[%u], opType[%s], transportType[%d], role[%u], workFlowMode[%u] ",
               taskDetailsInfos.itemId, taskDetailsInfos.cclTag, taskDetailsInfos.groupName, taskDetailsInfos.remoteRank,
-              taskDetailsInfos.rankSize, taskDetailsInfos.stage, taskInfo.taskParam_.taskType, taskDetailsInfos.srcAddr,
+              taskDetailsInfos.rankSize, taskDetailsInfos.stage, taskInfo.taskParam_.taskType.Describe().c_str(), taskDetailsInfos.srcAddr,
               taskDetailsInfos.dstAddr, taskDetailsInfos.dataSize, taskDetailsInfos.notifyID, DataTypeToSerialString( taskDetailsInfos.dataType).c_str(),
               taskDetailsInfos.linkType, taskDetailsInfos.timeStamp, taskDetailsInfos.durationEstimated,
               taskDetailsInfos.taskId, taskDetailsInfos.streamId, taskDetailsInfos.planeID, OpTypeToSerialString(taskDetailsInfos.opType).c_str(),

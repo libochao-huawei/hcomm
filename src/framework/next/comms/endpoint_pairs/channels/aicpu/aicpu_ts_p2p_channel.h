@@ -20,7 +20,7 @@
 #include "p2p_transport.h"
 #include "p2p_connection.h"
 #include "ipc_local_notify.h"
-#include "local_ipc_rma_buffer.h"
+#include "../../../../../../legacy/unified_platform/resource/buffer/local_ipc_rma_buffer.h"
 #include "aicpu_res_package_helper.h"
 
 namespace hcomm {
