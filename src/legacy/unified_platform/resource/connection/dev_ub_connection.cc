@@ -809,6 +809,31 @@ string DevUbConnection::Describe() const
                         funcId, jettyId, sqBuffVa, sqDepth, tpn, dbAddr);
 }
 
+HcclResult DevUbConnection::Describe(std::string &dfxMsg) const
+{
+    uint16_t udpSport = 0xFFFF; // 无法获取实际的udpSport，使用0xFFFF表示未知
+    if (tpProtocol == TpProtocol::TP) {
+        uint32_t attrBitmap = 8192;
+        struct TpAttr tpAttr {0};
+        u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
+        CHK_RET(HrtRaCtxGetTpAttr(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr));
+        udpSport = tpAttr.dataUdpSrcport;
+    }
+    udpSport = udpSport & 0xFF;
+    std::string locEidStr = StringFormat("%016llx:%016llx",
+                            static_cast<unsigned long long>(be64toh(locEid.subnetPrefix)),
+                            static_cast<unsigned long long>(be64toh(locEid.interfaceId)));
+    std::string rmtEidStr = StringFormat("%016llx:%016llx",
+                            static_cast<unsigned long long>(be64toh(rmtEid.subnetPrefix)),
+                            static_cast<unsigned long long>(be64toh(rmtEid.interfaceId)));
+    std::string dfxStr = StringFormat("chip id[%u] die id[%u], func id[%u] jetty id[%u] "
+        "local eid[%s] remote eid[%s] udp sport[%u]",
+        devLogicId, dieId, funcId, jettyId, locEidStr.c_str(), rmtEidStr.c_str(), udpSport);
+    dfxMsg += dfxStr;
+    HCCL_INFO("[DevUbConnection::%s] %s", __func__, dfxStr.c_str());
+    return HCCL_SUCCESS;
+}
+
 void DevUbConnection::AddNop(const Stream &stream)
 {
     if (opMode != OpMode::OFFLOAD) {
