@@ -183,11 +183,13 @@ __aicore__ inline void AivAlltoAllV2Mesh1D(EXTERN_KERNEL_ARGS_DEF_V2)
     AivAlltoAllMesh1D<T> op;
     op.Init(KERNEL_CLASS_INIT, true);
     op.InitCommon(tag);
-    SyncAll<true>();
-    if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
-        op.BarrierForFirstOP();
+    if(tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1){
+        SyncAll<true>();
+        if (block_idx == 0) {
+            op.BarrierForFirstOP();
+        }
+        SyncAll<true>();
     }
-    SyncAll<true>();
     op.Process();
     op.BarrierAll();
 }

@@ -112,9 +112,9 @@ public:
         }
     }
 
-    __aicore__ inline void Process(uint64_t count, uint64_t tag, uint64_t stride)
+    __aicore__ inline void Process(uint64_t count, uint64_t tag, uint64_t stride, bool isOpbase)
     {
-        if (count * sizeof(T) >= DATA_LIMIT && numBlocks_ >= 2 * rankSize_) {
+        if (count * sizeof(T) > 2 * DATA_LIMIT && numBlocks_ >= 2 * rankSize_) {
             // 核数大于等于2倍ranksize
             curStageCoreNum = numBlocks_ / rankSize_ * rankSize_; // 总的核数
             coreNumStage1 = rankSize_;
@@ -129,9 +129,72 @@ public:
             }
         } else {
             // 核数小于ranksize
-            RunCtrlCore(count, tag, stride);
+            if (isOpbase) {
+                if(count * sizeof(T) > 2 * DATA_LIMIT || numBlocks_ < rankSize_){
+                    RunCtrlCoreOpbase(count, tag, stride);
+                }else{
+                    RunCtrlCoreOpbaseSmall(count, tag, stride);
+                }
+            } else {
+                RunCtrlCore(count, tag, stride);
+            }
         }
     }
+
+     __aicore__ inline void RunCtrlCoreOpbase(uint64_t count, uint64_t tag, uint64_t stride)
+    {
+        if (numBlocks_ > rankSize_) {
+            numBlocks_ = rankSize_;
+        }
+        if (block_idx >= numBlocks_) {
+            SyncAll<true>();
+            return;
+        }
+        // 分核把数据从input搬到gm
+        auto input = reinterpret_cast<__gm__ T *>(input_);
+        uint64_t dataTypeSize = sizeof(T);
+        uint64_t countPerCore = count / numBlocks_;
+        uint64_t curCountCore = block_idx == numBlocks_ - 1 ? count - countPerCore * (numBlocks_ - 1) : countPerCore;
+        auto gmIn = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank_]) + block_idx * countPerCore * dataTypeSize);
+        CpGM2GM(gmIn, input + block_idx * countPerCore, curCountCore);
+        SyncAll<true>();
+
+        uint32_t perCoreRankNum = rankSize_ / numBlocks_;
+        uint32_t remainRankNum = rankSize_ % numBlocks_;
+        uint32_t curCoreRankNum = block_idx < remainRankNum ? perCoreRankNum + 1 : perCoreRankNum;
+        uint32_t startRank = block_idx < remainRankNum ? (perCoreRankNum + 1) * block_idx : perCoreRankNum * block_idx + remainRankNum;
+        for (uint32_t rank = startRank; rank < startRank + curCoreRankNum; rank++) {
+            Record(rank, rank_, tag);
+        }
+        for (uint32_t rank = startRank; rank < startRank + curCoreRankNum; rank++) {
+            auto gmOthers = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank]));
+            auto output = reinterpret_cast<__gm__ T *>(output_ + rank * stride);
+            WaitFlag(rank_, rank, tag);
+            CpGM2GM(output, gmOthers, count);
+            PipeBarrier<PIPE_ALL>();
+        }
+    }      
+
+    __aicore__ inline void RunCtrlCoreOpbaseSmall(uint64_t count, uint64_t tag, uint64_t stride)
+    {
+        if (numBlocks_ > rankSize_) {
+            numBlocks_ = rankSize_;
+        }
+        if (block_idx >= numBlocks_) {
+            return;
+        }
+        // 分核把数据从input搬到gm
+        auto input = reinterpret_cast<__gm__ T *>(input_);
+        auto gmIn = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank_]) + block_idx * count * sizeof(T));
+        CpGM2GM(gmIn, input, count);
+        PipeBarrier<PIPE_ALL>();
+        Record(rank, rank_, tag);
+        auto gmOthers = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[block_idx]) + block_idx * count * sizeof(T));
+        auto output = reinterpret_cast<__gm__ T *>(output_ + block_idx * stride);
+        WaitFlag(rank_, block_idx, tag);
+        CpGM2GM(output, gmOthers, count);
+        PipeBarrier<PIPE_ALL>();
+    }      
 
     __aicore__ inline void RunCtrlCore(uint64_t count, uint64_t tag, uint64_t stride)
     {
@@ -184,13 +247,15 @@ __aicore__ inline void AivAllGatherV2Mesh1D(EXTERN_KERNEL_ARGS_DEF_V2)
 {
     AivAllGatherMesh1D<T> op;
     op.Init(KERNEL_CLASS_INIT, true);
-    SyncAll<true>();
-    if (block_idx == 0 && tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1) {
-        op.BarrierForFirstOP();
+    if(tag >> AIV_TAG_MOVE_RIGHT_BITS == 1 && (tag & LOW_16_BITS) == 1){
+        SyncAll<true>();
+        if (block_idx == 0) {
+            op.BarrierForFirstOP();
+        }
+        SyncAll<true>();
     }
-	SyncAll<true>();
 
-    op.Process(len, tag, outputSliceStride);
+    op.Process(len, tag, outputSliceStride, true);
     // 执行barrier全同步
     op.BarrierAll();
 }
@@ -209,7 +274,7 @@ __aicore__ inline void AivAllGatherV2Mesh1DSuperKernel(SUPERKERNEL_ARGS_DEF)
         uint64_t curCount = (countLeft > maxCountPerLoop) ? maxCountPerLoop : countLeft;
         uint64_t curSize = curCount * sizeof(T);
 
-        op.Process(curCount, loopTag, op.outputSliceStride_);
+        op.Process(curCount, loopTag, op.outputSliceStride_, false);
         op.BarrierAll();
 
         countLeft -= curCount;

@@ -471,7 +471,6 @@ __aicore__ inline void AivCommBase::SyncCoreAll(int32_t curTag)
 
 __aicore__ inline void AivCommBase::BarrierAll()
 {
-    SyncAll<true>();
     int targetRank_ = GetBlockIdx();
     while (targetRank_ < rankSize_) {
             uint64_t flag_offset = BASE_FLAG_OFFSET + rank_ * FLAG_SIZE;
@@ -485,7 +484,6 @@ __aicore__ inline void AivCommBase::BarrierAll()
             Record(rank_, flag_offset / UB_ALIGN_SIZE, 0);
         targetRank_ += block_num;
     }
-    SyncAll<true>();
 }
 
 // 为sendRecv单独设计
