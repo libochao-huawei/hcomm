@@ -256,7 +256,6 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     u32 descNum = 1;
 
     rtStream_t stream;
-    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(stream));
     fakeCommA.hostDeviceSyncNotifyManager = std::make_unique<HostDeviceSyncNotifyManager>();
 
     fakeCommA.InitStreamManager();
