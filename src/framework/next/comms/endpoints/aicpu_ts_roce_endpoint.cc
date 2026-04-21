@@ -129,6 +129,7 @@ void AicpuTsRoceEndpoint::ReleaseSharedNetDev()
     }
     netDev_ = nullptr;
     if (toClose != nullptr) {
+        HCCL_INFO("[AicpuTsRoceEndpoint][ReleaseSharedNetDev] closing HcclNetDev for devicePhyId[%u]", key);
         const HcclResult ret = HcclNetDevClose(toClose);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[AicpuTsRoceEndpoint][ReleaseSharedNetDev] HcclNetDevClose failed, ret[%d]", ret);
