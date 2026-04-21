@@ -41,7 +41,7 @@ HcclResult Channel::CreateChannel(
                 EXECEPTION_CATCH(uniqueChannelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
                 break;
-            } else if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
+            } else (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_UBOE) {
                 EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuUboeChannel>(endpointHandle, channelDesc),
                     return HCCL_E_PARA);
                 break;
