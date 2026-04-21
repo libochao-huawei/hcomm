@@ -139,6 +139,10 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
         CreateOpParamByBaseOpParam(baseOpParam, msg, extMsg, rankNum, stream, runOpParam);
         param = reinterpret_cast<ops_hccl::OpParam *>(runOpParam.data());
     } else {
+        if (runOpParam.empty()) {
+            HCCL_ERROR("Run op param is empty at repeat %u.", repeatIdx);
+            return HCCL_E_PARA;
+        }
         if (param->opType == HCCL_CMD_ALLTOALLV) {
             for (u32 i = 0U; i < rankNum; ++i) {
                 extMsg.sendOffset[i] += extMsg.sendCounts[i];
@@ -148,7 +152,7 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
                         static_cast<u64 *>(param->all2AllVDataDes.rdispls)[i]);
             }
         } else  {
-            const u64 dataLen = GetDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
+            const u64 dataLen = msg.dataCnt * GetDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
             param->inputPtr = reinterpret_cast<void *>(reinterpret_cast<int8_t *>(param->inputPtr) + dataLen);
             param->outputPtr = reinterpret_cast<void *>(reinterpret_cast<int8_t *>(param->outputPtr) + dataLen);
         }
