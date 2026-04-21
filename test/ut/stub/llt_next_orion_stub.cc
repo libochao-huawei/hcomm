@@ -2215,6 +2215,54 @@ std::shared_ptr<TaskInfo>  MirrorTaskManagerLite::GetTaskInfo(u32 streamId, u32 
 
 }  // namespace Hccl
 
+namespace Hccl {
+class CommunicatorImplLite {
+public:
+    CommunicatorImplLite(u32 commId) : commId_(commId) {}
+    ~CommunicatorImplLite() {}
+private:
+    u32 commId_;
+};
+
+class CommunicatorImplLiteMgr {
+public:
+    CommunicatorImplLiteMgr();
+    ~CommunicatorImplLiteMgr();
+    static CommunicatorImplLiteMgr &GetInstance();
+    void DestroyComm(u32 commIdIndex);
+    CommunicatorImplLite *Get(const u32 commIdIndex);
+    std::vector<CommunicatorImplLite *> GetAll();
+    void SetEnvConfig(const HcclDeviceEnvConfigLite& envConfig) { envConfig_ = envConfig; }
+    const HcclDeviceEnvConfigLite& GetEnvConfig() { return envConfig_; }
+private:
+    std::unordered_map<u32, std::unique_ptr<CommunicatorImplLite>> communicatorImplLites;
+    std::mutex serialMutex;
+    HcclDeviceEnvConfigLite envConfig_;
+};
+
+CommunicatorImplLiteMgr::CommunicatorImplLiteMgr() {}
+CommunicatorImplLiteMgr::~CommunicatorImplLiteMgr() {}
+
+CommunicatorImplLiteMgr &CommunicatorImplLiteMgr::GetInstance()
+{
+    static CommunicatorImplLiteMgr instance;
+    return instance;
+}
+
+void CommunicatorImplLiteMgr::DestroyComm(u32 commIdIndex) {(void)commIdIndex;}
+
+CommunicatorImplLite *CommunicatorImplLiteMgr::Get(const u32 commIdIndex)
+{
+    (void)commIdIndex;
+    return nullptr;
+}
+
+std::vector<CommunicatorImplLite *> CommunicatorImplLiteMgr::GetAll()
+{
+    return {};
+}
+}  // namespace Hccl
+
 HcclResult HcclCommDestroyV2(HcclComm comm)
 {
     return HCCL_SUCCESS;

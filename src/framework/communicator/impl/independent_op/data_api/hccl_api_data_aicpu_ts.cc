@@ -733,8 +733,7 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         auto *const streamLitePtr = static_cast<Hccl::StreamLite *>(threadPtr->GetStreamLitePtr());
         CHK_PTR_NULL(streamLitePtr);
 
-        (void)timeOut;
-        EXECEPTION_CATCH(ubTransportLitePtr->Wait(localNotifyIdx, *streamLitePtr), ret = HCCL_E_INTERNAL);
+        EXECEPTION_CATCH(ubTransportLitePtr->WaitWithTimeout(localNotifyIdx, *streamLitePtr, timeOut), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
