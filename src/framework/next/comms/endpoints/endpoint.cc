@@ -69,6 +69,8 @@ HcclResult Endpoint::CreateEndpointBase(const EndpointDesc &endpointDesc, std::u
 {
 if (endpointDesc.protocol == COMM_PROTOCOL_ROCE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuRoceEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UBOE && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUboeEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if ((endpointDesc.protocol == COMM_PROTOCOL_UBC_TP || endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP) 	 
                 && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_HOST) { 
         EXECEPTION_CATCH(endpointPtr = std::make_unique<CpuUrmaEndpoint>(endpointDesc), return HCCL_E_PTR);	 
