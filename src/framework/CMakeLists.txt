@@ -941,7 +941,7 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/config OPTIONAL
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
@@ -950,7 +950,7 @@ if(NOT KERNEL_MODE)
     )
     add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
@@ -1007,7 +1007,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
 
         target_link_directories(ccl_kernel PRIVATE
@@ -1087,9 +1087,9 @@ if(DEVICE_MODE AND KERNEL_MODE)
         SUFFIX ".so"
     )
     install(TARGETS aicpu_custom
-        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        LIBRARY DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
     )
 endif()

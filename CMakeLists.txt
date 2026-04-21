@@ -215,23 +215,23 @@ elseif(BUILD_OPEN_PROJECT)
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
         install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.so
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libaicpu_custom.json
-            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR}/kernel OPTIONAL
         )
 
         add_custom_target(install_ccl_kernel DEPENDS
             ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
         )
         install(FILES ${BUILD_DEVICE_DIR}/src/framework/libccl_kernel.so
-            DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+            DESTINATION ${CMAKE_SYSTEM_PROCESSOR}-linux/devlib/device OPTIONAL
         )
         add_dependencies(install_tar hcomm)
         add_dependencies(install_ccl_kernel hcomm)
