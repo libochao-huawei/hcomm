@@ -19,6 +19,7 @@
 #undef private
 #undef protected
 #include "llt_hccl_stub_pub.h"
+#include "hcom_common.h"
 
 using namespace std;
 using namespace hccl;
@@ -242,4 +243,42 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->deviceType_, DevType::DEV_TYPE_910B);
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_ReturnHCCL_SUCCESS)
+{
+    hccl::HcclCommParams params;
+    hccl::RankTable_t rankTable;
+    TestConstructParamSpiltComm(params, rankTable, DevType::DEV_TYPE_910B);
+    params.deviceType = DevType::DEV_TYPE_910B;
+    std::unique_ptr<hccl::HcclCommunicator> implBase(new (std::nothrow) hccl::HcclCommunicator());
+
+    MOCKER_CPP(&hccl::HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    ret = implBase->Init(params, rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    std::string tag = "aivTag";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+
+    s8 *inputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    s8 *outputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    sal_memset(inputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+    sal_memset(outputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+
+    bool clearEnable = true;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    void *commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 2;
+
+    HcclResult ret = implBase->HcclGetAlgExecParam(
+        tag, opType, count, inputPtr, outputPtr, clearEnable, dataType, op, commContext, len, aivCoreLimit);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    sal_free(inputPtr);
+    sal_free(outputPtr);
 }
