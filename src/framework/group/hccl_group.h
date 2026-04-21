@@ -12,7 +12,7 @@
 
 #include "hccl_group_utils.h"
 
-extern s32 hcclGroupDepth; // depth of HcclGroupStart nesting
+extern thread_local s32 hcclGroupDepth; // depth of HcclGroupStart nesting
 
 #ifdef __cplusplus
 extern "C" {
