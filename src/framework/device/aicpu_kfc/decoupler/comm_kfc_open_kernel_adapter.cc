@@ -87,13 +87,15 @@ void CreateOpParamByBaseOpParam(const std::vector<uint8_t> &baseOpParam, const H
     const auto *baseParam = reinterpret_cast<const ops_hccl::OpParam *>(baseOpParam.data());
     const size_t opParamSize = sizeof(ops_hccl::OpParam) + baseParam->varMemSize;
     runOpParam.resize(opParamSize);
-
     auto *param = reinterpret_cast<ops_hccl::OpParam *>(runOpParam.data());
     memcpy_s(param, sizeof(ops_hccl::OpParam), baseParam, sizeof(ops_hccl::OpParam));
 
     if (baseParam->varMemSize > 0) {
         memcpy_s(param->varData, baseParam->varMemSize, baseParam->varData, baseParam->varMemSize);
     }
+
+    param->inputPtr = reinterpret_cast<void *>(msg.sendBuffer);
+    param->outputPtr = reinterpret_cast<void *>(msg.recvBuffer);
     bool convertAllToAllToV = false;
     if (param->opType == HcclCMDType::HCCL_CMD_ALLTOALL && msg.strideCount > 0UL) {
         for (uint32_t i = 0U; i < rankNum; ++i) {
@@ -131,26 +133,27 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
         HCCL_ERROR("Base op param is empty.");
         return HCCL_E_PARA;
     }
+    auto *param = reinterpret_cast<ops_hccl::OpParam *>(runOpParam.data());
     const auto *baseParam = reinterpret_cast<const ops_hccl::OpParam *>(baseOpParam.data());
     if (repeatIdx == 0U) {
         CreateOpParamByBaseOpParam(baseOpParam, msg, extMsg, rankNum, stream, runOpParam);
-    }
-    auto *param = reinterpret_cast<ops_hccl::OpParam *>(runOpParam.data());
-
-    if ((repeatIdx != 0) && (param->opType == HCCL_CMD_ALLTOALLV)) {
-        for (u32 i = 0U; i < rankNum; ++i) {
-            extMsg.sendOffset[i] += extMsg.sendCounts[i];
-            extMsg.recvOffset[i] += extMsg.recvCounts[i];
-            HCCL_INFO("Formatted alltoallv info: repeat %u, rank id %u, send offset %llu, recv offset %llu.", repeatIdx, i,
-                    static_cast<u64 *>(param->all2AllVDataDes.sdispls)[i],
-                    static_cast<u64 *>(param->all2AllVDataDes.rdispls)[i]);
+        param = reinterpret_cast<ops_hccl::OpParam *>(runOpParam.data());
+    } else {
+        if (param->opType == HCCL_CMD_ALLTOALLV) {
+            for (u32 i = 0U; i < rankNum; ++i) {
+                extMsg.sendOffset[i] += extMsg.sendCounts[i];
+                extMsg.recvOffset[i] += extMsg.recvCounts[i];
+                HCCL_INFO("Formatted alltoallv info: repeat %u, rank id %u, send offset %llu, recv offset %llu.", repeatIdx, i,
+                        static_cast<u64 *>(param->all2AllVDataDes.sdispls)[i],
+                        static_cast<u64 *>(param->all2AllVDataDes.rdispls)[i]);
+            }
+        } else  {
+            const u64 dataLen = msg.dataCnt * GetDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
+            param->inputPtr = reinterpret_cast<void *>(reinterpret_cast<int8_t *>(param->inputPtr) + dataLen);
+            param->outputPtr = reinterpret_cast<void *>(reinterpret_cast<int8_t *>(param->outputPtr) + dataLen);
         }
     }
 
-    const u64 repeatDataTypeSize = GetDataTypeSize(static_cast<HcclDataType>(msg.addMsg.v1Msg.hcclDataType));
-    const u64 offset = msg.dataCnt * repeatDataTypeSize * repeatIdx;
-    param->inputPtr = reinterpret_cast<void *>(msg.sendBuffer + offset);
-    param->outputPtr = reinterpret_cast<void *>(msg.recvBuffer + offset);
     const HcclCMDType opType = static_cast<HcclCMDType>(msg.commType.prepareType);
 
     HCCL_INFO("[MC2_OPEN_DIAG][FormatMsg] repeatIdx %u, rankNum %u, msgOpType %u, msgReduceType %u, "
@@ -182,9 +185,9 @@ HcclResult FormatOpenOpParamDataFromMsg(const std::vector<uint8_t> &baseOpParam,
     const u64 rankStrideBytes = isAllGather ? rankStrideCount * dataTypeSize : 0U;
     const u64 inputBegin = reinterpret_cast<u64>(param->inputPtr);
     const u64 outputBegin = reinterpret_cast<u64>(param->outputPtr);
-    HCCL_INFO("[MC2_OPEN_DIAG][FormatRun] runOpType %u, runAlgName[%s], offset %llu, runInputPtr %p, "
+    HCCL_INFO("[MC2_OPEN_DIAG][FormatRun] runOpType %u, runAlgName[%s], runInputPtr %p, "
               "runOutputPtr %p, runCount %llu, runDataType %u, outputType %u, runStrideCount %llu, stream %p.",
-              static_cast<u32>(param->opType), param->algName, static_cast<unsigned long long>(offset),
+              static_cast<u32>(param->opType), param->algName, 
               param->inputPtr, param->outputPtr, static_cast<unsigned long long>(param->DataDes.count),
               static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
               static_cast<unsigned long long>(param->DataDes.strideCount), param->stream);
