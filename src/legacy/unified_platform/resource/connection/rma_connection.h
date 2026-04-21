@@ -124,6 +124,10 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not support."));
     }
 
+    virtual HcclResult Describe(std::string &dfxMsg) const
+    {
+        MACRO_THROW(NotSupportException, StringFormat("not support."));
+    }
 protected:
     RmaConnStatus status;
     Socket       *socket{nullptr};
