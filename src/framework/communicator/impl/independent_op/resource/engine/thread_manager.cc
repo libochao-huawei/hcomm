@@ -232,7 +232,7 @@ HcclResult ThreadMgr::HcclThreadAcquireV2(CommEngine engine, uint32_t threadNum,
         ThreadHandle handle = reinterpret_cast<ThreadHandle>(threadVec[idx].get());
         threads[idx] = (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) ?
             hostToDeviceThreadHandle_[handle] : handle;
-        uint32_t id = threadVec[idx]->GetStream()->id();
+        uint32_t id = threadVec[idx]->GetStream()->sqId();
         HCCL_DEBUG("[%s]idx[%u] threadHandle[%llu] thread id = [%u]", __func__, idx, threads[idx], id);
         threadId.push_back(id);
 

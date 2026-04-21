@@ -14,8 +14,10 @@ src/framework/device/framework/aicpu_communicator.h
 src/framework/next/coll_comms/communicator/aicpu/coll_comm_aicpu.cc
 src/framework/next/comms/endpoint_pairs/channels/channel_process.cc
 src/framework/next/comms/endpoint_pairs/channels/aicpu/device/aicpu_channel_process.cc
+src/legacy/framework/dfx/aicpu/profiling/profiling_command_handle_lite.cc
 src/framework/next/coll_comms/api_c_adpt/dev/dev_coll_comm_c_adpt.cc
 src/framework/hcom/hcom.cc
 src/framework/communicator/impl/zero_copy/zero_copy_memory_agent.cc
 src/framework/next/comms/endpoint_pairs/channels/aicpu/device/aicpu_ts_urma_channel_kernel.cc
 src/framework/next/coll_comms/dfx/taskException/aicpu/hcclCommTaskExceptionLite.cc
+

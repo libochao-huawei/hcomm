@@ -35,7 +35,7 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
         [&]() -> HcclResult {
             auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
             std::string commId = hcclComm->GetIdentifier();
-            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            HCCL_RUN_INFO("Entry-HcclEngineCtxCreate:comm[%s]", commId.c_str());
             hccl::CollComm* collComm = hcclComm->GetCollComm();
             CHK_PTR_NULL(collComm);
             auto myRank = collComm->GetMyRank();
@@ -47,7 +47,7 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s] Failed to create CommEngineCtx with ctxTag[%s], engine[%d], ctx size[%llu], ret[%d]",
                 __func__, ctxTagTmp, engine, size, ret), ret);
-            HCCL_RUN_INFO("[%s] success, ctxTag[%s], engine[%d], size[%llu], ctx[%p], group[%s]", __func__, ctxTagTmp, 
+            HCCL_RUN_INFO("HcclEngineCtxCreate success, ctxTag[%s], engine[%d], size[%llu], ctx[%p], group[%s]", ctxTagTmp, 
                 engine, size, *ctx, hcclComm->GetIdentifier().c_str());
             return HCCL_SUCCESS;
         }());
