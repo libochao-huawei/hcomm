@@ -5314,6 +5314,9 @@ TEST_F(HcomTest, ut_HcclCommGraphAllGather)
     .will(returnValue(HCCL_SUCCESS));
 
     int ret = HCCL_SUCCESS;
+    ret = HcclCommGraphAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, 0, stream); 
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
     ret = HcclCommGraphAllGather("tag", sendbuf, recv, 10, HCCL_DATA_TYPE_INT8, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
