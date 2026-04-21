@@ -2317,6 +2317,11 @@ aclrtStream HrtStreamCreateWithFlags(uint32_t priority, uint32_t flag)
     return stream;
 }
 
+void HrtStreamSetMode(HcclRtStream streamPtr, const uint64_t stmMode)
+{
+    return ;
+}
+
 u32 HrtNotifyGetOffset(RtNotify_t ptr)
 {
     return 0;
