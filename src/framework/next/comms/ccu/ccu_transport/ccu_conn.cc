@@ -22,6 +22,8 @@
 #include "buffer.h"
 #include "local_ub_rma_buffer.h"
 #include "rdma_handle_manager.h"
+#include "orion_adapter_rts.h"
+#include "orion_adapter_hccp.h"
 
 namespace hcomm {
 
@@ -59,6 +61,7 @@ HcclResult CcuConnection::Init()
     DevEidInfo eidInfo{};
     CHK_RET(EidInfoMgr::GetInstance(devPhyId_).GetEidInfoByAddr(locAddr_, eidInfo));
     dieId_ = static_cast<uint8_t>(eidInfo.dieId);
+    funcId_ = eidInfo.funcId;
 
     EXCEPTION_HANDLE_END
 
@@ -503,6 +506,45 @@ std::string CcuConnection::Describe()
         locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), tpProtocol_.Describe().c_str(),
         status_.Describe().c_str(), innerStatus_.Describe().c_str(), dieId_, channelInfo_.channelId,
         jettyNum_);
+}
+
+HcclResult CcuConnection::Describe(std::string &dfxMsg)
+{
+    uint16_t udpSport = 0xFFFF;
+    if (tpProtocol_ == TpProtocol::RTP) {
+        uint32_t attrBitmap = 8192;
+        struct TpAttr tpAttr {0};
+        u32 devicePhyId = Hccl::HrtGetDevicePhyIdByIndex(devLogicId_);
+        CHK_RET(Hccl::HrtRaCtxGetTpAttr(devicePhyId, ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr));
+        udpSport = tpAttr.dataUdpSrcport;
+    }
+    udpSport = udpSport & 0xFF;
+
+    std::string jettyIds;
+    for (size_t i = 0; i < ccuJettys_.size(); i++) {
+        uint16_t jettyId = ccuJettys_[i]->GetJettyedOutParam().id;
+        jettyIds += (i == 0 ? "" : ", ") + std::to_string(jettyId);
+    }
+
+    Hccl::IpAddress locAddr{}, rmtAddr{};
+    (void)CommAddrToIpAddress(locAddr_, locAddr);
+    (void)CommAddrToIpAddress(rmtAddr_, rmtAddr);
+    Hccl::Eid locEid = locAddr.GetReverseEid();
+    Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
+
+    std::string locEidStr = Hccl::StringFormat("%016llx:%016llx",
+                            static_cast<unsigned long long>(be64toh(locEid.subnetPrefix)),
+                            static_cast<unsigned long long>(be64toh(locEid.interfaceId)));
+    std::string rmtEidStr = Hccl::StringFormat("%016llx:%016llx",
+                            static_cast<unsigned long long>(be64toh(rmtEid.subnetPrefix)),
+                            static_cast<unsigned long long>(be64toh(rmtEid.interfaceId)));
+
+    std::string dfxStr = Hccl::StringFormat("chip id[%u] die id[%u], func_id[%u], jetty id[%s], "
+        "local eid[%s] remote eid[%s], udp sport[%u]",
+        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEidStr.c_str(), rmtEidStr.c_str(), udpSport);
+    dfxMsg += dfxStr;
+    HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
+    return HcclResult::HCCL_SUCCESS;
 }
 
 uint32_t CcuConnection::GetDieId() const
