@@ -80,18 +80,16 @@ Stream::Stream(const StreamType streamType, bool isMainStream)
         HCCL_ERROR("[%s][%s]Construct stream by stream type failed, errNo[0x%016llx] rtStreamCreate error, ret[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret);
     }
-#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     bool isSupportV2 = false;
     hrtGetHcclV2Support(&isSupportV2);
     if (isSupportV2) {
         constexpr u32 streamMode = 1; // 配置流失败模式为遇错即停
-        HcclResult setModeRet = hrtStreamSetMode(rtStream, streamMode);
+        HcclResult setModeRet = hrtStreamSetMode(stream_, streamMode);
         if (setModeRet != HCCL_SUCCESS) {
-            HCCL_RUN_WARNING("[Stream][SetMode]Failed to set stream mode, errNo[0x%016llx], ret[%d]",
+            HCCL_ERROR("[Stream][SetMode]Failed to set stream mode, errNo[0x%016llx], ret[%d]",
                 HCCL_ERROR_CODE(setModeRet), setModeRet);
         }
     }
-#endif
 }
 
 Stream::Stream(const rtStream_t rtStream, bool isMainStream)
