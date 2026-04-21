@@ -820,15 +820,10 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg) const
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
-    std::string locEidStr = StringFormat("%016llx:%016llx",
-                            static_cast<unsigned long long>(be64toh(locEid.subnetPrefix)),
-                            static_cast<unsigned long long>(be64toh(locEid.interfaceId)));
-    std::string rmtEidStr = StringFormat("%016llx:%016llx",
-                            static_cast<unsigned long long>(be64toh(rmtEid.subnetPrefix)),
-                            static_cast<unsigned long long>(be64toh(rmtEid.interfaceId)));
+
     std::string dfxStr = StringFormat("chip id[%u] die id[%u], func id[%u] jetty id[%u] "
-        "local eid[%s] remote eid[%s] udp sport[%u]",
-        devLogicId, dieId, funcId, jettyId, locEidStr.c_str(), rmtEidStr.c_str(), udpSport);
+        "local [%s] remote [%s] udp sport[%u]",
+        devLogicId, dieId, funcId, jettyId, locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), udpSport);
     dfxMsg += dfxStr;
     HCCL_INFO("[DevUbConnection::%s] %s", __func__, dfxStr.c_str());
     return HCCL_SUCCESS;
