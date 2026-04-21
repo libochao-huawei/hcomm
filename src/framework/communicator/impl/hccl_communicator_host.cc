@@ -1845,6 +1845,7 @@ namespace hccl
         /* 将Host申请和注册好的资源，传给AICPU */
         // 1\ algName 从getstr里某一个名字里获取出来（要防止名字重复） commContext & len 从 response里拿
         // 2\ rtmemcopy 先获取一下algoperator对象，用这个调用getalgxxx
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 1");
         AivSuperKernelArgs aivSuperKernelArgs;
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
@@ -1857,6 +1858,7 @@ namespace hccl
         param.outputPtr = outputPtr;
         param.opType = opType;
         u64 totalSize;
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 2");
         std::vector<u64> sendCountMatrix(userRankSize_ * userRankSize_, count);
         if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             param.All2AllDataDes.sendType = dataType;
@@ -1864,12 +1866,14 @@ namespace hccl
             param.All2AllDataDes.sendCount = count;
             param.All2AllDataDes.sendCountMatrix =static_cast<void *>(sendCountMatrix.data());
         }
-
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 3");
+        
         if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER || opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             totalSize = count * SIZE_TABLE[dataType] * userRankSize_;
         } else {
             totalSize = count * SIZE_TABLE[dataType]; // allreduce就是输入
         }
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 4");
         param.inputSize = totalSize;
         std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
         CHK_SMART_PTR_NULL(algOperator);
@@ -1881,10 +1885,13 @@ namespace hccl
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 5");
         CHK_RET(algOperator->SelectAlg(param.tag, param, limit, algName, algDesc, newTag));
-
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 6");
+        
         // 资源创建
         InsertNewTagToTagMap(newTag, param.tag);
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 7");
         if (resMap_.find(newTag) == resMap_.end()) {
             HCCL_INFO("[HcclCoommunicator][HcclAllocRes] algName[%s], alloc new res", algName.c_str());
             AlgResourceRequest resRequest;
@@ -1893,7 +1900,8 @@ namespace hccl
             CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
             // 暂不作心跳注册
         }
-
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 8");
+        
         CHK_RET(algOperator->GetAivExecParam(algName, param, resMap_[newTag], aivSuperKernelArgs));
 
         // gettag
@@ -1905,6 +1913,7 @@ namespace hccl
         if (clearEnable) {
             aivOffloadTag_ = 1;
         }
+        HCCL_INFO("[HcclCommunicator][HcclGetAlgExecParam] 9");
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
         aivSuperKernelArgs.numBlocks = numBlocks;
 
