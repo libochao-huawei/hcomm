@@ -62,3 +62,4 @@ private:
 } // namespace hccl
 
 #endif
+
