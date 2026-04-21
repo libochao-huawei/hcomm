@@ -114,8 +114,6 @@
         <file value="libhcomm.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libhccl_fwk.so"/>
         <file value="hccl_aiv_op_910_95.o"/>
         <file value="libhccl_v2.so" file_type="shared" release_type="debug"/>
-        <file value="libhccl_v2_alg_frame.so" file_type="shared" release_type="debug"/>
-        <file value="libhccl_v2_native_alg_repo.so" file_type="shared" release_type="debug"/>
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>
