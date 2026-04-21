@@ -19,7 +19,16 @@ protected:
 struct FakeEndpoint { // will be used as EndpointHandle (void*)
     EndpointDesc desc;
     void* rdmaHandle{reinterpret_cast<void*>(0xDEADBEEF)};
-    FakeEndpoint() { memset(&desc, 0, sizeof(desc)); desc.protocol = COMM_PROTOCOL_RESERVED; }
+    FakeEndpoint() {
+        memset(&desc, 0, sizeof(desc));
+        // Provide a valid, non-reserved endpoint description so code paths that
+        // log or parse network addresses do not fail in unit tests.
+        Hccl::IpAddress localIp("127.0.0.1");
+        desc.protocol = COMM_PROTOCOL_UBOE;
+        desc.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+        desc.commAddr.addr = localIp.GetBinaryAddress().addr;
+        desc.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    }
     EndpointDesc GetEndpointDesc() { return desc; }
     void* GetRdmaHandle() { return rdmaHandle; }
 };
@@ -101,6 +110,7 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetStatus_WhenSocketNotReady_Returns_INIT) {
     AicpuTsUboeChannel ch(ep, desc);
 
     // Ensure the channel uses our fake socket (ParseInputParam isn't called here)
+    ch.channelDesc_.socket = reinterpret_cast<void*>(fakeSock);
     ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
 
     // Ensure initial channelStatus is INIT
