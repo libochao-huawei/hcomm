@@ -1779,6 +1779,125 @@ create_qp_err:
     return ret;
 }
 
+RS_ATTRI_VISI_DEF int RsTypicalCqCreate(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth,
+    unsigned int *cqn)
+{
+    struct RsRdevCb *rdevCb = NULL;
+    struct ibv_cq *ibCq = NULL;
+    int ret;
+
+    RS_QP_PARA_CHECK(phyId);
+    CHK_PRT_RETURN(cqn == NULL, hccp_err("cqn is NULL!"), -EINVAL);
+
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, RA_RS_NOR_QP_MODE);
+    CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
+
+    if (cqDepth == 0) {
+        cqDepth = RS_DRV_CQ_DEPTH;
+    }
+
+    ibCq = RsIbvCreateCq(rdevCb->ibCtx, (int)cqDepth, NULL, NULL, 0);
+    CHK_PRT_RETURN(ibCq == NULL, hccp_err("ibv create cq failed"), -ENOMEM);
+
+    *cqn = ibCq->handle;
+
+    if (rdevCb->typicalCqCnt < RS_MAX_TYPICAL_CQ_NUM) {
+        rdevCb->typicalCqTable[rdevCb->typicalCqCnt].cqn = *cqn;
+        rdevCb->typicalCqTable[rdevCb->typicalCqCnt].ibCq = ibCq;
+        rdevCb->typicalCqCnt++;
+    }
+
+    hccp_info("create cq success, cqn[%u], cqDepth[%u]", *cqn, cqDepth);
+
+    return 0;
+}
+
+RS_ATTRI_VISI_DEF int RsQpCreateWithCq(unsigned int phyId, unsigned int rdevIndex,
+    struct RsQpNormWithCq qpNorm, struct RsQpResp *qpResp)
+{
+    struct RsRdevCb *rdevCb = NULL;
+    struct RsQpCb *qpCb = NULL;
+    int ret;
+
+    RS_QP_PARA_CHECK(phyId);
+    CHK_PRT_RETURN(qpResp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
+
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, qpNorm.qpMode);
+    CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
+
+    ret = RsCallocQpcb(1, &qpCb);
+    CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d errno:%d", ret, errno), -ENOMEM);
+
+    ret = pthread_mutex_init(&qpCb->qpMutex, NULL);
+    if (ret) {
+        hccp_err("pthread_mutex_init failed, ret %d", ret);
+        goto qp_mutex_init_err;
+    }
+
+    ret = pthread_mutex_init(&qpCb->cqeErrInfo.mutex, NULL);
+    if (ret) {
+        hccp_err("pthread_mutex_init failed, ret %d", ret);
+        goto cqe_mutex_init_err;
+    }
+
+    qpCb->rdevCb = rdevCb;
+    qpCb->qpMode = qpNorm.qpMode;
+    qpCb->ibPd = rdevCb->ibPd;
+    qpCb->memAlign = qpNorm.memAlign;
+    qpCb->state = RS_QP_STATUS_DISCONNECT;
+    RS_INIT_LIST_HEAD(&qpCb->mrList);
+    RS_INIT_LIST_HEAD(&qpCb->remMrList);
+
+    ret = RsDrvQpCreateWithCq(qpCb, &qpNorm);
+    if (ret) {
+        hccp_err("create drv qp with cq failed:%d", ret);
+        goto create_qp_err;
+    }
+
+    ret = ibv_req_notify_cq(qpCb->ibSendCq, 0);
+    if (ret) {
+        hccp_err("Couldn't request send CQ notification, ret:%d", ret);
+        ret = -EOPENSRC;
+        goto ret_noritfy_cq;
+    }
+
+    ret = ibv_req_notify_cq(qpCb->ibRecvCq, 0);
+    if (ret) {
+        hccp_err("Couldn't request recv CQ notification, ret:%d", ret);
+        ret = -EOPENSRC;
+        goto ret_noritfy_cq;
+    }
+
+    ret = RsQpNotifyMr(rdevCb, qpCb, &qpResp->qpn);
+    if (ret) {
+        hccp_err("store qp notify mr failed:%d", ret);
+        goto ret_noritfy_cq;
+    }
+
+    qpCb->isExp = RS_NOT_EXP;
+
+    qpResp->qpn = (unsigned int)qpCb->qpInfoLo.qpn;
+    qpResp->gidIdx = (unsigned int)qpCb->qpInfoLo.gidIdx;
+    qpResp->psn = (unsigned int)qpCb->qpInfoLo.psn;
+    qpResp->gid = qpCb->qpInfoLo.gid;
+
+    return 0;
+
+ret_noritfy_cq:
+    RsDrvQpDestroy(qpCb);
+
+create_qp_err:
+    pthread_mutex_destroy(&qpCb->cqeErrInfo.mutex);
+
+cqe_mutex_init_err:
+    pthread_mutex_destroy(&qpCb->qpMutex);
+
+qp_mutex_init_err:
+    free(qpCb);
+    qpCb = NULL;
+    return ret;
+}
+
 STATIC int RsQpcbInitWithAttrs(struct RsRdevCb *rdevCb, struct RsQpCb *qpCb,
     struct RsQpNormWithAttrs *qpNorm)
 {

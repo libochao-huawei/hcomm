@@ -85,6 +85,8 @@ struct RaRdmaOps gRaHdcRdmaOps = {
     .raAiQpCreate = RaHdcAiQpCreate,
     .raAiQpCreateWithAttrs = RaHdcAiQpCreateWithAttrs,
     .raTypicalQpCreate = RaHdcTypicalQpCreate,
+    .raTypicalCqCreate = RaHdcTypicalCqCreate,
+    .raTypicalQpCreateWithCq = RaHdcTypicalQpCreateWithCq,
     .raLoopbackQpCreate = NULL,
     .raQpDestroy = RaHdcQpDestroy,
     .raTypicalQpModify = RaHdcTypicalQpModify,
@@ -135,6 +137,8 @@ struct RaRdmaOps gRaPeerRdmaOps = {
     .raAiQpCreate = NULL,
     .raAiQpCreateWithAttrs = NULL,
     .raTypicalQpCreate = NULL,
+    .raTypicalCqCreate = NULL,
+    .raTypicalQpCreateWithCq = NULL,
     .raLoopbackQpCreate = RaPeerLoopbackQpCreate,
     .raQpDestroy = RaPeerQpDestroy,
     .raTypicalQpModify = RaPeerTypicalQpModify,
@@ -1267,6 +1271,77 @@ HCCP_ATTRI_VISI_DEF int RaTypicalQpCreate(void *rdevHandle, int flag, int qpMode
     ret = rdmaHandleTmp->rdmaOps->raTypicalQpCreate(rdmaHandleTmp, flag, qpMode, qpInfo, qpHandle);
     CHK_PRT_RETURN(ret != 0 || *qpHandle == NULL,
         hccp_err("[create][ra_typical_qp]create qp failed, ret(%d) phyId(%u)", ret, phyId),
+        ConverReturnCode(RDMA_OP, ret));
+
+    return 0;
+}
+
+HCCP_ATTRI_VISI_DEF int RaTypicalCqCreate(void *rdevHandle, unsigned int cqDepth, unsigned int *cqn)
+{
+    struct RaRdmaHandle *rdmaHandleTmp = (struct RaRdmaHandle *)rdevHandle;
+    unsigned int phyId;
+    int ret;
+
+    CHK_PRT_RETURN(rdevHandle == NULL || rdmaHandleTmp->rdmaOps == NULL ||
+        rdmaHandleTmp->rdmaOps->raTypicalCqCreate == NULL,
+        hccp_err("[create][ra_typical_cq]rdev_handle is NULL or func is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(cqn == NULL, hccp_err("[create][ra_typical_cq]cqn is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    phyId = rdmaHandleTmp->rdevInfo.phyId;
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[create][ra_typical_cq]phyId(%u) must greater or equal to 0 and less than %d!", phyId,
+        RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    hccp_run_info("Input parameters: phyId[%u], cqDepth[%u]", phyId, cqDepth);
+
+    ret = rdmaHandleTmp->rdmaOps->raTypicalCqCreate(rdmaHandleTmp, cqDepth, cqn);
+    CHK_PRT_RETURN(ret != 0,
+        hccp_err("[create][ra_typical_cq]create cq failed, ret(%d) phyId(%u)", ret, phyId),
+        ConverReturnCode(RDMA_OP, ret));
+
+    return 0;
+}
+
+HCCP_ATTRI_VISI_DEF int RaTypicalQpCreateWithCQ(void *rdevHandle, int flag, int qpMode,
+    unsigned int sendCqn, unsigned int recvCqn, struct ibv_qp_cap *cap, int qpType, int sqSigAll,
+    struct TypicalQp *qpInfo, void **qpHandle)
+{
+    struct RaRdmaHandle *rdmaHandleTmp = (struct RaRdmaHandle *)rdevHandle;
+    unsigned int phyId;
+    int ret;
+
+    CHK_PRT_RETURN(rdevHandle == NULL || rdmaHandleTmp->rdmaOps == NULL ||
+        rdmaHandleTmp->rdmaOps->raTypicalQpCreateWithCq == NULL,
+        hccp_err("[create][ra_typical_qp_with_cq]rdev_handle is NULL or func is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(qpHandle == NULL, hccp_err("[create][ra_typical_qp_with_cq]qp_handle is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(qpInfo == NULL, hccp_err("[create][ra_typical_qp_with_cq]qp_info is NULL"),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(flag != 0, hccp_err("[create][ra_typical_qp_with_cq]The flag(%d) is invalid, expect 0", flag),
+        ConverReturnCode(RDMA_OP, -EINVAL));
+
+    phyId = rdmaHandleTmp->rdevInfo.phyId;
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[create][ra_typical_qp_with_cq]phyId(%u) must greater or equal to 0 and less than %d!", phyId,
+        RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    CHK_PRT_RETURN(qpMode < 0 || qpMode >= RA_RS_ERR_QP_MODE,
+        hccp_err("[create][ra_typical_qp_with_cq]QP mode(%d) must greater or equal to 0 and less than %d", qpMode,
+        RA_RS_ERR_QP_MODE), ConverReturnCode(RDMA_OP, -EINVAL));
+
+    hccp_run_info("Input parameters: phyId[%u], flag[%d] qpMode[%d] sendCqn[%u] recvCqn[%u]",
+        phyId, flag, qpMode, sendCqn, recvCqn);
+
+    ret = rdmaHandleTmp->rdmaOps->raTypicalQpCreateWithCq(rdmaHandleTmp, flag, qpMode,
+        sendCqn, recvCqn, cap, qpType, sqSigAll, qpInfo, qpHandle);
+    CHK_PRT_RETURN(ret != 0 || *qpHandle == NULL,
+        hccp_err("[create][ra_typical_qp_with_cq]create qp failed, ret(%d) phyId(%u)", ret, phyId),
         ConverReturnCode(RDMA_OP, ret));
 
     return 0;

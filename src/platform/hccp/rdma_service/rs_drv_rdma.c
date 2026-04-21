@@ -1169,6 +1169,77 @@ int RsDrvQpCreateWithAttrs(struct RsQpCb *qpCb, struct RsQpNormWithAttrs *qpNorm
     return ret;
 }
 
+STATIC struct ibv_cq *RsDrvFindCqByCqn(struct RsRdevCb *rdevCb, unsigned int cqn)
+{
+    unsigned int i;
+    for (i = 0; i < rdevCb->typicalCqCnt; i++) {
+        if (rdevCb->typicalCqTable[i].cqn == cqn) {
+            return rdevCb->typicalCqTable[i].ibCq;
+        }
+    }
+    return NULL;
+}
+
+int RsDrvQpCreateWithCq(struct RsQpCb *qpCb, struct RsQpNormWithCq *qpNorm)
+{
+    struct ibv_qp_init_attr qpInitAttr;
+    struct ibv_qp_attr qpAttr;
+    struct RsRdevCb *rdevCb = qpCb->rdevCb;
+    struct ibv_port_attr attr;
+    int ret;
+
+    qpCb->ibSendCq = RsDrvFindCqByCqn(rdevCb, qpNorm->sendCqn);
+    CHK_PRT_RETURN(qpCb->ibSendCq == NULL, hccp_err("send cq not found, cqn[%u]", qpNorm->sendCqn), -EINVAL);
+
+    qpCb->ibRecvCq = RsDrvFindCqByCqn(rdevCb, qpNorm->recvCqn);
+    CHK_PRT_RETURN(qpCb->ibRecvCq == NULL, hccp_err("recv cq not found, cqn[%u]", qpNorm->recvCqn), -EINVAL);
+
+    ret = memset_s(&attr, sizeof(struct ibv_port_attr), 0, sizeof(struct ibv_port_attr));
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr failed, ret:%d", ret), -ESAFEFUNC);
+    ret = memset_s(&qpInitAttr, sizeof(struct ibv_qp_init_attr), 0, sizeof(struct ibv_qp_init_attr));
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ESAFEFUNC);
+
+    qpInitAttr.send_cq = qpCb->ibSendCq;
+    qpInitAttr.recv_cq = qpCb->ibRecvCq;
+    qpInitAttr.qp_type = (enum ibv_qp_type)qpNorm->qpType;
+    qpInitAttr.sq_sig_all = qpNorm->sqSigAll;
+
+    if (qpNorm->cap.max_send_wr != 0) {
+        qpInitAttr.cap = qpNorm->cap;
+    } else {
+        qpInitAttr.cap.max_send_wr = QP_DEFAULT_MIN_CAP_SEND_WR;
+        qpInitAttr.cap.max_recv_wr = QP_DEFAULT_MIN_CAP_RECV_WR;
+        qpInitAttr.cap.max_send_sge = QP_DEFAULT_MIN_CAP_SEND_SGE;
+        qpInitAttr.cap.max_recv_sge = QP_DEFAULT_MIN_CAP_RECV_SGE;
+        qpInitAttr.cap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
+    }
+
+    qpCb->ibQp = RsIbvCreateQp(qpCb->ibPd, &qpInitAttr);
+    CHK_PRT_RETURN(qpCb->ibQp == NULL, hccp_err("rs_ibv_create_qp failed, errno=%d", errno), -ENOMEM);
+
+    ret = RsIbvQueryQp(qpCb->ibQp, &qpAttr, IBV_QP_CAP, &qpInitAttr);
+    if (ret) {
+        hccp_err("query qp attr failed ret %d", ret);
+        ret = -EOPENSRC;
+        goto create_qp_err;
+    }
+
+    ret = RsDrvQpInfoRelated(qpCb, rdevCb, &attr, &qpAttr);
+    if (ret) {
+        hccp_err("qp info related failed %d", ret);
+        goto create_qp_err;
+    }
+
+    hccp_info("chip_id %u, rdevIndex:%u, qp[%d] create with cq succ.", qpCb->rdevCb->rsCb->chipId,
+        qpCb->rdevCb->rdevIndex, qpCb->qpInfoLo.qpn);
+
+    return 0;
+
+create_qp_err:
+    (void)RsIbvDestroyQp(qpCb->ibQp);
+    return ret;
+}
+
 void RsDrvQpDestroy(struct RsQpCb *qpCb)
 {
     (void)RsIbvDestroyQp(qpCb->ibQp);

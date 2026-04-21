@@ -99,6 +99,9 @@ struct RsOps {
     int (*getTlsEnable)(unsigned int phyId, bool *tlsEnable);
     int (*getSecRandom)(int *value);
     int (*getHccnCfg)(unsigned int phyId, enum HccnCfgKey key, char *value, unsigned int *valueLen);
+    int (*cqCreate)(unsigned int phyId, unsigned int rdevIndex, unsigned int cqDepth, unsigned int *cqn);
+    int (*qpCreateWithCq)(unsigned int phyId, unsigned int rdevIndex, struct RsQpNormWithCq qpNorm,
+        struct RsQpResp *qpResp);
 };
 
 struct RsOps gRaRsOps = {
@@ -142,6 +145,8 @@ struct RsOps gRaRsOps = {
     .getTlsEnable = RsGetTlsEnable,
     .getSecRandom = RsDrvGetRandomNum,
     .getHccnCfg = RsGetHccnCfg,
+    .cqCreate = RsTypicalCqCreate,
+    .qpCreateWithCq = RsQpCreateWithCq,
 };
 
 struct HdcOps gRaHdcOps = {
@@ -496,6 +501,70 @@ STATIC int RaRsTypicalQpCreate(char *inBuf, char *outBuf, int *outLen, int *opRe
     }
 
     createData = (union OpTypicalQpCreateData *)(outBuf + sizeof(struct MsgHead));
+    createData->rxData.qpn = qpResp.qpn;
+    createData->rxData.gidIdx = qpResp.gidIdx;
+    createData->rxData.psn = qpResp.psn;
+    createData->rxData.gid = qpResp.gid;
+
+    return 0;
+}
+
+STATIC int RaRsTypicalCqCreate(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpTypicalCqCreateData *createData = (union OpTypicalCqCreateData *)(inBuf +
+        sizeof(struct MsgHead));
+    unsigned int cqn = 0;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTypicalCqCreateData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    *opResult = gRaRsOps.cqCreate(createData->txData.phyId, createData->txData.rdevIndex,
+        createData->txData.cqDepth, &cqn);
+    if (*opResult != 0) {
+        hccp_err("cq create failed ret[%d].", *opResult);
+        return 0;
+    }
+
+    createData = (union OpTypicalCqCreateData *)(outBuf + sizeof(struct MsgHead));
+    createData->rxData.cqn = cqn;
+
+    return 0;
+}
+
+STATIC int RaRsTypicalQpCreateWithCq(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
+{
+    union OpTypicalQpCreateWithCqData *createData = (union OpTypicalQpCreateWithCqData *)(inBuf +
+        sizeof(struct MsgHead));
+    struct RsQpResp qpResp = {0};
+    struct RsQpNormWithCq qpNorm;
+    int qpMode;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTypicalQpCreateWithCqData), sizeof(struct MsgHead), rcvBufLen,
+        opResult);
+
+    qpMode = createData->txData.qpMode;
+    qpNorm.flag = createData->txData.flag;
+    qpNorm.isExp = 1;
+    qpNorm.isExt = 1;
+    if (qpMode == RA_RS_OP_QP_MODE_EXT) {
+        qpNorm.qpMode = RA_RS_OP_QP_MODE;
+    } else {
+        qpNorm.qpMode = qpMode;
+    }
+    qpNorm.memAlign = createData->txData.memAlign;
+    qpNorm.sendCqn = createData->txData.sendCqn;
+    qpNorm.recvCqn = createData->txData.recvCqn;
+    qpNorm.cap = createData->txData.cap;
+    qpNorm.qpType = createData->txData.qpType;
+    qpNorm.sqSigAll = createData->txData.sqSigAll;
+
+    *opResult = gRaRsOps.qpCreateWithCq(createData->txData.phyId, createData->txData.rdevIndex, qpNorm, &qpResp);
+    if (*opResult != 0) {
+        hccp_err("qp create with cq failed ret[%d].", *opResult);
+        return 0;
+    }
+
+    createData = (union OpTypicalQpCreateWithCqData *)(outBuf + sizeof(struct MsgHead));
     createData->rxData.qpn = qpResp.qpn;
     createData->rxData.gidIdx = qpResp.gidIdx;
     createData->rxData.psn = qpResp.psn;
@@ -1539,6 +1608,8 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_AI_QP_CREATE, RaRsAiQpCreate, sizeof(union OpAiQpCreateData)},
     {RA_RS_AI_QP_CREATE_WITH_ATTRS, RaRsAiQpCreateWithData, sizeof(union OpAiQpCreateWithAttrsData)},
     {RA_RS_TYPICAL_QP_CREATE, RaRsTypicalQpCreate, sizeof(union OpTypicalQpCreateData)},
+    {RA_RS_TYPICAL_CQ_CREATE, RaRsTypicalCqCreate, sizeof(union OpTypicalCqCreateData)},
+    {RA_RS_TYPICAL_QP_CREATE_WITH_CQ, RaRsTypicalQpCreateWithCq, sizeof(union OpTypicalQpCreateWithCqData)},
     {RA_RS_QP_DESTROY, RaRsQpDestroy, sizeof(union OpQpDestroyData)},
     {RA_RS_TYPICAL_QP_MODIFY, RaRsTypicalQpModify, sizeof(union OpTypicalQpModifyData)},
     {RA_RS_QP_BATCH_MODIFY, RaRsQpBatchModify, sizeof(union OpQpBatchModifyData)},
@@ -1663,7 +1734,7 @@ STATIC int RaCheckParam(char *recvBuf, int rcvBufLen, char **sendBuf, int *sndBu
     if (((recvMsgHead->msgDataLen + sizeof(struct MsgHead)) != (unsigned int)rcvBufLen) ||
         (recvMsgHead->opcode >= RA_RS_OP_MAX_NUM ||
         ((recvMsgHead->opcode < RA_RS_HDC_SESSION_CLOSE) && (recvMsgHead->opcode >= RA_RS_EXTER_OP_MAX_NUM)))) {
-        hccp_err("rcv data incomplete, because rcvBufLen[%d] != msg_head_len[%u] + msgDataLen[%u] \
+        hccp_err("[TestDevice]rcv data incomplete, because rcvBufLen[%d] != msg_head_len[%u] + msgDataLen[%u] \
             or opcode[%u] is wrong, RA_RS_OP_MAX_NUM:[%d], RA_RS_EXTER_OP_MAX_NUM:[%d]",
             rcvBufLen, sizeof(struct MsgHead), recvMsgHead->msgDataLen, recvMsgHead->opcode,
             RA_RS_OP_MAX_NUM, RA_RS_EXTER_OP_MAX_NUM);
