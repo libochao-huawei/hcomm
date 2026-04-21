@@ -1864,7 +1864,6 @@ namespace hccl
             param.All2AllDataDes.sendCount = count;
             param.All2AllDataDes.sendCountMatrix =static_cast<void *>(sendCountMatrix.data());
         }
-
         if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER || opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             totalSize = count * SIZE_TABLE[dataType] * userRankSize_;
         } else {
@@ -1882,7 +1881,6 @@ namespace hccl
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
         CHK_RET(algOperator->SelectAlg(param.tag, param, limit, algName, algDesc, newTag));
-
         // 资源创建
         InsertNewTagToTagMap(newTag, param.tag);
         if (resMap_.find(newTag) == resMap_.end()) {
@@ -1893,7 +1891,6 @@ namespace hccl
             CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
             // 暂不作心跳注册
         }
-
         CHK_RET(algOperator->GetAivExecParam(algName, param, resMap_[newTag], aivSuperKernelArgs));
 
         // gettag
