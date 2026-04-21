@@ -41,7 +41,7 @@ void BuildA5SqeNotifyWait(u32 streamId, u32 taskId, u32 notifyId, u32 timeout, u
     sqe->header.taskId     = static_cast<uint16_t>(taskId >> LOW_BITS);
     sqe->header.wrCqe      = 1U;
     sqe->notifyId          = notifyId;
-    sqe->timeout           = timeout;
+    sqe->timeout           = 300;
 
     HCCL_INFO("[SQE]NotifyWait: notifyId=%lu, timeout=%us, streamId=%u, taskId=%u", notifyId, sqe->timeout, streamId, taskId);
 }
