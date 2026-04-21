@@ -91,6 +91,75 @@ TEST_F(StreamTest, constructor_02)
     EXPECT_TRUE(stream2.ptr() != nullptr);
 }
 
+TEST_F(StreamTest, stream_set_mode_online_v2_supported)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = true;
+    });
+
+    MOCKER(hrtStreamSetMode)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    Stream stream(StreamType::STREAM_TYPE_ONLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(StreamTest, stream_set_mode_online_v2_not_supported)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = false;
+    });
+
+    MOCKER(hrtStreamSetMode)
+    .expects(never());
+
+    Stream stream(StreamType::STREAM_TYPE_ONLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(StreamTest, stream_set_mode_offline_v2_supported)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = true;
+    });
+
+    MOCKER(hrtStreamSetMode)
+    .expects(never());
+
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(StreamTest, stream_set_mode_online_v2_support_fail)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(hrtStreamSetMode)
+    .expects(never());
+
+    Stream stream(StreamType::STREAM_TYPE_ONLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
 TEST_F(StreamTest, stream_construct_by_type_fail)
 {
     MOCKER(aclrtCreateStream)
