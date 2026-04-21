@@ -83,7 +83,7 @@ HcclResult DlTraceFunction::DlTraceFunctionInit()
             HCCL_E_OPEN_FILE_FAILURE);
             ret = DlUTraceFunctionInterInit();
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[DlTraceFunctionInit] DlUTraceFunctionInterInit fail, ret[%d], destory handle.", ret);
+                HCCL_ERROR("[DlTraceFunctionInit] DlUTraceFunctionInterInit fail, ret[%d], destroy handle.", ret);
                 (void)HcclDlclose(handle_);
                 handle_ = nullptr;
                 return ret;
@@ -91,7 +91,7 @@ HcclResult DlTraceFunction::DlTraceFunctionInit()
         } else {
             ret = DlATraceFunctionInterInit();
             if (ret != HCCL_SUCCESS) {
-                HCCL_ERROR("[DlTraceFunctionInit] DlATraceFunctionInterInit fail, ret[%d], destory handle.", ret);
+                HCCL_ERROR("[DlTraceFunctionInit] DlATraceFunctionInterInit fail, ret[%d], destroy handle.", ret);
                 (void)HcclDlclose(handle_);
                 handle_ = nullptr;
                 return ret;
