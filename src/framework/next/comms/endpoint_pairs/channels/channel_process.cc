@@ -23,19 +23,23 @@
 namespace hcomm {
 
 std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> ChannelProcess::g_ChannelMap;
-std::unordered_map<ChannelHandle, ChannelHandle> ChannelProcess::g_ChannelD2HMap;
+std::unordered_map<DeviceChannelKey, ChannelHandle, DeviceChannelKeyHash> ChannelProcess::g_ChannelD2HMap;
 std::mutex ChannelProcess::g_ChannelMapMtx;
 
 template <typename Func>
 HcclResult ChannelProcess::WithChannelByHandleLocked(ChannelHandle inHandle, Func &&func)
 {
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     // 单锁：该锁同时保护 g_ChannelD2HMap 和 g_ChannelMap
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
 
     // 1) D2H 映射
-    auto itH = g_ChannelD2HMap.find(inHandle);
+    DeviceChannelKey key{deviceId, inHandle};
+    auto itH = g_ChannelD2HMap.find(key);
     if (itH == g_ChannelD2HMap.end()) {
-        HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, inHandle[0x%llx].", __func__, inHandle);
+        HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, deviceId[%d], inHandle[0x%llx].", __func__, deviceId, inHandle);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     const ChannelHandle mappedHandle = itH->second;
@@ -43,8 +47,9 @@ HcclResult ChannelProcess::WithChannelByHandleLocked(ChannelHandle inHandle, Fun
     // 2) ChannelMap 查找
     auto itC = g_ChannelMap.find(mappedHandle);
     if (itC == g_ChannelMap.end() || !itC->second) {
-        HCCL_ERROR("[%s] channel not found in g_ChannelMap, inHandle[0x%llx], mappedHandle[0x%llx].",
+        HCCL_ERROR("[%s] channel not found in g_ChannelMap, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].",
             __func__,
+            deviceId,
             inHandle,
             mappedHandle);
         return HcclResult::HCCL_E_INTERNAL;
@@ -53,7 +58,7 @@ HcclResult ChannelProcess::WithChannelByHandleLocked(ChannelHandle inHandle, Fun
     Channel *ch = itC->second.get();
     if (ch == nullptr) {
         HCCL_ERROR(
-            "[%s] null channel pointer, inHandle[0x%llx], mappedHandle[0x%llx].", __func__, inHandle, mappedHandle);
+            "[%s] null channel pointer, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].", __func__, deviceId, inHandle, mappedHandle);
         return HcclResult::HCCL_E_INTERNAL;
     }
 
@@ -66,6 +71,9 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
 {
     CHK_PTR_NULL(endpointHandle);
 
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     for (uint32_t i = 0; i < channelNum; ++i) {
         std::unique_ptr<Channel> tmpPtr = nullptr;
         CHK_RET(Channel::CreateChannel(endpointHandle, engine, channelDescs[i], tmpPtr));
@@ -73,7 +81,7 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
 
         ChannelHandle handle = reinterpret_cast<ChannelHandle>(tmpPtr.get());
         outHandles[i] = handle;
-        HCCL_INFO("%s handle[0x%llx], ptr[%p]", __func__, handle, tmpPtr.get());
+        HCCL_INFO("%s deviceId[%d], handle[0x%llx], ptr[%p]", __func__, deviceId, handle, tmpPtr.get());
 
         // 仅在修改全局表时持锁
         {
@@ -83,13 +91,14 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
                 HCCL_ERROR("[%s] channel handle already exists [0x%llx] in ChannelMap", __func__, handle);
                 return HCCL_E_INTERNAL;
             }
-            if (g_ChannelD2HMap.find(handle) != g_ChannelD2HMap.end()) {
-                HCCL_ERROR("[%s] channel handle already exists [0x%llx] in g_ChannelD2HMap", __func__, handle);
+            DeviceChannelKey key{deviceId, handle};
+            if (g_ChannelD2HMap.find(key) != g_ChannelD2HMap.end()) {
+                HCCL_ERROR("[%s] channel handle already exists deviceId[%d], handle[0x%llx] in g_ChannelD2HMap", __func__, deviceId, handle);
                 return HCCL_E_INTERNAL;
             }
 
             g_ChannelMap.emplace(handle, std::move(tmpPtr));
-            g_ChannelD2HMap.emplace(handle, handle);
+            g_ChannelD2HMap.emplace(key, handle);
         }
     }
     return HCCL_SUCCESS;
@@ -97,11 +106,15 @@ HcclResult ChannelProcess::CreateChannelsLoop(EndpointHandle endpointHandle, Com
 
 HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint32_t memHandleNum, ChannelHandle channelHandle)
 {
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
     // 1) D2H 映射
-    auto itH = g_ChannelD2HMap.find(channelHandle);
+    DeviceChannelKey key{deviceId, channelHandle};
+    auto itH = g_ChannelD2HMap.find(key);
     if (itH == g_ChannelD2HMap.end()) {
-        HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, channelHandle[0x%llx].", __func__, channelHandle);
+        HCCL_ERROR("[%s] handle not found in g_ChannelD2HMap, deviceId[%d], channelHandle[0x%llx].", __func__, deviceId, channelHandle);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     const ChannelHandle mappedHandle = itH->second;
@@ -109,8 +122,9 @@ HcclResult ChannelProcess::ChannelUpdateMemInfo(HcommMemHandle *memHandles, uint
     // 2) ChannelMap 查找
     auto itC = g_ChannelMap.find(mappedHandle);
     if (itC == g_ChannelMap.end() || !itC->second) {
-        HCCL_ERROR("[%s] channel not found in g_ChannelMap, channelHandle[0x%llx], mappedHandle[0x%llx].",
+        HCCL_ERROR("[%s] channel not found in g_ChannelMap, deviceId[%d], channelHandle[0x%llx], mappedHandle[0x%llx].",
             __func__,
+            deviceId,
             channelHandle,
             mappedHandle);
         return HcclResult::HCCL_E_INTERNAL;
@@ -231,15 +245,20 @@ HcclResult ChannelProcess::FillChannelD2HMap(ChannelHandle *deviceChannelHandles
     CHK_PTR_NULL(hostChannelHandles);
     CHK_PRT_RET((listNum == 0), HCCL_ERROR("[%s]Invalid listNum, listNum[%u]", __func__, listNum), HCCL_E_PARA);
 
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
     for (uint32_t idx = 0; idx < listNum; idx++) {
         auto deviceChannelHandle = deviceChannelHandles[idx];
         auto hostChannelHandle = hostChannelHandles[idx];
-        HCCL_INFO("%s deviceChannelHandle[0x%llx], hostChannelHandle[0x%llx]",
+        HCCL_INFO("%s deviceId[%d], deviceChannelHandle[0x%llx], hostChannelHandle[0x%llx]",
             __func__,
+            deviceId,
             deviceChannelHandle,
             hostChannelHandle);
-        g_ChannelD2HMap.emplace(deviceChannelHandle, hostChannelHandle);
+        DeviceChannelKey key{deviceId, deviceChannelHandle};
+        g_ChannelD2HMap.emplace(key, hostChannelHandle);
     }
 
     return HCCL_SUCCESS;
@@ -568,17 +587,21 @@ HcclResult ChannelProcess::ChannelGetUserRemoteMem(ChannelHandle channelHandle, 
 HcclResult ChannelProcess::ChannelGet(const ChannelHandle channelHandle, void **channel)
 {
     CHK_PTR_NULL(channel);
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     std::lock_guard<std::mutex> lock(g_ChannelMapMtx);
-    const auto &D2HhandleIter = g_ChannelD2HMap.find(channelHandle);
+    DeviceChannelKey key{deviceId, channelHandle};
+    const auto &D2HhandleIter = g_ChannelD2HMap.find(key);
     if (D2HhandleIter == g_ChannelD2HMap.end()) {
-        HCCL_ERROR("[ChannelProcess][%s] channel[%llx] not found.", __func__, channelHandle);
+        HCCL_ERROR("[ChannelProcess][%s] deviceId[%d], channel[%llx] not found.", __func__, deviceId, channelHandle);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
  
     const auto handle = D2HhandleIter->second;
     const auto &handleIter = g_ChannelMap.find(handle);
     if (handleIter == g_ChannelMap.end()) {
-        HCCL_ERROR("[ChannelProcess][%s] channel[%llx] not found.", __func__, handle);
+        HCCL_ERROR("[ChannelProcess][%s] deviceId[%d], channel[%llx] not found.", __func__, deviceId, handle);
         return HcclResult::HCCL_E_NOT_FOUND;
     }
     *channel = reinterpret_cast<void*>(handleIter->second.get());
@@ -620,6 +643,9 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
     CHK_PRT_RET((channelNum == 0), HCCL_ERROR("[%s] Invalid channelNum[0]", __func__), HCCL_E_PARA);
     HCCL_INFO("[%s] START. channelNum[%u].", __func__, channelNum);
 
+    int32_t deviceId = 0;
+    CHK_RET(hrtGetDevice(&deviceId));
+
     std::vector<ChannelHandle> deviceHandles; // 存放 device 侧 handle（即用户传入的 handle）
 
     {
@@ -630,10 +656,11 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
             const ChannelHandle inHandle = channels[i];
 
             // 1) 先做 D2H 映射（统一销毁入口 handle）
-            auto itH = g_ChannelD2HMap.find(inHandle);
+            DeviceChannelKey key{deviceId, inHandle};
+            auto itH = g_ChannelD2HMap.find(key);
             if (itH == g_ChannelD2HMap.end()) {
                 HCCL_ERROR(
-                    "[Hcomm][%s] failed to find handle mapping in g_ChannelD2HMap, inHandle[0x%llx].", __func__, inHandle);
+                    "[Hcomm][%s] failed to find handle mapping in g_ChannelD2HMap, deviceId[%d], inHandle[0x%llx].", __func__, deviceId, inHandle);
                 return HcclResult::HCCL_E_NOT_FOUND;
             }
             const ChannelHandle mappedHandle = itH->second;
@@ -641,16 +668,18 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
             // 2) 从 ChannelMap 删除 channel（以 mappedHandle 为准）
             auto itC = g_ChannelMap.find(mappedHandle);
             if (itC == g_ChannelMap.end()) {
-                HCCL_ERROR("[Hcomm][%s] failed to find channel in g_ChannelMap, inHandle[0x%llx], mappedHandle[0x%llx].",
+                HCCL_ERROR("[Hcomm][%s] failed to find channel in g_ChannelMap, deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx].",
                     __func__,
+                    deviceId,
                     inHandle,
                     mappedHandle);
                 return HcclResult::HCCL_E_NOT_FOUND;
             }
             deviceHandles.push_back(inHandle);
 
-            HCCL_INFO("[Hcomm][%s] erase channel: inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p]",
+            HCCL_INFO("[Hcomm][%s] erase channel: deviceId[%d], inHandle[0x%llx], mappedHandle[0x%llx], ptr[%p]",
                 __func__,
+                deviceId,
                 inHandle,
                 mappedHandle,
                 itC->second.get());
@@ -658,9 +687,9 @@ HcclResult ChannelProcess::ChannelDestroy(const ChannelHandle *channels, uint32_
             // 3) 先 erase ChannelMap（unique_ptr 释放对象）
             g_ChannelMap.erase(itC);
 
-            // 4) 清理 D2HMap 中所有指向 mappedHandle 的映射，避免残留导致后续查到“已销毁”
+            // 4) 清理 D2HMap 中所有指向 mappedHandle 的映射，避免残留导致后续查到"已销毁"
             for (auto it = g_ChannelD2HMap.begin(); it != g_ChannelD2HMap.end();) {
-                if (it->second == mappedHandle) {
+                if (it->first.deviceId == deviceId && it->second == mappedHandle) {
                     it = g_ChannelD2HMap.erase(it);
                 } else {
                     ++it;

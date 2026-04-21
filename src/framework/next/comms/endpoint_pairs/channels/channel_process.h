@@ -18,6 +18,22 @@
 
 namespace hcomm {
 
+struct DeviceChannelKey {
+    int32_t deviceId;
+    ChannelHandle handle;
+
+    bool operator==(const DeviceChannelKey& other) const {
+        return deviceId == other.deviceId && handle == other.handle;
+    }
+};
+
+struct DeviceChannelKeyHash {
+    std::size_t operator()(const DeviceChannelKey& key) const {
+        return std::hash<int32_t>()(key.deviceId) ^
+               (std::hash<ChannelHandle>()(key.handle) << 1);
+    }
+};
+
 class ChannelProcess {
 public:
     ChannelProcess() = default;
@@ -64,7 +80,7 @@ private:
     static HcclResult ChannelResumeConcurrency(const ChannelHandle *channelList, uint32_t channelNum);
     
     static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
-    static std::unordered_map<ChannelHandle, ChannelHandle> g_ChannelD2HMap;
+    static std::unordered_map<DeviceChannelKey, ChannelHandle, DeviceChannelKeyHash> g_ChannelD2HMap;
     static std::mutex g_ChannelMapMtx;
 };
 }
