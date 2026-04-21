@@ -262,3 +262,59 @@ TEST_F(StreamTest, aicpu_stream_constructor)
     EXPECT_EQ(buff2.sqHead, 0);
     EXPECT_EQ(buff2.sqTail, 100);
 }
+
+TEST_F(StreamTest, test_host_stream_mode)
+{
+    // 测试支持 V2 版本且设置 stream 模式成功的情况
+    MOCKER(hrtGetHcclV2Support)
+    .expects(once())
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = true;
+    });
+
+    MOCKER(HrtStreamSetMode)
+    .expects(once())
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<HcclRtStream>(notNull())), eq(static_cast<uint64_t>(1)));
+
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+
+    // 测试支持 V2 版本但设置 stream 模式失败的情况
+    MOCKER(hrtGetHcclV2Support)
+    .expects(once())
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = true;
+    });
+
+    MOCKER(HrtStreamSetMode)
+    .expects(once())
+    .will(returnValue(HCCL_E_NOT_SUPPORT))
+    .with(eq(static_cast<HcclRtStream>(notNull())), eq(static_cast<uint64_t>(1)));
+
+    Stream stream2(StreamType::STREAM_TYPE_OFFLINE);
+    EXPECT_TRUE(stream2.ptr() != nullptr);
+    GlobalMockObject::verify();
+
+    // 测试不支持 V2 版本的情况
+    MOCKER(hrtGetHcclV2Support)
+    .expects(once())
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = false;
+    });
+
+    // 不应该调用 HrtStreamSetMode
+    MOCKER(HrtStreamSetMode)
+    .expects(never());
+
+    Stream stream3(StreamType::STREAM_TYPE_OFFLINE);
+    EXPECT_TRUE(stream3.ptr() != nullptr);
+    GlobalMockObject::verify();
+}

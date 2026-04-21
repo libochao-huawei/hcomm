@@ -85,7 +85,7 @@ Stream::Stream(const StreamType streamType, bool isMainStream)
     hrtGetHcclV2Support(&isSupportV2);
     if (isSupportV2) {
         constexpr u32 streamMode = 1; // 配置流失败模式为遇错即停
-        HcclResult setModeRet = HrtStreamSetMode(rtStream, streamMode);
+        HcclResult setModeRet = hrtStreamSetMode(rtStream, streamMode);
         if (setModeRet != HCCL_SUCCESS) {
             HCCL_RUN_WARNING("[Stream][SetMode]Failed to set stream mode, errNo[0x%016llx], ret[%d]",
                 HCCL_ERROR_CODE(setModeRet), setModeRet);
