@@ -19,6 +19,7 @@
 #undef private
 #undef protected
 #include "llt_hccl_stub_pub.h"
+#include "hcom_common.h"
 
 using namespace std;
 using namespace hccl;
@@ -242,4 +243,83 @@ TEST_F(HcclCommunicatorHostTest, Ut_SetDynamicTilingData_When_A2GroupSendRecv_Ex
     EXPECT_EQ(hcclCommunicator->deviceType_, DevType::DEV_TYPE_910B);
     EXPECT_EQ(hcclCommunicator->isGroupMode_, true);
     EXPECT_EQ(hcclCommunicator->userRankSize_, 2);
+}
+
+static void TestConstructParam(HcclCommParams &params, RankTable_t &rankTable)
+{
+    string commId = "comm ";
+    memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
+    params.rank = 0;
+    params.totalRanks = 2;
+    params.isHeterogComm = false;
+    params.logicDevId = 0;
+    params.commWorkMode = WorkMode::HCCL_MODE_NORMAL;
+    params.deviceType = DevType::DEV_TYPE_910;
+
+    rankTable.collectiveId = "192.168.0.101-8000-8001";
+    vector<RankInfo_t> rankVec(2);
+    rankVec[0].rankId = 0;
+    rankVec[0].deviceInfo.devicePhyId = 0;
+    rankVec[0].deviceInfo.port = 16666;
+    rankVec[0].deviceInfo.vnicPort = 16667;
+    HcclIpAddress ipAddr1(1694542016);
+    rankVec[0].deviceInfo.deviceIp.push_back(ipAddr1); // 101.0.168.192
+    rankVec[0].serverIdx = 0;
+    rankVec[0].serverId = "192.168.0.101";
+    rankVec[1].rankId = 1;
+    rankVec[1].deviceInfo.devicePhyId = 0;
+    rankVec[1].deviceInfo.port = 16666;
+    rankVec[1].deviceInfo.vnicPort = 16667;
+    HcclIpAddress ipAddr2(1711319232);
+    rankVec[1].deviceInfo.deviceIp.push_back(ipAddr2); // 101.0.168.192
+    rankVec[1].serverIdx = 1;
+    rankVec[1].serverId = "192.168.0.102";
+    rankTable.rankList.assign(rankVec.begin(), rankVec.end());
+    rankTable.deviceNum = 2;
+    rankTable.serverNum = 2;
+}
+
+TEST_F(HcclCommunicatorHostTest, Ut_HcclGetAlgExecParam_When_Normal_Expect_ReturnHCCL_SUCCESS)
+{
+    HcclResult ret = HCCL_SUCCESS;
+
+    HcclCommParams params;
+    RankTable_t rankTable;
+    TestConstructParam(params, rankTable);
+    params.deviceType = DevType::DEV_TYPE_910B;
+    std::unique_ptr<HcclCommunicator> hcclCommunicator(new (std::nothrow) HcclCommunicator());
+
+    MOCKER_CPP(&HcclCommunicator::InitRaResource).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitPara).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&HcclCommunicator::InitOneSidedService).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
+
+    ret = hcclCommunicator->Init(params, rankTable);
+    hcclCommunicator.userRankSize_ = 2;
+    AlgResourceResponse tempAlgResRep;
+    hcclCommAicpu->resMap_["test"] = tempAlgResRep;
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    std::string tag = "test";
+    HcclCMDType opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
+    u64 count = 1024;
+
+    s8 *inputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    s8 *outputPtr = (s8 *)sal_malloc(count * sizeof(s8));
+    sal_memset(inputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+    sal_memset(outputPtr, count * sizeof(s8), 0, count * sizeof(s8));
+
+    bool clearEnable = true;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    void *commContext = nullptr;
+    u64 len = 0;
+    u32 aivCoreLimit = 2;
+
+    ret = hcclCommunicator->HcclGetAlgExecParam(
+        tag, opType, count, inputPtr, outputPtr, clearEnable, dataType, op, commContext, len, aivCoreLimit);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    sal_free(inputPtr);
+    sal_free(outputPtr);
 }
