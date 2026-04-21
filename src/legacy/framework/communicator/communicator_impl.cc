@@ -2734,7 +2734,7 @@ HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, boo
     // 开启新流程时，仅mc2场景走回legacy通信域，此时不允许使用ms模式
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
     if (indOp != nullptr && strcmp(indOp, "") != 0) {
-        HCCL_RUN_WARNING("[CommunicatorImpl][%s] legacy communicator not support ccu ms mode for mc2.",
+        HCCL_WARNING("[CommunicatorImpl][%s] legacy communicator not support ccu ms mode for mc2.",
             __func__);
         isCcuMsAvailable = false;
     }
