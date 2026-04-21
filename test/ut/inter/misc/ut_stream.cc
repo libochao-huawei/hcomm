@@ -91,6 +91,75 @@ TEST_F(StreamTest, constructor_02)
     EXPECT_TRUE(stream2.ptr() != nullptr);
 }
 
+TEST_F(StreamTest, Ut_Stream_SetMode_When_V2SupportedAndOnlineType_Expect_HrtStreamSetModeCalled)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = true;
+    });
+
+    MOCKER(hrtStreamSetMode)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS));
+
+    Stream stream(StreamType::STREAM_TYPE_ONLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(StreamTest, Ut_Stream_SetMode_When_V2NotSupportedAndOnlineType_Expect_HrtStreamSetModeNotCalled)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = false;
+    });
+
+    MOCKER(hrtStreamSetMode)
+    .expects(never());
+
+    Stream stream(StreamType::STREAM_TYPE_ONLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(StreamTest, Ut_Stream_SetMode_When_V2SupportedAndOfflineType_Expect_HrtStreamSetModeNotCalled)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_SUCCESS))
+    .with(eq(static_cast<bool*>(notNull())))
+    .before([](const ::testing::tuple<bool*> &args) {
+        *std::get<0>(args) = true;
+    });
+
+    MOCKER(hrtStreamSetMode)
+    .expects(never());
+
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
+TEST_F(StreamTest, Ut_Stream_SetMode_When_GetHcclV2SupportFail_Expect_HrtStreamSetModeNotCalled)
+{
+    MOCKER(hrtGetHcclV2Support)
+    .stubs()
+    .will(returnValue(HCCL_E_INTERNAL));
+
+    MOCKER(hrtStreamSetMode)
+    .expects(never());
+
+    Stream stream(StreamType::STREAM_TYPE_ONLINE);
+    EXPECT_TRUE(stream.ptr() != nullptr);
+    GlobalMockObject::verify();
+}
+
 TEST_F(StreamTest, stream_construct_by_type_fail)
 {
     MOCKER(aclrtCreateStream)

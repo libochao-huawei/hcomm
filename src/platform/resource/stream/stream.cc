@@ -83,8 +83,7 @@ Stream::Stream(const StreamType streamType, bool isMainStream)
     bool isSupportV2 = false;
     CHK_PRT_CONT(hrtGetHcclV2Support(&isSupportV2), HCCL_WARNING("[Stream] Can not check hccl version"));
     if (isSupportV2 && streamType == StreamType::STREAM_TYPE_ONLINE) {
-        constexpr u32 streamMode = 1; // 配置流失败模式为遇错即停
-        HcclResult setModeRet = hrtStreamSetMode(stream_, streamMode);
+        HcclResult setModeRet = hrtStreamSetMode(stream_, STREAM_MODE_STOP_ON_FAILURE);
         if (setModeRet != HCCL_SUCCESS) {
             HCCL_ERROR("[Stream][SetMode]Failed to set stream mode, errNo[0x%016llx], ret[%d], stream id[%d]",
                 HCCL_ERROR_CODE(setModeRet), setModeRet, streamId_);
