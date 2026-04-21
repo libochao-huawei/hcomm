@@ -206,9 +206,7 @@ public:
 
     void UnfoldOp(HcclKernelParamLite *kernelParam);
     void RegisterRtsqCallback();
-#ifdef CCL_KERNEL_AICPU
-    void RegisterProfCallBack();
-#endif
+
     void CheckOpExecStatus() const;
     bool CheckNeedUpdateRes(HcclKernelParamLite *kernelParam);
     void UpdateCommParam(HcclKernelParamLite *kernelParam);

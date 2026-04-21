@@ -42,6 +42,8 @@ public:
 
     void Wait(u32 index, const StreamLite &stream) override;
 
+    void WaitWithTimeout(u32 index, const StreamLite &stream, u32 timeout) override;
+
     void Read(const RmaBufferLite &loc, const Buffer &rmt, const StreamLite &stream) override;
 
     void ReadReduce(const RmaBufferLite &loc, const Buffer &rmt, const ReduceIn &reduceIn,

@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "p2p_connection.h"
-#include "socket.h"
+#include "../socket/socket.h"
 #include "log.h"
 #include "orion_adapter_rts.h"
 #include "ip_address.h"
