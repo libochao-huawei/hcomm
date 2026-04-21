@@ -100,6 +100,9 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetStatus_WhenSocketNotReady_Returns_INIT) {
     HcommChannelDesc desc = MakeFakeChannelDesc(fakeSock);
     AicpuTsUboeChannel ch(ep, desc);
 
+    // Ensure the channel uses our fake socket (ParseInputParam isn't called here)
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
+
     // Ensure initial channelStatus is INIT
     EXPECT_EQ(ch.channelStatus, ChannelStatus::INIT);
 
@@ -130,6 +133,9 @@ TEST_F(AicpuTsUboeChannelTest, Ut_ProcessUboeState_AllStates_Transitions) {
     HcommChannelDesc desc = MakeFakeChannelDesc(fakeSock);
 
     AicpuTsUboeChannel ch(ep, desc);
+
+    // Ensure the channel actually uses our FakeSocket for IsSocketReady()/I/O
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
 
     // Minimal configuration so state handlers can run with fakes
     ch.notifyNum_ = 1;
