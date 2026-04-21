@@ -1,0 +1,33 @@
+---
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  modernize-loop-convert,
+  modernize-use-bool-literals,
+  modernize-use-nullptr,
+  modernize-use-override,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-branch-clone,
+  -bugprone-macro-parentheses,
+  -bugprone-narrowing-conversions,
+  -misc-const-correctness,
+  -performance-no-int-to-ptr,
+  -performance-unnecessary-value-param,
+  -readability-*,
+  -modernize-use-auto,
+  -modernize-use-equals-default,
+  -modernize-avoid-c-arrays,
+  -modernize-return-braced-init-list,
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-avoid-magic-numbers
+WarningsAsErrors: ''
+HeaderFilterRegex: '^(include|src|test|pkg_inc)/'
+FormatStyle: file
+CheckOptions:
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable
+  - key: modernize-use-nullptr.NullMacros
+    value: 'NULL'
