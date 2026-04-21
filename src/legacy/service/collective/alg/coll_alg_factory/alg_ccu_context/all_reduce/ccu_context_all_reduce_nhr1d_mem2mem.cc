@@ -385,12 +385,7 @@ void CcuContextAllReduceNHR1D::DoLocalCopySlice(CcuRep::Memory &src, CcuRep::Mem
 
     CCU_IF(sliceSize != 0)
     {
-        CCU_IF(isInputOutputEqual_ != 1) {
-            LocalCopy(dst, src, die0Size_, localSignal_, 1 << signalIndex);
-        }
-        CCU_IF(isInputOutputEqual_ == 1) {
-            LocalCopy(dst, src, sliceSize, localSignal_, 1 << signalIndex);
-        }
+        LocalCopy(dst, src, sliceSize, localSignal_, 1 << signalIndex);
     }
 }
 
