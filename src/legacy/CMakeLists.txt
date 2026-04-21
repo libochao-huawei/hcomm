@@ -203,6 +203,9 @@ target_link_libraries(ccl_dpu
 install(TARGETS  ccl_dpu
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
 )
+install(TARGETS  ccl_dpu
+    LIBRARY DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
+)
 
 # 需要链接的库，后需增加
 IF (NOT DEFINED ENV{HCCL_LOCAL_BUILD})
