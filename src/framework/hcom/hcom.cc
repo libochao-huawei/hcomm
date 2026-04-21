@@ -2960,6 +2960,7 @@ HcclResult HcomGetGroupNameByOpBase(s64 opBaseHcom, char **groupname)
 HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname) 
 {   
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
+    CHK_PTR_NULL(hcclComm);
     *groupname = const_cast<char *>(hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
