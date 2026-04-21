@@ -452,15 +452,14 @@ int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_
 }
 
 int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t len, uint32_t remoteNotifyIdx, u32 myRankId, u64 aicpuTaskId)
+    uint64_t len, uint32_t remoteNotifyIdx, u64 aicpuTaskId)
 {
     s32 dpuDevId;
     CHK_RET(hrtGetDevice(&dpuDevId));
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u], myRankId[%u], dpuDevId[%d], aicpuTaskId[%lu].",
-        __func__, thread, channel, dst, src, len, remoteNotifyIdx, myRankId, dpuDevId, aicpuTaskId);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdxIdx[%u], dpuDevId[%d], aicpuTaskId[%lu].",
+        __func__, thread, channel, dst, src, len, remoteNotifyIdx, dpuDevId, aicpuTaskId);
 
     (void)thread;
-    (void)myRankId;
     (void)aicpuTaskId;
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
@@ -476,8 +475,8 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
         ret = HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdx[%u], myRankId[%u], dpuDevId[%u], aicpuTaskId[%lu].",
-            __func__, thread, channel, dst, src, len, remoteNotifyIdx, myRankId, dpuDevId, aicpuTaskId), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], dst[0x%llx], src[0x%llx], len[%llu], remoteNotifyIdxIdx[%u], dpuDevId[%u], aicpuTaskId[%lu].",
+            __func__, thread, channel, dst, src, len, remoteNotifyIdx, dpuDevId, aicpuTaskId), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -485,7 +484,7 @@ int32_t HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHandle chann
 int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
-    return HcommWriteWithNotifyNbiOnThread(0, channel, dst, src, len, remoteNotifyIdx, 0, 0);
+    return HcommWriteWithNotifyNbiOnThread(0, channel, dst, src, len, remoteNotifyIdx, 0);
 }
 
 int32_t HcommReadNbiOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
@@ -520,16 +519,14 @@ int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t
 }
 
 int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx,
-    u32 myRankId, u64 aicpuTaskId)
+    u64 aicpuTaskId)
 {
     s32 dpuDevId;
     CHK_RET(hrtGetDevice(&dpuDevId));
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u], myRankId[%u], dpuDevId[%d], aicpuTaskId[%lu].",
-        __func__, thread, channel, remoteNotifyIdx, myRankId, dpuDevId, aicpuTaskId);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u], dpuDevId[%d], aicpuTaskId[%lu].",
+        __func__, thread, channel, remoteNotifyIdx, dpuDevId, aicpuTaskId);
 
     (void)thread;
-    (void)myRankId;
-    (void)aicpuTaskId;
     CHK_PTR_NULL(channel);
 
     HHCCL_RESULT ret = HCCL_SUCCESS;
@@ -543,12 +540,8 @@ int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
         ret = HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u], myRankId[%u], dpuDevId[%u], aicpuTaskId[%lu].",
-            __func__, thread, channel, remoteNotifyIdx, myRankId, dpuDevId, aicpuTaskId), ret);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
-    return HCCL_SUCCESS;
-}
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u].", __func__, thread, channel, remoteNotifyIdx), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], remoteNotifyIdx[%u], dpuDevId[%u], aicpuTaskId[%lu].",
+            __func__, thread, channel, remoteNotifyIdx, dpuDevId, aicpuTaskId), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -560,20 +553,18 @@ int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx
     if (devType != DevType::DEV_TYPE_950) {
         return HCCL_E_NOT_SUPPORT;
     }
-    return HcommChannelNotifyRecordOnThread(0, channel, remoteNotifyIdx, 0, 0);
+    return HcommChannelNotifyRecordOnThread(0, channel, remoteNotifyIdx, 0);
 }
 
 int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeOut,
-    u32 myRankId, u64 aicpuTaskId)
+    u64 aicpuTaskId)
 {
     s32 dpuDevId;
     CHK_RET(hrtGetDevice(&dpuDevId));
-    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u], myRankId[%u], dpuDevId[%d], aicpuTaskId[%[lu].",
-        __func__, thread, channel, localNotifyIdx, timeOut, myRankId, dpuDevId, aicpuTaskId);
+    HCCL_INFO("[%s] START. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u], dpuDevId[%d], aicpuTaskId[%lu].",
+        __func__, thread, channel, localNotifyIdx, timeOut, dpuDevId, aicpuTaskId);
 
     (void)thread;
-    (void)myRankId;
-    (void)aicpuTaskId;
     CHK_PTR_NULL(channel);
 
     HcclResult ret = HCCL_SUCCESS;
@@ -587,12 +578,8 @@ int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channe
         ret = HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u], myRankId[%u], dpuDevId[%u], aicpuTaskId[%lu].",
-            __func__, thread, channel, localNotifyIdx, timeOut, myRankId, dpuDevId, aicpuTaskId), ret);
-    HCCL_INFO("[%s] SUCCESS.", __func__);
-    return HCCL_SUCCESS;
-}
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u].", __func__, thread, channel, localNotifyIdx, timeOut), ret);
+        HCCL_ERROR("[%s] FAIL. thread[0x%llx], channel[0x%llx], localNotifyIdx[%u], timeOut[%u], dpuDevId[%u], aicpuTaskId[%lu].",
+            __func__, thread, channel, localNotifyIdx, timeOut, dpuDevId, aicpuTaskId), ret);
     HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
@@ -604,7 +591,7 @@ int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, u
     if (devType != DevType::DEV_TYPE_950) {
         return HCCL_E_NOT_SUPPORT;
     }
-    return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeOut, 0, 0);
+    return HcommChannelNotifyWaitOnThread(0, channel, localNotifyIdx, timeOut, 0);
 }
 
 HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后的任务保序

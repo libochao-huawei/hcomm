@@ -41,7 +41,7 @@ public:
     HcclResult GetStatus(ChannelStatus &status);
 
     std::string Describe() const;
-    std::string GetCommAddrString() const;
+    std::string GetCommAddrString(EndpointDesc ep) const;
 
     HcclResult SetDfxCallback(std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback);
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetDfxCallback() const;
@@ -130,7 +130,7 @@ private:
 
     uint64_t maxMsgSize_{0};
 
-    std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> dfxCallback_;
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> dfxCallback_;
 
     std::mutex cq_mutex;
     std::mutex sendCq_mutex;

@@ -536,10 +536,10 @@ std::string HostCpuRoceChannel::Describe() const
     return msg;
 }
 
-std::string HostCpuRoceChannel::GetCommAddrString() const
+std::string HostCpuRoceChannel::GetCommAddrString(EndpointDesc ep) const
 {
     std::string result;
-    const CommAddr &commAddr = remoteEp_.commAddr;
+    const CommAddr &commAddr = ep.commAddr;
 
     switch (commAddr.type) {
         case COMM_ADDR_TYPE_IP_V4: {
@@ -588,7 +588,7 @@ std::string HostCpuRoceChannel::GetCommAddrString() const
     return result;
 }
 
-HcclResult HostCpuRoceChannel::SetDfxCallback(std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> callback)
+HcclResult HostCpuRoceChannel::SetDfxCallback(std::function<HcclResult(const Hccl::TaskParam&, u64)> callback)
 {
     dfxCallback_ = callback;
     return HCCL_SUCCESS;
@@ -664,6 +664,24 @@ HcclResult HostCpuRoceChannel::PrepareNotifyWrResource(
     notifyRecordWr.wr_id        = 0; // 用户定义工作请求id，建议：设为有意义的值
     notifyRecordWr.wr.rdma.rkey = rmtRmaBuffers_[0]->GetRkey();                               // 远端秘钥
     notifyRecordWr.wr.rdma.remote_addr = static_cast<uint64_t>(rmtRmaBuffers_[0]->GetAddr()); // 远端地址
+
+    TaskParam taskParam{};
+    taskParam.taskType                 = TaskParamType::TASK_DPU_INLINE_WRITE;
+    taskParam.beginTime                = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.taskPara.DMA.dst         = static_cast<uint64_t>(rmtRmaBuffers_[0]->GetAddr());
+    taskParam.taskPara.DMA.size        = len;
+    taskParam.taskPara.DMA.notifyID    = dpuNotifyId;
+    taskParam.taskPara.DMA.notifyValue = 1;
+    taskParam.taskPara.DMA.linkType    = DfxLinkType::ROCE;
+    taskParam.taskPara.DMA.dmaOp       = DmaOp::HCCL_DMA_WRITE;
+    taskParam.taskPara.DMA.locAddr     = GetCommAddrString(localEp_);
+    taskParam.taskPara.DMA.locAddr     = GetCommAddrString(remoteEp_);
+    taskParam.aicpuTaskId = aicpuTaskId;
+
+
+    if (dfxCallback_ != nullptr) {
+        dfxCallback_(taskParam, reinterpret_cast<u64>(this));
+    }
     return HCCL_SUCCESS;
 }
 
@@ -755,6 +773,17 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
         }
     }
     CHK_RET(IbvPostRecv());
+
+    TaskParam taskParam{};
+    taskParam.taskType                 = TaskParamType::TASK_DPU_NOTIFY_WAIT;
+    taskParam.beginTime                = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.taskPara.Notify.notifyID = dpuNotifyId;
+    taskParam.taskPara.Notify.value    = 1;
+    taskParam.aicpuTaskId = aicpuTaskId;
+
+    if (dfxCallback_ != nullptr) {
+        dfxCallback_(taskParam, reinterpret_cast<u64>(this));
+    }
     return HCCL_SUCCESS;
 }
 
@@ -794,6 +823,24 @@ HcclResult HostCpuRoceChannel::PrepareWriteWrResource(const void *dst, const voi
     writeWithNotifyWr.imm_data            = dpuNotifyId;
     writeWithNotifyWr.wr.rdma.rkey        = rmtRmaBuffers_[rmtIdx]->GetRkey();
     writeWithNotifyWr.wr.rdma.remote_addr = reinterpret_cast<uint64_t>(dst);
+    
+    TaskParam taskParam{};
+    taskParam.taskType              = TaskParamType::TASK_DPU_WRITE_WITH_NOTIFY;
+    taskParam.beginTime             = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.taskPara.DMA.src      = src;
+    taskParam.taskPara.DMA.dst      = dst;
+    taskParam.taskPara.DMA.size     = len;
+    taskParam.taskPara.DMA.notifyID = dpuNotifyId;
+    taskParam.taskPara.DMA.notifyValue = 1;
+    taskParam.taskPara.DMA.linkType = DfxLinkType::ROCE;
+    taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
+    taskParam.taskPara.DMA.locAddr     = GetCommAddrString(localEp_);
+    taskParam.taskPara.DMA.locAddr     = GetCommAddrString(remoteEp_);
+    taskParam.aicpuTaskId = aicpuTaskId;
+
+    if (dfxCallback_ != nullptr) {
+        dfxCallback_(taskParam, reinterpret_cast<u64>(this));
+    }
 
     return HCCL_SUCCESS;
 }
@@ -1059,6 +1106,16 @@ HcclResult HostCpuRoceChannel::ChannelFence()
     wqeNum_ = 0; // 所有的wqe都已经完成，重置计数器
     fenceFlag_ = true;
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. wqeNum_[%u].", __func__, wqeNum_);
+    TaskParam taskParam{};
+    taskParam.taskType                 = TaskParamType::TASK_NOTIFY_WAIT;
+    taskParam.beginTime                = Hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    taskParam.taskPara.Notify.notifyID = INVALID_U64;
+    taskParam.taskPara.Notify.value    = 1;
+    taskParam.aicpuTaskId = aicpuTaskId;
+
+    if (newCallback_ != nullptr) {
+        newCallback_(stream.GetSqId(), taskId, taskParam, reinterpret_cast<u64>(this));
+    }
     return HCCL_SUCCESS;
 }
 
