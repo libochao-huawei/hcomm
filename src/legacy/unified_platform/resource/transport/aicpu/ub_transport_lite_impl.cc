@@ -95,6 +95,12 @@ HcclResult UbTransportLiteImpl::SetAddTaskInfoCallback(std::function<HcclResult(
     return HCCL_SUCCESS;
 }
 
+HcclResult UbTransportLiteImpl::SetAddDpuTaskInfoCallback(std::function<HcclResult(const TaskParam&, u64)> callback) {
+    CHK_PTR_NULL(callback);
+    newDpuCallback_ = callback;
+    return HCCL_SUCCESS;
+}
+
 UbTransportLiteImpl::~UbTransportLiteImpl()
 {
     for (auto &it : connUniqueIdVec) {

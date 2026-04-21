@@ -266,9 +266,9 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
             HCCL_INFO("[HcclChannelAcquire] Register DFX callback for CPU channels");
             HcclCommDfx* hcclCommDfx = collComm->GetHcclCommDfx();
             CHK_PTR_NULL(hcclCommDfx);
-            auto callback = hcclCommDfx->GetCallback();
+            auto callback = hcclCommDfx->GetDpuCallback();
             for (uint32_t idx = 0; idx < channelNum; idx++) {
-                int32_t ret = HcommChannelRegisterDfx(channels[idx], callback);
+                int32_t ret = HcommDpuChannelRegisterDfx(channels[idx], callback);
                 CHK_PRT_RET(ret != HCCL_SUCCESS,
                     HCCL_ERROR("[HcclChannelAcquire] Failed to register DFX callback for channel[%u], ret[%d]", idx, ret),
                     static_cast<HcclResult>(ret));

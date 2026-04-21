@@ -53,6 +53,12 @@ HcclResult HcclCommDfx::AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommDfx::AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam, u64 handle) {
+    u32 streamId = npuStreamId_;
+    u32 taskId = GetTaskId(streamId);
+    return AddTaskInfoCallback(streamId, taskId, taskParam, handle);
+}
+
 // HcclCommDfx接口实现 - 修改为返回HcclResult类型
 HcclResult HcclCommDfx::ReportAllTasks(bool cachedReq) {
     CHK_PTR_NULL(profiling_);

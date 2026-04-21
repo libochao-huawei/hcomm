@@ -33,6 +33,7 @@ public:
 
     // 注册回调函数
     HcclResult AddTaskInfoCallback(u32 streamId, u32 taskId, const Hccl::TaskParam &taskParam, u64 handle);
+    HcclResult AddDpuTaskInfoCallback(const Hccl::TaskParam &taskParam, u64 handle);
 
     // 获取MirrorTaskManager
     Hccl::MirrorTaskManager* GetMirrorTaskManager() const;
@@ -53,6 +54,11 @@ public:
     static u32 GetTaskId(u32 streamId);
     std::function<HcclResult(u32, u32, const Hccl::TaskParam&, u64)> GetCallback() {
         return setAddTaskCallback_;
+    }
+    std::function<HcclResult(const Hccl::TaskParam&, u64)> GetDpuCallback() {
+        return [this](const Hccl::TaskParam &taskParam, u64 handle) {
+            return this->AddDpuTaskInfoCallback(taskParam, handle);
+        };
     }
     HcclResult ReportKernel(uint64_t beginTime, const std::string& commTag, const std::string& kernelName, uint32_t threadId);
 
