@@ -56,7 +56,6 @@ target_include_directories(hccl_v2 PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -143,7 +142,6 @@ target_include_directories(ccl_dpu PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
