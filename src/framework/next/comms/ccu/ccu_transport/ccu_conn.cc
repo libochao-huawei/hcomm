@@ -532,16 +532,9 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     Hccl::Eid locEid = locAddr.GetReverseEid();
     Hccl::Eid rmtEid = rmtAddr.GetReverseEid();
 
-    std::string locEidStr = Hccl::StringFormat("%016llx:%016llx",
-                            static_cast<unsigned long long>(be64toh(locEid.subnetPrefix)),
-                            static_cast<unsigned long long>(be64toh(locEid.interfaceId)));
-    std::string rmtEidStr = Hccl::StringFormat("%016llx:%016llx",
-                            static_cast<unsigned long long>(be64toh(rmtEid.subnetPrefix)),
-                            static_cast<unsigned long long>(be64toh(rmtEid.interfaceId)));
-
     std::string dfxStr = Hccl::StringFormat("chip id[%u] die id[%u], func_id[%u], jetty id[%s], "
-        "local eid[%s] remote eid[%s], udp sport[%u]",
-        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locEidStr.c_str(), rmtEidStr.c_str(), udpSport);
+        "local [%s] remote [%s], udp sport[%u]",
+        devLogicId_, dieId_, funcId_, jettyIds.c_str(), locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), udpSport);
     dfxMsg += dfxStr;
     HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
     return HcclResult::HCCL_SUCCESS;
