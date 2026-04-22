@@ -11,7 +11,8 @@
 
 GTEST_API_ int main(int argc, char **argv) {
     // testcase测试代码，只跑特定的用例
-    //testing::GTEST_FLAG(filter) = "AllReduceTest.allreduce_cyw_test";
+    // testing::GTEST_FLAG(filter) = "AllReduceTest.allreduce_order_preserved_multi_node_single_rank_910b";
+    testing::GTEST_FLAG(filter) = "AllGatherTest.allgather_310P_opbase_AllGatherSlimRingExecutor";
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

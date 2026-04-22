@@ -50,6 +50,14 @@ u32 CollAllReduceOrderPreservedExecutor::CalReduceStreamNum(const u32& localRank
 
 HcclResult CollAllReduceOrderPreservedExecutor::CalcStreamNum(u32& streamNum)
 {
+    if (topoAttr_.deviceNumPerAggregation == 1) {
+        u32 level1StreamNum = CalReduceStreamNum(topoAttr_.moduleNum);
+        streamNum = std::min(level1StreamNum, DEVICE_EIGHT + DEVICE_EIGHT / FACTOR_NUM_TWO - 1);
+        HCCL_INFO("[%s]tag[%s] single rank per module, level1StreamNum[%u], streamNum[%u]",
+            __func__, tag_.c_str(), level1StreamNum, streamNum);
+        return HCCL_SUCCESS;
+    }
+
     // Level0RankSize条流给alltoall，剩下的流给LocalReduce使用
     u32 level0StreamNum = topoAttr_.deviceNumPerAggregation - 1 + CalReduceStreamNum(topoAttr_.deviceNumPerAggregation);
     // level1主流分给alltoall，从流给LocalReduce使用
@@ -138,6 +146,13 @@ void CollAllReduceOrderPreservedExecutor::CalGroupSlices(const OpParam &param, c
 HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel0(const OpParam &param, ExecMem &execMem,
     SubCommInfo &level0CommInfo)
 {
+    if (level0CommInfo.localRankSize == 1) {
+        all2allOffset_ = topoAttr_.moduleNum > 1 ? 1 : 0;
+        HCCL_INFO("[%s] single rank per module, skip L0 AllToAll and LocalReduce, tag[%s]",
+            __func__, tag_.c_str());
+        return RunReduceScatterLevel0SingleRank(param, execMem, level0CommInfo);
+    }
+
     // 切分数据(ReduceScatter分组，记录每组的起始偏移和大小)
     GroupSlicesInfo groupSlicesInfoLevel0;
     for (u32 groupId = 0; groupId < topoAttr_.moduleNum; groupId++) {
@@ -170,6 +185,19 @@ HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel0(const OpP
         (level0CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level0CommInfo.localRank,
         PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, param.stream));
     CHK_RET(RunTemplate(level0TempAlg, level0CommInfo));
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel0SingleRank(const OpParam &param,
+    ExecMem &execMem, SubCommInfo &level0CommInfo)
+{
+    u64 size = execMem.count * SIZE_TABLE[param.DataDes.dataType];
+    u64 totalInputSize = topoAttr_.userRankSize * size;
+
+    DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, totalInputSize);
+    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, totalInputSize) : execMem.outputMem.range(0, totalInputSize);
+    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
+
     return HCCL_SUCCESS;
 }
 
