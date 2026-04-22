@@ -1,0 +1,42 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug UT With CMake Target",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [
+                "--gtest_filter=Ccukernel_ReportProfilingTest.*",
+                "--gtest_break_on_failure"
+            ],
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Run UT Under Valgrind",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/usr/bin/valgrind",
+            "args": [
+                "--tool=memcheck",
+                "--leak-check=full",
+                "--show-leak-kinds=all",
+                "--track-origins=yes",
+                "--error-exitcode=1",
+                "--",
+                "${command:cmake.launchTargetPath}",
+                "--gtest_filter=Ccukernel_ReportProfilingTest.*",
+                "--gtest_break_on_failure"
+            ],
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "externalConsole": true,
+            "stopAtEntry": false
+        }
+    ]
+}
