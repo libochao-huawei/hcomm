@@ -125,10 +125,9 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLeve
     HCCL_INFO("[%s] single rank per module, skip L1 AllToAll and LocalReduce, tag[%s]",
         __func__, tag_.c_str());
 
-    u64 size = execMem.count * SIZE_TABLE[param.DataDes.dataType];
-
+    u64 size = totalSize_;
     DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, size);
-    DeviceMem dstMem = execMem.scratchMem.range(0, size);
+    DeviceMem dstMem = scratchMemFlag_ ? execmmm.scratchMem.range(0, size) : execMem.inputMem.ragge(0, size);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
 
     return HCCL_SUCCESS;
@@ -207,10 +206,12 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLeve
     CHK_SMART_PTR_NULL(level2TempAlg);
 
     u32 level0LastRank = level0Ranksize - 1;
+    bool isUseCclIn = level0Ranksize == 1 ? true : commIndex == level0LastRank - 1;
+    bool borrowSpace = level0Ranksize == 1;
     CHK_RET(level2TempAlg->Prepare(execMem.inputMem, execMem.scratchMem,
         param.stream, algResResp_->slaveStreams, algResResp_->notifiesMain, algResResp_->notifiesAux,
-        memInfo, param.reduceType, param.DataDes.dataType, commIndex == level0LastRank - 1,
-        commIndex == level0LastRank, false));
+        memInfo, param.reduceType, param.DataDes.dataType, isUseCclIn,
+        commIndex == level0LastRank, borrowSpace));
     CHK_RET(level2TempAlg->RegisterProfiler((level0Ranksize << PROF_RANKSIZE_OFFSET_OF_PLANEID) +
         level1CommInfo.localRank, PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, param.stream));
     CHK_RET(RunTemplate(level2TempAlg, level2CommInfo));

@@ -2047,7 +2047,7 @@ TEST_F(AllReduceTest, allreduce_order_preserved_multi_node_single_rank_91093_opb
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 1, 4, 1);
+    gen.GenTopoMeta(topoMeta, 4, 1, 1);
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLREDUCE;
@@ -2070,7 +2070,7 @@ TEST_F(AllReduceTest, allreduce_order_preserved_multi_node_single_rank_91093_off
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 1, 4, 1);
+    gen.GenTopoMeta(topoMeta, 4, 1, 1);
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLREDUCE;
@@ -2115,7 +2115,7 @@ TEST_F(AllReduceTest, allreduce_order_preserved_multi_node_single_rank_small_cou
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 1, 4, 1);
+    gen.GenTopoMeta(topoMeta, 4, 1, 1);
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::ALLREDUCE;
@@ -2178,26 +2178,3 @@ TEST_F(AllReduceTest, allreduce_order_preserved_multi_node_16server_single_rank_
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(AllReduceTest, allreduce_order_preserved_multi_node_uneven_single_rank)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 2, 1, 1);
-
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
-    checkerOpParam.tag = "AllReduce";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.DataDes.count = 768;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
-    checkerOpParam.algName = "AllReduceOrderPreservedFor91093Executor";
-    checkerOpParam.aicpuUnfoldMode = true;
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.Check(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}

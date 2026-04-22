@@ -195,7 +195,7 @@ HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel0SingleRank
     u64 size = execMem.count * SIZE_TABLE[param.DataDes.dataType];
 
     DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, size);
-    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, size) : execMem.outputMem.range(0, size);
+    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, size) : execMem.inputMem.range(0, size);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
 
     return HCCL_SUCCESS;
@@ -227,9 +227,10 @@ HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel1(const OpP
     CHK_SMART_PTR_NULL(level1TempAlg);
 
     u32 level0LastRank = level0Ranksize - 1;
+    bool isUseCclIn = (level0Ranksize == 1) || (commIndex == level0LastRank - 1);
     CHK_RET(level1TempAlg->Prepare(execMem.inputMem, outputMem, param.stream, algResResp_->slaveStreams,
         algResResp_->notifiesMain, algResResp_->notifiesAux, memInfo, param.reduceType,
-        param.DataDes.dataType, commIndex == level0LastRank - 1, commIndex == level0LastRank, true));
+        param.DataDes.dataType, isUseCclIn, commIndex == level0LastRank, true));
     
     CHK_RET(level1TempAlg->RegisterProfiler((level0Ranksize << PROF_RANKSIZE_OFFSET_OF_PLANEID) +
         level0CommInfo.localRank, PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, param.stream));
