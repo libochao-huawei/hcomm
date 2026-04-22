@@ -207,6 +207,7 @@ HcclResult AivUbMemTransport::RecvDataProcess()
     rmtBufferVec_.clear();
     rmtRmaBufferVec_.clear();
     remoteUserMemTag_.clear();
+    // 不在该接口内捕获异常，状态机中不检查该接口返回值，使异常在更上层被捕获
     RmtBufferUnpackProc(binaryStream);
     return HCCL_SUCCESS;
 }
@@ -379,6 +380,7 @@ HcclResult AivUbMemTransport::UpdateMemInfo(HcommMemHandle *memHandles, uint32_t
     CHK_RET(RecvMemInfo());
     CHK_RET(CheckSocketStatus());
     Hccl::BinaryStream recvStream(recvData_);
+    // 此处异常捕获能够正常影响接口返回值，上层也存在对返回值的校验
     EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(recvStream);
     EXCEPTION_HANDLE_END
