@@ -10,7 +10,10 @@
 
 #include "adapter_hccp.h"
 #include "ccu_api.hpp"
+#include "ccu_local_addr.hpp"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
+#include "ccu_remote_addr.hpp"
+#include <vector>
 
 struct CcuVarAddKernelArg {
     uint64_t numA{0xffffffff};
@@ -40,7 +43,26 @@ struct CcuVarAddTaskArg {
 //     result = numA + numB;
 //     return CcuResult::CCU_SUCCESS;
 // }
-
+void test_method(std::vector<ccu::RemoteAddr> &loopsrc){
+    for (int i = 0; i < 1; i++) {
+        ccu::LocalAddr localAddr1;
+        ccu::Alloc(&localAddr1);
+        loopsrc.emplace_back(*reinterpret_cast<ccu::RemoteAddr*>(&localAddr1));
+    }
+}
+CcuResult CcuAssignDemoKernel(CcuKernelArg arg)
+{
+    auto *args = static_cast<CcuVarAddKernelArg *>(arg);
+    ccu::RemoteAddr remoteAddr;
+    ccu::Alloc(&remoteAddr);
+    remoteAddr.addr = 0x10000000;
+    remoteAddr.token = 0x20000000;
+    std::vector<ccu::RemoteAddr> loopsrc;
+    test_method(loopsrc);
+    loopsrc[0].addr = remoteAddr.addr;
+    loopsrc[0].token = remoteAddr.token;
+    return CcuResult::CCU_SUCCESS;
+}
 CcuResult CcuAllocDemoKernel(CcuKernelArg arg)
 {
     auto *args = static_cast<CcuVarAddKernelArg *>(arg);
