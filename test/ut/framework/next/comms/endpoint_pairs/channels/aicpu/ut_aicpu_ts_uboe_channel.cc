@@ -135,36 +135,36 @@ TEST_F(AicpuTsUboeChannelTest, Ut_GetNotifyNum_Returns_Value) {
     EXPECT_EQ(n, 42u);
 }
 
-// TEST_F(AicpuTsUboeChannelTest, Ut_ProcessUboeState_AllStates_Transitions) {
-//     // Use fakes for external dependencies and drive the real channel methods
-//     FakeEndpoint fe;
-//     EndpointHandle ep = reinterpret_cast<EndpointHandle>(&fe);
-//     auto fakeSock = new FakeSocket();
-//     HcommChannelDesc desc = MakeFakeChannelDesc(fakeSock);
+TEST_F(AicpuTsUboeChannelTest, Ut_ProcessUboeState_AllStates_Transitions) {
+    // Use fakes for external dependencies and drive the real channel methods
+    FakeEndpoint fe;
+    EndpointHandle ep = reinterpret_cast<EndpointHandle>(&fe);
+    auto fakeSock = new FakeSocket();
+    HcommChannelDesc desc = MakeFakeChannelDesc(fakeSock);
 
-//     AicpuTsUboeChannel ch(ep, desc);
+    AicpuTsUboeChannel ch(ep, desc);
 
-//     // Ensure the channel actually uses our FakeSocket for IsSocketReady()/I/O
-//     ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
+    // Ensure the channel actually uses our FakeSocket for IsSocketReady()/I/O
+    ch.socket_ = reinterpret_cast<Hccl::Socket*>(fakeSock);
 
-//     // Minimal configuration so state handlers can run with fakes
-//     ch.notifyNum_ = 1;
-//     ch.channelDesc_.exchangeAllMems = false;
-//     ch.channelStatus = ChannelStatus::INIT;
-//     ch.uboeStatus = AicpuTsUboeChannel::UboeStatus::INIT;
+    // Minimal configuration so state handlers can run with fakes
+    ch.notifyNum_ = 1;
+    ch.channelDesc_.exchangeAllMems = false;
+    ch.channelStatus = ChannelStatus::INIT;
+    ch.uboeStatus = AicpuTsUboeChannel::UboeStatus::INIT;
 
-//     // Drive through the state machine by repeatedly calling GetStatus.
-//     // Rely on FakeSocket/FakeEndpoint/Fake buffer/notify to allow real methods to execute.
-//     int iter = 0;
-//     while (ch.channelStatus != ChannelStatus::READY && iter < 200) {
-//         ch.GetStatus();
-//         iter++;
-//     }
+    // Drive through the state machine by repeatedly calling GetStatus.
+    // Rely on FakeSocket/FakeEndpoint/Fake buffer/notify to allow real methods to execute.
+    int iter = 0;
+    while (ch.channelStatus != ChannelStatus::READY && iter < 200) {
+        ch.GetStatus();
+        iter++;
+    }
 
-//     EXPECT_EQ(ch.channelStatus, ChannelStatus::READY);
+    EXPECT_EQ(ch.channelStatus, ChannelStatus::READY);
 
-//     delete fakeSock;
-// }
+    delete fakeSock;
+}
 
 TEST_F(AicpuTsUboeChannelTest, Ut_PackingHelpers_NoCrash) {
     HcommChannelDesc desc{};
