@@ -11,7 +11,7 @@
 #include "hcclCommDfxLite.h"
 #include "hccl_common.h"
 
-namespace hccl {
+namespace hccl { 
 ReadWriteLockBase HcclCommDfxLite::baseLockLite_; // 基类锁成员
 ReadWriteLock HcclCommDfxLite::rwLockLite_(HcclCommDfxLite::baseLockLite_); // 读写锁
 std::unordered_map<std::string,std::unordered_map<u64, u32> > HcclCommDfxLite::channelRemoteRankIdLite_;
