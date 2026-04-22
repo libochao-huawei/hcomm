@@ -38,7 +38,7 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::ReduceScatter(__gm__ T *inputG
     __gm__ T *cclGMOther, __gm__ T *outputGM, uint64_t sliceCount, uint64_t avgLengthPerRank, uint64_t tailLength,
     int32_t tag)
 { 
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         int64_t curCount = CalActualCount(rank_, rankSize_, avgLengthPerRank, tailLength);
  
         GlobalTensor<T> inputGT;
@@ -49,10 +49,10 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::ReduceScatter(__gm__ T *inputG
         outputGT.SetGlobalBuffer(outputGM, curCount);
  
         LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
-        DataCopyGM2UB(localIn, inputGT[avgLengthPerRank * GetBlockIdx()], curCount);
+        DataCopyGM2UB(localIn, inputGT[avgLengthPerRank * blockIdx_], curCount);
         inOutQue.EnQue(localIn);
         LocalTensor<T> localOut = inOutQue.DeQue<T>();
-        DataCopyUB2GM(cclGTSelf[avgLengthPerRank * GetBlockIdx()], localOut, curCount);
+        DataCopyUB2GM(cclGTSelf[avgLengthPerRank * blockIdx_], localOut, curCount);
  
         // 卡间同步
         pipe_barrier(PIPE_ALL);
@@ -64,7 +64,7 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::ReduceScatter(__gm__ T *inputG
         pipe_barrier(PIPE_ALL);
         Record1vN(tag, CommPattern::intraRank); // 本卡目的分片已经在output中
     } else {
-        int64_t curCountBlk = CalActualCount(GetBlockIdx(), rankSize_, avgLengthPerRank, tailLength);
+        int64_t curCountBlk = CalActualCount(blockIdx_, rankSize_, avgLengthPerRank, tailLength);
  
         GlobalTensor<T> cclGTOther;
         cclGTOther.SetGlobalBuffer(cclGMOther, curCountBlk);
@@ -72,14 +72,14 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::ReduceScatter(__gm__ T *inputG
         outputGT.SetGlobalBuffer(outputGM, curCountBlk);
  
         // 从input搬运到buffer
-        CpGM2GM(cclGMSelf + avgLengthPerRank * GetBlockIdx(), inputGM + avgLengthPerRank * GetBlockIdx(), curCountBlk);
+        CpGM2GM(cclGMSelf + avgLengthPerRank * blockIdx_, inputGM + avgLengthPerRank * blockIdx_, curCountBlk);
         pipe_barrier(PIPE_ALL);
-        Record(tag, GetBlockIdx(), AivNotifyType::ACK); // 本卡该片数据已经可以被跨片读取
+        Record(tag, blockIdx_, AivNotifyType::ACK); // 本卡该片数据已经可以被跨片读取
  
         // 对端数据就绪后先搬到自己的UB，注意这里搬运的长度应当由rank_决定，而不是GetBlockIdx()决定
         int64_t curCount = CalActualCount(rank_, rankSize_, avgLengthPerRank, tailLength);
         
-        Wait(tag, GetBlockIdx(), AivNotifyType::ACK);
+        Wait(tag, blockIdx_, AivNotifyType::ACK);
         pipe_barrier(PIPE_ALL);
         LocalTensor<T> localIn = inOutQue.AllocTensor<T>();
         DataCopyGM2UB(localIn, cclGTOther[avgLengthPerRank * rank_], curCount);
@@ -110,7 +110,7 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::AllReduce(__gm__ T *inputGM, _
  
     __gm__ T *cclGMPeer = (__gm__ T *)(GM_IN[peerRank]);
  
-    if (GetBlockIdx() == 0) {
+    if (blockIdx_ == 0) {
         // 本端数据已就绪
         SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetStart), localSetTensor, tag);
         CpGM2GM(outputGM, cclGMSelf, count);
@@ -134,7 +134,7 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::AllGather(__gm__ T *inputGM, _
     int32_t tag)
 {
     // AllGather, 数据从input输入（rdma结果位置），inputMem+8M作为buffer，结果放在output中
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         int64_t curCount = CalActualCount(rank_, rankSize_, avgLengthPerRank, tailLength);
  
         GlobalTensor<T> inputGT;
@@ -148,26 +148,26 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::AllGather(__gm__ T *inputGM, _
         DataCopyGM2UB(localIn, inputGT, curCount);
         inOutQue.EnQue(localIn);
         LocalTensor<T> localOut = inOutQue.DeQue<T>();
-        DataCopyUB2GM(cclGTSelf[avgLengthPerRank * GetBlockIdx()], localOut, curCount);
+        DataCopyUB2GM(cclGTSelf[avgLengthPerRank * blockIdx_], localOut, curCount);
         pipe_barrier(PIPE_ALL);
  
         // 卡间同步
         Record1vN(tag, CommPattern::interRank);
-        DataCopyUB2GM(outputGT[avgLengthPerRank * GetBlockIdx()], localOut, curCount);
+        DataCopyUB2GM(outputGT[avgLengthPerRank * blockIdx_], localOut, curCount);
         inOutQue.FreeTensor(localOut);
     } else {
-        int64_t curCount = CalActualCount(GetBlockIdx(), rankSize_, avgLengthPerRank, tailLength);
+        int64_t curCount = CalActualCount(blockIdx_, rankSize_, avgLengthPerRank, tailLength);
  
-        WaitNv1(tag, GetBlockIdx());
+        WaitNv1(tag, blockIdx_);
         pipe_barrier(PIPE_ALL);
-        CpGM2GM(outputGM + (GetBlockIdx() * avgLengthPerRank), cclGMOther + GetBlockIdx() * avgLengthPerRank, curCount);
+        CpGM2GM(outputGM + (blockIdx_ * avgLengthPerRank), cclGMOther + blockIdx_ * avgLengthPerRank, curCount);
         pipe_barrier(PIPE_ALL);
  
         // 末尾同步
         // 本卡已读完GetBlockIdx()号对端上的rank号数据
-        Record(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+        Record(tag, blockIdx_, AivNotifyType::DataSignal);
         // 检查本卡上是否有GetBlockIdx()号对端的读完标记
-        Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+        Wait(tag, blockIdx_, AivNotifyType::DataSignal);
     }
  
     return;
@@ -179,7 +179,7 @@ __aicore__ inline void AivAllReduceRdmaSmall910B::Process(GM_ADDR input, GM_ADDR
 {
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);
-    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[GetBlockIdx()]);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[blockIdx_]);
     __gm__ T *outputGM = (__gm__ T *)output;
     uint64_t avgLengthPerRank = CeilDiv(len, rankSize_);
     uint64_t sliceCount = CeilDiv(len, avgLengthPerRank);

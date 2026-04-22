@@ -33,18 +33,18 @@ __aicore__ inline void AivAllReduceBigGraph910B::Process(GM_ADDR input, GM_ADDR 
 
     __gm__ T *outputGm = (__gm__ T *)output;
     __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_]);
-    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[GetBlockIdx()]);
+    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[blockIdx_]);
 
     // 本卡已进入算子，通知其他卡可以搬运，使用第1个flag
-    Record(tag, GetBlockIdx(), AivNotifyType::ACK);
+    Record(tag, blockIdx_, AivNotifyType::ACK);
 
     // 确认对端已经将对应的数据拉走
-    Wait(tag, GetBlockIdx(), AivNotifyType::ACK);
+    Wait(tag, blockIdx_, AivNotifyType::ACK);
 
     PipeBarrier<PIPE_ALL>();
 
     // ReduceScatter
-    if (GetBlockIdx() != rank_) {
+    if (blockIdx_ != rank_) {
         count = CalActualCount(rank_, sliceCount, avgLengthPerSlice, tailLength);
 
         uint64_t gmOffset = rank_ * avgLengthPerSlice;
@@ -59,7 +59,7 @@ __aicore__ inline void AivAllReduceBigGraph910B::Process(GM_ADDR input, GM_ADDR 
 
     // 全卡同步
     PipeBarrier<PIPE_ALL>();
-    if (GetBlockIdx() == rank_) {
+    if (blockIdx_ == rank_) {
         // check 本端aiv 所有reduce结果是否完成
        Wait1vN((rankSize_ - 1) * tag, CommPattern::intraRank);
 
@@ -75,21 +75,21 @@ __aicore__ inline void AivAllReduceBigGraph910B::Process(GM_ADDR input, GM_ADDR 
 
     // 每个aiv读相应对端的flag
     
-      WaitNv1(tag, GetBlockIdx());
+      WaitNv1(tag, blockIdx_);
       PipeBarrier<PIPE_ALL>();
     }
 
     // AllGather
-    uint64_t gmOffset = GetBlockIdx() * avgLengthPerSlice;
-    count = CalActualCount(GetBlockIdx(), sliceCount, avgLengthPerSlice, tailLength);
+    uint64_t gmOffset = blockIdx_ * avgLengthPerSlice;
+    count = CalActualCount(blockIdx_, sliceCount, avgLengthPerSlice, tailLength);
     CpGM2GM(outputGm + gmOffset, cclGmOther + gmOffset, count);
 
     PipeBarrier<PIPE_ALL>();
     // 通知对端，自己已经把对端的那片数据拉回来了
 
-    Record(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+    Record(tag, blockIdx_, AivNotifyType::DataSignal);
     // 确认对端已经将对应的数据拉走
-    Wait(tag, GetBlockIdx(), AivNotifyType::DataSignal);
+    Wait(tag, blockIdx_, AivNotifyType::DataSignal);
   
     return;
 }

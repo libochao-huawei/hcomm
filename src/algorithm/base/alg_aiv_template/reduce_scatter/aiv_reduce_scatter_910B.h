@@ -29,7 +29,7 @@ __aicore__ inline void AivReduceScatter910B::Process(GM_ADDR input, GM_ADDR outp
     __gm__ T *outputGM = (__gm__ T *)output;
  
     uint32_t blockNumPerGroup = numBlocks_ / rankSize_; // numBlocks_需要能被rankSize_整除
-    uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
+    uint32_t blockIdxInGroup = blockIdx_ % blockNumPerGroup;
 
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
     uint64_t avgLengthPerBlock = CeilDiv(len, blockNumPerGroup);
@@ -39,7 +39,7 @@ __aicore__ inline void AivReduceScatter910B::Process(GM_ADDR input, GM_ADDR outp
 
     uint64_t count = CalActualCount(blockIdxInGroup, sliceCount, avgLengthPerSlice, tailLength);
     uint64_t blockOffset = blockIdxInGroup * avgLengthPerSlice;
-    uint32_t dstRank = GetBlockIdx() / blockNumPerGroup;
+    uint32_t dstRank = blockIdx_ / blockNumPerGroup;
 
     GlobalTensor<int32_t> globalSet;
     __gm__ int32_t* ctrlFlagsGML = (__gm__ int32_t *)(GM_OUT[rank_] + multiOffset +
