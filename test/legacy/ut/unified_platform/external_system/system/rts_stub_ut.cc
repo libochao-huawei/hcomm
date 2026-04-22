@@ -8,13 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <runtime/stream.h>
-#include <runtime/rt.h>
-#include <runtime/base.h>
-#include "runtime/rts/rts_device.h"
-#include "runtime/rts/rts_event.h"
-
-// #include "rt_external.h"
+#include "rt_external.h"
 #include "acl/acl_rt.h"
 
 aclError aclrtDeviceGetBareTgid(int32_t *pid)
@@ -383,18 +377,6 @@ rtError_t rtMemcpyAsyncWithCfgV2(void *dst, uint64_t destMax, const void *src, u
     return RT_ERROR_NONE;
 }
 
-rtError_t rtReduceAsyncV2(void *dst, uint64_t destMax, const void *src, uint64_t count, rtRecudeKind_t kind,
-    rtDataType_t type, rtStream_t stm, void *overflowAddr)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtReduceAsync(
-    void *dst, uint64_t destMax, const void *src, uint64_t cnt, rtRecudeKind_t kind, rtDataType_t type, rtStream_t stm)
-{
-    return RT_ERROR_NONE;
-}
-
 rtError_t rtRDMASend(uint32_t sqIndex, uint32_t wqeIndex, rtStream_t stm)
 {
     return RT_ERROR_NONE;
@@ -434,12 +416,6 @@ rtError_t rtKernelLaunch(
 
 rtError_t rtAicpuKernelLaunch(const rtKernelLaunchNames_t *launchNames, uint32_t numBlocks, const void *args,
     uint32_t argsSize, rtSmDesc_t *smDesc, rtStream_t stm)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtReduceAsyncWithCfgV2(void *dst, uint64_t destMax, const void *src, uint64_t cnt, rtRecudeKind_t kind,
-    rtDataType_t type, rtStream_t stm, const rtTaskCfgInfo_t *cfgInfo)
 {
     return RT_ERROR_NONE;
 }
@@ -546,16 +522,6 @@ aclError aclrtQueryEventWaitStatus(aclrtEvent event, aclrtEventWaitStatus *statu
     return ACL_SUCCESS;
 }
 
-rtError_t rtSetTaskAbortCallBack(const char *moduleName, rtTaskAbortCallBack callback, void *args)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtStreamGetCaptureInfo(rtStream_t stm, rtStreamCaptureStatus * const status, rtModel_t *captureMdl)
-{
-    return RT_ERROR_NONE;
-}
-
 rtError_t rtStreamAddToModel(rtStream_t stm, rtModel_t captureMdl)
 {
     return RT_ERROR_NONE;
@@ -615,16 +581,6 @@ aclError aclrtGetOpTimeOutInterval(uint64_t *interval)
 aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
 {
     return ACL_SUCCESS;
-}
-
-rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
-{
-    return RT_ERROR_NONE;
-}
- 
-rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
-{
-    return RT_ERROR_NONE;
 }
 
 aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags)
