@@ -1,21 +1,29 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "aicpu_channel_process.h"
+#include "dev_aicpu_ts_channel_mgr.h"
 #include "aicpu_res_package_helper.h"
+#include "../channel.h"
 
-using namespace hccl;
+#include "adapter_rts_common.h"
+#include "exception_handler.h"
+#include "log.h"
+
+#include <securec.h>
+
+#include <cstdint>
+#include <vector>
 
 std::mutex AicpuChannelProcess::mutex_;
-std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> 
-    AicpuChannelProcess::ubTransportMap_;
+std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> AicpuChannelProcess::ubTransportMap_;
 
 HcclResult AicpuChannelProcess::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
 {
@@ -46,15 +54,13 @@ HcclResult AicpuChannelProcess::InitUrmaChannel(HcclChannelUrmaRes *commParam)
     for (u32 index = 0; index < commParam->listNum; index++) {
         std::vector<char> data(*addSize);
 
-        // 计算地址块的偏移
         CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, *addSize));
         currentSrcAddr += *addSize;
         addSize++;
-        // 反序列化得到device侧transport对象
         Hccl::AicpuResPackageHelper helper;
         auto dataVec = helper.ParsePackedData(data);
 
-        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
+        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM;
         if (static_cast<u32>(resType) >= dataVec.size()) {
             HCCL_ERROR("[HcclCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
             return HCCL_E_PARA;
@@ -62,7 +68,6 @@ HcclResult AicpuChannelProcess::InitUrmaChannel(HcclChannelUrmaRes *commParam)
         ChannelHandle channelHandle;
         CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
 
-        // 恢复出的channelHandle回填到commParam中
         ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
         channelList[index] = channelHandle;
         HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], channelSizeAddr[%p], channelHandle[0x%llx]",
@@ -93,12 +98,80 @@ HcclResult AicpuChannelProcess::AicpuChannelInit(HcclChannelUrmaRes *commParam)
     return HCCL_SUCCESS;
 }
 
+namespace {
+
+void RollbackDestroy(DevAicpuTsChannelMgr &mgr, const std::vector<ChannelHandle> &rollback)
+{
+    for (const auto &h : rollback) {
+        if (mgr.DestroyChannel(h)) {
+            HCCL_DEBUG("[AicpuChannelProcess][%s] rollback destroyed handle[0x%llx]", __func__, h);
+        } else {
+            HCCL_WARNING("[AicpuChannelProcess][%s] rollback failed to destroy handle[0x%llx]", __func__, h);
+        }
+    }
+}
+
+} // namespace
+
+HcclResult AicpuChannelProcess::InitHcommChannelRes(HcommChannelRes *commParam)
+{
+    CHK_PTR_NULL(commParam);
+    HCCL_INFO("[AicpuChannelProcess][%s] channelList[%p], listNum[%u]", __func__, commParam->channelList,
+        commParam->listNum);
+
+    CHK_PTR_NULL(commParam->channelList);
+    CHK_PTR_NULL(commParam->channelDataListAddr);
+    CHK_PTR_NULL(commParam->channelDataSizeListAddr);
+    CHK_PTR_NULL(commParam->channelTypeListAddr);
+
+    CHK_RET(hrtSetWorkModeAicpu(true));
+    CHK_RET(hrtSetlocalDevice(commParam->deviceInfo.deviceLogicId));
+    CHK_RET(hrtSetlocalDeviceType(static_cast<DevType>(commParam->deviceInfo.deviceType)));
+
+    void **dataList = reinterpret_cast<void **>(commParam->channelDataListAddr);
+    auto *sizeList = reinterpret_cast<u64 *>(commParam->channelDataSizeListAddr);
+    auto *typeList = reinterpret_cast<u32 *>(commParam->channelTypeListAddr);
+    auto *channelList = reinterpret_cast<ChannelHandle *>(commParam->channelList);
+
+    auto &mgr = DevAicpuTsChannelMgr::Instance();
+    std::vector<ChannelHandle> rollback;
+    rollback.reserve(commParam->listNum);
+
+    std::lock_guard<std::mutex> addLock(mutex_);
+    for (u32 index = 0; index < commParam->listNum; ++index) {
+        hcomm::HcommChannelKind kind = static_cast<hcomm::HcommChannelKind>(typeList[index]);
+        DevAicpuTsChannel *channel = mgr.GetOrCreateAicpuTsChannel(kind);
+        if (channel == nullptr) {
+            HCCL_ERROR("[AicpuChannelProcess][%s] index[%u] unsupported kind[%u]", __func__, index,
+                static_cast<uint32_t>(kind));
+            RollbackDestroy(mgr, rollback);
+            return HCCL_E_NOT_SUPPORT;
+        }
+        void *dp = dataList[index];
+        CHK_PTR_NULL(dp);
+        const u64 sz = sizeList[index];
+        ChannelHandle h{};
+        HcclResult pret = channel->Create(dp, sz, commParam->deviceInfo, h);
+        if (pret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuChannelProcess][InitHcommChannelRes] parse fail at index[%u]", index);
+            RollbackDestroy(mgr, rollback);
+            return pret;
+        }
+        channelList[index] = h;
+        rollback.push_back(h);
+        HCCL_INFO("[AicpuChannelProcess][%s] index[%u] channelHandle[0x%llx]", __func__, index, h);
+    }
+
+    HCCL_INFO("[AicpuChannelProcess][%s] aicpu_task End.", __func__);
+    return HCCL_SUCCESS;
+}
+
 HcclResult AicpuChannelProcess::AicpuChannelDestroy(HcclChannelUrmaRes *commParam)
 {
     HCCL_INFO("[AicpuChannelProcess][%s] commParam->channelList[%p], commParam->listNum[%u]",
               __func__, commParam->channelList, commParam->listNum);
 
-    // 加锁保护 ubTransportMap_
+    auto &mgr = DevAicpuTsChannelMgr::Instance();
     std::lock_guard<std::mutex> addLock(mutex_);
 
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
@@ -106,18 +179,21 @@ HcclResult AicpuChannelProcess::AicpuChannelDestroy(HcclChannelUrmaRes *commPara
         ChannelHandle handle = channelList[index];
 
         auto it = ubTransportMap_.find(handle);
-        if (it == ubTransportMap_.end()) {
-            // 理论上每个 handle 都应该存在，若不存在可能是重复销毁或逻辑错误
-            HCCL_WARNING("[AicpuChannelProcess][%s] handle[0x%llx] not found in ubTransportMap_, maybe already destroyed?",
-                      __func__, handle);
-            continue; // 容错处理：继续销毁其他 channel，不中断流程
+        if (it != ubTransportMap_.end()) {
+            ubTransportMap_.erase(it);
+            HCCL_DEBUG("[AicpuChannelProcess][%s] destroyed ub handle[0x%llx]", __func__, handle);
+            continue;
         }
 
-        // 3. 从 map 中移除条目，unique_ptr 会自动释放对象，从而销毁底层 UbTransportLiteImpl 资源
-        ubTransportMap_.erase(it);
-        HCCL_DEBUG("[AicpuChannelProcess][%s] destroyed handle[0x%llx]", __func__, handle);
+        if (mgr.DestroyChannel(handle)) {
+            HCCL_DEBUG("[AicpuChannelProcess][%s] destroyed hcomm res handle[0x%llx]", __func__, handle);
+            continue;
+        }
+
+        HCCL_WARNING("[AicpuChannelProcess][%s] handle[0x%llx] not found in ub/hcomm maps, maybe already destroyed?",
+            __func__, handle);
     }
 
-    HCCL_INFO("[AicpuChannelProcess][%s] aicpuTask End.", __func__);
+    HCCL_INFO("[AicpuChannelProcess][%s] aicpu_task End.", __func__);
     return HCCL_SUCCESS;
 }
