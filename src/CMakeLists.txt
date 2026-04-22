@@ -677,12 +677,12 @@ target_sources(hccd PRIVATE
 )
 # 指定hccd构建完成后安装到指定的目标位置
 install(TARGETS  hccd
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL}
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL} COMPONENT hcomm
 )
 
 # 指定ccl_kernel_plf构建完成后安装到指定的目标位置
 install(TARGETS  ccl_kernel_plf
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL}
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL} COMPONENT hcomm
 )
 # 设置ccl_kernel_plf_a输出文件的名字
 set_target_properties(ccl_kernel_plf_a
@@ -691,7 +691,7 @@ set_target_properties(ccl_kernel_plf_a
 )
 # 指定ccl_kernel_plf_a构建完成后安装到指定的目标位置
 install(TARGETS  ccl_kernel_plf_a
-    ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL}
+    ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}  ${INSTALL_OPTIONAL} COMPONENT hcomm
 )
 
 if(DEVICE_MODE)

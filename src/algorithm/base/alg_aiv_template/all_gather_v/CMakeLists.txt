@@ -78,6 +78,6 @@ else()
     )
 endif()
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_gather_v_op.o ${INSTALL_OPTIONAL}
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_gather_v_op.o ${INSTALL_OPTIONAL} COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
