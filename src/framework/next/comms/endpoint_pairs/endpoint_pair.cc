@@ -131,6 +131,7 @@ HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
     return HCCL_SUCCESS;
 }
 
+// 检查channel是否存在，channel不存在则返回true
 bool EndpointPair::IsChannelNotExist(CommEngine engine, u32 reuseIdx)
 {
     return channelHandles_.find(engine) == channelHandles_.end() || channelHandles_[engine].size() <= reuseIdx;
