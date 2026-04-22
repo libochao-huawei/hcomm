@@ -18,6 +18,7 @@
 #include <memory>
 #include <set>
 #include "rts_stub.h"
+#include "rt_external_mem.h"
 
 enum class FakeSqeType { NOTIFY_WAIT, NOTIFY_RECORD, SDMA_REDUCE, MEM_CPY };
 
