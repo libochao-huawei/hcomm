@@ -130,10 +130,10 @@ __aicore__ inline void aiv_reduce_scatter_v_910b_bigdata(EXTERN_KERNEL_ARGS_DEF)
     op.HeadCounter();
     uint64_t countLeft;
     uint64_t maxCountPerLoop = bufferSize / UB_ALIGN_SIZE * UB_ALIGN_SIZE / rankSize / sizeof(T);
-    if (GetBlockIdx() >= rankSize) {
-        countLeft = extraArgs.sendCounts[GetBlockIdx() - rankSize];
+    if (op.blockIdx_ >= rankSize) {
+        countLeft = extraArgs.sendCounts[op.blockIdx_ - rankSize];
     } else {
-        countLeft = extraArgs.sendCounts[GetBlockIdx()];
+        countLeft = extraArgs.sendCounts[op.blockIdx_];
     }
     uint64_t countSelf = extraArgs.sendCounts[rank];
     GM_ADDR curInput = input;
@@ -145,8 +145,8 @@ __aicore__ inline void aiv_reduce_scatter_v_910b_bigdata(EXTERN_KERNEL_ARGS_DEF)
     uint64_t selfOffset = 0;
     uint64_t othersOffset = 0;
     while (countLeft > 0 || countSelf > 0) {
-        if (GetBlockIdx() == rank ||(GetBlockIdx() >= rankSize && countSelf <= 0) ||
-            (GetBlockIdx() < rankSize && countLeft <= 0)) {
+        if (op.blockIdx_ == rank ||(op.blockIdx_ >= rankSize && countSelf <= 0) ||
+            (op.blockIdx_ < rankSize && countLeft <= 0)) {
             break;
         }
         uint64_t curCount = (countLeft > maxCountPerLoop) ? maxCountPerLoop : countLeft;

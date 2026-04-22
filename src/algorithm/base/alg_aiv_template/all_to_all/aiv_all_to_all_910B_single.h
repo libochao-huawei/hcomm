@@ -62,7 +62,7 @@ __aicore__ inline void sk_all_to_all_910B_single(SUPERKERNEL_ARGS_DEF)
     AivAll2All910BSingle op;
     op.Init(SUPERKERNEL_CLASS_INIT, 0, true);
     uint32_t blockNumPerGroup = op.numBlocks_/ op.rankSize_; 
-    uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
+    uint32_t dstRank = op.blockIdx_/ blockNumPerGroup;
 
     uint64_t remoteSendOffset = op.rank_ * op.len_;
     uint64_t localRecvOffset = dstRank * op.len_;
