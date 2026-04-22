@@ -171,7 +171,7 @@ HcclResult MyRank::Init(HcclMem cclBuffer, const uint32_t opExpansionMode, uint3
 
     // 仅自定义算子ccu流程初始化资源
     const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if ((indOp != nullptr && strcmp(indOp, "") != 0) && ccuInsHandle_ != 0 && rankNum != 1) {
+    if ((indOp != nullptr && strcmp(indOp, "") != 0) && ccuInsHandle_ == 0 && rankNum != 1) {
         CHK_RET(TryInitCcuInstance());
     }
 
