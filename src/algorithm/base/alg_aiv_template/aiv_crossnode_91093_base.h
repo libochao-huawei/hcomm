@@ -66,13 +66,22 @@ int32_t tag = args->tag; uint32_t numBlocks = args->numBlocks; \
 bool isOpBase = args->isOpBase; int32_t step = args->step; \
 uint32_t deterministic = args->deterministic
 
+// sk 绑定函数 A3
+#define SuperKernelBindA3(kernel_name) \
+extern "C" __sk__ void kernel_name##_1(SK_BIND_FUNC_ARGS_A3); \
+extern "C" __sk__ void kernel_name##_2(SK_BIND_FUNC_ARGS_A3); \
+extern "C" __sk__ void kernel_name##_3(SK_BIND_FUNC_ARGS_A3); \
+extern "C" __sk__ void kernel_name##_4(SK_BIND_FUNC_ARGS_A3); \
+SK_BIND(kernel_name, 0, kernel_name##_1, kernel_name##_2, kernel_name##_3, kernel_name##_4)
+
 // A3 sk 导出函数
-#define SK_BIND_FUNC_DEF_A3(kernel_name, postfix) \
+#define _SK_BIND_FUNC_DEF_A3(kernel_name, postfix) \
 extern "C" __sk__ void kernel_name##_##postfix(SK_BIND_FUNC_ARGS_A3) \
 { \
     CONVERT_SK_PARAM_TO_KERNEL_ARGS_A3; \
     kernel_name##_inner(KERNEL_ARGS_CALL_A3); \
 }
+#define SK_BIND_FUNC_DEF_A3(kernel_name, postfix) _SK_BIND_FUNC_DEF_A3(kernel_name, postfix)
 
 // A3 Global 导出函数
 #define GLOBAL_FUNC_DEF_A3(kernel_name) \
