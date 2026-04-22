@@ -37,8 +37,8 @@ HcclResult CcuResPack::Init()
         return HcclResult::HCCL_E_PARA;
     }
 
-    // todo: 根据通信域算子展开模式申请资源
-    // 如果资源不足需要回退
+    // 根据通信域算子展开模式申请资源
+    // 如果资源不足，返回HCCL_E_UNAVAIL，表示需要回退
     auto ret = CcuAllocEngineResHandle(devLogicId_, ccuEngine_, resHandle_);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[%s] failed but passed, resource is not enough, "

@@ -112,7 +112,7 @@ HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine
     return HCCL_SUCCESS;
 }
 
-// todo：实现ChannelDestroy，在外部提供入参后，找到对应的channelhandle，调用hcomm channel destroy销毁平台层对象
+// 找到对应的channelhandle，调用HcommChannelDestroy销毁平台层对象，并删除channelHandles_中的channelHandle元素
 HcclResult EndpointPair::DestroyChannel(CommEngine engine, u32 reuseIdx)
 {
     if (IsChannelNotExist(engine, reuseIdx)) {
