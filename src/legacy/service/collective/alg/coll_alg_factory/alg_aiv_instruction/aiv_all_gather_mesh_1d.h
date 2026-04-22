@@ -152,17 +152,16 @@ public:
         }
         // 分核把数据从input搬到gm
         auto input = reinterpret_cast<__gm__ T *>(input_);
-        uint64_t dataTypeSize = sizeof(T);
         uint64_t countPerCore = count / numBlocks_;
         uint64_t curCountCore = block_idx == numBlocks_ - 1 ? count - countPerCore * (numBlocks_ - 1) : countPerCore;
-        auto gmIn = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank_]) + block_idx * countPerCore * dataTypeSize);
+        auto gmIn = reinterpret_cast<__gm__ T *>(reinterpret_cast<uint64_t>(GM_IN[rank_]) + block_idx * countPerCore * sizeof(T));
         CpGM2GM(gmIn, input + block_idx * countPerCore, curCountCore);
         SyncAll<true>();
 
-        uint32_t perCoreRankNum = rankSize_ / numBlocks_;
         uint32_t remainRankNum = rankSize_ % numBlocks_;
-        uint32_t curCoreRankNum = block_idx < remainRankNum ? perCoreRankNum + 1 : perCoreRankNum;
+        uint32_t perCoreRankNum = rankSize_ / numBlocks_;
         uint32_t startRank = block_idx < remainRankNum ? (perCoreRankNum + 1) * block_idx : perCoreRankNum * block_idx + remainRankNum;
+        uint32_t curCoreRankNum = block_idx < remainRankNum ? perCoreRankNum + 1 : perCoreRankNum;
         for (uint32_t rank = startRank; rank < startRank + curCoreRankNum; rank++) {
             Record(rank, rank_, tag);
         }
