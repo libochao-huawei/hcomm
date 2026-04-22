@@ -97,6 +97,8 @@ class AivCrossNode91093Base {
 public:
     __aicore__ inline AivCrossNode91093Base() {}
 
+    __aicore__ inline void Init(GM_ADDR buffOut0, uint32_t rank, uint32_t rankSize, int32_t tag); // sync的init
+
     __aicore__ inline void Init(GM_ADDR buffOut0, GM_ADDR buffOut1, uint32_t rank, uint32_t rankSize, int32_t tag,
         uint32_t numBlocks, bool isOpBase, bool useDoubleBuffer); // ALL2ALL的init
 
@@ -407,6 +409,35 @@ __aicore__ inline void AivCrossNode91093Base::InitSetCheckClearArgsTensor()
         pipe.InitBuffer(inOutQue, 1, UB_DB_DATA_BATCH_SIZE);
     }
 }
+
+ // sync的init 
+ __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, uint32_t rank, uint32_t rankSize, int32_t tag) 
+ {
+    flagAddrSelf_ = buffOut0; 
+    blockGroup_ = block_num; 
+    rank_ = rank; 
+    tag_ = tag; 
+    rankSize_ = rankSize; 
+    useDoubleBuffer_ = true; 
+    usedBlockNum_ = block_num; 
+
+    InitSetCheckClearArgsTensor(); 
+    blockNumPerGroup = block_num / blockGroup_; // 多少个aiv服务同一个对端 
+    blockIdxInGroup = (blockIdx_ /blockGroup_) % blockNumPerGroup; 
+    numTargets = (rankSize_) / blockGroup_; 
+    uint32_t tailRankSize = (rankSize_) % blockGroup_; 
+    if (tailRankSize > 0 && blockIdx_ < tailRankSize) { 
+        numTargets += 1; 
+    } 
+
+
+    for (uint32_t i = 0; i < numTargets; i++) { 
+        uint32_t targetRank =  (blockIdx_ % blockGroup_ + i * blockGroup_) % rankSize_; 
+        targetRanks[i] = targetRank; 
+    } 
+
+    InitOffset(); 
+ }
 
 // ALL2ALL的init
 __aicore__ inline void AivCrossNode91093Base::Init(GM_ADDR buffOut0, GM_ADDR buffOut1, uint32_t rank, uint32_t rankSize, int32_t tag,
