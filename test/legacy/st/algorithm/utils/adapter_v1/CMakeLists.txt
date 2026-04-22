@@ -112,7 +112,7 @@ set(include_list
 
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 
-    ${TOP_DIR}/ace/npuruntime/inc/runtime
+    # ${TOP_DIR}/ace/npuruntime/inc/runtime
 )
 
 set(adaption_to_test_list
