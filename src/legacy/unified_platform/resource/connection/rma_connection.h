@@ -124,7 +124,7 @@ public:
         MACRO_THROW(NotSupportException, StringFormat("not support."));
     }
 
-    virtual HcclResult Describe(std::string &dfxMsg) const
+    virtual HcclResult Describe(std::string &dfxMsg)
     {
         MACRO_THROW(NotSupportException, StringFormat("not support."));
     }
