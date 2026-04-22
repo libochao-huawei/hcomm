@@ -195,6 +195,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config/
     ${HCCL_CODE_ROOT}/src/legacy/framework/misc/
     ${HCCL_CODE_ROOT}/src/legacy/framework/misc/json_parser/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/service/aicpu/ 
     ${HCCL_CODE_ROOT}/src/legacy/interface/
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive/
