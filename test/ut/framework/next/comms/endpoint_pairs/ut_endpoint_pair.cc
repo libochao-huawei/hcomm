@@ -53,7 +53,7 @@ TEST_F(TestEndpointPair, Ut_EndpointPair_Construct_Expect_HCCL_SUCCESS)
 // 测试销毁不存在的channel，返回HCCL_SUCCESS
 TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Not_Exist_Expect_SUCCESS)
 {
-    MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(HcommChannelDestroy).stubs().will(returnValue(static_cast<int>(HCCL_SUCCESS)));
 
     EndpointDesc localEndpointDesc{};
     localEndpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;
@@ -79,7 +79,7 @@ TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Not_Exist_Expect_SUCCESS
 // 测试销毁channel，返回HCCL_SUCCESS，预期channelHandles_[COMM_ENGINE_CCU]为空
 TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Exist_Expect_SUCCESS)
 {
-    MOCKER(HcommChannelDestroy).stubs().with(any(), any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(HcommChannelDestroy).stubs().will(returnValue(static_cast<int>(HCCL_SUCCESS)));
 
     EndpointDesc localEndpointDesc{};
     localEndpointDesc.protocol = COMM_PROTOCOL_UBC_CTP;

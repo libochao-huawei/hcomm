@@ -252,12 +252,12 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
     }
 
     // 模拟创建到rmtEp2的第二个channel时资源不足，需要清理前三个channel
-    MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
+    MOCKER(HcommCollectiveChannelCreate)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS))
-        .then(returnValue(HCCL_SUCCESS))
-        .then(returnValue(HCCL_SUCCESS))
-        .then(returnValue(HCCL_E_UNAVAIL));
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS)))
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS)))
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS)))
+        .then(returnValue(static_cast<int>(HCCL_E_UNAVAIL)));
     std::vector<HcommChannelDesc> hcommDesc(5);
     std::vector<ChannelHandle> hostChannelHandles(5);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
@@ -358,13 +358,13 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     // 第一次调用BatchCreateChannels，创建3个channel成功
     // 第二次调用BatchCreateChannels，创建5个channel，前4个channel成功，第5个channel失败
     // 需要只清理到rmtEp2的第二个channel
-    MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
+    MOCKER(HcommCollectiveChannelCreate)
         .stubs()
-        .will(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp1的channel1成功
-        .then(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp1的channel2成功
-        .then(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp2的channel1成功
-        .then(returnValue(HCCL_SUCCESS)) // 第二次调用，到rmtEp2的channel2成功
-        .then(returnValue(HCCL_E_UNAVAIL)); // 第二次调用，到rmtEp2的channel3失败
+        .will(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp1的channel1成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp1的channel2成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第一次调用，到rmtEp2的channel1成功
+        .then(returnValue(static_cast<int>(HCCL_SUCCESS))) // 第二次调用，到rmtEp2的channel2成功
+        .then(returnValue(static_cast<int>(HCCL_E_UNAVAIL))); // 第二次调用，到rmtEp2的channel3失败
     std::vector<HcommChannelDesc> hcommDesc(5);
     std::vector<ChannelHandle> hostChannelHandles(5);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
