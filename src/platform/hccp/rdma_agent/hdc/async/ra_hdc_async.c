@@ -635,9 +635,9 @@ int RaHdcInitAsync(struct RaInitConfig *cfg)
     CHK_PRT_RETURN(!cfg->enableHdcAsync, hccp_info("[init][ra_hdc_async]no need to init async hdc session"), 0);
 
     ret = RaHdcGetInterfaceVersion(cfg->phyId, RA_RS_ASYNC_HDC_SESSION_CONNECT, &interfaceVersion);
-    // normal case: driver not support to or no need to init async hdc session
+    // normal case: driver does not support to or no need to init async hdc session
     CHK_PRT_RETURN(ret != 0 || interfaceVersion < RA_RS_OPCODE_BASE_VERSION,
-        hccp_run_warn("[init][ra_hdc_async]not support to init async hdc session, ret(%d), interfaceVersion(%u)",
+        hccp_run_warn("[init][ra_hdc_async]does not support to init async hdc session, ret(%d), interfaceVersion(%u)",
         ret, interfaceVersion), 0);
 
     ret = RaHdcAsyncInitSession(cfg);

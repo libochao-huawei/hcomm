@@ -43,7 +43,7 @@ enum FWKAdptAPIRetCode {
     FWK_ADPT_NOT_SUPPORT_OPTYPE = 6,       // unsupported operate type
     FWK_ADPT_INTERNAL_ERROR = 7,           // adapter internal error
     FWK_ADPT_NOT_SUPPORT_DATATYPE = 8,     // unsupported input/output data type
-    FWK_ADPT_KERNEL_ALREADY_RUNING = 9,    // kernel already running, not support parallel run
+    FWK_ADPT_KERNEL_ALREADY_RUNING = 9,    // kernel already running, does not support parallel run
     FWK_ADPT_SESSION_NOT_EXIST = 10,       // session id not exist
     FWK_ADPT_SESSION_ALREADY_EXIST = 11,   // session id already exist for create session
     FWK_ADPT_NATIVE_END_OF_SEQUENCE = 12,  // end of sequence

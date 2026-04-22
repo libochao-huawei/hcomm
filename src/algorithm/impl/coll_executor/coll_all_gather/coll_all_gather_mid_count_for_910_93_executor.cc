@@ -41,7 +41,7 @@ HcclResult CollAllGatherMidCountFor91093Executor::CalcTransportMemType(Transport
         inputType = TransportMemType::CCL_INPUT;
         outputType = TransportMemType::CCL_OUTPUT;
     } else {
-        HCCL_ERROR("AllGatherMidCountFor91093Executor do not support offload mode");
+        HCCL_ERROR("AllGatherMidCountFor91093Executor do does not support offload mode");
         return HCCL_E_UNAVAIL;
     }
     HCCL_INFO("[CollAllGatherMidCountFor91093Executor][CalcTransportMemType] tag[%s] inputType[%d], outputType[%d]",

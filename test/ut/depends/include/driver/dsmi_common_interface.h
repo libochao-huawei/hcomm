@@ -50,7 +50,7 @@ extern "C" {
 #define DM_DDMP_ERROR_CODE_INVALID_DEVICE_ERROR DRV_ERROR_INVALID_DEVICE        /**< invalid device */
 #define DM_DDMP_ERROR_CODE_SEND_ERROR DRV_ERROR_SEND_MESG                  /**< hdc or upd send error */
 #define DM_DDMP_ERROR_CODE_INTERNAL_ERROR DRV_ERROR_INNER_ERR              /**< internal error */
-#define DM_DDMP_ERROR_CODE_NOT_SUPPORT DRV_ERROR_NOT_SUPPORT                 /**< dsmi command not support error */
+#define DM_DDMP_ERROR_CODE_NOT_SUPPORT DRV_ERROR_NOT_SUPPORT                 /**< dsmi command does not support error */
 #define DM_DDMP_ERROR_CODE_MEMERY_OPRATOR_ERROR DRV_ERROR_MEMORY_OPT_FAIL        /**< system memory function error */
 #define DM_DDMP_ERROR_CODE_PERIPHERAL_DEVICE_NOT_EXIST DRV_ERROR_NOT_EXIST /**< peripheral device not exist, BMC used */
 
@@ -788,7 +788,7 @@ typedef struct dsmi_ufs_status_stru {
     unsigned int model_number;                  /**< ufs device sub class */
     unsigned int device_life_time;              /**< ufs device life time used */
     unsigned int fw_ver;                        /**< product revision level */
-    unsigned int fw_update_enable;              /**< whether to support firmware update: 0-not support, 1-support */
+    unsigned int fw_update_enable;              /**< whether to support firmware update: 0-does not support, 1-support */
     unsigned char product_name[UFS_MAX_PI_LEN];         /**< ufs device product identification */
     unsigned char manufacturer_name[UFS_MAX_MN_LEN];    /** <ufs device manufacturer name */
     unsigned char serial_number[UFS_MAX_SN_LEN];        /** <ufs device serial number */
@@ -2206,7 +2206,7 @@ DLLEXPORT int dsmi_dft_get_elable(int device_id, int item_type, char *elable_dat
 * @ingroup driver
 * @brief start upgrade
 * @attention Support to upgrade one firmware of a device, or all upgradeable firmware of a device (the second
-            parameter is set to 0xFFFFFFFF), Does not support upgrading all devices, implemented by upper
+            parameter is set to 0xFFFFFFFF), Does does not support upgrading all devices, implemented by upper
             layer encapsulation interface
 * @param [in] device_id  The device id
 * @param [in] component_type firmware type
@@ -2500,7 +2500,7 @@ DLLEXPORT int dsmi_get_ecc_info(int device_id, int device_type, struct dsmi_ecc_
 * @param [in] device_id  The device id
 * @param [out] passthru_message  passthru_message_stru struct
 * @return  0 for success, others for fail
-* @note Support:not support
+* @note Support:does not support
 */
 DLLEXPORT int dsmi_passthru_mcu(int device_id, struct passthru_message_stru *passthru_message);
 

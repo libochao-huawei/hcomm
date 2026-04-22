@@ -3854,7 +3854,7 @@ HcclResult GetCombineComTaskNum(const std::string &sCollectiveType, s32 serverNu
                 sCollectiveType == HCCL_KERNEL_OP_TYPE_ALLTOALLVC) {
         interTaskNum = ALLTOALL_DEFAULT_COM_STEP * commStep;
     } else {
-        HCCL_ERROR("[HcomOpUtils][GetCombineComTaskNum]The current operator [%s] do not support tasknum "
+        HCCL_ERROR("[HcomOpUtils][GetCombineComTaskNum]The current operator [%s] do does not support tasknum "
             "accurate evaluation.", sCollectiveType.c_str());
         return HCCL_E_NOT_SUPPORT;
     }

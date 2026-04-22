@@ -98,7 +98,7 @@ HcclResult InsAlgTemplateBase::CalcResDetour(const RankGraph *rankGraph, AlgTemp
 {
     (void)rankGraph;
     (void)tempResReq;
-    HCCL_ERROR("[InsCollAlgFactory] Current alg do not support detour mode!");
+    HCCL_ERROR("[InsCollAlgFactory] Current alg do does not support detour mode!");
     return HcclResult::HCCL_E_INTERNAL;
 }
 
@@ -106,7 +106,7 @@ HcclResult InsAlgTemplateBase::CalcResDetour(ConnectedLinkMgr *linkMgr, AlgTempR
 {
     (void)linkMgr;
     (void)tempResReq;
-    HCCL_ERROR("[InsCollAlgFactory] Current alg do not support detour mode!");
+    HCCL_ERROR("[InsCollAlgFactory] Current alg do does not support detour mode!");
     return HcclResult::HCCL_E_INTERNAL;
 }
 
@@ -336,7 +336,7 @@ HcclResult InsAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     (void)numBlocks;
     (void)dataSize;
     (void)numBlocksLimit;
-    HCCL_WARNING("CalNumBlocks not support ins template.");
+    HCCL_WARNING("CalNumBlocks does not support ins template.");
     return HCCL_SUCCESS;
 }
 

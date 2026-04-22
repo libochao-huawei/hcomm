@@ -161,7 +161,7 @@ HcclResult hrtGetDeviceCount(u32 *count)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetDeviceCount]Does not support this interface.");
+    HCCL_ERROR("[hrtGetDeviceCount]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 };
@@ -233,7 +233,7 @@ HcclResult hrtGetDeviceRefresh(s32 *deviceLogicId)
     HCCL_INFO("[hrtGetDeviceRefresh]deviceLogicId[%d]", *deviceLogicId);
     return HCCL_SUCCESS;
 #else
-    HCCL_WARNING("[hrtGetDeviceRefresh]Does not support this interface.");
+    HCCL_WARNING("[hrtGetDeviceRefresh]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -390,7 +390,7 @@ HcclResult __hrtGetDevicePhyIdByIndex(u32 deviceLogicId, u32 &devicePhyId, bool 
     g_devicePhyId = devicePhyId;
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetDevicePhyIdByIndex]Does not support this interface.");
+    HCCL_ERROR("[hrtGetDevicePhyIdByIndex]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -437,7 +437,7 @@ HcclResult hrtGetPhyDeviceInfo(u32 devicePhysicId, s32 moduleType, s32 infoType,
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), rtRet, devicePhysicId, moduleType, infoType, value), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetPhyDeviceInfo]Does not support this interface.");
+    HCCL_ERROR("[hrtGetPhyDeviceInfo]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -452,7 +452,7 @@ HcclResult hrtGetSocVer(std::string &socName)
     socName = socNamePtr;
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetSocVer]Does not support this interface.");
+    HCCL_ERROR("[hrtGetSocVer]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -465,7 +465,7 @@ HcclResult hrtGetDeviceTypeBySocVersion(std::string &socVersion, DevType &devTyp
 {
     devType = DevType::DEV_TYPE_COUNT;
     if (socVersion == "Ascend310B1") {
-        HCCL_WARNING("hrtGetDeviceTypeBySocVersion Ascend310B1 not support! please check usage");
+        HCCL_WARNING("hrtGetDeviceTypeBySocVersion Ascend310B1 does not support! please check usage");
     }
     if (socVersion.find("Ascend950") != std::string::npos) {
         devType = DevType::DEV_TYPE_950;
@@ -697,7 +697,7 @@ HcclResult hrtMemSyncCopy(void *dst, uint64_t destMax, const void *src, uint64_t
         HCCL_ERROR("[hrtMemSyncCopy] hrtThreadExchangeCaptureMode return [%d]", hcclRet));
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtMemSyncCopy]Does not support this interface.");
+    HCCL_ERROR("[hrtMemSyncCopy]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -722,7 +722,7 @@ HcclResult hrtMemSyncCopyEx(void *dst, uint64_t destMax, const void *src, uint64
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtMemSyncCopyEx]Does not support this interface.");
+    HCCL_ERROR("[hrtMemSyncCopyEx]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -783,7 +783,7 @@ HcclResult hrtMemcpyAddrAsync(void *dst, uint64_t destMax, uint64_t destOffset, 
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtMemcpyAddrAsync]Does not support this interface.");
+    HCCL_ERROR("[hrtMemcpyAddrAsync]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -841,7 +841,7 @@ HcclResult hrtMemAsyncCopy(void *dst, uint64_t destMax, const void *src, uint64_
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtMemAsyncCopy]Does not support this interface.");
+    HCCL_ERROR("[hrtMemAsyncCopy]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -868,7 +868,7 @@ HcclResult hrtMemAsyncCopyWithoutCheckKind(void *dst, uint64_t destMax, const vo
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtMemAsyncCopyWithoutCheckKind]Does not support this interface.");
+    HCCL_ERROR("[hrtMemAsyncCopyWithoutCheckKind]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -926,7 +926,7 @@ HcclResult hrtGetPairDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s32 infoType, 
     }
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetPairDevicesInfo]Does not support this interface.");
+    HCCL_ERROR("[hrtGetPairDevicesInfo]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -944,7 +944,7 @@ HcclResult hrtGetPairPhyDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s32 infoTyp
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, phyDevId, otherPhyDevId, infoType, *pValue), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetPairPhyDevicesInfo]Does not support this interface.");
+    HCCL_ERROR("[hrtGetPairPhyDevicesInfo]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -960,7 +960,7 @@ HcclResult hrtGetPairDeviceLinkType(u32 phyDevId, u32 otherPhyDevId, LinkTypeInS
 #ifndef HCCD
     CHK_RET(hrtGetPairDeviceLinkTypeRaw(phyDevId, otherPhyDevId, 0, &linkTypeRaw));
 #else
-    HCCL_ERROR("[hrtGetPairDeviceLinkTypeRaw]Does not support this interface.");
+    HCCL_ERROR("[hrtGetPairDeviceLinkTypeRaw]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
     HCCL_INFO("[hrtGetPairDeviceLinkTypeRaw]phyDevId[%u] otherPhyDevId[%u] linkTypeRaw[%d]",
@@ -1017,7 +1017,7 @@ HcclResult hrtGetPairDevicePhyId(u32 localDevPhyId, u32 &pairDevPhyId)
         localDevPhyId, pairDevPhyId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetPairDevicePhyId]Does not support this interface.");
+    HCCL_ERROR("[hrtGetPairDevicePhyId]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1100,7 +1100,7 @@ HcclResult hrtIpcSetMemoryAttr(const u8 *name, aclrtIpcMemAttrType type, u64 att
         __func__, HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, name, type, attr), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("Call aclrtIpcMemSetAttr not support");
+    HCCL_ERROR("Call aclrtIpcMemSetAttr does not support");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1177,7 +1177,7 @@ HcclResult hrtSetIpcMemorySuperPodPid(const u8 *name, s32 peerSdid, s32 peerPid[
         "peerPid[%d], pidNum[%d].", ret, name, peerSdid, *peerPid, pidNum);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtSetIpcMemorySuperPodPid]Does not support this interface.");
+    HCCL_ERROR("[hrtSetIpcMemorySuperPodPid]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1300,7 +1300,7 @@ HcclResult hrtStreamActive(HcclRtStream activeStream, HcclRtStream stream)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtStreamActive]Does not support this interface.");
+    HCCL_ERROR("[hrtStreamActive]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1320,7 +1320,7 @@ HcclResult hrtGetStreamId(HcclRtStream stream, s32 &streamId)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetStreamId]Does not support this interface.");
+    HCCL_ERROR("[hrtGetStreamId]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1336,7 +1336,7 @@ HcclResult hrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetTaskIdAndStreamID]Does not support this interface.");
+    HCCL_ERROR("[hrtGetTaskIdAndStreamID]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1358,7 +1358,7 @@ HcclResult hrtEventCreate(aclrtEvent *event)
         ret, event), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtEventCreate]Does not support this interface.");
+    HCCL_ERROR("[hrtEventCreate]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1373,7 +1373,7 @@ HcclResult hrtEventDestroy(HcclRtEvent event)
         "event[%p]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, event), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtEventDestroy]Does not support this interface.");
+    HCCL_ERROR("[hrtEventDestroy]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1389,7 +1389,7 @@ HcclResult hrtEventRecord(aclrtEvent event, aclrtStream stream)
         "event[%p]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, event), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtEventRecord]Does not support this interface.");
+    HCCL_ERROR("[hrtEventRecord]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1405,7 +1405,7 @@ HcclResult hrtStreamWaitEvent(aclrtStream stream, aclrtEvent event)
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, event), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtStreamWaitEvent]Does not support this interface.");
+    HCCL_ERROR("[hrtStreamWaitEvent]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1422,7 +1422,7 @@ HcclResult hrtEventQuery(aclrtEvent event)
         event, ret, status), HCCL_E_RUNTIME);
     return (status == ACL_EVENT_RECORDED_STATUS_COMPLETE) ? HCCL_SUCCESS : HCCL_E_RUNTIME;
 #else
-    HCCL_ERROR("[hrtEventQuery]Does not support this interface.");
+    HCCL_ERROR("[hrtEventQuery]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1450,7 +1450,7 @@ HcclResult hrtGetNotifySize(u32 &notifySize)
     }
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetNotifySize]Does not support this interface.");
+    HCCL_ERROR("[hrtGetNotifySize]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1474,7 +1474,7 @@ HcclResult hrtNotifyGetOffset(HcclRtNotify notify, u64 &offset)
                                   getEventOffsetFuncPtr(notify, offset));
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyGetOffset]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyGetOffset]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1533,7 +1533,7 @@ HcclResult hrtNotifyCreate(s32 deviceId, aclrtNotify *notify)
     PLF_CONFIG_INFO(PLF_RES, "Create Notify para: deviceId[%d] notifyId[%u]", deviceId, notifyId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyCreate]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyCreate]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1551,7 +1551,7 @@ HcclResult hrtNotifyDestroy(rtNotify_t notify)
     REPLACE_NOTIFY_WITH_EVENT(aclrtDestroyNotify(notify), aclrtDestroyEvent(notify));
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyDestroy]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyDestroy]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1568,7 +1568,7 @@ HcclResult hrtNotifyRecord(rtNotify_t notify, rtStream_t stream)
     HCCL_INFO("hrtNotifyRecord notify[%p] taskId[%u] streamId[%u]", notify, taskId, streamId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyRecord]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyRecord]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1591,7 +1591,7 @@ HcclResult hrtNotifyWaitWithTimeOut(rtNotify_t notify, rtStream_t stream, uint32
     HCCL_INFO("hrtNotifyWaitWithTimeOut notify[%p] taskId[%u] streamId[%u]", notify, taskId, streamId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyWaitWithTimeOut]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyWaitWithTimeOut]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1604,7 +1604,7 @@ HcclResult hrtNotifyReset(aclrtNotify notify)
     CHK_RT_RET(aclrtNotifyBatchReset(&notify, 1));
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyRecord]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyRecord]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1624,7 +1624,7 @@ HcclResult hrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtEnableP2P]Does not support this interface.");
+    HCCL_ERROR("[hrtEnableP2P]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1640,7 +1640,7 @@ HcclResult hrtDisableP2P(u32 deviceLogicId, u32 devicePhyId)
         "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtDisableP2P]Does not support this interface.");
+    HCCL_ERROR("[hrtDisableP2P]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1657,7 +1657,7 @@ HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status)
             HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId, devicePhyId), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetP2PStatus]Does not support this interface.");
+    HCCL_ERROR("[hrtGetP2PStatus]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1680,7 +1680,7 @@ HcclResult hcclStreamSynchronize(HcclRtStream stream, s32 execTimeOut)
         "streamsynchronizewithtimeout fail. return[%d].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hcclStreamSynchronize]Does not support this interface.");
+    HCCL_ERROR("[hcclStreamSynchronize]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1693,7 +1693,7 @@ HcclResult hrtTaskAbortHandleCallback(aclrtDeviceTaskAbortCallback callback, voi
         "fail. return[%d], para: callback[%p].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, callback), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtTaskAbortHandleCallback]Does not support this interface.");
+    HCCL_ERROR("[hrtTaskAbortHandleCallback]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1718,7 +1718,7 @@ HcclResult PrintMemoryAttr(const void *memAddr)
     HCCL_INFO("memory attributes: address[%p], page size[%u]", memAddr, memAttr.pageSize);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[PrintMemoryAttr]Does not support this interface.");
+    HCCL_ERROR("[PrintMemoryAttr]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1730,7 +1730,7 @@ HcclResult hrtRegTaskFailCallbackByModule(rtTaskFailCallback callback)
         "fail. return[%d], para: callback[%p].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, callback), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtRegTaskFailCallbackByModule]Does not support this interface.");
+    HCCL_ERROR("[hrtRegTaskFailCallbackByModule]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1743,7 +1743,7 @@ HcclResult hrtGetStreamAvailableNum(u32 &maxStrCount)
         "fail. return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetStreamAvailableNum]Does not support this interface.");
+    HCCL_ERROR("[hrtGetStreamAvailableNum]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1756,7 +1756,7 @@ HcclResult hrtSubscribeReport(u64 threadId, rtStream_t &stream)
         "return[%d], para: threadId[%llu].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, threadId), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtSubscribeReport]Does not support this interface.");
+    HCCL_ERROR("[hrtSubscribeReport]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1768,7 +1768,7 @@ HcclResult hrtUnSubscribeReport(uint64_t threadId, aclrtStream &stream)
         "return[%d], para: threadId[%llu].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, threadId), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtUnSubscribeReport]Does not support this interface.");
+    HCCL_ERROR("[hrtUnSubscribeReport]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1782,7 +1782,7 @@ HcclResult hrtProcessReport(s32 timeout)
     }
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtProcessReport]Does not support this interface.");
+    HCCL_ERROR("[hrtProcessReport]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1802,7 +1802,7 @@ HcclResult hrtDeviceGetBareTgid(s32 *pid)
         *pid = 0;
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("[hrtDeviceGetBareTgid]Does not support this interface.");
+    HCCL_ERROR("[hrtDeviceGetBareTgid]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1820,7 +1820,7 @@ HcclResult hrtIpcOpenNotify(aclrtNotify* notify, const u8 *name)
         HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtIpcOpenNotify]Does not support this interface.");
+    HCCL_ERROR("[hrtIpcOpenNotify]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1837,7 +1837,7 @@ HcclResult hrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid[], int num)
         "rtSet ipc Notify pid fail. return[%d], num[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, num), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtSetIpcNotifyPid]Does not support this interface.");
+    HCCL_ERROR("[hrtSetIpcNotifyPid]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1868,7 +1868,7 @@ HcclResult hrtSetIpcNotifySuperPodPid(rtNotify_t notify, s32 peerSdid, s32 peerP
         "Params: notify[%p], peerSdid[%016llx], peerPid[%d], pidNum[%d].", ret, notify, peerSdid, *peerPid, pidNum);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtSetIpcNotifySuperPodPid]Does not support this interface.");
+    HCCL_ERROR("[hrtSetIpcNotifySuperPodPid]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1884,7 +1884,7 @@ HcclResult hrtCtxGetOverflowAddr(void **overflowAddr)
         "rtCtx get overflow addr fail. return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtCtxGetOverflowAddr]Does not support this interface.");
+    HCCL_ERROR("[hrtCtxGetOverflowAddr]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1905,7 +1905,7 @@ HcclResult hrtReduceAsync(void* dst, uint64_t destMax, const void* src, uint64_t
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, dst, destMax, src, count, kind, type), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtReduceAsync]Does not support this interface.");
+    HCCL_ERROR("[hrtReduceAsync]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1922,7 +1922,7 @@ HcclResult hrtCallbackLaunch(aclrtCallback callBackFunc, void *fnData, aclrtStre
         HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtCallbackLaunch]Does not support this interface.");
+    HCCL_ERROR("[hrtCallbackLaunch]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1937,7 +1937,7 @@ HcclResult hrtRDMASend(u32 qpn, u32 wqe_index, rtStream_t stream)
         HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtRDMASend]Does not support this interface.");
+    HCCL_ERROR("[hrtRDMASend]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1954,7 +1954,7 @@ HcclResult hrtIpcSetNotifyName(aclrtNotify notify, u8* name, uint32_t len)
         "return[%d].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), name, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtIpcSetNotifyName]Does not support this interface.");
+    HCCL_ERROR("[hrtIpcSetNotifyName]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1974,7 +1974,7 @@ HcclResult hrtStreamDestroy(rtStream_t stream)
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtStreamDestroy]Does not support this interface.");
+    HCCL_ERROR("[hrtStreamDestroy]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2000,7 +2000,7 @@ HcclResult hrtStreamCreate(aclrtStream *stream)
     PLF_CONFIG_DEBUG(PLF_RES, "Create Stream para: deviceId[%d] streamId[%d]", deviceId, streamId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtStreamCreate]Does not support this interface.");
+    HCCL_ERROR("[hrtStreamCreate]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2026,7 +2026,7 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
         deviceId, streamId, priority, flags);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtStreamCreateWithFlags]Does not support this interface.");
+    HCCL_ERROR("[hrtStreamCreateWithFlags]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2047,7 +2047,7 @@ HcclResult hrtStreamSetMode(HcclRtStream stream, const uint64_t stmMode)
         "nothing changed. rtRet[%d], stmMode[%llu]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, stmMode), HCCL_SUCCESS);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtStreamSetMode]Does not support this interface.");
+    HCCL_ERROR("[hrtStreamSetMode]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2069,7 +2069,7 @@ HcclResult hrtStreamGetMode(HcclRtStream const stream, uint64_t *const stmMode)
     HCCL_DEBUG("Call aclrtGetStreamAttribute return value[%d]. stmMode[%llu], streamId[%d].", ret, *stmMode, streamId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtStreamGetMode]Does not support this interface.");
+    HCCL_ERROR("[hrtStreamGetMode]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2148,7 +2148,7 @@ HcclResult hrtGetDeviceSatMode(aclrtFloatOverflowMode *floatOverflowMode)
         *floatOverflowMode = g_deviceSatMode;
         return HCCL_SUCCESS;
     }
-    HCCL_ERROR("[hrtGetDeviceSatMode]Does not support this interface.");
+    HCCL_ERROR("[hrtGetDeviceSatMode]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2162,7 +2162,7 @@ HcclResult hrtNotifyGetAddr(HcclRtNotify signal, u64 *notifyAddr)
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[rtGetNotifyAddress]rt get notify address failed."), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyGetAddr]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyGetAddr]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2177,7 +2177,7 @@ HcclResult hrtGetNotifyID(HcclRtNotify signal, u32 *notifyID)
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[hrtGetNotifyID]rt get notify id failed."), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetNotifyID]Does not support this interface.");
+    HCCL_ERROR("[hrtGetNotifyID]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2210,7 +2210,7 @@ HcclResult hrtGetDeviceInfo(u32 deviceId, HcclRtDeviceModuleType hcclModuleType,
     HCCL_DEBUG("Call aclrtGetDeviceInfo, ret[%d], attr[%d], val[%ld]", ret, attr, val);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetDeviceInfo]Does not support this interface.");
+    HCCL_ERROR("[hrtGetDeviceInfo]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2269,7 +2269,7 @@ HcclResult hrtGetRdmaDoorbellAddr(u32 dbIndex, u64 &dbAddr)
         dieAddrOffset * ((dbIndex & dbDieIdMask) >> dbDieIdShift);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetRdmaDoorbellAddr]Does not support this interface.");
+    HCCL_ERROR("[hrtGetRdmaDoorbellAddr]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2281,7 +2281,7 @@ HcclResult hrtGetDevArgsAddr(rtStream_t stm, rtArgsEx_t *argsInfo, void **devArg
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[rtGetDevArgsAddr]rtKernel Get Addr failed."), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetDevArgsAddr]Does not support this interface.");
+    HCCL_ERROR("[hrtGetDevArgsAddr]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2306,7 +2306,7 @@ HcclResult hrtMemSet(void *dst, uint64_t destMax, uint64_t count)
         HCCL_ERROR("[hrtMemSet] hrtThreadExchangeCaptureMode return [%d]", hcclRet));
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtMemSet]Does not support this interface.");
+    HCCL_ERROR("[hrtMemSet]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2322,7 +2322,7 @@ HcclResult hrtEventCreateWithFlag(aclrtEvent *evt)
         "value[%d] evt[%p].", ret, evt), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[aclrtCreateEventWithFlag]Does not support this interface.");
+    HCCL_ERROR("[aclrtCreateEventWithFlag]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2342,7 +2342,7 @@ HcclResult hrtNotifyCreateWithFlag(int32_t deviceId, aclrtNotify *notify)
     PLF_CONFIG_INFO(PLF_RES, "Create Notify para: deviceId[%d] notifyId[%u]", deviceId, notifyId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[aclrtCreateNotify]Does not support this interface.");
+    HCCL_ERROR("[aclrtCreateNotify]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2360,7 +2360,7 @@ HcclResult hrtIpcOpenNotifyWithFlag(rtNotify_t *notify, const u8 *name, uint32_t
         "notify:%p, name:%s, flags[%u], return value[%d].", notify, name, flags, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[aclrtNotifyImportByKey]Does not support this interface.");
+    HCCL_ERROR("[aclrtNotifyImportByKey]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2380,7 +2380,7 @@ HcclResult hrtNotifyImportByKey(rtNotify_t *notify, const u8 *name)
         "notify:%p, name:%s, return value[%d].", notify, name, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtNotifyImportByKey]Does not support this interface.");
+    HCCL_ERROR("[hrtNotifyImportByKey]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2399,7 +2399,7 @@ HcclResult hrtNotifyGetPhyInfo(rtNotify_t notify, uint32_t *phyDevId, uint32_t *
         "tsId:%u, return value[%d].", notify, *phyDevId, *tsId, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[rtNotifyGetPhyInfo]Does not support this interface.");
+    HCCL_ERROR("[rtNotifyGetPhyInfo]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2419,7 +2419,7 @@ HcclResult hrtNotifyGetPhyInfoExt(rtNotify_t notify, rtNotifyPhyInfo *notifyInfo
         notifyInfo->idType, notifyInfo->shrId, notifyInfo->flag, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[rtNotifyGetPhyInfoExt]Does not support this interface.");
+    HCCL_ERROR("[rtNotifyGetPhyInfoExt]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2436,7 +2436,7 @@ HcclResult hrtGetEventID(rtEvent_t event, uint32_t *eventId)
         "return value[%d].", event, *eventId, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetEventID]Does not support this interface.");
+    HCCL_ERROR("[hrtGetEventID]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2453,7 +2453,7 @@ HcclResult hrtStreamGetSqid(const rtStream_t stm, uint32_t *sqId)
         "sqId:%u value[%d].", stm, *sqId, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[rtStreamGetSqid]Does not support this interface.");
+    HCCL_ERROR("[rtStreamGetSqid]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2471,7 +2471,7 @@ HcclResult hrtStreamGetCqid(const rtStream_t stm, uint32_t *cqId, uint32_t *logi
         "cqId:%u logicCqId:%u value[%d].", stm, *cqId, *logicCqId, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[rtStreamGetCqid]Does not support this interface.");
+    HCCL_ERROR("[rtStreamGetCqid]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2488,7 +2488,7 @@ HcclResult hrtResourceClean()
         HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtResourceClean]Does not support this interface.");
+    HCCL_ERROR("[hrtResourceClean]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2529,7 +2529,7 @@ HcclResult hrtGetHccsPortNum(u32 deviceLogicId, s32 &num)
     }
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetHccsPortNum]Does not support this interface.");
+    HCCL_ERROR("[hrtGetHccsPortNum]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -2541,7 +2541,7 @@ HcclResult hrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
     aclError ret = aclmdlRICaptureThreadExchangeMode(mode);
     HCCL_DEBUG("Call aclmdlRICaptureThreadExchangeMode mode before: %d, ret: %d", *mode, ret);
     if (ret == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
-        HCCL_INFO("[hrtThreadExchangeCaptureMode]aclmdlRICaptureThreadExchangeMode not support!");
+        HCCL_INFO("[hrtThreadExchangeCaptureMode]aclmdlRICaptureThreadExchangeMode does not support!");
         return HCCL_E_NOT_SUPPORT;
     } else {
         CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[hrtThreadExchangeCaptureMode]aclmdlRICaptureThreadExchangeMode "
@@ -2549,7 +2549,7 @@ HcclResult hrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
     }
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtThreadExchangeCaptureMode]Does not support this interface.");
+    HCCL_ERROR("[hrtThreadExchangeCaptureMode]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }

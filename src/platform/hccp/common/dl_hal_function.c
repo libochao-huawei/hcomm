@@ -568,7 +568,7 @@ int DlHalSensorNodeRegister(uint32_t devid, struct halSensorNodeCfg *cfg, uint64
 
 int DlHalSensorNodeUnregister(uint32_t devid, uint64_t handle)
 {
-    /* sensor may not support, handle is 0 */
+    /* sensor may does not support, handle is 0 */
     if (handle == 0) {
         return 0;
     }

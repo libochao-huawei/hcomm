@@ -146,7 +146,7 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
     } 
 
     if (netInst->GetNetType() != NetType::CLOS) {
-        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][AddFabricInfo] NetInstance is not CLOS, not support add fabric."));
+        THROW<NotSupportException>(StringFormat("[RankGraphBuilder][AddFabricInfo] NetInstance is not CLOS, does not support add fabric."));
     }
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();

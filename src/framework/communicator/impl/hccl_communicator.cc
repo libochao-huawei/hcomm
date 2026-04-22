@@ -1535,7 +1535,7 @@ namespace hccl
                     HCCL_ERROR("[%s] invalid commType=[%d]", __func__, static_cast<int>(commType)),
                     HCCL_E_PARA);
         CHK_PRT_RET((algConfig.find(iter->second) == algConfig.npos),
-                    HCCL_ERROR("[%s] commType=[%d] not support algConfig=[%s]",
+                    HCCL_ERROR("[%s] commType=[%d] does not support algConfig=[%s]",
                                __func__, static_cast<int>(commType), algConfig.c_str()),
                     HCCL_E_PARA);
 

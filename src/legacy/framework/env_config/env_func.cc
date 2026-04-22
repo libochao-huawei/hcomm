@@ -555,7 +555,7 @@ HcclResult SetSpecificAlgType(std::vector<std::string> &algos, std::map<OpType, 
             std::vector<HcclAlgoType> algType;
             CHK_RET(ParseAlgoString(opStringName, remainAlgoConfig, algType));
             if (algType[0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL) {
-                HCCL_ERROR("[SetSpecificAlgType] specific config level0 not support null type.");
+                HCCL_ERROR("[SetSpecificAlgType] specific config level0 does not support null type.");
                 return HCCL_E_PARA;
             }
             hcclAlgoConfig[optype] = algType;
@@ -622,7 +622,7 @@ HcclAccelerator CastHcclAccelerator(const std::string &s)
         mode = HcclAccelerator::AIV;
     } else if (s == "HOST" || s == "HOST_TS") {
         mode = HcclAccelerator::CCU_SCHED;
-        HCCL_WARNING("do not support %s, use default op expansion mode.", s.c_str());
+        HCCL_WARNING("do does not support %s, use default op expansion mode.", s.c_str());
     } else if (s == "CCU_MS") {
         mode = HcclAccelerator::CCU_MS;
     } else if (s == "CCU_SCHED") {

@@ -341,7 +341,7 @@ void P2PTransportLiteImpl::BatchTransfer(const std::vector<RmaBufferLite> &loc, 
     for (u32 i = 0; i < insNum; i++) {
         if (transferOp[i].transType == TransferType::WRITE) {
             HCCL_ERROR("[P2PTransportLiteImpl][BatchTransfer]does not support WRITE operation");
-            THROW<InternalException>("[P2PTransportLiteImpl]BatchTransfer not support WRITE");
+            THROW<InternalException>("[P2PTransportLiteImpl]BatchTransfer does not support WRITE");
         } else if (transferOp[i].transType == TransferType::READ) {
             if (transferOp[i].reduceIn.reduceOp == ReduceOp::INVALID) {
                 BuildP2PRead(stream, loc[i], rmt[i]);

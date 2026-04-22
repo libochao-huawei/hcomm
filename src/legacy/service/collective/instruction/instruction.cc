@@ -846,7 +846,7 @@ void InsAicpuReduce::AicpuReduceTemplate(T* dst, u64 dstSize, T* src, u64 srcSiz
                 *(dst + i) = std::min(srcData, dstData);
                 break;
             default:
-                string msg = StringFormat("ReduceOp[%d] not support", int(reduceOp));
+                string msg = StringFormat("ReduceOp[%d] does not support", int(reduceOp));
                 THROW<NotSupportException>(msg);
                 break;   
         }
@@ -866,7 +866,7 @@ void InsAicpuReduce::RunAicpuReduce(void* dst, u64 dstSize, void* src, u64 srcSi
             AicpuReduceTemplate<double>((double*)(dst), dstSize, (double*)(src), srcSize, reduceOp);
             break;
         default:
-            string msg = StringFormat("DataType[%d] not support", int(dataType));
+            string msg = StringFormat("DataType[%d] does not support", int(dataType));
             THROW<NotSupportException>(msg);
             break; 
     }

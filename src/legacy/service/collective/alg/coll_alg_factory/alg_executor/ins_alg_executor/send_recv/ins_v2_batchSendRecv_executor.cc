@@ -249,7 +249,7 @@ HcclResult InsV2BatchSendRecvExecutor<AlgTopoMatch>::Orchestrate(
     CHK_RET(InitCommInfo(rankGraph));
 
     CHK_PRT_RET(rankSize_ == 1,
-        HCCL_ERROR("BatchSendRecv Excutor orchestrate failed, do not support single rank."),
+        HCCL_ERROR("BatchSendRecv Excutor orchestrate failed, do does not support single rank."),
         HcclResult::HCCL_E_PARA);
 
     // calculate required insQues and prepare queue
@@ -280,7 +280,7 @@ HcclResult InsV2BatchSendRecvExecutor<AlgTopoMatch>::Orchestrate(const AlgTopoIn
     CHK_RET(InitCommInfo(topoInfo));
 
     CHK_PRT_RET(rankSize_ == 1,
-        HCCL_ERROR("BatchSendRecv Excutor orchestrate failed, do not support single rank."),
+        HCCL_ERROR("BatchSendRecv Excutor orchestrate failed, do does not support single rank."),
         HcclResult::HCCL_E_PARA);
 
     // calculate required insQues and prepare queue

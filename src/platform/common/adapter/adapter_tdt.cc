@@ -32,7 +32,7 @@ HcclResult hrtOpenTsd()
     HCCL_INFO("hrtOpenTsd success");
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtOpenTsd]Does not support this interface.");
+    HCCL_ERROR("[hrtOpenTsd]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -48,7 +48,7 @@ HcclResult __hrtOpenNetService(rtNetServiceOpenArgs *openArgs)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtOpenNetService]Does not support this interface.");
+    HCCL_ERROR("[hrtOpenNetService]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -65,7 +65,7 @@ HcclResult __hrtCloseNetService()
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtCloseNetService]Does not support this interface.");
+    HCCL_ERROR("[hrtCloseNetService]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -84,7 +84,7 @@ HcclResult hrtTsdCapabilityGet(uint32_t deviceLogicId, int32_t type, uint64_t pt
     HCCL_INFO("Get TsdCapability success. deviceLogicId[%u]", deviceLogicId);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtTsdCapabilityGet]Does not support this interface.");
+    HCCL_ERROR("[hrtTsdCapabilityGet]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }

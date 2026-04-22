@@ -375,7 +375,7 @@ HcclResult HccdImplPml::CreateSrq()
         HcclResult ret = hrtHalGetChipInfo(devicePhyId_, chipName);
         if (ret == HCCL_SUCCESS) {
             if (chipName.find(SOC_NAME_910B) != std::string::npos) {
-                HCCL_INFO("not support chip[%s] create srq", chipName.c_str());
+                HCCL_INFO("does not support chip[%s] create srq", chipName.c_str());
                 return HCCL_SUCCESS;
             }
         }

@@ -37,7 +37,7 @@ extern HcclResult HcommProfilingInit(ThreadHandle *threads, u32 threadNum)
         CHK_RET(dfx::ProfilingManager::UpdateStartReportSqeIdx(GetStream(threads[i])->id(), taskId));
     }
 #else
-        HCCL_INFO("[%s] not support, do nothing", __func__);
+        HCCL_INFO("[%s] does not support, do nothing", __func__);
 #endif
     return HCCL_SUCCESS;
 }
@@ -64,7 +64,7 @@ extern HcclResult HcommProfilingReportMainStreamAndFirstTask(ThreadHandle thread
     HCCL_DEBUG("[%s] thread id = [%u] task id = [%u]", __func__, stream->id(), taskId);
     return dfx::ProfilingManager::ReportMainStreamTask(*stream, taskId, HEAD_TASK);
 #else
-    HCCL_INFO("[%s] not support, do nothing", __func__);
+    HCCL_INFO("[%s] does not support, do nothing", __func__);
 #endif
     return HCCL_SUCCESS;
 }
@@ -78,7 +78,7 @@ extern HcclResult HcommProfilingReportMainStreamAndLastTask(ThreadHandle thread)
     HCCL_DEBUG("[%s] thread id = [%u] task id = [%u]", __func__, GetStream(thread)->id(), taskId);
     return dfx::ProfilingManager::ReportMainStreamTask(*GetStream(thread), taskId, TAIL_TASK); 
 #else
-    HCCL_INFO("[%s] not support, do nothing", __func__);
+    HCCL_INFO("[%s] does not support, do nothing", __func__);
 #endif
     return HCCL_SUCCESS;
 }
@@ -108,7 +108,7 @@ extern HcclResult HcommProfilingReportDeviceHcclOpInfo(HcomProInfo profInfo)
     CHK_RET(dfx::ProfilingManager::ReportHcclOpInfo(hcclOpInfo, algTypeStr));
     return HCCL_SUCCESS;
 #else
-    HCCL_INFO("[%s] not support, do nothing", __func__);
+    HCCL_INFO("[%s] does not support, do nothing", __func__);
 #endif
     return HCCL_SUCCESS;
 }
@@ -130,7 +130,7 @@ extern HcclResult HcommProfilingEnd(ThreadHandle *threads, u32 threadNum)
         CHK_RET(dfx::ProfilingManager::UpdateStartReportSqeIdx(GetStream(threads[i])->id(), 0));
     }
 #else
-        HCCL_INFO("[%s] not support, do nothing", __func__);
+        HCCL_INFO("[%s] does not support, do nothing", __func__);
 #endif
     return HCCL_SUCCESS;
 }

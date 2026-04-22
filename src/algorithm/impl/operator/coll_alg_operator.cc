@@ -126,10 +126,10 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
                                param.opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
                                param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE);
     CHK_PRT_RET(isOnlyAiv && !supportOnlyAiv,
-            HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do not support aivonly",
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] opType[%s] currently do does not support aivonly",
                 GetCMDTypeEnumStr(param.opType).c_str()), HCCL_E_NOT_SUPPORT);
     CHK_PRT_RET(isOnlyAiv && userRankSize_ == 1 && supportOnlyAiv,
-            HCCL_ERROR("[CollAlgOperator][SelectAlg] aivonly not support, please ensure rankNum is greater than one"),
+            HCCL_ERROR("[CollAlgOperator][SelectAlg] aivonly does not support, please ensure rankNum is greater than one"),
                 HCCL_E_NOT_SUPPORT);
 
     // 兼容老接口
@@ -910,7 +910,7 @@ HcclResult CollAlgOperator::SelectAlgforAHC(u64 dataSize, AHCOpType ahcOpType)
             ahcSubGroupLevel = COMM_COMBINE_ORDER;
         }
     } else if (deviceType_ != DevType::DEV_TYPE_910_93) {
-        HCCL_DEBUG("[AHCAlgSelect] hccl algorithm: 910B not support level1 ahc, return ERROR.");
+        HCCL_DEBUG("[AHCAlgSelect] hccl algorithm: 910B does not support level1 ahc, return ERROR.");
         return HCCL_E_PARA;
     }
 
@@ -1115,19 +1115,19 @@ bool CollAlgOperator::IsNeedStrictMode(const OpParam& param)
 bool CollAlgOperator::CheckStrictCondition(const OpParam& param) const
 {
     CHK_PRT_RET(multiModuleDiffDeviceNumMode_ || multiSuperPodDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_, 
-        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support asymmetrical topo."),
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode does not support asymmetrical topo."),
         false);
 
     CHK_PRT_RET(param.reduceType == HCCL_REDUCE_PROD, 
-        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support PROD."),
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode does not support PROD."),
         false);
 
     CHK_PRT_RET(param.DataDes.dataType == HCCL_DATA_TYPE_FP64, 
-        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support FP64."),
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode does not support FP64."),
         false);
 
     CHK_PRT_RET(GetExternalInputInterHccsDisable(), 
-        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode not support HCCS disable."),
+        HCCL_ERROR("[CollAlgOperator][CheckStrictCondition] DETERMINISTIC_STRICT mode does not support HCCS disable."),
         false);
 
     return true;

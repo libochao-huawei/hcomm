@@ -20,7 +20,7 @@ ReduceOperator::ReduceOperator(AlgConfigurator* algConfigurator, CCLBufferManage
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1 || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
         HCCL_WARNING("[ReduceOperator][ReduceOperator] nonuniform-hierachical-ring and nonuniform-bruck and pipeline " \
-        "algorithms do not support Reduce yet, reset algo to halving-doubling");
+        "algorithms do does not support Reduce yet, reset algo to halving-doubling");
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
     }
 }
@@ -65,7 +65,7 @@ HcclResult ReduceOperator::SelectAlg(const std::string &tag, const OpParam &para
     }
 
     if (isDiffDeviceType_) {
-        HCCL_ERROR("[ReduceOperator][SelectAlg] Reduce not support diffDeviceType");
+        HCCL_ERROR("[ReduceOperator][SelectAlg] Reduce does not support diffDeviceType");
         return HCCL_E_NOT_SUPPORT;
     } else if (deviceType_ == DevType::DEV_TYPE_910) {
         ret = SelectAlgfor910A(param, algName);

@@ -36,7 +36,7 @@ HcclResult RemoteIpcRmaBufferImpl::Deserialize(const std::string& msg)
 HcclResult RemoteIpcRmaBufferImpl::Open()
 {
     if (memType == RmaMemType::HOST) {
-        HCCL_ERROR("[RemoteIpcRmaBufferImpl][Open]remote memType[%d] not support.", memType);
+        HCCL_ERROR("[RemoteIpcRmaBufferImpl][Open]remote memType[%d] does not support.", memType);
         return HCCL_E_PARA;
     }
 

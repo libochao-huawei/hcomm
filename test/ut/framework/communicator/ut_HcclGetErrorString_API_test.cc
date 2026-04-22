@@ -55,7 +55,7 @@ TEST_F(HcclGetErrorStringTest, Ut_HcclGetErrorString_When_InputIsHCCL_E_NOT_SUPP
     HcclResult code = HCCL_E_NOT_SUPPORT;
     
     const char* ret = HcclGetErrorString(code);
-    EXPECT_EQ(strcmp(ret, "not support feature"), 0);
+    EXPECT_EQ(strcmp(ret, "does not support feature"), 0);
 }
 
 TEST_F(HcclGetErrorStringTest, Ut_HcclGetErrorString_When_InputIsHCCL_E_NOT_FOUND_Expect_ReturnIsNotFoundSpecificResource) {

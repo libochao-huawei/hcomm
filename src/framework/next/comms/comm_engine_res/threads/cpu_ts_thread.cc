@@ -200,13 +200,13 @@ void CpuTsThread::LaunchTask() const
 // Local Data Plane Functions
 HcclResult CpuTsThread::LocalNotifyRecord(uint32_t notifyId) const
 {
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
+    HCCL_ERROR("[CpuTsThread][%s]does not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult CpuTsThread::LocalNotifyWait(uint32_t notifyId) const
 {
-    HCCL_ERROR("[CpuTsThread][%s]not support", __func__);
+    HCCL_ERROR("[CpuTsThread][%s]does not support", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -321,7 +321,7 @@ void CpuTsThread::SetIsMaster(bool isMaster) {
 HcclResult CpuTsThread::SupplementNotify(uint32_t notifyNum)
 {
     if (streamType_ == StreamType::STREAM_TYPE_DEVICE || notifyLoadType_ == NotifyLoadType::DEVICE_NOTIFY) {
-        HCCL_ERROR("[%s]Does not support this interface.", __func__);
+        HCCL_ERROR("[%s]Does does not support this interface.", __func__);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[%s]supplement notifyNum[%u], notifyNum_[%u]", __func__, notifyNum, notifyNum_);

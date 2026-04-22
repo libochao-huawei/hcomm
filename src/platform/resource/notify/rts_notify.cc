@@ -241,9 +241,9 @@ HcclResult RtsNotify::InitAndVerifySingleSignal()
     static bool init = false;
     if (!init) {
         CHK_PRT_RET(halResourceIdCheck == nullptr, HCCL_ERROR("halResourceIdCheck is nullptr, "
-            "Does not support this interface."), HCCL_E_DRV);
+            "Does does not support this interface."), HCCL_E_DRV);
         CHK_PRT_RET(halResourceIdInfoGet == nullptr, HCCL_ERROR("halResourceIdInfoGet is nullptr, "
-            "Does not support this interface."), HCCL_E_DRV);
+            "Does does not support this interface."), HCCL_E_DRV);
         init = true;
     }
 

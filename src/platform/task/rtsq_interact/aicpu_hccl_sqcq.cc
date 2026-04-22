@@ -27,7 +27,7 @@ drvError_t __attribute__((weak)) halEschedSubmitEvent(uint32_t devId, struct eve
 HcclResult QuerySqBaseAddr(uint32_t devId, uint32_t sqId, u64 &outVal)
 {
     CHK_PRT_RET((halSqCqQuery == nullptr), HCCL_ERROR("halSqCqQuery is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+        "Does does not support this interface."), HCCL_E_DRV);
     halSqCqQueryInfo queryinfo;
     queryinfo.tsId = 0;
     queryinfo.sqId = sqId;
@@ -51,7 +51,7 @@ HcclResult QuerySqBaseAddr(uint32_t devId, uint32_t sqId, u64 &outVal)
 HcclResult QuerySqStatusByType(uint32_t devId, uint32_t sqId, drvSqCqPropType_t type, uint32_t &outVal)
 {
     CHK_PRT_RET((halSqCqQuery == nullptr), HCCL_ERROR("halSqCqQuery is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+        "Does does not support this interface."), HCCL_E_DRV);
     halSqCqQueryInfo queryinfo;
     queryinfo.tsId = 0;
     queryinfo.sqId = sqId;
@@ -89,7 +89,7 @@ HcclResult QuerySqStatus(uint32_t devId, uint32_t sqId, uint32_t &sqHead, uint32
 HcclResult ConfigSqStatusByType(uint32_t devId, uint32_t sqId, drvSqCqPropType_t type, uint32_t value)
 {
     CHK_PRT_RET((halSqCqConfig == nullptr), HCCL_ERROR("halSqCqConfig is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+        "Does does not support this interface."), HCCL_E_DRV);
     halSqCqConfigInfo configInfo;
     configInfo.tsId = 0;
     configInfo.sqId = sqId;
@@ -275,7 +275,7 @@ bool IsExceptionCqe(const rtLogicCqReport_t &reportOfOne)
 CqeStatus CqReportRecv(const CqeQueryInput &cqeQueryInput, rtLogicCqReport_t &cqeException)
 {
     CHK_PRT_RET((halCqReportRecv == nullptr), HCCL_ERROR("halCqReportRecv is nullptr, "
-        "Does not support this interface."), CqeStatus::kCqeInnerError);
+        "Does does not support this interface."), CqeStatus::kCqeInnerError);
     halReportRecvInfo recvInfo;
     recvInfo.type = static_cast<drvSqCqType_t>(cqeQueryInput.type);
     recvInfo.tsId = 0;
@@ -321,7 +321,7 @@ CqeStatus CqReportRecv(const CqeQueryInput &cqeQueryInput, rtLogicCqReport_t &cq
 HcclResult StreamsKill(const uint32_t devId)
 {
     CHK_PRT_RET((halTsdrvCtl == nullptr), HCCL_ERROR("halTsdrvCtl is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+        "Does does not support this interface."), HCCL_E_DRV);
     ts_ctrl_msg_body_t killIn = {};
     ts_ctrl_msg_body_t killAck = {};
     size_t ackCount = sizeof(ts_ctrl_msg_body_t);
@@ -350,7 +350,7 @@ inline u64 GetCurCpuTimestamp()
 HcclResult DeviceQuery(const uint32_t devId, const uint32_t step, const uint32_t timeout)
 {
     CHK_PRT_RET((halTsdrvCtl == nullptr), HCCL_ERROR("halTsdrvCtl is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+        "Does does not support this interface."), HCCL_E_DRV);
     uint32_t status;
     uint64_t endTime;
     const uint64_t startTime = GetCurCpuTimestamp();
@@ -408,7 +408,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
     const s32 userStreamId, const u32 cqeErrCode)
 {
     CHK_PRT_RET((halEschedSubmitEvent == nullptr), HCCL_ERROR("halEschedSubmitEvent is nullptr, "
-        "Does not support this interface."), HCCL_E_DRV);
+        "Does does not support this interface."), HCCL_E_DRV);
     ts_aicpu_sqe_t aicpuSqe = {};
     u32 hostpid = 0;
     u32 vf_id = 0;

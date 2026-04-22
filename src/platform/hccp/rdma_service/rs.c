@@ -965,7 +965,7 @@ int RsRetryTimeoutExceptionCheck(struct SensorNode *sensorNode)
 {
     int ret = 0;
 
-    /* sensor may not support, handle is 0 */
+    /* sensor may does not support, handle is 0 */
     if (sensorNode->sensorHandle == 0) {
         return 0;
     }
@@ -1734,7 +1734,7 @@ STATIC void RsFreeDevList(struct rs_cb *rsCb)
             RsFreeUdevList(rsCb);
             break;
         default:
-            hccp_err("protocol[%d] not support", rsCb->protocol);
+            hccp_err("protocol[%d] does not support", rsCb->protocol);
             break;
     }
     return;

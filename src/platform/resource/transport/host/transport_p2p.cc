@@ -1412,7 +1412,7 @@ HcclResult TransportP2p::GetRemoteMem(UserMemType memType, void **remotePtr)
         }
 
         default: {
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -1440,7 +1440,7 @@ HcclResult TransportP2p::GetRemoteMemSize(UserMemType memType, u64 &size)
         }
 
         default: {
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }

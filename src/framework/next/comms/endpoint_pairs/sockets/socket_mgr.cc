@@ -71,7 +71,7 @@ HcclResult SocketMgr::GetSocketHandle(const Hccl::SocketConfig &socketConfig, Hc
         }
     } else {
         HCCL_ERROR(
-            "[SocketMgr] PortDeploymentType = %d, not support create socket.", localPort.GetType().Describe().c_str());
+            "[SocketMgr] PortDeploymentType = %d, does not support create socket.", localPort.GetType().Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
     if (socketHandle == nullptr) {
@@ -123,7 +123,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
         tmpSocket->Connect();
     } else {
         HCCL_ERROR(
-            "[SocketMgr] PortDeploymentType = %d, not support create socket.", socketConfig.link.GetType().Describe().c_str());
+            "[SocketMgr] PortDeploymentType = %d, does not support create socket.", socketConfig.link.GetType().Describe().c_str());
         return HCCL_E_NOT_SUPPORT;
     }
 

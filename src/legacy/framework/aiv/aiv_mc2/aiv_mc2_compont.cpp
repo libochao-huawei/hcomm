@@ -29,11 +29,11 @@ void AivMc2Compont::AllocCommResource(void *mc2Tiling, void **commContext)
     auto tilingVersion = *static_cast<uint32_t *>(mc2Tiling);
     HCCL_INFO("[AivMc2Compont:%s] Tiling version [%u]", __func__, tilingVersion);
     if (tilingVersion != UNKNOWN_TILING_V1 && tilingVersion != UNKNOWN_TILING_V2) {
-        THROW<NotSupportException>(StringFormat("Tiling version not support, version[%u]", tilingVersion));
+        THROW<NotSupportException>(StringFormat("Tiling version does not support, version[%u]", tilingVersion));
     }
 
     if (comm->GetRankSize() == 1) {
-        THROW<NotSupportException>(StringFormat("Comm[%s] rank size is 1, Mc2 not support", comm->GetId().c_str()));
+        THROW<NotSupportException>(StringFormat("Comm[%s] rank size is 1, Mc2 does not support", comm->GetId().c_str()));
     }
 
     if (tilingVersion == UNKNOWN_TILING_V1) {

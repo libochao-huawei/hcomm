@@ -161,7 +161,7 @@ u8 HcclSdmaSqe::ConvertToMemcpyDataType(u8 copyDataType) const
             // Should not run here.
             // Only for code style, 0x80 is reserved value of STRAS opcode.
             MACRO_THROW(NotSupportException,
-                        StringFormat("DataType=%u do not support.", static_cast<u32>(copyDataType)));
+                        StringFormat("DataType=%u do does not support.", static_cast<u32>(copyDataType)));
             break;
         }
     }

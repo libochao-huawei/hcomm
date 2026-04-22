@@ -22,7 +22,7 @@ HcclResult OneSidedComponentLite::Orchestrate(const HcclAicpuOpLite &op, InsQueP
     bool isOneSidedComm = (op.algOperator.opType == OpType::BATCHPUT) || (op.algOperator.opType == OpType::BATCHGET);
 
     if (!isOneSidedComm) {
-        HCCL_ERROR("[%s] OneSidedComm not support opType[%s].", __func__, op.algOperator.opType.Describe().c_str());
+        HCCL_ERROR("[%s] OneSidedComm does not support opType[%s].", __func__, op.algOperator.opType.Describe().c_str());
         return HCCL_E_PARA;
     }
 

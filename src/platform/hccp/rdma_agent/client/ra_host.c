@@ -234,7 +234,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketInit(int mode, struct rdev rdevInfo, void **sock
     } else if (mode == NETWORK_PEER_ONLINE) {
         socketHandleTmp->socketOps = &gRaPeerSocketOps;
     } else {
-        hccp_err("[init][ra_socket]Wrong mode(%d), do not support", mode);
+        hccp_err("[init][ra_socket]Wrong mode(%d), do does not support", mode);
         ret = -EINVAL;
         goto err;
     }
@@ -295,7 +295,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketInitV1(int mode, struct SocketInitInfoT socketIn
         socketHandleTmp->socketOps = &gRaPeerSocketOps;
         socketHandleTmp->scopeId = socketInit.scopeId;
     } else {
-        hccp_err("[init][ra_socket]Wrong mode(%d), do not support", mode);
+        hccp_err("[init][ra_socket]Wrong mode(%d), do does not support", mode);
         ret = -EINVAL;
         goto err;
     }
@@ -445,7 +445,7 @@ STATIC int RaGetInitRdmaHandle(int mode, struct RaRdmaHandle *rdmaHandle)
     } else if (mode == NETWORK_PEER_ONLINE) {
         (void)RaHdcRdmaSetOps(rdmaHandle, &gRaPeerRdmaOps);
     } else {
-        hccp_err("[init][ra_rdev]Wrong mode(%d), do not support", mode);
+        hccp_err("[init][ra_rdev]Wrong mode(%d), do does not support", mode);
         return -EINVAL;
     }
 
@@ -1224,7 +1224,7 @@ HCCP_ATTRI_VISI_DEF int RaAiQpCreate(void *rdevHandle, struct QpExtAttrs *attrs,
     if (ret == 0 && interfaceVersion >= RA_RS_OPCODE_BASE_VERSION) {
         ret = rdmaHandleTmp->rdmaOps->raAiQpCreateWithAttrs(rdmaHandleTmp, attrs, info, qpHandle);
     } else {
-        // origin procedure: not support to process data_plane_flag.bs.cq_cstm
+        // origin procedure: does not support to process data_plane_flag.bs.cq_cstm
         ret = rdmaHandleTmp->rdmaOps->raAiQpCreate(rdmaHandleTmp, attrs, info, qpHandle);
     }
     CHK_PRT_RETURN(ret != 0 || *qpHandle == NULL, hccp_err("[create][ra_ai_qp]create qp failed, ret(%d) phyId(%u)",
@@ -1644,7 +1644,7 @@ STATIC int RaIfaddrInfoConverter(unsigned int phyId, bool isAll, struct Interfac
             ret, phyId, interfaceVersion), -EINVAL);
 
     CHK_PRT_RETURN(interfaceVersionV2 < GET_IFADDRS_VERSION_3 && isAll,
-        hccp_err("[converter][ra_ifaddr]current version do not support get all device ip addr, interfaceVersion(%u), "
+        hccp_err("[converter][ra_ifaddr]current version do does not support get all device ip addr, interfaceVersion(%u), "
             "interfaceVersionV2(%u), isAll(%d)", interfaceVersion, interfaceVersionV2, isAll), -EPROTONOSUPPORT);
 
     if (interfaceVersion == GET_IFADDRS_VERSION_1) {
@@ -1690,7 +1690,7 @@ STATIC int RaIfaddrInfoConverter(unsigned int phyId, bool isAll, struct Interfac
             hccp_err("[converter][ra_ifaddr]ra_hdc_get_ifaddrs_v2 failed, ret(%d), phyId(%u), isAll(%d), num(%u)",
                 ret, phyId, isAll, *num), ret);
     } else {
-        hccp_err("[converter][ra_ifaddr]interface version not support, interfaceVersion(%u)", interfaceVersion);
+        hccp_err("[converter][ra_ifaddr]interface version does not support, interfaceVersion(%u)", interfaceVersion);
         return -EINVAL;
     }
 
@@ -1721,7 +1721,7 @@ HCCP_ATTRI_VISI_DEF int RaGetIfnum(struct RaGetIfattr *config, unsigned int *num
 
     CHK_PRT_RETURN(interfaceVersion < GET_IFADDRS_VERSION_3 && config->nicPosition == NETWORK_OFFLINE &&
         config->isAll,
-        hccp_err("[get][ra_ifnum]current version do not support get all ip num, interfaceVersion(%u), isAll(%d)",
+        hccp_err("[get][ra_ifnum]current version do does not support get all ip num, interfaceVersion(%u), isAll(%d)",
         interfaceVersion, config->isAll),
         ConverReturnCode(OTHERS, -ENOTSUPP));
 
@@ -1734,7 +1734,7 @@ HCCP_ATTRI_VISI_DEF int RaGetIfnum(struct RaGetIfattr *config, unsigned int *num
         CHK_PRT_RETURN(ret, hccp_err("[get][ra_ifnum]ra_peer_get_ifnum failed, ret(%d)", ret),
             ConverReturnCode(OTHERS, ret));
     } else {
-        hccp_err("[get][ra_ifnum]Wrong mode, do not support online mode");
+        hccp_err("[get][ra_ifnum]Wrong mode, do does not support online mode");
         return ConverReturnCode(OTHERS, -EPROTONOSUPPORT);
     }
 
@@ -1776,7 +1776,7 @@ HCCP_ATTRI_VISI_DEF int RaGetIfaddrs(struct RaGetIfattr *config, struct Interfac
         CHK_PRT_RETURN(ret, hccp_err("[get][ra_ifaddrs]ra_peer_get_ifaddrs failed, ret(%d)", ret),
             ConverReturnCode(OTHERS, ret));
     } else {
-        hccp_err("[get][ra_ifaddrs]Wrong mode, do not support online mode");
+        hccp_err("[get][ra_ifaddrs]Wrong mode, do does not support online mode");
         return ConverReturnCode(OTHERS, -EPROTONOSUPPORT);
     }
     return 0;

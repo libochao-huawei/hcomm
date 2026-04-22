@@ -28,7 +28,7 @@ BroadCastOperator::BroadCastOperator(AlgConfigurator* algConfigurator, CCLBuffer
         !(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING) &&
         !(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB)) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
-        HCCL_WARNING("[BroadCastOperator][BroadCastOperator] do not support ring in AlgoLevel1 yet, reset algType=HD.");
+        HCCL_WARNING("[BroadCastOperator][BroadCastOperator] do does not support ring in AlgoLevel1 yet, reset algType=HD.");
     }
 }
 BroadCastOperator::~BroadCastOperator()
@@ -182,7 +182,7 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
     if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) &&
         !(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB)) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-        HCCL_WARNING("[BroadCastOperator][BroadCastOperator] do not support ring in AlgoLevel1 yet, reset algType=NHR.");
+        HCCL_WARNING("[BroadCastOperator][BroadCastOperator] do does not support ring in AlgoLevel1 yet, reset algType=NHR.");
     }
 
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];

@@ -931,7 +931,7 @@ HcclResult DispatcherAiCpu::InlineReduceAsync(const void *src, u64 dataCount, co
 HcclResult DispatcherAiCpu::TbeReduceAsync(const void *src1, const void *src2, u64 count, const HcclDataType datatype,
     HcclReduceOp redOp, Stream &stream, const void *dst)
 {
-    HCCL_ERROR("[DispatcherAiCpu][TbeReduceAsync] aicpu do not support the tbe reduce");
+    HCCL_ERROR("[DispatcherAiCpu][TbeReduceAsync] aicpu do does not support the tbe reduce");
     return HCCL_E_NOT_SUPPORT;
 }
 

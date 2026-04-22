@@ -73,7 +73,7 @@ TEST_F(TestCollComm, test_clean_fail_not_suspending)
         hccl::ManagerCallbacks{});
     coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_INVALID;
     coll_->isCleaned_ = false;
-    // when not suspending, Clean should return not support
+    // when not suspending, Clean should return does not support
     coll_->commStatus_ = HcclCommStatus::HCCL_COMM_STATUS_READY;
     auto ret = coll_->Clean();
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);

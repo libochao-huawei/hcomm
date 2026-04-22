@@ -93,7 +93,7 @@ HCCP_ATTRI_VISI_DEF int RaGetDevEidInfoNum(struct RaInfo info, unsigned int *num
         CHK_PRT_RETURN(ret != 0, hccp_err("[get][eid]ra_peer_get_dev_eid_info_num failed, ret(%d) phyId(%u)",
             ret, info.phyId), ConverReturnCode(RDMA_OP, ret));
     } else {
-        hccp_err("[get][eid]mode(%d) do not support, phyId(%u)", info.mode, info.phyId);
+        hccp_err("[get][eid]mode(%d) do does not support, phyId(%u)", info.mode, info.phyId);
         return ConverReturnCode(RDMA_OP, -EINVAL);
     }
 
@@ -120,7 +120,7 @@ HCCP_ATTRI_VISI_DEF int RaGetDevEidInfoList(struct RaInfo info, struct HccpDevEi
         CHK_PRT_RETURN(ret != 0, hccp_err("[get][eid]ra_peer_get_dev_eid_info_list failed, ret(%d) phyId(%u)",
             ret, info.phyId), ConverReturnCode(RDMA_OP, ret));
     } else {
-        hccp_err("[get][eid]mode(%d) do not support, phyId(%u)", info.mode, info.phyId);
+        hccp_err("[get][eid]mode(%d) do does not support, phyId(%u)", info.mode, info.phyId);
         return ConverReturnCode(RDMA_OP, -EINVAL);
     }
 
@@ -137,7 +137,7 @@ STATIC int RaGetInitCtxHandle(struct CtxInitCfg *cfg, struct CtxInitAttr *attr,
     } else if (cfg->mode == NETWORK_PEER_ONLINE) {
         ctxHandle->ctxOps = &gRaPeerCtxOps;
     } else {
-        hccp_err("[init][ra_ctx]mode(%d) do not support, phyId(%u)", cfg->mode, attr->phyId);
+        hccp_err("[init][ra_ctx]mode(%d) do does not support, phyId(%u)", cfg->mode, attr->phyId);
         return -EINVAL;
     }
 
@@ -958,7 +958,7 @@ HCCP_ATTRI_VISI_DEF int RaCustomChannel(struct RaInfo info, struct CustomChanInf
         CHK_PRT_RETURN(ret != 0, hccp_err("[custom]ra_hdc_custom_channel failed, ret(%d) phyId(%u)",
             ret, info.phyId), ConverReturnCode(RDMA_OP, ret));
     } else {
-        hccp_err("[custom]mode(%d) do not support, phyId(%u)", info.mode, info.phyId);
+        hccp_err("[custom]mode(%d) do does not support, phyId(%u)", info.mode, info.phyId);
         return ConverReturnCode(RDMA_OP, -EINVAL);
     }
 

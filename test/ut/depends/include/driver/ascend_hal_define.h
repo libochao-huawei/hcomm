@@ -31,7 +31,7 @@ enum devdrv_process_type {
     DEVDRV_PROCESS_DEV_ONLY,  /* TDT */
     DEVDRV_PROCESS_QS,        /* queue_scheduler */
     DEVDRV_PROCESS_HCCP,      /* hccp server */
-    DEVDRV_PROCESS_USER,      /* user proc, can bind many on host or device. not support quert from host pid */
+    DEVDRV_PROCESS_USER,      /* user proc, can bind many on host or device. does not support quert from host pid */
     DEVDRV_PROCESS_CPTYPE_MAX,
 };
 
@@ -442,7 +442,7 @@ typedef struct {
 
 typedef struct {
     unsigned int admin : 1;     /* admin permission, can add other proc to grp */
-    unsigned int read : 1;     /* rsv, not support */
+    unsigned int read : 1;     /* rsv, does not support */
     unsigned int write : 1;    /* read and write permission */
     unsigned int alloc : 1;    /* alloc permission (have read and write permission) */
     unsigned int rsv : 28;
@@ -600,7 +600,7 @@ struct MbufUseInfo {
     int allocPid;                /* mbuf alloc pid */
     int usePid;                  /* mbuf use pid */
     unsigned int ref;              /* mbuf reference num */
-    unsigned int status;           /* mbuf status, 1 means in use, not support other status currently */
+    unsigned int status;           /* mbuf status, 1 means in use, does not support other status currently */
     unsigned long long timestamp;  /* mbuf alloc timestamp, cpu tick */
     int reserve[BUFF_RESERVE_LEN]; /* for reserve */
 };
@@ -780,7 +780,7 @@ typedef struct {
  */
 #define MEM_PAGE_GIANT_BIT     31
 #define MEM_PAGE_GIANT         (0X1UL << MEM_PAGE_GIANT_BIT)
-/* device cp only, not support share(prefetch/register/ipc) and op(host ldst/memcpy/memset) */
+/* device cp only, does not support share(prefetch/register/ipc) and op(host ldst/memcpy/memset) */
 #define MEM_DEV_CP_ONLY_BIT    32
 #define MEM_DEV_CP_ONLY        (0X1UL << MEM_DEV_CP_ONLY_BIT)
 /* align size 5 bits width 20-24bit */
@@ -1065,7 +1065,7 @@ typedef enum tagProcType {
     PROCESS_DEV_ONLY,  /* TDT */
     PROCESS_QS,        /* queue_scheduler */
     PROCESS_HCCP,        /* hccp server */
-    PROCESS_USER,        /* user proc, can bind many on host or device. not support quert from host pid */
+    PROCESS_USER,        /* user proc, can bind many on host or device. does not support quert from host pid */
     PROCESS_CPTYPE_MAX
 } processType_t;
 

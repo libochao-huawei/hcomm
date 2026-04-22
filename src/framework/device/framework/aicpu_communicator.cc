@@ -189,7 +189,7 @@ HcclResult HcclCommAicpu::StreamRestore(u32 streamId)
     HcclResult ret = hrtHalResourceIdRestore(devId_, 0, DRV_STREAM_ID, streamId, 0);
     // custom进程需要恢复stream资源, custom进程调用失败直接报错，aicpu进程调用失败做兼容性处理
     if (ret == HCCL_E_NOT_SUPPORT) {
-        CHK_PRT_RET(isCustom_, HCCL_ERROR("%s hrtHalResourceIdRestore fail, drv not support, custom[%d], ret[%d]",
+        CHK_PRT_RET(isCustom_, HCCL_ERROR("%s hrtHalResourceIdRestore fail, drv does not support, custom[%d], ret[%d]",
             __func__, isCustom_, ret), HCCL_E_DRV);
     } else if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("%s hrtHalResourceIdRestore fail, ret[%d]", __func__, ret);
@@ -3042,7 +3042,7 @@ bool HcclCommAicpu::HcclOpSupportRetry(const std::string &algName, bool retryEna
     // 不支持inplace的通信算子重执行
     if ((!algOpContext_.opRetryHandler.inplaceSupportRetry) && (!algOpContext_.opRetryHandler.isInplacePreSync) &&
         (!algOpContext_.opRetryHandler.isPostSync)) {
-        HCCL_ERROR("[OpRetry][AICPU]hccl aicpu can not retry, not support inplace case, opType[%s], "
+        HCCL_ERROR("[OpRetry][AICPU]hccl aicpu can not retry, does not support inplace case, opType[%s], "
             "inputPtr[0x%016lx], outputPtr[0x%016lx], opRetryHandler.inplaceSupportRetry[%d], "
             "opRetryHandler.isInplacePreSync[%d], opRetryHandler.isPostSync[%d]",
             GetCMDTypeEnumStr(param.opType).c_str(), param.inputPtr, param.outputPtr,
@@ -3055,7 +3055,7 @@ bool HcclCommAicpu::HcclOpSupportRetry(const std::string &algName, bool retryEna
 
     // 不支持的通信算子重执行
     if (HcclOpCheckSupportRetry(param.opType) == false) {
-        HCCL_ERROR("[OpRetry][AICPU]hccl aicpu can not retry, not support opType[%s].",
+        HCCL_ERROR("[OpRetry][AICPU]hccl aicpu can not retry, does not support opType[%s].",
             GetCMDTypeEnumStr(param.opType).c_str());
         return false;
     }
@@ -3064,7 +3064,7 @@ bool HcclCommAicpu::HcclOpSupportRetry(const std::string &algName, bool retryEna
 
 bool HcclCommAicpu::isPollutedZeroCopyOp(OpParam &param)
 {
-    // allreduce\reduce\reducescatter\reducescatterv with zerocopy can not support retry.
+    // allreduce\reduce\reducescatter\reducescatterv with zerocopy can does not support retry.
     bool isPollutedOp = ((param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE) ||
                         (param.opType == HcclCMDType::HCCL_CMD_REDUCE) ||
                         (param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER) ||

@@ -399,7 +399,7 @@
 #endif
 
 /*
- * Add the -DSECUREC_SUPPORT_BUILTIN_EXPECT=0 compiler option, if compiler can not support __builtin_expect.
+ * Add the -DSECUREC_SUPPORT_BUILTIN_EXPECT=0 compiler option, if compiler can does not support __builtin_expect.
  */
 #ifndef SECUREC_SUPPORT_BUILTIN_EXPECT
 #define SECUREC_SUPPORT_BUILTIN_EXPECT 1
@@ -466,7 +466,7 @@ long __builtin_expect(long exp, long c);
  * Codes should run under the macro SECUREC_COMPATIBLE_LINUX_FORMAT in unknown system on default,
  * and strtold.
  * The function strtold is referenced first at ISO9899:1999(C99), and some old compilers can
- * not support these functions. Here provides a macro to open these functions:
+ * does not support these functions. Here provides a macro to open these functions:
  * SECUREC_SUPPORT_STRTOLD  -- If defined, strtold will be used
  */
 #ifndef SECUREC_SUPPORT_STRTOLD

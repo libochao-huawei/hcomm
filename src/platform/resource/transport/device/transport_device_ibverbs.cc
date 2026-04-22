@@ -301,7 +301,7 @@ HcclResult TransportDeviceIbverbs::GetMemInfo(UserMemType memType, void **dstMem
         }
 
         default: {
-            HCCL_ERROR("[Get][MemInfo]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][MemInfo]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }

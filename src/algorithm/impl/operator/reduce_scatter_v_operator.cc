@@ -32,7 +32,7 @@ HcclResult ReduceScatterVOperator::SelectAlg(const std::string& tag, const OpPar
     HcclResult ret;
 
     if (isDiffDeviceType_) {
-        HCCL_ERROR("[ReduceScatterVOperator][SelectAlg] ReduceScatterV not support diffDeviceType");
+        HCCL_ERROR("[ReduceScatterVOperator][SelectAlg] ReduceScatterV does not support diffDeviceType");
         return HCCL_E_NOT_SUPPORT;
     } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
@@ -85,7 +85,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor91093(const OpParam& param, std::
     }
 
     if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_) {
-        HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support mode, multiModuleDiffDeviceNumMode_[%u], "
+        HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] does not support mode, multiModuleDiffDeviceNumMode_[%u], "
             "multiSuperPodDiffServerNumMode_[%u]", multiModuleDiffDeviceNumMode_, multiSuperPodDiffServerNumMode_);
         return HCCL_E_NOT_SUPPORT;
     } else {
@@ -99,7 +99,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor91093(const OpParam& param, std::
                 algName = "AlignedReduceScatterVDoubleRingFor91093Executor";
             }
         } else {
-            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support topoType_[%u]", topoType_);
+            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] does not support topoType_[%u]", topoType_);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -135,7 +135,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor910B(const OpParam& param, std::s
             HCCL_INFO("[SelectAlgfor910B] ReduceScatterV SelectAlgfor910B algName is [%s]", algName.c_str());
             return HCCL_SUCCESS;
         } else {
-            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor910B] ReduceScatterV not support uneven devices in multiServer.");
+            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor910B] ReduceScatterV does not support uneven devices in multiServer.");
             return HCCL_E_NOT_SUPPORT;
         }
     }

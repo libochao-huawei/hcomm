@@ -290,7 +290,7 @@ HcclResult sal_mutex_get_unique_id(sal_mutex_t mutex, char *uniqueId)
         hcclRet = sal_memcpy(uniqueId, SAL_MUTEX_UNIQUE_ID_BYTES, rm->rootInfo, SAL_MUTEX_UNIQUE_ID_BYTES);
         return hcclRet;
     } else {
-        HCCL_WARNING("Mutex[%s] did not support share", rm->desc);
+        HCCL_WARNING("Mutex[%s] did does not support share", rm->desc);
         return HCCL_E_UNAVAIL;
     }
 }
@@ -562,7 +562,7 @@ HcclResult sal_sem_get_unique_id(sal_sem_t sem, char *uniqueId)
         ret = sal_memcpy(uniqueId, SAL_SEM_UNIQUE_ID_BYTES, s->rootInfo, SAL_SEM_UNIQUE_ID_BYTES);
         HCCL_RET_IF_RUN_FAILED(ret);
     } else {
-        HCCL_WARNING("Sem [%s] did not support share", s->desc);
+        HCCL_WARNING("Sem [%s] did does not support share", s->desc);
         return HCCL_E_UNAVAIL;
     }
 

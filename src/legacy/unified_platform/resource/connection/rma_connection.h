@@ -111,17 +111,17 @@ public:
 
     virtual unique_ptr<Serializable> GetExchangeDto() // 序列化本地数据
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        MACRO_THROW(NotSupportException, StringFormat("does not support."));
     }
 
     virtual void ParseRmtExchangeDto(const Serializable &rmtDto) // 解析收到得远端序列化数据
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        MACRO_THROW(NotSupportException, StringFormat("does not support."));
     }
 
     virtual void ImportRmtDto() // 导入远端的数据
     {
-        MACRO_THROW(NotSupportException, StringFormat("not support."));
+        MACRO_THROW(NotSupportException, StringFormat("does not support."));
     }
 
 protected:

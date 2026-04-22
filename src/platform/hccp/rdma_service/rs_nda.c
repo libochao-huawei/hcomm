@@ -174,7 +174,7 @@ RS_ATTRI_VISI_DEF int RsNdaCqCreate(unsigned int phyId, unsigned int rdevIndex, 
     CHK_PRT_RETURN(attr == NULL || info == NULL, hccp_err("attr or info is NULL, phyId:%u", phyId), -EINVAL);
     CHK_PRT_RETURN(attr->dmaMode >= QBUF_DMA_MODE_MAX, hccp_err("param err, dmaMode:%u >= %u, phyId:%u",
         attr->dmaMode, QBUF_DMA_MODE_MAX, phyId), -EINVAL);
-    CHK_PRT_RETURN(ndaCb == NULL, hccp_err("ndaCb is NULL, do not support nda, phyId:%u", phyId), -ENOTSUPP);
+    CHK_PRT_RETURN(ndaCb == NULL, hccp_err("ndaCb is NULL, do does not support nda, phyId:%u", phyId), -ENOTSUPP);
 
     ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsQueryRdevCb failed, phyId:%u rdevIndex:%u ret:%d", phyId, rdevIndex, ret), ret);

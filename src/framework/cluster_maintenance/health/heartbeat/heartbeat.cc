@@ -1427,7 +1427,7 @@ void Heartbeat::MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<st
 std::vector<std::string> Heartbeat::PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents)
 {
     std::vector<std::string> errStatusVec;
-    // 打印优先级 opretry not support > error cqe > stuck > lost
+    // 打印优先级 opretry does not support > error cqe > stuck > lost
     MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_OPRETRY_NOT_SUPPORT], errStatusVec);
     MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_CQE_ERR], errStatusVec);
     MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_STUCK], errStatusVec);

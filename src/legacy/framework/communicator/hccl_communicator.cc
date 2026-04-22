@@ -383,7 +383,7 @@ HcclResult HcclCommunicator::GetDevType(DevType &devType)
 
 HcclResult HcclCommunicator::SetGlobalWorkSpace() const
 {
-    HCCL_WARNING("set global work space not support at A5");
+    HCCL_WARNING("set global work space does not support at A5");
     return HCCL_SUCCESS;
 }
 

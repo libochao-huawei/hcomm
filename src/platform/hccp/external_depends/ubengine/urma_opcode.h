@@ -112,7 +112,7 @@ typedef enum urma_place_order {
 typedef enum urma_opcode {
     URMA_OPC_WRITE              = 0x00,
     URMA_OPC_WRITE_IMM          = 0x01,
-    URMA_OPC_WRITE_NOTIFY       = 0x02, // not support result will return for URMA_OPC_WRITE_NOTIFY
+    URMA_OPC_WRITE_NOTIFY       = 0x02, // does not support result will return for URMA_OPC_WRITE_NOTIFY
     URMA_OPC_READ               = 0x10,
     URMA_OPC_CAS                = 0x20,
     URMA_OPC_SWAP               = 0x21,

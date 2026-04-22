@@ -1702,7 +1702,7 @@ HcclResult hrtGetIfNum(struct RaGetIfattr &config, u32 &num)
         HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num), HCCL_E_TCP_CONNECT);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetIfNum]Does not support this interface.");
+    HCCL_ERROR("[hrtGetIfNum]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1717,7 +1717,7 @@ HcclResult hrtGetIfAddress(struct RaGetIfattr &config, struct InterfaceInfo ifad
         HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num), HCCL_E_TCP_CONNECT);
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[hrtGetIfAddress]Does not support this interface.");
+    HCCL_ERROR("[hrtGetIfAddress]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -3083,7 +3083,7 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
             hccnKey = HccnCfgKey::HCCN_CFG_RESV_MEM_INFO;
             break;
         default:
-            HCCL_ERROR("[HrtRaGetHccnCfg]not support key[%d]", key);
+            HCCL_ERROR("[HrtRaGetHccnCfg]does not support key[%d]", key);
             return HCCL_E_PARA;
     }
 
@@ -3095,7 +3095,7 @@ HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT ke
         HCCL_WARNING("[HrtRaGetHccnCfg] device networkMode[%d] with phyId[%u], "
                      "get hccn config key[%d] info is empty. Possible reasons: "
                      "1. Device not need to use multi_qp/nslb-dp settings. "
-                     "  2. In this package, hccn_tool not support multi_qp/nslb-dp settings. "
+                     "  2. In this package, hccn_tool does not support multi_qp/nslb-dp settings. "
                      "  3. The right key not exist in device's config file or key's value is empty.",
             networkMode,
             devicePhyId,

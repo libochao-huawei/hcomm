@@ -180,7 +180,7 @@ HCCP_ATTRI_VISI_DEF int RaInit(struct RaInitConfig *config)
             goto err;
         }
     } else {
-        hccp_err("[init][ra]do not support nic_position(%u) phyId(%u)", config->nicPosition, phyId);
+        hccp_err("[init][ra]do does not support nic_position(%u) phyId(%u)", config->nicPosition, phyId);
         ret = -EPROTONOSUPPORT;
         goto err;
     }
@@ -231,7 +231,7 @@ HCCP_ATTRI_VISI_DEF int RaDeinit(struct RaInitConfig *config)
         CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra]ra_peer_deinit failed, ret(%d) phyId(%u)", ret, phyId),
             ConverReturnCode(HCCP_INIT, ret));
     } else {
-        hccp_err("[deinit][ra]do not support nic_position(%u) phyId(%u)", config->nicPosition, phyId);
+        hccp_err("[deinit][ra]do does not support nic_position(%u) phyId(%u)", config->nicPosition, phyId);
         return ConverReturnCode(HCCP_INIT, -EPROTONOSUPPORT);
     }
 

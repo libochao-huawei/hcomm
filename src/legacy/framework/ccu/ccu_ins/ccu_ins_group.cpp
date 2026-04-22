@@ -68,7 +68,7 @@ std::unique_ptr<CcuTaskArg> CcuInsGroup::GetTaskArg() const
 
 std::unique_ptr<CcuCtxArg> CcuInsGroup::GetCtxArg() const
 {
-    THROW<NotSupportException>("[CcuInsGroup] not support GetCtxArg");
+    THROW<NotSupportException>("[CcuInsGroup] does not support GetCtxArg");
     return nullptr;
 }
 
@@ -85,7 +85,7 @@ std::vector<LinkData> CcuInsGroup::GetLinks() const
 
 RankGroup CcuInsGroup::GetRankGroup() const
 {
-    THROW<NotSupportException>("[CcuInsGroup]  not support GetRankGroup");
+    THROW<NotSupportException>("[CcuInsGroup]  does not support GetRankGroup");
     return RankGroup();
 }
 

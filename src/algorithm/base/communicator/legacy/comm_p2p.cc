@@ -65,7 +65,7 @@ HcclResult CommP2P::CalcLink()
     }
     if (!isSupportP2P) {
         HCCL_ERROR("[Calc][Link]comm p2p rank[%u] devid[%d] serverId[%s] and dstRank[%u] devid[%d] serverId[%s] is "\
-            "not support P2P", rank_, paraVector_[rank_].devicePhyId, paraVector_[rank_].serverId.c_str(),\
+            "does not support P2P", rank_, paraVector_[rank_].devicePhyId, paraVector_[rank_].serverId.c_str(),\
             dstRank, paraVector_[dstRank].devicePhyId, paraVector_[dstRank].serverId.c_str());
         return HCCL_E_PARA;
     }

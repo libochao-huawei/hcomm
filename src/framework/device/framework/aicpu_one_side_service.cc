@@ -257,11 +257,11 @@ HcclResult HcclOneSideServiceAicpu::DoProcess(const std::string &tag, const OpTi
             vDataPtr->commResParaSize, sizeof(HcclOneSideCommResParam)), HCCL_E_PARA);
     const auto *commResParaPtr = reinterpret_cast<const HcclOneSideCommResParam *>(vDataPtr->commResParaAddr);
     CHK_PRT_RET(commResParaPtr != commResParaPtr_,
-        HCCL_ERROR("[DoProcess] not support commResParaPtr[%p/%p] address update", commResParaPtr, commResParaPtr_),
+        HCCL_ERROR("[DoProcess] does not support commResParaPtr[%p/%p] address update", commResParaPtr, commResParaPtr_),
         HCCL_E_PARA);
     LinkType linkType = static_cast<LinkType>(vDataPtr->linkType);
     CHK_PRT_RET((linkType != LinkType::LINK_ROCE) && (linkType != LinkType::LINK_HCCS),
-        HCCL_ERROR("[DoProcess] not support linkType[%u]", vDataPtr->linkType), HCCL_E_PARA);
+        HCCL_ERROR("[DoProcess] does not support linkType[%u]", vDataPtr->linkType), HCCL_E_PARA);
     const u32 descNum = vDataPtr->descNum;  // Batch descNum + 1(signal)
     CHK_PRT_RET(vDataPtr->descDataLen != descNum * sizeof(HcclOneSideOpDescParam),
         HCCL_ERROR("[DoProcess] descDataLen[%llu] should be equal to "

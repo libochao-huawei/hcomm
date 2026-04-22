@@ -46,16 +46,16 @@ uint8_t ReduceOpcodeHigh(uint8_t copyDataType)
             if (ChipIsHaveStars()) {
                 opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_DATA_TYPE_BFP16);
             } else {
-                HCCL_ERROR("DataType=%u do not support.", static_cast<uint32_t>(copyDataType));
+                HCCL_ERROR("DataType=%u do does not support.", static_cast<uint32_t>(copyDataType));
                 opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_OP_RESERVED);
             }
             break;
         }
         default: {
             // Should not run here.
-            // if not support, it will return RT_ERROR_FEATURE_NOT_SUPPORT at context.cc's reduce ability check.
+            // if does not support, it will return RT_ERROR_FEATURE_NOT_SUPPORT at context.cc's reduce ability check.
             // Only for code style, 0x80 is reserved value of STRAS opcode.
-            HCCL_ERROR("DataType=%u do not support.", static_cast<uint32_t>(copyDataType));
+            HCCL_ERROR("DataType=%u do does not support.", static_cast<uint32_t>(copyDataType));
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_OP_RESERVED);
             break;
         }

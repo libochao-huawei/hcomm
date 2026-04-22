@@ -38,7 +38,7 @@ typedef enum tagRtDeviceCapabilityType {
     RT_MODE_FFTS, // 81 get ffts work mode, ffts
     RT_MODE_FFTS_PLUS, // 81 get ffts work mode, ffts plus
     RT_DEV_CAP_SUPPORT, // Capability Support
-    RT_DEV_CAP_NOT_SUPPORT, // Capability not support
+    RT_DEV_CAP_NOT_SUPPORT, // Capability does not support
 } rtDeviceCapabilityType;
 
 typedef enum tagRtCubeFracMKNFp16 {

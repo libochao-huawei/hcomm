@@ -51,7 +51,7 @@ STATIC int RaHdcGetDrvLiteSupport(unsigned int phyId, bool enabled910aLite, unsi
             ret, phyId), ret);
         if (DlHalPlatGetChip((uint64_t)deviceInfo) == CHIP_TYPE_910A) { // Memory Limits
             *support = 0;
-            hccp_info("[init][ra_hdc_lite]device_info:0x%llx not support, phyId(%u)", deviceInfo, phyId);
+            hccp_info("[init][ra_hdc_lite]device_info:0x%llx does not support, phyId(%u)", deviceInfo, phyId);
             return 0;
         }
     }
@@ -81,9 +81,9 @@ STATIC void RaHdcGetOpcodeLiteSupport(unsigned int phyId, unsigned int supportFe
     unsigned int interfaceVersion = 0;
 
     ret = RaHdcGetInterfaceVersion(phyId, RA_RS_GET_LITE_SUPPORT, &interfaceVersion);
-    // get version failed or opcode interface_version is 0: opcode not support lite
+    // get version failed or opcode interface_version is 0: opcode does not support lite
     if (ret != 0 || interfaceVersion == 0) {
-        hccp_info("[init][ra_hdc_lite]get opcode not support, ret[%d] != 0 or interfaceVersion is 0", ret);
+        hccp_info("[init][ra_hdc_lite]get opcode does not support, ret[%d] != 0 or interfaceVersion is 0", ret);
         *support = LITE_NOT_SUPPORT;
         return;
     }
@@ -101,7 +101,7 @@ STATIC void RaHdcGetOpcodeLiteSupport(unsigned int phyId, unsigned int supportFe
     }
 
     // none of 4KB page_size align & 2MB page_size align lite support
-    hccp_info("[init][ra_hdc_lite]get opcode not support, interfaceVersion[%u] supportFeature[0x%x]",
+    hccp_info("[init][ra_hdc_lite]get opcode does not support, interfaceVersion[%u] supportFeature[0x%x]",
         interfaceVersion, supportFeature);
     *support = LITE_NOT_SUPPORT;
     return;
@@ -187,9 +187,9 @@ STATIC int RaSensorNodeRegister(unsigned int phyId, struct RaRdmaHandle *rdmaHan
 
     ret = RaHdcGetInterfaceVersion(phyId, RA_RS_RDEV_INIT, &interfaceVersion);
     if ((ret != 0) || (interfaceVersion <= RA_RS_OPCODE_BASE_VERSION)) {
-        /* unknown or old version, not support sensor */
+        /* unknown or old version, does not support sensor */
         rdmaHandle->sensorHandle = 0;
-        hccp_warn("[init][ra_hdc_lite]not support sensor, ret:%d, phyId:%u, interfaceVersion:%u",
+        hccp_warn("[init][ra_hdc_lite]does not support sensor, ret:%d, phyId:%u, interfaceVersion:%u",
             ret, phyId, interfaceVersion);
         return 0;
     }
@@ -465,7 +465,7 @@ int RaHdcLiteQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     struct rdma_lite_qp_attr liteQpAttr = { 0 };
     int ret;
 
-    // not support rdma lite or not op mode qp
+    // does not support rdma lite or not op mode qp
     if (rdmaHandle->supportLite == 0 || (qpHdc->qpMode != RA_RS_OP_QP_MODE && qpHdc->qpMode != RA_RS_OP_QP_MODE_EXT)) {
         return 0;
     }
@@ -623,7 +623,7 @@ int RaHdcLiteGetCqeErrInfoList(struct RaRdmaHandle *rdmaHandle, struct CqeErrInf
     unsigned int cqeErrIdx = 0;
     unsigned int numTmp = 0;
 
-    // not support lite
+    // does not support lite
     if (rdmaHandle->supportLite == 0) {
         *num = 0;
         return 0;

@@ -68,7 +68,7 @@ static std::map<uint16_t, uint16_t> ccuReduceTypeMap = {
 HcclResult IsLoopGroupParamNull(LoopGroupParam* loopGroupParam)
 {
     if (loopGroupParam != nullptr) {
-        HCCL_ERROR("this ins do not support loop");
+        HCCL_ERROR("this ins do does not support loop");
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -350,7 +350,7 @@ HcclResult TransformSetCKEInstr(const CcuRep::CcuInstr *instr, TaskStubCcuGraph 
 
     // 当前只支持clearType为1的场景
     if (clearType != 0x0001) {
-        HCCL_ERROR("do not support clearType[%hu]", clearType);
+        HCCL_ERROR("do does not support clearType[%hu]", clearType);
         return HCCL_E_INTERNAL;
     }
 
@@ -1329,7 +1329,7 @@ HcclResult TransformClearCKEInstr(const CcuRep::CcuInstr *instr, TaskStubCcuGrap
     }
 
     if (clearMask != 0x0000) {
-        HCCL_ERROR("do not support Clear CKE[%u:%04x]", clearCKEId, clearMask);
+        HCCL_ERROR("do does not support Clear CKE[%u:%04x]", clearCKEId, clearMask);
         return HCCL_E_INTERNAL;
     }
 

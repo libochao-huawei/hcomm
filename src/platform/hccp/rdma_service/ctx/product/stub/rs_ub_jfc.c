@@ -18,12 +18,12 @@
 
 int RsUbDeleteJfcExt(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
 {
-    hccp_err("product type do not support");
+    hccp_err("product type do does not support");
     return -EOPENSRC;
 }
 
 int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urma_jfc_t **jfc)
 {
-    hccp_err("product type do not support");
+    hccp_err("product type do does not support");
     return -EOPENSRC;
 }

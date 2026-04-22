@@ -29,7 +29,7 @@ CcuAlgTemplateBase::~CcuAlgTemplateBase()
 HcclResult CcuAlgTemplateBase::CalcRes(AlgTempResReq &tempResReq)
 {
     (void)tempResReq;
-    HCCL_ERROR("[CcuAlgTemplateBase] [CalcRes] Current alg do not support detour mode!");
+    HCCL_ERROR("[CcuAlgTemplateBase] [CalcRes] Current alg do does not support detour mode!");
     return HcclResult::HCCL_E_INTERNAL;
 }
 
@@ -37,7 +37,7 @@ HcclResult CcuAlgTemplateBase::CalcResDetour(const RankGraph *rankGraph, AlgTemp
 {
     (void)rankGraph;
     (void)tempResReq;
-    HCCL_ERROR("[CcuAlgTemplateBase] [CalcRes] Current alg do not support detour mode!");
+    HCCL_ERROR("[CcuAlgTemplateBase] [CalcRes] Current alg do does not support detour mode!");
     return HcclResult::HCCL_E_INTERNAL;
 }
 
@@ -45,7 +45,7 @@ HcclResult CcuAlgTemplateBase::CalcResDetour(ConnectedLinkMgr *linkMgr, AlgTempR
 {
     (void)linkMgr;
     (void)tempResReq;
-    HCCL_ERROR("[CcuAlgTemplateBase] [CalcRes] Current alg do not support detour mode!");
+    HCCL_ERROR("[CcuAlgTemplateBase] [CalcRes] Current alg do does not support detour mode!");
     return HcclResult::HCCL_E_INTERNAL;
 }
 
@@ -187,7 +187,7 @@ HcclResult CcuAlgTemplateBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 nu
     (void) numBlocks;
     (void) dataSize;
     (void) numBlocksLimit;
-    HCCL_WARNING("CalNumBlocks not support ccu template.");
+    HCCL_WARNING("CalNumBlocks does not support ccu template.");
     return HCCL_SUCCESS;
 }
 

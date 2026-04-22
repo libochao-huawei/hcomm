@@ -401,7 +401,7 @@ HcclResult TransportHeterogP2P::GetRemoteMem(UserMemType memType, void **remoteP
         }
 
         default: {
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }

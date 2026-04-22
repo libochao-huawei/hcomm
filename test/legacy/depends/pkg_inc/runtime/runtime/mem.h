@@ -193,7 +193,7 @@ typedef struct rtMemcpyConfig {
 typedef enum tagRtMemcpyChannelType {
     RT_MEMCPY_CHANNEL_TYPE_INNER = 0,  // 1P
     RT_MEMCPY_CHANNEL_TYPE_PCIe,
-    RT_MEMCPY_CHANNEL_TYPE_HCCs,  // not support now
+    RT_MEMCPY_CHANNEL_TYPE_HCCs,  // does not support now
     RT_MEMCPY_CHANNEL_TYPE_RESERVED,
 } rtMemcpyChannelType_t;
 
@@ -1185,7 +1185,7 @@ RTS_API rtError_t rtUnmapMem(void* devPtr);
 * 3. rtMemSetAccess: ptr and size must be same with rtMemMap, rtMemGetAccess: ptr and size is in range of set
 * 4. after rtMemMap, if handle has owner(witch location pa handle is created or use witch device pa handle is imported)
 *    the owner location has readwrite prop automatic, not need to set again
-* 5. not support repeat set ptr to same location
+* 5. does not support repeat set ptr to same location
 * @param [in] virPtr mapped address.
 * @param [in] size mapped size.
 * @param [in] desc va location and access type, when location is device, id is devid.
@@ -1319,7 +1319,7 @@ RTS_API rtError_t rtMemGetAllocationGranularity(rtDrvMemProp_t *prop, rtDrvMemGr
  *                          The value will be SIZE_MAX if the error doesn't pertain to any specific copy.
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
- * @return RT_ERROR_FEATURE_NOT_SUPPORT for not support
+ * @return RT_ERROR_FEATURE_NOT_SUPPORT for does not support
  */
 RTS_API rtError_t rtsMemcpyBatch(void **dsts, void **srcs, size_t *sizes, size_t count,
     rtMemcpyBatchAttr *attrs, size_t *attrsIdxs, size_t numAttrs, size_t *failIdx);
@@ -1343,7 +1343,7 @@ RTS_API rtError_t rtsMemcpyBatch(void **dsts, void **srcs, size_t *sizes, size_t
  * @param [in] stm   asynchronized task stream
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
- * @return RT_ERROR_FEATURE_NOT_SUPPORT for not support
+ * @return RT_ERROR_FEATURE_NOT_SUPPORT for does not support
  */
 RTS_API rtError_t rtsMemcpyBatchAsync(void **dsts, size_t *destMaxs, void **srcs, size_t *sizes, size_t count,
     rtMemcpyBatchAttr *attrs, size_t *attrsIdxs, size_t numAttrs, size_t *failIdx, rtStream_t stream);

@@ -76,7 +76,7 @@ HcclResult TransportDirectNpu::GetRemoteMem(UserMemType memType, void **remotePt
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -124,7 +124,7 @@ HcclResult TransportDirectNpu::GetRemoteMemSize(UserMemType memType, u64 &size)
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -155,7 +155,7 @@ HcclResult TransportDirectNpu::LoadBinaryFromFile(const char *binPath, aclrtBina
         HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx] load binary from file error.", aclRet),
         HCCL_E_OPEN_FILE_FAILURE);
 #else
-    HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
+    HCCL_ERROR("[AicpuAclKernelLaunch]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
     return HCCL_SUCCESS;
@@ -758,7 +758,7 @@ HcclResult TransportDirectNpu::RegUserMem(MemType memType, u8*& exchangeDataPtr,
         }
 
         default: {
-            HCCL_ERROR("[Reg][UserMem]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Reg][UserMem]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -803,7 +803,7 @@ HcclResult TransportDirectNpu::GetMemInfo(UserMemType memType, void **dstMemPtr,
         }
 
         default: {
-            HCCL_ERROR("[Get][MemInfo]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][MemInfo]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
         }
     }
@@ -903,7 +903,7 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
             binHandle_, kernelName, true, timeOut));
 #else
-    HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
+    HCCL_ERROR("[AicpuAclKernelLaunch]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
     HCCL_INFO("[TransportDirectNpu][TxData] exec succ.");
@@ -974,7 +974,7 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
             binHandle_, kernelName, true, timeOut));
 #else
-    HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
+    HCCL_ERROR("[AicpuAclKernelLaunch]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
     return HCCL_SUCCESS;
@@ -1019,7 +1019,7 @@ HcclResult TransportDirectNpu::GetRemoteMemKey(UserMemType memType, uint32_t *re
             break;
 
         default:
-            HCCL_ERROR("[Get][RemoteMemKey]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][RemoteMemKey]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -1036,7 +1036,7 @@ HcclResult TransportDirectNpu::GetLocalMemDetails(UserMemType memType, MemDetail
             break;
 
         default:
-            HCCL_ERROR("[Get][LocalMemDetails]not support dst_mem_type=%d", memType);
+            HCCL_ERROR("[Get][LocalMemDetails]does not support dst_mem_type=%d", memType);
             return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -1080,7 +1080,7 @@ HcclResult TransportDirectNpu::GetTransportErrorCqe(const HcclNetDevCtx netDevCt
     HcclIpAddress localIp   = (static_cast<NetDevContext *>(netDevCtx))->GetLocalIp();
     NicType nicType         = (static_cast<NetDevContext *>(netDevCtx))->GetNicType();
     CHK_PRT_RET(nicType == NicType::HOST_NIC_TYPE,
-        HCCL_WARNING("[TransportDirectNpu][GetTransportErrorCqe] nicType[%d] not support", nicType), HCCL_SUCCESS);
+        HCCL_WARNING("[TransportDirectNpu][GetTransportErrorCqe] nicType[%d] does not support", nicType), HCCL_SUCCESS);
     RaResourceInfo raResourceInfo;
     CHK_RET(NetworkManager::GetInstance(deviceLogicId).GetRaResourceInfo(raResourceInfo));
     RdmaHandle rdmaHandle   = raResourceInfo.nicSocketMap[localIp].nicRdmaHandle;

@@ -904,7 +904,7 @@ int32_t HcommThreadJoin(ThreadHandle thread, uint32_t timeout)
         return HCCL_SUCCESS;
     }
 
-    HCCL_ERROR("[%s]Does not support this interface.", __func__);
+    HCCL_ERROR("[%s]Does does not support this interface.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 #ifdef __cplusplus

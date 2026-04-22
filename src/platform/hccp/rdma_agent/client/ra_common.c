@@ -43,7 +43,7 @@ HCCP_ATTRI_VISI_DEF int RaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
     } else if (info->mode == NETWORK_OFFLINE) {
         ret = RaHdcGetTlsEnable(info->phyId, tlsEnable);
     } else {
-        hccp_err("[get][tls_enable]do not support mode(%d) phyId(%u)", info->mode, info->phyId);
+        hccp_err("[get][tls_enable]do does not support mode(%d) phyId(%u)", info->mode, info->phyId);
         return ConverReturnCode(OTHERS, -ENOTSUPP);
     }
     return ConverReturnCode(OTHERS, ret);
@@ -73,7 +73,7 @@ HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct RaInfo *info, enum SaveSnapshotAct
         CHK_PRT_RETURN(ret != 0, hccp_err("[save][snapshot]ra_hdc_save_snapshot failed, ret[%d]", ret),
             ConverReturnCode(OTHERS, ret));
     } else {
-        hccp_err("[save][snapshot]do not support mode[%d] phyId[%u]", info->mode, info->phyId);
+        hccp_err("[save][snapshot]do does not support mode[%d] phyId[%u]", info->mode, info->phyId);
         return ConverReturnCode(OTHERS, -ENOTSUPP);
     }
 
@@ -102,7 +102,7 @@ HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct RaInfo *info)
         CHK_PRT_RETURN(ret != 0, hccp_err("[restore][snapshot]ra_hdc_restore_snapshot failed, ret[%d]", ret),
             ConverReturnCode(OTHERS, ret));
     } else {
-        hccp_err("[restore][snapshot]do not support mode[%d] phyId[%u]", info->mode, info->phyId);
+        hccp_err("[restore][snapshot]do does not support mode[%d] phyId[%u]", info->mode, info->phyId);
         return ConverReturnCode(OTHERS, -ENOTSUPP);
     }
 
@@ -120,7 +120,7 @@ HCCP_ATTRI_VISI_DEF int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, c
         ConverReturnCode(OTHERS, -EINVAL));
     CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][hccn_cfg]phyId(%u) must smaller than %u",
         info->phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(OTHERS, -EINVAL));
-    CHK_PRT_RETURN(info->mode != NETWORK_OFFLINE, hccp_err("[get][hccn_cfg]do not support mode(%u)", info->mode),
+    CHK_PRT_RETURN(info->mode != NETWORK_OFFLINE, hccp_err("[get][hccn_cfg]do does not support mode(%u)", info->mode),
         ConverReturnCode(OTHERS, -EINVAL));
 
     hccp_run_info("Input parameters: phyId[%u], nicPosition:[%d], hccn_cfg_key[%d]",

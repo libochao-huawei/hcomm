@@ -39,7 +39,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
         SelectorStatus::NOT_MATCH);
 
     CHK_PRT_RET(op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64,
-        HCCL_WARNING("[Algo][ReduceAutoSelector] ccu_ms mode not support INT64, UINT64, FP64."),
+        HCCL_WARNING("[Algo][ReduceAutoSelector] ccu_ms mode does not support INT64, UINT64, FP64."),
         SelectorStatus::NOT_MATCH);
 
     if (topoInfo.levelNum > 1) {
@@ -110,7 +110,7 @@ SelectorStatus ReduceAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInf
         SelectorStatus::NOT_MATCH);
 
     CHK_PRT_RET(op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64,
-        HCCL_WARNING("[Algo][ReduceAutoSelector] ccu_ms mode not support INT64, UINT64, FP64."),
+        HCCL_WARNING("[Algo][ReduceAutoSelector] ccu_ms mode does not support INT64, UINT64, FP64."),
         SelectorStatus::NOT_MATCH);
 
     HCCL_DEBUG("[ReduceAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
@@ -229,7 +229,7 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
             SelectorStatus::NOT_MATCH);
 
         CHK_PRT_RET(op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64,
-            HCCL_WARNING("[Algo][ReduceAutoSelector] aicpu levelNum > 1 not support INT64, UINT64, FP64."),
+            HCCL_WARNING("[Algo][ReduceAutoSelector] aicpu levelNum > 1 does not support INT64, UINT64, FP64."),
             SelectorStatus::NOT_MATCH);
 
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
@@ -315,7 +315,7 @@ SelectorStatus ReduceAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
         SelectorStatus::NOT_MATCH);
 
     if (op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
-        HCCL_WARNING("[Algo][ReduceAutoSelector] aiv mode not support INT64, UINT64, FP64.");
+        HCCL_WARNING("[Algo][ReduceAutoSelector] aiv mode does not support INT64, UINT64, FP64.");
         return SelectorStatus::NOT_MATCH;
     }
 

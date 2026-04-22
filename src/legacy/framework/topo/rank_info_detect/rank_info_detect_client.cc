@@ -431,8 +431,8 @@ HcclResult RankInfoDetectClient::VerifyTlsConsistency() const
         return HCCL_E_PARA;
     } else if (isTlsConsistent && !isSupportCheckTlsStatus) {
         // 3.通信域内的部分卡不支持查询TLS开关状态，目前能查询到的卡的TLS开关状态是一致的，打印warning提醒
-        HCCL_WARNING("[Verify][TlsConsistency] Some ranks do not support to check tlsStatus, " \
-            "not support rankId: [%s]", tlsUnknownRankStr.c_str());
+        HCCL_WARNING("[Verify][TlsConsistency] Some ranks do does not support to check tlsStatus, " \
+            "does not support rankId: [%s]", tlsUnknownRankStr.c_str());
     } else {
         // 4.通信域内的部分卡不支持查询TLS开关状态，但是目前能查询到的卡的TLS开关状态已经不一致，报错
         ReportTlsConfigurationError(

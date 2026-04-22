@@ -227,7 +227,7 @@ HcclResult hrtHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoT
     }
     HCCL_INFO("Entry-hrtHalGetDeviceInfo");
     drvError_t ret = DlHalFunction::GetInstance().dlHalGetDeviceInfo(devId, moduleType, infoType, value);
-    CHK_PRT_RET(ret == DRV_ERROR_NOT_SUPPORT, HCCL_WARNING("hrtHalGetDeviceInfo not support"
+    CHK_PRT_RET(ret == DRV_ERROR_NOT_SUPPORT, HCCL_WARNING("hrtHalGetDeviceInfo does not support"
         "return[%d].", HCCL_ERROR_CODE(DRV_ERROR_NOT_SUPPORT), ret), HCCL_E_NOT_SUPPORT);
     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] hrtHalGetDeviceInfo fail,"
         "return[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret), HCCL_E_DRV);
@@ -439,7 +439,7 @@ HcclResult hrtHalSensorNodeRegister(uint32_t devId, uint64_t *handle)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[halSensorNodeRegister]Does not support this interface.");
+    HCCL_ERROR("[halSensorNodeRegister]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -459,7 +459,7 @@ HcclResult hrtHalSensorNodeUnregister(uint32_t devId, uint64_t handle)
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[halSensorNodeUnregister]Does not support this interface.");
+    HCCL_ERROR("[halSensorNodeUnregister]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -501,7 +501,7 @@ HcclResult hrtHalSensorNodeUpdateState(uint32_t devId, uint64_t handle, int val,
 
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[halSensorNodeUpdateState]Does not support this interface.");
+    HCCL_ERROR("[halSensorNodeUpdateState]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -635,7 +635,7 @@ HcclResult hrtHalResourceIdRestore(u32 devId, u32 tsId, drvIdType_t resType, u32
 {
     // 兼容老的12包，找不到符号时不报错，返回HCCL_E_NOT_SUPPORT由上层处理是否报错
     CHK_PRT_RET(halResourceIdRestore == nullptr,
-        HCCL_WARNING("hrtHalResourceIdRestore not support, halResourceIdRestore is nullptr"), HCCL_E_NOT_SUPPORT);
+        HCCL_WARNING("hrtHalResourceIdRestore does not support, halResourceIdRestore is nullptr"), HCCL_E_NOT_SUPPORT);
     
     drvResIdKey resInfo;
     resInfo.ruDevId = devId;

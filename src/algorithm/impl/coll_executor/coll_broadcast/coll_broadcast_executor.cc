@@ -27,7 +27,7 @@ HcclResult CollBroadcastExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         !(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) &&
         !(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB)) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
-        HCCL_WARNING("[BroadCastOperator][Broadcast] do not support ring in AlgoLevel1 yet, reset algType_=HD.");
+        HCCL_WARNING("[BroadCastOperator][Broadcast] do does not support ring in AlgoLevel1 yet, reset algType_=HD.");
     }
 
     tag_ = param.tag;

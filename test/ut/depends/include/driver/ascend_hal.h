@@ -1759,7 +1759,7 @@ DLLEXPORT DV_OFF_ONLINE DVresult drvMemsetD8(DVdeviceptr dst, size_t destMax, UI
  * @attention
  * 1. The destination buffer must have enough space to store the contents of the source buffer to be copied.
  * 2. (offline) This interface cannot process data larger than 2G.
- * 3. Share memory address not support D2D copy, including ipc open and memory export, use may result in unexpected
+ * 3. Share memory address does not support D2D copy, including ipc open and memory export, use may result in unexpected
  * behavior.
  * @param [in] dst: unsigned 64-bit integer, memory address to be initialized
  * @param [in] dest_max: the maximum number of valid initial memory values that can be set
@@ -1791,7 +1791,7 @@ DLLEXPORT drvError_t halMemcpy(void *dst, size_t dst_size, void *src, size_t cou
  * @brief Copy the data in the source buffer to the destination buffer asynchronously
  * @attention
  * 1. The destination buffer must have enough space to store the contents of the source buffer to be copied.
- * 2. (offline) (virtual machine logical grouping) not support
+ * 2. (offline) (virtual machine logical grouping) does not support
  * 3. The max num of async copy tasks being processed simultaneously is 65535.
  * @attention Ascend950 is not supported
  * @param [in] dst:  unsigned 64-bit integer, memory address to be initialized
@@ -1810,7 +1810,7 @@ DLLEXPORT DV_OFF_ONLINE DVresult halMemCpyAsync(
  * @brief Copy the data in the source buffer to the destination buffer asynchronously wait finish
  * @attention
  * 1. The destination buffer must have enough space to store the contents of the source buffer to be copied.
- * 2. (offline) (virtual machine logical grouping) not support
+ * 2. (offline) (virtual machine logical grouping) does not support
  * 3. The copyFd will be free after wait finish, so the same copyFd can only be wait finish once.
  * @attention: Ascend950 is not supported
  * @param [in] copy_fd:  get from halMemCpyAsync, Asynchronously copy Fd
@@ -1951,7 +1951,7 @@ DLLEXPORT DV_ONLINE DVresult halMemcpyWait(struct DMA_ADDR *dma_addr);
  * 4. The memory management module is not responsible for the length check of ByteCount,
  * 5. users need to ensure that the length and devPtr is legal.
  * 6. devPtr must be aligned by page size.
- * 7. Share mem addr not support prefetch, including ipc open and mem export, use may result in unexpected behavior.
+ * 7. Share mem addr does not support prefetch, including ipc open and mem export, use may result in unexpected behavior.
  * @param [in] dev_ptr: memory to prefetch
  * @param [in] len: prefetch size
  * @param [in] device: destination device for prefetching data
@@ -2018,7 +2018,7 @@ DLLEXPORT DV_ONLINE DVresult halShmemSetPodPid(const char *name, uint32_t sdid, 
  * @brief Open the shared memory corresponding to name, vptr returns the virtual address that can access shared memory
  * @attention
  * 1、Available online, not offline.
- * 2、Ipc not support access double pgtable offset addr.
+ * 2、Ipc does not support access double pgtable offset addr.
  * @param [in] name: name used for sharing between processes
  * @param [out] vptr: virtual address with access to shared memory
  * @return DRV_ERROR_NONE : success
@@ -2393,7 +2393,7 @@ DLLEXPORT drvError_t halMemUnmap(void *ptr);
  * 3. halMemSetAccess: ptr and size must be same with halMemMap, halMemGetAccess: ptr and size is in range of set
  * 4. after halMemMap, if handle has owner(witch location pa is created or use witch device pa handle is imported)
  *    the owner location has readwrite prop automatic, not need to set again
- * 5. not support repeat set ptr to same location
+ * 5. does not support repeat set ptr to same location
  * @param [in] ptr: mapped address.
  * @param [in] size: mapped size.
  * @param [in] desc: va location and access type, when location is device, id is devid.
@@ -2616,7 +2616,7 @@ struct MemInfo {
  * @ingroup driver
  * @brief get device memory info
  * @attention For offline scenarios, return success.
- * If type == MEM_INFO_TYPE_ADDR_CHECK, to check whether the address is accessible, not support svm/host/host_agent
+ * If type == MEM_INFO_TYPE_ADDR_CHECK, to check whether the address is accessible, does not support svm/host/host_agent
  * memtype.
  * @param [in] device: device id
  * @param [in] type: command type
@@ -2628,7 +2628,7 @@ DLLEXPORT DVresult halMemGetInfoEx(DVdevice device, unsigned int type, struct Me
 /**
  * @ingroup driver
  * @brief This command is used to get memory information.
- * @attention If type == MEM_INFO_TYPE_ADDR_CHECK, to check whether the address is accessible, not support
+ * @attention If type == MEM_INFO_TYPE_ADDR_CHECK, to check whether the address is accessible, does not support
  * svm/host/host_agent memtype.
  * @param [in] device: rRequested input device id.
  * @param [in] type: requested input memory type.
@@ -3459,7 +3459,7 @@ DLLEXPORT int prof_channel_poll(struct prof_poll_info *out_buf, int num, int tim
 * @param [in/out] *data_len : Store the length of the profile to be read
 * @return PROF_OK flush ok
 * @return PROF_STOPPED_ALREADY means channel is stopped
-* @return DRV_ERROR_NOT_SUPPORT for not support
+* @return DRV_ERROR_NOT_SUPPORT for does not support
 */
 DLLEXPORT int halProfDataFlush(unsigned int device_id, unsigned int channel_id, unsigned int *data_len);
 
@@ -4704,8 +4704,8 @@ DLLEXPORT drvError_t halQueueModeNotify(PSM_STATUS status, void *rsv) ASCEND_HAL
 * @brief  export queue information
 * @attention
 * ensure to export after queue is created.
-* not support to export repeatedly.
-* not support to export after local queue enqueue or deque.
+* does not support to export repeatedly.
+* does not support to export after local queue enqueue or deque.
 * @param [in] devId: logic devid
 * @param [in] qid: queue id
 * @param [in] queInfo: share queue info
@@ -4718,8 +4718,8 @@ DLLEXPORT drvError_t halQueueExport(unsigned int devId, unsigned int qid, struct
 * @brief  unexport queue information
 * @attention
 * ensure to unexport after export.
-* not support to unexport repeatedly.
-* not support to export or operate queue after unexport.
+* does not support to unexport repeatedly.
+* does not support to export or operate queue after unexport.
 * @param [in] devId: logic devid
 * @param [in] qid: queue id
 * @param [in] queInfo: share queue info
@@ -4731,7 +4731,7 @@ DLLEXPORT drvError_t halQueueUnexport(unsigned int devId, unsigned int qid, stru
 * @ingroup driver
 * @brief  import queue information
 * @attention
-* not support to import repeatedly.
+* does not support to import repeatedly.
 * import and export sequences are asynchronous, if the peer end has not exported, DRV_ERROR_RESUME is returned,
 * the user needs to retry.
 * @param [in] devId: logic devid
@@ -4745,7 +4745,7 @@ DLLEXPORT drvError_t halQueueImport(unsigned int devId, struct shareQueInfo *que
 * @ingroup driver
 * @brief  unimport queue information
 * @attention
-* not support to unimport repeatedly.
+* does not support to unimport repeatedly.
 * ensure to unimport after import.
 * @param [in] devId: logic devid
 * @param [in] qid: queue id
@@ -4919,7 +4919,7 @@ DLLEXPORT drvError_t halGetFaultEvent(uint32_t devId, struct halEventFilter* fil
 * @param [in]  timeout Waiting time, unit:ms. Value Range: 0-30000, 0 means no waiting, -1 means never time out
 * @param [in]  filter  Filter conditions
 * @param [out] eventInfo  Event information
-* @return   0 for success, 73 for no event occurred, 0xfffe for not support, others for fail
+* @return   0 for success, 73 for no event occurred, 0xfffe for does not support, others for fail
 */
 DLLEXPORT drvError_t halReadFaultEvent(int32_t devId, int timeout,
     struct halEventFilter* filter, struct halFaultEventInfo* eventInfo);
@@ -4932,7 +4932,7 @@ DLLEXPORT drvError_t halReadFaultEvent(int32_t devId, int timeout,
 * @param [in]  device_id The logical device id
 * @param [in]  filter  Filter conditions
 * @param [out] handler  fault event callback func.
-* @return   0 for success, 0xfffe for not support, others for fail
+* @return   0 for success, 0xfffe for does not support, others for fail
 */
 DLLEXPORT drvError_t halSubscribeFaultEvent(int device_id, struct halEventFilter filter, halfaulteventcb handler);
 

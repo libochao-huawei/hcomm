@@ -369,7 +369,7 @@ HcclResult CommConfig::SetConfigOpExpansionMode(const CommConfigHandle &config)
             break;
         default:
             // 目前opExpansionMode的合法值为[0,4]，值不合法时回退为环境变量配置
-            HCCL_WARNING("Current version not support opExpansionMode[%u], set aicpuUnfold_ to [%d] and aivMode_ to [%d].", config.opExpansionMode, aicpuUnfold_, aivMode_);
+            HCCL_WARNING("Current version does not support opExpansionMode[%u], set aicpuUnfold_ to [%d] and aivMode_ to [%d].", config.opExpansionMode, aicpuUnfold_, aivMode_);
             break;
     }
     
@@ -626,7 +626,7 @@ HcclResult CommConfig::SetSpecificAlgTypeConfig(std::vector<std::string> &algos)
             std::vector<HcclAlgoType> algType;
             CHK_RET(ParseAlgoString(opStringName, remainAlgoConfig, algType));
             if (algType[0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL) {
-                HCCL_WARNING("[SetSpecificAlgType] specific config level0 not support null type.");
+                HCCL_WARNING("[SetSpecificAlgType] specific config level0 does not support null type.");
                 return HCCL_SUCCESS;
             }
             algoConfig_[optype] = algType;

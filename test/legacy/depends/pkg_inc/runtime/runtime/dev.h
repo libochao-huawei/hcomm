@@ -820,7 +820,7 @@ RTS_API rtError_t rtDebugGetStalledCore(rtDbgCoreInfo_t *const coreInfo);
 * @param [in] devId user device ID
 * @param [out] uuid rtUuid struct
 * @return ACL_RT_SUCCESS for get uuid successfully
-* @return ACL_ERROR_RT_FEATURE_NOT_SUPPORT for driver or device not support uuid feature
+* @return ACL_ERROR_RT_FEATURE_NOT_SUPPORT for driver or device does not support uuid feature
 */
 RTS_API rtError_t rtGetDeviceUuid(const int32_t devId, rtUuid_t *uuid);
 #define RT_DEVICE_FLAG_DEFAULT (0x0U)

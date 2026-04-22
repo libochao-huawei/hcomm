@@ -488,7 +488,7 @@ void Interpret(const InsLocalCopy &insLocalCopy, CommunicatorImpl &comm, const S
 inline void CheckLocalReduceIns(const InsLocalReduce &ins)
 {
     if (ins.GetDataType() == DataType::INT64) {
-        THROW<InvalidParamsException>(StringFormat("%s LocalReduce SDMAInlineReduce dose not support INT64, \
+        THROW<InvalidParamsException>(StringFormat("%s LocalReduce SDMAInlineReduce dose does not support INT64, \
             need use TBE reduce.", __func__));
     }
 }

@@ -47,7 +47,7 @@ HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngin
         type = HCCL_MEM_TYPE_DEVICE;
         CHK_RET(hrtMalloc(&ctxData, size));
     } else {
-        HCCL_ERROR("[%s] not support engine type[%d]", __func__, engine);
+        HCCL_ERROR("[%s] does not support engine type[%d]", __func__, engine);
         return HCCL_E_PARA;
     }
 

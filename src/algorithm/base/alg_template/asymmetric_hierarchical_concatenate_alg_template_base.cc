@@ -108,7 +108,7 @@ HcclResult AHCAlgTemplateBase::GetNslbAdjInfoPro(const u32 rank, const u32 rankS
     HCCL_DEBUG("[NSLB-AHC] try to GetNslbDstRanks, rank = %u, ranksize = %u", rank, rankSize);
     CHK_RET(commAHCBaseInfo_->GetNslbDstRanks(rank, dstRanks));
     if (dstRanks.size() == 0 || dstRanks.size() > NSLBDP_MAX_PHASE) {
-        HCCL_DEBUG("[NSLB-AHC]  dstRanks size not support");
+        HCCL_DEBUG("[NSLB-AHC]  dstRanks size does not support");
         return HCCL_SUCCESS;
     }
     for (u32 nextRank : dstRanks) {

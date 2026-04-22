@@ -64,7 +64,7 @@ extern "C" {
 #define  ACL_ERROR_RT_STREAM_CAPTURED            107027 // stream is captured
 #define  ACL_ERROR_RT_EVENT_CAPTURED             107028 // event is captured
 #define  ACL_ERROR_RT_STREAM_NOT_CAPTURED        107029 // stream is not in capture status
-#define  ACL_ERROR_RT_CAPTURE_MODE_NOT_SUPPORT   107030 // stream is captured, not support current oper
+#define  ACL_ERROR_RT_CAPTURE_MODE_NOT_SUPPORT   107030 // stream is captured, does not support current oper
 #define  ACL_ERROR_RT_STREAM_CAPTURE_IMPLICIT    107031 // a disallowed implicit dependency from default stream
 #define  ACL_ERROR_STREAM_CAPTURE_CONFLICT       107032 // interdependent stream cannot begin capture together
 #define  ACL_ERROR_STREAM_TASK_GROUP_STATUS      107033 // task group status error
@@ -72,7 +72,7 @@ extern "C" {
 #define  ACL_ERROR_RT_TASK_ABORT_STOP            107035 // device task aborting stop before post process
 #define  ACL_ERROR_RT_STREAM_CAPTURE_UNMATCHED   107036 // the capture was not initiated in this stream
 
-#define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT        207000 // feature not support
+#define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT        207000 // feature does not support
 #define  ACL_ERROR_RT_MEMORY_ALLOCATION          207001 // memory allocation error, only used by out of memory
 #define  ACL_ERROR_RT_MEMORY_FREE                207002 // memory free error
 #define  ACL_ERROR_RT_AICORE_OVER_FLOW           207003 // aicore over flow
@@ -91,7 +91,7 @@ extern "C" {
 #define  ACL_ERROR_RT_AIVEC_OVER_FLOW            207016 // aivec over flow
 #define  ACL_ERROR_RT_OVER_FLOW                  207017 // common over flow
 #define  ACL_ERROR_RT_DEVICE_OOM                 207018 // device oom
-#define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP 207019 // not support to update this op 
+#define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP 207019 // does not support to update this op 
 
 #define  ACL_ERROR_RT_INTERNAL_ERROR             507000 // runtime internal error
 #define  ACL_ERROR_RT_TS_ERROR                   507001 // ts internal error
@@ -102,7 +102,7 @@ extern "C" {
 #define  ACL_ERROR_RT_EVENT_NOT_COMPLETE         507006 // event not complete
 #define  ACL_ERROR_RT_CONTEXT_RELEASE_ERROR      507007 // context release error
 #define  ACL_ERROR_RT_SOC_VERSION                507008 // soc version error
-#define  ACL_ERROR_RT_TASK_TYPE_NOT_SUPPORT      507009 // task type not support
+#define  ACL_ERROR_RT_TASK_TYPE_NOT_SUPPORT      507009 // task type does not support
 #define  ACL_ERROR_RT_LOST_HEARTBEAT             507010 // ts lost heartbeat
 #define  ACL_ERROR_RT_MODEL_EXECUTE              507011 // model execute failed
 #define  ACL_ERROR_RT_REPORT_TIMEOUT             507012 // report timeout

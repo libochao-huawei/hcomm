@@ -700,7 +700,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevDeinit(void *rdmaHandle, unsigned int notifyType);
  * @ingroup libinit
  * @brief Rdma_agent get support lite
  * @param rdma_handle [IN] rdma handle
- * @param support_lite [OUT] rdma lite support(0: not support lite, 1: 4KB page align lite, 2: 2MB page align lite)
+ * @param support_lite [OUT] rdma lite support(0: does not support lite, 1: 4KB page align lite, 2: 2MB page align lite)
  * @see ra_rdev_deinit
  * @retval #zero Success
  * @retval #non-zero Failure

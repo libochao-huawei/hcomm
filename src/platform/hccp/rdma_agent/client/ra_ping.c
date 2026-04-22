@@ -49,7 +49,7 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
     CHK_PRT_RETURN(initAttr == NULL || initInfo == NULL,
         hccp_err("[init][ra_ping]initAttr or init_info is NULL"), -EINVAL);
     CHK_PRT_RETURN(initAttr->mode != NETWORK_OFFLINE,
-        hccp_err("[init][ra_ping]mode:%d do not support", initAttr->mode), -EINVAL);
+        hccp_err("[init][ra_ping]mode:%d do does not support", initAttr->mode), -EINVAL);
 
     if (initAttr->protocol == PROTOCOL_RDMA) {
         CHK_PRT_RETURN(initAttr->commInfo.rdma.udpSport > MAX_PORT_NUM,
@@ -68,7 +68,7 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
         hccp_run_info("Input parameters: phyId[%u], nicPosition[%d], eidIndex[%u] bufferSize[0x%x]",
             initAttr->ub.phyId, initAttr->mode, initAttr->dev.ub.eidIndex, initAttr->bufferSize);
     } else {
-        hccp_err("[init][ra_ping]protocol:%d do not support", initAttr->protocol);
+        hccp_err("[init][ra_ping]protocol:%d do does not support", initAttr->protocol);
         return -ENOTSUPP;
     }
     pingHandle->protocol = initAttr->protocol;
@@ -372,7 +372,7 @@ STATIC int RaPingDeinitParaCheck(struct RaPingHandle *pingHandle)
             devInfo.ub.eidIndex, devInfo.ub.eid.in6.subnetPrefix, devInfo.ub.eid.in6.interfaceId,
             pingHandle->targetCnt, pingHandle->taskCnt);
     } else {
-        hccp_err("[deinit][ra_ping]protocol:%d do not support", pingHandle->protocol);
+        hccp_err("[deinit][ra_ping]protocol:%d do does not support", pingHandle->protocol);
         return -ENOTSUPP;
     }
 

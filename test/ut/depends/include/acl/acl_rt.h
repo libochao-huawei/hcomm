@@ -251,7 +251,7 @@ typedef struct tagRtGroupInfo aclrtGroupInfo;
 typedef struct rtExceptionInfo aclrtExceptionInfo;
 
 typedef enum aclrtMemLocationType {
-    ACL_MEM_LOCATION_TYPE_HOST = 0, /**< reserved enum, current version not support */
+    ACL_MEM_LOCATION_TYPE_HOST = 0, /**< reserved enum, current version does not support */
     ACL_MEM_LOCATION_TYPE_DEVICE,
     ACL_MEM_LOCATION_TYPE_UNREGISTERED,
 } aclrtMemLocationType;

@@ -1450,7 +1450,7 @@ HcclResult ParseCannVersion()
     }
     return HcclResult::HCCL_SUCCESS;
 #else
-	HCCL_WARNING("[ParseCannVersion]Does not support this interface.");
+	HCCL_WARNING("[ParseCannVersion]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -1660,14 +1660,14 @@ HcclResult ParseOpExpansion()
     }
     if (opExpansionModeEnv == "AI_CPU") {
         if (deviceType == DevType::DEV_TYPE_910) {
-            HCCL_WARNING("910 do not support AICPU unfold.");
+            HCCL_WARNING("910 do does not support AICPU unfold.");
         } else {
             g_externalInput.aicpuUnfold = true;
             g_externalInput.aicpuCacheEnable = 1; // aicpu cache默认使能
         }
     } else if (opExpansionModeEnv == "AICPU_CacheDisable") {
         if (deviceType == DevType::DEV_TYPE_910) {
-            HCCL_WARNING("910 do not support AICPU unfold.");
+            HCCL_WARNING("910 do does not support AICPU unfold.");
         } else {
             g_externalInput.aicpuUnfold = true;
             g_externalInput.aicpuCacheEnable = 0; // Disable aicpu cache
@@ -1682,7 +1682,7 @@ HcclResult ParseOpExpansion()
         if (deviceType == DevType::DEV_TYPE_910B) {
             g_externalInput.enableFfts = false;
         } else {
-            HCCL_WARNING("deviceType[%u] do not support HOST_TS", deviceType);
+            HCCL_WARNING("deviceType[%u] do does not support HOST_TS", deviceType);
         }
     } else {
         HCCL_ERROR("HCCL_OP_EXPANSION_MODE is set to [%s], which is incorrect. Please check",

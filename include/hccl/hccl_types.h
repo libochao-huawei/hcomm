@@ -26,7 +26,7 @@ typedef enum {
     HCCL_E_PTR = 2,                 /**< empty pointer */
     HCCL_E_MEMORY = 3,              /**< memory error */
     HCCL_E_INTERNAL = 4,            /**< internal error */
-    HCCL_E_NOT_SUPPORT = 5,         /**< not support feature */
+    HCCL_E_NOT_SUPPORT = 5,         /**< does not support feature */
     HCCL_E_NOT_FOUND = 6,           /**< not found specific resource */
     HCCL_E_UNAVAIL = 7,             /**< resource unavailable */
     HCCL_E_SYSCALL = 8,             /**< call system interface error */

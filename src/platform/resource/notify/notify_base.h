@@ -81,7 +81,7 @@ public:
 
     NotifyBase(NotifyType notifyType, HcclSignalInfo notifyInfo) : notifyType(notifyType)
     {
-        HCCL_ERROR("[NotifyConstructor]Does not support this interface.");
+        HCCL_ERROR("[NotifyConstructor]Does does not support this interface.");
     }
 
     virtual ~NotifyBase()
@@ -131,25 +131,25 @@ public:
     virtual HcclResult Grant(s64 recvId) = 0;
     virtual void Break()
     {
-        HCCL_ERROR("[Break]Does not support this interface.");
+        HCCL_ERROR("[Break]Does does not support this interface.");
         return;
     }
 
     virtual HcclResult GetNotifyData(HcclSignalInfo &notifyInfo)
     {
-        HCCL_ERROR("[GetNotifyData]Does not support this interface.");
+        HCCL_ERROR("[GetNotifyData]Does does not support this interface.");
         return HCCL_E_NOT_SUPPORT;
     }
 
     virtual HcclResult SetNotifyData(const HcclSignalInfo &notifyInfo)
     {
-        HCCL_ERROR("[SetNotifyData]Does not support this interface.");
+        HCCL_ERROR("[SetNotifyData]Does does not support this interface.");
         return HCCL_E_NOT_SUPPORT;
     }
 
     virtual HcclResult GetNotifyOffset(u64 &offset)
     {
-        HCCL_ERROR("[GetNotifyOffset]Does not support this interface.");
+        HCCL_ERROR("[GetNotifyOffset]Does does not support this interface.");
         return HCCL_E_NOT_SUPPORT;
     }
 

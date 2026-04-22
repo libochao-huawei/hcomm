@@ -1085,7 +1085,7 @@ int hal_kernel_get_device_addr_mode(u32 dev_id, HAL_KERNEL_ADDR_MODE *addr_mode)
 * @param [in] dev_id2: device id 2 for get topology
 * @param [out] topology_type: topology_type
 * @return 0: success, else: fail
-* @note 1. dev_id1 and dev_id2 not support to input virtual device id
+* @note 1. dev_id1 and dev_id2 does not support to input virtual device id
 * @note 2. if dev_id1 and dev_id2 are valid and the same, return TOPOLOGY_TYPE_HCCS_SW for Ascend910A3,
 *          others return TOPOLOGY_TYPE_HCCS.
 */

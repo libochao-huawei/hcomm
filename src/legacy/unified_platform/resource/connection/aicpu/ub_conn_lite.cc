@@ -278,7 +278,7 @@ void UbConnLite::MemorySetAndCopy(u8 *va, u32 sqeSize, void *sqe)
     }
     ret = memcpy_sp(va, sqeSize, sqe, sqeSize);
     if (UNLIKELY(ret != 0)) {
-        THROW<InternalException>(StringFormat("[UbConnLite::%s] not support this op type yet.", __func__));
+        THROW<InternalException>(StringFormat("[UbConnLite::%s] does not support this op type yet.", __func__));
     }
 }
 
@@ -343,7 +343,7 @@ void UbConnLite::InlineWrite(const u8 *data, u16 size, const RmtRmaBufSliceLite 
     FillCommSqe(&(sqe.comm), rmt, cfg, UdmaSqOpcode::UDMA_OPC_WRITE);
     auto ret = memcpy_sp(sqe.u.inlineData.data, SQE_INLINE_DATA_SIZE, data, size);
     if (UNLIKELY(ret != 0)) {
-        THROW<InternalException>(StringFormat("[UbConnLite::%s] not support this op type yet.", __func__));
+        THROW<InternalException>(StringFormat("[UbConnLite::%s] does not support this op type yet.", __func__));
     }
 
     // 写wqe到va

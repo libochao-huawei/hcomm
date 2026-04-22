@@ -659,7 +659,7 @@ HcclResult Transport::HcclBatchRead(const TransportDeviceNormalData &ibvData, st
     return TransportDeviceIbverbs::HnsPostSend(ibvData, localMems, remoteMems, memNum, HcclWrOpCode::HCCL_WR_RDMA_READ,
         dbInfo);
 #else
-    HCCL_ERROR("[Transport][HcclBatchRead]Does not support this interface.");
+    HCCL_ERROR("[Transport][HcclBatchRead]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
@@ -676,7 +676,7 @@ HcclResult Transport::HcclBatchWrite(const TransportDeviceNormalData &ibvData,
     return TransportDeviceIbverbs::HnsPostSend(ibvData, localMems, remoteMems, memNum,
         HcclWrOpCode::HCCL_WR_RDMA_WRITE, dbInfo);
 #else
-    HCCL_ERROR("[Transport][HcclBatchWrite]Does not support this interface.");
+    HCCL_ERROR("[Transport][HcclBatchWrite]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }

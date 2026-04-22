@@ -89,7 +89,7 @@ typedef enum tag_ts_error {
     TS_ERROR_VM_IS_IDLE = 0x49,                      /**< vm is idle(virtual vm) */
     TS_ERROR_VM_RESOURCE_CONFLICT = 0x50,            /**< vm resource conflict(virtual vm) */
     TS_ERROR_OPER_TYPE_INVALID = 0x51,               /**< operation type invalid(must be 1 or 0) */
-    TS_ERROR_RESOURCE_TYPE_NOT_SUPPORT = 0x52,       /**< resource_type not support */
+    TS_ERROR_RESOURCE_TYPE_NOT_SUPPORT = 0x52,       /**< resource_type does not support */
     TS_ERROR_VIR_ID_INVALID = 0x53,                  /**< vir id invalid */
     TS_ERROR_PHY_ID_INVALID = 0x54,                  /**< phy id invalid */
     TS_ERROR_SQ_CTRL_FLAG_INVALID = 0x55,            /**< sq ctrl flag invalid */
@@ -138,7 +138,7 @@ typedef enum tag_ts_error {
     TS_STREAM_SQ_FULL = 0x94,                        /**< stream sq full */
     TS_ERROR_END_OF_SEQUENCE = 0x95,                 /**< end of sequence */
     TS_ERROR_SWITCH_STREAM_LABEL = 0x96,             /**< switch stream label failed */
-    TS_ERROR_TASK_TYPE_NOT_SUPPORT = 0x97,           /**< task type not support */
+    TS_ERROR_TASK_TYPE_NOT_SUPPORT = 0x97,           /**< task type does not support */
     TS_ERROR_TRANS_SQE_FAIL = 0x98,                  /**< trans sqe fail */
     TS_MODEL_ABORT_NORMAL = 0x99,                    /**< model exit */
     TS_ERROR_RINGBUFFER_NOT_FIND = 0x100,            /**< not find the ringbuffer */
@@ -211,16 +211,16 @@ typedef enum tag_ts_error {
     TS_APP_EXIT_NO_SEND_CQ = 0x907,                  /**< app exit no send cq report */
     TS_STREAM_RECYCLED = 0x908,                      /**< stream is recycled */
     TS_ERROR_TS_CLOSED = 0x909,                      /**< sentinel mode, ts is closed */
-    TS_ERROR_FEATURE_NOT_SUPPORT = 0x90A,            /**< feature not support on this chip */
+    TS_ERROR_FEATURE_NOT_SUPPORT = 0x90A,            /**< feature does not support on this chip */
     // thf following error codes are ts paas to log daemon, no need to runtime
     TS_LOG_DEAMON_RESET_ACC_SWITCH_INVALID = 0x90B,  /* log daemon reset acc switch param invalid */
     TS_LOG_DEAMON_CORE_SWITCH_INVALID = 0x90C,       /* core switch invalid */
     TS_LOG_DEAMON_CORE_ID_INVALID = 0x90D,           /* core id invalid */
     TS_LOG_DEAMON_NO_VALID_CORE_ID = 0x90E,          /* no  valid core id */
     TS_LOG_DEAMON_CORE_ID_PG_DOWN = 0x90F,           /* core mask on pgmap */
-    TS_LOG_DEAMON_NOT_SUPPORT_CORE_MASK = 0x910,     /* 1910b not support core mask */
+    TS_LOG_DEAMON_NOT_SUPPORT_CORE_MASK = 0x910,     /* 1910b does not support core mask */
     TS_LOG_DEAMON_SINGLE_COMMIT_INVALID = 0x911,     /* single commit invalid */
-    TS_LOG_DEAMON_NOT_SUPPORT_AIV_CORE_MASK = 0x912, /* 1980 not support aiv core mask */
+    TS_LOG_DEAMON_NOT_SUPPORT_AIV_CORE_MASK = 0x912, /* 1980 does not support aiv core mask */
     TS_LOG_DEAMON_NOT_IN_POOL = 0x913,               /* 51 core maybe not in pool */
     TS_LOG_DEAMON_CORE_POOLING_STATUS_FAIL = 0x914,  /* 51 disable/enable core need pooling status */
     TS_ERROR_RESERVED,                               /**< unknown error */

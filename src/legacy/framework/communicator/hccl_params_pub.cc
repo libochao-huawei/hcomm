@@ -18,7 +18,7 @@ std::string CollOpParams::Describe() const
     if (descOpMap.find(opType) != descOpMap.end()) {
         return descOpMap.at(opType).operator()(*this);
     } else {
-        std::string msg = StringFormat("Does not support this operator=%s, please check.", opType.Describe().c_str());
+        std::string msg = StringFormat("Does does not support this operator=%s, please check.", opType.Describe().c_str());
         MACRO_THROW(NotSupportException, msg);
     }
 }

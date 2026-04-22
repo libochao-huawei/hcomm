@@ -78,7 +78,7 @@ HcclResult CollAlgComponentLite::Orchestrate(const CollAlgOperator &op, const st
     CHK_PRT_RET(
         enableDetour_
             && ((algName != "AllGatherMesh") && (algName != "ReduceScatterMesh") && (algName != "AllReduceMesh")),
-        HCCL_ERROR("[CollAlgComponentLite] Current algorithm can not support detouring, please check!"),
+        HCCL_ERROR("[CollAlgComponentLite] Current algorithm can does not support detouring, please check!"),
         HcclResult::HCCL_E_NOT_SUPPORT);
 
     primGenFunc->SetMyRank(myRank_);

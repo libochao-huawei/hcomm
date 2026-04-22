@@ -66,7 +66,7 @@ HcclResult AivAlgTemplateBase::CalcResDetour(const RankGraph *rankGraph, AlgTemp
 {
     (void)rankGraph;
     (void)tempResReq;
-    HCCL_ERROR("[AivAlgTemplateBase] Current alg do not support detour mode!");
+    HCCL_ERROR("[AivAlgTemplateBase] Current alg do does not support detour mode!");
     return HcclResult::HCCL_E_INTERNAL;
 }
 
@@ -74,7 +74,7 @@ HcclResult AivAlgTemplateBase::CalcResDetour(ConnectedLinkMgr *linkMgr, AlgTempR
 {
     (void)linkMgr;
     (void)tempResReq;
-    HCCL_ERROR("[AivAlgTemplateBase] Current alg do not support detour mode!");
+    HCCL_ERROR("[AivAlgTemplateBase] Current alg do does not support detour mode!");
     return HcclResult::HCCL_E_INTERNAL;
 }
 

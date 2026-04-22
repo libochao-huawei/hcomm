@@ -345,7 +345,7 @@ int RaRdmaLiteRestoreSnapshot(struct rdma_lite_context *liteCtx)
 {
     if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteRestoreSnapshot == NULL) {
 #ifndef HNS_ROCE_LLT
-        hccp_err("driver package may not support ra_rdma_lite_restore_snapshot interface, please change new one");
+        hccp_err("driver package may does not support ra_rdma_lite_restore_snapshot interface, please change new one");
         return -ENOTSUPP;
 #endif
     }

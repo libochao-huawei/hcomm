@@ -93,7 +93,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
     // 校验入参
     CHK_PRT_RET(initAttr == nullptr, HCCL_ERROR("[HccnRpingInit]initAttr is null."), HCCN_E_PARA);
     CHK_PRT_RET(initAttr->mode >= HCCN_RPING_MODE_RESERVED,
-        HCCL_ERROR("[HccnRpingInit]LinkMode[%d] not support.", initAttr->mode), HCCN_E_PARA);
+        HCCL_ERROR("[HccnRpingInit]LinkMode[%d] does not support.", initAttr->mode), HCCN_E_PARA);
     CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingInit]rpingCtx is null."), HCCN_E_PARA);
     // 初始化ra接口
     CHK_PRT_RET(DlRaFunction::GetInstance().DlRaFunctionInit() != HCCL_SUCCESS,

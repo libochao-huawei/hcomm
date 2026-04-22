@@ -255,7 +255,7 @@ HcclResult CollAlgComponent::Orchestrate(const CollAlgOperator &op, const CollAl
     CHK_PRT_RET(enableDetour_
                     && ((algName != "AllGatherMesh") && (algName != "ReduceScatterMesh")
                         && (algName != "AllReduceMesh")),
-                HCCL_ERROR("[CollAlgComponent] Current algorithm can not support detouring, please check!"),
+                HCCL_ERROR("[CollAlgComponent] Current algorithm can does not support detouring, please check!"),
                 HcclResult::HCCL_E_NOT_SUPPORT);
 
     if (rankSize_ == 1) {

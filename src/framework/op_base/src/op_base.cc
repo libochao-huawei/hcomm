@@ -4377,7 +4377,7 @@ const char *HcclGetErrorString(HcclResult code)
     static const std::map<HcclResult, std::string> errorMap = {{HCCL_SUCCESS, "no error"},
         {HCCL_E_PARA, "parameter error"}, {HCCL_E_PTR, "empty pointer"},
         {HCCL_E_MEMORY, "memory error"}, {HCCL_E_INTERNAL, "internal error"},
-        {HCCL_E_NOT_SUPPORT, "not support feature"}, {HCCL_E_NOT_FOUND, "not found specific resource"},
+        {HCCL_E_NOT_SUPPORT, "does not support feature"}, {HCCL_E_NOT_FOUND, "not found specific resource"},
         {HCCL_E_UNAVAIL, "resource unavailable"}, {HCCL_E_SYSCALL, "call system interface error"},
         {HCCL_E_TIMEOUT, "timeout"}, {HCCL_E_OPEN_FILE_FAILURE, "open file fail"},
         {HCCL_E_TCP_CONNECT, "tcp connect fail"}, {HCCL_E_ROCE_CONNECT, "roce connect fail"},

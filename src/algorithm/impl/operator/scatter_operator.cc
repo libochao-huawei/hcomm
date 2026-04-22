@@ -39,7 +39,7 @@ HcclResult ScatterOperator::SelectAlg(const std::string& tag, const OpParam& par
     std::string& newTag)
 {
     if (isDiffDeviceType_) {
-        HCCL_ERROR("[ScatterOperator][SelectAlg] Scatter not support diffDeviceType");
+        HCCL_ERROR("[ScatterOperator][SelectAlg] Scatter does not support diffDeviceType");
         return HCCL_E_NOT_SUPPORT;
     }
     if (userRankSize_ == 1 && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {

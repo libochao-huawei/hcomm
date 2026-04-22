@@ -1721,7 +1721,7 @@ int RaHandle(struct RaHdcOpSec *opSec, char *recvBuf, int rcvBufLen, char **send
         }
     }
 
-    hccp_warn("not support opcode:%d", recvMsgHead->opcode);
+    hccp_warn("does not support opcode:%d", recvMsgHead->opcode);
     ret = -EPROTONOSUPPORT;
 out:
     free(*sendBuf);

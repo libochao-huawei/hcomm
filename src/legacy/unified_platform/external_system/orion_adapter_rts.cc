@@ -1185,7 +1185,7 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
     HCCL_INFO("[HrtThreadExchangeCaptureMode] mode[%p].", mode);
     aclError ret = aclmdlRICaptureThreadExchangeMode(mode);
     if (ret == ACL_ERROR_RT_FEATURE_NOT_SUPPORT) {
-        HCCL_WARNING("[HrtThreadExchangeCaptureMode] rtThreadExchangeCaptureMode not support!, ret=%d, mode=%p.",
+        HCCL_WARNING("[HrtThreadExchangeCaptureMode] rtThreadExchangeCaptureMode does not support!, ret=%d, mode=%p.",
                         ret, mode);
         return HCCL_E_NOT_SUPPORT;
     } else {
@@ -1198,7 +1198,7 @@ HcclResult HrtThreadExchangeCaptureMode(aclmdlRICaptureMode *mode)
 HcclResult HrtMemPrefetchToDevice(void *devPtr, uint64_t len)
 {
     CHK_PRT_RET(aclrtMemP2PMap == nullptr, HCCL_ERROR("aclrtMemP2PMap is nullptr, "
-            "Does not support this interface."), HCCL_E_RUNTIME);
+            "Does does not support this interface."), HCCL_E_RUNTIME);
 	aclError ret = aclrtMemP2PMap(devPtr, static_cast<size_t>(len), HrtGetDevice(), 0);
     HCCL_INFO("[HrtMemPrefetchToDevice] devPtr[%p], len[%llu], ret[%d].", devPtr, len, ret);
     if (ret != ACL_SUCCESS) {

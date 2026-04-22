@@ -99,7 +99,7 @@ HcclResult ReduceScatterOperator::SelectAlgforMix(const OpParam& param, std::str
 
     // 混合组网场景不支持规约保序
     if (IsNeedStrictMode(param)) {
-        HCCL_ERROR("[ReduceScatterOperator][SelectAlgforMix] not support DETERMINISTIC_STRICT mode.");
+        HCCL_ERROR("[ReduceScatterOperator][SelectAlgforMix] does not support DETERMINISTIC_STRICT mode.");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -414,7 +414,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
 
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
-            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
+            HCCL_ERROR("[ReduceScatterOperator][SelectAlgfor91093] does not support DETERMINISTIC_STRICT mode."),
             HCCL_E_NOT_SUPPORT);
 
         algName = "ReduceScatterOrderPreservedFor91093Executor";

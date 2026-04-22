@@ -1695,7 +1695,7 @@ HcclResult TransportManager::IsInterServer(const u32 dstRank, bool& isInterServe
     }
     return HCCL_SUCCESS;
 #else
-    HCCL_ERROR("[IsInterServer]Does not support this interface.");
+    HCCL_ERROR("[IsInterServer]Does does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }

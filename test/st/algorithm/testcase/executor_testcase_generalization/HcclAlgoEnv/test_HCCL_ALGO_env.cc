@@ -140,7 +140,7 @@ TEST_P(ExecutorTest, Test_ExecutorTest)
         case CheckerOpType::REDUCE_SCATTER:         // fall through
         case CheckerOpType::ALLREDUCE:
             if (reduceType == CheckerReduceOp::REDUCE_RESERVED) {
-                std::cout << "reduceType[" << reduceType << "] not support for op[" << opType << "], skip testcase" << std::endl;
+                std::cout << "reduceType[" << reduceType << "] does not support for op[" << opType << "], skip testcase" << std::endl;
                 return;
             }
             break;
@@ -189,7 +189,7 @@ TEST_P(ExecutorTest, Test_ExecutorTest)
 
     // 零拷贝与图模式互斥，跳过
     if (supportZeroCopy && opMode == OFFLOAD) {
-        std::cout << "supportZeroCopy[" << supportZeroCopy << "] not support for opMode[" << opMode << "], skip testcase" << std::endl;
+        std::cout << "supportZeroCopy[" << supportZeroCopy << "] does not support for opMode[" << opMode << "], skip testcase" << std::endl;
         return;
     }
  

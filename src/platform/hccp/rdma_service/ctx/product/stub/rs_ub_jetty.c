@@ -18,25 +18,25 @@
 
 void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg)
 {
-    hccp_err("product type do not support");
+    hccp_err("product type do does not support");
     jettyCb->jetty = NULL;
     return;
 }
 
 void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb)
 {
-    hccp_err("product type do not support");
+    hccp_err("product type do does not support");
     return;
 }
 
 void RsUbVaMunmapBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
-    hccp_err("product type do not support");
+    hccp_err("product type do does not support");
     return;
 }
 
 void RsUbFreeJettyIdBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num)
 {
-    hccp_err("product type do not support");
+    hccp_err("product type do does not support");
     return;
 }

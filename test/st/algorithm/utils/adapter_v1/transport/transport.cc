@@ -42,7 +42,7 @@ HcclResult GenLinkInfo(TransportType transportType, LinkInfo &linkInfo)
     } else if (transportType == TransportType::TRANS_TYPE_IBV_EXP) {
         linkInfo.linkProto = LinkProtoStub::RDMA;
     } else {
-        HCCL_ERROR("[GenLinkInfo] this transportType not support");
+        HCCL_ERROR("[GenLinkInfo] this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;
@@ -151,7 +151,7 @@ HcclResult Transport::TxAsync(UserMemType dstMemType, u64 dstOffset, const void 
         std::shared_ptr<TaskStub> taskpost(new TaskStubPost(remoteRank, link, 0, NotifyTypeStub::FIN, "TXASYNC"));
         TaskQueueStub::AppendTask(curRank, &stream, taskpost);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -197,7 +197,7 @@ HcclResult Transport::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &stream)
         std::shared_ptr<TaskStub> taskpost(new TaskStubPost(remoteRank, link, 0, NotifyTypeStub::FIN, "TXASYNC"));
         TaskQueueStub::AppendTask(curRank, &stream, taskpost);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
     return HcclResult::HCCL_SUCCESS;
@@ -228,7 +228,7 @@ HcclResult Transport::TxData(UserMemType dstMemType, u64 dstOffset, const void *
     } else if (this->transportType_ == TransportType::TRANS_TYPE_P2P) {
         return HCCL_SUCCESS;
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -260,7 +260,7 @@ HcclResult Transport::RxData(UserMemType srcMemType, u64 srcOffset, void *dst, u
     } else if (this->transportType_ == TransportType::TRANS_TYPE_IBV_EXP) {
         return HCCL_SUCCESS;
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -280,7 +280,7 @@ HcclResult Transport::TxPrepare(Stream &stream)
         std::shared_ptr<TaskStub> taskwait(new TaskStubWait(remoteRank, link, 0, NotifyTypeStub::READY, "TXPREPARE"));
         TaskQueueStub::AppendTask(curRank, &stream, taskwait);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
     return HcclResult::HCCL_SUCCESS;
@@ -299,7 +299,7 @@ HcclResult Transport::RxPrepare(Stream &stream)
         std::shared_ptr<TaskStub> taskpost(new TaskStubPost(remoteRank, link, 0, NotifyTypeStub::READY, "RXPREPARE"));
         TaskQueueStub::AppendTask(curRank, &stream, taskpost);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
     return HcclResult::HCCL_SUCCESS;
@@ -321,7 +321,7 @@ HcclResult Transport::TxDone(Stream &stream)
         std::shared_ptr<TaskStub> taskwait(new TaskStubWait(remoteRank, link, 0, NotifyTypeStub::FIN_ACK, "TXDONE"));
         TaskQueueStub::AppendTask(curRank, &stream, taskwait);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
     return HcclResult::HCCL_SUCCESS;
@@ -344,7 +344,7 @@ HcclResult Transport::RxDone(Stream &stream)
         std::shared_ptr<TaskStub> taskpost(new TaskStubPost(remoteRank, link, 0, NotifyTypeStub::FIN_ACK, "RXDONE"));
         TaskQueueStub::AppendTask(curRank, &stream, taskpost);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
     return HcclResult::HCCL_SUCCESS;
@@ -481,7 +481,7 @@ HcclResult Transport::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, 
         std::shared_ptr<TaskStub> taskwait(new TaskStubWait(remoteRank, link, 0, NotifyTypeStub::FIN, "RXASYNC"));
         TaskQueueStub::AppendTask(curRank, &stream, taskwait);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -527,7 +527,7 @@ HcclResult Transport::RxAsync(std::vector<RxMemoryInfo>& rxMems, Stream &stream)
         std::shared_ptr<TaskStub> taskwait(new TaskStubWait(remoteRank, link, 0, NotifyTypeStub::FIN, "RXASYNC"));
         TaskQueueStub::AppendTask(curRank, &stream, taskwait);
     } else {
-        HCCL_ERROR("this transportType not support");
+        HCCL_ERROR("this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -806,7 +806,7 @@ HcclResult Transport::DataReceivedAck(Stream &stream)
         std::shared_ptr<TaskStub> taskwait(new TaskStubWait(remoteRank, link, 0, NotifyTypeStub::FIN_ACK, "DATARECEIVEDACK"));
         TaskQueueStub::AppendTask(curRank, &stream, taskwait);
     } else {
-        HCCL_ERROR("[GenLinkInfo] this transportType not support");
+        HCCL_ERROR("[GenLinkInfo] this transportType does not support");
         return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;

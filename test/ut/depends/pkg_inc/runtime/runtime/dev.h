@@ -170,7 +170,7 @@ typedef enum {
     RT_PROCESS_DEV_ONLY,   /* TDT */
     RT_PROCESS_QS,         /* queue_scheduler */
     RT_PROCESS_HCCP,       /* hccp server */
-    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not support quert from host pid */
+    RT_PROCESS_USER,       /* user proc, can bind many on host or device. does not support quert from host pid */
     RT_PROCESS_CPTYPE_MAX
 } rtDevResProcType_t;
 

@@ -664,11 +664,11 @@ typedef struct {
 } rtMemGrpShareAttr_t;
 
 typedef enum tagGroupQueryCmdType {
-    RT_MEM_GRP_QUERY_GROUP,                  /* not support */
+    RT_MEM_GRP_QUERY_GROUP,                  /* does not support */
     RT_MEM_GRP_QUERY_GROUPS_OF_PROCESS,      /* query process all grp */
     RT_MEM_GRP_QUERY_GROUP_ID,               /* query grp ID by grp name */
     RT_MEM_GRP_QUERY_GROUP_ADDR_INFO,        /* query group addr info */
-    RT_MEM_GRP_QUERY_CMD_MAX                 /* not support */
+    RT_MEM_GRP_QUERY_CMD_MAX                 /* does not support */
 } rtGroupQueryCmdType;
 
 typedef struct {

@@ -551,7 +551,7 @@ DLLEXPORT int halProfSampleRegister(unsigned int dev_id, unsigned int chan_id, s
  * @ingroup driver
  * @brief query the rest of the prof channel
  * @attention The registration process calls to query the remaining writable length of the buffer.
- *  Only the process that registers this channel in user space is supported; others will return not support.
+ *  Only the process that registers this channel in user space is supported; others will return does not support.
  * @param [in] dev_id : device id
  * @param [in] chan_id : channel id
  * @param [in/out] buff_avail_len : the amount of remaining data that can be written to the buff.

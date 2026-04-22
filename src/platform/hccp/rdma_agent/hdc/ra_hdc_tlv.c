@@ -30,7 +30,7 @@ int RaHdcTlvInit(struct RaTlvHandle *tlvHandle)
         opCode = RA_RS_TLV_INIT;
     } else {
         ret = -ENOTSUPP;
-        hccp_warn("[init][ra_hdc_tlv]ra tlv init version not support, phy_id(%u)", phyId);
+        hccp_warn("[init][ra_hdc_tlv]ra tlv init version does not support, phy_id(%u)", phyId);
         return ret;
     }
 

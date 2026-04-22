@@ -175,7 +175,7 @@ HcclResult AllReduceOperator::SelectAlgforMix(const OpParam& param, std::string&
 
     // 混合组网场景不支持规约保序
     if (IsNeedStrictMode(param)) {
-        HCCL_ERROR("[AllReduceOperator][SelectAlgforMix] not support DETERMINISTIC_STRICT mode.");
+        HCCL_ERROR("[AllReduceOperator][SelectAlgforMix] does not support DETERMINISTIC_STRICT mode.");
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -491,7 +491,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
 
         CHK_PRT_RET(!isServNumPowOfTwo, HCCL_ERROR("server num[%u] is pow of two.", serverNum_), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isSupportAivRdmaMidCount, HCCL_ERROR("current data size[%llu] not support aiv rdma mid count.", dataSize), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(!isSupportAivRdmaMidCount, HCCL_ERROR("current data size[%llu] does not support aiv rdma mid count.", dataSize), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("does not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] deterministic config[%u], dataSize[%llu]",
             isSingleMeshAggregation_, isOpbase, topoMatcher_->GetDeterministicConfig(), dataSize), HCCL_E_NOT_SUPPORT);
@@ -626,7 +626,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     if (IsNeedStrictMode(param)) {
         CHK_PRT_RET(!CheckStrictCondition(param), 
-            HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] not support DETERMINISTIC_STRICT mode."),
+            HCCL_ERROR("[AllReduceOperator][SelectAlgfor91093] does not support DETERMINISTIC_STRICT mode."),
             HCCL_E_NOT_SUPPORT);
 
         algName = "AllReduceOrderPreservedFor91093Executor";

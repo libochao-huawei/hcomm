@@ -4014,7 +4014,7 @@ TEST_F(OpbaseTest, ut_HcclGetErrorString)
     EXPECT_EQ("empty pointer", std::string(HcclGetErrorString(HCCL_E_PTR)));
     EXPECT_EQ("memory error", std::string(HcclGetErrorString( HCCL_E_MEMORY)));
     EXPECT_EQ("internal error", std::string(HcclGetErrorString(HCCL_E_INTERNAL)));
-    EXPECT_EQ("not support feature", std::string(HcclGetErrorString(HCCL_E_NOT_SUPPORT)));
+    EXPECT_EQ("does not support feature", std::string(HcclGetErrorString(HCCL_E_NOT_SUPPORT)));
     EXPECT_EQ("not found specific resource", std::string(HcclGetErrorString(HCCL_E_NOT_FOUND)));
     EXPECT_EQ("resource unavailable", std::string(HcclGetErrorString(HCCL_E_UNAVAIL)));
     EXPECT_EQ("call system interface error", std::string(HcclGetErrorString(HCCL_E_SYSCALL)));

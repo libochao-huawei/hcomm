@@ -252,7 +252,7 @@ HcclResult CollBroadCastRingFor91093::KernelRun(const OpParam &param, ExecMem &e
                     TemplateType::TEMPLATE_SCATTER_NB, dispatcher_);
                 HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_NB in COMM_LEVEL1", __func__);
             } else {
-                HCCL_ERROR("broadcast level1 only supports NB/NHR algo. not support algType_[%u]", algType_.algoLevel1);
+                HCCL_ERROR("broadcast level1 only supports NB/NHR algo. does not support algType_[%u]", algType_.algoLevel1);
                 return HCCL_E_NOT_SUPPORT;
             }
             CHK_SMART_PTR_NULL(level1TempAlg);
