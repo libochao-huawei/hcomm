@@ -96,7 +96,7 @@ SelectorStatus AllGatherAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
             } else if (Is2DieFullMesh()) {
                 HCCL_WARNING("[Algo][AllGatherAutoSelector] 2DieFullMesh is not supported yet for schedule mode.");
                 return SelectorStatus::NOT_MATCH;
-            } else {
+            } else  {
                 primQueueGenName = "CcuAllGatherParallelMesh1DNHR";
             }
         } else {

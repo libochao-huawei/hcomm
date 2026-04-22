@@ -17,7 +17,7 @@
 #include "hccl_res.h"
 
 #include "ccu_kernel.h"
-#include "ccu_res_pack.h"
+#include "../../ccu/pub_inc/ccu_res_pack.h"
 #include "ccu_drv_handle.h"
 
 namespace hcomm {

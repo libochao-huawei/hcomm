@@ -3048,7 +3048,11 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
 
     CHK_RET(HcomGetWorkspaceSubStreamNum(hcomOpParam->group, streamNum, opDataSize, hcomOpParam->dataType,
         hcomOpParam->aivCoreLimit, hcomOpParam->reduceOp, hcomOpParam->count, hcclOpType));
-    CHK_RET(GetOpWorkspaceMemSize(false, hcclOpType, hcomOpParam, 0, opMemSize));
+    if (devType == DevType::DEV_TYPE_950) {
+        CHK_RET(HcomGetWorkspaceMemSize(hcomOpParam->opType, hcomOpParam->count, hcomOpParam->dataType, hcomOpParam->group, opMemSize));
+    } else {
+        CHK_RET(GetOpWorkspaceMemSize(false, hcclOpType, hcomOpParam, 0, opMemSize));
+    }
 
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     u32 serverNum = hcomInfo.rankTable.serverNum;

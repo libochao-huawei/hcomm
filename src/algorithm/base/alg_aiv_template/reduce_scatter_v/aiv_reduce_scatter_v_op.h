@@ -19,6 +19,7 @@
 
 #define AIV_REDUCE_SCATTER_V_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_reduce_scatter_v_##type(EXTERN_KERNEL_ARGS_DEF) { \
+    AIV_INFO_HINT; \
     if (extraArgs.maxCount * sizeof(type) > AIV_REDUCE_SCATTER_MID_SIZE) { \
         return aiv_reduce_scatter_v_910b_bigdata<type>(EXTERN_KERNEL_ARGS_CALL); \
     } else if (extraArgs.maxCount * sizeof(type) > UB_MAX_DATA_SIZE) { \

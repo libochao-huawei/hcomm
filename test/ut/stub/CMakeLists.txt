@@ -30,6 +30,8 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rank_graph.cc
+
+    ${HCCL_LLT_ROOT}/stub/llt_next_orion_ccu_stub.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
@@ -62,7 +64,6 @@ list(REMOVE_ITEM ALGORITHM_SOURCES ${EXCLUDE_ALGORITHM_DEVICE_REGEX})
 set(EXCLUDE_COMMON_DEVICE_REGEX 
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc"
     "${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc"
-    "${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc"
     "${HCCL_CODE_ROOT}/src/common/launch_device/launch_device.cc"
     )
 list(REMOVE_ITEM COMMON_SOURCES ${EXCLUDE_COMMON_DEVICE_REGEX})
@@ -325,6 +326,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
     ${HCCL_CODE_ROOT}/src/legacy/framework/env_config
     ${HCCL_CODE_ROOT}/src/legacy/service/collective/primitive
     ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu
@@ -345,6 +347,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
     #next
+    ${HCCL_CODE_ROOT}/src/framework/next/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/slaves/
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms

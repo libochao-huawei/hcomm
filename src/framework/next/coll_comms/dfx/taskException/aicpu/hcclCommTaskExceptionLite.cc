@@ -351,22 +351,20 @@ HcclResult HcclCommTaskExceptionLite::PrintTaskContextInfo(CollCommAicpu *aicpuC
         HCCL_ERROR("[%s]GetQueue nullptr, devId[%u], sqId[%u].", __func__, devId_, sqId), HCCL_E_PARA);
 
     auto func = [taskId] (const std::shared_ptr<Hccl::TaskInfo>& task) { return task->taskId_ == taskId; };
-    auto taskItorPtr = queue->Find(func);
-    CHK_PRT_RET(taskItorPtr == nullptr || *taskItorPtr == *queue->End(),
+    auto taskIterPtr = queue->Find(func);
+    CHK_PRT_RET(taskIterPtr == nullptr || *taskIterPtr == *queue->End(),
         HCCL_ERROR("[%s]exception task not found, devId[%u], sqId[%u], taskId[%u]", __func__, devId_, sqId, taskId),
         HCCL_E_PARA);
 
     // 找到当前异常task的前50个task(至多)
     std::vector<std::shared_ptr<Hccl::TaskInfo>> taskContext {};
-    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); ++i, --(*taskItorPtr)) {
-        if ((**taskItorPtr)->taskId_ > taskId) {
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskIterPtr != *queue->Begin(); ++i, --(*taskIterPtr)) {
+        if ((**taskIterPtr)->taskId_ > taskId) {
             HCCL_ERROR("[%s]prev taskId[%u] is bigger than err taskId[%u], stop traversal",
-                __func__, (**taskItorPtr)->taskId_, taskId);
+                __func__, (**taskIterPtr)->taskId_, taskId);
             break;
         }
-        if ((**taskItorPtr)->taskId_ != taskId) {
-            taskContext.emplace_back(**taskItorPtr);
-        }
+        taskContext.emplace_back(**taskIterPtr);
     }
 
     HCCL_ERROR("[TaskException][AICPU]context sequence before error task is "
@@ -417,13 +415,11 @@ std::string HcclCommTaskExceptionLite::GetOpDataInfo(const Hccl::TaskInfo& taskI
     }
 
     const auto &opInfo = taskInfo.dfxOpInfo_;
-    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], src[0x%llx], dst[0x%llx], dataType[%s]",
+    return Hccl::StringFormat("opIndex[%u], algTag[%s], count[%llu], reduceType[%s], dataType[%s]",
         opInfo->opIndex_,
         opInfo->algTag_.c_str(),
         opInfo->op_.dataCount,
         opInfo->op_.reduceOp.Describe().c_str(),
-        opInfo->op_.inputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.inputMem->GetAddr()),
-        opInfo->op_.outputMem == nullptr ? 0 : static_cast<u64>(opInfo->op_.outputMem->GetAddr()),
         opInfo->op_.dataType.Describe().c_str());
 }
 

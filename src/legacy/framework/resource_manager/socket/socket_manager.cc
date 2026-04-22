@@ -9,6 +9,7 @@
  */
 #include <mutex>
 #include <set>
+#include <algorithm>
 #include "socket_manager.h"
 #include "socket_handle_manager.h"
 #include "communicator_impl.h"
@@ -18,6 +19,8 @@
 #include "preempt_port_manager.h"
 #include "timeout_exception.h"
 #include "p2p_enable_manager.h"
+#include "rank_table_info.h"
+#include "phy_topo_builder.h"
 
 namespace Hccl {
 
@@ -115,72 +118,105 @@ void SocketManager::BatchCreateConnectedSockets(const vector<LinkData> &links)
 void SocketManager::ServerInit(PortData &localPort)
 {
     std::lock_guard<std::mutex> lock(socketLock);
+    IpAddress ipAddress = localPort.GetAddr();
+    u32 serverListenPort = localPort.GetType() == PortDeploymentType::P2P
+            ? GetDeviceListenPort(localPort.GetRankId(), DEVICE_PORT_KEY_IPADDRESS)
+            : GetDeviceListenPort(localPort.GetRankId(), ipAddress);
+
     auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    auto &rankListenPortMap = SocketManager::GetDeviceServerListenPortMap();
     auto serverSocketInMap = serverSocketMap.find(localPort);
     if (serverSocketInMap != serverSocketMap.end()) {
+        auto oldServerSocket = serverSocketMap.at(localPort);
+        u32 oldServerListenPort = oldServerSocket->GetListenPort();
+        if (oldServerListenPort != serverListenPort) {
+            // 自定义算子的时候，会持有一个不关联通信域的SocketManager, 从而获取到的是默认端口，在单卡多进程的时候需要重新导向合适的端口。
+            // 通信域算子又可以切换回来。
+            bool success = oldServerSocket->Listen(serverListenPort);
+            HCCL_INFO("[SocketManager::%s] %s change listen port %u to %u, ret[%u]", __func__, 
+                localPort.Describe().c_str(), oldServerListenPort, serverListenPort, success);
+        }
         HCCL_INFO("[%s] find localPort in serverSocketMap, localPort [%s]", __func__, localPort.Describe().c_str());
         return;
     }
 
     SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
-    IpAddress    ipAddress        = localPort.GetAddr();
-    u32 serverListenPort          = DEFAULT_VALUE_DEVICEPORT;
-    auto iter = rankListenPortMap.find(localPort.GetRankId());
-    if (iter != rankListenPortMap.end()) {
-        serverListenPort = iter->second;
-    }
-    NicType nicType = localPort.GetType() == PortDeploymentType::P2P ? NicType::DEVICE_VNIC_TYPE : NicType::DEVICE_NIC_TYPE;
-    auto         serverSocket     = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server",
-                                                   SocketRole::SERVER, nicType);
+    NicType nicType = localPort.GetType() == PortDeploymentType::P2P
+            ? NicType::DEVICE_VNIC_TYPE
+            : NicType::DEVICE_NIC_TYPE;
+    auto serverSocket = socketProducer(ipAddress, ipAddress, serverListenPort, hccpSocketHandle, "server", SocketRole::SERVER, nicType);
     bool success = serverSocket->Listen(serverListenPort);
     if (success) {
-        HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the port %u success", __func__, deviceLogicId_, serverListenPort);
+        HCCL_RUN_INFO("[SocketManager::%s] Local %s listen the port %u success", __func__, localPort.Describe().c_str(), serverListenPort);
     } else {
-        string msg = StringFormat("[SocketManager::%s] Device %u listen the port %u failed, maybe other process be listen it", __func__, deviceLogicId_, serverListenPort);
+        string msg = StringFormat("[SocketManager::%s] Local %s listen the port %u failed, maybe other process be listen it", __func__, localPort.Describe().c_str(), serverListenPort);
         MACRO_THROW(InvalidParamsException, msg);
     }
     serverSocketMap[localPort] = std::move(serverSocket);
 }
 
-void SocketManager::ServerInitAll(const vector<LinkData> &links, u32 &linstenPort) const
+void SocketManager::ServerInitAll(NewRankInfo &rankInfo)
 {
-    std::lock_guard<std::mutex> lock(socketLock);
     vector<SocketPortRange> listenPortRanges = EnvConfig::GetInstance().GetHostNicConfig().GetDeviceSocketPortRange();
     if (listenPortRanges.empty()) {
         HCCL_RUN_INFO("[SocketManager::%s] socket port range not configured.", __func__);
         return;
     }
 
-    auto &serverSocketMap = SocketManager::GetServerSocketMap();
-    std::set<PortData> newPorts;
-    bool useOld = false;  // 旧端口抢占过，就沿用旧端口
-    for(uint32_t i = 0; i < links.size(); i++) {
-        LinkData link = links[i];
-        auto localPort = link.GetLocalPort();
-        auto iter = serverSocketMap.find(localPort);
-        if (iter != serverSocketMap.end()) {
-            linstenPort = serverSocketMap[localPort]->GetListenPort();  
-            useOld = true;
-            HCCL_INFO("[SocketManager::%s] Device %u use the old device port %u in same process.", __func__, deviceLogicId_, linstenPort);
-        } else {
-            newPorts.insert(localPort);
-        }
-    }
+    const std::string &topoPath = CommunicatorImpl::GetTopoFilePath();
+    PhyTopoBuilder::GetInstance().Build(topoPath);
 
-    for(auto it = newPorts.begin(); it != newPorts.end(); ++it)
-    {
-        auto localPort = *it;
-        SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
-        IpAddress ipAddress = localPort.GetAddr();
-        auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, linstenPort, ipAddress, "server", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
-        if (!useOld && it == newPorts.begin()) { // 首个链接抢占，其余继承
-            PreemptPortManager::GetInstance(deviceLogicId_).ListenPreempt(serverSocket, listenPortRanges, linstenPort);
-            HCCL_RUN_INFO("[SocketManager::%s] Device %u listen the preempt port %u", __func__, deviceLogicId_, linstenPort);
-        } else {
-            serverSocket->Listen(linstenPort);
+    std::lock_guard<std::mutex> lock(socketLock);
+    auto devLogicId = HrtGetDevice();
+    auto &serverSocketMap = SocketManager::GetServerSocketMap();
+    u32 rankId = rankInfo.rankId;
+    u32 localId = rankInfo.localId;
+    u32 devicePhyId = rankInfo.deviceId;
+    for (auto &rankLevelInfo : rankInfo.rankLevelInfos) {
+        shared_ptr<Graph<PhyTopo::Node, PhyTopo::Link>> graph = PhyTopo::GetInstance()->GetTopoGraph(rankLevelInfo.netLayer);
+        if (graph == nullptr) {
+            HCCL_DEBUG("[SocketManager::%s]Can't find the layout %u Graph!", __func__, rankLevelInfo.netLayer);
+            continue;
         }
-        serverSocketMap[localPort] = std::move(serverSocket);
+        std::vector<std::shared_ptr<PhyTopo::Link>> links = graph->GetEdges(localId);
+        for (auto &link : links) {
+            if (link->GetSourceIFace()->GetPos() == AddrPosition::HOST) {
+                continue;
+            }
+            HCCL_DEBUG("[SocketManager::%s] find the device link %s", __func__, link->Describe().c_str());
+            const std::set<LinkProtocol> &protocols = link->GetLinkProtocols();
+            for (auto &protocol : protocols) {
+                PortDeploymentType deployType = AddrPos2PortDeploymentType(link->GetSourceIFace()->GetPos(), protocol);
+                LinkProtoType protoType = LinkProtocol2LinkProtoType(protocol);
+                const std::set<std::string>  &ports = link->GetSourceIFace()->GetPorts();
+                for (auto &rankAddr : rankLevelInfo.rankAddrs) {
+                    // topo查得网口使用则打开建链
+                    std::set<std::string> intersectSet;
+                    std::set_intersection(ports.begin(), ports.end(), rankAddr.ports.begin(), rankAddr.ports.end(), std::inserter(intersectSet, intersectSet.begin()));
+                    if (intersectSet.empty()) {
+                        continue;
+                    }
+                    PortData localPort{static_cast<RankId>(rankId), deployType, protoType, 0, rankAddr.addr};
+                    u32 listenPort = DEFAULT_VALUE_DEVICEPORT;
+                    if (serverSocketMap.find(localPort) != serverSocketMap.end()) {
+                        // 单进程多通信域，找到老端口直接返回老端口
+                        listenPort = serverSocketMap[localPort]->GetListenPort();
+                        HCCL_INFO("[SocketManager::%s] Device %s use the old device port %u in same process.", __func__, localPort.Describe().c_str(), listenPort);
+                    } else {
+                        // 首次执行启用新端口
+                        SocketHandle hccpSocketHandle = SocketHandleManager::GetInstance().Create(devicePhyId, localPort);
+                        IpAddress ipAddress = localPort.GetAddr();
+                        NicType nicType = localPort.GetType() == PortDeploymentType::P2P ? NicType::DEVICE_VNIC_TYPE : NicType::DEVICE_NIC_TYPE;
+                        auto serverSocket = std::make_shared<Socket>(hccpSocketHandle, ipAddress, listenPort, ipAddress, "server", SocketRole::SERVER, nicType);
+                        PreemptPortManager::GetInstance(devLogicId).ListenPreempt(serverSocket, listenPortRanges, listenPort);
+                        serverSocketMap[localPort] = std::move(serverSocket);
+                        HCCL_RUN_INFO("[SocketManager::%s] Device %s listen the preempt port %u", __func__, localPort.Describe().c_str(), listenPort);
+                    }
+                    rankAddr.socketPort_ = listenPort;
+                    // HOST侧网卡建链使用此字段，虽然并未正式抢占，但是给它预定此端口，以最后一个为准
+                    rankInfo.devicePort = listenPort;
+                }
+            }
+        }
     }
 }
 
@@ -204,25 +240,28 @@ Socket *SocketManager::CreateConnectedSocket(SocketConfig &socketConfig)
         return res;
     }
 
-    auto socketHandle = SocketHandleManager::GetInstance().Get(devicePhyId, socketConfig.link.GetLocalPort());
+    const PortData &localPort = socketConfig.link.GetLocalPort();
+    const PortData &remotePort = socketConfig.link.GetRemotePort();
+
+    auto socketHandle = SocketHandleManager::GetInstance().Get(devicePhyId, localPort);
     if (socketHandle == nullptr) {
         THROW<NullPtrException>(StringFormat("socketHandle of is nullptr, devicePhyId=%d, port=%s", devicePhyId,
-                                             socketConfig.link.GetLocalPort().Describe().c_str()));
+                                             localPort.Describe().c_str()));
     }
-    auto &rankListenPortMap = SocketManager::GetDeviceServerListenPortMap();
     IpAddress  localIpAddress  = socketConfig.link.GetLocalAddr();
     IpAddress  remoteIpAddress = socketConfig.link.GetRemoteAddr();
     SocketRole socketRole      = socketConfig.GetRole();
     string     hccpSocketTag   = socketConfig.GetHccpTag();
-    u32 serverListenPort = DEFAULT_VALUE_DEVICEPORT;
-    auto iter = rankListenPortMap.find(static_cast<u32>(socketConfig.remoteRank));
-    if (iter != rankListenPortMap.end()) {
-        serverListenPort = iter->second;
-    }
-    NicType nicType = socketConfig.link.GetLocalPort().GetType() == PortDeploymentType::P2P ? NicType::DEVICE_VNIC_TYPE : NicType::DEVICE_NIC_TYPE;
+
+    u32 serverListenPort = localPort.GetType() == PortDeploymentType::P2P 
+            ? GetDeviceListenPort(remotePort.GetRankId(), DEVICE_PORT_KEY_IPADDRESS)
+            : GetDeviceListenPort(remotePort.GetRankId(), remoteIpAddress);
+    NicType nicType = localPort.GetType() == PortDeploymentType::P2P 
+            ? NicType::DEVICE_VNIC_TYPE
+            : NicType::DEVICE_NIC_TYPE;
     auto tmpSocket = socketProducer(localIpAddress, remoteIpAddress, serverListenPort, socketHandle, hccpSocketTag,
                                     socketRole, nicType);
-    HCCL_INFO("[SocketManager::%s] Device %u connect async the remote rank %d port %u.", __func__, devicePhyId, socketConfig.remoteRank, serverListenPort);
+    HCCL_INFO("[SocketManager::%s] Connect async the remote %s port %u.", __func__, remotePort.Describe().c_str(), serverListenPort);
     tmpSocket->ConnectAsync();
     connectedSocketMap[socketConfig] = std::move(tmpSocket);
     return connectedSocketMap[socketConfig].get();
@@ -325,23 +364,37 @@ bool SocketManager::DelWhiteList(PortData &localPort, vector<RaSocketWhitelist> 
     return true;
 }
 
-void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, u32> &rankListenPortMap)
+void SocketManager::SetDeviceServerListenPortMap(const std::unordered_map<u32, std::unordered_map<IpAddress, u32>> &rankListenPortMap)
 {
     std::lock_guard<std::mutex> lock(socketLock);
-    std::unordered_map<u32, u32> &staticMap = SocketManager::GetDeviceServerListenPortMap();
-    staticMap.clear();
-    for (auto &pair : rankListenPortMap) {
-        staticMap[pair.first] = pair.second;
-    }
-    return;
+    rankListenPortMap_ = rankListenPortMap;
 }
 
-std::unordered_map<u32, u32> &SocketManager::GetDeviceServerListenPortMap()
+std::unordered_map<u32, std::unordered_map<IpAddress, u32>> SocketManager::GetSubCommDeviceServerListenPortMap(const std::vector<u32> &rankIds) const
 {
-    static std::unordered_map<u32, u32> rankListenPortMap;
-    return rankListenPortMap;
+    std::lock_guard<std::mutex> lock(socketLock);
+    std::unordered_map<u32, std::unordered_map<IpAddress, u32>> subRankListenPortMap;
+    for (u32 subRankId = 0; subRankId < rankIds.size(); ++subRankId) {
+        u32 rankId  = rankIds[subRankId];
+        if (rankListenPortMap_.find(rankId) == rankListenPortMap_.end()) {
+            HCCL_WARNING("[SocketManager::%s]Cant't find listen port for rank %u to sub comm.", __func__, rankId);
+        } else {
+            subRankListenPortMap.insert(std::make_pair(subRankId, rankListenPortMap_.at(rankId)));
+        }
+    }
+    return subRankListenPortMap;
 }
 
+u32 SocketManager::GetDeviceListenPort(const u32 &rankId, const IpAddress &ipAddress)
+{
+    u32 listenPort = rankListenPortMap_[rankId][ipAddress];
+    if (listenPort == 0) {
+        listenPort = DEFAULT_VALUE_DEVICEPORT;
+        rankListenPortMap_[rankId][ipAddress] = listenPort;
+        HCCL_WARNING("[SocketManager::%s] Can't find rankId[%u], addr[%s] listen port, use default", __func__, rankId, ipAddress.Describe().c_str());
+    }
+    return listenPort;
+}
 
 SocketManager::~SocketManager()
 {

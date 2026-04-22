@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <algorithm>
 #include <array>
 #include "rank_graph_builder.h"
 #include "detour_service.h"
@@ -50,6 +51,20 @@ unique_ptr<RankGraph> RankGraphBuilder::Build(const RankTableInfo &ranktable, co
     HCCL_INFO("[RankGraphBuilder] Build VirtualTopo success!");
     rankGraph_->Dump();
     return std::move(rankGraph_);
+}
+
+const RankLevelInfo &RankGraphBuilder::GetRankLevelInfoByNetLayer(const NewRankInfo &rankInfo, u32 netLayer) const
+{
+    auto it = std::find_if(rankInfo.rankLevelInfos.begin(), rankInfo.rankLevelInfos.end(),
+        [netLayer](const RankLevelInfo &levelInfo) {
+            return levelInfo.netLayer == netLayer;
+        });
+    if (it == rankInfo.rankLevelInfos.end()) {
+        THROW<InvalidParamsException>(StringFormat(
+            "[RankGraphBuilder][GetRankLevelInfoByNetLayer] rankId[%u] netLayer[%u] does not exist in ranktable.",
+            rankInfo.rankId, netLayer));
+    }
+    return *it;
 }
 
 std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId localId)
@@ -135,8 +150,9 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
     }
     set<RankId> inRanks = netInst->GetRankIds();
     string      netInstId = netInst->GetNetInstId();
+    const auto &myLevelInfo = GetRankLevelInfoByNetLayer(rankTable_->ranks[myRank_], netLayer);
     // 根据planeId确认Fabric个数，每个fabricId对应一个planeId
-    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(rankTable_->ranks[myRank_].rankLevelInfos[netLayer].rankAddrs);
+    std::map<PlaneId, FabricId> planeId2Node = GetFabricsFromAddrInfo(myLevelInfo.rankAddrs);
 
     if (planeId2Node.size() == 0) {
         HCCL_WARNING("[RankGraphBuilder][AddFabricInfo] current rankId[%d] netLayer[%u] group no net plane", myRank_, netLayer);
@@ -146,7 +162,8 @@ void RankGraphBuilder::AddFabricInfo(u32 netLayer)
 
     // 遍历每一个rankId，每个rankId都增加 peer2net 和 net2peer 两条链路
     for (RankId srcRankId : inRanks) {
-        vector<AddressInfo> addrs = rankTable_->ranks[srcRankId].rankLevelInfos[netLayer].rankAddrs;
+        const auto &srcLevelInfo = GetRankLevelInfoByNetLayer(rankTable_->ranks[srcRankId], netLayer);
+        const vector<AddressInfo> &addrs = srcLevelInfo.rankAddrs;
         // rankId对应的物理逻辑localId
         LocalId localId  = rankGraph_->GetLocalId(srcRankId);
         // 从物理拓扑图中找出 localId在 netLayer 中所有的peer2Net的边。

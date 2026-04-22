@@ -20,6 +20,7 @@
 
 #define AIV_ALL_TO_ALL_VC_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_all_to_all_vc_##type(EXTERN_KERNEL_ARGS_DEF) { \
+    AIV_INFO_HINT; \
     if (isOpBase) { \
         if (extraArgs.maxCount * sizeof(type) > bufferSize) { \
             return aiv_all_to_all_vc_910b<type>(EXTERN_KERNEL_ARGS_CALL); \

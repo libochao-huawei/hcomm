@@ -592,7 +592,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         # common
         ${HCCL_BASE_DIR}/common/debug/profiling/task_profiling.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/task_exception_handler.cc
-        ${HCCL_BASE_DIR}/common/debug/profiling/task_exception_handler_device.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/profiler_base.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/plugin_runner.cc
         ${HCCL_BASE_DIR}/common/debug/profiling/plugin_runner_device.cc
@@ -860,7 +859,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/impl
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
-        ${TOP_DIR}/runtime/src/dfx/adump/inc/adump
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/runtime/include/external
  	    ${TOP_DIR}/runtime/include/external/acl

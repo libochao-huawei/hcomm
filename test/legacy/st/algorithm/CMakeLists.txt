@@ -234,5 +234,12 @@ set(HCOMM_PLATFORM_INCLUDE_LIST
     ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
 )
 
+# 设置全局包含路径，让所有子目录继承
+include_directories(
+    ${HCOMM_ROOT_PATH}/include
+    ${HCOMM_ROOT_PATH}/include/hccl
+    ${HCOMM_ROOT_PATH}/include/hcomm
+)
+
 add_subdirectory(testcase)
 add_subdirectory(utils)
