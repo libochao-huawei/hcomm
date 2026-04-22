@@ -19,7 +19,7 @@
 
 namespace hcomm {
 /**
- * @note 职责：Host CPU通信引擎+RoCE协议的通信设备Endpoint，管理通信设备上下文，以及设备上的注册内存。
+ * @note 职责：AICPU通信引擎+UBOE协议的通信设备Endpoint，管理通信设备上下文，以及设备上的注册内存。
  */
 class UboeEndpoint : public Endpoint {
 public:
@@ -35,8 +35,6 @@ public:
         return regedMemMgr_;
     }
 
-    CcuChannelCtxPool *GetCcuChannelCtxPool();
-
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
     HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) override;
@@ -44,8 +42,6 @@ public:
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
     HcclResult GetAllMemHandles(void **memHandles, uint32_t *memHandleNum) override;
 
-private:
-    std::unique_ptr<CcuChannelCtxPool> ccuChannelCtxPool_{nullptr};
 };
 }
 

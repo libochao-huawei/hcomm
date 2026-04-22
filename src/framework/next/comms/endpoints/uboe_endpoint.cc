@@ -27,129 +27,76 @@ HcclResult UboeEndpoint::Init()
 {
     HCCL_INFO("[%s] localEndpoint protocol[%d]", __func__, endpointDesc_.protocol);
 
-    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_ERROR("[UboeEndpoint][%s] endpointDesc.loc.locType[%d] only support ENDPOINT_LOC_TYPE_DEVICE", __func__, endpointDesc_.loc.locType);
-        return HCCL_E_PARA;
-    }
-
     Hccl::IpAddress ipAddr{};
-    HcclResult ret = CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr);
-    if(ret!= HCCL_SUCCESS) {
-        HCCL_ERROR("call CommAddrToIpAddress failed");
-        return ret;
-    }
+    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
 
-    u32 devPhyId;
     s32 deviceLogicId;
-    ret = hrtGetDevice(&deviceLogicId);
-    if(ret != HCCL_SUCCESS){
-        HCCL_ERROR("call hrtGetDevice failed, deviceLogicId[%d]", deviceLogicId);
-        return ret;
-    }
-    Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
-    ret = hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId);
-    if(ret!= HCCL_SUCCESS){
-        HCCL_ERROR("call hrtGetDevicePhyIdByIndex failed, deviceLogicId[%d], devPhyId[%u]",deviceLogicId, devPhyId);
-        return ret;
-    }
-
-    if (endpointDesc_.loc.device.devPhyId != devPhyId){
-        HCCL_WARNING("[UboeEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
-        endpointDesc_.loc.device.devPhyId = devPhyId; // 当前endpointDesc.loc.device.devPhyId不准，暂时由查询的devPhyId赋值
-    }
+    u32 devPhyId;
+    CHK_RET(hrtGetDevice(&deviceLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId));
+    endpointDesc_.loc.device.devPhyId = devPhyId;
 
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
     Hccl::IpAddress eidAddress{};
     rdmaHandleMgr.UboeIpv4ToEid(ipAddr, eidAddress);
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddress)), return HCCL_E_PARA);
+    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(rdmaHandleMgr.GetByIp(endpointDesc_.loc.device.devPhyId, eidAddress)), 
+        return HCCL_E_PARA);
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("%s success, devId[%u], eidAddress[%s], ctxHandle[%p]",
         __func__, devPhyId, eidAddress.Describe().c_str(), ctxHandle_);
 
-    EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
-    this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
-
-    // ccu模式专用的资源分配器
-    ccuChannelCtxPool_.reset(new (std::nothrow) CcuChannelCtxPool(deviceLogicId));
-    CHK_PTR_NULL(ccuChannelCtxPool_);
+    EXECEPTION_CATCH(regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
+    regedMemMgr_->rdmaHandle_ = ctxHandle_;
 
     return HcclResult::HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::ServerSocketListen(const uint32_t port)
 {
-    if (endpointDesc_.loc.locType != ENDPOINT_LOC_TYPE_DEVICE){
-        HCCL_INFO("[UboeEndpoint][%s] endpointDesc.loc.locType[%d] skip create ServerSocket", __func__, endpointDesc_.loc.locType);
-        return HCCL_SUCCESS;
-    }
-
-    Hccl::IpAddress ipaddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipaddr));
-
-    HCCL_INFO("endpointDesc_.loc.device.devPhyId %u",endpointDesc_.loc.device.devPhyId);
-
-    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
-    Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipaddr);
-
-    HCCL_INFO("[UboeEndpoint][%s] devicePhyId[%u] localPort[%s]", 
-        __func__, 
-        endpointDesc_.loc.device.devPhyId, 
-        localPort.Describe().c_str()
-    );
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStartListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, endpointDesc_.loc.device.devPhyId, port));
+    HCCL_INFO("%s is not supported", __func__);
     return HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::ServerSocketStopListen(const uint32_t port)
 {
-    Hccl::IpAddress ipAddr{};
-    CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
-    Hccl::DevNetPortType type = Hccl::DevNetPortType(Hccl::ConnectProtoType::UB);
-    Hccl::PortData localPort = Hccl::PortData(static_cast<Hccl::RankId>(endpointDesc_.loc.device.devPhyId), type, 0, ipAddr);
-
-    CHK_RET(ServerSocketManager::GetInstance().ServerSocketStopListen(localPort, Hccl::NicType::DEVICE_NIC_TYPE, port));
+    HCCL_INFO("%s is not supported", __func__);
     return HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
-    CHK_RET(this->regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
+    CHK_RET(regedMemMgr_->RegisterMemory(mem, memTag, memHandle));
     return HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::UnregisterMemory(void* memHandle)
 {
-    CHK_RET(this->regedMemMgr_->UnregisterMemory(memHandle));
+    CHK_RET(regedMemMgr_->UnregisterMemory(memHandle));
     return HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
-    CHK_RET(this->regedMemMgr_->MemoryExport(this->endpointDesc_, memHandle, memDesc, memDescLen));
+    CHK_RET(regedMemMgr_->MemoryExport(endpointDesc_, memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
 {
-    CHK_RET(this->regedMemMgr_->MemoryImport(memDesc, descLen, outMem));
+    CHK_RET(regedMemMgr_->MemoryImport(memDesc, descLen, outMem));
     return HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
 {
-    CHK_RET(this->regedMemMgr_->MemoryUnimport(memDesc, descLen));
+    CHK_RET(regedMemMgr_->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
 }
 
 HcclResult UboeEndpoint::GetAllMemHandles(void **memHandles, uint32_t *memHandleNum)
 {
-    CHK_RET(this->regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
+    CHK_RET(regedMemMgr_->GetAllMemHandles(memHandles, memHandleNum));
     return HCCL_SUCCESS;
-}
-
-CcuChannelCtxPool *UboeEndpoint::GetCcuChannelCtxPool()
-{
-    return ccuChannelCtxPool_.get();
 }
 
 }

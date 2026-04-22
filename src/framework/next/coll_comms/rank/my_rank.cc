@@ -200,6 +200,7 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 }
 
 constexpr uint32_t MEM_HANDLE_NUM_MAX = 256;  // memHandleNum的默认限制最大为256
+constexpr uint32_t NOTIFY_NUM_MAX = 64; // notifynum 的默认限制最大为64
 
 HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, 
     uint32_t index)
@@ -221,6 +222,14 @@ HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &c
                 __func__, index, channelDesc.memHandleNum);
         }
     }
+    CHK_PRT_RET(channelDesc.notifyNum > NOTIFY_NUM_MAX, 
+        HCCL_ERROR("[%s]Channeldesc[%u] invalid notifyNum [%u], max notify num[%u]",
+        __func__, index, channelDesc.notifyNum, NOTIFY_NUM_MAX), HCCL_E_PARA);
+    // 集合通信暂不支持UBOE，提前拦截
+    CHK_PRT_RET(channelDesc.channelProtocol == COMM_PROTOCOL_UBOE, 
+        HCCL_ERROR("[%s]Channeldesc[%u] Unsupported channelProtocol [%u]",
+        __func__, index, channelDesc.channelProtocol), HCCL_E_NOT_SUPPORT);
+
     return HCCL_SUCCESS;
 }
 
