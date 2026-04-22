@@ -144,7 +144,7 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLeve
 {
     if (level1CommInfo.localRankSize == 1) {
         all2allOffset_ = topoAttr_.superPodNum > 1 ? 1 : 0;
-	CHK_RET(RunReduceScatterLevel1SingleRank(param, execMem, level1CommInfo));
+        CHK_RET(RunReduceScatterLevel1SingleRank(param, execMem, level1CommInfo));
         return HCCL_SUCCESS;
     }
 
