@@ -150,7 +150,8 @@ HcclResult CollAllReduceOrderPreservedExecutor::RunReduceScatterLevel0(const OpP
         all2allOffset_ = topoAttr_.moduleNum > 1 ? 1 : 0;
         HCCL_INFO("[%s] single rank per module, skip L0 AllToAll and LocalReduce, tag[%s]",
             __func__, tag_.c_str());
-        return RunReduceScatterLevel0SingleRank(param, execMem, level0CommInfo);
+        CHK_RET(RunReduceScatterLevel0SingleRank(param, execMem, level0CommInfo));
+        return HCCL_SUCCESS;
     }
 
     // 切分数据(ReduceScatter分组，记录每组的起始偏移和大小)
