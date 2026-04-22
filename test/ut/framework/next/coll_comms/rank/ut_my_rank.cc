@@ -327,10 +327,10 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
 
     // 构造两个remote endpoint
     EndpointDesc rmtEp1;
-    rmtEp.protocol = COMM_PROTOCOL_UBC_CTP;
-    rmtEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
-    rmtEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    rmtEp1.protocol = COMM_PROTOCOL_UBC_CTP;
+    rmtEp1.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    rmtEp1.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
+    rmtEp1.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
 
     EndpointDesc rmtEp2;
     rmtEp2.protocol = COMM_PROTOCOL_UBC_CTP;
