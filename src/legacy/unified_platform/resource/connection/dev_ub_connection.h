@@ -23,12 +23,21 @@
 
 namespace Hccl {
 
+// `env_config.h` 在 hcomm 与 legacy 下不是同一文件：framework 为 `struct EnvConfig::UB_QOS_DEFAULT`，legacy 为 `constexpr u32 UB_QOS_DEFAULT`（Hccl）。
+#if defined(HCCLV2_ENV_CONFIG_H)
+constexpr u32 kDevUbDefaultQos = UB_QOS_DEFAULT;
+#elif defined(HCCL_ENV_CONFIG_H)
+constexpr u32 kDevUbDefaultQos = static_cast<u32>(::EnvConfig::UB_QOS_DEFAULT);
+#else
+constexpr u32 kDevUbDefaultQos = 4U;
+#endif
+
 class DevUbConnection : public RmaConnection {
 public:
     DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                     const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
                     const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
-                    u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
+                    u8 qos = static_cast<u8>(kDevUbDefaultQos));
     void          Connect() override;
     RmaConnStatus GetStatus() override;
     bool          Suspend() override;
@@ -137,7 +146,7 @@ private:
     u32                 localTpNum{0};
     TpInfo              tpInfo{};
 
-    u8 qos_{static_cast<u8>(UB_QOS_DEFAULT)};
+    u8 qos_{static_cast<u8>(kDevUbDefaultQos)};
 
     u32 piVal{0};
     u32 ciVal{0};
@@ -180,7 +189,7 @@ public:
     DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
                       const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
-                      u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
+                      u8 qos = static_cast<u8>(kDevUbDefaultQos));
 };
 
 class DevUbCtpConnection : public DevUbConnection {
@@ -188,7 +197,7 @@ public:
     DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                        const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
                        const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
-                       u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
+                       u8 qos = static_cast<u8>(kDevUbDefaultQos));
 };
 
 class DevUbUboeConnection : public DevUbConnection {
@@ -196,7 +205,7 @@ public:
     DevUbUboeConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                         const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL,
                         const IpAddress &locIpv4Addr = IpAddress(), const IpAddress &rmtIpv4Addr = IpAddress(),
-                        u8 qos = static_cast<u8>(UB_QOS_DEFAULT));
+                        u8 qos = static_cast<u8>(kDevUbDefaultQos));
 };
 
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);
