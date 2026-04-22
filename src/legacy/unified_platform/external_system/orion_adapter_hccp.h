@@ -160,7 +160,7 @@ using QpInfo = struct QpInfoDef {
     u32 serviceLevel = 0;
     u32 retryCnt = 0;
     u32 retryInterval = 0;
-    s32 lbMax = 0;
+    s32 lbValue = 0;
     u32 qpThreshold;
     QpInfoDef() : rdmaHandle(nullptr), qpHandle(nullptr), qp(nullptr), context(nullptr), sendCq(nullptr),
         recvCq(nullptr), srq(nullptr), srqCq(nullptr), srqContext(nullptr),

@@ -128,6 +128,7 @@ void EnvRdmaConfig::Parse()
     rdmaRetryCnt.Parse();
     uboeTimeOut.Parse();
     ubTimeOut.Parse();
+    multiQpThreshold.Parse();
     HCCL_RUN_INFO("[Init][EnvVarParam]Env config rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], "
                   "rdmaRetryCnt[%u], uboeTimeOut[%u], ubTimeOut[%u]",
                   GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt(),
@@ -162,6 +163,10 @@ u32 EnvRdmaConfig::GetUboeTimeOut() const
 u32 EnvRdmaConfig::GetUbTimeOut() const
 {
     return ubTimeOut.Get();
+
+u32 EnvRdmaConfig::GetRdmaMultiQpThreshold() const
+{
+    return multiQpThreshold.Get();
 }
 
 // EnvAlgoConfig

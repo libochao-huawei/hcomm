@@ -122,6 +122,7 @@ public:
     u32  GetRdmaRetryCnt() const;
     u32  GetUboeTimeOut() const;
     u32  GetUbTimeOut() const;
+    u32  GetRdmaMultiQpThreshold() const;
 
 private:
     static constexpr u32 HCCL_RDMA_TC_DEFAULT        = 132; // 默认的traffic class为132(33*4)
@@ -156,6 +157,10 @@ private:
                               CHK_RANGE_CLOSED<u32>(HCCL_UBOE_TIMEOUT_MIN, HCCL_UBOE_TIMEOUT_MAX)};
     CfgField<u32> ubTimeOut{"HCCL_UB_TIMEOUT", u32(HCCL_UB_TIMEOUT_DEFAULT), Str2T<u32>,
                             CHK_RANGE_CLOSED<u32>(HCCL_UB_TIMEOUT_MIN, HCCL_UB_TIMEOUT_MAX)};
+    CfgField<u32> queueNum{"HCCL_RDMA_QPS_PER_CONNECTION", u32(1), Str2T<u32>,
+                               CHK_RANGE_CLOSED<u32>(1, 32)};
+    CfgField<u32> multiQpThreshold{"HCCL_MULTI_QP_THRESHOLD", u32(512), Str2T<u32>,
+                               CHK_RANGE_CLOSED<u32>(1, 8192)};
 };
 
 // 算法配置
