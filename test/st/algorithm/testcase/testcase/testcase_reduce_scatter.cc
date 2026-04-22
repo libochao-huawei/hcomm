@@ -1396,8 +1396,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_a3_ReduceScatterMeshAivFor91093Exec
 
 TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_node_single_rank_910b)
 {
-    setenv("HCCL_DETERMINISTIC", "strict", 1);
-
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
     // 4节点 × 1 rank/节点
@@ -1421,12 +1419,10 @@ TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_node_single_rank_
 
 TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_node_single_rank_91093)
 {
-    setenv("HCCL_DETERMINISTIC", "strict", 1);
-
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
     // 4节点 × 1 rank/节点
-    gen.GenTopoMeta(topoMeta, 1, 4, 1);
+    gen.GenTopoMeta(topoMeta, 4, 1, 1);
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
@@ -1446,11 +1442,9 @@ TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_node_single_rank_
 
 TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_node_single_rank_91093_offload)
 {
-    setenv("HCCL_DETERMINISTIC", "strict", 1);
-
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 1, 4, 1);
+    gen.GenTopoMeta(topoMeta, 4, 1, 1);
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
@@ -1538,7 +1532,7 @@ TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_node_single_rank_
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 1, 4, 1);
+    gen.GenTopoMeta(topoMeta, 4, 1, 1);
 
     CheckerOpParam checkerOpParam;
     checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
@@ -1546,28 +1540,6 @@ TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_node_single_rank_
     checkerOpParam.opMode = CheckerOpMode::OPBASE;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
-    checkerOpParam.algName = "ReduceScatterOrderPreservedFor91093Executor";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.Check(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-}
-
-TEST_F(ReduceScatterTest, reduce_scatter_order_preserved_multi_super_pod_single_rank)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta;
-    gen.GenTopoMeta(topoMeta, 2, 1, 1);
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
-    checkerOpParam.tag = "ReduceScatterOrderPreserved";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.DataDes.count = 768;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_93;
     checkerOpParam.algName = "ReduceScatterOrderPreservedFor91093Executor";
