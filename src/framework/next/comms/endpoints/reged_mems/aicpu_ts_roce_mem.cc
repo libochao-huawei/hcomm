@@ -47,8 +47,9 @@ std::shared_ptr<LocalBufferMgrCtx> GetOrCreateLocalBufferMgr(s32 devicePhyId)
 
 namespace hcomm {
 AicpuTsRoceRegedMemMgr::AicpuTsRoceRegedMemMgr(HcclNetDev netDev, RdmaHandle rdmaHandle)
-    : netDev_(netDev), rdmaHandle_(rdmaHandle)
+    : netDev_(netDev)
 {
+    rdmaHandle_ = rdmaHandle;
     if (netDev_ != nullptr) {
         auto *netDevCtx = static_cast<hccl::NetDevContext *>(netDev_);
         const s32 phyId = netDevCtx->GetPhyId();
