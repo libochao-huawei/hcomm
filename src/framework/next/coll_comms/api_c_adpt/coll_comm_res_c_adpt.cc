@@ -148,9 +148,9 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
         case COMM_PROTOCOL_PCIE:
         case COMM_PROTOCOL_SIO:
         case COMM_PROTOCOL_UBC_CTP:
+        case COMM_PROTOCOL_UBC_TP:
             return ProcessUbcChannelDesc(channelDesc, channelDescFinal, hcclComm);
         case COMM_PROTOCOL_UB_MEM:
-        case COMM_PROTOCOL_UBC_TP:
             break;
         case COMM_PROTOCOL_ROCE:
             return ProcessRoceChannelDesc(channelDesc, channelDescFinal, hcclComm);
@@ -161,7 +161,6 @@ HcclResult ProcessHcclChannelDesc(const HcclChannelDesc &channelDesc, HcclChanne
                     case COMM_PROTOCOL_PCIE:    return "COMM_PROTOCOL_PCIE";
                     case COMM_PROTOCOL_SIO:     return "COMM_PROTOCOL_SIO";
                     case COMM_PROTOCOL_UBC_CTP: return "COMM_PROTOCOL_UBC_CTP";
-                    case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
                     case COMM_PROTOCOL_UB_MEM:  return "COMM_PROTOCOL_UB_MEM";
                     case COMM_PROTOCOL_ROCE:    return "COMM_PROTOCOL_ROCE";
                     case COMM_PROTOCOL_UBC_TP:  return "COMM_PROTOCOL_UBC_TP";
