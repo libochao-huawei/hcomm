@@ -57,3 +57,6 @@ target_sources(legacy_alg_ccu_1d_testcase_part1
         testcase_broadcast_ccu.cc
         ${UTILS_DIR}/common/virtual_topo_stub/virtual_topo_stub.cc
 )
+
+enable_testing()
+add_test(NAME legacy_alg_ccu_1d_testcase_part1 COMMAND legacy_alg_ccu_1d_testcase_part1)
