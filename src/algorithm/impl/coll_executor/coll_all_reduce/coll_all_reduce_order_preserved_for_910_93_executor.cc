@@ -158,7 +158,8 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel1(c
         all2allOffset_ = topoAttr_.superPodNum > 1 ? 1 : 0;
         HCCL_INFO("[%s] single rank per module, skip L1 AllToAll and LocalReduce, tag[%s]",
             __func__, tag_.c_str());
-        return RunReduceScatterLevel1SingleRank(param, execMem, level1CommInfo);
+	CHK_RET(RunReduceScatterLevel1SingleRank(param, execMem, level1CommInfo));
+        return HCCL_SUCCESS;
     }
 
     // 切分数据(ReduceScatter分组，记录每组的起始偏移和大小)
