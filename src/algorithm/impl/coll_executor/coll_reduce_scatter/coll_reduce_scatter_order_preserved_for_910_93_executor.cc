@@ -125,11 +125,17 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLeve
     HCCL_INFO("[%s] single rank per module, skip L1 AllToAll and LocalReduce, tag[%s]",
         __func__, tag_.c_str());
 
-    u64 size = execMem.count * topoAttr_.userRankSize * SIZE_TABLE[param.DataDes.dataType];
-    DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, size);
-    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, size) : execMem.inputMem.range(0, size);
-    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
-
+    u64 unitSize = SIZE_TABLE[param.DataDes.dataType];
+    u64 curSize = execMem.count * unitSize;
+    DeviceMem bufferMem = scratchMemFlag_ ? execMem.scratchMem : execMem.inputMem;
+    DeviceMem dstMem;
+    DeviceMem srcMem;
+    for (u32 i = 0; i < topoAttr_.userRankSize; i++) {
+        // 拷贝input上每个slice的数据到中转内存，源端每个slice的size固定为output的size
+        dstMem = bufferMem.range(curSize * i, curSize);
+        srcMem = DeviceMem::create(static_cast<u8 *>(execMem.inputPtr) + param.DataDes.count * unitSize * i, curSize);
+        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
+    }
     return HCCL_SUCCESS;
 }
 
