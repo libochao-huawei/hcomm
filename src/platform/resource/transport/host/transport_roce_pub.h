@@ -153,7 +153,7 @@ private:
 
     // wait 异步send done + 同步recv
     HcclResult WaitSendAsyncCompleteAndRecv(const SendRecvParam &sendParam, const SendRecvParam &recvParam);
-
+    using TransportHeterogRoce::Send;
     // 同步send
     HcclResult Send(const SendRecvParam &sendParam);
     // 同步recv
