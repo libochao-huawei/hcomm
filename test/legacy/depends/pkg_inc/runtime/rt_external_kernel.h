@@ -344,6 +344,13 @@ typedef struct {
     size_t numAttrs;
 } rtKernelLaunchCfg_t;
 
+typedef struct tagRtDevBinary {
+    uint32_t magic;    // magic number
+    uint32_t version;  // version of binary
+    const void *data;  // binary data
+    uint64_t length;   // binary length
+} rtDevBinary_t;
+
 /**
  * @ingroup rts_kernel
  * @brief rts Launch Kernel
