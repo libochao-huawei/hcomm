@@ -339,9 +339,17 @@ u64 CommKfcAicpuServer::ResolveLogicalStrideCount(const HcclMsg &msg, u32 msgPos
         for (u32 retry = 0U; !nextReady && scan == 1U && retry < LOGICAL_STRIDE_LOOKAHEAD_RETRY; ++retry) {
             nextReady = TryReadMsg(nextMsgPos, nextMsg);
         }
-        if (!nextReady || !IsSameSplitMsg(msg, nextMsg, opType, accumulatedCount, dataTypeSize)) {
+        if (!nextReady) {
+            HCCL_INFO("!nextReady, scan: %u", scan);
             break;
         }
+        if (!IsSameSplitMsg(msg, nextMsg, opType, accumulatedCount, dataTypeSize)) {
+            HCCL_INFO("!IsSameSplitMsg");
+            break;
+        }
+        // if (!nextReady || !IsSameSplitMsg(msg, nextMsg, opType, accumulatedCount, dataTypeSize)) {
+        //     break;
+        // }
         splitMsgPos.push_back(nextMsgPos);
         accumulatedCount += nextMsg.dataCnt * GetMsgRepeatCnt(nextMsg);
     }
