@@ -31,7 +31,7 @@ namespace hcomm {
 
 static std::unordered_map<int32_t, std::shared_ptr<CcuDrvHandle>> ccuDrvHandleMap;
 static std::mutex ccuDrvHandleMutex;
-static bool ccuDriverInitAaginFlag = false; // 记录每个进程CCU驱动是否重复拉起
+static bool ccuDriverInitAgainFlag = false; // 记录每个进程CCU驱动是否重复拉起
 static thread_local HcclMainboardId mainBoardType = HcclMainboardId::MAINBOARD_OTHERS; // 记录本卡的主板类型
 
 HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle> &ccuDrvHandle)
@@ -44,7 +44,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
 
     std::lock_guard<std::mutex> lock(ccuDrvHandleMutex);
     // ccu驱动已重复拉起失败时，直接返回，在锁保护内返回
-    if (ccuDriverInitAaginFlag) {
+    if (ccuDriverInitAgainFlag) {
         return HcclResult::HCCL_E_AGAIN;
     }
 
@@ -64,7 +64,7 @@ HcclResult CcuInitFeature(const int32_t devLogicId, std::shared_ptr<CcuDrvHandle
     if (ret == HcclResult::HCCL_E_AGAIN) {
         HCCL_WARNING("[%s] failed but passed, ccu driver already be inited, devLogicId[%d].",
             __func__, devLogicId);
-        ccuDriverInitAaginFlag = true; // 记录该进程ccu驱动已拉起失败
+        ccuDriverInitAgainFlag = true; // 记录该进程ccu驱动已拉起失败
         drvHandle = nullptr; // 主动置空触发资源销毁，控制释放时序
         return ret;
     }
