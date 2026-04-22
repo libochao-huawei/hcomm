@@ -47,8 +47,8 @@ __aicore__ inline void AivAll2AllV91093Single::Process(GM_ADDR input, GM_ADDR ou
     __gm__ T *outputGM = (__gm__ T *)output;
  
     uint32_t blockNumPerGroup = numBlocks_ / rankSize_; 
-    uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
-    uint32_t dstRank = GetBlockIdx() / blockNumPerGroup;
+    uint32_t blockIdxInGroup = blockIdx_ % blockNumPerGroup;
+    uint32_t dstRank = blockIdx_ / blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
 
     __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_]);

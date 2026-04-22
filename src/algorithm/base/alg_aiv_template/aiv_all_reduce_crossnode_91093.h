@@ -66,10 +66,10 @@ __aicore__ inline void AivAllReduceCrossnode91093::InitDataCopyOffset(uint64_t p
     } else {
         numTargets = 1;
         blockNumPerGroup = numBlocks_ / rankSize_; // 多少个aiv服务一个rank
-        targetRanks[0] = GetBlockIdx() / blockNumPerGroup;
+        targetRanks[0] = blockIdx_ / blockNumPerGroup;
 
         uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
-        blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
+        blockIdxInGroup = blockIdx_ % blockNumPerGroup;
 
         if (len <= totalBufferCount) { // ccl够用，只需要搬一轮的情况
             countMid = 0;

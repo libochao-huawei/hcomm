@@ -68,10 +68,10 @@ __aicore__ inline void AivAllReduce91093Deter::InitDataCopyOffset(uint64_t perRa
     } else {
         numTargets = 1;
         blockNumPerGroup = numBlocks_ / rankSize_; // 多少个aiv服务一个rank
-        targetRanks[0] = GetBlockIdx() / blockNumPerGroup;
+        targetRanks[0] = blockIdx_ / blockNumPerGroup;
 
         uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
-        blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
+        blockIdxInGroup = blockIdx_ % blockNumPerGroup;
 
         if (len <= halfBufferCount) { // ccl够用，只需要搬一轮的情况
             countMid = 0;
@@ -237,12 +237,12 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
 
         // step3.2 归约为numReduce份数据的reduce
         uint32_t numReduce = rankSize_ < usedBlockNum_ ? rankSize_ : usedBlockNum_;
-        if (GetBlockIdx() < numReduce && GetBlockIdx() != 0){
+        if (blockIdx_ < numReduce && blockIdx_ != 0){
             uint64_t dataNum = curGroupCount;
             if (rank_ == rankSize_ - 1){
                 dataNum = curGroupCountLast;
             }
-            int x = GetBlockIdx();
+            int x = blockIdx_;
             int64_t multiple = GetDeterministicRankOffset(x);
             int64_t target = x - multiple;
     

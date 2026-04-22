@@ -155,8 +155,8 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         
         // step3.2 归约为numReduce份数据的reduce
         uint32_t numReduce = rankSize_ < usedBlockNum_ ? rankSize_ : usedBlockNum_;
-        if (GetBlockIdx() < numReduce && GetBlockIdx() != 0){
-            int x = GetBlockIdx();
+        if (blockIdx_ < numReduce && blockIdx_ != 0){
+            int x = blockIdx_;
             int64_t multiple = GetDeterministicRankOffset(x);
             int64_t target = x - multiple;
     
@@ -187,7 +187,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         }
 
         // step4 本端ccl -> 本端 output
-        bool case1 = rankSize_ > numBlocks_ && GetBlockIdx() == numBlocks_ - 1; // 单核
+        bool case1 = rankSize_ > numBlocks_ && blockIdx_ == numBlocks_ - 1; // 单核
         bool case2 = rankSize_ <= numBlocks_ && targetRanks[0] == rank_; // 单核
         if (case1 || case2){
             int64_t waitBlock = GetDeterministicRank(numReduce);
