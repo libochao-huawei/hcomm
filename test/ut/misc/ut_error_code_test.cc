@@ -121,20 +121,20 @@ TEST_F(ErrorCodeScenarioTest, EI0015_SocketConnectionTimeout)
 TEST_F(ErrorCodeScenarioTest, EI0016_TLSConsistency_Inconsistent) 
 {
     nlohmann::json testJson;
-    testJson["version"] = "2.0"
+    testJson["version"] = "2.0";
     testJson["rank_count"] = 2;
     testJson["topo_file_path"] = "/tmp/test.json";
 
-    nlomann::json rankList = nlohmann::json::array();
-    nlomann::json rank0;
+    nlohmann::json rankList = nlohmann::json::array();
+    nlohmann::json rank0;
     rank0["rank_id"] = 0;
     rank0["tls_status"] = "enable";
-    rankList.push_bask(rank0);
+    rankList.push_back(rank0);
 
-    nlomann::json rank1;
+    nlohmann::json rank1;
     rank1["rank_id"] = 1;
     rank1["tls_status"] = "disable";
-    rankList.push_bask(rank1);
+    rankList.push_back(rank1);
 
     testJson["rank_list"] = rankList;
 }
