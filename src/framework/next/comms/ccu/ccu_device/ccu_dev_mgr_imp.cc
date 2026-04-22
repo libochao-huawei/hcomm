@@ -20,7 +20,7 @@
 #include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
 
 // #include "ccu_comp.h"
-#include "comms/ccu/ccu_device/ccu_res_specs.h"
+#include "./ccu_res_specs.h"
 // #include "ccu_res_batch_allocator.h"
 
 #include "adapter_rts.h"
