@@ -72,7 +72,7 @@ TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Not_Exist_Expect_SUCCESS
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(endpointPair.channelHandles_.size(), 0);
 
-    HcclResult ret = endpointPair.DestroyChannel(COMM_ENGINE_CCU, 0);
+    ret = endpointPair.DestroyChannel(COMM_ENGINE_CCU, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -104,7 +104,7 @@ TEST_F(TestEndpointPair, Ut_DestroyChannel_When_Channel_Exist_Expect_SUCCESS)
     endpointPair.channelHandles_[COMM_ENGINE_CCU].push_back(fakeChannelHandle + 2);
 
     // 删除index为0的channel
-    HcclResult ret = endpointPair.DestroyChannel(COMM_ENGINE_CCU, 0);
+    ret = endpointPair.DestroyChannel(COMM_ENGINE_CCU, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(endpointPair.channelHandles_[COMM_ENGINE_CCU].size(), 2);
     EXPECT_EQ(endpointPair.channelHandles_[COMM_ENGINE_CCU][0], fakeChannelHandle + 1);

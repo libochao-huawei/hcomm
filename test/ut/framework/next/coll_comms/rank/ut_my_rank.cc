@@ -167,17 +167,17 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 1, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
-    EXPECT_EQ(myRank.newChannels_[0], {0, 0});
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(0u, 0u));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 2, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 2, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
-    EXPECT_EQ(myRank.newChannels_[0], {1, 1});
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(1u, 1u));
 
     EXPECT_EQ(myRank.BatchCreateSockets(channelDesc, 3, "test", hcommDesc), HCCL_SUCCESS);
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_AICPU_TS, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 1);
-    EXPECT_EQ(myRank.newChannels_[0], {2, 0});
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(2u, 0u));
 
     MOCKER_CPP(&hcomm::ChannelProcess::ChannelGetStatus).stubs().with(any()).will(returnValue(HCCL_E_AGAIN));
     MOCKER_CPP(&Hccl::EnvSocketConfig::GetLinkTimeOut).stubs().with(any()).will(returnValue((s32)(1)));
@@ -223,10 +223,10 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
 
     // 构造两个remote endpoint
     EndpointDesc rmtEp1;
-    rmtEp.protocol = COMM_PROTOCOL_UBC_CTP;
-    rmtEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;
-    rmtEp.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
-    rmtEp.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
+    rmtEp1.protocol = COMM_PROTOCOL_UBC_CTP;
+    rmtEp1.commAddr.type = COMM_ADDR_TYPE_IP_V4;
+    rmtEp1.commAddr.addr = Hccl::IpAddress("2.0.0.0").GetBinaryAddress().addr;
+    rmtEp1.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
 
     EndpointDesc rmtEp2;
     rmtEp2.protocol = COMM_PROTOCOL_UBC_CTP;
@@ -254,10 +254,10 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_H
     // 模拟创建到rmtEp2的第二个channel时资源不足，需要清理前三个channel
     MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
         .stubs()
-        .WillOnce(returnValue(HCCL_SUCCESS))
-        .WillOnce(returnValue(HCCL_SUCCESS))
-        .WillOnce(returnValue(HCCL_SUCCESS))
-        .WillRepeatedly(returnValue(HCCL_E_UNAVAIL));
+        .will(returnValue(HCCL_SUCCESS))
+        .then(returnValue(HCCL_SUCCESS))
+        .then(returnValue(HCCL_SUCCESS))
+        .then(returnValue(HCCL_E_UNAVAIL));
     std::vector<HcommChannelDesc> hcommDesc(5);
     std::vector<ChannelHandle> hostChannelHandles(5);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
@@ -360,20 +360,20 @@ TEST_F(MyRankTest, Ut_BatchCreateChannels_Multi_Times_When_fallback_Expect_Retur
     // 需要只清理到rmtEp2的第二个channel
     MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
         .stubs()
-        .WillOnce(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp1的channel1成功
-        .WillOnce(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp1的channel2成功
-        .WillOnce(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp2的channel1成功
-        .WillOnce(returnValue(HCCL_SUCCESS)) // 第二次调用，到rmtEp2的channel2成功
-        .WillRepeatedly(returnValue(HCCL_E_UNAVAIL)); // 第二次调用，到rmtEp2的channel3失败
+        .will(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp1的channel1成功
+        .then(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp1的channel2成功
+        .then(returnValue(HCCL_SUCCESS)) // 第一次调用，到rmtEp2的channel1成功
+        .then(returnValue(HCCL_SUCCESS)) // 第二次调用，到rmtEp2的channel2成功
+        .then(returnValue(HCCL_E_UNAVAIL)); // 第二次调用，到rmtEp2的channel3失败
     std::vector<HcommChannelDesc> hcommDesc(5);
     std::vector<ChannelHandle> hostChannelHandles(5);
     ChannelHandle *hostChannelHandleList = hostChannelHandles.data();
     // 第一次调用BatchCreateChannels成功，创建3个channel
     EXPECT_EQ(myRank.BatchCreateChannels(COMM_ENGINE_CCU, channelDesc, 3, hcommDesc, hostChannelHandleList), HCCL_SUCCESS);
     EXPECT_EQ(myRank.newChannels_.size(), 3);
-    EXPECT_EQ(myRank.newChannels_[0], {0, 0});
-    EXPECT_EQ(myRank.newChannels_[1], {1, 1});
-    EXPECT_EQ(myRank.newChannels_[2], {2, 0});
+    EXPECT_EQ(myRank.newChannels_[0], std::make_pair(0u, 0u));
+    EXPECT_EQ(myRank.newChannels_[1], std::make_pair(1u, 1u));
+    EXPECT_EQ(myRank.newChannels_[2], std::make_pair(2u, 0u));
 
     // 获取到rmtEp1的endpointPair
     RankIdPair rankIdPair1 = std::make_pair(0, 1);
