@@ -5,6 +5,17 @@ repos:
       - id: clang-format
         types_or: [c++, c]
 
+  - repo: local
+    hooks:
+      - id: clang-tidy-staged
+        name: clang-tidy staged C/C++ files
+        entry: bash scripts/clang_tidy_precommit.sh
+        language: system
+        pass_filenames: true
+        types_or: [c++, c]
+        stages: [commit]
+        verbose: true
+
   # OAT compliance check (Open Source Audit Tool)
   - repo: local
     hooks:
