@@ -372,11 +372,10 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
         }
     }
 
-    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT &&
-        (!isMeshTopo || multiModuleDiffDeviceNumMode_)) {
-        // 保序规约场景（多batch一致），当前不支持A2标卡（ring拓扑场景）/ 非对称场景
-        HCCL_ERROR("[SelectAlgfor910B] reduce order preservation only support MeshTopo(isMeshTopo:[%d]) and Symmetry("
-            "multiModuleDiffDeviceNumMode_[%d]).", isMeshTopo, multiModuleDiffDeviceNumMode_);
+    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT && multiModuleDiffDeviceNumMode_) {
+        // 保序规约场景（多batch一致），当前不支持非对称场景
+        HCCL_ERROR("[SelectAlgfor910B] reduce order preservation only support Symmetry("
+            "multiModuleDiffDeviceNumMode_[%d]).", multiModuleDiffDeviceNumMode_);
         return HCCL_E_NOT_SUPPORT;
     }
 
