@@ -1,0 +1,336 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Unix Makefiles",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build_out",
+        "CUSTOM_ASCEND_CANN_PACKAGE_PATH": "/usr/local/Ascend/ascend-toolkit/latest",
+        "CANN_3RD_LIB_PATH": "${sourceDir}/third_party",
+        "CANN_UTILS_LIB_PATH": "${sourceDir}/utils",
+        "ASCENDC_DUMP": "0",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_OPEN_PROJECT": "ON"
+      }
+    },
+    {
+      "name": "ut",
+      "displayName": "UT (build_ut)",
+      "description": "bash build.sh --ut",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build_ut",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+        "ENABLE_TEST": "ON",
+        "ENABLE_UT": "on",
+        "ENABLE_ST": "off",
+        "ASCEND_INSTALL_PATH": "/usr/local/Ascend/latest",
+        "LLT_KILL_TIME": "1200",
+        "DEVICE_MODE": "OFF",
+        "OUTPUT_PATH": "${sourceDir}/output",
+        "ENABLE_ASAN": "ON",
+        "ENABLE_GCOV": "ON"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      }
+    },
+    {
+      "name": "st",
+      "displayName": "ST (build_st)",
+      "description": "bash build.sh --st",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build_st",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "PRODUCT_SIDE": "host",
+        "ENABLE_TEST": "ON",
+        "ENABLE_UT": "off",
+        "ENABLE_ST": "on"
+      }
+    },
+    {
+      "name": "pkg-device",
+      "displayName": "bash build.sh --pkg (device kernel stage)",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build_pkg_device",
+      "cacheVariables": {
+        "DEVICE_MODE": "ON",
+        "KERNEL_MODE": "ON",
+        "PRODUCT": "ascend",
+        "PRODUCT_SIDE": "device",
+        "USE_ALOG": "0",
+        "CUSTOM_SIGN_SCRIPT": "${sourceDir}/scripts/sign/community_sign_build.py",
+        "ENABLE_SIGN": "false",
+        "VERSION_INFO": "8.5.0"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      }
+    },
+    {
+      "name": "host-pkg",
+      "displayName": "bash build.sh --pkg (host package stage)",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build_pkg_host",
+      "cacheVariables": {
+        "DEVICE_MODE": "OFF",
+        "PRODUCT": "ascend",
+        "PRODUCT_SIDE": "host",
+        "USE_ALOG": "1"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      }
+    },
+    {
+      "name": "full-device",
+      "displayName": "bash build.sh --full (device stage)",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build_full_device",
+      "cacheVariables": {
+        "FULL_MODE": "ON",
+        "DEVICE_MODE": "ON",
+        "KERNEL_MODE": "ON",
+        "PRODUCT": "ascend910B",
+        "PRODUCT_SIDE": "device",
+        "USE_ALOG": "0",
+        "CUSTOM_SIGN_SCRIPT": "${sourceDir}/scripts/sign/community_sign_build.py",
+        "ENABLE_SIGN": "false",
+        "VERSION_INFO": "8.5.0"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      }
+    },
+    {
+      "name": "full-hccd",
+      "displayName": "bash build.sh --full (hccd stage)",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build_full_hccd",
+      "cacheVariables": {
+        "FULL_MODE": "ON",
+        "DEVICE_MODE": "ON",
+        "PRODUCT": "ascend",
+        "PRODUCT_SIDE": "device",
+        "USE_ALOG": "1",
+        "CUSTOM_SIGN_SCRIPT": "${sourceDir}/scripts/sign/community_sign_build.py",
+        "ENABLE_SIGN": "false",
+        "VERSION_INFO": "8.5.0"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      }
+    },
+    {
+      "name": "host-full",
+      "displayName": "bash build.sh --full (host package stage)",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "FULL_MODE": "ON",
+        "DEVICE_MODE": "OFF",
+        "PRODUCT": "ascend",
+        "PRODUCT_SIDE": "host",
+        "USE_ALOG": "1"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-st",
+      "displayName": "Build Host UT",
+      "configurePreset": "st",
+      "jobs": 4,
+      "targets": [
+        "all"
+      ],
+      "inheritConfigureEnvironment": true,
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      },
+      "cleanFirst": false,
+      "verbose": true,
+      "nativeToolOptions": [],
+      "configuration": ""
+    },
+    {
+      "name": "build-ut",
+      "displayName": "Build Host UT",
+      "configurePreset": "ut",
+      "jobs": 4,
+      "targets": [
+        "all"
+      ],
+      "inheritConfigureEnvironment": true,
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+      },
+      "cleanFirst": false,
+      "verbose": true,
+      "nativeToolOptions": [],
+      "configuration": ""
+    },
+    {
+      "name": "build-pkg-device",
+      "displayName": "Build device kernel targets for --pkg",
+      "configurePreset": "pkg-device",
+      "verbose": true,
+      "targets": [
+        "ccl_kernel_plf",
+        "ccl_kernel_plf_a",
+        "ccl_kernel",
+        "aicpu_custom_json",
+        "aicpu_custom"
+      ]
+    },
+    {
+      "name": "build-host-pkg",
+      "configurePreset": "host-pkg",
+      "verbose": true,
+      "targets": [
+        "package"
+      ]
+    },
+    {
+      "name": "build-full-device",
+      "displayName": "Build device targets for --full",
+      "configurePreset": "full-device",
+      "verbose": true,
+      "targets": [
+        "hccp_service.bin",
+        "rs",
+        "net_co",
+        "ccl_kernel_plf",
+        "ccl_kernel_plf_a",
+        "ccl_kernel",
+        "aicpu_custom_json",
+        "aicpu_custom",
+        "generate_device_hccp_package",
+        "generate_device_aicpu_package",
+        "sign_cann_hcomm_compat",
+        "sign_aicpu_hcomm"
+      ]
+    },
+    {
+      "name": "build-full-hccd",
+      "displayName": "Build hccd targets for --full",
+      "configurePreset": "full-hccd",
+      "verbose": true,
+      "targets": [
+        "rs",
+        "ra_peer",
+        "ra_hdc",
+        "ra",
+        "hccd",
+        "generate_device_hccd_package",
+        "sign_cann_hccd_compat"
+      ]
+    },
+    {
+      "name": "build-host-full",
+      "configurePreset": "host-full",
+      "verbose": true,
+      "targets": [
+        "package"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "ctest-st",
+      "displayName": "Run ctest for Host UT",
+      "configurePreset": "st",
+      "inheritConfigureEnvironment": true,
+      "execution": {
+        "jobs": 1,
+        "timeout": 1200,
+        "stopOnFailure": true,
+        "interactiveDebugging": true,
+        "noTestsAction": "ignore"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash",
+        "GTEST_SHUFFLE": "1",
+        "GTEST_COLOR": "yes",
+        "GTEST_PRINT_TIME": "1",
+        "GTEST_BREAK_ON_FAILURE": "1",
+        "GTEST_CATCH_EXCEPTIONS": "1",
+        "GTEST_FILTER": "*",
+        "CTEST_PARALLEL_LEVEL": "1"
+      },
+      "output": {
+        "outputOnFailure": true,
+        "verbosity": "verbose",
+        "quiet": false,
+        "debug": false
+      },
+      "filter": {
+        "include": {
+          "name": ".*"
+        },
+        "exclude": {
+          "label": "aaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "ctest-ut",
+      "displayName": "Run ctest for Host UT",
+      "configurePreset": "ut",
+      "inheritConfigureEnvironment": true,
+      "execution": {
+        "jobs": 1,
+        "timeout": 1200,
+        "stopOnFailure": true,
+        "interactiveDebugging": true,
+        "noTestsAction": "ignore"
+      },
+      "environment": {
+        "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash",
+        "GTEST_SHUFFLE": "1",
+        "GTEST_COLOR": "yes",
+        "GTEST_PRINT_TIME": "1",
+        "GTEST_BREAK_ON_FAILURE": "1",
+        "GTEST_CATCH_EXCEPTIONS": "1",
+        "GTEST_FILTER": "*",
+        "CTEST_PARALLEL_LEVEL": "1"
+      },
+      "output": {
+        "outputOnFailure": true,
+        "verbosity": "verbose",
+        "quiet": false,
+        "debug": false
+      },
+      "filter": {
+        "include": {
+          "name": ".*"
+        },
+        "exclude": {
+          "label": "aaaaaaa"
+        }
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "build-ut-test",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "ut"
+        },
+        {
+          "type": "build",
+          "name": "build-ut"
+        }
+      ]
+    }
+  ]
+}
