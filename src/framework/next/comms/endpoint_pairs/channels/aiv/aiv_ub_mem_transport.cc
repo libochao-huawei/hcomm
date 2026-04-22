@@ -102,23 +102,23 @@ Hccl::TransportStatus AivUbMemTransport::GetStatus()
             baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
             break;
         case AivUbMemTransportStatus::SOCKET_OK:
-            SendDataSize();
+            CHK_RET(SendDataSize());
             aivUbStatus_ = AivUbMemTransportStatus::SEND_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::SEND_DATA_SIZE:
-            RecvDataSize();
+            CHK_RET(RecvDataSize());
             aivUbStatus_ = AivUbMemTransportStatus::RECV_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::RECV_DATA_SIZE:
-            SendMemInfo();
+            CHK_RET(SendMemInfo());
             aivUbStatus_ = AivUbMemTransportStatus::SEND_MEM_INFO;
             break;
         case AivUbMemTransportStatus::SEND_MEM_INFO:
-            RecvMemInfo();
+            CHK_RET(RecvMemInfo());
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_INFO;
             break;
         case AivUbMemTransportStatus::RECV_MEM_INFO:
-            RecvDataProcess();
+            CHK_RET(RecvDataProcess());
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_FIN;
             break;
         case AivUbMemTransportStatus::RECV_MEM_FIN:
