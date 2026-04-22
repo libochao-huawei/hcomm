@@ -84,7 +84,7 @@ HcclResult AllReduceNB::RunAsyncStaged(const u32 rank, const u32 rankSize, const
                 "failed in AllGather step", rank, count_), ret);
             break;
         default:
-            HCCL_ERROR("[AllReduceNB][RunAsyncStaged]stage[%d]is not support", stage);
+            HCCL_ERROR("[AllReduceNB][RunAsyncStaged]stage[%d]does not support", stage);
             return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("AllReduceNB RunAsyncStaged stage[%d] finished: rank[%u] ranksize[%u]", stage, rank, rankSize);

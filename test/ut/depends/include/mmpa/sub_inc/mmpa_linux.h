@@ -551,7 +551,7 @@ MMPA_FUNC_VISIBILITY VOID mmAlignFree(VOID *addr);
 #define MMPA_DLL_API
 
 // compatible with versions without mmSysGetEnv, mmSysGetEnv, mmSysSetEnv, mmSysUnsetEnv
-// only support  enum name, env variable is not support
+// only support  enum name, env variable does not support
 // example: char *value = NULL; MM_SYS_GET_ENV(MM_ENV_HOME, value);
 #define MM_SYS_GET_ENV(IdName, value)                                       \
     do {                                                                    \

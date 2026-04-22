@@ -419,7 +419,7 @@ HcclResult InsV2BatchSendRecvExecutor<AlgTopoMatch>::CalcResOffload(const RankGr
     (void)rankGraph;
     (void)dataSize;
     (void)resReq;
-    HCCL_ERROR("[InsCollAlgFactory][InsV2BatchSendRecvExecutor][CalcResOffload] offload is not support");
+    HCCL_ERROR("[InsCollAlgFactory][InsV2BatchSendRecvExecutor][CalcResOffload] offload does not support");
     return HcclResult::HCCL_E_NOT_SUPPORT;
 }
 

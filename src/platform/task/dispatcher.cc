@@ -718,7 +718,7 @@ HcclResult DispatcherPub::InlineReduceAsync(const void *src, u64 count, const Hc
         runtimeDataType = HCCL_RT_DATA_TYPE_MAP.at(datatype);
         rtReduceOp = HCCL_RT_REDUCE_OP_MAP.at(redOp);
     } catch (...) {
-        HCCL_ERROR("[DispatcherPub][ReduceAsync]data type[%s] or reduceOp[%s] is not support",
+        HCCL_ERROR("[DispatcherPub][ReduceAsync]data type[%s] or reduceOp[%s] does not support",
             GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_PARA;
     }

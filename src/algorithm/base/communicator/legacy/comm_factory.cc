@@ -151,7 +151,7 @@ HcclResult CommFactory::CheckCommPara(const std::string &tag, const DeviceMem &i
     }
 
     CHK_PRT_RET(isSupport == false,
-        HCCL_ERROR("[Check][CommPara]tag[%s], deviceType[%d], commPlane[%d] and commType[%d] is not support",
+        HCCL_ERROR("[Check][CommPara]tag[%s], deviceType[%d], commPlane[%d] and commType[%d] does not support",
             tag.c_str(), deviceType_, commParaInfo.commPlane, commParaInfo.commType), HCCL_E_PARA);
 
     return HCCL_SUCCESS;

@@ -135,7 +135,7 @@ HcclResult TransportDeviceP2p::CheckRelationship(u32 relationship)
     constexpr u32 sameSuperpod = HCCL_TRANSPORT_RELATIONSHIP_SAME_SUPERPOD;
 
     if ((relationship != sameChip) && (relationship != sameServer) && (relationship != sameSuperpod)) {
-        HCCL_ERROR("[TransportDeviceP2p] relationship is not support, relationship:%d", relationship);
+        HCCL_ERROR("[TransportDeviceP2p] relationship does not support, relationship:%d", relationship);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;

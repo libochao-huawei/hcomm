@@ -248,7 +248,7 @@ HcclResult hrtHalGrpQuery(GroupQueryCmdType cmd, void *inBuff, unsigned int inLe
     CHK_PTR_NULL(outBuff);
     CHK_PTR_NULL(outLen);
     drvError_t ret = DlHalFunction::GetInstance().dlHalGrpQuery(cmd, inBuff, inLen, outBuff, outLen);
-    CHK_PRT_RET(ret == DRV_ERROR_NOT_SUPPORT, HCCL_WARNING("dlHalGrpQuery is not support."), HCCL_SUCCESS);
+    CHK_PRT_RET(ret == DRV_ERROR_NOT_SUPPORT, HCCL_WARNING("dlHalGrpQuery does not support."), HCCL_SUCCESS);
     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] hrtHalGrpQuery fail,"
         "return[%d], para: cmd[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret, cmd), HCCL_E_DRV);
     return HCCL_SUCCESS;

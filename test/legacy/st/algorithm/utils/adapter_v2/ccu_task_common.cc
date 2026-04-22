@@ -290,7 +290,7 @@ HcclResult GetPeerRankByTaskNode(TaskNodePtr currNode, RankId &peerRank)
         TaskStubWriteReduce *write = dynamic_cast<TaskStubWriteReduce *>(currNode->task);
         peerRank = write->GetRemoteRank();
     } else {
-        HCCL_ERROR("[GetPeerRankByTaskNode] Get peer rank by task node failed, task node type [%d] is not support.",
+        HCCL_ERROR("[GetPeerRankByTaskNode] Get peer rank by task node failed, task node type [%d] does not support.",
             static_cast<int>(currNode->task->GetType()));
         return HCCL_E_INTERNAL;
     }

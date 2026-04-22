@@ -186,7 +186,7 @@ HcclResult TransportP2p::ParseSpecifyLink(LinkTypeInServer &linkType)
         isSioToHccs_ = true;
         HCCL_INFO("%s specifyLink change to HCCS_SW_TYPE", __func__);
     } else {
-        HCCL_ERROR("%s fail, linkType:%d, specifyLink:%d is not support", __func__, linkType, machinePara_.specifyLink);
+        HCCL_ERROR("%s fail, linkType:%d, specifyLink:%d does not support", __func__, linkType, machinePara_.specifyLink);
         return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;

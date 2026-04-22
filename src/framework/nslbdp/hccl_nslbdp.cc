@@ -870,7 +870,7 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
     }
     HCCL_DEBUG("[NSLB-DP] check table NSLBDP_TYPE_TBL_ADJ size:[%zu].", hcclNslbDpAlgorithmInfo_.size());
     if (CheckAhcSupport(algType, nslbIdentifier) == false) {
-        HCCL_RUN_INFO("[NSLB-DP-ADJ] Check AHC commoninfo is not support.");
+        HCCL_RUN_INFO("[NSLB-DP-ADJ] Check AHC commoninfo does not support.");
         return HCCL_SUCCESS;
     }
     u64 taskId = GetGlobalCommTaskId();

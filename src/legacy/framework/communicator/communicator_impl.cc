@@ -933,7 +933,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         ExecAlgSelect(opParams, OpMode::OFFLOAD);
 
         if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 950不支持HOST_TS模式
-            HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] HOSTCPU_TS is not support.");
+            HCCL_ERROR("[CommunicatorImpl::LoadOffloadCollOp] HOSTCPU_TS does not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
 
@@ -3049,7 +3049,7 @@ HcclResult CommunicatorImpl::ReLoadOffloadOp()
     ExecAlgSelect(curOpParams, OpMode::OFFLOAD); // 根据配置选择对应的collService
 
     if (opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS) { // 950不支持HOST_TS模式
-            HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadOp] HOSTCPU_TS is not support.");
+            HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadOp] HOSTCPU_TS does not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
     }
     bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);

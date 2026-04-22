@@ -70,7 +70,7 @@ HcclResult AllReduceRecursiveHalvingDoubling::RunAsyncStaged(const u32 rank, con
             CHK_RET(GatherInPartOne(rank, links));
             break;
         default:
-            HCCL_ERROR("[AllReduceRecursiveHalvingDoubling][RunAsyncStaged]stage[%d]is not support", stage);
+            HCCL_ERROR("[AllReduceRecursiveHalvingDoubling][RunAsyncStaged]stage[%d]does not support", stage);
             return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("AllReduceRecursiveHalvingDoubling RunAsyncStaged stage[%d] finished: rank[%u] ranksize[%u]",

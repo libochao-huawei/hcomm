@@ -92,7 +92,7 @@ HcclResult AllReduceNHRV1::RunAsyncStaged(const u32 rank, const u32 rankSize, co
                 "RunAllGatherOnHorizontal step", rank, count_), ret);
             break;
         default:
-            HCCL_ERROR("[AllReduceNHRV1][RunAsyncStaged]stage[%d]is not support", stage);
+            HCCL_ERROR("[AllReduceNHRV1][RunAsyncStaged]stage[%d]does not support", stage);
             return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("AllReduceNHRV1 RunAsyncStaged stage[%d] finished: rank[%u] ranksize[%u]", stage, rank, rankSize);

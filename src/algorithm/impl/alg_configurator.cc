@@ -208,7 +208,7 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
                 break;
             } else if (opType < HcclCMDType::HCCL_CMD_ALL) {
                 algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
-                HCCL_INFO("server num[%u]: level1:ahc algo is not support, set default.", moduleNum);
+                HCCL_INFO("server num[%u]: level1:ahc algo does not support, set default.", moduleNum);
                 break;
             } else {
                 algType = AlgTypeLevel1::ALG_LEVEL1_AHC;
@@ -223,7 +223,7 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
                 break;
             } else if (opType < HcclCMDType::HCCL_CMD_ALL) {
                 algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
-                HCCL_INFO("server num[%u]: level1:ahc broke algo is not support, set default.", moduleNum);
+                HCCL_INFO("server num[%u]: level1:ahc broke algo does not support, set default.", moduleNum);
                 break;
             } else {
                 algType = AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE;
@@ -479,7 +479,7 @@ HcclResult AlgConfigurator::GetTopoTypeByAlgType(const AlgType &algType, const D
             break;
         default:
             HCCL_ERROR("[AlgConfigurator][GetTopoTypeByAlgType]errNo[0x%016llx] case: device type[%d](0~1:V910),"
-                " algorithm[%s] is not support", HCCL_ERROR_CODE(HCCL_E_PARA), deviceType,
+                " algorithm[%s] does not support", HCCL_ERROR_CODE(HCCL_E_PARA), deviceType,
                 AlgTypeToStr(algType).c_str());
             return HCCL_E_PARA;
     }

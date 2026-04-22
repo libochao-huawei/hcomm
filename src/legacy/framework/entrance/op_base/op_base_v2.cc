@@ -116,7 +116,7 @@ std::map<HcclReduceOp, ReduceOp> HCCL_OP_REDUCE_MAP = {{HCCL_REDUCE_SUM, ReduceO
 static void CheckHcclDeterministic(uint32_t hcclDeterministic)
 {
     if (hcclDeterministic == 0) {
-        HCCL_WARNING("[HcclCommInitClusterInfoConfig] hcclDeterministic[%u] is not support.", hcclDeterministic);
+        HCCL_WARNING("[HcclCommInitClusterInfoConfig] hcclDeterministic[%u] does not support.", hcclDeterministic);
     } else if (hcclDeterministic != HCCL_COMM_DETERMINISTIC_CONFIG_NOT_SET && hcclDeterministic != 1) {
         HCCL_WARNING("[HcclCommInitClusterInfoConfig] hcclDeterministic[%u] is invalid.", hcclDeterministic);
     }
@@ -2784,7 +2784,7 @@ HcclResult HcclGetTopoDescV2()
 
 HcclResult HcclGetCommAsyncErrorV2()
 {
-    HCCL_WARNING("HcclGetCommAsyncErrorV2 is not support!");
+    HCCL_WARNING("HcclGetCommAsyncErrorV2 does not support!");
     return HCCL_SUCCESS;
 }
 

@@ -1001,7 +1001,7 @@ HcclResult CommBase::GetRankIPInfo(bool isInterServer, bool isInterHccs, bool &i
         socketManager = exchanger_.socketManager;
         CHK_PTR_NULL(socketManager);
     } else {
-        HCCL_ERROR("[Create][ExchangerNetwork]isInterServer[%d] and isInterHccs[%d] is not support",
+        HCCL_ERROR("[Create][ExchangerNetwork]isInterServer[%d] and isInterHccs[%d] does not support",
             isInterServer, isInterHccs);
         return HCCL_E_INTERNAL;
     }

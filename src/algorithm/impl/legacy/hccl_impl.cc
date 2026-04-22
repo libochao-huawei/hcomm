@@ -467,7 +467,7 @@ HcclResult hcclImpl::GetCommTypeInLevel1(const AlgType algType, CommType &commTy
            commType = CommType::COMM_TAG_WHOLE_NB;
         }
     } else {
-        HCCL_ERROR("[Get][CommTypeInLevel1]algType[%s] is not support", AlgTypeToStr(algType).c_str());
+        HCCL_ERROR("[Get][CommTypeInLevel1]algType[%s] does not support", AlgTypeToStr(algType).c_str());
         return HCCL_E_PARA;
     }
     HCCL_DEBUG("[Get][CommTypeInLevel1]The algType is %s, while commType is %d",
