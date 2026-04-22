@@ -23,6 +23,7 @@
 #include "env_config.h"
 #include "hccp_common.h"
 #include "network_api_exception.h"
+#include "adapter_error_manager_pub.h"
 
 namespace Hccl {
 
@@ -205,6 +206,10 @@ void RankInfoDispather::ProcessSend()
         }
 
         //循环超时
+        if ((std::chrono::steady_clock::now() - startTime) >= timeout) {
+            RPT_INPUT_ERR(true, "EI0015", std::vector<std::string>({"error_reason"}),
+                std::vector<std::string>({"epoll_wait timeout"}));
+        }
         CHK_PRT_THROW(((std::chrono::steady_clock::now() - startTime) >= timeout), 
                         HCCL_ERROR("[RankInfoDispather::%s] epoll_wait timeout.", __func__), TimeoutException, "epoll_wait timeout");
         
