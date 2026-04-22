@@ -816,7 +816,7 @@ HcclResult DevUbConnection::Describe(std::string &dfxMsg) const
         uint32_t attrBitmap = 8192;
         struct TpAttr tpAttr {0};
         u32 devicePhyId = HrtGetDevicePhyIdByIndex(devLogicId);
-        CHK_RET(HrtRaCtxGetTpAttr(devicePhyId, rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr));
+        CHK_RET(HrtRaGetTpAttrAsync(rdmaHandle, tpInfo.tpHandle, attrBitmap, tpAttr, reqHandle));
         udpSport = tpAttr.dataUdpSrcport;
     }
     udpSport = udpSport & 0xFF;
