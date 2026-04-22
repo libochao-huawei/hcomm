@@ -16,6 +16,9 @@ namespace Hccl {
 
 class EnvConfig {
 public:
+    /// UBC Jetty / TP：默认 QoS（0–7），与 `src/framework/common/src/config/env_config.h` 中 `EnvConfig::UB_QOS_DEFAULT` 一致
+    static constexpr u32 UB_QOS_DEFAULT = 4U;
+
     static EnvConfig &GetInstance();
 
     const EnvHostNicConfig &GetHostNicConfig();
