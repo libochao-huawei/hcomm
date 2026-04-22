@@ -34,8 +34,9 @@ public:
     ~AddressInfo() {};
     
     IpAddress                  addr;
+    u32                        socketPort_{0};  // socket监听端口
     AddrType                   addrType;
-    std::set<std::string>      ports;
+    std::set<std::string>      ports;  // 网口标记
     std::string                planeId{"0"};
     void                       Deserialize(const nlohmann::json &addressInfoJson);
     explicit                   AddressInfo(BinaryStream &binStream);

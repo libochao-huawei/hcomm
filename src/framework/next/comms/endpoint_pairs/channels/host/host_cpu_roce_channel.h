@@ -16,6 +16,7 @@
 #include "enum_factory.h"
 #include "hccl_common.h"
 #include "../../sockets/socket_mgr.h"
+#include "infiniband/verbs.h"
 
 // Orion
 #include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
@@ -88,6 +89,12 @@ private:
     HcclResult PostAndCheckSend(const char *caller, struct ibv_send_wr &wr);
     HcclResult FindLocalBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
     HcclResult FindRemoteBuffer(const uint64_t addr, const uint64_t len, size_t &targetIdx) const;
+
+    // Wrapper for stub
+    int IbvPollCq(ibv_cq *sendCq, uint32_t numEntries, ibv_wc *wc) const
+    {
+        return ibv_poll_cq(sendCq, numEntries, wc);
+    }
 
     // 入参
     EndpointHandle endpointHandle_;

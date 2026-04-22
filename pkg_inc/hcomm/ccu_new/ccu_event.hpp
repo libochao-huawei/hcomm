@@ -10,6 +10,7 @@
 
 #ifndef CCU_EVENT_HPP
 #define CCU_EVENT_HPP
+<<<<<<< HEAD
  
 #include <cstdint>
 #include <type_traits>
@@ -23,11 +24,27 @@
  public:
      explicit CcuEventMask(CcuEventHandle* owner) : ownerHandle_(owner) {}
      void operator=(uint32_t newMask) const{
+=======
+
+#include <cstdint>
+#include <type_traits>
+
+#include "ccu_types.h"
+#include "ccu_data_api_impl.h"
+
+class CcuEvent;
+
+class CcuEventMask {
+public:
+    explicit CcuEventMask(CcuEventHandle* owner) : ownerHandle_(owner) {}
+    void operator=(uint32_t newMask) const{
+>>>>>>> origin/ccu_c
         auto ret = CcuSetMask(*ownerHandle_, newMask);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
+<<<<<<< HEAD
  private:
      CcuEventHandle* ownerHandle_;
  };
@@ -43,16 +60,31 @@
      }
  
      void setMask(uint32_t mask) const {
+=======
+private:
+    CcuEventHandle* ownerHandle_;
+};
+
+class CcuEvent final {
+public:
+    explicit CcuEvent() : mask(&handle) {}
+
+    CcuEvent(const CcuEvent& other) : handle(other.handle), mask(&handle) {}
+
+    void operator=(CcuEvent&& other) {
+        this->handle = other.handle;
+    }
+
+    void setMask(uint32_t mask) const {
+>>>>>>> origin/ccu_c
         auto ret = CcuSetMask(this->handle, mask);
         if (ret != CcuResult::CCU_SUCCESS) {
             throw "todo: failed";
         }
     }
  
-     CcuEventHandle handle{0};
-     CcuEventMask mask;
- };
+    CcuEventHandle handle{0};
+    CcuEventMask mask;
+};
 
- 
- #endif // CCU_EVENT_HPP
- 
+#endif // CCU_EVENT_HPP

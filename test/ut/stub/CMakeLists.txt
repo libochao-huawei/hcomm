@@ -62,7 +62,6 @@ list(REMOVE_ITEM ALGORITHM_SOURCES ${EXCLUDE_ALGORITHM_DEVICE_REGEX})
 set(EXCLUDE_COMMON_DEVICE_REGEX 
     "${HCCL_CODE_ROOT}/src/common/debug/profiling/plugin_runner_device.cc"
     "${HCCL_CODE_ROOT}/src/common/stream/stream_utils_aicpu.cc"
-    "${HCCL_CODE_ROOT}/src/common/debug/profiling/task_exception_handler_device.cc"
     "${HCCL_CODE_ROOT}/src/common/launch_device/launch_device.cc"
     )
 list(REMOVE_ITEM COMMON_SOURCES ${EXCLUDE_COMMON_DEVICE_REGEX})

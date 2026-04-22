@@ -67,6 +67,9 @@ void NewRankInfo::Deserialize(const nlohmann::json &newRankInfoJson)
     for (auto &levelJson : levelJsons) {
         RankLevelInfo levelInfo;
         levelInfo.Deserialize(levelJson);
+        for (auto &addrsInfo : levelInfo.rankAddrs) {
+            addrsInfo.socketPort_ = devicePort;
+        }
         rankLevelInfos.emplace_back(levelInfo);
     }
 

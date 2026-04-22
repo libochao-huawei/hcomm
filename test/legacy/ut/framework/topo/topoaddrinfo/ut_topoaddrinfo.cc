@@ -249,7 +249,8 @@ void *mock_dlsym(void *handle, const char *symbol)
     if (strcmp(symbol, "dcmiv2_get_mainboard_id") == 0) {
         return (void*)mock_dcmiv2_get_mainboard_id;
     }
-    if (strcmp(symbol, "dcmiv2_get_dev_id_from_chip_phyid") == 0) {
+    if (strcmp(symbol, "dcmiv2_get_dev_id_from_chip_phyid") == 0
+     || strcmp(symbol, "dcmiv2_get_dev_id_by_chip_phy_id") == 0) {
         return (void*)mock_get_logicid_from_chipphy_id;
     }
     return (void*)0x1;

@@ -44,7 +44,8 @@ protected:
         std::cout << "A Test case in AdapterHccp TearDown" << std::endl;
     }
 
-    FdHandle fakeFdHandle = nullptr;
+    SocketHandle fakeSocHandle = (SocketHandle)0x123;
+    FdHandle fakeFdHandle = (FdHandle)0x200;
     void *fakeData = (void *)0x100;
 };
 
@@ -182,7 +183,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), NullPtrException);
+    EXPECT_THROW(HrtRaSocketWhiteListAdd(fakeSocHandle, whiteList), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_ok)
@@ -190,11 +191,10 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_ok)
     // Given
     MOCKER(RaSocketWhiteListAdd).stubs().will(returnValue(0));
     vector<RaSocketWhitelist> whiteList(1);
-    SocketHandle validSocketHandle = reinterpret_cast<SocketHandle>(0x123);
     // when
 
     // then
-    EXPECT_NO_THROW(HrtRaSocketWhiteListAdd(validSocketHandle, whiteList));
+    EXPECT_NO_THROW(HrtRaSocketWhiteListAdd(fakeSocHandle, whiteList));
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_strcpy_nok)
@@ -205,7 +205,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_strcpy_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), NullPtrException);
+    EXPECT_THROW(HrtRaSocketWhiteListAdd(fakeSocHandle, whiteList), InternalException);
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListDel_nok)
@@ -216,7 +216,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListDel_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListDel(nullptr, whiteList), NullPtrException);
+    EXPECT_THROW(HrtRaSocketWhiteListDel(fakeSocHandle, whiteList), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, hrtRaSocketListenOneStart_again)
@@ -726,7 +726,9 @@ TEST_F(AdapterHccpTest, RaUbAllocTokenIdHandle_ok)
 TEST_F(AdapterHccpTest, RaUbFreeTokenIdHandle_exception)
 {
     MOCKER(RaCtxTokenIdFree).stubs().with(any()).will(returnValue(1));
-    EXPECT_THROW(RaUbFreeTokenIdHandle(0, 0), NullPtrException);
+    RdmaHandle handle = (void *)0x1234;
+    TokenIdHandle tokenIdHandle = 1234;
+    EXPECT_THROW(RaUbFreeTokenIdHandle(handle, tokenIdHandle), NetworkApiException);
 }
 
 void MockRaSocketRecv(int ret, unsigned long long recvSize)
@@ -746,44 +748,42 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvOnceComplete_Expect_Suc
 {
     MockRaSocketRecv(0, 100); // 一次接收完成
     MockEnvLinkTimeoutGet(1); // 1秒超时
-    FdHandle fakeFdHandle = reinterpret_cast<FdHandle>(0x123);
-    void *fakeData = reinterpret_cast<void *>(0x133);
     EXPECT_NO_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100));
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeExceeds_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeExceeds_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(0, 150); // 超出预期大小
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeZero_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeZero_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(0, 0); // 接收为0
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClosed_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClosed_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(SOCK_ESOCKCLOSED, 0);
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClose_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClose_Expect_Throw_NetworkApiException)
 {
     MockRaSocketRecv(SOCK_CLOSE, 0);
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
-TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_Timeout_Expect_ThrowException)
+TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_Timeout_Expect_Throw_NetworkApiException)
 {
-    MockRaSocketRecv(0, 0); // 模拟一直接收不到数据
+    MockRaSocketRecv(1, 0); // 模拟一直接收不到数据
     MockEnvLinkTimeoutGet(0); // 超时时间设为0
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, ut_HrtRaSocketWhiteListDel_With_Enormous_WhiteList)

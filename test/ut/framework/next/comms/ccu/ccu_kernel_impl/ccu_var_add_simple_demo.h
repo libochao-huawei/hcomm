@@ -10,10 +10,14 @@
 
 #include "adapter_hccp.h"
 #include "ccu_api.hpp"
+<<<<<<< HEAD
 #include "ccu_local_addr.hpp"
 #include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
 #include "ccu_remote_addr.hpp"
 #include <vector>
+=======
+#include "ccu_log.h" // demo演示使用，hccl仓需要另外实现
+>>>>>>> origin/ccu_c
 
 struct CcuVarAddKernelArg {
     uint64_t numA{0xffffffff};
