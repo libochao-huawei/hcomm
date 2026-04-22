@@ -101,7 +101,7 @@ HcclResult CcuDeinitFeature(const int32_t devLogicId)
 
 HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enableFlag)
 {
-    const auto &dieEnableFlags = CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
+    const auto &dieEnableFlags = Hccl::CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
     CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
         HCCL_ERROR("[%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
             __func__, dieId, CCU_MAX_IODIE_NUM, deviceLogicId),
@@ -114,7 +114,7 @@ HcclResult CcuGetDieEnableInfo(int32_t deviceLogicId, uint8_t dieId, bool &enabl
 HcclResult CcuAllocEngineResHandle(const int32_t deviceLogicId,
     const CcuEngine ccuEngine, CcuResHandle &resHandle)
 {
-    auto dieEnableFlags = Hccl::CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
+    const auto &dieEnableFlags = Hccl::CcuComponent::GetInstance(deviceLogicId).GetDieEnableFlags();
     if (!dieEnableFlags[0] && !dieEnableFlags[1]) {
         HCCL_ERROR("[%s] failed, all ccu dies are disable, devLogicId[%d].",
             __func__, deviceLogicId);

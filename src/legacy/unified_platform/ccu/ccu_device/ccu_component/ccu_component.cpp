@@ -897,7 +897,7 @@ HcclResult CcuComponent::CleanTaskKillState() const
     return HcclResult::HCCL_SUCCESS;
 }
 
-std::array<bool, MAX_CCU_IODIE_NUM> CcuComponent::GetDieEnableFlags() const
+const std::array<bool, MAX_CCU_IODIE_NUM> &CcuComponent::GetDieEnableFlags() const
 {
     return dieEnableFlags;
 }
