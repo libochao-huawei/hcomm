@@ -297,6 +297,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/dfx/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/ccu/ccu_representation/reps/common/
 
+
     # ccu 头文件
     ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
