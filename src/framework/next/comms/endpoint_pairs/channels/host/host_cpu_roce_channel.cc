@@ -181,7 +181,18 @@ HcclResult HostCpuRoceChannel::BuildConnection()
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, rdmaHandle_, lbMax),
         HCCL_E_NETWORK);
 
-    for (u32 i = 0; i < channelDesc_.roceAttr.queueNum; i++) {
+    u32 loopTimes = 0;
+    if (lbMax > 0) {
+        if (channelDesc_.roceAttr.queueNum == 1) {
+            loopTimes = lbMax;
+        } else {
+            loopTimes = channelDesc_.roceAttr.queueNum;
+        }
+    } else {
+        loopTimes = channelDesc_.roceAttr.queueNum;
+    }
+
+    for (u32 i = 0; i < loopTimes; i++) {
         std::unique_ptr<HostRdmaConnection> conn;
         EXECEPTION_CATCH(
             conn = std::make_unique<HostRdmaConnection>(socket_, rdmaHandle_),
@@ -189,14 +200,14 @@ HcclResult HostCpuRoceChannel::BuildConnection()
         CHK_PTR_NULL(conn);
         CHK_RET(conn->Init());
         Hccl::QpInfo& qpInfo = conn->GetQpInfo();
-        qpInfo.lbMax = lbMax;
+        qpInfo.lbValue = i % lbMax;
         qpInfo.qpThreshold = channelDesc_.roceAttr.qpThreshold;
         qpInfo.serviceLevel = channelDesc_.roceAttr.sl;
         qpInfo.trafficClass = channelDesc_.roceAttr.tc;
         qpInfo.retryCnt = channelDesc_.roceAttr.retryCnt;
         qpInfo.retryInterval = channelDesc_.roceAttr.retryInterval;
-        HCCL_INFO("[HostCpuRoceChannel::BuildConnection] QpInfo: serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
-            qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
+        HCCL_INFO("[HostCpuRoceChannel::BuildConnection] QpInfo[%u]: lbValue[%u], serviceLevel[%u], trafficClass[%u], retryCnt[%u], retryInterval[%u].", 
+            i, qpInfo.lbValue, qpInfo.serviceLevel, qpInfo.trafficClass, qpInfo.retryCnt, qpInfo.retryInterval);
         connections_.emplace_back(std::move(conn));
     }
     connNum_ = connections_.size();
@@ -752,28 +763,30 @@ HcclResult HostCpuRoceChannel::NotifyRecord(const uint32_t remoteNotifyIdx)
     CHK_PRT_RET(qpInfo.empty(), HCCL_ERROR("[HostCpuRoceChannel::%s] qpInfos is Empty", __func__), HCCL_E_ROCE_CONNECT);
 
     // 3.调用ibv_post_send
-    HCCL_INFO("[HostCpuRoceChannel::%s] call ibv_post_send, qp_state = [%u]", __func__, qpInfo[0].qp->state);
-    int32_t ret = ibv_post_send(qpInfo[0].qp, &notifyRecordWr, &sendbadWr);
-    if (ret != 0 && sendbadWr == nullptr) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_post_send failed while badWr is nullptr", __func__);
-        return HCCL_E_INTERNAL;
-    }
-    CHK_PRT_RET(ret == ENOMEM,
-        HCCL_WARNING("[HostCpuRoceChannel][%s] post send wqe overflow. ret:%d, badWr->wr_id[%llu], "
-                     "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-            __func__, ret, sendbadWr->wr_id, sendbadWr->sg_list->addr, sendbadWr->wr.rdma.remote_addr, sendbadWr->wr.ud.remote_qpn),
-        HCCL_E_AGAIN);
+    for (uint32_t i = 0; i < qpInfo.size(); i++) {
+        HCCL_INFO("[HostCpuRoceChannel::%s] call ibv_post_send, qp_state[%u] = [%u]", __func__, i, qpInfo[i].qp->state);
+        int32_t ret = ibv_post_send(qpInfo[i].qp, &notifyRecordWr, &sendbadWr);
+        if (ret != 0 && sendbadWr == nullptr) {
+            HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_post_send failed while badWr is nullptr", __func__);
+            return HCCL_E_INTERNAL;
+        }
+        CHK_PRT_RET(ret == ENOMEM,
+            HCCL_WARNING("[HostCpuRoceChannel][%s] post send wqe overflow. ret:%d, badWr->wr_id[%llu], "
+                        "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
+                __func__, ret, sendbadWr->wr_id, sendbadWr->sg_list->addr, sendbadWr->wr.rdma.remote_addr, sendbadWr->wr.ud.remote_qpn),
+            HCCL_E_AGAIN);
 
-    CHK_PRT_RET(ret != 0,
-        HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_post_send failed. ret:%d, badWr->wr_id[%llu], "
-                   "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
-            __func__, ret, sendbadWr->wr_id, sendbadWr->sg_list->addr, sendbadWr->wr.rdma.remote_addr, sendbadWr->wr.ud.remote_qpn),
-        HCCL_E_NETWORK);
-    if (wqeNum_ == UINT32_MAX) {
-        HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", __func__);
-        return HCCL_E_INTERNAL;
+        CHK_PRT_RET(ret != 0,
+            HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_post_send failed. ret:%d, badWr->wr_id[%llu], "
+                    "badWr->sg_list->addr[%llu], badWr->wr.rdma.remote_addr[%llu], badWr->wr.ud.remote_qpn[%u]",
+                __func__, ret, sendbadWr->wr_id, sendbadWr->sg_list->addr, sendbadWr->wr.rdma.remote_addr, sendbadWr->wr.ud.remote_qpn),
+            HCCL_E_NETWORK);
+        if (wqeNum_ == UINT32_MAX) {
+            HCCL_ERROR("[HostCpuRoceChannel::%s] wqeNum_ has reached the maximum value of uint32_t.", __func__);
+            return HCCL_E_INTERNAL;
+        }
+        wqeNum_++;
     }
-    wqeNum_++;
     HCCL_INFO("[HostCpuRoceChannel::NotifyRecord] NotifyRecord end, wqeNum_=%u", wqeNum_);
 
     taskParam.endTime  = hccl::DlProfFunction::GetInstance().dlMsprofSysCycleTime();
@@ -812,26 +825,28 @@ HcclResult HostCpuRoceChannel::NotifyWait(const uint32_t localNotifyIdx, const u
     // 2.轮询rq_cq
     auto startTime = std::chrono::steady_clock::now();
     auto waitTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::milliseconds(timeout));
-    while (true) {
-        auto actualNum = ibv_poll_cq(qpInfo[0].recvCq, 1, &wc);
-        CHK_PRT_RET(actualNum < 0, HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq err. actualNum=%d", __func__, actualNum),
-                    HCCL_E_NETWORK);
+    for (uint32_t i = 0; i < qpInfo.size(); i++) {
+        while (true) {
+            auto actualNum = ibv_poll_cq(qpInfo[i].recvCq, 1, &wc);
+            CHK_PRT_RET(actualNum < 0, HCCL_ERROR("[HostCpuRoceChannel::%s] ibv_poll_cq err. actualNum=%d", __func__, actualNum),
+                        HCCL_E_NETWORK);
 
-        if (actualNum > 0 && wc.imm_data == dpuNotifyId) {
-            if (wc.status != IBV_WC_SUCCESS) {
-                HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status[%d].", __func__, wc.status);
-                return ReportWcStatusError(wc.status);
+            if (actualNum > 0 && wc.imm_data == dpuNotifyId) {
+                if (wc.status != IBV_WC_SUCCESS) {
+                    HCCL_ERROR("[HostCpuRoceChannel][%s] ibv_poll_cq return wc.status[%d].", __func__, wc.status);
+                    return ReportWcStatusError(wc.status);
+                }
+                HCCL_INFO("[HostCpuRoceChannel::NotifyWait] poll cq success");
+                break;
+            } else if (actualNum > 0) {
+                CHK_PRT_RET(true, HCCL_ERROR("[HostCpuRoceChannel::%s] polled cq unexpected. imm_data[%u] != dpuNotifyId[%u]",
+                    __func__, wc.imm_data, dpuNotifyId), HCCL_E_NETWORK);
             }
-            HCCL_INFO("[HostCpuRoceChannel::NotifyWait] poll cq success");
-            break;
-        } else if (actualNum > 0) {
-            CHK_PRT_RET(true, HCCL_ERROR("[HostCpuRoceChannel::%s] polled cq unexpected. imm_data[%u] != dpuNotifyId[%u]",
-                __func__, wc.imm_data, dpuNotifyId), HCCL_E_NETWORK);
-        }
 
-        if ((std::chrono::steady_clock::now() - startTime) >= waitTime) {
-            CHK_PRT_RET(true, HCCL_ERROR("[HostCpuRoceChannel][%s] call ibv_poll_cq timeout. actualNum=%d", __func__, actualNum),
-                        HCCL_E_TIMEOUT);
+            if ((std::chrono::steady_clock::now() - startTime) >= waitTime) {
+                CHK_PRT_RET(true, HCCL_ERROR("[HostCpuRoceChannel][%s] call ibv_poll_cq timeout. actualNum=%d", __func__, actualNum),
+                            HCCL_E_TIMEOUT);
+            }
         }
     }
     CHK_RET(IbvPostRecv());
