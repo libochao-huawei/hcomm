@@ -331,7 +331,7 @@ namespace hccl
         commAicpuParam_.userRank = collComm_->GetMyRankId();
         commAicpuParam_.userRankSize = collComm_->GetRankSize();
         const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
-        HCCL_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
+        HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
             "userRank[%u], userRankSize[%u], opExpansionMode[%u].",
             __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId,
             commAicpuParam_.devicePhyId, commAicpuParam_.deviceType,
