@@ -1130,6 +1130,29 @@ typedef enum tagRtMemcpyKind {
     RT_MEMCPY_RESERVED,
 } rtMemcpyKind_t;
 
+typedef enum tagRtRecudeKind {
+    RT_MEMCPY_SDMA_AUTOMATIC_ADD = 10,  // D2D, SDMA inline reduce, include 1P, and P2P
+    RT_MEMCPY_SDMA_AUTOMATIC_MAX = 11,
+    RT_MEMCPY_SDMA_AUTOMATIC_MIN = 12,
+    RT_MEMCPY_SDMA_AUTOMATIC_EQUAL = 13,
+    RT_RECUDE_KIND_END = 14,
+} rtRecudeKind_t;
+
+typedef enum tagRtDataType {
+    RT_DATA_TYPE_FP32 = 0,  // fp32
+    RT_DATA_TYPE_FP16 = 1,  // fp16
+    RT_DATA_TYPE_INT16 = 2, // int16
+    RT_DATA_TYPE_INT4 = 3,  // int4
+    RT_DATA_TYPE_INT8 = 4,  // int8
+    RT_DATA_TYPE_INT32 = 5, // int32
+    RT_DATA_TYPE_BFP16 = 6, // bfp16
+    RT_DATA_TYPE_BFP32 = 7, // bfp32
+    RT_DATA_TYPE_UINT8 = 8, // uint8
+    RT_DATA_TYPE_UINT16 = 9, // uint16
+    RT_DATA_TYPE_UINT32 = 10, // uint32
+    RT_DATA_TYPE_END = 11,
+} rtDataType_t;
+
 RTS_API rtError_t rtMemcpyAsyncPtr(void *memcpyAddrInfo, uint64_t destMax, uint64_t count,
                                     rtMemcpyKind_t kind, rtStream_t stream, uint32_t qosCfg);
 

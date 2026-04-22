@@ -575,9 +575,9 @@ aclError aclrtQueryEventWaitStatus(aclrtEvent event, aclrtEventWaitStatus *statu
     return ACL_SUCCESS;
 }
 
-rtError_t rtSetTaskAbortCallBack(const char *moduleName, rtTaskAbortCallBack callback, void *args)
-{
-    return RT_ERROR_NONE;
+rtError_t rtSetTaskAbortCallBack(const char *moduleName, rtTaskAbortCallBack callback, void *args) 
+{ 
+    return RT_ERROR_NONE; 
 }
 
 rtError_t rtStreamGetCaptureInfo(rtStream_t stm, rtStreamCaptureStatus * const status, rtModel_t *captureMdl)

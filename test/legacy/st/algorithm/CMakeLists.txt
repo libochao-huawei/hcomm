@@ -52,7 +52,6 @@ set(ASCEND_CANN_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
-    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
     ${ASCEND_CANN_PACKAGE_PATH}/include
     ${ASCEND_CANN_PACKAGE_PATH}/include/hccl
