@@ -102,23 +102,23 @@ Hccl::TransportStatus AivUbMemTransport::GetStatus()
             baseStatus_ = Hccl::TransportStatus::SOCKET_OK;
             break;
         case AivUbMemTransportStatus::SOCKET_OK:
-            CHK_RET(SendDataSize());
+            SendDataSize();
             aivUbStatus_ = AivUbMemTransportStatus::SEND_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::SEND_DATA_SIZE:
-            CHK_RET(RecvDataSize());
+            RecvDataSize();
             aivUbStatus_ = AivUbMemTransportStatus::RECV_DATA_SIZE;
             break;
         case AivUbMemTransportStatus::RECV_DATA_SIZE:
-            CHK_RET(SendMemInfo());
+            SendMemInfo();
             aivUbStatus_ = AivUbMemTransportStatus::SEND_MEM_INFO;
             break;
         case AivUbMemTransportStatus::SEND_MEM_INFO:
-            CHK_RET(RecvMemInfo());
+            RecvMemInfo();
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_INFO;
             break;
         case AivUbMemTransportStatus::RECV_MEM_INFO:
-            CHK_RET(RecvDataProcess());
+            RecvDataProcess();
             aivUbStatus_ = AivUbMemTransportStatus::RECV_MEM_FIN;
             break;
         case AivUbMemTransportStatus::RECV_MEM_FIN:
@@ -207,9 +207,7 @@ HcclResult AivUbMemTransport::RecvDataProcess()
     rmtBufferVec_.clear();
     rmtRmaBufferVec_.clear();
     remoteUserMemTag_.clear();
-    EXCEPTION_HANDLE_BEGIN
     RmtBufferUnpackProc(binaryStream);
-    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
