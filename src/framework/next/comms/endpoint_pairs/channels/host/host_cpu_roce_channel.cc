@@ -15,7 +15,7 @@
 #include "hcomm_c_adpt.h"
 #include "exception_handler.h"
 #include "cpu_roce_endpoint.h"
-#include <adapter_error_manager_pub.h>
+#include "adapter_error_manager_pub.h"
 
 // Orion
 #include "orion_adapter_hccp.h"

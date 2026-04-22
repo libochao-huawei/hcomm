@@ -15,7 +15,7 @@
 #include "dlhal_function_v2.h"
 #include "task_param.h"
 #include "kernel_param_lite.h"
-#include <adapter_error_manager_pub.h>
+#include "adapter_error_manager_pub.h"
 
 #include "task_struct_v2.h"
 #include "task_scheduler_error.h"
