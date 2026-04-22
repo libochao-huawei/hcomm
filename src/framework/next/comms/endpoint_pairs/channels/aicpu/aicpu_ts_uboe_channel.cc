@@ -47,7 +47,6 @@ HcclResult AicpuTsUboeChannel::Makebufs(HcommMemHandle *memHandles, uint32_t mem
 
 HcclResult AicpuTsUboeChannel::ParseInputParam() 
 {
-    HCCL_ERROR("[AicpuTsUboeChannel][%s] 111111111111111111 2", __func__);
     // 1. 从 endpointHandle_，获得 localEp_ 和 rdmaHandle_
     Endpoint* localEpPtr = reinterpret_cast<Endpoint*>(endpointHandle_);
     CHK_PTR_NULL(localEpPtr);
@@ -84,7 +83,6 @@ HcclResult AicpuTsUboeChannel::ParseInputParam()
     }
 
     EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
-    HCCL_ERROR("[AicpuTsUboeChannel][%s] 111111111111111111 3", __func__);
     return HCCL_SUCCESS;
 }
 
@@ -228,14 +226,12 @@ HcclResult AicpuTsUboeChannel::BuildSocket()
 
 HcclResult AicpuTsUboeChannel::Init()
 {
-    HCCL_ERROR("[AicpuTsUboeChannel][%s] 111111111111111111 0", __func__);
     CHK_RET(ParseInputParam());
     CHK_RET(BuildSocket());
     CHK_RET(BuildNotify());
     localRmaBuffers_.clear();
     commonRes_.bufferVec.clear();
     CHK_RET(BuildBuffer(bufs_));
-    HCCL_ERROR("[AicpuTsUboeChannel][%s] 111111111111111111 1", __func__);
     return HCCL_SUCCESS;
 }
 
@@ -260,7 +256,6 @@ bool AicpuTsUboeChannel::IsSocketReady()
     }
 
     Hccl::SocketStatus socketStatus = socket_->GetAsyncStatus();
-    HCCL_ERROR("[AicpuTsUboeChannel::%s] 11111111111111 4 socket status: %s", __func__, socketStatus.Describe().c_str());
     if (socketStatus == Hccl::SocketStatus::OK) {
         channelStatus = ChannelStatus::SOCKET_OK;
         return true;
