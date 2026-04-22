@@ -107,8 +107,8 @@ __aicore__ inline void aiv_all_gather_v_910b_bigdata(EXTERN_KERNEL_ARGS_DEF)
     op.HeadCounter();
     uint64_t maxCountPerLoop = bufferSize / UB_ALIGN_SIZE * UB_ALIGN_SIZE / sizeof(T);
     uint64_t countLeft;
-    if (blockIdx_ < rankSize) {
-        countLeft = extraArgs.recvCounts[blockIdx_];
+    if (op.blockIdx_ < rankSize) {
+        countLeft = extraArgs.recvCounts[op.blockIdx_];
     } else {
         countLeft = extraArgs.recvCounts[rank];
     }
