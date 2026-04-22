@@ -8,13 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <runtime/stream.h>
-#include <runtime/rt.h>
-#include <runtime/base.h>
-#include "runtime/rts/rts_device.h"
-#include "runtime/rts/rts_event.h"
-
-// #include "rt_external.h"
+#include "rt_external.h"
 #include "acl/acl_rt.h"
 
 aclError aclrtDeviceGetBareTgid(int32_t *pid)
@@ -546,16 +540,6 @@ aclError aclrtQueryEventWaitStatus(aclrtEvent event, aclrtEventWaitStatus *statu
     return ACL_SUCCESS;
 }
 
-rtError_t rtSetTaskAbortCallBack(const char *moduleName, rtTaskAbortCallBack callback, void *args)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtStreamGetCaptureInfo(rtStream_t stm, rtStreamCaptureStatus * const status, rtModel_t *captureMdl)
-{
-    return RT_ERROR_NONE;
-}
-
 rtError_t rtStreamAddToModel(rtStream_t stm, rtModel_t captureMdl)
 {
     return RT_ERROR_NONE;
@@ -615,16 +599,6 @@ aclError aclrtGetOpTimeOutInterval(uint64_t *interval)
 aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
 {
     return ACL_SUCCESS;
-}
-
-rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
-{
-    return RT_ERROR_NONE;
-}
- 
-rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
-{
-    return RT_ERROR_NONE;
 }
 
 aclError aclrtMemP2PMap(void *devPtr, size_t size, int32_t dstDevId, uint64_t flags)
