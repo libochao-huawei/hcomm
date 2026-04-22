@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-<<<<<<<< HEAD:pkg_inc/hcomm/ccu_new/ccu_control_api.h
 #ifndef CCU_CONTROL_API_H
 #define CCU_CONTROL_API_H
 
@@ -39,14 +38,4 @@ extern CcuResult HcommCcuKernelLaunch(ThreadHandle threadHandle,
 #endif // __cplusplus
 
 #endif // CCU_CONTROL_API_H
-========
-#include "gtest/gtest.h"
-#include "comm.h"
-#include "env_config.h"
 
-GTEST_API_ int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
-    return RUN_ALL_TESTS();
-}
->>>>>>>> origin/ccu_c:test/ut/platform/task/main.cc
