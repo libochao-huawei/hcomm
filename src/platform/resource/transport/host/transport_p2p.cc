@@ -179,7 +179,7 @@ HcclResult TransportP2p::ParseSpecifyLink(LinkTypeInServer &linkType)
         s32 sendPid = 0;
         CHK_RET(SalGetBareTgid(&sendPid));
         CHK_PRT_RET(sendPid == recvPid_,
-            HCCL_WARNING("%s specifyLink is not support in multi-thread", __func__), HCCL_SUCCESS);
+            HCCL_WARNING("%s specifyLink does not support in multi-thread", __func__), HCCL_SUCCESS);
 
         // A3 DIE间通信场景, 将链路从SIO切换到HCCS
         linkType = LinkTypeInServer::HCCS_SW_TYPE;

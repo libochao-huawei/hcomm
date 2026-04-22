@@ -815,7 +815,7 @@ void CollServiceAiCpuImpl::AllocQueueNotify(const InsQueue &insQueue)
 
 void CollServiceAiCpuImpl::AllocQNotifyForSingleQ(const InsQueue &insQueue) const
 {
-    THROW<InternalException>("AllocQNotifyForSingleQ is not support in AiCpu mode");
+    THROW<InternalException>("AllocQNotifyForSingleQ does not support in AiCpu mode");
 }
 
 

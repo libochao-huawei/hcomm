@@ -79,7 +79,7 @@ HcclResult CommP2P::CalcLink()
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Calc][Link]comm p2p calc links num failed, type[%d], dstRank[%u]",
             static_cast<int32_t>(MachineType::MACHINE_CLIENT_TYPE), dstRank), ret);
     } else {
-        HCCL_ERROR("[Calc][Link]comm p2p dstRank_[%u] is not support to create link with itself", dstRank);
+        HCCL_ERROR("[Calc][Link]comm p2p dstRank_[%u] does not support to create link with itself", dstRank);
         return HCCL_E_PARA;
     }
 

@@ -63,7 +63,7 @@ inline void CheckLinkIsValid(const LinkData &link, const string &desc)
             return;
         }
     }
-    string msg = StringFormat("type=%s is not support in %s", link.Describe().c_str(), desc.c_str());
+    string msg = StringFormat("type=%s does not support in %s", link.Describe().c_str(), desc.c_str());
     throw NotSupportException(msg);
 }
 

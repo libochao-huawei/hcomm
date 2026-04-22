@@ -381,7 +381,7 @@ HcclResult TopoInfoExtractor::SetTopologyInfo()
         CHK_RET(SetTopoInfoForMeshL0());
         CHK_RET(SetTopoInfoForMeshL1());
     } else {
-        HCCL_INFO("[Set][TopologyInfo]topo is not support Mesh, meshAggregationRankSize_[%u], userRankSize_[%u]",
+        HCCL_INFO("[Set][TopologyInfo]topo does not support Mesh, meshAggregationRankSize_[%u], userRankSize_[%u]",
             meshAggregationRankSize_, userRankSize_);
     }
     CommPlaneVector_[COMM_COMBINE_ORDER].push_back(rankVector_);

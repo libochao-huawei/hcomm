@@ -386,7 +386,7 @@ void CommunicatorImpl::SingleRankProc(const CollOpParams &opParams, void *stream
 {
     if (opParams.opType == Hccl::OpType::BATCHSENDRECV || opParams.opType == Hccl::OpType::SEND
         || opParams.opType == Hccl::OpType::RECV) {
-        HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1 is not support BATCHSENDRECV SEND RECV", __func__);
+        HCCL_WARNING("[CommunicatorImpl][%s] ranksize == 1 does not support BATCHSENDRECV SEND RECV", __func__);
         return;
     }
     if (opParams.sendBuf == opParams.recvBuf) {

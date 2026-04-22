@@ -2762,7 +2762,7 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
 HcclResult HcclIgetLookupRequest(HcclComm comm, s32* tag, ServiceHandle* handle, uint64_t* keys, uint64_t keyMaxNum,
     HcclRequest* request)
 {
-    HCCL_ERROR("[Iget][LookupRequest] is not support HcclIgetLookupRequest interface");
+    HCCL_ERROR("[Iget][LookupRequest] does not support HcclIgetLookupRequest interface");
     return HCCL_E_PARA;
 }
 
@@ -3421,7 +3421,7 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
         // 离线编译场景需要重新计算
         if (isOfflineCompilation) {
             if (hcclOpType == HCCL_CMD_ALLTOALLV) {
-                HCCL_ERROR("[GetOpScratchMemSize] offline compilation is not support HcomAllToAllV");
+                HCCL_ERROR("[GetOpScratchMemSize] offline compilation does not support HcomAllToAllV");
                 return HCCL_E_PARA;
             }
         }

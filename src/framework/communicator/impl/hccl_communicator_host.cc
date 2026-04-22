@@ -663,10 +663,10 @@ namespace hccl
         // 判断输入输出地址是否都注册为对称内存
         HcclResult ret = symmetricMemory_->FindSymmetricWindow(opParam.inputPtr, opParam.inputSize, &opParam.inputSymWindow, &opParam.inputOffset);
         CHK_PRT_RET(ret != HCCL_SUCCESS || opParam.inputSymWindow == nullptr,
-                    HCCL_INFO("[%s] input[%p] size[%llu] is not support symmetric memory", __func__, opParam.inputPtr, opParam.inputSize), false);
+                    HCCL_INFO("[%s] input[%p] size[%llu] does not support symmetric memory", __func__, opParam.inputPtr, opParam.inputSize), false);
         ret = symmetricMemory_->FindSymmetricWindow(opParam.outputPtr, opParam.outputSize, &opParam.outputSymWindow, &opParam.outputOffset);
         CHK_PRT_RET(ret != HCCL_SUCCESS || opParam.outputSymWindow == nullptr,
-                    HCCL_INFO("[%s] output[%p] size[%llu] is not support symmetric memory", __func__, opParam.outputPtr, opParam.outputSize), false);
+                    HCCL_INFO("[%s] output[%p] size[%llu] does not support symmetric memory", __func__, opParam.outputPtr, opParam.outputSize), false);
         
         HCCL_INFO("[HcclCommunicator][IsSupportSymmetricMemory] opParam.inputPtr[%p], inputOffset[%llu], inputSymWindow[%p]",
                     opParam.inputPtr, opParam.inputOffset, opParam.inputSymWindow);
@@ -700,9 +700,9 @@ namespace hccl
 
         // 判断输入输出地址是否都是支持零Copy特性的
         CHK_PRT_RET(!ZeroCopyMemoryAgent::IsActivateCommMemoryAddr(opParam.inputPtr, opParam.inputSize),
-                    HCCL_INFO("[%s] input[%p] size[%llu] is not support zero copy", __func__, opParam.inputPtr, opParam.inputSize), false);
+                    HCCL_INFO("[%s] input[%p] size[%llu] does not support zero copy", __func__, opParam.inputPtr, opParam.inputSize), false);
         CHK_PRT_RET(!ZeroCopyMemoryAgent::IsActivateCommMemoryAddr(opParam.outputPtr, opParam.outputSize),
-                    HCCL_INFO("[%s] output[%p] size[%llu] is not support zero copy", __func__, opParam.outputPtr, opParam.outputSize), false);
+                    HCCL_INFO("[%s] output[%p] size[%llu] does not support zero copy", __func__, opParam.outputPtr, opParam.outputSize), false);
 
         return true;
     }

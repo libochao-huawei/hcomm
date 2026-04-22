@@ -2205,7 +2205,7 @@ DLLEXPORT drvError_t halHostUnregisterEx(void *src_ptr, UINT32 devid, UINT32 fla
  * 3. When the virt_mem_type is DVPP, ignore the advise_4G and adivse_continuty flags, and will return DVPP memory
  *    directly.
  * 4. Source address marked with MEM_HOST_RW_DEV_RO is only support drvMemcpy.
- * 5. Source address marked with MEM_READONLY is not support drvMemcpy/drvMemConvertAddr.
+ * 5. Source address marked with MEM_READONLY does not support drvMemcpy/drvMemConvertAddr.
  * 6. For Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,
  *    The maximum virtual memory(no page) applied for at a time is 128GB.
  * 7. Sensitive information cannot be stored in this memory.

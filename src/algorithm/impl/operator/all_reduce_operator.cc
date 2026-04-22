@@ -493,7 +493,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
 
         CHK_PRT_RET(!isSupportAivRdmaMidCount, HCCL_ERROR("current data size[%llu] not support aiv rdma mid count.", dataSize), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] deterministic config[%u], dataSize[%llu]",
+        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("does not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] deterministic config[%u], dataSize[%llu]",
             isSingleMeshAggregation_, isOpbase, topoMatcher_->GetDeterministicConfig(), dataSize), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }

@@ -339,7 +339,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
             "data type support range:[int8, int16, int32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] "\
+        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("does not support aiv deter.isSingleMeshAggregation_[%d] isOpbase[%d] "\
             "deterministic config[%u] dataSize[%llu], serverNum_[%u]",
             isSingleMeshAggregation_, isOpbase, topoMatcher_->GetDeterministicConfig(), dataSize, serverNum_), HCCL_E_NOT_SUPPORT);
 

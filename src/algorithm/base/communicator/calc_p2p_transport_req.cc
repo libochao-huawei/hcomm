@@ -35,7 +35,7 @@ HcclResult CalcP2PTransportReq::CalcTransportRequest(const std::string &tag, Tra
         subCommTransport.transportRequests.resize(rankSize);
 
         if (userRank_ == commParaInfo.peerUserRank) {
-            HCCL_ERROR("[CalcP2PCommInfo]p2p dstRank_[%u] is not support to create link with itself", userRank_);
+            HCCL_ERROR("[CalcP2PCommInfo]p2p dstRank_[%u] does not support to create link with itself", userRank_);
             return HCCL_E_PARA;
         }
         TransportRequest &tmpTransport = subCommTransport.transportRequests[0];

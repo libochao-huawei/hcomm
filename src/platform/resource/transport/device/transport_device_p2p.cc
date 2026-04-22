@@ -85,7 +85,7 @@ drvError_t __attribute__((weak)) halResAddrMap(unsigned int devId, struct res_ad
 HcclResult TransportDeviceP2p::GetNotifyAddr(s32 deviceId, const HcclSignalInfo &signalInfo, u64 &addr)
 {
     if (halResAddrMap == nullptr) {
-        HCCL_ERROR("driver package is not support function [halResAddrMap], please update the package.");
+        HCCL_ERROR("driver package does not support function [halResAddrMap], please update the package.");
         return HCCL_E_DRV;
     }
 

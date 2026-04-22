@@ -3441,7 +3441,7 @@ HcclResult HcclConfigGetInfo(HcclComm comm, HcclConfigType cfgType,
     return HcclResult::HCCL_SUCCESS;
 #endif
 
-    HCCL_ERROR("[%s] is not support for hccd or kernel.", __func__);
+    HCCL_ERROR("[%s] does not support for hccd or kernel.", __func__);
     return HcclResult::HCCL_E_NOT_SUPPORT;
 }
 
