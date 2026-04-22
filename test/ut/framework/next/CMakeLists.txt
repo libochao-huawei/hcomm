@@ -27,6 +27,7 @@ set(src_to_test_list
     coll_comms/rank/ut_my_rank_tls.cc
     comms/api_c_adpt/ut_hcomm_res_mgr_test.cc
     comms/api_c_adpt/ut_hcomm_endpoint_test.cc
+    comms/api_c_adpt/ut_hcomm_endpoint_uboe_test.cc
     comms/api_c_adpt/ut_hcomm_mem_test.cc
     comms/api_c_adpt/ut_hcomm_channel_test.cc
     comms/api_c_adpt/ut_hcomm_engine_ctx_test.cc

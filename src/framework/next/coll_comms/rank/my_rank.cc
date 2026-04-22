@@ -202,33 +202,31 @@ HcclResult MyRank::BatchCreateSockets(const HcclChannelDesc* channelDescs, uint3
 constexpr uint32_t MEM_HANDLE_NUM_MAX = 256;  // memHandleNum的默认限制最大为256
 constexpr uint32_t NOTIFY_NUM_MAX = 64; // notifynum 的默认限制最大为64
 
-HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, 
-    uint32_t index)
+HcclResult MyRank::CheckChannelParam(CommEngine engine, const HcclChannelDesc* channelDesc, 
+    uint32_t channelNum)
 {
-    if (engine == COMM_ENGINE_AIV) {
-        CHK_PRT_RET(
-            (channelDesc.memHandleNum > MEM_HANDLE_NUM_MAX), 
-            HCCL_ERROR("[%s]Channeldesc[%u] invalid memHandleNum, memHandleNum[%u], max channel num[%u]",
-            __func__, index, channelDesc.memHandleNum, MEM_HANDLE_NUM_MAX), HCCL_E_PARA
-        );
-        CHK_PRT_RET(
-            (channelDesc.memHandleNum != 0 && channelDesc.memHandles == nullptr), 
-            HCCL_ERROR("[%s]Channeldesc[%u] invalid memHandles, memHandles is null", 
-            __func__, index), HCCL_E_PARA
-        );
-    } else {
-        if (channelDesc.memHandleNum != 0) {
-            HCCL_WARNING("[%s]Channeldesc[%u] memHandleNum[%u] is non-zero, memHandle exchange is not supported.", 
-                __func__, index, channelDesc.memHandleNum);
+    for (u32 index = 0; index < channelNum; ++index) {
+        if (engine == COMM_ENGINE_AIV) {
+            CHK_PRT_RET(
+                (channelDesc.->memHandleNum > MEM_HANDLE_NUM_MAX), 
+                HCCL_ERROR("[%s]Channeldesc[%u] invalid memHandleNum, memHandleNum[%u], max channel num[%u]",
+                __func__, index, channelDesc.->memHandleNum, MEM_HANDLE_NUM_MAX), HCCL_E_PARA
+            );
+            CHK_PRT_RET(
+                (channelDesc.->memHandleNum != 0 && channelDesc.->memHandles == nullptr), 
+                HCCL_ERROR("[%s]Channeldesc[%u] invalid memHandles, memHandles is null", 
+                __func__, index), HCCL_E_PARA
+            );
+        } else {
+            if (channelDesc.->memHandleNum != 0) {
+                HCCL_WARNING("[%s]Channeldesc[%u] memHandleNum[%u] is non-zero, memHandle exchange is not supported.", 
+                    __func__, index, channelDesc.->memHandleNum);
+            }
         }
+        CHK_PRT_RET(channelDesc.->notifyNum > NOTIFY_NUM_MAX, 
+            HCCL_ERROR("[%s]Channeldesc[%u] invalid notifyNum [%u], max notify num[%u]",
+            __func__, index, channelDesc.->notifyNum, NOTIFY_NUM_MAX), HCCL_E_PARA);
     }
-    CHK_PRT_RET(channelDesc.notifyNum > NOTIFY_NUM_MAX, 
-        HCCL_ERROR("[%s]Channeldesc[%u] invalid notifyNum [%u], max notify num[%u]",
-        __func__, index, channelDesc.notifyNum, NOTIFY_NUM_MAX), HCCL_E_PARA);
-    // 集合通信暂不支持UBOE，提前拦截
-    CHK_PRT_RET(channelDesc.channelProtocol == COMM_PROTOCOL_UBOE, 
-        HCCL_ERROR("[%s]Channeldesc[%u] Unsupported channelProtocol [%u]",
-        __func__, index, channelDesc.channelProtocol), HCCL_E_NOT_SUPPORT);
 
     return HCCL_SUCCESS;
 }
@@ -249,9 +247,6 @@ HcclResult MyRank::BatchCreateChannels(CommEngine engine, const HcclChannelDesc*
         std::unordered_map<hcomm::EndpointPair*, u32>>> reuseChannelIdxMap{};
 
     for (uint32_t i = 0; i < channelNum; ++i) {
-        // 参数检查
-        CHK_RET(CheckChannelParam(engine, channelDescs[i], i));
-
         const EndpointDesc &localEndpointDesc = channelDescs[i].localEndpoint;
         const EndpointDesc &remoteEndpointDesc = channelDescs[i].remoteEndpoint;
         uint32_t remoteRank = channelDescs[i].remoteRank;
@@ -415,6 +410,9 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     HCCL_INFO("[CreateChannels][Enter] engine[%d] commTag[%s] channelNum[%u] rankId[%u]",
         engine, commTag.c_str(), channelNum, rankId_);
 
+    // 参数检查
+    CHK_RET(CheckChannelParam(engine, channelDescs, channelNum));
+
     std::vector<ChannelHandle> hostChannelHandles(channelNum);
     ChannelHandle* hostChannelHandleList = hostChannelHandles.data();
 
@@ -425,7 +423,6 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
     CHK_RET(BatchConnectChannels(channelDescs, hostChannelHandleList, channelNum));
     // 添加初始化时进行填表
     for (u32 i = 0; i < channelNum; ++i) {
-        CHK_RET(CheckChannelParam(engine,channelDescs[i],i));
         u32 remoteRank = channelDescs[i].remoteRank;
         HcclCommDfx::AddChannelRemoteRankId(commTag, hostChannelHandleList[i], remoteRank);
     }
