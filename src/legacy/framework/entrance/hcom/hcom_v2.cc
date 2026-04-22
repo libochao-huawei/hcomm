@@ -1139,7 +1139,7 @@ HcclResult HcomSupportDeterministicOptimV2(const char *group, bool &isDeterminis
             HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
             HCCL_E_NOT_FOUND);
     isDeterministicOptim = true;
-    HCCL_WARNING("HcomSupportDeterministicOptimV2 dose not support at A5! set isDeterministicOptim to true.");
+    HCCL_WARNING("HcomSupportDeterministicOptimV2 does not support at A5! set isDeterministicOptim to true.");
     return HCCL_SUCCESS;
 }
 
@@ -1165,7 +1165,7 @@ HcclResult HcomSetQosCfgV2(const char *group, const u32 qosCfg)
             HCCL_ERROR("comm with group name [%s] is not found", group == nullptr ? HCCL_WORLD_GROUP : group),
             HCCL_E_NOT_FOUND);
     (void)qosCfg;
-    HCCL_WARNING("HcomSetQosCfgV2 dose not support at A5!");
+    HCCL_WARNING("HcomSetQosCfgV2 does not support at A5!");
     return HCCL_SUCCESS;
 }
 
@@ -1233,25 +1233,25 @@ HcclResult HcomUnloadTaskV2(const std::string group, const char *tag)
 
 HcclResult HcclCommResetQosCfgV2()
 {
-    HCCL_WARNING("HcclCommResetQosCfgV2 dose not support!");
+    HCCL_WARNING("HcclCommResetQosCfgV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcomResetQosCfgV2()
 {
-    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 dose not support!");
+    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommSetQosCfgV2()
 {
-    HCCL_WARNING("HcclCommSetQosCfgV2 dose not support!");
+    HCCL_WARNING("HcclCommSetQosCfgV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcomGetCommCCLBufferSizeV2()
 {
-    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 dose not support!");
+    HCCL_WARNING("HcomGetCommCCLBufferSizeV2 does not support!");
     return HCCL_SUCCESS;
 }
 
@@ -1366,13 +1366,13 @@ HcclResult HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rt
 
 HcclResult HcomSetAttachedStreamV2()
 {
-    HCCL_RUN_INFO("HcomSetAttachedStreamV2 dose not support!");
+    HCCL_RUN_INFO("HcomSetAttachedStreamV2 does not support!");
     return HCCL_SUCCESS;
 }
 
 HcclResult HcomReleaseSubCommsV2()
 {
-    HCCL_RUN_INFO("HcomReleaseSubCommsV2 dose not support!");
+    HCCL_RUN_INFO("HcomReleaseSubCommsV2 does not support!");
     return HCCL_SUCCESS;
 }
 
