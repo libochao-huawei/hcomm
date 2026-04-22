@@ -181,29 +181,29 @@ CollServiceBase::CollServiceBase(CommunicatorImpl *comm) : comm(comm)
 
 void CollServiceBase::AllocCommResource(void *mc2Tiling, void **commContext, const AcceleratorState& tilingAccelerator)
 {
-    THROW<NotSupportException>("AllocCommResource was does not support in this mode.");
+    THROW<NotSupportException>("AllocCommResource does not support in this mode.");
 }
 
 HcclResult CollServiceBase::AllocCollOpResource(CollOperator &op, const std::string &opAlgTag, void **addr)
 {
-    HCCL_ERROR("[%s] was does not support in this mode.", __func__);
+    HCCL_ERROR("[%s] does not support in this mode.", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
 void CollServiceBase::GetCcuTaskInfo(void *tilingData, void *ccuTaskGroup)
 {
-    THROW<NotSupportException>("GetCcuTaskInfo was does not support in this mode.");
+    THROW<NotSupportException>("GetCcuTaskInfo does not support in this mode.");
 }
 
 u32 CollServiceBase::GetCcuMc2ServerNum()
 {
-    THROW<NotSupportException>("GetCcuMc2ServerNum was does not support in this mode.");
+    THROW<NotSupportException>("GetCcuMc2ServerNum does not support in this mode.");
     return 0;
 }
 
 void CollServiceBase::Resume()
 {
-    THROW<NotSupportException>("Resume was does not support in this mode.");
+    THROW<NotSupportException>("Resume does not support in this mode.");
 }
 
 void CollServiceBase::WaitOpbasedTransportReady() const
@@ -408,12 +408,12 @@ void CollServiceBase::AddCountTask(bool isHead)
 
 void CollServiceBase::ReLoadWithOpBasedMode(CollOperator &op)
 {
-    THROW<NotSupportException>("ReLoadWithOpBasedMode was does not support in this mode.");
+    THROW<NotSupportException>("ReLoadWithOpBasedMode does not support in this mode.");
 }
 
 void CollServiceBase::ReLoadWithOffloadMode(CollOperator &op)
 {
-    THROW<NotSupportException>("ReLoadWithOffloadMode was does not support in this mode.");
+    THROW<NotSupportException>("ReLoadWithOffloadMode does not support in this mode.");
 }
 
 void CollServiceBase::AllocQueueNotify(const InsQueue &insQueue)
@@ -453,7 +453,7 @@ void CollServiceBase::AllocQNotifyForSingleQ(const InsQueue &insQueue) const
 
 HcclResult CollServiceBase::GetAlgExecParam(bool clearEnable, u32 numBlocks, void *&commContext, u64 &len)
 {
-    HCCL_ERROR("GetAlgExecParam was does not support in this mode.");
+    HCCL_ERROR("GetAlgExecParam does not support in this mode.");
     return HCCL_E_NOT_SUPPORT;
 }
 
