@@ -200,7 +200,7 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
                 break;
         }
         RPT_INPUT_ERR(true, "EI0012", std::vector<std::string>({"error_code", "error_description"}),
-            std::vector<std::string>({std::to_string(exceptionInfo->errorCode), sdmaErrDesc}))
+            std::vector<std::string>({std::to_string(exceptionInfo->errorCode), sdmaErrDesc}));
     }
 
     struct event_summary event;
