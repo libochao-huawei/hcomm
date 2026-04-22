@@ -166,7 +166,7 @@ HcclResult CollReduceScatterOrderPreservedExecutor::RunReduceScatterLevel0(const
         all2allOffset_ = topoAttr_.moduleNum > 1 ? 1 : 0;
         HCCL_INFO("[%s] single rank per module, skip L0 AllToAll and LocalReduce, tag[%s]",
             __func__, tag_.c_str());
-	CHK_RET(RunReduceScatterLevel0SingleRank(param, execMem, level0CommInfo));
+        CHK_RET(RunReduceScatterLevel0SingleRank(param, execMem, level0CommInfo));
 	return HCCL_SUCCESS;
     }
 
