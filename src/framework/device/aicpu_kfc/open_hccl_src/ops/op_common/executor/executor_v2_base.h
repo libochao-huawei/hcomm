@@ -47,9 +47,14 @@ public:
     HcclResult SetTempFastLaunchAddr(TemplateFastLaunchCtx &tempFastLaunchCtx, 
                             void* inputPtr, void* outputPtr, const HcclMem &hcclBuff) const;
 
-    HcclResult RestoreChannelMap(const AlgResourceCtxSerializable &resCtx,
-                                 std::vector<std::map<u32, std::vector<ChannelInfo>>> &rankIdToChannelInfo) const;
+    virtual HcclResult RestoreChannelMap(const AlgResourceCtxSerializable &resCtx,
+        std::vector<std::map<u32, std::vector<ChannelInfo>>> &rankIdToChannelInfo) const;
 
+#ifndef AICPU_COMPILE
+    HcclResult FastLaunchSaveCtxTwoTemplate(const OpParam &param, const u32 threadNum, const u32 ccuKernelNum, 
+                                            const std::vector<ThreadHandle> &threads_, const std::vector<u32> &ccuKernelNumList, 
+                                            const std::vector<std::vector<CcuKernelSubmitInfo>> &submitInfosList);
+#endif
 protected:
     // CollAlg base params
     u32           myRank_   = INVALID_VALUE_RANKID;
@@ -62,6 +67,7 @@ protected:
     // dataInfo
     HcclDataType  dataType_;
     u64           dataCount_ = 0;
+    u64           strideCount_ = 0;
 
     u64           maxTmpMemSize_ = 0;
 
