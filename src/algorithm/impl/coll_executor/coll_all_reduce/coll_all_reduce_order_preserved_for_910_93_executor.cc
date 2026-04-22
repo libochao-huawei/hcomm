@@ -202,10 +202,9 @@ HcclResult CollAllReduceOrderPreservedFor91093Executor::RunReduceScatterLevel1Si
     ExecMem &execMem, SubCommInfo &level1CommInfo)
 {
     u64 size = execMem.count * SIZE_TABLE[param.DataDes.dataType];
-    u64 totalInputSize = topoAttr_.userRankSize * size;
 
-    DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, totalInputSize);
-    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, totalInputSize) : execMem.outputMem.range(0, totalInputSize);
+    DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, size);
+    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, size) : execMem.outputMem.range(0, size);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
 
     return HCCL_SUCCESS;
