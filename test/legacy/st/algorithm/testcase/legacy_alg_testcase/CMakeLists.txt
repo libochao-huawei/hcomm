@@ -53,5 +53,9 @@ target_sources(legacy_alg_testcase
         testcase_reduce.cc
         testcase_reduce_aicpu_mesh1d_nhr.cc
         testcase_broadcast.cc
+        testcase_broadcast_parallel_aicpu.cc
         ${UTILS_DIR}/common/virtual_topo_stub/virtual_topo_stub.cc
 )
+
+enable_testing()
+add_test(NAME legacy_alg_testcase COMMAND legacy_alg_testcase)
