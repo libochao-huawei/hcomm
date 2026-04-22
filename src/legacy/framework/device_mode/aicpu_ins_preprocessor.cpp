@@ -114,7 +114,7 @@ void AicpuInsPreprocessor::AllocQueueNotify(std::vector<std::tuple<QId, QId, u32
 {
     HCCL_INFO("[AicpuInsPreprocessor::%s] start.", __func__);
 
-    QueueNotifyManager &queueNotifyMgr = comm->GetQueueNotifyManager();
+    QueueNotifyManager &queueNotifyMgr = comm->GetAicpuQueueNotifyManager();
 
     std::for_each(queueNotifyReq.begin(), queueNotifyReq.end(), [&queueNotifyMgr](auto item) {
         queueNotifyMgr.ApplyFor(std::get<QUEUE_NOTIFY_POST_QID_POS>(item), std::get<QUEUE_NOTIFY_WAIT_QID_POS>(item),
@@ -223,7 +223,7 @@ std::vector<char> AicpuInsPreprocessor::PackOpData(const std::string &opTag, con
 
     resType = AicpuResMgrType::QUEUE_NOTIFY;
     SetModuleName(dataVec[resType], "QueueNotifyManager");
-    dataVec[resType].data = comm->GetQueueNotifyManager().GetPackedData();
+    dataVec[resType].data = comm->GetAicpuQueueNotifyManager().GetPackedData();
     HCCL_INFO("CollServiceAiCpuImpl::PackOpData: GetResMgr %s Data", resType.Describe().c_str());
 
     resType = AicpuResMgrType::QUEUE_WAIT_GROUP_CNT_NOTIFY;
