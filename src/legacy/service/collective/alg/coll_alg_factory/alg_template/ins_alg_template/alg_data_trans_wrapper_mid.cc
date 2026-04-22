@@ -801,6 +801,10 @@ HcclResult LocalReduceSlices(InsQuePtr queue, const std::vector<DataSlice> &srcS
 
 HcclResult LocalCopy(InsQuePtr queue, const DataSlice &srcSlice, const DataSlice &dstSlice)
 {
+    if (srcSlice == dstSlice) {
+        return HcclResult::HCCL_SUCCESS;
+    }
+    
     CHK_PRT_RET(
         srcSlice.GetSize() != dstSlice.GetSize(),
         HCCL_ERROR(

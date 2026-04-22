@@ -126,6 +126,8 @@ private:
     uint64_t rankIdxLevel0_{0};
     uint64_t rankIdxLevel1_{0};
 
+    u64 sliceCount_;
+
     std::vector<std::vector<RankId>>              virtRanks_;
     std::vector<std::map<RankId, u32>>            virtRankMap_; // map<virtRank, virtRankOrder>
     std::vector<std::vector<std::vector<RankId>>> vTopo_;
