@@ -508,6 +508,9 @@ struct CcumDfxInfoForTest {
 };
 
 TEST_F(CcuTaskExceptionTest, PrintPanicLogInfo_Normal) {
+    MOCKER(hrtGetDeviceType).stubs()
+        .with(outBound(DevType::DEV_TYPE_950))
+        .will(returnValue(HCCL_SUCCESS));
     uint8_t panicLog[128] = {};
     struct CcumDfxInfoForTest *info = reinterpret_cast<struct CcumDfxInfoForTest *>(panicLog);
     info->queryResult = 0; // success
