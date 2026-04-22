@@ -117,7 +117,7 @@ function(pack_built_in)
   install(FILES ${CMAKE_BINARY_DIR}/version.hcomm.info
       DESTINATION share/info/hcomm
       RENAME version.info
-      ${INSTALL_OPTIONAL}
+      ${INSTALL_OPTIONAL} COMPONENT hcomm
   )
   install(FILES ${CONF_FILES}
       DESTINATION hcomm/conf
