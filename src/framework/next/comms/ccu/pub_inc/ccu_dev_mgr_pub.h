@@ -22,7 +22,7 @@
 #include "hccl_rank_graph.h"
 
 // 支持新老通信域混跑，引入legacy数据结构
-#include "ccu_dev_mgr.h"
+#include "unified_platform/pub_inc/ccu/ccu_dev_mgr.h"
 
 namespace hcomm {
 
