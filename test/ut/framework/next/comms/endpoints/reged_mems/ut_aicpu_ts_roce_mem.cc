@@ -30,7 +30,7 @@ protected:
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_When_NetDevNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     HcommMem mem{};
     mem.addr = reinterpret_cast<void *>(0x1000U);
     mem.size = 4096U;
@@ -41,7 +41,7 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_When_NetDevNull_Returns_E_P
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryExport_When_MemHandleNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     EndpointDesc ep{};
     void *desc = nullptr;
     uint32_t len = 0;
@@ -50,7 +50,7 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryExport_When_MemHandleNull_Returns_E_
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryExport_When_MemDescOutNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     EndpointDesc ep{};
     void *fake = reinterpret_cast<void *>(0x1);
     uint32_t len = 0;
@@ -59,7 +59,7 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryExport_When_MemDescOutNull_Returns_E
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryImport_When_DescTooShort_Returns_E_PARA)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     char buf[4] = {};
     HcommMem out{};
     EXPECT_EQ(mgr.MemoryImport(buf, sizeof(buf), &out), HCCL_E_PARA);
@@ -67,27 +67,27 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryImport_When_DescTooShort_Returns_E_P
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryImport_When_OutMemNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     char buf[sizeof(EndpointDesc)] = {};
     EXPECT_EQ(mgr.MemoryImport(buf, sizeof(buf), nullptr), HCCL_E_PTR);
 }
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryUnimport_When_MemDescNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     EXPECT_EQ(mgr.MemoryUnimport(nullptr, sizeof(EndpointDesc)), HCCL_E_PTR);
 }
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemHandles_When_CountOutNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     void *handles = nullptr;
     EXPECT_EQ(mgr.GetAllMemHandles(&handles, nullptr), HCCL_E_PTR);
 }
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemDetails_When_NetDevNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     std::vector<RoceMemDetails> local;
     std::vector<RoceMemDetails> remote;
     EXPECT_EQ(mgr.GetAllMemDetails(local, remote), HCCL_E_PTR);
@@ -95,7 +95,7 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemDetails_When_NetDevNull_Returns_E
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemHandles_When_NoRecords_Returns_SUCCESS)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     void *handles = reinterpret_cast<void *>(0xdeadbeefULL);
     uint32_t n = 99U;
     ASSERT_EQ(mgr.GetAllMemHandles(&handles, &n), HCCL_SUCCESS);
@@ -105,13 +105,13 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetAllMemHandles_When_NoRecords_Returns_SU
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_UnregisterMemory_When_MemHandleNull_Returns_E_PTR)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     EXPECT_EQ(mgr.UnregisterMemory(nullptr), HCCL_E_PTR);
 }
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryUnimport_When_RemoteMgrMissing_Returns_NOT_FOUND)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     EndpointDesc ep{};
     ep.protocol = COMM_PROTOCOL_ROCE;
     ep.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
@@ -122,7 +122,7 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_MemoryUnimport_When_RemoteMgrMissing_Retur
 
 TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_GetParamsFromMemDesc_WhenValid_Returns_SUCCESS)
 {
-    AicpuTsRoceRegedMemMgr mgr(nullptr);
+    AicpuTsRoceRegedMemMgr mgr(nullptr, nullptr);
     EndpointDesc ep{};
     ep.protocol = COMM_PROTOCOL_ROCE;
     ep.loc.locType = ENDPOINT_LOC_TYPE_DEVICE;
@@ -149,7 +149,7 @@ TEST_F(AicpuTsRoceRegedMemMgrTest, Ut_RegisterMemory_WithNetDev_MockLocalRdmaIni
     hccl::NetDevContext netCtx;
     ASSERT_EQ(netCtx.Init(NicType::DEVICE_NIC_TYPE, 0, 0, localIp), HCCL_SUCCESS);
 
-    AicpuTsRoceRegedMemMgr mgr(reinterpret_cast<HcclNetDev>(&netCtx));
+    AicpuTsRoceRegedMemMgr mgr(reinterpret_cast<HcclNetDev>(&netCtx), nullptr);
     HcommMem mem{};
     mem.addr = reinterpret_cast<void *>(0x9000ULL);
     mem.size = 4096U;

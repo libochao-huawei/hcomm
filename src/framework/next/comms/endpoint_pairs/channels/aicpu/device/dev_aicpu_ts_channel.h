@@ -8,26 +8,20 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef AICPU_CHANNEL_RES_HANDLER_H
-#define AICPU_CHANNEL_RES_HANDLER_H
-
-#include <cstdint>
-#include <unordered_map>
+#ifndef DEV_AICPU_TS_CHANNEL_H
+#define DEV_AICPU_TS_CHANNEL_H
 
 #include "channel_param.h"
+#include "hcomm_res_defs.h"
 
-class IAicpuChannelResHandler {
+class DevAicpuTsChannel {
 public:
-    virtual ~IAicpuChannelResHandler() = default;
-    virtual HcclResult Parse(const void *blob, u64 blobBytes, const HcommDeviceInfo &deviceInfo, ChannelHandle &outHandle) = 0;
+    virtual ~DevAicpuTsChannel() = default;
+
+    virtual HcclResult Create(const void *blob, u64 blobBytes,
+                              const HcommDeviceInfo &deviceInfo,
+                              ChannelHandle &outHandle) = 0;
     virtual bool Destroy(ChannelHandle handle) = 0;
 };
 
-const std::unordered_map<uint32_t, IAicpuChannelResHandler *> &GetAicpuChannelResHandlers();
-
-void AicpuChannelResRegisterHandleKind(ChannelHandle handle, uint32_t kind);
-void AicpuChannelResUnregisterHandleKind(ChannelHandle handle);
-
-bool AicpuChannelResDestroyForHandle(ChannelHandle handle);
-
-#endif // AICPU_CHANNEL_RES_HANDLER_H
+#endif // DEV_AICPU_TS_CHANNEL_H

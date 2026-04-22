@@ -1205,12 +1205,11 @@ HcclResult TransportDeviceIbverbs::ResolveRdmaKeysFromMemDetails(RdmaAddrKeyReso
     param.transRemoteAddr = LogicalPtrToDevPtr(*rf.second, param.remoteAddr);
 
     auto lf = localMemDetailsRmaMgr_->Find(MakeMemLookupKey(param.localAddr, param.length));
-    if (!lf.first || lf.second == nullptr) {
+    CHK_PRT_RET(!lf.first || lf.second == nullptr,
         HCCL_ERROR("[TransportDeviceIbverbs]Can't find localBuffer key by addr and size {%p, %llu}, "
                    "registered local MR count[%zu]",
-            param.localAddr, param.length, localMemDetailsRmaMgr_->size());
-        return HCCL_E_INTERNAL;
-    }
+            param.localAddr, param.length, localMemDetailsRmaMgr_->size()),
+        HCCL_E_INTERNAL);
     param.srcKey = lf.second->key;
     param.transLocalAddr = LogicalPtrToDevPtr(*lf.second, param.localAddr);
     return HCCL_SUCCESS;

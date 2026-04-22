@@ -8,12 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "aicpu_ts_roce_res_handler.h"
+#include "dev_aicpu_ts_roce_channel.h"
 #include <securec.h>
 #include <chrono>
 #include <cstdint>
 #include <cstring>
-#include <unordered_map>
 #include <vector>
 #include "channel_param.h"
 #include "adapter_hal_pub.h"
@@ -27,15 +26,9 @@
 using namespace hccl;
 
 namespace {
-constexpr uint32_t kAicpuTsRoce = 2U;
-struct AicpuTsRoceResSlot {
-    DispatcherCtxPtr ctx{nullptr};
-    std::shared_ptr<Transport> link;
-    char commId[128]{};
-};
 
-std::unordered_map<ChannelHandle, AicpuTsRoceResSlot> g_aicpuTsRoceResSlots;
-u64 g_aicpuTsRoceResCommSeq{0};
+constexpr u32 RDMA_QP_MAX_NUM = 32U;
+constexpr u32 HCCL_MULTI_QP_THRESHOLD_DEFAULT = 0U;
 
 HcclResult FillIbverbsDataFromRes(const HcommRoceChannelRes *res, TransportDeviceIbverbsData &ibd)
 {
@@ -53,13 +46,13 @@ HcclResult FillIbverbsDataFromRes(const HcommRoceChannelRes *res, TransportDevic
             remoteMd.push_back(remoteBase[i]);
         }
     }
-    HCCL_INFO("[AicpuTsRoceResHandler][Parse] Roce mem from channel res: localMemCount[%u] remoteMemCount[%u] "
+    HCCL_INFO("[DevAicpuTsRoceChannel][Create] Roce mem from channel res: localMemCount[%u] remoteMemCount[%u] "
         "parsed local[%zu] remote[%zu]",
         res->localMemCount, res->remoteMemCount, localMd.size(), remoteMd.size());
 
     const u32 qpInfoSize = res->qpsPerConnection + static_cast<u32>(res->qpsPerConnection != 1U);
     if (qpInfoSize < 1U || qpInfoSize > RDMA_QP_MAX_NUM) {
-        HCCL_ERROR("[AicpuTsRoceResHandler][Parse] bad qp layout qpsPerConn[%u]", res->qpsPerConnection);
+        HCCL_ERROR("[DevAicpuTsRoceChannel][Create] bad qp layout qpsPerConn[%u]", res->qpsPerConnection);
         return HCCL_E_PARA;
     }
     std::vector<HcclQpInfoV2> qpVec(qpInfoSize);
@@ -82,13 +75,12 @@ HcclResult OpenDispatcherForTsRoce(const HcommDeviceInfo &deviceInfo, char *comm
     outDevId = INVALID_UINT;
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(deviceInfo.devicePhyId, &outDevId));
     CHK_PRT_RET(outDevId == INVALID_UINT,
-        HCCL_ERROR("[AicpuTsRoceResHandler][Parse] invalid devId for logicId[%d]", deviceInfo.deviceLogicId),
+        HCCL_ERROR("[DevAicpuTsRoceChannel][Create] invalid devId for logicId[%d]", deviceInfo.deviceLogicId),
         HCCL_E_PARA);
 
-    ++g_aicpuTsRoceResCommSeq;
     int nc = snprintf_s(commId, commIdLen, commIdLen - 1U, "hcomm_ts_roce_%d_%llu", deviceInfo.deviceLogicId,
-        static_cast<unsigned long long>(g_aicpuTsRoceResCommSeq));
-    CHK_PRT_RET(nc < 0, HCCL_ERROR("[AicpuTsRoceResHandler][Parse] snprintf_s failed"), HCCL_E_INTERNAL);
+        static_cast<unsigned long long>(commIdLen));
+    CHK_PRT_RET(nc < 0, HCCL_ERROR("[DevAicpuTsRoceChannel][Create] snprintf_s failed"), HCCL_E_INTERNAL);
 
     DispatcherCtxPtr dctxPtr = nullptr;
     CHK_RET(CreateDispatcherCtx(&dctxPtr, outDevId, commId));
@@ -97,7 +89,7 @@ HcclResult OpenDispatcherForTsRoce(const HcommDeviceInfo &deviceInfo, char *comm
     const HcclDispatcher dispatcher = dctx->GetDispatcher();
     if (dispatcher == nullptr) {
         (void)DestroyDispatcherCtx(dctxPtr, commId);
-        HCCL_ERROR("[AicpuTsRoceResHandler][Parse] null dispatcher");
+        HCCL_ERROR("[DevAicpuTsRoceChannel][Create] null dispatcher");
         return HCCL_E_PTR;
     }
     outDctx = dctxPtr;
@@ -133,7 +125,7 @@ HcclResult CreateAndInitTsRoceTransport(const HcommDeviceInfo &deviceInfo, Dispa
         kEmptyNotifyPool, machinePara, TransportDeviceP2pData(), ibd));
     if (link == nullptr) {
         (void)DestroyDispatcherCtx(dctxPtr, commId);
-        HCCL_ERROR("[AicpuTsRoceResHandler][Parse] Transport alloc failed");
+        HCCL_ERROR("[DevAicpuTsRoceChannel][Create] Transport alloc failed");
         return HCCL_E_PTR;
     }
     HcclResult tr = link->Init();
@@ -148,18 +140,12 @@ HcclResult CreateAndInitTsRoceTransport(const HcommDeviceInfo &deviceInfo, Dispa
 
 } // namespace
 
-AicpuTsRoceResHandler &AicpuTsRoceResHandler::Instance()
-{
-    static AicpuTsRoceResHandler inst;
-    return inst;
-}
-
-HcclResult AicpuTsRoceResHandler::Parse(const void *blob, u64 blobBytes, const HcommDeviceInfo &deviceInfo,
-    ChannelHandle &outHandle)
+HcclResult DevAicpuTsRoceChannel::Create(const void *blob, u64 blobBytes,
+    const HcommDeviceInfo &deviceInfo, ChannelHandle &outHandle)
 {
     CHK_PTR_NULL(blob);
     if (blobBytes < sizeof(HcommRoceChannelRes)) {
-        HCCL_ERROR("[AicpuTsRoceResHandler][Parse] blob too small[%llu]",
+        HCCL_ERROR("[DevAicpuTsRoceChannel][Create] blob too small[%llu]",
             static_cast<unsigned long long>(blobBytes));
         return HCCL_E_PARA;
     }
@@ -169,23 +155,36 @@ HcclResult AicpuTsRoceResHandler::Parse(const void *blob, u64 blobBytes, const H
     CHK_RET(FillIbverbsDataFromRes(res, ibd));
     const u32 qpInfoSize = res->qpsPerConnection + static_cast<u32>(res->qpsPerConnection != 1U);
 
-    char commId[sizeof(AicpuTsRoceResSlot::commId)];
+    char commId[sizeof(RoceSlot::commId)];
     u32 devId = INVALID_UINT;
     DispatcherCtxPtr dctxPtr = nullptr;
     HcclDispatcher dispatcher = nullptr;
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        ++commSeq_;
+        int nc = snprintf_s(commId, sizeof(commId), sizeof(commId) - 1U, "hcomm_ts_roce_%d_%llu",
+            deviceInfo.deviceLogicId, static_cast<unsigned long long>(commSeq_));
+        CHK_PRT_RET(nc < 0, HCCL_ERROR("[DevAicpuTsRoceChannel][Create] snprintf_s failed"), HCCL_E_INTERNAL);
+    }
+
     CHK_RET(OpenDispatcherForTsRoce(deviceInfo, commId, sizeof(commId), devId, dctxPtr, dispatcher));
 
     std::shared_ptr<Transport> link;
     CHK_RET(CreateAndInitTsRoceTransport(deviceInfo, dctxPtr, commId, dispatcher, std::move(ibd), link));
 
     outHandle = reinterpret_cast<ChannelHandle>(link.get());
-    AicpuTsRoceResSlot slot;
+    RoceSlot slot;
     slot.ctx = dctxPtr;
     slot.link = std::move(link);
     CHK_SAFETY_FUNC_RET(memcpy_s(slot.commId, sizeof(slot.commId), commId, sizeof(commId)));
-    g_aicpuTsRoceResSlots.emplace(outHandle, std::move(slot));
-    AicpuChannelResRegisterHandleKind(outHandle, kAicpuTsRoce);
-    HCCL_INFO("[AicpuTsRoceResHandler][Parse] success logicId[%d] phyId[%u] devId[%u] blobBytes[%llu] "
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        slots_.emplace(outHandle, std::move(slot));
+    }
+
+    HCCL_INFO("[DevAicpuTsRoceChannel][Create] success logicId[%d] phyId[%u] devId[%u] blobBytes[%llu] "
         "localMem[%u] remoteMem[%u] qpsPerConn[%u] qpNum[%u] chipId[%lld] commId[%s] handle[0x%llx]",
         deviceInfo.deviceLogicId, deviceInfo.devicePhyId, devId,
         static_cast<unsigned long long>(blobBytes), res->localMemCount, res->remoteMemCount, res->qpsPerConnection,
@@ -194,22 +193,25 @@ HcclResult AicpuTsRoceResHandler::Parse(const void *blob, u64 blobBytes, const H
     return HCCL_SUCCESS;
 }
 
-bool AicpuTsRoceResHandler::Destroy(ChannelHandle handle)
+bool DevAicpuTsRoceChannel::Destroy(ChannelHandle handle)
 {
-    auto it = g_aicpuTsRoceResSlots.find(handle);
-    if (it == g_aicpuTsRoceResSlots.end()) {
-        return false;
+    RoceSlot slot;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = slots_.find(handle);
+        if (it == slots_.end()) {
+            return false;
+        }
+        slot = std::move(it->second);
+        slots_.erase(it);
     }
-    if (it->second.link != nullptr) {
-        (void)it->second.link->DeInit();
-        it->second.link.reset();
+    if (slot.link != nullptr) {
+        (void)slot.link->DeInit();
+        slot.link.reset();
     }
-    if (it->second.ctx != nullptr) {
-        (void)DestroyDispatcherCtx(it->second.ctx, it->second.commId);
-        it->second.ctx = nullptr;
+    if (slot.ctx != nullptr) {
+        (void)DestroyDispatcherCtx(slot.ctx, slot.commId);
     }
-    g_aicpuTsRoceResSlots.erase(it);
-    AicpuChannelResUnregisterHandleKind(handle);
-    HCCL_DEBUG("[AicpuTsRoceResHandler][Destroy] destroyed handle[0x%llx]", handle);
+    HCCL_DEBUG("[DevAicpuTsRoceChannel][Destroy] destroyed handle[0x%llx]", handle);
     return true;
 }

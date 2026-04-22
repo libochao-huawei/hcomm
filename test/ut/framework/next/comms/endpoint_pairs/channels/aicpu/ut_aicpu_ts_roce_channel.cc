@@ -588,7 +588,7 @@ TEST_F(AicpuTsRoceChannelTest, Ut_Serialize_WhenInitedAndDepsStubbed_Returns_SUC
     local.commAddr.type = COMM_ADDR_TYPE_IP_V4;
     ASSERT_EQ(inet_pton(AF_INET, "10.20.1.1", &local.commAddr.addr), 1);
 
-    auto mgr = std::make_shared<AicpuTsRoceRegedMemMgr>(nullptr);
+    auto mgr = std::make_shared<AicpuTsRoceRegedMemMgr>(nullptr, nullptr);
     StubEndpointWithRoceMemMgr stub(local, reinterpret_cast<void *>(0xbeefU), mgr);
     HcommChannelDesc desc{};
     AicpuTsRoceChannel ch(reinterpret_cast<EndpointHandle>(&stub), desc);

@@ -26,7 +26,7 @@
 namespace hcomm {
 class AicpuTsRoceRegedMemMgr : public RegedMemMgr {
 public:
-    explicit AicpuTsRoceRegedMemMgr(HcclNetDev netDev);
+    AicpuTsRoceRegedMemMgr(HcclNetDev netDev, RdmaHandle rdmaHandle);
     ~AicpuTsRoceRegedMemMgr() override = default;
 
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;

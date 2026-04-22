@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "aicpu_ts_roce_endpoint.h"
-#include "hccl/hccl_res.h"
 #include "endpoint_mgr.h"
 #include "hccl_mem_defs.h"
 #include "log.h"
@@ -22,6 +21,10 @@
 #include <exception>
 
 namespace hcomm {
+namespace {
+constexpr uint32_t kDefaultRocePort = 16666;
+}
+
 AicpuTsRoceEndpoint::AicpuTsRoceEndpoint(const EndpointDesc &endpointDesc)
     : Endpoint(endpointDesc)
 {
@@ -193,7 +196,7 @@ HcclResult AicpuTsRoceEndpoint::Init()
         __func__, devPhyId, ipAddr.GetReadableAddress(), ctxHandle_);
 
     try {
-        regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(netDev_);
+        regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(netDev_, ctxHandle_);
     } catch (std::exception &e) {
         HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
         ctxHandle_ = nullptr;
@@ -202,7 +205,7 @@ HcclResult AicpuTsRoceEndpoint::Init()
     }
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
 
-    constexpr uint32_t defaultPort = 16666;
+    constexpr uint32_t defaultPort = 16666U;
     ret = ServerSocketListen(defaultPort);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s]call trace: hcclRet -> %d", __func__, ret);
@@ -216,7 +219,7 @@ HcclResult AicpuTsRoceEndpoint::Init()
 
 HcclResult AicpuTsRoceEndpoint::ServerSocketListen(const uint32_t port)
 {
-    const uint32_t listenPort = (port != 0U) ? port : 60001U;
+    const uint32_t listenPort = (port != 0U) ? port : kDefaultRocePort;
     const SocketMapKey key{netDevRefPhyId_, listenPort};
 
     {
@@ -291,7 +294,7 @@ HcclResult AicpuTsRoceEndpoint::AddListenSocketWhiteList(uint32_t port, const st
     }
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
     auto &sockMap = GetServerSocketMap();
-    const uint32_t listenPort = (port != 0U) ? port : 60001U;
+    const uint32_t listenPort = (port != 0U) ? port : kDefaultRocePort;
     const SocketMapKey key{netDevRefPhyId_, listenPort};
     auto it = sockMap.find(key);
     if (it == sockMap.end() || it->second.socket == nullptr) {
@@ -308,7 +311,7 @@ HcclResult AicpuTsRoceEndpoint::AcceptDataSocket(uint32_t port, const std::strin
 {
     std::lock_guard<std::mutex> lk(ListenSocketMapMutex());
     auto &sockMap = GetServerSocketMap();
-    const uint32_t listenPort = (port != 0U) ? port : 60001U;
+    const uint32_t listenPort = (port != 0U) ? port : kDefaultRocePort;
     const SocketMapKey key{netDevRefPhyId_, listenPort};
     auto it = sockMap.find(key);
     if (it == sockMap.end() || it->second.socket == nullptr) {

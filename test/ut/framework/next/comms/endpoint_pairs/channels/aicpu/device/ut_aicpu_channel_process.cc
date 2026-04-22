@@ -15,7 +15,7 @@
 
 #include "adapter_hal.h"
 #include "aicpu/device/aicpu_channel_process.h"
-#include "aicpu/device/aicpu_ts_roce_res_handler.h"
+#include "aicpu/device/dev_aicpu_ts_channel_mgr.h"
 #include "channel_param.h"
 #include "dlhns_function.h"
 #include "externalinput_pub.h"
@@ -131,5 +131,5 @@ TEST_F(AicpuChannelProcessTest, Ut_InitHcommChannelRes_WhenValidTsRoceBlob_Retur
 
     ASSERT_EQ(AicpuChannelProcess::InitHcommChannelRes(&res), HCCL_SUCCESS);
     ASSERT_NE(outHandle, 0ULL);
-    EXPECT_TRUE(AicpuTsRoceResHandler::Instance().Destroy(outHandle));
+    EXPECT_TRUE(DevAicpuTsChannelMgr::Instance().DestroyChannel(outHandle));
 }

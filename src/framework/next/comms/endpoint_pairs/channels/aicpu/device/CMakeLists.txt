@@ -9,8 +9,8 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     aicpu_channel_process.cc
-    aicpu_channel_res_registry.cc
-    aicpu_ts_roce_res_handler.cc
+    dev_aicpu_ts_channel_mgr.cc
+    dev_aicpu_ts_roce_channel.cc
     aicpu_ts_urma_channel_kernel.cc
 )
 

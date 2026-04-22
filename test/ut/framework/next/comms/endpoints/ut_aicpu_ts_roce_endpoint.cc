@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include <arpa/inet.h>
 
 #include "gtest/gtest.h"
@@ -158,7 +168,7 @@ TEST_F(AicpuTsRoceEndpointTest, Ut_UnregisterMemory_WhenMemHandleNull_Returns_PT
     ASSERT_EQ(inet_pton(AF_INET, "10.10.10.10", &desc.commAddr.addr), 1);
 
     AicpuTsRoceEndpoint ep(desc);
-    ep.regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(nullptr);
+    ep.regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(nullptr, nullptr);
     EXPECT_EQ(ep.UnregisterMemory(nullptr), HCCL_E_PTR);
 }
 
@@ -170,7 +180,7 @@ TEST_F(AicpuTsRoceEndpointTest, Ut_RegisterMemory_WhenMemHandleOutNull_Returns_P
     ASSERT_EQ(inet_pton(AF_INET, "10.10.10.11", &desc.commAddr.addr), 1);
 
     AicpuTsRoceEndpoint ep(desc);
-    ep.regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(nullptr);
+    ep.regedMemMgr_ = std::make_shared<AicpuTsRoceRegedMemMgr>(nullptr, nullptr);
     HcommMem mem{};
     mem.addr = reinterpret_cast<void *>(0x1000U);
     mem.size = 4096U;
