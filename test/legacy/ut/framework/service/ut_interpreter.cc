@@ -51,7 +51,9 @@ public:
 
         rmaConnectionManager = make_unique<RmaConnManager>(*this);
 
-        queueNotifyManager = make_unique<QueueNotifyManager>(*this);
+        aicpuQueueNotifyManager = make_unique<QueueNotifyManager>(*this);
+
+        ccuQueueNotifyManager = make_unique<QueueNotifyManager>(*this);
 
         queueWaitGroupCntNotifyManager = make_unique<QueueWaitGroupCntNotifyManager>();
 
@@ -83,9 +85,14 @@ public:
         return *remoteRmaBufManager.get();
     }
 
-    QueueNotifyManager &GetQueueNotifyManager() const override
+    QueueNotifyManager &GetAicpuQueueNotifyManager() const override
     {
-        return *queueNotifyManager.get();
+        return *aicpuQueueNotifyManager.get();
+    }
+
+    QueueNotifyManager &GetCcuQueueNotifyManager() const override
+    {
+        return *ccuQueueNotifyManager.get();
     }
 
     QueueWaitGroupCntNotifyManager &GetQueueWaitGroupCntNotifyManager() const override
@@ -117,7 +124,8 @@ private:
     unique_ptr<DataBufManager> dataBufferManager;
     unique_ptr<LocalRmaBufManager> localRmaBufManager;
     unique_ptr<RemoteRmaBufManager> remoteRmaBufManager;
-    unique_ptr<QueueNotifyManager> queueNotifyManager;
+    unique_ptr<QueueNotifyManager> aicpuQueueNotifyManager;
+    unique_ptr<QueueNotifyManager> ccuQueueNotifyManager;
     unique_ptr<QueueWaitGroupCntNotifyManager> queueWaitGroupCntNotifyManager;
     unique_ptr<QueueBcastPostCntNotifyManager> queueBcastPostCntNotifyManager;
     unique_ptr<ConnLocalNotifyManager> connLocalNotifyManager;
