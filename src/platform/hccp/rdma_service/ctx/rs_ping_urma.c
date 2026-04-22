@@ -297,6 +297,7 @@ STATIC int RsPingCommonInitSegCb(struct rs_cb *rscb, struct RsPingCtxCb *pingCb,
         .bs.token_policy = URMA_TOKEN_PLAIN_TEXT,
         .bs.cacheable = URMA_NON_CACHEABLE,
         .bs.access = URMA_ACCESS_LOCAL_ONLY,
+        .bs.non_pin = 1,
         .bs.token_id_valid = URMA_TOKEN_ID_INVALID,
         .bs.reserved = 0
     };
