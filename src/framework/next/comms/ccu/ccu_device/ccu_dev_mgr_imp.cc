@@ -14,14 +14,14 @@
 #include "hccl_common.h"
 #include "eid_info_mgr.h"
 
-// #include "ccu_comp.h"
-// #include "ccu_res_specs.h"
-// #include "ccu_res_batch_allocator.h"
-
 // 支持ccu新老通信域混跑临时添加
 #include "unified_platform/ccu/ccu_device/ccu_component/ccu_component.h"
 #include "unified_platform/ccu/ccu_device/ccu_res_specs.h"
 #include "unified_platform/ccu/ccu_device/ccu_res_batch_allocator.h"
+
+// #include "ccu_comp.h"
+#include "comms/ccu/ccu_device/ccu_res_specs.h"
+// #include "ccu_res_batch_allocator.h"
 
 #include "adapter_rts.h"
 
