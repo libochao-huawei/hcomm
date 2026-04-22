@@ -123,7 +123,7 @@ HcclResult CollReduceScatterOrderPreservedExecutor::RunReduceScatterLevel0Single
 {
     u64 size = totalSize_;
     DeviceMem srcMem = DeviceMem::create(execMem.inputPtr, size);
-    DeviceMem dstMem = scratchMemFlag_ ? execMem.ccratchMem.range(0, size) : execMem.inputMem.range(0, size);
+    DeviceMem dstMem = scratchMemFlag_ ? execMem.scratchMem.range(0, size) : execMem.inputMem.range(0, size);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
 
     return HCCL_SUCCESS;
