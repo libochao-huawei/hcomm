@@ -206,7 +206,7 @@ HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLeve
     CHK_SMART_PTR_NULL(level2TempAlg);
 
     u32 level0LastRank = level0Ranksize - 1;
-    bool isUseCclIn = level0Ranksize == 1 ? true : commIndex == level0LastRank - 1;
+    bool isUseCclIn = (level0Ranksize == 1) || (commIndex == level0LastRank - 1);
     bool borrowSpace = level0Ranksize == 1;
     CHK_RET(level2TempAlg->Prepare(execMem.inputMem, execMem.scratchMem,
         param.stream, algResResp_->slaveStreams, algResResp_->notifiesMain, algResResp_->notifiesAux,
