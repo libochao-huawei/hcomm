@@ -30,7 +30,6 @@ CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/community_sign_build.py"
 ENABLE_SIGN="false"
 VERSION_INFO="8.5.0"
 
-BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
 
 BUILD_CB_TEST="false"
@@ -445,16 +444,6 @@ while [[ $# -gt 0 ]]; do
         DO_NOT_CLEAN="true"
         shift
         ;;
-    --fwk_test_hlt)
-        BUILD_FWK_HLT="true"
-        MOCK_FWK_HLT="0"
-        shift
-        ;;
-    --fwk_test_hlt_mock)
-        BUILD_FWK_HLT="true"
-        MOCK_FWK_HLT="1"
-        shift
-        ;;
     --cb_test_verify)
         BUILD_CB_TEST="true"
         shift
@@ -546,14 +535,6 @@ if [ "${ENABLE_UT}" == "on" ]; then
     make_ut_gov
 elif [ "${ENABLE_ST}" == "on" ]; then
     build_st 
-elif [ "${KERNEL}" == "true" ]; then
-    build_kernel
-elif [ "${BUILD_FWK_HLT}" == "true" ]; then
-    log "Info: Building fwk_test with MOCK_HCCL=${MOCK_FWK_HLT}"
-    cmake ${CUSTOM_OPTION} -DMOCK_HCCL=${MOCK_FWK_HLT} ../test/hlt
-    build hcomm_test
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
     log "Info: Building cb_test_verify"
     build_cb_test_verify
@@ -563,31 +544,28 @@ elif [ "${BUILD_CB_TEST}" == "true" ]; then
     else
         log "Info: Building cb_test_verify success"
     fi
-elif [ "${FULL_MODE}" == "true" ]; then
-    cd ..
-    mkdir -p ${BUILD_DEVICE_DIR}
-    cd ${BUILD_DEVICE_DIR}
-    CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DFULL_MODE=ON -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend910B -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_device
-    BUILD_HCCD_DIR="${CURRENT_DIR}/build_hccd"
-    mkdir -p ${BUILD_HCCD_DIR}
-    cd ${BUILD_HCCD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_hccd
-    cd .. & cd ${BUILD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
-    build_package
-    rmdir ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
-    cd ..
-    mkdir -p ${BUILD_DEVICE_DIR}
-    cd ${BUILD_DEVICE_DIR}
-    CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
-    build_kernel
-    cd .. & cd ${BUILD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
-    build_package
-    rmdir ${BUILD_DEVICE_DIR}
+    mk_dir "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
+
+    # 配置
+    cmake -S ../ -B . ${CUSTOM_OPTION}
+    if [ $? -ne 0 ]; then
+        log "Error: cmake config failed"
+        exit 1
+    fi
+
+    # 编译
+    cmake --build . -j${THREAD_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: cmake build failed"
+        exit 1
+    fi
+
+    # 打包
+    make package -j${THREAD_NUM}
+    if [ $? -ne 0 ]; then
+        log "Error: make package failed"
+        exit 1
+    fi
 fi
