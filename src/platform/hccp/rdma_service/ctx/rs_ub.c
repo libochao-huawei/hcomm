@@ -282,9 +282,9 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     *devIndex = RsGenerateDevIndex(devCb->rscb->devCnt, devAttr->ub.dieId, devAttr->ub.funcId);
     devCb->index = *devIndex;
 
-    hccp_info("max_jetty:%u, maxJfsInlineLen:%u, max_jfs_depth:%u, max_jfr_depth:%u, max_jfs_sge:%u, max_jfr_sge:%u",
-        attr.dev_cap.max_jetty, devAttr->ub.maxJfsInlineLen, devAttr->sqMaxDepth,
-        devAttr->rqMaxDepth, devAttr->sqMaxSge, devAttr->rqMaxSge);
+    hccp_info("max_jetty:%u, maxJfsInlineLen:%u, sqMaxDepth:%u, rqMaxDepth:%u, sqMaxSge:%u, rqMaxSge:%u "
+        "maxReadSize:%u maxWriteSize:%u", attr.dev_cap.max_jetty, devAttr->ub.maxJfsInlineLen, devAttr->sqMaxDepth,
+        devAttr->rqMaxDepth, devAttr->sqMaxSge, devAttr->rqMaxSge, devAttr->maxReadSize, devAttr->maxWriteSize);
     return 0;
 }
 
