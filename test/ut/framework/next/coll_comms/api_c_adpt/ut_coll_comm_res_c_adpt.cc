@@ -141,3 +141,57 @@ TEST_F(HcclChannelDescTest, Ut_ProcessRoceChannelDesc_When_RetryCntIsInvaild_Ret
     ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_AICPU_TS, channelDesc.data(), 1, channels.data());
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+TEST_F(HcclChannelDescTest, Ut_CheckCommEngine_When_EngineIsCCU_And_OpExpansionModeIsValid_ReturnTrue)
+{
+    constexpr uint32_t DEFAULT_MODE = 0;
+    constexpr uint32_t CCU_MS_MODE = 5;
+    constexpr uint32_t CCU_SCHE_MODE = 6;
+
+    bool result1 = CheckCommEngine(CommEngine::COMM_ENGINE_CCU, DEFAULT_MODE);
+    EXPECT_TRUE(result1);
+
+    bool result2 = CheckCommEngine(CommEngine::COMM_ENGINE_CCU, CCU_MS_MODE);
+    EXPECT_TRUE(result2);
+
+    bool result3 = CheckCommEngine(CommEngine::COMM_ENGINE_CCU, CCU_SCHE_MODE);
+    EXPECT_TRUE(result3);
+}
+
+TEST_F(HcclChannelDescTest, Ut_CheckCommEngine_When_EngineIsCCU_And_OpExpansionModeIsInvalid_ReturnFalse)
+{
+    constexpr uint32_t INVALID_MODE = 1;
+
+    bool result = CheckCommEngine(CommEngine::COMM_ENGINE_CCU, INVALID_MODE);
+    EXPECT_FALSE(result);
+}
+
+TEST_F(HcclChannelDescTest, Ut_CheckCommEngine_When_EngineIsAICPU_ReturnTrue)
+{
+    constexpr uint32_t ANY_MODE = 2;
+
+    bool result = CheckCommEngine(CommEngine::COMM_ENGINE_AICPU, ANY_MODE);
+    EXPECT_TRUE(result);
+}
+
+TEST_F(HcclChannelDescTest, Ut_CheckCommEngine_When_EngineIsAICPU_TS_ReturnTrue)
+{
+    constexpr uint32_t ANY_MODE = 3;
+
+    bool result = CheckCommEngine(CommEngine::COMM_ENGINE_AICPU_TS, ANY_MODE);
+    EXPECT_TRUE(result);
+}
+
+TEST_F(HcclChannelDescTest, Ut_HcclChannelAcquire_When_EngineIsCCU_And_OpExpansionModeIsInvalid_ReturnHCCLEPARA)
+{
+    hcclCommPtr->collComm_->config_.opExpansionMode_ = 1; // 设置非法的opExpansionMode
+    comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    std::vector<HcclChannelDesc> channelDesc(1);
+    std::vector<ChannelHandle> channels(1);
+    GetChannelDesc(channelDesc);
+    channelDesc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_CCU;
+
+    ret = HcclChannelAcquire(comm, CommEngine::COMM_ENGINE_CCU, channelDesc.data(), 1, channels.data());
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
