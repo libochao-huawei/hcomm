@@ -14,7 +14,7 @@ if(NOT BUILD_OPEN_PROJECT)
     )
 endif()
 
-if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
+if(BUILD_OPEN_PROJECT AND DEVICE_MODE)
     target_sources(ccl_kernel PRIVATE
         hccl_aicpu_interface.cc
         hccl_aicpu_transport_interface.cc

@@ -106,7 +106,6 @@ elseif(BUILD_OPEN_PROJECT)
             SOURCE_DIR ${HCOMM_ROOT_DIR}/cmake/device
             BINARY_DIR ${CMAKE_BINARY_DIR}/device_build
             CMAKE_ARGS
-                -DKERNEL_MODE=${KERNEL_MODE}
                 -DTOOLCHAIN_DIR=${HCC_TOOLCHAIN_DIR}
                 -DCMAKE_TOOLCHAIN_FILE=${HCOMM_ROOT_DIR}/cmake/aarch64-hcc-toolchain.cmake
                 -DCMAKE_C_COMPILER=${HCC_C_COMPILER}
