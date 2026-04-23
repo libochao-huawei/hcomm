@@ -561,6 +561,7 @@ HcclResult CcuConnection::testSetTpAttr()
     struct TpAttr tpAttr {0};
     tpAttr.dataUdpSrcport = 128;
     CHK_RET(HrtRaSetTpAttrAsync(ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandle_[0]));
+    return HCCL_SUCCESS;
 }
 
 uint32_t CcuConnection::GetDieId() const
