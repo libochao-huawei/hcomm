@@ -1017,17 +1017,6 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
 endif()
 
 if(DEVICE_MODE AND KERNEL_MODE)
-    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
-    add_custom_command(
-        TARGET ccl_kernel
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CCL_KERNEL_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel> ${CCL_KERNEL_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel_plf> ${CCL_KERNEL_TAR_DIR}
-        COMMAND chmod 750 ${CCL_KERNEL_TAR_DIR}/lib*
-        COMMENT "Copying libccl_kernel_plf.so libccl_kernel.so to ${CCL_KERNEL_TAR_DIR}"
-    )
-
     set(AICPU_CUSTOM_COMPILE_DEFINITIONS
         HCCD
         CCL_KERNEL_AICPU

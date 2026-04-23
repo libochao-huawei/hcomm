@@ -699,20 +699,3 @@ if(NOT BUILD_OPEN_PROJECT)
         ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
     )
 endif()    
-
-if(DEVICE_MODE)
-    set(HCCD_TAR_DIR ${HCCL_BASE_DIR}/../build_hccd/hccd_tar_pkg/lib64)
-    add_custom_command(
-        TARGET hccd
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_peer> ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_hdc> ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra> ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccd> ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy ${CANN_3RD_LIB_PATH}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCD_TAR_DIR}
-        COMMAND chmod 750 ${HCCD_TAR_DIR}/lib*
-        COMMENT "Copying libhccd.so to ${HCCD_TAR_DIR}"
-    )
-endif()
