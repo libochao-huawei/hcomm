@@ -802,23 +802,34 @@ HcclResult HostCpuRoceChannel::WriteWithNotify(
 
     // 构造 WR
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
-    uint32_t qpInfoSize = qpInfo.size();
-    uint32_t wrLen = tailLen / qpInfoSize;
-    uint32_t wrLenTail = tailLen - (qpInfoSize - 1) * wrLen;
+    uint32_t useQpNum = 0;
+    uint32_t wrLen = len / useQpNum;
+    uint32_t wrLenTail = len - (useQpNum - 1) * wrLen;
     if (wrLen < qpInfo[0].qpThreshold) {
-        uint32_t minSize = tailLen / qpInfo[0].qpThreshold;     // 保证每个qp分担的数据量满足最小阈值
-        qpInfoSize = minSize;
-        wrLen = tailLen / qpInfoSize;
-        wrLenTail = tailLen - (qpInfoSize - 1) * wrLen;
+        uint32_t minSize = len / qpInfo[0].qpThreshold;     // 保证每个qp分担的数据量满足最小阈值
+        useQpNum = minSize;
+        wrLen = tailLen / useQpNum;
+        wrLenTail = tailLen - (useQpNum - 1) * wrLen;
     }
 
-    for (uint32_t i = 0; i < qpInfoSize; i++) {
-        uint32_t qpLen = (i == qpInfoSize - 1) ? wrLenTail : wrLen;
+    uint32_t i;
+    for (i = 0; i < useQpNum; i++) {
+        uint32_t qpLen = (i == useQpNum - 1) ? wrLenTail : wrLen;
         struct ibv_send_wr writeWithNotifyWr{};
         struct ibv_sge sgList{};
         writeWithNotifyWr.sg_list = &sgList;
         CHK_RET(PrepareWriteWrResource(tailDst + wrLen * i, tailSrc + wrLen * i, tailLen, remoteNotifyIdx, writeWithNotifyWr));
         CHK_RET(PostAndCheckSend(qpInfo[i].qp, __func__, writeWithNotifyWr));
+    }
+
+    // 未使用的QP，发长度为0的数据
+    while (i < qpInfo.size()) {
+        struct ibv_send_wr wr{};
+        struct ibv_sge sg;
+        qpLen = 0;
+        BuildRdmaWr(caller, opcode, localAddr, remoteAddr, qpLen, localIdx, rmtIdx, wr, sg);
+        CHK_RET(PostAndCheckSend(qpInfo[i].qp, caller, wr));
+        i++;
     }
 
     HCCL_INFO("[HostCpuRoceChannel::%s] SUCCESS. len[0x%llx], newWqe[%u], wqeNum_[%u].",
@@ -900,22 +911,32 @@ HcclResult HostCpuRoceChannel::PostRdmaOp(const char *caller, ibv_wr_opcode opco
 
     // 2. 构造 WR 并发送
     std::vector<Hccl::QpInfo> qpInfo = GetQpInfos();
-    uint32_t qpInfoSize = qpInfo.size();
-    uint32_t wrLen = len / qpInfoSize;
-    uint32_t wrLenTail = len - (qpInfoSize - 1) * wrLen;
+    uint32_t useQpNum = 0;
+    uint32_t wrLen = len / useQpNum;
+    uint32_t wrLenTail = len - (useQpNum - 1) * wrLen;
     if (wrLen < qpInfo[0].qpThreshold) {
         uint32_t minSize = len / qpInfo[0].qpThreshold;     // 保证每个qp分担的数据量满足最小阈值
-        qpInfoSize = minSize;
-        wrLen = tailLen / qpInfoSize;
-        wrLenTail = tailLen - (qpInfoSize - 1) * wrLen;
+        useQpNum = minSize;
+        wrLen = tailLen / useQpNum;
+        wrLenTail = tailLen - (useQpNum - 1) * wrLen;
     }
 
-    for (uint32_t i = 0; i < qpInfoSize; i++) {
+    for (uint32_t i = 0; i < useQpNum; i++) {
         uint32_t qpLen = (i == qpInfoSize - 1) ? wrLenTail : wrLen;
         struct ibv_send_wr wr{};
         struct ibv_sge sg;
         BuildRdmaWr(caller, opcode, localAddr + wrLen * i, remoteAddr + wrLen * i, qpLen, localIdx, rmtIdx, wr, sg);
         CHK_RET(PostAndCheckSend(qpInfo[i].qp, caller, wr));
+    }
+
+    // 未使用的QP，发长度为0的数据
+    while (i < qpInfo.size()) {
+        struct ibv_send_wr wr{};
+        struct ibv_sge sg;
+        qpLen = 0;
+        BuildRdmaWr(caller, opcode, localAddr, remoteAddr, qpLen, localIdx, rmtIdx, wr, sg);
+        CHK_RET(PostAndCheckSend(qpInfo[i].qp, caller, wr));
+        i++;
     }
 
     HCCL_INFO("[HostCpuRoceChannel::%s] Slice SUCCESS. wqeNum_[%u]", caller, wqeNum_);
