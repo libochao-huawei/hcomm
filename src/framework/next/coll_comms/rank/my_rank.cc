@@ -85,6 +85,8 @@ HcclResult MyRank::TryInitCcuInstance()
     if (ccuInitRet == HcclResult::HCCL_E_AGAIN) {
         opExpansionMode_ = AICPU_TS_MODE;
         ccuResContainer_ = nullptr;
+        HCCL_RUN_WARNING("[MyRank][%s] failed to init ccu driver, "
+            "fallback to aicpu, rankId[%u].", __func__, rankId_);
         return HcclResult::HCCL_SUCCESS;
     }
 
@@ -101,6 +103,8 @@ HcclResult MyRank::TryInitCcuInstance()
         // 其余模式资源不足回退至aicpu ts
         opExpansionMode_ = AICPU_TS_MODE;
         ccuResContainer_ = nullptr;
+        HCCL_RUN_WARNING("[MyRank][%s] ccu resouces are unavailable, "
+            "fallback to aicpu, rankId[%u].", __func__, rankId_);
         return HcclResult::HCCL_SUCCESS;
     }
 
