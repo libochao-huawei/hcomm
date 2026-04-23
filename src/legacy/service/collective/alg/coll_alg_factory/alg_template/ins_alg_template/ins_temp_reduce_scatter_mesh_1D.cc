@@ -32,14 +32,14 @@ HcclResult InsTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
     for (auto resReqIter = linkReq.begin(); resReqIter != linkReq.end(); resReqIter++) {
         auto remoteRank = resReqIter->first;
         if (rank2PathNumMap_.find(remoteRank) == rank2PathNumMap_.end() || rank2PathNumMap_[remoteRank] == 0) {
-            HCCL_ERROR("[InsTempReduceScatterMesh1D] No path to remoteRank[%u]", remoteRank);
+            HCCL_ERROR("[InsTempReduceScatterMesh1D] No path to remoteRank[%d]", remoteRank);
             return HcclResult::HCCL_E_INTERNAL;
         }
         if (pathNum == 0) {
             pathNum = rank2PathNumMap_[remoteRank];
         } else if (rank2PathNumMap_[remoteRank] != pathNum) {
             HCCL_ERROR("[InsTempReduceScatterMesh1D] Inconsistency pathNum to remoteRanks, Previous consistent pathNum=[%u], mismatched "
-                       "remoteRank=[%u], pathNum=[%u]",
+                       "remoteRank=[%d], pathNum=[%u]",
                 pathNum,
                 remoteRank,
                 rank2PathNumMap_[remoteRank]);
@@ -134,7 +134,7 @@ HcclResult InsTempReduceScatterMesh1D::RunReduceScatter(const ResLinks &tempLink
         RankId remoteRank = tempVTopo_[0][nextRank];
         u32 rmAlgRank;
         CHK_RET(GetAlgRank(remoteRank, tempVTopo_[0], rmAlgRank));
-        HCCL_DEBUG("[InsTempReduceScatterMesh1D][RunReduceScatter] myRank[%d], toRank[%d], fromRank[%d], rmAlgRank[%d]", myRank_, remoteRank, remoteRank, rmAlgRank);
+        HCCL_DEBUG("[InsTempReduceScatterMesh1D][RunReduceScatter] myRank[%d], toRank[%d], fromRank[%d], rmAlgRank[%u]", myRank_, remoteRank, remoteRank, rmAlgRank);
         CHK_PRT_RET(tempLinks.at(remoteRank).empty(), HCCL_ERROR("[InsTempReduceScatterMesh1D][RunReduceScatter] Rank [%d], remoteRank[%d] required links Error.", myRank_, remoteRank),
             HcclResult::HCCL_E_INTERNAL);
         const std::vector<LinkData> &neighborLinkDatas = tempLinks.at(remoteRank);
@@ -144,7 +144,7 @@ HcclResult InsTempReduceScatterMesh1D::RunReduceScatter(const ResLinks &tempLink
         std::vector<float> dataSplitRate(linkNum);
         CHK_RET(CalcDataSplitRateForLinks(neighborLinkDatas, dataSplitRate));
         for (u32 linkIdx = 0; linkIdx < linkNum; linkIdx++) {
-            CHK_PRT_RET(queIdx >= tempInsQues.size(), HCCL_ERROR("[InsTempReduceScatterMesh1D][RunReduceScatter] queIdx [%d] >= tempInsQues.size() [%d].", queIdx, tempInsQues.size()),
+            CHK_PRT_RET(queIdx >= tempInsQues.size(), HCCL_ERROR("[InsTempReduceScatterMesh1D][RunReduceScatter] queIdx [%u] >= tempInsQues.size() [%lu].", queIdx, tempInsQues.size()),
                 HcclResult::HCCL_E_INTERNAL);
             InsQuePtr currQue = tempInsQues[queIdx + 1];
             queIdx++;

@@ -19,7 +19,7 @@ TopoMatchMeshNHRPcie::TopoMatchMeshNHRPcie(
 TopoMatchMeshNHRPcie::~TopoMatchMeshNHRPcie()
 {}
 
-HcclResult TopoMatchMeshNHRPcie::LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType)
+HcclResult TopoMatchMeshNHRPcie::LoadTopoInstRanks(u32 topoInstId, std::vector<RankId> &ranksOfSameLinkType) const
 {
     std::vector<u32> ranksInTopo;
     u32 rankNum;
@@ -31,7 +31,7 @@ HcclResult TopoMatchMeshNHRPcie::LoadTopoInstRanks(u32 topoInstId, std::vector<R
 }
 
 HcclResult TopoMatchMeshNHRPcie::DeduplicateLevelRanks(std::vector<RankId> &level0Ranks,
-    std::vector<RankId> &level1Ranks)
+    std::vector<RankId> &level1Ranks) const
 {
     u32 level0RankSize = level0Ranks.size();
     auto level1End = std::remove_if(level1Ranks.begin(), level1Ranks.end(),
