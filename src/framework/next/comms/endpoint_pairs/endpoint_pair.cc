@@ -36,13 +36,20 @@ HcclResult EndpointPair::Init()
 HcclResult EndpointPair::GetSocket(const std::string &socketTag, const uint32_t listenPort,
     u32 reuseIdx, Hccl::Socket*& socket)
 {
+    uint32_t connectMode = 0;
     Hccl::LinkData linkData = BuildDefaultLinkData();
     CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData, reuseIdx));
     std::string linkTag = socketTag;
-    if (linkData.GetReuseIdx() != "0") {
-        linkTag += ("_" + linkData.GetReuseIdx());
+
+    if (localEndpointDesc_.loc.locType != remoteEndpointDesc_.loc.locType) {
+        connectMode = 1;
+    } else {
+        if (linkData.GetReuseIdx() != "0") {
+            linkTag += ("_" + linkData.GetReuseIdx());
+        }
     }
-    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag);
+
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, listenPort, linkTag, connectMode);
     CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
