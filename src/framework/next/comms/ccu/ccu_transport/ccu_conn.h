@@ -78,7 +78,6 @@ private:
     HcclResult    ReleaseConnRes();
     HcclResult    ReturnErrorStatus(const std::string &funcName);
     std::string   Describe();
-    HcclResult    testSetTpAttr();
 
 private:
     CcuConnStatus status_{CcuConnStatus::CONN_INVALID};
