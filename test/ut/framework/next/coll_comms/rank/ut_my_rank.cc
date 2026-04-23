@@ -187,6 +187,122 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     unsetenv("HCCL_DFS_CONFIG");
 }
 
+// 测试Init时用户未配置展开模式时，读取环境变量配置
+TEST_F(MyRankTest, Ut_Init_When_Default_Mode_Expect_Set_By_Env)
+{
+    setenv("HCCL_OP_EXPANSION_MODE", "CCU_SCHED", 1);
+    MOCKER_CPP(&hccl::MyRank::TryInitCcuInstance).stubs().will(returnValue(HCCL_SUCCESS));
+    // 构造myrank
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    HcclMem cclBuffer;
+    cclBuffer.addr = (void*)0xab;
+    cclBuffer.size = 1024;
+    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+
+    uint32_t defaultOpExpansionMode = 0;
+    EXPECT_EQ(myRank.Init(cclBuffer, defaultOpExpansionMode, 2), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.opExpansionMode_, 6);
+    unsetenv("HCCL_OP_EXPANSION_MODE");
+}
+
+// 测试Init时ccu驱动拉起失败回退到aicpu
+TEST_F(MyRankTest, Ut_Init_When_Ccu_Driver_Fail_Expect_Fallback_Aicpu)
+{
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_AGAIN));
+    // 构造myrank
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    HcclMem cclBuffer;
+    cclBuffer.addr = (void*)0xab;
+    cclBuffer.size = 1024;
+    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+
+    uint32_t opExpansionModeMs = 5;
+    EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.opExpansionMode_, 2);
+    unsetenv("HCCL_INDEPENDENT_OP");
+}
+
+// 测试Init时ccu ms资源不足回退到sched
+TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_Insufficient_Expect_Fallback_Sched)
+{
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs()
+        .will(returnValue(HCCL_E_UNAVAIL))
+        .then(returnValue(HCCL_SUCCESS));
+    // 构造myrank
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    HcclMem cclBuffer;
+    cclBuffer.addr = (void*)0xab;
+    cclBuffer.size = 1024;
+    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+
+    uint32_t opExpansionModeMs = 5;
+    EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.opExpansionMode_, 6);
+    unsetenv("HCCL_INDEPENDENT_OP");
+}
+
+// 测试Init时ccu ms和sched资源不足回退到aicpu
+TEST_F(MyRankTest, Ut_Init_When_Ccu_Ms_And_Sched_Insufficient_Expect_Fallback_Aicpu)
+{
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_UNAVAIL));
+    // 构造myrank
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    HcclMem cclBuffer;
+    cclBuffer.addr = (void*)0xab;
+    cclBuffer.size = 1024;
+    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+
+    uint32_t opExpansionModeMs = 5;
+    EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_SUCCESS);
+    EXPECT_EQ(myRank.opExpansionMode_, 2);
+    unsetenv("HCCL_INDEPENDENT_OP");
+}
+
+// 测试Init在申请资源时出现其他报错时失败
+TEST_F(MyRankTest, Ut_Init_When_)
+{
+    setenv("HCCL_INDEPENDENT_OP", "1", 1);
+    MOCKER_CPP(&hcomm::CcuResContainer::ChangeMode).stubs().will(returnValue(HCCL_E_PARA));
+    // 构造myrank
+    aclrtBinHandle binHandle;
+    CommConfig config;
+    ManagerCallbacks callbacks;
+    void* rankGraphPtr = (void*)0x114514;
+    std::shared_ptr<RankGraph> rankGraph = std::make_shared<RankGraphV2>(rankGraphPtr);
+    MyRank myRank(binHandle, 0, config, callbacks, rankGraph.get());
+    HcclMem cclBuffer;
+    cclBuffer.addr = (void*)0xab;
+    cclBuffer.size = 1024;
+    cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
+
+    uint32_t opExpansionModeMs = 5;
+    EXPECT_EQ(myRank.Init(cclBuffer, opExpansionModeMs, 2), HCCL_E_PARA);
+    unsetenv("HCCL_INDEPENDENT_OP");
+}
+
 // 测试BatchCreateChannels在资源不足时销毁新申请的channel
 TEST_F(MyRankTest, Ut_BatchCreateChannels_When_Resource_fallback_Expect_Return_HCCL_E_UNAVAIL)
 {
