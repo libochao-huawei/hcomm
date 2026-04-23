@@ -164,12 +164,29 @@ HcclResult LaunchOpenOpParamDataImpl(std::vector<uint8_t> &opParam)
     char *ctx = static_cast<char *>(param->resCtx);
     std::vector<char> seq(ctx, ctx + param->ctxSize);
     resCtx.DeSerialize(seq);
-    HCCL_INFO("[MC2_OPEN_DIAG][Launch] opType %u, algName[%s], inputPtr %p, outputPtr %p, count %llu, "
-              "dataType %u, outputType %u, strideCount %llu, resCtx %p, ctxSize %llu, stream %p.",
+    HCCL_INFO("[MC2_OPEN_DIAG][Launch] opType %u, algName[%s], inputPtr %p, outputPtr %p, resCtx %p, ctxSize %llu, stream %p.",
               static_cast<u32>(param->opType), param->algName, param->inputPtr, param->outputPtr,
-              static_cast<unsigned long long>(param->DataDes.count), static_cast<u32>(param->DataDes.dataType),
-              static_cast<u32>(param->DataDes.outputType), static_cast<unsigned long long>(param->DataDes.strideCount),
               param->resCtx, static_cast<unsigned long long>(param->ctxSize), param->stream);
+    if (param->opType == HCCL_CMD_ALLTOALLV) {
+        HCCL_INFO("[MC2_OPEN_DIAG][Launch][AllToAllV] sendDataType %u, recvDataType %u, sendCounts %p, recvCounts %p, sdispls %p, rdispls %p.",
+                static_cast<u32>(param->all2AllVDataDes.sendType), static_cast<u32>(param->all2AllVDataDes.recvType),
+                param->all2AllVDataDes.sendCounts, param->all2AllVDataDes.recvCounts,
+                param->all2AllVDataDes.sdispls, param->all2AllVDataDes.rdispls);
+    } else if (param->opType == HCCL_CMD_ALLTOALL) {
+        HCCL_INFO("[MC2_OPEN_DIAG][Launch][AllToAll][V] sendDataType %u, recvDataType %u, sendCounts %p, recvCounts %p, sdispls %p, rdispls %p.",
+                static_cast<u32>(param->all2AllVDataDes.sendType), static_cast<u32>(param->all2AllVDataDes.recvType),
+                param->all2AllVDataDes.sendCounts, param->all2AllVDataDes.recvCounts,
+                param->all2AllVDataDes.sdispls, param->all2AllVDataDes.rdispls);
+        HCCL_INFO("[MC2_OPEN_DIAG][Launch][AllToAll] sendCount %llu, sendDataType %u, recvCount %llu, recvDataType %u.",
+                static_cast<unsigned long long>(param->all2AllDataDes.sendCount),
+                static_cast<u32>(param->all2AllDataDes.sendType), static_cast<unsigned long long>(param->all2AllDataDes.recvCount),
+                static_cast<u32>(param->all2AllDataDes.recvType));
+    } else {
+        HCCL_INFO("[MC2_OPEN_DIAG][Launch][Else] count %llu, dataType %u, outputType %u, strideCount %llu.",
+                static_cast<unsigned long long>(param->DataDes.count),
+                static_cast<u32>(param->DataDes.dataType), static_cast<u32>(param->DataDes.outputType),
+                static_cast<unsigned long long>(param->DataDes.strideCount));
+    }
     HCCL_INFO("[MC2_OPEN_DIAG][LaunchResCtx] userRank %u, userRankSize %u, threadNum %zu, cclMemAddr %p, "
               "cclMemSize %llu.",
               resCtx.topoInfo.userRank, resCtx.topoInfo.userRankSize, resCtx.threads.size(), resCtx.cclMem.addr,
