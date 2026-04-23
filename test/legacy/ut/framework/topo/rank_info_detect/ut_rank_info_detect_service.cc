@@ -436,7 +436,7 @@ TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_Sudden_Fail)
     EXPECT_EQ(1, res1);
 }
 
-TEST_F(RankInfoDetectService, Ut_GetConnections_When_ServerTimeout_Expect_RptInputErr)
+TEST_F(RankInfoDetectServiceTest, Ut_GetConnections_When_ServerTimeout_Expect_RptInputErr)
 {
     MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&HostSocketHandleManager::Get).stubs().with(any(), any()).will(returnValue(hccpSocketHandle));

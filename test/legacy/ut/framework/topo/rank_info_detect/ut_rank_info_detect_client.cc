@@ -367,6 +367,6 @@ TEST_F(RankInfoDetectClientTest, Ut_VerifyRankTable_When_RankFailed_Expect_RptIn
 {
     MOCKER(RptInputErr).stubs().will(returnValue(HCCL_SUCCESS));
     rankInfoDetectClient_->rankTable_.rankCount = 1;
-    rankInfoDetectClient_->arankSize_ = 2;
+    rankInfoDetectClient_->rankSize_ = 2;
     EXPECT_THROW(rankInfoDetectClient_->VerifyRankTable(), InvalidParamsException);
 }
