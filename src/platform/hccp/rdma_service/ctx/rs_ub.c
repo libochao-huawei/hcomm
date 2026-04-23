@@ -264,6 +264,8 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     devAttr->rqMaxSge = attr.dev_cap.max_jfr_sge;
     devAttr->ub.maxJfsInlineLen = attr.dev_cap.max_jfs_inline_len;
     devAttr->ub.maxJfsRsge = attr.dev_cap.max_jfs_rsge;
+    devAttr->maxReadSize = attr.dev_cap.max_read_size;
+    devAttr->maxWriteSize = attr.dev_cap.max_write_size;
     devAttr->ub.rmTpCap.value = attr.dev_cap.rm_tp_cap.value;
     devAttr->ub.rcTpCap.value = attr.dev_cap.rc_tp_cap.value;
     devAttr->ub.umTpCap.value = attr.dev_cap.um_tp_cap.value;
