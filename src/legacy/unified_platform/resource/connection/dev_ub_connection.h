@@ -154,7 +154,6 @@ private:
     void         UnImportJetty();
     void         DestroyJetty();
     void         ReleaseResource();
-    HcclResult    testSetTpAttr();
 
     void ProcessSlices(const MemoryBuffer &loc, const MemoryBuffer &rmt,
                        std::function<void(const MemoryBuffer &, const MemoryBuffer &, u32)> processOneSlice,
