@@ -293,7 +293,6 @@ else()
     )
 endif()
 
-message(STATUS "ccl_kernel_plf KERNEL_MODE=${KERNEL_MODE}")
 message(STATUS "ccl_kernel_plf BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "ccl_kernel_plf ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
 
