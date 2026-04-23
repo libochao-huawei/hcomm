@@ -23,10 +23,10 @@ namespace Hccl {
 
 TpManager& TpManager::GetInstance(const int32_t deviceLogicId)
 {
-    static TpManager tpManager[MAX_MODULE_DEVICE_NUM];
+    static TpManager tpManager[MAX_MODULE_DEVICE_NUM + 1];
 
     if (deviceLogicId < 0 ||
-        static_cast<uint32_t>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM) {
+        static_cast<uint32_t>(deviceLogicId) > MAX_MODULE_DEVICE_NUM) {
         THROW<InvalidParamsException>("[TpManager][%s] failed to get instance, "
             "devLogicId[%d] should be less than %u.", __func__,
             deviceLogicId, MAX_MODULE_DEVICE_NUM);

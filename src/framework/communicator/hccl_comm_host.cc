@@ -330,14 +330,17 @@ namespace hccl
             commAicpuParam_.kfcStatusTransferD2HParams));
         commAicpuParam_.userRank = collComm_->GetMyRankId();
         commAicpuParam_.userRankSize = collComm_->GetRankSize();
-        HCCL_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], userRank[%u], userRankSize[%u]",
-            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId,
-            commAicpuParam_.deviceType, commAicpuParam_.userRank, commAicpuParam_.userRankSize);
+        const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
+        HCCL_RUN_INFO("[%s]success, commId[%s], deviceLogicId[%u], devicePhyId[%u], devType[%u], "
+            "userRank[%u], userRankSize[%u], opExpansionMode[%u].",
+            __func__, collComm_->GetCommId().c_str(), commAicpuParam_.deviceLogicId,
+            commAicpuParam_.devicePhyId, commAicpuParam_.deviceType,
+            commAicpuParam_.userRank, commAicpuParam_.userRankSize,
+            opExpansionMode);
         
         const char *indOp = getenv("HCCL_INDEPENDENT_OP");
         if (indOp != nullptr && strcmp(indOp, "") != 0) {
             // 当前需要支持coll comm与legacy comm混跑，coll comm确定加速模式后，需要设置comm加速模式
-            const auto opExpansionMode = GetCollCommOpExpansionMode(collComm_.get());
             auto *commImplV2 = static_cast<Hccl::HcclCommunicator *>(commV2);
             constexpr bool isCcuMsAvailable = false; // 禁止legacy通信域使用ms模式，避免抢占过多coll comm ccu可用资源
             CHK_RET(commImplV2->SetAccelerator(static_cast<int32_t>(opExpansionMode), isCcuMsAvailable));

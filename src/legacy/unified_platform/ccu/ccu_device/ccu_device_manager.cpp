@@ -263,11 +263,6 @@ HcclResult CcuDeviceManager::GetXnBaseAddr(const uint32_t devLogicId, const uint
     );
 }
 
-std::string ResInfo::Describe() const
-{
-    return StringFormat("ResInfo[startId=%u, num=%u]", startId, num);
-}
-
 HcclResult CheckDieValid(const char *funcName, const int32_t devLogicId, const uint8_t dieId,
     const std::array<bool, MAX_CCU_IODIE_NUM> &dieEnableFlags)
 {

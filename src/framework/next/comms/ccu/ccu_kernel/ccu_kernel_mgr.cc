@@ -32,7 +32,7 @@ CcuKernelMgr::~CcuKernelMgr()
 
 CcuKernelMgr &CcuKernelMgr::GetInstance(const int32_t deviceLogicId)
 {
-    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM];
+    static CcuKernelMgr kernelManager[MAX_MODULE_DEVICE_NUM + 1];
 
     int32_t devLogicId = deviceLogicId;
     if (devLogicId < 0 || static_cast<uint32_t>(devLogicId) >= MAX_MODULE_DEVICE_NUM) {
@@ -637,8 +637,8 @@ HcclResult CcuKernelMgr::LoadInstruction(const CcuRep::CcuInstrInfo &instrInfo, 
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(devLogicId_), devPhyId));
 
     const RaInfo info{NetworkMode::NETWORK_OFFLINE, devPhyId};
-    struct CustomChannelInfoIn  inBuff{};
-    struct CustomChannelInfoOut outBuff{};
+    CustomChannelInfoIn  inBuff{};
+    CustomChannelInfoOut outBuff{};
 
     // 设置操作码和通道数据
     inBuff.op                          = CcuOpcodeType::CCU_U_OP_SET_INSTRUCTION;

@@ -21,12 +21,16 @@
 #include "enum_factory.h"
 #include "hccl_rank_graph.h"
 
+// 支持新老通信域混跑，引入legacy数据结构
+#include "unified_platform/pub_inc/ccu/ccu_dev_mgr.h"
+
 namespace hcomm {
 
 MAKE_ENUM(CcuEngine, CCU_MS, CCU_SCHE);
 
 using CcuResHandle = void *;
 
+// 不复用legacy数据结构，对上层支持CommAddr，不使用Hccl::IpAddress
 struct CcuChannelPara {
     CommAddr commAddr{};
     uint32_t channelNum{0};
@@ -40,25 +44,37 @@ struct CcuChannelPara {
     }
 };
 
-MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+using CcuJettyType = Hccl::CcuJettyType;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * MAKE_ENUM(CcuJettyType, CCUM_CACHED_JETTY, INVALID_JETTY);
+ */
 
-struct CcuJettyInfo {
-    CcuJettyType jettyType{CcuJettyType::INVALID_JETTY};
-    uint16_t jettyCtxId{0};
-    uint16_t taJettyId{0};
+using CcuJettyInfo = Hccl::CcuJettyInfo;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuJettyInfo {
+ *     CcuJettyType jettyType{CcuJettyType::INVALID_JETTY};
+ *     uint16_t jettyCtxId{0};
+ *     uint16_t taJettyId{0};
 
-    uint32_t sqDepth{0};
-    uint32_t wqeBBStartId{0};
+ *     uint32_t sqDepth{0};
+ *     uint32_t wqeBBStartId{0};
 
-    uint64_t sqBufVa{0};
-    uint32_t sqBufSize{0};
-};
+ *     uint64_t sqBufVa{0};
+ *     uint32_t sqBufSize{0};
+ * };
+ */
 
-struct CcuChannelInfo {
-    uint32_t channelId{0};
-    uint8_t dieId{0};
-    std::vector<CcuJettyInfo> jettyInfos;
-};
+using CcuChannelInfo = Hccl::CcuChannelInfo;
+/* 开源自定义算子CCU设备管理实现，当前支持新老通信域混跑，
+ * 暂时改用legacy数据结构，避免反向依赖
+ * struct CcuChannelInfo {
+ *     uint32_t channelId{0};
+ *     uint8_t dieId{0};
+ *     std::vector<CcuJettyInfo> jettyInfos;
+ * };
+ */
 
 /**
  * @brief 启用CCU特性，初始化CCU平台层
