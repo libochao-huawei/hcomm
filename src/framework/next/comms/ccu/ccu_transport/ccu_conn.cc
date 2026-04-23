@@ -510,6 +510,7 @@ std::string CcuConnection::Describe()
 
 HcclResult CcuConnection::Describe(std::string &dfxMsg)
 {
+    testSetTpAttr();
     uint16_t udpSport = 0xFFFF;
     if (tpProtocol_ == TpProtocol::RTP) {
         uint32_t attrBitmap = 8192;
@@ -537,6 +538,14 @@ HcclResult CcuConnection::Describe(std::string &dfxMsg)
     dfxMsg += dfxStr;
     HCCL_INFO("[CcuConnection::%s] %s", __func__, dfxStr.c_str());
     return HcclResult::HCCL_SUCCESS;
+}
+
+void CcuConnection::testSetTpAttr()
+{
+    uint32_t attrBitmap = 0x1FFFF;
+    struct TpAttr tpAttr {0};
+    tpAttr.dataUdpSrcport = 12345;
+    CHK_RET(HrtRaSetTpAttrAsync(ctxHandle_, tpInfo_.tpHandle, attrBitmap, tpAttr, reqHandle_[0]));
 }
 
 uint32_t CcuConnection::GetDieId() const
