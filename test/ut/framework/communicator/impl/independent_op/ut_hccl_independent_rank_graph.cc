@@ -849,3 +849,287 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Ser
     EXPECT_EQ(listSize, 1);
     DestroyComm(comm);
 }
+
+// ==================== 新增拓扑查询函数 UT 测试用例 ====================
+
+// GetTopoInstsByLayer: 参数校验 - netLayer无效
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetTopoInstsByLayer_When_InvalidNetLayer_Expect_ParaError)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 获取netLayer信息
+    uint32_t netLayerNum = 0;
+    uint32_t* netLayers = nullptr;
+    ret = HcclRankGraphGetLayers(comm, &netLayers, &netLayerNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 使用一个无效的netLayer（大于等于netLayerNum）
+    uint32_t invalidNetLayer = netLayerNum + 1;
+    uint32_t* topoInsts = nullptr;
+    uint32_t topoInstNum = 0;
+
+    // 通过HcclRankGraphGetTopoInstsByLayer接口测试
+    ret = HcclRankGraphGetTopoInstsByLayer(comm, invalidNetLayer, &topoInsts, &topoInstNum);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+// GetTopoType: 参数校验 - netLayer无效
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetTopoType_When_InvalidNetLayer_Expect_ParaError)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 使用一个无效的netLayer
+    uint32_t invalidNetLayer = 100;
+    uint32_t topoInstId = 0;
+    CommTopo topoType;
+
+    ret = HcclRankGraphGetTopoType(comm, invalidNetLayer, topoInstId, &topoType);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+// GetRanksByTopoInst: 非910B设备类型返回NOT_SUPPORT
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetRanksByTopoInst_When_Not910B_Expect_NotSupport)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 910_93设备类型，非910B
+    uint32_t netLayer = 0;
+    uint32_t topoInstId = 0;
+    uint32_t* ranks = nullptr;
+    uint32_t rankNum = 0;
+
+    ret = HcclRankGraphGetRanksByTopoInst(comm, netLayer, topoInstId, &ranks, &rankNum);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+// GetRanksByTopoInst: 参数校验 - netLayer无效
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetRanksByTopoInst_When_InvalidNetLayer_Expect_ParaError)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 设置为910B设备类型
+    set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910B));
+
+    // 使用无效的netLayer
+    uint32_t invalidNetLayer = 100;
+    uint32_t topoInstId = 0;
+    uint32_t* ranks = nullptr;
+    uint32_t rankNum = 0;
+
+    ret = HcclRankGraphGetRanksByTopoInst(comm, invalidNetLayer, topoInstId, &ranks, &rankNum);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+// GetRanksByTopoInst: 910B设备类型，有效参数
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetRanksByTopoInst_When_910BValidParams_Expect_Success)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 设置为910B设备类型
+    set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910B));
+
+    uint32_t netLayer = 0;
+    uint32_t topoInstId = 0;
+    uint32_t* ranks = nullptr;
+    uint32_t rankNum = 0;
+
+    ret = HcclRankGraphGetRanksByTopoInst(comm, netLayer, topoInstId, &ranks, &rankNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// GetEndpointNum: 参数校验 - netLayer无效
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetEndpointNum_When_InvalidNetLayer_Expect_ParaError)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint32_t invalidNetLayer = 100;
+    uint32_t topoInstId = 0;
+    uint32_t num = 0;
+
+    ret = HcclRankGraphGetEndpointNum(comm, invalidNetLayer, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+// GetEndpointDesc: 参数校验 - nullptr参数
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetEndpointDesc_When_NullPtr_Expect_ParaError)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint32_t netLayer = 0;
+    uint32_t topoInstId = 0;
+    uint32_t descNum = 0;
+
+    // descNum为nullptr
+    ret = HcclRankGraphGetEndpointDesc(comm, netLayer, topoInstId, nullptr, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    // endpointDesc为nullptr
+    ret = HcclRankGraphGetEndpointDesc(comm, netLayer, topoInstId, &descNum, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+// GetEndpointDesc: 参数校验 - netLayer无效
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetEndpointDesc_When_InvalidNetLayer_Expect_ParaError)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint32_t invalidNetLayer = 100;
+    uint32_t topoInstId = 0;
+    uint32_t descNum = 10;
+    EndpointDesc endpointDesc[10];
+
+    ret = HcclRankGraphGetEndpointDesc(comm, invalidNetLayer, topoInstId, &descNum, endpointDesc);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+// GetDevicePort: rank不存在时返回错误
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetDevicePort_When_RankNotExist_Expect_ParaError)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 使用一个不存在的rank id（9999）
+    uint32_t invalidRank = 9999;
+    uint32_t devPort = 0;
+
+    // GetDevicePort 是 RankGraphV1 的公开方法，直接通过 rankGraphV2 调用
+    ret = rankGraphV2->GetDevicePort(invalidRank, &devPort);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+}
+
+// GetDevicePort: 正常获取
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetDevicePort_When_ValidRank_Expect_Success)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 使用存在的rank id（0）
+    uint32_t rank = 0;
+    uint32_t devPort = 0;
+
+    // GetDevicePort 是 RankGraphV1 的公开方法，直接通过 rankGraphV2 调用
+    ret = rankGraphV2->GetDevicePort(rank, &devPort);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// GetTopoInstsByLayer: 有效参数
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetTopoInstsByLayer_When_ValidParams_Expect_Success)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint32_t netLayer = 0;
+    uint32_t* topoInsts = nullptr;
+    uint32_t topoInstNum = 0;
+
+    ret = HcclRankGraphGetTopoInstsByLayer(comm, netLayer, &topoInsts, &topoInstNum);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_GE(topoInstNum, 0u);
+}
+
+// GetTopoType: 有效参数
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetTopoType_When_ValidParams_Expect_Success)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint32_t netLayer = 0;
+    uint32_t topoInstId = 0;
+    CommTopo topoType;
+
+    ret = HcclRankGraphGetTopoType(comm, netLayer, topoInstId, &topoType);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// GetEndpointNum: 有效参数
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetEndpointNum_When_ValidParams_Expect_Success)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint32_t netLayer = 0;
+    uint32_t topoInstId = 0;
+    uint32_t num = 0;
+
+    ret = HcclRankGraphGetEndpointNum(comm, netLayer, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+// GetEndpointDesc: 有效参数
+TEST_F(HcclIndependentOpRankGraphTest, Ut_GetEndpointDesc_When_ValidParams_Expect_Success)
+{
+    std::shared_ptr<hccl::hcclComm>hcclCommPtr;
+    std::shared_ptr<Hccl::RankGraph>rankGraphV2;
+    void* comm;
+    HcclResult ret;
+    SetUpCommAndGraph(hcclCommPtr, rankGraphV2, comm, ret);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    uint32_t netLayer = 0;
+    uint32_t topoInstId = 0;
+    uint32_t descNum = 10;
+    EndpointDesc endpointDesc[10];
+
+    ret = HcclRankGraphGetEndpointDesc(comm, netLayer, topoInstId, &descNum, endpointDesc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
