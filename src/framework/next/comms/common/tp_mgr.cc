@@ -96,6 +96,10 @@ static bool ApplyUbcQosTpSlPolicy(const GetTpInfoParam &param, uint32_t nTp, uin
     }
     tpListIndexOut = slotIdx;
     mappedSlOut = SlValueAtRankInMask16(slMask, slRank);
+    HCCL_INFO("[TpMgr][%s] nTp[%u] mPop[%u] mSl[%u] k[%u] numGroups[%u] qos[%u] groupIdx[%u] slotIdx[%u] slMask[0x%x] "
+              "tpListIdx[%u] mappedSl[%u] slLevelCount[%u].",
+        __func__, nTp, mPop, mSl, k, numGroups, qos, groupIdx, slotIdx, static_cast<unsigned>(slMask), tpListIndexOut,
+        mappedSlOut, param.slLevelCount);
     return true;
 }
 /*
