@@ -49,5 +49,6 @@ target_link_libraries(topoaddrinfo PRIVATE
 )
 
 install(TARGETS topoaddrinfo
-    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+    LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
 )

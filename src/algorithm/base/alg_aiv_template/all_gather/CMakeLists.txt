@@ -809,46 +809,57 @@ else()
    )
 endif()
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_gather_op.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_all_gather_op.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_int32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_float32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_bfloat16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_bfloat16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint8.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint8.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint16.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint16.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint32.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_ag_superkernel_uint32.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ag_crossnode.o OPTIONAL
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hccl_sk_ag_crossnode.o ${INSTALL_OPTIONAL}
+    COMPONENT hcomm
     DESTINATION ${INSTALL_LIBRARY_DIR}
 )
