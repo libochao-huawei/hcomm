@@ -120,8 +120,9 @@ bool CollReduceScatterOrderPreservedFor91093Executor::IsSmallData(const u64 tota
 }
 
 HcclResult CollReduceScatterOrderPreservedFor91093Executor::RunReduceScatterLevel1SingleRank(const OpParam &param,
-    ExecMem &execMem, SubCommInfo &level1CommInfo)
+    ExecMem &execMem, const SubCommInfo &level1CommInfo) const
 {
+    (void) level1CommInfo;
     HCCL_INFO("[%s] single rank per module, skip L1 AllToAll and LocalReduce, tag[%s]",
         __func__, tag_.c_str());
 
