@@ -275,7 +275,7 @@ HcclResult CheckDieValid(const char *funcName, const int32_t devLogicId, const u
     const std::array<bool, CCU_MAX_IODIE_NUM> &dieEnableFlags)
 {
     CHK_PRT_RET(dieId >= CCU_MAX_IODIE_NUM,
-        HCCL_ERROR("[%s] failed, dieId[%u] is invalid, shoudle be in [0-%u), devLogicId[%d].",
+        HCCL_ERROR("[%s] failed, dieId[%u] is invalid, should be in [0-%u), devLogicId[%d].",
             funcName, dieId, CCU_MAX_IODIE_NUM, devLogicId),
         HcclResult::HCCL_E_PARA);
 
