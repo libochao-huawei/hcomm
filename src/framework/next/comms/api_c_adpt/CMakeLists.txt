@@ -7,6 +7,9 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
+add_subdirectory(ccu)
+
 set(src_list
     hcomm_c_adpt.cc
     endpoint_map.cc

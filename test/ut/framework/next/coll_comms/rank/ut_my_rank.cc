@@ -8,6 +8,7 @@
 #include "my_rank.h"
 #include "channel_process.h"
 #include "base_config.h"
+#include "ccu_primitives.h"
 #define private public
 using namespace hccl;
 
@@ -110,7 +111,7 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     MOCKER_CPP(&hccl::CommMems::GetTagMemoryHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER_CPP(&hcomm::EndpointMgr::RegisterMemory).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
     MOCKER_CPP(&hccl::CommMems::SetMemHandles).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
-    MOCKER_CPP(&hcomm::CcuResContainer::Init).stubs().with(any()).will(returnValue(static_cast<int>(HCCL_SUCCESS)));
+    MOCKER(&HcommCcuInsCreate).stubs().with().will(returnValue(CcuResult::CCU_SUCCESS));
     ChannelHandle channelHandle = 0xab;
     MOCKER(hcomm::ChannelProcess::CreateChannelsLoop)
         .stubs()
@@ -125,7 +126,8 @@ TEST_F(MyRankTest, Ut_When_BatchCreateChannels_Expect_SUCCESS)
     cclBuffer.addr = (void*)0xab;
     cclBuffer.size = 1024;
     cclBuffer.type = HCCL_MEM_TYPE_DEVICE;
-    EXPECT_EQ(myRank.Init(cclBuffer, 0, 2), HCCL_SUCCESS);
+    constexpr uint32_t aicpu_mode = 2;
+    EXPECT_EQ(myRank.Init(cclBuffer, aicpu_mode, 2), HCCL_SUCCESS);
     EndpointDesc localEp;
     localEp.protocol = COMM_PROTOCOL_UB_MEM;
     localEp.commAddr.type = COMM_ADDR_TYPE_IP_V4;

@@ -31,11 +31,16 @@ public:
     HcclResult Init();
     HcclResult Deinit();
 
-    HcclResult Register(std::unique_ptr<CcuKernel> kernel,
-        CcuResPack &resPack, CcuKernelHandle &kernelHandle);
-    HcclResult Translate(const std::vector<CcuKernelHandle> &kernelHandles);
-    HcclResult UnRegister(const CcuKernelHandle kernelHandle);
-    CcuKernel *GetKernel(const CcuKernelHandle kernelHandle);
+    CcuResult Register(CcuResPack &resPack, char *kernelFuncName,
+        CcuKernelFunc ccuKernelFunc, CcuKernelArg kernelArg,
+        CcuKernelHandle &kernelHandle);
+
+    CcuResult Translate(const std::vector<CcuKernelHandle> &kernelHandles);
+
+    CcuKernel *GetKernel(CcuKernelHandle kernelHandle);
+    CcuResult UnRegister(CcuKernelHandle kernelHandle);
+
+    CcuKernel *GetCurrentKernel();
 
 private:
     explicit CcuKernelMgr() = default;
@@ -50,7 +55,7 @@ private:
     };
 
 private:
-    HcclResult AllocRes(std::unique_ptr<CcuKernel> &kernel, CcuResPack &resPack);
+    CcuResult AllocRes(CcuResPack &resPack);
 
     HcclResult InstantiationTranslator(const uint16_t dieId);
     HcclResult TransRepSequenceToMicrocode(const std::vector<CcuKernel *> &kernels,
@@ -63,7 +68,7 @@ private:
 private:
     bool initializedFlag_{false};
     int32_t devLogicId_{-1};
-    std::mutex kernelMapMutex_;
+    std::mutex kernelMapMutex_{};
     CcuKernelHandle kernelId_ = 0;
     std::unordered_map<CcuKernelHandle, std::unique_ptr<CcuKernel>> kernelMap_{};
     void *instructionLoadDevMem_{nullptr};
@@ -71,6 +76,8 @@ private:
     std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::shared_ptr<CcuRepTranslator>>> translators;
     std::unordered_map<uint16_t, std::unordered_map<uint16_t, std::shared_ptr<CcuRepReferenceManager>>> referenceMgrs;
     CcuTranslatResPack translatorResPack{};
+
+    std::unique_ptr<CcuKernel> currKernel_{nullptr};
 };
 }; // namespace hcomm
 
