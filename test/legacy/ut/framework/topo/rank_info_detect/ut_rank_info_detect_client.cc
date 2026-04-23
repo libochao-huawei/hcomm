@@ -43,7 +43,9 @@
 #include "topo_addr_info.h"
 #include "adapter_error_manager_pub.h"
 
-extern void CheckRootInfoJson(const nlohmann::json &parseJson);
+namespace Hccl {
+void CheckRootInfoJson(const nlohmann::json &parseJson);
+}
 
 using namespace Hccl;
 
