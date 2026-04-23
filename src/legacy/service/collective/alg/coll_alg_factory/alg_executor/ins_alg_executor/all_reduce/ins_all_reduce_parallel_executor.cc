@@ -160,6 +160,24 @@ void InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1
 }
 
 template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1>
+void InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::GenTemplateAlgParams1ForIntra(
+    const u64 scratchReadOffset, const u64 dataCount, const u64 scratchWriteOffset,
+    TemplateDataParams &tempAlgParams) const
+{
+    tempAlgParams.buffInfo.inBuffType           = BufferType::SCRATCH;
+    tempAlgParams.buffInfo.outBuffType          = BufferType::SCRATCH;
+    tempAlgParams.buffInfo.scratBuffType         = BufferType::SCRATCH;
+    tempAlgParams.buffInfo.inBuffBaseOff        = scratchReadOffset;
+    tempAlgParams.buffInfo.outBuffBaseOff        = scratchWriteOffset;
+    tempAlgParams.buffInfo.scratchBuffBaseOff    = scratchWriteOffset;
+    tempAlgParams.sliceSize                     = dataCount * dataTypeSize_;
+    tempAlgParams.tailSize                      = tempAlgParams.sliceSize;
+    tempAlgParams.inputSliceStride              = 0;
+    tempAlgParams.outputSliceStride             = 0;
+    return;
+}
+
+template <typename AlgTopoMatch, typename InsAlgTemplate0, typename InsAlgTemplate1>
 void InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTemplate1>::GetParallelDataSplitRate(
     std::vector<float> &splitDataSize) const
 {
@@ -419,10 +437,10 @@ HcclResult InsAllReduceParallelExecutor<AlgTopoMatch, InsAlgTemplate0, InsAlgTem
         // 第二步开始前同步
         CHK_RET(PreSyncQues(syncQueues_, 0));
         tempAlgParamsInter1.buffInfo.scratchBuffSize = Inter1ScratchSize;
-        GenTemplateAlgParams1(dataOffset0, dataCountPerLoopAixs0, interScratchOffset1, tempAlgParamsInter1);
+        GenTemplateAlgParams1(Intra0ScratchSize, dataCountPerLoopAixs0, interScratchOffset1, tempAlgParamsInter1);
         CHK_RET(tempAlgInter.GenExtIns(tempFuncs, tempAlgParamsInter1, interLinks_, interQue_));
         tempAlgParamsIntra1.buffInfo.scratchBuffSize = Intra1ScratchSize;
-        GenTemplateAlgParams1(dataOffset1, dataCountPerLoopAixs1, 0, tempAlgParamsIntra1);
+        GenTemplateAlgParams1ForIntra(interScratchOffset0, dataCountPerLoopAixs1, Intra0ScratchSize, tempAlgParamsIntra1);
         CHK_RET(tempAlgIntra.GenExtIns(tempFuncs, tempAlgParamsIntra1, intraLinks_, intraQue_));
         CHK_RET(PostSyncQues(syncQueues_, 0));
     }

@@ -42,6 +42,7 @@ private:
     void GenTemplateAlgParams0(const u64 dataOffset, const u64 dataCount, const u64 scratchOffset,TemplateDataParams &tempAlgParams) const;
     void GenTemplateAlgParams1(const u64 dataOffset, const u64 dataCount, const u64 scratchOffset,TemplateDataParams &tempAlgParams) const;
     HcclResult CalcSendDataSize(u64 &memBlockSize, float &SplitRate, u32 &multipleIntra, u32 &multipleInter);
+    void GenTemplateAlgParams1ForIntra(const u64 scratchReadOffset, const u64 dataCount, const u64 scratchWriteOffset, TemplateDataParams &tempAlgParams) const;
     
     void GetParallelDataSplitRate(std::vector<float> &splitDataSize) const;
     HcclResult PrepareResForTemplate(const RankGraph *rankGraph, InsAlgTemplate0 &tempAlgIntra, InsAlgTemplate1 &tempAlgInter);
